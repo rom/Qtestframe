@@ -229,6 +229,102 @@ requirements:
         - method: test
           text: Varje diagram har en tabellvy med samma värden, och i en skärmbild i gråskala går varje serie fortfarande att skilja från de andra.
 
+  - id: RPT-11
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [report-builder, custom-reports, grouping]
+    refs: ["ISO/IEC 25010:2023 functional completeness", "ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [RPT-T09]
+    en:
+      title: Custom reports
+      description: The system SHOULD let a user build a report by choosing item type, columns, filters, grouping and a total per group, and save it under a name.
+      rationale: The standard reports never fit every question, and exporting to a spreadsheet for each one breaks the link to live data.
+      criteria:
+        - method: test
+          text: A user builds a report of open requirements grouped by owner with a count per group and saves it; reopening it gives the same result on the same data.
+          threshold: "5 building blocks"
+    sv:
+      title: Egna rapporter
+      description: Systemet BÖR låta en användare bygga en rapport genom att välja objekttyp, kolumner, filter, gruppering och en summa per grupp, och spara den under ett namn.
+      rationale: Standardrapporterna passar aldrig varje fråga, och att exportera till kalkylblad för var och en bryter kopplingen till aktuella data.
+      criteria:
+        - method: test
+          text: En användare bygger en rapport över öppna krav grupperade per ägare med antal per grupp och sparar den; när den öppnas igen ger den samma resultat på samma data.
+          threshold: "5 byggstenar"
+
+  - id: RPT-12
+    type: functional
+    obligation: should
+    priority: low
+    tags: [sharing, report-definitions, permissions]
+    refs: ["ISO/IEC 27001:2022 A.5.15", "ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [RPT-T10]
+    en:
+      title: Shared report definitions
+      description: The system SHOULD let a user share a saved report definition with a team, with each viewer seeing only the data that viewer has permission to read.
+      rationale: Teams want one agreed report rather than private copies that drift apart, and sharing the definition rather than the data keeps permissions intact.
+      criteria:
+        - method: test
+          text: A report shared with a team shows each member results filtered by that member's permissions.
+          threshold: "results follow the viewer's permissions"
+    sv:
+      title: Delade rapportdefinitioner
+      description: Systemet BÖR låta en användare dela en sparad rapportdefinition med ett team, där varje betraktare bara ser de data som den har behörighet att läsa.
+      rationale: Team vill ha en överenskommen rapport snarare än privata kopior som glider isär, och att dela definitionen i stället för data behåller behörigheterna.
+      criteria:
+        - method: test
+          text: En rapport som delas med ett team visar varje medlem resultat filtrerade efter medlemmens behörigheter.
+          threshold: "resultaten följer betraktarens behörigheter"
+
+  - id: RPT-13
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [trends, snapshots, history]
+    refs: ["ISO/IEC 25012:2008 currentness", "ISO/IEC 25010:2023 functional correctness"]
+    tests: [RPT-T11]
+    en:
+      title: Monthly snapshots for trends
+      description: The system MUST store a snapshot of the key figures of each project at the end of each month and show their trend for the last 24 months.
+      rationale: Trends computed from current data change when old items are edited or deleted, so last year's figures cannot be compared reliably without snapshots.
+      criteria:
+        - method: test
+          text: Editing an item from last month does not change last month's snapshot, and the trend chart shows a value for each stored month.
+          threshold: "24 months shown"
+    sv:
+      title: Månatliga ögonblicksbilder för trender
+      description: Systemet SKA spara en ögonblicksbild av nyckeltalen för varje projekt vid varje månadsslut och visa deras utveckling de senaste 24 månaderna.
+      rationale: Trender som räknas fram ur aktuella data ändras när gamla objekt redigeras eller raderas, så förra årets siffror går inte att jämföra utan ögonblicksbilder.
+      criteria:
+        - method: test
+          text: Att redigera ett objekt från förra månaden ändrar inte förra månadens ögonblicksbild, och trenddiagrammet visar ett värde för varje sparad månad.
+          threshold: "24 månader visas"
+
+  - id: RPT-14
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [background, long-reports, notification]
+    refs: ["ISO/IEC 25010:2023 time behaviour", "ISO 9241-110:2020 controllability"]
+    tests: [RPT-T12]
+    en:
+      title: Long reports run in the background
+      description: A report that is not ready within 10 seconds MUST continue in the background and notify the user with a link when it is ready.
+      rationale: A frozen page for minutes stops the user's other work and leads to repeated requests that load the system further.
+      criteria:
+        - method: test
+          text: A report that takes 2 minutes lets the user keep working and sends an in-app notification with a link when finished.
+          threshold: "switch to background after 10 s"
+    sv:
+      title: Långa rapporter körs i bakgrunden
+      description: En rapport som inte är klar inom 10 sekunder SKA fortsätta i bakgrunden och avisera användaren med en länk när den är klar.
+      rationale: En sida som står still i minuter stoppar användarens övriga arbete och leder till upprepade beställningar som belastar systemet ytterligare.
+      criteria:
+        - method: test
+          text: En rapport som tar 2 minuter låter användaren fortsätta arbeta och skickar en avisering i appen med en länk när den är klar.
+          threshold: "övergång till bakgrund efter 10 s"
+
 tests:
   - id: RPT-T01
     priority: high
@@ -465,3 +561,125 @@ tests:
           expected: En tabell med samma värden som diagrammet visas.
         - action: Ta en skärmbild av diagrammet i gråskala.
           expected: Var och en av de 3 serierna går att skilja från de andra genom etikett eller mönster.
+
+  - id: RPT-T09
+    priority: medium
+    execution: manual
+    tags: [report-builder, custom-reports]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    en:
+      title: Building and saving a custom report
+      description: Builds a grouped report with a count and reopens it.
+      preconditions: A project with open requirements owned by 3 users.
+      expected: The saved report gives the same grouped counts when reopened.
+      steps:
+        - action: Choose item type requirement, columns id, title and owner, and filter on status open.
+          expected: The preview lists the open requirements.
+          data: "status open"
+        - action: Group by owner, add a count per group and save as "Open by owner".
+          expected: The report shows one group per owner with its count.
+        - action: Close and reopen the saved report.
+          expected: The groups and counts are the same.
+    sv:
+      title: Bygga och spara en egen rapport
+      description: Bygger en grupperad rapport med antal och öppnar den igen.
+      preconditions: Ett projekt med öppna krav som ägs av 3 användare.
+      expected: Den sparade rapporten ger samma grupperade antal när den öppnas igen.
+      steps:
+        - action: Välj objekttypen krav, kolumnerna id, titel och ägare, och filtrera på status öppen.
+          expected: Förhandsvisningen listar de öppna kraven.
+          data: "status öppen"
+        - action: Gruppera per ägare, lägg till antal per grupp och spara som "Öppna per ägare".
+          expected: Rapporten visar en grupp per ägare med sitt antal.
+        - action: Stäng och öppna den sparade rapporten igen.
+          expected: Grupperna och antalen är desamma.
+
+  - id: RPT-T10
+    priority: low
+    execution: manual
+    tags: [sharing, permissions]
+    refs: ["ISO/IEC 27001:2022 A.5.15"]
+    en:
+      title: Shared report respects each viewer's access
+      description: Shares a report with a team whose members see different projects.
+      preconditions: A saved report over two projects and a team of 2 users, one with access to both projects and one to one project.
+      expected: Each member sees results only from projects they may read.
+      steps:
+        - action: Share the report with the team.
+          expected: Both members see the report in their list.
+        - action: Open the report as each member.
+          expected: The first sees items from both projects; the second sees items from one project only.
+    sv:
+      title: Delad rapport följer varje betraktares åtkomst
+      description: Delar en rapport med ett team vars medlemmar ser olika projekt.
+      preconditions: En sparad rapport över två projekt och ett team med 2 användare, en med åtkomst till båda projekten och en till ett projekt.
+      expected: Varje medlem ser resultat bara från projekt den får läsa.
+      steps:
+        - action: Dela rapporten med teamet.
+          expected: Båda medlemmarna ser rapporten i sin lista.
+        - action: Öppna rapporten som var och en av medlemmarna.
+          expected: Den första ser objekt från båda projekten; den andra ser objekt från ett projekt.
+
+  - id: RPT-T11
+    priority: medium
+    execution: manual
+    tags: [trends, snapshots]
+    refs: ["ISO/IEC 25012:2008 currentness"]
+    en:
+      title: Snapshot unchanged by later edits
+      description: Edits an item of an earlier month and checks the stored snapshot and the trend chart.
+      preconditions: A project with snapshots for at least 3 past months.
+      expected: Past snapshots do not change and each stored month shows in the trend.
+      steps:
+        - action: Note last month's snapshot value for open requirements.
+          expected: The value is recorded.
+          data: "for example 42 open"
+        - action: Close an item that was open at the end of last month.
+          expected: The current count changes.
+        - action: Open the trend chart.
+          expected: Last month still shows the recorded value and each stored month has a point.
+    sv:
+      title: Ögonblicksbilden ändras inte av senare ändringar
+      description: Redigerar ett objekt från en tidigare månad och kontrollerar den sparade ögonblicksbilden och trenddiagrammet.
+      preconditions: Ett projekt med ögonblicksbilder för minst 3 tidigare månader.
+      expected: Tidigare ögonblicksbilder ändras inte och varje sparad månad syns i trenden.
+      steps:
+        - action: Notera förra månadens värde i ögonblicksbilden för öppna krav.
+          expected: Värdet noteras.
+          data: "till exempel 42 öppna"
+        - action: Stäng ett objekt som var öppet vid förra månadsskiftet.
+          expected: Det aktuella antalet ändras.
+        - action: Öppna trenddiagrammet.
+          expected: Förra månaden visar fortfarande det noterade värdet och varje sparad månad har en punkt.
+
+  - id: RPT-T12
+    priority: medium
+    execution: manual
+    tags: [background, long-reports]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    en:
+      title: Report that runs in the background
+      description: Requests a report that takes longer than 10 seconds and keeps working meanwhile.
+      preconditions: A large project where a chosen report takes about 2 minutes.
+      expected: The report continues in the background and a notification with a link arrives when ready.
+      steps:
+        - action: Request the report.
+          expected: After at most 10 seconds the page says the report runs in the background.
+          data: "report over 200 000 items"
+        - action: Open other pages and edit an item.
+          expected: The application responds while the report runs.
+        - action: Wait for the notification and follow its link.
+          expected: The finished report opens.
+    sv:
+      title: Rapport som körs i bakgrunden
+      description: Beställer en rapport som tar längre tid än 10 sekunder och fortsätter arbeta under tiden.
+      preconditions: Ett stort projekt där en vald rapport tar runt 2 minuter.
+      expected: Rapporten fortsätter i bakgrunden och en avisering med en länk kommer när den är klar.
+      steps:
+        - action: Beställ rapporten.
+          expected: Efter högst 10 sekunder anger sidan att rapporten körs i bakgrunden.
+          data: "rapport över 200 000 objekt"
+        - action: Öppna andra sidor och redigera ett objekt.
+          expected: Applikationen svarar medan rapporten körs.
+        - action: Vänta på aviseringen och följ dess länk.
+          expected: Den färdiga rapporten öppnas.

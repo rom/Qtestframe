@@ -303,6 +303,102 @@ requirements:
         - method: inspection
           text: Driftsättningshistoriken för de senaste 30 dagarna anger de fem uppgifterna för varje driftsättning.
 
+  - id: DEP-14
+    type: non_functional
+    obligation: should
+    priority: high
+    tags: [canary, progressive-delivery, rollout]
+    refs: ["Google SRE workbook ch. 16 (Canarying Releases)", "Humble and Farley, Continuous Delivery (2010) ch. 10"]
+    tests: [DEP-T12]
+    en:
+      title: Canary release before full rollout
+      description: The pipeline SHOULD send a new version to at most 5 % of production traffic for 15 minutes and compare its error rate and latency with the current version before the full rollout.
+      rationale: A fault that tests missed then reaches a small share of users and is caught by measurement instead of by complaints.
+      criteria:
+        - method: test
+          text: A canary with an injected error rate above the current version is stopped and rolled back before it reaches more than 5 % of traffic.
+          threshold: "≤ 5 % traffic for ≥ 15 min"
+    sv:
+      title: Kanariefågelrelease före full utrullning
+      description: Pipelinen BÖR skicka en ny version till högst 5 % av produktionstrafiken i 15 minuter och jämföra dess felandel och svarstid med den nuvarande versionen före full utrullning.
+      rationale: Ett fel som testerna missade når då bara en liten andel användare och upptäcks genom mätning i stället för genom klagomål.
+      criteria:
+        - method: test
+          text: En kanarieversion med en inlagd felandel över den nuvarande versionens stoppas och rullas tillbaka innan den når mer än 5 % av trafiken.
+          threshold: "≤ 5 % trafik i ≥ 15 min"
+
+  - id: DEP-15
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [metrics, dora, delivery]
+    refs: ["DORA State of DevOps research (four key metrics)", "ITIL 4 Release management"]
+    tests: [DEP-T13]
+    en:
+      title: Delivery performance measured
+      description: The supplier SHOULD measure deployment frequency, lead time for changes, change failure rate and time to restore service every month from pipeline and incident data.
+      rationale: These four figures show whether delivery speed and stability improve together, and measuring them from tool data keeps the figures honest.
+      criteria:
+        - method: inspection
+          text: The monthly report shows the four figures, each computed from pipeline or incident records that can be traced.
+          threshold: "4 metrics per month"
+    sv:
+      title: Leveransförmågan mäts
+      description: Leverantören BÖR mäta driftsättningsfrekvens, ledtid för ändringar, andel misslyckade ändringar och tid för att återställa tjänsten varje månad utifrån data från pipeline och incidenter.
+      rationale: De fyra måtten visar om takt och stabilitet förbättras tillsammans, och att mäta dem ur verktygens data håller siffrorna ärliga.
+      criteria:
+        - method: inspection
+          text: Månadsrapporten visar de fyra måtten, vart och ett beräknat ur poster från pipeline eller incidenter som går att spåra.
+          threshold: "4 mått per månad"
+
+  - id: DEP-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [approval, segregation, production]
+    refs: ["ISO/IEC 27001:2022 A.8.32 (change management)", "ISO/IEC 27001:2022 A.5.3"]
+    tests: [DEP-T14]
+    en:
+      title: Production deployment approved by another person
+      description: A deployment to production MUST be approved in the pipeline by a person other than the author of the change.
+      rationale: Four eyes before production stop both mistakes and a single person pushing an unreviewed change on their own.
+      criteria:
+        - method: test
+          text: The pipeline refuses an approval given by the author of the change and accepts one from another authorised person.
+          threshold: "1 independent approval"
+    sv:
+      title: Driftsättning i produktion godkänns av en annan person
+      description: En driftsättning i produktion SKA godkännas i pipelinen av en annan person än den som skrev ändringen.
+      rationale: Fyra ögon före produktion stoppar både misstag och att en enskild person på egen hand för ut en ogranskad ändring.
+      criteria:
+        - method: test
+          text: Pipelinen avvisar ett godkännande från ändringens författare och godtar ett från en annan behörig person.
+          threshold: "1 oberoende godkännande"
+
+  - id: DEP-17
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [duration, deployment, pipeline]
+    refs: ["Humble and Farley, Continuous Delivery (2010) ch. 5", "DORA State of DevOps research (lead time for changes)"]
+    tests: [DEP-T15]
+    en:
+      title: Deployment duration
+      description: A deployment to production MUST complete within 30 minutes from the start of the deployment job until the new version serves all traffic.
+      rationale: A slow deployment delays urgent fixes and tempts teams to bypass the pipeline when time matters most.
+      criteria:
+        - method: inspection
+          text: The deployment records of the last 20 production deployments show a duration of at most 30 minutes for at least 19 of them.
+          threshold: "≤ 30 min for 95 % of deployments"
+    sv:
+      title: Driftsättningens längd
+      description: En driftsättning i produktion SKA vara klar inom 30 minuter från att driftsättningsjobbet startar tills den nya versionen tar emot all trafik.
+      rationale: En långsam driftsättning fördröjer brådskande rättningar och frestar teamen att gå förbi pipelinen just när tiden är knapp.
+      criteria:
+        - method: inspection
+          text: Posterna för de 20 senaste driftsättningarna i produktion visar en längd på högst 30 minuter för minst 19 av dem.
+          threshold: "≤ 30 min för 95 % av driftsättningarna"
+
 tests:
   - id: DEP-T01
     priority: high
@@ -621,3 +717,117 @@ tests:
           expected: Versionsinformation finns och publicerades högst 1 arbetsdag efter leveransen.
         - action: Kontrollera innehållet i varje versionsinformation.
           expected: Var och en har avsnitt för nya funktioner, rättningar, kända problem och åtgärder för användarna.
+
+  - id: DEP-T12
+    priority: high
+    execution: manual
+    tags: [canary, rollout]
+    refs: ["Google SRE workbook ch. 16 (Canarying Releases)"]
+    en:
+      title: Faulty canary is stopped
+      description: Deploys a test version that returns errors and checks that the canary stage stops it.
+      preconditions: Staging or production with canary support and a build that returns server errors for 5 % of requests.
+      expected: The canary is stopped and rolled back with no more than 5 % of traffic exposed.
+      steps:
+        - action: Deploy the faulty build through the pipeline.
+          expected: The pipeline sends at most 5 % of traffic to the new version.
+          data: "build with 5 % injected server errors"
+        - action: Watch the canary analysis during the observation period.
+          expected: The analysis reports a higher error rate than the current version.
+        - action: Check the outcome of the pipeline.
+          expected: The canary is rolled back, the full rollout does not start and the team is notified.
+    sv:
+      title: Felaktig kanarieversion stoppas
+      description: Driftsätter en testversion som ger fel och kontrollerar att kanariesteget stoppar den.
+      preconditions: Staging eller produktion med stöd för kanarieversioner och ett bygge som ger serverfel för 5 % av anropen.
+      expected: Kanarieversionen stoppas och rullas tillbaka utan att mer än 5 % av trafiken har påverkats.
+      steps:
+        - action: Driftsätt det felaktiga bygget genom pipelinen.
+          expected: Pipelinen skickar högst 5 % av trafiken till den nya versionen.
+          data: "bygge med 5 % inlagda serverfel"
+        - action: Följ kanarieanalysen under observationsperioden.
+          expected: Analysen rapporterar en högre felandel än den nuvarande versionen.
+        - action: Kontrollera pipelinens utfall.
+          expected: Kanarieversionen rullas tillbaka, full utrullning startar inte och teamet får besked.
+
+  - id: DEP-T13
+    priority: medium
+    execution: manual
+    tags: [metrics, dora]
+    refs: ["DORA State of DevOps research (four key metrics)"]
+    en:
+      title: Monthly delivery metrics traced to records
+      description: Checks the monthly delivery report against pipeline and incident records.
+      preconditions: The delivery report for the last month and read access to the pipeline and the incident tool.
+      expected: Each of the four metrics is present and can be recomputed from the records.
+      steps:
+        - action: Read the four metrics in the report.
+          expected: Deployment frequency, lead time, change failure rate and time to restore are each given.
+        - action: Recompute the deployment frequency and the change failure rate from the pipeline and incident records.
+          expected: The recomputed values match the report.
+          data: "deployments and incidents of the month"
+    sv:
+      title: Månatliga leveransmått spårade till poster
+      description: Kontrollerar månadsrapporten om leveranser mot poster i pipeline och incidentverktyg.
+      preconditions: Leveransrapporten för förra månaden och läsbehörighet till pipelinen och incidentverktyget.
+      expected: Vart och ett av de fyra måtten finns och kan räknas om ur posterna.
+      steps:
+        - action: Läs de fyra måtten i rapporten.
+          expected: Driftsättningsfrekvens, ledtid, andel misslyckade ändringar och tid till återställning anges var för sig.
+        - action: Räkna om driftsättningsfrekvensen och andelen misslyckade ändringar ur posterna i pipeline och incidentverktyg.
+          expected: De omräknade värdena stämmer med rapporten.
+          data: "månadens driftsättningar och incidenter"
+
+  - id: DEP-T14
+    priority: high
+    execution: manual
+    tags: [approval, segregation]
+    refs: ["ISO/IEC 27001:2022 A.8.32 (change management)"]
+    en:
+      title: Author cannot approve their own production deployment
+      description: Tries to approve a production deployment as the author of the change and then as another person.
+      preconditions: A change ready for production, its author and a second user with deployment approval rights.
+      expected: Only the second person's approval lets the deployment start.
+      steps:
+        - action: Sign in to the pipeline as the author and approve the production stage.
+          expected: The approval is refused with a message that the author cannot approve.
+          data: "author: the developer who made the change"
+        - action: Sign in as the second user and approve.
+          expected: The approval is accepted and the deployment starts; the record shows who approved.
+    sv:
+      title: Författaren kan inte godkänna sin egen driftsättning i produktion
+      description: Försöker godkänna en driftsättning i produktion som ändringens författare och sedan som en annan person.
+      preconditions: En ändring som är klar för produktion, dess författare och en andra användare med behörighet att godkänna driftsättningar.
+      expected: Bara den andra personens godkännande låter driftsättningen starta.
+      steps:
+        - action: Logga in i pipelinen som författaren och godkänn produktionssteget.
+          expected: Godkännandet avvisas med ett meddelande om att författaren inte kan godkänna.
+          data: "författare: utvecklaren som gjorde ändringen"
+        - action: Logga in som den andra användaren och godkänn.
+          expected: Godkännandet tas emot och driftsättningen startar; posten visar vem som godkände.
+
+  - id: DEP-T15
+    priority: medium
+    execution: manual
+    tags: [duration, deployment]
+    refs: ["DORA State of DevOps research (lead time for changes)"]
+    en:
+      title: Duration of recent production deployments
+      description: Reads the start and end times of recent production deployments.
+      preconditions: Access to the deployment records.
+      expected: At least 19 of the last 20 deployments took at most 30 minutes.
+      steps:
+        - action: Export the last 20 production deployments with start time and the time the new version served all traffic.
+          expected: The export lists 20 deployments with both times.
+        - action: Compute the duration of each and count those above 30 minutes.
+          expected: At most 1 deployment took longer than 30 minutes.
+    sv:
+      title: Längden på de senaste driftsättningarna i produktion
+      description: Läser av start- och sluttider för de senaste driftsättningarna i produktion.
+      preconditions: Åtkomst till posterna för driftsättningar.
+      expected: Minst 19 av de 20 senaste driftsättningarna tog högst 30 minuter.
+      steps:
+        - action: Exportera de 20 senaste driftsättningarna i produktion med starttid och tidpunkten då den nya versionen tog emot all trafik.
+          expected: Exporten listar 20 driftsättningar med båda tiderna.
+        - action: Beräkna längden för var och en och räkna dem som tog över 30 minuter.
+          expected: Högst 1 driftsättning tog längre än 30 minuter.

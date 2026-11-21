@@ -275,6 +275,102 @@ requirements:
           text: Av 20 planerade jobb startar vart och ett inom 60 sekunder från sin tid; ett jobb som planerats under ett stopp på 10 minuter startar inom 5 minuter efter omstarten.
           threshold: ≤ 60 s; missade jobb ≤ 5 min efter omstart
 
+  - id: SCHED-13
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [free-busy, availability, participants]
+    refs: ["RFC 5545 §3.6.4 (free/busy component)", "ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [SCHED-T10]
+    en:
+      title: Free and busy times when planning
+      description: When a user plans an event, the system SHOULD show the free and busy times of the invited participants and resources for the chosen day without showing the details of their other events.
+      rationale: Finding a time that suits everyone by trial and error takes many rounds of messages, while the details of others' calendars are not the planner's business.
+      criteria:
+        - method: test
+          text: Planning an event with 3 participants shows their busy blocks for the day, and no title of their other events is shown.
+          threshold: "0 event details disclosed"
+    sv:
+      title: Lediga och upptagna tider vid planering
+      description: När en användare planerar en händelse BÖR systemet visa de inbjudna deltagarnas och resursernas lediga och upptagna tider för den valda dagen utan att visa detaljer om deras andra händelser.
+      rationale: Att hitta en tid som passar alla genom att prova tar många meddelanden fram och tillbaka, medan detaljerna i andras kalendrar inte angår den som planerar.
+      criteria:
+        - method: test
+          text: Planering av en händelse med 3 deltagare visar deras upptagna block för dagen, och ingen titel på deras andra händelser visas.
+          threshold: "0 händelsedetaljer röjs"
+
+  - id: SCHED-14
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [booking-rules, notice, horizon]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    tests: [SCHED-T11]
+    en:
+      title: Minimum notice and booking horizon
+      description: The system MUST reject a booking of a resource that starts sooner than the resource's configured minimum notice or later than its booking horizon.
+      rationale: Resources need preparation time and must not be blocked months ahead by one person, and rules that are only written down are not followed.
+      criteria:
+        - method: test
+          text: With a minimum notice of 24 hours and a horizon of 90 days, bookings 2 hours ahead and 100 days ahead are rejected and one 10 days ahead is accepted.
+          threshold: "notice 24 h; horizon 90 days"
+    sv:
+      title: Minsta framförhållning och bokningshorisont
+      description: Systemet SKA avvisa en bokning av en resurs som börjar tidigare än resursens inställda minsta framförhållning eller senare än dess bokningshorisont.
+      rationale: Resurser behöver förberedelsetid och ska inte blockeras månader i förväg av en person, och regler som bara finns på papper följs inte.
+      criteria:
+        - method: test
+          text: Med en minsta framförhållning på 24 timmar och en horisont på 90 dagar avvisas bokningar 2 timmar och 100 dagar framåt, och en bokning 10 dagar framåt godtas.
+          threshold: "framförhållning 24 h; horisont 90 dagar"
+
+  - id: SCHED-15
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [capacity, resources, booking]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    tests: [SCHED-T12]
+    en:
+      title: Bookings limited by capacity
+      description: For a resource with a capacity above one, such as a room with seats or a test rig with stations, the system MUST accept overlapping bookings only up to the capacity.
+      rationale: Treating such resources as single slots wastes them, while ignoring capacity overbooks them.
+      criteria:
+        - method: test
+          text: A room with 3 seats accepts 3 overlapping bookings and rejects the fourth with a message.
+          threshold: "overlapping bookings ≤ capacity"
+    sv:
+      title: Bokningar begränsade av kapacitet
+      description: För en resurs med en kapacitet över ett, till exempel ett rum med platser eller en testrigg med stationer, SKA systemet godta överlappande bokningar bara upp till kapaciteten.
+      rationale: Att behandla sådana resurser som enkla tider slösar bort dem, medan en bortsedd kapacitet leder till överbokning.
+      criteria:
+        - method: test
+          text: Ett rum med 3 platser godtar 3 överlappande bokningar och avvisar den fjärde med ett meddelande.
+          threshold: "överlappande bokningar ≤ kapacitet"
+
+  - id: SCHED-16
+    type: functional
+    obligation: must
+    priority: high
+    tags: [jobs, missed-runs, catch-up]
+    refs: ["ISO/IEC 25010:2023 recoverability", "ISO/IEC 25010:2023 functional correctness"]
+    tests: [SCHED-T13]
+    en:
+      title: Missed job runs after downtime
+      description: When the scheduler was stopped across the planned time of a recurring job, the system MUST run that job once after the restart, not once for every missed occurrence.
+      rationale: Skipping missed runs silently loses work such as reminders, while running every missed occurrence at once floods recipients and resources.
+      criteria:
+        - method: test
+          text: A job planned hourly that missed 3 runs during a 3-hour stop runs exactly once after restart and then follows its schedule.
+          threshold: "1 catch-up run"
+    sv:
+      title: Missade jobbkörningar efter driftstopp
+      description: När schemaläggaren har varit stoppad över den planerade tiden för ett återkommande jobb SKA systemet köra jobbet en gång efter omstarten, inte en gång för varje missad förekomst.
+      rationale: Att i det tysta hoppa över missade körningar förlorar arbete som påminnelser, medan att köra varje missad förekomst på en gång översvämmar mottagare och resurser.
+      criteria:
+        - method: test
+          text: Ett jobb som planeras varje timme och missade 3 körningar under ett stopp på 3 timmar körs exakt en gång efter omstart och följer sedan sitt schema.
+          threshold: "1 körning i efterhand"
+
 tests:
   - id: SCHED-T01
     priority: high
@@ -561,3 +657,127 @@ tests:
           data: 20 jobb
         - action: Planera ett jobb 5 minuter fram, stoppa systemet i 10 minuter och starta det igen.
           expected: Det missade jobbet startar inom 5 minuter efter omstarten och körs en gång.
+
+  - id: SCHED-T10
+    priority: medium
+    execution: manual
+    tags: [free-busy, participants]
+    refs: ["RFC 5545 §3.6.4 (free/busy component)"]
+    en:
+      title: Free and busy view when inviting
+      description: Plans an event with participants who have other events and checks what is shown.
+      preconditions: 3 test users with known events on the chosen day, one of them titled "Private appointment".
+      expected: Busy blocks appear in the right places without titles or details.
+      steps:
+        - action: Start planning an event and add the 3 users.
+          expected: A day view shows a row per participant.
+        - action: Compare the busy blocks with the participants' known events.
+          expected: The blocks match the times of their events.
+          data: "3 events at 09:00, 11:00 and 14:00"
+        - action: Look for titles or locations of the other events.
+          expected: No title, location or description of the other events is shown.
+    sv:
+      title: Vy över lediga och upptagna tider vid inbjudan
+      description: Planerar en händelse med deltagare som har andra händelser och kontrollerar vad som visas.
+      preconditions: 3 testanvändare med kända händelser den valda dagen, varav en med titeln "Privat besök".
+      expected: Upptagna block visas på rätt ställen utan titlar eller detaljer.
+      steps:
+        - action: Börja planera en händelse och lägg till de 3 användarna.
+          expected: En dagsvy visar en rad per deltagare.
+        - action: Jämför de upptagna blocken med deltagarnas kända händelser.
+          expected: Blocken stämmer med tiderna för deras händelser.
+          data: "3 händelser klockan 09.00, 11.00 och 14.00"
+        - action: Leta efter titlar eller platser för de andra händelserna.
+          expected: Ingen titel, plats eller beskrivning av de andra händelserna visas.
+
+  - id: SCHED-T11
+    priority: medium
+    execution: manual
+    tags: [booking-rules, notice]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    en:
+      title: Booking rules for notice and horizon
+      description: Books a resource too early, too far ahead and within the rules.
+      preconditions: A resource with a minimum notice of 24 hours and a horizon of 90 days.
+      expected: Only the booking within the rules is accepted.
+      steps:
+        - action: Book the resource starting in 2 hours.
+          expected: The booking is rejected with a message about the minimum notice.
+          data: "start now + 2 h"
+        - action: Book the resource starting in 100 days.
+          expected: The booking is rejected with a message about the horizon.
+          data: "start now + 100 days"
+        - action: Book the resource starting in 10 days.
+          expected: The booking is accepted.
+    sv:
+      title: Bokningsregler för framförhållning och horisont
+      description: Bokar en resurs för tidigt, för långt fram och inom reglerna.
+      preconditions: En resurs med en minsta framförhållning på 24 timmar och en horisont på 90 dagar.
+      expected: Bara bokningen inom reglerna godtas.
+      steps:
+        - action: Boka resursen med start om 2 timmar.
+          expected: Bokningen avvisas med ett meddelande om minsta framförhållning.
+          data: "start nu + 2 h"
+        - action: Boka resursen med start om 100 dagar.
+          expected: Bokningen avvisas med ett meddelande om horisonten.
+          data: "start nu + 100 dagar"
+        - action: Boka resursen med start om 10 dagar.
+          expected: Bokningen godtas.
+
+  - id: SCHED-T12
+    priority: medium
+    execution: manual
+    tags: [capacity, resources]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    en:
+      title: Overlapping bookings up to capacity
+      description: Books a room with 3 seats four times for the same hour.
+      preconditions: A room resource with capacity 3 and 4 test users.
+      expected: Three bookings succeed and the fourth is rejected.
+      steps:
+        - action: Book the room for 10:00–11:00 as 3 different users.
+          expected: Each booking is accepted and the room shows 0 seats left.
+          data: "capacity 3"
+        - action: Book the same hour as a fourth user.
+          expected: The booking is rejected with a message that the room is full.
+    sv:
+      title: Överlappande bokningar upp till kapaciteten
+      description: Bokar ett rum med 3 platser fyra gånger samma timme.
+      preconditions: En rumsresurs med kapaciteten 3 och 4 testanvändare.
+      expected: Tre bokningar lyckas och den fjärde avvisas.
+      steps:
+        - action: Boka rummet 10.00–11.00 som 3 olika användare.
+          expected: Varje bokning godtas och rummet visar 0 lediga platser.
+          data: "kapacitet 3"
+        - action: Boka samma timme som en fjärde användare.
+          expected: Bokningen avvisas med ett meddelande om att rummet är fullt.
+
+  - id: SCHED-T13
+    priority: high
+    execution: manual
+    tags: [jobs, missed-runs]
+    refs: ["ISO/IEC 25010:2023 recoverability"]
+    en:
+      title: Catch-up after a scheduler stop
+      description: Stops the scheduler for 3 hours across an hourly job and starts it again.
+      preconditions: A test environment with an hourly job that writes a run record.
+      expected: The job runs once after the restart and then on schedule.
+      steps:
+        - action: Stop the scheduler at 09:50 and keep it stopped until 12:50.
+          expected: No run records are written for 10:00, 11:00 and 12:00.
+        - action: Start the scheduler.
+          expected: Exactly one run record is written shortly after the start.
+        - action: Wait until 13:05.
+          expected: A run record for 13:00 is written and no further catch-up runs occur.
+    sv:
+      title: Körning i efterhand efter stopp i schemaläggaren
+      description: Stoppar schemaläggaren i 3 timmar över ett jobb som körs varje timme och startar den igen.
+      preconditions: En testmiljö med ett jobb som körs varje timme och skriver en körningspost.
+      expected: Jobbet körs en gång efter omstarten och sedan enligt schemat.
+      steps:
+        - action: Stoppa schemaläggaren klockan 09.50 och håll den stoppad till 12.50.
+          expected: Inga körningsposter skrivs för 10.00, 11.00 och 12.00.
+        - action: Starta schemaläggaren.
+          expected: Exakt en körningspost skrivs strax efter starten.
+        - action: Vänta till 13.05.
+          expected: En körningspost för 13.00 skrivs och inga fler körningar i efterhand sker.

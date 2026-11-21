@@ -299,6 +299,102 @@ requirements:
         - method: test
           text: Före bekräftelsen av en beställning listar granskningssidan varje inmatat värde, och varje avsnitts ändra-kontroll öppnar avsnittet med värdena kvar.
 
+  - id: FORM-14
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [conditional-fields, progressive-disclosure, submission]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks", "ISO 9241-143:2012"]
+    tests: [FORM-T11]
+    en:
+      title: Conditional fields shown only when relevant
+      description: A field that depends on an earlier answer SHOULD appear only after that answer is given and stay out of the submitted data while it is hidden.
+      rationale: Questions that do not apply lengthen the form and invite wrong answers, and stale values in hidden fields corrupt the stored record.
+      criteria:
+        - method: test
+          text: Choosing the answer that hides a dependent field removes it from view and from the submitted data.
+          threshold: "0 hidden values submitted"
+    sv:
+      title: Villkorade fält visas bara när de är relevanta
+      description: Ett fält som beror på ett tidigare svar BÖR visas först när det svaret har getts och hållas utanför de inskickade uppgifterna så länge det är dolt.
+      rationale: Frågor som inte gäller gör formuläret längre och lockar till felaktiga svar, och gamla värden i dolda fält förstör den sparade posten.
+      criteria:
+        - method: test
+          text: Om användaren väljer det svar som döljer ett beroende fält försvinner fältet ur vyn och ur de skickade uppgifterna.
+          threshold: "0 dolda värden skickas"
+
+  - id: FORM-15
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [date-input, keyboard, locale]
+    refs: ["WCAG 2.2 SC 2.1.1", "ISO 9241-143:2012", "Unicode CLDR date and time patterns"]
+    tests: [FORM-T12]
+    en:
+      title: Dates typed or picked
+      description: Date fields MUST accept a date typed with the keyboard in the format of the user's locale as well as a date chosen in a date picker.
+      rationale: A picker alone is slow for known dates and hard to use with a keyboard or screen reader, while typing alone gives no overview of weekdays.
+      criteria:
+        - method: test
+          text: Typing 2026-03-05 in Swedish locale and 03/05/2026 in US English locale both store 5 March 2026, and the picker sets the same value.
+          threshold: "2 input methods per date field"
+    sv:
+      title: Datum skrivs eller väljs
+      description: Datumfält SKA ta emot ett datum som skrivs med tangentbordet i formatet för användarens språkinställning och ett datum som väljs i en datumväljare.
+      rationale: Enbart en väljare är långsam för kända datum och svår att använda med tangentbord eller skärmläsare, medan enbart inskrivning inte ger någon överblick över veckodagarna.
+      criteria:
+        - method: test
+          text: Att skriva 2026-03-05 med svensk språkinställning och 03/05/2026 med amerikansk engelska sparar båda den 5 mars 2026, och väljaren sätter samma värde.
+          threshold: "2 inmatningssätt per datumfält"
+
+  - id: FORM-16
+    type: usability
+    obligation: must
+    priority: high
+    tags: [session-expiry, data-loss, re-authentication]
+    refs: ["WCAG 2.2 SC 2.2.5", "ISO 9241-110:2020 use error robustness"]
+    tests: [FORM-T13]
+    en:
+      title: Form input kept when the session expires
+      description: When the session expires while a user fills in a form, the system MUST keep the entered values and restore them in the form after the user signs in again.
+      rationale: Long forms take longer than a session lifetime, and losing the input at submission is one of the most frustrating failures a user meets.
+      criteria:
+        - method: test
+          text: A form submitted after the session expired returns, after a new sign-in, with every entered value present.
+          threshold: "0 lost values"
+    sv:
+      title: Formulärdata behålls när sessionen går ut
+      description: När sessionen går ut medan en användare fyller i ett formulär SKA systemet behålla de inmatade värdena och återställa dem i formuläret när användaren har loggat in igen.
+      rationale: Långa formulär tar längre tid än en sessions livslängd, och att förlora inmatningen vid inskickandet är ett av de mest frustrerande felen en användare möter.
+      criteria:
+        - method: test
+          text: Ett formulär som skickas efter att sessionen har gått ut kommer, efter ny inloggning, tillbaka med varje inmatat värde kvar.
+          threshold: "0 förlorade värden"
+
+  - id: FORM-17
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [confirmation, reference-number, submission]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 1"]
+    tests: [FORM-T14]
+    en:
+      title: Confirmation with a reference number
+      description: After a successful submission the system MUST show a confirmation that states what was submitted, a reference number and the next step.
+      rationale: Without a clear confirmation users submit twice or call support to ask whether the form arrived.
+      criteria:
+        - method: test
+          text: Each of the 3 main submission forms ends on a confirmation with a summary, a unique reference number and the next step.
+          threshold: "1 reference number per submission"
+    sv:
+      title: Bekräftelse med referensnummer
+      description: Efter ett lyckat inskick SKA systemet visa en bekräftelse som anger vad som skickades in, ett referensnummer och nästa steg.
+      rationale: Utan en tydlig bekräftelse skickar användarna in två gånger eller ringer supporten för att fråga om formuläret kom fram.
+      criteria:
+        - method: test
+          text: Vart och ett av de 3 viktigaste formulären slutar med en bekräftelse med sammanfattning, ett unikt referensnummer och nästa steg.
+          threshold: "1 referensnummer per inskick"
+
 tests:
   - id: FORM-T01
     priority: high
@@ -631,3 +727,133 @@ tests:
         - action: Tolka beloppet "1 234,50" med svensk språkinställning.
           expected: Värdet godtas och sparas som 1234.50.
           data: "1 234,50"
+
+  - id: FORM-T11
+    priority: medium
+    execution: manual
+    tags: [conditional-fields, submission]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    en:
+      title: Dependent field appears and disappears with its answer
+      description: Changes the controlling answer back and forth and inspects the submitted data.
+      preconditions: A form with a question that controls a dependent field and the browser's network inspector.
+      expected: The dependent field is shown only for the triggering answer and its value is not submitted when hidden.
+      steps:
+        - action: Answer the controlling question with "No".
+          expected: The dependent field is not shown.
+          data: "question: \"Is an interpreter needed?\""
+        - action: Change the answer to "Yes" and fill in the dependent field.
+          expected: The field appears directly after the question and accepts input.
+          data: "language: Finnish"
+        - action: Change the answer back to "No" and submit.
+          expected: The field disappears and the submitted data contains no value for it.
+    sv:
+      title: Beroende fält visas och döljs med sitt svar
+      description: Ändrar det styrande svaret fram och tillbaka och granskar de skickade uppgifterna.
+      preconditions: Ett formulär med en fråga som styr ett beroende fält och webbläsarens nätverksverktyg.
+      expected: Det beroende fältet visas bara för det utlösande svaret och dess värde skickas inte när det är dolt.
+      steps:
+        - action: Svara "Nej" på den styrande frågan.
+          expected: Det beroende fältet visas inte.
+          data: "fråga: \"Behövs tolk?\""
+        - action: Ändra svaret till "Ja" och fyll i det beroende fältet.
+          expected: Fältet visas direkt efter frågan och tar emot inmatning.
+          data: "språk: finska"
+        - action: Ändra tillbaka svaret till "Nej" och skicka in.
+          expected: Fältet försvinner och de skickade uppgifterna innehåller inget värde för det.
+
+  - id: FORM-T12
+    priority: medium
+    execution: manual
+    tags: [date-input, keyboard]
+    refs: ["WCAG 2.2 SC 2.1.1"]
+    en:
+      title: Typed and picked dates
+      description: Enters the same date by typing in two locales and with the picker.
+      preconditions: A form with a date field and two test users with Swedish and US English locale.
+      expected: Each method stores the same date.
+      steps:
+        - action: As the Swedish user, type the date in the field and save.
+          expected: The record stores 5 March 2026.
+          data: "2026-03-05"
+        - action: As the US English user, type the date and save.
+          expected: The record stores 5 March 2026.
+          data: "03/05/2026"
+        - action: Open the date picker with the keyboard and choose 5 March 2026.
+          expected: The picker can be operated without a mouse and sets the same value.
+    sv:
+      title: Inskrivna och valda datum
+      description: Matar in samma datum genom att skriva med två språkinställningar och med väljaren.
+      preconditions: Ett formulär med ett datumfält och två testanvändare med svensk respektive amerikansk engelsk språkinställning.
+      expected: Varje sätt sparar samma datum.
+      steps:
+        - action: Skriv datumet i fältet som den svenska användaren och spara.
+          expected: Posten sparar den 5 mars 2026.
+          data: "2026-03-05"
+        - action: Skriv datumet som den amerikanska användaren och spara.
+          expected: Posten sparar den 5 mars 2026.
+          data: "03/05/2026"
+        - action: Öppna datumväljaren med tangentbordet och välj den 5 mars 2026.
+          expected: Väljaren går att använda utan mus och sätter samma värde.
+
+  - id: FORM-T13
+    priority: high
+    execution: manual
+    tags: [session-expiry, data-loss]
+    refs: ["WCAG 2.2 SC 2.2.5"]
+    en:
+      title: Expired session during form entry
+      description: Lets the session expire while a form is being filled in and then submits it.
+      preconditions: A test environment with a short session lifetime and a form with at least 10 fields.
+      expected: After a new sign-in the form returns with all entered values.
+      steps:
+        - action: Fill in every field of the form.
+          expected: The values are shown in the form.
+          data: "session lifetime set to 2 minutes"
+        - action: Wait until the session has expired and submit.
+          expected: The system asks the user to sign in again.
+        - action: Sign in.
+          expected: The form opens with every entered value and can be submitted.
+    sv:
+      title: Sessionen går ut under ifyllnad
+      description: Låter sessionen gå ut medan ett formulär fylls i och skickar sedan in det.
+      preconditions: En testmiljö med kort sessionstid och ett formulär med minst 10 fält.
+      expected: Efter ny inloggning kommer formuläret tillbaka med alla inmatade värden.
+      steps:
+        - action: Fyll i varje fält i formuläret.
+          expected: Värdena visas i formuläret.
+          data: "sessionstid inställd på 2 minuter"
+        - action: Vänta tills sessionen har gått ut och skicka in.
+          expected: Systemet ber användaren logga in igen.
+        - action: Logga in.
+          expected: Formuläret öppnas med varje inmatat värde och kan skickas in.
+
+  - id: FORM-T14
+    priority: medium
+    execution: manual
+    tags: [confirmation, reference-number]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    en:
+      title: Confirmation page after submission
+      description: Submits the main forms and checks the confirmation.
+      preconditions: Test users who can submit the 3 main forms.
+      expected: Each submission ends on a confirmation with summary, unique reference number and next step.
+      steps:
+        - action: Submit the first form with valid data.
+          expected: A confirmation shows a summary of the submission, a reference number and the next step.
+        - action: Submit the same form again with other data.
+          expected: The new confirmation has a different reference number.
+        - action: Repeat for the other 2 forms.
+          expected: Each ends on a confirmation with the same parts.
+    sv:
+      title: Bekräftelsesida efter inskick
+      description: Skickar in de viktigaste formulären och kontrollerar bekräftelsen.
+      preconditions: Testanvändare som kan skicka in de 3 viktigaste formulären.
+      expected: Varje inskick slutar med en bekräftelse med sammanfattning, unikt referensnummer och nästa steg.
+      steps:
+        - action: Skicka in det första formuläret med giltiga uppgifter.
+          expected: En bekräftelse visar en sammanfattning av inskicket, ett referensnummer och nästa steg.
+        - action: Skicka in samma formulär igen med andra uppgifter.
+          expected: Den nya bekräftelsen har ett annat referensnummer.
+        - action: Upprepa för de andra 2 formulären.
+          expected: Vart och ett slutar med en bekräftelse med samma delar.

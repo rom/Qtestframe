@@ -305,6 +305,102 @@ requirements:
         - method: test
           text: En text med svenska, grekiska, kinesiska tecken och emojier passerar oförändrad genom gränssnittet, API:et, export och import.
 
+  - id: CMP-14
+    type: usability
+    obligation: should
+    priority: low
+    tags: [print, paper, layout]
+    refs: ["ISO/IEC 25010:2023 adaptability", "CSS Media Queries Level 4 (print media type)"]
+    tests: [CMP-T11]
+    en:
+      title: Printable item pages
+      description: Item and report pages SHOULD print on A4 and US Letter paper in portrait without cut-off text and without navigation elements.
+      rationale: Records are still printed for meetings, signatures and archives, and a page that prints with menus and cut-off columns is useless on paper.
+      criteria:
+        - method: test
+          text: A print preview of a long item page on A4 and Letter shows the full text width and no navigation bar.
+          threshold: "0 cut-off lines"
+    sv:
+      title: Utskrivbara objektsidor
+      description: Objekt- och rapportsidor BÖR gå att skriva ut på A4- och US Letter-papper i stående format utan avklippt text och utan navigeringselement.
+      rationale: Poster skrivs fortfarande ut till möten, underskrifter och arkiv, och en sida som skrivs ut med menyer och avklippta kolumner är oanvändbar på papper.
+      criteria:
+        - method: test
+          text: En förhandsgranskning av en lång objektsida på A4 och Letter visar hela textbredden och ingen navigeringsrad.
+          threshold: "0 avklippta rader"
+
+  - id: CMP-15
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [database, versions, server]
+    refs: ["ISO/IEC 25010:2023 adaptability", "ISO/IEC 25010:2023 compatibility"]
+    tests: [CMP-T12]
+    en:
+      title: Two major database versions supported
+      description: The system MUST run on each of the two most recent major versions of every database server it supports.
+      rationale: Customers upgrade databases on their own schedule, and support for a single version forces them to upgrade the database and the application in the same window.
+      criteria:
+        - method: test
+          text: The automated test suite passes against each of the two most recent major versions of each supported database.
+          threshold: "2 major versions per database"
+    sv:
+      title: Två huvudversioner av databasen stöds
+      description: Systemet SKA fungera på var och en av de två senaste huvudversionerna av varje databasserver som det stöder.
+      rationale: Kunderna uppgraderar databaser i sin egen takt, och stöd för en enda version tvingar dem att uppgradera databasen och applikationen i samma fönster.
+      criteria:
+        - method: test
+          text: Den automatiska testsviten går igenom mot var och en av de två senaste huvudversionerna av varje databas som stöds.
+          threshold: "2 huvudversioner per databas"
+
+  - id: CMP-16
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [clients, forward-compatibility, enum]
+    refs: ["Postel's robustness principle (RFC 1122 §1.2.2)", "ISO/IEC 25010:2023 interoperability"]
+    tests: [CMP-T13]
+    en:
+      title: Client libraries tolerate new response values
+      description: The official client libraries MUST accept response fields and enumeration values that they do not know without failing.
+      rationale: The server adds fields and values within a major version, and a client that rejects them breaks on every server release.
+      criteria:
+        - method: test
+          text: A client library given a response with an extra field and a new enumeration value parses it and keeps the unknown value available.
+          threshold: "0 parse failures"
+    sv:
+      title: Klientbibliotek tål nya värden i svar
+      description: De officiella klientbiblioteken SKA ta emot svarsfält och uppräkningsvärden som de inte känner till utan att fallera.
+      rationale: Servern lägger till fält och värden inom en huvudversion, och en klient som avvisar dem slutar fungera vid varje serverrelease.
+      criteria:
+        - method: test
+          text: Ett klientbibliotek som får ett svar med ett extra fält och ett nytt uppräkningsvärde tolkar svaret och behåller det okända värdet åtkomligt.
+          threshold: "0 tolkningsfel"
+
+  - id: CMP-17
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [host, locale, time-zone]
+    refs: ["ISO/IEC 25010:2023 adaptability", "ISO 8601-1:2019"]
+    tests: [CMP-T14]
+    en:
+      title: Behaviour independent of the host locale and time zone
+      description: The system MUST give the same stored data and the same output whatever locale and time zone the server operating system is set to.
+      rationale: Servers in different regions and containers with default settings differ in locale and zone, and code that reads them silently changes dates, decimals and sorting.
+      criteria:
+        - method: test
+          text: The test suite passes and produces identical exports with the host set to UTC with en_US and to Europe/Stockholm with sv_SE.
+          threshold: "0 differences between runs"
+    sv:
+      title: Beteende oberoende av värdens språkinställning och tidszon
+      description: Systemet SKA ge samma lagrade data och samma utdata oavsett vilken språkinställning och tidszon serverns operativsystem har.
+      rationale: Servrar i olika regioner och containrar med standardinställningar skiljer sig i språkinställning och zon, och kod som läser dem ändrar i det tysta datum, decimaler och sortering.
+      criteria:
+        - method: test
+          text: Testsviten går igenom och ger identiska exporter med värden inställd på UTC med en_US och på Europe/Stockholm med sv_SE.
+          threshold: "0 skillnader mellan körningarna"
+
 tests:
   - id: CMP-T01
     priority: high
@@ -607,3 +703,127 @@ tests:
           expected: Titeln i svaret är identisk byte för byte med testtexten i UTF-8.
         - action: Exportera projektet, importera filen till ett nytt projekt och läs titeln.
           expected: Titeln är identisk med testtexten.
+
+  - id: CMP-T11
+    priority: low
+    execution: manual
+    tags: [print, layout]
+    refs: ["CSS Media Queries Level 4 (print media type)"]
+    en:
+      title: Print preview of an item page and a report
+      description: Opens the print preview of a long item and a report in two paper sizes.
+      preconditions: An item with long text and a table, a report with at least 10 rows, and a supported browser.
+      expected: The printouts show the content without cut-off text and without navigation.
+      steps:
+        - action: Open the item and choose print with A4 portrait.
+          expected: The preview shows the item content without the top bar or side menu and no line is cut at the right edge.
+          data: "A4 portrait"
+        - action: Change the paper size to US Letter.
+          expected: The content still fits the page width.
+        - action: Print preview the report.
+          expected: Table columns fit the width or wrap, and headers repeat on each page.
+    sv:
+      title: Förhandsgranskning av utskrift av en objektsida och en rapport
+      description: Öppnar förhandsgranskningen av utskrift för ett långt objekt och en rapport i två pappersstorlekar.
+      preconditions: Ett objekt med lång text och en tabell, en rapport med minst 10 rader och en webbläsare som stöds.
+      expected: Utskrifterna visar innehållet utan avklippt text och utan navigering.
+      steps:
+        - action: Öppna objektet och välj utskrift med A4 stående.
+          expected: Förhandsgranskningen visar objektets innehåll utan topprad eller sidomeny och ingen rad klipps av vid högerkanten.
+          data: "A4 stående"
+        - action: Ändra pappersstorleken till US Letter.
+          expected: Innehållet ryms fortfarande inom sidbredden.
+        - action: Förhandsgranska rapporten.
+          expected: Tabellens kolumner ryms i bredd eller radbryts, och rubrikerna upprepas på varje sida.
+
+  - id: CMP-T12
+    priority: medium
+    execution: automated
+    tags: [database, versions]
+    refs: ["ISO/IEC 25010:2023 adaptability"]
+    en:
+      title: Test suite against two database major versions
+      description: Runs the integration test suite in the pipeline against both supported major versions of the database.
+      preconditions: A pipeline job matrix with the two most recent major versions of each supported database.
+      expected: The suite passes on each version.
+      steps:
+        - action: Start the pipeline matrix for the current commit.
+          expected: One job runs per database and version.
+          data: "for example PostgreSQL 17 and 18"
+        - action: Read the results of each job.
+          expected: Each job passes the full integration test suite.
+    sv:
+      title: Testsvit mot två huvudversioner av databasen
+      description: Kör integrationstesterna i pipelinen mot båda huvudversionerna av databasen som stöds.
+      preconditions: En jobbmatris i pipelinen med de två senaste huvudversionerna av varje databas som stöds.
+      expected: Testsviten går igenom på varje version.
+      steps:
+        - action: Starta pipelinens matris för den aktuella incheckningen.
+          expected: Ett jobb körs per databas och version.
+          data: "till exempel PostgreSQL 17 och 18"
+        - action: Läs resultatet för varje jobb.
+          expected: Varje jobb går igenom hela integrationstestsviten.
+
+  - id: CMP-T13
+    priority: medium
+    execution: automated
+    tags: [clients, forward-compatibility]
+    refs: ["ISO/IEC 25010:2023 interoperability"]
+    en:
+      title: Client library with unknown fields and values
+      description: Feeds the client library a recorded response with additions and checks the result.
+      preconditions: The official client library and a stubbed server that returns a modified response.
+      expected: The client parses the response and exposes the new value without an error.
+      steps:
+        - action: Add an unknown field to a recorded item response and return it from the stub.
+          expected: The client returns the item and ignores the unknown field.
+          data: "extra field \"riskScore\": 3"
+        - action: Change the status of the item to a value the client does not know.
+          expected: The client returns the item with the status kept as an unknown value instead of failing.
+          data: "status \"archived-pending\""
+    sv:
+      title: Klientbibliotek med okända fält och värden
+      description: Matar klientbiblioteket med ett inspelat svar med tillägg och kontrollerar resultatet.
+      preconditions: Det officiella klientbiblioteket och en stubbad server som returnerar ett ändrat svar.
+      expected: Klienten tolkar svaret och gör det nya värdet åtkomligt utan fel.
+      steps:
+        - action: Lägg till ett okänt fält i ett inspelat svar för ett objekt och returnera det från stubben.
+          expected: Klienten returnerar objektet och bortser från det okända fältet.
+          data: "extra fält \"riskScore\": 3"
+        - action: Ändra objektets status till ett värde som klienten inte känner till.
+          expected: Klienten returnerar objektet med statusen kvar som ett okänt värde i stället för att fallera.
+          data: "status \"archived-pending\""
+
+  - id: CMP-T14
+    priority: medium
+    execution: automated
+    tags: [host, locale, time-zone]
+    refs: ["ISO/IEC 25010:2023 adaptability"]
+    en:
+      title: Same results under different host settings
+      description: Runs the test suite and a reference export with two different host locales and time zones.
+      preconditions: A container image of the system and a reference data set with dates near midnight and decimal values.
+      expected: Both runs pass and give byte-identical exports.
+      steps:
+        - action: Run the suite and the reference export with TZ=UTC and LANG=en_US.UTF-8.
+          expected: The suite passes and the export is saved.
+          data: "TZ=UTC, LANG=en_US.UTF-8"
+        - action: Run the same with TZ=Europe/Stockholm and LANG=sv_SE.UTF-8.
+          expected: The suite passes and the export is saved.
+          data: "TZ=Europe/Stockholm, LANG=sv_SE.UTF-8"
+        - action: Compare the two exports.
+          expected: The files are identical.
+    sv:
+      title: Samma resultat med olika värdinställningar
+      description: Kör testsviten och en referensexport med två olika språkinställningar och tidszoner på värden.
+      preconditions: En containeravbild av systemet och en referensdatamängd med datum nära midnatt och decimalvärden.
+      expected: Båda körningarna går igenom och ger byteidentiska exporter.
+      steps:
+        - action: Kör testsviten och referensexporten med TZ=UTC och LANG=en_US.UTF-8.
+          expected: Testsviten går igenom och exporten sparas.
+          data: "TZ=UTC, LANG=en_US.UTF-8"
+        - action: Kör samma sak med TZ=Europe/Stockholm och LANG=sv_SE.UTF-8.
+          expected: Testsviten går igenom och exporten sparas.
+          data: "TZ=Europe/Stockholm, LANG=sv_SE.UTF-8"
+        - action: Jämför de två exporterna.
+          expected: Filerna är identiska.

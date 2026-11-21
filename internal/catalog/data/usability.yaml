@@ -349,6 +349,102 @@ requirements:
           text: Medelvärdet för SUS bland deltagarna i det senaste användbarhetstestet är minst 70.
           threshold: "SUS ≥ 70"
 
+  - id: USE-16
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [time-on-task, efficiency, benchmark]
+    refs: ["ISO 9241-11:2018 efficiency", "ISO/IEC 25022:2016 (measures of efficiency)"]
+    tests: [USE-T11]
+    en:
+      title: Time on task for experienced users
+      description: Experienced users SHOULD complete the task of creating and linking a requirement to a test within 60 seconds at the median.
+      rationale: Frequent tasks done many times a day decide the real cost of using the system, and a timed benchmark shows whether changes help or hurt.
+      criteria:
+        - method: test
+          text: In a timed session with 5 experienced users, the median time for the task is at most 60 seconds.
+          threshold: "median ≤ 60 s"
+    sv:
+      title: Tid för uppgiften för vana användare
+      description: Vana användare BÖR slutföra uppgiften att skapa ett krav och koppla det till ett testfall inom 60 sekunder i median.
+      rationale: Vanliga uppgifter som görs många gånger om dagen avgör den verkliga kostnaden för att använda systemet, och en tidtagen jämförelse visar om ändringar hjälper eller stjälper.
+      criteria:
+        - method: test
+          text: Vid en tidtagen session med 5 vana användare är mediantiden för uppgiften högst 60 sekunder.
+          threshold: "median ≤ 60 s"
+
+  - id: USE-17
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [terminology, glossary, consistency]
+    refs: ["ISO 9241-110:2020 conformity with user expectations", "Nielsen heuristic 4"]
+    tests: [USE-T12]
+    en:
+      title: One term per concept
+      description: The user interface MUST use the terms of a maintained glossary, with the same term for the same concept on every screen, in messages and in the documentation.
+      rationale: Two names for one thing make users believe there are two things, and they look for a function that does not exist.
+      criteria:
+        - method: inspection
+          text: A text review of the interface strings against the glossary finds no synonym used for a glossary concept.
+          threshold: "0 synonyms in use"
+    sv:
+      title: En term per begrepp
+      description: Användargränssnittet SKA använda termerna i en förvaltad ordlista, med samma term för samma begrepp på varje skärm, i meddelanden och i dokumentationen.
+      rationale: Två namn på samma sak får användarna att tro att det finns två saker, och de letar efter en funktion som inte finns.
+      criteria:
+        - method: inspection
+          text: En textgranskning av gränssnittets strängar mot ordlistan hittar ingen synonym som används för ett begrepp i ordlistan.
+          threshold: "0 synonymer i bruk"
+
+  - id: USE-18
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [usability-testing, users, release]
+    refs: ["ISO 9241-210:2019 (evaluation of designs against user requirements)", "ISO/IEC 25062:2006"]
+    tests: [USE-T13]
+    en:
+      title: Usability test before changing core tasks
+      description: Before a release that changes a core task, the supplier MUST run a usability test of the new design with at least 5 representative users and fix each problem that stopped a user.
+      rationale: Designers cannot judge their own work as new users do, and five users find most of the problems that block a task.
+      criteria:
+        - method: inspection
+          text: The release record links to a test report with at least 5 participants, the problems found and the fixes for each blocking problem.
+          threshold: "≥ 5 participants; 0 open blocking problems"
+    sv:
+      title: Användbarhetstest innan kärnuppgifter ändras
+      description: Före en release som ändrar en kärnuppgift SKA leverantören genomföra ett användbarhetstest av den nya utformningen med minst 5 representativa användare och åtgärda varje problem som stoppade en användare.
+      rationale: Den som har utformat något kan inte bedöma det som en ny användare gör, och fem användare hittar de flesta problem som blockerar en uppgift.
+      criteria:
+        - method: inspection
+          text: Releaseposten länkar till en testrapport med minst 5 deltagare, de problem som hittades och åtgärderna för varje blockerande problem.
+          threshold: "≥ 5 deltagare; 0 öppna blockerande problem"
+
+  - id: USE-19
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [disabled-actions, explanation, discoverability]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 1"]
+    tests: [USE-T14]
+    en:
+      title: Unavailable actions explain why
+      description: An action the user cannot take in the current state SHOULD stay visible as unavailable and state the reason when the user points at it or focuses it.
+      rationale: A hidden or silently disabled button leaves users unsure whether the function exists or what they must do first.
+      criteria:
+        - method: test
+          text: Hovering or focusing an unavailable action, such as approving an item without the right, shows the reason in text.
+          threshold: "1 reason per unavailable action"
+    sv:
+      title: Otillgängliga åtgärder förklarar varför
+      description: En åtgärd som användaren inte kan utföra i det aktuella läget BÖR förbli synlig som otillgänglig och ange orsaken när användaren pekar på den eller ger den fokus.
+      rationale: En dold eller tyst inaktiverad knapp gör användarna osäkra på om funktionen finns eller vad de först behöver göra.
+      criteria:
+        - method: test
+          text: När användaren pekar på eller fokuserar en otillgänglig åtgärd, till exempel att godkänna ett objekt utan behörighet, visas orsaken i text.
+          threshold: "1 orsak per otillgänglig åtgärd"
+
 tests:
   - id: USE-T01
     priority: high
@@ -653,3 +749,123 @@ tests:
           expected: Webbläsarens varning om att lämna sidan visas.
         - action: Skriptet sparar formuläret och klickar sedan på samma länk.
           expected: Ingen varning visas och den länkade sidan öppnas.
+
+  - id: USE-T11
+    priority: medium
+    execution: manual
+    tags: [time-on-task, efficiency]
+    refs: ["ISO 9241-11:2018 efficiency"]
+    en:
+      title: Timed core task with experienced users
+      description: Times experienced users while they create a requirement and link it to a test.
+      preconditions: 5 users who use the system weekly, a test project with existing tests and a stopwatch or screen recording.
+      expected: The median time is at most 60 seconds.
+      steps:
+        - action: Give each user the task card and start the timer when they begin.
+          expected: Each user starts from the project start page.
+          data: "task: create requirement \"Login lockout\" and link test T-12"
+        - action: Stop the timer when the link is saved.
+          expected: 5 times are recorded.
+        - action: Compute the median.
+          expected: The median is at most 60 seconds.
+    sv:
+      title: Tidtagen kärnuppgift med vana användare
+      description: Tar tid på vana användare medan de skapar ett krav och kopplar det till ett testfall.
+      preconditions: 5 användare som använder systemet varje vecka, ett testprojekt med befintliga testfall och ett tidtagarur eller skärminspelning.
+      expected: Mediantiden är högst 60 sekunder.
+      steps:
+        - action: Ge varje användare uppgiftskortet och starta tidtagningen när de börjar.
+          expected: Varje användare börjar från projektets startsida.
+          data: "uppgift: skapa kravet \"Spärr efter inloggningsförsök\" och koppla testfallet T-12"
+        - action: Stoppa tidtagningen när kopplingen är sparad.
+          expected: 5 tider noteras.
+        - action: Beräkna medianen.
+          expected: Medianen är högst 60 sekunder.
+
+  - id: USE-T12
+    priority: medium
+    execution: manual
+    tags: [terminology, glossary]
+    refs: ["ISO 9241-110:2020 conformity with user expectations"]
+    en:
+      title: Interface terms checked against the glossary
+      description: Searches the interface strings and help for synonyms of glossary terms.
+      preconditions: The glossary with its listed synonyms to avoid and the interface resource files.
+      expected: No synonym of a glossary concept is used.
+      steps:
+        - action: For each glossary term, search the resource files for its listed synonyms.
+          expected: No synonym is found.
+          data: "for example \"test run\" against \"execution\""
+        - action: Repeat the search in the user documentation.
+          expected: No synonym is found.
+    sv:
+      title: Gränssnittets termer kontrollerade mot ordlistan
+      description: Söker i gränssnittets strängar och hjälpen efter synonymer till ordlistans termer.
+      preconditions: Ordlistan med sina listade synonymer att undvika och gränssnittets resursfiler.
+      expected: Ingen synonym till ett begrepp i ordlistan används.
+      steps:
+        - action: Sök efter de listade synonymerna i resursfilerna för varje term i ordlistan.
+          expected: Ingen synonym hittas.
+          data: "till exempel \"testkörning\" mot \"körning\""
+        - action: Upprepa sökningen i användardokumentationen.
+          expected: Ingen synonym hittas.
+
+  - id: USE-T13
+    priority: medium
+    execution: manual
+    tags: [usability-testing, release]
+    refs: ["ISO 9241-210:2019 (evaluation of designs against user requirements)"]
+    en:
+      title: Usability test record of a release
+      description: Checks the test record of the last release that changed a core task.
+      preconditions: The release notes and the usability test reports of the last 12 months.
+      expected: A test with at least 5 users exists and each blocking problem was fixed before release.
+      steps:
+        - action: Identify the last release that changed a core task.
+          expected: The release is identified.
+        - action: Open the linked usability test report.
+          expected: The report lists at least 5 representative participants and the problems found.
+        - action: Check the status of each blocking problem at release.
+          expected: Each blocking problem has a fix included in the release.
+    sv:
+      title: Användbarhetstest för en release
+      description: Kontrollerar testposten för den senaste releasen som ändrade en kärnuppgift.
+      preconditions: Releaseanteckningarna och rapporterna från användbarhetstester de senaste 12 månaderna.
+      expected: Ett test med minst 5 användare finns och varje blockerande problem åtgärdades före releasen.
+      steps:
+        - action: Identifiera den senaste releasen som ändrade en kärnuppgift.
+          expected: Releasen är identifierad.
+        - action: Öppna den länkade rapporten från användbarhetstestet.
+          expected: Rapporten listar minst 5 representativa deltagare och de problem som hittades.
+        - action: Kontrollera status för varje blockerande problem vid releasen.
+          expected: Varje blockerande problem har en åtgärd som ingår i releasen.
+
+  - id: USE-T14
+    priority: medium
+    execution: manual
+    tags: [disabled-actions, explanation]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    en:
+      title: Reason shown for an unavailable action
+      description: Signs in without approval rights and points at the approve action.
+      preconditions: A test user without the right to approve and an item waiting for approval.
+      expected: The action is visible as unavailable and its reason is shown on hover and focus.
+      steps:
+        - action: Open the item waiting for approval.
+          expected: The approve action is shown as unavailable.
+        - action: Point at the action with the mouse.
+          expected: A text states that the approval right is missing.
+        - action: Move the keyboard focus to the action.
+          expected: The same reason is shown and announced by a screen reader.
+    sv:
+      title: Orsak visas för en otillgänglig åtgärd
+      description: Loggar in utan behörighet att godkänna och pekar på åtgärden godkänn.
+      preconditions: En testanvändare utan behörighet att godkänna och ett objekt som väntar på godkännande.
+      expected: Åtgärden syns som otillgänglig och orsaken visas när användaren pekar på den eller ger den fokus.
+      steps:
+        - action: Öppna objektet som väntar på godkännande.
+          expected: Åtgärden godkänn visas som otillgänglig.
+        - action: Peka på åtgärden med musen.
+          expected: En text anger att behörigheten att godkänna saknas.
+        - action: Flytta tangentbordsfokus till åtgärden.
+          expected: Samma orsak visas och läses upp av skärmläsare.

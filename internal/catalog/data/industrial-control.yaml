@@ -437,6 +437,102 @@ requirements:
           text: En lägesändring från RUN till PROGRAM och ett skrivkommando från en bärbar dator som inte är ingenjörsstation visas var för sig i övervakningstjänsten inom 60 sekunder, och skrivkommandot ger ett larm.
           threshold: ≤ 60 s
 
+  - id: ICS-19
+    type: security
+    obligation: must
+    priority: high
+    tags: [application-allowlisting, hmi, malware]
+    refs: ["IEC 62443-3-3 SR 3.2", "IEC 62443-4-2 CR 3.2", "NIST SP 800-82r3 (application allowlisting)"]
+    tests: [ICS-T16]
+    en:
+      title: Only approved programs on HMIs and engineering stations
+      description: HMIs and engineering workstations MUST run only programs on an approved list and block every other executable.
+      rationale: Antivirus signatures arrive late on isolated networks, while an allowlist stops unknown malware from starting at all.
+      criteria:
+        - method: test
+          text: Starting an unlisted executable on an HMI is blocked and logged, and the listed HMI software starts.
+          threshold: "0 unlisted programs run"
+    sv:
+      title: Bara godkända program på HMI och ingenjörsstationer
+      description: HMI och ingenjörsstationer SKA bara köra program som finns på en godkänd lista och spärra varje annan körbar fil.
+      rationale: Antivirussignaturer kommer sent till isolerade nät, medan en lista över tillåtna program hindrar okänd skadlig kod från att starta över huvud taget.
+      criteria:
+        - method: test
+          text: Att starta en körbar fil som inte finns på listan på en HMI spärras och loggas, och den listade HMI-programvaran startar.
+          threshold: "0 olistade program körs"
+
+  - id: ICS-20
+    type: security
+    obligation: must
+    priority: high
+    tags: [removable-media, usb, control-stations]
+    refs: ["IEC 62443-3-3 SR 2.3", "NIST SP 800-82r3 (removable media)"]
+    tests: [ICS-T17]
+    en:
+      title: Removable media blocked at control stations
+      description: Control stations MUST block USB storage devices and other removable media, leaving a scanning station as the only route for files into the control zone.
+      rationale: Removable media are a main route of malware into isolated control networks.
+      criteria:
+        - method: test
+          text: A USB storage device plugged into an operator station is not mounted and the attempt is logged; a file passed through the scanning station is available.
+          threshold: "0 mounted removable media"
+    sv:
+      title: Flyttbara media spärras på styrstationer
+      description: Styrstationer SKA spärra USB-minnen och andra flyttbara media, så att en skanningsstation blir den enda vägen för filer in i styrzonen.
+      rationale: Flyttbara media är en huvudväg för skadlig kod in i isolerade styrnät.
+      criteria:
+        - method: test
+          text: Ett USB-minne som ansluts till en operatörsstation monteras inte och försöket loggas; en fil som har gått via skanningsstationen är tillgänglig.
+          threshold: "0 monterade flyttbara media"
+
+  - id: ICS-21
+    type: security
+    obligation: must
+    priority: medium
+    tags: [least-functionality, hardening, services]
+    refs: ["IEC 62443-3-3 SR 7.7", "IEC 62443-4-2 CR 7.7"]
+    tests: [ICS-T18]
+    en:
+      title: Unused ports and services disabled
+      description: Each controller, HMI and server in the control zone MUST have every network port, service and protocol that is not on its documented list disabled.
+      rationale: Each open service is a door that an attacker can try, and industrial devices often ship with web servers and debug ports enabled.
+      criteria:
+        - method: test
+          text: A port scan of each control zone device finds only the ports on its documented list.
+          threshold: "0 undocumented open ports"
+    sv:
+      title: Oanvända portar och tjänster avstängda
+      description: Varje styrenhet, HMI och server i styrzonen SKA ha varje nätverksport, tjänst och protokoll som inte finns på dess dokumenterade lista avstängd.
+      rationale: Varje öppen tjänst är en dörr som en angripare kan pröva, och industriella enheter levereras ofta med webbservrar och felsökningsportar påslagna.
+      criteria:
+        - method: test
+          text: En portskanning av varje enhet i styrzonen hittar bara de portar som finns på dess dokumenterade lista.
+          threshold: "0 odokumenterade öppna portar"
+
+  - id: ICS-22
+    type: security
+    obligation: must
+    priority: high
+    tags: [firmware, integrity, signatures]
+    refs: ["IEC 62443-4-2 CR 3.10", "IEC 62443-3-3 SR 3.4"]
+    tests: [ICS-T19]
+    en:
+      title: Firmware integrity checked before installation
+      description: Controllers MUST verify the vendor's digital signature on a firmware or logic package and refuse a package that fails the check.
+      rationale: Tampered firmware gives an attacker lasting control below the level that operators and monitoring can see.
+      criteria:
+        - method: test
+          text: A firmware package with one altered byte is refused by the controller and the refusal is logged; the original package installs.
+          threshold: "0 unsigned packages installed"
+    sv:
+      title: Firmwarens integritet kontrolleras före installation
+      description: Styrenheter SKA verifiera leverantörens digitala signatur på ett firmware- eller logikpaket och vägra ett paket som inte klarar kontrollen.
+      rationale: Manipulerad firmware ger en angripare varaktig kontroll på en nivå som operatörer och övervakning inte ser.
+      criteria:
+        - method: test
+          text: Ett firmwarepaket med en ändrad byte vägras av styrenheten och vägran loggas; originalpaketet installeras.
+          threshold: "0 osignerade paket installerade"
+
 tests:
   - id: ICS-T01
     priority: critical
@@ -895,3 +991,119 @@ tests:
           expected: Tre misslyckade inloggningar visas inom 60 sekunder.
         - action: Skicka ett skrivkommando till teststyrenheten från den bärbara datorn.
           expected: Kommandot visas inom 60 sekunder och ett larm som anger den bärbara datorns adress når säkerhetsteamet.
+
+  - id: ICS-T16
+    priority: high
+    execution: manual
+    tags: [application-allowlisting, hmi]
+    refs: ["IEC 62443-3-3 SR 3.2"]
+    en:
+      title: Unlisted program blocked on an HMI
+      description: Tries to start a program that is not on the allowlist of a test HMI.
+      preconditions: A test HMI with application allowlisting in enforcing mode and a harmless test executable not on the list.
+      expected: The test program is blocked and logged; HMI software runs.
+      steps:
+        - action: Copy the test executable to the HMI and start it.
+          expected: The start is blocked with a message.
+          data: "harmless test executable"
+        - action: Check the security event log.
+          expected: The blocked start is logged with file name, hash and user.
+        - action: Start the HMI application.
+          expected: It starts normally.
+    sv:
+      title: Olistat program spärras på en HMI
+      description: Försöker starta ett program som inte finns på listan över tillåtna program på en test-HMI.
+      preconditions: En test-HMI med spärr för olistade program i skarpt läge och en ofarlig testfil som inte finns på listan.
+      expected: Testprogrammet spärras och loggas; HMI-programvaran körs.
+      steps:
+        - action: Kopiera testfilen till HMI:n och starta den.
+          expected: Starten spärras med ett meddelande.
+          data: "ofarlig körbar testfil"
+        - action: Kontrollera säkerhetsloggen.
+          expected: Den spärrade starten loggas med filnamn, kontrollsumma och användare.
+        - action: Starta HMI-applikationen.
+          expected: Den startar som vanligt.
+
+  - id: ICS-T17
+    priority: high
+    execution: manual
+    tags: [removable-media, usb]
+    refs: ["IEC 62443-3-3 SR 2.3"]
+    en:
+      title: USB storage at an operator station
+      description: Plugs a USB storage device into an operator station and then uses the scanning station.
+      preconditions: A test operator station, a USB storage device with a test file and the scanning station.
+      expected: The device is not mounted and the file reaches the station only through the scanning station.
+      steps:
+        - action: Plug the USB device into the operator station.
+          expected: The device is not mounted and an event is logged.
+          data: "USB stick with test.pdf"
+        - action: Pass the file through the scanning station.
+          expected: The scan passes and the file is available on the file share of the control zone.
+    sv:
+      title: USB-minne i en operatörsstation
+      description: Ansluter ett USB-minne till en operatörsstation och använder sedan skanningsstationen.
+      preconditions: En testoperatörsstation, ett USB-minne med en testfil och skanningsstationen.
+      expected: Enheten monteras inte och filen når stationen bara via skanningsstationen.
+      steps:
+        - action: Anslut USB-minnet till operatörsstationen.
+          expected: Enheten monteras inte och en händelse loggas.
+          data: "USB-minne med test.pdf"
+        - action: För filen via skanningsstationen.
+          expected: Skanningen godkänns och filen finns på styrzonens filutdelning.
+
+  - id: ICS-T18
+    priority: medium
+    execution: manual
+    tags: [least-functionality, hardening]
+    refs: ["IEC 62443-3-3 SR 7.7"]
+    en:
+      title: Port scan of control zone devices
+      description: Scans the devices of the control zone and compares with their documented lists.
+      preconditions: A maintenance window, a port scanner approved for the control network and the documented port lists.
+      expected: No device has an open port outside its list.
+      steps:
+        - action: Scan each device in the zone at a low rate.
+          expected: A list of open ports per device is produced.
+          data: "low-rate TCP and UDP scan"
+        - action: Compare each device's open ports with its documented list.
+          expected: No undocumented port is open.
+    sv:
+      title: Portskanning av enheter i styrzonen
+      description: Skannar enheterna i styrzonen och jämför med deras dokumenterade listor.
+      preconditions: Ett underhållsfönster, en portskanner som är godkänd för styrnätet och de dokumenterade portlistorna.
+      expected: Ingen enhet har en öppen port utanför sin lista.
+      steps:
+        - action: Skanna varje enhet i zonen i låg takt.
+          expected: En lista över öppna portar per enhet tas fram.
+          data: "TCP- och UDP-skanning i låg takt"
+        - action: Jämför varje enhets öppna portar med dess dokumenterade lista.
+          expected: Ingen odokumenterad port är öppen.
+
+  - id: ICS-T19
+    priority: high
+    execution: manual
+    tags: [firmware, integrity]
+    refs: ["IEC 62443-4-2 CR 3.10"]
+    en:
+      title: Tampered firmware refused
+      description: Loads an altered and an original firmware package into a test controller.
+      preconditions: A test controller, a signed firmware package from the vendor and a copy with one byte changed.
+      expected: The altered package is refused and logged; the original installs.
+      steps:
+        - action: Load the altered package.
+          expected: The controller refuses it with a signature error and logs the attempt.
+          data: "one byte changed in the image"
+        - action: Load the original package.
+          expected: The controller accepts and installs it.
+    sv:
+      title: Manipulerad firmware vägras
+      description: Laddar ett ändrat och ett ursprungligt firmwarepaket i en teststyrenhet.
+      preconditions: En teststyrenhet, ett signerat firmwarepaket från leverantören och en kopia med en ändrad byte.
+      expected: Det ändrade paketet vägras och loggas; originalet installeras.
+      steps:
+        - action: Ladda det ändrade paketet.
+          expected: Styrenheten vägrar med ett signaturfel och loggar försöket.
+          data: "en byte ändrad i avbilden"
+        - action: Ladda originalpaketet.
+          expected: Styrenheten godtar och installerar det.

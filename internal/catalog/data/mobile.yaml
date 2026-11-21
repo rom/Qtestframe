@@ -351,6 +351,126 @@ requirements:
           text: Med systemets största vanliga textstorlek visar de 10 mest använda skärmarna hela texten utan avkortning eller överlappning.
           threshold: upp till 200 %
 
+  - id: MOB-16
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [deep-links, navigation, links]
+    refs: ["Apple Human Interface Guidelines (universal links)", "Material Design (app links)"]
+    tests: [MOB-T12]
+    en:
+      title: Links open the item in the app
+      description: A link to an item MUST open that item in the mobile app when the app is installed and in the browser when it is not.
+      rationale: Users receive links by e-mail and chat, and a link that lands on the app's start screen or a store page makes them search for the item again.
+      criteria:
+        - method: test
+          text: Tapping an item link on a phone with the app opens the item in the app, and on a phone without the app opens it in the browser.
+          threshold: "2 of 2 cases"
+    sv:
+      title: Länkar öppnar objektet i appen
+      description: En länk till ett objekt SKA öppna objektet i mobilappen när appen är installerad och i webbläsaren när den inte är det.
+      rationale: Användare får länkar via e-post och chatt, och en länk som hamnar på appens startskärm eller i en appbutik får dem att leta upp objektet på nytt.
+      criteria:
+        - method: test
+          text: Att trycka på en objektlänk på en telefon med appen öppnar objektet i appen, och på en telefon utan appen öppnar det i webbläsaren.
+          threshold: "2 av 2 fall"
+
+  - id: MOB-17
+    type: functional
+    obligation: must
+    priority: high
+    tags: [updates, minimum-version, compatibility]
+    refs: ["ISO/IEC 25010:2023 compatibility", "OWASP MASVS-CODE-2"]
+    tests: [MOB-T13]
+    en:
+      title: Update prompt below the minimum version
+      description: When the installed app is older than the minimum version the server supports, the app MUST block further use with a message that links to the update in the app store.
+      rationale: Old app versions that call changed endpoints fail in confusing ways or bypass fixes, and a clear block tells users what to do.
+      criteria:
+        - method: test
+          text: An app below the minimum version shows the update message at start and cannot reach other screens; an app at the minimum works normally.
+          threshold: "minimum version set on the server"
+    sv:
+      title: Uppmaning till uppdatering under lägsta version
+      description: När den installerade appen är äldre än den lägsta version som servern stöder SKA appen spärra fortsatt användning med ett meddelande som länkar till uppdateringen i appbutiken.
+      rationale: Gamla appversioner som anropar ändrade ändpunkter fallerar på förvirrande sätt eller kringgår rättningar, och en tydlig spärr talar om för användarna vad de ska göra.
+      criteria:
+        - method: test
+          text: En app under lägsta version visar uppdateringsmeddelandet vid start och kan inte nå andra skärmar; en app på lägsta version fungerar som vanligt.
+          threshold: "lägsta version inställd på servern"
+
+  - id: MOB-18
+    type: usability
+    obligation: must
+    priority: high
+    tags: [screen-reader, voiceover, talkback]
+    refs: ["EN 301 549 V3.2.1 clause 11 (software)", "WCAG 2.2 SC 4.1.2", "Apple Human Interface Guidelines (accessibility)"]
+    tests: [MOB-T14]
+    en:
+      title: Core tasks with VoiceOver and TalkBack
+      description: The core tasks of the mobile app MUST be possible to complete with VoiceOver on iOS and TalkBack on Android.
+      rationale: Blind users rely on the built-in screen readers, and an unlabelled button in the middle of a task stops them completely.
+      criteria:
+        - method: test
+          text: A tester completes each core task with VoiceOver and with TalkBack without sighted help.
+          threshold: "100 % of core tasks on both platforms"
+    sv:
+      title: Kärnuppgifter med VoiceOver och TalkBack
+      description: Mobilappens kärnuppgifter SKA gå att slutföra med VoiceOver på iOS och TalkBack på Android.
+      rationale: Blinda användare förlitar sig på de inbyggda skärmläsarna, och en omärkt knapp mitt i en uppgift stoppar dem helt.
+      criteria:
+        - method: test
+          text: En testare slutför varje kärnuppgift med VoiceOver och med TalkBack utan seende hjälp.
+          threshold: "100 % av kärnuppgifterna på båda plattformarna"
+
+  - id: MOB-19
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [stability, crashes, quality]
+    refs: ["ISO/IEC 25010:2023 faultlessness", "Material Design"]
+    tests: [MOB-T15]
+    en:
+      title: Crash-free sessions
+      description: The mobile app SHOULD reach a crash-free session rate of at least 99.5 % per release, measured over its first 14 days.
+      rationale: Crashes lose user input and are the main cause of poor store ratings and uninstalls.
+      criteria:
+        - method: analysis
+          text: The crash reporting shows a crash-free rate of at least 99.5 % for the last release over its first 14 days.
+          threshold: "≥ 99.5 % crash-free sessions"
+    sv:
+      title: Sessioner utan krascher
+      description: Mobilappen BÖR nå en andel sessioner utan krascher på minst 99,5 % per release, mätt under de första 14 dagarna.
+      rationale: Krascher förlorar användarens inmatning och är den främsta orsaken till dåliga betyg i appbutiken och avinstallationer.
+      criteria:
+        - method: analysis
+          text: Kraschrapporteringen visar en andel utan krascher på minst 99,5 % för den senaste releasen under dess första 14 dagar.
+          threshold: "≥ 99,5 % sessioner utan krascher"
+
+  - id: MOB-20
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [battery, background, energy]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "Material Design"]
+    tests: [MOB-T16]
+    en:
+      title: Battery use in the background
+      description: The mobile app SHOULD use at most 1 % of the battery per day while it is only running in the background.
+      rationale: Background synchronisation and location checks that drain the battery make users restrict or remove the app.
+      criteria:
+        - method: test
+          text: After 24 hours in the background with normal synchronisation, the platform's battery statistics show at most 1 % used by the app.
+          threshold: "≤ 1 % per 24 h in background"
+    sv:
+      title: Batteriförbrukning i bakgrunden
+      description: Mobilappen BÖR använda högst 1 % av batteriet per dygn när den bara körs i bakgrunden.
+      rationale: Synkronisering och platskontroller i bakgrunden som tömmer batteriet får användarna att begränsa eller ta bort appen.
+      criteria:
+        - method: test
+          text: Efter 24 timmar i bakgrunden med vanlig synkronisering visar plattformens batteristatistik att appen har använt högst 1 %.
+          threshold: "≤ 1 % per dygn i bakgrunden"
+
 tests:
   - id: MOB-T01
     priority: high
@@ -699,3 +819,151 @@ tests:
           expected: Nyckeln förvaras i plattformens nyckellager och inte i appens filer.
         - action: Logga ut, kopiera datakatalogen igen och sök i den.
           expected: Ingen cachad post och ingen token finns kvar.
+
+  - id: MOB-T12
+    priority: medium
+    execution: manual
+    tags: [deep-links]
+    refs: ["Apple Human Interface Guidelines (universal links)"]
+    en:
+      title: Item link on phones with and without the app
+      description: Opens an item link from an e-mail on two phones.
+      preconditions: Two phones of the supported platforms, one with the app signed in and one without the app, and an e-mail with an item link.
+      expected: The item opens in the app on the first phone and in the browser on the second.
+      steps:
+        - action: On the phone with the app, tap the link in the e-mail.
+          expected: The app opens directly on the item.
+          data: "link to item REQ-42"
+        - action: On the phone without the app, tap the same link.
+          expected: The browser opens the item page after sign-in.
+    sv:
+      title: Objektlänk på telefoner med och utan appen
+      description: Öppnar en objektlänk från ett e-postmeddelande på två telefoner.
+      preconditions: Två telefoner med plattformar som stöds, en med appen inloggad och en utan appen, och ett e-postmeddelande med en objektlänk.
+      expected: Objektet öppnas i appen på den första telefonen och i webbläsaren på den andra.
+      steps:
+        - action: Tryck på länken i e-postmeddelandet på telefonen med appen.
+          expected: Appen öppnas direkt på objektet.
+          data: "länk till objektet REQ-42"
+        - action: Tryck på samma länk på telefonen utan appen.
+          expected: Webbläsaren öppnar objektsidan efter inloggning.
+
+  - id: MOB-T13
+    priority: high
+    execution: manual
+    tags: [updates, minimum-version]
+    refs: ["ISO/IEC 25010:2023 compatibility"]
+    en:
+      title: Blocked old app version
+      description: Raises the minimum supported version on the server and starts an older app.
+      preconditions: A test server where the minimum app version can be set and two app builds, one below and one at the minimum.
+      expected: The older build is blocked with an update message; the build at the minimum works.
+      steps:
+        - action: Set the minimum version on the server and start the older build.
+          expected: A message says that an update is needed and links to the app store.
+          data: "minimum 5.2.0, app 5.1.3"
+        - action: Try to reach other screens.
+          expected: No other screen opens.
+        - action: Start the build at the minimum version.
+          expected: The app opens normally.
+    sv:
+      title: Spärrad gammal appversion
+      description: Höjer den lägsta version som stöds på servern och startar en äldre app.
+      preconditions: En testserver där lägsta appversion kan ställas in och två appbyggen, ett under och ett på lägsta version.
+      expected: Det äldre bygget spärras med ett uppdateringsmeddelande; bygget på lägsta version fungerar.
+      steps:
+        - action: Ställ in lägsta version på servern och starta det äldre bygget.
+          expected: Ett meddelande säger att en uppdatering behövs och länkar till appbutiken.
+          data: "lägsta 5.2.0, app 5.1.3"
+        - action: Försök nå andra skärmar.
+          expected: Ingen annan skärm öppnas.
+        - action: Starta bygget på lägsta version.
+          expected: Appen öppnas som vanligt.
+
+  - id: MOB-T14
+    priority: high
+    execution: manual
+    tags: [screen-reader, voiceover, talkback]
+    refs: ["EN 301 549 V3.2.1 clause 11 (software)"]
+    en:
+      title: Core tasks with the platform screen readers
+      description: Completes the core tasks with VoiceOver and TalkBack turned on.
+      preconditions: An iPhone with VoiceOver, an Android phone with TalkBack, the current app build and the list of core tasks.
+      expected: Each core task is completed on both platforms without sighted help.
+      steps:
+        - action: With VoiceOver on, sign in, find an item and change its status.
+          expected: Each control is announced with a meaningful name and the task completes.
+          data: "core task list of the app"
+        - action: Repeat the tasks with TalkBack.
+          expected: Each control is announced with a meaningful name and the task completes.
+        - action: Record any control without a name or that cannot be reached.
+          expected: No such control is found.
+    sv:
+      title: Kärnuppgifter med plattformarnas skärmläsare
+      description: Slutför kärnuppgifterna med VoiceOver och TalkBack påslagna.
+      preconditions: En iPhone med VoiceOver, en Androidtelefon med TalkBack, det aktuella appbygget och listan över kärnuppgifter.
+      expected: Varje kärnuppgift slutförs på båda plattformarna utan seende hjälp.
+      steps:
+        - action: Logga in, hitta ett objekt och ändra dess status med VoiceOver påslaget.
+          expected: Varje kontroll läses upp med ett begripligt namn och uppgiften slutförs.
+          data: "appens lista över kärnuppgifter"
+        - action: Upprepa uppgifterna med TalkBack.
+          expected: Varje kontroll läses upp med ett begripligt namn och uppgiften slutförs.
+        - action: Notera kontroller som saknar namn eller inte går att nå.
+          expected: Ingen sådan kontroll hittas.
+
+  - id: MOB-T15
+    priority: medium
+    execution: manual
+    tags: [stability, crashes]
+    refs: ["ISO/IEC 25010:2023 faultlessness"]
+    en:
+      title: Crash-free rate of the last release
+      description: Reads the crash-free session rate of the last release from the crash reporting.
+      preconditions: Access to the crash reporting tool with at least 14 days of data for the last release.
+      expected: The crash-free rate is at least 99.5 %.
+      steps:
+        - action: Filter the crash reports on the last release and its first 14 days.
+          expected: Sessions and crashed sessions are shown.
+        - action: Read or compute the crash-free session rate.
+          expected: The rate is at least 99.5 %.
+          data: "sessions without a crash divided by all sessions"
+    sv:
+      title: Andel utan krascher för senaste releasen
+      description: Läser av andelen sessioner utan krascher för senaste releasen i kraschrapporteringen.
+      preconditions: Åtkomst till kraschrapporteringen med minst 14 dagars data för senaste releasen.
+      expected: Andelen utan krascher är minst 99,5 %.
+      steps:
+        - action: Filtrera kraschrapporterna på senaste releasen och dess första 14 dagar.
+          expected: Sessioner och kraschade sessioner visas.
+        - action: Läs av eller beräkna andelen sessioner utan krascher.
+          expected: Andelen är minst 99,5 %.
+          data: "sessioner utan krasch delat med alla sessioner"
+
+  - id: MOB-T16
+    priority: medium
+    execution: manual
+    tags: [battery, background]
+    refs: ["ISO/IEC 25010:2023 resource utilization"]
+    en:
+      title: Background battery use over 24 hours
+      description: Leaves the app in the background for a day and reads the battery statistics.
+      preconditions: A fully charged test phone with the app signed in and normal synchronisation, and no other app installed for the test.
+      expected: The app has used at most 1 % of the battery over 24 hours.
+      steps:
+        - action: Open the app, sign in, then send it to the background.
+          expected: The app keeps synchronising in the background.
+          data: "50 items with updates during the day"
+        - action: After 24 hours, open the platform's battery statistics.
+          expected: The app's share is at most 1 % of the battery.
+    sv:
+      title: Batteriförbrukning i bakgrunden under ett dygn
+      description: Lämnar appen i bakgrunden i ett dygn och läser av batteristatistiken.
+      preconditions: En fulladdad testtelefon med appen inloggad och vanlig synkronisering, och inga andra appar installerade för testet.
+      expected: Appen har använt högst 1 % av batteriet under 24 timmar.
+      steps:
+        - action: Öppna appen, logga in och lägg den sedan i bakgrunden.
+          expected: Appen fortsätter synkronisera i bakgrunden.
+          data: "50 objekt med uppdateringar under dagen"
+        - action: Öppna plattformens batteristatistik efter 24 timmar.
+          expected: Appens andel är högst 1 % av batteriet.

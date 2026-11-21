@@ -295,6 +295,102 @@ requirements:
         - method: test
           text: En användare utan åtkomst till ett projekt hittar inga av dess objekt, och det totala antalet motsvarar de objekt som användaren har läsbehörighet till.
 
+  - id: SRCH-14
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [typo-tolerance, fuzzy, ranking]
+    refs: ["ISO 9241-110:2020 use error robustness", "ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [SRCH-T10]
+    en:
+      title: Tolerance of one typing error
+      description: Search SHOULD find items whose words differ by one letter from a search word of at least 5 letters, ranked below exact matches.
+      rationale: Typing errors are common on small keyboards, and a search that returns nothing makes users believe the item does not exist.
+      criteria:
+        - method: test
+          text: A search for "requirment" finds items with "requirement", listed after any exact matches.
+          threshold: "edit distance 1 for words of ≥ 5 letters"
+    sv:
+      title: Tolerans för ett skrivfel
+      description: Sökningen BÖR hitta objekt vars ord skiljer sig med en bokstav från ett sökord med minst 5 bokstäver, rangordnade under exakta träffar.
+      rationale: Skrivfel är vanliga på små tangentbord, och en sökning som inte ger något får användarna att tro att objektet inte finns.
+      criteria:
+        - method: test
+          text: En sökning efter "kravspecifkation" hittar objekt med "kravspecifikation", listade efter eventuella exakta träffar.
+          threshold: "redigeringsavstånd 1 för ord med ≥ 5 bokstäver"
+
+  - id: SRCH-15
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [suggestions, autocomplete, response-time]
+    refs: ["ISO/IEC 25010:2023 time behaviour", "ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [SRCH-T11]
+    en:
+      title: Suggestions while typing
+      description: The search field SHOULD show up to 8 matching items as suggestions within 300 milliseconds after the user has typed 2 characters.
+      rationale: Suggestions let users reach a known item without opening a result page, provided they arrive while the user is still typing.
+      criteria:
+        - method: test
+          text: Typing 2 characters shows suggestions within 300 ms at the 95th percentile in a project with 100 000 items.
+          threshold: "p95 ≤ 300 ms; ≤ 8 suggestions"
+    sv:
+      title: Förslag medan användaren skriver
+      description: Sökfältet BÖR visa upp till 8 matchande objekt som förslag inom 300 millisekunder efter att användaren har skrivit 2 tecken.
+      rationale: Förslag låter användarna nå ett känt objekt utan att öppna en resultatsida, förutsatt att de kommer medan användaren fortfarande skriver.
+      criteria:
+        - method: test
+          text: Att skriva 2 tecken visar förslag inom 300 ms vid 95:e percentilen i ett projekt med 100 000 objekt.
+          threshold: "p95 ≤ 300 ms; ≤ 8 förslag"
+
+  - id: SRCH-16
+    type: functional
+    obligation: must
+    priority: high
+    tags: [index, freshness, consistency]
+    refs: ["ISO/IEC 25012:2008 currentness", "ISO/IEC 25010:2023 functional correctness"]
+    tests: [SRCH-T12]
+    en:
+      title: Saved changes findable within 5 seconds
+      description: A created or changed item MUST be found by search with its new content within 5 seconds after it was saved.
+      rationale: Users who save an item and then cannot find it assume the save failed and create a duplicate.
+      criteria:
+        - method: test
+          text: An item saved with a unique new word is found by searching for that word within 5 seconds in 20 of 20 attempts.
+          threshold: "≤ 5 s index delay"
+    sv:
+      title: Sparade ändringar hittas inom 5 sekunder
+      description: Ett skapat eller ändrat objekt SKA hittas av sökningen med sitt nya innehåll inom 5 sekunder efter att det sparades.
+      rationale: Användare som sparar ett objekt och sedan inte hittar det tror att sparandet misslyckades och skapar en dubblett.
+      criteria:
+        - method: test
+          text: Ett objekt som sparas med ett unikt nytt ord hittas genom en sökning på ordet inom 5 sekunder i 20 av 20 försök.
+          threshold: "≤ 5 s fördröjning i indexet"
+
+  - id: SRCH-17
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [attachments, full-text, documents]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    tests: [SRCH-T13]
+    en:
+      title: Search in the text of attachments
+      description: Search SHOULD include the text content of attached PDF, Word and plain text files and show which attachment matched.
+      rationale: Much of the information is in attached documents, and users otherwise have to open each file to find a term.
+      criteria:
+        - method: test
+          text: A word that appears only inside an attached PDF finds the item, and the result names the attachment.
+          threshold: "3 file types indexed"
+    sv:
+      title: Sökning i bilagornas text
+      description: Sökningen BÖR omfatta textinnehållet i bifogade PDF-, Word- och textfiler och visa vilken bilaga som gav träffen.
+      rationale: Mycket av informationen finns i bifogade dokument, och användarna måste annars öppna varje fil för att hitta ett ord.
+      criteria:
+        - method: test
+          text: Ett ord som bara finns i en bifogad PDF hittar objektet, och resultatet anger bilagan.
+          threshold: "3 filtyper indexeras"
+
 tests:
   - id: SRCH-T01
     priority: medium
@@ -561,3 +657,119 @@ tests:
           expected: Förslagen innehåller inget objekt från P2.
         - action: Ge användaren läsbehörighet till P2 och upprepa sökningen.
           expected: Båda objekten returneras och det totala antalet är 2.
+
+  - id: SRCH-T10
+    priority: medium
+    execution: manual
+    tags: [typo-tolerance, fuzzy]
+    refs: ["ISO 9241-110:2020 use error robustness"]
+    en:
+      title: Search with one typing error
+      description: Searches with a misspelled word and checks the results and their order.
+      preconditions: Items that contain "requirement", one of which has the misspelling itself in its title.
+      expected: Items with the correct word are found, ranked after the exact match.
+      steps:
+        - action: Search for the misspelled word.
+          expected: Items with "requirement" are listed.
+          data: "requirment"
+        - action: Check the order of the results.
+          expected: The item whose title contains the exact misspelling is listed first, then the near matches.
+    sv:
+      title: Sökning med ett skrivfel
+      description: Söker med ett felstavat ord och kontrollerar träffarna och deras ordning.
+      preconditions: Objekt som innehåller "kravspecifikation", varav ett har själva felstavningen i sin titel.
+      expected: Objekt med det rätta ordet hittas, rangordnade efter den exakta träffen.
+      steps:
+        - action: Sök efter det felstavade ordet.
+          expected: Objekt med "kravspecifikation" listas.
+          data: "kravspecifkation"
+        - action: Kontrollera ordningen på träffarna.
+          expected: Objektet vars titel innehåller exakt felstavningen listas först, därefter de närliggande träffarna.
+
+  - id: SRCH-T11
+    priority: medium
+    execution: automated
+    tags: [suggestions, autocomplete]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    en:
+      title: Suggestion response time
+      description: Measures the time from the second keystroke to shown suggestions.
+      preconditions: A project with 100 000 items and a browser automation script that records timings.
+      expected: The 95th percentile is at most 300 ms and at most 8 suggestions are shown.
+      steps:
+        - action: Type 2 characters in the search field for 100 different prefixes.
+          expected: Suggestions appear for each prefix that has matches.
+          data: "100 two-letter prefixes"
+        - action: Compute the 95th percentile of the times and count the suggestions.
+          expected: The percentile is at most 300 ms and no list has more than 8 suggestions.
+    sv:
+      title: Svarstid för förslag
+      description: Mäter tiden från andra tangenttrycket tills förslagen visas.
+      preconditions: Ett projekt med 100 000 objekt och ett skript för webbläsarautomatisering som registrerar tider.
+      expected: 95:e percentilen är högst 300 ms och högst 8 förslag visas.
+      steps:
+        - action: Skriv 2 tecken i sökfältet för 100 olika början av ord.
+          expected: Förslag visas för varje början som har träffar.
+          data: "100 början med två bokstäver"
+        - action: Beräkna 95:e percentilen av tiderna och räkna förslagen.
+          expected: Percentilen är högst 300 ms och ingen lista har fler än 8 förslag.
+
+  - id: SRCH-T12
+    priority: high
+    execution: automated
+    tags: [index, freshness]
+    refs: ["ISO/IEC 25012:2008 currentness"]
+    en:
+      title: Freshness of the search index
+      description: Saves items with unique words and measures when search finds them.
+      preconditions: API access to a test project and a script that saves and searches.
+      expected: Each item is found within 5 seconds.
+      steps:
+        - action: Save an item whose title contains a unique word and start a timer.
+          expected: The save succeeds.
+          data: "word \"zqxj4471\""
+        - action: Search for the word every 500 ms until the item is found.
+          expected: The item is found within 5 seconds.
+        - action: Repeat 20 times with new words.
+          expected: Each attempt finds the item within 5 seconds.
+    sv:
+      title: Sökindexets aktualitet
+      description: Sparar objekt med unika ord och mäter när sökningen hittar dem.
+      preconditions: API-åtkomst till ett testprojekt och ett skript som sparar och söker.
+      expected: Varje objekt hittas inom 5 sekunder.
+      steps:
+        - action: Spara ett objekt vars titel innehåller ett unikt ord och starta en tidtagning.
+          expected: Sparandet lyckas.
+          data: "ordet \"zqxj4471\""
+        - action: Sök efter ordet var 500:e ms tills objektet hittas.
+          expected: Objektet hittas inom 5 sekunder.
+        - action: Upprepa 20 gånger med nya ord.
+          expected: Varje försök hittar objektet inom 5 sekunder.
+
+  - id: SRCH-T13
+    priority: medium
+    execution: manual
+    tags: [attachments, full-text]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    en:
+      title: Word found inside an attachment
+      description: Attaches documents with a unique word and searches for it.
+      preconditions: An item and three test files, PDF, Word and plain text, each containing a different unique word.
+      expected: Each word finds the item and the result names the matching attachment.
+      steps:
+        - action: Attach the three files to the item and wait for indexing.
+          expected: The attachments are listed on the item.
+          data: "words \"alfa7731\", \"beta7732\", \"gamma7733\""
+        - action: Search for each word.
+          expected: Each search finds the item and names the attachment that contains the word.
+    sv:
+      title: Ord hittas i en bilaga
+      description: Bifogar dokument med ett unikt ord och söker efter det.
+      preconditions: Ett objekt och tre testfiler, PDF, Word och ren text, med var sitt unikt ord.
+      expected: Varje ord hittar objektet och träffen anger vilken bilaga som matchade.
+      steps:
+        - action: Bifoga de tre filerna till objektet och vänta på indexeringen.
+          expected: Bilagorna listas på objektet.
+          data: "orden \"alfa7731\", \"beta7732\", \"gamma7733\""
+        - action: Sök efter varje ord.
+          expected: Varje sökning hittar objektet och anger den bilaga som innehåller ordet.

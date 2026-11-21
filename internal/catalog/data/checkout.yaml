@@ -299,6 +299,126 @@ requirements:
           text: En ånger dag 14 efter leveransen godtas och bekräftas via e-post; dag 15 förklarar ordersidan att perioden har gått ut.
           threshold: 14 dagar efter leverans
 
+  - id: SHOP-14
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [pre-ticked, extras, consent]
+    refs: ["Directive 2011/83/EU Art. 22", "Directive 2005/29/EC Art. 6"]
+    tests: [SHOP-T10]
+    en:
+      title: No pre-ticked paid extras
+      description: The checkout MUST NOT add a paid extra, such as insurance or express delivery, through a box or option that is selected by default.
+      rationale: Consumer law requires express consent to every additional payment, and a default selection is not consent.
+      criteria:
+        - method: test
+          text: On every checkout step, each option that adds a cost starts unselected and the total changes only after the customer selects it.
+          threshold: "0 paid options selected by default"
+    sv:
+      title: Inga förkryssade tillval mot betalning
+      description: Kassan SKA INTE lägga till ett tillval mot betalning, till exempel försäkring eller expressleverans, genom en ruta eller ett alternativ som är förvalt.
+      rationale: Konsumentlagstiftningen kräver uttryckligt samtycke till varje extra betalning, och ett förval är inget samtycke.
+      criteria:
+        - method: test
+          text: På varje steg i kassan börjar varje alternativ som lägger till en kostnad omarkerat och totalen ändras först när kunden väljer det.
+          threshold: "0 betalda alternativ förvalda"
+
+  - id: SHOP-15
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [delivery, date, information]
+    refs: ["Directive 2011/83/EU Art. 6(1)(g)", "Directive 2011/83/EU Art. 18"]
+    tests: [SHOP-T11]
+    en:
+      title: Delivery date before the order
+      description: Before the order is placed, the checkout MUST show for each delivery option the latest date of delivery of the goods.
+      rationale: Customers choose between options on the date, and the trader is bound by the date given, which makes it a key term of the contract.
+      criteria:
+        - method: test
+          text: Each delivery option on the review step shows a latest delivery date, and the order confirmation repeats the chosen one.
+          threshold: "1 date per delivery option"
+    sv:
+      title: Leveransdatum före beställning
+      description: Innan beställningen läggs SKA kassan för varje leveransalternativ visa det senaste datum då varorna levereras.
+      rationale: Kunderna väljer mellan alternativen utifrån datumet, och näringsidkaren är bunden av det angivna datumet, vilket gör det till ett viktigt avtalsvillkor.
+      criteria:
+        - method: test
+          text: Varje leveransalternativ i granskningssteget visar ett senaste leveransdatum, och orderbekräftelsen upprepar det valda.
+          threshold: "1 datum per leveransalternativ"
+
+  - id: SHOP-16
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [price-reduction, prior-price, omnibus]
+    refs: ["Directive 98/6/EC Art. 6a"]
+    tests: [SHOP-T12]
+    en:
+      title: Prior price shown with a price reduction
+      description: When a price reduction is announced, the system MUST show as the prior price the lowest price of the product in the 30 days before the reduction.
+      rationale: Inflated "before" prices mislead consumers, and the law fixes which prior price may be shown.
+      criteria:
+        - method: test
+          text: A product priced 100, 80 and 120 in the last 30 days and then reduced to 90 shows 80 as the prior price.
+          threshold: "lowest price in the prior 30 days"
+    sv:
+      title: Tidigare pris visas vid prissänkning
+      description: När en prissänkning tillkännages SKA systemet som tidigare pris visa det lägsta pris som produkten haft under de 30 dagarna före sänkningen.
+      rationale: Uppblåsta "förepriser" vilseleder konsumenterna, och lagen bestämmer vilket tidigare pris som visas.
+      criteria:
+        - method: test
+          text: En produkt med priserna 100, 80 och 120 de senaste 30 dagarna som sänks till 90 visar 80 som tidigare pris.
+          threshold: "lägsta pris de föregående 30 dagarna"
+
+  - id: SHOP-17
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [order-tracking, guest, status]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "ISO/IEC 25010:2023 functional completeness"]
+    tests: [SHOP-T13]
+    en:
+      title: Order status without an account
+      description: The order confirmation SHOULD contain a personal link through which a guest customer can see the order status, the delivery tracking and the withdrawal option.
+      rationale: Guest customers otherwise have to call support for every question about their order.
+      criteria:
+        - method: test
+          text: The link in a guest order confirmation shows status, tracking and withdrawal without sign-in, and a modified link shows nothing.
+          threshold: "1 unguessable link per order"
+    sv:
+      title: Orderstatus utan konto
+      description: Orderbekräftelsen BÖR innehålla en personlig länk där en gästkund kan se orderns status, leveransspårningen och möjligheten att ångra köpet.
+      rationale: Gästkunder måste annars ringa supporten för varje fråga om sin order.
+      criteria:
+        - method: test
+          text: Länken i en orderbekräftelse till en gäst visar status, spårning och ångerrätt utan inloggning, och en ändrad länk visar ingenting.
+          threshold: "1 länk per order som inte går att gissa"
+
+  - id: SHOP-18
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [refund, withdrawal, payment-method]
+    refs: ["Directive 2011/83/EU Art. 13(1)", "Directive 2011/83/EU Art. 13(3)"]
+    tests: [SHOP-T14]
+    en:
+      title: Refund within 14 days of a withdrawal
+      description: After a withdrawal, the system MUST refund the payments received, including standard delivery costs, through the means of payment used, within 14 days of the withdrawal notice or of receiving the returned goods when the trader has chosen to wait for them.
+      rationale: The deadline and the means of refund are fixed by consumer law, and late refunds lead to complaints and sanctions.
+      criteria:
+        - method: test
+          text: A withdrawal registered on day 0 for goods returned on day 6 is refunded to the original card by day 14 including standard delivery.
+          threshold: "≤ 14 days"
+    sv:
+      title: Återbetalning inom 14 dagar efter ångrat köp
+      description: Efter ett ångrat köp SKA systemet återbetala de mottagna betalningarna, inklusive kostnaden för standardleverans, med det betalningsmedel som användes, inom 14 dagar från meddelandet om ånger eller från att de returnerade varorna tagits emot när näringsidkaren har valt att invänta dem.
+      rationale: Tidsfristen och sättet att återbetala styrs av konsumentlagstiftningen, och sena återbetalningar leder till klagomål och sanktioner.
+      criteria:
+        - method: test
+          text: Ett ångrat köp som registreras dag 0 för varor som returneras dag 6 återbetalas till det ursprungliga kortet senast dag 14, inklusive standardleverans.
+          threshold: "≤ 14 dagar"
+
 tests:
   - id: SHOP-T01
     priority: medium
@@ -581,3 +701,151 @@ tests:
         - action: Flytta klockan till dag 15 efter leveransen av beställning 2 och öppna dess ordersida.
           expected: Sidan förklarar att ångerfristen har gått ut och visar kontaktuppgifter till supporten.
           data: dag 15
+
+  - id: SHOP-T10
+    priority: high
+    execution: manual
+    tags: [pre-ticked, extras]
+    refs: ["Directive 2011/83/EU Art. 22"]
+    en:
+      title: No paid option selected by default
+      description: Goes through the checkout and inspects every option that adds a cost.
+      preconditions: A cart and a checkout that offers insurance, gift wrapping and express delivery for a fee.
+      expected: No paid option is selected until the customer chooses it.
+      steps:
+        - action: Go through each checkout step without changing any option.
+          expected: Every option that adds a cost is unselected and the total equals items plus standard delivery.
+          data: "options: insurance 49 SEK, express 99 SEK, gift wrap 29 SEK"
+        - action: Select express delivery.
+          expected: The total rises by the express fee.
+    sv:
+      title: Inget betalt alternativ förvalt
+      description: Går igenom kassan och granskar varje alternativ som lägger till en kostnad.
+      preconditions: En varukorg och en kassa som erbjuder försäkring, presentinslagning och expressleverans mot avgift.
+      expected: Inget betalt alternativ är valt förrän kunden väljer det.
+      steps:
+        - action: Gå igenom varje steg i kassan utan att ändra något alternativ.
+          expected: Varje alternativ som lägger till en kostnad är omarkerat och totalen är varor plus standardleverans.
+          data: "alternativ: försäkring 49 kr, express 99 kr, presentinslagning 29 kr"
+        - action: Välj expressleverans.
+          expected: Totalen ökar med avgiften för express.
+
+  - id: SHOP-T11
+    priority: medium
+    execution: manual
+    tags: [delivery, date]
+    refs: ["Directive 2011/83/EU Art. 6(1)(g)"]
+    en:
+      title: Delivery dates per option
+      description: Checks the delivery dates on the review step and in the confirmation.
+      preconditions: A cart and a checkout with standard and express delivery.
+      expected: Each option shows a latest delivery date and the confirmation repeats the chosen date.
+      steps:
+        - action: Open the review step.
+          expected: Standard and express each show a latest delivery date.
+          data: "order placed on a Thursday"
+        - action: Choose express, place the order and open the confirmation.
+          expected: The confirmation shows the same latest delivery date as the review step.
+    sv:
+      title: Leveransdatum per alternativ
+      description: Kontrollerar leveransdatumen i granskningssteget och i bekräftelsen.
+      preconditions: En varukorg och en kassa med standard- och expressleverans.
+      expected: Varje alternativ visar ett senaste leveransdatum och bekräftelsen upprepar det valda datumet.
+      steps:
+        - action: Öppna granskningssteget.
+          expected: Standard och express visar var sitt senaste leveransdatum.
+          data: "beställning lagd en torsdag"
+        - action: Välj express, lägg beställningen och öppna bekräftelsen.
+          expected: Bekräftelsen visar samma senaste leveransdatum som granskningssteget.
+
+  - id: SHOP-T12
+    priority: high
+    execution: automated
+    tags: [price-reduction, prior-price]
+    refs: ["Directive 98/6/EC Art. 6a"]
+    en:
+      title: Prior price from the price history
+      description: Seeds a price history and announces a reduction.
+      preconditions: A test product whose price history can be seeded.
+      expected: The prior price shown is the lowest price in the 30 days before the reduction.
+      steps:
+        - action: Seed prices 100 from day -30, 80 from day -20 and 120 from day -10.
+          expected: The price history holds the three prices.
+          data: "prices 100, 80, 120"
+        - action: Reduce the price to 90 with a sale label.
+          expected: The product page shows 90 with 80 as the prior price.
+        - action: Seed a price of 70 from day -40 only and repeat.
+          expected: The value 70 is not used since it lies outside the 30 days.
+    sv:
+      title: Tidigare pris ur prishistoriken
+      description: Lägger in en prishistorik och tillkännager en sänkning.
+      preconditions: En testprodukt vars prishistorik kan läggas in.
+      expected: Det tidigare pris som visas är det lägsta priset under de 30 dagarna före sänkningen.
+      steps:
+        - action: Lägg in priset 100 från dag -30, 80 från dag -20 och 120 från dag -10.
+          expected: Prishistoriken innehåller de tre priserna.
+          data: "priser 100, 80, 120"
+        - action: Sänk priset till 90 med en reaetikett.
+          expected: Produktsidan visar 90 med 80 som tidigare pris.
+        - action: Lägg in priset 70 bara från dag -40 och upprepa.
+          expected: Värdet 70 används inte eftersom det ligger utanför de 30 dagarna.
+
+  - id: SHOP-T13
+    priority: medium
+    execution: manual
+    tags: [order-tracking, guest]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    en:
+      title: Guest order status link
+      description: Places a guest order and uses the link in the confirmation.
+      preconditions: A guest checkout and access to the confirmation e-mail.
+      expected: The link shows status, tracking and withdrawal; a changed link shows nothing.
+      steps:
+        - action: Place an order as a guest and open the link in the confirmation.
+          expected: The page shows the order status, the tracking link and the withdrawal option without sign-in.
+        - action: Change one character of the link and open it.
+          expected: No order information is shown.
+          data: "link with one character altered"
+    sv:
+      title: Länk till orderstatus för gäst
+      description: Lägger en gästorder och använder länken i bekräftelsen.
+      preconditions: En gästkassa och åtkomst till bekräftelsemejlet.
+      expected: Länken visar status, spårning och ångerrätt; en ändrad länk visar ingenting.
+      steps:
+        - action: Lägg en order som gäst och öppna länken i bekräftelsen.
+          expected: Sidan visar orderns status, spårningslänken och möjligheten att ångra köpet utan inloggning.
+        - action: Ändra ett tecken i länken och öppna den.
+          expected: Ingen orderinformation visas.
+          data: "länk med ett ändrat tecken"
+
+  - id: SHOP-T14
+    priority: high
+    execution: manual
+    tags: [refund, withdrawal]
+    refs: ["Directive 2011/83/EU Art. 13(1)"]
+    en:
+      title: Refund timing after a withdrawal
+      description: Registers a withdrawal, returns the goods and checks the refund.
+      preconditions: A delivered test order paid with a test card from the payment provider and a test clock.
+      expected: The full amount including standard delivery is refunded to the card by day 14.
+      steps:
+        - action: Register the withdrawal on day 0.
+          expected: The withdrawal is confirmed.
+          data: "order total 499 SEK including 49 SEK standard delivery"
+        - action: Register receipt of the returned goods on day 6.
+          expected: The refund is started.
+        - action: Check the payment provider's test dashboard on day 14.
+          expected: A refund of 499 SEK to the original card is recorded no later than day 14.
+    sv:
+      title: Tid för återbetalning efter ångrat köp
+      description: Registrerar ett ångrat köp, returnerar varorna och kontrollerar återbetalningen.
+      preconditions: En levererad testorder betald med ett testkort från betaltjänsten och en testklocka.
+      expected: Hela beloppet inklusive standardleverans återbetalas till kortet senast dag 14.
+      steps:
+        - action: Registrera det ångrade köpet dag 0.
+          expected: Ångern bekräftas.
+          data: "ordersumma 499 kr inklusive 49 kr standardleverans"
+        - action: Registrera mottagandet av de returnerade varorna dag 6.
+          expected: Återbetalningen startas.
+        - action: Kontrollera betaltjänstens testpanel dag 14.
+          expected: En återbetalning på 499 kr till det ursprungliga kortet är registrerad senast dag 14.

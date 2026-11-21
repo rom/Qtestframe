@@ -403,6 +403,102 @@ requirements:
         - method: test
           text: En ingenjör med godkänd arbetsorder för ett ställverk når dess IED:er efter flerfaktorsautentisering, når inte ett annat ställverk och sessionens inspelning sparas.
 
+  - id: ENRG-18
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [consumption-data, customer-access, smart-metering]
+    refs: ["Directive (EU) 2019/944 Art. 20 (functionalities of smart metering systems)", "Directive (EU) 2019/944 Art. 23"]
+    tests: [ENRG-T17]
+    en:
+      title: Consumption history downloadable by the customer
+      description: The system MUST let a customer download their validated consumption data of at least the last 36 months in a machine-readable format free of charge.
+      rationale: Customers need their history to compare offers and to share it with energy service providers of their choice.
+      criteria:
+        - method: test
+          text: A customer downloads 36 months of hourly data as CSV, and the totals per month match the billing data.
+          threshold: "≥ 36 months, free of charge"
+    sv:
+      title: Förbrukningshistorik kan laddas ned av kunden
+      description: Systemet SKA låta en kund kostnadsfritt ladda ned sina validerade förbrukningsdata för minst de senaste 36 månaderna i ett maskinläsbart format.
+      rationale: Kunderna behöver sin historik för att jämföra erbjudanden och dela den med energitjänstföretag som de själva väljer.
+      criteria:
+        - method: test
+          text: En kund laddar ned 36 månaders timdata som CSV, och summorna per månad stämmer med faktureringsdata.
+          threshold: "≥ 36 månader, kostnadsfritt"
+
+  - id: ENRG-19
+    type: functional
+    obligation: must
+    priority: high
+    tags: [supplier-switching, market, timing]
+    refs: ["Directive (EU) 2019/944 Art. 12 (right to switch)"]
+    tests: [ENRG-T18]
+    en:
+      title: Supplier switch processed within 24 hours
+      description: The system MUST complete the technical process of switching a customer to a new electricity supplier within 24 hours of a valid switch request on any working day.
+      rationale: The Electricity Directive sets the deadline, and slow switching keeps customers on contracts they have chosen to leave.
+      criteria:
+        - method: test
+          text: A valid switch request received on a working day at 10:00 is completed in the system by 10:00 the next day.
+          threshold: "≤ 24 h on working days"
+    sv:
+      title: Leverantörsbyte genomförs inom 24 timmar
+      description: Systemet SKA slutföra den tekniska processen för att byta en kunds elleverantör inom 24 timmar från en giltig begäran om byte på varje arbetsdag.
+      rationale: Elmarknadsdirektivet sätter tidsfristen, och långsamma byten håller kvar kunder i avtal som de har valt att lämna.
+      criteria:
+        - method: test
+          text: En giltig begäran om byte som tas emot en arbetsdag klockan 10.00 är slutförd i systemet senast klockan 10.00 nästa dag.
+          threshold: "≤ 24 h på arbetsdagar"
+
+  - id: ENRG-20
+    type: functional
+    obligation: must
+    priority: high
+    tags: [disturbance-records, protection, fault-analysis]
+    refs: ["IEC 61850-7-4:2010 (RDRE disturbance recording)"]
+    tests: [ENRG-T19]
+    en:
+      title: Disturbance records collected after a trip
+      description: After a protection trip, the system MUST collect the disturbance records of the relays involved and store them with the event within 15 minutes.
+      rationale: Fault analysis depends on the records, and records left in the relay are overwritten by the next fault.
+      criteria:
+        - method: test
+          text: A simulated trip causes the disturbance records of each involved relay to be stored and linked to the trip event within 15 minutes.
+          threshold: "≤ 15 min"
+    sv:
+      title: Störningsregistreringar hämtas efter en utlösning
+      description: Efter en skyddsutlösning SKA systemet hämta störningsregistreringarna från de reläer som var inblandade och lagra dem med händelsen inom 15 minuter.
+      rationale: Felanalys bygger på registreringarna, och registreringar som ligger kvar i reläet skrivs över vid nästa fel.
+      criteria:
+        - method: test
+          text: En simulerad utlösning gör att störningsregistreringarna från varje inblandat relä lagras och kopplas till utlösningshändelsen inom 15 minuter.
+          threshold: "≤ 15 min"
+
+  - id: ENRG-21
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [remit, inside-information, unavailability]
+    refs: ["Regulation (EU) No 1227/2011 (REMIT) Art. 4 (obligation to publish inside information)"]
+    tests: [ENRG-T20]
+    en:
+      title: Unplanned unavailability published within one hour
+      description: The system MUST publish inside information on an unplanned unavailability of a generation or transmission asset on the inside information platform within 60 minutes after the event.
+      rationale: Market participants trading on undisclosed outages abuse the market, and the regulator expects publication within the hour.
+      criteria:
+        - method: test
+          text: An unplanned outage of a test unit registered at 14:00 is published on the test platform by 15:00 with capacity, start and expected end.
+          threshold: "≤ 60 min"
+    sv:
+      title: Oplanerad otillgänglighet publiceras inom en timme
+      description: Systemet SKA publicera insiderinformation om en oplanerad otillgänglighet hos en produktions- eller överföringsanläggning på plattformen för insiderinformation inom 60 minuter efter händelsen.
+      rationale: Aktörer som handlar på okända avbrott missbrukar marknaden, och tillsynsmyndigheten förväntar sig publicering inom timmen.
+      criteria:
+        - method: test
+          text: Ett oplanerat avbrott i en testenhet som registreras klockan 14.00 publiceras på testplattformen senast klockan 15.00 med kapacitet, start och förväntat slut.
+          threshold: "≤ 60 min"
+
 tests:
   - id: ENRG-T01
     priority: high
@@ -893,3 +989,119 @@ tests:
           expected: Anslutningen avvisas och loggas.
         - action: Avsluta sessionen och öppna inspelningen som administratör.
           expected: Inspelningen visar åtgärderna med användare, arbetsorder och tider.
+
+  - id: ENRG-T17
+    priority: medium
+    execution: manual
+    tags: [consumption-data, customer-access]
+    refs: ["Directive (EU) 2019/944 Art. 20 (functionalities of smart metering systems)"]
+    en:
+      title: Customer download of 36 months of data
+      description: Downloads the consumption history as a customer and compares it with billing.
+      preconditions: A test customer with 36 months of validated hourly data and invoices.
+      expected: The download is free, machine-readable and matches the billed totals.
+      steps:
+        - action: Sign in as the customer and download the consumption history.
+          expected: A CSV file with 36 months of hourly values is downloaded without a charge.
+          data: "36 months × hourly values"
+        - action: Sum the values per month and compare with the invoices.
+          expected: Each monthly total matches the billed consumption.
+    sv:
+      title: Kunden laddar ned 36 månaders data
+      description: Laddar ned förbrukningshistoriken som kund och jämför den med faktureringen.
+      preconditions: En testkund med 36 månaders validerade timvärden och fakturor.
+      expected: Nedladdningen är kostnadsfri, maskinläsbar och stämmer med de fakturerade summorna.
+      steps:
+        - action: Logga in som kunden och ladda ned förbrukningshistoriken.
+          expected: En CSV-fil med 36 månaders timvärden laddas ned utan avgift.
+          data: "36 månader × timvärden"
+        - action: Summera värdena per månad och jämför med fakturorna.
+          expected: Varje månadssumma stämmer med den fakturerade förbrukningen.
+
+  - id: ENRG-T18
+    priority: high
+    execution: manual
+    tags: [supplier-switching, timing]
+    refs: ["Directive (EU) 2019/944 Art. 12 (right to switch)"]
+    en:
+      title: Switch request completed in 24 hours
+      description: Sends a valid switch request on a working day and checks the completion time.
+      preconditions: A market test environment with a customer, the old and new supplier and a working-day clock.
+      expected: The switch is completed within 24 hours.
+      steps:
+        - action: Send a valid switch request at 10:00 on a Tuesday.
+          expected: The request is accepted.
+          data: "request with customer and metering point identifiers"
+        - action: Check the supplier of the metering point at 10:00 on Wednesday.
+          expected: The new supplier is registered and both suppliers have been notified.
+    sv:
+      title: Begäran om byte slutförd inom 24 timmar
+      description: Skickar en giltig begäran om byte en arbetsdag och kontrollerar när den är slutförd.
+      preconditions: En testmiljö för marknaden med en kund, gammal och ny leverantör och en klocka med arbetsdagar.
+      expected: Bytet är slutfört inom 24 timmar.
+      steps:
+        - action: Skicka en giltig begäran om byte klockan 10.00 en tisdag.
+          expected: Begäran godtas.
+          data: "begäran med kundens och mätpunktens identiteter"
+        - action: Kontrollera mätpunktens leverantör klockan 10.00 på onsdagen.
+          expected: Den nya leverantören är registrerad och båda leverantörerna har fått besked.
+
+  - id: ENRG-T19
+    priority: high
+    execution: manual
+    tags: [disturbance-records, protection]
+    refs: ["IEC 61850-7-4:2010 (RDRE disturbance recording)"]
+    en:
+      title: Disturbance records after a simulated trip
+      description: Injects a fault in a test bay and checks the collected records.
+      preconditions: A test bay with two protection relays with disturbance recording and the collection function.
+      expected: Records of both relays are stored with the trip event within 15 minutes.
+      steps:
+        - action: Inject a fault that makes both relays trip.
+          expected: The trip event is registered in the system.
+          data: "test set injects a phase-to-earth fault"
+        - action: Wait and open the trip event.
+          expected: Within 15 minutes the event links one disturbance record from each relay.
+        - action: Open one record.
+          expected: The record holds the analogue and binary channels around the trip.
+    sv:
+      title: Störningsregistreringar efter en simulerad utlösning
+      description: Lägger in ett fel i ett testfack och kontrollerar de hämtade registreringarna.
+      preconditions: Ett testfack med två skyddsreläer med störningsregistrering och hämtningsfunktionen.
+      expected: Registreringar från båda reläerna lagras med utlösningshändelsen inom 15 minuter.
+      steps:
+        - action: Lägg in ett fel som får båda reläerna att lösa ut.
+          expected: Utlösningshändelsen registreras i systemet.
+          data: "provutrustningen lägger in ett jordfel"
+        - action: Vänta och öppna utlösningshändelsen.
+          expected: Inom 15 minuter kopplar händelsen en störningsregistrering från varje relä.
+        - action: Öppna en registrering.
+          expected: Registreringen innehåller de analoga och binära kanalerna runt utlösningen.
+
+  - id: ENRG-T20
+    priority: high
+    execution: manual
+    tags: [remit, inside-information]
+    refs: ["Regulation (EU) No 1227/2011 (REMIT) Art. 4 (obligation to publish inside information)"]
+    en:
+      title: Publication of an unplanned outage
+      description: Registers an unplanned outage and checks the publication on the test platform.
+      preconditions: A test generation unit and access to the test environment of the inside information platform.
+      expected: The message is published within 60 minutes with the required details.
+      steps:
+        - action: Register an unplanned outage of the unit at 14:00.
+          expected: The outage is recorded.
+          data: "unit G2, 300 MW unavailable"
+        - action: Check the test platform at 15:00.
+          expected: A message is published with unit, unavailable capacity, start time and expected end.
+    sv:
+      title: Publicering av ett oplanerat avbrott
+      description: Registrerar ett oplanerat avbrott och kontrollerar publiceringen på testplattformen.
+      preconditions: En testenhet för produktion och åtkomst till testmiljön för plattformen för insiderinformation.
+      expected: Meddelandet publiceras inom 60 minuter med de uppgifter som krävs.
+      steps:
+        - action: Registrera ett oplanerat avbrott i enheten klockan 14.00.
+          expected: Avbrottet registreras.
+          data: "enhet G2, 300 MW otillgängligt"
+        - action: Kontrollera testplattformen klockan 15.00.
+          expected: Ett meddelande är publicerat med enhet, otillgänglig kapacitet, starttid och förväntat slut.

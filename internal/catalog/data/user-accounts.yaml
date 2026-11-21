@@ -279,6 +279,102 @@ requirements:
         - method: test
           text: Var och en av de fem ändringarna ger en post i granskningsloggen med utförare, berört konto, åtgärd och tidsstämpel i UTC.
 
+  - id: ACCT-13
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [scim, provisioning, deprovisioning]
+    refs: ["RFC 7643", "RFC 7644", "ISO/IEC 27001:2022 A.5.18"]
+    tests: [ACCT-T09]
+    en:
+      title: Provisioning through SCIM
+      description: The system SHOULD support creation, update and deactivation of user accounts and group memberships through the SCIM 2.0 protocol.
+      rationale: Organisations manage people in their identity provider, and automatic provisioning removes leavers at once instead of when someone remembers.
+      criteria:
+        - method: test
+          text: Creating, updating and deactivating a user in the identity provider is reflected in the system within 5 minutes through SCIM.
+          threshold: "≤ 5 min per change"
+    sv:
+      title: Kontohantering via SCIM
+      description: Systemet BÖR stödja att användarkonton och gruppmedlemskap skapas, uppdateras och inaktiveras via protokollet SCIM 2.0.
+      rationale: Organisationer hanterar personer i sin identitetstjänst, och automatisk kontohantering tar bort den som har slutat direkt i stället för när någon kommer ihåg det.
+      criteria:
+        - method: test
+          text: Att skapa, uppdatera och inaktivera en användare i identitetstjänsten slår igenom i systemet inom 5 minuter via SCIM.
+          threshold: "≤ 5 min per ändring"
+
+  - id: ACCT-14
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [deactivation, ownership, handover]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "ISO/IEC 25010:2023 functional completeness"]
+    tests: [ACCT-T10]
+    en:
+      title: Handover of owned items at deactivation
+      description: Before an account is deactivated, the system MUST show the items, approvals and scheduled reports the user owns and let the administrator assign them to another user.
+      rationale: Items owned by a departed user stay unattended, and waiting approvals or scheduled reports silently stop.
+      criteria:
+        - method: test
+          text: Deactivating a user who owns 5 items, 1 pending approval and 1 scheduled report shows the 7 and moves them to the chosen user.
+          threshold: "0 orphaned items"
+    sv:
+      title: Överlämning av ägda objekt vid inaktivering
+      description: Innan ett konto inaktiveras SKA systemet visa de objekt, godkännanden och schemalagda rapporter som användaren äger och låta administratören tilldela dem en annan användare.
+      rationale: Objekt som ägs av någon som har slutat blir obevakade, och väntande godkännanden eller schemalagda rapporter stannar i det tysta.
+      criteria:
+        - method: test
+          text: Att inaktivera en användare som äger 5 objekt, 1 väntande godkännande och 1 schemalagd rapport visar de 7 och flyttar dem till den valda användaren.
+          threshold: "0 föräldralösa objekt"
+
+  - id: ACCT-15
+    type: functional
+    obligation: should
+    priority: low
+    tags: [invitations, bulk, csv]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness", "RFC 4180"]
+    tests: [ACCT-T11]
+    en:
+      title: Bulk invitation from a file
+      description: The system SHOULD let an administrator invite up to 500 users at once from a CSV file with e-mail address and role, and report each row that was rejected.
+      rationale: Onboarding a department one invitation at a time is slow and leads to wrong roles.
+      criteria:
+        - method: test
+          text: A file with 100 rows, 2 of them with invalid addresses, sends 98 invitations with the right roles and reports the 2 rows.
+          threshold: "≤ 500 rows per file"
+    sv:
+      title: Massinbjudan från en fil
+      description: Systemet BÖR låta en administratör bjuda in upp till 500 användare på en gång från en CSV-fil med e-postadress och roll, och rapportera varje rad som avvisades.
+      rationale: Att ta in en hel avdelning en inbjudan i taget går långsamt och leder till fel roller.
+      criteria:
+        - method: test
+          text: En fil med 100 rader, varav 2 med ogiltiga adresser, skickar 98 inbjudningar med rätt roller och rapporterar de 2 raderna.
+          threshold: "≤ 500 rader per fil"
+
+  - id: ACCT-16
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [external-users, marking, guests]
+    refs: ["ISO/IEC 27001:2022 A.5.10", "ISO 9241-110:2020 self-descriptiveness"]
+    tests: [ACCT-T12]
+    en:
+      title: External users marked
+      description: The system MUST mark users from outside the organisation as external wherever their name appears, including mention suggestions, comments and member lists.
+      rationale: People share differently when an outsider is present, and an unmarked guest can be told internal information by mistake.
+      criteria:
+        - method: test
+          text: An external user's name carries the external marker in the member list, the mention suggestions and on a comment.
+          threshold: "3 of 3 places marked"
+    sv:
+      title: Externa användare markeras
+      description: Systemet SKA markera användare utanför organisationen som externa överallt där deras namn visas, däribland i förslag vid omnämnande, kommentarer och medlemslistor.
+      rationale: Man delar på ett annat sätt när en utomstående är med, och en omärkt gäst kan av misstag få ta del av intern information.
+      criteria:
+        - method: test
+          text: En extern användares namn har markeringen extern i medlemslistan, i förslagen vid omnämnande och på en kommentar.
+          threshold: "3 av 3 ställen markerade"
+
 tests:
   - id: ACCT-T01
     priority: high
@@ -531,3 +627,123 @@ tests:
           expected: Alla fem åtgärderna lyckas.
         - action: Läs de poster i granskningsloggen som skapades under testet.
           expected: Det finns exakt fem poster i utförd ordning, var och en med administratören som utförare, kontot som mål, åtgärden och en tidsstämpel i UTC.
+
+  - id: ACCT-T09
+    priority: medium
+    execution: manual
+    tags: [scim, provisioning]
+    refs: ["RFC 7644"]
+    en:
+      title: SCIM provisioning from an identity provider
+      description: Connects a test identity provider through SCIM and changes a user there.
+      preconditions: A test tenant of an identity provider with SCIM provisioning to the system and an administrator account.
+      expected: Each change in the identity provider appears in the system within 5 minutes.
+      steps:
+        - action: Assign a new user to the application in the identity provider.
+          expected: The user account is created in the system within 5 minutes.
+          data: "user test.scim@example.com"
+        - action: Change the user's name and group in the identity provider.
+          expected: The name and group membership change in the system within 5 minutes.
+        - action: Remove the user from the application in the identity provider.
+          expected: The account is deactivated within 5 minutes and can no longer sign in.
+    sv:
+      title: SCIM-kontohantering från en identitetstjänst
+      description: Ansluter en testidentitetstjänst via SCIM och ändrar en användare där.
+      preconditions: En testmiljö hos en identitetstjänst med SCIM-kontohantering mot systemet och ett administratörskonto.
+      expected: Varje ändring i identitetstjänsten syns i systemet inom 5 minuter.
+      steps:
+        - action: Tilldela applikationen till en ny användare i identitetstjänsten.
+          expected: Användarkontot skapas i systemet inom 5 minuter.
+          data: "användaren test.scim@example.com"
+        - action: Ändra användarens namn och grupp i identitetstjänsten.
+          expected: Namnet och gruppmedlemskapet ändras i systemet inom 5 minuter.
+        - action: Ta bort användaren från applikationen i identitetstjänsten.
+          expected: Kontot inaktiveras inom 5 minuter och kan inte längre logga in.
+
+  - id: ACCT-T10
+    priority: medium
+    execution: manual
+    tags: [deactivation, ownership]
+    refs: ["ISO/IEC 27001:2022 A.5.18"]
+    en:
+      title: Deactivation with handover
+      description: Deactivates a user who owns items, an approval and a scheduled report.
+      preconditions: A test user owning 5 items, 1 pending approval and 1 scheduled report, and a second user to receive them.
+      expected: The owned things are listed and moved to the second user.
+      steps:
+        - action: As administrator, start deactivating the test user.
+          expected: A list shows the 5 items, the approval and the report.
+        - action: Choose the second user as new owner and confirm.
+          expected: The account is deactivated.
+        - action: Open the moved things as the second user.
+          expected: The 5 items, the approval and the report are owned by or assigned to the second user.
+    sv:
+      title: Inaktivering med överlämning
+      description: Inaktiverar en användare som äger objekt, ett godkännande och en schemalagd rapport.
+      preconditions: En testanvändare som äger 5 objekt, 1 väntande godkännande och 1 schemalagd rapport, och en andra användare som ska ta emot dem.
+      expected: Det som ägs listas och flyttas till den andra användaren.
+      steps:
+        - action: Börja inaktivera testanvändaren som administratör.
+          expected: En lista visar de 5 objekten, godkännandet och rapporten.
+        - action: Välj den andra användaren som ny ägare och bekräfta.
+          expected: Kontot inaktiveras.
+        - action: Öppna det som flyttades som den andra användaren.
+          expected: De 5 objekten, godkännandet och rapporten ägs av eller är tilldelade den andra användaren.
+
+  - id: ACCT-T11
+    priority: low
+    execution: manual
+    tags: [invitations, bulk]
+    refs: ["RFC 4180"]
+    en:
+      title: Invitations from a CSV file
+      description: Uploads a CSV file with 100 rows, 2 of them invalid.
+      preconditions: An administrator account and a CSV file with columns e-mail and role.
+      expected: 98 invitations are sent with the right roles and the 2 invalid rows are reported.
+      steps:
+        - action: Upload the file in the bulk invitation dialog.
+          expected: A preview lists 98 valid rows and 2 rejected rows with reasons.
+          data: "rows 7 and 63 have invalid addresses"
+        - action: Confirm the invitations.
+          expected: 98 invitations are sent and the user list shows them as invited with the roles from the file.
+    sv:
+      title: Inbjudningar från en CSV-fil
+      description: Laddar upp en CSV-fil med 100 rader, varav 2 är ogiltiga.
+      preconditions: Ett administratörskonto och en CSV-fil med kolumnerna e-post och roll.
+      expected: 98 inbjudningar skickas med rätt roller och de 2 ogiltiga raderna rapporteras.
+      steps:
+        - action: Ladda upp filen i dialogen för massinbjudan.
+          expected: En förhandsvisning listar 98 giltiga rader och 2 avvisade rader med skäl.
+          data: "rad 7 och 63 har ogiltiga adresser"
+        - action: Bekräfta inbjudningarna.
+          expected: 98 inbjudningar skickas och användarlistan visar dem som inbjudna med rollerna från filen.
+
+  - id: ACCT-T12
+    priority: medium
+    execution: manual
+    tags: [external-users, marking]
+    refs: ["ISO/IEC 27001:2022 A.5.10"]
+    en:
+      title: External marker on a guest user
+      description: Adds an external user to a project and looks at the places where the name appears.
+      preconditions: An external test user with access to a project and an internal user.
+      expected: The external marker is shown in each place.
+      steps:
+        - action: Open the project member list.
+          expected: The external user's name has the external marker.
+        - action: As the internal user, type @ and the first letters of the external user's name in a comment.
+          expected: The suggestion shows the external marker.
+        - action: Let the external user write a comment and view it.
+          expected: The comment author has the external marker.
+    sv:
+      title: Markeringen extern på en gästanvändare
+      description: Lägger till en extern användare i ett projekt och tittar på ställena där namnet visas.
+      preconditions: En extern testanvändare med åtkomst till ett projekt och en intern användare.
+      expected: Markeringen extern visas på varje ställe.
+      steps:
+        - action: Öppna projektets medlemslista.
+          expected: Den externa användarens namn har markeringen extern.
+        - action: Skriv @ och de första bokstäverna i den externa användarens namn i en kommentar som den interna användaren.
+          expected: Förslaget visar markeringen extern.
+        - action: Låt den externa användaren skriva en kommentar och visa den.
+          expected: Kommentarens författare har markeringen extern.

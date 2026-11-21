@@ -1,0 +1,670 @@
+area: offline-sync
+prefix: SYNC
+group: functional
+catalogue: software
+name: {en: "Offline work and synchronisation", sv: "Arbete offline och synkronisering"}
+description:
+  en: "Clients that keep working without a network and synchronise afterwards: offline start, local storage, queued changes, delta synchronisation, conflicts, permissions and upgrades."
+  sv: "Klienter som fortsätter fungera utan nät och synkroniserar efteråt: start offline, lokal lagring, köade ändringar, synkronisering av skillnader, konflikter, behörigheter och uppgraderingar."
+
+requirements:
+  - id: SYNC-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [offline-start, service-worker, web-client]
+    refs: ["W3C Service Workers (offline caching)", "ISO/IEC 25010:2023 fault tolerance"]
+    tests: [SYNC-T01]
+    en:
+      title: Web client starts without a network
+      description: The web client MUST start and show the start page, the item lists and the items stored for offline use when the device has no network connection.
+      rationale: Field staff, travellers and users on unstable networks lose access exactly when they need it if the client only loads from the server.
+      criteria:
+        - method: test
+          text: With the network turned off after one online visit, reloading the client shows the start page and opens 3 stored items.
+          threshold: "start offline after 1 online visit"
+    sv:
+      title: Webbklienten startar utan nät
+      description: Webbklienten SKA starta och visa startsidan, objektlistorna och de objekt som lagrats för offlinebruk när enheten saknar nätanslutning.
+      rationale: Fältpersonal, resenärer och användare på instabila nät förlorar åtkomsten just när de behöver den om klienten bara laddas från servern.
+      criteria:
+        - method: test
+          text: Med nätet avstängt efter ett besök online visar en omladdning av klienten startsidan och öppnar 3 lagrade objekt.
+          threshold: "start offline efter 1 besök online"
+
+  - id: SYNC-02
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [storage, persistence, eviction]
+    refs: ["WHATWG Storage Living Standard (persistent storage)", "W3C Indexed Database API"]
+    tests: [SYNC-T02]
+    en:
+      title: Persistent local storage requested
+      description: The web client SHOULD request persistent storage from the browser and tell the user when it is refused, since the browser can then delete the offline data under storage pressure.
+      rationale: Browsers clear best-effort storage without warning, and users who rely on offline data otherwise find it gone in the field.
+      criteria:
+        - method: test
+          text: The client requests persistent storage at first offline use, and when the browser refuses, a notice says that offline data can be removed by the browser.
+          threshold: "1 request at first offline use"
+    sv:
+      title: Beständig lokal lagring begärs
+      description: Webbklienten BÖR begära beständig lagring av webbläsaren och tala om för användaren när den nekas, eftersom webbläsaren då kan radera offlinedata när lagringsutrymmet blir knappt.
+      rationale: Webbläsare rensar lagring utan beständighet utan förvarning, och användare som förlitar sig på offlinedata upptäcker annars ute i fält att den är borta.
+      criteria:
+        - method: test
+          text: Klienten begär beständig lagring vid första offlineanvändningen, och när webbläsaren nekar talar ett meddelande om att offlinedata kan tas bort av webbläsaren.
+          threshold: "1 begäran vid första offlineanvändningen"
+
+  - id: SYNC-03
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [outbox, pending-changes, transparency]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "ISO 9241-110:2020 controllability"]
+    tests: [SYNC-T03]
+    en:
+      title: Pending changes visible and discardable
+      description: The client MUST show the number of changes waiting to be sent, list each with its item and time, and let the user discard a single pending change.
+      rationale: Users need to know what has not reached the server before they hand over a device or rely on a colleague seeing their work.
+      criteria:
+        - method: test
+          text: After 3 offline edits the client shows 3 pending changes with item and time, and discarding one leaves 2 that are sent on reconnection.
+          threshold: "count matches the queue"
+    sv:
+      title: Väntande ändringar syns och kan kastas
+      description: Klienten SKA visa antalet ändringar som väntar på att skickas, lista var och en med objekt och tid och låta användaren kasta en enskild väntande ändring.
+      rationale: Användare behöver veta vad som inte har nått servern innan de lämnar ifrån sig en enhet eller räknar med att en kollega ser deras arbete.
+      criteria:
+        - method: test
+          text: Efter 3 ändringar offline visar klienten 3 väntande ändringar med objekt och tid, och om en kastas återstår 2 som skickas vid återanslutning.
+          threshold: "antalet stämmer med kön"
+
+  - id: SYNC-04
+    type: functional
+    obligation: must
+    priority: high
+    tags: [replay, ordering, idempotency]
+    refs: ["IETF draft-ietf-httpapi-idempotency-key-header", "ISO/IEC 25010:2023 integrity"]
+    tests: [SYNC-T04]
+    en:
+      title: Queued changes applied once and in order
+      description: The synchronisation MUST send queued changes in the order they were made, each with a unique idempotency key, so that a change resent after a lost answer is applied exactly once.
+      rationale: Mobile networks drop answers after the server has acted, and blind resending then creates duplicates or applies edits in the wrong order.
+      criteria:
+        - method: test
+          text: Dropping the answer to every second request during a sync of 10 queued changes still gives 10 applied changes in order and no duplicates.
+          threshold: "0 duplicates; original order kept"
+    sv:
+      title: Köade ändringar tillämpas en gång och i ordning
+      description: Synkroniseringen SKA skicka köade ändringar i den ordning de gjordes, var och en med en unik idempotensnyckel, så att en ändring som skickas om efter ett förlorat svar tillämpas exakt en gång.
+      rationale: Mobilnät tappar svar efter att servern har agerat, och att skicka om i blindo skapar då dubbletter eller tillämpar ändringar i fel ordning.
+      criteria:
+        - method: test
+          text: Om svaret på vartannat anrop tappas under en synkronisering av 10 köade ändringar blir resultatet ändå 10 tillämpade ändringar i ordning och inga dubbletter.
+          threshold: "0 dubbletter; ursprunglig ordning behålls"
+
+  - id: SYNC-05
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [delta-sync, bandwidth, sync-token]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "RFC 9110 §8.8.3 (ETag)"]
+    tests: [SYNC-T05]
+    en:
+      title: Only changes transferred on synchronisation
+      description: After a period offline, the synchronisation MUST fetch only the items changed or deleted since the client's last sync token, not the whole data set.
+      rationale: Full downloads after each reconnection waste mobile data and battery and take minutes on slow links.
+      criteria:
+        - method: test
+          text: After 1 day offline in a project of 10 000 items where 20 changed, the sync transfers those 20 items and the deletion list, below 5 % of a full download.
+          threshold: "< 5 % of a full download"
+    sv:
+      title: Bara ändringar överförs vid synkronisering
+      description: Efter en period offline SKA synkroniseringen bara hämta de objekt som har ändrats eller raderats sedan klientens senaste synkroniseringstoken, inte hela datamängden.
+      rationale: Fullständiga nedladdningar vid varje återanslutning slösar mobildata och batteri och tar minuter på långsamma förbindelser.
+      criteria:
+        - method: test
+          text: Efter 1 dag offline i ett projekt med 10 000 objekt där 20 har ändrats överför synkroniseringen de 20 objekten och listan över raderingar, under 5 % av en fullständig nedladdning.
+          threshold: "< 5 % av en fullständig nedladdning"
+
+  - id: SYNC-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [merge, conflicts, fields]
+    refs: ["RFC 9110 §13.1.1", "ISO/IEC 25010:2023 integrity"]
+    tests: [SYNC-T06]
+    en:
+      title: Edits of different fields merged
+      description: When an offline edit and a server edit of the same item changed different fields, the synchronisation MUST merge both edits without asking the user.
+      rationale: Asking the user about every concurrent edit, even when they touch different fields, trains users to click through conflict dialogs without reading them.
+      criteria:
+        - method: test
+          text: An offline change of the title and a server change of the status of the same item give an item with both changes and no conflict dialog.
+          threshold: "0 dialogs for disjoint fields"
+    sv:
+      title: Ändringar i olika fält slås samman
+      description: När en ändring offline och en ändring på servern av samma objekt gällde olika fält SKA synkroniseringen slå samman båda ändringarna utan att fråga användaren.
+      rationale: Att fråga användaren om varje samtidig ändring, även när de rör olika fält, lär användarna att klicka sig förbi konfliktdialoger utan att läsa dem.
+      criteria:
+        - method: test
+          text: En ändring offline av titeln och en ändring på servern av statusen för samma objekt ger ett objekt med båda ändringarna och ingen konfliktdialog.
+          threshold: "0 dialoger för olika fält"
+
+  - id: SYNC-07
+    type: functional
+    obligation: must
+    priority: high
+    tags: [deleted-items, conflicts, restore]
+    refs: ["ISO/IEC 25010:2023 integrity", "ISO 9241-110:2020 use error robustness"]
+    tests: [SYNC-T07]
+    en:
+      title: Edit of an item deleted on the server
+      description: When an offline edit refers to an item that was deleted on the server, the synchronisation MUST keep the offline edit, tell the user and offer to restore the item with the edit or to discard the edit.
+      rationale: Silently dropping the change loses the user's work, and silently restoring the item undoes a colleague's deliberate deletion.
+      criteria:
+        - method: test
+          text: Editing offline an item that another user deletes meanwhile gives a notice after sync with the two choices, and choosing restore brings the item back with the edit.
+          threshold: "0 silently lost edits"
+    sv:
+      title: Ändring av ett objekt som har raderats på servern
+      description: När en ändring offline gäller ett objekt som har raderats på servern SKA synkroniseringen behålla ändringen, informera användaren och erbjuda att återställa objektet med ändringen eller att kasta ändringen.
+      rationale: Att i det tysta släppa ändringen förlorar användarens arbete, och att i det tysta återställa objektet gör en kollegas avsiktliga radering ogjord.
+      criteria:
+        - method: test
+          text: Att offline ändra ett objekt som en annan användare raderar under tiden ger efter synkroniseringen ett meddelande med de två valen, och valet att återställa tar tillbaka objektet med ändringen.
+          threshold: "0 tyst förlorade ändringar"
+
+  - id: SYNC-08
+    type: functional
+    obligation: must_not
+    priority: high
+    tags: [clocks, ordering, versions]
+    refs: ["ISO/IEC 25010:2023 integrity", "RFC 9110 §8.8.3 (ETag)"]
+    tests: [SYNC-T08]
+    en:
+      title: No ordering by device clocks
+      description: The synchronisation MUST NOT decide which of two conflicting changes wins by the clocks of the devices.
+      rationale: Device clocks are often wrong by minutes or hours, and a wrong clock then silently overwrites newer work with older work.
+      criteria:
+        - method: test
+          text: A device with its clock set 2 hours ahead does not win a conflict over a change made later on another device; the conflict is resolved from server versions.
+          threshold: "0 decisions from device time"
+    sv:
+      title: Ingen ordning efter enheternas klockor
+      description: Synkroniseringen SKA INTE avgöra vilken av två motstridiga ändringar som vinner utifrån enheternas klockor.
+      rationale: Enheternas klockor går ofta fel med minuter eller timmar, och en felaktig klocka skriver då i det tysta över nyare arbete med äldre.
+      criteria:
+        - method: test
+          text: En enhet vars klocka är ställd 2 timmar fram vinner inte en konflikt över en ändring som gjordes senare på en annan enhet; konflikten avgörs utifrån serverns versioner.
+          threshold: "0 beslut utifrån enhetens tid"
+
+  - id: SYNC-09
+    type: functional
+    obligation: should
+    priority: low
+    tags: [attachments, wifi, data-usage]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "ISO 9241-110:2020 suitability for individualisation"]
+    tests: [SYNC-T09]
+    en:
+      title: Attachments for offline use on demand
+      description: The client SHOULD download attachments for offline use only when the user asks for them or, by a user setting, over Wi-Fi only.
+      rationale: Attachments are often large, and downloading all of them over a mobile connection uses up data plans and storage.
+      criteria:
+        - method: test
+          text: With the Wi-Fi only setting on and a mobile connection, item texts synchronise while attachments wait until Wi-Fi is available or the user opens one.
+          threshold: "0 attachment bytes over mobile data with the setting on"
+    sv:
+      title: Bilagor för offlinebruk vid behov
+      description: Klienten BÖR ladda ned bilagor för offlinebruk bara när användaren ber om dem eller, med en användarinställning, bara via Wi-Fi.
+      rationale: Bilagor är ofta stora, och att ladda ned alla via mobilnätet förbrukar dataabonnemang och lagring.
+      criteria:
+        - method: test
+          text: Med inställningen bara Wi-Fi påslagen och en mobilanslutning synkroniseras objektens text medan bilagorna väntar tills Wi-Fi finns eller användaren öppnar en av dem.
+          threshold: "0 byte bilagor via mobildata med inställningen påslagen"
+
+  - id: SYNC-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [permissions, revocation, local-data]
+    refs: ["OWASP MASVS-STORAGE", "ISO/IEC 27001:2022 A.5.15"]
+    tests: [SYNC-T10]
+    en:
+      title: Revoked access removes local copies
+      description: At the next synchronisation after a user loses access to an item or project, the client MUST delete the local copies of that item or project from the device.
+      rationale: Offline copies would otherwise let a user keep reading data that an administrator has deliberately taken away.
+      criteria:
+        - method: test
+          text: Removing a user from a project and letting the device synchronise deletes the project's items from local storage, verified by inspecting the store.
+          threshold: "0 local items without access after sync"
+    sv:
+      title: Återkallad åtkomst tar bort lokala kopior
+      description: Vid nästa synkronisering efter att en användare har förlorat åtkomst till ett objekt eller projekt SKA klienten radera de lokala kopiorna av objektet eller projektet från enheten.
+      rationale: Offlinekopior skulle annars låta en användare fortsätta läsa data som en administratör avsiktligt har dragit in.
+      criteria:
+        - method: test
+          text: Att ta bort en användare från ett projekt och låta enheten synkronisera raderar projektets objekt ur den lokala lagringen, kontrollerat genom att granska lagret.
+          threshold: "0 lokala objekt utan åtkomst efter synkronisering"
+
+  - id: SYNC-11
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [resume, interruption, checkpoint]
+    refs: ["ISO/IEC 25010:2023 recoverability", "ISO/IEC 25010:2023 fault tolerance"]
+    tests: [SYNC-T11]
+    en:
+      title: Interrupted synchronisation resumes
+      description: A synchronisation that is interrupted MUST resume from the last confirmed item when the connection returns instead of starting again from the beginning.
+      rationale: Long first synchronisations on poor networks never finish if each drop resets the progress.
+      criteria:
+        - method: test
+          text: Cutting the network at 60 % of an initial sync of 5 000 items and restoring it lets the sync finish while transferring at most 45 % of the items again.
+          threshold: "≤ 45 % retransferred after a drop at 60 %"
+    sv:
+      title: Avbruten synkronisering återupptas
+      description: En synkronisering som avbryts SKA fortsätta från det senast bekräftade objektet när anslutningen är tillbaka i stället för att börja om från början.
+      rationale: Långa första synkroniseringar på dåliga nät blir aldrig klara om varje avbrott nollställer förloppet.
+      criteria:
+        - method: test
+          text: Att bryta nätet vid 60 % av en första synkronisering av 5 000 objekt och återställa det låter synkroniseringen bli klar med högst 45 % av objekten överförda på nytt.
+          threshold: "≤ 45 % överförs igen efter avbrott vid 60 %"
+
+  - id: SYNC-12
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [upgrade, local-schema, migration]
+    refs: ["ISO/IEC 25010:2023 recoverability", "ISO/IEC 25010:2023 compatibility"]
+    tests: [SYNC-T12]
+    en:
+      title: Pending changes survive a client upgrade
+      description: When a client update changes the format of the local store, the client MUST migrate the stored data and keep every pending change so that it is sent after the upgrade.
+      rationale: Updates often install while a device is offline, and losing the outbox in an upgrade destroys work the user believes is saved.
+      criteria:
+        - method: test
+          text: Upgrading a client with 5 pending changes to a version with a new local format keeps the 5 changes, and they are applied on the next sync.
+          threshold: "0 lost pending changes"
+    sv:
+      title: Väntande ändringar överlever en uppgradering av klienten
+      description: När en uppdatering av klienten ändrar formatet på den lokala lagringen SKA klienten migrera lagrade data och behålla varje väntande ändring så att den skickas efter uppgraderingen.
+      rationale: Uppdateringar installeras ofta medan en enhet är offline, och att förlora utkorgen vid en uppgradering förstör arbete som användaren tror är sparat.
+      criteria:
+        - method: test
+          text: Att uppgradera en klient med 5 väntande ändringar till en version med nytt lokalt format behåller de 5 ändringarna, och de tillämpas vid nästa synkronisering.
+          threshold: "0 förlorade väntande ändringar"
+
+tests:
+  - id: SYNC-T01
+    priority: high
+    execution: manual
+    tags: [offline-start, service-worker]
+    refs: ["W3C Service Workers (offline caching)"]
+    en:
+      title: Reload of the web client without a network
+      description: Visits the client online, marks items for offline use and reloads it with the network off.
+      preconditions: A supported browser, a test user and 3 items marked for offline use.
+      expected: The client starts and shows the start page, lists and stored items offline.
+      steps:
+        - action: Sign in online, open the start page and mark 3 items for offline use.
+          expected: The client reports the items as available offline.
+        - action: Turn the network off and reload the page.
+          expected: The client starts and shows the start page and the item list.
+          data: "browser developer tools set to offline"
+        - action: Open each of the 3 items.
+          expected: Each item opens with its stored content and an offline indicator.
+    sv:
+      title: Omladdning av webbklienten utan nät
+      description: Besöker klienten online, markerar objekt för offlinebruk och laddar om med nätet avstängt.
+      preconditions: En webbläsare som stöds, en testanvändare och 3 objekt markerade för offlinebruk.
+      expected: Klienten startar och visar startsida, listor och lagrade objekt offline.
+      steps:
+        - action: Logga in online, öppna startsidan och markera 3 objekt för offlinebruk.
+          expected: Klienten rapporterar att objekten finns tillgängliga offline.
+        - action: Stäng av nätet och ladda om sidan.
+          expected: Klienten startar och visar startsidan och objektlistan.
+          data: "webbläsarens utvecklarverktyg inställda på offline"
+        - action: Öppna vart och ett av de 3 objekten.
+          expected: Varje objekt öppnas med sitt lagrade innehåll och en markering för offline.
+
+  - id: SYNC-T02
+    priority: medium
+    execution: manual
+    tags: [storage, persistence]
+    refs: ["WHATWG Storage Living Standard (persistent storage)"]
+    en:
+      title: Persistent storage request and refusal notice
+      description: Enables offline use in a browser that grants and one that refuses persistent storage.
+      preconditions: Two browser profiles, one where the site is allowed persistent storage and one where it is denied.
+      expected: The client requests persistent storage and informs the user when it is refused.
+      steps:
+        - action: Enable offline use in the profile that allows persistent storage.
+          expected: The client requests persistent storage and the browser grants it; no warning is shown.
+        - action: Enable offline use in the profile that denies it.
+          expected: A notice says that the browser may remove offline data when storage runs low.
+    sv:
+      title: Begäran om beständig lagring och meddelande vid nekande
+      description: Slår på offlinebruk i en webbläsare som beviljar och en som nekar beständig lagring.
+      preconditions: Två webbläsarprofiler, en där webbplatsen tillåts beständig lagring och en där den nekas.
+      expected: Klienten begär beständig lagring och informerar användaren när den nekas.
+      steps:
+        - action: Slå på offlinebruk i profilen som tillåter beständig lagring.
+          expected: Klienten begär beständig lagring och webbläsaren beviljar den; ingen varning visas.
+        - action: Slå på offlinebruk i profilen som nekar den.
+          expected: Ett meddelande säger att webbläsaren kan ta bort offlinedata när lagringen tar slut.
+
+  - id: SYNC-T03
+    priority: medium
+    execution: manual
+    tags: [outbox, pending-changes]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    en:
+      title: Outbox of pending changes
+      description: Makes changes offline, inspects and trims the outbox and reconnects.
+      preconditions: A client with offline use enabled and 3 stored items.
+      expected: The outbox shows each pending change and only the kept changes reach the server.
+      steps:
+        - action: Turn the network off and edit the 3 items.
+          expected: The client shows 3 pending changes.
+        - action: Open the list of pending changes.
+          expected: Each change is listed with its item and time.
+        - action: Discard the change of one item and reconnect.
+          expected: 2 changes are sent; the discarded item keeps its server version.
+    sv:
+      title: Utkorg med väntande ändringar
+      description: Gör ändringar offline, granskar och rensar utkorgen och ansluter igen.
+      preconditions: En klient med offlinebruk påslaget och 3 lagrade objekt.
+      expected: Utkorgen visar varje väntande ändring och bara de behållna ändringarna når servern.
+      steps:
+        - action: Stäng av nätet och redigera de 3 objekten.
+          expected: Klienten visar 3 väntande ändringar.
+        - action: Öppna listan över väntande ändringar.
+          expected: Varje ändring listas med sitt objekt och sin tid.
+        - action: Kasta ändringen för ett objekt och anslut igen.
+          expected: 2 ändringar skickas; det objekt vars ändring kastades behåller serverns version.
+
+  - id: SYNC-T04
+    priority: high
+    execution: automated
+    tags: [replay, idempotency]
+    refs: ["IETF draft-ietf-httpapi-idempotency-key-header"]
+    en:
+      title: Replay with lost answers
+      description: Synchronises 10 queued changes through a proxy that drops every second answer.
+      preconditions: A test client with 10 queued changes to the same item and a proxy that forwards requests but drops every second response.
+      expected: The server applies each change once and in order.
+      steps:
+        - action: Start synchronisation through the proxy.
+          expected: The client resends each request whose answer was dropped, with the same idempotency key.
+          data: "10 changes, each appending a numbered line"
+        - action: Read the item on the server.
+          expected: It holds lines 1 to 10 in order, each exactly once.
+    sv:
+      title: Återuppspelning med tappade svar
+      description: Synkroniserar 10 köade ändringar via en proxy som tappar vartannat svar.
+      preconditions: En testklient med 10 köade ändringar av samma objekt och en proxy som vidarebefordrar anrop men tappar vartannat svar.
+      expected: Servern tillämpar varje ändring en gång och i ordning.
+      steps:
+        - action: Starta synkroniseringen via proxyn.
+          expected: Klienten skickar om varje anrop vars svar tappades, med samma idempotensnyckel.
+          data: "10 ändringar som var och en lägger till en numrerad rad"
+        - action: Läs objektet på servern.
+          expected: Det innehåller raderna 1 till 10 i ordning, var och en exakt en gång.
+
+  - id: SYNC-T05
+    priority: medium
+    execution: automated
+    tags: [delta-sync, bandwidth]
+    refs: ["ISO/IEC 25010:2023 resource utilization"]
+    en:
+      title: Data transferred after a day offline
+      description: Measures the bytes of a sync after changes on the server.
+      preconditions: A project of 10 000 items, a client that has synchronised once and a way to count transferred bytes.
+      expected: The sync transfers only changed items and deletions, below 5 % of a full download.
+      steps:
+        - action: Measure the bytes of a full initial synchronisation.
+          expected: The full size is recorded.
+          data: "for example 40 MB"
+        - action: Take the client offline, change 20 items and delete 2 on the server, and after 1 day reconnect.
+          expected: The client synchronises.
+        - action: Measure the bytes of this synchronisation.
+          expected: Only the 20 items and the 2 deletions are transferred, below 5 % of the full size.
+    sv:
+      title: Överförd datamängd efter en dag offline
+      description: Mäter antalet byte i en synkronisering efter ändringar på servern.
+      preconditions: Ett projekt med 10 000 objekt, en klient som har synkroniserat en gång och ett sätt att räkna överförda byte.
+      expected: Synkroniseringen överför bara ändrade objekt och raderingar, under 5 % av en fullständig nedladdning.
+      steps:
+        - action: Mät antalet byte i en fullständig första synkronisering.
+          expected: Den fullständiga storleken noteras.
+          data: "till exempel 40 MB"
+        - action: Ta klienten offline, ändra 20 objekt och radera 2 på servern, och anslut igen efter 1 dag.
+          expected: Klienten synkroniserar.
+        - action: Mät antalet byte i denna synkronisering.
+          expected: Bara de 20 objekten och de 2 raderingarna överförs, under 5 % av den fullständiga storleken.
+
+  - id: SYNC-T06
+    priority: high
+    execution: manual
+    tags: [merge, conflicts]
+    refs: ["RFC 9110 §13.1.1"]
+    en:
+      title: Merge of edits to different fields
+      description: Edits the title offline while another user changes the status on the server.
+      preconditions: Two test users with access to the same item; the first has it stored offline.
+      expected: The item ends with both changes and no conflict dialog is shown.
+      steps:
+        - action: Take the first user's client offline and change the title.
+          expected: The change is pending.
+          data: "title \"Updated offline\""
+        - action: As the second user, change the status of the item on the server.
+          expected: The change is saved.
+          data: "status \"In review\""
+        - action: Reconnect the first client.
+          expected: The item has the new title and the new status and no conflict dialog appears.
+    sv:
+      title: Sammanslagning av ändringar i olika fält
+      description: Ändrar titeln offline medan en annan användare ändrar statusen på servern.
+      preconditions: Två testanvändare med åtkomst till samma objekt; den första har det lagrat offline.
+      expected: Objektet får båda ändringarna och ingen konfliktdialog visas.
+      steps:
+        - action: Ta den första användarens klient offline och ändra titeln.
+          expected: Ändringen väntar.
+          data: "titel \"Uppdaterad offline\""
+        - action: Ändra objektets status på servern som den andra användaren.
+          expected: Ändringen sparas.
+          data: "status \"Under granskning\""
+        - action: Anslut den första klienten igen.
+          expected: Objektet har den nya titeln och den nya statusen och ingen konfliktdialog visas.
+
+  - id: SYNC-T07
+    priority: high
+    execution: manual
+    tags: [deleted-items, conflicts]
+    refs: ["ISO/IEC 25010:2023 integrity"]
+    en:
+      title: Offline edit of an item deleted on the server
+      description: Edits an item offline that another user deletes meanwhile, then reconnects.
+      preconditions: Two test users and an item stored offline on the first user's client.
+      expected: The user is told and can restore the item with the edit or discard the edit.
+      steps:
+        - action: Take the first client offline and edit the item.
+          expected: The change is pending.
+        - action: As the second user, delete the item.
+          expected: The item is in the recycle bin.
+        - action: Reconnect the first client and choose restore with the edit.
+          expected: A notice offers restore or discard; after restore the item is back with the offline edit.
+    sv:
+      title: Ändring offline av ett objekt som har raderats på servern
+      description: Ändrar ett objekt offline som en annan användare raderar under tiden och ansluter sedan igen.
+      preconditions: Två testanvändare och ett objekt lagrat offline i den första användarens klient.
+      expected: Användaren informeras och kan återställa objektet med ändringen eller kasta ändringen.
+      steps:
+        - action: Ta den första klienten offline och ändra objektet.
+          expected: Ändringen väntar.
+        - action: Radera objektet som den andra användaren.
+          expected: Objektet ligger i papperskorgen.
+        - action: Anslut den första klienten igen och välj att återställa med ändringen.
+          expected: Ett meddelande erbjuder att återställa eller kasta; efter återställningen är objektet tillbaka med ändringen från offline.
+
+  - id: SYNC-T08
+    priority: high
+    execution: manual
+    tags: [clocks, ordering]
+    refs: ["ISO/IEC 25010:2023 integrity"]
+    en:
+      title: Device with a wrong clock in a conflict
+      description: Creates a same-field conflict where the device with the earlier real edit has a clock set ahead.
+      preconditions: Two devices with the item stored offline; the first device's clock is set 2 hours ahead.
+      expected: The outcome follows server versions and conflict rules, not device times.
+      steps:
+        - action: Offline on the first device, change the title.
+          expected: The change is stamped with the wrong device time.
+          data: "device clock +2 h"
+        - action: Later, on the second device online, change the same title.
+          expected: The server saves version 2.
+        - action: Reconnect the first device.
+          expected: The first device's change does not overwrite version 2 because of its clock; the user is shown the conflict.
+    sv:
+      title: Enhet med fel klocka i en konflikt
+      description: Skapar en konflikt i samma fält där den enhet som gjorde den tidigare ändringen har klockan ställd fram.
+      preconditions: Två enheter med objektet lagrat offline; den första enhetens klocka är ställd 2 timmar fram.
+      expected: Utfallet följer serverns versioner och konfliktregler, inte enheternas tider.
+      steps:
+        - action: Ändra titeln offline på den första enheten.
+          expected: Ändringen tidsstämplas med enhetens felaktiga tid.
+          data: "enhetens klocka +2 h"
+        - action: Ändra senare samma titel online på den andra enheten.
+          expected: Servern sparar version 2.
+        - action: Anslut den första enheten igen.
+          expected: Den första enhetens ändring skriver inte över version 2 på grund av sin klocka; användaren får se konflikten.
+
+  - id: SYNC-T09
+    priority: low
+    execution: manual
+    tags: [attachments, wifi]
+    refs: ["ISO/IEC 25010:2023 resource utilization"]
+    en:
+      title: Attachments wait for Wi-Fi
+      description: Synchronises over a mobile connection with the Wi-Fi only setting on.
+      preconditions: A phone with mobile data, the Wi-Fi only setting on and items with attachments changed on the server.
+      expected: Texts synchronise at once; attachments wait for Wi-Fi or for the user to open one.
+      steps:
+        - action: Synchronise over mobile data.
+          expected: Item texts are updated and no attachment is downloaded.
+          data: "5 changed items with 10 MB of attachments"
+        - action: Open one attachment.
+          expected: That attachment is downloaded on request.
+        - action: Connect to Wi-Fi.
+          expected: The remaining attachments are downloaded.
+    sv:
+      title: Bilagor väntar på Wi-Fi
+      description: Synkroniserar via mobilanslutning med inställningen bara Wi-Fi påslagen.
+      preconditions: En telefon med mobildata, inställningen bara Wi-Fi påslagen och objekt med bilagor som har ändrats på servern.
+      expected: Texterna synkroniseras direkt; bilagorna väntar på Wi-Fi eller på att användaren öppnar en.
+      steps:
+        - action: Synkronisera via mobildata.
+          expected: Objektens texter uppdateras och ingen bilaga laddas ned.
+          data: "5 ändrade objekt med 10 MB bilagor"
+        - action: Öppna en bilaga.
+          expected: Den bilagan laddas ned på begäran.
+        - action: Anslut till Wi-Fi.
+          expected: De övriga bilagorna laddas ned.
+
+  - id: SYNC-T10
+    priority: high
+    execution: manual
+    tags: [permissions, revocation]
+    refs: ["OWASP MASVS-STORAGE"]
+    en:
+      title: Local copies removed after loss of access
+      description: Removes a user from a project and inspects the device storage after the next sync.
+      preconditions: A test device with offline copies of a project, an administrator and a way to inspect the local store.
+      expected: The project's items are gone from the device after the sync.
+      steps:
+        - action: Confirm that the project's items are in the local store.
+          expected: The items are present.
+          data: "developer tools or a debug build to inspect the store"
+        - action: As administrator, remove the user from the project.
+          expected: The membership is removed.
+        - action: Let the device synchronise and inspect the local store.
+          expected: No item of the project remains on the device.
+    sv:
+      title: Lokala kopior tas bort efter förlorad åtkomst
+      description: Tar bort en användare från ett projekt och granskar enhetens lagring efter nästa synkronisering.
+      preconditions: En testenhet med offlinekopior av ett projekt, en administratör och ett sätt att granska den lokala lagringen.
+      expected: Projektets objekt är borta från enheten efter synkroniseringen.
+      steps:
+        - action: Kontrollera att projektets objekt finns i den lokala lagringen.
+          expected: Objekten finns.
+          data: "utvecklarverktyg eller ett felsökningsbygge för att granska lagret"
+        - action: Ta bort användaren från projektet som administratör.
+          expected: Medlemskapet tas bort.
+        - action: Låt enheten synkronisera och granska den lokala lagringen.
+          expected: Inget objekt från projektet finns kvar på enheten.
+
+  - id: SYNC-T11
+    priority: medium
+    execution: automated
+    tags: [resume, interruption]
+    refs: ["ISO/IEC 25010:2023 recoverability"]
+    en:
+      title: Resume after a dropped connection
+      description: Interrupts an initial sync at 60 % and counts what is transferred again.
+      preconditions: A new client, a project with 5 000 items and a proxy that can cut the connection.
+      expected: The sync finishes and at most 45 % of the items are transferred again.
+      steps:
+        - action: Start the initial synchronisation and cut the connection at 60 %.
+          expected: The client reports the interruption and keeps the confirmed items.
+          data: "3 000 of 5 000 items confirmed"
+        - action: Restore the connection.
+          expected: The sync resumes from the last confirmed item.
+        - action: Count the items transferred after the restore.
+          expected: At most 2 250 items are transferred and the client holds all 5 000.
+    sv:
+      title: Återupptagning efter bruten anslutning
+      description: Avbryter en första synkronisering vid 60 % och räknar vad som överförs på nytt.
+      preconditions: En ny klient, ett projekt med 5 000 objekt och en proxy som kan bryta anslutningen.
+      expected: Synkroniseringen blir klar och högst 45 % av objekten överförs på nytt.
+      steps:
+        - action: Starta den första synkroniseringen och bryt anslutningen vid 60 %.
+          expected: Klienten rapporterar avbrottet och behåller de bekräftade objekten.
+          data: "3 000 av 5 000 objekt bekräftade"
+        - action: Återställ anslutningen.
+          expected: Synkroniseringen fortsätter från det senast bekräftade objektet.
+        - action: Räkna de objekt som överförs efter återställningen.
+          expected: Högst 2 250 objekt överförs och klienten har alla 5 000.
+
+  - id: SYNC-T12
+    priority: high
+    execution: manual
+    tags: [upgrade, local-schema]
+    refs: ["ISO/IEC 25010:2023 recoverability"]
+    en:
+      title: Upgrade with pending changes
+      description: Upgrades an offline client that has pending changes to a version with a new local store format.
+      preconditions: An installed client of version N with 5 pending changes made offline and an installer of version N+1 with a changed local format.
+      expected: The 5 changes survive the upgrade and are applied at the next sync.
+      steps:
+        - action: With the device offline, install version N+1.
+          expected: The client starts and runs its local data migration.
+          data: "version N to N+1"
+        - action: Open the list of pending changes.
+          expected: The 5 changes are still listed.
+        - action: Reconnect.
+          expected: The 5 changes are applied on the server.
+    sv:
+      title: Uppgradering med väntande ändringar
+      description: Uppgraderar en klient offline som har väntande ändringar till en version med nytt format för den lokala lagringen.
+      preconditions: En installerad klient i version N med 5 väntande ändringar gjorda offline och ett installationspaket för version N+1 med ändrat lokalt format.
+      expected: De 5 ändringarna överlever uppgraderingen och tillämpas vid nästa synkronisering.
+      steps:
+        - action: Installera version N+1 medan enheten är offline.
+          expected: Klienten startar och kör sin migrering av lokala data.
+          data: "version N till N+1"
+        - action: Öppna listan över väntande ändringar.
+          expected: De 5 ändringarna finns kvar i listan.
+        - action: Anslut igen.
+          expected: De 5 ändringarna tillämpas på servern.

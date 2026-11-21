@@ -319,6 +319,126 @@ requirements:
           text: Byggpipelinen mäter startsidans komprimerade skriptstorlek och rapporterar högst 500 kB.
           threshold: "≤ 500 kB komprimerat"
 
+  - id: PERF-14
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [deployment, cold-start, response-time]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    tests: [PERF-T11]
+    en:
+      title: Response time just after a deployment
+      description: The system MUST answer 95 % of read requests within 2 seconds during the first 5 minutes after a new version is deployed.
+      rationale: Empty caches and unwarmed runtimes make the first minutes after a release slow, and every release then becomes a short degradation for users.
+      criteria:
+        - method: test
+          text: Response times measured in the 5 minutes after a deployment under steady load have a 95th percentile of at most 2 seconds.
+          threshold: "p95 ≤ 2 s in the first 5 min"
+    sv:
+      title: Svarstid strax efter en driftsättning
+      description: Systemet SKA besvara 95 % av läsanropen inom 2 sekunder under de första 5 minuterna efter att en ny version har driftsatts.
+      rationale: Tomma cacheminnen och ouppvärmda körmiljöer gör de första minuterna efter en release långsamma, och varje release blir då en kort försämring för användarna.
+      criteria:
+        - method: test
+          text: Svarstider som mäts under de 5 minuterna efter en driftsättning med jämn last har en 95:e percentil på högst 2 sekunder.
+          threshold: "p95 ≤ 2 s de första 5 min"
+
+  - id: PERF-15
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [database, query, percentile]
+    refs: ["ISO/IEC 25010:2023 time behaviour", "ISO/IEC 25010:2023 resource utilization"]
+    tests: [PERF-T12]
+    en:
+      title: Database query time in core journeys
+      description: Each database query issued by the core user journeys SHOULD complete within 100 ms at the 95th percentile with production data volume.
+      rationale: Slow single queries add up across a page and hold connections that other requests need.
+      criteria:
+        - method: test
+          text: The query statistics from a load test with production volume show no core-journey query with a 95th percentile above 100 ms.
+          threshold: "p95 ≤ 100 ms per query"
+    sv:
+      title: Frågetid mot databasen i kärnflödena
+      description: Varje databasfråga som kärnflödena ställer BÖR slutföras inom 100 ms vid 95:e percentilen med produktionens datamängd.
+      rationale: Långsamma enskilda frågor summeras över en sida och håller anslutningar som andra anrop behöver.
+      criteria:
+        - method: test
+          text: Frågestatistiken från ett lasttest med produktionens datamängd visar ingen fråga i kärnflödena med en 95:e percentil över 100 ms.
+          threshold: "p95 ≤ 100 ms per fråga"
+
+  - id: PERF-16
+    type: performance
+    obligation: must
+    priority: high
+    tags: [regression, pipeline, benchmark]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (load testing)", "ISO/IEC 25010:2023 time behaviour"]
+    tests: [PERF-T13]
+    en:
+      title: Performance regression stops the build
+      description: The build pipeline MUST fail a change whose benchmark suite runs more than 10 % slower than the baseline of the main branch.
+      rationale: Performance degrades a few per cent at a time, and a gate on every change catches the regression while its cause is still known.
+      criteria:
+        - method: test
+          text: A change that adds a deliberate delay of 15 % fails the benchmark step and a change within 5 % passes.
+          threshold: "> 10 % slower than baseline fails"
+    sv:
+      title: Prestandaförsämring stoppar bygget
+      description: Byggpipelinen SKA underkänna en ändring vars prestandatester går mer än 10 % långsammare än referensvärdet för huvudgrenen.
+      rationale: Prestanda försämras några procent i taget, och en kontroll vid varje ändring fångar försämringen medan orsaken fortfarande är känd.
+      criteria:
+        - method: test
+          text: En ändring som lägger till en avsiktlig fördröjning på 15 % underkänns i prestandasteget och en ändring inom 5 % godkänns.
+          threshold: "> 10 % långsammare än referensen underkänns"
+
+  - id: PERF-17
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [spike, recovery, load]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (spike testing)", "ISO/IEC 25010:2023 time behaviour"]
+    tests: [PERF-T14]
+    en:
+      title: Recovery after a load spike
+      description: After a load spike of three times the expected peak for 5 minutes, the system MUST return to its normal response time thresholds within 2 minutes.
+      rationale: Spikes are normal at deadlines and campaigns, and a system that stays slow after the spike has queued more work than it can clear.
+      criteria:
+        - method: test
+          text: In a spike test the 95th percentile is back within the normal threshold no later than 2 minutes after the spike ends.
+          threshold: "≤ 2 min to normal p95"
+    sv:
+      title: Återhämtning efter en lasttopp
+      description: Efter en lasttopp på tre gånger den förväntade toppen i 5 minuter SKA systemet vara tillbaka inom sina vanliga gränsvärden för svarstid inom 2 minuter.
+      rationale: Lasttoppar är vanliga vid deadlines och kampanjer, och ett system som förblir långsamt efter toppen har köat mer arbete än det hinner med.
+      criteria:
+        - method: test
+          text: I ett spiktest är 95:e percentilen tillbaka inom det vanliga gränsvärdet senast 2 minuter efter att toppen har upphört.
+          threshold: "≤ 2 min till vanlig p95"
+
+  - id: PERF-18
+    type: performance
+    obligation: must_not
+    priority: medium
+    tags: [batch, interactive, isolation]
+    refs: ["ISO/IEC 25010:2023 time behaviour", "ISO/IEC 25010:2023 resource utilization"]
+    tests: [PERF-T15]
+    en:
+      title: Batch jobs do not slow interactive use
+      description: Running the scheduled batch jobs MUST NOT raise the 95th percentile response time of interactive requests by more than 20 %.
+      rationale: Users working late or in other time zones meet the batch window, and heavy jobs that share resources make their work slow.
+      criteria:
+        - method: test
+          text: The 95th percentile of interactive requests with batch jobs running is at most 20 % above the same load without them.
+          threshold: "≤ +20 % p95"
+    sv:
+      title: Batchjobb gör inte interaktiv användning långsammare
+      description: Körningen av de schemalagda batchjobben SKA INTE höja 95:e percentilen för svarstiden för interaktiva anrop med mer än 20 %.
+      rationale: Användare som arbetar sent eller i andra tidszoner hamnar i batchfönstret, och tunga jobb som delar resurser gör deras arbete långsamt.
+      criteria:
+        - method: test
+          text: 95:e percentilen för interaktiva anrop när batchjobben körs är högst 20 % över samma last utan dem.
+          threshold: "≤ +20 % p95"
+
 tests:
   - id: PERF-T01
     priority: high
@@ -607,3 +727,155 @@ tests:
           expected: Rapporten visar startsidans komprimerade skriptstorlek, högst 500 kB.
         - action: Lägg till ett testberoende på 600 kB i startsidan på en gren och bygg den.
           expected: Budgetsteget misslyckas och anger vilken budget som överskreds.
+
+  - id: PERF-T11
+    priority: medium
+    execution: automated
+    tags: [deployment, cold-start]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    en:
+      title: Response times during a deployment
+      description: Keeps a steady load on staging while a new version is deployed and measures the first 5 minutes.
+      preconditions: Staging with production-sized data and a load script that runs read requests at a steady rate.
+      expected: The 95th percentile of reads stays at or below 2 seconds in the 5 minutes after the deployment.
+      steps:
+        - action: Start the load script at the normal rate and let it run for 10 minutes.
+          expected: The baseline 95th percentile is recorded.
+          data: "50 requests per second"
+        - action: Deploy a new version while the load continues.
+          expected: The deployment completes and the load script keeps receiving answers.
+        - action: Compute the 95th percentile of reads for the first 5 minutes after the new version took traffic.
+          expected: The value is at most 2 seconds.
+    sv:
+      title: Svarstider under en driftsättning
+      description: Håller en jämn last mot stagingmiljön medan en ny version driftsätts och mäter de första 5 minuterna.
+      preconditions: Stagingmiljö med produktionsstor datamängd och ett lastskript som kör läsanrop i jämn takt.
+      expected: 95:e percentilen för läsningar ligger på högst 2 sekunder under de 5 minuterna efter driftsättningen.
+      steps:
+        - action: Starta lastskriptet i vanlig takt och låt det gå i 10 minuter.
+          expected: Referensvärdet för 95:e percentilen noteras.
+          data: "50 anrop per sekund"
+        - action: Driftsätt en ny version medan lasten fortsätter.
+          expected: Driftsättningen slutförs och lastskriptet fortsätter att få svar.
+        - action: Beräkna 95:e percentilen för läsningar under de första 5 minuterna efter att den nya versionen tog emot trafik.
+          expected: Värdet är högst 2 sekunder.
+
+  - id: PERF-T12
+    priority: medium
+    execution: automated
+    tags: [database, query]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    en:
+      title: Slow query check under load
+      description: Collects database query statistics during a load test of the core journeys.
+      preconditions: A load test environment with production-sized data and query statistics enabled in the database.
+      expected: No query of the core journeys has a 95th percentile above 100 ms.
+      steps:
+        - action: Reset the query statistics and run the core journey load test for 30 minutes.
+          expected: The statistics hold every query executed during the test.
+        - action: List the queries ordered by 95th percentile execution time.
+          expected: No query issued by a core journey exceeds 100 ms; any that does is reported with its plan.
+          data: "statistics view of the database"
+    sv:
+      title: Kontroll av långsamma frågor under last
+      description: Samlar in frågestatistik från databasen under ett lasttest av kärnflödena.
+      preconditions: En lasttestmiljö med produktionsstor datamängd och frågestatistik påslagen i databasen.
+      expected: Ingen fråga i kärnflödena har en 95:e percentil över 100 ms.
+      steps:
+        - action: Nollställ frågestatistiken och kör lasttestet för kärnflödena i 30 minuter.
+          expected: Statistiken innehåller varje fråga som kördes under testet.
+        - action: Lista frågorna sorterade efter 95:e percentilen för körtiden.
+          expected: Ingen fråga från ett kärnflöde överstiger 100 ms; en som gör det rapporteras med sin frågeplan.
+          data: "databasens statistikvy"
+
+  - id: PERF-T13
+    priority: high
+    execution: automated
+    tags: [regression, benchmark]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (load testing)"]
+    en:
+      title: Benchmark gate rejects a slower change
+      description: Submits changes with known slowdowns to the pipeline and checks the benchmark gate.
+      preconditions: The pipeline with the benchmark step and a stored baseline from the main branch.
+      expected: A change more than 10 % slower fails and a change within the limit passes.
+      steps:
+        - action: Open a change that adds a 15 % delay to a benchmarked function.
+          expected: The benchmark step fails and reports the measured slowdown against the baseline.
+          data: "sleep added in the function under benchmark"
+        - action: Open a change with no performance effect.
+          expected: The benchmark step passes with a result within 5 % of the baseline.
+    sv:
+      title: Prestandakontrollen underkänner en långsammare ändring
+      description: Skickar ändringar med kända försämringar till pipelinen och kontrollerar prestandasteget.
+      preconditions: Pipelinen med prestandasteget och ett sparat referensvärde från huvudgrenen.
+      expected: En ändring som är mer än 10 % långsammare underkänns och en ändring inom gränsen godkänns.
+      steps:
+        - action: Öppna en ändring som lägger till 15 % fördröjning i en funktion som prestandatestas.
+          expected: Prestandasteget underkänns och rapporterar den uppmätta försämringen mot referensen.
+          data: "fördröjning tillagd i funktionen som testas"
+        - action: Öppna en ändring utan effekt på prestandan.
+          expected: Prestandasteget godkänns med ett resultat inom 5 % från referensen.
+
+  - id: PERF-T14
+    priority: medium
+    execution: automated
+    tags: [spike, load]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (spike testing)"]
+    en:
+      title: Spike test with recovery time
+      description: Raises the load to three times the expected peak for 5 minutes and measures the time to recover.
+      preconditions: A production-like environment and a load script with a configurable rate.
+      expected: The 95th percentile is back within the normal threshold within 2 minutes after the spike.
+      steps:
+        - action: Run the expected peak load for 10 minutes.
+          expected: Response times are within the normal thresholds.
+          data: "expected peak: 100 virtual users"
+        - action: Raise the load to three times the peak for 5 minutes, then drop it back.
+          expected: The system answers during the spike, with slower responses allowed.
+          data: "300 virtual users"
+        - action: Measure the 95th percentile per 30-second interval after the drop.
+          expected: The value is within the normal threshold no later than 2 minutes after the drop.
+    sv:
+      title: Spiktest med återhämtningstid
+      description: Höjer lasten till tre gånger den förväntade toppen i 5 minuter och mäter tiden till återhämtning.
+      preconditions: En produktionslik miljö och ett lastskript med inställbar takt.
+      expected: 95:e percentilen är tillbaka inom det vanliga gränsvärdet inom 2 minuter efter toppen.
+      steps:
+        - action: Kör den förväntade topplasten i 10 minuter.
+          expected: Svarstiderna ligger inom de vanliga gränsvärdena.
+          data: "förväntad topp: 100 virtuella användare"
+        - action: Höj lasten till tre gånger toppen i 5 minuter och sänk den sedan igen.
+          expected: Systemet svarar under toppen, där längre svarstider godtas.
+          data: "300 virtuella användare"
+        - action: Mät 95:e percentilen per 30-sekundersintervall efter sänkningen.
+          expected: Värdet ligger inom det vanliga gränsvärdet senast 2 minuter efter sänkningen.
+
+  - id: PERF-T15
+    priority: medium
+    execution: automated
+    tags: [batch, interactive]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    en:
+      title: Interactive response times while batch jobs run
+      description: Compares interactive response times with and without the batch jobs under the same load.
+      preconditions: A production-like environment with the scheduled batch jobs and an interactive load script.
+      expected: The 95th percentile with batch jobs is at most 20 % above the baseline.
+      steps:
+        - action: Run the interactive load for 30 minutes without batch jobs.
+          expected: The baseline 95th percentile is recorded.
+        - action: Start the nightly batch jobs and run the same interactive load for 30 minutes.
+          expected: The batch jobs run to completion or keep running for the whole period.
+        - action: Compare the 95th percentiles.
+          expected: The value with batch jobs is at most 20 % higher than the baseline.
+    sv:
+      title: Interaktiva svarstider medan batchjobb körs
+      description: Jämför interaktiva svarstider med och utan batchjobben vid samma last.
+      preconditions: En produktionslik miljö med de schemalagda batchjobben och ett interaktivt lastskript.
+      expected: 95:e percentilen med batchjobb är högst 20 % över referensvärdet.
+      steps:
+        - action: Kör den interaktiva lasten i 30 minuter utan batchjobb.
+          expected: Referensvärdet för 95:e percentilen noteras.
+        - action: Starta nattens batchjobb och kör samma interaktiva last i 30 minuter.
+          expected: Batchjobben körs klart eller pågår under hela perioden.
+        - action: Jämför 95:e percentilerna.
+          expected: Värdet med batchjobb är högst 20 % högre än referensvärdet.

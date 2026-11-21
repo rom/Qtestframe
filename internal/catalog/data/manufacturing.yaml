@@ -403,6 +403,102 @@ requirements:
           text: För en produkt som tas som stickprov stämmer programvaruförteckningen med den levererade firmwaren, supportperioden anges i produktinformationen, och protokollet från en övning med en simulerad utnyttjad sårbarhet visar en tidig varning framtagen inom 24 timmar.
           threshold: ≤ 24 h
 
+  - id: MFG-18
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [downtime, reason-codes, oee]
+    refs: ["ISO 22400-2:2014 availability", "ISO 22400-2:2014"]
+    tests: [MFG-T17]
+    en:
+      title: Reason code for each machine stop
+      description: Each machine stop longer than 2 minutes MUST be given a reason code from the configured list, by the operator or automatically from the machine signal, before the shift ends.
+      rationale: Downtime without a reason cannot be analysed, and the biggest causes of lost availability then remain unknown.
+      criteria:
+        - method: test
+          text: At the end of a test shift, each stop longer than 2 minutes has a reason code and stops without one are listed for the shift lead.
+          threshold: "100 % of stops > 2 min coded"
+    sv:
+      title: Orsakskod för varje maskinstopp
+      description: Varje maskinstopp längre än 2 minuter SKA få en orsakskod från den inställda listan, av operatören eller automatiskt från maskinens signal, innan skiftet slutar.
+      rationale: Stillestånd utan orsak går inte att analysera, och de största orsakerna till förlorad tillgänglighet förblir då okända.
+      criteria:
+        - method: test
+          text: Vid slutet av ett testskift har varje stopp längre än 2 minuter en orsakskod och stopp utan kod listas för skiftledaren.
+          threshold: "100 % av stopp > 2 min kodade"
+
+  - id: MFG-19
+    type: functional
+    obligation: must
+    priority: high
+    tags: [qualification, operators, competence]
+    refs: ["ISO 9001:2026 (competence)", "IEC 62264-2 (personnel model)"]
+    tests: [MFG-T18]
+    en:
+      title: Operator qualification checked at start
+      description: The system MUST block an operator from starting an operation that requires a qualification the operator does not hold or that has expired.
+      rationale: Work by unqualified people is a common cause of defects and injuries, and a paper matrix is not checked at the moment it matters.
+      criteria:
+        - method: test
+          text: An operator without the welding qualification is blocked from starting a welding operation, and a qualified operator can start it.
+          threshold: "0 operations started without qualification"
+    sv:
+      title: Operatörens behörighet kontrolleras vid start
+      description: Systemet SKA hindra en operatör från att starta en operation som kräver en behörighet som operatören saknar eller vars giltighet har gått ut.
+      rationale: Arbete av personer utan behörighet är en vanlig orsak till fel och skador, och en matris på papper kontrolleras inte i det ögonblick det spelar roll.
+      criteria:
+        - method: test
+          text: En operatör utan svetsbehörighet hindras från att starta en svetsoperation, och en behörig operatör kan starta den.
+          threshold: "0 operationer startade utan behörighet"
+
+  - id: MFG-20
+    type: functional
+    obligation: must_not
+    priority: high
+    tags: [calibration, measuring-equipment, quality]
+    refs: ["ISO 9001:2026 (measurement traceability)", "ISO 10012:2003"]
+    tests: [MFG-T19]
+    en:
+      title: No measurement with equipment past calibration
+      description: The system MUST NOT accept inspection results recorded with measuring equipment whose calibration has expired.
+      rationale: Results from an uncalibrated gauge can pass bad parts, and every result since the expiry then has to be investigated.
+      criteria:
+        - method: test
+          text: Recording a result with a gauge one day past its calibration date is refused with a message, and the same with a calibrated gauge is accepted.
+          threshold: "0 results with expired equipment"
+    sv:
+      title: Ingen mätning med utrustning efter kalibreringsdatum
+      description: Systemet SKA INTE godta kontrollresultat som registreras med mätutrustning vars kalibrering har gått ut.
+      rationale: Resultat från ett okalibrerat mätdon kan släppa igenom felaktiga detaljer, och varje resultat sedan utgångsdatumet måste då utredas.
+      criteria:
+        - method: test
+          text: Att registrera ett resultat med ett mätdon en dag efter dess kalibreringsdatum avvisas med ett meddelande, och samma sak med ett kalibrerat mätdon godtas.
+          threshold: "0 resultat med utgången utrustning"
+
+  - id: MFG-21
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [first-article, approval, series]
+    refs: ["ISO 9001:2026 (control of production and service provision)", "ISO 9001:2026 (release of products and services)"]
+    tests: [MFG-T20]
+    en:
+      title: First article approved before the series
+      description: After a set-up or a new revision, the system MUST hold the order until the first article has been inspected and approved by a quality inspector.
+      rationale: Faults in set-up or programs show on the first part, and running the series before checking it multiplies the scrap.
+      criteria:
+        - method: test
+          text: After a set-up the order cannot report more than 1 part until a first article approval is recorded, after which the series continues.
+          threshold: "1 part before approval"
+    sv:
+      title: Första detalj godkänns före serien
+      description: Efter en omställning eller en ny revision SKA systemet hålla ordern tills den första detaljen har kontrollerats och godkänts av en kvalitetskontrollant.
+      rationale: Fel i omställning eller program syns på första detaljen, och att köra serien innan den har kontrollerats mångdubblar kassationen.
+      criteria:
+        - method: test
+          text: Efter en omställning kan ordern inte rapportera mer än 1 detalj förrän ett godkännande av första detalj är registrerat, varefter serien fortsätter.
+          threshold: "1 detalj före godkännande"
+
 tests:
   - id: MFG-T01
     priority: high
@@ -905,3 +1001,123 @@ tests:
         - action: Läs övningsprotokollet från kännedom till framtagen tidig varning.
           expected: Den tidiga varningen till CSIRT och Enisa var klar inom 24 timmar.
           data: ≤ 24 h
+
+  - id: MFG-T17
+    priority: medium
+    execution: manual
+    tags: [downtime, reason-codes]
+    refs: ["ISO 22400-2:2014 availability"]
+    en:
+      title: Stops coded by the end of the shift
+      description: Creates machine stops during a test shift and checks the coding at shift end.
+      preconditions: A test work centre with machine signals and a reason code list.
+      expected: Each stop longer than 2 minutes has a reason code or is listed for the shift lead.
+      steps:
+        - action: Create three stops of 1, 5 and 12 minutes; let the machine signal set the code of the 12-minute stop.
+          expected: The 5- and 12-minute stops are registered for coding; the 1-minute stop is not.
+          data: "stops 1, 5 and 12 min"
+        - action: As operator, code the 5-minute stop.
+          expected: The code is saved.
+        - action: Close the shift.
+          expected: Both long stops have codes and no stop is listed as uncoded.
+    sv:
+      title: Stopp kodade vid skiftets slut
+      description: Skapar maskinstopp under ett testskift och kontrollerar kodningen vid skiftets slut.
+      preconditions: En testarbetsstation med maskinsignaler och en lista med orsakskoder.
+      expected: Varje stopp längre än 2 minuter har en orsakskod eller listas för skiftledaren.
+      steps:
+        - action: Skapa tre stopp på 1, 5 och 12 minuter; låt maskinsignalen sätta koden för stoppet på 12 minuter.
+          expected: Stoppen på 5 och 12 minuter registreras för kodning; stoppet på 1 minut gör det inte.
+          data: "stopp 1, 5 och 12 min"
+        - action: Koda stoppet på 5 minuter som operatör.
+          expected: Koden sparas.
+        - action: Stäng skiftet.
+          expected: Båda de långa stoppen har koder och inget stopp listas som okodat.
+
+  - id: MFG-T18
+    priority: high
+    execution: manual
+    tags: [qualification, operators]
+    refs: ["ISO 9001:2026 (competence)"]
+    en:
+      title: Unqualified operator blocked at start
+      description: Starts an operation that needs a qualification as an unqualified and a qualified operator.
+      preconditions: An operation that requires the welding qualification and two operators, one with a valid qualification.
+      expected: Only the qualified operator can start the operation.
+      steps:
+        - action: Sign in as the operator without the qualification and start the welding operation.
+          expected: The start is blocked with a message naming the missing qualification.
+          data: "qualification \"Welding EN ISO 9606-1\""
+        - action: Sign in as the qualified operator and start the same operation.
+          expected: The operation starts.
+    sv:
+      title: Operatör utan behörighet hindras vid start
+      description: Startar en operation som kräver behörighet som en operatör utan och en med behörighet.
+      preconditions: En operation som kräver svetsbehörighet och två operatörer, varav en med giltig behörighet.
+      expected: Bara den behöriga operatören kan starta operationen.
+      steps:
+        - action: Logga in som operatören utan behörigheten och starta svetsoperationen.
+          expected: Starten hindras med ett meddelande som anger den saknade behörigheten.
+          data: "behörighet \"Svetsning EN ISO 9606-1\""
+        - action: Logga in som den behöriga operatören och starta samma operation.
+          expected: Operationen startar.
+
+  - id: MFG-T19
+    priority: high
+    execution: manual
+    tags: [calibration, measuring-equipment]
+    refs: ["ISO 10012:2003"]
+    en:
+      title: Result with an expired gauge refused
+      description: Records inspection results with an expired and a calibrated gauge.
+      preconditions: Two gauges of the same type, one with its calibration expired yesterday, and an inspection step.
+      expected: The result with the expired gauge is refused.
+      steps:
+        - action: Record a result with the expired gauge.
+          expected: The result is refused with a message about the calibration date.
+          data: "gauge G-17, calibration expired yesterday"
+        - action: Record the same result with the calibrated gauge.
+          expected: The result is accepted.
+          data: "gauge G-18"
+    sv:
+      title: Resultat med utgånget mätdon avvisas
+      description: Registrerar kontrollresultat med ett utgånget och ett kalibrerat mätdon.
+      preconditions: Två mätdon av samma typ, varav ett vars kalibrering gick ut i går, och ett kontrollsteg.
+      expected: Resultatet med det utgångna mätdonet avvisas.
+      steps:
+        - action: Registrera ett resultat med det utgångna mätdonet.
+          expected: Resultatet avvisas med ett meddelande om kalibreringsdatumet.
+          data: "mätdon G-17, kalibreringen gick ut i går"
+        - action: Registrera samma resultat med det kalibrerade mätdonet.
+          expected: Resultatet godtas.
+          data: "mätdon G-18"
+
+  - id: MFG-T20
+    priority: medium
+    execution: manual
+    tags: [first-article, approval]
+    refs: ["ISO 9001:2026 (release of products and services)"]
+    en:
+      title: Series held until first article approval
+      description: Performs a set-up and tries to report parts before and after first article approval.
+      preconditions: A test order after a set-up and a quality inspector account.
+      expected: Only 1 part can be reported before approval.
+      steps:
+        - action: Report the first part after the set-up.
+          expected: The part is reported and the order waits for first article approval.
+        - action: Try to report a second part.
+          expected: The report is refused until approval.
+        - action: As the inspector, record the approval, then report more parts.
+          expected: The approval is recorded and further parts are accepted.
+    sv:
+      title: Serien hålls tills första detalj är godkänd
+      description: Gör en omställning och försöker rapportera detaljer före och efter godkännande av första detalj.
+      preconditions: En testorder efter en omställning och ett konto för en kvalitetskontrollant.
+      expected: Bara 1 detalj kan rapporteras före godkännandet.
+      steps:
+        - action: Rapportera den första detaljen efter omställningen.
+          expected: Detaljen rapporteras och ordern väntar på godkännande av första detalj.
+        - action: Försök rapportera en andra detalj.
+          expected: Rapporteringen avvisas tills godkännandet finns.
+        - action: Registrera godkännandet som kontrollant och rapportera sedan fler detaljer.
+          expected: Godkännandet registreras och fler detaljer godtas.

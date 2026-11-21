@@ -1,0 +1,702 @@
+area: e-government
+prefix: EGOV
+group: domain
+catalogue: software
+name: {en: "Digital public services", sv: "Digitala offentliga tjänster"}
+description:
+  en: "Online services of public authorities: European digital identity wallets and eID, electronic signatures, fully online procedures, the once-only principle, cross-border use, decisions and records."
+  sv: "Myndigheters e-tjänster: europeiska plånböcker för digital identitet och e-legitimation, elektroniska underskrifter, helt digitala förfaranden, principen om att uppgifter bara lämnas en gång, gränsöverskridande användning, beslut och diarieföring."
+
+requirements:
+  - id: EGOV-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [eudi-wallet, authentication, eidas]
+    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5f (cross-border reliance on European Digital Identity Wallets)", "Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5a"]
+    tests: [EGOV-T01]
+    en:
+      title: Sign-in with a European Digital Identity Wallet
+      description: Where a service requires strong user authentication, the service MUST accept sign-in with a European Digital Identity Wallet issued in any member state.
+      rationale: Public sector bodies are required to accept the wallets, and residents of other member states otherwise cannot use the service on equal terms.
+      criteria:
+        - method: test
+          text: A test wallet from the reference implementation signs in to the service, and the person is identified from the presented person identification data.
+          threshold: "wallets of every member state accepted"
+    sv:
+      title: Inloggning med en europeisk plånbok för digital identitet
+      description: När en tjänst kräver stark autentisering av användare SKA tjänsten godta inloggning med en europeisk plånbok för digital identitet som utfärdats i någon av EU:s medlemsstater.
+      rationale: Offentliga organ är skyldiga att godta plånböckerna, och personer från andra medlemsstater kan annars inte använda tjänsten på lika villkor.
+      criteria:
+        - method: test
+          text: En testplånbok från referensimplementationen loggar in i tjänsten, och personen identifieras utifrån de personidentifieringsuppgifter som visas upp.
+          threshold: "plånböcker från varje medlemsstat godtas"
+
+  - id: EGOV-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [eid, mutual-recognition, assurance-level]
+    refs: ["Regulation (EU) No 910/2014 Art. 6 (mutual recognition)", "Regulation (EU) No 910/2014 Art. 8 (assurance levels of electronic identification schemes)"]
+    tests: [EGOV-T02]
+    en:
+      title: Notified foreign eID accepted
+      description: The service MUST accept electronic identification means notified by other member states at an assurance level equal to or higher than the level the service requires.
+      rationale: Mutual recognition is a legal duty, and a service that accepts only national eID shuts out residents and businesses from other countries.
+      criteria:
+        - method: test
+          text: Sign-in through the national eIDAS node with a test identity of another member state at level substantial succeeds for a service that requires substantial.
+          threshold: "level ≥ required level"
+    sv:
+      title: Anmäld utländsk e-legitimation godtas
+      description: Tjänsten SKA godta medel för elektronisk identifiering som anmälts av andra medlemsstater på en tillitsnivå som är lika med eller högre än den nivå tjänsten kräver.
+      rationale: Ömsesidigt erkännande är en rättslig skyldighet, och en tjänst som bara godtar nationell e-legitimation stänger ute personer och företag från andra länder.
+      criteria:
+        - method: test
+          text: Inloggning via den nationella eIDAS-noden med en testidentitet från en annan medlemsstat på nivån väsentlig lyckas för en tjänst som kräver väsentlig.
+          threshold: "nivå ≥ krävd nivå"
+
+  - id: EGOV-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [relying-party, data-minimisation, attributes]
+    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5b (wallet-relying parties)", "GDPR Art. 5(1)(c)"]
+    tests: [EGOV-T03]
+    en:
+      title: Only registered and needed attributes requested
+      description: The service MUST request from a wallet only the attributes that it has registered as a relying party and that the procedure needs.
+      rationale: Asking for more than needed breaks data minimisation, and the wallet will show the user and may refuse requests beyond the registration.
+      criteria:
+        - method: inspection
+          text: The presentation requests of each procedure contain only attributes listed in the relying party registration and justified in the procedure description.
+          threshold: "0 unregistered attributes requested"
+    sv:
+      title: Bara registrerade och nödvändiga attribut efterfrågas
+      description: Tjänsten SKA bara begära de attribut från en plånbok som den har registrerat som förlitande part och som förfarandet behöver.
+      rationale: Att be om mer än som behövs bryter mot uppgiftsminimering, och plånboken visar det för användaren och kan neka begäranden utöver registreringen.
+      criteria:
+        - method: inspection
+          text: Begärandena om uppvisande för varje förfarande innehåller bara attribut som finns i registreringen som förlitande part och som motiveras i beskrivningen av förfarandet.
+          threshold: "0 oregistrerade attribut efterfrågas"
+
+  - id: EGOV-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [assurance-level, risk, authentication]
+    refs: ["Regulation (EU) No 910/2014 Art. 8 (assurance levels of electronic identification schemes)"]
+    tests: [EGOV-T04]
+    en:
+      title: Required assurance level per procedure
+      description: The authority MUST document for each online procedure the eID assurance level it requires, based on the harm a false identity could cause, and the service MUST refuse sign-in at a lower level.
+      rationale: Too low a level lets impostors act in someone's name, while too high a level shuts out users without a good reason.
+      criteria:
+        - method: test
+          text: A procedure documented as level high refuses a sign-in at level substantial with a message, and accepts one at level high.
+          threshold: "1 documented level per procedure"
+    sv:
+      title: Krävd tillitsnivå per förfarande
+      description: Myndigheten SKA för varje e-tjänst dokumentera vilken tillitsnivå för e-legitimation den kräver, utifrån den skada en falsk identitet kan orsaka, och tjänsten ska avvisa inloggning på en lägre nivå.
+      rationale: En för låg nivå låter bedragare agera i någons namn, medan en för hög nivå stänger ute användare utan goda skäl.
+      criteria:
+        - method: test
+          text: Ett förfarande som är dokumenterat på nivån hög avvisar en inloggning på nivån väsentlig med ett meddelande, och godtar en på nivån hög.
+          threshold: "1 dokumenterad nivå per förfarande"
+
+  - id: EGOV-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [qualified-signatures, validation, documents]
+    refs: ["Regulation (EU) No 910/2014 Art. 25(2) (legal effect of qualified electronic signatures)", "Regulation (EU) No 910/2014 Art. 32 (validation of qualified electronic signatures)"]
+    tests: [EGOV-T05]
+    en:
+      title: Qualified electronic signatures accepted and validated
+      description: Where a procedure requires a handwritten signature, the service MUST accept a qualified electronic signature from any member state and validate it, recording the validation result with the document.
+      rationale: A qualified electronic signature has the effect of a handwritten one throughout the EU, and an unvalidated signature proves nothing.
+      criteria:
+        - method: test
+          text: A PDF signed with a qualified signature from another member state is accepted and its validation report is stored; a document with a broken signature is rejected.
+          threshold: "1 validation report per signed document"
+    sv:
+      title: Kvalificerade elektroniska underskrifter godtas och valideras
+      description: När ett förfarande kräver en handskriven underskrift SKA tjänsten godta en kvalificerad elektronisk underskrift från någon av EU:s medlemsstater och validera den, med valideringsresultatet sparat tillsammans med handlingen.
+      rationale: En kvalificerad elektronisk underskrift har samma verkan som en handskriven i hela EU, och en underskrift som inte har validerats bevisar ingenting.
+      criteria:
+        - method: test
+          text: En PDF som är undertecknad med en kvalificerad underskrift från en annan medlemsstat godtas och dess valideringsrapport sparas; en handling med trasig underskrift avvisas.
+          threshold: "1 valideringsrapport per undertecknad handling"
+
+  - id: EGOV-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [fully-online, procedures, single-digital-gateway]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6 (online procedures)", "Regulation (EU) 2018/1724 (SDG) Annex II"]
+    tests: [EGOV-T06]
+    en:
+      title: Procedure completed fully online
+      description: A procedure in scope of the Single Digital Gateway MUST let the user identify, submit information and evidence, pay any fee and receive the outcome online, without a visit or paper.
+      rationale: The regulation requires these procedures to be fully online, and a single paper step forces cross-border users to travel or post documents.
+      criteria:
+        - method: demonstration
+          text: A test user completes the procedure from identification to receiving the decision without any paper or physical step.
+          threshold: "0 offline steps"
+    sv:
+      title: Förfarandet genomförs helt digitalt
+      description: Ett förfarande som omfattas av den gemensamma digitala ingången SKA låta användaren identifiera sig, lämna uppgifter och bevis, betala eventuell avgift och få utfallet digitalt, utan besök eller papper.
+      rationale: Förordningen kräver att dessa förfaranden är helt digitala, och ett enda steg på papper tvingar användare från andra länder att resa eller skicka handlingar.
+      criteria:
+        - method: demonstration
+          text: En testanvändare genomför förfarandet från identifiering till mottaget beslut utan något steg på papper eller på plats.
+          threshold: "0 steg utanför nätet"
+
+  - id: EGOV-07
+    type: functional
+    obligation: must
+    priority: high
+    tags: [once-only, evidence, preview]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 14 (technical system for the exchange of evidence)"]
+    tests: [EGOV-T07]
+    en:
+      title: Evidence fetched once-only at the user's request
+      description: When the user explicitly requests it, the service MUST fetch the evidence from the issuing authority through the once-only technical system and let the user preview the evidence before it is used.
+      rationale: Users should not have to obtain and upload documents that another authority already holds, but they keep control over what is shared about them.
+      criteria:
+        - method: test
+          text: Choosing the once-only option retrieves a test diploma from the issuing test authority, shows a preview and uses it only after the user confirms.
+          threshold: "1 preview before use"
+    sv:
+      title: Bevis hämtas enligt principen om en gång på användarens begäran
+      description: När användaren uttryckligen begär det SKA tjänsten hämta beviset från den utfärdande myndigheten via det tekniska systemet för engångsprincipen och låta användaren förhandsgranska beviset innan det används.
+      rationale: Användare ska inte behöva skaffa och ladda upp handlingar som en annan myndighet redan har, men de behåller kontrollen över vad som delas om dem.
+      criteria:
+        - method: test
+          text: Att välja alternativet för engångsprincipen hämtar ett testexamensbevis från den utfärdande testmyndigheten, visar en förhandsgranskning och använder det först när användaren bekräftar.
+          threshold: "1 förhandsgranskning före användning"
+
+  - id: EGOV-08
+    type: usability
+    obligation: must
+    priority: high
+    tags: [cross-border, addresses, identifiers]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 13 (cross-border access to online procedures)", "W3C Personal names around the world"]
+    tests: [EGOV-T08]
+    en:
+      title: Forms usable by residents of other countries
+      description: The forms of the service MUST accept foreign addresses, phone numbers with country codes and identification numbers of other countries without requiring a national identity number.
+      rationale: A form that insists on a national identity number or a domestic postcode blocks cross-border users, which the regulation does not allow.
+      criteria:
+        - method: test
+          text: A user with a Finnish address, a +358 phone number and a Finnish identity code completes the form, and no field requires a Swedish personal identity number.
+          threshold: "0 national-only mandatory fields"
+    sv:
+      title: Formulär som kan användas av personer bosatta i andra länder
+      description: Tjänstens formulär SKA godta utländska adresser, telefonnummer med landsnummer och identitetsnummer från andra länder utan att kräva ett nationellt personnummer.
+      rationale: Ett formulär som kräver ett nationellt personnummer eller ett inhemskt postnummer stänger ute användare från andra länder, vilket förordningen inte tillåter.
+      criteria:
+        - method: test
+          text: En användare med finsk adress, ett telefonnummer med +358 och en finsk personbeteckning fyller i formuläret, och inget fält kräver ett svenskt personnummer.
+          threshold: "0 obligatoriska fält bara för inhemska uppgifter"
+
+  - id: EGOV-09
+    type: functional
+    obligation: must
+    priority: high
+    tags: [decisions, reasons, appeal]
+    refs: ["Förvaltningslag (2017:900) 32 § (motivering av beslut)", "Förvaltningslag (2017:900) 33 § (underrättelse om beslut)"]
+    tests: [EGOV-T09]
+    en:
+      title: Decision with reasons and appeal information
+      description: A decision sent through the service MUST state the reasons for the decision and, when the decision can be appealed, how to appeal and the deadline for it.
+      rationale: Applicants need the reasons to understand and challenge a decision, and the law requires both the reasons and the appeal information.
+      criteria:
+        - method: inspection
+          text: A sample of 10 decisions sent through the service each states the reasons, and each appealable one gives the appeal route and deadline.
+          threshold: "10 of 10 decisions complete"
+    sv:
+      title: Beslut med motivering och information om överklagande
+      description: Ett beslut som skickas via tjänsten SKA ange skälen för beslutet och, när beslutet kan överklagas, hur man överklagar och inom vilken tid.
+      rationale: Sökande behöver skälen för att förstå och kunna angripa ett beslut, och lagen kräver både motivering och information om överklagande.
+      criteria:
+        - method: inspection
+          text: Ett urval av 10 beslut som skickats via tjänsten anger vart och ett skälen, och varje beslut som kan överklagas anger hur och inom vilken tid.
+          threshold: "10 av 10 beslut fullständiga"
+
+  - id: EGOV-10
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [feedback, quality, single-digital-gateway]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 25 (user feedback tool)"]
+    tests: [EGOV-T10]
+    en:
+      title: Feedback on each procedure page
+      description: Each online procedure page in scope of the Single Digital Gateway MUST offer a feedback tool through which users can anonymously rate the service and comment on it.
+      rationale: The regulation requires the feedback, and it shows the authority where users get stuck.
+      criteria:
+        - method: test
+          text: Each in-scope procedure page has the feedback tool, and a submitted anonymous rating appears in the authority's feedback statistics.
+          threshold: "1 tool per procedure page"
+    sv:
+      title: Synpunkter på varje sida för ett förfarande
+      description: Varje sida för ett e-förfarande som omfattas av den gemensamma digitala ingången SKA erbjuda ett verktyg där användarna anonymt kan betygsätta och kommentera tjänsten.
+      rationale: Förordningen kräver synpunkterna, och de visar myndigheten var användarna kör fast.
+      criteria:
+        - method: test
+          text: Varje sida för ett förfarande som omfattas har verktyget för synpunkter, och ett inskickat anonymt betyg syns i myndighetens statistik över synpunkter.
+          threshold: "1 verktyg per förfarandesida"
+
+  - id: EGOV-11
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [interoperability, assessment, cross-border]
+    refs: ["Regulation (EU) 2024/903 (Interoperable Europe Act) Art. 3 (interoperability assessment)"]
+    tests: [EGOV-T11]
+    en:
+      title: Interoperability assessment before a new cross-border service
+      description: Before deciding on a new or substantially modified trans-European digital public service, the authority MUST carry out and publish an interoperability assessment.
+      rationale: Services designed in isolation become barriers between member states, and the Interoperable Europe Act requires the assessment.
+      criteria:
+        - method: inspection
+          text: The decision record of the last new trans-European service refers to a published interoperability assessment dated before the decision.
+          threshold: "1 assessment before the decision"
+    sv:
+      title: Bedömning av interoperabilitet före en ny gränsöverskridande tjänst
+      description: Innan beslut fattas om en ny eller väsentligt ändrad transeuropeisk digital offentlig tjänst SKA myndigheten genomföra och publicera en bedömning av interoperabiliteten.
+      rationale: Tjänster som utformas var för sig blir hinder mellan medlemsstaterna, och förordningen om ett kompatibelt Europa kräver bedömningen.
+      criteria:
+        - method: inspection
+          text: Beslutsunderlaget för den senaste nya transeuropeiska tjänsten hänvisar till en publicerad bedömning av interoperabiliteten daterad före beslutet.
+          threshold: "1 bedömning före beslutet"
+
+  - id: EGOV-12
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [acknowledgement, receipt, case-number]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6 (online procedures)"]
+    tests: [EGOV-T12]
+    en:
+      title: Acknowledgement of receipt with a case number
+      description: When the outcome is not delivered at once, the service MUST send the user an acknowledgement of receipt with a case number and the expected handling time within 1 hour of the submission.
+      rationale: Without a receipt users cannot prove they applied in time or ask about their case.
+      criteria:
+        - method: test
+          text: A submission receives an acknowledgement with case number and expected handling time within 1 hour.
+          threshold: "≤ 1 h"
+    sv:
+      title: Mottagningsbekräftelse med diarienummer
+      description: När utfallet inte lämnas direkt SKA tjänsten skicka användaren en bekräftelse på mottagandet med diarienummer och förväntad handläggningstid inom 1 timme från inskickandet.
+      rationale: Utan en bekräftelse kan användarna inte visa att de ansökte i tid eller fråga om sitt ärende.
+      criteria:
+        - method: test
+          text: Ett inskick får en bekräftelse med diarienummer och förväntad handläggningstid inom 1 timme.
+          threshold: "≤ 1 h"
+
+  - id: EGOV-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [records, registration, public-documents]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)"]
+    tests: [EGOV-T13]
+    en:
+      title: Submissions registered as official documents
+      description: Each submission received through the service MUST be registered in the authority's records system without delay, with date of receipt, case number, sender and a short description of the content.
+      rationale: Submissions become official documents on receipt, and the registration is what makes them findable for the public and for the case officers.
+      criteria:
+        - method: test
+          text: A submission appears in the records system on the day of receipt with the four registration data.
+          threshold: "registered on the day of receipt"
+    sv:
+      title: Inskick registreras som allmänna handlingar
+      description: Varje inskick som tas emot via tjänsten SKA registreras utan dröjsmål i myndighetens diarium, med datum för mottagandet, diarienummer, avsändare och en kort beskrivning av innehållet.
+      rationale: Inskick blir allmänna handlingar när de kommer in, och registreringen är det som gör dem sökbara för allmänheten och för handläggarna.
+      criteria:
+        - method: test
+          text: Ett inskick syns i diariet samma dag som det kom in, med de fyra registreringsuppgifterna.
+          threshold: "registrerat samma dag som det kom in"
+
+tests:
+  - id: EGOV-T01
+    priority: high
+    execution: manual
+    tags: [eudi-wallet, authentication]
+    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5f (cross-border reliance on European Digital Identity Wallets)"]
+    en:
+      title: Sign-in with a test wallet
+      description: Signs in to the service with a wallet from the reference implementation.
+      preconditions: The service's test environment registered as a relying party and a test wallet with person identification data of another member state.
+      expected: The sign-in succeeds and the person is identified from the presented data.
+      steps:
+        - action: Choose sign-in with a European Digital Identity Wallet.
+          expected: A presentation request is shown as a QR code or opens the wallet on the same device.
+          data: "test wallet with person identification data from Belgium"
+        - action: Approve the presentation in the wallet.
+          expected: The service signs the user in and shows the name from the presented data.
+    sv:
+      title: Inloggning med en testplånbok
+      description: Loggar in i tjänsten med en plånbok från referensimplementationen.
+      preconditions: Tjänstens testmiljö registrerad som förlitande part och en testplånbok med personidentifieringsuppgifter från en annan medlemsstat.
+      expected: Inloggningen lyckas och personen identifieras utifrån de uppvisade uppgifterna.
+      steps:
+        - action: Välj inloggning med en europeisk plånbok för digital identitet.
+          expected: En begäran om uppvisande visas som QR-kod eller öppnar plånboken på samma enhet.
+          data: "testplånbok med personidentifieringsuppgifter från Belgien"
+        - action: Godkänn uppvisandet i plånboken.
+          expected: Tjänsten loggar in användaren och visar namnet från de uppvisade uppgifterna.
+
+  - id: EGOV-T02
+    priority: high
+    execution: manual
+    tags: [eid, mutual-recognition]
+    refs: ["Regulation (EU) No 910/2014 Art. 6 (mutual recognition)"]
+    en:
+      title: Sign-in with a foreign eID
+      description: Signs in through the national eIDAS node with a test identity of another member state.
+      preconditions: The service connected to the test environment of the national eIDAS node and test identities at levels low and substantial.
+      expected: The substantial identity is accepted; the low one is refused for a substantial service.
+      steps:
+        - action: Choose foreign eID and the other member state, and sign in with the substantial test identity.
+          expected: The service signs the user in with the attributes received from the node.
+          data: "test identity at level substantial"
+        - action: Repeat with the low test identity.
+          expected: The sign-in is refused with a message about the required level.
+          data: "test identity at level low"
+    sv:
+      title: Inloggning med utländsk e-legitimation
+      description: Loggar in via den nationella eIDAS-noden med en testidentitet från en annan medlemsstat.
+      preconditions: Tjänsten ansluten till testmiljön för den nationella eIDAS-noden och testidentiteter på nivåerna låg och väsentlig.
+      expected: Identiteten på nivån väsentlig godtas; den på nivån låg avvisas för en tjänst som kräver väsentlig.
+      steps:
+        - action: Välj utländsk e-legitimation och den andra medlemsstaten, och logga in med testidentiteten på nivån väsentlig.
+          expected: Tjänsten loggar in användaren med de attribut som tagits emot från noden.
+          data: "testidentitet på nivån väsentlig"
+        - action: Upprepa med testidentiteten på nivån låg.
+          expected: Inloggningen avvisas med ett meddelande om den krävda nivån.
+          data: "testidentitet på nivån låg"
+
+  - id: EGOV-T03
+    priority: high
+    execution: manual
+    tags: [relying-party, data-minimisation]
+    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5b (wallet-relying parties)"]
+    en:
+      title: Presentation requests against the registration
+      description: Compares the attributes requested in each procedure with the relying party registration.
+      preconditions: The relying party registration, the procedure descriptions and logs of presentation requests.
+      expected: Each requested attribute is registered and justified.
+      steps:
+        - action: Capture the presentation request of each procedure.
+          expected: The requested attributes are listed.
+          data: "for example family name, given name, date of birth"
+        - action: Compare the attributes with the registration and the procedure description.
+          expected: Each requested attribute is registered and justified for that procedure.
+    sv:
+      title: Begäranden om uppvisande mot registreringen
+      description: Jämför de attribut som begärs i varje förfarande med registreringen som förlitande part.
+      preconditions: Registreringen som förlitande part, beskrivningarna av förfarandena och loggar över begäranden om uppvisande.
+      expected: Varje begärt attribut är registrerat och motiverat.
+      steps:
+        - action: Fånga begäran om uppvisande för varje förfarande.
+          expected: De begärda attributen listas.
+          data: "till exempel efternamn, förnamn, födelsedatum"
+        - action: Jämför attributen med registreringen och beskrivningen av förfarandet.
+          expected: Varje begärt attribut är registrerat och motiverat för förfarandet.
+
+  - id: EGOV-T04
+    priority: high
+    execution: manual
+    tags: [assurance-level, authentication]
+    refs: ["Regulation (EU) No 910/2014 Art. 8 (assurance levels of electronic identification schemes)"]
+    en:
+      title: Assurance level enforced for a high-level procedure
+      description: Signs in at two levels to a procedure documented as requiring level high.
+      preconditions: A procedure documented as level high and test identities at levels substantial and high.
+      expected: Only the high-level sign-in reaches the procedure.
+      steps:
+        - action: Read the documented level and its justification for the procedure.
+          expected: Level high is documented with the harm a false identity could cause.
+        - action: Sign in at level substantial and open the procedure.
+          expected: Access is refused with a message about the required level.
+        - action: Sign in at level high and open the procedure.
+          expected: The procedure opens.
+    sv:
+      title: Tillitsnivå upprätthålls för ett förfarande på hög nivå
+      description: Loggar in på två nivåer i ett förfarande som är dokumenterat att kräva nivån hög.
+      preconditions: Ett förfarande dokumenterat på nivån hög och testidentiteter på nivåerna väsentlig och hög.
+      expected: Bara inloggningen på nivån hög når förfarandet.
+      steps:
+        - action: Läs den dokumenterade nivån och dess motivering för förfarandet.
+          expected: Nivån hög är dokumenterad med den skada en falsk identitet skulle kunna orsaka.
+        - action: Logga in på nivån väsentlig och öppna förfarandet.
+          expected: Åtkomsten avvisas med ett meddelande om den krävda nivån.
+        - action: Logga in på nivån hög och öppna förfarandet.
+          expected: Förfarandet öppnas.
+
+  - id: EGOV-T05
+    priority: high
+    execution: manual
+    tags: [qualified-signatures, validation]
+    refs: ["Regulation (EU) No 910/2014 Art. 32 (validation of qualified electronic signatures)"]
+    en:
+      title: Foreign qualified signature on an uploaded document
+      description: Uploads documents with a valid foreign qualified signature and with a broken signature.
+      preconditions: "Two test PDFs: one signed with a qualified signature from a trust service provider of another member state, one with the signed content altered."
+      expected: The valid one is accepted with a stored validation report; the altered one is rejected.
+      steps:
+        - action: Upload the validly signed PDF.
+          expected: The document is accepted and a validation report with the signer and the trust list status is stored with it.
+          data: "qualified certificate from a trust service provider in the EU trusted lists"
+        - action: Upload the altered PDF.
+          expected: The document is rejected with a message that the signature is not valid.
+    sv:
+      title: Utländsk kvalificerad underskrift på en uppladdad handling
+      description: Laddar upp handlingar med en giltig utländsk kvalificerad underskrift och med en trasig underskrift.
+      preconditions: "Två test-PDF:er: en undertecknad med en kvalificerad underskrift från en betrodd tjänsteleverantör i en annan medlemsstat, en där det undertecknade innehållet har ändrats."
+      expected: Den giltiga godtas med en sparad valideringsrapport; den ändrade avvisas.
+      steps:
+        - action: Ladda upp den giltigt undertecknade PDF-filen.
+          expected: Handlingen godtas och en valideringsrapport med undertecknaren och status i förtroendelistan sparas med den.
+          data: "kvalificerat certifikat från en tjänsteleverantör i EU:s förtroendelistor"
+        - action: Ladda upp den ändrade PDF-filen.
+          expected: Handlingen avvisas med ett meddelande om att underskriften inte är giltig.
+
+  - id: EGOV-T06
+    priority: high
+    execution: manual
+    tags: [fully-online, procedures]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6 (online procedures)"]
+    en:
+      title: Procedure from start to decision online
+      description: Completes an in-scope procedure as a test user and notes every step.
+      preconditions: A test user with eID, a test payment method and an in-scope procedure in the test environment.
+      expected: Each step from identification to the decision is online.
+      steps:
+        - action: Sign in and fill in the application.
+          expected: Identification and the form are online.
+        - action: Upload the evidence and pay the fee.
+          expected: Evidence upload and payment are online.
+          data: "test card from the payment provider"
+        - action: Wait for the test case officer's decision.
+          expected: The decision is delivered in the service's inbox; no step required paper or a visit.
+    sv:
+      title: Förfarande från start till beslut digitalt
+      description: Genomför ett förfarande som omfattas som testanvändare och noterar varje steg.
+      preconditions: En testanvändare med e-legitimation, ett testbetalsätt och ett förfarande som omfattas i testmiljön.
+      expected: Varje steg från identifiering till beslut sker digitalt.
+      steps:
+        - action: Logga in och fyll i ansökan.
+          expected: Identifiering och formulär sker digitalt.
+        - action: Ladda upp bevisen och betala avgiften.
+          expected: Uppladdning av bevis och betalning sker digitalt.
+          data: "testkort från betaltjänsten"
+        - action: Vänta på testhandläggarens beslut.
+          expected: Beslutet levereras i tjänstens inkorg; inget steg krävde papper eller besök.
+
+  - id: EGOV-T07
+    priority: high
+    execution: manual
+    tags: [once-only, evidence]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 14 (technical system for the exchange of evidence)"]
+    en:
+      title: Evidence retrieved through the once-only system
+      description: Chooses the once-only option for a piece of evidence and checks the preview and confirmation.
+      preconditions: The service connected to the once-only technical system test environment and a test evidence provider holding a diploma for the test user.
+      expected: The evidence is fetched, previewed and used only after confirmation.
+      steps:
+        - action: Choose to fetch the diploma through the once-only system.
+          expected: The service asks for the explicit request and redirects to the preview space.
+          data: "test diploma from the evidence provider"
+        - action: Look at the preview and decline.
+          expected: The evidence is not used and the user can upload a document instead.
+        - action: Repeat and confirm.
+          expected: The evidence is attached to the application.
+    sv:
+      title: Bevis hämtat via systemet för engångsprincipen
+      description: Väljer alternativet för engångsprincipen för ett bevis och kontrollerar förhandsgranskning och bekräftelse.
+      preconditions: Tjänsten ansluten till testmiljön för det tekniska systemet för engångsprincipen och en testleverantör av bevis som har ett examensbevis för testanvändaren.
+      expected: Beviset hämtas, förhandsgranskas och används först efter bekräftelse.
+      steps:
+        - action: Välj att hämta examensbeviset via systemet för engångsprincipen.
+          expected: Tjänsten ber om den uttryckliga begäran och skickar användaren vidare till förhandsgranskningen.
+          data: "testexamensbevis från bevisleverantören"
+        - action: Titta på förhandsgranskningen och avböj.
+          expected: Beviset används inte och användaren kan i stället ladda upp en handling.
+        - action: Upprepa och bekräfta.
+          expected: Beviset bifogas ansökan.
+
+  - id: EGOV-T08
+    priority: high
+    execution: manual
+    tags: [cross-border, addresses]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 13 (cross-border access to online procedures)"]
+    en:
+      title: Application by a resident of another country
+      description: Fills in the application with foreign contact and identity data.
+      preconditions: A test user signed in with a foreign eID.
+      expected: The form accepts the foreign data and no field requires Swedish-only data.
+      steps:
+        - action: Enter a Finnish address with its postcode format.
+          expected: The address is accepted.
+          data: "Mannerheimintie 1, 00100 Helsinki, Finland"
+        - action: Enter a phone number with country code and a Finnish identity code.
+          expected: Both are accepted.
+          data: "+358 40 123 4567; Finnish test identity code"
+        - action: Submit the application.
+          expected: The application is submitted without a request for a Swedish personal identity number.
+    sv:
+      title: Ansökan från en person bosatt i ett annat land
+      description: Fyller i ansökan med utländska kontakt- och identitetsuppgifter.
+      preconditions: En testanvändare inloggad med utländsk e-legitimation.
+      expected: Formuläret godtar de utländska uppgifterna och inget fält kräver uppgifter som bara finns i Sverige.
+      steps:
+        - action: Ange en finsk adress med dess format för postnummer.
+          expected: Adressen godtas.
+          data: "Mannerheimintie 1, 00100 Helsingfors, Finland"
+        - action: Ange ett telefonnummer med landsnummer och en finsk personbeteckning.
+          expected: Båda godtas.
+          data: "+358 40 123 4567; finsk testpersonbeteckning"
+        - action: Skicka in ansökan.
+          expected: Ansökan skickas in utan att ett svenskt personnummer efterfrågas.
+
+  - id: EGOV-T09
+    priority: medium
+    execution: manual
+    tags: [decisions, appeal]
+    refs: ["Förvaltningslag (2017:900) 33 § (underrättelse om beslut)"]
+    en:
+      title: Content of sent decisions
+      description: Reviews a sample of decisions sent through the service.
+      preconditions: 10 decisions sent through the service in the last month, of which some can be appealed.
+      expected: Each states reasons and each appealable one gives appeal route and deadline.
+      steps:
+        - action: Read the reasons in each decision.
+          expected: Each decision states the reasons for the outcome.
+        - action: Check the appealable decisions for appeal information.
+          expected: Each gives how to appeal and the deadline.
+          data: "for example 3 weeks from receipt"
+    sv:
+      title: Innehållet i skickade beslut
+      description: Granskar ett urval av beslut som skickats via tjänsten.
+      preconditions: 10 beslut som skickats via tjänsten den senaste månaden, varav några kan överklagas.
+      expected: Vart och ett anger skäl och varje beslut som kan överklagas anger hur och inom vilken tid.
+      steps:
+        - action: Läs skälen i varje beslut.
+          expected: Varje beslut anger skälen för utfallet.
+        - action: Kontrollera att besluten som kan överklagas innehåller information om överklagande.
+          expected: Vart och ett anger hur man överklagar och tidsfristen.
+          data: "till exempel 3 veckor från mottagandet"
+
+  - id: EGOV-T10
+    priority: medium
+    execution: manual
+    tags: [feedback, quality]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 25 (user feedback tool)"]
+    en:
+      title: Feedback tool on procedure pages
+      description: Uses the feedback tool on an in-scope procedure page.
+      preconditions: The list of in-scope procedure pages and access to the authority's feedback statistics.
+      expected: Each page has the tool and an anonymous rating reaches the statistics.
+      steps:
+        - action: Open each in-scope procedure page.
+          expected: Each page shows the feedback tool.
+        - action: Submit an anonymous rating with a comment on one page.
+          expected: The submission is confirmed without asking for identity.
+          data: "rating 2 of 5, comment \"unclear fee\""
+        - action: Open the feedback statistics the next day.
+          expected: The rating and comment appear for that procedure.
+    sv:
+      title: Verktyg för synpunkter på sidorna för förfaranden
+      description: Använder verktyget för synpunkter på en sida för ett förfarande som omfattas.
+      preconditions: Listan över sidor för förfaranden som omfattas och åtkomst till myndighetens statistik över synpunkter.
+      expected: Varje sida har verktyget och ett anonymt betyg når statistiken.
+      steps:
+        - action: Öppna varje sida för ett förfarande som omfattas.
+          expected: Varje sida visar verktyget för synpunkter.
+        - action: Skicka in ett anonymt betyg med en kommentar på en sida.
+          expected: Inskicket bekräftas utan att identitet efterfrågas.
+          data: "betyg 2 av 5, kommentar \"otydlig avgift\""
+        - action: Öppna statistiken över synpunkter nästa dag.
+          expected: Betyget och kommentaren syns för förfarandet.
+
+  - id: EGOV-T11
+    priority: medium
+    execution: manual
+    tags: [interoperability, assessment]
+    refs: ["Regulation (EU) 2024/903 (Interoperable Europe Act) Art. 3 (interoperability assessment)"]
+    en:
+      title: Interoperability assessment in the decision record
+      description: Checks the decision record of the latest new trans-European service.
+      preconditions: The decision record and the authority's publication of interoperability assessments.
+      expected: A published assessment exists and is dated before the decision.
+      steps:
+        - action: Open the decision record of the latest new trans-European digital public service.
+          expected: The record refers to an interoperability assessment.
+        - action: Find the published assessment and compare dates.
+          expected: The assessment is published and dated before the decision.
+    sv:
+      title: Bedömning av interoperabilitet i beslutsunderlaget
+      description: Kontrollerar beslutsunderlaget för den senaste nya transeuropeiska tjänsten.
+      preconditions: Beslutsunderlaget och myndighetens publicering av bedömningar av interoperabilitet.
+      expected: En publicerad bedömning finns och är daterad före beslutet.
+      steps:
+        - action: Öppna beslutsunderlaget för den senaste nya transeuropeiska digitala offentliga tjänsten.
+          expected: Underlaget hänvisar till en bedömning av interoperabiliteten.
+        - action: Leta upp den publicerade bedömningen och jämför datumen.
+          expected: Bedömningen är publicerad och daterad före beslutet.
+
+  - id: EGOV-T12
+    priority: medium
+    execution: manual
+    tags: [acknowledgement, receipt]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6 (online procedures)"]
+    en:
+      title: Acknowledgement after submission
+      description: Submits an application whose outcome is not immediate and waits for the acknowledgement.
+      preconditions: A test user and a procedure handled by a case officer.
+      expected: An acknowledgement with case number and expected handling time arrives within 1 hour.
+      steps:
+        - action: Submit the application and note the time.
+          expected: The submission is confirmed on screen.
+        - action: Check the user's inbox and e-mail.
+          expected: Within 1 hour an acknowledgement arrives with the case number and the expected handling time.
+    sv:
+      title: Bekräftelse efter inskick
+      description: Skickar in en ansökan vars utfall inte lämnas direkt och väntar på bekräftelsen.
+      preconditions: En testanvändare och ett förfarande som handläggs av en handläggare.
+      expected: En bekräftelse med diarienummer och förväntad handläggningstid kommer inom 1 timme.
+      steps:
+        - action: Skicka in ansökan och notera tiden.
+          expected: Inskicket bekräftas på skärmen.
+        - action: Kontrollera användarens inkorg och e-post.
+          expected: Inom 1 timme kommer en bekräftelse med diarienummer och förväntad handläggningstid.
+
+  - id: EGOV-T13
+    priority: high
+    execution: manual
+    tags: [records, registration]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)"]
+    en:
+      title: Submission registered in the records system
+      description: Submits an application and looks it up in the records system.
+      preconditions: A test user and read access to the authority's test records system.
+      expected: The submission is registered the same day with the four registration data.
+      steps:
+        - action: Submit an application with an attachment.
+          expected: The submission is confirmed.
+        - action: Search the records system for the submission on the same day.
+          expected: It is registered with date of receipt, case number, sender and a short description.
+    sv:
+      title: Inskick registrerat i diariet
+      description: Skickar in en ansökan och söker upp den i diariet.
+      preconditions: En testanvändare och läsbehörighet till myndighetens testdiarium.
+      expected: Inskicket är registrerat samma dag med de fyra registreringsuppgifterna.
+      steps:
+        - action: Skicka in en ansökan med en bilaga.
+          expected: Inskicket bekräftas.
+        - action: Sök efter inskicket i diariet samma dag.
+          expected: Det är registrerat med datum för mottagandet, diarienummer, avsändare och en kort beskrivning.

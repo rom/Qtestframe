@@ -303,6 +303,126 @@ requirements:
           text: Övningsrapporter finns för de två senaste halvårsperioderna, en för varje typ av scenario, med iakttagelser och åtgärder.
           threshold: "≥ 1 övning per 6 månader"
 
+  - id: INC-13
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [communication, status-updates, severity]
+    refs: ["ITIL 4 Incident management (communication)", "Google SRE Book ch. 14 (managing incidents)"]
+    tests: [INC-T09]
+    en:
+      title: Regular status updates during a major incident
+      description: During a severity 1 incident the incident commander MUST publish a status update to affected customers at least every 30 minutes until the incident is resolved.
+      rationale: Silence during an outage makes customers assume the worst and floods support with questions that a scheduled update answers.
+      criteria:
+        - method: inspection
+          text: The timeline of the last 3 severity 1 incidents shows no gap longer than 30 minutes between customer updates.
+          threshold: "≤ 30 min between updates"
+    sv:
+      title: Regelbundna lägesuppdateringar under en allvarlig incident
+      description: Under en incident med allvarlighetsgrad 1 SKA incidentledaren publicera en lägesuppdatering till berörda kunder minst var 30:e minut tills incidenten är löst.
+      rationale: Tystnad under ett avbrott får kunderna att tro det värsta och fyller supporten med frågor som en schemalagd uppdatering hade besvarat.
+      criteria:
+        - method: inspection
+          text: Tidslinjen för de 3 senaste incidenterna med allvarlighetsgrad 1 visar inget uppehåll längre än 30 minuter mellan kunduppdateringarna.
+          threshold: "≤ 30 min mellan uppdateringar"
+
+  - id: INC-14
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [out-of-band, communication, channel]
+    refs: ["ISO/IEC 27001:2022 A.5.24 (information security incident management planning and preparation)", "NIST SP 800-61 Rev. 3 (preparation)"]
+    tests: [INC-T10]
+    en:
+      title: Incident communication independent of affected systems
+      description: The incident team MUST have a communication channel and access to the incident plan that keep working when the company's own e-mail, chat and identity provider are down.
+      rationale: An incident that takes down the tools the team uses to coordinate also stops the response, unless an independent channel exists.
+      criteria:
+        - method: demonstration
+          text: In an exercise with e-mail, chat and single sign-on unavailable, the team reaches every on-call member and opens the plan within 15 minutes.
+          threshold: "≤ 15 min to assemble the team"
+    sv:
+      title: Incidentkommunikation oberoende av drabbade system
+      description: Incidentgruppen SKA ha en kommunikationskanal och tillgång till incidentplanen som fortsätter fungera när företagets egen e-post, chatt och identitetstjänst ligger nere.
+      rationale: En incident som slår ut verktygen som gruppen samordnar sig med stoppar också hanteringen, om det inte finns en oberoende kanal.
+      criteria:
+        - method: demonstration
+          text: Vid en övning där e-post, chatt och enkel inloggning inte är tillgängliga når gruppen varje jourhavande och öppnar planen inom 15 minuter.
+          threshold: "≤ 15 min till samlad grupp"
+
+  - id: INC-15
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [suppliers, escalation, contacts]
+    refs: ["ISO/IEC 27001:2022 A.5.24", "ISO/IEC 27036-3:2023", "Regulation (EU) 2022/2554 (DORA) Art. 28"]
+    tests: [INC-T11]
+    en:
+      title: Escalation contacts of critical suppliers
+      description: The incident plan MUST list for each critical third-party supplier a 24-hour contact, the escalation path and the contract reference, checked at least every 6 months.
+      rationale: When a supplier's fault causes the incident, minutes are lost hunting for a support number that the plan could have given.
+      criteria:
+        - method: inspection
+          text: Each critical supplier in the supplier register has a 24-hour contact in the plan with a check date not older than 6 months.
+          threshold: "check interval ≤ 6 months"
+    sv:
+      title: Eskaleringskontakter till kritiska leverantörer
+      description: Incidentplanen SKA för varje kritisk tredjepartsleverantör ange en kontakt dygnet runt, eskaleringsvägen och avtalsreferensen, kontrollerade minst var 6:e månad.
+      rationale: När ett leverantörsfel orsakar incidenten går minuter förlorade på att leta efter ett supportnummer som planen hade kunnat ge.
+      criteria:
+        - method: inspection
+          text: Varje kritisk leverantör i leverantörsregistret har en kontakt dygnet runt i planen med ett kontrolldatum som inte är äldre än 6 månader.
+          threshold: "kontrollintervall ≤ 6 månader"
+
+  - id: INC-16
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [customer-report, post-incident, communication]
+    refs: ["ITIL 4 Incident management (communication)", "ISO/IEC 27001:2022 A.5.27 (learning from information security incidents)"]
+    tests: [INC-T12]
+    en:
+      title: Written incident report to customers
+      description: After a severity 1 incident the supplier MUST give affected customers a written report with cause, impact, duration and corrective actions within 10 working days.
+      rationale: Customers need the facts for their own risk management and reporting, and a written report shows that the cause is understood.
+      criteria:
+        - method: inspection
+          text: For each severity 1 incident of the last 12 months, a customer report with the four parts was sent within 10 working days.
+          threshold: "≤ 10 working days"
+    sv:
+      title: Skriftlig incidentrapport till kunderna
+      description: Efter en incident med allvarlighetsgrad 1 SKA leverantören ge berörda kunder en skriftlig rapport med orsak, påverkan, varaktighet och åtgärder inom 10 arbetsdagar.
+      rationale: Kunderna behöver fakta för sin egen riskhantering och rapportering, och en skriftlig rapport visar att orsaken är förstådd.
+      criteria:
+        - method: inspection
+          text: För varje incident med allvarlighetsgrad 1 de senaste 12 månaderna skickades en kundrapport med de fyra delarna inom 10 arbetsdagar.
+          threshold: "≤ 10 arbetsdagar"
+
+  - id: INC-17
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [metrics, detection, recovery]
+    refs: ["ITIL 4 Incident management", "ISO/IEC 27035-1:2023"]
+    tests: [INC-T13]
+    en:
+      title: Detection and recovery times reported
+      description: The supplier SHOULD report every month the median time from start to detection and from detection to recovery for the incidents of the month, split by severity.
+      rationale: Without these figures nobody knows whether monitoring and response are getting better or worse.
+      criteria:
+        - method: inspection
+          text: The monthly report gives both medians per severity level, computed from the incident timelines.
+          threshold: "2 medians per severity per month"
+    sv:
+      title: Tider för upptäckt och återställning redovisas
+      description: Leverantören BÖR varje månad redovisa mediantiden från start till upptäckt och från upptäckt till återställning för månadens incidenter, uppdelat per allvarlighetsgrad.
+      rationale: Utan dessa siffror vet ingen om övervakningen och hanteringen blir bättre eller sämre.
+      criteria:
+        - method: inspection
+          text: Månadsrapporten anger båda medianerna per allvarlighetsgrad, beräknade ur incidenternas tidslinjer.
+          threshold: "2 medianer per allvarlighetsgrad och månad"
+
 tests:
   - id: INC-T01
     priority: high
@@ -563,3 +683,143 @@ tests:
           expected: Varje halvårsperiod har minst en övning, och både ett scenario för driftavbrott och ett för säkerhetsintrång förekommer.
         - action: Jämför iakttagelserna i rapporten med åtgärdslistan för varje övning.
           expected: Varje iakttagelse har en åtgärd med en ansvarig.
+
+  - id: INC-T09
+    priority: high
+    execution: manual
+    tags: [communication, status-updates]
+    refs: ["ITIL 4 Incident management (communication)"]
+    en:
+      title: Update interval in severity 1 timelines
+      description: Reads the timelines of recent severity 1 incidents and measures the gaps between customer updates.
+      preconditions: The timelines and status page history of the last 3 severity 1 incidents.
+      expected: No gap between consecutive customer updates exceeds 30 minutes.
+      steps:
+        - action: List the times of each customer update for each incident from start to resolution.
+          expected: The list covers the whole duration of each incident.
+        - action: Compute the largest gap per incident.
+          expected: Each largest gap is at most 30 minutes.
+    sv:
+      title: Uppdateringsintervall i tidslinjer för allvarlighetsgrad 1
+      description: Läser tidslinjerna för färska incidenter med allvarlighetsgrad 1 och mäter uppehållen mellan kunduppdateringarna.
+      preconditions: Tidslinjerna och statussidans historik för de 3 senaste incidenterna med allvarlighetsgrad 1.
+      expected: Inget uppehåll mellan två kunduppdateringar överstiger 30 minuter.
+      steps:
+        - action: Lista tiderna för varje kunduppdatering för varje incident från start till lösning.
+          expected: Listan täcker hela incidentens varaktighet.
+        - action: Beräkna det längsta uppehållet per incident.
+          expected: Varje längsta uppehåll är högst 30 minuter.
+
+  - id: INC-T10
+    priority: high
+    execution: manual
+    tags: [out-of-band, exercise]
+    refs: ["NIST SP 800-84"]
+    en:
+      title: Exercise without the company's own communication tools
+      description: Runs a short exercise in which e-mail, chat and single sign-on are declared unavailable.
+      preconditions: The out-of-band channel, an offline copy of the incident plan and the current on-call list.
+      expected: The team is assembled on the independent channel with the plan open within 15 minutes.
+      steps:
+        - action: Announce the exercise scenario and start the clock.
+          expected: The on-call engineer starts the call-out using only the out-of-band channel.
+          data: "scenario: identity provider and chat down"
+        - action: Record when each on-call member joins and when the plan is opened.
+          expected: Every member joins and the plan is open within 15 minutes.
+    sv:
+      title: Övning utan företagets egna kommunikationsverktyg
+      description: Genomför en kort övning där e-post, chatt och enkel inloggning förklaras otillgängliga.
+      preconditions: Den oberoende kanalen, en frånkopplad kopia av incidentplanen och den aktuella jourlistan.
+      expected: Gruppen är samlad i den oberoende kanalen med planen öppen inom 15 minuter.
+      steps:
+        - action: Meddela övningsscenariot och starta klockan.
+          expected: Den jourhavande teknikern startar inkallningen med enbart den oberoende kanalen.
+          data: "scenario: identitetstjänst och chatt nere"
+        - action: Notera när varje jourhavande ansluter och när planen öppnas.
+          expected: Varje medlem ansluter och planen är öppen inom 15 minuter.
+
+  - id: INC-T11
+    priority: medium
+    execution: manual
+    tags: [suppliers, escalation]
+    refs: ["ISO/IEC 27001:2022 A.5.24"]
+    en:
+      title: Critical supplier contacts in the incident plan
+      description: Compares the supplier register with the plan and tests one contact.
+      preconditions: The supplier register with criticality and the current incident plan.
+      expected: Each critical supplier has a checked 24-hour contact in the plan.
+      steps:
+        - action: List the critical suppliers in the register.
+          expected: The list is produced.
+        - action: Look up each supplier in the incident plan.
+          expected: Each has a 24-hour contact, an escalation path, a contract reference and a check date within 6 months.
+        - action: Call one contact outside office hours as a test.
+          expected: The supplier answers and confirms the escalation path.
+          data: "test call agreed with the supplier"
+    sv:
+      title: Kritiska leverantörers kontakter i incidentplanen
+      description: Jämför leverantörsregistret med planen och provar en kontakt.
+      preconditions: Leverantörsregistret med kritikalitet och den aktuella incidentplanen.
+      expected: Varje kritisk leverantör har en kontrollerad kontakt dygnet runt i planen.
+      steps:
+        - action: Lista de kritiska leverantörerna i registret.
+          expected: Listan tas fram.
+        - action: Slå upp varje leverantör i incidentplanen.
+          expected: Var och en har en kontakt dygnet runt, en eskaleringsväg, en avtalsreferens och ett kontrolldatum inom 6 månader.
+        - action: Ring en kontakt utanför kontorstid som test.
+          expected: Leverantören svarar och bekräftar eskaleringsvägen.
+          data: "testsamtal överenskommet med leverantören"
+
+  - id: INC-T12
+    priority: medium
+    execution: manual
+    tags: [customer-report, post-incident]
+    refs: ["ITIL 4 Incident management (communication)"]
+    en:
+      title: Customer reports after severity 1 incidents
+      description: Checks the customer reports sent after severity 1 incidents.
+      preconditions: The list of severity 1 incidents of the last 12 months and the reports sent to customers.
+      expected: Each incident has a report with cause, impact, duration and actions, sent within 10 working days.
+      steps:
+        - action: For each incident, find the sent customer report and its date.
+          expected: A report exists for each incident.
+        - action: Check the content and the number of working days from resolution to sending.
+          expected: Each report has the four parts and was sent within 10 working days.
+    sv:
+      title: Kundrapporter efter incidenter med allvarlighetsgrad 1
+      description: Kontrollerar de kundrapporter som skickats efter incidenter med allvarlighetsgrad 1.
+      preconditions: Listan över incidenter med allvarlighetsgrad 1 de senaste 12 månaderna och rapporterna som skickats till kunderna.
+      expected: Varje incident har en rapport med orsak, påverkan, varaktighet och åtgärder, skickad inom 10 arbetsdagar.
+      steps:
+        - action: Leta upp den skickade kundrapporten och dess datum för varje incident.
+          expected: Det finns en rapport för varje incident.
+        - action: Kontrollera innehållet och antalet arbetsdagar från lösning till utskick.
+          expected: Varje rapport har de fyra delarna och skickades inom 10 arbetsdagar.
+
+  - id: INC-T13
+    priority: medium
+    execution: manual
+    tags: [metrics, detection]
+    refs: ["ITIL 4 Incident management"]
+    en:
+      title: Detection and recovery medians recomputed
+      description: Recomputes the monthly medians from the incident timelines.
+      preconditions: The monthly incident report and the timelines of the month's incidents.
+      expected: The medians in the report match those computed from the timelines.
+      steps:
+        - action: Extract start, detection and recovery times for each incident of the month.
+          expected: Each incident has the three times.
+          data: "incidents of last month"
+        - action: Compute the two medians per severity and compare with the report.
+          expected: The values match.
+    sv:
+      title: Medianer för upptäckt och återställning räknas om
+      description: Räknar om månadens medianer ur incidenternas tidslinjer.
+      preconditions: Månadsrapporten om incidenter och tidslinjerna för månadens incidenter.
+      expected: Medianerna i rapporten stämmer med dem som räknas fram ur tidslinjerna.
+      steps:
+        - action: Ta ut start-, upptäckts- och återställningstid för varje incident under månaden.
+          expected: Varje incident har de tre tiderna.
+          data: "förra månadens incidenter"
+        - action: Beräkna de två medianerna per allvarlighetsgrad och jämför med rapporten.
+          expected: Värdena stämmer.

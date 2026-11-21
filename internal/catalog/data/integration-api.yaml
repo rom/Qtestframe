@@ -345,6 +345,102 @@ requirements:
         - method: test
           text: Varje svar har kvothuvudena, och det första anropet över en gräns på 100 per minut returnerar 429 med Retry-After i sekunder.
 
+  - id: API-16
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [async, long-running, status]
+    refs: ["RFC 9110 §15.3.3 (202 Accepted)", "ISO/IEC 25010:2023 interoperability"]
+    tests: [API-T10]
+    en:
+      title: Long-running operations answered with a status resource
+      description: An API request whose work takes longer than 10 seconds MUST be answered at once with status 202 and the address of a status resource that reports progress and the result.
+      rationale: Holding the connection open for minutes runs into gateway timeouts, and clients then retry work that is already running.
+      criteria:
+        - method: test
+          text: A bulk export request returns 202 within 1 second with a status address that later reports completion and the result link.
+          threshold: "response ≤ 1 s"
+    sv:
+      title: Långvariga operationer besvaras med en statusresurs
+      description: Ett API-anrop vars arbete tar längre tid än 10 sekunder SKA besvaras direkt med status 202 och adressen till en statusresurs som rapporterar förlopp och resultat.
+      rationale: Att hålla anslutningen öppen i minuter slår i tidsgränser i gateways, och klienterna försöker då om arbete som redan pågår.
+      criteria:
+        - method: test
+          text: Ett anrop om massexport returnerar 202 inom 1 sekund med en statusadress som senare rapporterar att arbetet är klart och länken till resultatet.
+          threshold: "svar ≤ 1 s"
+
+  - id: API-17
+    type: interface
+    obligation: should
+    priority: low
+    tags: [fields, selection, payload]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "OpenAPI Specification 3.1"]
+    tests: [API-T11]
+    en:
+      title: Selection of returned fields
+      description: Collection endpoints SHOULD accept a parameter that limits the response to the named fields.
+      rationale: Clients that need two fields of each item should not have to download and parse the whole item.
+      criteria:
+        - method: test
+          text: A request with a field selection of id and title returns only those fields for each item.
+          threshold: "only selected fields returned"
+    sv:
+      title: Val av returnerade fält
+      description: Ändpunkter för samlingar BÖR ta emot en parameter som begränsar svaret till de namngivna fälten.
+      rationale: Klienter som behöver två fält från varje objekt ska inte behöva hämta och tolka hela objektet.
+      criteria:
+        - method: test
+          text: Ett anrop med fälturval id och title returnerar bara de fälten för varje objekt.
+          threshold: "bara valda fält returneras"
+
+  - id: API-18
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [changelog, versions, documentation]
+    refs: ["Keep a Changelog 1.1.0", "Semantic Versioning"]
+    tests: [API-T12]
+    en:
+      title: Published API changelog
+      description: The supplier MUST publish a dated changelog of the API that lists each added, changed, deprecated and removed endpoint and field per version.
+      rationale: Integrators need to know what changed before they upgrade, and reading diffs of the API description is error-prone.
+      criteria:
+        - method: inspection
+          text: The changelog has an entry for each API release of the last 12 months, and a sampled change in the API description appears in it.
+          threshold: "1 entry per release"
+    sv:
+      title: Publicerad ändringslogg för API:t
+      description: Leverantören SKA publicera en daterad ändringslogg för API:t som per version listar varje tillagd, ändrad, utfasad och borttagen ändpunkt och varje sådant fält.
+      rationale: Integratörer behöver veta vad som har ändrats innan de uppgraderar, och att läsa skillnader i API-beskrivningen leder lätt till fel.
+      criteria:
+        - method: inspection
+          text: Ändringsloggen har en post för varje API-release de senaste 12 månaderna, och en ändring som väljs ut i API-beskrivningen finns med.
+          threshold: "1 post per release"
+
+  - id: API-19
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [sandbox, testing, integrators]
+    refs: ["ISO/IEC 25010:2023 interoperability", "ISO/IEC 25010:2023 testability"]
+    tests: [API-T13]
+    en:
+      title: Sandbox for integrators
+      description: The supplier SHOULD provide a sandbox environment with the current API version and generated test data, separate from production data.
+      rationale: Integrators must try writes and error cases without touching real data, and testing against production leads to mistakes there.
+      criteria:
+        - method: demonstration
+          text: An integrator creates, updates and deletes items in the sandbox through the API, and none of it is visible in production.
+          threshold: "0 effects on production"
+    sv:
+      title: Sandlåda för integratörer
+      description: Leverantören BÖR tillhandahålla en sandlådemiljö med den aktuella API-versionen och genererade testdata, skild från produktionsdata.
+      rationale: Integratörer måste kunna prova skrivningar och felfall utan att röra verkliga data, och tester mot produktion leder till misstag där.
+      criteria:
+        - method: demonstration
+          text: En integratör skapar, uppdaterar och raderar objekt i sandlådan via API:t, och inget av det syns i produktion.
+          threshold: "0 effekter på produktion"
+
 tests:
   - id: API-T01
     priority: high
@@ -631,3 +727,123 @@ tests:
           expected: Svaret har status 429, en kropp med problemdetaljer och ett Retry-After-huvud i sekunder.
         - action: Vänta det antal sekunder som anges i Retry-After och skicka ett nytt anrop.
           expected: Anropet lyckas.
+
+  - id: API-T10
+    priority: medium
+    execution: automated
+    tags: [async, long-running]
+    refs: ["RFC 9110 §15.3.3 (202 Accepted)"]
+    en:
+      title: Bulk export returns a status resource
+      description: Starts a long-running export through the API and polls its status.
+      preconditions: An API client and a project large enough that the export takes more than 10 seconds.
+      expected: The request is accepted at once and the status resource reports progress and the result.
+      steps:
+        - action: Send the request that starts the bulk export.
+          expected: Status 202 arrives within 1 second with a Location header for the status resource.
+          data: "project with 50 000 items"
+        - action: Poll the status resource every 5 seconds.
+          expected: The status shows progress and then completion with a link to the result.
+        - action: Fetch the result link.
+          expected: The export file is returned.
+    sv:
+      title: Massexport returnerar en statusresurs
+      description: Startar en långvarig export via API:t och frågar efter dess status.
+      preconditions: En API-klient och ett projekt som är så stort att exporten tar mer än 10 sekunder.
+      expected: Anropet tas emot direkt och statusresursen rapporterar förlopp och resultat.
+      steps:
+        - action: Skicka anropet som startar massexporten.
+          expected: Status 202 kommer inom 1 sekund med ett Location-huvud för statusresursen.
+          data: "projekt med 50 000 objekt"
+        - action: Fråga statusresursen var 5:e sekund.
+          expected: Statusen visar förlopp och sedan att arbetet är klart med en länk till resultatet.
+        - action: Hämta resultatlänken.
+          expected: Exportfilen returneras.
+
+  - id: API-T11
+    priority: low
+    execution: automated
+    tags: [fields, selection]
+    refs: ["OpenAPI Specification 3.1"]
+    en:
+      title: Field selection on a collection
+      description: Requests a collection with and without a field selection.
+      preconditions: API access to a project with items.
+      expected: With the selection only the named fields are returned.
+      steps:
+        - action: Request the item collection without selection.
+          expected: Each item has its full set of fields.
+        - action: Request the same collection with a selection of id and title.
+          expected: Each item has only id and title.
+          data: "fields=id,title"
+    sv:
+      title: Fälturval för en samling
+      description: Begär en samling med och utan fälturval.
+      preconditions: API-åtkomst till ett projekt med objekt.
+      expected: Med urvalet returneras bara de namngivna fälten.
+      steps:
+        - action: Begär samlingen av objekt utan urval.
+          expected: Varje objekt har alla sina fält.
+        - action: Begär samma samling med urvalet id och title.
+          expected: Varje objekt har bara id och title.
+          data: "fields=id,title"
+
+  - id: API-T12
+    priority: medium
+    execution: manual
+    tags: [changelog, versions]
+    refs: ["Keep a Changelog 1.1.0"]
+    en:
+      title: API changelog against the API description
+      description: Compares the changelog with the API releases and one change in the description.
+      preconditions: The published changelog and the API descriptions of the last two versions.
+      expected: Each release has an entry and the sampled change is listed.
+      steps:
+        - action: List the API releases of the last 12 months.
+          expected: Each release has a dated changelog entry.
+        - action: Compare the API descriptions of the last two versions and pick one difference.
+          expected: The difference appears in the changelog entry of the newer version.
+          data: "for example a new field on the item resource"
+    sv:
+      title: API:ts ändringslogg mot API-beskrivningen
+      description: Jämför ändringsloggen med API-releaserna och en ändring i beskrivningen.
+      preconditions: Den publicerade ändringsloggen och API-beskrivningarna för de två senaste versionerna.
+      expected: Varje release har en post och den utvalda ändringen finns med.
+      steps:
+        - action: Lista API-releaserna de senaste 12 månaderna.
+          expected: Varje release har en daterad post i ändringsloggen.
+        - action: Jämför API-beskrivningarna för de två senaste versionerna och välj en skillnad.
+          expected: Skillnaden finns i ändringsloggens post för den nyare versionen.
+          data: "till exempel ett nytt fält i objektresursen"
+
+  - id: API-T13
+    priority: medium
+    execution: manual
+    tags: [sandbox, testing]
+    refs: ["ISO/IEC 25010:2023 testability"]
+    en:
+      title: Writes in the sandbox stay out of production
+      description: Creates, updates and deletes data in the sandbox and looks for it in production.
+      preconditions: Sandbox credentials, the sandbox address and read access to production.
+      expected: Every change happens in the sandbox only.
+      steps:
+        - action: Create an item in the sandbox through the API.
+          expected: The item is created and returned.
+          data: "title \"Sandbox test 42\""
+        - action: Update and then delete the item in the sandbox.
+          expected: Both calls succeed.
+        - action: Search production for the title.
+          expected: No item is found.
+    sv:
+      title: Skrivningar i sandlådan stannar utanför produktion
+      description: Skapar, uppdaterar och raderar data i sandlådan och letar efter dem i produktion.
+      preconditions: Behörighet till sandlådan, sandlådans adress och läsbehörighet i produktion.
+      expected: Varje ändring sker bara i sandlådan.
+      steps:
+        - action: Skapa ett objekt i sandlådan via API:t.
+          expected: Objektet skapas och returneras.
+          data: "titel \"Sandlådetest 42\""
+        - action: Uppdatera och radera sedan objektet i sandlådan.
+          expected: Båda anropen lyckas.
+        - action: Sök efter titeln i produktion.
+          expected: Inget objekt hittas.
