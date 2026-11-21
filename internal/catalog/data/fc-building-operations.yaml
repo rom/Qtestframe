@@ -1,0 +1,544 @@
+area: fc-building-operations
+prefix: FCOPS
+group: operations
+catalogue: facilities
+name: {en: Accessibility, energy and maintenance of buildings, sv: Tillgänglighet, energi och underhåll av byggnader}
+description:
+  en: Accessible entrances, toilets, lifts, contrast marking and hearing loops, the energy performance certificate, energy metering and follow-up, building automation for energy, waste sorting, the preventive maintenance plan, the mandatory ventilation inspection, lift inspections and fault reports from occupants.
+  sv: Tillgängliga entréer, toaletter, hissar, kontrastmarkering och hörslingor, energideklarationen, energimätning och uppföljning, fastighetsautomation för energi, källsortering, planen för förebyggande underhåll, den obligatoriska ventilationskontrollen, besiktning av hissar och felanmälningar från hyresgäster.
+
+requirements:
+  - id: FCOPS-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [accessibility, entrance, step-free]
+    refs: ["BBR (BFS 2011:6) avsnitt 3 (tillgänglighet)", "EN 17210:2021", "ISO 21542:2021"]
+    tests: [FCOPS-T01]
+    en:
+      title: Step-free main entrance with a door of at least 0.8 m clear width
+      description: The main entrance of the building MUST be reachable without steps from the street and the accessible parking, with a door of at least 0.8 m clear width that opens automatically or with a force of at most 30 N.
+      rationale: Steps and heavy doors stop wheelchair users, people with walkers and parents with prams from entering on their own.
+      criteria:
+        - method: inspection
+          text: The route from the street and the accessible parking to the main door has no step above 20 mm, the clear width is at least 0.8 m, and the opening force measures at most 30 N or the door opens automatically.
+          threshold: width ≥ 0.8 m, force ≤ 30 N
+    sv:
+      title: Huvudentré utan trappsteg med en dörr med minst 0,8 m fri bredd
+      description: Byggnadens huvudentré SKA gå att nå utan trappsteg från gatan och från parkeringen för rörelsehindrade, med en dörr med minst 0,8 m fri bredd som öppnas automatiskt eller med en kraft på högst 30 N.
+      rationale: Trappsteg och tunga dörrar hindrar rullstolsanvändare, personer med rollator och föräldrar med barnvagn från att ta sig in på egen hand.
+      criteria:
+        - method: inspection
+          text: Vägen från gatan och parkeringen för rörelsehindrade till huvuddörren har inget steg över 20 mm, den fria bredden är minst 0,8 m, och öppningskraften mäts till högst 30 N eller dörren öppnas automatiskt.
+          threshold: bredd ≥ 0,8 m, kraft ≤ 30 N
+
+  - id: FCOPS-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [accessibility, toilet]
+    refs: ["BBR (BFS 2011:6) avsnitt 3 (tillgänglighet)", "ISO 21542:2021"]
+    tests: [FCOPS-T01]
+    en:
+      title: Accessible toilet on each floor with a turning circle of 1.5 m
+      description: Each floor used by staff or visitors MUST have at least one accessible toilet with a free turning circle of 1.5 m in diameter, grab rails on both sides of the toilet and an alarm button within reach from the floor.
+      rationale: Without an accessible toilet on the floor, a person using a wheelchair cannot work or attend a meeting there.
+      criteria:
+        - method: inspection
+          text: On each floor, the accessible toilet has a free circle of 1.5 m, grab rails on both sides and an alarm button that can be reached from the floor and alerts staff.
+          threshold: Ø 1.5 m
+    sv:
+      title: Tillgänglig toalett på varje våningsplan med vändyta på 1,5 m
+      description: Varje våningsplan som används av personal eller besökare SKA ha minst en tillgänglig toalett med en fri vändyta på 1,5 m i diameter, stödhandtag på båda sidor om toaletten och en larmknapp som går att nå från golvet.
+      rationale: Utan en tillgänglig toalett på våningsplanet kan en person som använder rullstol inte arbeta eller delta i ett möte där.
+      criteria:
+        - method: inspection
+          text: På varje våningsplan har den tillgängliga toaletten en fri cirkel på 1,5 m, stödhandtag på båda sidor och en larmknapp som går att nå från golvet och larmar personal.
+          threshold: Ø 1,5 m
+
+  - id: FCOPS-03
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [accessibility, contrast, visual-impairment]
+    refs: ["EN 17210:2021"]
+    tests: [FCOPS-T02]
+    en:
+      title: Contrast marking of glass doors, stairs and door frames
+      description: Glass doors and glass walls, the first and last step of each stair and the door frames on escape routes SHOULD be marked with a light reflectance value difference of at least 30 points against their background.
+      rationale: People with low vision walk into unmarked glass and miss steps that do not stand out from the floor.
+      criteria:
+        - method: test
+          text: Measurements with a reflectance meter on 10 marked items show a difference of at least 30 points against the background.
+          threshold: LRV difference ≥ 30
+    sv:
+      title: Kontrastmarkering av glasdörrar, trappor och dörrkarmar
+      description: Glasdörrar och glasväggar, första och sista steget i varje trappa och dörrkarmarna i utrymningsvägar BÖR vara markerade med en skillnad i ljusreflektansvärde på minst 30 enheter mot bakgrunden.
+      rationale: Personer med nedsatt syn går in i omärkt glas och missar trappsteg som inte skiljer sig från golvet.
+      criteria:
+        - method: test
+          text: Mätningar med en reflektansmätare på 10 markerade föremål visar en skillnad på minst 30 enheter mot bakgrunden.
+          threshold: skillnad i LRV ≥ 30
+
+  - id: FCOPS-04
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [accessibility, hearing-loop]
+    refs: ["IEC 60118-4"]
+    tests: [FCOPS-T02]
+    en:
+      title: Hearing loop in meeting rooms with more than 20 seats
+      description: Each meeting room and auditorium with more than 20 seats MUST have an audio frequency induction loop that meets IEC 60118-4 and is marked with the loop sign at the entrance.
+      rationale: Hearing aid users cannot follow speech in larger rooms without a loop, and the sign tells them to switch their aid to it.
+      criteria:
+        - method: test
+          text: A loop measurement in each such room shows a field strength within the IEC 60118-4 limits over the seating area, and the sign is at the entrance.
+    sv:
+      title: Hörslinga i mötesrum med fler än 20 platser
+      description: Varje mötesrum och hörsal med fler än 20 platser SKA ha en hörslinga som uppfyller IEC 60118-4 och är märkt med symbolen för hörslinga vid ingången.
+      rationale: Användare av hörapparat kan inte följa tal i större rum utan slinga, och symbolen visar att de kan ställa om apparaten till den.
+      criteria:
+        - method: test
+          text: En mätning av slingan i varje sådant rum visar en fältstyrka inom gränserna i IEC 60118-4 över publikytan, och symbolen finns vid ingången.
+
+  - id: FCOPS-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [accessibility, lift]
+    refs: ["EN 81-70", "BBR (BFS 2011:6) avsnitt 3 (tillgänglighet)"]
+    tests: [FCOPS-T01]
+    en:
+      title: Lift to each floor with a car of at least 1.1 × 1.4 m
+      description: A building with more than one floor used by staff or visitors MUST have a lift to each such floor with a car of at least 1.1 m by 1.4 m and controls that meet EN 81-70.
+      rationale: This car size takes a wheelchair with an accompanying person, and accessible controls let blind and short users operate the lift.
+      criteria:
+        - method: inspection
+          text: The lift reaches each floor, the measured car is at least 1.1 m by 1.4 m, and the controls have tactile markings and spoken floor announcements.
+          threshold: car ≥ 1.1 × 1.4 m
+    sv:
+      title: Hiss till varje våningsplan med en hisskorg på minst 1,1 × 1,4 m
+      description: En byggnad med mer än ett våningsplan som används av personal eller besökare SKA ha en hiss till varje sådant plan med en hisskorg på minst 1,1 m gånger 1,4 m och manöverdon som uppfyller EN 81-70.
+      rationale: Den korgstorleken rymmer en rullstol med ledsagare, och tillgängliga manöverdon låter blinda och korta personer använda hissen.
+      criteria:
+        - method: inspection
+          text: Hissen når varje våningsplan, den uppmätta korgen är minst 1,1 m gånger 1,4 m, och manöverdonen har taktil märkning och talade våningsutrop.
+          threshold: korg ≥ 1,1 × 1,4 m
+
+  - id: FCOPS-06
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [energy-performance-certificate, energy]
+    refs: ["Lag (2006:985) om energideklaration för byggnader", "Directive (EU) 2024/1275 (EPBD) (energy performance certificates)"]
+    tests: [FCOPS-T03]
+    en:
+      title: Valid energy performance certificate for the building
+      description: The building owner MUST hold an energy performance certificate for the building that is less than 10 years old and registered with the national authority.
+      rationale: The certificate shows the building's energy performance to buyers and tenants and lists cost-effective improvements.
+      criteria:
+        - method: inspection
+          text: The certificate is found in the national register, is less than 10 years old and covers the building's current heated floor area.
+          threshold: < 10 years old
+    sv:
+      title: Giltig energideklaration för byggnaden
+      description: Byggnadens ägare SKA ha en energideklaration för byggnaden som är mindre än 10 år gammal och registrerad hos den nationella myndigheten.
+      rationale: Deklarationen visar byggnadens energiprestanda för köpare och hyresgäster och listar kostnadseffektiva förbättringar.
+      criteria:
+        - method: inspection
+          text: Deklarationen finns i det nationella registret, är mindre än 10 år gammal och omfattar byggnadens nuvarande uppvärmda golvarea.
+          threshold: < 10 år gammal
+
+  - id: FCOPS-07
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [energy-metering, follow-up, energy-management]
+    refs: ["ISO 50001:2018"]
+    tests: [FCOPS-T04]
+    en:
+      title: Hourly energy metering with monthly follow-up against a baseline
+      description: The building owner SHOULD meter the electricity, heating and cooling of the building every hour and compare each month's use, corrected for outdoor temperature, with the energy baseline.
+      rationale: Hourly data show waste such as ventilation running at night, and the monthly comparison shows whether measures have worked.
+      criteria:
+        - method: analysis
+          text: The energy system has hourly values for the 3 media for the last 12 months, and each monthly report shows the corrected use against the baseline.
+    sv:
+      title: Energimätning per timme med månadsuppföljning mot en baslinje
+      description: Byggnadens ägare BÖR mäta byggnadens el, värme och kyla varje timme och jämföra varje månads användning, korrigerad för utetemperaturen, med energibaslinjen.
+      rationale: Timvärden visar slöseri som ventilation som går på natten, och jämförelsen varje månad visar om åtgärder har gett effekt.
+      criteria:
+        - method: analysis
+          text: Energisystemet har timvärden för de 3 medierna för de senaste 12 månaderna, och varje månadsrapport visar den korrigerade användningen mot baslinjen.
+
+  - id: FCOPS-08
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [building-automation, energy, alarms]
+    refs: ["Directive (EU) 2024/1275 (EPBD) (building automation and control systems)"]
+    tests: [FCOPS-T04]
+    en:
+      title: Building automation alerts when daily energy use exceeds the baseline by 15 %
+      description: The building automation system SHOULD compare each day's energy use with the expected use for the outdoor temperature and alert the operator when the difference exceeds 15 %.
+      rationale: Faults such as stuck valves and wrong schedules waste energy for months unless the system points them out.
+      criteria:
+        - method: test
+          text: A ventilation unit set to run through the night raises an energy alert the next morning.
+          threshold: alert above 15 % of expected use
+    sv:
+      title: Fastighetsautomationen larmar när dygnets energianvändning överskrider baslinjen med 15 %
+      description: Systemet för fastighetsautomation BÖR jämföra varje dygns energianvändning med den förväntade för utetemperaturen och larma driften när skillnaden överstiger 15 %.
+      rationale: Fel som fastnade ventiler och felaktiga drifttider slösar energi i månader om inte systemet pekar ut dem.
+      criteria:
+        - method: test
+          text: Ett ventilationsaggregat som ställts att gå hela natten ger ett energilarm nästa morgon.
+          threshold: larm över 15 % av förväntad användning
+
+  - id: FCOPS-09
+    type: non_functional
+    obligation: should
+    priority: low
+    tags: [waste, environment, recycling]
+    refs: ["ISO 14001:2015 §6.1.2"]
+    tests: [FCOPS-T05]
+    en:
+      title: Waste sorted in 6 fractions with yearly quantities
+      description: The building SHOULD offer the occupants waste sorting in at least 6 fractions (food, paper, plastic, metal, glass and residual waste) and report the quantity of each fraction once a year.
+      rationale: Sorting at the source is the precondition for recycling, and reported quantities show whether it works.
+      criteria:
+        - method: inspection
+          text: The waste room has containers for the 6 fractions, and the yearly report from the waste contractor states the quantity of each.
+    sv:
+      title: Avfall sorteras i 6 fraktioner med årliga mängder
+      description: Byggnaden BÖR erbjuda hyresgästerna källsortering i minst 6 fraktioner (matavfall, papper, plast, metall, glas och restavfall) och rapportera mängden för varje fraktion en gång per år.
+      rationale: Sortering vid källan är förutsättningen för återvinning, och rapporterade mängder visar om den fungerar.
+      criteria:
+        - method: inspection
+          text: Soprummet har kärl för de 6 fraktionerna, och avfallsentreprenörens årsrapport anger mängden för var och en.
+
+  - id: FCOPS-10
+    type: business
+    obligation: must
+    priority: high
+    tags: [preventive-maintenance, maintenance-plan]
+    refs: ["ISO 41001:2018"]
+    tests: [FCOPS-T06]
+    en:
+      title: Preventive maintenance plan for each technical installation
+      description: The facility manager MUST keep a preventive maintenance plan that gives each technical installation its maintenance tasks and intervals, and record each performed task with its date.
+      rationale: Installations that are only repaired when they fail cost more and fail at the worst times.
+      criteria:
+        - method: review
+          text: Each installation in the asset register is in the plan with tasks and intervals, and a sample of 10 tasks due in the last 6 months has a recorded completion date.
+    sv:
+      title: Plan för förebyggande underhåll för varje teknisk installation
+      description: Fastighetsförvaltaren SKA ha en plan för förebyggande underhåll som ger varje teknisk installation dess underhållsuppgifter och intervall, och dokumentera varje utförd uppgift med datum.
+      rationale: Installationer som bara repareras när de går sönder kostar mer och går sönder vid de sämsta tidpunkterna.
+      criteria:
+        - method: review
+          text: Varje installation i anläggningsregistret finns i planen med uppgifter och intervall, och ett urval av 10 uppgifter som skulle ha utförts under de senaste 6 månaderna har ett dokumenterat datum för utförandet.
+
+  - id: FCOPS-11
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [ventilation, ovk, mandatory-inspection]
+    refs: ["Förordning (1991:1273) om funktionskontroll av ventilationssystem", "BFS 2011:16 (OVK)"]
+    tests: [FCOPS-T07]
+    en:
+      title: Ventilation inspection within the interval for the building type
+      description: The building owner MUST have each ventilation system inspected by a certified inspector within the interval set for the building type and correct each remark by the date stated in the protocol.
+      rationale: Swedish rules require recurring functional inspection of ventilation, usually every 3 or 6 years depending on the building, because poor ventilation harms the indoor environment.
+      criteria:
+        - method: review
+          text: The latest protocol for each system is within the interval, the inspector's certificate is valid, and each remark has a recorded correction by its date.
+    sv:
+      title: Ventilationskontroll inom intervallet för byggnadstypen
+      description: Byggnadens ägare SKA låta en certifierad funktionskontrollant kontrollera varje ventilationssystem inom det intervall som gäller för byggnadstypen och rätta varje anmärkning till det datum som protokollet anger.
+      rationale: Reglerna kräver återkommande funktionskontroll av ventilationen, oftast vart 3:e eller 6:e år beroende på byggnaden, eftersom dålig ventilation skadar inomhusmiljön.
+      criteria:
+        - method: review
+          text: Det senaste protokollet för varje system ligger inom intervallet, kontrollantens certifikat är giltigt, och varje anmärkning har en dokumenterad rättelse till sitt datum.
+
+  - id: FCOPS-12
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [lift, periodic-inspection]
+    refs: []
+    tests: [FCOPS-T07]
+    en:
+      title: Periodic lift inspection by an accredited body
+      description: The building owner MUST have each lift inspected by an accredited inspection body at the interval set by the national rules and correct each remark by the date in the inspection protocol.
+      rationale: Lifts carry people and can trap or injure them, and periodic inspection is the main check on their safety.
+      criteria:
+        - method: review
+          text: Each lift has a current inspection protocol from an accredited body, and each remark has a recorded correction by its date.
+    sv:
+      title: Återkommande besiktning av hissar av ett ackrediterat organ
+      description: Byggnadens ägare SKA låta ett ackrediterat kontrollorgan besiktiga varje hiss med det intervall som de nationella reglerna anger och rätta varje anmärkning till det datum som besiktningsprotokollet anger.
+      rationale: Hissar bär människor och kan stänga in eller skada dem, och återkommande besiktning är den främsta kontrollen av deras säkerhet.
+      criteria:
+        - method: review
+          text: Varje hiss har ett aktuellt besiktningsprotokoll från ett ackrediterat organ, och varje anmärkning har en dokumenterad rättelse till sitt datum.
+
+  - id: FCOPS-13
+    type: business
+    obligation: must
+    priority: medium
+    tags: [fault-report, occupants, response-time]
+    refs: ["ISO 41001:2018"]
+    tests: [FCOPS-T08]
+    en:
+      title: Fault reports acknowledged within 1 working day
+      description: The facility manager MUST acknowledge each fault report from an occupant within 1 working day, with the expected date of the repair.
+      rationale: Occupants who hear nothing report the same fault again and lose trust in the management.
+      criteria:
+        - method: analysis
+          text: The fault reports of the last 3 months show an acknowledgement with an expected repair date within 1 working day for at least 95 % of them.
+          threshold: ≤ 1 working day for ≥ 95 %
+    sv:
+      title: Felanmälningar bekräftas inom 1 arbetsdag
+      description: Fastighetsförvaltaren SKA bekräfta varje felanmälan från en hyresgäst inom 1 arbetsdag, med det datum då reparationen väntas vara klar.
+      rationale: Hyresgäster som inte hör något anmäler samma fel igen och tappar förtroendet för förvaltningen.
+      criteria:
+        - method: analysis
+          text: Felanmälningarna för de senaste 3 månaderna visar en bekräftelse med förväntat datum för reparationen inom 1 arbetsdag för minst 95 % av dem.
+          threshold: ≤ 1 arbetsdag för ≥ 95 %
+
+tests:
+  - id: FCOPS-T01
+    priority: high
+    execution: manual
+    tags: [accessibility]
+    refs: ["BBR (BFS 2011:6) avsnitt 3 (tillgänglighet)"]
+    en:
+      title: Accessibility walk-through of entrance, toilets and lift
+      description: Measures the entrance route, the accessible toilets and the lift with a tape measure and a door force gauge.
+      preconditions: A tape measure, a door force gauge and access to each floor.
+      expected: The entrance, each floor's accessible toilet and the lift meet the stated dimensions and features.
+      steps:
+        - action: Walk from the street and the accessible parking to the main door and measure steps, door width and opening force.
+          expected: No step is above 20 mm, the width is at least 0.8 m, and the force is at most 30 N or the door is automatic.
+          data: Width ≥ 0.8 m, force ≤ 30 N
+        - action: On each floor, measure the free circle in the accessible toilet and check the grab rails and the alarm button.
+          expected: The circle is at least 1.5 m, rails are on both sides, and the button reached from the floor alerts staff.
+        - action: Measure the lift car and ride to each floor using the tactile buttons.
+          expected: The car is at least 1.1 m by 1.4 m, it reaches each floor, and each floor is announced.
+    sv:
+      title: Tillgänglighetsgenomgång av entré, toaletter och hiss
+      description: Mäter vägen till entrén, de tillgängliga toaletterna och hissen med måttband och dörrkraftmätare.
+      preconditions: Ett måttband, en dörrkraftmätare och tillträde till varje våningsplan.
+      expected: Entrén, varje plans tillgängliga toalett och hissen uppfyller de angivna måtten och funktionerna.
+      steps:
+        - action: Gå från gatan och parkeringen för rörelsehindrade till huvuddörren och mät steg, dörrbredd och öppningskraft.
+          expected: Inget steg är över 20 mm, bredden är minst 0,8 m, och kraften är högst 30 N eller dörren är automatisk.
+          data: Bredd ≥ 0,8 m, kraft ≤ 30 N
+        - action: Mät den fria cirkeln i den tillgängliga toaletten på varje plan och kontrollera stödhandtag och larmknapp.
+          expected: Cirkeln är minst 1,5 m, handtag finns på båda sidor, och knappen som nås från golvet larmar personal.
+        - action: Mät hisskorgen och åk till varje plan med de taktila knapparna.
+          expected: Korgen är minst 1,1 m gånger 1,4 m, den når varje plan, och varje plan ropas ut.
+
+  - id: FCOPS-T02
+    priority: medium
+    execution: manual
+    tags: [accessibility, contrast, hearing-loop]
+    refs: ["EN 17210:2021", "IEC 60118-4"]
+    en:
+      title: Contrast measurements and hearing loop check
+      description: Measures the reflectance of marked items and checks the hearing loops in rooms with more than 20 seats.
+      preconditions: A reflectance meter, a loop field strength meter and the list of rooms with more than 20 seats.
+      expected: Each measured marking has a difference of at least 30 points, and each listed room has a working, signed loop.
+      steps:
+        - action: Measure the reflectance of 10 markings and their backgrounds.
+          expected: Each difference is at least 30 points.
+          data: 10 markings
+        - action: Measure the loop field strength over the seating area of each listed room while speech is played.
+          expected: The values are within the IEC 60118-4 limits.
+        - action: Look for the loop sign at each entrance.
+          expected: The sign is there.
+    sv:
+      title: Kontrastmätning och kontroll av hörslingor
+      description: Mäter reflektansen för markerade föremål och kontrollerar hörslingorna i rum med fler än 20 platser.
+      preconditions: En reflektansmätare, en fältstyrkemätare för hörslingor och listan över rum med fler än 20 platser.
+      expected: Varje mätt markering har en skillnad på minst 30 enheter, och varje listat rum har en fungerande och skyltad slinga.
+      steps:
+        - action: Mät reflektansen för 10 markeringar och deras bakgrunder.
+          expected: Varje skillnad är minst 30 enheter.
+          data: 10 markeringar
+        - action: Mät slingans fältstyrka över publikytan i varje listat rum medan tal spelas upp.
+          expected: Värdena ligger inom gränserna i IEC 60118-4.
+        - action: Leta efter symbolen för hörslinga vid varje ingång.
+          expected: Symbolen finns.
+
+  - id: FCOPS-T03
+    priority: medium
+    execution: manual
+    tags: [energy-performance-certificate]
+    refs: ["Lag (2006:985) om energideklaration för byggnader"]
+    en:
+      title: Energy performance certificate in the national register
+      description: Looks up the building's energy performance certificate in the national register.
+      preconditions: The building's property designation and access to the national register of certificates.
+      expected: A certificate less than 10 years old covering the current heated area is registered.
+      steps:
+        - action: Search the register for the property designation.
+          expected: A certificate for the building is found.
+        - action: Read the date and the heated floor area of the certificate.
+          expected: The date is less than 10 years ago, and the area matches the current heated area.
+    sv:
+      title: Energideklarationen i det nationella registret
+      description: Slår upp byggnadens energideklaration i det nationella registret.
+      preconditions: Byggnadens fastighetsbeteckning och åtkomst till det nationella registret över energideklarationer.
+      expected: En deklaration som är mindre än 10 år gammal och omfattar den nuvarande uppvärmda arean är registrerad.
+      steps:
+        - action: Sök i registret på fastighetsbeteckningen.
+          expected: En deklaration för byggnaden hittas.
+        - action: Läs deklarationens datum och uppvärmda golvarea.
+          expected: Datumet ligger mindre än 10 år bakåt, och arean stämmer med den nuvarande uppvärmda arean.
+
+  - id: FCOPS-T04
+    priority: medium
+    execution: manual
+    tags: [energy-metering, building-automation]
+    refs: ["ISO 50001:2018"]
+    en:
+      title: Energy data, monthly follow-up and the energy alert
+      description: Checks the hourly energy data and the monthly reports, then provokes excess use to test the energy alert.
+      preconditions: Access to the energy system and the building automation, the monthly energy reports and a ventilation unit that can run overnight without harm.
+      expected: Hourly data and monthly comparisons exist, and the excess use raises an alert the next morning.
+      steps:
+        - action: Check the energy system for hourly values of electricity, heating and cooling for the last 12 months.
+          expected: Each hour has a value for each of the 3 media.
+        - action: Read the last 3 monthly reports.
+          expected: Each shows the temperature-corrected use against the baseline.
+        - action: Set the ventilation unit to run through the night.
+          expected: The building automation raises an energy alert the next morning, and the unit is reset.
+    sv:
+      title: Energidata, månadsuppföljning och energilarmet
+      description: Kontrollerar energidata per timme och månadsrapporterna och framkallar sedan en överförbrukning för att testa energilarmet.
+      preconditions: Åtkomst till energisystemet och fastighetsautomationen, månadsrapporterna om energi och ett ventilationsaggregat som kan gå över natten utan skada.
+      expected: Timdata och månadsjämförelser finns, och överförbrukningen ger ett larm nästa morgon.
+      steps:
+        - action: Kontrollera att energisystemet har timvärden för el, värme och kyla för de senaste 12 månaderna.
+          expected: Varje timme har ett värde för vart och ett av de 3 medierna.
+        - action: Läs de 3 senaste månadsrapporterna.
+          expected: Var och en visar den temperaturkorrigerade användningen mot baslinjen.
+        - action: Ställ ventilationsaggregatet att gå hela natten.
+          expected: Fastighetsautomationen ger ett energilarm nästa morgon, och aggregatet återställs.
+
+  - id: FCOPS-T05
+    priority: low
+    execution: manual
+    tags: [waste]
+    refs: []
+    en:
+      title: Waste room and yearly waste report
+      description: Inspects the waste room and reads the waste contractor's yearly report.
+      preconditions: Access to the waste room and the latest yearly report from the waste contractor.
+      expected: Containers for the 6 fractions exist, and the report states the quantity of each.
+      steps:
+        - action: Inspect the waste room.
+          expected: There are labelled containers for food, paper, plastic, metal, glass and residual waste.
+        - action: Read the yearly report.
+          expected: It states the quantity of each of the 6 fractions.
+    sv:
+      title: Soprum och årlig avfallsrapport
+      description: Granskar soprummet och läser avfallsentreprenörens årsrapport.
+      preconditions: Tillträde till soprummet och den senaste årsrapporten från avfallsentreprenören.
+      expected: Kärl för de 6 fraktionerna finns, och rapporten anger mängden för var och en.
+      steps:
+        - action: Granska soprummet.
+          expected: Det finns märkta kärl för matavfall, papper, plast, metall, glas och restavfall.
+        - action: Läs årsrapporten.
+          expected: Den anger mängden för var och en av de 6 fraktionerna.
+
+  - id: FCOPS-T06
+    priority: high
+    execution: manual
+    tags: [preventive-maintenance]
+    refs: ["ISO 41001:2018"]
+    en:
+      title: Maintenance plan compared with the asset register and work records
+      description: Matches the asset register with the maintenance plan and samples tasks that were due.
+      preconditions: The asset register, the preventive maintenance plan and the work records of the last 6 months.
+      expected: Each installation is in the plan, and each sampled task has a completion date.
+      steps:
+        - action: Match each installation in the asset register with the plan.
+          expected: Each has tasks and intervals.
+        - action: Pick 10 tasks that were due in the last 6 months and find them in the work records.
+          expected: Each has a recorded completion date.
+          data: 10 tasks
+    sv:
+      title: Underhållsplanen jämförs med anläggningsregistret och arbetsorder
+      description: Matchar anläggningsregistret mot underhållsplanen och gör stickprov på uppgifter som skulle ha utförts.
+      preconditions: Anläggningsregistret, planen för förebyggande underhåll och arbetsordrarna för de senaste 6 månaderna.
+      expected: Varje installation finns i planen, och varje vald uppgift har ett datum för utförandet.
+      steps:
+        - action: Matcha varje installation i anläggningsregistret mot planen.
+          expected: Var och en har uppgifter och intervall.
+        - action: Välj 10 uppgifter som skulle ha utförts under de senaste 6 månaderna och hitta dem bland arbetsordrarna.
+          expected: Var och en har ett dokumenterat datum för utförandet.
+          data: 10 uppgifter
+
+  - id: FCOPS-T07
+    priority: high
+    execution: manual
+    tags: [ventilation, lift, mandatory-inspection]
+    refs: ["Förordning (1991:1273) om funktionskontroll av ventilationssystem"]
+    en:
+      title: Ventilation and lift inspection protocols
+      description: Reviews the latest ventilation inspection and lift inspection protocols and the correction of their remarks.
+      preconditions: The list of ventilation systems and lifts, the latest protocols and the work records for the remarks.
+      expected: Each protocol is within its interval from a qualified inspector, and each remark is corrected by its date.
+      steps:
+        - action: For each ventilation system, compare the protocol date with the interval for the building type and check the inspector's certificate.
+          expected: Each protocol is within the interval, and the certificate was valid on the inspection date.
+          data: Interval 3 or 6 years for the building type
+        - action: For each lift, check the date and the accreditation of the inspection body.
+          expected: Each protocol is current and from an accredited body.
+        - action: For each remark in the protocols, find the correction in the work records.
+          expected: Each remark has a correction dated by its deadline.
+    sv:
+      title: Protokoll från ventilationskontroll och hissbesiktning
+      description: Granskar de senaste protokollen från ventilationskontroll och hissbesiktning och rättelsen av deras anmärkningar.
+      preconditions: Listan över ventilationssystem och hissar, de senaste protokollen och arbetsordrarna för anmärkningarna.
+      expected: Varje protokoll ligger inom sitt intervall och kommer från en behörig kontrollant, och varje anmärkning är rättad till sitt datum.
+      steps:
+        - action: Jämför protokollets datum med intervallet för byggnadstypen och kontrollera kontrollantens certifikat för varje ventilationssystem.
+          expected: Varje protokoll ligger inom intervallet, och certifikatet var giltigt på kontrolldagen.
+          data: Intervall 3 eller 6 år för byggnadstypen
+        - action: Kontrollera datum och ackreditering för kontrollorganet för varje hiss.
+          expected: Varje protokoll är aktuellt och kommer från ett ackrediterat organ.
+        - action: Hitta rättelsen i arbetsordrarna för varje anmärkning i protokollen.
+          expected: Varje anmärkning har en rättelse daterad senast vid sin tidsgräns.
+
+  - id: FCOPS-T08
+    priority: medium
+    execution: automated
+    tags: [fault-report]
+    refs: []
+    en:
+      title: Acknowledgement time of fault reports
+      description: A script computes the time from each fault report to its acknowledgement with an expected repair date.
+      preconditions: An export of the fault reports of the last 3 months with report and acknowledgement times.
+      expected: At least 95 % are acknowledged with an expected date within 1 working day.
+      steps:
+        - action: Compute the working time between report and acknowledgement for each fault report.
+          expected: Each report has a value.
+        - action: Compute the share acknowledged within 1 working day with an expected repair date.
+          expected: The share is at least 95 %.
+          data: Limit 1 working day
+    sv:
+      title: Tid till bekräftelse av felanmälningar
+      description: Ett skript beräknar tiden från varje felanmälan till bekräftelsen med förväntat datum för reparationen.
+      preconditions: En export av felanmälningarna för de senaste 3 månaderna med tidpunkter för anmälan och bekräftelse.
+      expected: Minst 95 % bekräftas med förväntat datum inom 1 arbetsdag.
+      steps:
+        - action: Beräkna arbetstiden mellan anmälan och bekräftelse för varje felanmälan.
+          expected: Varje anmälan har ett värde.
+        - action: Beräkna andelen som bekräftats inom 1 arbetsdag med förväntat datum för reparationen.
+          expected: Andelen är minst 95 %.
+          data: Gräns 1 arbetsdag
