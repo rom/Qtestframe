@@ -509,7 +509,7 @@ requirements:
     obligation: must
     priority: high
     tags: [safety-data-sheet, reach, hazardous-substances]
-    refs: ["Regulation (EC) No 1907/2006 Art. 31"]
+    refs: ["Regulation (EC) No 1907/2006 (REACH) Art. 31(5) (language)", "Regulation (EC) No 1907/2006 (REACH) Art. 31(8) (supplied no later than the first delivery)"]
     tests: [DCTD-T14]
     en:
       title: Safety data sheet in Swedish at or before the first delivery
@@ -907,7 +907,7 @@ tests:
     priority: high
     execution: manual
     tags: [safety-data-sheet]
-    refs: ["Regulation (EC) No 1907/2006 Art. 31"]
+    refs: ["Regulation (EC) No 1907/2006 (REACH) Art. 31(5) (language)", "Regulation (EC) No 1907/2006 (REACH) Art. 31(8) (supplied no later than the first delivery)"]
     en:
       title: Safety data sheets for the hazardous products of a delivery
       description: Compares the hazardous products on the delivery notes with the safety data sheets received.

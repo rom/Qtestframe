@@ -13,11 +13,11 @@ requirements:
     obligation: must
     priority: high
     tags: [eudi-wallet, authentication, eidas]
-    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5f (cross-border reliance on European Digital Identity Wallets)", "Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5a"]
+    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5f(1) (cross-border reliance on European Digital Identity Wallets)", "Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5a"]
     tests: [EGOV-T01]
     en:
       title: Sign-in with a European Digital Identity Wallet
-      description: Where a service requires strong user authentication, the service MUST accept sign-in with a European Digital Identity Wallet issued in any member state.
+      description: Where an online public service requires electronic identification and authentication, the service MUST accept sign-in with a European Digital Identity Wallet issued in any member state.
       rationale: Public sector bodies are required to accept the wallets, and residents of other member states otherwise cannot use the service on equal terms.
       criteria:
         - method: test
@@ -25,7 +25,7 @@ requirements:
           threshold: "wallets of every member state accepted"
     sv:
       title: Inloggning med en europeisk plånbok för digital identitet
-      description: När en tjänst kräver stark autentisering av användare SKA tjänsten godta inloggning med en europeisk plånbok för digital identitet som utfärdats i någon av EU:s medlemsstater.
+      description: När en offentlig e-tjänst kräver elektronisk identifiering och autentisering SKA tjänsten godta inloggning med en europeisk plånbok för digital identitet som utfärdats i någon av EU:s medlemsstater.
       rationale: Offentliga organ är skyldiga att godta plånböckerna, och personer från andra medlemsstater kan annars inte använda tjänsten på lika villkor.
       criteria:
         - method: test
@@ -61,7 +61,7 @@ requirements:
     obligation: must
     priority: high
     tags: [relying-party, data-minimisation, attributes]
-    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5b (wallet-relying parties)", "GDPR Art. 5(1)(c)"]
+    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5b(3) (wallet-relying parties request only registered data)", "GDPR Art. 5(1)(c)"]
     tests: [EGOV-T03]
     en:
       title: Only registered and needed attributes requested
@@ -133,7 +133,7 @@ requirements:
     obligation: must
     priority: high
     tags: [fully-online, procedures, single-digital-gateway]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6 (online procedures)", "Regulation (EU) 2018/1724 (SDG) Annex II"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6(2) (procedures offered fully online)", "Regulation (EU) 2018/1724 (SDG) Art. 13(2)(e) (fees paid online)", "Regulation (EU) 2018/1724 (SDG) Annex II"]
     tests: [EGOV-T06]
     en:
       title: Procedure completed fully online
@@ -157,7 +157,7 @@ requirements:
     obligation: must
     priority: high
     tags: [once-only, evidence, preview]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 14 (technical system for the exchange of evidence)"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 14(3) (explicit request and preview of evidence)"]
     tests: [EGOV-T07]
     en:
       title: Evidence fetched once-only at the user's request
@@ -181,7 +181,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cross-border, addresses, identifiers]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 13 (cross-border access to online procedures)", "W3C Personal names around the world"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 13(2)(b) (cross-border access to online procedures)", "W3C Personal names around the world"]
     tests: [EGOV-T08]
     en:
       title: Forms usable by residents of other countries
@@ -229,7 +229,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [feedback, quality, single-digital-gateway]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 25 (user feedback tool)"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 25(1)–(2) (user feedback tool)"]
     tests: [EGOV-T10]
     en:
       title: Feedback on each procedure page
@@ -253,23 +253,23 @@ requirements:
     obligation: must
     priority: medium
     tags: [interoperability, assessment, cross-border]
-    refs: ["Regulation (EU) 2024/903 (Interoperable Europe Act) Art. 3 (interoperability assessment)"]
+    refs: ["Regulation (EU) 2024/903 (Interoperable Europe Act) Art. 3(1)–(2) (interoperability assessment)"]
     tests: [EGOV-T11]
     en:
-      title: Interoperability assessment before a new cross-border service
-      description: Before deciding on a new or substantially modified trans-European digital public service, the authority MUST carry out and publish an interoperability assessment.
+      title: Interoperability assessment before new binding requirements
+      description: Before deciding on new or substantially modified binding requirements that affect trans-European digital public services, the authority MUST carry out an interoperability assessment and publish its report on an official website.
       rationale: Services designed in isolation become barriers between member states, and the Interoperable Europe Act requires the assessment.
       criteria:
         - method: inspection
-          text: The decision record of the last new trans-European service refers to a published interoperability assessment dated before the decision.
+          text: The decision record of the latest new or changed binding requirement for a trans-European digital public service refers to a published interoperability assessment report dated before the decision.
           threshold: "1 assessment before the decision"
     sv:
-      title: Bedömning av interoperabilitet före en ny gränsöverskridande tjänst
-      description: Innan beslut fattas om en ny eller väsentligt ändrad transeuropeisk digital offentlig tjänst SKA myndigheten genomföra och publicera en bedömning av interoperabiliteten.
+      title: Bedömning av interoperabilitet före nya bindande krav
+      description: Innan beslut fattas om nya eller väsentligt ändrade bindande krav som påverkar transeuropeiska digitala offentliga tjänster SKA myndigheten genomföra en bedömning av interoperabiliteten och publicera rapporten på en officiell webbplats.
       rationale: Tjänster som utformas var för sig blir hinder mellan medlemsstaterna, och förordningen om ett kompatibelt Europa kräver bedömningen.
       criteria:
         - method: inspection
-          text: Beslutsunderlaget för den senaste nya transeuropeiska tjänsten hänvisar till en publicerad bedömning av interoperabiliteten daterad före beslutet.
+          text: Beslutsunderlaget för det senaste nya eller ändrade bindande kravet för en transeuropeisk digital offentlig tjänst hänvisar till en publicerad rapport om bedömningen av interoperabiliteten daterad före beslutet.
           threshold: "1 bedömning före beslutet"
 
   - id: EGOV-12
@@ -277,7 +277,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [acknowledgement, receipt, case-number]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6 (online procedures)"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6(2)(b) (automatic acknowledgement of receipt)"]
     tests: [EGOV-T12]
     en:
       title: Acknowledgement of receipt with a case number
@@ -301,7 +301,7 @@ requirements:
     obligation: must
     priority: high
     tags: [records, registration, public-documents]
-    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)"]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)", "Offentlighets- och sekretesslag (2009:400) 5 kap. 2 § (uppgifter i registret)"]
     tests: [EGOV-T13]
     en:
       title: Submissions registered as official documents
@@ -325,7 +325,7 @@ tests:
     priority: high
     execution: manual
     tags: [eudi-wallet, authentication]
-    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5f (cross-border reliance on European Digital Identity Wallets)"]
+    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5f(1) (cross-border reliance on European Digital Identity Wallets)"]
     en:
       title: Sign-in with a test wallet
       description: Signs in to the service with a wallet from the reference implementation.
@@ -383,7 +383,7 @@ tests:
     priority: high
     execution: manual
     tags: [relying-party, data-minimisation]
-    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5b (wallet-relying parties)"]
+    refs: ["Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5b(3) (wallet-relying parties request only registered data)"]
     en:
       title: Presentation requests against the registration
       description: Compares the attributes requested in each procedure with the relying party registration.
@@ -469,7 +469,7 @@ tests:
     priority: high
     execution: manual
     tags: [fully-online, procedures]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6 (online procedures)"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6(2) (procedures offered fully online)"]
     en:
       title: Procedure from start to decision online
       description: Completes an in-scope procedure as a test user and notes every step.
@@ -501,7 +501,7 @@ tests:
     priority: high
     execution: manual
     tags: [once-only, evidence]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 14 (technical system for the exchange of evidence)"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 14(3) (explicit request and preview of evidence)"]
     en:
       title: Evidence retrieved through the once-only system
       description: Chooses the once-only option for a piece of evidence and checks the preview and confirmation.
@@ -533,7 +533,7 @@ tests:
     priority: high
     execution: manual
     tags: [cross-border, addresses]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 13 (cross-border access to online procedures)"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 13(2)(b) (cross-border access to online procedures)"]
     en:
       title: Application by a resident of another country
       description: Fills in the application with foreign contact and identity data.
@@ -595,7 +595,7 @@ tests:
     priority: medium
     execution: manual
     tags: [feedback, quality]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 25 (user feedback tool)"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 25(1)–(2) (user feedback tool)"]
     en:
       title: Feedback tool on procedure pages
       description: Uses the feedback tool on an in-scope procedure page.
@@ -627,24 +627,24 @@ tests:
     priority: medium
     execution: manual
     tags: [interoperability, assessment]
-    refs: ["Regulation (EU) 2024/903 (Interoperable Europe Act) Art. 3 (interoperability assessment)"]
+    refs: ["Regulation (EU) 2024/903 (Interoperable Europe Act) Art. 3(1)–(2) (interoperability assessment)"]
     en:
       title: Interoperability assessment in the decision record
-      description: Checks the decision record of the latest new trans-European service.
+      description: Checks the decision record of the latest new or changed binding requirement for a trans-European digital public service.
       preconditions: The decision record and the authority's publication of interoperability assessments.
       expected: A published assessment exists and is dated before the decision.
       steps:
-        - action: Open the decision record of the latest new trans-European digital public service.
+        - action: Open the decision record of the latest new or changed binding requirement for a trans-European digital public service.
           expected: The record refers to an interoperability assessment.
         - action: Find the published assessment and compare dates.
           expected: The assessment is published and dated before the decision.
     sv:
       title: Bedömning av interoperabilitet i beslutsunderlaget
-      description: Kontrollerar beslutsunderlaget för den senaste nya transeuropeiska tjänsten.
+      description: Kontrollerar beslutsunderlaget för det senaste nya eller ändrade bindande kravet för en transeuropeisk digital offentlig tjänst.
       preconditions: Beslutsunderlaget och myndighetens publicering av bedömningar av interoperabilitet.
       expected: En publicerad bedömning finns och är daterad före beslutet.
       steps:
-        - action: Öppna beslutsunderlaget för den senaste nya transeuropeiska digitala offentliga tjänsten.
+        - action: Öppna beslutsunderlaget för det senaste nya eller ändrade bindande kravet för en transeuropeisk digital offentlig tjänst.
           expected: Underlaget hänvisar till en bedömning av interoperabiliteten.
         - action: Leta upp den publicerade bedömningen och jämför datumen.
           expected: Bedömningen är publicerad och daterad före beslutet.
@@ -653,7 +653,7 @@ tests:
     priority: medium
     execution: manual
     tags: [acknowledgement, receipt]
-    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6 (online procedures)"]
+    refs: ["Regulation (EU) 2018/1724 (SDG) Art. 6(2)(b) (automatic acknowledgement of receipt)"]
     en:
       title: Acknowledgement after submission
       description: Submits an application whose outcome is not immediate and waits for the acknowledgement.
@@ -679,7 +679,7 @@ tests:
     priority: high
     execution: manual
     tags: [records, registration]
-    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)"]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)", "Offentlighets- och sekretesslag (2009:400) 5 kap. 2 § (uppgifter i registret)"]
     en:
       title: Submission registered in the records system
       description: Submits an application and looks it up in the records system.

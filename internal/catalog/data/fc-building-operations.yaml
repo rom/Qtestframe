@@ -313,7 +313,7 @@ requirements:
     obligation: must
     priority: high
     tags: [work-environment, risk-assessment, premises]
-    refs: ["AFS 2023:1 (systematic work environment management)", "AFS 2023:12 (design of workplaces)"]
+    refs: ["AFS 2023:1 11 § (investigation and risk assessment)", "AFS 2023:1 13 § (action plan)", "AFS 2023:12 (design of workplaces)"]
     tests: [FCOPS-T09]
     en:
       title: Yearly work environment risk assessment of the premises
@@ -335,7 +335,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [lighting, workstation, ergonomics]
-    refs: ["EN 12464-1:2021 (lighting of indoor work places)", "AFS 2023:12 (design of workplaces)"]
+    refs: ["EN 12464-1:2021 (lighting of indoor work places)", "AFS 2023:12 5 kap. 24 § (quality of lighting)"]
     tests: [FCOPS-T10]
     en:
       title: Maintained illuminance of at least 500 lux at desk workstations
@@ -359,7 +359,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [ergonomics, workstation, furniture]
-    refs: ["AFS 2023:12 (design of workplaces)", "ISO 9241-5 (workstation layout and postural requirements)"]
+    refs: ["AFS 2023:12 3 kap. 28 § (furnishings and equipment)", "ISO 9241-5 (workstation layout and postural requirements)"]
     tests: [FCOPS-T10]
     en:
       title: Height-adjustable desk and adjustable chair at each fixed workstation
@@ -667,7 +667,7 @@ tests:
     priority: high
     execution: manual
     tags: [work-environment, risk-assessment]
-    refs: ["AFS 2023:1 (systematic work environment management)"]
+    refs: ["AFS 2023:1 11 § (investigation and risk assessment)", "AFS 2023:1 13 § (action plan)"]
     en:
       title: Review of the work environment risk assessment of the premises
       description: Reviews the latest risk assessment and its action plan.
@@ -697,7 +697,7 @@ tests:
     priority: medium
     execution: manual
     tags: [lighting, ergonomics]
-    refs: ["EN 12464-1:2021 (lighting of indoor work places)", "AFS 2023:12 (design of workplaces)"]
+    refs: ["EN 12464-1:2021 (lighting of indoor work places)", "AFS 2023:12 5 kap. 24 § (quality of lighting)", "AFS 2023:12 3 kap. 28 § (furnishings and equipment)"]
     en:
       title: Illuminance and furniture at sampled workstations
       description: Measures the illuminance and checks the furniture adjustments at 10 sampled workstations.

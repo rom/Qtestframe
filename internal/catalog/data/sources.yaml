@@ -2619,6 +2619,12 @@ sources:
     name: {en: "Pressure Equipment Directive 2014/68/EU", sv: "Direktivet om tryckbärande anordningar 2014/68/EU"}
     match: ["Directive 2014/68/EU"]
     url: https://eur-lex.europa.eu/eli/dir/2014/68/oj
+  - id: lifts-directive
+    kind: directive
+    jurisdiction: EU
+    name: {en: "Lifts Directive 2014/33/EU", sv: "Hissdirektivet 2014/33/EU"}
+    match: ["Directive 2014/33/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2014/33/oj
   - id: noise-at-work
     kind: directive
     jurisdiction: EU

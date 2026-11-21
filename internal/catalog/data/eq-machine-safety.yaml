@@ -495,7 +495,7 @@ requirements:
     tests: [EQSAF-T15]
     en:
       title: Digital instructions with a free paper copy on request
-      description: When the instructions are supplied in digital form, the manufacturer MUST state on the machine or its packaging how to access them, keep them downloadable for at least 10 years and send a paper copy free of charge when the buyer asks for one at the time of purchase.
+      description: When the instructions are supplied in digital form, the manufacturer MUST state on the machine or its packaging how to access them, keep them accessible online for the expected lifetime of the machine and at least 10 years after it was placed on the market, and send a paper copy free of charge within 1 month when the buyer asks for one at the time of purchase.
       rationale: Digital instructions are easier to keep current, but users without access to them still need the safety information.
       criteria:
         - method: inspection
@@ -503,7 +503,7 @@ requirements:
           threshold: ≥ 10 years online
     sv:
       title: Digital bruksanvisning med kostnadsfri papperskopia på begäran
-      description: När bruksanvisningen levereras i digital form SKA tillverkaren ange på maskinen eller förpackningen hur den nås, hålla den nedladdningsbar i minst 10 år och skicka en papperskopia utan kostnad när köparen begär det vid köpet.
+      description: När bruksanvisningen levereras i digital form SKA tillverkaren ange på maskinen eller förpackningen hur den nås, hålla den tillgänglig på nätet under maskinens förväntade livslängd och minst 10 år efter att den släpptes ut på marknaden, och skicka en papperskopia utan kostnad inom 1 månad när köparen begär det vid köpet.
       rationale: En digital bruksanvisning är lättare att hålla aktuell, men användare som saknar tillgång till den behöver ändå säkerhetsinformationen.
       criteria:
         - method: inspection

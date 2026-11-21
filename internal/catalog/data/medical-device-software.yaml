@@ -229,7 +229,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [udi, identification, version]
-    refs: ["Regulation (EU) 2017/745 (MDR) Art. 27 (unique device identification)", "Regulation (EU) 2017/745 (MDR) Annex VI Part C §6.5 (device software)"]
+    refs: ["Regulation (EU) 2017/745 (MDR) Art. 27 (unique device identification)", "Regulation (EU) 2017/745 (MDR) Annex VI Part C §6.5.4(b) (UDI on a readily accessible screen)"]
     tests: [MDSW-T10]
     en:
       title: UDI and version shown in the software
@@ -253,7 +253,7 @@ requirements:
     obligation: must
     priority: high
     tags: [vigilance, serious-incidents, reporting]
-    refs: ["Regulation (EU) 2017/745 (MDR) Art. 87 (reporting of serious incidents)"]
+    refs: ["Regulation (EU) 2017/745 (MDR) Art. 87(3)–(5) (reporting of serious incidents)"]
     tests: [MDSW-T11]
     en:
       title: Serious incidents reported on time
@@ -617,7 +617,7 @@ tests:
     priority: high
     execution: manual
     tags: [vigilance, serious-incidents]
-    refs: ["Regulation (EU) 2017/745 (MDR) Art. 87 (reporting of serious incidents)"]
+    refs: ["Regulation (EU) 2017/745 (MDR) Art. 87(3)–(5) (reporting of serious incidents)"]
     en:
       title: Reporting times of serious incidents
       description: Checks awareness and report dates in the vigilance log.

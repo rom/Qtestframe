@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [security-protection-analysis, risk-analysis]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "Säkerhetsskyddsförordning (2021:955) 2 kap. 1 § (säkerhetsskyddsanalysens innehåll)", "PMFS 2022:1"]
     tests: [SAKS-T01]
     en:
       title: Protective security requirements based on the security protection analysis
@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [classification, marking]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 5 § (säkerhetsskyddsklassificering)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 5 § (säkerhetsskyddsklassificering)", "PMFS 2022:1", "Säkerhetsskyddsförordning (2021:955) 3 kap. 7 § (anteckning om säkerhetsskyddsklass)"]
     tests: [SAKS-T02]
     en:
       title: Classification level shown on screen, in exports and on printouts
@@ -102,7 +102,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [need-to-know, access-control]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "Säkerhetsskyddsförordning (2021:955) 2 kap. 2 § (behörighet och behov av uppgifterna)"]
     tests: [SAKS-T04]
     en:
       title: Need-to-know is checked in addition to the clearance
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: high
     tags: [logging, audit]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "Säkerhetsskyddsförordning (2021:955) 3 kap. 4 § (spårbarhet)"]
     tests: [SAKS-T06]
     en:
       title: Logging of each access to classified records
@@ -248,7 +248,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [encryption, approved-products]
-    refs: ["Säkerhetsskyddsförordning (2021:955)", "Försvarsmaktens föreskrifter om säkerhetsskydd (FFS)"]
+    refs: ["Säkerhetsskyddsförordning (2021:955) 3 kap. 5 § (kryptografiska funktioner godkända av Försvarsmakten)", "Försvarsmaktens föreskrifter om säkerhetsskydd (FFS)"]
     tests: [SAKS-T09]
     en:
       title: Encryption with products approved by the Swedish Armed Forces
@@ -324,14 +324,14 @@ requirements:
     tests: [SAKS-T11]
     en:
       title: Suppliers work on classified systems only under a protective security agreement
-      description: The organisation MUST NOT let a supplier develop, operate, host or maintain a system that handles classified information before a protective security agreement (Swedish term säkerhetsskyddsavtal) with the supplier is signed and each of the supplier's staff with access has passed the security vetting for the level.
+      description: The organisation MUST NOT let a supplier develop, operate, host or maintain a system that handles information classified CONFIDENTIAL (konfidentiell) or higher before a protective security agreement (Swedish term säkerhetsskyddsavtal) with the supplier is signed and each of the supplier's staff with access has passed the security vetting for the level.
       rationale: A supplier with access to the system has the same access to the information as the organisation's own staff, and the agreement and the vetting are what bind the supplier to the same protection.
       criteria:
         - method: review
           text: Each supplier with access to the system has a signed agreement dated before its first access, and each named person of the supplier with access has a recorded vetting at the level of the system.
     sv:
       title: Leverantörer arbetar med säkerhetsskyddsklassificerade system bara under säkerhetsskyddsavtal
-      description: Organisationen SKA INTE låta en leverantör utveckla, driva, vara värd för eller underhålla ett system som behandlar säkerhetsskyddsklassificerade uppgifter innan ett säkerhetsskyddsavtal med leverantören är undertecknat och var och en av leverantörens personal med åtkomst har godkänts vid säkerhetsprövning för nivån.
+      description: Organisationen SKA INTE låta en leverantör utveckla, driva, vara värd för eller underhålla ett system som behandlar uppgifter i säkerhetsskyddsklassen konfidentiell eller högre innan ett säkerhetsskyddsavtal med leverantören är undertecknat och var och en av leverantörens personal med åtkomst har godkänts vid säkerhetsprövning för nivån.
       rationale: En leverantör med åtkomst till systemet har samma tillgång till uppgifterna som organisationens egen personal, och avtalet och prövningen är det som binder leverantören till samma skydd.
       criteria:
         - method: review
@@ -342,7 +342,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [procurement, outsourcing, security-assessment]
-    refs: ["Säkerhetsskyddslag (2018:585) 4 kap. (säkerhetsskyddad upphandling)", "Säkerhetsskyddsförordning (2021:955)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 4 kap. 7–8 §§ (särskild säkerhetsskyddsbedömning och lämplighetsprövning)", "Säkerhetsskyddsförordning (2021:955)"]
     tests: [SAKS-T12]
     en:
       title: Protective security assessment before outsourcing or procurement
@@ -408,7 +408,7 @@ requirements:
     obligation: must
     priority: high
     tags: [training, security-clearance, staff]
-    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 4 § (personalsäkerhet)", "Säkerhetsskyddsförordning (2021:955) 5 kap. 1 § (utbildning i säkerhetsskydd)", "PMFS 2022:1"]
     tests: [SAKS-T15]
     en:
       title: Protective security training before access and every 12 months
@@ -796,7 +796,7 @@ tests:
     priority: critical
     execution: manual
     tags: [procurement]
-    refs: ["Säkerhetsskyddslag (2018:585) 4 kap. (säkerhetsskyddad upphandling)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 4 kap. 7–8 §§ (särskild säkerhetsskyddsbedömning och lämplighetsprövning)"]
     en:
       title: Procurements have a protective security assessment
       description: Compares the procurements of the last 24 months with the protective security assessments.
@@ -882,7 +882,7 @@ tests:
     priority: high
     execution: automated
     tags: [training, security-clearance]
-    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 4 § (personalsäkerhet)", "Säkerhetsskyddsförordning (2021:955) 5 kap. 1 § (utbildning i säkerhetsskydd)"]
     en:
       title: Expired training withdraws access to classified records
       description: A script sets the training date of a cleared user and requests a classified record.

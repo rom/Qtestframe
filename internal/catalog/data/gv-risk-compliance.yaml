@@ -215,7 +215,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [whistleblowing, reporting-channel, feedback]
-    refs: ["Directive (EU) 2019/1937 Art. 9(1)", "Lag (2021:890) om skydd för personer som rapporterar om missförhållanden"]
+    refs: ["Directive (EU) 2019/1937 Art. 9(1)(b) (acknowledgment within 7 days)", "Directive (EU) 2019/1937 Art. 9(1)(f) (feedback within 3 months)", "Lag (2021:890) om skydd för personer som rapporterar om missförhållanden 5 kap. 8 §"]
     tests: [GVRC-T06]
     en:
       title: Whistleblowing reports acknowledged in 7 days and answered in 3 months
@@ -239,7 +239,7 @@ requirements:
     obligation: must
     priority: high
     tags: [archives, archive-description, public-authority]
-    refs: ["Arkivlag (1990:782) 6 §"]
+    refs: ["Arkivlag (1990:782) 6 § 2 p. (arkivbeskrivning och arkivförteckning)"]
     tests: [GVRC-T07]
     en:
       title: Archive description and archive list kept up to date
@@ -263,7 +263,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [archives, disposal, retention]
-    refs: ["Arkivlag (1990:782) 10 §"]
+    refs: ["Arkivlag (1990:782) 10 § (gallring)", "Arkivlag (1990:782) 6 § 5 p. (verkställa föreskriven gallring)"]
     tests: [GVRC-T07]
     en:
       title: No disposal of public records without a disposal decision
@@ -285,12 +285,12 @@ requirements:
     obligation: must
     priority: high
     tags: [public-records, registration, public-access]
-    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 §"]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)"]
     tests: [GVRC-T08]
     en:
       title: Public records registered no later than the working day after receipt
       description: A public authority MUST register each received or drawn up public record that is subject to registration no later than the working day after it was received or drawn up.
-      rationale: Registration is how the public learns which records exist, and a delay hides them from requests for access.
+      rationale: The law requires registration as soon as a record is received or drawn up, and 1 working day makes that measurable; registration is how the public learns which records exist.
       criteria:
         - method: analysis
           text: For 20 sampled records, the registration date is at most 1 working day after the date of receipt or drawing up.
@@ -298,7 +298,7 @@ requirements:
     sv:
       title: Allmänna handlingar registreras senast arbetsdagen efter att de kommit in
       description: En myndighet SKA registrera varje allmän handling som har kommit in eller upprättats och som omfattas av registreringsskyldigheten senast arbetsdagen efter att den kom in eller upprättades.
-      rationale: Registreringen är det sätt på vilket allmänheten får veta vilka handlingar som finns, och en fördröjning döljer dem för den som begär ut handlingar.
+      rationale: Lagen kräver registrering så snart en handling har kommit in eller upprättats, och 1 arbetsdag gör kravet mätbart; registreringen är det sätt på vilket allmänheten får veta vilka handlingar som finns.
       criteria:
         - method: analysis
           text: För 20 utvalda handlingar ligger registreringsdatumet högst 1 arbetsdag efter datumet då handlingen kom in eller upprättades.
@@ -483,7 +483,7 @@ tests:
     priority: critical
     execution: manual
     tags: [whistleblowing]
-    refs: ["Directive (EU) 2019/1937 Art. 9(1)"]
+    refs: ["Directive (EU) 2019/1937 Art. 9(1)(b) (acknowledgment within 7 days)", "Directive (EU) 2019/1937 Art. 9(1)(f) (feedback within 3 months)"]
     en:
       title: Handling times in the whistleblowing channel
       description: Checks the receipt and feedback times of whistleblowing reports and submits a test report.
@@ -513,7 +513,7 @@ tests:
     priority: high
     execution: manual
     tags: [archives, disposal]
-    refs: ["Arkivlag (1990:782) 6 §", "Arkivlag (1990:782) 10 §"]
+    refs: ["Arkivlag (1990:782) 6 § 2 p. (arkivbeskrivning och arkivförteckning)", "Arkivlag (1990:782) 6 § 5 p. (verkställa föreskriven gallring)", "Arkivlag (1990:782) 10 § (gallring)"]
     en:
       title: Archive description, archive list and disposal log
       description: Reviews the archive documents of the authority and the decisions behind recent disposals.
@@ -543,7 +543,7 @@ tests:
     priority: high
     execution: manual
     tags: [registration, digital-preservation]
-    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 §", "ISO 14721:2025 (open archival information system)"]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)", "ISO 14721:2025 (open archival information system)"]
     en:
       title: Registration delay and checksum verification in the e-archive
       description: Samples registered records for their registration delay and tests the fixity check of the electronic archive.

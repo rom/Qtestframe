@@ -585,7 +585,7 @@ requirements:
     obligation: must
     priority: high
     tags: [fundamental-rights, impact-assessment, deployer]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 27 (fundamental rights impact assessment)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 27(1) (fundamental rights impact assessment)"]
     tests: [AIACT-T16]
     en:
       title: Fundamental rights impact assessment before first use
@@ -609,7 +609,7 @@ requirements:
     obligation: must
     priority: high
     tags: [quality-management, provider, documentation]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 17 (quality management system)", "ISO/IEC 42001:2023 §4.4 (AI management system)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 17(1) (quality management system)", "ISO/IEC 42001:2023 §4.4 (AI management system)"]
     tests: [AIACT-T17]
     en:
       title: Quality management system of the provider
@@ -657,7 +657,7 @@ requirements:
     obligation: must
     priority: high
     tags: [explanation, affected-persons, decisions]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 86 (right to explanation of individual decision-making)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 86(1) (right to explanation of individual decision-making)"]
     tests: [AIACT-T19]
     en:
       title: Explanation of a decision on request
@@ -1110,7 +1110,7 @@ tests:
     priority: high
     execution: manual
     tags: [fundamental-rights, impact-assessment]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 27 (fundamental rights impact assessment)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 27(1) (fundamental rights impact assessment)"]
     en:
       title: Impact assessment record before go-live
       description: Checks the assessment for a deployed high-risk AI system that falls under the obligation.
@@ -1140,7 +1140,7 @@ tests:
     priority: high
     execution: manual
     tags: [quality-management, provider]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 17 (quality management system)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 17(1) (quality management system)"]
     en:
       title: Quality management system covers the listed aspects
       description: Maps the aspects listed in Art. 17 to the provider's procedures.
@@ -1194,7 +1194,7 @@ tests:
     priority: high
     execution: manual
     tags: [explanation, decisions]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 86 (right to explanation of individual decision-making)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 86(1) (right to explanation of individual decision-making)"]
     en:
       title: Answering a request for explanation
       description: Submits a request for explanation of a decision and checks the answer.

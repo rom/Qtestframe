@@ -331,18 +331,18 @@ requirements:
     tests: [PJDEL-T10]
     en:
       title: Award decision with reasons sent to each tenderer
-      description: The buyer MUST send the award decision to each tenderer on the same day, with the name of the winning tenderer and the reasons for the decision.
+      description: The buyer MUST send a written notice of the award decision to each candidate and tenderer, stating the reasons for the decision and the end date of the standstill period before which no contract is signed.
       rationale: Tenderers need the reasons to judge whether to accept the decision or ask for a review, and the standstill period counts from the notice.
       criteria:
         - method: review
-          text: The sending log shows the same date for each tenderer, and the notice names the winner and states the reasons.
+          text: The sending log lists each candidate and tenderer, and the notice states the reasons and the standstill period.
     sv:
       title: Tilldelningsbeslut med skäl skickas till varje anbudsgivare
-      description: Beställaren SKA skicka tilldelningsbeslutet till varje anbudsgivare samma dag, med namnet på den vinnande anbudsgivaren och skälen för beslutet.
+      description: Beställaren SKA skicka en skriftlig underrättelse om tilldelningsbeslutet till varje anbudssökande och anbudsgivare, med skälen för beslutet och uppgift om hur länge avtalsspärren gäller.
       rationale: Anbudsgivarna behöver skälen för att bedöma om de godtar beslutet eller begär överprövning, och avtalsspärren räknas från underrättelsen.
       criteria:
         - method: review
-          text: Utskickslistan visar samma datum för varje anbudsgivare, och underrättelsen namnger vinnaren och anger skälen.
+          text: Utskickslistan tar upp varje anbudssökande och anbudsgivare, och underrättelsen anger skälen och avtalsspärren.
 
   - id: PJDEL-16
     type: regulatory
@@ -373,7 +373,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [procurement, contract-change]
-    refs: ["Directive 2014/24/EU Art. 72 (modification of contracts during their term)", "Lag (2016:1145) om offentlig upphandling (LOU) 17 kap. (ändring av kontrakt)"]
+    refs: ["Directive 2014/24/EU Art. 72 (modification of contracts during their term)", "Lag (2016:1145) om offentlig upphandling (LOU) 17 kap. 8–15 §§ (ändring av kontrakt)"]
     tests: [PJDEL-T11]
     en:
       title: Contract changes assessed against the procurement rules
@@ -682,12 +682,12 @@ tests:
       title: Award notice and standstill before signature
       description: Checks the contents and sending of the award decision and the time until the contract was signed.
       preconditions: The award decision, the sending log and the signed contract.
-      expected: Each tenderer got the reasoned decision the same day, and the contract was signed after the standstill period.
+      expected: Each candidate and tenderer got the reasoned decision, and the contract was signed after the standstill period.
       steps:
         - action: Read the award decision.
-          expected: It names the winning tenderer and states the reasons.
-        - action: Compare the sending date for each tenderer in the log.
-          expected: The date is the same for each tenderer.
+          expected: It states the reasons for the decision and the standstill period.
+        - action: Compare the sending log with the list of candidates and tenderers.
+          expected: Each candidate and tenderer is in the log with a sending date.
         - action: Count the days from the sending date to the contract signature date.
           expected: At least 10 full days have passed.
           data: "Sent 3 March, signed 14 March or later"
@@ -695,12 +695,12 @@ tests:
       title: Underrättelse om tilldelning och avtalsspärr före undertecknande
       description: Kontrollerar innehållet i och utskicket av tilldelningsbeslutet och tiden fram till att avtalet tecknades.
       preconditions: Tilldelningsbeslutet, utskickslistan och det undertecknade avtalet.
-      expected: Varje anbudsgivare fick det motiverade beslutet samma dag, och avtalet tecknades efter avtalsspärren.
+      expected: Varje anbudssökande och anbudsgivare fick det motiverade beslutet, och avtalet tecknades efter avtalsspärren.
       steps:
         - action: Läs tilldelningsbeslutet.
-          expected: Det namnger den vinnande anbudsgivaren och anger skälen.
-        - action: Jämför utskicksdatumet för varje anbudsgivare i listan.
-          expected: Datumet är detsamma för varje anbudsgivare.
+          expected: Det anger skälen för beslutet och avtalsspärren.
+        - action: Jämför utskickslistan med förteckningen över anbudssökande och anbudsgivare.
+          expected: Varje anbudssökande och anbudsgivare finns i listan med ett utskicksdatum.
         - action: Räkna dagarna från utskicksdatumet till avtalets undertecknandedatum.
           expected: Minst 10 hela dagar har gått.
           data: "Skickat 3 mars, undertecknat 14 mars eller senare"
