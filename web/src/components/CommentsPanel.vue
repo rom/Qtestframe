@@ -14,8 +14,12 @@ import type { Comment } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
+import { usePrefsStore } from '@/stores/prefs'
+import { rememberValues } from '@/lib/suggest'
 
 const props = defineProps<{ entity: 'requirement' | 'test'; entityId: string }>()
+const route = useRoute()
 const emit = defineEmits<{ count: [n: number] }>()
 const auth = useAuthStore()
 const notify = useNotify()
@@ -60,6 +64,8 @@ async function post() {
     else await load()
     draft.value = ''
     emit('count', comments.value.length)
+    const pid = typeof route.params.projectId === 'string' ? route.params.projectId : ''
+    if (pid) void rememberValues(usePrefsStore().prefs, pid, [{ field: 'comment', value: body }])
   } catch (e) {
     notify.fail(e, t('comments.addFailed'))
   } finally {
@@ -128,7 +134,7 @@ function onKey(e: KeyboardEvent) {
         </div>
       </div>
       <div class="grid" style="gap: 6px; margin-top: 12px">
-        <MentionInput v-model="draft" multiline rows="3" auto-resize :placeholder="t('comments.placeholder')" :aria-label="t('comments.post')" :maxlength="MAX" @keydown="onKey" />
+        <MentionInput v-model="draft" suggest="comment" multiline rows="3" auto-resize :placeholder="t('comments.placeholder')" :aria-label="t('comments.post')" :maxlength="MAX" @keydown="onKey" />
         <div class="row" style="justify-content: flex-end">
           <span v-if="draft.length > MAX - 500" class="small muted">{{ draft.length }}/{{ MAX }}</span>
           <Button :label="t('comments.post')" icon="pi pi-send" size="small" :loading="posting" :disabled="!draft.trim()" @click="post" />

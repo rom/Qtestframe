@@ -50,6 +50,8 @@ import type { Baseline, CriterionResult, ExitCriterion, Release, ReleaseStatusRe
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { usePrefsStore } from '@/stores/prefs'
+import SuggestInput from '@/components/SuggestInput.vue'
+import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
@@ -296,6 +298,7 @@ async function saveRelease() {
       await load()
       if (r?.id) open(r, 'scope')
     }
+    void rememberValues(prefs.prefs, proj.pid, savedEntries({ 'release.name': body.name }, { 'release.name': editing.value?.name }))
     dialog.value = false
   } catch (e) {
     formError.value = errorMessage(e)
@@ -750,7 +753,7 @@ function itemNote(c: CriterionResult, note?: string) {
     <form class="grid" style="gap: 12px" @submit.prevent="saveRelease">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
       <div class="form-grid">
-        <div v-field class="field"><label for="rel-name">{{ t('common.name') }}</label><InputText id="rel-name" v-model="form.name" :placeholder="t('releasesView.namePlaceholder')" autofocus /></div>
+        <div v-field class="field"><label for="rel-name">{{ t('common.name') }}</label><SuggestInput id="rel-name" v-model="form.name" field="release.name" :project-id="proj.pid" :placeholder="t('releasesView.namePlaceholder')" autofocus /></div>
         <div v-field class="field"><label for="rel-version">{{ t('common.version') }}</label><InputText id="rel-version" v-model="form.version" :placeholder="t('releasesView.versionPlaceholder')" /></div>
         <div v-field class="field">
           <label for="rel-status">{{ t('common.status') }}</label>

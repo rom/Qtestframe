@@ -4,6 +4,7 @@ import { can } from '@/lib/permissions'
 import { useProjectStore } from '@/stores/project'
 import type { Me } from '@/lib/types'
 import { isChallenge, type MfaChallenge } from '@/lib/mfa'
+import { clearSuggestCache } from '@/lib/suggest'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({ me: null as Me | null, loaded: false }),
@@ -19,6 +20,9 @@ export const useAuthStore = defineStore('auth', {
       return can(this.me, perm, proj.scoped ? proj.project?.my_access : null)
     },
     set(me: Me | null) {
+      // cached autocomplete answers belong to one user in one organisation (and preference)
+      const ac = (m: Me | null) => `${m?.user?.id}|${m?.tenant?.id}|${m?.user?.preferences?.autocomplete ?? ''}`
+      if (ac(me) !== ac(this.me)) clearSuggestCache()
       this.me = me
       this.loaded = true
       setCsrfToken(me?.csrf_token)

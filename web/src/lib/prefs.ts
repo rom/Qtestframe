@@ -1,6 +1,7 @@
 // User preferences (Me.user.preferences): normalisation, defaults and the
 // pure decisions the app derives from them.
 import type { Preferences } from './types'
+import { AUTOCOMPLETE_MODES } from './suggest'
 import { THEME_IDS, concreteTheme, isDecorative, isThemeId, schemeOf, type ConcreteThemeId, type ThemeId } from '@/themes/registry'
 
 /** All values of the theme preference: light, dark, system and the decorative themes. */
@@ -28,6 +29,7 @@ export function normalizePrefs(raw: Partial<Preferences> | null | undefined): Pr
   if (typeof p.create_linked_test === 'boolean') out.create_linked_test = p.create_linked_test
   // --- obligation keyword highlighting ---
   if (p.hide_obligation_highlight === true) out.hide_obligation_highlight = true
+  if (p.autocomplete && (AUTOCOMPLETE_MODES as readonly string[]).includes(p.autocomplete)) out.autocomplete = p.autocomplete
   return out
 }
 
@@ -44,6 +46,7 @@ const KEYS: (keyof Preferences)[] = [
   'create_linked_test',
   // --- obligation keyword highlighting ---
   'hide_obligation_highlight',
+  'autocomplete',
 ]
 
 /**

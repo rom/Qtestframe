@@ -58,6 +58,8 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import ConflictDialog from './ConflictDialog.vue'
+import SuggestInput from './SuggestInput.vue'
+import { autocompleteEnabled, fetchSuggestions, rememberValues, savedEntries } from '@/lib/suggest'
 import CatalogOrigin from './CatalogOrigin.vue'
 import { fieldConflicts, REQUIREMENT_FIELDS, staleOf, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
@@ -189,8 +191,19 @@ async function loadSources() {
   }
 }
 const sourceSuggestions = ref<string[]>([])
-function completeSource(e: { query: string }) {
-  sourceSuggestions.value = filterSources(sources.value, e.query)
+async function completeSource(e: { query: string }) {
+  const local = filterSources(sources.value, e.query)
+  sourceSuggestions.value = local
+  // plus the sources this user typed before (autocomplete history)
+  const q = e.query.trim()
+  if (!q || !autocompleteEnabled(prefs.prefs)) return
+  try {
+    const known = new Set(local.map((x) => x.toLowerCase()))
+    const mine = (await fetchSuggestions('requirement.source', q, props.projectId)).map((x) => x.value).filter((v) => !known.has(v.toLowerCase()))
+    if (mine.length) sourceSuggestions.value = [...local, ...mine]
+  } catch {
+    /* the project's sources are enough */
+  }
 }
 watch(() => props.projectId, loadSources, { immediate: true })
 
@@ -405,6 +418,16 @@ watch(
     if (props.itemId && JSON.stringify(bodyOf(form.value)) === JSON.stringify(loaded.value)) void load()
   },
 )
+/** the free-text values to remember for autocomplete (those that changed) */
+function suggestValues(after: Record<string, unknown>, before: Record<string, unknown> | null) {
+  const pick = (b: Record<string, unknown> | null) => ({
+    'requirement.title': b?.title as string,
+    'requirement.source': b?.source as string,
+    'requirement.owner': b?.owner as string,
+    'requirement.rationale': b?.rationale as string,
+  })
+  return savedEntries(pick(after), before ? pick(before) : {})
+}
 function delRequirement(id: string) {
   return () => api.delTrash(`/requirements/${id}`)
 }
@@ -467,6 +490,7 @@ async function save() {
       }
     }
     emit('saved', saved)
+    void rememberValues(prefs.prefs, props.projectId, suggestValues(body, before))
     if (!isNew.value) await load() // refresh version and counts
   } catch (e) {
     const st = staleOf<Requirement>(e)
@@ -590,7 +614,7 @@ function criterionLabel(id: string | null) {
 
     <div v-field class="field">
       <label>{{ t('common.title') }}</label>
-      <InputText v-model="form.title" :disabled="!canWrite" required autofocus />
+      <SuggestInput v-model="form.title" field="requirement.title" :project-id="projectId" :disabled="!canWrite" required autofocus />
     </div>
     <div v-field class="field">
       <label v-if="canWrite">{{ t('common.description') }}</label>
@@ -685,7 +709,7 @@ function criterionLabel(id: string | null) {
       <div v-field class="field">
         <label>{{ t('common.owner') }}</label>
         <HelpTip id="req.owner" :label="t('common.owner')" />
-        <MentionInput v-model="form.owner" :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" />
+        <MentionInput v-model="form.owner" suggest="requirement.owner" :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.source') }}</label>
@@ -707,7 +731,7 @@ function criterionLabel(id: string | null) {
       <div v-field class="field full">
         <label>{{ t('requirements.rationale') }}</label>
         <HelpTip id="req.rationale" :label="t('requirements.rationale')" />
-        <MentionInput v-model="form.rationale" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
+        <MentionInput v-model="form.rationale" suggest="requirement.rationale" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.folder') }}</label>

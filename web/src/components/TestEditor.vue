@@ -19,7 +19,6 @@ import TagSuggestions from './TagSuggestions.vue'
 import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, ref, watch } from 'vue'
-import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
@@ -52,6 +51,9 @@ import { enumLabel, enumOptions } from '@/i18n/labels'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Category, DataRow, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
 import { useMetaStore } from '@/stores/meta'
+import { usePrefsStore } from '@/stores/prefs'
+import SuggestInput from './SuggestInput.vue'
+import { rememberValues, savedEntries } from '@/lib/suggest'
 import { PLAYWRIGHT, WEB_STARTER } from '@/lib/webTests'
 import { useNotify } from '@/composables/notify'
 
@@ -286,6 +288,23 @@ watch(
     if (props.itemId && JSON.stringify(bodyOf(form.value)) === JSON.stringify(loaded.value)) void load()
   },
 )
+/** the free-text values to remember for autocomplete (those that changed) */
+const prefsStore = usePrefsStore()
+function suggestValues(after: Record<string, unknown>, before: Record<string, unknown> | null) {
+  type StepText = { action?: string; expected?: string; data?: string }
+  const pick = (b: Record<string, unknown> | null) => {
+    const steps = ((b?.steps as StepText[] | undefined) ?? []).filter(Boolean)
+    return {
+      'test.title': b?.title as string,
+      'test.preconditions': b?.preconditions as string,
+      'test.expected': b?.expected_result as string,
+      'test.step.action': steps.map((s) => s.action),
+      'test.step.expected': steps.map((s) => s.expected),
+      'test.step.data': steps.map((s) => s.data),
+    }
+  }
+  return savedEntries(pick(after), before ? pick(before) : {})
+}
 function delTest(id: string) {
   return () => api.delTrash(`/tests/${id}`)
 }
@@ -358,6 +377,7 @@ async function save() {
       }
     }
     emit('saved', saved)
+    void rememberValues(prefsStore.prefs, props.projectId, suggestValues(body, before))
     if (!isNew.value) await load() // refresh version, call-step keys and called_by
   } catch (e) {
     const st = staleOf<TestCase>(e)
@@ -491,7 +511,7 @@ const scriptPlaceholder = computed(() => {
 
     <div v-field class="field">
       <label>{{ t('common.title') }}</label>
-      <InputText v-model="form.title" required autofocus :disabled="!canWrite" />
+      <SuggestInput v-model="form.title" field="test.title" :project-id="projectId" required autofocus :disabled="!canWrite" />
     </div>
     <div class="row">
       <SelectButton v-model="form.execution_type" :options="execOptions" option-label="label" option-value="value" :allow-empty="false" :disabled="!canWrite" :aria-label="t('tests.executionType')">
@@ -506,7 +526,7 @@ const scriptPlaceholder = computed(() => {
       <div v-field class="field full">
         <label>{{ t('tests.preconditions') }}</label>
         <HelpTip id="test.preconditions" :label="t('tests.preconditions')" />
-        <MentionInput v-model="form.preconditions" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
+        <MentionInput v-model="form.preconditions" suggest="test.preconditions" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.status') }}</label>
@@ -573,17 +593,17 @@ const scriptPlaceholder = computed(() => {
                 <ItemRef :to="{ name: 'tests', params: { projectId }, query: { item: data.call_test_id } }" :item-key="data.call_test_key || t('tests.callTestFallback')" :title="data.call_test_title" />
               </span>
             </div>
-            <Textarea v-else v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.actionPlaceholder')" :aria-label="t('tests.stepActionN', { n: index + 1 })" />
+            <SuggestInput v-else v-model="data.action" field="test.step.action" :project-id="projectId" multiline rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.actionPlaceholder')" :aria-label="t('tests.stepActionN', { n: index + 1 })" />
           </template>
         </Column>
         <Column :header="t('tests.expectedResult')" style="width: 32%">
           <template #body="{ data, index }">
             <span v-if="data.call_test_id" class="small muted">{{ t('tests.calledExpected') }}</span>
-            <Textarea v-else v-model="data.expected" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.expectedPlaceholder')" :aria-label="t('tests.stepExpectedN', { n: index + 1 })" />
+            <SuggestInput v-else v-model="data.expected" field="test.step.expected" :project-id="projectId" multiline rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.expectedPlaceholder')" :aria-label="t('tests.stepExpectedN', { n: index + 1 })" />
           </template>
         </Column>
         <Column :header="t('tests.data')" style="width: 22%">
-          <template #body="{ data, index }"><Textarea v-if="!data.call_test_id" v-model="data.data" rows="1" auto-resize class="w-full mono" :disabled="!canWrite" :aria-label="t('tests.stepDataN', { n: index + 1 })" /></template>
+          <template #body="{ data, index }"><SuggestInput v-if="!data.call_test_id" v-model="data.data" field="test.step.data" :project-id="projectId" multiline rows="1" auto-resize class="w-full mono" :disabled="!canWrite" :aria-label="t('tests.stepDataN', { n: index + 1 })" /></template>
         </Column>
         <Column v-if="canWrite" style="width: 7.5rem">
           <template #body="{ index }">
@@ -615,7 +635,7 @@ const scriptPlaceholder = computed(() => {
     <div v-field class="field">
       <label>{{ t('tests.overallExpected') }}</label>
       <HelpTip id="test.expected" :label="t('tests.overallExpected')" />
-      <Textarea v-model="form.expected_result" rows="2" auto-resize :disabled="!canWrite" />
+      <SuggestInput v-model="form.expected_result" field="test.expected" :project-id="projectId" multiline rows="2" auto-resize :disabled="!canWrite" />
     </div>
 
     <div v-if="item">

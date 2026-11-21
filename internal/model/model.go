@@ -227,6 +227,10 @@ type Preferences struct {
 	// (MUST, SKA INTE …) in requirement descriptions; highlighting is on
 	// by default.
 	HideObligationHighlight bool `json:"hide_obligation_highlight,omitempty"`
+	// Autocomplete: suggestions in free-text fields (see AutocompleteModes):
+	// "" = on (my history and project values) | history | project | off.
+	// Only "" and history record what the user saves.
+	Autocomplete string `json:"autocomplete,omitempty"`
 }
 
 // Preference value sets.
@@ -240,6 +244,9 @@ var (
 	StartPages  = []string{"projects", "last_project", "default_project", "search"}
 	PageSizes   = []int{10, 25, 50, 100}
 	DateFormats = []string{"locale", "iso", "relative"}
+	// AutocompleteModes: the values of Preferences.Autocomplete besides ""
+	// (on: both sources).
+	AutocompleteModes = []string{"history", "project", "off"}
 )
 
 // SessionInfo describes an active login session (profile page).

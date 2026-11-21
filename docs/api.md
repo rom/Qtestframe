@@ -1273,6 +1273,7 @@ dimensions and values up to 100 characters, names up to 200.
 | `hide_analysis` | bool | hide the live requirement-language analysis in the editor |
 | `create_linked_test` | bool | personal default for "Also create linked test" (overrides the server default) |
 | `hide_obligation_highlight` | bool | do not highlight obligation keywords (MUST, SKA INTE …) in requirement descriptions; highlighting is on by default |
+| `autocomplete` | `history`, `project`, `off`; empty = on | autocomplete suggestions in free-text fields (see [Autocomplete](#autocomplete)): `history` = only my own history, `project` = only the values used in the project, `off` = no suggestions. Only empty and `history` record what you save |
 
 ## Revision history
 
@@ -1363,6 +1364,57 @@ spelling is kept), `acronym` (an upper-case abbreviation such as GDPR) or
 `keyword` (a word of the title, or a word used more than once). English and
 Swedish stop words, requirement keywords (MUST, SKA …) and placeholders are
 never suggested. Existing tags rank first.
+
+## Autocomplete
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/suggest?field=&q=&project_id=&limit=&sources=` | read of the field in `project_id` | → `{items: [{value, source, uses, last_used?}], total}` |
+| POST | `/suggest/history` | read of the field in each project | `{"project_id"?, "entries": [{"field", "value", "project_id"?}]}` → `{"recorded": n}` |
+| GET | `/suggest/history` | signed in | → `{"count": n}`: how many values you have stored (all organisations) |
+| DELETE | `/suggest/history` | signed in | clears your own history in every organisation → `{"deleted": n}` |
+
+Free-text fields of the web client suggest what was typed in them before.
+A suggestion comes from two sources (`source`):
+
+- `history`: your own values of the field, recorded by `POST
+  /suggest/history` when you save a form (not while you type). Values are
+  trimmed, at most 1000 characters, and de-duplicated per field and
+  project with a use count and the time of the last use; each user keeps
+  at most 200 values per field and organisation (the least recently used
+  go). History saved in one project is suggested in the others, but only
+  from projects you may still read with the field's read permission.
+- `project`: the distinct values already used in the project, ranked by
+  how often they are used, for the short fields `requirement.source`,
+  `requirement.owner` and `risk.owner`.
+
+`field` is one of `requirement.title`, `requirement.source`,
+`requirement.owner`, `requirement.rationale` (permission
+`requirement.read`), `test.title`, `test.preconditions`, `test.expected`,
+`test.step.action`, `test.step.expected`, `test.step.data` (`test.read`),
+`execution.notes`, `execution.step.actual`, `run.name` (`run.read`),
+`defect.title`, `defect.description`, `comment`, `review.comment`,
+`release.name` (`project.read`), `risk.title`, `risk.mitigation`,
+`risk.owner` (`requirement.read`) and `search` (the search box; it belongs
+to no project, so `project_id` must be empty). Every other field needs
+`project_id`; a project the caller may not read answers 404 and a missing
+permission 403, as for any project resource. Unknown fields answer 400.
+
+Ranking: values that start with `q` first, then values where a word
+starts with `q`, then values that contain it (ignoring case); values that
+do not contain `q`, and `q` itself, are left out. Ties go to the value used
+more often and more recently (uses weighted down by age: half after a
+month), then to the alphabetical order. An empty `q` gives the most used
+and recent values. `limit` is 1–8 (default 8). `sources=history` or
+`sources=project` narrows the sources.
+
+The personal preference `autocomplete` applies on the server too: `off`
+answers an empty list and records nothing, `project` records nothing,
+`history` suggests no project values. The queries of one user are limited
+to 300 a minute (429 `rate_limited`; the web client waits 200 ms after the
+last keystroke). The history is personal: it is deleted with your
+membership of an organisation (in that organisation) and with your
+account, and it is not part of a backup.
 
 ## Baselines
 

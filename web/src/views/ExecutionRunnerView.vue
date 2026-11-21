@@ -3,6 +3,9 @@ import ItemRef from '../components/ItemRef.vue'
 import { useUndoStore } from '@/stores/undo'
 import { patchEntry, recordUndo } from '@/lib/undoActions'
 import MentionInput from '@/components/MentionInput.vue'
+import SuggestInput from '@/components/SuggestInput.vue'
+import { rememberValues, savedEntries } from '@/lib/suggest'
+import { usePrefsStore } from '@/stores/prefs'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -323,6 +326,15 @@ async function save(): Promise<boolean> {
     if (body.output !== undefined) before.output = prev.output ?? ''
     const updated = await api.patch<Execution>(`/executions/${ex.value.id}`, body)
     recordUndo(patchEntry(t('undo.a.result', { key: prev.test?.key ?? '' }), `/executions/${prev.id}`, before, body))
+    // the notes and actual results typed here, for autocomplete
+    void rememberValues(
+      usePrefsStore().prefs,
+      proj.pid,
+      savedEntries(
+        { 'execution.notes': [notes.value, ...iterations.value.map((it) => it.notes)], 'execution.step.actual': allSteps.value.map((s) => s.actual) },
+        { 'execution.notes': [prev.notes, ...(prev.iterations ?? []).map((it) => it.notes)], 'execution.step.actual': (prev.step_results ?? []).map((s) => s.actual) },
+      ),
+    )
     if (updated) ex.value = { ...ex.value, ...updated, test: ex.value.test }
     for (const it of updated?.iterations ?? []) {
       const mine = iterations.value.find((x) => x.id === it.id)
@@ -575,7 +587,7 @@ const statusOptions = computed(() => [
         </div>
         <div v-field class="field" style="margin-top: 8px">
           <label>{{ t('testData.iterationNotes') }}</label>
-          <Textarea v-model="currentIteration.notes" rows="2" auto-resize :maxlength="20000" :disabled="!canExecute" />
+          <SuggestInput v-model="currentIteration.notes" field="execution.notes" :project-id="proj.pid" multiline rows="2" auto-resize :maxlength="20000" :disabled="!canExecute" />
         </div>
       </div>
     </section>
@@ -648,7 +660,7 @@ const statusOptions = computed(() => [
           <div v-if="steps[current].data" class="field"><span class="field-label">{{ t('runner.testData') }}</span><div class="step-box mono">{{ resolve(steps[current].data) }}</div></div>
           <div v-field class="field">
             <label>{{ t('runner.actual') }}</label>
-            <Textarea v-model="steps[current].actual" rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.actualPlaceholder')" />
+            <SuggestInput v-model="steps[current].actual" field="execution.step.actual" :project-id="proj.pid" multiline rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.actualPlaceholder')" />
           </div>
           <section class="evidence" :aria-labelledby="`evidence-${steps[current].id}`">
             <button
@@ -782,7 +794,7 @@ const statusOptions = computed(() => [
         <div v-field class="field full">
           <label>{{ t('runner.notes') }}</label>
           <HelpTip id="runner.notes" :label="t('runner.notes')" />
-          <MentionInput v-model="notes" multiline rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.notesPlaceholder')" />
+          <MentionInput v-model="notes" suggest="execution.notes" multiline rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.notesPlaceholder')" />
         </div>
       </div>
       <div v-if="canExecute" class="row" style="justify-content: flex-end; margin-top: 12px">

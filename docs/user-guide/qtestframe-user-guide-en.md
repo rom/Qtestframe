@@ -123,6 +123,17 @@ Most changes can be undone: editing, creating, copying and deleting requirements
 
 The keyboard shortcuts work outside text fields; in a text field they undo your typing as usual. The history belongs to you and your browser tab: it is cleared when you switch organisation, sign out or reload the page. A deleted requirement or test comes back with its key, links, relations, comments, history, attachments and execution results; deletions can be undone for 30 days through the API (see `GET /projects/{pid}/trash` in the API reference). An undo fails when the situation changed in the meantime, for example when someone else edited the item or you no longer have the permission; the item is then left as it is and a message explains why.
 
+### Autocomplete
+
+Text fields where you often write the same thing suggest what you saved in them before: titles of requirements, tests, defects and risks, a requirement's source, owner and rationale, a test's preconditions and expected result, the action, expected result and data of test steps, execution notes and actual results, comments, review comments, run and release names, and recent searches. For a requirement's **Source** and **Owner** and a risk's **Owner**, the values already used in the project are suggested too.
+
+- Start typing: after a short pause a list of at most eight suggestions opens under the field. Values that start with what you typed come first, then values with a word that starts with it, then values that contain it; the ones you use most and most recently win ties.
+- Nothing is chosen until you press <kbd>↓</kbd> or <kbd>↑</kbd>, so <kbd>Enter</kbd> and <kbd>Tab</kbd> work as usual while the list is just open. On a highlighted suggestion, <kbd>Enter</kbd> or <kbd>Tab</kbd> puts it in the field (it replaces the text); <kbd>Esc</kbd> closes the list without closing the dialog. You can also click or tap a suggestion.
+- In an empty one-line field, <kbd>↓</kbd> lists your most used recent values; in a multi-line field use <kbd>Alt</kbd>+<kbd>↓</kbd>, because the arrow keys move the cursor there.
+- Screen readers hear how many suggestions there are and what was inserted. A clock icon marks your own history, a folder icon a value used in the project.
+
+Your history is saved with your account when you save a form (not while you type), so it follows you to every browser. You only ever see your own history, and only from projects you can still open. Turn the suggestions off, or limit them to one source, with **Autocomplete suggestions** in your [preferences](#preferences); **Clear my autocomplete history** in your profile deletes everything that was saved. Passwords, tokens and e-mail addresses are never remembered.
+
 ### Help where you need it
 
 - Many fields and sections have a small **i** next to their name. Point at it with the mouse, or move the keyboard focus to it, to see what the field means. Select it (or tap it on a phone) to keep the explanation open, and choose **Read more in the user guide** to open the section that describes it. <kbd>Esc</kbd> closes it.
@@ -174,6 +185,9 @@ Preferences are stored with your account and applied on every device. Change the
 | **Compact tables** | Denser table rows, to see more at once. |
 | **Hide the live requirement-language analysis** | Turns off the analysis box in the requirement editor. |
 | **Highlight obligation keywords** | On by default: marks MUST, SHOULD, MAY, SKA, BÖR, FÅR … in requirement descriptions and shows the keyword line under the description in the editor. See [Highlighted obligation keywords](#highlighted-obligation-keywords). |
+| **Autocomplete suggestions** | What text fields suggest (see [Autocomplete](#autocomplete)): *On: my history and values used in the project* (the default), *Only my own history*, *Only values used in the project* or *Off*. With *Off* no suggestions are shown; with *Off* and *Only values used in the project* nothing you save is added to your history. |
+
+Under the preference, **Clear my autocomplete history** deletes all the values your text fields remember for you, in every organisation, and shows how many are stored.
 
 ### Security
 

@@ -32,6 +32,7 @@ import { normalizeLang } from '@/i18n/select'
 import { enumLabel } from '@/i18n/labels'
 import { useMetaStore } from '@/stores/meta'
 import { EMAIL_MODES, emailMode, type EmailMode } from '@/lib/email'
+import { autocompleteMode, clearHistory, historyCount } from '@/lib/suggest'
 
 const auth = useAuthStore()
 const prefsStore = usePrefsStore()
@@ -91,6 +92,7 @@ function toForm(p: Preferences) {
     create_linked_test: typeof p.create_linked_test === 'boolean' ? p.create_linked_test : null,
     // --- obligation keyword highlighting ---
     hide_obligation_highlight: !!p.hide_obligation_highlight,
+    autocomplete: autocompleteMode(p) as string,
   }
 }
 const pform = ref(toForm(prefsStore.prefs))
@@ -165,6 +167,36 @@ const linkedTestOptions = computed(() => [
   { label: t('profile.linkedYes'), value: true as boolean | null },
   { label: t('profile.linkedNo'), value: false as boolean | null },
 ])
+const autocompleteOptions = computed(() => [
+  { label: t('profile.autocompleteOn'), value: '' },
+  { label: t('profile.autocompleteHistory'), value: 'history' },
+  { label: t('profile.autocompleteProject'), value: 'project' },
+  { label: t('profile.autocompleteOff'), value: 'off' },
+])
+// the autocomplete history stored for the account (GET/DELETE /suggest/history)
+const acCount = ref<number | null>(null)
+const clearingAc = ref(false)
+async function loadAcCount() {
+  try {
+    acCount.value = await historyCount()
+  } catch {
+    acCount.value = null
+  }
+}
+function clearAutocomplete() {
+  notify.confirmDanger(t('profile.confirmClearAutocomplete'), async () => {
+    clearingAc.value = true
+    try {
+      const n = await clearHistory()
+      acCount.value = 0
+      notify.ok(t('profile.autocompleteCleared', { count: n }, n))
+    } catch (e) {
+      notify.fail(e)
+    } finally {
+      clearingAc.value = false
+    }
+  })
+}
 const tenantOptions = computed(() => [
   { label: t('profile.defaultTenantNone'), value: '' },
   ...(auth.me?.memberships ?? []).map((m) => ({ label: m.tenant_name || m.tenant_slug || m.tenant_id, value: m.tenant_id })),
@@ -350,6 +382,7 @@ onMounted(() => {
   loadProjects()
   loadRbac()
   loadSessions()
+  void loadAcCount()
   loadLogins()
 })
 </script>
@@ -475,6 +508,26 @@ onMounted(() => {
           <span class="small muted">{{ t('obligationKw.prefHint') }}</span>
         </div>
         <!-- /obligation keyword highlighting -->
+        <div v-field class="field">
+          <label for="pf-autocomplete">{{ t('profile.autocomplete') }}</label>
+          <Select v-model="pform.autocomplete" input-id="pf-autocomplete" :options="autocompleteOptions" option-label="label" option-value="value" aria-describedby="pf-autocomplete-hint" />
+          <span id="pf-autocomplete-hint" class="small muted">{{ t('profile.autocompleteHint') }}</span>
+          <div class="row" style="gap: 8px">
+            <Button
+              type="button"
+              size="small"
+              text
+              severity="danger"
+              icon="pi pi-eraser"
+              :label="t('profile.clearAutocomplete')"
+              :loading="clearingAc"
+              :disabled="acCount === 0"
+              data-testid="clear-autocomplete"
+              @click="clearAutocomplete"
+            />
+            <span v-if="acCount !== null" class="small muted" aria-live="polite">{{ t('profile.autocompleteStored', { count: acCount }, acCount) }}</span>
+          </div>
+        </div>
         <div class="full row" style="justify-content: flex-end">
           <span v-if="prefsDirty" class="small muted" style="margin-right: auto"><i class="pi pi-circle-fill" style="font-size: 8px; color: var(--p-amber-500)" /> {{ t('profile.unsaved') }}</span>
           <Button :label="t('common.discard')" text severity="secondary" :disabled="!prefsDirty" @click="resetPrefs" />

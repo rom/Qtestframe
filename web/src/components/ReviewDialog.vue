@@ -8,8 +8,10 @@ import Checkbox from 'primevue/checkbox'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
-import Textarea from 'primevue/textarea'
+import SuggestInput from './SuggestInput.vue'
 import { api } from '@/lib/api'
+import { REVIEW_COMMENT, rememberValues, savedEntries } from '@/lib/suggest'
+import { usePrefsStore } from '@/stores/prefs'
 import { canApprove, canRequestChanges, openChecklistItems } from '@/lib/notifications'
 import { useNotify } from '@/composables/notify'
 import { useNotificationsStore } from '@/stores/notifications'
@@ -51,6 +53,7 @@ async function save(decision = '') {
       comment: comment.value,
       ...(decision ? { decision } : {}),
     })
+    void rememberValues(usePrefsStore().prefs, props.review.project_id, savedEntries({ [REVIEW_COMMENT]: comment.value }, { [REVIEW_COMMENT]: props.review.comment }))
     notify.ok(decision ? t(`reviews.done.${decision}`, { key: out.entity_key }) : t('reviews.saved'))
     emit('saved', out)
     if (decision) {
@@ -92,7 +95,7 @@ async function save(decision = '') {
         </div>
       </fieldset>
       <label for="rv-comment" class="block small">{{ t('reviews.comment') }}</label>
-      <Textarea id="rv-comment" v-model="comment" rows="3" auto-resize fluid :disabled="!pending" />
+      <SuggestInput id="rv-comment" v-model="comment" field="review.comment" :project-id="review.project_id" multiline rows="3" auto-resize fluid :disabled="!pending" />
       <Message v-if="tried === 'approved' && open.length" severity="error" :closable="false">{{ t('reviews.needChecklist', { n: open.length }, open.length) }}</Message>
       <Message v-if="tried === 'changes_requested' && !comment.trim()" severity="error" :closable="false">{{ t('reviews.needComment') }}</Message>
     </template>

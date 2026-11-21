@@ -7,10 +7,12 @@ import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
-import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
 import Message from 'primevue/message'
 import ItemPickerDialog from './ItemPickerDialog.vue'
+import SuggestInput from './SuggestInput.vue'
+import { rememberValues, savedEntries } from '@/lib/suggest'
+import { usePrefsStore } from '@/stores/prefs'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { DEFECT_PRIORITIES, DEFECT_SEVERITIES, DEFECT_STATUSES, diffLinks, groupLinks, linkBody, linkRoute, mergeLinks, sameLink, type DefectDraft } from '@/lib/defectTracker'
 import { P } from '@/lib/permissions'
@@ -117,6 +119,11 @@ async function save() {
       for (const l of diff.add) d = await api.post<Defect>(`/defects/${id}/links`, linkBody(l))
       for (const l of diff.remove) d = await api.del<Defect>(`/defects/${id}/links`, linkBody(l))
     }
+    void rememberValues(
+      usePrefsStore().prefs,
+      props.projectId,
+      savedEntries({ 'defect.title': form.value.title, 'defect.description': form.value.description }, { 'defect.title': props.defect?.title, 'defect.description': props.defect?.description }),
+    )
     visible.value = false
     emit('saved', d)
   } catch (e) {
@@ -131,14 +138,14 @@ async function save() {
   <Dialog v-model:visible="visible" :header="isNew ? t('defectsView.newHeader') : t('defectsView.editHeader', { key: defect?.key ?? '' })" modal maximizable :maximize-button-props="{ 'aria-label': t('common.toggleMaximize') }" style="width: min(720px, 96vw)">
     <form id="defect-form" class="grid" style="gap: 12px" @submit.prevent="save">
       <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
-      <div v-field class="field"><label>{{ t('common.title') }}</label><InputText v-model="form.title" required autofocus :disabled="!canEdit" maxlength="300" /></div>
+      <div v-field class="field"><label>{{ t('common.title') }}</label><SuggestInput v-model="form.title" field="defect.title" :project-id="projectId" required autofocus :disabled="!canEdit" maxlength="300" /></div>
       <div class="form-grid">
         <div v-field class="field"><label>{{ t('common.status') }}</label><Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('defectsView.severityLabel') }}</label><Select v-model="form.severity" :options="severityOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('common.priority') }}</label><Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('defectsView.assignee') }}</label><InputText v-model="form.assignee" :disabled="!canEdit" :placeholder="t('defectsView.assigneePlaceholder')" /></div>
       </div>
-      <div v-field class="field"><label>{{ t('common.description') }}</label><Textarea v-model="form.description" rows="5" auto-resize :disabled="!canEdit" :placeholder="t('defectsView.descriptionPlaceholder')" /></div>
+      <div v-field class="field"><label>{{ t('common.description') }}</label><SuggestInput v-model="form.description" field="defect.description" :project-id="projectId" multiline rows="5" auto-resize :disabled="!canEdit" :placeholder="t('defectsView.descriptionPlaceholder')" /></div>
 
       <section aria-labelledby="defect-links-h">
         <h3 id="defect-links-h" class="section-title" style="margin: 0 0 6px">{{ t('defectsView.linkedItems') }}</h3>

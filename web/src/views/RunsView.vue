@@ -45,6 +45,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
+import SuggestInput from '@/components/SuggestInput.vue'
+import { RUN_NAME, rememberValues } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
 import { enumOptions } from '@/i18n/labels'
 import HelpLink from '@/guide/HelpLink.vue'
@@ -157,6 +159,7 @@ async function create() {
       folder_ids: selectedFolderIds.value,
     })
     dialog.value = false
+    void rememberValues(prefs.prefs, proj.pid, fields.name?.trim() ? [{ field: RUN_NAME, value: fields.name }] : [])
     notify.ok(t('runs.created'), run?.name)
     if (run?.id) router.push({ name: 'run', params: { projectId: proj.pid, runId: run.id } })
     else load()
@@ -363,7 +366,7 @@ const runLayout = useColumnLayout(
     <div class="grid" style="gap: 14px">
       <Message v-if="createError" severity="error" :closable="false">{{ createError }}</Message>
       <div class="form-grid">
-        <div v-field class="field full"><label>{{ t('common.name') }}</label><InputText v-model="form.name" autofocus /></div>
+        <div v-field class="field full"><label>{{ t('common.name') }}</label><SuggestInput v-model="form.name" field="run.name" :project-id="proj.pid" autofocus /></div>
         <div v-field class="field"><label>{{ t('common.environment') }}</label><HelpTip id="run.environment" :label="t('common.environment')" /><InputText v-model="form.environment" :placeholder="t('runs.envPlaceholder')" /></div>
         <div v-field class="field"><label>{{ t('common.build') }}</label><HelpTip id="run.build" :label="t('common.build')" /><InputText v-model="form.build" :placeholder="t('runs.buildPlaceholder')" /></div>
         <div v-if="rel.releases.value.length" v-field class="field full">

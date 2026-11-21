@@ -4892,6 +4892,169 @@ paths:
           $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/suggest:
+    get:
+      tags:
+      - Projects
+      summary: Autocomplete suggestions
+      operationId: getSuggest
+      description: |-
+        Suggestions for a free-text field: the caller's own history of the field (in the projects they may read) and, for `requirement.source`, `requirement.owner` and `risk.owner`, the values used in the project. Prefix matches first, then word-start matches, then contains; ties by frequency and recency. At most 8. See docs/api.md#autocomplete.
+
+        **Permission:** signed in; read of the field (e.g. `test.read` for `test.step.expected`) in `project_id`.
+      x-permission: authenticated
+      parameters:
+      - name: field
+        in: query
+        required: true
+        description: field key, e.g. `test.step.expected`, `requirement.source`, `search`
+        schema:
+          type: string
+      - name: q
+        in: query
+        required: false
+        description: the text typed so far
+        schema:
+          type: string
+      - name: project_id
+        in: query
+        required: false
+        description: the project of the field (required except for `search`)
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: 1-8 (default 8)
+        schema:
+          type: integer
+      - name: sources
+        in: query
+        required: false
+        description: 'comma-separated: history, project (default both, as the preference allows)'
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Suggestion'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/suggest/history:
+    get:
+      tags:
+      - Auth
+      summary: Count my autocomplete history
+      operationId: getSuggestHistory
+      description: |-
+        `{"count": n}`: how many values the caller has stored (all organisations).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Auth
+      summary: Record autocomplete history
+      operationId: postSuggestHistory
+      description: |-
+        `{"project_id"?, "entries": [{"field", "value", "project_id"?}]}` → `{"recorded": n}`. Records the values the caller saved (at most 200 entries; values are trimmed and at most 1000 characters). Nothing is recorded when the preference `autocomplete` is `off` or `project`.
+
+        **Permission:** signed in; read of each field in its project.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project_id:
+                  type: string
+                entries:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - field
+                    - value
+                    properties:
+                      field:
+                        type: string
+                      value:
+                        type: string
+                      project_id:
+                        type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recorded:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Auth
+      summary: Clear my autocomplete history
+      operationId: deleteSuggestHistory
+      description: |-
+        Deletes the caller's autocomplete history in every organisation → `{"deleted": n}`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/export:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -12718,6 +12881,35 @@ components:
         hide_obligation_highlight:
           type: boolean
           description: Do not highlight obligation keywords in requirement descriptions (highlighting is on by default).
+        autocomplete:
+          type: string
+          enum:
+          - ''
+          - history
+          - project
+          - 'off'
+          description: autocomplete suggestions in free-text fields; empty = on (history and project values)
+    Suggestion:
+      type: object
+      required:
+      - value
+      - source
+      - uses
+      properties:
+        value:
+          type: string
+        source:
+          type: string
+          enum:
+          - history
+          - project
+        uses:
+          type: integer
+          description: times saved (history) or items using the value (project)
+        last_used:
+          type: string
+          format: date-time
+          description: history only
     SessionInfo:
       type: object
       properties:
