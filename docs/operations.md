@@ -368,6 +368,17 @@ use *Groups assigned to the application* to keep the list short.
       role_mapping: {"qtf-admins": admin, "qtf-testers": tester}
 ```
 
+**Multi-factor authentication with OIDC.** By default the identity
+provider is responsible for MFA and Qtestframe's own second factor
+(Administration › Multi-factor authentication) is not asked for OIDC
+sign-ins (`local_mfa: off`). `local_mfa: unless_idp_mfa` asks for it unless
+the ID token's `amr` claim contains `mfa` (or a value listed in
+`mfa_amr_values`, e.g. `[mfa, otp, hwk]`) or its `acr` is one of
+`mfa_acr_values` (e.g. the provider's MFA level); `local_mfa: always` asks
+for it on every sign-in through the provider. Users then need an
+authenticator app in Qtestframe as well (or must set one up when the MFA
+policy requires it). See [security.md](security.md#multi-factor-authentication).
+
 ## 7. Single sign-on: SAML
 
 Create the SP key pair and point the IdP at the SP metadata:

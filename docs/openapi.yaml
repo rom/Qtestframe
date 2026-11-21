@@ -193,7 +193,7 @@ paths:
       summary: Login
       operationId: postAuthLogin
       description: |-
-        `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after 10 attempts in 5 min per IP + e-mail, 403 if local login is disabled — `Me` + `qtf_session` cookie
+        `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after 10 attempts in 5 min per IP + e-mail, 403 if local login is disabled — `Me` + `qtf_session` cookie. When the account has a second factor (and the device is not remembered) the answer is instead `{"mfa_required": true, "methods", "remember_days", "expires_at"}` with a short-lived `qtf_mfa` cookie: finish with `POST /auth/mfa/verify`. A session whose MFA policy requires a second factor that is not set up yet answers 403 `mfa_enrolment_required` outside `/api/v1/auth/` until it is.
 
         **Permission:** none (public).
       x-permission: none
@@ -10507,6 +10507,360 @@ paths:
 
         **Permission:** `script.execute`.
       x-permission: script.execute
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/challenge:
+    get:
+      tags:
+      - Auth
+      summary: Pending second factor
+      operationId: getAuthMfaChallenge
+      description: |-
+        Describes the sign-in that waits for its second factor (the `qtf_mfa` cookie set by `POST /auth/login` or an OIDC callback): `{"mfa_required": true, "methods": ["totp","recovery_code"], "remember_days", "expires_at"}`. 401 `mfa_expired` when none is pending.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/verify:
+    post:
+      tags:
+      - Auth
+      summary: Give the second factor
+      operationId: postAuthMfaVerify
+      description: |-
+        `{"code", "remember"?}`: a 6-digit TOTP code (each code is accepted once) or a recovery code (single use). On success the session starts and the answer is `/auth/me`; with `remember` and a server policy with `remember_days` > 0 the device is remembered (`qtf_mfa_device` cookie). Wrong codes: 401 `mfa_invalid`, recorded as failed sign-ins (method `mfa`); after 5 wrong codes the pending sign-in is dropped (401 `mfa_expired`); attempts share the sign-in rate limit (429).
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa:
+    get:
+      tags:
+      - Auth
+      summary: Own MFA status
+      operationId: getAuthMfa
+      description: |-
+        `{"enabled", "enabled_at", "pending", "recovery_codes_left", "recovery_codes_total", "trusted_devices", "required", "enrolment_deadline", "enrolment_required", "remember_days"}`. The TOTP secret is never returned.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/totp:
+    post:
+      tags:
+      - Auth
+      summary: Start setting up an authenticator app
+      operationId: postAuthMfaTotp
+      description: |-
+        Creates a new TOTP secret (RFC 6238: SHA-1, 6 digits, 30 s) that is active only after `POST /auth/mfa/totp/confirm`: `{"secret", "otpauth_uri", "issuer", "account", "digits", "period", "algorithm"}`. This is the only time the secret is returned. 409 when an authenticator is already active. Browser sessions only (403 for API tokens).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/totp/confirm:
+    post:
+      tags:
+      - Auth
+      summary: Activate the authenticator app
+      operationId: postAuthMfaTotpConfirm
+      description: |-
+        `{"code"}`: a current code of the new authenticator activates it and returns `{"recovery_codes": [...]}` (10 single-use codes, shown once, stored hashed). A session that had to enrol (`mfa_enrolment_required`) is unlocked. 400 `mfa_invalid` for a wrong code.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/disable:
+    post:
+      tags:
+      - Auth
+      summary: Turn MFA off
+      operationId: postAuthMfaDisable
+      description: |-
+        `{"code"}` (a current TOTP code or a recovery code) removes the authenticator, the recovery codes and remembered devices — 204. 403 `mfa_required` when a policy requires MFA for the caller. The user is told by e-mail.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/recovery-codes:
+    post:
+      tags:
+      - Auth
+      summary: New recovery codes
+      operationId: postAuthMfaRecoveryCodes
+      description: |-
+        `{"code"}` (a current TOTP code or a recovery code) replaces all recovery codes: `{"recovery_codes": [...]}`. The old codes stop working.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/trusted-devices:
+    delete:
+      tags:
+      - Auth
+      summary: Forget remembered devices
+      operationId: deleteAuthMfaTrustedDevices
+      description: |-
+        Forgets every device remembered with "remember this device": `{"forgotten": n}`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/mfa:
+    get:
+      tags:
+      - Administration
+      summary: MFA policies
+      operationId: getAdminMfa
+      description: |-
+        `{"server": policy, "tenant": policy|null, "can_edit_server", "members", "members_enrolled", "server_roles", "users"?, "users_enrolled"?}`. A policy is `{"scope", "mode": "optional"|"all"|"roles", "roles", "grace_days", "remember_days", "required_since", "updated_by", "updated_at"}`.
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/mfa/server:
+    put:
+      tags:
+      - Administration
+      summary: Set the server MFA policy
+      operationId: putAdminMfaServer
+      description: |-
+        Super administrators only. `{"mode", "roles", "grace_days", "remember_days"}`; roles are built-in role names and `super_admin`. It applies to every user (a role counts in any tenant). `remember_days` > 0 offers "remember this device" for that many days.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/mfa/tenant:
+    put:
+      tags:
+      - Administration
+      summary: Set the tenant MFA policy
+      operationId: putAdminMfaTenant
+      description: |-
+        `{"mode", "roles", "grace_days"}` for the current tenant (roles of the tenant). A tenant policy adds to the server policy; it cannot lift it.
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/members/{uid}/mfa/reset:
+    parameters:
+    - name: uid
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Members
+      summary: Reset a member's MFA
+      operationId: postMembersByUidMfaReset
+      description: |-
+        Removes the member's authenticator, recovery codes and remembered devices and signs them out — 204 (409 when they have none). Like a password reset, a tenant administrator cannot reset super administrators or users of other tenants. Audited (`member.reset_mfa`); the user is notified in the app and by e-mail.
+
+        **Permission:** `member.manage`.
+      x-permission: member.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/mfa/reset:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: Reset a user's MFA
+      operationId: postUsersByIdMfaReset
+      description: |-
+        Super administrators only; as `POST /members/{uid}/mfa/reset` for any user (audited as `user.reset_mfa`).
+
+        **Permission:** signed in.
+      x-permission: authenticated
       responses:
         '200':
           description: OK

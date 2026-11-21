@@ -14,6 +14,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/invite/:token', name: 'invite', component: () => import('./views/InviteView.vue'), meta: { public: true } },
   // forced password change after an administrator reset (see beforeEach)
   { path: '/change-password', name: 'changePassword', component: () => import('./views/ChangePasswordView.vue'), meta: { passwordChange: true } },
+  // forced set-up of a second factor required by the MFA policy (see beforeEach)
+  { path: '/mfa-setup', name: 'mfaSetup', component: () => import('./views/MfaSetupView.vue'), meta: { mfaEnrol: true } },
   {
     path: '/',
     component: () => import('./layouts/AppLayout.vue'),
@@ -72,6 +74,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'users', name: 'users', component: () => import('./views/admin/UsersView.vue'), meta: { superAdmin: true } },
           { path: 'roles', name: 'rbac', component: () => import('./views/admin/RbacView.vue') },
           { path: 'execution', name: 'executionSettings', component: () => import('./views/admin/ExecutionSettingsView.vue'), meta: { perm: P.settingsManage } },
+          { path: 'mfa', name: 'mfaPolicy', component: () => import('./views/admin/MfaPolicyView.vue'), meta: { perm: P.tenantManage } },
           { path: 'backup', name: 'backup', component: () => import('./views/admin/BackupView.vue'), meta: { superAdmin: true } },
         ],
       },
@@ -109,6 +112,9 @@ router.beforeEach(async (to) => {
   // a reset password must be changed before anything else
   if (auth.me.user?.must_change_password) return to.meta.passwordChange ? true : { name: 'changePassword' }
   if (to.meta.passwordChange) return { path: '/' }
+  // then a second factor, when the MFA policy requires one now
+  if (auth.me.mfa?.enrolment_required) return to.meta.mfaEnrol ? true : { name: 'mfaSetup' }
+  if (to.meta.mfaEnrol) return { path: '/' }
   if (to.name === 'home') return await homeRoute()
   if (to.meta.superAdmin && !auth.me.user.super_admin) return { name: 'projects' }
   if (typeof to.meta.perm === 'string' && !auth.can(to.meta.perm)) return { name: 'projects' }

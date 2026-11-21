@@ -88,7 +88,8 @@ volumetric network attacks (use upstream filtering).
 * **Rate limiting** (`rateLimiter` in `internal/api/server.go`): at most 10
   login attempts per 5-minute sliding window per key *client IP + normalised
   e-mail*; further attempts get **HTTP 429** `rate_limited`. A successful
-  login resets the key. The limiter is in memory (per process, lost on
+  login (with multi-factor authentication: after the second factor) resets
+  the key. The limiter is in memory (per process, lost on
   restart). Failed logins are logged at WARN (`login failed`, e-mail,
   client IP). Behind a reverse proxy configure `server.trusted_proxies`,
   otherwise all clients share the proxy's address.
@@ -135,6 +136,114 @@ volumetric network attacks (use upstream filtering).
   expiry (`expires_days`), `last_used` is recorded, revocable
   (`DELETE /tokens/{id}`). Tokens cannot create tokens, and a super admin's
   token has only the token's role.
+
+### Multi-factor authentication
+
+Implemented in `internal/auth/totp.go` (algorithms), `internal/api/mfa.go`
+(flows, policy, resets) and `internal/store/mfa.go` (migration
+`0025_mfa.sql`).
+
+* **Second factor: TOTP** (RFC 6238) with HMAC-SHA-1, 6 digits and 30 s
+  steps — what every authenticator app supports — implemented with the Go
+  standard library (`crypto/hmac`, `crypto/sha1`; verified against the RFC
+  test vectors). Codes of the previous and next step are accepted (clock
+  drift, ±30 s); all three candidates are compared in constant time.
+  **Replay protection:** the step of the last accepted code is stored
+  (`user_mfa.last_step`) and only later steps are accepted, with a
+  conditional `UPDATE … WHERE last_step < ?`, so a code works exactly once
+  even for two requests racing with the same code (this also means at most
+  one sign-in per 30 s step).
+* **Enrolment:** `POST /auth/mfa/totp` creates a random 160-bit secret
+  (crypto/rand) and returns it **once**, as an `otpauth://` URI (rendered
+  as a QR code in the browser with `qrcode-generator`; no third party sees
+  it) and as a manual key. It becomes active only after
+  `POST /auth/mfa/totp/confirm` with a valid code; until then it does not
+  affect sign-in. The secret is never returned again (`GET /auth/mfa` shows
+  only the state). MFA changes need a browser session; API tokens get 403.
+* **TOTP secrets at rest:** Qtestframe has no application-level
+  encryption key or secret-encryption helper, so secrets are stored **in
+  plain text** in `user_mfa.totp_secret` (the server must compute the
+  codes, so a hash is not possible). Whoever can read
+  the database (or a backup: `user_mfa` is part of `qtestframe backup`,
+  not of project archives) can compute a user's codes — but still needs
+  the password. Protect the database and backups accordingly
+  (section 7); after a suspected leak, reset the MFA of all users.
+* **Recovery codes:** 10 codes of 12 characters from a 31-character
+  alphabet without look-alikes (≈ 59 bits each), shown once, stored as
+  SHA-256 hashes (`mfa_recovery_codes`), each usable once. New codes
+  (`POST /auth/mfa/recovery-codes`) need a current code and invalidate all
+  old ones. Using one is audited (`mfa.recovery_code_used`).
+* **Sign-in with MFA:** after a correct password (`POST /auth/login`) a
+  user with a confirmed second factor gets **no session**: the answer is
+  `{"mfa_required": true, …}` and a pending sign-in is stored
+  (`mfa_challenges`, keyed by the SHA-256 of the random token in the
+  `qtf_mfa` cookie: `HttpOnly`, `SameSite=Lax`, `Path=/api/v1/auth/`,
+  5 minutes). `POST /auth/mfa/verify` with a TOTP or recovery code then
+  creates the session. Protections against guessing the 6-digit code:
+  * every attempt counts against the existing sign-in rate limit of
+    *client IP + e-mail* (10 per 5 minutes; the limit is **not** reset by
+    the correct password, only after the second factor);
+  * a per-account limit of 10 attempts per 15 minutes, whatever the
+    client address;
+  * at most 5 wrong codes per pending sign-in, after which it is deleted
+    and the password must be entered again;
+  * wrong codes are recorded as failed sign-ins (method `mfa`) and logged
+    at WARN (`second factor failed`), so they appear in the user's sign-in
+    history and the "failed attempts since your last sign-in" notice.
+  Logout deletes a pending sign-in. Successful sign-ins are audited with
+  `mfa=totp`, `mfa=recovery-code` or `mfa=remembered-device`.
+* **Remember this device** (optional, server policy `remember_days`,
+  default 0 = off): after a correct code the browser gets a random token in
+  the `qtf_mfa_device` cookie (`HttpOnly`, `SameSite=Lax`,
+  `Path=/api/v1/auth/`); only its SHA-256 is stored
+  (`mfa_trusted_devices`, with expiry, IP and user agent). It skips the
+  second factor — never the password — for that user for the configured
+  number of days (lowering the number also shortens devices remembered
+  before). Users can forget their remembered devices; an administrator
+  reset and turning MFA off forget them too. The tokens are revocable server-side,
+  unlike a purely signed cookie.
+* **Policy** (`mfa_policies`; Administration › Multi-factor
+  authentication): `optional` (default), `all` or `roles`. The **server
+  policy** (super administrators; scope `''`) applies to every user, with
+  the roles counted in any tenant plus the pseudo-role `super_admin`; each
+  **tenant policy** (`tenant.manage`) applies to the members of that
+  tenant by their role there. Tenant policies can only add requirements.
+  A **grace period** (`grace_days`) runs from when the policy started to
+  require MFA for more people (`required_since`) or from the user's
+  creation, whichever is later; during it users see a reminder, afterwards
+  a sign-in without a second factor gets a session flagged
+  `sessions.mfa_enrol_required`: every endpoint outside `/api/v1/auth/`
+  answers **403 `mfa_enrolment_required`** until the user has confirmed an
+  authenticator (the web client shows the set-up page). The policy is
+  evaluated at sign-in (and for `/auth/me`), so a stricter policy reaches
+  existing sessions at their next sign-in. Users cannot turn MFA off while
+  a policy requires it (403 `mfa_required`).
+* **Administrator reset** (lost phone and recovery codes):
+  `POST /members/{uid}/mfa/reset` (`member.manage`; like a password reset,
+  not for super administrators or users of other tenants) or
+  `POST /users/{id}/mfa/reset` (super administrators). It deletes the
+  authenticator, recovery codes, remembered devices and pending sign-ins,
+  signs the user out everywhere, is audited (`member.reset_mfa` /
+  `user.reset_mfa`) and the user is told by an in-app notification and an
+  e-mail (when e-mail is configured); turning MFA off oneself also sends
+  an e-mail. Nobody can reset their own MFA this way.
+* **Single sign-on:** for OIDC the identity provider is responsible for
+  MFA by default (`local_mfa: off`). With `local_mfa: unless_idp_mfa`
+  Qtestframe's own second factor is asked for unless the ID token's `amr`
+  claim contains `mfa` (or a value of `mfa_amr_values`) or its `acr` is
+  one of `mfa_acr_values`; with `always` it is always asked for (when the
+  user has enrolled, or must enrol under the policy). The callback then
+  redirects to `/login?mfa=1` instead of `/`. The reported `amr`/`acr` are
+  recorded in the audit entry of the sign-in. SAML sign-ins do not use the
+  local second factor (configure MFA at the identity provider).
+* **Not affected:** API tokens (a separate credential; protect them like
+  passwords) and SCIM tokens. E-mail invitations start a session as
+  before, flagged for enrolment if the policy requires MFA.
+* **Not implemented yet:** WebAuthn / passkeys (as second factor or
+  passwordless). It needs a WebAuthn library (e.g.
+  `github.com/go-webauthn/webauthn`, not a dependency today), a configured
+  relying-party ID and origin, and credential storage; the challenge and
+  policy machinery above is designed to accept further factors.
 
 ### OpenID Connect
 
@@ -770,6 +879,7 @@ permissions (Landlock allows `/etc`); fork bombs are stopped by `TasksMax`.
 - [ ] TLS certificate from a trusted CA; `hsts: true`; `cookie_secure: true`
 - [ ] `base_url` set to the public HTTPS URL
 - [ ] SSO configured; `auth.local: false` or strong passwords + few local accounts
+- [ ] multi-factor authentication required at least for administrators (Administration › Multi-factor authentication, or MFA at the identity provider)
 - [ ] secrets via `*_file` / `LoadCredential=`, permissions `0640 root:qtestframe`
 - [ ] PostgreSQL with `sslmode=verify-full`, least-privilege DB role
 - [ ] `logging.syslog` to a central server over `tls`

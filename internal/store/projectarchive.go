@@ -151,6 +151,9 @@ var ProjectArchiveExcluded = map[string]string{
 	"scim_groups":          "organisation",
 	"scim_group_members":   "organisation",
 	"file_blobs":           "stored as files/<id>",
+	"user_mfa":             "secret (second factors)",
+	"mfa_recovery_codes":   "secret (second factors)",
+	"mfa_policies":         "organisation",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.

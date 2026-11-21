@@ -14,6 +14,7 @@ import ThemePicker from '@/components/ThemePicker.vue'
 import HelpMenu from '@/guide/HelpMenu.vue'
 import UndoControls from '@/components/UndoControls.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
+import MfaGraceBanner from '@/components/MfaGraceBanner.vue'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -404,6 +405,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
             style="margin-top: 8px; display: flex; max-width: 100%"
           />
         </div>
+        <MfaGraceBanner />
         <RouterView />
       </main>
     </div>

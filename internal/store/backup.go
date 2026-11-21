@@ -40,10 +40,13 @@ var BackupTables = []string{
 	"metric_snapshots",
 	"trace_rules",
 	"invitations", "report_subscriptions",
+	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 }
 
 // tables that exist but are deliberately not part of a backup.
-var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "job_runs": true, "script_jobs": true}
+// (pending MFA sign-ins and remembered devices are as transient as sessions)
+var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "job_runs": true, "script_jobs": true,
+	"mfa_challenges": true, "mfa_trusted_devices": true}
 
 // boolColumns are stored as INTEGER 0/1 on SQLite and BOOLEAN on PostgreSQL.
 var boolColumns = map[string]bool{
@@ -457,7 +460,7 @@ func deleteOrder() []string {
 	for _, t := range BackupTables {
 		all = append(all, t)
 		if t == "users" {
-			all = append(all, "sessions")
+			all = append(all, "sessions", "mfa_challenges", "mfa_trusted_devices")
 		}
 	}
 	for i, j := 0, len(all)-1; i < j; i, j = i+1, j-1 {

@@ -62,13 +62,13 @@ is unreachable); all other paths serve the web client.
 | Method | Path | Body / Notes | Response |
 |---|---|---|---|
 | GET | `/auth/providers` | public | `{"local":true,"oidc":[{"name","display_name","login_url"}],"saml":[{"name","display_name","login_url"}]}` |
-| POST | `/auth/login` | `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after 10 attempts in 5 min per IP + e-mail, 403 if local login is disabled | `Me` + `qtf_session` cookie |
+| POST | `/auth/login` | `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after 10 attempts in 5 min per IP + e-mail, 403 if local login is disabled | `Me` + `qtf_session` cookie, or `{"mfa_required": true, …}` + `qtf_mfa` cookie when a second factor is needed (see [Multi-factor authentication](#multi-factor-authentication)) |
 | POST | `/auth/logout` | deletes the session | 204 |
 | GET | `/auth/me` | | `Me` |
 | POST | `/auth/switch-tenant` | `{"tenant_id"}` | `Me` |
 | POST | `/auth/password` | `{"current_password","new_password"}` (local accounts only) | 204 |
 | GET | `/auth/oidc/{name}/login` | browser redirect | 302 |
-| GET | `/auth/oidc/{name}/callback` | browser redirect | 302 → `/` |
+| GET | `/auth/oidc/{name}/callback` | browser redirect | 302 → `/`, or → `/login?mfa=1` when the provider's `local_mfa` asks for Qtestframe's second factor |
 | GET | `/auth/saml/{name}/metadata` | SP metadata XML | XML |
 | GET | `/auth/saml/{name}/login` | browser redirect | 302 |
 | POST | `/auth/saml/{name}/acs` | IdP POST binding | 302 → `/` |
@@ -81,9 +81,85 @@ is unreachable); all other paths serve the web client.
   "role": "admin|manager|test_lead|tester|reviewer|viewer|<custom>|",
   "permissions": ["project.read", ...],
   "memberships": [Membership],
-  "csrf_token": "..."
+  "csrf_token": "...",
+  "mfa": MFAStatus
 }
 ```
+
+`User` and `Membership` carry `"mfa_enabled"` (a confirmed second factor);
+in `GET /users` and `GET /members` it is filled for every row, and members
+also have `"mfa_required"` (the server or tenant policy requires MFA for
+their role here).
+
+## Multi-factor authentication
+
+A second factor (TOTP authenticator app, RFC 6238: SHA-1, 6 digits, 30 s,
+±1 step; each code is accepted once) plus 10 single-use recovery codes.
+API tokens are not affected. Design and protections: [security.md](security.md#multi-factor-authentication).
+
+**Sign-in.** When the password is right and the account has a second
+factor (and the device is not remembered), `POST /auth/login` answers
+
+```json
+{"mfa_required": true, "methods": ["totp", "recovery_code"], "remember_days": 0, "expires_at": "…"}
+```
+
+and sets the `qtf_mfa` cookie (5 minutes, `Path=/api/v1/auth/`); there is
+no session yet. Then:
+
+| Method | Path | Body / Notes | Response |
+|---|---|---|---|
+| GET | `/auth/mfa/challenge` | public; the pending sign-in (after an OIDC redirect to `/login?mfa=1`) | as above; 401 `mfa_expired` |
+| POST | `/auth/mfa/verify` | public; `{"code", "remember"?}` – a 6-digit code or a recovery code; `remember` (when the server policy has `remember_days` > 0) sets the `qtf_mfa_device` cookie | `Me` + `qtf_session`; 401 `mfa_invalid` (wrong or reused code, recorded as a failed sign-in with method `mfa`), 401 `mfa_expired` (none pending, expired, or 5 wrong codes), 429 `rate_limited` |
+
+A session whose policy requires a second factor that is not set up yet
+(grace period over) gets **403 `mfa_enrolment_required`** from every
+endpoint outside `/api/v1/auth/` until the authenticator is confirmed.
+
+**Own second factor** (browser sessions only; API tokens get 403):
+
+| Method | Path | Body / Notes | Response |
+|---|---|---|---|
+| GET | `/auth/mfa` | | `MFAStatus` |
+| POST | `/auth/mfa/totp` | starts the set-up; the secret is returned only here | `{"secret", "otpauth_uri", "issuer", "account", "digits", "period", "algorithm"}`; 409 when already on |
+| POST | `/auth/mfa/totp/confirm` | `{"code"}` | `{"recovery_codes": [10 codes]}` (shown once); 400 `mfa_invalid` |
+| POST | `/auth/mfa/recovery-codes` | `{"code"}` (TOTP or recovery code) | `{"recovery_codes": [...]}`; old codes stop working |
+| POST | `/auth/mfa/disable` | `{"code"}` (TOTP or recovery code); a pending set-up needs none | 204; 403 `mfa_required` when a policy requires MFA |
+| DELETE | `/auth/mfa/trusted-devices` | forgets remembered devices | `{"forgotten": n}` |
+
+`MFAStatus`:
+
+```json
+{
+  "enabled": true, "enabled_at": "…", "pending": false,
+  "recovery_codes_left": 9, "recovery_codes_total": 10,
+  "trusted_devices": 0, "remember_days": 0,
+  "required": true, "enrolment_deadline": null, "enrolment_required": false
+}
+```
+
+`enrolment_deadline` is set while a required second factor is missing (the
+end of the grace period); `enrolment_required` is true for a session that
+must set it up first.
+
+**Policy and resets:**
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/admin/mfa` | tenant.manage | `{"server": MFAPolicy, "tenant": MFAPolicy\|null, "can_edit_server", "members", "members_enrolled", "server_roles", "users"?, "users_enrolled"?}` |
+| PUT | `/admin/mfa/server` | super admin | `{"mode", "roles", "grace_days", "remember_days"}` → MFAPolicy; roles are built-in roles or `super_admin` and count in any tenant |
+| PUT | `/admin/mfa/tenant` | tenant.manage | `{"mode", "roles", "grace_days"}` for the current tenant (its roles); adds to the server policy |
+| POST | `/members/{user_id}/mfa/reset` | member.manage | removes authenticator, recovery codes and remembered devices, signs the user out, notifies them (in-app and e-mail) → 204; 409 when they have none; 403 for super administrators and users of other tenants (as for password resets) |
+| POST | `/users/{id}/mfa/reset` | super admin | the same for any user |
+
+`MFAPolicy`: `{"scope": ""|tenant id, "mode": "optional"|"all"|"roles",
+"roles": [...], "grace_days": 0-365, "remember_days": 0-365 (server only),
+"required_since", "updated_by", "updated_at"}`. The grace period counts
+from `required_since` (set when the policy starts to require MFA for more
+people) or the user's creation, whichever is later. Policy changes and
+resets are audited (`mfa.policy`, `member.reset_mfa`, `user.reset_mfa`), as
+are `mfa.enable`, `mfa.disable`, `mfa.recovery_codes`,
+`mfa.recovery_code_used` and `mfa.forget_devices`.
 
 ## Administration
 

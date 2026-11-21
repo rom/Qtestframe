@@ -135,6 +135,8 @@ func (p *OIDCProvider) Exchange(ctx context.Context, st OIDCState, state, code s
 		Email:    claimString(claims, p.Cfg.EmailClaim),
 		Name:     claimString(claims, p.Cfg.NameClaim),
 		Groups:   claimStrings(claims, p.Cfg.GroupsClaim),
+		AMR:      claimStrings(claims, "amr"),
+		ACR:      claimString(claims, "acr"),
 	}
 	if v, ok := claims["email_verified"].(bool); ok && !v {
 		return nil, errors.New("oidc: e-mail address not verified")
@@ -169,4 +171,35 @@ func claimStrings(c map[string]any, k string) []string {
 		return strings.Split(v, ",")
 	}
 	return nil
+}
+
+// IdPMFA reports whether the identity provider says it used multi-factor
+// authentication: an amr value of MFAAMRValues (default "mfa", RFC 8176)
+// or an acr value of MFAACRValues.
+func (p *OIDCProvider) IdPMFA(id *Identity) bool {
+	amr := p.Cfg.MFAAMRValues
+	if len(amr) == 0 {
+		amr = []string{"mfa"}
+	}
+	for _, v := range id.AMR {
+		for _, w := range amr {
+			if strings.EqualFold(strings.TrimSpace(v), w) {
+				return true
+			}
+		}
+	}
+	for _, w := range p.Cfg.MFAACRValues {
+		if id.ACR != "" && id.ACR == w {
+			return true
+		}
+	}
+	return false
+}
+
+// LocalMFA returns the provider's local_mfa setting (default off).
+func (p *OIDCProvider) LocalMFA() string {
+	if p.Cfg.LocalMFA == "" {
+		return config.LocalMFAOff
+	}
+	return p.Cfg.LocalMFA
 }
