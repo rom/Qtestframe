@@ -170,7 +170,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [payment, card-data, pci-dss]
-    refs: ["PCI DSS v4.0 Req. 3", "PCI DSS v4.0 SAQ A"]
+    refs: ["PCI DSS v4.0.1 Req. 3", "PCI DSS v4.0.1 SAQ A"]
     tests: [SHOP-T06]
     en:
       title: Card details never handled by the system
@@ -578,7 +578,7 @@ tests:
     priority: critical
     execution: manual
     tags: [payment, sca, card-data]
-    refs: ["PCI DSS v4.0 Req. 3", "Commission Delegated Regulation (EU) 2018/389"]
+    refs: ["PCI DSS v4.0.1 Req. 3", "Commission Delegated Regulation (EU) 2018/389"]
     en:
       title: Card payments with authentication outcomes and declines
       description: Pays with the payment provider's test cards while recording the traffic to the system's servers.

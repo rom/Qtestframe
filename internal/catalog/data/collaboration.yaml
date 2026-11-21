@@ -58,7 +58,7 @@ requirements:
     obligation: must
     priority: high
     tags: [mentions, access-control]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3"]
     tests: [COLL-T02]
     en:
       title: Mention suggestions limited to users with access
@@ -104,7 +104,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [mentions, access-control]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "ISO/IEC 27001:2022 A.8.3"]
     tests: [COLL-T03]
     en:
       title: Mentions do not grant access
@@ -170,7 +170,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sharing, links, access-control]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "ISO/IEC 27001:2022 A.8.3"]
     tests: [COLL-T05]
     en:
       title: Internal share links respect permissions
@@ -192,7 +192,7 @@ requirements:
     obligation: may
     priority: medium
     tags: [sharing, external, expiry]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.8.3"]
     tests: [COLL-T06]
     en:
       title: Read-only links for external readers
@@ -240,7 +240,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [comments, xss, markdown]
-    refs: ["OWASP ASVS 5.0 V1 encoding and sanitization", "OWASP Top 10 2021 A03", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP ASVS 5.0 V1.3.1 (HTML sanitization)", "OWASP Top 10 2021 A03", "ISO/IEC 27001:2022 A.8.28"]
     tests: [COLL-T08]
     en:
       title: Comment text rendered safely
@@ -438,7 +438,7 @@ tests:
     priority: high
     execution: manual
     tags: [mentions]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "ISO/IEC 27001:2022 A.8.3"]
     en:
       title: Mention suggestions and notifications
       description: Types a mention and checks the suggestions and the notification sent to the mentioned user.
@@ -532,7 +532,7 @@ tests:
     priority: high
     execution: manual
     tags: [sharing, links]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "ISO/IEC 27001:2022 A.8.3"]
     en:
       title: Internal share link with and without access
       description: Copies a share link and opens it as a signed-out user, a member and a non-member.
@@ -628,7 +628,7 @@ tests:
     priority: critical
     execution: automated
     tags: [xss, comments]
-    refs: ["OWASP ASVS 5.0 V1 encoding and sanitization", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP ASVS 5.0 V1.3.1 (HTML sanitization)", "ISO/IEC 27001:2022 A.8.28"]
     en:
       title: Script injection attempts in comments
       description: A browser test posts comments with injection payloads and checks the rendered result.

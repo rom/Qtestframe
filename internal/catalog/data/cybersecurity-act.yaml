@@ -238,7 +238,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cryptography, policy, tls]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(h)", "Implementing Regulation (EU) 2024/2690 Annex §9 (cryptography)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(h)", "Implementing Regulation (EU) 2024/2690 Annex §9 (cryptography)", "CWE-327 (broken or risky cryptographic algorithm)"]
     tests: [CSL-T08]
     en:
       title: Cryptography policy that the systems follow
@@ -292,7 +292,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [mfa, remote-access, administrators]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)", "Implementing Regulation (EU) 2024/2690 Annex §11 (access control)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)", "Implementing Regulation (EU) 2024/2690 Annex §11 (access control)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     tests: [CSL-T10]
     en:
       title: Multi-factor authentication for administrators and remote access
@@ -318,7 +318,7 @@ requirements:
     obligation: must
     priority: high
     tags: [business-continuity, backup, restore]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(c)", "Implementing Regulation (EU) 2024/2690 Annex §4 (business continuity and crisis management)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(c)", "Implementing Regulation (EU) 2024/2690 Annex §4 (business continuity and crisis management)", "MITRE ATT&CK T1486 (data encrypted for impact)", "MITRE ATT&CK T1490 (inhibit system recovery)", "MITRE ATT&CK M1053 (data backup)"]
     tests: [CSL-T11]
     en:
       title: Continuity plan and tested restore every 6 months
@@ -370,7 +370,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cyber-hygiene, training, staff]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(g)", "Implementing Regulation (EU) 2024/2690 Annex §8 (basic cyber hygiene practices and security training)", "Cybersäkerhetslag (2025:1506) 2 kap. 3 § (säkerhetsåtgärder)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(g)", "Implementing Regulation (EU) 2024/2690 Annex §8 (basic cyber hygiene practices and security training)", "Cybersäkerhetslag (2025:1506) 2 kap. 3 § (säkerhetsåtgärder)", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK M1017 (user training)"]
     tests: [CSL-T13]
     en:
       title: Yearly cyber hygiene training for all staff
@@ -418,7 +418,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [emergency-communication, crisis]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)", "Implementing Regulation (EU) 2024/2690 Annex §4 (business continuity and crisis management)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)", "Implementing Regulation (EU) 2024/2690 Annex §4 (business continuity and crisis management)", "MITRE ATT&CK M1060 (out-of-band communications channel)"]
     tests: [CSL-T15]
     en:
       title: Emergency communication that works without the normal systems
@@ -442,7 +442,7 @@ requirements:
     obligation: must
     priority: high
     tags: [human-resources-security, offboarding, screening]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(i)", "Implementing Regulation (EU) 2024/2690 Annex §10 (human resources security)", "ISO/IEC 27001:2022 A.6.1", "ISO/IEC 27001:2022 A.6.5"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(i)", "Implementing Regulation (EU) 2024/2690 Annex §10 (human resources security)", "ISO/IEC 27001:2022 A.6.1", "ISO/IEC 27001:2022 A.6.5", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [CSL-T16]
     en:
       title: Access removed on the last working day
@@ -704,7 +704,7 @@ tests:
     priority: high
     execution: automated
     tags: [cryptography, tls, scanning]
-    refs: []
+    refs: ["CWE-327 (broken or risky cryptographic algorithm)"]
     en:
       title: External services offer only permitted protocols and ciphers
       description: A script scans the TLS configuration of each externally reachable service and compares it with the cryptography policy.
@@ -766,7 +766,7 @@ tests:
     priority: critical
     execution: manual
     tags: [mfa, remote-access]
-    refs: []
+    refs: ["CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     en:
       title: Administrative sign-in and remote access without a second factor are refused
       description: Tries to sign in to an administrative account and to connect remotely with only a password, and inspects the exclusions of the identity provider.
@@ -800,7 +800,7 @@ tests:
     priority: high
     execution: manual
     tags: [business-continuity, restore]
-    refs: []
+    refs: ["MITRE ATT&CK T1486 (data encrypted for impact)", "MITRE ATT&CK T1490 (inhibit system recovery)", "MITRE ATT&CK M1053 (data backup)"]
     en:
       title: Restore of a critical system within the recovery time
       description: Reviews the continuity plan and the restore records, then restores one critical system chosen by the assessor.
@@ -864,7 +864,7 @@ tests:
     priority: high
     execution: manual
     tags: [cyber-hygiene, training]
-    refs: ["Implementing Regulation (EU) 2024/2690 Annex §8 (basic cyber hygiene practices and security training)"]
+    refs: ["Implementing Regulation (EU) 2024/2690 Annex §8 (basic cyber hygiene practices and security training)", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK M1017 (user training)"]
     en:
       title: Every account holder has current hygiene training
       description: Compares the list of active account holders with the training record.
@@ -916,7 +916,7 @@ tests:
     priority: medium
     execution: manual
     tags: [emergency-communication]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)", "MITRE ATT&CK M1060 (out-of-band communications channel)"]
     en:
       title: Crisis team is reached through the emergency channel
       description: Runs a call-out of the crisis team with the normal email and identity services unavailable to them.
@@ -942,7 +942,7 @@ tests:
     priority: high
     execution: manual
     tags: [offboarding]
-    refs: ["Implementing Regulation (EU) 2024/2690 Annex §10 (human resources security)"]
+    refs: ["Implementing Regulation (EU) 2024/2690 Annex §10 (human resources security)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Leavers lost access by their last working day
       description: Compares the HR list of leavers with the account deactivation times.

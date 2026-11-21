@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [spf, dns, spoofing]
-    refs: ["RFC 7208 (SPF)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14"]
+    refs: ["RFC 7208 (SPF)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
     tests: [MAILS-T01]
     en:
       title: SPF record for each sending domain
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [dkim, signing]
-    refs: ["RFC 6376 (DKIM)", "RFC 8301 (cryptographic algorithm and key usage update to DKIM)", "ISO/IEC 27001:2022 A.5.14"]
+    refs: ["RFC 6376 (DKIM)", "RFC 8301 (cryptographic algorithm and key usage update to DKIM)", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)"]
     tests: [MAILS-T01]
     en:
       title: DKIM signature with a key of at least 2048 bits
@@ -58,7 +58,7 @@ requirements:
     obligation: should
     priority: high
     tags: [dmarc, reporting]
-    refs: ["RFC 7489 (DMARC)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14"]
+    refs: ["RFC 9989 (DMARC)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
     tests: [MAILS-T01, MAILS-T09]
     en:
       title: DMARC policy that rejects or quarantines
@@ -80,7 +80,7 @@ requirements:
     obligation: must
     priority: high
     tags: [tls, smtp, mta-sts]
-    refs: ["RFC 3207 (SMTP STARTTLS)", "RFC 8461 (MTA-STS)", "RFC 8460 (SMTP TLS reporting)", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["RFC 3207 (SMTP STARTTLS)", "RFC 8461 (MTA-STS)", "RFC 8460 (SMTP TLS reporting)", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.8.24", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     tests: [MAILS-T02]
     en:
       title: Encrypted transport of email
@@ -106,7 +106,7 @@ requirements:
     obligation: must
     priority: high
     tags: [header-injection, input-validation]
-    refs: ["CWE-93 (CRLF injection)", "OWASP ASVS 4.0.3 §5.2.3 (mail injection)", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["CWE-93 (CRLF injection)", "OWASP ASVS 5.0 V1.3.11 (mail injection)", "ISO/IEC 27001:2022 A.8.28"]
     tests: [MAILS-T03]
     en:
       title: No header injection in outgoing email
@@ -128,7 +128,7 @@ requirements:
     obligation: must
     priority: high
     tags: [html-email, xss, output-encoding]
-    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP ASVS 5.0 V1.2.1 (output encoding)", "CWE-79 (cross-site scripting)", "ISO/IEC 27001:2022 A.8.28", "CWE-116 (improper encoding or escaping of output)"]
     tests: [MAILS-T03]
     en:
       title: User content is encoded in HTML email
@@ -150,7 +150,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [content, confidentiality]
-    refs: ["OWASP ASVS 4.0.3 §8.3.1", "GDPR Art. 32 (security of processing)", "ISO/IEC 27001:2022 A.5.14"]
+    refs: ["OWASP ASVS 5.0 V14.2.6 (minimum sensitive data)", "GDPR Art. 32 (security of processing)", "ISO/IEC 27001:2022 A.5.14", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1114 (email collection)"]
     tests: [MAILS-T04]
     en:
       title: No passwords or confidential content in email
@@ -172,7 +172,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [invitation, links, expiry]
-    refs: ["OWASP ASVS 4.0.3 §2.5.1", "NIST SP 800-63B §6.1.2 (enrollment codes)", "ISO/IEC 27001:2022 A.5.17"]
+    refs: ["OWASP ASVS 5.0 V6.4.1 (activation codes)", "NIST SP 800-63A-4 §3.8 (confirmation codes)", "ISO/IEC 27001:2022 A.5.17", "CWE-1472 (generation of credential with long expiration)"]
     tests: [MAILS-T05]
     en:
       title: Invitation links work once and expire after 7 days
@@ -244,7 +244,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [rate-limit, abuse]
-    refs: ["OWASP Abuse Case Cheat Sheet", "M3AAWG Sender Best Common Practices"]
+    refs: ["OWASP Abuse Case Cheat Sheet", "M3AAWG Sender Best Common Practices", "CWE-799 (improper control of interaction frequency)"]
     tests: [MAILS-T08]
     en:
       title: Limit on email to external addresses per user
@@ -268,7 +268,7 @@ requirements:
     obligation: must
     priority: high
     tags: [inbound-email, dmarc, reply-by-email]
-    refs: ["RFC 7489 §6.6 (mail receiver actions)", "RFC 6376", "ISO/IEC 27001:2022 A.5.14"]
+    refs: ["RFC 9989 §5.3 (mail receiver actions)", "RFC 6376", "ISO/IEC 27001:2022 A.5.14", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1684.002 (email spoofing)"]
     tests: [MAILS-T10]
     en:
       title: Inbound email is authenticated before it changes data
@@ -290,7 +290,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [parked-domains, spf, dmarc]
-    refs: ["M3AAWG Protecting Parked Domains Best Common Practices", "RFC 7208", "RFC 7489", "ISO/IEC 27001:2022 A.5.14"]
+    refs: ["M3AAWG Protecting Parked Domains Best Common Practices", "RFC 7208", "RFC 9989 (DMARC)", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)"]
     tests: [MAILS-T11]
     en:
       title: Domains that send no email say so
@@ -312,7 +312,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [dmarc-reports, monitoring]
-    refs: ["RFC 7489 §7 (DMARC feedback)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.8.16"]
+    refs: ["RFC 9990 (DMARC aggregate reporting)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.8.16", "MITRE ATT&CK T1684.002 (email spoofing)"]
     tests: [MAILS-T12]
     en:
       title: Weekly review of DMARC aggregate reports
@@ -336,7 +336,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [dkim, key-rotation]
-    refs: ["M3AAWG DKIM Key Rotation Best Common Practices", "RFC 6376", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["M3AAWG DKIM Key Rotation Best Common Practices", "RFC 6376", "ISO/IEC 27001:2022 A.8.24", "CWE-324 (use of a key past its expiration date)"]
     tests: [MAILS-T13]
     en:
       title: DKIM keys rotated every 12 months
@@ -360,7 +360,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [links, phishing, https]
-    refs: ["M3AAWG Sender Best Common Practices", "ISO/IEC 27001:2022 A.8.23"]
+    refs: ["M3AAWG Sender Best Common Practices", "ISO/IEC 27001:2022 A.8.23", "MITRE ATT&CK T1566.002 (spearphishing link)"]
     tests: [MAILS-T14]
     en:
       title: Email links point to the system's own HTTPS domains
@@ -382,7 +382,7 @@ tests:
     priority: high
     execution: automated
     tags: [spf, dkim, dmarc, dns]
-    refs: ["RFC 7208", "RFC 6376", "RFC 7489", "ISO/IEC 27001:2022 A.5.14"]
+    refs: ["RFC 7208", "RFC 6376", "RFC 9989 (DMARC)", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
     en:
       title: SPF, DKIM and DMARC of the sending domains
       description: Looks up the DNS records of each sending domain and checks the authentication results of a received test message.
@@ -416,7 +416,7 @@ tests:
     priority: high
     execution: manual
     tags: [tls, smtp, mta-sts]
-    refs: ["RFC 8461", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["RFC 8461", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.8.24", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     en:
       title: Outgoing email is sent over TLS
       description: Sends test messages and inspects the transport of each hop and the MTA-STS policy of the receiving domains.
@@ -446,7 +446,7 @@ tests:
     priority: high
     execution: automated
     tags: [header-injection, html-email]
-    refs: ["OWASP Web Security Testing Guide v4.2 §4.7.10 (testing for IMAP/SMTP injection)", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.7.10 (testing for IMAP/SMTP injection)", "ISO/IEC 27001:2022 A.8.28", "CWE-116 (improper encoding or escaping of output)"]
     en:
       title: Header injection and markup in notification email
       description: Uses a display name with a line break and a comment with HTML tags, and inspects the resulting email.
@@ -476,7 +476,7 @@ tests:
     priority: high
     execution: manual
     tags: [content, confidentiality]
-    refs: []
+    refs: ["CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1114 (email collection)"]
     en:
       title: Outgoing email contains no passwords or confidential text
       description: Triggers the welcome, password reset and record notification emails and reads their content.
@@ -508,7 +508,7 @@ tests:
     priority: medium
     execution: manual
     tags: [invitation, expiry]
-    refs: []
+    refs: ["CWE-1472 (generation of credential with long expiration)"]
     en:
       title: Invitation links are single-use and expire
       description: Uses an invitation link twice and opens one that is older than 7 days.
@@ -602,7 +602,7 @@ tests:
     priority: medium
     execution: automated
     tags: [rate-limit, abuse]
-    refs: []
+    refs: ["CWE-799 (improper control of interaction frequency)"]
     en:
       title: Invitation flood is limited
       description: A script sends 60 invitations to external addresses from one user within an hour.
@@ -634,7 +634,7 @@ tests:
     priority: medium
     execution: manual
     tags: [dmarc, reporting]
-    refs: ["RFC 7489 §7 (DMARC reporting)", "ISO/IEC 27001:2022 A.5.14"]
+    refs: ["RFC 9990 (DMARC aggregate reporting)", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
     en:
       title: DMARC aggregate reports are received and read
       description: Checks that aggregate reports reach the report address and that unknown senders in them are followed up.
@@ -666,7 +666,7 @@ tests:
     priority: high
     execution: manual
     tags: [inbound-email, dmarc]
-    refs: ["RFC 7489 §6.6 (mail receiver actions)"]
+    refs: ["RFC 9989 §5.3 (mail receiver actions)", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1684.002 (email spoofing)"]
     en:
       title: Forged replies do not add comments
       description: Sends a genuine and a forged reply to a notification email.
@@ -696,7 +696,7 @@ tests:
     priority: medium
     execution: automated
     tags: [parked-domains]
-    refs: ["RFC 7208", "RFC 7489"]
+    refs: ["RFC 7208", "RFC 9989 (DMARC)", "MITRE ATT&CK T1684.002 (email spoofing)"]
     en:
       title: Non-sending domains publish restrictive records
       description: A script looks up SPF and DMARC records for each registered domain that sends no email.
@@ -722,7 +722,7 @@ tests:
     priority: medium
     execution: manual
     tags: [dmarc-reports]
-    refs: ["RFC 7489 §7 (DMARC feedback)"]
+    refs: ["RFC 9990 (DMARC aggregate reporting)", "MITRE ATT&CK T1684.002 (email spoofing)"]
     en:
       title: DMARC reports are reviewed and acted on
       description: Compares the DMARC aggregate reports of the last 4 weeks with the review log and tickets.
@@ -748,7 +748,7 @@ tests:
     priority: medium
     execution: manual
     tags: [dkim, key-rotation]
-    refs: ["RFC 6376"]
+    refs: ["RFC 6376", "CWE-324 (use of a key past its expiration date)"]
     en:
       title: DKIM selectors are current and old ones removed
       description: Reads the DKIM selector of recent messages and looks up the previous selector in DNS.
@@ -774,7 +774,7 @@ tests:
     priority: medium
     execution: automated
     tags: [links]
-    refs: ["M3AAWG Sender Best Common Practices"]
+    refs: ["M3AAWG Sender Best Common Practices", "MITRE ATT&CK T1566.002 (spearphishing link)"]
     en:
       title: Template links stay on the system's domains
       description: A script renders each email template and follows every link without running scripts.

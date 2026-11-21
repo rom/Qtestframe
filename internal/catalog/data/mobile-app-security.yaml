@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [backups, storage, device]
-    refs: ["OWASP MASVS-STORAGE-2", "ISO/IEC 27001:2022 A.8.1", "GDPR Art. 32(1)(a)"]
+    refs: ["OWASP MASVS-STORAGE-2", "ISO/IEC 27001:2022 A.8.1", "GDPR Art. 32(1)(a)", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1409 (stored application data)"]
     tests: [MOBSEC-T01]
     en:
       title: Sensitive app data excluded from device backups
@@ -35,7 +35,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [logging, storage, sensitive-data]
-    refs: ["OWASP MASVS-STORAGE-2", "CWE-532", "ISO/IEC 27001:2022 A.8.12"]
+    refs: ["OWASP MASVS-STORAGE-2", "CWE-532 (insertion of sensitive information into log file)", "ISO/IEC 27001:2022 A.8.12"]
     tests: [MOBSEC-T02]
     en:
       title: No sensitive data in the device's system log
@@ -57,7 +57,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [tls, cleartext, network]
-    refs: ["OWASP MASVS-NETWORK-1", "ISO/IEC 27001:2022 A.8.24", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    refs: ["OWASP MASVS-NETWORK-1", "ISO/IEC 27001:2022 A.8.24", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-1428 (reliance on HTTP instead of HTTPS)", "CWE-295 (improper certificate validation)", "MITRE ATT&CK T1638 (adversary-in-the-middle)"]
     tests: [MOBSEC-T03]
     en:
       title: Cleartext traffic disabled and certificates validated
@@ -79,7 +79,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [certificate-pinning, network]
-    refs: ["OWASP MASVS-NETWORK-2", "OWASP Pinning Cheat Sheet", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["OWASP MASVS-NETWORK-2", "OWASP Pinning Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "CWE-295 (improper certificate validation)", "MITRE ATT&CK T1638 (adversary-in-the-middle)"]
     tests: [MOBSEC-T04]
     en:
       title: Pinned public keys for the system's own API
@@ -101,7 +101,7 @@ requirements:
     obligation: must
     priority: high
     tags: [biometrics, keystore, local-authentication]
-    refs: ["OWASP MASVS-AUTH-2", "ISO/IEC 27001:2022 A.8.5", "NIST SP 800-63B-4 (biometrics)"]
+    refs: ["OWASP MASVS-AUTH-2", "ISO/IEC 27001:2022 A.8.5", "NIST SP 800-63B-4 §3.2.3 (use of biometrics)", "MITRE ATT&CK T1617 (hooking)"]
     tests: [MOBSEC-T05]
     en:
       title: Biometric unlock bound to a key in the key store
@@ -127,7 +127,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [screenshots, app-switcher, privacy]
-    refs: ["OWASP MASVS-PLATFORM-3", "ISO/IEC 27001:2022 A.8.12"]
+    refs: ["OWASP MASVS-PLATFORM-3", "ISO/IEC 27001:2022 A.8.12", "MITRE ATT&CK T1513 (screen capture)"]
     tests: [MOBSEC-T06]
     en:
       title: Sensitive screens hidden in screenshots and the app switcher
@@ -149,7 +149,7 @@ requirements:
     obligation: must
     priority: high
     tags: [deep-links, intents, ipc]
-    refs: ["OWASP MASVS-PLATFORM-1", "CWE-926", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP MASVS-PLATFORM-1", "CWE-926 (improper export of Android application components)", "ISO/IEC 27001:2022 A.8.28", "CWE-939 (improper authorization in handler for custom URL scheme)", "MITRE ATT&CK T1635.001 (URI hijacking)"]
     tests: [MOBSEC-T07]
     en:
       title: Deep links and exported components validate their input
@@ -175,7 +175,7 @@ requirements:
     obligation: must
     priority: high
     tags: [webview, javascript-bridge]
-    refs: ["OWASP MASVS-PLATFORM-2", "CWE-749", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP MASVS-PLATFORM-2", "CWE-749 (exposed dangerous method or function)", "ISO/IEC 27001:2022 A.8.28"]
     tests: [MOBSEC-T08]
     en:
       title: Web views load only own content and expose no native bridge to other origins
@@ -197,7 +197,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [embedded-secrets, binary-analysis]
-    refs: ["OWASP MASVS-CRYPTO-2", "CWE-798", "OWASP Mobile Application Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["OWASP MASVS-CRYPTO-2", "CWE-798 (use of hard-coded credentials)", "OWASP Mobile Application Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24"]
     tests: [MOBSEC-T09]
     en:
       title: No secret keys in the app package
@@ -241,7 +241,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [attestation, integrity, root-detection]
-    refs: ["OWASP MASVS-RESILIENCE-1", "OWASP MASVS-RESILIENCE-2", "ISO/IEC 27001:2022 A.8.7 (protection against malware)"]
+    refs: ["OWASP MASVS-RESILIENCE-1", "OWASP MASVS-RESILIENCE-2", "ISO/IEC 27001:2022 A.8.7 (protection against malware)", "MITRE ATT&CK T1577 (compromise application executable)", "MITRE ATT&CK M1002 (attestation)"]
     tests: [MOBSEC-T11]
     en:
       title: Platform attestation for high-risk operations
@@ -263,7 +263,7 @@ requirements:
     obligation: must
     priority: high
     tags: [release-build, debuggable, hardening]
-    refs: ["OWASP MASVS-RESILIENCE-4", "OWASP MASVS-CODE-4", "ISO/IEC 27001:2022 A.8.31"]
+    refs: ["OWASP MASVS-RESILIENCE-4", "OWASP MASVS-CODE-4", "ISO/IEC 27001:2022 A.8.31", "CWE-489 (active debug code)"]
     tests: [MOBSEC-T12]
     en:
       title: Release builds are not debuggable
@@ -285,7 +285,7 @@ requirements:
     obligation: must_not
     priority: medium
     tags: [permissions, privacy]
-    refs: ["OWASP MASVS-PRIVACY-1", "GDPR Art. 5(1)(c)", "GDPR Art. 25(2)"]
+    refs: ["OWASP MASVS-PRIVACY-1", "GDPR Art. 5(1)(c)", "GDPR Art. 25(2)", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1430 (location tracking)"]
     tests: [MOBSEC-T13]
     en:
       title: No device permission without a documented need
@@ -307,7 +307,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [third-party-sdk, privacy-labels, data-collection]
-    refs: ["OWASP MASVS-PRIVACY-3", "GDPR Art. 13", "GDPR Art. 28(1)", "ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    refs: ["OWASP MASVS-PRIVACY-3", "GDPR Art. 13", "GDPR Art. 28(1)", "ePrivacy Directive 2002/58/EC Art. 5(3)", "CWE-1357 (reliance on insufficiently trustworthy component)", "MITRE ATT&CK T1474 (supply chain compromise)"]
     tests: [MOBSEC-T14]
     en:
       title: Inventory of SDKs and the data they collect
@@ -329,7 +329,7 @@ tests:
     priority: high
     execution: manual
     tags: [backups]
-    refs: ["OWASP MASTG (MASVS-STORAGE tests)"]
+    refs: ["OWASP MASTG (MASVS-STORAGE tests)", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1409 (stored application data)"]
     en:
       title: Restored backup does not bring the session along
       description: Backs up a device with the app signed in and restores it to another device.
@@ -359,7 +359,7 @@ tests:
     priority: high
     execution: manual
     tags: [logging]
-    refs: ["CWE-532"]
+    refs: ["CWE-532 (insertion of sensitive information into log file)"]
     en:
       title: System log holds no secrets or record data
       description: Captures the system log while using the release build and searches it for known test values.
@@ -385,7 +385,7 @@ tests:
     priority: critical
     execution: manual
     tags: [tls, cleartext]
-    refs: ["OWASP MASVS-NETWORK-1"]
+    refs: ["OWASP MASVS-NETWORK-1", "CWE-1428 (reliance on HTTP instead of HTTPS)", "CWE-295 (improper certificate validation)", "MITRE ATT&CK T1638 (adversary-in-the-middle)"]
     en:
       title: App refuses intercepted and cleartext connections
       description: Routes the app through an intercepting proxy with an untrusted certificate and inspects the network configuration.
@@ -411,7 +411,7 @@ tests:
     priority: medium
     execution: manual
     tags: [certificate-pinning]
-    refs: ["OWASP MASVS-NETWORK-2"]
+    refs: ["OWASP MASVS-NETWORK-2", "CWE-295 (improper certificate validation)", "MITRE ATT&CK T1638 (adversary-in-the-middle)"]
     en:
       title: Pinning blocks a proxy with a trusted root
       description: Installs the proxy's root certificate on the device and checks that pinned API calls still fail.
@@ -441,7 +441,7 @@ tests:
     priority: high
     execution: manual
     tags: [biometrics, keystore]
-    refs: ["OWASP MASVS-AUTH-2"]
+    refs: ["OWASP MASVS-AUTH-2", "MITRE ATT&CK T1617 (hooking)"]
     en:
       title: Forced biometric success does not unlock the app
       description: Uses an instrumentation tool on a rooted device to force the biometric callback, then unlocks with a real biometric.
@@ -467,7 +467,7 @@ tests:
     priority: medium
     execution: manual
     tags: [screenshots, app-switcher]
-    refs: ["OWASP MASVS-PLATFORM-3"]
+    refs: ["OWASP MASVS-PLATFORM-3", "MITRE ATT&CK T1513 (screen capture)"]
     en:
       title: Confidential screens are masked
       description: Opens a confidential record, takes a screenshot and opens the app switcher.
@@ -493,7 +493,7 @@ tests:
     priority: high
     execution: manual
     tags: [deep-links, intents]
-    refs: ["OWASP MASVS-PLATFORM-1"]
+    refs: ["OWASP MASVS-PLATFORM-1", "CWE-939 (improper authorization in handler for custom URL scheme)", "MITRE ATT&CK T1635.001 (URI hijacking)"]
     en:
       title: Crafted links and intents are refused
       description: Sends crafted deep links and intents to the app and reviews its exported components.
@@ -553,7 +553,7 @@ tests:
     priority: critical
     execution: automated
     tags: [embedded-secrets]
-    refs: ["CWE-798"]
+    refs: ["CWE-798 (use of hard-coded credentials)"]
     en:
       title: Release package contains no usable secrets
       description: A script unpacks the release package and scans it and its native libraries for secrets.
@@ -609,7 +609,7 @@ tests:
     priority: medium
     execution: manual
     tags: [attestation]
-    refs: ["OWASP MASVS-RESILIENCE-1"]
+    refs: ["OWASP MASVS-RESILIENCE-1", "MITRE ATT&CK T1577 (compromise application executable)", "MITRE ATT&CK M1002 (attestation)"]
     en:
       title: High-risk operations need a valid attestation
       description: Runs the three high-risk operations from a genuine device, a re-signed app and an emulator.
@@ -639,7 +639,7 @@ tests:
     priority: high
     execution: automated
     tags: [release-build, debuggable]
-    refs: ["OWASP MASVS-RESILIENCE-4"]
+    refs: ["OWASP MASVS-RESILIENCE-4", "CWE-489 (active debug code)"]
     en:
       title: Release package is not debuggable
       description: A script inspects the release package for debug flags, symbols and test hosts.
@@ -669,7 +669,7 @@ tests:
     priority: medium
     execution: manual
     tags: [permissions]
-    refs: ["OWASP MASVS-PRIVACY-1"]
+    refs: ["OWASP MASVS-PRIVACY-1", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1430 (location tracking)"]
     en:
       title: Declared permissions match the documented list
       description: Compares the permissions in the release package with the documented list and checks when they are requested.
@@ -699,7 +699,7 @@ tests:
     priority: medium
     execution: manual
     tags: [third-party-sdk, privacy-labels]
-    refs: ["OWASP MASVS-PRIVACY-3"]
+    refs: ["OWASP MASVS-PRIVACY-3", "CWE-1357 (reliance on insufficiently trustworthy component)", "MITRE ATT&CK T1474 (supply chain compromise)"]
     en:
       title: App traffic matches the SDK list and store declaration
       description: Captures the app's network traffic during a session and compares it with the SDK list and the store privacy declaration.

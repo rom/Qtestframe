@@ -60,13 +60,26 @@ func TestDocLinks(t *testing.T) {
 		"RFC 2119":       "https://www.rfc-editor.org/rfc/rfc2119",
 		"RFC 9110 §15.5": "https://www.rfc-editor.org/rfc/rfc9110",
 		"RFC 6265bis":    "https://www.rfc-editor.org/",
-		"IETF draft-ietf-httpapi-ratelimit-headers": "https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/",
-		"GDPR Art. 32(1)(a)":                        "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
-		"ISO/IEC 27033-2:2012":                      "https://www.iso.org/standard/51581.html",
-		"EN 55032:2015":                             "https://webstore.iec.ch/en/publication/22046",
-		"CWE-79":                                    "https://cwe.mitre.org/data/definitions/79.html",
-		"3GPP TS 23.501":                            "https://www.3gpp.org/DynaReport/23501.htm",
-		"ITU-T G.8275.1":                            "https://www.itu.int/rec/T-REC-G.8275.1",
+		"IETF draft-ietf-httpapi-ratelimit-headers":        "https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/",
+		"GDPR Art. 32(1)(a)":                               "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+		"ISO/IEC 27033-2:2012":                             "https://www.iso.org/standard/51581.html",
+		"EN 55032:2015":                                    "https://webstore.iec.ch/en/publication/22046",
+		"CWE-79":                                           "https://cwe.mitre.org/data/definitions/79.html",
+		"CWE-1464 (improper session invalidation)":         "https://cwe.mitre.org/data/definitions/1464.html",
+		"CWE Top 25 Most Dangerous Software Weaknesses":    "https://cwe.mitre.org/top25/",
+		"MITRE CWE":                                        "https://cwe.mitre.org/",
+		"MITRE ATT&CK T1078 (valid accounts)":              "https://attack.mitre.org/techniques/T1078/",
+		"MITRE ATT&CK T1110.001 (password guessing)":       "https://attack.mitre.org/techniques/T1110/001/",
+		"MITRE ATT&CK M1032 (multi-factor authentication)": "https://attack.mitre.org/mitigations/M1032/",
+		"MITRE ATT&CK TA0010 (exfiltration)":               "https://attack.mitre.org/tactics/TA0010/",
+		"MITRE ATT&CK T0886 (remote services)":             "https://attack.mitre.org/techniques/T0886/",
+		"MITRE ATT&CK T1693.001 (system firmware)":         "https://attack.mitre.org/techniques/T1693/001/",
+		"MITRE ATT&CK M0930 (network segmentation)":        "https://attack.mitre.org/mitigations/M0930/",
+		"MITRE ATT&CK T1638 (adversary-in-the-middle)":     "https://attack.mitre.org/techniques/T1638/",
+		"MITRE ATT&CK Containers Matrix":                   "https://attack.mitre.org/matrices/enterprise/containers/",
+		"MITRE ATT&CK":                                     "https://attack.mitre.org/",
+		"3GPP TS 23.501":                                   "https://www.3gpp.org/DynaReport/23501.htm",
+		"ITU-T G.8275.1":                                   "https://www.itu.int/rec/T-REC-G.8275.1",
 	} {
 		ts := c.RefTargets([]string{ref}, "sv")
 		if len(ts) != 1 || ts[0].URL != want || ts[0].Source == "" || ts[0].Name == "" {
@@ -84,6 +97,21 @@ func TestDocLinks(t *testing.T) {
 		return 1
 	}) {
 		t.Errorf("cited RFCs %v", docs)
+	}
+	// one cited document per technique, sub-technique and mitigation, and
+	// the analytics group sub-techniques under their technique
+	attack := c.CitedDocuments("mitre-attack")
+	labels := map[string]bool{}
+	for _, d := range attack {
+		labels[d.Label] = true
+	}
+	for _, l := range []string{"MITRE ATT&CK T1110", "MITRE ATT&CK T1110.001", "MITRE ATT&CK M1032", "MITRE ATT&CK T0886"} {
+		if !labels[l] {
+			t.Errorf("cited ATT&CK documents miss %s", l)
+		}
+	}
+	if s := c.Source("mitre-attack"); s.ClauseOf("MITRE ATT&CK T1110.001 (password guessing)") != "T1110" || s.ClauseOf("MITRE ATT&CK M1032 (multi-factor authentication)") != "M1032" {
+		t.Errorf("ATT&CK clauses %q %q", s.ClauseOf("MITRE ATT&CK T1110.001 (password guessing)"), s.ClauseOf("MITRE ATT&CK M1032 (multi-factor authentication)"))
 	}
 	if c.CitedDocuments("gdpr") != nil || c.CitedDocuments("nope") != nil {
 		t.Error("documents of a source without ref_links")

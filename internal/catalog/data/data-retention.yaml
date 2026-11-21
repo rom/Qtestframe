@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [deletion, search-index, cache]
-    refs: ["GDPR Art. 17", "ISO/IEC 27001:2022 A.8.10", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)"]
+    refs: ["GDPR Art. 17", "ISO/IEC 27001:2022 A.8.10", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)", "CWE-459 (incomplete cleanup)"]
     tests: [RET-T04]
     en:
       title: Deletion reaches indexes, caches and replicas
@@ -188,7 +188,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [anonymisation, k-anonymity]
-    refs: ["GDPR Recital 26", "ISO/IEC 20889:2018", "Article 29 Working Party Opinion 05/2014 on Anonymisation Techniques", "ISO/IEC 27001:2022 A.8.11"]
+    refs: ["GDPR Recital 26", "ISO/IEC 20889:2018", "Article 29 Working Party Opinion 05/2014 on Anonymisation Techniques", "ISO/IEC 27001:2022 A.8.11", "CWE-359 (exposure of private personal information)"]
     tests: [RET-T09]
     en:
       title: Anonymised data cannot be linked to a person
@@ -232,7 +232,7 @@ requirements:
     obligation: must
     priority: high
     tags: [media-sanitisation, decommissioning]
-    refs: ["NIST SP 800-88 Rev. 2", "ISO/IEC 27001:2022 A.7.14", "ISO/IEC 27040:2024", "GDPR Art. 32(1)(b)"]
+    refs: ["NIST SP 800-88 Rev. 2", "ISO/IEC 27001:2022 A.7.14", "ISO/IEC 27040:2024", "GDPR Art. 32(1)(b)", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)", "CWE-226 (sensitive information in resource not removed before reuse)"]
     tests: [RET-T11]
     en:
       title: Storage media sanitised before reuse or disposal
@@ -416,7 +416,7 @@ tests:
     priority: high
     execution: manual
     tags: [deletion, search-index, cache]
-    refs: ["GDPR Art. 17", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)"]
+    refs: ["GDPR Art. 17", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)", "CWE-459 (incomplete cleanup)"]
     en:
       title: Deleted record disappears from search, cache and warehouse
       description: Deletes a record with a unique marker and searches for it in every secondary store after 24 hours.
@@ -566,7 +566,7 @@ tests:
     priority: medium
     execution: automated
     tags: [anonymisation, k-anonymity]
-    refs: ["ISO/IEC 20889:2018", "ISO/IEC 27001:2022 A.8.11"]
+    refs: ["ISO/IEC 20889:2018", "ISO/IEC 27001:2022 A.8.11", "CWE-359 (exposure of private personal information)"]
     en:
       title: k-anonymity check of anonymised data
       description: A script measures k-anonymity and searches for direct identifiers in the anonymised data set.
@@ -618,7 +618,7 @@ tests:
     priority: high
     execution: manual
     tags: [media-sanitisation]
-    refs: ["NIST SP 800-88 Rev. 2"]
+    refs: ["NIST SP 800-88 Rev. 2", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)", "CWE-226 (sensitive information in resource not removed before reuse)"]
     en:
       title: Each decommissioned device has a sanitisation certificate
       description: Compares the list of devices taken out of service with the sanitisation certificates.

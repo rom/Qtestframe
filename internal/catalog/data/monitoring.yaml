@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [logging, structured-logs]
-    refs: ["The Twelve-Factor App, XI Logs", "OWASP ASVS 4.0 V7.1 (log content)", "ISO/IEC 27001:2022 A.8.15 (logging)"]
+    refs: ["The Twelve-Factor App, XI Logs", "OWASP ASVS 5.0 V16.2.1 (log entry metadata)", "ISO/IEC 27001:2022 A.8.15 (logging)"]
     tests: [OBS-T01]
     en:
       title: Structured log entries
@@ -56,7 +56,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [logging, secrets, personal-data]
-    refs: ["OWASP ASVS 4.0 V7.1.1 (no credentials in logs)", "OWASP Logging Cheat Sheet", "GDPR Art. 5(1)(c) (data minimisation)", "ISO/IEC 27001:2022 A.8.15"]
+    refs: ["OWASP ASVS 5.0 V16.2.5 (sensitive data in logs)", "OWASP Logging Cheat Sheet", "GDPR Art. 5(1)(c) (data minimisation)", "ISO/IEC 27001:2022 A.8.15"]
     tests: [OBS-T03]
     en:
       title: No secrets or identity numbers in logs

@@ -236,7 +236,7 @@ requirements:
     obligation: should_not
     priority: medium
     tags: [test-data, anonymisation]
-    refs: ["GDPR Art. 5(1)(b)", "GDPR Art. 32", "ISO/IEC 27001:2022 A.8.33"]
+    refs: ["GDPR Art. 5(1)(b)", "GDPR Art. 32", "ISO/IEC 27001:2022 A.8.33", "CWE-359 (exposure of private personal information)"]
     tests: [PRIV-T11]
     en:
       title: No real personal data in test environments
@@ -302,7 +302,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [pseudonymisation, analytics]
-    refs: ["GDPR Art. 4(5) and Art. 25(1) (pseudonymisation, data protection by design)", "ENISA: Pseudonymisation techniques and best practices (2019)", "ISO/IEC 27001:2022 A.8.11", "GDPR Art. 32(1)(a)"]
+    refs: ["GDPR Art. 4(5) and Art. 25(1) (pseudonymisation, data protection by design)", "ENISA: Pseudonymisation techniques and best practices (2019)", "ISO/IEC 27001:2022 A.8.11", "GDPR Art. 32(1)(a)", "CWE-359 (exposure of private personal information)"]
     tests: [PRIV-T14]
     en:
       title: Analytics data is pseudonymised
@@ -324,7 +324,7 @@ requirements:
     obligation: must
     priority: high
     tags: [privacy-by-default, visibility, defaults]
-    refs: ["GDPR Art. 25(2)", "EDPB Guidelines 4/2019 on Article 25 Data Protection by Design and by Default", "ISO/IEC 27701:2025 (privacy by design and by default)"]
+    refs: ["GDPR Art. 25(2)", "EDPB Guidelines 4/2019 on Article 25 Data Protection by Design and by Default", "ISO/IEC 27701:2025 (privacy by design and by default)", "CWE-359 (exposure of private personal information)", "CWE-276 (incorrect default permissions)"]
     tests: [PRIV-T15]
     en:
       title: Smallest audience by default
@@ -392,7 +392,7 @@ requirements:
     obligation: must
     priority: high
     tags: [data-subject-requests, identity-verification]
-    refs: ["GDPR Art. 12(6)", "GDPR Art. 5(1)(c)", "EDPB Guidelines 01/2022 on data subject rights - Right of access"]
+    refs: ["GDPR Art. 12(6)", "GDPR Art. 5(1)(c)", "EDPB Guidelines 01/2022 on data subject rights - Right of access", "CWE-359 (exposure of private personal information)", "MITRE ATT&CK T1684.001 (impersonation)"]
     tests: [PRIV-T18]
     en:
       title: Identity confirmed before data is released on request
@@ -752,7 +752,7 @@ tests:
     priority: medium
     execution: automated
     tags: [test-data, anonymisation]
-    refs: ["ISO/IEC 27001:2022 A.8.33"]
+    refs: ["ISO/IEC 27001:2022 A.8.33", "CWE-359 (exposure of private personal information)"]
     en:
       title: Test environments hold no production personal data
       description: A script compares a sample of person records in each test environment with production.
@@ -840,7 +840,7 @@ tests:
     priority: medium
     execution: automated
     tags: [pseudonymisation, analytics]
-    refs: []
+    refs: ["CWE-359 (exposure of private personal information)"]
     en:
       title: No clear-text identities in the analytics store
       description: Samples rows from the analytics store, searches them for identifying values and checks where the pseudonymisation key can be read.
@@ -872,7 +872,7 @@ tests:
     priority: high
     execution: manual
     tags: [privacy-by-default]
-    refs: ["GDPR Art. 25(2)"]
+    refs: ["GDPR Art. 25(2)", "CWE-359 (exposure of private personal information)", "CWE-276 (incorrect default permissions)"]
     en:
       title: New accounts start with the narrowest visibility
       description: Creates a new account and checks what other users can see before and after the user changes the settings.
@@ -958,7 +958,7 @@ tests:
     priority: high
     execution: manual
     tags: [data-subject-requests, identity-verification]
-    refs: ["GDPR Art. 12(6)"]
+    refs: ["GDPR Art. 12(6)", "CWE-359 (exposure of private personal information)", "MITRE ATT&CK T1684.001 (impersonation)"]
     en:
       title: Requests from unverified senders release no data
       description: Sends a data access request from an unknown address and from the signed-in user.

@@ -20,7 +20,7 @@ requirements:
     obligation: must            # must | must_not | should | should_not | may (the keyword used in the text)
     priority: high              # critical | high | medium | low
     tags: [password, login]     # lower case, a-z 0-9 and "-"
-    refs: ["NIST SP 800-63B §5.1.1.2"]   # standards it is based on: cited, never copied
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)"]   # standards it is based on: cited, never copied
     tests: [AUTH-T01, AUTH-T02] # at least one catalogue test that verifies it (same or other area)
     en:
       title: Minimum password length          # short, no final full stop
@@ -66,8 +66,10 @@ tests:
   regulations listed below, ISTQB, …) but write every sentence yourself and
   cite the standard in `refs` by name and section only. Never copy
   normative text. Cite only what the item really implements, keep a `refs`
-  list to at most 8 entries, and spell each source the same way everywhere
-  (see *Citing standards* below).
+  list to at most 10 entries (checked; no duplicates), and spell each
+  source the same way everywhere (see *Citing standards* below). Aim for
+  about 8 standards; the last places are meant for the CWE weaknesses and
+  MITRE ATT&CK techniques of a security item.
 - **Generic and reusable.** Write "the system", "a user", "an administrator";
   no product names. Put the adjustable value (12 characters, 2 seconds,
   99.9 %) in the text so a team can edit it after adding the item.
@@ -142,7 +144,24 @@ actually check.
 | CER (resilience of critical entities) | `Directive (EU) 2022/2557 (CER) Art. 13(1)(d)` |
 | NIS2 | `Directive (EU) 2022/2555 (NIS2) Art. 23` |
 | Swedish Cybersecurity Act (implements NIS2) | `Cybersäkerhetslag (2025:1506) 2 kap. 3 §` |
+| OWASP ASVS (current edition 5.0; no 4.0 numbering) | `OWASP ASVS 5.0 V6.2.1 (password length)`, or the section `OWASP ASVS 5.0 V13.3 (secret management)` |
+| NIST SP 800-63-4 digital identity guidelines (not the Rev. 3 numbering) | `NIST SP 800-63B-4 §3.1.1.2 (password verifiers)`, `NIST SP 800-63A-4 §3.8 (confirmation codes)` |
+| PCI DSS (current version v4.0.1) | `PCI DSS v4.0.1 Req. 8.2.6`, `PCI DSS v4.0.1 SAQ A (eligibility criteria)` |
+| MITRE CWE weakness (current CWE list; prefer base and variant entries, never deprecated ones) | `CWE-521 (weak password requirements)`, `CWE Top 25 Most Dangerous Software Weaknesses` |
+| MITRE ATT&CK technique, sub-technique or mitigation (Enterprise, ICS or Mobile; never revoked or deprecated ids) | `MITRE ATT&CK T1110.001 (password guessing)`, `MITRE ATT&CK T0886 (remote services)`, `MITRE ATT&CK M1032 (multi-factor authentication)` |
 | Radio Equipment Directive, Art. 3(3)(d)–(f) as applied by Delegated Regulation (EU) 2022/30, with the harmonised standard EN 18031-1/-2/-3 and its mechanism (AUM, ACM, SCM, SSM, SUM, RLM, CCK, CRY, GEC, DLM …) | `Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)` |
+
+Give security items (the areas of the security group, and the security
+requirements of the privacy group and the other catalogues) the CWE
+weaknesses they prevent, typically 1–3 of the most specific entries, and
+the ATT&CK techniques they mitigate or detect, typically 1–2; an ATT&CK
+mitigation (`M1032`, `M0930` for ICS) where it is the clearer link. Use
+ATT&CK for ICS for industrial control items and the Mobile matrix for
+mobile apps. Check every id on cwe.mitre.org and attack.mitre.org, cite
+the short name in lower case as in the examples, and add the same refs to
+the tests whose steps check that weakness or technique. The catalogue
+browser links each id to its page (`ref_links` of the `cwe` and
+`mitre-attack` sources), and the search finds `CWE-79` or `T1110`.
 
 Cite the RED only for items that make sense for internet-connected radio
 equipment, and IEC 62443 where the item fits an industrial system or

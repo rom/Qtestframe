@@ -130,7 +130,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [prompt-injection, tool-use, confirmation]
-    refs: ["OWASP Top 10 for LLM Applications 2025 LLM01 (prompt injection)", "OWASP Top 10 for LLM Applications 2025 LLM06 (excessive agency)", "ISO/IEC 27001:2022 A.8.26"]
+    refs: ["OWASP Top 10 for LLM Applications 2025 LLM01 (prompt injection)", "OWASP Top 10 for LLM Applications 2025 LLM06 (excessive agency)", "ISO/IEC 27001:2022 A.8.26", "CWE-1426 (improper validation of generative AI output)", "CWE-1427 (prompt injection)", "MITRE ATT&CK T1698 (indirect prompt injection)"]
     tests: [AIML-T05]
     en:
       title: Model output cannot trigger privileged actions on its own
@@ -156,7 +156,7 @@ requirements:
     obligation: should
     priority: high
     tags: [output-filtering, personal-data, secrets]
-    refs: ["OWASP Top 10 for LLM Applications 2025 LLM02 (sensitive information disclosure)", "ISO/IEC 27001:2022 A.8.12", "GDPR Art. 32"]
+    refs: ["OWASP Top 10 for LLM Applications 2025 LLM02 (sensitive information disclosure)", "ISO/IEC 27001:2022 A.8.12", "GDPR Art. 32", "CWE-1426 (improper validation of generative AI output)", "CWE-359 (exposure of private personal information)"]
     tests: [AIML-T06]
     en:
       title: Answers are filtered for personal identity numbers and secrets
@@ -204,7 +204,7 @@ requirements:
     obligation: must
     priority: high
     tags: [content-policy, red-team, harmful-content]
-    refs: ["NIST AI 600-1 (Generative AI Profile) §2", "OWASP Top 10 for LLM Applications 2025 LLM05 (improper output handling)"]
+    refs: ["NIST AI 600-1 (Generative AI Profile) §2", "OWASP Top 10 for LLM Applications 2025 LLM05 (improper output handling)", "CWE-1427 (prompt injection)", "MITRE ATT&CK T1699 (direct prompt injection)"]
     tests: [AIML-T08]
     en:
       title: Requests against the content policy are refused
@@ -322,7 +322,7 @@ requirements:
     obligation: should
     priority: high
     tags: [data-minimisation, pseudonymisation, prompts]
-    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25(1)", "OWASP Top 10 for LLM Applications 2025 LLM02 (sensitive information disclosure)", "ISO/IEC 27701:2025 (de-identification)"]
+    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25(1)", "OWASP Top 10 for LLM Applications 2025 LLM02 (sensitive information disclosure)", "ISO/IEC 27701:2025 (de-identification)", "CWE-359 (exposure of private personal information)", "CWE-212 (improper removal of sensitive information before storage or transfer)"]
     tests: [AIML-T12]
     en:
       title: Direct identifiers removed before text is sent to an external model
@@ -540,7 +540,7 @@ tests:
     priority: critical
     execution: manual
     tags: [prompt-injection, tool-use]
-    refs: ["OWASP Top 10 for LLM Applications 2025 LLM01", "ISO/IEC 27001:2022 A.8.26"]
+    refs: ["OWASP Top 10 for LLM Applications 2025 LLM01", "ISO/IEC 27001:2022 A.8.26", "CWE-1426 (improper validation of generative AI output)", "CWE-1427 (prompt injection)", "MITRE ATT&CK T1698 (indirect prompt injection)"]
     en:
       title: Hidden instructions in a document do not trigger actions
       description: Asks the assistant to summarise a document with a hidden instruction and tries a proposed action as a read-only user.
@@ -572,7 +572,7 @@ tests:
     priority: high
     execution: automated
     tags: [output-filtering]
-    refs: []
+    refs: ["CWE-1426 (improper validation of generative AI output)", "CWE-359 (exposure of private personal information)"]
     en:
       title: Sensitive values are masked in answers
       description: Runs a set of prompts designed to make the model repeat identity numbers, card numbers and keys that are present in its context.
@@ -630,7 +630,7 @@ tests:
     priority: high
     execution: automated
     tags: [red-team, content-policy]
-    refs: ["NIST AI 600-1 (Generative AI Profile)"]
+    refs: ["NIST AI 600-1 (Generative AI Profile)", "CWE-1427 (prompt injection)", "MITRE ATT&CK T1699 (direct prompt injection)"]
     en:
       title: Red-team prompts are refused
       description: Runs the red-team set for each forbidden category of the content policy and computes the refusal rate.
@@ -752,7 +752,7 @@ tests:
     priority: high
     execution: automated
     tags: [pseudonymisation, prompts]
-    refs: ["GDPR Art. 5(1)(c)"]
+    refs: ["GDPR Art. 5(1)(c)", "CWE-359 (exposure of private personal information)", "CWE-212 (improper removal of sensitive information before storage or transfer)"]
     en:
       title: Identifiers are replaced before the model call
       description: A script asks for a draft from a record with known identifiers and captures the outgoing model request.

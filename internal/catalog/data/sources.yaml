@@ -1226,15 +1226,24 @@ sources:
     url: https://cwe.mitre.org/
     ref_links:
       - {regex: '^CWE-(\d+)\b', label: 'CWE-$1', url: 'https://cwe.mitre.org/data/definitions/$1.html'}
+      - {regex: '^CWE Top 25\b', label: 'CWE Top 25', url: 'https://cwe.mitre.org/top25/'}
+  # Enterprise, ICS and Mobile share one id space and one url scheme:
+  # techniques T1110 and T0886, sub-techniques T1110.001 (techniques/T1110/001/),
+  # mitigations M1032 and M0930, tactics TA0010.
   - id: mitre-attack
     kind: practice
     jurisdiction: international
     short: MITRE ATT&CK
     name: {en: "MITRE ATT&CK", sv: "MITRE ATT&CK"}
     match: ["MITRE ATT&CK"]
+    clause: '\b(?:TA|T|M)\d{4}\b'
     url: https://attack.mitre.org/
     ref_links:
+      - {regex: '^MITRE ATT&CK (T\d{4})\.(\d{3})\b', label: 'MITRE ATT&CK $1.$2', url: 'https://attack.mitre.org/techniques/$1/$2/'}
       - {regex: '^MITRE ATT&CK (T\d{4})\b', label: 'MITRE ATT&CK $1', url: 'https://attack.mitre.org/techniques/$1/'}
+      - {regex: '^MITRE ATT&CK (M\d{4})\b', label: 'MITRE ATT&CK $1', url: 'https://attack.mitre.org/mitigations/$1/'}
+      - {regex: '^MITRE ATT&CK (TA\d{4})\b', label: 'MITRE ATT&CK $1', url: 'https://attack.mitre.org/tactics/$1/'}
+      - {regex: '^MITRE ATT&CK Containers Matrix\b', label: 'MITRE ATT&CK Containers Matrix', url: 'https://attack.mitre.org/matrices/enterprise/containers/'}
   - id: cve
     kind: practice
     jurisdiction: international
@@ -1304,9 +1313,12 @@ sources:
     kind: guideline
     jurisdiction: US
     short: NIST SP 800-63
-    name: {en: "NIST SP 800-63 Digital Identity Guidelines (63A, 63B)", sv: "NIST SP 800-63 Riktlinjer för digital identitet (63A, 63B)"}
+    name: {en: "NIST SP 800-63-4 Digital Identity Guidelines (63A-4, 63B-4)", sv: "NIST SP 800-63-4 Riktlinjer för digital identitet (63A-4, 63B-4)"}
     match: ["NIST SP 800-63A", "NIST SP 800-63B"]
-    url: https://pages.nist.gov/800-63-3/
+    url: https://pages.nist.gov/800-63-4/
+    links:
+      - {label: "NIST SP 800-63A-4", url: "https://doi.org/10.6028/NIST.SP.800-63A-4"}
+      - {label: "NIST SP 800-63B-4", url: "https://doi.org/10.6028/NIST.SP.800-63B-4"}
   - id: nist-800-53
     kind: standard
     jurisdiction: US
@@ -2701,11 +2713,11 @@ sources:
     short: NIST IR 8547
     name: {en: "NIST IR 8547 Transition to Post-Quantum Cryptography Standards", sv: "NIST IR 8547 Övergång till standarder för postkvantkryptografi"}
     match: ["NIST IR 8547"]
-    url: https://csrc.nist.gov/pubs/ir/8547/ipd
+    url: https://doi.org/10.6028/NIST.IR.8547
   - id: eu-pqc-roadmap
     kind: guideline
     jurisdiction: EU
-    name: {en: "NIS Cooperation Group: Coordinated Implementation Roadmap for the Transition to Post-Quantum Cryptography", sv: "NIS-samarbetsgruppen: samordnad färdplan för övergången till postkvantkryptografi"}
+    name: {en: "NIS Cooperation Group: Coordinated Implementation Roadmap for the Transition to Post-Quantum Cryptography (v1.1, 2025)", sv: "NIS-samarbetsgruppen: samordnad färdplan för övergången till postkvantkryptografi (v1.1, 2025)"}
     match: ["NIS Cooperation Group PQC Roadmap"]
     url: https://digital-strategy.ec.europa.eu/en/library/coordinated-implementation-roadmap-transition-post-quantum-cryptography
   - id: owasp-cicd-top-10
