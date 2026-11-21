@@ -26,7 +26,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Baslinjer](#baslinjer) | Frysa en release och jämföra versioner |
 | [Sökning och filter](#sökning-och-filter) | Frågespråket med många exempel |
 | [Rapporter och export](#rapporter-och-export) | Standardrapporter, den egna rapportbyggaren, exportformat och dokumentarkivet |
-| [Dokument](#dokument) | Projektets dokumentarkiv: uppladdning, förhandsvisning och länkar |
+| [Dokument](#dokument-1) | Projektets dokumentarkiv: uppladdning, förhandsvisning och länkar |
 | [Administration](#administration) | Organisationer, användare, medlemmar och roller, delning av projekt, återställning av lösenord, API-nycklar, händelseloggen, säkerhetskopiering och återställning |
 | [Tillgänglighet och språk](#tillgänglighet-och-språk) | Tangentbord, skärmläsare, teman, engelska och svenska, mobiler och surfplattor |
 | [Vanliga frågor](#vanliga-frågor) | Svar på vanliga frågor |
@@ -738,7 +738,7 @@ Fliken **Länkar** för ett krav, ett testfall och en körning listar länkar ti
 |---|---|
 | **Krav**, **Testfall** | ett eller flera objekt i projektet med objektväljaren |
 | **Körning** | en testkörning i projektet |
-| **Arkivfil** | ett dokument eller en sparad rapport i projektets [dokumentarkiv](#dokument) |
+| **Arkivfil** | ett dokument eller en sparad rapport i projektets [dokumentarkiv](#dokument-1) |
 | **Rapport** | en sparad rapportdefinition; länken öppnar den under **Rapporter** |
 | **Webbadress** | en adress som börjar med `https://`, `http://` eller `mailto:`, till exempel en designspecifikation, ett ärende eller en wikisida |
 
@@ -791,7 +791,7 @@ Att skapa, uppdatera och läsa om ärenden kräver behörigheten att redigera kr
 
 Fliken **Bilagor** i redigeraren innehåller filer som hör till kravet: ritningar, specifikationer, e-post, skärmbilder. Dra filer till fliken eller välj dem för att ladda upp (upp till 25 MB per fil om administratören inte har angett en annan gräns); flera filer laddas upp efter varandra med förloppsvisning. Bilder, PDF-filer och vanlig text kan förhandsvisas; andra filer laddas ned.
 
-Du kan också välja **Bifoga från arkivet**: en fil som redan finns i projektets [dokumentarkiv](#dokument) länkas i stället för att kopieras, så att en specifikation kan bifogas till många krav. Att ta bort en bilaga tar bara bort länken; en uppladdad bilaga som inte längre är länkad någonstans tas bort.
+Du kan också välja **Bifoga från arkivet**: en fil som redan finns i projektets [dokumentarkiv](#dokument-1) länkas i stället för att kopieras, så att en specifikation kan bifogas till många krav. Att ta bort en bilaga tar bara bort länken; en uppladdad bilaga som inte längre är länkad någonstans tas bort.
 
 Att ladda upp och ta bort bilagor kräver rollen **Ansvarig** (samma som att redigera kravet); att läsa dem kräver **Läsare**.
 
@@ -1429,7 +1429,7 @@ Fliken **Länkar** på körningens sida länkar körningen till krav, testfall, 
 
 ## Bilagor till körningar och exekveringar
 
-Även körningar och exekveringar har **Bilagor**: loggfiler, skärmbilder av ett fel, testrapporter från andra verktyg. I exekveringsvyn öppnar du fliken **Bilagor** bredvid **Resultat** och drar filer dit eller väljer **Välj filer**; på körningens sida hör bilagorna till körningen som helhet. Du kan också bifoga en fil från projektets [dokumentarkiv](#dokument). Att ladda upp och ta bort bilagor för körningar och exekveringar kräver **Testare** (rätten att registrera utfall).
+Även körningar och exekveringar har **Bilagor**: loggfiler, skärmbilder av ett fel, testrapporter från andra verktyg. I exekveringsvyn öppnar du fliken **Bilagor** bredvid **Resultat** och drar filer dit eller väljer **Välj filer**; på körningens sida hör bilagorna till körningen som helhet. Du kan också bifoga en fil från projektets [dokumentarkiv](#dokument-1). Att ladda upp och ta bort bilagor för körningar och exekveringar kräver **Testare** (rätten att registrera utfall).
 
 # Releaser och risker
 
@@ -2275,7 +2275,7 @@ Ett `-` negerar bara när det står direkt före villkoret: `-status:obsolete`, 
 Qtestframe tar ut data på två sätt (ett helt projekt kan också [sparas som fil och läsas in igen](#spara-och-läs-in-projekt)):
 
 - **Export** laddar ned projektets rådata (krav, kriterier, testfall, spårbarhet, körningar) som kalkylblad, dokument eller Markdown, för granskningar, revisioner, arbete offline eller andra verktyg.
-- **Rapporter** tar fram formaterade dokument för människor: en statusrapport för projektet, en täckningsrapport, en sammanfattning av en körning, en defektlista eller en rapport som du utformar själv. Rapporter kan laddas ned eller sparas i projektets [dokumentarkiv](#dokument).
+- **Rapporter** tar fram formaterade dokument för människor: en statusrapport för projektet, en täckningsrapport, en sammanfattning av en körning, en defektlista eller en rapport som du utformar själv. Rapporter kan laddas ned eller sparas i projektets [dokumentarkiv](#dokument-1).
 
 Alla med rollen **Läsare** eller högre får exportera och ta fram rapporter. Att spara en egen rapportdefinition kräver **Testare** (testfall) eller **Ansvarig** (krav); att spara en framtagen rapport i arkivet får alla som får ta fram den.
 
@@ -2368,6 +2368,10 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 
 Rapporter tas fram på det språk du just nu använder i Qtestframe (**Användarmeny → Språk**, se [Språk](#språk)). Med det svenska gränssnittet är rapportens rubrik, avsnitt, kolumnrubriker, nyckeltal och värden som status, utfall, täckning och kravnivå (till exempel *Godkänt*, *Underkänd*, *MUST (SKA)*) på svenska, med samma ord som i appen. Ditt eget innehåll, som titlar, namn, beskrivningar, taggar och anteckningar, översätts aldrig. Det gäller nedladdningar, rapporter som sparas i arkivet, egna rapporter, flera rapporter på en gång och rapporter som skickas med e-post.
 
+### Dokument
+
+Under standardrapporterna finns **Dokument** med två kompletta dokument: en **kravspecifikation** och en **testplan** med testspecifikation. **Skapa …** öppnar verktyget i [dokumentarkivet](#skapa-en-kravspecifikation-eller-en-testplan), där dokumentet sparas.
+
 ## Egna rapporter
 
 Under **Anpassad rapport** utformar du en rapport själv:
@@ -2396,7 +2400,7 @@ Ta fram rapporten i valfritt format, som ovan. För att återanvända den välje
 
 - välj **format** (bara format som alla markerade rapporter stöder visas),
 - för *Sammanfattning av körning*, välj **körning**,
-- **Ladda ner som ZIP** för att få alla i en fil, eller **Spara i arkivet** för att lägga var och en i [dokumentarkivet](#dokument) (taggad *report*). När du sparar listas en rapport som inte kan skapas med orsaken, och de andra sparas ändå.
+- **Ladda ner som ZIP** för att få alla i en fil, eller **Spara i arkivet** för att lägga var och en i [dokumentarkivet](#dokument-1) (taggad *report*). När du sparar listas en rapport som inte kan skapas med orsaken, och de andra sparas ändå.
 
 **Ta bort sparade rapporter** tar bort de markerade sparade egna rapporterna (standardrapporter kan inte tas bort). Att spara i arkivet och att ta bort kräver behörighet att redigera krav eller testfall; att ladda ner kräver exportbehörighet.
 
@@ -2449,7 +2453,8 @@ Filen innehåller projektets data i klartext. Förvara den lika omsorgsfullt som
 | Arbeta med data i Excel eller ett annat verktyg | **Export**, XLSX eller CSV |
 | Lägga in data eller en rapport i en wiki, en pull request eller ett Git-förråd | **Export** eller **Rapporter**, Markdown |
 | Lämna över krav till ett kravverktyg (DOORS, Polarion …) eller en annan Qtestframe | **Export**, ReqIF |
-| Ett specifikationsdokument för granskning eller underskrift | **Export**, DOCX, delarna krav och kriterier |
+| Ett specifikationsdokument för granskning eller underskrift | **Dokument → Skapa dokument → Kravspecifikation** (PDF eller Word, från en baslinje om den ska signeras); för en enkel tabell **Export**, DOCX |
+| En testplan med testspecifikation | **Dokument → Skapa dokument → Testplan** |
 | En statusrapport till ett styrgruppsmöte | **Rapporter → Projektstatus**, PDF |
 | Underlag för en revision eller en release | **Rapporter → Kravtäckning** eller **Sammanfattning av körning**, sparad i arkivet, tillsammans med en [baslinje](#baslinjer) |
 | En återkommande lista med egna kolumner | En sparad **anpassad rapport** |
@@ -2462,7 +2467,8 @@ Varje projekt har ett **dokumentarkiv**: en samlad plats för alla filer i proje
 
 - **dokument** som du laddar upp direkt till arkivet, till exempel specifikationer, avtal, testplaner eller mötesanteckningar;
 - **bilagor** som har laddats upp till ett krav, ett testfall, en körning eller en exekvering;
-- **rapporter** som har tagits fram och sparats i arkivet (se [Rapporter](#standardrapporter)).
+- **rapporter** som har tagits fram och sparats i arkivet (se [Rapporter](#standardrapporter));
+- **skapade dokument**: en kravspecifikation eller en testplan som Qtestframe skriver åt dig (se [nedan](#skapa-en-kravspecifikation-eller-en-testplan)).
 
 Välj **Dokument** i projektets sidopanel. Alla som kan läsa projektet kan se och ladda ned dess filer.
 
@@ -2488,6 +2494,29 @@ size>5000000                                   filer större än ungefär 5 MB
 3. Lägg till en beskrivning och taggar, åtskilda med kommatecken, så att filerna blir lättare att hitta. Du kan ändra dem senare med **Redigera**.
 
 Den största tillåtna storleken är 25 MB per fil om administratören inte har angett en annan gräns. Att ladda upp dokument till arkivet kräver rollen **Testare** eller **Ansvarig** (rätten att redigera testfall eller krav).
+
+## Skapa en kravspecifikation eller en testplan
+
+Qtestframe kan skriva två kompletta dokument åt dig och spara dem i arkivet:
+
+- en **kravspecifikation** enligt ISO/IEC/IEEE 29148: titelsida, dokumentinformation med revisionshistorik, innehållsförteckning, en inledning (syfte, projektets beskrivning som omfattning och vad nyckelorden SKA, BÖR och FÅR betyder), kraven grupperade efter mapp, kategori eller typ, en spårbarhetsmatris och en ordlista med referenser;
+- en **testplan** med **testspecifikation** enligt ISO/IEC/IEEE 29119-3: egenskaperna som ska testas (kraven som testfallen verifierar), testansatsen med startkriterier (organisationens [regler för körning](#när-kan-ett-testfall-exekveras)) och slutkriterier (era [releasers](#releaser-och-risker)), testmiljön (konfigurationer och körningarnas miljöer), roller, tidplanen (releaser och körningar), därefter varje testfall med sina steg, och en bilaga om täckning med de krav som saknar testfall.
+
+1. Välj **Skapa dokument** och välj **Kravspecifikation** eller **Testplan**. (Sidan **Rapporter** har samma två dokument under **Dokument**.)
+2. Välj i dialogen:
+   - **Titel**, **Version** och **Författare**. Lämnas de tomma är titeln dokumentets namn, versionen en mer än den senaste versionen av samma typ i arkivet (*1.0*, *2.0* …) och författaren du.
+   - **Dokumentets språk**: engelska eller svenska, ditt språk som standard. En svensk specifikation förklarar nyckelorden **SKA**, **BÖR** och **FÅR** och hur de motsvarar MUST, SHOULD och MAY.
+   - **Format**: PDF, Word (DOCX) eller Markdown. PDF och Word har titelsida, sidnummer och innehållsförteckning; i Word får innehållsförteckningen sina sidnummer när Word uppdaterar fältet (det frågar när filen öppnas).
+   - **Innehåll**: aktuella krav och testfall, eller en [baslinje](#baslinjer). Med en baslinje visar dokumentet de frysta texterna, och dess signaturer listas som godkännanden.
+   - **Filter**: en [fråga](#sökning-och-filter) på kraven (specifikation) eller testfallen (testplan), till exempel `status:approved` eller `folder:Kassa`.
+   - **Ta med avvisade och inaktuella krav** (och, för en testplan, utfasade testfall). De utelämnas som standard.
+   - **Gruppera kraven efter** mapp, kategori (en dimension) eller typ (bara specifikation; en testplan grupperas alltid efter mapp).
+   - Vilka **fält** som visas för varje krav eller testfall, och vilka **bilagor**. *Senaste utfall* är avstängt som standard: en specifikation beskriver, den rapporterar inte.
+3. Välj **Skapa**. En förloppsindikator visas medan dokumentet skrivs; ett projekt med tusentals krav tar några sekunder.
+
+Det nya dokumentet visas överst i arkivet, markerat, med **Öppna** (PDF) och **Ladda ner**. Det är ett *dokument* med taggarna `generated`, `requirements-specification` eller `test-plan` och versionen (till exempel `v2.0`); de tidigare versionerna av samma typ utgör dess revisionshistorik. Nyckelord i kravtexterna (MUST, SHALL, SKA …) skrivs i fetstil.
+
+Att skapa dokument kräver rätten att exportera, att läsa krav (och testfall för en testplan) och att ladda upp dokument (**Testare** eller **Ansvarig**).
 
 ## Förhandsvisa och ladda ned
 

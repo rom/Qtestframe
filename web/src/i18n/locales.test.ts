@@ -162,6 +162,21 @@ describe('dynamic keys', () => {
     ]
     expect(keys.filter((k) => !(k in EN))).toEqual([])
   })
+  it('cover the document generators', async () => {
+    const { ALL_DOC_FIELDS, DOC_GROUPINGS, DOC_KINDS } = await import('@/lib/documents')
+    const { LANGUAGES } = await import('./select')
+    const { docFormProblems, blankDocForm } = await import('@/lib/documents')
+    const problems = docFormProblems({ ...blankDocForm('test_plan', 'en'), fields: [], title: 'x'.repeat(300), version: 'x'.repeat(50) })
+    const keys = [
+      ...ALL_DOC_FIELDS.map((f) => `documents.generate.field.${f}`),
+      ...DOC_KINDS.flatMap((k) => [`documents.generate.kind.${k}`, `documents.generate.kindHelp.${k}`]),
+      ...DOC_GROUPINGS.map((g) => `documents.generate.group.${g}`),
+      ...LANGUAGES.map((l) => `documents.generate.lang.${l}`),
+      ...problems.map((p) => `documents.generate.problem.${p}`),
+    ]
+    expect(problems.length).toBe(3)
+    expect(keys.filter((k) => !(k in EN))).toEqual([])
+  })
   it('cover all analysis rules', async () => {
     const { ANALYSIS_RULES } = await import('./analysis')
     expect(ANALYSIS_RULES.filter((r) => !(`analysis.rules.${r}` in EN))).toEqual([])

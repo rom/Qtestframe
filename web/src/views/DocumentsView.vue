@@ -1,7 +1,11 @@
 <script setup lang="ts">
 // Document archive: every file of the project (attachments, documents, reports).
 import { tagClass } from '@/lib/tagColors'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import Menu from 'primevue/menu'
+import GenerateDocumentDialog from '@/components/GenerateDocumentDialog.vue'
+import { DOC_KINDS, type DocKind } from '@/lib/documents'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -138,6 +142,9 @@ const q = ref('')
 const kind = ref('')
 const kindOptions = computed(() => [{ label: t('documents.allKinds'), value: '' }, ...ARCHIVE_KINDS.map((k) => ({ label: t(`documents.kind.${k}`), value: k }))])
 const canUpload = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
+// generated documents: export and reading, plus the upload permission (docs/api.md "Generated documents")
+const canGenerate = computed(() => canUpload.value && auth.can(P.export) && auth.can(P.requirementRead))
+const canGenerateKind = (k: DocKind) => canGenerate.value && (k !== 'test_plan' || auth.can(P.testRead))
 const canManage = (f: FileInfo) => auth.can(P.projectUpdate) || (!!auth.user && f.uploaded_by === auth.user.email)
 const kindSeverity = (k: string) => (k === 'report' ? 'info' : k === 'document' ? 'success' : 'secondary')
 
@@ -153,7 +160,54 @@ async function load() {
     loading.value = false
   }
 }
-onMounted(load)
+const route = useRoute()
+const router = useRouter()
+onMounted(async () => {
+  await load()
+  // ?create=<kind> opens the generator (from the Reports page); ?file=<id> highlights a file
+  const create = route.query.create
+  if (typeof create === 'string' && (DOC_KINDS as readonly string[]).includes(create) && canGenerateKind(create as DocKind)) openGenerate(create as DocKind)
+  const fid = route.query.file
+  if (typeof fid === 'string') {
+    const f = files.value.find((x) => x.id === fid)
+    if (f) void highlight(f)
+  }
+  if (create || fid) void router.replace({ query: {} })
+})
+
+// ---------- generate a document ----------
+const genOpen = ref(false)
+const genKind = ref<DocKind>('requirements_spec')
+const genMenu = ref<InstanceType<typeof Menu> | null>(null)
+const genItems = computed(() =>
+  DOC_KINDS.filter(canGenerateKind).map((k) => ({
+    label: t(`documents.generate.kind.${k}`),
+    icon: k === 'test_plan' ? 'pi pi-list-check' : 'pi pi-book',
+    command: () => openGenerate(k),
+  })),
+)
+function openGenerate(k: DocKind) {
+  genKind.value = k
+  genOpen.value = true
+}
+/** the newest generated file: highlighted in the list, with open and download actions */
+const created = ref<FileInfo | null>(null)
+const createdBanner = ref<HTMLElement | null>(null)
+async function highlight(f: FileInfo) {
+  created.value = f
+  await nextTick()
+  createdBanner.value?.focus()
+}
+async function onGenerated(f: FileInfo) {
+  notify.ok(t('documents.generate.done'), f.name)
+  if (q.value || kind.value) {
+    q.value = ''
+    kind.value = ''
+  }
+  await load()
+  await highlight(files.value.find((x) => x.id === f.id) ?? f)
+}
+const rowClass = (f: FileInfo) => (created.value && f.id === created.value.id ? 'row-new' : undefined)
 
 // ---------- upload ----------
 const uploadOpen = ref(false)
@@ -247,10 +301,24 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
     </div>
     <div class="actions">
       <HelpLink page="documents" />
+      <template v-if="genItems.length">
+        <Button :label="t('documents.generate.menu')" icon="pi pi-file-plus" severity="secondary" outlined aria-haspopup="menu" aria-controls="doc-generate-menu" class="doc-generate" @click="genMenu?.toggle($event)" />
+        <Menu id="doc-generate-menu" ref="genMenu" :model="genItems" popup />
+      </template>
       <Button v-if="canUpload" :label="t('documents.upload')" icon="pi pi-upload" @click="openUpload" />
     </div>
   </div>
   <UploadQueue :queue="queue" :announcement="announcement" @dismiss="dismiss" />
+  <div v-if="created" ref="createdBanner" class="card created-banner" role="status" tabindex="-1" :aria-label="t('documents.generate.createdNamed', { name: created.name })">
+    <i :class="fileIcon(created.content_type, created.name)" aria-hidden="true" style="font-size: 22px; color: var(--p-primary-color)" />
+    <div class="grow" style="min-width: 0">
+      <b>{{ t('documents.generate.created') }}</b>
+      <div class="small ellipsis">{{ created.name }}<template v-if="created.description"> · {{ created.description }}</template></div>
+    </div>
+    <Button v-if="previewKind(created) !== 'download'" :label="t('documents.generate.open')" icon="pi pi-eye" size="small" @click="open(created)" />
+    <a :href="contentUrl(created.id)" :download="created.name" class="p-button p-button-sm" :class="previewKind(created) !== 'download' ? 'p-button-outlined p-button-secondary' : ''"><i class="pi pi-download" aria-hidden="true" />&nbsp;{{ t('files.download') }}</a>
+    <Button icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.close')" @click="created = null" />
+  </div>
   <div class="card">
     <div class="filterbar">
       <QueryInput v-model="q" scope="document" :error="error" :placeholder="t('documents.filterPlaceholder', { example: 'tag:spec type:pdf linked:*REQ-1' })" @submit="load" />
@@ -290,6 +358,7 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
       size="small"
       sort-field="created_at"
       :sort-order="-1"
+      :row-class="rowClass"
       reorderable-columns
       @column-reorder="docLayout.onReorder()"
     >
@@ -375,6 +444,7 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
     </form>
   </Dialog>
   <FilePreviewDialog v-model:visible="previewOpen" :file="preview" />
+  <GenerateDocumentDialog v-model:visible="genOpen" :kind="genKind" @generated="onGenerated" />
   <Dialog v-model:visible="tagDialog" :header="tagMode === 'add' ? t('documents.bulk.addTagsHeader', { n: manageable.length }, manageable.length) : t('documents.bulk.removeTagsHeader', { n: manageable.length }, manageable.length)" modal style="width: min(460px, 96vw)">
     <div class="bulk-form">
       <SelectButton v-model="tagMode" :options="[{ l: t('common.add'), v: 'add' }, { l: t('common.remove'), v: 'remove' }]" option-label="l" option-value="v" :allow-empty="false" :aria-label="t('common.tags')" />
@@ -397,6 +467,21 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
 </template>
 
 <style scoped>
+.created-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--p-primary-color);
+}
+.created-banner:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+:deep(.row-new) > td {
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+}
 .bulk-form {
   display: flex;
   flex-direction: column;
