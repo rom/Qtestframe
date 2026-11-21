@@ -239,7 +239,8 @@ async function discover(request) {
     { name: 'requirements-sheet-edit', path: `${p}/requirements?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="5"]', press: ['F2'], wait: '.cell-editor' },
     { name: 'tests-sheet-edit-text', path: `${p}/tests?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="4"]', press: ['F2'], wait: 'textarea.cell-editor' },
     { name: 'requirements-sheet-error', path: `${p}/requirements?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', press: ['F2', 'Control+a', 'Backspace', 'Enter'], wait: '.cell-error' },
-    { name: 'requirements-sheet-bulk', path: `${p}/requirements?view=sheet`, open: '.sheet-body .sheet-cell.sel input[type="checkbox"]', wait: '.bulkbar' },
+    // a row ticked with Space (the pointer then moves away, so nothing is hovered when the toolbar pushes the grid down)
+    { name: 'requirements-sheet-bulk', path: `${p}/requirements?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', press: [' '], wait: '.bulkbar' },
     { name: 'tests-sheet-keys', path: `${p}/tests?view=sheet`, open: '.sheet-keys summary', wait: '.sheet-keys[open] dl' },
     { name: 'runs', path: `${p}/runs` },
     { name: 'runs-bulk', path: `${p}/runs`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
@@ -613,6 +614,7 @@ async function main() {
             }
             // press: keys pressed after that (e.g. F2 to edit a spreadsheet cell)
             for (const key of r.press ?? []) await page.keyboard.press(key)
+            if (r.press) await page.mouse.move(1, 1)
             await settle(page, r.wait)
             if (!r.anon && page.url().includes('/login')) throw new Error('redirected to login')
             checks++
