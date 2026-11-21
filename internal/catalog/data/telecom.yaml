@@ -520,7 +520,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [net-neutrality, traffic-management, transparency]
-    refs: ["Regulation (EU) 2015/2120 Art. 3(3) (reasonable traffic management)", "Regulation (EU) 2015/2120 Art. 4(1) (transparency)"]
+    refs: ["Regulation (EU) 2015/2120 Art. 3(3) (reasonable traffic management)"]
     tests: [TEL-T22]
     en:
       title: No blocking or throttling of named services
@@ -568,7 +568,7 @@ requirements:
     obligation: must
     priority: high
     tags: [emergency, real-time-text, accessibility]
-    refs: ["Directive (EU) 2018/1972 Art. 109(5) (equivalent access for end-users with disabilities)", "Directive (EU) 2019/882 (EAA) Annex I Section IV"]
+    refs: ["Directive (EU) 2018/1972 Art. 109(5) (equivalent access for end-users with disabilities)", "Directive (EU) 2019/882 (EAA) Annex I Section IV(a) (real-time text in emergency communications)"]
     tests: [TEL-T24]
     en:
       title: Emergency calls with real-time text

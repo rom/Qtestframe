@@ -339,7 +339,7 @@ requirements:
     obligation: must
     priority: high
     tags: [alarm-lines, analogue, pstn-shutdown]
-    refs: []
+    refs: ["Directive 2014/33/EU Annex I §4.5 (two-way communication with a rescue service)"]
     tests: [CMTEL-T10]
     en:
       title: Inventory and migration plan for analogue alarm and lift lines

@@ -354,7 +354,7 @@ requirements:
     obligation: must
     priority: high
     tags: [vat, consumers, place-of-supply]
-    refs: ["Directive 2006/112/EC Art. 58 (electronically supplied services)", "Directive 2006/112/EC Art. 369b (one-stop shop)"]
+    refs: ["Directive 2006/112/EC Art. 58 (electronically supplied services)", "Directive 2006/112/EC Art. 369b(c) (one-stop shop, Union scheme)"]
     tests: [BILL-T13]
     en:
       title: VAT rate of the consumer's member state
