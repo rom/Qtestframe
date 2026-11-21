@@ -1857,3 +1857,16 @@ sources:
     name: {en: "NIST SP 800-63C Digital Identity Guidelines: Federation and Assertions", sv: "NIST SP 800-63C Riktlinjer för digital identitet: federation och intyg"}
     match: ["NIST SP 800-63C"]
     url: https://pages.nist.gov/800-63-4/sp800-63c.html
+  - id: nist-ir-8547
+    kind: guideline
+    jurisdiction: US
+    short: NIST IR 8547
+    name: {en: "NIST IR 8547 Transition to Post-Quantum Cryptography Standards", sv: "NIST IR 8547 Övergång till standarder för postkvantkryptografi"}
+    match: ["NIST IR 8547"]
+    url: https://csrc.nist.gov/pubs/ir/8547/ipd
+  - id: eu-pqc-roadmap
+    kind: guideline
+    jurisdiction: EU
+    name: {en: "NIS Cooperation Group: Coordinated Implementation Roadmap for the Transition to Post-Quantum Cryptography", sv: "NIS-samarbetsgruppen: samordnad färdplan för övergången till postkvantkryptografi"}
+    match: ["NIS Cooperation Group PQC Roadmap"]
+    url: https://digital-strategy.ec.europa.eu/en/library/coordinated-implementation-roadmap-transition-post-quantum-cryptography

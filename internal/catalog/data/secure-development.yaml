@@ -271,6 +271,124 @@ requirements:
         - method: review
           text: Varje sårbarhetsrättning de senaste 12 månaderna har ett länkat automatiskt test som har visats fallera före rättningen.
 
+  - id: SDL-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-testing, authorisation, test-matrix]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-02", "OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.8.29", "IEC 62443-4-1 SVV-1"]
+    tests: [SDL-T09]
+    en:
+      title: Automated authorisation test matrix
+      description: The supplier MUST run an automated test on every build that calls each API operation as each role and as an anonymous client and compares the result with the documented permission matrix.
+      rationale: Broken access control is the most common serious web flaw, and new endpoints are easily added without the checks that older ones have.
+      criteria:
+        - method: inspection
+          text: The matrix covers every operation in the API description and every role, and the build fails when a call that should be refused returns 2xx.
+        - method: test
+          text: Removing the permission check from one test endpoint makes the build fail.
+    sv:
+      title: Automatiserad testmatris för behörigheter
+      description: Leverantören SKA vid varje bygge köra ett automatiserat test som anropar varje API-operation som varje roll och som anonym klient och jämför resultatet med den dokumenterade behörighetsmatrisen.
+      rationale: Bristande åtkomstkontroll är det vanligaste allvarliga felet i webbsystem, och nya ändpunkter läggs lätt till utan de kontroller som äldre har.
+      criteria:
+        - method: inspection
+          text: Matrisen täcker varje operation i API-beskrivningen och varje roll, och bygget fallerar när ett anrop som borde avvisas svarar 2xx.
+        - method: test
+          text: När behörighetskontrollen tas bort från en teständpunkt fallerar bygget.
+
+  - id: SDL-13
+    type: security
+    obligation: should
+    priority: medium
+    tags: [security-testing, fuzzing, parsers]
+    refs: ["IEC 62443-4-1 SVV-3", "NIST SP 800-218 PW.8.2", "ISO/IEC 27001:2022 A.8.29", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3"]
+    tests: [SDL-T10]
+    en:
+      title: Fuzz testing of parsers for external input
+      description: The supplier SHOULD fuzz each parser of files or protocol messages from outside the system for at least 60 minutes of CPU time before each release.
+      rationale: Parsers of complex formats hide memory and logic errors that ordinary tests with valid input never reach.
+      criteria:
+        - method: inspection
+          text: The release record shows a fuzzing run of at least 60 minutes for each parser in the list of external input formats, with crashes triaged.
+          threshold: "≥ 60 CPU-minutes per parser and release"
+    sv:
+      title: Fuzztestning av tolkar för extern indata
+      description: Leverantören BÖR fuzztesta varje tolk för filer eller protokollmeddelanden utifrån i minst 60 minuters processortid före varje leverans.
+      rationale: Tolkar för komplexa format döljer minnes- och logikfel som vanliga tester med giltig indata aldrig når.
+      criteria:
+        - method: inspection
+          text: Leveransposten visar en fuzzkörning på minst 60 minuter för varje tolk i listan över externa indataformat, med krascher analyserade.
+          threshold: "≥ 60 processorminuter per tolk och leverans"
+
+  - id: SDL-14
+    type: security
+    obligation: must
+    priority: high
+    tags: [infrastructure-as-code, misconfiguration, pipeline]
+    refs: ["OWASP Top 10 2021 A05", "NIST SP 800-53 CM-6", "ISO/IEC 27001:2022 A.8.9", "CSA Cloud Controls Matrix v4 IVS"]
+    tests: [SDL-T11]
+    en:
+      title: Security scan of infrastructure code
+      description: The supplier MUST scan infrastructure and deployment code for security misconfigurations on every pull request and block the merge on a finding of high or critical severity.
+      rationale: Public storage buckets, open management ports and privileged containers are written in code long before they reach production.
+      criteria:
+        - method: test
+          text: A pull request that opens port 22 to 0.0.0.0/0 or makes a storage bucket public is blocked with a finding.
+    sv:
+      title: Säkerhetsskanning av infrastrukturkod
+      description: Leverantören SKA skanna infrastruktur- och driftsättningskod efter felaktiga säkerhetsinställningar vid varje pull request och stoppa sammanslagningen vid ett fynd av hög eller kritisk allvarlighet.
+      rationale: Publika lagringsbehållare, öppna administrationsportar och privilegierade containrar skrivs i kod långt innan de når produktion.
+      criteria:
+        - method: test
+          text: En pull request som öppnar port 22 mot 0.0.0.0/0 eller gör en lagringsbehållare publik stoppas med ett fynd.
+
+  - id: SDL-15
+    type: security
+    obligation: should
+    priority: low
+    tags: [security-champion, organisation]
+    refs: ["OWASP SAMM v2 Education and Guidance", "ISO/IEC 27001:2022 A.6.3", "IEC 62443-4-1 SM-4"]
+    tests: [SDL-T12]
+    en:
+      title: Security champion in each development team
+      description: The supplier SHOULD name a security champion in each development team, who spends at least 10 % of their working time on security reviews, threat models and guidance.
+      rationale: A central security team cannot follow every change, and a named person in the team keeps security questions from falling between roles.
+      criteria:
+        - method: review
+          text: The team list names a champion for each team, and the time reports show at least 10 % of their time on security work over the last quarter.
+          threshold: "≥ 10 % of working time"
+    sv:
+      title: Säkerhetsansvarig utvecklare i varje team
+      description: Leverantören BÖR utse en säkerhetsansvarig utvecklare i varje utvecklingsteam, som lägger minst 10 % av sin arbetstid på säkerhetsgranskningar, hotmodeller och vägledning.
+      rationale: Ett centralt säkerhetsteam kan inte följa varje ändring, och en utsedd person i teamet hindrar att säkerhetsfrågor hamnar mellan rollerna.
+      criteria:
+        - method: review
+          text: Teamlistan anger en säkerhetsansvarig för varje team, och tidrapporterna visar minst 10 % av deras tid på säkerhetsarbete under det senaste kvartalet.
+          threshold: "≥ 10 % av arbetstiden"
+
+  - id: SDL-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-testing, test-plan, release]
+    refs: ["OWASP Web Security Testing Guide", "ISO/IEC/IEEE 29119-3", "IEC 62443-4-1 SVV-1", "ISO/IEC 27001:2022 A.8.29"]
+    tests: [SDL-T13]
+    en:
+      title: Security test plan for each major release
+      description: The supplier MUST run a security test plan before each major release that maps every changed function to the test categories of the OWASP Web Security Testing Guide that apply to it.
+      rationale: Without a plan, security testing covers what the tester happens to think of and leaves new functions untested.
+      criteria:
+        - method: review
+          text: The test plan of the last major release lists each changed function with its test categories, a result and a link to each finding.
+    sv:
+      title: Säkerhetstestplan för varje större leverans
+      description: Leverantören SKA före varje större leverans genomföra en säkerhetstestplan som kopplar varje ändrad funktion till de testkategorier i OWASP Web Security Testing Guide som gäller för den.
+      rationale: Utan en plan täcker säkerhetstesterna det testaren råkar komma på och lämnar nya funktioner otestade.
+      criteria:
+        - method: review
+          text: Testplanen för den senaste större leveransen listar varje ändrad funktion med sina testkategorier, ett resultat och en länk till varje fynd.
+
 tests:
   - id: SDL-T01
     priority: high
@@ -523,3 +641,145 @@ tests:
           expected: Rapporten levereras.
         - action: Vänta på bekräftelsen.
           expected: En bekräftelse med ett referensnummer kommer inom 3 arbetsdagar.
+
+  - id: SDL-T09
+    priority: high
+    execution: automated
+    tags: [authorisation, test-matrix]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-02"]
+    en:
+      title: Permission matrix test fails on a missing check
+      description: Checks that the authorisation matrix test covers the API and catches a removed permission check.
+      preconditions: The documented permission matrix, the API description and a branch where the tester can change code.
+      expected: The test covers every operation and role and fails when a check is removed.
+      steps:
+        - action: Compare the operations and roles in the matrix test with the API description and the role list.
+          expected: Every operation and role, plus the anonymous client, is covered.
+        - action: Remove the permission check from one endpoint on a test branch and run the build.
+          expected: The build fails and names the endpoint and the role that got 2xx.
+        - action: Restore the check and run the build again.
+          expected: The build passes.
+    sv:
+      title: Test av behörighetsmatrisen fallerar när en kontroll saknas
+      description: Kontrollerar att testet av behörighetsmatrisen täcker API:et och fångar en borttagen behörighetskontroll.
+      preconditions: Den dokumenterade behörighetsmatrisen, API-beskrivningen och en gren där testaren kan ändra kod.
+      expected: Testet täcker varje operation och roll och fallerar när en kontroll tas bort.
+      steps:
+        - action: Jämför operationerna och rollerna i matristestet med API-beskrivningen och rollistan.
+          expected: Varje operation och roll, samt den anonyma klienten, täcks.
+        - action: Ta bort behörighetskontrollen från en ändpunkt i en testgren och kör bygget.
+          expected: Bygget fallerar och anger ändpunkten och rollen som fick 2xx.
+        - action: Återställ kontrollen och kör bygget igen.
+          expected: Bygget går igenom.
+
+  - id: SDL-T10
+    priority: medium
+    execution: manual
+    tags: [fuzzing]
+    refs: ["IEC 62443-4-1 SVV-3"]
+    en:
+      title: Fuzzing record for each external parser
+      description: Checks the fuzzing results of the last release against the list of external input formats.
+      preconditions: The list of external input formats and parsers, and the release record of the last release.
+      expected: Each parser was fuzzed for at least 60 CPU-minutes and every crash has a triage decision.
+      steps:
+        - action: For each parser in the list, find its fuzzing run in the release record.
+          expected: A run of at least 60 CPU-minutes is recorded for each parser.
+        - action: Check the crashes reported by the runs.
+          expected: Each crash has a ticket with a decision, and no crash rated high is open at release.
+    sv:
+      title: Fuzzningsresultat för varje extern tolk
+      description: Kontrollerar fuzzningsresultaten för den senaste leveransen mot listan över externa indataformat.
+      preconditions: Listan över externa indataformat och tolkar, och leveransposten för den senaste leveransen.
+      expected: Varje tolk har fuzztestats i minst 60 processorminuter och varje krasch har ett beslut.
+      steps:
+        - action: Leta upp fuzzkörningen för varje tolk i listan i leveransposten.
+          expected: En körning på minst 60 processorminuter finns för varje tolk.
+        - action: Kontrollera krascherna som körningarna rapporterade.
+          expected: Varje krasch har ett ärende med ett beslut, och ingen krasch med hög allvarlighet är öppen vid leveransen.
+
+  - id: SDL-T11
+    priority: high
+    execution: automated
+    tags: [infrastructure-as-code]
+    refs: ["NIST SP 800-53 CM-6"]
+    en:
+      title: Insecure infrastructure code blocks the merge
+      description: Opens pull requests with known misconfigurations in the infrastructure code.
+      preconditions: A test branch of the infrastructure repository with the scanner enabled in the pipeline.
+      expected: Each misconfiguration is reported and the merge is blocked.
+      steps:
+        - action: Open a pull request that adds a firewall rule allowing port 22 from 0.0.0.0/0.
+          expected: The scanner reports a high finding and the merge button is disabled.
+        - action: Open a pull request that makes a storage bucket publicly readable.
+          expected: The scanner reports a finding and the merge is blocked.
+        - action: Open a pull request that only changes a tag on a resource.
+          expected: The scan passes and the merge is allowed.
+    sv:
+      title: Osäker infrastrukturkod stoppar sammanslagningen
+      description: Öppnar pull requests med kända felinställningar i infrastrukturkoden.
+      preconditions: En testgren av infrastrukturförrådet med skannern påslagen i pipelinen.
+      expected: Varje felinställning rapporteras och sammanslagningen stoppas.
+      steps:
+        - action: Öppna en pull request som lägger till en brandväggsregel som tillåter port 22 från 0.0.0.0/0.
+          expected: Skannern rapporterar ett högt fynd och knappen för sammanslagning är avstängd.
+        - action: Öppna en pull request som gör en lagringsbehållare läsbar för alla.
+          expected: Skannern rapporterar ett fynd och sammanslagningen stoppas.
+        - action: Öppna en pull request som bara ändrar en etikett på en resurs.
+          expected: Skanningen går igenom och sammanslagningen tillåts.
+
+  - id: SDL-T12
+    priority: low
+    execution: manual
+    tags: [security-champion]
+    refs: ["OWASP SAMM v2 Education and Guidance"]
+    en:
+      title: Each team has an active security champion
+      description: Reviews the team list and the champions' time records.
+      preconditions: The list of development teams, the list of security champions and time reports for the last quarter.
+      expected: Each team has a champion who spent at least 10 % of their time on security work.
+      steps:
+        - action: Match the team list against the champion list.
+          expected: Each team has a named champion.
+        - action: Sum each champion's time on security work in the last quarter.
+          expected: Each champion has at least 10 % of their reported time on security work.
+    sv:
+      title: Varje team har en aktiv säkerhetsansvarig utvecklare
+      description: Granskar teamlistan och de säkerhetsansvarigas tidrapporter.
+      preconditions: Listan över utvecklingsteam, listan över säkerhetsansvariga och tidrapporter för det senaste kvartalet.
+      expected: Varje team har en säkerhetsansvarig som lagt minst 10 % av sin tid på säkerhetsarbete.
+      steps:
+        - action: Matcha teamlistan mot listan över säkerhetsansvariga.
+          expected: Varje team har en namngiven säkerhetsansvarig.
+        - action: Summera varje säkerhetsansvarigs tid för säkerhetsarbete under det senaste kvartalet.
+          expected: Var och en har minst 10 % av sin rapporterade tid på säkerhetsarbete.
+
+  - id: SDL-T13
+    priority: high
+    execution: manual
+    tags: [test-plan, release]
+    refs: ["OWASP Web Security Testing Guide", "ISO/IEC/IEEE 29119-3"]
+    en:
+      title: Security test plan covers the changed functions
+      description: Compares the security test plan of the last major release with the release notes.
+      preconditions: The release notes and the security test plan of the last major release, and the ticket system.
+      expected: Every changed function was tested against its test categories and every finding is tracked.
+      steps:
+        - action: List the changed functions from the release notes.
+          expected: A list of functions is produced.
+        - action: Find each function in the test plan.
+          expected: Each has the applicable test categories, for example WSTG-ATHN and WSTG-INPV, and a result.
+        - action: Open the linked findings.
+          expected: Each finding exists as a ticket with a severity and a decision.
+    sv:
+      title: Säkerhetstestplanen täcker de ändrade funktionerna
+      description: Jämför säkerhetstestplanen för den senaste större leveransen med versionsinformationen.
+      preconditions: Versionsinformationen och säkerhetstestplanen för den senaste större leveransen samt ärendesystemet.
+      expected: Varje ändrad funktion har testats mot sina testkategorier och varje fynd följs upp.
+      steps:
+        - action: Lista de ändrade funktionerna utifrån versionsinformationen.
+          expected: En lista med funktioner tas fram.
+        - action: Leta upp varje funktion i testplanen.
+          expected: Var och en har de tillämpliga testkategorierna, till exempel WSTG-ATHN och WSTG-INPV, och ett resultat.
+        - action: Öppna de länkade fynden.
+          expected: Varje fynd finns som ett ärende med allvarlighet och beslut.
