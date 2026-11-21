@@ -1869,3 +1869,51 @@ sources:
     name: {en: "Offline web application specifications (W3C Service Workers, W3C Indexed Database API, WHATWG Storage)", sv: "Specifikationer för webbapplikationer offline (W3C Service Workers, W3C Indexed Database API, WHATWG Storage)"}
     match: ["W3C Service Workers", "W3C Indexed Database API", "WHATWG Storage Living Standard"]
     url: https://www.w3.org/TR/service-workers/
+  - id: mdr
+    kind: law
+    jurisdiction: EU
+    short: MDR
+    name: {en: "Medical Device Regulation (EU) 2017/745", sv: "Förordningen om medicintekniska produkter (EU) 2017/745"}
+    match: ["Regulation (EU) 2017/745"]
+    url: https://eur-lex.europa.eu/eli/reg/2017/745/oj
+  - id: mdcg
+    kind: guideline
+    jurisdiction: EU
+    name: {en: "Medical Device Coordination Group (MDCG) guidance documents", sv: "Vägledningar från samordningsgruppen för medicintekniska produkter (MDCG)"}
+    match: ["MDCG "]
+    url: https://health.ec.europa.eu/medical-devices-sector/new-regulations/guidance-mdcg-endorsed-documents-and-other-guidance_en
+  - id: iec-62304
+    kind: standard
+    jurisdiction: international
+    short: IEC 62304
+    name: {en: "IEC 62304 Medical device software – Software life cycle processes", sv: "IEC 62304 Programvara för medicintekniska produkter – Livscykelprocesser"}
+    match: ["IEC 62304"]
+    url: https://webstore.iec.ch/en/publication/22794
+  - id: iso-14971
+    kind: standard
+    jurisdiction: international
+    short: ISO 14971
+    name: {en: "ISO 14971 Medical devices – Application of risk management to medical devices", sv: "ISO 14971 Medicintekniska produkter – Riskhantering för medicintekniska produkter"}
+    match: ["ISO 14971"]
+    url: https://www.iso.org/standard/72704.html
+  - id: iec-62366
+    kind: standard
+    jurisdiction: international
+    short: IEC 62366-1
+    name: {en: "IEC 62366-1 Medical devices – Application of usability engineering to medical devices", sv: "IEC 62366-1 Medicintekniska produkter – Användbarhetsteknik för medicintekniska produkter"}
+    match: ["IEC 62366"]
+    url: https://webstore.iec.ch/en/publication/67220
+  - id: iec-81001-5-1
+    kind: standard
+    jurisdiction: international
+    short: IEC 81001-5-1
+    name: {en: "IEC 81001-5-1 Health software and health IT systems safety, effectiveness and security – Security activities in the product life cycle", sv: "IEC 81001-5-1 Hälsoprogramvara och hälso-IT-system – Säkerhetsaktiviteter i produktens livscykel"}
+    match: ["IEC 81001-5-1"]
+    url: https://webstore.iec.ch/en/publication/33615
+  - id: iso-13485
+    kind: standard
+    jurisdiction: international
+    short: ISO 13485
+    name: {en: "ISO 13485 Medical devices – Quality management systems", sv: "ISO 13485 Medicintekniska produkter – Ledningssystem för kvalitet"}
+    match: ["ISO 13485"]
+    url: https://www.iso.org/standard/59752.html
