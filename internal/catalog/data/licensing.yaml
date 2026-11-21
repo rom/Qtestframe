@@ -1,0 +1,453 @@
+area: licensing
+prefix: LIC
+group: privacy
+name: {en: Open-source licence compliance, sv: Efterlevnad av öppen källkods-licenser}
+description:
+  en: Licence policy, automatic licence checks, attribution notices, source code offers for copyleft components, contributions, licence metadata and third-party assets.
+  sv: Licenspolicy, automatiska licenskontroller, upphovsmannaangivelser, erbjudanden om källkod för copyleft-komponenter, bidrag, licensmetadata och tredjepartsmaterial.
+
+requirements:
+  - id: LIC-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [licence-policy, allow-list]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.1 (program foundation)", "SPDX License List"]
+    tests: [LIC-T01]
+    en:
+      title: Licence policy with allowed, conditional and forbidden licences
+      description: The organisation MUST keep a licence policy that classifies each licence by SPDX identifier as allowed, allowed with conditions or forbidden for the product's distribution model.
+      rationale: Developers add dependencies every week, and without a written policy each of them has to make a legal judgement on their own.
+      criteria:
+        - method: inspection
+          text: The policy lists at least the 20 most frequent licences in the product's dependencies with SPDX identifier, class and conditions, and names an owner.
+    sv:
+      title: Licenspolicy med tillåtna, villkorade och förbjudna licenser
+      description: Organisationen SKA ha en licenspolicy som klassar varje licens med SPDX-identifierare som tillåten, tillåten med villkor eller förbjuden för produktens distributionsmodell.
+      rationale: Utvecklare lägger till beroenden varje vecka, och utan en skriftlig policy måste var och en göra en juridisk bedömning på egen hand.
+      criteria:
+        - method: inspection
+          text: Policyn anger åtminstone de 20 vanligaste licenserna bland produktens beroenden med SPDX-identifierare, klass och villkor, och namnger en ägare.
+
+  - id: LIC-02
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [licence-check, pipeline]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.3 (open source content review and approval)", "NTIA Minimum Elements for an SBOM (2021)"]
+    tests: [LIC-T02]
+    en:
+      title: Forbidden licences stop the build
+      description: The build pipeline MUST check the licence of each direct and transitive dependency against the licence policy and fail when it finds a forbidden or unknown licence.
+      rationale: A forbidden licence found after release can force a product to be withdrawn or its source to be published.
+      criteria:
+        - method: test
+          text: Adding a dependency with a forbidden licence, and one without any licence information, each fails the build with a message naming the package and the licence.
+    sv:
+      title: Förbjudna licenser stoppar bygget
+      description: Byggpipelinen SKA kontrollera licensen för varje direkt och transitivt beroende mot licenspolicyn och fallera när den hittar en förbjuden eller okänd licens.
+      rationale: En förbjuden licens som upptäcks efter release kan tvinga fram att en produkt dras tillbaka eller att dess källkod publiceras.
+      criteria:
+        - method: test
+          text: Att lägga till ett beroende med en förbjuden licens, och ett utan licensuppgifter, får i båda fallen bygget att fallera med ett meddelande som namnger paketet och licensen.
+
+  - id: LIC-03
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [attribution, notices]
+    refs: ["MIT License (notice condition)", "Apache License 2.0 §4(d) (NOTICE file)", "BSD 3-Clause License (notice condition)"]
+    tests: [LIC-T03]
+    en:
+      title: Attribution notices ship with each release
+      description: Each release MUST include a notices file with the copyright statements and licence texts of the third-party components it contains, reachable from the product's information page.
+      rationale: Most permissive licences allow use only on condition that the copyright notice and licence text are passed on.
+      criteria:
+        - method: test
+          text: The notices file of the latest release names each component in its SBOM with copyright and licence text, and the information page links to it.
+    sv:
+      title: Upphovsmannaangivelser följer med varje release
+      description: Varje release SKA innehålla en fil med upphovsrättsangivelser och licenstexter för de tredjepartskomponenter den innehåller, nåbar från produktens om-sida.
+      rationale: De flesta tillåtande licenser medger användning bara på villkor att upphovsrättsangivelsen och licenstexten förs vidare.
+      criteria:
+        - method: test
+          text: Filen med angivelser i den senaste releasen namnger varje komponent i dess SBOM med upphovsrätt och licenstext, och om-sidan länkar till den.
+
+  - id: LIC-04
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [copyleft, source-offer, gpl]
+    refs: ["GNU GPL v3 §6 (conveying non-source forms)", "GNU LGPL v2.1 §6", "Mozilla Public License 2.0 §3.2"]
+    tests: [LIC-T04]
+    en:
+      title: Source code is offered for distributed copyleft components
+      description: For each copyleft component the product distributes in binary form, the organisation MUST provide the corresponding source code or a written offer of it valid for at least 3 years.
+      rationale: Copyleft licences grant the right to distribute only together with the source, and failing to provide it ends the licence.
+      criteria:
+        - method: inspection
+          text: For each GPL, LGPL and MPL component in the distributed artefacts, the source archive or written offer is published with the release.
+          threshold: "offer valid ≥ 3 years"
+    sv:
+      title: Källkod erbjuds för distribuerade copyleft-komponenter
+      description: För varje copyleft-komponent som produkten distribuerar i binär form SKA organisationen tillhandahålla motsvarande källkod eller ett skriftligt erbjudande om den som gäller i minst 3 år.
+      rationale: Copyleft-licenser ger rätt att distribuera bara tillsammans med källkoden, och den som inte tillhandahåller den förlorar licensen.
+      criteria:
+        - method: inspection
+          text: För varje GPL-, LGPL- och MPL-komponent i de distribuerade artefakterna publiceras källkodsarkivet eller det skriftliga erbjudandet med releasen.
+          threshold: "erbjudandet gäller ≥ 3 år"
+
+  - id: LIC-05
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [network-copyleft, agpl, saas]
+    refs: ["GNU AGPL v3 §13 (remote network interaction)", "Server Side Public License v1 §13"]
+    tests: [LIC-T02]
+    en:
+      title: Network copyleft licences are reviewed before use
+      description: A component under AGPL, SSPL or another licence with obligations triggered by network use SHOULD be taken into a hosted service only after a recorded approval by the licence policy owner.
+      rationale: These licences can require publishing the source of the whole service even though nothing is distributed to users.
+      criteria:
+        - method: test
+          text: Adding an AGPL dependency fails the build until an approval record for the package exists in the policy exceptions.
+    sv:
+      title: Licenser med copyleft vid nätverksanvändning granskas före användning
+      description: En komponent under AGPL, SSPL eller en annan licens med skyldigheter som utlöses av användning över nätverk BÖR tas in i en driftad tjänst först efter ett dokumenterat godkännande av licenspolicyns ägare.
+      rationale: Dessa licenser kan kräva att källkoden för hela tjänsten publiceras, trots att ingenting distribueras till användarna.
+      criteria:
+        - method: test
+          text: Att lägga till ett AGPL-beroende får bygget att fallera tills en godkännandepost för paketet finns bland policyns undantag.
+
+  - id: LIC-06
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [own-licence, metadata, spdx]
+    refs: ["REUSE Specification 3.2", "SPDX Specification 2.3 Annex E (SPDX-License-Identifier)"]
+    tests: [LIC-T05]
+    en:
+      title: The product's own licence is declared in each source file
+      description: Each source file of the product MUST carry an SPDX-License-Identifier and a copyright line, with the full text of each licence used kept in the repository.
+      rationale: Clear licence metadata lets customers and tools check the product automatically, and settles the status of files copied elsewhere.
+      criteria:
+        - method: test
+          text: A REUSE compliance check of the repository reports no file without licence and copyright information.
+    sv:
+      title: Produktens egen licens anges i varje källkodsfil
+      description: Varje källkodsfil i produkten SKA ha en SPDX-License-Identifier och en upphovsrättsrad, och den fullständiga texten för varje licens som används finns i kodförrådet.
+      rationale: Tydlig licensmetadata låter kunder och verktyg kontrollera produkten automatiskt och avgör vad som gäller för filer som kopierats till andra ställen.
+      criteria:
+        - method: test
+          text: En kontroll av kodförrådet enligt REUSE rapporterar ingen fil som saknar licens- och upphovsrättsuppgifter.
+
+  - id: LIC-07
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [copied-code, snippets]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.3", "Creative Commons Attribution-ShareAlike 4.0 (Stack Overflow contributions)"]
+    tests: [LIC-T06]
+    en:
+      title: Copied code snippets are recorded with their source
+      description: Code copied from websites, forums or other projects SHOULD be marked in the source with its origin URL and licence, and is subject to the same licence policy as dependencies.
+      rationale: Snippet scanners regularly find copied code under share-alike or copyleft licences that nobody recorded.
+      criteria:
+        - method: test
+          text: A snippet scan of the repository finds no match of 10 or more lines with a public source that lacks an origin comment.
+          threshold: "matches ≥ 10 lines"
+    sv:
+      title: Kopierade kodstycken registreras med källa
+      description: Kod som kopierats från webbplatser, forum eller andra projekt BÖR märkas i källkoden med ursprunglig URL och licens och omfattas av samma licenspolicy som beroenden.
+      rationale: Skannrar för kodstycken hittar regelbundet kopierad kod under share-alike- eller copyleft-licenser som ingen har registrerat.
+      criteria:
+        - method: test
+          text: En skanning av kodförrådet efter kodstycken hittar ingen träff på 10 rader eller fler mot en publik källa som saknar en kommentar om ursprunget.
+          threshold: "träffar ≥ 10 rader"
+
+  - id: LIC-08
+    type: constraint
+    obligation: should
+    priority: low
+    tags: [contributions, upstream]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.5 (community engagement)"]
+    tests: [LIC-T06]
+    en:
+      title: Contributions to external projects are approved
+      description: Employees SHOULD contribute code to external open-source projects only under a contribution policy that names the approver and the allowed contributor agreements.
+      rationale: A contribution transfers rights to the organisation's code, and some contributor agreements grant more than intended.
+      criteria:
+        - method: review
+          text: Each external contribution of the last 12 months found in the employees' public accounts has an approval record that matches the policy.
+    sv:
+      title: Bidrag till externa projekt godkänns
+      description: Anställda BÖR bidra med kod till externa projekt med öppen källkod enbart enligt en policy för bidrag som anger godkännare och tillåtna bidragsavtal.
+      rationale: Ett bidrag överlåter rättigheter till organisationens kod, och en del bidragsavtal ger mer än vad som var avsett.
+      criteria:
+        - method: review
+          text: Varje externt bidrag de senaste 12 månaderna som hittas på de anställdas publika konton har en godkännandepost som stämmer med policyn.
+
+  - id: LIC-09
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [fonts, images, assets]
+    refs: ["SIL Open Font License 1.1", "Creative Commons licences 4.0 (attribution conditions)"]
+    tests: [LIC-T07]
+    en:
+      title: Licences of fonts, icons and images are recorded
+      description: Each font, icon set, image and sound in the product MUST have a recorded source and licence that permits the way the product uses it.
+      rationale: Media files are rarely covered by dependency scanners, and unlicensed images and fonts are a common cause of infringement claims.
+      criteria:
+        - method: inspection
+          text: The asset register lists each media file in the build output with source, licence and permitted use, and none is missing.
+    sv:
+      title: Licenser för typsnitt, ikoner och bilder registreras
+      description: Varje typsnitt, ikonuppsättning, bild och ljud i produkten SKA ha en registrerad källa och en licens som tillåter det sätt produkten använder den på.
+      rationale: Mediefiler täcks sällan av skannrar för beroenden, och olicensierade bilder och typsnitt är en vanlig orsak till anspråk om intrång.
+      criteria:
+        - method: inspection
+          text: Registret över material anger varje mediefil i byggresultatet med källa, licens och tillåten användning, och ingen saknas.
+
+  - id: LIC-10
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [sbom, licence-data]
+    refs: ["SPDX Specification 2.3 §7 (package information)", "CycloneDX 1.6 (licence data)"]
+    tests: [LIC-T03]
+    en:
+      title: The SBOM lists the concluded licence of each component
+      description: The software bill of materials of each release SHOULD state the concluded licence of each component as an SPDX expression.
+      rationale: Customers and auditors check licences from the SBOM, and a missing or vague value forces them to ask.
+      criteria:
+        - method: test
+          text: Validating the SBOM of the latest release shows a valid SPDX licence expression for each component and no NOASSERTION value.
+    sv:
+      title: SBOM anger den fastställda licensen för varje komponent
+      description: Programvaruförteckningen (SBOM) för varje release BÖR ange den fastställda licensen för varje komponent som ett SPDX-uttryck.
+      rationale: Kunder och revisorer kontrollerar licenser utifrån SBOM, och ett saknat eller otydligt värde tvingar dem att fråga.
+      criteria:
+        - method: test
+          text: En validering av SBOM för den senaste releasen visar ett giltigt SPDX-licensuttryck för varje komponent och inget värde NOASSERTION.
+
+tests:
+  - id: LIC-T01
+    priority: high
+    execution: manual
+    tags: [licence-policy, review]
+    refs: ["OpenChain ISO/IEC 5230:2020"]
+    en:
+      title: Review of the licence policy against the dependencies
+      description: Compares the licences found in the product's dependencies with the classes in the licence policy.
+      preconditions: The licence policy; a licence report of all direct and transitive dependencies of the main branch.
+      expected: The policy names an owner and classifies at least the 20 most frequent licences of the dependencies.
+      steps:
+        - action: Count the dependencies per licence in the licence report and take the 20 most frequent licences.
+          expected: A list of 20 SPDX identifiers is obtained.
+        - action: Look up each of the 20 licences in the policy.
+          expected: Each is classified as allowed, allowed with conditions or forbidden, and conditions are spelled out.
+        - action: Read the owner and the date of the last update of the policy.
+          expected: An owner is named.
+    sv:
+      title: Granskning av licenspolicyn mot beroendena
+      description: Jämför licenserna bland produktens beroenden med klasserna i licenspolicyn.
+      preconditions: Licenspolicyn; en licensrapport över alla direkta och transitiva beroenden på huvudgrenen.
+      expected: Policyn namnger en ägare och klassar åtminstone de 20 vanligaste licenserna bland beroendena.
+      steps:
+        - action: Räkna beroendena per licens i licensrapporten och ta de 20 vanligaste licenserna.
+          expected: En lista med 20 SPDX-identifierare tas fram.
+        - action: Leta upp var och en av de 20 licenserna i policyn.
+          expected: Var och en är klassad som tillåten, tillåten med villkor eller förbjuden, och villkoren är utskrivna.
+        - action: Läs ägaren och datumet för den senaste uppdateringen av policyn.
+          expected: En ägare är namngiven.
+
+  - id: LIC-T02
+    priority: high
+    execution: automated
+    tags: [licence-check, pipeline, agpl]
+    refs: []
+    en:
+      title: The licence check stops forbidden, unknown and unapproved licences
+      description: Adds dependencies with a forbidden licence, no licence and an AGPL licence in a test branch and runs the pipeline.
+      preconditions: Permission to push a test branch; a forbidden licence in the policy; three test packages in an internal registry with the needed licence metadata.
+      expected: Each of the three dependencies fails the build until it is removed or, for AGPL, an approval record exists.
+      steps:
+        - action: Add a package whose licence the policy forbids and run the pipeline.
+          expected: The licence check fails and names the package and its licence.
+        - action: Replace it with a package without licence information and run the pipeline.
+          expected: The licence check fails and reports the licence as unknown.
+        - action: Replace it with an AGPL-3.0-only package and run the pipeline.
+          expected: The licence check fails because no approval exists.
+          data: "SPDX: AGPL-3.0-only"
+        - action: Add an approval record for the AGPL package to the policy exceptions and run the pipeline again.
+          expected: The licence check passes.
+    sv:
+      title: Licenskontrollen stoppar förbjudna, okända och ej godkända licenser
+      description: Lägger till beroenden med en förbjuden licens, utan licens och med en AGPL-licens i en testgren och kör pipelinen.
+      preconditions: Behörighet att skicka en testgren; en förbjuden licens i policyn; tre testpaket i ett internt register med de licensuppgifter som behövs.
+      expected: Vart och ett av de tre beroendena får bygget att fallera tills det tas bort eller, för AGPL, en godkännandepost finns.
+      steps:
+        - action: Lägg till ett paket vars licens policyn förbjuder och kör pipelinen.
+          expected: Licenskontrollen fallerar och namnger paketet och dess licens.
+        - action: Ersätt det med ett paket utan licensuppgifter och kör pipelinen.
+          expected: Licenskontrollen fallerar och rapporterar licensen som okänd.
+        - action: Ersätt det med ett paket under AGPL-3.0-only och kör pipelinen.
+          expected: Licenskontrollen fallerar eftersom inget godkännande finns.
+          data: "SPDX: AGPL-3.0-only"
+        - action: Lägg till en godkännandepost för AGPL-paketet bland policyns undantag och kör pipelinen igen.
+          expected: Licenskontrollen går igenom.
+
+  - id: LIC-T03
+    priority: high
+    execution: automated
+    tags: [attribution, sbom]
+    refs: ["SPDX Specification 2.3"]
+    en:
+      title: Notices file and SBOM licence data of a release
+      description: Compares the notices file with the SBOM of the latest release and validates the licence expressions.
+      preconditions: The release artefacts of the latest release, including the notices file and the SBOM; an SPDX or CycloneDX validator.
+      expected: Each SBOM component is in the notices file with copyright and licence text, and each has a valid concluded licence.
+      steps:
+        - action: Validate the SBOM and list the concluded licence of each component.
+          expected: Each component has a valid SPDX expression and none has NOASSERTION.
+        - action: For each component in the SBOM, search the notices file for its name.
+          expected: Each component is present with a copyright statement and its licence text.
+        - action: Open the product's information page.
+          expected: It links to the notices file of the installed version.
+    sv:
+      title: Fil med angivelser och licensdata i SBOM för en release
+      description: Jämför filen med angivelser med SBOM för den senaste releasen och validerar licensuttrycken.
+      preconditions: Releaseartefakterna för den senaste releasen, däribland filen med angivelser och SBOM; en validerare för SPDX eller CycloneDX.
+      expected: Varje komponent i SBOM finns i filen med angivelser med upphovsrätt och licenstext, och var och en har en giltig fastställd licens.
+      steps:
+        - action: Validera SBOM och lista den fastställda licensen för varje komponent.
+          expected: Varje komponent har ett giltigt SPDX-uttryck och ingen har NOASSERTION.
+        - action: Sök efter varje komponents namn i filen med angivelser.
+          expected: Varje komponent finns med en upphovsrättsangivelse och sin licenstext.
+        - action: Öppna produktens om-sida.
+          expected: Den länkar till filen med angivelser för den installerade versionen.
+
+  - id: LIC-T04
+    priority: high
+    execution: manual
+    tags: [copyleft, source-offer]
+    refs: []
+    en:
+      title: Source code for copyleft components of a release
+      description: Finds the copyleft components in the distributed artefacts and checks the published source or written offer.
+      preconditions: The SBOM of the latest distributed release; the release page.
+      expected: Each GPL, LGPL and MPL component has its source archive or a written offer valid for at least 3 years published with the release.
+      steps:
+        - action: Filter the SBOM for GPL, LGPL and MPL licences.
+          expected: A list of copyleft components is obtained.
+        - action: For each component, find the source archive or the written offer on the release page.
+          expected: Each component has one of them.
+        - action: Download one source archive and compare its version with the SBOM.
+          expected: The version matches the distributed binary.
+        - action: Read the validity of each written offer.
+          expected: Each offer is valid for at least 3 years from the release date.
+    sv:
+      title: Källkod för copyleft-komponenter i en release
+      description: Letar upp copyleft-komponenterna i de distribuerade artefakterna och kontrollerar den publicerade källkoden eller det skriftliga erbjudandet.
+      preconditions: SBOM för den senaste distribuerade releasen; releasesidan.
+      expected: Varje GPL-, LGPL- och MPL-komponent har sitt källkodsarkiv eller ett skriftligt erbjudande som gäller i minst 3 år publicerat med releasen.
+      steps:
+        - action: Filtrera SBOM på licenserna GPL, LGPL och MPL.
+          expected: En lista över copyleft-komponenter tas fram.
+        - action: Leta upp källkodsarkivet eller det skriftliga erbjudandet för varje komponent på releasesidan.
+          expected: Varje komponent har något av dem.
+        - action: Ladda ner ett källkodsarkiv och jämför dess version med SBOM.
+          expected: Versionen stämmer med den distribuerade binärfilen.
+        - action: Läs giltighetstiden för varje skriftligt erbjudande.
+          expected: Varje erbjudande gäller i minst 3 år från releasedatumet.
+
+  - id: LIC-T05
+    priority: medium
+    execution: automated
+    tags: [spdx, reuse]
+    refs: ["REUSE Specification 3.2"]
+    en:
+      title: REUSE compliance check of the repository
+      description: Runs a REUSE compliance check of the repository in the pipeline.
+      preconditions: The REUSE tool is available in the pipeline.
+      expected: Each file has licence and copyright information, and each licence used has its text in the repository.
+      steps:
+        - action: Run the REUSE lint command on the main branch.
+          expected: The tool reports the repository as compliant.
+        - action: Add a new source file without an SPDX header in a test branch and run the check.
+          expected: The check fails and names the file.
+    sv:
+      title: Kontroll av kodförrådet enligt REUSE
+      description: Kör en kontroll av kodförrådet enligt REUSE i pipelinen.
+      preconditions: REUSE-verktyget finns i pipelinen.
+      expected: Varje fil har licens- och upphovsrättsuppgifter, och varje licens som används har sin text i kodförrådet.
+      steps:
+        - action: Kör kommandot REUSE lint på huvudgrenen.
+          expected: Verktyget rapporterar kodförrådet som korrekt.
+        - action: Lägg till en ny källkodsfil utan SPDX-huvud i en testgren och kör kontrollen.
+          expected: Kontrollen fallerar och namnger filen.
+
+  - id: LIC-T06
+    priority: medium
+    execution: manual
+    tags: [copied-code, contributions]
+    refs: []
+    en:
+      title: Snippet scan and review of external contributions
+      description: Runs a snippet scan of the repository and compares the employees' external contributions with the approval records.
+      preconditions: A snippet scanning tool with a public code index; the list of employees' public code hosting accounts; the contribution approval records.
+      expected: Every copied snippet of 10 lines or more has an origin comment, and every external contribution has an approval.
+      steps:
+        - action: Run the snippet scan on the main branch.
+          expected: The tool reports matches with public sources.
+        - action: For each match of 10 lines or more, open the file at the matched lines.
+          expected: Each has a comment with the origin URL and licence, and the licence is allowed by the policy.
+          data: "threshold 10 lines"
+        - action: List the contributions of the last 12 months from the employees' public accounts to external projects and look up their approvals.
+          expected: Each contribution has an approval record that names the approver and the contributor agreement.
+    sv:
+      title: Skanning efter kodstycken och granskning av externa bidrag
+      description: Kör en skanning av kodförrådet efter kodstycken och jämför de anställdas externa bidrag med godkännandeposterna.
+      preconditions: Ett verktyg för skanning efter kodstycken med ett index över publik kod; listan över de anställdas publika konton för kodlagring; godkännandeposterna för bidrag.
+      expected: Varje kopierat kodstycke på 10 rader eller fler har en kommentar om ursprunget, och varje externt bidrag har ett godkännande.
+      steps:
+        - action: Kör skanningen efter kodstycken på huvudgrenen.
+          expected: Verktyget rapporterar träffar mot publika källor.
+        - action: Öppna filen vid de träffade raderna för varje träff på 10 rader eller fler.
+          expected: Var och en har en kommentar med ursprunglig URL och licens, och licensen är tillåten enligt policyn.
+          data: "gränsvärde 10 rader"
+        - action: Lista de senaste 12 månadernas bidrag till externa projekt från de anställdas publika konton och leta upp deras godkännanden.
+          expected: Varje bidrag har en godkännandepost som namnger godkännaren och bidragsavtalet.
+
+  - id: LIC-T07
+    priority: medium
+    execution: manual
+    tags: [fonts, images, assets]
+    refs: []
+    en:
+      title: Media files in the build output match the asset register
+      description: Lists the fonts, icons, images and sounds in the build output and compares them with the asset register.
+      preconditions: The build output of the latest release; the asset register.
+      expected: Each media file is in the register with source, licence and permitted use that covers the product's use.
+      steps:
+        - action: List all font, image, icon and audio files in the build output.
+          expected: A complete list with file names and checksums is obtained.
+          data: "extensions: woff2, ttf, svg, png, jpg, webp, mp3"
+        - action: Look up each file in the asset register.
+          expected: Each file has a source, a licence and a permitted use.
+        - action: For five files chosen at random, read the licence at the source.
+          expected: The licence allows the use in the product, including commercial use where it applies.
+    sv:
+      title: Mediefiler i byggresultatet stämmer med registret över material
+      description: Listar typsnitt, ikoner, bilder och ljud i byggresultatet och jämför dem med registret över material.
+      preconditions: Byggresultatet för den senaste releasen; registret över material.
+      expected: Varje mediefil finns i registret med källa, licens och tillåten användning som täcker produktens användning.
+      steps:
+        - action: Lista alla typsnitts-, bild-, ikon- och ljudfiler i byggresultatet.
+          expected: En fullständig lista med filnamn och kontrollsummor tas fram.
+          data: "filändelser: woff2, ttf, svg, png, jpg, webp, mp3"
+        - action: Leta upp varje fil i registret över material.
+          expected: Varje fil har en källa, en licens och en tillåten användning.
+        - action: Läs licensen hos källan för fem slumpvis valda filer.
+          expected: Licensen tillåter användningen i produkten, även kommersiell användning där det är aktuellt.

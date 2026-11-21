@@ -134,7 +134,7 @@ requirements:
     tests: [AIML-T05]
     en:
       title: Model output cannot trigger privileged actions on its own
-      description: The system MUST ask the user for confirmation before carrying out an action proposed by the model that changes, deletes or sends data, and MUST run it with the user's own permissions.
+      description: The system MUST ask the user for confirmation before carrying out an action proposed by the model that changes, deletes or sends data, and run it with the user's own permissions.
       rationale: Instructions hidden in documents, emails or web pages can make the model propose harmful actions, so the model must not act with more rights than the user or without the user.
       criteria:
         - method: test
