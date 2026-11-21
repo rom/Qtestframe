@@ -175,7 +175,7 @@ requirements:
     obligation: must
     priority: high
     tags: [technical-documentation, retention]
-    refs: ["Directive 2014/35/EU (LVD) Art. 6(3)", "Directive 2014/35/EU (LVD) Annex III §2 (technical documentation)", "Directive 2014/30/EU (EMC) Art. 7(3)", "Directive 2014/30/EU (EMC) Annex II §2 (technical documentation)"]
+    refs: ["Directive 2014/35/EU (LVD) Art. 6(3)", "Directive 2014/35/EU (LVD) Annex III §2 (technical documentation)", "Directive 2014/30/EU (EMC) Art. 7(3)", "Directive 2014/30/EU (EMC) Annex II §3 (technical documentation)"]
     tests: [HWEMC-T07]
     en:
       title: Technical documentation kept for ten years
@@ -529,7 +529,7 @@ tests:
     priority: high
     execution: manual
     tags: [technical-documentation]
-    refs: ["Directive 2014/35/EU (LVD) Annex III §2 (technical documentation)", "Directive 2014/30/EU (EMC) Annex II §2 (technical documentation)"]
+    refs: ["Directive 2014/35/EU (LVD) Annex III §2 (technical documentation)", "Directive 2014/30/EU (EMC) Annex II §3 (technical documentation)"]
     en:
       title: Technical file is complete and kept long enough
       description: Opens the technical file of a sampled product variant and its retention setting.

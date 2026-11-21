@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: high
     tags: [procurement, award-criteria, evaluation]
-    refs: ["Directive 2014/24/EU Art. 67", "Lag (2016:1145) om offentlig upphandling (LOU)"]
+    refs: ["Directive 2014/24/EU Art. 67 (contract award criteria)", "Lag (2016:1145) om offentlig upphandling (LOU) 16 kap. 1–6 §§ (tilldelning av kontrakt)"]
     tests: [PJDEL-T01]
     en:
       title: Award criteria and weights published before tenders are received
@@ -283,7 +283,7 @@ tests:
     priority: high
     execution: manual
     tags: [procurement, tender]
-    refs: ["Directive 2014/24/EU Art. 67"]
+    refs: ["Directive 2014/24/EU Art. 67 (contract award criteria)"]
     en:
       title: Review of the tender documents and the evaluation
       description: Reviews the requirements and award criteria in the tender documents and compares the evaluation report with them.

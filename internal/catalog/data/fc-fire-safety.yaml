@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [fire-documentation, building-code]
-    refs: ["BBR (BFS 2011:6) avsnitt 5 (brandskydd)"]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
     tests: [FCFIRE-T01]
     en:
       title: Fire safety documentation kept up to date with each change
@@ -40,7 +40,7 @@ requirements:
     en:
       title: Systematic fire safety work with a yearly follow-up
       description: The owner and the occupant MUST run documented systematic fire safety work with a named responsible person, written routines for checks and training, and a yearly follow-up with recorded actions.
-      rationale: Swedish law places the duty of keeping fire protection in working order on owners and occupants, and a documented system shows that the duty is met.
+      rationale: Swedish law requires owners and users of buildings to keep equipment for extinguishing fires and saving lives and to take the measures needed to prevent fire and limit its damage, and a documented system shows that the duty is met.
       criteria:
         - method: review
           text: The fire safety documentation names the responsible person, contains the routines, and the latest yearly follow-up is less than 12 months old with actions and owners.
@@ -48,7 +48,7 @@ requirements:
     sv:
       title: Systematiskt brandskyddsarbete med årlig uppföljning
       description: Ägaren och nyttjanderättshavaren SKA bedriva ett dokumenterat systematiskt brandskyddsarbete med en namngiven ansvarig, skriftliga rutiner för kontroller och utbildning och en årlig uppföljning med dokumenterade åtgärder.
-      rationale: Lagen lägger ansvaret för att hålla brandskyddet i funktion på ägare och nyttjanderättshavare, och ett dokumenterat arbete visar att ansvaret tas.
+      rationale: Lagen kräver att ägare och nyttjanderättshavare håller utrustning för brandsläckning och livräddning och vidtar de åtgärder som behövs för att förebygga brand och begränsa skador av brand, och ett dokumenterat arbete visar att ansvaret tas.
       criteria:
         - method: review
           text: Dokumentationen av brandskyddsarbetet namnger den ansvarige, innehåller rutinerna, och den senaste årliga uppföljningen är mindre än 12 månader gammal med åtgärder och ansvariga.
@@ -59,7 +59,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [fire-alarm, detection, alarm-transmission]
-    refs: ["EN 54 (fire detection and fire alarm systems)", "BBR (BFS 2011:6) avsnitt 5 (brandskydd)"]
+    refs: ["EN 54 (fire detection and fire alarm systems)", "BFS 2024:7 (säkerhet i händelse av brand)"]
     tests: [FCFIRE-T03]
     en:
       title: Automatic fire alarm in the areas stated in the documentation
@@ -107,7 +107,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [escape-routes, evacuation]
-    refs: ["BBR (BFS 2011:6) avsnitt 5 (brandskydd)"]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
     tests: [FCFIRE-T04]
     en:
       title: Two independent escape routes from each fire compartment
@@ -177,7 +177,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [evacuation-alarm, audibility]
-    refs: ["EN 54 (fire detection and fire alarm systems)", "BBR (BFS 2011:6) avsnitt 5 (brandskydd)"]
+    refs: ["EN 54 (fire detection and fire alarm systems)", "BFS 2024:7 (säkerhet i händelse av brand)"]
     tests: [FCFIRE-T06]
     en:
       title: Evacuation alarm heard in each room
@@ -225,7 +225,7 @@ requirements:
     obligation: must
     priority: high
     tags: [fire-stopping, penetrations, compartments]
-    refs: ["BBR (BFS 2011:6) avsnitt 5 (brandskydd)"]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
     tests: [FCFIRE-T07]
     en:
       title: Penetrations in fire compartment walls sealed after each installation
@@ -247,7 +247,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [fire-doors, door-closers, hold-open]
-    refs: ["EN 1155", "BBR (BFS 2011:6) avsnitt 5 (brandskydd)"]
+    refs: ["EN 1155", "BFS 2024:7 (säkerhet i händelse av brand)"]
     tests: [FCFIRE-T07]
     en:
       title: Fire doors close by themselves and are checked each quarter
@@ -295,7 +295,7 @@ tests:
     priority: critical
     execution: manual
     tags: [fire-documentation]
-    refs: ["BBR (BFS 2011:6) avsnitt 5 (brandskydd)"]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
     en:
       title: Fire safety documentation compared with recent changes
       description: Reviews the fire safety documentation and matches it with the building permits and changes of use of the last 3 years.
@@ -381,7 +381,7 @@ tests:
     priority: critical
     execution: manual
     tags: [escape-routes]
-    refs: ["BBR (BFS 2011:6) avsnitt 5 (brandskydd)"]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
     en:
       title: Escape routes on the drawings and on site
       description: Compares the escape routes of each compartment in the documentation with the site and reviews the weekly checklists.

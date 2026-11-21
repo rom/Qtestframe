@@ -398,7 +398,7 @@ requirements:
     obligation: must
     priority: high
     tags: [outage-reporting, incident, regulator]
-    refs: ["Directive (EU) 2018/1972 Art. 40", "Directive (EU) 2022/2555 Art. 23", "Lag (2022:482) om elektronisk kommunikation"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23", "Cybersäkerhetslag (2025:1506) 2 kap. 5–8 §§ (rapportering av betydande incidenter)"]
     tests: [TEL-T17]
     en:
       title: Outage data for the report to the regulator
@@ -422,7 +422,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [redundancy, geo-redundancy, failover]
-    refs: ["Directive (EU) 2018/1972 Art. 40", "ISO/IEC 27001:2022 A.8.14", "ISO 22301:2019 §8.4"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(c)", "ISO/IEC 27001:2022 A.8.14", "ISO 22301:2019 §8.4"]
     tests: [TEL-T18]
     en:
       title: Core service continues after the loss of one site
@@ -474,7 +474,7 @@ requirements:
     obligation: must
     priority: high
     tags: [radio-equipment, red, customer-premises-equipment]
-    refs: ["Directive 2014/53/EU Art. 3(3)(d)(e)(f)", "Commission Delegated Regulation (EU) 2022/30", "EN 18031-1"]
+    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(d)–(f)", "Commission Delegated Regulation (EU) 2022/30", "EN 18031-1"]
     tests: [TEL-T20]
     en:
       title: Customer radio equipment meets the RED cybersecurity requirements
@@ -996,7 +996,7 @@ tests:
     priority: high
     execution: manual
     tags: [outage-reporting, regulator]
-    refs: ["Directive (EU) 2018/1972 Art. 40"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23"]
     en:
       title: Report draft after a simulated outage
       description: Simulates an outage of 3 base stations and checks the generated report draft.

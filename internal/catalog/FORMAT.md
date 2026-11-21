@@ -138,7 +138,8 @@ actually check.
 | Cyber Resilience Act | `Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)`, `… Annex I Part II §2`, `… Art. 14` |
 | DORA (digital operational resilience, financial sector) | `Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)` |
 | CER (resilience of critical entities) | `Directive (EU) 2022/2557 (CER) Art. 13(1)(d)` |
-| NIS2 | `NIS2 Directive (EU) 2022/2555 Art. 23` |
+| NIS2 | `Directive (EU) 2022/2555 (NIS2) Art. 23` |
+| Swedish Cybersecurity Act (implements NIS2) | `Cybersäkerhetslag (2025:1506) 2 kap. 3 §` |
 | Radio Equipment Directive, Art. 3(3)(d)–(f) as applied by Delegated Regulation (EU) 2022/30, with the harmonised standard EN 18031-1/-2/-3 and its mechanism (AUM, ACM, SCM, SSM, SUM, RLM, CCK, CRY, GEC, DLM …) | `Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)` |
 
 Cite the RED only for items that make sense for internet-connected radio

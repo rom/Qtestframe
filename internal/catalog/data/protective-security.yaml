@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [classification, marking]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. (säkerhetsskyddsklassificering)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 5 § (säkerhetsskyddsklassificering)", "PMFS 2022:1"]
     tests: [SAKS-T02]
     en:
       title: Classification level shown on screen, in exports and on printouts
@@ -58,7 +58,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [classification, declassification, audit]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
     tests: [SAKS-T03]
     en:
       title: Only an authorised role lowers a classification level
@@ -102,7 +102,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [need-to-know, access-control]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
     tests: [SAKS-T04]
     en:
       title: Need-to-know is checked in addition to the clearance
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: high
     tags: [logging, audit]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
     tests: [SAKS-T06]
     en:
       title: Logging of each access to classified records
@@ -200,7 +200,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [network-separation, isolation]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
     tests: [SAKS-T07]
     en:
       title: Classified systems separated from other networks
@@ -226,19 +226,19 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [approval, accreditation, security-testing]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "Säkerhetsskyddsförordning (2021:955) 3 kap. 1–3 §§ (säkerhetsskyddsbedömning, samråd och godkännande)", "PMFS 2022:1"]
     tests: [SAKS-T08]
     en:
       title: Written approval before a classified system is used
       description: The organisation MUST NOT take a system that handles classified information into use, or into use again after a change of its security functions, before the protective security officer has approved it in writing on the basis of a security assessment and a security test of that version.
-      rationale: The approval is the point where someone accountable confirms that the protection works, and for CONFIDENTIAL or higher the regulations also call for informing the supervisory authority before the system is used.
+      rationale: The approval is the point where someone accountable confirms that the protection works, and for CONFIDENTIAL or higher the protective security ordinance also calls for a written consultation with the Swedish Security Service, or the Swedish Armed Forces in their area of supervision, before the system is put into operation.
       criteria:
         - method: review
           text: Each production version of the last 24 months that changed a security function has a signed approval dated before it was put into use, with the assessment and the test report attached.
     sv:
       title: Skriftligt godkännande innan ett säkerhetsskyddsklassificerat system används
       description: Organisationen SKA INTE ta ett system som behandlar säkerhetsskyddsklassificerade uppgifter i drift, eller i drift igen efter en ändring av dess säkerhetsfunktioner, innan säkerhetsskyddschefen har godkänt det skriftligt med stöd av en säkerhetsskyddsbedömning och en säkerhetstestning av den versionen.
-      rationale: Godkännandet är det tillfälle då en ansvarig person bekräftar att skyddet fungerar, och för konfidentiell eller högre kräver föreskrifterna dessutom att tillsynsmyndigheten underrättas innan systemet används.
+      rationale: Godkännandet är det tillfälle då en ansvarig person bekräftar att skyddet fungerar, och för konfidentiell eller högre kräver säkerhetsskyddsförordningen dessutom skriftligt samråd med Säkerhetspolisen, eller med Försvarsmakten inom dess tillsynsområde, innan systemet tas i drift.
       criteria:
         - method: review
           text: Varje produktionsversion de senaste 24 månaderna som ändrade en säkerhetsfunktion har ett undertecknat godkännande daterat före driftsättningen, med bedömningen och testrapporten bifogade.
@@ -274,7 +274,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [removable-media, data-loss-prevention]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
     tests: [SAKS-T09]
     en:
       title: Only registered removable media can be written
@@ -295,24 +295,24 @@ requirements:
     type: regulatory
     obligation: must
     priority: critical
-    tags: [incident-reporting, supervisory-authority]
-    refs: ["Säkerhetsskyddslag (2018:585)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    tags: [incident-reporting, security-service]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (anmäla och rapportera)", "Säkerhetsskyddsförordning (2021:955) 2 kap. 4 § (anmälan till Säkerhetspolisen)", "PMFS 2022:1"]
     tests: [SAKS-T10]
     en:
-      title: Protective security incidents reported to the supervisory authority within 24 hours
-      description: The organisation MUST send a report to its supervisory authority for protective security within 24 hours of detecting an event in which classified information is suspected to have been disclosed, altered or destroyed without authorisation.
-      rationale: The supervisory authority needs early notice to limit the damage and to see whether the event is part of a wider threat, and the 24 hours turn the legal demand for prompt reporting into a measurable target.
+      title: Protective security incidents reported to the Swedish Security Service within 24 hours
+      description: The organisation MUST send a report to the Swedish Security Service (Säkerhetspolisen) within 24 hours of detecting an event in which classified information is suspected to have been disclosed, altered or destroyed without authorisation.
+      rationale: The protective security ordinance requires prompt notice to the Swedish Security Service, which informs the supervisory authority, and organisations in the Swedish Armed Forces' area of supervision notify the Armed Forces as well. Early notice limits the damage and shows whether the event is part of a wider threat, and the 24 hours turn the demand for prompt reporting into a measurable target.
       criteria:
         - method: demonstration
-          text: In an exercise with a simulated leak, the report to the supervisory authority is ready for sending within 24 hours and contains what happened, which information and classification level, and the actions taken.
+          text: In an exercise with a simulated leak, the report to the Swedish Security Service is ready for sending within 24 hours and contains what happened, which information and classification level, and the actions taken.
           threshold: "≤ 24 hours from detection"
     sv:
-      title: Säkerhetsskyddsincidenter rapporteras till tillsynsmyndigheten inom 24 timmar
-      description: Organisationen SKA skicka en rapport till sin tillsynsmyndighet för säkerhetsskydd inom 24 timmar från att den har upptäckt en händelse där säkerhetsskyddsklassificerade uppgifter kan ha röjts, ändrats eller förstörts obehörigt.
-      rationale: Tillsynsmyndigheten behöver tidigt besked för att begränsa skadan och se om händelsen ingår i ett bredare hot, och de 24 timmarna gör lagens krav på skyndsam rapportering till ett mätbart mål.
+      title: Säkerhetsskyddsincidenter anmäls till Säkerhetspolisen inom 24 timmar
+      description: Organisationen SKA skicka en anmälan till Säkerhetspolisen inom 24 timmar från att den har upptäckt en händelse där säkerhetsskyddsklassificerade uppgifter kan ha röjts, ändrats eller förstörts obehörigt.
+      rationale: Säkerhetsskyddsförordningen kräver skyndsam anmälan till Säkerhetspolisen, som underrättar tillsynsmyndigheten, och verksamhetsutövare inom Försvarsmaktens tillsynsområde anmäler även till Försvarsmakten. Ett tidigt besked begränsar skadan och visar om händelsen ingår i ett bredare hot, och de 24 timmarna gör kravet på skyndsam anmälan till ett mätbart mål.
       criteria:
         - method: demonstration
-          text: I en övning med ett simulerat röjande är rapporten till tillsynsmyndigheten klar att skicka inom 24 timmar och anger vad som hände, vilka uppgifter och vilken säkerhetsskyddsklass samt vidtagna åtgärder.
+          text: I en övning med ett simulerat röjande är anmälan till Säkerhetspolisen klar att skicka inom 24 timmar och anger vad som hände, vilka uppgifter och vilken säkerhetsskyddsklass samt vidtagna åtgärder.
           threshold: "≤ 24 timmar från upptäckt"
 
   - id: SAKS-14
@@ -320,7 +320,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [outsourcing, procurement, security-agreement]
-    refs: ["Säkerhetsskyddslag (2018:585) 4 kap. (säkerhetsskyddad upphandling)", "Säkerhetsskyddsförordning (2021:955)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 4 kap. 1 § (säkerhetsskyddsavtal)", "Säkerhetsskyddsförordning (2021:955)"]
     tests: [SAKS-T11]
     en:
       title: Suppliers work on classified systems only under a protective security agreement
@@ -643,30 +643,30 @@ tests:
     refs: []
     en:
       title: Exercise with a suspected leak of classified information
-      description: A tabletop exercise in which a suspected leak is detected and reported to the supervisory authority.
-      preconditions: The protective security officer and the incident team are available; an invented scenario in which a log review shows that a cleared user exported classified records to an unregistered medium; the reporting template of the supervisory authority.
+      description: A tabletop exercise in which a suspected leak is detected and reported to the Swedish Security Service.
+      preconditions: The protective security officer and the incident team are available; an invented scenario in which a log review shows that a cleared user exported classified records to an unregistered medium; the reporting form of the Swedish Security Service.
       expected: A complete report is ready for sending within 24 hours of the simulated detection.
       steps:
         - action: Present the scenario and note the time as the time of detection.
           expected: The team starts the protective security incident procedure and informs the protective security officer.
         - action: Let the team find out which records, classification levels and people are involved, using the access log.
           expected: The team lists the exported records with their levels from the log.
-        - action: Let the team fill in the report to the supervisory authority.
+        - action: Let the team fill in the report to the Swedish Security Service.
           expected: The report states what happened, which information and levels, when it was detected and the actions taken.
         - action: Note the time the report is ready for sending.
           expected: The report is ready within 24 hours of the time of detection.
           data: "Limit 24 hours"
     sv:
       title: Övning med ett misstänkt röjande av säkerhetsskyddsklassificerade uppgifter
-      description: En skrivbordsövning där ett misstänkt röjande upptäcks och rapporteras till tillsynsmyndigheten.
-      preconditions: Säkerhetsskyddschefen och incidentteamet är tillgängliga; ett påhittat scenario där en logggranskning visar att en prövad användare har exporterat säkerhetsskyddsklassificerade poster till ett oregistrerat medium; tillsynsmyndighetens mall för rapportering.
+      description: En skrivbordsövning där ett misstänkt röjande upptäcks och anmäls till Säkerhetspolisen.
+      preconditions: Säkerhetsskyddschefen och incidentteamet är tillgängliga; ett påhittat scenario där en logggranskning visar att en prövad användare har exporterat säkerhetsskyddsklassificerade poster till ett oregistrerat medium; Säkerhetspolisens formulär för anmälan.
       expected: En fullständig rapport är klar att skicka inom 24 timmar från den simulerade upptäckten.
       steps:
         - action: Presentera scenariot och notera tiden som tidpunkt för upptäckten.
           expected: Teamet startar rutinen för säkerhetsskyddsincidenter och informerar säkerhetsskyddschefen.
         - action: Låt teamet ta reda på vilka poster, säkerhetsskyddsklasser och personer som berörs med hjälp av åtkomstloggen.
           expected: Teamet listar de exporterade posterna med deras klass utifrån loggen.
-        - action: Låt teamet fylla i rapporten till tillsynsmyndigheten.
+        - action: Låt teamet fylla i anmälan till Säkerhetspolisen.
           expected: Rapporten anger vad som hände, vilka uppgifter och klasser, när det upptäcktes och vidtagna åtgärder.
         - action: Notera tiden då rapporten är klar att skicka.
           expected: Rapporten är klar inom 24 timmar från tidpunkten för upptäckten.

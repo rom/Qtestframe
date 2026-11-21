@@ -252,7 +252,7 @@ requirements:
     obligation: should
     priority: low
     tags: [region, hosting, carbon-intensity]
-    refs: ["Green Software Foundation: Principles of Green Software Engineering (carbon awareness)", "EU Energy Efficiency Directive (EU) 2023/1791 Art. 12 (data centres)"]
+    refs: ["Green Software Foundation: Principles of Green Software Engineering (carbon awareness)"]
     tests: [GRN-T02]
     en:
       title: Hosting region chosen with grid carbon intensity in mind

@@ -263,7 +263,7 @@ requirements:
     obligation: must
     priority: high
     tags: [training, operators, maintenance-staff]
-    refs: ["Directive 2009/104/EC Art. 8 (information for workers)", "Directive 2009/104/EC Art. 9 (training of workers)"]
+    refs: ["Directive 2009/104/EC Art. 8 (informing workers)", "Directive 2009/104/EC Art. 9 (training of workers)"]
     tests: [EQACC-T07]
     en:
       title: Operators and maintenance staff trained before handover
@@ -287,7 +287,7 @@ requirements:
     obligation: must
     priority: high
     tags: [initial-inspection, work-equipment]
-    refs: ["Directive 2009/104/EC Art. 4a(1) (inspection of work equipment)"]
+    refs: ["Directive 2009/104/EC Art. 5(1) (inspection of work equipment)"]
     tests: [EQACC-T07]
     en:
       title: Initial inspection by a competent person
@@ -573,7 +573,7 @@ tests:
     priority: high
     execution: manual
     tags: [training, initial-inspection]
-    refs: ["Directive 2009/104/EC Art. 9 (training of workers)", "Directive 2009/104/EC Art. 4a(1) (inspection of work equipment)"]
+    refs: ["Directive 2009/104/EC Art. 9 (training of workers)", "Directive 2009/104/EC Art. 5(1) (inspection of work equipment)"]
     en:
       title: Training and initial inspection before use
       description: Compares the staffing plan with the training records and checks the initial inspection record.

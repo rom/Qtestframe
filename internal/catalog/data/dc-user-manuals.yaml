@@ -355,7 +355,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [availability, retention]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(18) (information and instructions to the user)"]
     tests: [DCUM-T11]
     en:
       title: Manuals available for 10 years
@@ -671,7 +671,7 @@ tests:
     priority: medium
     execution: manual
     tags: [availability]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(18) (information and instructions to the user)"]
     en:
       title: Older manual versions can be downloaded
       description: Checks that manuals for older product versions are still offered for download.

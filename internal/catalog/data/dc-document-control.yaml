@@ -309,12 +309,12 @@ requirements:
     obligation: must
     priority: high
     tags: [retention, technical-file]
-    refs: ["Decision No 768/2008/EC Annex I Art. R2(3)", "Regulation (EU) 2024/2847 (CRA) Art. 13(13)"]
+    refs: ["Decision No 768/2008/EC Annex I Art. R2(3)", "Regulation (EU) 2024/2847 (CRA) Art. 13(13)", "Regulation (EU) 2023/1230 Art. 10(3)", "Directive 2014/35/EU (LVD) Art. 6(3)", "Directive 2014/30/EU (EMC) Art. 7(3)"]
     tests: [DCDC-T08]
     en:
       title: Technical documentation kept for 10 years
       description: The manufacturer MUST keep the technical documentation and the EU declaration of conformity for at least 10 years after the last unit of the product variant was placed on the market.
-      rationale: Authorities can request the documentation long after a product's sale, and the retention period is set in Union law.
+      rationale: Authorities can request the documentation long after a product's sale. Decision 768/2008/EC leaves the period to each product act, and the CRA, the Machinery Regulation, the LVD and the EMC Directive set it to 10 years; the CRA extends it to the end of the support period when that is longer.
       criteria:
         - method: inspection
           text: The retention schedule sets at least 10 years for both document types, and the documents of a product variant discontinued 9 years ago can be retrieved.
@@ -322,7 +322,7 @@ requirements:
     sv:
       title: Teknisk dokumentation sparas i 10 år
       description: Tillverkaren SKA spara den tekniska dokumentationen och EU-försäkran om överensstämmelse i minst 10 år efter att den sista enheten av produktvarianten släpptes ut på marknaden.
-      rationale: Myndigheter kan begära dokumentationen långt efter att en produkt sålts, och bevarandetiden är fastställd i unionsrätten.
+      rationale: Myndigheter kan begära dokumentationen långt efter att en produkt sålts. Beslut 768/2008/EG överlåter tiden åt varje produktakt, och cyberresiliensförordningen, maskinförordningen, lågspänningsdirektivet och EMC-direktivet sätter den till 10 år; cyberresiliensförordningen förlänger den till supportperiodens slut när den är längre.
       criteria:
         - method: inspection
           text: Bevarandeplanen anger minst 10 år för båda dokumenttyperna, och dokumenten för en produktvariant som utgick för 9 år sedan kan hämtas.
