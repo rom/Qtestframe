@@ -334,6 +334,48 @@ type systemSettingsView struct {
 	// LoggingApplies is false when logging changes apply after a restart
 	// only (the server has no runtime logger).
 	LoggingRuntime bool `json:"logging_runtime"`
+	// Secrets describes the encryption of stored secrets (read-only: it is
+	// configured in the file, section secrets).
+	Secrets *secretsView `json:"secrets,omitempty"`
+}
+
+// secretsView is the key provider protecting the stored secrets.
+type secretsView struct {
+	// Provider is local, tpm or pkcs11; KeyID identifies its key (a
+	// fingerprint, never the key).
+	Provider string            `json:"provider"`
+	KeyID    string            `json:"key_id"`
+	Info     map[string]string `json:"info"`
+	// ActiveKey is the data-encryption key new values are encrypted with;
+	// Keys counts the stored data-encryption keys.
+	ActiveKey string `json:"active_key"`
+	Keys      int    `json:"keys"`
+	// Encrypted and Plaintext count the stored secret values.
+	Encrypted int `json:"encrypted"`
+	Plaintext int `json:"plaintext"`
+}
+
+func (s *Server) secretsView(ctx context.Context) (*secretsView, error) {
+	kr := s.Store.Keyring()
+	if kr == nil {
+		return nil, nil
+	}
+	p := kr.Provider()
+	v := &secretsView{Provider: p.Name(), KeyID: p.KeyID(), Info: p.Info(), ActiveKey: kr.Active()}
+	keys, err := s.Store.SecretKeys(ctx)
+	if err != nil {
+		return nil, err
+	}
+	v.Keys = len(keys)
+	st, err := s.Store.SecretStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, n := range st.Encrypted {
+		v.Encrypted += n
+	}
+	v.Plaintext = st.Plaintext
+	return v, nil
 }
 
 func ptr[T any](v T) *T { return &v }
@@ -388,6 +430,9 @@ func (s *Server) settingsView(ctx context.Context) (*systemSettingsView, error) 
 			continue
 		}
 		v.Settings = append(v.Settings, x)
+	}
+	if v.Secrets, err = s.secretsView(ctx); err != nil {
+		return nil, err
 	}
 	return v, nil
 }

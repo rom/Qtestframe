@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/db"
+	"github.com/rom/qtestframe/internal/secrets"
 )
 
 // Logical backups are database agnostic: a ZIP archive with manifest.json
@@ -43,6 +44,9 @@ var BackupTables = []string{
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",
 	"system_settings",
+	// the data-encryption keys of the stored secrets, wrapped by the key
+	// provider's key: a backup restores only where that key is available
+	"secret_keys",
 }
 
 // tables that exist but are deliberately not part of a backup.
@@ -54,7 +58,7 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "
 var boolColumns = map[string]bool{
 	"users.super_admin": true, "users.disabled": true, "users.must_change_password": true,
 	"login_events.success": true, "scim_users.active": true, "trace_rules.enabled": true,
-	"invitations.sso": true, "report_subscriptions.enabled": true,
+	"invitations.sso": true, "report_subscriptions.enabled": true, "secret_keys.active": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).
@@ -431,6 +435,7 @@ func (s *Store) Restore(ctx context.Context, r io.ReaderAt, size int64) (map[str
 	}
 	budget := &budgetReader{left: MaxRestoreSize}
 	out := map[string]int{}
+	var kr *secrets.Keyring
 	err = s.tx(ctx, func(c conn) error {
 		del := deleteOrder()
 		for _, t := range del {
@@ -448,10 +453,19 @@ func (s *Store) Restore(ctx context.Context, r io.ReaderAt, size int64) (map[str
 			}
 			out[t] = n
 		}
-		return nil
+		var kerr error
+		kr, kerr = s.restoreKeys(ctx, c)
+		return kerr
 	})
 	if err != nil {
 		return nil, err
+	}
+	if kr != nil {
+		s.keys = kr
+		// secrets of a backup taken before they were encrypted
+		if _, err := s.MigrateSecrets(ctx); err != nil {
+			return out, fmt.Errorf("restore: encrypt the restored secrets: %w", err)
+		}
 	}
 	return out, nil
 }

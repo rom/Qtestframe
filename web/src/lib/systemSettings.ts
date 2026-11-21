@@ -80,6 +80,27 @@ export interface SystemSettings {
   load_error?: string
   trash_retention_days: number
   logging_runtime: boolean
+  /** encryption of stored secrets (read-only; section secrets of the file) */
+  secrets?: SecretsInfo
+}
+
+/** The key provider protecting the stored secrets (GET /admin/settings). */
+export interface SecretsInfo {
+  provider: 'local' | 'tpm' | 'pkcs11'
+  key_id: string
+  info: Record<string, string>
+  active_key: string
+  keys: number
+  encrypted: number
+  plaintext: number
+}
+
+/** Details of a key provider, in display order (keys of SecretsInfo.info). */
+export const SECRETS_INFO = ['key_source', 'key_file', 'device', 'pcrs', 'module', 'token', 'slot', 'key_label'] as const
+
+/** Rows describing the key provider; values of key_source are message ids. */
+export function secretsRows(s: SecretsInfo): { id: (typeof SECRETS_INFO)[number]; value: string; message: boolean }[] {
+  return SECRETS_INFO.filter((id) => s.info[id]).map((id) => ({ id, value: s.info[id], message: id === 'key_source' }))
 }
 
 export interface TestResult {

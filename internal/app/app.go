@@ -63,6 +63,8 @@ Usage:
                                                   write a logical backup of all data
   qtestframe restore     [--config FILE] --in FILE.zip --yes
                                                   replace ALL data with a backup
+  qtestframe secrets status|migrate|rotate [--prune]|rewrap [--from-config OLD]|decrypt --yes|generate-key [--config FILE]
+                                                  encryption of stored secrets (docs/security.md)
   qtestframe check-config [--config FILE] [--port N] [--listen HOST:PORT]
   qtestframe healthcheck [--config FILE] [--port N] [--url URL]
   qtestframe report      --url URL --token T (--project KEY --run NAME [--create-run] | --run-id ID)
@@ -104,6 +106,8 @@ func Run(args []string, env Env) int {
 		err = cmdBackup(args[1:], env)
 	case "restore":
 		err = cmdRestore(args[1:], env)
+	case "secrets":
+		err = cmdSecrets(args[1:], env)
 	case "healthcheck":
 		err = cmdHealthcheck(args[1:], env)
 	case "check-config":
@@ -156,8 +160,24 @@ func listenFlags(fs *flag.FlagSet) *config.Overrides {
 	return o
 }
 
-// openStore loads configuration, opens and migrates the database.
-func openStore(ctx context.Context, cfgPath string) (config.Config, *store.Store, error) {
+// openStore loads configuration, opens and migrates the database and sets
+// up the encryption of stored secrets (notes, e.g. a created key file, are
+// written to notes).
+func openStore(ctx context.Context, cfgPath string, notes io.Writer) (config.Config, *store.Store, error) {
+	cfg, st, err := openDB(ctx, cfgPath)
+	if err != nil {
+		return cfg, nil, err
+	}
+	if _, err := setupSecrets(ctx, &cfg, st, func(msg string) { fmt.Fprintf(notes, "secrets: %s\n", msg) }); err != nil {
+		st.DB.Close()
+		return cfg, nil, err
+	}
+	return cfg, st, nil
+}
+
+// openDB loads configuration, opens and migrates the database (stored
+// secrets stay as they are: backup, secrets status and rewrap).
+func openDB(ctx context.Context, cfgPath string) (config.Config, *store.Store, error) {
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
 		return cfg, nil, err
@@ -229,7 +249,7 @@ func cmdUserCreate(args []string, env Env) error {
 	if *email == "" {
 		return errors.New("--email is required")
 	}
-	_, st, err := openStore(env.Ctx, *cfgPath)
+	_, st, err := openStore(env.Ctx, *cfgPath, env.Stderr)
 	if err != nil {
 		return err
 	}
@@ -261,7 +281,7 @@ func cmdTenantCreate(args []string, env Env) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	_, st, err := openStore(env.Ctx, *cfgPath)
+	_, st, err := openStore(env.Ctx, *cfgPath, env.Stderr)
 	if err != nil {
 		return err
 	}
@@ -282,7 +302,7 @@ func cmdMemberAdd(args []string, env Env) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	_, st, err := openStore(env.Ctx, *cfgPath)
+	_, st, err := openStore(env.Ctx, *cfgPath, env.Stderr)
 	if err != nil {
 		return err
 	}
@@ -315,7 +335,7 @@ func cmdSeedDemo(args []string, env Env) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	cfg, st, err := openStore(env.Ctx, *cfgPath)
+	cfg, st, err := openStore(env.Ctx, *cfgPath, env.Stderr)
 	if err != nil {
 		return err
 	}
@@ -365,7 +385,8 @@ func cmdBackup(args []string, env Env) error {
 	if *out == "" {
 		return errors.New("--out is required")
 	}
-	_, st, err := openStore(env.Ctx, *cfgPath)
+	// the backup keeps the stored secrets encrypted (and the wrapped keys)
+	_, st, err := openDB(env.Ctx, *cfgPath)
 	if err != nil {
 		return err
 	}
@@ -417,7 +438,7 @@ func cmdRestore(args []string, env Env) error {
 	if err != nil {
 		return err
 	}
-	_, st, err := openStore(env.Ctx, *cfgPath)
+	_, st, err := openStore(env.Ctx, *cfgPath, env.Stderr)
 	if err != nil {
 		return err
 	}
@@ -509,6 +530,11 @@ func hardeningOptions(cfg config.Config) hardening.Options {
 	if cfg.Logging.Syslog.Enabled && strings.HasPrefix(cfg.Logging.Syslog.Network, "unix") {
 		o.ReadWritePaths = append(o.ReadWritePaths, cfg.Logging.Syslog.Address)
 	}
+	// the TPM unwraps data-encryption keys created later (secrets rotate
+	// by another process, a restore)
+	if cfg.Secrets.Provider == config.SecretsTPM && cfg.Secrets.TPM.Device != "" {
+		o.ReadWritePaths = append(o.ReadWritePaths, cfg.Secrets.TPM.Device)
+	}
 	if cfg.Runner.Enabled {
 		o.ReadWritePaths = append(o.ReadWritePaths, cfg.Runner.WorkDir)
 		o.ExecPaths = []string{"/usr", "/bin", "/lib", "/lib64", "/opt"}
@@ -578,6 +604,14 @@ func cmdServe(args []string, env Env) error {
 		log.Info("applied database migrations", "count", n)
 	}
 	st := store.New(d)
+	// stored secrets are encrypted; the keys are unwrapped now, before the
+	// process is locked down (key file, TPM, HSM)
+	kp, err := setupSecrets(ctx, &cfg, st, func(msg string) { log.Warn("secrets: " + msg) })
+	if err != nil {
+		return err
+	}
+	defer kp.Close()
+	log.Info("secrets encrypted", "provider", kp.Name(), "key", kp.KeyID(), "data_key", st.Keyring().Active())
 	if err := Bootstrap(ctx, st, cfg.Bootstrap, log); err != nil {
 		return err
 	}

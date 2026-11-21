@@ -24,6 +24,7 @@ import {
   fieldId,
   isSection,
   SECTIONS,
+  secretsRows,
   sectionForm,
   sourceSeverity,
   TESTABLE,
@@ -326,6 +327,26 @@ function resetProviders() {
           <Message v-if="current === 'runner'" severity="warn" :closable="false">{{ t('sysSettings.runnerWarning') }}</Message>
           <p v-if="current === 'runner'" class="small"><i class="pi pi-refresh" aria-hidden="true" /> {{ t('sysSettings.restartNote') }}</p>
           <p v-if="current === 'email'" class="small muted">{{ t('sysSettings.emailTestTo', { email: auth.me?.user?.email ?? '' }) }}</p>
+          <!-- encryption of stored secrets: read-only, set in the file -->
+          <div v-if="current === 'security' && data.secrets" class="sys-secrets" role="group" aria-labelledby="h-sys-secrets">
+            <h3 id="h-sys-secrets" class="plain-heading"><i class="pi pi-lock" aria-hidden="true" /> {{ t('sysSettings.secrets.title') }}</h3>
+            <p class="small muted">{{ t('sysSettings.secrets.intro') }}</p>
+            <dl class="sys-secrets-list">
+              <dt>{{ t('sysSettings.secrets.providerLabel') }}</dt>
+              <dd>{{ t(`sysSettings.secrets.provider.${data.secrets.provider}`) }}</dd>
+              <template v-for="r in secretsRows(data.secrets)" :key="r.id">
+                <dt>{{ t(`sysSettings.secrets.info.${r.id}`) }}</dt>
+                <dd :class="{ mono: !r.message }">{{ r.message ? t(`sysSettings.secrets.source.${r.value}`) : r.value }}</dd>
+              </template>
+              <dt>{{ t('sysSettings.secrets.keyId') }}</dt>
+              <dd class="mono">{{ data.secrets.key_id }}</dd>
+              <dt>{{ t('sysSettings.secrets.activeKey') }}</dt>
+              <dd class="mono">{{ data.secrets.active_key }} ({{ t('sysSettings.secrets.keys') }}: {{ data.secrets.keys }})</dd>
+              <dt>{{ t('sysSettings.secrets.values') }}</dt>
+              <dd>{{ t('sysSettings.secrets.valuesText', { encrypted: data.secrets.encrypted, plaintext: data.secrets.plaintext }) }}</dd>
+            </dl>
+            <Message v-if="data.secrets.plaintext > 0" severity="warn" :closable="false">{{ t('sysSettings.secrets.plaintextNote') }}</Message>
+          </div>
           <div class="sys-fields">
             <SystemSettingField
               v-for="s in [...editable, ...readonly]"
@@ -469,5 +490,28 @@ function resetProviders() {
   padding-left: 18px;
   display: grid;
   gap: 6px;
+}
+.sys-secrets {
+  border: 1px solid var(--p-content-border-color, #ddd);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.sys-secrets h3 {
+  font-size: 1rem;
+  margin: 0 0 4px;
+}
+.sys-secrets-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 8px 0;
+}
+.sys-secrets-list dt {
+  font-weight: 600;
+}
+.sys-secrets-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 </style>

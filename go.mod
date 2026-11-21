@@ -10,9 +10,11 @@ require (
 	github.com/elastic/go-seccomp-bpf v1.6.0
 	github.com/go-jose/go-jose/v4 v4.1.9
 	github.com/go-pdf/fpdf v0.9.0
+	github.com/google/go-tpm v0.9.8
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/landlock-lsm/go-landlock v0.11.2
+	github.com/miekg/pkcs11 v1.1.2
 	github.com/xuri/excelize/v2 v2.11.1
 	golang.org/x/crypto v0.59.0
 	golang.org/x/oauth2 v0.38.0

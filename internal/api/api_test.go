@@ -23,6 +23,7 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/rbac"
 	"github.com/rom/qtestframe/internal/runner"
+	"github.com/rom/qtestframe/internal/secrets"
 	"github.com/rom/qtestframe/internal/store"
 	"github.com/rom/qtestframe/internal/testutil"
 )
@@ -45,6 +46,10 @@ func newEnv(t *testing.T, mut ...func(*config.Config)) *env {
 	t.Helper()
 	d := testutil.OpenDB(t)
 	st := store.New(d)
+	// stored secrets are encrypted in every API test
+	if err := st.SetupSecrets(context.Background(), secrets.NewEphemeral()); err != nil {
+		t.Fatal(err)
+	}
 	cfg := config.Default()
 	cfg.Auth.CookieSecure = false
 	cfg.Server.BaseURL = "http://example.test"
