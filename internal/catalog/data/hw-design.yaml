@@ -1,0 +1,728 @@
+area: hw-design
+prefix: HWDES
+group: quality
+catalogue: hardware
+name: {en: Electronic product design and reliability, sv: Konstruktion och tillförlitlighet för elektronikprodukter}
+description:
+  en: Design practice for electronic hardware, covering design reviews, component derating, thermal and worst-case analysis, component selection and obsolescence, circuit board and assembly standards, design for test, revision control, and reliability engineering with MTBF prediction, FMEA, accelerated life testing, stress screening and field failure follow-up.
+  sv: Konstruktionspraxis för elektronisk hårdvara, med konstruktionsgranskningar, nedstämpling av komponenter, termisk analys och värsta fall-analys, komponentval och komponentinaktualitet, standarder för kretskort och montering, testbarhet, revisionsstyrning samt tillförlitlighetsteknik med MTBF-prognos, FMEA, accelererad livslängdsprovning, stressprovning och uppföljning av fältfel.
+
+requirements:
+  - id: HWDES-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [design-review, checklist]
+    refs: ["ISO 9001:2015 §8.3.4 (design and development controls)"]
+    tests: [HWDES-T01]
+    en:
+      title: Design reviews at schematic, layout and pre-production
+      description: The hardware team MUST hold a documented design review at the completion of the schematic, at the completion of the circuit board layout and before release to production, using a checklist, with at least one reviewer who did not take part in the design.
+      rationale: Errors found on paper are far cheaper to fix than errors found on a built board or in the field.
+      criteria:
+        - method: inspection
+          text: The current hardware revision has three review records with the filled-in checklist, the reviewers, the findings and their closure.
+    sv:
+      title: Konstruktionsgranskningar vid schema, layout och förserie
+      description: Hårdvaruteamet SKA hålla en dokumenterad konstruktionsgranskning när schemat är klart, när kretskortslayouten är klar och före release till produktion, med en checklista och minst en granskare som inte deltog i konstruktionen.
+      rationale: Fel som hittas på papper är mycket billigare att rätta än fel som hittas på ett byggt kort eller i fält.
+      criteria:
+        - method: inspection
+          text: Den aktuella hårdvarurevisionen har tre granskningsprotokoll med ifylld checklista, granskare, fynd och hur fynden stängts.
+
+  - id: HWDES-02
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [derating, components, stress]
+    refs: ["ECSS-Q-ST-30-11C (derating of EEE components)", "IEC 61709:2017 (reference conditions for failure rates and stress models)"]
+    tests: [HWDES-T02]
+    en:
+      title: Components derated at the maximum ambient temperature
+      description: The design MUST operate each component at no more than 80 % of its rated voltage, current and power at the maximum operating ambient temperature, as shown in a derating analysis for each component on the bill of materials.
+      rationale: Failure rates rise steeply as components approach their ratings, and derating is the most effective single measure for reliability.
+      criteria:
+        - method: analysis
+          text: The derating analysis covers each part of the bill of materials, and no part exceeds 80 % of a rating.
+          threshold: stress ≤ 80 % of rating
+    sv:
+      title: Nedstämplade komponenter vid högsta omgivningstemperatur
+      description: Konstruktionen SKA driva varje komponent på högst 80 % av dess märkspänning, märkström och märkeffekt vid den högsta omgivningstemperaturen i drift, enligt en nedstämplingsanalys för varje komponent i materialförteckningen.
+      rationale: Felintensiteten ökar brant när komponenter närmar sig sina märkvärden, och nedstämpling är den enskilt mest verksamma åtgärden för tillförlitlighet.
+      criteria:
+        - method: analysis
+          text: Nedstämplingsanalysen omfattar varje del i materialförteckningen, och ingen del överskrider 80 % av ett märkvärde.
+          threshold: påkänning ≤ 80 % av märkvärdet
+
+  - id: HWDES-03
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [thermal, junction-temperature]
+    refs: ["IEC 61709:2017 (reference conditions for failure rates and stress models)", "IEC 60068-2-2 (test B: dry heat)"]
+    tests: [HWDES-T02]
+    en:
+      title: Thermal margin of the hottest components
+      description: At the maximum operating ambient temperature and full load, the junction or case temperature of each power semiconductor, processor and electrolytic capacitor MUST stay at least 20 °C below its rated maximum, as measured on a built unit.
+      rationale: Temperature is the main driver of wear-out in electronics, and a measured margin confirms that the thermal design works in practice.
+      criteria:
+        - method: test
+          text: Thermocouple measurements on a unit at full load in a chamber at the maximum ambient show each listed component at least 20 °C below its rating.
+          threshold: margin ≥ 20 °C
+    sv:
+      title: Termisk marginal för de varmaste komponenterna
+      description: Vid högsta omgivningstemperatur i drift och full last SKA kapsel- eller övergångstemperaturen för varje effekthalvledare, processor och elektrolytkondensator ligga minst 20 °C under dess högsta märkvärde, uppmätt på en byggd enhet.
+      rationale: Temperatur är den främsta orsaken till förslitning i elektronik, och en uppmätt marginal bekräftar att den termiska konstruktionen fungerar i praktiken.
+      criteria:
+        - method: test
+          text: Mätningar med termoelement på en enhet med full last i en kammare med högsta omgivningstemperatur visar att varje angiven komponent ligger minst 20 °C under sitt märkvärde.
+          threshold: marginal ≥ 20 °C
+
+  - id: HWDES-04
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [worst-case-analysis, tolerances]
+    refs: ["ECSS-Q-ST-30-01C (worst case analysis)"]
+    tests: [HWDES-T03]
+    en:
+      title: Worst-case analysis of critical circuits
+      description: The hardware team SHOULD perform a worst-case analysis of each circuit marked as critical (power supplies, reset, clocks, analogue measurement), combining component tolerances, temperature drift over the operating range and end-of-life ageing.
+      rationale: A circuit that works with nominal parts at room temperature can fail with parts at the edge of their tolerance or after years of drift.
+      criteria:
+        - method: analysis
+          text: Each critical circuit has a worst-case analysis that shows the circuit within its specification at the combined extremes.
+    sv:
+      title: Värsta fall-analys av kritiska kretsar
+      description: Hårdvaruteamet BÖR göra en värsta fall-analys av varje krets som markerats som kritisk (strömförsörjning, återställning, klockor, analog mätning), där komponenttoleranser, temperaturdrift över driftområdet och åldring vid livslängdens slut kombineras.
+      rationale: En krets som fungerar med nominella delar i rumstemperatur kan fallera med delar i kanten av sin tolerans eller efter flera års drift.
+      criteria:
+        - method: analysis
+          text: Varje kritisk krets har en värsta fall-analys som visar att kretsen håller sin specifikation vid de kombinerade ytterlägena.
+
+  - id: HWDES-05
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [component-selection, second-source, supply]
+    refs: ["IEC 62402:2019 (obsolescence management)"]
+    tests: [HWDES-T04]
+    en:
+      title: Second source for each active component
+      description: Each active component on the bill of materials SHOULD have at least two approved sources, or a documented risk acceptance with a planned buffer stock covering 12 months of production.
+      rationale: A single-source part makes production depend on one supplier's capacity and decisions.
+      criteria:
+        - method: inspection
+          text: The approved component list shows two sources or a signed acceptance with a buffer stock plan for each active component.
+          threshold: buffer ≥ 12 months
+    sv:
+      title: Alternativ leverantör för varje aktiv komponent
+      description: Varje aktiv komponent i materialförteckningen BÖR ha minst två godkända källor, eller ett dokumenterat godtagande av risken med ett planerat buffertlager som täcker 12 månaders produktion.
+      rationale: En del med en enda källa gör produktionen beroende av en leverantörs kapacitet och beslut.
+      criteria:
+        - method: inspection
+          text: Listan över godkända komponenter visar två källor eller ett undertecknat godtagande med en plan för buffertlager för varje aktiv komponent.
+          threshold: buffert ≥ 12 månader
+
+  - id: HWDES-06
+    type: business
+    obligation: must
+    priority: high
+    tags: [obsolescence, lifecycle, last-time-buy]
+    refs: ["IEC 62402:2019 (obsolescence management)"]
+    tests: [HWDES-T04]
+    en:
+      title: Obsolescence monitoring of the bill of materials
+      description: The manufacturer MUST check the life-cycle status of each part on the bill of materials of each product in production at least every 3 months, and MUST decide on a last-time buy or a redesign within 30 days of a discontinuation notice.
+      rationale: Products are often produced and supported for longer than their components are made, and late reactions cause production stops.
+      criteria:
+        - method: inspection
+          text: The obsolescence report of the last 12 months shows four checks, and each discontinuation notice has a decision dated within 30 days.
+          threshold: check every 3 months, decision ≤ 30 days
+    sv:
+      title: Bevakning av komponentinaktualitet i materialförteckningen
+      description: Tillverkaren SKA kontrollera livscykelstatus för varje del i materialförteckningen för varje produkt i produktion minst var 3:e månad, och besluta om sista köp eller omkonstruktion inom 30 dagar efter ett meddelande om att en del utgår.
+      rationale: Produkter tillverkas och underhålls ofta längre än deras komponenter tillverkas, och sena reaktioner ger produktionsstopp.
+      criteria:
+        - method: inspection
+          text: Rapporten om komponentinaktualitet för de senaste 12 månaderna visar fyra kontroller, och varje meddelande om utgående del har ett beslut daterat inom 30 dagar.
+          threshold: kontroll var 3:e månad, beslut ≤ 30 dagar
+
+  - id: HWDES-07
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [pcb, fabrication, design-rules]
+    refs: ["IPC-2221B (generic standard on printed board design)", "IPC-6012E (qualification and performance of rigid printed boards)"]
+    tests: [HWDES-T05]
+    en:
+      title: Circuit board designed and built to the specified class
+      description: The circuit board MUST pass a design rule check against the rules of IPC-2221B and the fabricator's capabilities, and each fabrication lot MUST be accepted against the performance class of IPC-6012 stated on the fabrication drawing.
+      rationale: Boards outside the design rules or the class give open vias, short circuits and delamination that show up only after assembly or in use.
+      criteria:
+        - method: inspection
+          text: The design rule check report shows no violation, and the certificate of conformance of each lot states the class on the fabrication drawing.
+          threshold: 0 violations
+    sv:
+      title: Kretskort konstruerat och tillverkat enligt angiven klass
+      description: Kretskortet SKA klara en kontroll av konstruktionsregler mot reglerna i IPC-2221B och kortleverantörens förmåga, och varje tillverkningsparti SKA godkännas mot den prestandaklass enligt IPC-6012 som anges på tillverkningsritningen.
+      rationale: Kort utanför konstruktionsreglerna eller klassen ger öppna vior, kortslutningar och delaminering som syns först efter montering eller vid användning.
+      criteria:
+        - method: inspection
+          text: Rapporten från kontrollen av konstruktionsregler visar inga överträdelser, och intyget om överensstämmelse för varje parti anger klassen på tillverkningsritningen.
+          threshold: 0 överträdelser
+
+  - id: HWDES-08
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [assembly, workmanship, inspection]
+    refs: ["IPC-A-610 (acceptability of electronic assemblies)", "IPC J-STD-001 (requirements for soldered electrical and electronic assemblies)"]
+    tests: [HWDES-T05]
+    en:
+      title: Assemblies accepted against IPC-A-610 class 2
+      description: Each assembled circuit board MUST be inspected and accepted against IPC-A-610 class 2 or the higher class stated on the assembly drawing, by inspectors trained in that standard.
+      rationale: A shared acceptance standard removes discussion on what a good solder joint is and catches assembly defects before they reach customers.
+      criteria:
+        - method: inspection
+          text: The inspection records of one lot name the class and a trained inspector, and a re-inspection of 10 boards finds no defect of that class.
+    sv:
+      title: Monterade kort godkänns mot IPC-A-610 klass 2
+      description: Varje monterat kretskort SKA kontrolleras och godkännas mot IPC-A-610 klass 2 eller den högre klass som anges på monteringsritningen, av kontrollanter som utbildats i standarden.
+      rationale: En gemensam standard för godkännande tar bort diskussionen om vad en bra lödfog är och fångar monteringsfel innan de når kunderna.
+      criteria:
+        - method: inspection
+          text: Kontrollprotokollen för ett parti anger klassen och en utbildad kontrollant, och en ny kontroll av 10 kort hittar inga fel enligt den klassen.
+
+  - id: HWDES-09
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [design-for-test, test-coverage, production-test]
+    refs: ["IEEE 1149.1-2013 (boundary scan)"]
+    tests: [HWDES-T06]
+    en:
+      title: Production test coverage of at least 90 % of the nets
+      description: The production test (in-circuit test, boundary scan and functional test combined) SHOULD detect an open or short on at least 90 % of the nets of the circuit board, as shown by a coverage report.
+      rationale: Assembly defects on untested nets reach customers, and test access has to be designed in from the start.
+      criteria:
+        - method: analysis
+          text: The coverage report of the production test shows the share of nets covered, and the share is at least 90 %.
+          threshold: ≥ 90 % of nets
+    sv:
+      title: Produktionstestet täcker minst 90 % av näten
+      description: Produktionstestet (kretstest, boundary scan och funktionstest tillsammans) BÖR upptäcka avbrott eller kortslutning på minst 90 % av kretskortets nät, enligt en täckningsrapport.
+      rationale: Monteringsfel på otestade nät når kunderna, och teståtkomst behöver konstrueras in från början.
+      criteria:
+        - method: analysis
+          text: Täckningsrapporten för produktionstestet visar andelen täckta nät, och andelen är minst 90 %.
+          threshold: ≥ 90 % av näten
+
+  - id: HWDES-10
+    type: functional
+    obligation: must
+    priority: high
+    tags: [revision-control, traceability, bom]
+    refs: ["ISO 9001:2015 §8.5.2 (identification and traceability)", "ISO 9001:2015 §7.5.3 (control of documented information)"]
+    tests: [HWDES-T07]
+    en:
+      title: Each built unit traceable to its hardware revision
+      description: The schematics, layout, bill of materials and assembly drawings MUST be kept under revision control with a released revision letter, and each built unit MUST be traceable from its serial number to the revision and the component lots used.
+      rationale: When a fault is found, the manufacturer has to know exactly which units share the design and the component lot.
+      criteria:
+        - method: test
+          text: For 3 sampled serial numbers, the production system returns the hardware revision and the lots of the 5 main components, and the files of that revision are retrievable.
+    sv:
+      title: Varje byggd enhet går att spåra till sin hårdvarurevision
+      description: Scheman, layout, materialförteckning och monteringsritningar SKA hållas under revisionsstyrning med en släppt revisionsbokstav, och varje byggd enhet SKA gå att spåra från sitt serienummer till revisionen och de komponentpartier som använts.
+      rationale: När ett fel hittas behöver tillverkaren veta exakt vilka enheter som delar konstruktionen och komponentpartiet.
+      criteria:
+        - method: test
+          text: För 3 serienummer i ett stickprov visar produktionssystemet hårdvarurevisionen och partierna för de 5 viktigaste komponenterna, och filerna för revisionen går att hämta.
+
+  - id: HWDES-11
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [mtbf, reliability-prediction]
+    refs: ["IEC 61709:2017 (reference conditions for failure rates and stress models)", "IEC 60300-1:2014 (dependability management)"]
+    tests: [HWDES-T08]
+    en:
+      title: Predicted MTBF meets the target
+      description: The reliability prediction of the product, calculated with a named failure rate source (for example IEC 61709 with SN 29500) at an ambient temperature of 40 °C, MUST show a mean time between failures of at least 100 000 hours.
+      rationale: A prediction made during design shows whether the target is within reach and which components dominate the failure rate.
+      criteria:
+        - method: analysis
+          text: The prediction report names the failure rate source, the temperature and the stress assumptions, lists each part, and shows an MTBF of at least 100 000 h.
+          threshold: MTBF ≥ 100 000 h at 40 °C
+    sv:
+      title: Prognostiserad MTBF uppfyller målet
+      description: Tillförlitlighetsprognosen för produkten, beräknad med en angiven källa för felintensiteter (till exempel IEC 61709 med SN 29500) vid en omgivningstemperatur på 40 °C, SKA visa en medeltid mellan fel på minst 100 000 timmar.
+      rationale: En prognos under konstruktionen visar om målet är inom räckhåll och vilka komponenter som dominerar felintensiteten.
+      criteria:
+        - method: analysis
+          text: Prognosrapporten anger källan för felintensiteter, temperaturen och antagandena om påkänning, förtecknar varje del och visar en MTBF på minst 100 000 h.
+          threshold: MTBF ≥ 100 000 h vid 40 °C
+
+  - id: HWDES-12
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [fmea, failure-modes]
+    refs: ["IEC 60812:2018 (failure modes and effects analysis)"]
+    tests: [HWDES-T09]
+    en:
+      title: Hardware FMEA with actions for high-priority failure modes
+      description: The hardware team MUST carry out a failure modes and effects analysis of the design before release to production, and each failure mode with the highest action priority MUST have a design action or a signed risk acceptance.
+      rationale: A structured walk through how each part can fail and what follows reveals single points of failure and missing protections.
+      criteria:
+        - method: inspection
+          text: The FMEA covers each function block of the schematic, and each failure mode with high action priority has a closed action or a signed acceptance.
+          threshold: 0 open high-priority failure modes
+    sv:
+      title: FMEA för hårdvaran med åtgärder för felsätt med hög prioritet
+      description: Hårdvaruteamet SKA göra en felsätts- och feleffektsanalys av konstruktionen före release till produktion, och varje felsätt med högsta åtgärdsprioritet SKA ha en konstruktionsåtgärd eller ett undertecknat godtagande av risken.
+      rationale: En strukturerad genomgång av hur varje del kan gå sönder och vad som följer avslöjar enskilda felpunkter och saknade skydd.
+      criteria:
+        - method: inspection
+          text: FMEA:n omfattar varje funktionsblock i schemat, och varje felsätt med hög åtgärdsprioritet har en stängd åtgärd eller ett undertecknat godtagande.
+          threshold: 0 öppna felsätt med hög prioritet
+
+  - id: HWDES-13
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [accelerated-life-test, halt, reliability-test]
+    refs: ["IEC 62506:2013 (accelerated product testing)", "IEC 61124 (reliability compliance tests for constant failure rate)"]
+    tests: [HWDES-T10]
+    en:
+      title: Accelerated life test before release
+      description: Before release to production, at least 10 units SHOULD pass an accelerated life test whose acceleration factors are documented and that represents at least 5 years of use, with each failure analysed to its root cause.
+      rationale: Predictions rest on handbook data, and only a test on real units reveals design weaknesses and wear-out mechanisms.
+      criteria:
+        - method: test
+          text: The test report shows at least 10 units, the acceleration model and factors, an equivalent use time of at least 5 years and a root cause for each failure.
+          threshold: ≥ 10 units, ≥ 5 years equivalent
+    sv:
+      title: Accelererad livslängdsprovning före release
+      description: Före release till produktion BÖR minst 10 enheter klara en accelererad livslängdsprovning vars accelerationsfaktorer är dokumenterade och som motsvarar minst 5 års användning, med varje fel analyserat till grundorsak.
+      rationale: Prognoser bygger på handboksdata, och bara en provning av verkliga enheter avslöjar konstruktionssvagheter och förslitningsmekanismer.
+      criteria:
+        - method: test
+          text: Provningsrapporten visar minst 10 enheter, accelerationsmodellen och faktorerna, en motsvarande användningstid på minst 5 år och en grundorsak för varje fel.
+          threshold: ≥ 10 enheter, ≥ 5 år motsvarande
+
+  - id: HWDES-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [field-failures, returns, reliability-growth]
+    refs: ["IEC 60300-3-2:2004 (collection of dependability data from the field)", "ISO 9001:2015 §10.2 (nonconformity and corrective action)"]
+    tests: [HWDES-T11]
+    en:
+      title: Field failures analysed and compared with the prediction
+      description: The manufacturer MUST analyse each returned faulty unit to a failure cause, compute the field MTBF from shipments and confirmed failures each quarter, and open a corrective action when the field MTBF is below 70 % of the predicted value.
+      rationale: Field data shows the real reliability and points to the design and production causes that tests and predictions missed.
+      criteria:
+        - method: inspection
+          text: The quarterly reliability reports of the last 12 months show the field MTBF and its basis, each return has a failure cause, and a field MTBF below 70 % of prediction has a corrective action.
+          threshold: action when field MTBF < 70 % of prediction
+    sv:
+      title: Fältfel analyseras och jämförs med prognosen
+      description: Tillverkaren SKA analysera varje returnerad felaktig enhet till en felorsak, beräkna MTBF i fält utifrån leveranser och bekräftade fel varje kvartal, och öppna en korrigerande åtgärd när MTBF i fält är lägre än 70 % av det prognostiserade värdet.
+      rationale: Fältdata visar den verkliga tillförlitligheten och pekar på de orsaker i konstruktion och tillverkning som provningar och prognoser missade.
+      criteria:
+        - method: inspection
+          text: Kvartalsrapporterna om tillförlitlighet för de senaste 12 månaderna visar MTBF i fält och dess underlag, varje retur har en felorsak, och en MTBF i fält under 70 % av prognosen har en korrigerande åtgärd.
+          threshold: åtgärd när MTBF i fält < 70 % av prognosen
+
+  - id: HWDES-15
+    type: non_functional
+    obligation: may
+    priority: low
+    tags: [burn-in, stress-screening, early-failures]
+    refs: ["IEC 61163-1:2006 (reliability stress screening)"]
+    tests: [HWDES-T10]
+    en:
+      title: Stress screening of production units
+      description: When field data shows early failures, production MAY add an environmental stress screening of each unit (for example temperature cycling while powered), with a duration set from the early failure data.
+      rationale: Screening removes weak units with latent defects before they reach customers, at the cost of time and stress on good units.
+      criteria:
+        - method: inspection
+          text: When screening is used, the screening specification states profile and duration with the data it is based on, and the screening records show each unit screened.
+    sv:
+      title: Stressprovning av produktionsenheter
+      description: När fältdata visar tidiga fel FÅR produktionen lägga till en miljöstressprovning av varje enhet (till exempel temperaturväxling under drift), med en varaktighet som bestäms utifrån data om tidiga fel.
+      rationale: Stressprovning sorterar bort svaga enheter med dolda fel innan de når kunderna, till priset av tid och påkänning på felfria enheter.
+      criteria:
+        - method: inspection
+          text: När stressprovning används anger provningsspecifikationen profil och varaktighet med det underlag de bygger på, och protokollen visar att varje enhet har provats.
+
+  - id: HWDES-16
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [power-supply, brown-out, voltage-dips]
+    refs: ["IEC 61000-4-11:2020 (voltage dips, short interruptions and voltage variations immunity)"]
+    tests: [HWDES-T12]
+    en:
+      title: Clean behaviour during voltage dips and brown-out
+      description: During voltage dips, short interruptions and slow brown-out of the supply, the product MUST either continue to operate or reset cleanly and restart by itself when the supply returns, without corrupting stored data or configuration.
+      rationale: Supply disturbances happen daily in the field, and products that hang or corrupt their memory require a service visit.
+      criteria:
+        - method: test
+          text: After the dips and interruptions of the test standard and a slow ramp from nominal voltage to zero and back over 60 s, repeated 20 times, the unit runs normally and its stored data and configuration are unchanged.
+          threshold: 20 of 20 cycles without corruption
+    sv:
+      title: Kontrollerat beteende vid spänningsdippar och långsamt spänningsbortfall
+      description: Under spänningsdippar, korta avbrott och långsamt sjunkande matningsspänning SKA produkten antingen fortsätta att fungera eller återställas kontrollerat och starta om av sig själv när spänningen är tillbaka, utan att lagrade data eller inställningar förstörs.
+      rationale: Störningar i matningen sker dagligen i fält, och produkter som hänger sig eller förstör sitt minne kräver ett servicebesök.
+      criteria:
+        - method: test
+          text: Efter provningsstandardens dippar och avbrott och en långsam ramp från nominell spänning till noll och tillbaka under 60 s, upprepad 20 gånger, fungerar enheten normalt och dess lagrade data och inställningar är oförändrade.
+          threshold: 20 av 20 cykler utan förstörda data
+
+tests:
+  - id: HWDES-T01
+    priority: high
+    execution: manual
+    tags: [design-review]
+    refs: ["ISO 9001:2015 §8.3.4 (design and development controls)"]
+    en:
+      title: Review records of the current hardware revision
+      description: Checks the three design review records of the current hardware revision.
+      preconditions: The design review records and the design team list of the current hardware revision.
+      expected: Three complete reviews with an independent reviewer and closed findings.
+      steps:
+        - action: Open the schematic, layout and pre-production review records.
+          expected: Each has a filled-in checklist and a list of findings.
+        - action: Compare the reviewers with the design team list.
+          expected: Each review has at least one reviewer who is not on the design team.
+        - action: Check the status of each finding.
+          expected: Each finding is closed or has a signed deferral.
+    sv:
+      title: Granskningsprotokoll för den aktuella hårdvarurevisionen
+      description: Kontrollerar de tre protokollen från konstruktionsgranskningar för den aktuella hårdvarurevisionen.
+      preconditions: Granskningsprotokollen och listan över konstruktionsteamet för den aktuella hårdvarurevisionen.
+      expected: Tre fullständiga granskningar med en oberoende granskare och stängda fynd.
+      steps:
+        - action: Öppna protokollen från granskningen av schema, layout och förserie.
+          expected: Vart och ett har en ifylld checklista och en lista över fynd.
+        - action: Jämför granskarna med listan över konstruktionsteamet.
+          expected: Varje granskning har minst en granskare som inte ingår i konstruktionsteamet.
+        - action: Kontrollera status för varje fynd.
+          expected: Varje fynd är stängt eller har ett undertecknat beslut om att skjuta upp det.
+
+  - id: HWDES-T02
+    priority: high
+    execution: manual
+    tags: [derating, thermal]
+    refs: ["IEC 61709:2017 (reference conditions for failure rates and stress models)"]
+    en:
+      title: Derating analysis and thermal measurement
+      description: Reviews the derating analysis and measures the temperatures of the hottest components on a built unit.
+      preconditions: The derating analysis, the bill of materials, a unit with thermocouples fitted on the power semiconductors, processor and electrolytic capacitors, a climatic chamber and a load.
+      expected: No component exceeds 80 % stress, and each measured component has at least 20 °C margin.
+      steps:
+        - action: Compare the parts in the derating analysis with the bill of materials and read the stress ratios.
+          expected: Each part is covered and no ratio exceeds 80 %.
+        - action: Run the unit at full load in the chamber at the maximum ambient until temperatures are stable.
+          expected: The temperatures change by less than 1 °C over 30 minutes.
+          data: "+55 °C ambient, full load"
+        - action: Read the thermocouples and compare them with the ratings.
+          expected: Each component is at least 20 °C below its rated maximum.
+    sv:
+      title: Nedstämplingsanalys och termisk mätning
+      description: Granskar nedstämplingsanalysen och mäter temperaturen på de varmaste komponenterna på en byggd enhet.
+      preconditions: Nedstämplingsanalysen, materialförteckningen, en enhet med termoelement monterade på effekthalvledare, processor och elektrolytkondensatorer, en klimatkammare och en last.
+      expected: Ingen komponent överskrider 80 % påkänning, och varje uppmätt komponent har minst 20 °C marginal.
+      steps:
+        - action: Jämför delarna i nedstämplingsanalysen med materialförteckningen och läs påkänningskvoterna.
+          expected: Varje del omfattas och ingen kvot överskrider 80 %.
+        - action: Kör enheten med full last i kammaren vid högsta omgivningstemperatur tills temperaturerna är stabila.
+          expected: Temperaturerna ändras mindre än 1 °C under 30 minuter.
+          data: "+55 °C omgivning, full last"
+        - action: Läs termoelementen och jämför med märkvärdena.
+          expected: Varje komponent ligger minst 20 °C under sitt högsta märkvärde.
+
+  - id: HWDES-T03
+    priority: medium
+    execution: manual
+    tags: [worst-case-analysis]
+    refs: ["ECSS-Q-ST-30-01C (worst case analysis)"]
+    en:
+      title: Worst-case analyses of the critical circuits
+      description: Checks that each critical circuit has a worst-case analysis with the three contributions.
+      preconditions: The list of critical circuits and the worst-case analyses.
+      expected: Each critical circuit is analysed and within specification at the extremes.
+      steps:
+        - action: Match each critical circuit with an analysis.
+          expected: Each circuit has an analysis.
+        - action: Read the inputs and results of each analysis.
+          expected: Tolerances, temperature drift and ageing are combined, and the result is within the circuit's specification.
+    sv:
+      title: Värsta fall-analyser av de kritiska kretsarna
+      description: Kontrollerar att varje kritisk krets har en värsta fall-analys med de tre bidragen.
+      preconditions: Listan över kritiska kretsar och värsta fall-analyserna.
+      expected: Varje kritisk krets är analyserad och inom specifikationen vid ytterlägena.
+      steps:
+        - action: Para ihop varje kritisk krets med en analys.
+          expected: Varje krets har en analys.
+        - action: Läs indata och resultat i varje analys.
+          expected: Toleranser, temperaturdrift och åldring kombineras, och resultatet ligger inom kretsens specifikation.
+
+  - id: HWDES-T04
+    priority: high
+    execution: manual
+    tags: [component-selection, obsolescence]
+    refs: ["IEC 62402:2019 (obsolescence management)"]
+    en:
+      title: Sources and obsolescence decisions of the bill of materials
+      description: Reviews the approved component list and the obsolescence report.
+      preconditions: The approved component list, the obsolescence reports of the last 12 months and the discontinuation notices received.
+      expected: Active parts have two sources or an acceptance, checks are quarterly, and notices get timely decisions.
+      steps:
+        - action: Read the sources of each active component.
+          expected: Each has two sources or a signed acceptance with a buffer stock plan.
+        - action: Count the obsolescence checks in the last 12 months.
+          expected: There are at least four, no more than 3 months apart.
+        - action: Compare the date of each discontinuation notice with its decision.
+          expected: Each decision is dated within 30 days of the notice.
+    sv:
+      title: Källor och beslut om komponentinaktualitet för materialförteckningen
+      description: Granskar listan över godkända komponenter och rapporten om komponentinaktualitet.
+      preconditions: Listan över godkända komponenter, rapporterna om komponentinaktualitet för de senaste 12 månaderna och mottagna meddelanden om utgående delar.
+      expected: Aktiva delar har två källor eller ett godtagande, kontrollerna görs varje kvartal och meddelandena får beslut i tid.
+      steps:
+        - action: Läs källorna för varje aktiv komponent.
+          expected: Var och en har två källor eller ett undertecknat godtagande med en plan för buffertlager.
+        - action: Räkna kontrollerna av komponentinaktualitet de senaste 12 månaderna.
+          expected: De är minst fyra och ligger högst 3 månader isär.
+        - action: Jämför datumet för varje meddelande om utgående del med beslutet.
+          expected: Varje beslut är daterat inom 30 dagar efter meddelandet.
+
+  - id: HWDES-T05
+    priority: high
+    execution: manual
+    tags: [pcb, assembly]
+    refs: ["IPC-6012E (qualification and performance of rigid printed boards)", "IPC-A-610 (acceptability of electronic assemblies)"]
+    en:
+      title: Board fabrication and assembly acceptance
+      description: Checks the design rule report, the board certificates and re-inspects assembled boards.
+      preconditions: The design rule check report, the fabrication drawing, the certificates of conformance of the last lot, its inspection records and 10 assembled boards.
+      expected: No rule violation, certificates state the class, and the re-inspection finds no defect.
+      steps:
+        - action: Read the design rule check report and the class on the fabrication drawing.
+          expected: No violation is reported, and the certificate of conformance states the same class.
+        - action: Read the inspection records of the lot.
+          expected: The class and a trained inspector are named.
+        - action: Re-inspect 10 boards against IPC-A-610 at the stated class.
+          expected: No defect of that class is found.
+    sv:
+      title: Godkännande av korttillverkning och montering
+      description: Kontrollerar rapporten om konstruktionsregler och kortens intyg och kontrollerar monterade kort på nytt.
+      preconditions: Rapporten från kontrollen av konstruktionsregler, tillverkningsritningen, intygen om överensstämmelse för det senaste partiet, dess kontrollprotokoll och 10 monterade kort.
+      expected: Inga regelöverträdelser, intygen anger klassen och den nya kontrollen hittar inga fel.
+      steps:
+        - action: Läs rapporten från kontrollen av konstruktionsregler och klassen på tillverkningsritningen.
+          expected: Inga överträdelser rapporteras, och intyget om överensstämmelse anger samma klass.
+        - action: Läs kontrollprotokollen för partiet.
+          expected: Klassen och en utbildad kontrollant anges.
+        - action: Kontrollera 10 kort på nytt mot IPC-A-610 i den angivna klassen.
+          expected: Inga fel enligt den klassen hittas.
+
+  - id: HWDES-T06
+    priority: medium
+    execution: manual
+    tags: [design-for-test]
+    refs: ["IEEE 1149.1-2013 (boundary scan)"]
+    en:
+      title: Production test coverage report
+      description: Reads the coverage report and confirms it with a seeded defect.
+      preconditions: The coverage report of the production test, the production test station and a board with a known open on a covered net.
+      expected: Coverage is at least 90 % and the seeded defect is detected.
+      steps:
+        - action: Read the share of nets covered in the report.
+          expected: It is at least 90 %.
+        - action: Run the production test on the board with the seeded open.
+          expected: The test fails and names the net.
+    sv:
+      title: Täckningsrapport för produktionstestet
+      description: Läser täckningsrapporten och bekräftar den med ett inplanterat fel.
+      preconditions: Täckningsrapporten för produktionstestet, teststationen i produktionen och ett kort med ett känt avbrott på ett täckt nät.
+      expected: Täckningen är minst 90 % och det inplanterade felet upptäcks.
+      steps:
+        - action: Läs andelen täckta nät i rapporten.
+          expected: Den är minst 90 %.
+        - action: Kör produktionstestet på kortet med det inplanterade avbrottet.
+          expected: Testet underkänns och anger nätet.
+
+  - id: HWDES-T07
+    priority: high
+    execution: manual
+    tags: [traceability]
+    refs: ["ISO 9001:2015 §8.5.2 (identification and traceability)"]
+    en:
+      title: Serial number traced to revision and component lots
+      description: Traces sampled serial numbers back to their hardware revision, files and component lots.
+      preconditions: Access to the production system and the revision control system, and 3 serial numbers from different months.
+      expected: Each serial number leads to a revision with retrievable files and to component lots.
+      steps:
+        - action: Look up each serial number in the production system.
+          expected: The hardware revision and the lots of the 5 main components are shown.
+        - action: Retrieve the schematics, layout, bill of materials and assembly drawings of that revision.
+          expected: All four are retrievable at the released revision letter.
+    sv:
+      title: Serienummer spåras till revision och komponentpartier
+      description: Spårar serienummer i ett stickprov tillbaka till deras hårdvarurevision, filer och komponentpartier.
+      preconditions: Åtkomst till produktionssystemet och systemet för revisionsstyrning, och 3 serienummer från olika månader.
+      expected: Varje serienummer leder till en revision med hämtbara filer och till komponentpartier.
+      steps:
+        - action: Slå upp varje serienummer i produktionssystemet.
+          expected: Hårdvarurevisionen och partierna för de 5 viktigaste komponenterna visas.
+        - action: Hämta scheman, layout, materialförteckning och monteringsritningar för revisionen.
+          expected: Alla fyra går att hämta i den släppta revisionen.
+
+  - id: HWDES-T08
+    priority: high
+    execution: manual
+    tags: [mtbf]
+    refs: ["IEC 61709:2017 (reference conditions for failure rates and stress models)"]
+    en:
+      title: Reliability prediction review
+      description: Reviews the assumptions and the result of the reliability prediction.
+      preconditions: The reliability prediction report and the current bill of materials.
+      expected: The prediction is complete, uses stated assumptions and meets the target.
+      steps:
+        - action: Read the failure rate source, the temperature and the stress assumptions.
+          expected: They are stated and the temperature is 40 °C.
+        - action: Compare the parts in the prediction with the bill of materials.
+          expected: Each part is included.
+        - action: Read the resulting MTBF.
+          expected: It is at least 100 000 hours.
+    sv:
+      title: Granskning av tillförlitlighetsprognosen
+      description: Granskar antagandena och resultatet i tillförlitlighetsprognosen.
+      preconditions: Rapporten med tillförlitlighetsprognosen och den aktuella materialförteckningen.
+      expected: Prognosen är fullständig, bygger på angivna antaganden och uppfyller målet.
+      steps:
+        - action: Läs källan för felintensiteter, temperaturen och antagandena om påkänning.
+          expected: De anges och temperaturen är 40 °C.
+        - action: Jämför delarna i prognosen med materialförteckningen.
+          expected: Varje del ingår.
+        - action: Läs den beräknade MTBF.
+          expected: Den är minst 100 000 timmar.
+
+  - id: HWDES-T09
+    priority: high
+    execution: manual
+    tags: [fmea]
+    refs: ["IEC 60812:2018 (failure modes and effects analysis)"]
+    en:
+      title: FMEA coverage and closure
+      description: Compares the FMEA with the schematic and checks the high-priority failure modes.
+      preconditions: The FMEA, the schematic with its function blocks and the action list.
+      expected: Each block is analysed and no high-priority failure mode is open.
+      steps:
+        - action: Match each function block of the schematic with FMEA rows.
+          expected: Each block has at least one row.
+        - action: Filter the FMEA on high action priority and read the actions.
+          expected: Each has a closed action or a signed acceptance.
+    sv:
+      title: FMEA:ns omfattning och stängning
+      description: Jämför FMEA:n med schemat och kontrollerar felsätten med hög prioritet.
+      preconditions: FMEA:n, schemat med dess funktionsblock och åtgärdslistan.
+      expected: Varje block är analyserat och inget felsätt med hög prioritet är öppet.
+      steps:
+        - action: Para ihop varje funktionsblock i schemat med rader i FMEA:n.
+          expected: Varje block har minst en rad.
+        - action: Filtrera FMEA:n på hög åtgärdsprioritet och läs åtgärderna.
+          expected: Var och en har en stängd åtgärd eller ett undertecknat godtagande.
+
+  - id: HWDES-T10
+    priority: medium
+    execution: manual
+    tags: [accelerated-life-test, stress-screening]
+    refs: ["IEC 62506:2013 (accelerated product testing)", "IEC 61163-1:2006 (reliability stress screening)"]
+    en:
+      title: Accelerated life test report and screening records
+      description: Reviews the accelerated life test report and, when screening is used, its specification and records.
+      preconditions: The accelerated life test report, and the screening specification and records when screening is used.
+      expected: The life test is sufficient and analysed, and screening, when used, is founded on data and covers each unit.
+      steps:
+        - action: Read the number of units, the acceleration model, the equivalent use time and the failure analyses.
+          expected: At least 10 units, a documented model, at least 5 years equivalent and a root cause for each failure.
+        - action: When screening is used, read its specification and compare the screening records with the units shipped in one week.
+          expected: Profile and duration are founded on early failure data, and each shipped unit has a screening record.
+    sv:
+      title: Rapport från accelererad livslängdsprovning och protokoll från stressprovning
+      description: Granskar rapporten från den accelererade livslängdsprovningen och, när stressprovning används, dess specifikation och protokoll.
+      preconditions: Rapporten från den accelererade livslängdsprovningen, och specifikationen och protokollen för stressprovning när sådan används.
+      expected: Livslängdsprovningen är tillräcklig och analyserad, och stressprovningen bygger på data och omfattar varje enhet när den används.
+      steps:
+        - action: Läs antal enheter, accelerationsmodell, motsvarande användningstid och felanalyser.
+          expected: Minst 10 enheter, en dokumenterad modell, minst 5 år motsvarande och en grundorsak för varje fel.
+        - action: När stressprovning används, läs dess specifikation och jämför protokollen med enheterna som levererats under en vecka.
+          expected: Profil och varaktighet bygger på data om tidiga fel, och varje levererad enhet har ett protokoll från stressprovningen.
+
+  - id: HWDES-T11
+    priority: high
+    execution: manual
+    tags: [field-failures]
+    refs: ["IEC 60300-3-2:2004 (collection of dependability data from the field)"]
+    en:
+      title: Field reliability reports and return analyses
+      description: Reviews the quarterly field reliability reports and the return analyses.
+      preconditions: The quarterly reliability reports of the last 12 months, the return records and the corrective action log.
+      expected: Each quarter has a field MTBF, each return has a cause, and low values have actions.
+      steps:
+        - action: Read the field MTBF and its basis in each quarterly report.
+          expected: Each report shows shipments, confirmed failures and the field MTBF.
+        - action: Check the failure cause of each return in the period.
+          expected: Each return has a failure cause.
+        - action: Compare each field MTBF with 70 % of the predicted value.
+          expected: Each quarter below that value has a corrective action.
+    sv:
+      title: Rapporter om tillförlitlighet i fält och analyser av returer
+      description: Granskar kvartalsrapporterna om tillförlitlighet i fält och analyserna av returer.
+      preconditions: Kvartalsrapporterna om tillförlitlighet för de senaste 12 månaderna, returprotokollen och loggen över korrigerande åtgärder.
+      expected: Varje kvartal har en MTBF i fält, varje retur har en orsak och låga värden har åtgärder.
+      steps:
+        - action: Läs MTBF i fält och dess underlag i varje kvartalsrapport.
+          expected: Varje rapport visar leveranser, bekräftade fel och MTBF i fält.
+        - action: Kontrollera felorsaken för varje retur under perioden.
+          expected: Varje retur har en felorsak.
+        - action: Jämför varje MTBF i fält med 70 % av det prognostiserade värdet.
+          expected: Varje kvartal under det värdet har en korrigerande åtgärd.
+
+  - id: HWDES-T12
+    priority: high
+    execution: manual
+    tags: [voltage-dips, brown-out]
+    refs: ["IEC 61000-4-11:2020 (voltage dips, short interruptions and voltage variations immunity)"]
+    en:
+      title: Voltage dips, interruptions and slow brown-out
+      description: Applies dips, interruptions and slow ramps to the supply while the product writes data.
+      preconditions: A programmable AC source, a unit that writes to its storage during the test, and a copy of its data and configuration before the test.
+      expected: The unit continues or restarts by itself, and its data and configuration are unchanged.
+      steps:
+        - action: Apply the dips and short interruptions of the test standard.
+          expected: The unit continues or restarts by itself after each event.
+          data: "0 % for 1 cycle, 70 % for 25 cycles, 0 % for 250 cycles"
+        - action: Ramp the supply from nominal to zero and back over 60 s, 20 times.
+          expected: The unit restarts by itself after each ramp.
+        - action: Compare data and configuration with the copy taken before the test.
+          expected: They are unchanged apart from the data written by the test itself.
+    sv:
+      title: Spänningsdippar, avbrott och långsamt spänningsbortfall
+      description: Ger dippar, avbrott och långsamma ramper på matningen medan produkten skriver data.
+      preconditions: En programmerbar växelspänningskälla, en enhet som skriver till sitt minne under provningen och en kopia av dess data och inställningar före provningen.
+      expected: Enheten fortsätter eller startar om av sig själv, och dess data och inställningar är oförändrade.
+      steps:
+        - action: Ge provningsstandardens dippar och korta avbrott.
+          expected: Enheten fortsätter eller startar om av sig själv efter varje händelse.
+          data: "0 % i 1 period, 70 % i 25 perioder, 0 % i 250 perioder"
+        - action: Rampa matningen från nominell spänning till noll och tillbaka under 60 s, 20 gånger.
+          expected: Enheten startar om av sig själv efter varje ramp.
+        - action: Jämför data och inställningar med kopian från före provningen.
+          expected: De är oförändrade så när som på de data som provningen själv skrivit.
