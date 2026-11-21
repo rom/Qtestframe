@@ -293,6 +293,15 @@ func jobRequest(ctx context.Context) *http.Request {
 // endJob finishes a job without a result: the execution gets its earlier
 // result back.
 func (s *Server) endJob(ctx context.Context, tenantID string, j *model.ScriptJob, state, message string) {
+	// An error after the job's context ended (a store lookup or the runner
+	// failing with "context canceled") is the cancellation itself: record
+	// it as cancelled or interrupted, not as an error.
+	if state == model.JobError && ctx.Err() != nil {
+		state, message = model.JobInterrupted, errServerStopped.Error()
+		if errors.Is(context.Cause(ctx), errJobCancelled) {
+			state, message = model.JobCancelled, errJobCancelled.Error()
+		}
+	}
 	// a stopped job is recorded even though its context has ended
 	ctx = context.WithoutCancel(ctx)
 	if ok, err := s.Store.FinishJob(ctx, j.ID, state, message); err != nil || !ok {
