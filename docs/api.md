@@ -795,9 +795,56 @@ import) `run.execute`.
 | POST | `/runs/{id}/executions/bulk` | `{"ids":[...] \| "all": true, "from": [results]?, "set": {"status"?, "assignee"?, "notes_append"?}}` (run.execute) → `{"updated", "rejected", "skipped"}`, each `[{id, key, title, status, assignee, reason}]` with the values before; or `{"ids" \| "all", "from"?, "remove": true}` (run.write) → `{"removed": n, "skipped"}`. `status` is `passed`, `failed`, `blocked`, `skipped` or `not_run`; `from` keeps only executions with those results (others are `skipped` with reason `status`, unchanged ones with `already`). Results that record an execution go through the readiness check; refusals are `rejected` with the blocking issues as `reason`. Executions are applied in passes, so prerequisites in the same request are recorded first. Step results are not changed. |
 | POST | `/runs/{id}/results?configuration=` | CI import: `{"results":[{"test_key","status","duration_ms","output","configuration"?}]}` (see *Configurations of imported results* below) → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness","reason"}]}`; results of tests that may not be executed (see below) are not recorded; `reason` spells out the blocking issues |
 | POST | `/runs/{id}/junit?create_missing=&configuration=` | JUnit XML import (see below): body `application/xml`/`text/xml`, or multipart with one or more `file` parts; at most 20 MB → `{"updated","unknown","rejected","unmapped":["test case name"],"created":[{"id","key","title"}]}` (the first three as for `/results`); 400 for malformed XML |
-| GET | `/executions/{id}` | `Execution` with `step_results` (each with `iteration_id`), `iterations` (data-driven tests), `readiness` and embedded `test` (TestCase incl. steps & script) |
+| GET | `/executions/{id}` | `Execution` with `step_results` (each with `iteration_id`), `iterations` (data-driven tests), `readiness`, embedded `test` (TestCase incl. steps & script) and `job`, its latest background job (see *Background jobs* below; absent if it never had one) |
 | PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual","evidence"}],"iterations":[{"id","status"?,"notes"?}]}` – status derived from steps (or iterations) when omitted and steps or iterations given; 409 `not_ready` when the update records an execution that the settings forbid |
-| POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled or the test may not be executed) → execution with embedded `test` |
+| POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled, the test may not be executed or it is queued or running as a job) → execution with embedded `test`. A **web test** (script language `playwright`) is queued as a background job instead → 202 with the execution (`in_progress`) and its `job` |
+| POST | `/executions/{id}/run-script/cancel` | (script.execute) cancels the queued job of the execution or stops its running one → `{cancelled, stopping}`; 409 if it has none |
+| POST | `/runs/{id}/run-automated` | (script.execute) "Run automated tests": `{"execution_ids"?: [...], "include_passed"?: false}` queues background jobs for the automated executions of the run — without `execution_ids` every automated execution that has not passed (all with `include_passed`) → 202 `{"queued": [job], "skipped": [{execution_id, test_key, configuration_name, reason, code}]}`; `code` is `not_automated`, `no_script`, `disabled` (the server does not run that language), `active` (already queued or running), `not_ready` (readiness: the blocking issues are the `reason`) or `cycle` |
+| GET | `/runs/{id}/jobs` | (run.read) the current jobs of the run — the batches with queued or running jobs, else the latest batch → `{"items": [job], "counts": {queued, running, done, passed, failed, skipped, cancelled, error, total}, "active": bool}` |
+| POST | `/runs/{id}/jobs/cancel` | (script.execute) `{"job_ids"?: [...], "running"?: false}` cancels queued jobs (all queued ones of the run without `job_ids`); their executions get their earlier result back; with `running` running jobs are stopped too → `{cancelled, stopping}` |
+
+**Background jobs.** Web tests take seconds to minutes, so they never run
+inside a request: `run-script` of a web test and `run-automated` enqueue
+**jobs** and answer at once. A job is `{id, run_id, execution_id, batch_id,
+seq, state, after, requested_by, message, created_at, started_at,
+finished_at, test_key, test_title, configuration_name}`; `state` is
+`queued`, `running`, `passed`, `failed`, `skipped` (not executed: e.g. its
+prerequisite failed meanwhile — `message` says why), `cancelled`, `error`
+(it could not run, e.g. Node.js is missing) or `interrupted` (the server
+stopped). Its execution is `in_progress` while the job is queued or running
+and gets its earlier result back when the job is cancelled, skipped,
+failed to start or interrupted. A worker pool of `runner.web.max_parallel`
+jobs per server process runs them in queue order; `after` lists the jobs
+of prerequisites (tests the test depends on, in the same run and
+configuration) that must finish first, and the readiness is checked again
+just before a job starts. Jobs do not survive a restart: on start-up (and,
+with several instances on PostgreSQL, when an instance's heartbeat is more
+than a minute old) unfinished jobs become `interrupted` and their
+executions are reset with a note in the output. `run-automated` also runs
+scripts of the other languages as jobs; `run-script` of those still runs
+synchronously. A finished web test stores its result, the Playwright
+output (secrets masked) and the duration, and attaches its screenshots,
+trace (`trace.zip`) and video to the execution (tagged `web-test`,
+replacing those of its previous run).
+
+**Web tests.** Script language `playwright`: the script is the body of a
+Playwright test (`await page.goto('/login'); …`), wrapped into
+`test(<title>, async ({ page, context, request, baseURL }) => { … })`, or,
+when it calls `test(` itself, a complete spec file. The base URL is, in
+this order, the value of a configuration dimension named `Base URL` (or
+`URL`, `Bas-URL`), the URL of the run's environment in the project's web
+test settings, or the project's base URL; a configuration dimension
+`Browser`/`Webbläsare` picks the browser (Chrome, Chromium, Edge →
+chromium; Firefox → firefox; Safari, WebKit → webkit), else the server's
+default. Project variables are passed to every automated script as
+`QTF_VAR_<NAME>`, together with `QTF_BASE_URL`, `QTF_BROWSER`,
+`QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT` and
+`QTF_BUILD`.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/web-tests` | project.read | `{base_url, environment_urls: [{environment, base_url}], variables: [{name, value, secret, has_value}], enabled, browser}`; secret values are never returned (`value` empty, `has_value`) |
+| PUT | `/projects/{pid}/web-tests` | project.update | `{base_url, environment_urls, variables}` (replaces them); a secret variable with an empty `value` keeps its saved value; 400 for non-http(s) URLs, duplicate environments or variable names (case-insensitive), names other than `[A-Za-z_][A-Za-z0-9_]*` (at most 64), values over 4096 bytes, more than 100 variables |
 
 **JUnit XML import.** `POST /runs/{id}/junit` reads `<testsuites>` or
 `<testsuite>` documents (suites may nest) as written by Playwright, pytest,

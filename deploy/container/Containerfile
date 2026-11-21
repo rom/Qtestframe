@@ -14,6 +14,15 @@
 
 ARG GO_VERSION=1.26.11
 ARG NODE_VERSION=22
+# Web tests (Playwright) need Node.js and a browser in the image. The
+# default image stays distroless and static; build with
+#   --build-arg WITH_PLAYWRIGHT=true
+# for an image based on Debian with Node.js, @playwright/test and Chromium
+# (several hundred MB more). PLAYWRIGHT_BROWSERS adds browsers, e.g.
+# "chromium firefox webkit".
+ARG WITH_PLAYWRIGHT=false
+ARG PLAYWRIGHT_VERSION=1.64.1
+ARG PLAYWRIGHT_BROWSERS=chromium
 
 ############################
 # 1. Web UI (Vue/Vite) -> internal/webui/dist
@@ -54,9 +63,9 @@ RUN mkdir -p /out/root/var/lib/qtestframe/runner /out/root/etc/qtestframe/tls /o
  && chmod 0700 /out/root/var/lib/qtestframe/runner
 
 ############################
-# 3. Runtime
+# 3. Runtime (default: distroless, static)
 ############################
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian12:nonroot AS runtime-false
 ARG VERSION=dev
 LABEL org.opencontainers.image.title="qtestframe" \
       org.opencontainers.image.description="Multi-tenant requirements and test management server" \
@@ -84,3 +93,46 @@ EXPOSE 8443
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD ["/usr/bin/qtestframe", "healthcheck"]
 ENTRYPOINT ["/usr/bin/qtestframe"]
 CMD ["serve"]
+
+############################
+# 3b. Runtime with Playwright (--build-arg WITH_PLAYWRIGHT=true)
+############################
+FROM docker.io/library/node:${NODE_VERSION}-bookworm-slim AS runtime-true
+ARG VERSION=dev
+ARG PLAYWRIGHT_VERSION
+ARG PLAYWRIGHT_BROWSERS
+LABEL org.opencontainers.image.title="qtestframe" \
+      org.opencontainers.image.description="Multi-tenant requirements and test management server (with Playwright web tests)" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.licenses="NOASSERTION"
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright/browsers
+WORKDIR /opt/playwright
+RUN npm init -y >/dev/null \
+ && npm i --no-audit --no-fund @playwright/test@${PLAYWRIGHT_VERSION} \
+ && npx playwright install --with-deps ${PLAYWRIGHT_BROWSERS} \
+ && rm -rf /root/.npm /var/lib/apt/lists/* \
+ && groupadd -g 65532 nonroot && useradd -u 65532 -g 65532 -M -d /var/lib/qtestframe nonroot
+COPY --from=build /out/qtestframe /usr/bin/qtestframe
+COPY --from=build --chown=65532:65532 /out/root/var/lib/qtestframe /var/lib/qtestframe
+COPY --from=build --chown=65532:65532 /out/root/run/qtestframe /run/qtestframe
+COPY --from=build /out/root/etc/qtestframe /etc/qtestframe
+ENV QTF_DATABASE_DRIVER=sqlite \
+    QTF_DATABASE_DSN=/var/lib/qtestframe/qtestframe.db \
+    QTF_SERVER_LISTEN=:8443 \
+    QTF_LOG_FORMAT=json \
+    QTF_RUNNER_WORK_DIR=/var/lib/qtestframe/runner \
+    QTF_RUNNER_WEB_NODE=/usr/local/bin/node \
+    QTF_RUNNER_WEB_PLAYWRIGHT_DIR=/opt/playwright \
+    QTF_RUNNER_WEB_BROWSERS_PATH=/opt/playwright/browsers
+# Enable at run time: -e QTF_RUNNER_ENABLED=true -e QTF_RUNNER_WEB_ENABLED=true
+USER 65532:65532
+VOLUME ["/var/lib/qtestframe"]
+EXPOSE 8443
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD ["/usr/bin/qtestframe", "healthcheck"]
+ENTRYPOINT ["/usr/bin/qtestframe"]
+CMD ["serve"]
+
+############################
+# Final image: runtime-false (default) or runtime-true
+############################
+FROM runtime-${WITH_PLAYWRIGHT}

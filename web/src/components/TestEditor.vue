@@ -52,6 +52,7 @@ import { enumLabel, enumOptions } from '@/i18n/labels'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Category, DataRow, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
 import { useMetaStore } from '@/stores/meta'
+import { PLAYWRIGHT, WEB_STARTER } from '@/lib/webTests'
 import { useNotify } from '@/composables/notify'
 
 const props = defineProps<{
@@ -439,6 +440,8 @@ const scriptPlaceholder = computed(() => {
       return `import sys\n# ${t('tests.scriptComment')}\nsys.exit(0)`
     case 'javascript':
       return `// ${t('tests.scriptCommentShort')}\nprocess.exit(0)`
+    case PLAYWRIGHT:
+      return WEB_STARTER
     default:
       return `#!/bin/sh\nset -e\n# ${t('tests.scriptComment')}\ncurl -fsS http://localhost:8080/healthz`
   }
@@ -537,9 +540,15 @@ const scriptPlaceholder = computed(() => {
     <template v-if="form.execution_type === 'automated'">
       <div class="section-title"><i class="pi pi-code" /> {{ t('tests.script') }} <HelpTip id="test.script" :label="t('tests.script')" /></div>
       <div class="row">
-        <Select v-model="form.script_language" :options="languageOptions" option-label="label" option-value="value" :disabled="!canWrite" style="width: 160px" :aria-label="t('fields.script_language')" />
-        <span class="small muted">{{ t('tests.scriptHint') }}</span>
+        <Select v-model="form.script_language" :options="languageOptions" option-label="label" option-value="value" :disabled="!canWrite" style="width: 220px" :aria-label="t('fields.script_language')" />
+        <span v-if="form.script_language !== PLAYWRIGHT" class="small muted">{{ t('tests.scriptHint') }}</span>
+        <template v-else>
+          <Button v-if="canWrite && !form.script.trim()" size="small" :label="t('webTests.starter')" icon="pi pi-file-edit" text @click="form.script = WEB_STARTER" />
+          <HelpTip id="test.webTest" :label="t('enums.scriptLanguage.playwright')" />
+        </template>
       </div>
+      <p v-if="form.script_language === PLAYWRIGHT" class="small muted" style="margin: 4px 0 8px">{{ t('webTests.editorHelp') }}</p>
+      <Message v-if="form.script_language === PLAYWRIGHT && meta.loaded && !meta.meta.web_tests_enabled" severity="info" :closable="false" style="margin-bottom: 8px">{{ t('webTests.editorOff') }}</Message>
       <Textarea v-model="form.script" class="code-input w-full" rows="12" :placeholder="scriptPlaceholder" :aria-label="t('tests.script')" spellcheck="false" :disabled="!canWrite" style="font-family: var(--qtf-mono)" />
     </template>
 

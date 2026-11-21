@@ -124,6 +124,39 @@ What a rule forbids is refused by the server, also for API clients and CI import
 
 The **Runs** column shows how many runs target each configuration. Creating configurations can be undone with the undo button.
 
+## Web tests
+
+[Web tests](tests.md#web-tests-playwright) run in a real browser on the server. They are switched on by the server administrator in the configuration file (`runner.web`, see below) and set up per project under **Settings → Web tests** *(Manager; permission project.update)*:
+
+- **Base URL** — the address of the application under test, e.g. `https://staging.example.com`. `page.goto('/login')` in a web test opens `https://staging.example.com/login`.
+- **Base URL per environment** — a run whose **Environment** matches the name (ignoring case) uses this URL instead, e.g. *production* → `https://www.example.com`. A test configuration with a **Base URL** dimension wins over both.
+- **Test variables** — name and value, passed to every automated script of the project as `QTF_VAR_<NAME>` (in a web test `process.env.QTF_VAR_USERNAME`). Mark passwords and tokens **Secret**: their value is write-only — it is never shown again, not even to administrators (leave the field empty to keep it), and it is replaced by `***` in stored output and failure messages. Screenshots and traces can still show a secret that the page displays.
+
+Only members with the permission *script.execute* (by default **Test lead** and **Manager**) can run scripts and web tests. Scripts run on the server with the server's privileges, restricted only by the sandbox; web tests always have network access, so treat **Run script** as running code on the server.
+
+**Server setup** (the server administrator):
+
+1. Install Node.js and Playwright in a directory, e.g. `/opt/qtestframe-playwright`: `npm i @playwright/test`, then the browsers with `npx playwright install --with-deps chromium` (add `firefox webkit` for those browsers).
+2. In the configuration file set `runner.enabled: true` and:
+
+   ```yaml
+   runner:
+     web:
+       enabled: true
+       node: /usr/bin/node
+       playwright_dir: /opt/qtestframe-playwright   # has node_modules/@playwright/test
+       browsers_path: /opt/qtestframe-playwright/browsers  # PLAYWRIGHT_BROWSERS_PATH, if not the default
+       browser: chromium          # default browser: chromium, firefox or webkit
+       headless: true
+       timeout: 60s               # per test
+       screenshots: on_failure    # on_failure, always or off
+       trace: on_failure          # on_failure, always or off
+       video: off                 # off, on_failure or always
+       max_parallel: 2            # web tests running at the same time
+   ```
+
+3. Restart the server. **Run script** now works for web tests; the demo project of `qtestframe seed-demo` has one (*Login page shows the sign-in form*) that opens the server's own login page — set `server.base_url` to the address the server is reachable at.
+
 ## API tokens
 
 API tokens let scripts and CI pipelines use the REST API without a password, for example for the [CI import](runs.md#import-results-from-ci).

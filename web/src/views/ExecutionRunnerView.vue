@@ -19,6 +19,8 @@ import StatusTag from '@/components/StatusTag.vue'
 import TagsInput from '@/components/TagsInput.vue'
 import DefectLinks from '@/components/DefectLinks.vue'
 import AttachmentsPanel from '@/components/AttachmentsPanel.vue'
+import WebTestEvidence from '@/components/WebTestEvidence.vue'
+import { jobActive, pollDelay, PLAYWRIGHT } from '@/lib/webTests'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import { draftFromExecution } from '@/lib/defectTracker'
 import Tabs from 'primevue/tabs'
@@ -378,6 +380,62 @@ async function finish() {
   router.push({ name: 'run', params: { projectId: proj.pid, runId: props.runId } })
 }
 
+// ---------- scripts and web tests ----------
+const isWeb = computed(() => test.value?.script_language === PLAYWRIGHT)
+const job = computed(() => ex.value?.job ?? null)
+/** a web test (or a script of "Run automated tests") is queued or running in the background */
+const jobRunning = computed(() => jobActive(job.value))
+/** changes when a job ends, so the evidence reloads */
+const evidenceKey = computed(() => (job.value ? `${job.value.id}:${job.value.state}` : ''))
+let pollTimer: ReturnType<typeof setTimeout> | undefined
+let pollAttempt = 0
+function stopPolling() {
+  if (pollTimer) clearTimeout(pollTimer)
+  pollTimer = undefined
+  pollAttempt = 0
+}
+function schedulePoll() {
+  if (pollTimer) clearTimeout(pollTimer)
+  pollTimer = setTimeout(pollJob, pollDelay(pollAttempt++))
+}
+/** follows a background job until it ends, then shows the result */
+async function pollJob() {
+  pollTimer = undefined
+  const id = props.executionId
+  try {
+    const e = await api.get<Execution>(`/executions/${id}`)
+    if (id !== props.executionId || !ex.value) return
+    const row = list.value.find((x) => x.id === e.id)
+    if (row) row.status = e.status
+    if (jobActive(e.job)) {
+      ex.value = { ...ex.value, status: e.status, job: e.job }
+      schedulePoll()
+      return
+    }
+    stopPolling()
+    if (dirty.value) {
+      ex.value = { ...ex.value, ...e, test: e.test ?? ex.value.test }
+      output.value = e.output || ''
+    } else await load()
+    const state = e.job?.state ?? ''
+    if (state === 'passed' || state === 'failed' || state === 'skipped') notify.ok(t('webTests.finished'), enumLabel('result', e.status))
+    else if (state) notify.info(t('webTests.jobEnded', { state: t(`webTests.state.${state}`) }))
+    void loadList()
+  } catch (err) {
+    if (id === props.executionId) schedulePoll()
+    else stopPolling()
+    void err
+  }
+}
+watch(
+  () => [props.executionId, jobRunning.value] as const,
+  ([, active]) => {
+    if (active && !pollTimer) schedulePoll()
+    if (!active) stopPolling()
+  },
+)
+onBeforeUnmount(stopPolling)
+
 async function runScript() {
   if (!ex.value) return
   running.value = true
@@ -385,17 +443,33 @@ async function runScript() {
     const updated = await api.post<Execution>(`/executions/${ex.value.id}/run-script`)
     if (updated) {
       ex.value = { ...ex.value, ...updated, test: updated.test ?? ex.value.test }
+      const row = list.value.find((e) => e.id === updated.id)
+      if (row) row.status = updated.status
+      if (jobActive(updated.job)) {
+        notify.info(t('webTests.queuedToast'), t('webTests.queuedHint'))
+        schedulePoll()
+        return
+      }
       output.value = updated.output || ''
       override.value = AUTO
       snapshot.value = stateKey()
-      const row = list.value.find((e) => e.id === updated.id)
-      if (row) row.status = updated.status
     }
     notify.ok(t('runner.scriptFinished'), enumLabel('result', updated?.status))
   } catch (e) {
     notify.fail(e, t('runner.scriptFailed'))
   } finally {
     running.value = false
+  }
+}
+async function cancelJob() {
+  if (!ex.value) return
+  try {
+    await api.post(`/executions/${ex.value.id}/run-script/cancel`)
+    notify.ok(t('webTests.cancelled'))
+    pollAttempt = 0
+    schedulePoll()
+  } catch (e) {
+    notify.fail(e, t('webTests.cancelFailed'))
   }
 }
 
@@ -511,16 +585,21 @@ const statusOptions = computed(() => [
       <div class="card">
         <div class="row" style="justify-content: space-between; margin-bottom: 8px">
           <h2 class="plain-heading"><i class="pi pi-code" aria-hidden="true" /> {{ t('runner.script') }} <span class="muted small">({{ test?.script_language || 'sh' }})</span></h2>
-          <Button
-            v-if="canScript"
-            :label="t('runner.runScript')"
-            icon="pi pi-play"
-            :loading="running"
-            :disabled="!test?.script || blocked"
-            @click="runScript"
-          />
-          <span v-else class="small muted">{{ t('runner.needsPermission') }}</span>
+          <span class="row nowrap">
+            <Tag v-if="jobRunning" :value="t(`webTests.state.${job?.state}`)" :icon="job?.state === 'running' ? 'pi pi-spin pi-spinner' : 'pi pi-clock'" severity="info" />
+            <Button v-if="jobRunning && canScript" :label="t('webTests.cancel')" icon="pi pi-times" size="small" severity="secondary" outlined @click="cancelJob" />
+            <Button
+              v-if="canScript"
+              :label="t('runner.runScript')"
+              icon="pi pi-play"
+              :loading="running || jobRunning"
+              :disabled="!test?.script || blocked || jobRunning"
+              @click="runScript"
+            />
+            <span v-else class="small muted">{{ t('runner.needsPermission') }}</span>
+          </span>
         </div>
+        <p v-if="jobRunning" class="small muted" role="status">{{ t('webTests.queuedHint') }}</p>
         <pre class="console" tabindex="0" :aria-label="t('runner.script')" style="color: #e2e8f0">{{ test?.script || t('runner.noScript') }}</pre>
       </div>
       <div class="card">
@@ -528,10 +607,12 @@ const statusOptions = computed(() => [
           <h2 class="plain-heading"><i class="pi pi-desktop" aria-hidden="true" /> {{ t('runner.output') }}</h2>
           <StatusTag :value="ex.status" kind="result" />
         </div>
-        <ProgressBar v-if="running" mode="indeterminate" :aria-label="t('runner.running')" style="height: 4px; margin-bottom: 8px" />
-        <pre class="console" tabindex="0" :aria-label="t('runner.output')" aria-live="polite" :aria-busy="running">{{ output || t('runner.noOutput') }}</pre>
+        <ProgressBar v-if="running || jobRunning" mode="indeterminate" :aria-label="t('runner.running')" style="height: 4px; margin-bottom: 8px" />
+        <pre class="console" tabindex="0" :aria-label="t('runner.output')" aria-live="polite" :aria-busy="running || jobRunning">{{ output || t('runner.noOutput') }}</pre>
+        <p v-if="job?.message && !jobRunning && job.state !== 'passed' && job.state !== 'failed'" class="small" style="margin-top: 8px; white-space: pre-wrap">{{ t(`webTests.state.${job.state}`) }}: {{ job.message }}</p>
       </div>
     </div>
+    <WebTestEvidence v-if="isAutomated && isWeb" :execution-id="executionId" :reload-key="evidenceKey" style="margin-top: 16px" />
 
     <!-- manual -->
     <div v-else-if="steps.length" class="runner" :class="{ 'has-bar': canExecute }">

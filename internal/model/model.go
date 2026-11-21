@@ -54,7 +54,7 @@ const (
 )
 
 // Script languages supported by the runner.
-var ScriptLanguages = []string{"sh", "bash", "python", "javascript"}
+var ScriptLanguages = []string{"sh", "bash", "python", "javascript", "playwright"}
 
 // Evaluation (verification) methods – the classic IADT set.
 var EvaluationMethods = []string{"test", "inspection", "analysis", "demonstration", "review"}

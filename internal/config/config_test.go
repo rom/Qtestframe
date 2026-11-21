@@ -147,6 +147,16 @@ func TestEnvOverrides(t *testing.T) {
 		c.Bootstrap.AdminEmail != "admin@example.com" || c.Bootstrap.AdminPassword != "pw" || c.Auth.CookieSecure {
 		t.Errorf("env overrides not applied: %+v", c)
 	}
+	t.Setenv("QTF_RUNNER_ENABLED", "1")
+	t.Setenv("QTF_RUNNER_WEB_ENABLED", "true")
+	t.Setenv("QTF_RUNNER_WORK_DIR", "/var/lib/q/runner")
+	t.Setenv("QTF_RUNNER_WEB_NODE", "/usr/local/bin/node")
+	t.Setenv("QTF_RUNNER_WEB_PLAYWRIGHT_DIR", "/opt/pw")
+	t.Setenv("QTF_RUNNER_WEB_BROWSERS_PATH", "/opt/pw/browsers")
+	if c, err := Load(""); err != nil || !c.Runner.Enabled || !c.Runner.Web.Enabled || c.Runner.WorkDir != "/var/lib/q/runner" ||
+		c.Runner.Web.Node != "/usr/local/bin/node" || c.Runner.Web.PlaywrightDir != "/opt/pw" || c.Runner.Web.BrowsersPath != "/opt/pw/browsers" {
+		t.Errorf("runner env: %+v %v", c.Runner, err)
+	}
 	for v, want := range map[string]bool{"1": true, "TRUE": true, "true": true, "0": false, "yes": false} {
 		t.Setenv("QTF_COOKIE_SECURE", v)
 		c, err := Load("")
@@ -253,6 +263,18 @@ func TestValidate(t *testing.T) {
 		}, "logging.syslog.network"},
 		{"syslog address", func(c *Config) { c.Logging.Syslog = Syslog{Enabled: true, Network: "udp"} }, "logging.syslog.address"},
 		{"runner timeout", func(c *Config) { c.Runner.Enabled = true; c.Runner.Timeout = 0 }, "runner.timeout"},
+		{"web parallel", func(c *Config) { c.Runner.Web.MaxParallel = 0 }, "max_parallel"},
+		{"web install", func(c *Config) { c.Runner.Web.Enabled = true }, "playwright_dir"},
+		{"web browser", func(c *Config) { c.Runner.Web.Enabled, c.Runner.Web.Command, c.Runner.Web.Browser = true, "pw", "lynx" }, "runner.web.browser"},
+		{"web screenshots", func(c *Config) {
+			c.Runner.Web.Enabled, c.Runner.Web.Command, c.Runner.Web.Screenshots = true, "pw", "never"
+		}, "runner.web.screenshots"},
+		{"web trace", func(c *Config) { c.Runner.Web.Enabled, c.Runner.Web.Command, c.Runner.Web.Trace = true, "pw", "x" }, "runner.web.trace"},
+		{"web video", func(c *Config) { c.Runner.Web.Enabled, c.Runner.Web.Command, c.Runner.Web.Video = true, "pw", "on" }, "runner.web.video"},
+		{"web timeout", func(c *Config) { c.Runner.Web.Enabled, c.Runner.Web.Command, c.Runner.Web.Timeout = true, "pw", 0 }, "runner.web.timeout"},
+		{"web evidence", func(c *Config) {
+			c.Runner.Web.Enabled, c.Runner.Web.Command, c.Runner.Web.MaxEvidenceMB = true, "pw", -1
+		}, "max_evidence_mb"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -277,6 +299,13 @@ func TestValidate(t *testing.T) {
 		if err := c.Validate(); err != nil {
 			t.Errorf("%s: %v", n, err)
 		}
+	}
+
+	// a complete web runner
+	c = ok()
+	c.Runner.Web.Enabled, c.Runner.Web.PlaywrightDir = true, "/opt/pw"
+	if err := c.Validate(); err != nil {
+		t.Errorf("web: %v", err)
 	}
 
 	// Multiple errors are joined.

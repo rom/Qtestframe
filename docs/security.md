@@ -68,7 +68,7 @@ volumetric network attacks (use upstream filtering).
 | **D**enial of service | resource exhaustion | read/write/idle timeouts, 1 MiB header and 8 MiB JSON body limit (1 MiB for SAML ACS), query limits (4096 bytes, 64 regexes, depth 128), RE2 regular expressions (linear time, no ReDoS), search `limit` ≤ 1000, DB connection pool cap, login rate limit; systemd `MemoryMax`, `TasksMax`, `LimitNOFILE` |
 | | runaway test scripts | runner disabled by default; wall-clock timeout with process-group kill, rlimits (CPU, file size, open files, no core), output cap; process count bounded by systemd `TasksMax` |
 | **E**levation of privilege | role escalation | RBAC checked server-side on every endpoint; API tokens cannot exceed the creator's role and are capped at the current membership role; tokens cannot create tokens and never carry super-admin rights; only super admins manage users/tenants; the last admin of a tenant cannot be demoted or removed |
-| | RCE via script runner / parser bug | sandbox re-exec (no_new_privs + Landlock + seccomp + rlimits + dropped capabilities, optional socket deny), separate SELinux domain / AppArmor child profile without network, systemd sandbox, unprivileged user |
+| | RCE via script runner / parser bug | sandbox re-exec (no_new_privs + Landlock + seccomp + rlimits + dropped capabilities, optional socket deny), separate SELinux domain / AppArmor child profile without network, systemd sandbox, unprivileged user; web tests (Playwright) keep re-exec, no_new_privs, Landlock and rlimits but have no seccomp filter and always network access (see §9) |
 | | kernel exploitation | seccomp deny-list in-process and `SystemCallFilter=` in systemd, `RestrictNamespaces`, no capabilities but `CAP_NET_BIND_SERVICE`, `MemoryDenyWriteExecute` |
 
 ## 3. Authentication
@@ -480,6 +480,62 @@ SELinux. Prefer to leave JavaScript out of `runner.interpreters`.
 Even with all layers, treat the runner as a privilege boundary that a
 determined attacker with `script.execute` may eventually cross: run it only
 for trusted teams, or on a dedicated instance.
+
+### Web tests (Playwright)
+
+Web tests (script language `playwright`, `runner.web.enabled`, off by
+default and requiring `runner.enabled`) run `playwright test` with Node.js
+and a real browser. A browser needs many system calls, threads, shared
+memory and the network, so they run with a **weaker sandbox**:
+
+* the same re-exec (`qtestframe sandbox-exec --web`), new process group,
+  `PR_SET_NO_NEW_PRIVS`, dropped capabilities and rlimits (`RLIMIT_CPU` =
+  `runner.web.job_timeout` + 1 s, `RLIMIT_FSIZE` 1 GiB, `RLIMIT_NOFILE`
+  8192, no core dumps);
+* **Landlock**: read/execute `/etc`, `/usr`, `/lib*`, `/bin`, `/sbin`,
+  `/opt`, `/proc`, `/sys` and the Playwright, browser and Node.js
+  directories (`playwright_dir`, `browsers_path`, `node`,
+  `executable_path`, absolute paths of `command`); write only the job
+  directory, its short `TMPDIR` and `/dev/shm`. The database and uploads
+  stay out of reach (and the server's own Landlock domain still applies);
+* **no seccomp filter** and **network always allowed** —
+  `runner.deny_network` does not apply: the browser must reach the system
+  under test. A web test can therefore reach every host the server can
+  reach, including internal services and cloud metadata endpoints. Restrict
+  outgoing connections of the service with the firewall
+  (`deploy/nftables`), egress policies or a dedicated host.
+
+With `runner.sandbox: false` Node.js starts directly with the server's
+privileges (only the server's own hardening applies). Either way **web
+tests run with the privileges of the server's user**: only grant
+`script.execute` (Test lead and Manager by default) to people you would let
+run code on the server. The JIT of Node.js and the browsers needs
+`MemoryDenyWriteExecute=no` in the systemd unit and, on SELinux, the
+`qtestframe_runner_execmem` boolean; the browsers also need `/dev/shm` and
+the font configuration.
+
+**Test variables** (project settings, `PUT /projects/{pid}/web-tests`) are
+passed to every automated script as `QTF_VAR_<NAME>`. Secret values are
+write-only like defect-tracker tokens: stored in the database (plain, like
+other project settings: protect database and backups), never returned by
+the API or shown in the UI, not written to the audit log (only variable
+names are), and replaced by `***` in the stored output and failure
+messages. Masking cannot reach into screenshots, traces or videos: a
+page that displays a secret shows it there, and a script can always send a
+secret elsewhere — secrets are protected from readers of the project, not
+from authors of scripts.
+
+**Evidence files** (screenshots, `trace.zip`, videos) are read only from
+the job directory (paths outside it in the JSON report are ignored, symlinks
+resolved), limited to `runner.web.max_evidence_mb` each, and stored as
+attachments of the execution. A trace contains the pages, network requests
+(including headers such as cookies) and console output of the test.
+
+**Background jobs**: web tests never run inside a request; they are queued
+(table `script_jobs`) and run by a small per-process worker pool
+(`runner.web.max_parallel`, default 2), which bounds the load a user with
+`script.execute` can cause. A job carries the identity of the user who
+queued it (audit `execution.script` / `run.automated`).
 
 ## 10. Operating-system hardening (defence in depth)
 

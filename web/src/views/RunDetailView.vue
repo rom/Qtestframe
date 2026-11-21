@@ -31,6 +31,8 @@ import SummaryBar from '@/components/SummaryBar.vue'
 import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
 import DefectLinks from '@/components/DefectLinks.vue'
 import AttachmentsPanel from '@/components/AttachmentsPanel.vue'
+import RunJobsPanel from '@/components/RunJobsPanel.vue'
+import { skippedText, type EnqueueResult } from '@/lib/webTests'
 import Tabs from 'primevue/tabs'
 import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
@@ -314,6 +316,27 @@ function showReadiness(ev: Event, ex: Execution) {
   readinessOf.value = ex
   readinessPop.value?.toggle(ev)
 }
+// ---------- automated tests as background jobs (see RunJobsPanel) ----------
+const canScript = computed(() => auth.can(P.scriptExecute) && meta.meta.runner_enabled === true)
+const jobsPanel = ref<InstanceType<typeof RunJobsPanel> | null>(null)
+const queueing = ref(false)
+async function runAutomated(ids?: string[]) {
+  queueing.value = true
+  try {
+    const res = await api.post<EnqueueResult>(`/runs/${props.runId}/run-automated`, ids?.length ? { execution_ids: ids } : {})
+    const n = res?.queued?.length ?? 0
+    const skipped = res?.skipped ?? []
+    const detail = skipped.length ? `${t('webTests.skippedN', { n: skipped.length }, skipped.length)}\n${skippedText(skipped)}` : undefined
+    if (n) notify.ok(t('webTests.queuedN', { n }, n), detail)
+    else notify.info(t('webTests.nothingQueued'), detail)
+    jobsPanel.value?.refresh()
+    await reload()
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    queueing.value = false
+  }
+}
 const picker = ref(false)
 async function addTests(items: { id: string }[]) {
   try {
@@ -398,6 +421,7 @@ async function copySnippet(text: string = ciSnippet.value) {
         </Select>
         <StatusTag v-else :value="run.status" />
         <Button v-if="canExecute && executions.length" :label="t('run.execute')" icon="pi pi-play" @click="startNext" />
+        <Button v-if="canScript && executions.length" :label="t('webTests.runAll')" icon="pi pi-bolt" severity="secondary" outlined :loading="queueing" v-tooltip.bottom="t('webTests.runAllHint')" @click="runAutomated()" />
         <Button v-if="canWrite" :label="t('run.addTests')" icon="pi pi-plus" severity="secondary" outlined @click="picker = true" />
         <Button :label="t('run.ciImport')" icon="pi pi-cloud-upload" severity="secondary" outlined @click="ciDialog = true" />
         <Button v-if="canWrite" icon="pi pi-pencil" severity="secondary" text rounded :aria-label="t('common.edit')" v-tooltip="t('common.edit')" @click="openEdit" />
@@ -446,6 +470,8 @@ async function copySnippet(text: string = ciSnippet.value) {
       </div>
     </section>
 
+    <RunJobsPanel ref="jobsPanel" :run-id="runId" :can-cancel="canScript" @changed="reload" />
+
     <Tabs :id="tabsId" v-model:value="tab" class="editor-tabs" scrollable>
       <TabList>
         <Tab value="executions"><i class="pi pi-list" aria-hidden="true" /> {{ t('common.executions') }} <span class="count">{{ executions.length }}</span></Tab>
@@ -482,6 +508,7 @@ async function copySnippet(text: string = ciSnippet.value) {
         <b>{{ t('common.selected', { count: selection.length }) }}</b>
         <Select v-model="bulkResult" :options="bulkResultOptions" option-label="label" option-value="value" :placeholder="t('run.bulk.setResult')" :aria-label="t('run.bulk.setResult')" size="small" style="min-width: 150px" />
         <Button :label="t('run.bulk.more')" icon="pi pi-pencil" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openBulk" />
+        <Button v-if="canScript" :label="t('webTests.runSelected')" icon="pi pi-bolt" size="small" severity="secondary" outlined :loading="queueing" @click="runAutomated(selectedIds)" />
         <Button v-if="canWrite" :label="t('run.bulk.remove')" icon="pi pi-minus-circle" size="small" severity="danger" outlined @click="bulkRemove" />
         <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
       </div>
