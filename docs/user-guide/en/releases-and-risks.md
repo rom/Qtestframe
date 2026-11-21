@@ -142,3 +142,7 @@ The exit criterion **Risks mitigated** with the level *High* blocks a release wh
 2. Put those requirements in the release scope.
 3. Add **Risks mitigated** with the level you can accept to the exit criteria.
 4. Test the requirements in the release's runs; as the mitigation works, set the risks to *Mitigated*.
+
+## The risk report
+
+The **Risk report** under **Reports** summarises the register for a review meeting or an audit: key figures, risks by level and status, the heat map, the top risks, the register, the traceability from each risk to its requirements, their tests and latest results, and the open risks whose mitigation is not tested yet. See [Standard reports](reports-and-export.md#standard-reports). The [dashboard](traceability-and-coverage.md#the-dashboard) shows the open risks per level and a small heat map.

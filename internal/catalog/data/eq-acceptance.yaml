@@ -1,0 +1,678 @@
+area: eq-acceptance
+prefix: EQACC
+group: operations
+catalogue: equipment
+name: {en: "Procurement, acceptance, commissioning and decommissioning", sv: "Upphandling, godkännande, idrifttagning och avveckling"}
+description:
+  en: The life of a piece of equipment from purchase to disposal, covering the purchase specification and supplier evaluation, factory acceptance test (FAT), delivery inspection, installation and electrical verification, site acceptance test (SAT) and performance run, handover of documentation and training, initial inspection, final acceptance, and decommissioning with energy isolation, data sanitisation and disposal.
+  sv: Utrustningens liv från inköp till kassering, med inköpsspecifikation och leverantörsbedömning, fabriksacceptanstest (FAT), leveranskontroll, installation och verifiering av elinstallationen, platsacceptanstest (SAT) och prestandakörning, överlämning av dokumentation och utbildning, första besiktning, slutligt godkännande och avveckling med frånskiljning av energi, sanering av lagringsmedier och kassering.
+
+requirements:
+  - id: EQACC-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [purchase-specification, procurement]
+    refs: ["ISO 9001:2026 §8.4.3 (information for external providers)"]
+    tests: [EQACC-T01]
+    en:
+      title: Purchase specification with measurable acceptance criteria
+      description: Each purchase of equipment MUST be based on a purchase specification that states the measurable performance (capacity, accuracy, cycle time), the utilities and site conditions, the interfaces, the applicable standards and directives, the documentation to be delivered and the acceptance tests.
+      rationale: Acceptance can only be agreed against stated and measurable criteria, and disputes after delivery usually trace back to a vague specification.
+      criteria:
+        - method: inspection
+          text: The purchase specification of a sampled order covers the six listed topics, and each performance item has a number with a unit and a tolerance.
+    sv:
+      title: Inköpsspecifikation med mätbara godkännandekriterier
+      description: Varje inköp av utrustning SKA grunda sig på en inköpsspecifikation som anger den mätbara prestandan (kapacitet, noggrannhet, cykeltid), medier och förhållanden på platsen, gränssnitten, tillämpliga standarder och direktiv, den dokumentation som ska levereras och godkännandetesterna.
+      rationale: Godkännande kan bara avtalas mot angivna och mätbara kriterier, och tvister efter leverans går oftast tillbaka till en vag specifikation.
+      criteria:
+        - method: inspection
+          text: Inköpsspecifikationen för en order i ett stickprov omfattar de sex angivna ämnena, och varje prestandapunkt har ett tal med enhet och tolerans.
+
+  - id: EQACC-02
+    type: business
+    obligation: must
+    priority: medium
+    tags: [supplier-evaluation, procurement]
+    refs: ["ISO 9001:2026 §8.4.1 (control of externally provided processes, products and services)"]
+    tests: [EQACC-T01]
+    en:
+      title: Supplier evaluated before the order
+      description: Before an order for equipment is placed, the buyer MUST record an evaluation of the supplier covering its quality management, references from comparable deliveries, service presence in the region of the site and financial standing.
+      rationale: The supplier will support the equipment for many years, and a poor choice is expensive to correct after delivery.
+      criteria:
+        - method: inspection
+          text: The supplier evaluation of a sampled order covers the four topics and is dated before the order date.
+    sv:
+      title: Leverantören bedöms före beställningen
+      description: Innan en beställning av utrustning läggs SKA köparen registrera en bedömning av leverantören som omfattar dess kvalitetsledning, referenser från jämförbara leveranser, servicenärvaro i platsens region och finansiella ställning.
+      rationale: Leverantören ska stödja utrustningen i många år, och ett dåligt val är dyrt att rätta efter leverans.
+      criteria:
+        - method: inspection
+          text: Leverantörsbedömningen för en order i ett stickprov omfattar de fyra ämnena och är daterad före beställningsdatum.
+
+  - id: EQACC-03
+    type: business
+    obligation: should
+    priority: medium
+    tags: [design-review, supplier-documents]
+    refs: ["ISO 9001:2026 §8.4.2 (type and extent of control)"]
+    tests: [EQACC-T01]
+    en:
+      title: Supplier design documents reviewed before manufacture
+      description: The buyer SHOULD review and approve the supplier's layout drawing, electrical diagrams, interface list and risk assessment before manufacture starts, and record each comment with its resolution.
+      rationale: Changes are cheap on drawings and costly once the equipment is built.
+      criteria:
+        - method: inspection
+          text: The document register shows the four documents approved before the manufacturing start date, and each comment has a resolution.
+    sv:
+      title: Leverantörens konstruktionsdokument granskas före tillverkning
+      description: Köparen BÖR granska och godkänna leverantörens layoutritning, elscheman, gränssnittslista och riskbedömning innan tillverkningen startar, och registrera varje kommentar med hur den lösts.
+      rationale: Ändringar är billiga på ritningar och dyra när utrustningen väl är byggd.
+      criteria:
+        - method: inspection
+          text: Dokumentregistret visar de fyra dokumenten godkända före tillverkningsstart, och varje kommentar har en lösning.
+
+  - id: EQACC-04
+    type: business
+    obligation: must
+    priority: high
+    tags: [fat, test-protocol]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
+    tests: [EQACC-T02]
+    en:
+      title: FAT protocol approved before the factory acceptance test
+      description: The supplier MUST submit the factory acceptance test protocol, with each test step traced to a clause of the purchase specification and with its pass criterion, for the buyer's approval at least 10 working days before the test.
+      rationale: An approved protocol fixes what will be tested and how before anyone sees results, which avoids disputes during the test.
+      criteria:
+        - method: inspection
+          text: The approved protocol is dated at least 10 working days before the FAT, and each clause of the purchase specification that the FAT can verify is traced to a step.
+          threshold: ≥ 10 working days before the FAT
+    sv:
+      title: FAT-protokoll godkänt före fabriksacceptanstestet
+      description: Leverantören SKA lämna protokollet för fabriksacceptanstestet, med varje teststeg spårat till ett avsnitt i inköpsspecifikationen och med sitt godkännandekriterium, för köparens godkännande minst 10 arbetsdagar före testet.
+      rationale: Ett godkänt protokoll fastställer vad som testas och hur innan någon har sett resultaten, vilket undviker tvister under testet.
+      criteria:
+        - method: inspection
+          text: Det godkända protokollet är daterat minst 10 arbetsdagar före FAT, och varje avsnitt i inköpsspecifikationen som FAT kan verifiera är spårat till ett steg.
+          threshold: ≥ 10 arbetsdagar före FAT
+
+  - id: EQACC-05
+    type: business
+    obligation: must_not
+    priority: critical
+    tags: [fat, deviations, shipping-release]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
+    tests: [EQACC-T02]
+    en:
+      title: No shipment with open critical FAT deviations
+      description: The buyer MUST NOT release the equipment for shipment while a deviation classed as critical in the factory acceptance test is open.
+      rationale: Defects are far easier and cheaper to correct at the supplier's factory than on site.
+      criteria:
+        - method: inspection
+          text: The shipping release of a sampled delivery lists 0 open critical deviations and gives a due date for each other open deviation.
+          threshold: 0 open critical deviations
+    sv:
+      title: Ingen leverans med öppna kritiska avvikelser från FAT
+      description: Köparen SKA INTE frisläppa utrustningen för leverans så länge en avvikelse som klassats som kritisk vid fabriksacceptanstestet är öppen.
+      rationale: Fel är mycket enklare och billigare att rätta i leverantörens fabrik än på plats.
+      criteria:
+        - method: inspection
+          text: Frisläppandet för leverans av en leverans i ett stickprov anger 0 öppna kritiska avvikelser och ett slutdatum för varje annan öppen avvikelse.
+          threshold: 0 öppna kritiska avvikelser
+
+  - id: EQACC-06
+    type: business
+    obligation: must
+    priority: medium
+    tags: [delivery-inspection, transport-damage]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
+    tests: [EQACC-T03]
+    en:
+      title: Delivery inspected within two working days
+      description: The receiving team MUST inspect each delivery of equipment within 2 working days for transport damage, the state of shock and tilt indicators and completeness against the packing list, and MUST report each finding to the supplier and the carrier in writing.
+      rationale: Transport damage claims expire quickly, and hidden damage found at commissioning is hard to attribute.
+      criteria:
+        - method: inspection
+          text: The delivery inspection record is dated within 2 working days of arrival, covers the three checks, and each finding has a written report to supplier and carrier.
+          threshold: ≤ 2 working days
+    sv:
+      title: Leveransen kontrolleras inom två arbetsdagar
+      description: Mottagningen SKA kontrollera varje leverans av utrustning inom 2 arbetsdagar med avseende på transportskador, läget hos stöt- och lutningsindikatorer och fullständighet mot packlistan, och rapportera varje fynd skriftligt till leverantören och transportören.
+      rationale: Reklamationer av transportskador preskriberas snabbt, och dolda skador som upptäcks vid idrifttagningen är svåra att härleda.
+      criteria:
+        - method: inspection
+          text: Protokollet från leveranskontrollen är daterat inom 2 arbetsdagar efter ankomst, omfattar de tre kontrollerna, och varje fynd har en skriftlig rapport till leverantör och transportör.
+          threshold: ≤ 2 arbetsdagar
+
+  - id: EQACC-07
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [installation, site-prerequisites, commissioning]
+    refs: ["IEC 62337:2012 (commissioning of electrical, instrumentation and control systems)"]
+    tests: [EQACC-T04]
+    en:
+      title: Site prerequisites and installation checked against a checklist
+      description: Before the equipment is energised, the installation team MUST verify with a signed checklist that the foundation, anchoring, levelling, utilities (power, compressed air, water, exhaust), clearances for operation and maintenance, and environmental conditions match the supplier's installation instructions.
+      rationale: Equipment installed outside its prerequisites fails early or performs below specification, and the warranty may not cover it.
+      criteria:
+        - method: inspection
+          text: The installation checklist has a measured or observed value for each item, each within the supplier's limits, and is signed before the first energisation.
+    sv:
+      title: Förutsättningar på platsen och installation kontrolleras mot en checklista
+      description: Innan utrustningen spänningssätts SKA installationsteamet med en undertecknad checklista verifiera att fundament, förankring, avvägning, medier (el, tryckluft, vatten, utsug), fria utrymmen för drift och underhåll samt miljöförhållanden motsvarar leverantörens installationsanvisningar.
+      rationale: Utrustning som installeras utanför sina förutsättningar går tidigt sönder eller presterar under specifikationen, och garantin täcker det kanske inte.
+      criteria:
+        - method: inspection
+          text: Installationschecklistan har ett uppmätt eller iakttaget värde för varje punkt, var och en inom leverantörens gränser, och är undertecknad före första spänningssättningen.
+
+  - id: EQACC-08
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [electrical-installation, verification, energisation]
+    refs: ["IEC 60364-6:2016 (verification of low-voltage electrical installations)", "IEC 60204-1:2016 §18 (verification)"]
+    tests: [EQACC-T04]
+    en:
+      title: Electrical installation verified before energisation
+      description: A qualified electrician MUST verify the electrical installation of the equipment before first energisation by inspection and by testing the continuity of protective conductors, insulation resistance and the automatic disconnection of supply, and MUST record the measured values.
+      rationale: Installation faults such as a missing protective conductor turn the first fault in the equipment into a lethal shock.
+      criteria:
+        - method: inspection
+          text: The verification record shows the electrician's name, the measured values of the three tests within their limits and a date before first energisation.
+    sv:
+      title: Elinstallationen verifieras före spänningssättning
+      description: En behörig elinstallatör SKA verifiera utrustningens elinstallation före första spänningssättningen genom besiktning och provning av skyddsledarnas kontinuitet, isolationsresistans och automatisk frånkoppling av matningen, och registrera de uppmätta värdena.
+      rationale: Installationsfel som en saknad skyddsledare gör att det första felet i utrustningen ger en livsfarlig elektrisk stöt.
+      criteria:
+        - method: inspection
+          text: Verifieringsprotokollet visar elinstallatörens namn, de uppmätta värdena för de tre provningarna inom sina gränser och ett datum före första spänningssättningen.
+
+  - id: EQACC-09
+    type: business
+    obligation: must
+    priority: high
+    tags: [sat, site-acceptance]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
+    tests: [EQACC-T05]
+    en:
+      title: Site acceptance test with production materials
+      description: After installation, the supplier and the buyer MUST run a site acceptance test with the materials and utilities of the site, covering each function and interface of the purchase specification that the FAT could not verify, and record each deviation.
+      rationale: Behaviour on site differs from the factory because of real materials, utilities and interfaces to other equipment.
+      criteria:
+        - method: inspection
+          text: The SAT report lists each specification clause not verified at FAT with a result, and each deviation has a class and an owner.
+    sv:
+      title: Platsacceptanstest med produktionsmaterial
+      description: Efter installationen SKA leverantören och köparen genomföra ett platsacceptanstest med platsens material och medier, som omfattar varje funktion och varje gränssnitt i inköpsspecifikationen som FAT inte kunde verifiera, och registrera varje avvikelse.
+      rationale: Beteendet på plats skiljer sig från fabriken på grund av verkliga material, medier och gränssnitt mot annan utrustning.
+      criteria:
+        - method: inspection
+          text: SAT-rapporten anger varje avsnitt i specifikationen som inte verifierades vid FAT med ett resultat, och varje avvikelse har en klass och en ansvarig.
+
+  - id: EQACC-10
+    type: performance
+    obligation: must
+    priority: high
+    tags: [performance-run, capacity, availability]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)", "EN 15341:2019+A1:2022 (maintenance key performance indicators)"]
+    tests: [EQACC-T05]
+    en:
+      title: Performance run at rated capacity
+      description: The equipment MUST reach its rated capacity during a continuous performance run of 72 hours in production, with an availability of at least 95 % and a reject rate at or below the value of the purchase specification.
+      rationale: Short tests do not show the stoppages, drift and wear that appear in continuous production.
+      criteria:
+        - method: test
+          text: The performance run log of 72 hours shows output at or above rated capacity, availability of at least 95 % and a reject rate within the specification.
+          threshold: 72 h, availability ≥ 95 %
+    sv:
+      title: Prestandakörning vid märkkapacitet
+      description: Utrustningen SKA nå sin märkkapacitet under en sammanhängande prestandakörning på 72 timmar i produktion, med en tillgänglighet på minst 95 % och en kassationsgrad som högst är värdet i inköpsspecifikationen.
+      rationale: Korta tester visar inte de stopp, den drift och det slitage som uppstår i kontinuerlig produktion.
+      criteria:
+        - method: test
+          text: Loggen från prestandakörningen på 72 timmar visar en produktion på minst märkkapaciteten, en tillgänglighet på minst 95 % och en kassationsgrad inom specifikationen.
+          threshold: 72 h, tillgänglighet ≥ 95 %
+
+  - id: EQACC-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [documentation-handover, as-built, instructions]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.7.4 (instructions)", "ISO 9001:2026 §7.5.3 (control of documented information)"]
+    tests: [EQACC-T06]
+    en:
+      title: Documentation handed over before acceptance
+      description: The supplier MUST hand over, before final acceptance, the operating and maintenance instructions in the language of the users, the as-built drawings, the spare parts list, the calibration and test certificates and the EU declaration of conformity, in a format the buyer's document system can store.
+      rationale: Without documentation, the equipment cannot be operated, maintained or modified safely, and it is rarely delivered after payment.
+      criteria:
+        - method: inspection
+          text: The handover record lists the five document types as received and checked, and each instruction exists in the users' language.
+    sv:
+      title: Dokumentation överlämnas före godkännandet
+      description: Leverantören SKA före det slutliga godkännandet överlämna drift- och underhållsinstruktioner på användarnas språk, relationsritningar, reservdelslista, kalibrerings- och provningsintyg och EU-försäkran om överensstämmelse, i ett format som köparens dokumentsystem kan lagra.
+      rationale: Utan dokumentation kan utrustningen inte drivas, underhållas eller ändras säkert, och den levereras sällan efter att betalningen gjorts.
+      criteria:
+        - method: inspection
+          text: Överlämningsprotokollet anger de fem dokumenttyperna som mottagna och kontrollerade, och varje instruktion finns på användarnas språk.
+
+  - id: EQACC-12
+    type: business
+    obligation: must
+    priority: high
+    tags: [training, operators, maintenance-staff]
+    refs: ["Directive 2009/104/EC Art. 8 (informing workers)", "Directive 2009/104/EC Art. 9 (training of workers)"]
+    tests: [EQACC-T07]
+    en:
+      title: Operators and maintenance staff trained before handover
+      description: Before the equipment is handed over to production, each operator and maintenance technician named in the staffing plan MUST complete the supplier's training on operation, safety functions and routine maintenance, with attendance recorded.
+      rationale: Untrained staff misuse equipment, bypass safety functions and cause stoppages during the first months of operation.
+      criteria:
+        - method: inspection
+          text: The training records list each named person with the three topics completed before the handover date.
+          threshold: 100 % of named staff trained
+    sv:
+      title: Operatörer och underhållspersonal utbildas före överlämningen
+      description: Innan utrustningen lämnas över till produktionen SKA varje operatör och underhållstekniker som anges i bemanningsplanen genomgå leverantörens utbildning i drift, säkerhetsfunktioner och förebyggande underhåll, med närvaro registrerad.
+      rationale: Personal utan utbildning använder utrustningen fel, kringgår säkerhetsfunktioner och orsakar stopp under de första driftmånaderna.
+      criteria:
+        - method: inspection
+          text: Utbildningsregistret anger varje namngiven person med de tre ämnena genomförda före överlämningsdatum.
+          threshold: 100 % av den namngivna personalen utbildad
+
+  - id: EQACC-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [initial-inspection, work-equipment]
+    refs: ["Directive 2009/104/EC Art. 5(1) (inspection of work equipment)"]
+    tests: [EQACC-T07]
+    en:
+      title: Initial inspection by a competent person
+      description: Where the safety of the equipment depends on its installation conditions, a competent person MUST inspect it after installation and before first use, and the employer MUST keep the inspection record for the life of the equipment.
+      rationale: The employer is responsible for safe work equipment, and an initial inspection confirms that installation has not compromised its safety.
+      criteria:
+        - method: inspection
+          text: The inspection record names the competent person, the scope and the result, is dated before first use and is stored in the equipment file.
+    sv:
+      title: Första besiktning av en kompetent person
+      description: När utrustningens säkerhet beror på installationsförhållandena SKA en kompetent person besiktiga den efter installationen och före första användningen, och arbetsgivaren SKA spara besiktningsprotokollet under utrustningens livslängd.
+      rationale: Arbetsgivaren ansvarar för säker arbetsutrustning, och en första besiktning bekräftar att installationen inte har försämrat säkerheten.
+      criteria:
+        - method: inspection
+          text: Besiktningsprotokollet anger den kompetenta personen, omfattningen och resultatet, är daterat före första användningen och finns i utrustningens akt.
+
+  - id: EQACC-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [final-acceptance, punch-list, warranty]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
+    tests: [EQACC-T08]
+    en:
+      title: Final acceptance certificate after the punch list is closed
+      description: The buyer MUST issue the final acceptance certificate only when each punch list item is closed or listed in the certificate with an agreed due date and retention amount, and the certificate MUST state the start date of the warranty period.
+      rationale: Acceptance shifts the risk and starts the warranty, so open items need a binding plan before it is signed.
+      criteria:
+        - method: inspection
+          text: The final acceptance certificate references the punch list, each open item has a due date and retention amount, and the warranty start date is stated.
+    sv:
+      title: Slutligt godkännandebevis efter att restlistan stängts
+      description: Köparen SKA utfärda det slutliga godkännandebeviset först när varje punkt på restlistan är stängd eller angiven i beviset med ett överenskommet slutdatum och innehållet belopp, och beviset SKA ange startdatum för garantitiden.
+      rationale: Godkännandet flyttar risken och startar garantin, så öppna punkter behöver en bindande plan innan det undertecknas.
+      criteria:
+        - method: inspection
+          text: Det slutliga godkännandebeviset hänvisar till restlistan, varje öppen punkt har slutdatum och innehållet belopp, och garantins startdatum anges.
+
+  - id: EQACC-15
+    type: business
+    obligation: must
+    priority: high
+    tags: [decommissioning, energy-isolation, hazardous-materials]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.14 (disposal process)", "Directive 2009/104/EC Art. 4 (rules concerning work equipment)"]
+    tests: [EQACC-T09]
+    en:
+      title: Decommissioning plan before dismantling
+      description: Before equipment is dismantled, the owner MUST approve a decommissioning plan that names the isolation and lockout of each energy source, the draining and removal of hazardous substances, the disconnection from shared utilities and control networks, and the destination of each main part.
+      rationale: Dismantling is a high-risk activity in which stored energy, residual chemicals and live connections to other equipment injure people.
+      criteria:
+        - method: inspection
+          text: The approved plan covers the four topics, and the lockout record shows each energy source isolated before work started.
+    sv:
+      title: Avvecklingsplan före nedmontering
+      description: Innan utrustning monteras ned SKA ägaren godkänna en avvecklingsplan som anger frånskiljning och låsning av varje energikälla, tömning och borttagning av farliga ämnen, frånkoppling från gemensamma medier och styrnät och vart varje huvuddel tar vägen.
+      rationale: Nedmontering är en högriskaktivitet där lagrad energi, kemikalierester och spänningsförande förbindelser med annan utrustning skadar människor.
+      criteria:
+        - method: inspection
+          text: Den godkända planen omfattar de fyra ämnena, och låsningsprotokollet visar varje energikälla frånskild innan arbetet började.
+
+  - id: EQACC-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [data-sanitisation, storage-media, decommissioning]
+    refs: ["NIST SP 800-88 Rev. 2", "ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)"]
+    tests: [EQACC-T10]
+    en:
+      title: Storage media sanitised with a certificate
+      description: Before decommissioned equipment leaves the site, each storage medium in it (controller memory cards, industrial PCs, operator panels) MUST be sanitised by a method that matches the sensitivity of its data, and a certificate MUST record the medium, the method, the person and the date.
+      rationale: Controllers and panels hold recipes, network configuration and credentials that help an attacker who buys the equipment second-hand.
+      criteria:
+        - method: inspection
+          text: Each storage medium in the equipment's asset record has a sanitisation certificate, and a read attempt on 1 sampled medium finds no data.
+    sv:
+      title: Lagringsmedier saneras med intyg
+      description: Innan avvecklad utrustning lämnar platsen SKA varje lagringsmedium i den (minneskort i styrsystem, industridatorer, operatörspaneler) saneras med en metod som motsvarar datans känslighet, och ett intyg SKA ange mediet, metoden, personen och datumet.
+      rationale: Styrsystem och paneler innehåller recept, nätverksinställningar och inloggningsuppgifter som hjälper en angripare som köper utrustningen begagnad.
+      criteria:
+        - method: inspection
+          text: Varje lagringsmedium i utrustningens tillgångspost har ett intyg om sanering, och ett läsförsök på 1 medium i ett stickprov hittar inga data.
+
+  - id: EQACC-17
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [disposal, waste, weee]
+    refs: ["Directive 2012/19/EU (WEEE) Art. 13 (financing in respect of WEEE from users other than private households)", "Directive 2008/98/EC (Waste Framework Directive) Art. 35 (record keeping)"]
+    tests: [EQACC-T09]
+    en:
+      title: Disposal of the parts documented
+      description: The owner SHOULD keep, for each decommissioned piece of equipment, the waste transfer notes of hazardous waste, the receipt of the WEEE take-back or treatment facility and the records of parts sold for re-use, for at least 3 years.
+      rationale: The waste holder remains responsible until the waste reaches a permitted facility, and records prove that this happened.
+      criteria:
+        - method: inspection
+          text: The equipment file of a decommissioned item holds the three kinds of records, dated and kept for at least 3 years.
+          threshold: kept ≥ 3 years
+    sv:
+      title: Kasseringen av delarna dokumenteras
+      description: Ägaren BÖR för varje avvecklad utrustning spara transportdokumenten för farligt avfall, kvittot från återtagandet enligt WEEE eller behandlingsanläggningen och uppgifterna om delar som sålts för återanvändning, i minst 3 år.
+      rationale: Avfallsinnehavaren är ansvarig tills avfallet når en anläggning med tillstånd, och dokumentationen visar att det har skett.
+      criteria:
+        - method: inspection
+          text: Akten för en avvecklad utrustning innehåller de tre slagen av dokument, daterade och sparade i minst 3 år.
+          threshold: sparas ≥ 3 år
+
+tests:
+  - id: EQACC-T01
+    priority: high
+    execution: manual
+    tags: [purchase-specification, supplier-evaluation]
+    refs: ["ISO 9001:2026 §8.4.3 (information for external providers)", "ISO 9001:2026 §8.4.1 (control of externally provided processes, products and services)"]
+    en:
+      title: Specification, supplier evaluation and design review of an order
+      description: Reviews the documents of one recent equipment order from specification to design approval.
+      preconditions: The purchase specification, supplier evaluation, order, document register and manufacturing start date of one recent order.
+      expected: The specification is measurable, the supplier was evaluated in time and design documents were approved before manufacture.
+      steps:
+        - action: Read the purchase specification.
+          expected: It covers performance, utilities, interfaces, standards, documentation and acceptance tests, with numbers, units and tolerances for performance.
+        - action: Compare the date of the supplier evaluation with the order date and read its topics.
+          expected: It predates the order and covers quality management, references, service presence and financial standing.
+        - action: Read the approval dates of the layout, electrical diagrams, interface list and risk assessment.
+          expected: Each is approved before the manufacturing start date with each comment resolved.
+    sv:
+      title: Specifikation, leverantörsbedömning och konstruktionsgranskning för en order
+      description: Granskar dokumenten för en nyligen lagd order av utrustning från specifikation till godkänd konstruktion.
+      preconditions: Inköpsspecifikationen, leverantörsbedömningen, beställningen, dokumentregistret och tillverkningsstarten för en nyligen lagd order.
+      expected: Specifikationen är mätbar, leverantören bedömdes i tid och konstruktionsdokumenten godkändes före tillverkningen.
+      steps:
+        - action: Läs inköpsspecifikationen.
+          expected: Den omfattar prestanda, medier, gränssnitt, standarder, dokumentation och godkännandetester, med tal, enheter och toleranser för prestandan.
+        - action: Jämför leverantörsbedömningens datum med beställningsdatum och läs dess ämnen.
+          expected: Den är äldre än beställningen och omfattar kvalitetsledning, referenser, servicenärvaro och finansiell ställning.
+        - action: Läs godkännandedatumen för layout, elscheman, gränssnittslista och riskbedömning.
+          expected: Vart och ett är godkänt före tillverkningsstart med varje kommentar löst.
+
+  - id: EQACC-T02
+    priority: critical
+    execution: manual
+    tags: [fat]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
+    en:
+      title: FAT protocol, execution and shipping release
+      description: Checks the FAT protocol approval, its traceability and the shipping release of one delivery.
+      preconditions: The FAT protocol with its approval, the purchase specification, the FAT report with deviations and the shipping release.
+      expected: The protocol was approved in time and traced, and no critical deviation was open at shipment.
+      steps:
+        - action: Compare the protocol approval date with the FAT date.
+          expected: It is at least 10 working days earlier.
+        - action: Trace the specification clauses that the FAT can verify to protocol steps.
+          expected: Each such clause has a step with a pass criterion.
+        - action: Compare the open deviations at the shipping release with their classes.
+          expected: No critical deviation is open and each other open deviation has a due date.
+    sv:
+      title: FAT-protokoll, genomförande och frisläppande för leverans
+      description: Kontrollerar godkännandet av FAT-protokollet, dess spårbarhet och frisläppandet för en leverans.
+      preconditions: FAT-protokollet med sitt godkännande, inköpsspecifikationen, FAT-rapporten med avvikelser och frisläppandet för leverans.
+      expected: Protokollet godkändes i tid och är spårat, och ingen kritisk avvikelse var öppen vid leveransen.
+      steps:
+        - action: Jämför datum för godkännandet av protokollet med datum för FAT.
+          expected: Det ligger minst 10 arbetsdagar tidigare.
+        - action: Spåra de avsnitt i specifikationen som FAT kan verifiera till steg i protokollet.
+          expected: Varje sådant avsnitt har ett steg med ett godkännandekriterium.
+        - action: Jämför de öppna avvikelserna vid frisläppandet med deras klasser.
+          expected: Ingen kritisk avvikelse är öppen och varje annan öppen avvikelse har ett slutdatum.
+
+  - id: EQACC-T03
+    priority: medium
+    execution: manual
+    tags: [delivery-inspection]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
+    en:
+      title: Delivery inspection record and damage reports
+      description: Checks the delivery inspection record of one delivery against its arrival date.
+      preconditions: The delivery note with arrival date, the delivery inspection record and the correspondence with supplier and carrier.
+      expected: The inspection was done in time and each finding was reported.
+      steps:
+        - action: Compare the inspection date with the arrival date.
+          expected: The inspection is within 2 working days.
+        - action: Read the results for transport damage, indicators and completeness.
+          expected: All three checks are recorded.
+        - action: Match each finding with a written report.
+          expected: Each finding was reported to both supplier and carrier.
+    sv:
+      title: Protokoll från leveranskontroll och skaderapporter
+      description: Kontrollerar protokollet från leveranskontrollen för en leverans mot dess ankomstdatum.
+      preconditions: Följesedeln med ankomstdatum, protokollet från leveranskontrollen och korrespondensen med leverantör och transportör.
+      expected: Kontrollen gjordes i tid och varje fynd rapporterades.
+      steps:
+        - action: Jämför kontrolldatum med ankomstdatum.
+          expected: Kontrollen ligger inom 2 arbetsdagar.
+        - action: Läs resultaten för transportskador, indikatorer och fullständighet.
+          expected: Alla tre kontrollerna är registrerade.
+        - action: Para ihop varje fynd med en skriftlig rapport.
+          expected: Varje fynd rapporterades till både leverantör och transportör.
+
+  - id: EQACC-T04
+    priority: critical
+    execution: manual
+    tags: [installation, electrical-installation]
+    refs: ["IEC 62337:2012 (commissioning of electrical, instrumentation and control systems)", "IEC 60364-6:2016 (verification of low-voltage electrical installations)"]
+    en:
+      title: Installation checklist and electrical verification before energisation
+      description: Checks the installation checklist and the electrical verification record against the first energisation date.
+      preconditions: The supplier's installation instructions, the installation checklist, the electrical verification record and the commissioning log with the first energisation date.
+      expected: Both records are complete, within limits and dated before energisation.
+      steps:
+        - action: Compare each checklist value with the supplier's limit.
+          expected: Each item has a value within the limit, and the checklist is signed.
+        - action: Read the electrical verification record.
+          expected: Protective conductor continuity, insulation resistance and automatic disconnection have measured values within their limits and the electrician is named.
+          data: "insulation resistance ≥ 1 MΩ at 500 V DC"
+        - action: Compare both dates with the first energisation in the commissioning log.
+          expected: Both are earlier.
+    sv:
+      title: Installationschecklista och verifiering av elinstallationen före spänningssättning
+      description: Kontrollerar installationschecklistan och verifieringsprotokollet för elinstallationen mot datum för första spänningssättningen.
+      preconditions: Leverantörens installationsanvisningar, installationschecklistan, verifieringsprotokollet för elinstallationen och idrifttagningsloggen med datum för första spänningssättningen.
+      expected: Båda protokollen är fullständiga, inom gränserna och daterade före spänningssättningen.
+      steps:
+        - action: Jämför varje värde i checklistan med leverantörens gräns.
+          expected: Varje punkt har ett värde inom gränsen, och checklistan är undertecknad.
+        - action: Läs verifieringsprotokollet för elinstallationen.
+          expected: Skyddsledarnas kontinuitet, isolationsresistans och automatisk frånkoppling har uppmätta värden inom sina gränser och elinstallatören anges.
+          data: "isolationsresistans ≥ 1 MΩ vid 500 V DC"
+        - action: Jämför båda datumen med första spänningssättningen i idrifttagningsloggen.
+          expected: Båda är tidigare.
+
+  - id: EQACC-T05
+    priority: high
+    execution: manual
+    tags: [sat, performance-run]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
+    en:
+      title: SAT coverage and 72-hour performance run
+      description: Reviews the SAT report and the log of the performance run.
+      preconditions: The FAT report, the SAT report, the purchase specification and the production log of the performance run.
+      expected: SAT covers the clauses not verified at FAT, and the run meets capacity, availability and reject rate.
+      steps:
+        - action: List the specification clauses not verified at FAT and find each in the SAT report.
+          expected: Each has a result, and each deviation has a class and an owner.
+        - action: Compute output, availability and reject rate from the 72-hour log.
+          expected: Output is at least rated capacity, availability at least 95 % and the reject rate within the specification.
+    sv:
+      title: SAT:s omfattning och prestandakörning på 72 timmar
+      description: Granskar SAT-rapporten och loggen från prestandakörningen.
+      preconditions: FAT-rapporten, SAT-rapporten, inköpsspecifikationen och produktionsloggen från prestandakörningen.
+      expected: SAT omfattar de avsnitt som inte verifierades vid FAT, och körningen uppfyller kapacitet, tillgänglighet och kassationsgrad.
+      steps:
+        - action: Lista de avsnitt i specifikationen som inte verifierades vid FAT och leta upp vart och ett i SAT-rapporten.
+          expected: Vart och ett har ett resultat, och varje avvikelse har en klass och en ansvarig.
+        - action: Beräkna produktion, tillgänglighet och kassationsgrad ur loggen för de 72 timmarna.
+          expected: Produktionen är minst märkkapaciteten, tillgängligheten minst 95 % och kassationsgraden inom specifikationen.
+
+  - id: EQACC-T06
+    priority: high
+    execution: manual
+    tags: [documentation-handover]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.7.4 (instructions)"]
+    en:
+      title: Handover documentation received and checked
+      description: Checks the handover record and opens each document type in the document system.
+      preconditions: The handover record, access to the document system and the list of user languages at the site.
+      expected: All five document types are stored and the instructions exist in the users' language.
+      steps:
+        - action: Read the handover record.
+          expected: Instructions, as-built drawings, spare parts list, certificates and declaration of conformity are marked as received and checked.
+        - action: Open each document in the document system and check the language of the instructions.
+          expected: Each opens and the instructions exist in each user language at the site.
+    sv:
+      title: Överlämnad dokumentation mottagen och kontrollerad
+      description: Kontrollerar överlämningsprotokollet och öppnar varje dokumenttyp i dokumentsystemet.
+      preconditions: Överlämningsprotokollet, åtkomst till dokumentsystemet och listan över användarnas språk på platsen.
+      expected: Alla fem dokumenttyperna är lagrade och instruktionerna finns på användarnas språk.
+      steps:
+        - action: Läs överlämningsprotokollet.
+          expected: Instruktioner, relationsritningar, reservdelslista, intyg och försäkran om överensstämmelse är markerade som mottagna och kontrollerade.
+        - action: Öppna varje dokument i dokumentsystemet och kontrollera instruktionernas språk.
+          expected: Varje dokument går att öppna och instruktionerna finns på varje användarspråk på platsen.
+
+  - id: EQACC-T07
+    priority: high
+    execution: manual
+    tags: [training, initial-inspection]
+    refs: ["Directive 2009/104/EC Art. 9 (training of workers)", "Directive 2009/104/EC Art. 5(1) (inspection of work equipment)"]
+    en:
+      title: Training and initial inspection before use
+      description: Compares the staffing plan with the training records and checks the initial inspection record.
+      preconditions: The staffing plan, the training records, the handover date, the inspection record and the date of first use.
+      expected: Each named person was trained before handover and the inspection predates first use.
+      steps:
+        - action: Match each person in the staffing plan with a training record.
+          expected: Each has completed operation, safety functions and routine maintenance before the handover date.
+        - action: Read the initial inspection record.
+          expected: It names the competent person, scope and result, and is dated before first use.
+    sv:
+      title: Utbildning och första besiktning före användning
+      description: Jämför bemanningsplanen med utbildningsregistret och kontrollerar protokollet från första besiktningen.
+      preconditions: Bemanningsplanen, utbildningsregistret, överlämningsdatum, besiktningsprotokollet och datum för första användning.
+      expected: Varje namngiven person utbildades före överlämningen och besiktningen är äldre än första användningen.
+      steps:
+        - action: Para ihop varje person i bemanningsplanen med en utbildningspost.
+          expected: Var och en har genomgått drift, säkerhetsfunktioner och förebyggande underhåll före överlämningsdatum.
+        - action: Läs protokollet från första besiktningen.
+          expected: Det anger den kompetenta personen, omfattning och resultat, och är daterat före första användningen.
+
+  - id: EQACC-T08
+    priority: high
+    execution: manual
+    tags: [final-acceptance]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
+    en:
+      title: Final acceptance certificate and punch list
+      description: Compares the final acceptance certificate with the punch list on the day of signature.
+      preconditions: The final acceptance certificate and the punch list with its status history.
+      expected: Each open item is listed with due date and retention, and the warranty start is stated.
+      steps:
+        - action: List the punch list items open on the signature date.
+          expected: The list is produced from the status history.
+        - action: Find each open item in the certificate and read the warranty clause.
+          expected: Each has a due date and retention amount, and the warranty start date is stated.
+    sv:
+      title: Slutligt godkännandebevis och restlista
+      description: Jämför det slutliga godkännandebeviset med restlistan på dagen för undertecknandet.
+      preconditions: Det slutliga godkännandebeviset och restlistan med sin statushistorik.
+      expected: Varje öppen punkt anges med slutdatum och innehållet belopp, och garantins start anges.
+      steps:
+        - action: Lista de punkter på restlistan som var öppna på dagen för undertecknandet.
+          expected: Listan tas fram ur statushistoriken.
+        - action: Leta upp varje öppen punkt i beviset och läs garantiklausulen.
+          expected: Varje punkt har slutdatum och innehållet belopp, och garantins startdatum anges.
+
+  - id: EQACC-T09
+    priority: high
+    execution: manual
+    tags: [decommissioning, disposal]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.14 (disposal process)", "Directive 2008/98/EC (Waste Framework Directive) Art. 35 (record keeping)"]
+    en:
+      title: Decommissioning plan, lockout and disposal records
+      description: Reviews the decommissioning of one piece of equipment from plan to disposal records.
+      preconditions: The decommissioning plan, the lockout record, the work start date and the equipment file of a decommissioned item.
+      expected: The plan is complete, energy was isolated before work, and disposal is documented.
+      steps:
+        - action: Read the approved plan.
+          expected: It covers energy isolation, hazardous substances, disconnection from utilities and networks, and the destination of the main parts.
+        - action: Compare the lockout record with the work start date.
+          expected: Each energy source in the plan was isolated before work started.
+        - action: Open the disposal records in the equipment file.
+          expected: Waste transfer notes, the take-back or treatment receipt and re-use records are present and dated.
+    sv:
+      title: Avvecklingsplan, låsning och dokumentation av kassering
+      description: Granskar avvecklingen av en utrustning från plan till dokumentation av kasseringen.
+      preconditions: Avvecklingsplanen, låsningsprotokollet, datum för arbetets start och akten för en avvecklad utrustning.
+      expected: Planen är fullständig, energin frånskildes före arbetet och kasseringen är dokumenterad.
+      steps:
+        - action: Läs den godkända planen.
+          expected: Den omfattar frånskiljning av energi, farliga ämnen, frånkoppling från medier och nät och vart huvuddelarna tar vägen.
+        - action: Jämför låsningsprotokollet med datum för arbetets start.
+          expected: Varje energikälla i planen frånskildes innan arbetet började.
+        - action: Öppna dokumentationen av kasseringen i utrustningens akt.
+          expected: Transportdokument för avfall, kvitto från återtagande eller behandling och uppgifter om återanvändning finns och är daterade.
+
+  - id: EQACC-T10
+    priority: high
+    execution: manual
+    tags: [data-sanitisation]
+    refs: ["NIST SP 800-88 Rev. 2"]
+    en:
+      title: Sanitisation certificates and read attempt
+      description: Matches the storage media of a decommissioned item with certificates and tries to read one medium.
+      preconditions: The asset record of the equipment with its storage media, the sanitisation certificates and a forensic reader for one medium.
+      expected: Each medium has a certificate and the sampled medium holds no data.
+      steps:
+        - action: Match each storage medium in the asset record with a certificate.
+          expected: Each has a certificate with medium, method, person and date.
+        - action: Read the sampled medium with the forensic reader.
+          expected: No file system or readable data is found.
+    sv:
+      title: Intyg om sanering och läsförsök
+      description: Parar ihop lagringsmedierna i en avvecklad utrustning med intyg och försöker läsa ett medium.
+      preconditions: Utrustningens tillgångspost med dess lagringsmedier, intygen om sanering och en forensisk läsare för ett medium.
+      expected: Varje medium har ett intyg och mediet i stickprovet innehåller inga data.
+      steps:
+        - action: Para ihop varje lagringsmedium i tillgångsposten med ett intyg.
+          expected: Vart och ett har ett intyg med medium, metod, person och datum.
+        - action: Läs mediet i stickprovet med den forensiska läsaren.
+          expected: Inget filsystem och inga läsbara data hittas.

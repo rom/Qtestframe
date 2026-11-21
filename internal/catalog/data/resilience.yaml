@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [timeout, dependency]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)", "Google SRE book ch. 22 (Addressing Cascading Failures)"]
+    refs: ["ISO/IEC 25010:2023 fault tolerance", "Google SRE book ch. 22 (Addressing Cascading Failures)"]
     tests: [RES-T01]
     en:
       title: Timeout on every outbound call
@@ -86,7 +86,7 @@ requirements:
     obligation: should
     priority: high
     tags: [circuit-breaker, dependency]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)", "Google SRE book ch. 22 (Addressing Cascading Failures)"]
+    refs: ["ISO/IEC 25010:2023 fault tolerance", "Google SRE book ch. 22 (Addressing Cascading Failures)"]
     tests: [RES-T03]
     en:
       title: Circuit breaker for dependencies
@@ -110,7 +110,7 @@ requirements:
     obligation: must
     priority: high
     tags: [graceful-degradation, search]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
+    refs: ["ISO/IEC 25010:2023 fault tolerance", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     tests: [RES-T04]
     en:
       title: Core functions work without the search service
@@ -156,7 +156,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [consistency, transaction]
-    refs: ["ISO/IEC 25010:2011 §4.2.6.2 (integrity)", "Google SRE book ch. 26 (Data Integrity)"]
+    refs: ["ISO/IEC 25010:2023 integrity", "Google SRE book ch. 26 (Data Integrity)"]
     tests: [RES-T06]
     en:
       title: Atomic multi-step changes
@@ -178,7 +178,7 @@ requirements:
     obligation: must
     priority: high
     tags: [error-message, user]
-    refs: ["ISO 9241-110:2020 (use error robustness)", "ISO/IEC 25010:2011 §4.2.4.4 (user error protection)"]
+    refs: ["ISO 9241-110:2020 (use error robustness)", "ISO/IEC 25010:2023 user error protection"]
     tests: [RES-T07]
     en:
       title: Error messages say what happened and what to do
@@ -268,7 +268,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [queue, dead-letter, messaging]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)"]
+    refs: ["ISO/IEC 25010:2023 recoverability"]
     tests: [RES-T09]
     en:
       title: Dead-letter queue for failed messages

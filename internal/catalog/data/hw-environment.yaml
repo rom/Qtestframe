@@ -1,0 +1,754 @@
+area: hw-environment
+prefix: HWENV
+group: quality
+catalogue: hardware
+name: {en: Environmental robustness and restricted substances, sv: Miljötålighet och begränsade ämnen}
+description:
+  en: How a hardware product withstands its environment and how it treats the environment, covering the environmental specification, climatic and mechanical tests after IEC 60068, IP and IK ratings, restricted substances under RoHS 2011/65/EU and REACH, material declarations, and marking and treatment information under the WEEE Directive 2012/19/EU.
+  sv: Hur en hårdvaruprodukt tål sin omgivning och hur den påverkar miljön, med miljöspecifikation, klimat- och mekaniska provningar enligt IEC 60068, IP- och IK-klassning, begränsade ämnen enligt RoHS 2011/65/EU och Reach, materialdeklarationer samt märkning och information för behandling enligt WEEE-direktivet 2012/19/EU.
+
+requirements:
+  - id: HWENV-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [environmental-specification, temperature, humidity]
+    refs: ["IEC 60721-3 (classification of environmental conditions)", "IEC 60068-1:2013 (general and guidance)"]
+    tests: [HWENV-T01]
+    en:
+      title: Environmental specification with test levels
+      description: The product specification MUST state the operating and storage ranges for temperature, relative humidity and altitude, the vibration and shock levels in operation and transport, and the IEC 60068 test with severity that verifies each of them.
+      rationale: Environmental tests can only be planned and passed against stated limits, and the limits tell customers where the product can be used.
+      criteria:
+        - method: inspection
+          text: The specification lists each of the seven conditions with a numeric range or level and a test reference with severity.
+    sv:
+      title: Miljöspecifikation med provningsnivåer
+      description: Produktspecifikationen SKA ange områdena för drift och lagring för temperatur, relativ fuktighet och höjd över havet, nivåerna för vibration och stöt i drift och transport, och den provning enligt IEC 60068 med stränghet som verifierar var och en av dem.
+      rationale: Miljöprovningar kan bara planeras och klaras mot angivna gränser, och gränserna visar kunderna var produkten kan användas.
+      criteria:
+        - method: inspection
+          text: Specifikationen anger vart och ett av de sju villkoren med ett numeriskt område eller en nivå och en hänvisning till provning med stränghet.
+
+  - id: HWENV-02
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [cold, climatic-test]
+    refs: ["IEC 60068-2-1:2025 (test A: cold)"]
+    tests: [HWENV-T02]
+    en:
+      title: Operation at the minimum operating temperature
+      description: The product MUST perform its functional test without error after 16 hours at its minimum operating temperature (−20 °C by default) and while still at that temperature.
+      rationale: Cold changes component values, battery capacity and the stiffness of materials, and failures often appear only after the whole product has cooled through.
+      criteria:
+        - method: test
+          text: Three units pass the functional test at the end of a 16-hour cold exposure at the specified temperature.
+          threshold: 16 h at the minimum temperature
+    sv:
+      title: Drift vid lägsta drifttemperatur
+      description: Produkten SKA klara sitt funktionstest utan fel efter 16 timmar vid sin lägsta drifttemperatur (−20 °C som standardvärde) och medan den fortfarande har den temperaturen.
+      rationale: Kyla ändrar komponentvärden, batterikapacitet och materialens styvhet, och fel visar sig ofta först när hela produkten har kylts igenom.
+      criteria:
+        - method: test
+          text: Tre enheter klarar funktionstestet i slutet av en köldexponering på 16 timmar vid den specificerade temperaturen.
+          threshold: 16 h vid lägsta temperatur
+
+  - id: HWENV-03
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [dry-heat, climatic-test, thermal]
+    refs: ["IEC 60068-2-2:2025 (test B: dry heat)"]
+    tests: [HWENV-T02]
+    en:
+      title: Operation at the maximum operating temperature
+      description: The product MUST perform its functional test without error and without thermal shutdown after 16 hours of operation at full load at its maximum operating temperature (+55 °C by default).
+      rationale: Heat at full load is the main stress for electronics, and the test shows that cooling and derating are sufficient for the specified range.
+      criteria:
+        - method: test
+          text: Three units at full load pass the functional test at the end of 16 hours at the specified temperature, and no thermal shutdown is logged.
+          threshold: 16 h at the maximum temperature, full load
+    sv:
+      title: Drift vid högsta drifttemperatur
+      description: Produkten SKA klara sitt funktionstest utan fel och utan termisk avstängning efter 16 timmars drift med full last vid sin högsta drifttemperatur (+55 °C som standardvärde).
+      rationale: Värme vid full last är den största påfrestningen för elektronik, och provningen visar att kylning och nedstämpling räcker för det specificerade området.
+      criteria:
+        - method: test
+          text: Tre enheter med full last klarar funktionstestet i slutet av 16 timmar vid den specificerade temperaturen, och ingen termisk avstängning loggas.
+          threshold: 16 h vid högsta temperatur, full last
+
+  - id: HWENV-04
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [damp-heat, humidity, condensation]
+    refs: ["IEC 60068-2-30:2025 (test Db: damp heat, cyclic)"]
+    tests: [HWENV-T03]
+    en:
+      title: Function after cyclic damp heat
+      description: The product MUST pass its functional test and an insulation resistance measurement of at least 10 MΩ after 6 cycles of cyclic damp heat with an upper temperature of +40 °C.
+      rationale: Condensation during temperature cycles causes leakage currents, corrosion and short circuits that dry tests do not reveal.
+      criteria:
+        - method: test
+          text: Three units pass the functional test and show an insulation resistance of at least 10 MΩ within 1 hour after the last cycle.
+          threshold: 6 cycles, +40 °C, ≥ 10 MΩ
+    sv:
+      title: Funktion efter cyklisk fuktig värme
+      description: Produkten SKA klara sitt funktionstest och en mätning av isolationsresistansen på minst 10 MΩ efter 6 cykler med cyklisk fuktig värme med en övre temperatur på +40 °C.
+      rationale: Kondens under temperaturcykler ger läckströmmar, korrosion och kortslutningar som torra provningar inte avslöjar.
+      criteria:
+        - method: test
+          text: Tre enheter klarar funktionstestet och visar en isolationsresistans på minst 10 MΩ inom 1 timme efter den sista cykeln.
+          threshold: 6 cykler, +40 °C, ≥ 10 MΩ
+
+  - id: HWENV-05
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [thermal-cycling, solder-joints]
+    refs: ["IEC 60068-2-14:2023 (test N: change of temperature)"]
+    tests: [HWENV-T04]
+    en:
+      title: No failure after temperature cycling
+      description: The product MUST pass its functional test after 5 cycles of change of temperature between its minimum and maximum storage temperatures with a dwell time of 3 hours at each extreme.
+      rationale: Repeated expansion and contraction cracks solder joints and seals, which is a main cause of early field failures.
+      criteria:
+        - method: test
+          text: Three units pass the functional test after the 5 cycles, and an inspection under 10× magnification finds no cracked solder joint on the 5 largest components.
+          threshold: 5 cycles, 3 h dwell
+    sv:
+      title: Inga fel efter temperaturväxlingar
+      description: Produkten SKA klara sitt funktionstest efter 5 cykler med temperaturväxling mellan sin lägsta och högsta lagringstemperatur med en hålltid på 3 timmar vid varje ytterläge.
+      rationale: Upprepad utvidgning och sammandragning spräcker lödfogar och tätningar, vilket är en huvudorsak till tidiga fel i fält.
+      criteria:
+        - method: test
+          text: Tre enheter klarar funktionstestet efter de 5 cyklerna, och en kontroll med 10 gångers förstoring hittar ingen sprucken lödfog på de 5 största komponenterna.
+          threshold: 5 cykler, 3 h hålltid
+
+  - id: HWENV-06
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [vibration, mechanical-test]
+    refs: ["IEC 60068-2-6:2007 (test Fc: vibration, sinusoidal)", "IEC 60068-2-64:2026 (test Fh: vibration, broadband random)"]
+    tests: [HWENV-T05]
+    en:
+      title: Vibration in three axes
+      description: The product MUST pass its functional test after a vibration test in each of three perpendicular axes at the frequency range, level and duration stated in the environmental specification, with no loose part, broken fixing or resonance-induced fault during the test.
+      rationale: Vibration in transport and operation loosens screws and connectors and fatigues heavy components on the circuit board.
+      criteria:
+        - method: test
+          text: Two units pass the functional test after the test in each axis, the monitored function shows no interruption during the test, and an inspection finds no loose or broken part.
+    sv:
+      title: Vibration i tre axlar
+      description: Produkten SKA klara sitt funktionstest efter en vibrationsprovning i var och en av tre vinkelräta axlar med det frekvensområde, den nivå och den varaktighet som anges i miljöspecifikationen, utan lösa delar, brutna infästningar eller fel orsakade av resonans under provningen.
+      rationale: Vibration under transport och drift lossar skruvar och kontaktdon och utmattar tunga komponenter på kretskortet.
+      criteria:
+        - method: test
+          text: Två enheter klarar funktionstestet efter provningen i varje axel, den övervakade funktionen visar inga avbrott under provningen och en kontroll hittar inga lösa eller trasiga delar.
+
+  - id: HWENV-07
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [shock, mechanical-test]
+    refs: ["IEC 60068-2-27:2008 (test Ea: shock)"]
+    tests: [HWENV-T05]
+    en:
+      title: Mechanical shock
+      description: The product MUST pass its functional test after 18 half-sine shocks of 30 g peak acceleration and 11 ms duration, three in each direction of each of three perpendicular axes.
+      rationale: Shocks from handling and transport break heavy components, connectors and enclosure fixings.
+      criteria:
+        - method: test
+          text: Two units pass the functional test after the 18 shocks, and an inspection finds no broken or displaced part.
+          threshold: 30 g, 11 ms, 18 shocks
+    sv:
+      title: Mekanisk stöt
+      description: Produkten SKA klara sitt funktionstest efter 18 halvsinusformade stötar med 30 g toppacceleration och 11 ms varaktighet, tre i varje riktning längs var och en av tre vinkelräta axlar.
+      rationale: Stötar vid hantering och transport bryter tunga komponenter, kontaktdon och kapslingens infästningar.
+      criteria:
+        - method: test
+          text: Två enheter klarar funktionstestet efter de 18 stötarna, och en kontroll hittar inga trasiga eller förskjutna delar.
+          threshold: 30 g, 11 ms, 18 stötar
+
+  - id: HWENV-08
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [free-fall, portable, drop-test]
+    refs: ["IEC 60068-2-31:2008 (test Ec: rough handling shocks)"]
+    tests: [HWENV-T06]
+    en:
+      title: Portable product survives a drop from 1 metre
+      description: A portable product MUST remain safe and pass its functional test after 26 free-fall drops from 1 m onto a steel-faced concrete floor, covering each face, edge and corner once.
+      rationale: Portable products are dropped in daily use, and a cracked enclosure can expose live parts or a damaged battery.
+      criteria:
+        - method: test
+          text: After the 26 drops, two units pass the functional test, and no opening lets a 12 mm test finger reach a live part.
+          threshold: 26 drops from 1 m
+    sv:
+      title: Bärbar produkt klarar ett fall från 1 meter
+      description: En bärbar produkt SKA förbli säker och klara sitt funktionstest efter 26 fria fall från 1 m mot ett stålklätt betonggolv, så att varje sida, kant och hörn träffas en gång.
+      rationale: Bärbara produkter tappas i daglig användning, och en sprucken kapsling kan frilägga spänningsförande delar eller ett skadat batteri.
+      criteria:
+        - method: test
+          text: Efter de 26 fallen klarar två enheter funktionstestet, och ingen öppning släpper fram ett provfinger på 12 mm till en spänningsförande del.
+          threshold: 26 fall från 1 m
+
+  - id: HWENV-09
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [ip-rating, ingress-protection, enclosure]
+    refs: ["IEC 60529:1989+A2:2013 (IP code)"]
+    tests: [HWENV-T07]
+    en:
+      title: Declared IP rating verified by test
+      description: The enclosure MUST meet the IP rating declared on the data plate (IP54 by default), verified by the dust and water tests of IEC 60529 for that rating on a unit with all cables and covers fitted as in use.
+      rationale: Dust and water entering the enclosure cause short circuits and corrosion, and the declared rating is what customers rely on when they install the product.
+      criteria:
+        - method: test
+          text: After the dust test and the water test of the declared rating, the unit shows no dust or water inside in quantities that impair function, and passes the functional test.
+    sv:
+      title: Deklarerad IP-klass verifierad genom provning
+      description: Kapslingen SKA uppfylla den IP-klass som anges på märkskylten (IP54 som standardvärde), verifierad med de damm- och vattenprovningar i IEC 60529 som gäller för klassen på en enhet med alla kablar och lock monterade som vid användning.
+      rationale: Damm och vatten som tränger in i kapslingen ger kortslutningar och korrosion, och den deklarerade klassen är vad kunderna förlitar sig på när de installerar produkten.
+      criteria:
+        - method: test
+          text: Efter dammprovningen och vattenprovningen för den deklarerade klassen visar enheten inget damm eller vatten invändigt i mängder som försämrar funktionen, och den klarar funktionstestet.
+
+  - id: HWENV-10
+    type: non_functional
+    obligation: should
+    priority: low
+    tags: [ik-rating, impact, enclosure]
+    refs: ["IEC 62262:2002+A1:2021 (IK code)"]
+    tests: [HWENV-T08]
+    en:
+      title: Impact protection of the enclosure
+      description: An enclosure for public or industrial locations SHOULD meet impact protection IK08 (5 J), verified by impacts on the most exposed points of the enclosure.
+      rationale: Enclosures in public and industrial places are hit by tools, carts and vandals, and a cracked enclosure loses its IP rating and its safety.
+      criteria:
+        - method: test
+          text: Five 5 J impacts on the most exposed points cause no crack that reduces the IP rating or exposes a live part.
+          threshold: IK08, 5 J
+    sv:
+      title: Kapslingens skydd mot slag
+      description: En kapsling för offentliga eller industriella platser BÖR uppfylla slagskyddsklass IK08 (5 J), verifierad med slag mot kapslingens mest utsatta punkter.
+      rationale: Kapslingar på offentliga och industriella platser träffas av verktyg, vagnar och skadegörare, och en sprucken kapsling förlorar sin IP-klass och sin säkerhet.
+      criteria:
+        - method: test
+          text: Fem slag på 5 J mot de mest utsatta punkterna ger ingen spricka som sänker IP-klassen eller friläggar en spänningsförande del.
+          threshold: IK08, 5 J
+
+  - id: HWENV-11
+    type: regulatory
+    obligation: must_not
+    priority: critical
+    tags: [rohs, restricted-substances]
+    refs: ["Directive 2011/65/EU (RoHS) Art. 4(1) (prevention)", "Directive 2011/65/EU (RoHS) Annex II (restricted substances and maximum concentration values)"]
+    tests: [HWENV-T09]
+    en:
+      title: Restricted substances below the RoHS limits
+      description: A homogeneous material in the product MUST NOT contain more than 0.1 % by weight of lead, mercury, hexavalent chromium, PBB, PBDE, DEHP, BBP, DBP or DIBP, or more than 0.01 % by weight of cadmium, for each use not covered by a listed exemption.
+      rationale: These substances harm health and the environment when products are used and recycled, and products above the limits cannot be sold in the EU.
+      criteria:
+        - method: test
+          text: X-ray fluorescence screening of 10 high-risk materials (solders, plastics with colours, cables, coatings) shows values below the limits, and any value above the screening limit is confirmed below the limit by laboratory analysis.
+          threshold: 0.1 % (0.01 % for cadmium)
+    sv:
+      title: Begränsade ämnen under gränserna i RoHS
+      description: Ett homogent material i produkten SKA INTE innehålla mer än 0,1 viktprocent bly, kvicksilver, sexvärt krom, PBB, PBDE, DEHP, BBP, DBP eller DIBP, eller mer än 0,01 viktprocent kadmium, för en användning som saknar ett angivet undantag.
+      rationale: Dessa ämnen skadar hälsa och miljö när produkterna används och återvinns, och produkter över gränserna får inte säljas i EU.
+      criteria:
+        - method: test
+          text: Röntgenfluorescensmätning av 10 material med hög risk (lod, färgade plaster, kablar, ytbeläggningar) visar värden under gränserna, och ett värde över screeninggränsen bekräftas under gränsen genom laboratorieanalys.
+          threshold: 0,1 % (0,01 % för kadmium)
+
+  - id: HWENV-12
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [rohs, material-declaration, suppliers]
+    refs: ["Directive 2011/65/EU (RoHS) Art. 7 (obligations of manufacturers)", "EN IEC 63000:2018 (technical documentation for restricted substances)", "IEC 62474 (material declaration)"]
+    tests: [HWENV-T09]
+    en:
+      title: Material declarations for each part in the bill of materials
+      description: The manufacturer MUST hold, for each part in the bill of materials, a supplier material declaration or a test report that shows compliance with the RoHS restrictions, dated within the last 36 months.
+      rationale: Compliance is built from the parts upward, and the documentation required by the harmonised standard is based on supplier declarations and a risk-based review.
+      criteria:
+        - method: inspection
+          text: The compliance report of the bill of materials shows a declaration or test report for each part, and none is older than 36 months.
+          threshold: 100 % of parts, ≤ 36 months old
+    sv:
+      title: Materialdeklarationer för varje del i materialförteckningen
+      description: Tillverkaren SKA för varje del i materialförteckningen ha en materialdeklaration från leverantören eller en provningsrapport som visar att begränsningarna i RoHS uppfylls, daterad inom de senaste 36 månaderna.
+      rationale: Efterlevnaden byggs upp från delarna, och den dokumentation som den harmoniserade standarden kräver bygger på leverantörsdeklarationer och en riskbaserad granskning.
+      criteria:
+        - method: inspection
+          text: Rapporten om efterlevnad för materialförteckningen visar en deklaration eller provningsrapport för varje del, och ingen är äldre än 36 månader.
+          threshold: 100 % av delarna, ≤ 36 månader gamla
+
+  - id: HWENV-13
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [rohs, exemptions, expiry]
+    refs: ["Directive 2011/65/EU (RoHS) Annex III (exempted applications)", "Directive 2011/65/EU (RoHS) Art. 5 (adaptation of the annexes to scientific and technical progress)"]
+    tests: [HWENV-T10]
+    en:
+      title: RoHS exemptions tracked with their expiry dates
+      description: The manufacturer MUST list each RoHS exemption the product relies on with the part that uses it and the expiry date of the exemption, and MUST start a redesign of the part at least 18 months before the expiry date.
+      rationale: Exemptions expire, and a product that still relies on an expired exemption becomes non-compliant overnight.
+      criteria:
+        - method: inspection
+          text: The exemption list names part, exemption number and expiry date, and each exemption expiring within 18 months has an open redesign task.
+          threshold: redesign starts ≥ 18 months before expiry
+    sv:
+      title: Undantag i RoHS följs med sina slutdatum
+      description: Tillverkaren SKA förteckna varje undantag i RoHS som produkten förlitar sig på med den del som använder det och undantagets slutdatum, och påbörja en omkonstruktion av delen minst 18 månader före slutdatum.
+      rationale: Undantag upphör, och en produkt som fortfarande förlitar sig på ett upphört undantag uppfyller plötsligt inte kraven.
+      criteria:
+        - method: inspection
+          text: Förteckningen över undantag anger del, undantagsnummer och slutdatum, och varje undantag som upphör inom 18 månader har en öppen uppgift för omkonstruktion.
+          threshold: omkonstruktion startar ≥ 18 månader före slutdatum
+
+  - id: HWENV-14
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [reach, svhc, customer-information]
+    refs: ["Regulation (EC) No 1907/2006 (REACH) Art. 33 (duty to communicate information on substances in articles)"]
+    tests: [HWENV-T10]
+    en:
+      title: Substances of very high concern communicated
+      description: When an article in the product contains a substance on the REACH candidate list above 0.1 % by weight, the manufacturer MUST give its customers the name of the substance and the information needed for safe use, at the latest with the delivery.
+      rationale: Customers and consumers have a right to know about substances of very high concern so that they can handle and dispose of the product safely.
+      criteria:
+        - method: inspection
+          text: The SVHC report checked against the current candidate list identifies each affected article, and the product information sent with deliveries names each substance found.
+          threshold: 0.1 % by weight per article
+    sv:
+      title: Information om ämnen som inger mycket stora betänkligheter
+      description: När en vara i produkten innehåller ett ämne på Reachs kandidatförteckning över 0,1 viktprocent SKA tillverkaren ge sina kunder ämnets namn och den information som behövs för säker användning, senast vid leveransen.
+      rationale: Kunder och konsumenter har rätt att få veta om ämnen som inger mycket stora betänkligheter så att de kan hantera och kassera produkten säkert.
+      criteria:
+        - method: inspection
+          text: Rapporten om SVHC som kontrollerats mot den aktuella kandidatförteckningen anger varje berörd vara, och produktinformationen som skickas med leveranserna anger varje funnet ämne.
+          threshold: 0,1 viktprocent per vara
+
+  - id: HWENV-15
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [weee, marking, wheeled-bin]
+    refs: ["Directive 2012/19/EU (WEEE) Art. 14(4) (marking with the crossed-out wheeled bin)", "Directive 2012/19/EU (WEEE) Annex IX (symbol for the marking of EEE)", "EN 50419:2022 (marking of electrical and electronic equipment)"]
+    tests: [HWENV-T11]
+    en:
+      title: Crossed-out wheeled bin symbol on the product
+      description: Each electrical or electronic product MUST carry the crossed-out wheeled bin symbol, visible, legible and indelible, on the product, or on the packaging and the instructions when the product has no free surface of at least 7 mm × 7 mm for it.
+      rationale: The symbol tells users that the product is collected separately and is not put in household waste.
+      criteria:
+        - method: inspection
+          text: The symbol is present on 5 sampled units with a height of at least 7 mm, or on the packaging and instructions for a product smaller than the symbol.
+          threshold: height ≥ 7 mm
+    sv:
+      title: Symbolen med överkorsad soptunna på produkten
+      description: Varje elektrisk eller elektronisk produkt SKA bära symbolen med en överkorsad soptunna på hjul, synlig, läsbar och outplånlig, på produkten eller, när produkten saknar en fri yta på minst 7 × 7 mm för symbolen, på förpackningen och i instruktionerna.
+      rationale: Symbolen talar om för användarna att produkten samlas in separat och inte läggs i hushållsavfallet.
+      criteria:
+        - method: inspection
+          text: Symbolen finns på 5 enheter i ett stickprov med en höjd på minst 7 mm, eller på förpackningen och i instruktionerna för en produkt som är mindre än symbolen.
+          threshold: höjd ≥ 7 mm
+
+  - id: HWENV-16
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [weee, treatment-information, recycling]
+    refs: ["Directive 2012/19/EU (WEEE) Art. 15 (information for treatment facilities)", "Directive 2012/19/EU (WEEE) Annex VII (selective treatment)"]
+    tests: [HWENV-T11]
+    en:
+      title: Information for recycling and treatment facilities
+      description: Within one year after a new product type is placed on the market, the manufacturer MUST publish information for treatment facilities that shows the location of the parts and substances that need selective treatment (batteries, circuit boards above 10 cm², capacitors with hazardous substances, displays).
+      rationale: Treatment facilities need to find and remove hazardous parts before shredding to protect workers and the environment.
+      criteria:
+        - method: inspection
+          text: The treatment information of each product type placed on the market more than 12 months ago is published and shows the four listed part types with their location.
+          threshold: published ≤ 12 months after market placement
+    sv:
+      title: Information till anläggningar för återvinning och behandling
+      description: Inom ett år efter att en ny produkttyp släppts ut på marknaden SKA tillverkaren publicera information till behandlingsanläggningar som visar var de delar och ämnen sitter som kräver selektiv behandling (batterier, kretskort större än 10 cm², kondensatorer med farliga ämnen, bildskärmar).
+      rationale: Behandlingsanläggningar behöver hitta och ta bort farliga delar före fragmentering för att skydda personalen och miljön.
+      criteria:
+        - method: inspection
+          text: Informationen för behandling av varje produkttyp som släpptes ut på marknaden för mer än 12 månader sedan är publicerad och visar de fyra angivna typerna av delar med deras placering.
+          threshold: publicerad ≤ 12 månader efter utsläppandet
+
+  - id: HWENV-17
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [design-for-disassembly, batteries, repair]
+    refs: ["Directive 2012/19/EU (WEEE) Art. 4 (product design)", "Regulation (EU) 2023/1542 (Batteries Regulation) Art. 11 (removability and replaceability of portable batteries)"]
+    tests: [HWENV-T12]
+    en:
+      title: Batteries removable with commercially available tools
+      description: A product that contains a portable battery SHOULD let the end user remove and replace the battery with commercially available tools in no more than 5 minutes, without glue that needs heat or solvents.
+      rationale: Removable batteries extend product life, ease repair and allow safe separation at end of life.
+      criteria:
+        - method: demonstration
+          text: A person who follows the instructions removes and refits the battery with commercially available tools in at most 5 minutes, and no heat or solvent is used.
+          threshold: ≤ 5 min
+    sv:
+      title: Batterier kan tas ut med verktyg som finns i handeln
+      description: En produkt som innehåller ett bärbart batteri BÖR låta slutanvändaren ta ut och byta batteriet med verktyg som finns i handeln på högst 5 minuter, utan lim som kräver värme eller lösningsmedel.
+      rationale: Batterier som kan tas ut förlänger produktens livslängd, underlättar reparation och gör säker separering möjlig vid livslängdens slut.
+      criteria:
+        - method: demonstration
+          text: En person som följer instruktionerna tar ut och sätter tillbaka batteriet med verktyg som finns i handeln på högst 5 minuter, och ingen värme eller inget lösningsmedel används.
+          threshold: ≤ 5 min
+
+tests:
+  - id: HWENV-T01
+    priority: high
+    execution: manual
+    tags: [environmental-specification]
+    refs: ["IEC 60721-3 (classification of environmental conditions)"]
+    en:
+      title: Environmental specification is complete
+      description: Reviews the environmental section of the product specification.
+      preconditions: The current product specification.
+      expected: Each condition has a numeric limit and a referenced test with severity.
+      steps:
+        - action: Read the ranges for temperature, humidity and altitude in operation and storage.
+          expected: Each has numeric limits.
+        - action: Read the vibration and shock levels and the test references.
+          expected: Each condition has an IEC 60068 test with its severity.
+    sv:
+      title: Miljöspecifikationen är fullständig
+      description: Granskar miljöavsnittet i produktspecifikationen.
+      preconditions: Den aktuella produktspecifikationen.
+      expected: Varje villkor har en numerisk gräns och en angiven provning med stränghet.
+      steps:
+        - action: Läs områdena för temperatur, fuktighet och höjd över havet i drift och lagring.
+          expected: Vart och ett har numeriska gränser.
+        - action: Läs nivåerna för vibration och stöt och hänvisningarna till provning.
+          expected: Varje villkor har en provning enligt IEC 60068 med dess stränghet.
+
+  - id: HWENV-T02
+    priority: high
+    execution: manual
+    tags: [cold, dry-heat]
+    refs: ["IEC 60068-2-1:2025 (test A: cold)", "IEC 60068-2-2:2025 (test B: dry heat)"]
+    en:
+      title: Functional test at the temperature limits
+      description: Runs the functional test on three units at the minimum and at the maximum operating temperature.
+      preconditions: A climatic chamber, three units, the functional test procedure and a load that drives the units at full load.
+      expected: All units pass at both limits without thermal shutdown.
+      steps:
+        - action: Keep the units unpowered at the minimum operating temperature for 16 hours, then power them and run the functional test in the chamber.
+          expected: Each unit passes.
+          data: "−20 °C, 16 h"
+        - action: Run the units at full load at the maximum operating temperature for 16 hours, then run the functional test in the chamber.
+          expected: Each unit passes and no thermal shutdown is logged.
+          data: "+55 °C, 16 h, full load"
+    sv:
+      title: Funktionstest vid temperaturgränserna
+      description: Kör funktionstestet på tre enheter vid lägsta och högsta drifttemperatur.
+      preconditions: En klimatkammare, tre enheter, funktionstestets procedur och en last som driver enheterna med full last.
+      expected: Alla enheter klarar båda gränserna utan termisk avstängning.
+      steps:
+        - action: Håll enheterna strömlösa vid lägsta drifttemperatur i 16 timmar, slå sedan på dem och kör funktionstestet i kammaren.
+          expected: Varje enhet godkänns.
+          data: "−20 °C, 16 h"
+        - action: Kör enheterna med full last vid högsta drifttemperatur i 16 timmar och kör sedan funktionstestet i kammaren.
+          expected: Varje enhet godkänns och ingen termisk avstängning loggas.
+          data: "+55 °C, 16 h, full last"
+
+  - id: HWENV-T03
+    priority: high
+    execution: manual
+    tags: [damp-heat]
+    refs: ["IEC 60068-2-30:2025 (test Db: damp heat, cyclic)"]
+    en:
+      title: Cyclic damp heat with insulation measurement
+      description: Exposes three units to cyclic damp heat and measures insulation resistance afterwards.
+      preconditions: A humidity chamber, three units and an insulation resistance tester.
+      expected: The units work and keep at least 10 MΩ insulation resistance.
+      steps:
+        - action: Run 6 cycles of cyclic damp heat with an upper temperature of +40 °C.
+          expected: The cycles complete as programmed.
+          data: "6 cycles of 24 h, +25 °C to +40 °C"
+        - action: Within 1 hour after the last cycle, measure insulation resistance and run the functional test.
+          expected: Resistance is at least 10 MΩ and each unit passes.
+    sv:
+      title: Cyklisk fuktig värme med mätning av isolationen
+      description: Utsätter tre enheter för cyklisk fuktig värme och mäter isolationsresistansen efteråt.
+      preconditions: En fuktkammare, tre enheter och en isolationsprovare.
+      expected: Enheterna fungerar och har kvar minst 10 MΩ isolationsresistans.
+      steps:
+        - action: Kör 6 cykler med cyklisk fuktig värme med en övre temperatur på +40 °C.
+          expected: Cyklerna genomförs enligt programmet.
+          data: "6 cykler om 24 h, +25 °C till +40 °C"
+        - action: Mät isolationsresistansen och kör funktionstestet inom 1 timme efter den sista cykeln.
+          expected: Resistansen är minst 10 MΩ och varje enhet godkänns.
+
+  - id: HWENV-T04
+    priority: medium
+    execution: manual
+    tags: [thermal-cycling]
+    refs: ["IEC 60068-2-14:2023 (test N: change of temperature)"]
+    en:
+      title: Temperature cycling and solder joint inspection
+      description: Cycles three units between the storage limits and inspects the solder joints.
+      preconditions: A thermal cycling chamber, three units and a stereo microscope with 10× magnification.
+      expected: The units pass the functional test and show no cracked solder joints.
+      steps:
+        - action: Run 5 cycles between the minimum and maximum storage temperatures with 3 hours at each extreme.
+          expected: The cycles complete as programmed.
+          data: "−40 °C to +85 °C, 3 h dwell, 5 cycles"
+        - action: Run the functional test and inspect the solder joints of the 5 largest components.
+          expected: Each unit passes and no joint is cracked.
+    sv:
+      title: Temperaturväxling och kontroll av lödfogar
+      description: Växlar tre enheter mellan lagringsgränserna och kontrollerar lödfogarna.
+      preconditions: En kammare för temperaturväxling, tre enheter och ett stereomikroskop med 10 gångers förstoring.
+      expected: Enheterna klarar funktionstestet och visar inga spruckna lödfogar.
+      steps:
+        - action: Kör 5 cykler mellan lägsta och högsta lagringstemperatur med 3 timmar vid varje ytterläge.
+          expected: Cyklerna genomförs enligt programmet.
+          data: "−40 °C till +85 °C, 3 h hålltid, 5 cykler"
+        - action: Kör funktionstestet och kontrollera lödfogarna på de 5 största komponenterna.
+          expected: Varje enhet godkänns och ingen fog är sprucken.
+
+  - id: HWENV-T05
+    priority: high
+    execution: manual
+    tags: [vibration, shock]
+    refs: ["IEC 60068-2-6:2007 (test Fc: vibration, sinusoidal)", "IEC 60068-2-27:2008 (test Ea: shock)"]
+    en:
+      title: Vibration and shock in three axes
+      description: Vibrates and shocks two monitored units in each axis and inspects them.
+      preconditions: A vibration table with shock capability, two units with a monitored function and the levels of the environmental specification.
+      expected: No interruption, no loose or broken part, and the functional test passes.
+      steps:
+        - action: Run the specified vibration in each of the three axes while monitoring the function.
+          expected: The monitor shows no interruption.
+        - action: Apply three 30 g, 11 ms half-sine shocks in each direction of each axis.
+          expected: The shocks are applied as specified.
+          data: "30 g, 11 ms, 18 shocks"
+        - action: Inspect the units and run the functional test.
+          expected: No part is loose, broken or displaced, and each unit passes.
+    sv:
+      title: Vibration och stöt i tre axlar
+      description: Vibrerar och stöter två övervakade enheter i varje axel och kontrollerar dem.
+      preconditions: Ett vibrationsbord med stötfunktion, två enheter med en övervakad funktion och nivåerna i miljöspecifikationen.
+      expected: Inga avbrott, inga lösa eller trasiga delar, och funktionstestet godkänns.
+      steps:
+        - action: Kör den specificerade vibrationen i var och en av de tre axlarna medan funktionen övervakas.
+          expected: Övervakningen visar inga avbrott.
+        - action: Ge tre halvsinusformade stötar på 30 g och 11 ms i varje riktning längs varje axel.
+          expected: Stötarna ges enligt specifikationen.
+          data: "30 g, 11 ms, 18 stötar"
+        - action: Kontrollera enheterna och kör funktionstestet.
+          expected: Ingen del är lös, trasig eller förskjuten, och varje enhet godkänns.
+
+  - id: HWENV-T06
+    priority: medium
+    execution: manual
+    tags: [drop-test]
+    refs: ["IEC 60068-2-31:2008 (test Ec: rough handling shocks)"]
+    en:
+      title: Drop test of a portable product
+      description: Drops two units onto a steel-faced concrete floor on each face, edge and corner.
+      preconditions: Two units, a steel-faced concrete floor, a drop fixture set to 1 m and a 12 mm test finger.
+      expected: The units work and no live part can be reached.
+      steps:
+        - action: Drop each unit 26 times from 1 m so that each face, edge and corner hits the floor once.
+          expected: The drops are carried out as planned.
+        - action: Probe each opening with the test finger and run the functional test.
+          expected: The finger reaches no live part and each unit passes.
+    sv:
+      title: Fallprovning av en bärbar produkt
+      description: Släpper två enheter mot ett stålklätt betonggolv på varje sida, kant och hörn.
+      preconditions: Två enheter, ett stålklätt betonggolv, en fallanordning inställd på 1 m och ett provfinger på 12 mm.
+      expected: Enheterna fungerar och ingen spänningsförande del går att nå.
+      steps:
+        - action: Släpp varje enhet 26 gånger från 1 m så att varje sida, kant och hörn träffar golvet en gång.
+          expected: Fallen genomförs enligt planen.
+        - action: Prova varje öppning med provfingret och kör funktionstestet.
+          expected: Fingret når ingen spänningsförande del och varje enhet godkänns.
+
+  - id: HWENV-T07
+    priority: high
+    execution: manual
+    tags: [ip-rating]
+    refs: ["IEC 60529:1989+A2:2013 (IP code)"]
+    en:
+      title: Dust and water test of the declared IP rating
+      description: Runs the IEC 60529 tests of the declared rating on a unit installed as in use.
+      preconditions: A dust chamber and a water spray or jet setup for the declared rating, and a unit with all cables and covers fitted.
+      expected: No harmful ingress and the functional test passes.
+      steps:
+        - action: Run the dust test of the declared first digit.
+          expected: The dust inside does not impair function or safety.
+          data: "IP5X: talcum powder, 8 h"
+        - action: Run the water test of the declared second digit.
+          expected: The water inside does not impair function or safety.
+          data: "IPX4: splashing water, 10 min"
+        - action: Open the unit, inspect it and run the functional test.
+          expected: No harmful ingress is found and the unit passes.
+    sv:
+      title: Damm- och vattenprovning för den deklarerade IP-klassen
+      description: Kör provningarna i IEC 60529 för den deklarerade klassen på en enhet installerad som vid användning.
+      preconditions: En dammkammare och en uppställning för vattenstänk eller vattenstråle för den deklarerade klassen, och en enhet med alla kablar och lock monterade.
+      expected: Inget skadligt inträngande och funktionstestet godkänns.
+      steps:
+        - action: Kör dammprovningen för den deklarerade första siffran.
+          expected: Dammet invändigt försämrar inte funktion eller säkerhet.
+          data: "IP5X: talk, 8 h"
+        - action: Kör vattenprovningen för den deklarerade andra siffran.
+          expected: Vattnet invändigt försämrar inte funktion eller säkerhet.
+          data: "IPX4: vattenstänk, 10 min"
+        - action: Öppna enheten, kontrollera den och kör funktionstestet.
+          expected: Inget skadligt inträngande hittas och enheten godkänns.
+
+  - id: HWENV-T08
+    priority: low
+    execution: manual
+    tags: [ik-rating]
+    refs: ["IEC 62262:2002+A1:2021 (IK code)"]
+    en:
+      title: Impact test of the enclosure
+      description: Applies 5 J impacts to the most exposed points of the enclosure.
+      preconditions: An impact hammer for 5 J, a mounted enclosure and a 12 mm test finger.
+      expected: No crack that reduces the IP rating or exposes a live part.
+      steps:
+        - action: Apply five 5 J impacts on the most exposed points.
+          expected: The impacts are applied at the marked points.
+        - action: Inspect the enclosure and probe any opening with the test finger.
+          expected: No crack reduces the IP rating and no live part can be reached.
+    sv:
+      title: Slagprovning av kapslingen
+      description: Ger slag på 5 J mot kapslingens mest utsatta punkter.
+      preconditions: En slaghammare för 5 J, en monterad kapsling och ett provfinger på 12 mm.
+      expected: Ingen spricka som sänker IP-klassen eller friläggar en spänningsförande del.
+      steps:
+        - action: Ge fem slag på 5 J mot de mest utsatta punkterna.
+          expected: Slagen ges mot de markerade punkterna.
+        - action: Kontrollera kapslingen och prova varje öppning med provfingret.
+          expected: Ingen spricka sänker IP-klassen och ingen spänningsförande del går att nå.
+
+  - id: HWENV-T09
+    priority: critical
+    execution: manual
+    tags: [rohs, material-declaration]
+    refs: ["Directive 2011/65/EU (RoHS) Annex II (restricted substances and maximum concentration values)", "EN IEC 63000:2018 (technical documentation for restricted substances)"]
+    en:
+      title: RoHS screening and material declarations
+      description: Screens high-risk materials with X-ray fluorescence and checks the supplier declarations of the bill of materials.
+      preconditions: A handheld X-ray fluorescence analyser, a production unit, the bill of materials and the compliance report.
+      expected: Each screened material is below the limits and each part has a current declaration.
+      steps:
+        - action: Screen 10 high-risk materials of the unit.
+          expected: Each value is below the screening limit, or a laboratory analysis confirms it is below the legal limit.
+          data: "solder, red plastic part, cable insulation, plated screw, conformal coating"
+        - action: Compare the parts in the bill of materials with the compliance report.
+          expected: Each part has a declaration or test report no older than 36 months.
+    sv:
+      title: Kontroll av RoHS och materialdeklarationer
+      description: Mäter material med hög risk med röntgenfluorescens och kontrollerar leverantörernas deklarationer för materialförteckningen.
+      preconditions: En handhållen röntgenfluorescensanalysator, en produktionsenhet, materialförteckningen och rapporten om efterlevnad.
+      expected: Varje uppmätt material ligger under gränserna och varje del har en aktuell deklaration.
+      steps:
+        - action: Mät 10 material med hög risk i enheten.
+          expected: Varje värde ligger under screeninggränsen, eller en laboratorieanalys bekräftar att det ligger under den lagstadgade gränsen.
+          data: "lod, röd plastdel, kabelisolering, pläterad skruv, skyddslack"
+        - action: Jämför delarna i materialförteckningen med rapporten om efterlevnad.
+          expected: Varje del har en deklaration eller provningsrapport som inte är äldre än 36 månader.
+
+  - id: HWENV-T10
+    priority: high
+    execution: manual
+    tags: [rohs, exemptions, reach]
+    refs: ["Directive 2011/65/EU (RoHS) Annex III (exempted applications)", "Regulation (EC) No 1907/2006 (REACH) Art. 33 (duty to communicate information on substances in articles)"]
+    en:
+      title: Exemption list and SVHC information are current
+      description: Checks the RoHS exemption list against the expiry dates and the SVHC report against the current candidate list.
+      preconditions: The exemption list, the redesign tasks, the SVHC report, the current REACH candidate list and the product information sent with deliveries.
+      expected: Expiring exemptions have redesign tasks and each SVHC found is communicated.
+      steps:
+        - action: For each exemption expiring within 18 months, look for a redesign task.
+          expected: Each has an open task with an owner.
+        - action: Compare the date of the candidate list used in the SVHC report with the current list.
+          expected: The report uses the current list.
+        - action: Compare the substances in the report with the product information.
+          expected: Each substance above 0.1 % by weight is named in the product information.
+    sv:
+      title: Förteckningen över undantag och informationen om SVHC är aktuella
+      description: Kontrollerar förteckningen över undantag i RoHS mot slutdatumen och rapporten om SVHC mot den aktuella kandidatförteckningen.
+      preconditions: Förteckningen över undantag, uppgifterna för omkonstruktion, rapporten om SVHC, den aktuella kandidatförteckningen i Reach och produktinformationen som skickas med leveranserna.
+      expected: Undantag som snart upphör har uppgifter för omkonstruktion, och varje funnet SVHC kommuniceras.
+      steps:
+        - action: Leta upp en uppgift för omkonstruktion för varje undantag som upphör inom 18 månader.
+          expected: Vart och ett har en öppen uppgift med en ansvarig.
+        - action: Jämför datumet för den kandidatförteckning som rapporten om SVHC använder med den aktuella förteckningen.
+          expected: Rapporten använder den aktuella förteckningen.
+        - action: Jämför ämnena i rapporten med produktinformationen.
+          expected: Varje ämne över 0,1 viktprocent anges i produktinformationen.
+
+  - id: HWENV-T11
+    priority: high
+    execution: manual
+    tags: [weee]
+    refs: ["Directive 2012/19/EU (WEEE) Art. 14(4) (marking with the crossed-out wheeled bin)", "Directive 2012/19/EU (WEEE) Art. 15 (information for treatment facilities)"]
+    en:
+      title: WEEE marking and treatment information
+      description: Inspects the WEEE symbol on sampled units and the published treatment information.
+      preconditions: 5 units from stock, a ruler and the list of product types with their market placement dates.
+      expected: The symbol is present and the treatment information is published in time.
+      steps:
+        - action: Measure the crossed-out wheeled bin symbol on each unit.
+          expected: It is present and at least 7 mm high, or shown on packaging and instructions for a smaller product.
+        - action: Open the treatment information of each product type placed on the market more than 12 months ago.
+          expected: It is published and shows batteries, circuit boards, capacitors and displays with their location.
+    sv:
+      title: WEEE-märkning och information för behandling
+      description: Kontrollerar WEEE-symbolen på enheter i ett stickprov och den publicerade informationen för behandling.
+      preconditions: 5 enheter från lagret, en linjal och listan över produkttyper med datum för utsläppande på marknaden.
+      expected: Symbolen finns och informationen för behandling är publicerad i tid.
+      steps:
+        - action: Mät symbolen med den överkorsade soptunnan på varje enhet.
+          expected: Den finns och är minst 7 mm hög, eller visas på förpackning och i instruktioner för en mindre produkt.
+        - action: Öppna informationen för behandling för varje produkttyp som släpptes ut på marknaden för mer än 12 månader sedan.
+          expected: Den är publicerad och visar batterier, kretskort, kondensatorer och bildskärmar med deras placering.
+
+  - id: HWENV-T12
+    priority: medium
+    execution: manual
+    tags: [design-for-disassembly, batteries]
+    refs: ["Regulation (EU) 2023/1542 (Batteries Regulation) Art. 11 (removability and replaceability of portable batteries)"]
+    en:
+      title: Battery replacement by an end user
+      description: A person who has not seen the product before replaces the battery following the instructions.
+      preconditions: A unit with a battery, the user instructions, commercially available tools and a timer.
+      expected: The battery is replaced within 5 minutes without heat or solvent.
+      steps:
+        - action: Ask the person to remove the battery following the instructions and start the timer.
+          expected: The battery comes out without heat or solvent.
+          data: "tools: Phillips screwdriver size 1, plastic opening tool"
+        - action: Ask the person to fit the battery back and stop the timer when the product starts.
+          expected: The product starts and the total time is at most 5 minutes.
+    sv:
+      title: Batteribyte av en slutanvändare
+      description: En person som inte har sett produkten tidigare byter batteriet enligt instruktionerna.
+      preconditions: En enhet med batteri, användarinstruktionerna, verktyg som finns i handeln och ett tidtagarur.
+      expected: Batteriet byts inom 5 minuter utan värme eller lösningsmedel.
+      steps:
+        - action: Be personen ta ut batteriet enligt instruktionerna och starta tidtagningen.
+          expected: Batteriet kommer ut utan värme eller lösningsmedel.
+          data: "verktyg: stjärnskruvmejsel storlek 1, öppningsverktyg i plast"
+        - action: Be personen sätta tillbaka batteriet och stoppa tidtagningen när produkten startar.
+          expected: Produkten startar och den totala tiden är högst 5 minuter.

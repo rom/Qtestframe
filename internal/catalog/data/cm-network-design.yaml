@@ -1,0 +1,732 @@
+area: cm-network-design
+prefix: CMNET
+group: quality
+catalogue: communications
+name: {en: Network design and operations, sv: Nätdesign och nätdrift}
+description:
+  en: Redundant paths and failover, capacity and its forecast, traffic classes, latency, jitter and packet loss limits, monitoring, secured management, time synchronisation, configuration baselines, documentation and planned changes in a data or communication network.
+  sv: Redundanta vägar och omkoppling, kapacitet och prognos, trafikklasser, gränser för fördröjning, jitter och paketförlust, övervakning, skyddad förvaltning, tidssynkronisering, konfigurationsbaslinjer, dokumentation och planerade ändringar i ett data- eller kommunikationsnät.
+
+requirements:
+  - id: CMNET-01
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [redundancy, path-diversity, resilience]
+    refs: ["ISO/IEC 27001:2022 A.8.14", "ISO/IEC 27033-2:2012 (network security design)"]
+    tests: [CMNET-T01]
+    en:
+      title: Two physically separate paths to each site
+      description: The network MUST connect each site to the core over 2 paths that share no cable route, duct or network node, so that one cut cable or one failed node leaves the site connected.
+      rationale: Excavation damage and single node failures are the most common causes of site outages, and only physical diversity protects against them.
+      criteria:
+        - method: inspection
+          text: The route maps of both paths for each site show no shared cable route, duct, building entry or node.
+        - method: demonstration
+          text: Disconnecting either path of a chosen site keeps the site reachable from the core.
+    sv:
+      title: Två fysiskt åtskilda vägar till varje plats
+      description: Nätet SKA ansluta varje plats till kärnnätet via 2 vägar som inte delar kabelsträckning, kanalisation eller nätnod, så att en avgrävd kabel eller en trasig nod inte bryter platsens anslutning.
+      rationale: Grävskador och fel i enstaka noder är de vanligaste orsakerna till avbrott på en plats, och bara fysiskt åtskilda vägar skyddar mot dem.
+      criteria:
+        - method: inspection
+          text: Ledningskartorna för båda vägarna till varje plats visar ingen gemensam kabelsträckning, kanalisation, byggnadsintag eller nod.
+        - method: demonstration
+          text: När den ena av en vald plats vägar kopplas bort går platsen fortfarande att nå från kärnnätet.
+
+  - id: CMNET-02
+    type: performance
+    obligation: must
+    priority: high
+    tags: [failover, redundancy, convergence]
+    refs: ["RFC 5880", "ISO/IEC 27001:2022 A.8.14"]
+    tests: [CMNET-T02]
+    en:
+      title: Traffic moved to the other path within 1 second
+      description: When one of 2 redundant links or core nodes fails, the network MUST carry the traffic over the remaining path within 1 second of the failure.
+      rationale: Voice calls and control sessions drop after a few seconds without packets, so failover has to finish before the applications notice.
+      criteria:
+        - method: test
+          text: A continuous test stream loses packets for at most 1 second when the active link is disconnected and when the active core node is powered off.
+          threshold: ≤ 1 s
+    sv:
+      title: Trafiken flyttas till den andra vägen inom 1 sekund
+      description: När en av 2 redundanta länkar eller kärnnoder går sönder SKA nätet föra trafiken över den kvarvarande vägen inom 1 sekund från felet.
+      rationale: Röstsamtal och styrsessioner bryts efter några sekunder utan paket, så omkopplingen behöver vara klar innan tillämpningarna märker felet.
+      criteria:
+        - method: test
+          text: En kontinuerlig testström tappar paket under högst 1 sekund när den aktiva länken kopplas bort och när den aktiva kärnnoden stängs av.
+          threshold: ≤ 1 s
+
+  - id: CMNET-03
+    type: performance
+    obligation: must
+    priority: high
+    tags: [capacity, utilisation, dimensioning]
+    refs: ["ITIL 4 Capacity and performance management"]
+    tests: [CMNET-T03]
+    en:
+      title: Peak link utilisation at most 70 %
+      description: The network MUST be dimensioned so that each core link and each site uplink stays at or below 70 % utilisation, averaged over 5 minutes, during the busiest hour of each month.
+      rationale: Queues and delay grow steeply above this level, and the remaining headroom absorbs traffic peaks and the extra load after a failover.
+      criteria:
+        - method: analysis
+          text: The utilisation statistics for the last 3 months show no 5-minute average above 70 % on any core link or uplink.
+          threshold: ≤ 70 % per 5 min
+    sv:
+      title: Högsta länkbeläggning 70 %
+      description: Nätet SKA dimensioneras så att varje kärnlänk och varje upplänk från en plats har högst 70 % beläggning, som medelvärde över 5 minuter, under månadens mest belastade timme.
+      rationale: Köer och fördröjning ökar brant över den nivån, och marginalen tar emot trafiktoppar och den extra lasten efter en omkoppling.
+      criteria:
+        - method: analysis
+          text: Beläggningsstatistiken för de senaste 3 månaderna visar inget 5-minutersmedelvärde över 70 % på någon kärnlänk eller upplänk.
+          threshold: ≤ 70 % per 5 min
+
+  - id: CMNET-04
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [capacity, forecast, planning]
+    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 20000-1:2018 §8.4.3"]
+    tests: [CMNET-T04]
+    en:
+      title: Capacity forecast every 6 months
+      description: The network operator SHOULD issue a capacity forecast every 6 months that projects the peak utilisation of each core link 18 months ahead and lists the links forecast to pass 70 %.
+      rationale: Upgrading a link takes months of procurement and installation, so the need has to be seen well before the link is full.
+      criteria:
+        - method: review
+          text: The 2 latest forecasts are at most 6 months apart, cover each core link, project 18 months ahead and list the links above 70 % with a planned upgrade date.
+    sv:
+      title: Kapacitetsprognos var 6:e månad
+      description: Nätoperatören BÖR var 6:e månad ta fram en kapacitetsprognos som förutser den högsta beläggningen på varje kärnlänk 18 månader framåt och listar de länkar som väntas passera 70 %.
+      rationale: Att uppgradera en länk tar månader med upphandling och installation, så behovet behöver synas i god tid innan länken är full.
+      criteria:
+        - method: review
+          text: De 2 senaste prognoserna ligger högst 6 månader isär, täcker varje kärnlänk, sträcker sig 18 månader framåt och listar länkarna över 70 % med ett planerat datum för uppgradering.
+
+  - id: CMNET-05
+    type: functional
+    obligation: must
+    priority: high
+    tags: [qos, dscp, traffic-classes]
+    refs: ["RFC 4594", "RFC 2474"]
+    tests: [CMNET-T05]
+    en:
+      title: Four traffic classes marked and queued separately
+      description: The network MUST carry at least 4 traffic classes (real-time voice, interactive video, business-critical data and default class), each marked with its own DSCP value and placed in its own queue on each link.
+      rationale: Without classes, a large file transfer delays voice and control traffic on the same link.
+      criteria:
+        - method: test
+          text: Test streams of each class keep their DSCP value end to end, and the queue counters of a link show each class in its own queue.
+    sv:
+      title: Fyra trafikklasser märks och köas separat
+      description: Nätet SKA hantera minst 4 trafikklasser (realtidsröst, interaktiv video, verksamhetskritisk data och standardklass), var och en märkt med ett eget DSCP-värde och lagd i en egen kö på varje länk.
+      rationale: Utan klasser fördröjer en omfattande filöverföring rösttrafik och styrtrafik på samma länk.
+      criteria:
+        - method: test
+          text: Testströmmar i varje klass behåller sitt DSCP-värde hela vägen, och köräknarna på en länk visar varje klass i sin egen kö.
+
+  - id: CMNET-06
+    type: performance
+    obligation: must
+    priority: high
+    tags: [latency, voice, qos]
+    refs: ["ITU-T G.114", "ITU-T Y.1541"]
+    tests: [CMNET-T06]
+    en:
+      title: One-way delay of voice packets at most 150 ms
+      description: The network MUST deliver the packets of the voice class between 2 sites with a one-way delay of at most 150 ms for 99 % of the packets.
+      rationale: Above this delay speakers start to talk over each other and the conversation quality drops.
+      criteria:
+        - method: test
+          text: Active measurement between each pair of sites over 24 hours shows a one-way delay of at most 150 ms for 99 % of the voice-class probes.
+          threshold: ≤ 150 ms (99th percentile)
+    sv:
+      title: Fördröjning i en riktning för röstpaket högst 150 ms
+      description: Nätet SKA leverera paketen i röstklassen mellan 2 platser med en fördröjning i en riktning på högst 150 ms för 99 % av paketen.
+      rationale: Vid längre fördröjning börjar de som talar avbryta varandra och samtalskvaliteten sjunker.
+      criteria:
+        - method: test
+          text: Aktiv mätning mellan varje par av platser under 24 timmar visar en fördröjning i en riktning på högst 150 ms för 99 % av mätpaketen i röstklassen.
+          threshold: ≤ 150 ms (99:e percentilen)
+
+  - id: CMNET-07
+    type: performance
+    obligation: must
+    priority: high
+    tags: [jitter, packet-loss, voice, qos]
+    refs: ["ITU-T Y.1541"]
+    tests: [CMNET-T06]
+    en:
+      title: Jitter below 30 ms and packet loss below 0.5 % for voice
+      description: The network MUST keep the jitter of the voice class below 30 ms and its packet loss below 0.5 % between 2 sites, measured in periods of 15 minutes.
+      rationale: Jitter beyond the size of the receiving buffer and lost packets are heard as gaps and distortion in the call.
+      criteria:
+        - method: test
+          text: Each 15-minute period of a 24-hour measurement between each pair of sites shows jitter below 30 ms and packet loss below 0.5 % in the voice class.
+          threshold: jitter < 30 ms, loss < 0.5 %
+    sv:
+      title: Jitter under 30 ms och paketförlust under 0,5 % för röst
+      description: Nätet SKA hålla jittret i röstklassen under 30 ms och paketförlusten under 0,5 % mellan 2 platser, mätt i perioder om 15 minuter.
+      rationale: Jitter som är större än mottagarens buffert och förlorade paket hörs som avbrott och störningar i samtalet.
+      criteria:
+        - method: test
+          text: Varje 15-minutersperiod under en mätning på 24 timmar mellan varje par av platser visar jitter under 30 ms och paketförlust under 0,5 % i röstklassen.
+          threshold: jitter < 30 ms, förlust < 0,5 %
+
+  - id: CMNET-08
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [congestion, qos, voice]
+    refs: ["RFC 3246", "RFC 4594"]
+    tests: [CMNET-T07]
+    en:
+      title: Default-class traffic dropped before voice under congestion
+      description: When a link is congested, the network SHOULD drop default-class packets before voice packets, so that the voice class keeps the jitter and loss limits of CMNET-07.
+      rationale: Congestion happens after failures and during traffic peaks, and that is when voice calls matter most.
+      criteria:
+        - method: test
+          text: With a link loaded to 120 % by default-class traffic, a parallel voice stream stays below 30 ms jitter and 0.5 % loss while the default-class stream loses packets.
+          threshold: jitter < 30 ms, loss < 0.5 % at 120 % load
+    sv:
+      title: Trafik i standardklassen kastas före röst vid överbelastning
+      description: När en länk är överbelastad BÖR nätet kasta paket i standardklassen före röstpaket, så att röstklassen håller gränserna för jitter och förlust i CMNET-07.
+      rationale: Överbelastning uppstår efter fel och vid trafiktoppar, och det är då röstsamtalen är som viktigast.
+      criteria:
+        - method: test
+          text: När en länk belastas till 120 % med trafik i standardklassen håller en parallell röstström jitter under 30 ms och förlust under 0,5 %, medan strömmen i standardklassen tappar paket.
+          threshold: jitter < 30 ms, förlust < 0,5 % vid 120 % last
+
+  - id: CMNET-09
+    type: functional
+    obligation: must
+    priority: high
+    tags: [monitoring, alarms, availability]
+    refs: ["ITIL 4 Monitoring and event management", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [CMNET-T08]
+    en:
+      title: Alarm within 2 minutes when a network element stops answering
+      description: The monitoring system MUST poll each router, switch, firewall and wireless controller every 60 seconds and raise an alarm within 2 minutes after an element stops answering.
+      rationale: An element that fails silently is often found only when users report the outage, which adds to the time to restore.
+      criteria:
+        - method: test
+          text: Disconnecting the management interface of a test switch raises an alarm naming the switch within 2 minutes.
+          threshold: ≤ 2 min
+    sv:
+      title: Larm inom 2 minuter när ett nätelement slutar svara
+      description: Övervakningssystemet SKA fråga varje router, switch, brandvägg och styrenhet för trådlöst nät var 60:e sekund och larma inom 2 minuter efter att ett element slutat svara.
+      rationale: Ett element som går sönder utan att larma upptäcks ofta först när användarna anmäler avbrottet, vilket förlänger tiden till återställning.
+      criteria:
+        - method: test
+          text: När förvaltningsgränssnittet på en testswitch kopplas bort larmar systemet inom 2 minuter med switchens namn.
+          threshold: ≤ 2 min
+
+  - id: CMNET-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [management-plane, ssh, snmpv3]
+    refs: ["RFC 3414", "RFC 6241", "ISO/IEC 27001:2022 A.8.20", "IEC 62443-3-3 SR 4.1"]
+    tests: [CMNET-T09]
+    en:
+      title: Network elements managed only over encrypted protocols
+      description: Each network element MUST accept management access only over encrypted and authenticated protocols (SSH, SNMPv3 with authentication and privacy, NETCONF over SSH or TLS) and refuse Telnet, SNMPv1 and SNMPv2c.
+      rationale: Clear-text management protocols expose administrator passwords and community strings to anyone who can read the traffic.
+      criteria:
+        - method: test
+          text: A scan of each element's management address shows no open Telnet port, and SNMPv1 and SNMPv2c requests get no answer.
+        - method: inspection
+          text: The configuration of a sample of 10 elements enables only SSH, SNMPv3 with authPriv and NETCONF over SSH or TLS for management.
+    sv:
+      title: Nätelement förvaltas bara via krypterade protokoll
+      description: Varje nätelement SKA ta emot förvaltningsåtkomst bara via krypterade och autentiserade protokoll (SSH, SNMPv3 med autentisering och kryptering, NETCONF över SSH eller TLS) och vägra Telnet, SNMPv1 och SNMPv2c.
+      rationale: Förvaltningsprotokoll i klartext röjer administratörernas lösenord och communitysträngar för den som kan läsa trafiken.
+      criteria:
+        - method: test
+          text: En skanning av varje elements förvaltningsadress visar ingen öppen Telnetport, och förfrågningar med SNMPv1 och SNMPv2c får inget svar.
+        - method: inspection
+          text: Konfigurationen i ett urval av 10 element tillåter bara SSH, SNMPv3 med authPriv och NETCONF över SSH eller TLS för förvaltning.
+
+  - id: CMNET-11
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [ntp, time-synchronisation, logging]
+    refs: ["RFC 5905", "ISO/IEC 27001:2022 A.8.17"]
+    tests: [CMNET-T10]
+    en:
+      title: Element clocks within 100 ms of UTC
+      description: Each network element MUST synchronise its clock to at least 2 internal NTP servers and stay within 100 ms of UTC.
+      rationale: Fault analysis and security investigations correlate log entries from many elements, which only works when their clocks agree.
+      criteria:
+        - method: test
+          text: A query of 20 elements shows 2 configured NTP servers on each and a clock offset within 100 ms.
+          threshold: ≤ 100 ms
+    sv:
+      title: Elementens klockor inom 100 ms från UTC
+      description: Varje nätelement SKA synkronisera sin klocka mot minst 2 interna NTP-servrar och ligga inom 100 ms från UTC.
+      rationale: Felanalyser och säkerhetsutredningar jämför loggposter från många element, och det fungerar bara när klockorna stämmer överens.
+      criteria:
+        - method: test
+          text: En avläsning av 20 element visar 2 inställda NTP-servrar i varje och en klockavvikelse inom 100 ms.
+          threshold: ≤ 100 ms
+
+  - id: CMNET-12
+    type: security
+    obligation: should
+    priority: medium
+    tags: [configuration-baseline, compliance, drift]
+    refs: ["ISO/IEC 27001:2022 A.8.9"]
+    tests: [CMNET-T11]
+    en:
+      title: Daily comparison with the approved configuration baseline
+      description: The network management system SHOULD compare the running configuration of each element with its approved baseline once a day and report each deviation to the network operations team within 24 hours.
+      rationale: Unapproved changes and forgotten temporary fixes weaken the security and the redundancy of the network without anyone noticing.
+      criteria:
+        - method: test
+          text: A change made directly on a test element, outside the change process, appears as a deviation in the report of the next daily run.
+          threshold: ≤ 24 h
+    sv:
+      title: Daglig jämförelse med den godkända konfigurationsbaslinjen
+      description: Systemet för nätförvaltning BÖR en gång per dygn jämföra varje elements aktiva konfiguration med dess godkända baslinje och rapportera varje avvikelse till nätdriften inom 24 timmar.
+      rationale: Ej godkända ändringar och bortglömda tillfälliga lösningar försvagar nätets säkerhet och redundans utan att någon märker det.
+      criteria:
+        - method: test
+          text: En ändring som görs direkt i ett testelement, utanför ändringsprocessen, visas som en avvikelse i rapporten från nästa dygnskörning.
+          threshold: ≤ 24 h
+
+  - id: CMNET-13
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [documentation, inventory, topology]
+    refs: ["ISO/IEC 27001:2022 A.5.9", "ISO/IEC 27033-1:2015"]
+    tests: [CMNET-T12]
+    en:
+      title: Topology and inventory that match the live network
+      description: The network operator MUST keep a topology diagram and an inventory of network elements, with model, software version, location and management address, that differ from the live network by at most 1 element at each quarterly audit.
+      rationale: Out-of-date documentation slows down fault handling and hides elements that no longer get security updates.
+      criteria:
+        - method: inspection
+          text: A comparison of the inventory with a discovery scan of the live network at the quarterly audit finds at most 1 element missing, extra or with a wrong software version.
+          threshold: ≤ 1 deviating element
+    sv:
+      title: Topologi och förteckning som stämmer med det verkliga nätet
+      description: Nätoperatören SKA hålla en topologiritning och en förteckning över nätelement, med modell, programvaruversion, placering och förvaltningsadress, som skiljer sig från det verkliga nätet med högst 1 element vid varje kvartalsrevision.
+      rationale: Inaktuell dokumentation gör felhanteringen långsammare och döljer element som inte längre får säkerhetsuppdateringar.
+      criteria:
+        - method: inspection
+          text: En jämförelse mellan förteckningen och en inventeringsskanning av det verkliga nätet vid kvartalsrevisionen hittar högst 1 element som saknas, är extra eller har fel programvaruversion.
+          threshold: ≤ 1 avvikande element
+
+  - id: CMNET-14
+    type: business
+    obligation: must
+    priority: medium
+    tags: [change-management, maintenance-window, notice]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC 20000-1:2018 §8.5.1"]
+    tests: [CMNET-T13]
+    en:
+      title: Traffic-affecting changes only in announced maintenance windows
+      description: The network operator MUST make changes that interrupt traffic only in a maintenance window announced to the affected users at least 5 working days in advance.
+      rationale: Users who know about a planned interruption can move critical work, and unannounced interruptions are handled as incidents.
+      criteria:
+        - method: review
+          text: Of the traffic-affecting changes in the last quarter, each was made inside a maintenance window and announced at least 5 working days before it.
+          threshold: ≥ 5 working days notice
+    sv:
+      title: Ändringar som påverkar trafiken bara i aviserade servicefönster
+      description: Nätoperatören SKA göra ändringar som avbryter trafik bara i ett servicefönster som aviserats till de berörda användarna minst 5 arbetsdagar i förväg.
+      rationale: Användare som känner till ett planerat avbrott kan flytta kritiskt arbete, och oaviserade avbrott hanteras som incidenter.
+      criteria:
+        - method: review
+          text: Varje ändring under det senaste kvartalet som påverkade trafiken gjordes inom ett servicefönster och aviserades minst 5 arbetsdagar före.
+          threshold: ≥ 5 arbetsdagars varsel
+
+tests:
+  - id: CMNET-T01
+    priority: critical
+    execution: manual
+    tags: [redundancy, path-diversity]
+    refs: ["ISO/IEC 27001:2022 A.8.14"]
+    en:
+      title: Path diversity review and link disconnection at one site
+      description: Reviews the route maps of the two paths to each site and disconnects each path of one site in turn.
+      preconditions: Route maps from the network owner and the carriers for both paths of each site, and a maintenance window at one chosen site.
+      expected: No site has a shared route, duct, building entry or node, and the chosen site stays reachable when either path is disconnected.
+      steps:
+        - action: Overlay the route maps of both paths for each site and list the points they share.
+          expected: No shared cable route, duct, building entry or node is found.
+        - action: At the chosen site, disconnect the first path and ping the site router from the core.
+          expected: The site router answers.
+        - action: Reconnect the first path, disconnect the second and ping again.
+          expected: The site router answers.
+    sv:
+      title: Granskning av åtskilda vägar och bortkoppling av länkar på en plats
+      description: Granskar ledningskartorna för de två vägarna till varje plats och kopplar bort vägarna till en plats i tur och ordning.
+      preconditions: Ledningskartor från nätägaren och operatörerna för båda vägarna till varje plats, och ett servicefönster på en vald plats.
+      expected: Ingen plats har gemensam sträckning, kanalisation, byggnadsintag eller nod, och den valda platsen går att nå när någon av vägarna kopplas bort.
+      steps:
+        - action: Lägg ledningskartorna för båda vägarna till varje plats på varandra och lista de punkter som de delar.
+          expected: Ingen gemensam kabelsträckning, kanalisation, byggnadsintag eller nod hittas.
+        - action: Koppla bort den första vägen på den valda platsen och pinga platsens router från kärnnätet.
+          expected: Platsens router svarar.
+        - action: Återanslut den första vägen, koppla bort den andra och pinga igen.
+          expected: Platsens router svarar.
+
+  - id: CMNET-T02
+    priority: high
+    execution: automated
+    tags: [failover, convergence]
+    refs: ["RFC 5880"]
+    en:
+      title: Packet loss during link and node failover
+      description: A traffic generator sends a constant stream across the redundant core while a script disconnects the active link and powers off the active node.
+      preconditions: A traffic generator sending 1 000 packets per second between two sites across the redundant core, and remote control of the link port and the node power.
+      expected: Each failure causes at most 1 second of lost packets.
+      steps:
+        - action: Start the stream and shut down the port of the active core link.
+          expected: The generator counts at most 1 000 lost packets.
+          data: 1 000 packets/s
+        - action: Restore the port, wait 5 minutes and power off the active core node.
+          expected: The generator counts at most 1 000 lost packets.
+    sv:
+      title: Paketförlust vid omkoppling av länk och nod
+      description: En trafikgenerator skickar en jämn ström genom det redundanta kärnnätet medan ett skript kopplar bort den aktiva länken och stänger av den aktiva noden.
+      preconditions: En trafikgenerator som skickar 1 000 paket per sekund mellan två platser genom det redundanta kärnnätet, och fjärrstyrning av länkens port och nodens strömförsörjning.
+      expected: Varje fel ger högst 1 sekund av förlorade paket.
+      steps:
+        - action: Starta strömmen och stäng porten för den aktiva kärnlänken.
+          expected: Generatorn räknar högst 1 000 förlorade paket.
+          data: 1 000 paket/s
+        - action: Öppna porten igen, vänta 5 minuter och stäng av den aktiva kärnnoden.
+          expected: Generatorn räknar högst 1 000 förlorade paket.
+
+  - id: CMNET-T03
+    priority: high
+    execution: automated
+    tags: [capacity, utilisation]
+    refs: []
+    en:
+      title: Busy-hour utilisation analysis over 3 months
+      description: A script reads the interface counters of the core links and uplinks for 3 months and finds the highest 5-minute average of each.
+      preconditions: Interface counters stored in periods of 5 minutes or less for the last 3 months.
+      expected: No core link or uplink has a 5-minute average above 70 %.
+      steps:
+        - action: Compute the 5-minute average utilisation in each direction for each core link and uplink.
+          expected: A table of the highest value per link and month is produced.
+        - action: Compare each highest value with 70 %.
+          expected: No value exceeds 70 %.
+          data: Limit 70 %
+    sv:
+      title: Analys av beläggningen under den mest belastade timmen i 3 månader
+      description: Ett skript läser gränssnittsräknarna för kärnlänkar och upplänkar för 3 månader och tar fram det högsta 5-minutersmedelvärdet för var och en.
+      preconditions: Gränssnittsräknare sparade i perioder om högst 5 minuter för de senaste 3 månaderna.
+      expected: Ingen kärnlänk eller upplänk har ett 5-minutersmedelvärde över 70 %.
+      steps:
+        - action: Beräkna 5-minutersmedelvärdet av beläggningen i varje riktning för varje kärnlänk och upplänk.
+          expected: En tabell med det högsta värdet per länk och månad tas fram.
+        - action: Jämför varje högsta värde med 70 %.
+          expected: Inget värde är över 70 %.
+          data: Gräns 70 %
+
+  - id: CMNET-T04
+    priority: medium
+    execution: manual
+    tags: [capacity, forecast]
+    refs: ["ITIL 4 Capacity and performance management"]
+    en:
+      title: Review of the latest capacity forecasts
+      description: Reviews the 2 latest capacity forecasts against the network inventory.
+      preconditions: The 2 latest capacity forecasts and the current list of core links.
+      expected: The forecasts are at most 6 months apart, cover each core link 18 months ahead and plan an upgrade for each link above 70 %.
+      steps:
+        - action: Compare the issue dates of the 2 forecasts.
+          expected: They are at most 6 months apart.
+        - action: Check that each core link in the inventory appears in the latest forecast with a projection 18 months ahead.
+          expected: Each core link is covered.
+        - action: Find the links forecast to pass 70 %.
+          expected: Each has a planned upgrade date before the date it is forecast to pass 70 %.
+    sv:
+      title: Granskning av de senaste kapacitetsprognoserna
+      description: Granskar de 2 senaste kapacitetsprognoserna mot förteckningen över nätet.
+      preconditions: De 2 senaste kapacitetsprognoserna och den aktuella listan över kärnlänkar.
+      expected: Prognoserna ligger högst 6 månader isär, täcker varje kärnlänk 18 månader framåt och planerar en uppgradering för varje länk över 70 %.
+      steps:
+        - action: Jämför datumen för de 2 prognoserna.
+          expected: De ligger högst 6 månader isär.
+        - action: Kontrollera att varje kärnlänk i förteckningen finns i den senaste prognosen med en prognos 18 månader framåt.
+          expected: Varje kärnlänk finns med.
+        - action: Ta fram de länkar som väntas passera 70 %.
+          expected: Var och en har ett planerat datum för uppgradering som ligger före det datum då den väntas passera 70 %.
+
+  - id: CMNET-T05
+    priority: high
+    execution: manual
+    tags: [qos, dscp]
+    refs: ["RFC 4594"]
+    en:
+      title: Traffic classes keep their marking and queue
+      description: Sends a test stream in each traffic class between two sites and checks the marking at the far end and the queues on a link.
+      preconditions: Test hosts at two sites, a packet capture at the receiving host and read access to the queue counters of one link on the path.
+      expected: Each class arrives with its DSCP value and is counted in its own queue.
+      steps:
+        - action: Send a stream of 1 000 packets in each of the 4 classes.
+          expected: The capture shows each stream with the DSCP value of its class.
+          data: EF voice, AF41 video, AF31 critical data, DF default class
+        - action: Read the queue counters of the link.
+          expected: Each class has increased the counter of its own queue by 1 000 packets.
+    sv:
+      title: Trafikklasser behåller sin märkning och kö
+      description: Skickar en testström i varje trafikklass mellan två platser och kontrollerar märkningen hos mottagaren och köerna på en länk.
+      preconditions: Testdatorer på två platser, en paketinspelning hos den mottagande datorn och läsbehörighet till köräknarna på en länk längs vägen.
+      expected: Varje klass kommer fram med sitt DSCP-värde och räknas i sin egen kö.
+      steps:
+        - action: Skicka en ström om 1 000 paket i var och en av de 4 klasserna.
+          expected: Inspelningen visar varje ström med sin klass DSCP-värde.
+          data: EF röst, AF41 video, AF31 kritisk data, DF standardklass
+        - action: Läs köräknarna på länken.
+          expected: Varje klass har ökat räknaren för sin egen kö med 1 000 paket.
+
+  - id: CMNET-T06
+    priority: high
+    execution: automated
+    tags: [latency, jitter, packet-loss]
+    refs: ["ITU-T Y.1541"]
+    en:
+      title: 24-hour measurement of delay, jitter and loss in the voice class
+      description: Probes in the voice class measure one-way delay, jitter and loss between each pair of sites for 24 hours.
+      preconditions: Measurement probes with clocks synchronised to within 1 ms at each site, sending voice-class packets every 20 ms.
+      expected: The 99th percentile of delay is at most 150 ms, and each 15-minute period has jitter below 30 ms and loss below 0.5 %.
+      steps:
+        - action: Run the probes for 24 hours and collect the results per pair of sites.
+          expected: Results are available for each pair and each 15-minute period.
+        - action: Compute the 99th percentile of the one-way delay per pair.
+          expected: Each value is at most 150 ms.
+          data: Limit 150 ms
+        - action: Find the highest jitter and loss of each 15-minute period.
+          expected: Jitter is below 30 ms and loss below 0.5 % in each period.
+    sv:
+      title: Mätning av fördröjning, jitter och förlust i röstklassen under 24 timmar
+      description: Mätprober i röstklassen mäter fördröjning i en riktning, jitter och förlust mellan varje par av platser i 24 timmar.
+      preconditions: Mätprober på varje plats med klockor synkroniserade inom 1 ms, som skickar paket i röstklassen var 20:e ms.
+      expected: Den 99:e percentilen av fördröjningen är högst 150 ms, och varje 15-minutersperiod har jitter under 30 ms och förlust under 0,5 %.
+      steps:
+        - action: Kör proberna i 24 timmar och samla resultaten per par av platser.
+          expected: Resultat finns för varje par och varje 15-minutersperiod.
+        - action: Beräkna den 99:e percentilen av fördröjningen i en riktning per par.
+          expected: Varje värde är högst 150 ms.
+          data: Gräns 150 ms
+        - action: Ta fram högsta jitter och förlust för varje 15-minutersperiod.
+          expected: Jittret är under 30 ms och förlusten under 0,5 % i varje period.
+
+  - id: CMNET-T07
+    priority: medium
+    execution: manual
+    tags: [congestion, qos]
+    refs: ["RFC 4594"]
+    en:
+      title: Voice quality on a congested link
+      description: Overloads a test link with default-class traffic while a voice stream runs in parallel.
+      preconditions: A test link of 100 Mbit/s, a traffic generator and a voice-class stream between its ends.
+      expected: The voice stream keeps its limits while default-class packets are dropped.
+      steps:
+        - action: Start the voice stream and measure jitter and loss for 5 minutes.
+          expected: Jitter is below 30 ms and loss below 0.5 %.
+        - action: Add default-class traffic at 120 Mbit/s for 15 minutes.
+          expected: The default-class stream loses packets.
+          data: 120 Mbit/s on a 100 Mbit/s link
+        - action: Measure jitter and loss of the voice stream during the overload.
+          expected: Jitter stays below 30 ms and loss below 0.5 %.
+    sv:
+      title: Röstkvalitet på en överbelastad länk
+      description: Överbelastar en testlänk med trafik i standardklassen medan en röstström går parallellt.
+      preconditions: En testlänk på 100 Mbit/s, en trafikgenerator och en ström i röstklassen mellan länkens ändar.
+      expected: Röstströmmen håller sina gränser medan paket i standardklassen kastas.
+      steps:
+        - action: Starta röstströmmen och mät jitter och förlust i 5 minuter.
+          expected: Jittret är under 30 ms och förlusten under 0,5 %.
+        - action: Lägg till trafik i standardklassen på 120 Mbit/s i 15 minuter.
+          expected: Strömmen i standardklassen tappar paket.
+          data: 120 Mbit/s på en länk om 100 Mbit/s
+        - action: Mät röstströmmens jitter och förlust under överbelastningen.
+          expected: Jittret förblir under 30 ms och förlusten under 0,5 %.
+
+  - id: CMNET-T08
+    priority: high
+    execution: manual
+    tags: [monitoring, alarms]
+    refs: ["ITIL 4 Monitoring and event management"]
+    en:
+      title: Alarm for a network element that stops answering
+      description: Disconnects the management interface of a monitored test switch and times the alarm.
+      preconditions: A test switch in the monitoring system with polling every 60 seconds.
+      expected: An alarm naming the switch is raised within 2 minutes and cleared after reconnection.
+      steps:
+        - action: Disconnect the management interface of the switch and note the time.
+          expected: An alarm with the switch name appears within 2 minutes.
+        - action: Reconnect the interface.
+          expected: The alarm is cleared within 2 minutes.
+    sv:
+      title: Larm för ett nätelement som slutar svara
+      description: Kopplar bort förvaltningsgränssnittet på en övervakad testswitch och mäter tiden till larm.
+      preconditions: En testswitch i övervakningssystemet med avfrågning var 60:e sekund.
+      expected: Ett larm med switchens namn visas inom 2 minuter och upphör efter återanslutning.
+      steps:
+        - action: Koppla bort switchens förvaltningsgränssnitt och anteckna tiden.
+          expected: Ett larm med switchens namn visas inom 2 minuter.
+        - action: Anslut gränssnittet igen.
+          expected: Larmet upphör inom 2 minuter.
+
+  - id: CMNET-T09
+    priority: high
+    execution: automated
+    tags: [management-plane, scan]
+    refs: ["RFC 3414", "ISO/IEC 27001:2022 A.8.20"]
+    en:
+      title: Scan of management protocols on network elements
+      description: A script scans the management address of each element for clear-text protocols and checks the configuration of a sample.
+      preconditions: A list of management addresses, a scanner on the management network and read access to the configurations.
+      expected: No element accepts Telnet, SNMPv1 or SNMPv2c, and the sample enables only encrypted management protocols.
+      steps:
+        - action: Scan TCP port 23 on each management address.
+          expected: No address has the port open.
+          data: TCP 23
+        - action: Send SNMPv1 and SNMPv2c requests with the common default communities.
+          expected: No element answers.
+        - action: Read the management settings of 10 chosen elements.
+          expected: Only SSH, SNMPv3 with authPriv and NETCONF over SSH or TLS are enabled.
+    sv:
+      title: Skanning av förvaltningsprotokoll på nätelement
+      description: Ett skript skannar varje elements förvaltningsadress efter klartextprotokoll och kontrollerar konfigurationen i ett urval.
+      preconditions: En lista över förvaltningsadresser, en skanner i förvaltningsnätet och läsbehörighet till konfigurationerna.
+      expected: Inget element tar emot Telnet, SNMPv1 eller SNMPv2c, och urvalet tillåter bara krypterade förvaltningsprotokoll.
+      steps:
+        - action: Skanna TCP-port 23 på varje förvaltningsadress.
+          expected: Ingen adress har porten öppen.
+          data: TCP 23
+        - action: Skicka förfrågningar med SNMPv1 och SNMPv2c med de vanliga standardcommunityna.
+          expected: Inget element svarar.
+        - action: Läs förvaltningsinställningarna i 10 utvalda element.
+          expected: Bara SSH, SNMPv3 med authPriv och NETCONF över SSH eller TLS är påslagna.
+
+  - id: CMNET-T10
+    priority: medium
+    execution: automated
+    tags: [ntp, time-synchronisation]
+    refs: ["RFC 5905"]
+    en:
+      title: Clock offset of network elements
+      description: A script reads the NTP status of a sample of network elements.
+      preconditions: Read access to 20 network elements of different types.
+      expected: Each element has 2 NTP servers and an offset within 100 ms.
+      steps:
+        - action: Read the configured NTP servers on each element.
+          expected: Each element lists at least 2 internal NTP servers.
+        - action: Read the current offset from UTC on each element.
+          expected: Each offset is within 100 ms.
+          data: Limit 100 ms
+    sv:
+      title: Klockavvikelse i nätelement
+      description: Ett skript läser NTP-status i ett urval av nätelement.
+      preconditions: Läsbehörighet till 20 nätelement av olika typer.
+      expected: Varje element har 2 NTP-servrar och en avvikelse inom 100 ms.
+      steps:
+        - action: Läs de inställda NTP-servrarna i varje element.
+          expected: Varje element anger minst 2 interna NTP-servrar.
+        - action: Läs den aktuella avvikelsen från UTC i varje element.
+          expected: Varje avvikelse är inom 100 ms.
+          data: Gräns 100 ms
+
+  - id: CMNET-T11
+    priority: medium
+    execution: manual
+    tags: [configuration-baseline, drift]
+    refs: ["ISO/IEC 27001:2022 A.8.9"]
+    en:
+      title: Unapproved configuration change found by the daily comparison
+      description: Makes a change directly on a test element and checks the next baseline report.
+      preconditions: A test element with an approved baseline in the network management system.
+      expected: The next daily report shows the change as a deviation.
+      steps:
+        - action: Log in to the test element directly and add a local user account.
+          expected: The element accepts the change.
+          data: A local test account
+        - action: Read the deviation report after the next daily run.
+          expected: The report lists the element and the added account within 24 hours of the change.
+        - action: Remove the account.
+          expected: The following report no longer lists the deviation.
+    sv:
+      title: Ej godkänd konfigurationsändring hittas vid den dagliga jämförelsen
+      description: Gör en ändring direkt i ett testelement och kontrollerar nästa rapport om baslinjen.
+      preconditions: Ett testelement med en godkänd baslinje i systemet för nätförvaltning.
+      expected: Nästa dygnsrapport visar ändringen som en avvikelse.
+      steps:
+        - action: Logga in direkt i testelementet och lägg till ett lokalt användarkonto.
+          expected: Elementet godtar ändringen.
+          data: Ett lokalt testkonto
+        - action: Läs avvikelserapporten efter nästa dygnskörning.
+          expected: Rapporten visar elementet och det tillagda kontot inom 24 timmar från ändringen.
+        - action: Ta bort kontot.
+          expected: Nästa rapport visar inte längre avvikelsen.
+
+  - id: CMNET-T12
+    priority: medium
+    execution: manual
+    tags: [documentation, inventory]
+    refs: ["ISO/IEC 27001:2022 A.5.9"]
+    en:
+      title: Inventory compared with a discovery scan
+      description: Compares the network inventory and topology diagram with a discovery scan of the live network.
+      preconditions: The current inventory and topology diagram, and a discovery scan made the same day.
+      expected: At most 1 element is missing, extra or has a wrong software version.
+      steps:
+        - action: Match each element of the scan with the inventory by management address.
+          expected: A list of matched, missing and extra elements is produced.
+        - action: Compare the software version of each matched element.
+          expected: The total of missing, extra and wrong-version elements is at most 1.
+        - action: Check 5 chosen links of the scan in the topology diagram.
+          expected: Each link is drawn between the right elements.
+    sv:
+      title: Förteckningen jämförs med en inventeringsskanning
+      description: Jämför förteckningen över nätet och topologiritningen med en inventeringsskanning av det verkliga nätet.
+      preconditions: Den aktuella förteckningen och topologiritningen, och en inventeringsskanning från samma dag.
+      expected: Högst 1 element saknas, är extra eller har fel programvaruversion.
+      steps:
+        - action: Para ihop varje element i skanningen med förteckningen via förvaltningsadressen.
+          expected: En lista över matchade, saknade och extra element tas fram.
+        - action: Jämför programvaruversionen för varje matchat element.
+          expected: Summan av saknade, extra och element med fel version är högst 1.
+        - action: Kontrollera 5 utvalda länkar från skanningen i topologiritningen.
+          expected: Varje länk är ritad mellan rätt element.
+
+  - id: CMNET-T13
+    priority: medium
+    execution: manual
+    tags: [change-management, maintenance-window]
+    refs: ["ITIL 4 Change enablement"]
+    en:
+      title: Review of traffic-affecting changes in the last quarter
+      description: Compares the change records of the last quarter with the maintenance windows and the notices sent to users.
+      preconditions: The change log, the maintenance window calendar and the sent notices for the last quarter.
+      expected: Each traffic-affecting change was made in a window and announced at least 5 working days ahead.
+      steps:
+        - action: Select the changes marked as traffic-affecting.
+          expected: A list with the time of each change is produced.
+        - action: Compare each change time with the maintenance window calendar.
+          expected: Each change falls inside a window.
+        - action: Find the notice for each change and count the working days between notice and change.
+          expected: Each notice was sent at least 5 working days before the change.
+    sv:
+      title: Granskning av ändringar som påverkade trafiken under det senaste kvartalet
+      description: Jämför ändringsposterna för det senaste kvartalet med servicefönstren och de aviseringar som skickats till användarna.
+      preconditions: Ändringsloggen, kalendern med servicefönster och de skickade aviseringarna för det senaste kvartalet.
+      expected: Varje ändring som påverkade trafiken gjordes i ett servicefönster och aviserades minst 5 arbetsdagar i förväg.
+      steps:
+        - action: Välj ut de ändringar som är markerade som trafikpåverkande.
+          expected: En lista med tidpunkten för varje ändring tas fram.
+        - action: Jämför varje ändrings tidpunkt med kalendern för servicefönster.
+          expected: Varje ändring ligger inom ett servicefönster.
+        - action: Hitta aviseringen för varje ändring och räkna arbetsdagarna mellan avisering och ändring.
+          expected: Varje avisering skickades minst 5 arbetsdagar före ändringen.

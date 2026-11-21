@@ -1,0 +1,58 @@
+# Types of requirement catalogue, in display order. Every area names one in
+# its "catalogue" field (default: software).
+catalogues:
+  - id: software
+    name: {en: Software, sv: Programvara}
+    description:
+      en: Applications, services and platforms built as software.
+      sv: Applikationer, tjänster och plattformar som byggs som programvara.
+  - id: hardware
+    name: {en: Hardware, sv: Hårdvara}
+    description:
+      en: Electronic and mechanical products, components and embedded devices.
+      sv: Elektroniska och mekaniska produkter, komponenter och inbyggda enheter.
+  - id: equipment
+    name: {en: Equipment, sv: Utrustning}
+    description:
+      en: Machines, instruments and tools that are bought, installed and operated.
+      sv: Maskiner, instrument och verktyg som köps in, installeras och används.
+  - id: system
+    name: {en: Systems, sv: System}
+    description:
+      en: Systems of systems that combine hardware, software, people and processes.
+      sv: Sammansatta system av hårdvara, programvara, människor och processer.
+  - id: communications
+    name: {en: Communications solutions, sv: Kommunikationslösningar}
+    description:
+      en: Networks, radio links, telephony, messaging and other communication solutions.
+      sv: Nätverk, radiolänkar, telefoni, meddelandetjänster och andra kommunikationslösningar.
+  - id: project
+    name: {en: Projects, sv: Projekt}
+    description:
+      en: How a project is planned, run, followed up and closed.
+      sv: Hur ett projekt planeras, genomförs, följs upp och avslutas.
+  - id: services
+    name: {en: Services, sv: Tjänster}
+    description:
+      en: Services that are delivered, bought or outsourced, with their service levels.
+      sv: Tjänster som levereras, köps in eller läggs ut, med sina servicenivåer.
+  - id: facilities
+    name: {en: Buildings and facilities, sv: Byggnader och anläggningar}
+    description:
+      en: Buildings, premises, technical rooms and sites with their installations.
+      sv: Byggnader, lokaler, tekniska utrymmen och anläggningar med sina installationer.
+  - id: governance
+    name: {en: Governance, maintenance and operations, sv: Styrning, underhåll och drift}
+    description:
+      en: Management system, roles, maintenance and the day-to-day running of a delivered solution.
+      sv: Ledningssystem, roller, underhåll och den dagliga driften av en levererad lösning.
+  - id: documentation
+    name: {en: Documentation, sv: Dokumentation}
+    description:
+      en: The documents that are delivered with a solution and how they are kept up to date.
+      sv: Dokumenten som levereras med en lösning och hur de hålls aktuella.
+  - id: education
+    name: {en: Education and training, sv: Utbildning}
+    description:
+      en: Training of users, operators and maintenance staff, and how its effect is followed up.
+      sv: Utbildning av användare, operatörer och underhållspersonal och uppföljning av dess effekt.

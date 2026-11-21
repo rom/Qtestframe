@@ -1,0 +1,598 @@
+area: ed-training-programme
+prefix: EDTP
+group: operations
+catalogue: education
+name: {en: Training needs and programme, sv: Utbildningsbehov och utbildningsprogram}
+description:
+  en: Training needs analysis, training plans and learning objectives per target group, training of end users, operators, administrators and maintenance staff, training environments, train-the-trainer and refresher intervals.
+  sv: Analys av utbildningsbehov, utbildningsplaner och lärandemål per målgrupp, utbildning av slutanvändare, operatörer, administratörer och underhållspersonal, utbildningsmiljöer, utbildning av utbildare och intervall för repetitionsutbildning.
+
+requirements:
+  - id: EDTP-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [training-needs-analysis, competence]
+    refs: ["ISO 9001:2026 §7.2", "ISO 10015:2019"]
+    tests: [EDTP-T01]
+    en:
+      title: Training needs analysis per role
+      description: The organisation MUST carry out a training needs analysis that compares, for each role that uses, operates or maintains the system, the competence the role needs with the current competence and lists the gaps.
+      rationale: Training that starts from the actual gaps reaches the people who need it and avoids courses that teach what staff already know.
+      criteria:
+        - method: review
+          text: The analysis has an entry for each role in the role list with required competence, current competence and the gaps found.
+    sv:
+      title: Analys av utbildningsbehov per roll
+      description: Organisationen SKA genomföra en analys av utbildningsbehov som för varje roll som använder, driver eller underhåller systemet jämför den kompetens som behövs med den befintliga kompetensen och anger luckorna.
+      rationale: Utbildning som utgår från de verkliga luckorna når de personer som behöver den och undviker kurser i det som personalen redan kan.
+      criteria:
+        - method: review
+          text: Analysen har en post för varje roll i rollförteckningen med kompetens som behövs, befintlig kompetens och de luckor som har upptäckts.
+
+  - id: EDTP-02
+    type: business
+    obligation: should
+    priority: medium
+    tags: [training-needs-analysis, change]
+    refs: ["ISO 10015:2019"]
+    tests: [EDTP-T01]
+    en:
+      title: Needs analysis updated before each major release
+      description: The training owner SHOULD update the training needs analysis before each release that changes the tasks of a role and when a new role is introduced.
+      rationale: New functions and roles create new gaps that an analysis made at the start of the project does not show.
+      criteria:
+        - method: review
+          text: For each major release and each new role of the last 12 months the analysis has an update dated before the release or the role's start.
+    sv:
+      title: Behovsanalysen uppdateras före varje större release
+      description: Utbildningsansvarig BÖR uppdatera analysen av utbildningsbehov före varje release som ändrar en rolls uppgifter och när en ny roll införs.
+      rationale: Nya funktioner och roller skapar nya luckor som en analys från projektets början inte visar.
+      criteria:
+        - method: review
+          text: För varje större release och varje ny roll under de senaste 12 månaderna har analysen en uppdatering daterad före releasen eller rollens start.
+
+  - id: EDTP-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [training-plan, target-group]
+    refs: ["ISO 10015:2019", "ADDIE instructional design model"]
+    tests: [EDTP-T02]
+    en:
+      title: Training plan per target group
+      description: The training plan MUST state for end users, operators, administrators and maintenance staff the courses, their learning objectives, their duration and their delivery method.
+      rationale: Each group works with the system in a different way, so each needs its own content, depth and form.
+      criteria:
+        - method: review
+          text: The plan has a section for each of the four target groups, and each course in it has objectives, a duration and a delivery method.
+          threshold: "4 target groups"
+    sv:
+      title: Utbildningsplan per målgrupp
+      description: Utbildningsplanen SKA ange kurser, lärandemål, längd och genomförandeform för slutanvändare, operatörer, administratörer och underhållspersonal.
+      rationale: Varje grupp arbetar med systemet på sitt sätt och behöver därför eget innehåll, eget djup och egen form.
+      criteria:
+        - method: review
+          text: Planen har ett avsnitt för var och en av de fyra målgrupperna, och varje kurs i den har lärandemål, längd och genomförandeform.
+          threshold: "4 målgrupper"
+
+  - id: EDTP-04
+    type: business
+    obligation: should
+    priority: medium
+    tags: [learning-objectives]
+    refs: ["ADDIE instructional design model"]
+    tests: [EDTP-T02]
+    en:
+      title: Learning objectives that can be assessed
+      description: Each learning objective SHOULD state an observable action, the conditions under which it is performed and the criterion for success.
+      rationale: Objectives that describe observable performance can be assessed, which is the basis for both the test and the evaluation of the course.
+      criteria:
+        - method: inspection
+          text: In a sample of 10 learning objectives each one contains an observable action, a condition and a success criterion.
+    sv:
+      title: Lärandemål som kan bedömas
+      description: Varje lärandemål BÖR ange en observerbar handling, de förutsättningar under vilka den utförs och kriteriet för godkänt.
+      rationale: Mål som beskriver observerbara prestationer kan bedömas, vilket är grunden både för provet och för utvärderingen av kursen.
+      criteria:
+        - method: inspection
+          text: I ett urval av 10 lärandemål innehåller varje mål en observerbar handling, en förutsättning och ett kriterium för godkänt.
+
+  - id: EDTP-05
+    type: business
+    obligation: must
+    priority: high
+    tags: [end-users, go-live]
+    refs: ["ISO 9001:2026 §7.2"]
+    tests: [EDTP-T03]
+    en:
+      title: End users trained before go-live
+      description: At least 90 % of the end users named in the roll-out plan MUST have completed their training before the system goes live for them.
+      rationale: Users who meet a new system untrained make errors, overload the support and form a lasting negative view of the system.
+      criteria:
+        - method: analysis
+          text: The training records show that at least 90 % of the named end users of each roll-out group completed the course before the group's go-live date.
+          threshold: "≥ 90 %"
+    sv:
+      title: Slutanvändare utbildade före driftstart
+      description: Minst 90 % av de slutanvändare som anges i införandeplanen SKA ha genomgått sin utbildning innan systemet tas i drift för dem.
+      rationale: Användare som möter ett nytt system utan utbildning gör fel, överbelastar supporten och får en bestående negativ bild av systemet.
+      criteria:
+        - method: analysis
+          text: Utbildningsregistret visar att minst 90 % av de namngivna slutanvändarna i varje införandegrupp genomgick kursen före gruppens driftstart.
+          threshold: "≥ 90 %"
+
+  - id: EDTP-06
+    type: business
+    obligation: may
+    priority: low
+    tags: [scheduling, invitation]
+    refs: []
+    tests: [EDTP-T03]
+    en:
+      title: Course invitations 10 working days ahead
+      description: The training coordinator MAY send course invitations to participants and their managers at least 10 working days before the course date.
+      rationale: Advance notice lets managers release staff from their duties and increases attendance.
+      criteria:
+        - method: inspection
+          text: For the courses of the last 3 months the invitations were sent at least 10 working days before the course date.
+          threshold: "≥ 10 working days"
+    sv:
+      title: Kallelser till kurser 10 arbetsdagar i förväg
+      description: Utbildningssamordnaren FÅR skicka kallelser till deltagarna och deras chefer minst 10 arbetsdagar före kursdatumet.
+      rationale: Kallelse i god tid låter cheferna frigöra personal från sina uppgifter och ökar närvaron.
+      criteria:
+        - method: inspection
+          text: För kurserna under de senaste 3 månaderna skickades kallelserna minst 10 arbetsdagar före kursdatumet.
+          threshold: "≥ 10 arbetsdagar"
+
+  - id: EDTP-07
+    type: business
+    obligation: must
+    priority: critical
+    tags: [operators, hands-on, abnormal-situations]
+    refs: ["ISO 9001:2026 §7.2"]
+    tests: [EDTP-T04]
+    en:
+      title: Hands-on operator training with abnormal situations
+      description: Operator training MUST include hands-on exercises in a training environment that cover start-up, shutdown, emergency stop and at least 3 abnormal situations from the alarm list.
+      rationale: Operators need to have practised the rare and stressful situations before they meet them for real.
+      criteria:
+        - method: review
+          text: The operator course plan contains exercises in the training environment for the three modes and at least 3 abnormal situations, and the attendance records show that each operator took part.
+          threshold: "≥ 3 abnormal situations"
+    sv:
+      title: Praktisk operatörsutbildning med onormala situationer
+      description: Operatörsutbildningen SKA innehålla praktiska övningar i en utbildningsmiljö som omfattar uppstart, avstängning, nödstopp och minst 3 onormala situationer ur larmlistan.
+      rationale: Operatörer behöver ha övat på de sällsynta och pressade situationerna innan de möter dem på riktigt.
+      criteria:
+        - method: review
+          text: Kursplanen för operatörer innehåller övningar i utbildningsmiljön för de tre lägena och minst 3 onormala situationer, och närvarolistorna visar att varje operatör deltog.
+          threshold: "≥ 3 onormala situationer"
+
+  - id: EDTP-08
+    type: business
+    obligation: should
+    priority: medium
+    tags: [administrators, practical-assessment]
+    refs: ["ISO 9001:2026 §7.2"]
+    tests: [EDTP-T05]
+    en:
+      title: Practical assessment of administrators
+      description: Each administrator SHOULD pass a practical assessment in the training environment that covers user management, configuration changes and a restore from backup.
+      rationale: Administration tasks done wrongly can lock out users or lose data, so competence is shown by doing, not by attendance.
+      criteria:
+        - method: demonstration
+          text: Each administrator's record has a passed practical assessment, and the assessment checklist covers the three tasks.
+    sv:
+      title: Praktiskt prov för administratörer
+      description: Varje administratör BÖR klara ett praktiskt prov i utbildningsmiljön som omfattar användaradministration, konfigurationsändringar och en återläsning från säkerhetskopia.
+      rationale: Felaktigt utförda administrativa uppgifter kan stänga ute användare eller förstöra data, så kompetensen visas genom handling och inte genom närvaro.
+      criteria:
+        - method: demonstration
+          text: Varje administratörs register har ett godkänt praktiskt prov, och checklistan för provet omfattar de tre uppgifterna.
+
+  - id: EDTP-09
+    type: security
+    obligation: must
+    priority: critical
+    tags: [maintenance-staff, authorisation, safety]
+    refs: ["ISO 9001:2026 §7.2", "EN 50110-1:2023"]
+    tests: [EDTP-T06]
+    en:
+      title: Maintenance work only after passed training
+      description: The maintenance manager MUST authorise a technician to work on an asset type only after the technician has passed the training for that asset type, including its safety part.
+      rationale: Maintenance on equipment without the right training endangers the technician and the plant.
+      criteria:
+        - method: inspection
+          text: For each technician the authorisation list contains only asset types for which the training record shows a passed course with its safety part.
+    sv:
+      title: Underhållsarbete först efter godkänd utbildning
+      description: Underhållschefen SKA ge en tekniker behörighet att arbeta på en typ av tillgång först efter att teknikern har klarat utbildningen för den typen, inklusive dess säkerhetsdel.
+      rationale: Underhåll på utrustning utan rätt utbildning utsätter teknikern och anläggningen för fara.
+      criteria:
+        - method: inspection
+          text: För varje tekniker innehåller behörighetslistan bara typer av tillgångar för vilka utbildningsregistret visar en godkänd kurs med säkerhetsdel.
+
+  - id: EDTP-10
+    type: security
+    obligation: should
+    priority: medium
+    tags: [training-environment, test-data]
+    refs: ["ISO/IEC 27001:2022 A.8.31", "ISO/IEC 27001:2022 A.8.33"]
+    tests: [EDTP-T07]
+    en:
+      title: Separate training environment without real personal data
+      description: Training SHOULD take place in an environment that is separate from production and contains representative data without real personal data.
+      rationale: Exercises in production risk real changes, and real personal data in training spreads it to people who have no need for it.
+      criteria:
+        - method: inspection
+          text: The training environment has no connection to production systems, and a search of its data for real personal identity numbers finds none.
+    sv:
+      title: Separat utbildningsmiljö utan verkliga personuppgifter
+      description: Utbildningen BÖR genomföras i en miljö som är skild från produktion och innehåller representativa data utan verkliga personuppgifter.
+      rationale: Övningar i produktion riskerar verkliga ändringar, och verkliga personuppgifter i utbildningen sprids till personer som inte behöver dem.
+      criteria:
+        - method: inspection
+          text: Utbildningsmiljön har ingen förbindelse med produktionssystemen, och en sökning i dess data efter verkliga personnummer ger inga träffar.
+
+  - id: EDTP-11
+    type: business
+    obligation: should
+    priority: medium
+    tags: [train-the-trainer]
+    refs: ["ISO 29993:2017"]
+    tests: [EDTP-T08]
+    en:
+      title: Internal trainers qualified through train-the-trainer
+      description: Each internal trainer SHOULD complete the supplier's train-the-trainer programme and deliver one supervised session before training others alone.
+      rationale: Internal trainers carry the training forward after the supplier leaves, so their own competence decides the quality of all later courses.
+      criteria:
+        - method: review
+          text: Each internal trainer has a completed train-the-trainer record and a supervised session record dated before their first independent course.
+    sv:
+      title: Interna utbildare kvalificerade genom utbildning av utbildare
+      description: Varje intern utbildare BÖR genomgå leverantörens program för utbildning av utbildare och hålla ett pass under handledning innan utbildaren utbildar andra på egen hand.
+      rationale: Interna utbildare för utbildningen vidare när leverantören har lämnat, så deras egen kompetens avgör kvaliteten på alla senare kurser.
+      criteria:
+        - method: review
+          text: Varje intern utbildare har en genomförd utbildning av utbildare och ett handlett pass registrerade före sin första egna kurs.
+
+  - id: EDTP-12
+    type: business
+    obligation: should
+    priority: low
+    tags: [trainer-competence]
+    refs: ["ISO 29993:2017"]
+    tests: [EDTP-T08]
+    en:
+      title: Trainer competence in subject and teaching
+      description: The record of each trainer SHOULD show both subject knowledge of the system and training in teaching methods.
+      rationale: Subject experts without teaching skills and good teachers without subject knowledge both leave gaps in what participants learn.
+      criteria:
+        - method: review
+          text: Each trainer's record lists the subject qualification and a course or experience in teaching methods.
+    sv:
+      title: Utbildarens kompetens i ämne och pedagogik
+      description: Registret för varje utbildare BÖR visa både ämneskunskap om systemet och utbildning i pedagogiska metoder.
+      rationale: Ämnesexperter utan pedagogisk förmåga och goda pedagoger utan ämneskunskap lämnar båda luckor i det som deltagarna lär sig.
+      criteria:
+        - method: review
+          text: Varje utbildares register anger ämneskvalifikationen och en kurs eller erfarenhet i pedagogiska metoder.
+
+  - id: EDTP-13
+    type: business
+    obligation: must
+    priority: high
+    tags: [refresher, interval]
+    refs: ["ISO 9001:2026 §7.2"]
+    tests: [EDTP-T09]
+    en:
+      title: Refresher intervals per role
+      description: The training plan MUST set a refresher interval for each role, with at most 12 months for the emergency procedures of operators and maintenance staff.
+      rationale: Skills that are rarely used fade, and emergency procedures are the least practised and the most critical.
+      criteria:
+        - method: review
+          text: Each role in the plan has a refresher interval, and the interval for emergency procedures is 12 months or less; the records show no operator or technician past the interval.
+          threshold: "≤ 12 months for emergency procedures"
+    sv:
+      title: Intervall för repetitionsutbildning per roll
+      description: Utbildningsplanen SKA ange ett intervall för repetitionsutbildning för varje roll, med högst 12 månader för operatörers och underhållspersonals nödrutiner.
+      rationale: Färdigheter som sällan används bleknar, och nödrutiner är både minst övade och mest kritiska.
+      criteria:
+        - method: review
+          text: Varje roll i planen har ett repetitionsintervall, och intervallet för nödrutiner är högst 12 månader; registret visar ingen operatör eller tekniker som har passerat intervallet.
+          threshold: "≤ 12 månader för nödrutiner"
+
+  - id: EDTP-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [change-training, release]
+    refs: ["ISO 9001:2026 §7.2"]
+    tests: [EDTP-T10]
+    en:
+      title: Training on changes before release
+      description: The users of each role whose tasks are changed by a release MUST receive training on the changes before the release goes live.
+      rationale: A change that users meet unprepared at go-live causes the same errors as an untrained new system.
+      criteria:
+        - method: review
+          text: For each release of the last 12 months that changed tasks, the training records show the change training of the affected roles before the go-live date.
+    sv:
+      title: Utbildning om ändringar före release
+      description: Användarna i varje roll vars uppgifter ändras av en release SKA få utbildning om ändringarna innan releasen tas i drift.
+      rationale: En ändring som användarna möter oförberedda vid driftstarten orsakar samma fel som ett nytt system utan utbildning.
+      criteria:
+        - method: review
+          text: För varje release under de senaste 12 månaderna som ändrade uppgifter visar utbildningsregistret att de berörda rollerna fick utbildning om ändringen före driftstarten.
+
+tests:
+  - id: EDTP-T01
+    priority: high
+    execution: manual
+    tags: [training-needs-analysis]
+    refs: ["ISO 9001:2026 §7.2", "ISO 10015:2019"]
+    en:
+      title: Review of the training needs analysis
+      description: Checks that the needs analysis covers every role and is updated for releases and new roles.
+      preconditions: The role list, the training needs analysis with its version history and the release list of the last 12 months.
+      expected: Each role has required and current competence and gaps, and the analysis was updated before each major release and new role.
+      steps:
+        - action: Match each role in the role list to an entry in the analysis.
+          expected: Each role has required competence, current competence and gaps.
+        - action: Compare the update dates of the analysis with the dates of the major releases and the start dates of new roles.
+          expected: Each release and each new role has an update dated before it.
+    sv:
+      title: Granskning av analysen av utbildningsbehov
+      description: Kontrollerar att behovsanalysen täcker varje roll och uppdateras för releaser och nya roller.
+      preconditions: Rollförteckningen, analysen av utbildningsbehov med versionshistorik och förteckningen över releaser under de senaste 12 månaderna.
+      expected: Varje roll har kompetens som behövs, befintlig kompetens och luckor, och analysen uppdaterades före varje större release och ny roll.
+      steps:
+        - action: Koppla varje roll i rollförteckningen till en post i analysen.
+          expected: Varje roll har kompetens som behövs, befintlig kompetens och luckor.
+        - action: Jämför analysens uppdateringsdatum med datumen för de större releaserna och startdatumen för nya roller.
+          expected: Varje release och varje ny roll har en uppdatering daterad före den.
+
+  - id: EDTP-T02
+    priority: high
+    execution: manual
+    tags: [training-plan, learning-objectives]
+    refs: ["ISO 10015:2019", "ADDIE instructional design model"]
+    en:
+      title: Review of the training plan and learning objectives
+      description: Checks the coverage of the training plan and the form of the learning objectives.
+      preconditions: The current training plan.
+      expected: Each target group has courses with objectives, duration and method, and sampled objectives contain action, condition and criterion.
+      steps:
+        - action: Find the sections for end users, operators, administrators and maintenance staff in the plan.
+          expected: All four sections exist, and each course has objectives, a duration and a delivery method.
+        - action: Pick 10 learning objectives from different courses and check their wording.
+          expected: Each objective has an observable action, a condition and a success criterion.
+          data: "Sample of 10 learning objectives"
+    sv:
+      title: Granskning av utbildningsplanen och lärandemålen
+      description: Kontrollerar vad utbildningsplanen täcker och hur lärandemålen är formulerade.
+      preconditions: Den gällande utbildningsplanen.
+      expected: Varje målgrupp har kurser med lärandemål, längd och form, och målen i urvalet innehåller handling, förutsättning och kriterium.
+      steps:
+        - action: Leta upp avsnitten för slutanvändare, operatörer, administratörer och underhållspersonal i planen.
+          expected: Alla fyra avsnitten finns, och varje kurs har lärandemål, längd och genomförandeform.
+        - action: Välj 10 lärandemål ur olika kurser och kontrollera hur de är formulerade.
+          expected: Varje mål har en observerbar handling, en förutsättning och ett kriterium för godkänt.
+          data: "Urval av 10 lärandemål"
+
+  - id: EDTP-T03
+    priority: high
+    execution: manual
+    tags: [end-users, go-live]
+    refs: ["ISO 9001:2026 §7.2"]
+    en:
+      title: Training coverage before go-live
+      description: Calculates the share of trained end users per roll-out group and checks the course invitations.
+      preconditions: The roll-out plan with named users and go-live dates, the training records and the course invitations of the last 3 months.
+      expected: At least 90 % of each group was trained before go-live, and invitations were sent at least 10 working days ahead.
+      steps:
+        - action: For each roll-out group, count the named users with a completed course dated before the group's go-live date.
+          expected: The count is at least 90 % of the group.
+          data: "Threshold 90 %"
+        - action: Compare the send date of each invitation with its course date.
+          expected: Each invitation was sent at least 10 working days before the course.
+    sv:
+      title: Andel utbildade före driftstart
+      description: Beräknar andelen utbildade slutanvändare per införandegrupp och kontrollerar kallelserna till kurserna.
+      preconditions: Införandeplanen med namngivna användare och datum för driftstart, utbildningsregistret och kallelserna under de senaste 3 månaderna.
+      expected: Minst 90 % av varje grupp var utbildad före driftstarten, och kallelserna skickades minst 10 arbetsdagar i förväg.
+      steps:
+        - action: Räkna för varje införandegrupp de namngivna användare som har en genomförd kurs daterad före gruppens driftstart.
+          expected: Antalet är minst 90 % av gruppen.
+          data: "Gräns 90 %"
+        - action: Jämför utskicksdatumet för varje kallelse med kursdatumet.
+          expected: Varje kallelse skickades minst 10 arbetsdagar före kursen.
+
+  - id: EDTP-T04
+    priority: critical
+    execution: manual
+    tags: [operators, hands-on]
+    refs: ["ISO 9001:2026 §7.2"]
+    en:
+      title: Review of the operator course and attendance
+      description: Checks the exercises of the operator course and that each operator took part in them.
+      preconditions: The operator course plan, the alarm list, the list of operators and the attendance records.
+      expected: The course has exercises for start-up, shutdown, emergency stop and at least 3 abnormal situations, and each operator attended them.
+      steps:
+        - action: List the exercises in the operator course plan and the environment in which each is done.
+          expected: Exercises for start-up, shutdown and emergency stop are done in the training environment.
+        - action: Match the abnormal situation exercises to the alarm list.
+          expected: At least 3 exercises cover abnormal situations from the alarm list.
+        - action: Compare the list of operators with the attendance records of the exercises.
+          expected: Each operator has attended each exercise.
+    sv:
+      title: Granskning av operatörskursen och närvaron
+      description: Kontrollerar övningarna i operatörskursen och att varje operatör har deltagit i dem.
+      preconditions: Kursplanen för operatörer, larmlistan, förteckningen över operatörer och närvarolistorna.
+      expected: Kursen har övningar för uppstart, avstängning, nödstopp och minst 3 onormala situationer, och varje operatör har deltagit i dem.
+      steps:
+        - action: Lista övningarna i kursplanen för operatörer och den miljö där var och en genomförs.
+          expected: Övningarna för uppstart, avstängning och nödstopp genomförs i utbildningsmiljön.
+        - action: Koppla övningarna om onormala situationer till larmlistan.
+          expected: Minst 3 övningar omfattar onormala situationer ur larmlistan.
+        - action: Jämför förteckningen över operatörer med närvarolistorna för övningarna.
+          expected: Varje operatör har deltagit i varje övning.
+
+  - id: EDTP-T05
+    priority: medium
+    execution: manual
+    tags: [administrators]
+    refs: ["ISO 9001:2026 §7.2"]
+    en:
+      title: Practical assessment of an administrator
+      description: Observes a practical assessment and checks the assessment records of administrators.
+      preconditions: The training environment with a backup to restore, the assessment checklist, the list of administrators and their training records.
+      expected: The checklist covers the three tasks, the observed administrator completes them, and each administrator has a passed assessment.
+      steps:
+        - action: Observe an administrator creating a user, changing a configuration setting and restoring the backup in the training environment.
+          expected: The administrator completes the three tasks, and the assessor marks each on the checklist.
+        - action: Compare the list of administrators with the training records.
+          expected: Each administrator has a passed practical assessment.
+    sv:
+      title: Praktiskt prov för en administratör
+      description: Observerar ett praktiskt prov och kontrollerar provresultaten för administratörer.
+      preconditions: Utbildningsmiljön med en säkerhetskopia att läsa tillbaka, checklistan för provet, förteckningen över administratörer och deras utbildningsregister.
+      expected: Checklistan omfattar de tre uppgifterna, den observerade administratören utför dem, och varje administratör har ett godkänt prov.
+      steps:
+        - action: Observera när en administratör skapar en användare, ändrar en konfigurationsinställning och läser tillbaka säkerhetskopian i utbildningsmiljön.
+          expected: Administratören utför de tre uppgifterna, och bedömaren markerar var och en i checklistan.
+        - action: Jämför förteckningen över administratörer med utbildningsregistret.
+          expected: Varje administratör har ett godkänt praktiskt prov.
+
+  - id: EDTP-T06
+    priority: critical
+    execution: manual
+    tags: [maintenance-staff, authorisation]
+    refs: ["ISO 9001:2026 §7.2", "EN 50110-1:2023"]
+    en:
+      title: Technician authorisations match passed training
+      description: Compares the authorisation list of technicians with their training records.
+      preconditions: The authorisation list for maintenance work and the training records of the technicians.
+      expected: Every authorisation has a matching passed course with its safety part.
+      steps:
+        - action: For each technician and authorised asset type, find the training record of the course for that asset type.
+          expected: Each authorisation has a passed course.
+        - action: Check the safety part in each matching record.
+          expected: The safety part is passed, and its date is before the authorisation date.
+    sv:
+      title: Teknikernas behörigheter stämmer med godkänd utbildning
+      description: Jämför teknikernas behörighetslista med deras utbildningsregister.
+      preconditions: Behörighetslistan för underhållsarbete och teknikernas utbildningsregister.
+      expected: Varje behörighet har en motsvarande godkänd kurs med säkerhetsdel.
+      steps:
+        - action: Leta för varje tekniker och behörig typ av tillgång upp kursen för den typen i utbildningsregistret.
+          expected: Varje behörighet har en godkänd kurs.
+        - action: Kontrollera säkerhetsdelen i varje motsvarande post.
+          expected: Säkerhetsdelen är godkänd, och dess datum ligger före datumet för behörigheten.
+
+  - id: EDTP-T07
+    priority: medium
+    execution: manual
+    tags: [training-environment]
+    refs: ["ISO/IEC 27001:2022 A.8.31", "ISO/IEC 27001:2022 A.8.33"]
+    en:
+      title: Inspection of the training environment
+      description: Checks the separation of the training environment and the absence of real personal data.
+      preconditions: Administrator access to the training environment and the network diagram.
+      expected: The environment has no connection to production, and no real personal identity numbers are found in its data.
+      steps:
+        - action: Check the network diagram and the configured connections of the training environment.
+          expected: No connection to a production system exists.
+        - action: Search the data of the training environment for valid Swedish personal identity numbers and compare hits with the list of synthetic test identities.
+          expected: Each hit is a synthetic test identity.
+          data: "Search pattern for personal identity numbers; list of synthetic test identities"
+    sv:
+      title: Inspektion av utbildningsmiljön
+      description: Kontrollerar att utbildningsmiljön är avskild och att den saknar verkliga personuppgifter.
+      preconditions: Administratörsbehörighet till utbildningsmiljön och nätverksritningen.
+      expected: Miljön har ingen förbindelse med produktion, och inga verkliga personnummer hittas i dess data.
+      steps:
+        - action: Kontrollera nätverksritningen och utbildningsmiljöns konfigurerade förbindelser.
+          expected: Det finns ingen förbindelse med något produktionssystem.
+        - action: Sök i utbildningsmiljöns data efter giltiga svenska personnummer och jämför träffarna med listan över syntetiska testidentiteter.
+          expected: Varje träff är en syntetisk testidentitet.
+          data: "Sökmönster för personnummer; lista över syntetiska testidentiteter"
+
+  - id: EDTP-T08
+    priority: medium
+    execution: manual
+    tags: [train-the-trainer, trainer-competence]
+    refs: ["ISO 29993:2017"]
+    en:
+      title: Review of trainer qualifications
+      description: Checks the train-the-trainer and competence records of internal trainers.
+      preconditions: The list of internal trainers, their records and the course log.
+      expected: Each trainer completed train-the-trainer and a supervised session before their first own course, and has both subject and teaching qualifications.
+      steps:
+        - action: For each trainer, compare the dates of train-the-trainer and the supervised session with the first independent course in the log.
+          expected: Both dates are before the first independent course.
+        - action: Check each trainer's record for a subject qualification and a teaching qualification.
+          expected: Each record has both.
+    sv:
+      title: Granskning av utbildarnas kvalifikationer
+      description: Kontrollerar registren över utbildning av utbildare och kompetens för interna utbildare.
+      preconditions: Förteckningen över interna utbildare, deras register och kursloggen.
+      expected: Varje utbildare genomgick utbildning av utbildare och ett handlett pass före sin första egna kurs och har både ämnes- och pedagogisk kvalifikation.
+      steps:
+        - action: Jämför för varje utbildare datumen för utbildningen av utbildare och det handledda passet med den första egna kursen i loggen.
+          expected: Båda datumen ligger före den första egna kursen.
+        - action: Kontrollera att varje utbildares register har en ämneskvalifikation och en pedagogisk kvalifikation.
+          expected: Varje register har båda.
+
+  - id: EDTP-T09
+    priority: high
+    execution: manual
+    tags: [refresher]
+    refs: ["ISO 9001:2026 §7.2"]
+    en:
+      title: Refresher intervals and overdue refreshers
+      description: Checks the refresher intervals in the plan and finds staff who are past their interval.
+      preconditions: The training plan and an export of the training records of operators and maintenance staff.
+      expected: Each role has an interval, emergency procedures have at most 12 months, and no one is past the interval.
+      steps:
+        - action: Check the refresher interval of each role in the plan.
+          expected: Each role has an interval, and the interval for emergency procedures is 12 months or less.
+        - action: Filter the export for operators and technicians whose last emergency procedure training is older than the interval.
+          expected: The filter returns no persons.
+    sv:
+      title: Repetitionsintervall och försenad repetition
+      description: Kontrollerar repetitionsintervallen i planen och letar upp personal som har passerat sitt intervall.
+      preconditions: Utbildningsplanen och en export av utbildningsregistret för operatörer och underhållspersonal.
+      expected: Varje roll har ett intervall, nödrutinerna har högst 12 månader, och ingen har passerat intervallet.
+      steps:
+        - action: Kontrollera repetitionsintervallet för varje roll i planen.
+          expected: Varje roll har ett intervall, och intervallet för nödrutiner är högst 12 månader.
+        - action: Filtrera exporten på operatörer och tekniker vars senaste utbildning i nödrutiner är äldre än intervallet.
+          expected: Filtret ger inga personer.
+
+  - id: EDTP-T10
+    priority: high
+    execution: manual
+    tags: [change-training]
+    refs: ["ISO 9001:2026 §7.2"]
+    en:
+      title: Change training before releases
+      description: Checks that roles affected by a release were trained on the change before go-live.
+      preconditions: The releases of the last 12 months with their go-live dates and affected roles, and the training records.
+      expected: Each affected role was trained on each change before its go-live date.
+      steps:
+        - action: List the releases that changed tasks and the roles each one affected.
+          expected: A list of releases and affected roles exists.
+        - action: For each release and role, find the change training in the records and compare its date with the go-live date.
+          expected: Each training is dated before the go-live date.
+    sv:
+      title: Utbildning om ändringar före releaser
+      description: Kontrollerar att roller som berörs av en release har utbildats om ändringen före driftstarten.
+      preconditions: Releaserna under de senaste 12 månaderna med datum för driftstart och berörda roller samt utbildningsregistret.
+      expected: Varje berörd roll utbildades om varje ändring före dess driftstart.
+      steps:
+        - action: Lista de releaser som ändrade uppgifter och de roller som var och en berörde.
+          expected: Det finns en lista över releaser och berörda roller.
+        - action: Leta för varje release och roll upp utbildningen om ändringen i registret och jämför dess datum med datumet för driftstart.
+          expected: Varje utbildning är daterad före driftstarten.

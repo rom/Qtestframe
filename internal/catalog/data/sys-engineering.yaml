@@ -1,0 +1,696 @@
+area: sys-engineering
+prefix: SYENG
+group: quality
+catalogue: system
+name: {en: Systems engineering and requirements, sv: Systemteknik och kravhantering}
+description:
+  en: The engineering of systems after ISO/IEC/IEEE 15288 and ISO/IEC/IEEE 29148, covering the life-cycle model and its decision gates, stakeholder needs and the concept of operations, the attributes and quality of requirements, traceability, requirements baselines, architecture description and trade-off decisions, technical risk and measurement, and configuration management (identification, baselines, change control, status accounting and audits).
+  sv: Systemutveckling enligt ISO/IEC/IEEE 15288 och ISO/IEC/IEEE 29148, med livscykelmodell och beslutspunkter, intressenternas behov och driftkoncept, kravens attribut och kvalitet, spårbarhet, kravbaslinjer, arkitekturbeskrivning och avvägningsbeslut, teknisk risk och mätning samt konfigurationsstyrning (identifiering, baslinjer, ändringsstyrning, konfigurationsredovisning och konfigurationsrevisioner).
+
+requirements:
+  - id: SYENG-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [life-cycle, decision-gates]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.2.1 (life cycle model management process)", "ISO/IEC/IEEE 24748-1:2024 (life cycle management guidelines)"]
+    tests: [SYENG-T01]
+    en:
+      title: Life-cycle model with decision gates
+      description: The project MUST define the life-cycle stages of the system (for example concept, development, production, utilisation, support, retirement) and, for each decision gate between stages, the entry criteria, the evidence expected and the role that decides.
+      rationale: Gates with explicit criteria stop a system from moving to a costly stage before its risks and requirements are under control.
+      criteria:
+        - method: inspection
+          text: The systems engineering management plan lists the stages and, for each gate, criteria, evidence and decision maker, and the records of passed gates show decisions against those criteria.
+    sv:
+      title: Livscykelmodell med beslutspunkter
+      description: Projektet SKA definiera systemets livscykelskeden (till exempel koncept, utveckling, produktion, användning, stöd, avveckling) och för varje beslutspunkt mellan skedena ingångskriterier, förväntade belägg och den roll som beslutar.
+      rationale: Beslutspunkter med uttryckliga kriterier hindrar ett system från att gå vidare till ett kostsamt skede innan dess risker och krav är under kontroll.
+      criteria:
+        - method: inspection
+          text: Planen för systemteknisk ledning anger skedena och för varje beslutspunkt kriterier, belägg och beslutsfattare, och protokollen från passerade beslutspunkter visar beslut mot dessa kriterier.
+
+  - id: SYENG-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [stakeholders, stakeholder-needs]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.2 (stakeholder needs and requirements definition process)", "ISO/IEC/IEEE 29148:2018 §6.3 (stakeholder needs and requirements definition process)"]
+    tests: [SYENG-T02]
+    en:
+      title: Stakeholder register and documented needs
+      description: The project MUST keep a register of the stakeholders of the system across its life cycle (users, operators, maintainers, owners, authorities, neighbouring systems) and MUST record the needs of each stakeholder with its source and date.
+      rationale: Needs of stakeholders who are not identified, often maintainers and authorities, surface late as costly changes.
+      criteria:
+        - method: inspection
+          text: The register covers each of the six stakeholder classes or states why a class does not apply, and each stakeholder has at least one recorded need with source and date.
+    sv:
+      title: Intressentregister och dokumenterade behov
+      description: Projektet SKA föra ett register över systemets intressenter under hela livscykeln (användare, operatörer, underhållare, ägare, myndigheter, angränsande system) och registrera varje intressents behov med källa och datum.
+      rationale: Behov hos intressenter som inte identifierats, ofta underhållare och myndigheter, dyker upp sent som dyra ändringar.
+      criteria:
+        - method: inspection
+          text: Registret omfattar var och en av de sex klasserna av intressenter eller anger varför en klass inte gäller, och varje intressent har minst ett registrerat behov med källa och datum.
+
+  - id: SYENG-03
+    type: business
+    obligation: should
+    priority: medium
+    tags: [concept-of-operations, scenarios]
+    refs: ["ISO/IEC/IEEE 29148:2018 Annex B (concept of operations)", "ISO/IEC/IEEE 15288:2023 §6.4.1 (business or mission analysis process)"]
+    tests: [SYENG-T02]
+    en:
+      title: Concept of operations with operational scenarios
+      description: The project SHOULD write a concept of operations that describes how the system is used, with at least one scenario for normal operation, degraded operation, maintenance and emergency, each naming the actors and the expected system behaviour.
+      rationale: Scenarios make needs concrete, reveal missing functions and give the basis for validation.
+      criteria:
+        - method: review
+          text: Stakeholder representatives review the concept of operations, and it contains the four scenario types with actors and expected behaviour.
+    sv:
+      title: Driftkoncept med driftscenarier
+      description: Projektet BÖR skriva ett driftkoncept som beskriver hur systemet används, med minst ett scenario för normal drift, nedsatt drift, underhåll och nödläge, där varje scenario anger aktörerna och systemets förväntade beteende.
+      rationale: Scenarier gör behoven konkreta, avslöjar saknade funktioner och ger underlaget för validering.
+      criteria:
+        - method: review
+          text: Företrädare för intressenterna granskar driftkonceptet, och det innehåller de fyra typerna av scenarier med aktörer och förväntat beteende.
+
+  - id: SYENG-04
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [requirement-attributes, requirements]
+    refs: ["ISO/IEC/IEEE 29148:2018 §5.2.8 (requirements attributes)"]
+    tests: [SYENG-T03]
+    en:
+      title: Attributes recorded for each system requirement
+      description: Each system requirement MUST carry a unique and stable identifier, a rationale, a source, a priority, a verification method (test, inspection, analysis or demonstration) and a status.
+      rationale: Attributes make requirements manageable, since they explain why a requirement exists, how it will be verified and how important it is.
+      criteria:
+        - method: inspection
+          text: An export of the system requirements shows each of the six attributes filled in for each requirement, and no identifier has been reused.
+          threshold: 0 requirements with missing attributes
+    sv:
+      title: Attribut registrerade för varje systemkrav
+      description: Varje systemkrav SKA ha en unik och stabil identitet, en motivering, en källa, en prioritet, en verifieringsmetod (test, inspektion, analys eller demonstration) och en status.
+      rationale: Attribut gör kraven hanterbara eftersom de förklarar varför ett krav finns, hur det ska verifieras och hur viktigt det är.
+      criteria:
+        - method: inspection
+          text: En export av systemkraven visar vart och ett av de sex attributen ifyllt för varje krav, och ingen identitet har återanvänts.
+          threshold: 0 krav med saknade attribut
+
+  - id: SYENG-05
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [requirement-quality, verifiable, singular]
+    refs: ["ISO/IEC/IEEE 29148:2018 §5.2.5 (characteristics of individual requirements)", "ISO/IEC/IEEE 29148:2018 §5.2.7 (requirement language criteria)"]
+    tests: [SYENG-T03]
+    en:
+      title: Each requirement singular, unambiguous and verifiable
+      description: Each system requirement MUST state one need with one obligation keyword, avoid vague terms, and state a measurable value where it sets a performance, as checked by a peer review or a language checker before baselining.
+      rationale: Compound and vague requirements cannot be verified or traced and cause disputes at acceptance.
+      criteria:
+        - method: review
+          text: A review of 30 sampled requirements finds no requirement with more than one obligation, no vague term and a value with a unit in each performance requirement.
+    sv:
+      title: Varje krav är enkelt, entydigt och verifierbart
+      description: Varje systemkrav SKA uttrycka ett behov med ett nyckelord för förpliktelse, undvika vaga ord och ange ett mätbart värde där det anger en prestanda, vilket kontrolleras med en kollegial granskning eller ett språkverktyg före baslinjen.
+      rationale: Sammansatta och vaga krav kan inte verifieras eller spåras och orsakar tvister vid godkännandet.
+      criteria:
+        - method: review
+          text: En granskning av 30 krav i ett stickprov hittar inget krav med mer än en förpliktelse, inget vagt ord och ett värde med enhet i varje prestandakrav.
+
+  - id: SYENG-06
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [traceability, completeness, stakeholder-needs]
+    refs: ["ISO/IEC/IEEE 29148:2018 §5.2.6 (characteristics of a set of requirements)", "ISO/IEC/IEEE 15288:2023 §6.4.3 (system requirements definition process)"]
+    tests: [SYENG-T04]
+    en:
+      title: Each stakeholder need traced to system requirements
+      description: Each recorded stakeholder need MUST be traced to at least one system requirement or to a recorded decision not to meet it, and each system requirement MUST trace back to a need or to a derived-requirement rationale.
+      rationale: Untraced needs are forgotten and untraced requirements add cost without a reason, so both directions matter.
+      criteria:
+        - method: analysis
+          text: A traceability report shows 0 needs without a requirement or decision and 0 requirements without a need or derivation rationale.
+          threshold: 0 untraced items
+    sv:
+      title: Varje intressentbehov spåras till systemkrav
+      description: Varje registrerat intressentbehov SKA spåras till minst ett systemkrav eller till ett registrerat beslut att inte uppfylla det, och varje systemkrav SKA spåras tillbaka till ett behov eller till en motivering för ett härlett krav.
+      rationale: Behov som inte spåras glöms bort och krav som inte spåras ger kostnader utan skäl, så båda riktningarna är viktiga.
+      criteria:
+        - method: analysis
+          text: En spårbarhetsrapport visar 0 behov utan krav eller beslut och 0 krav utan behov eller motivering för härledning.
+          threshold: 0 ospårade poster
+
+  - id: SYENG-07
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [traceability, architecture, verification]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.4 (system architecture definition process)", "ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    tests: [SYENG-T04]
+    en:
+      title: Requirements traced to architecture elements and verification
+      description: Each system requirement MUST be allocated to at least one architecture element and linked to at least one verification activity, and the links MUST be navigable in both directions in the requirements tool.
+      rationale: Allocation shows who builds what, and verification links show when a requirement is proven, which together make progress and impact of changes visible.
+      criteria:
+        - method: analysis
+          text: The traceability report shows each requirement with an allocation and a verification link, and opening an architecture element lists its requirements.
+          threshold: 0 unallocated or unverified requirements
+    sv:
+      title: Kraven spåras till arkitekturelement och verifiering
+      description: Varje systemkrav SKA allokeras till minst ett arkitekturelement och länkas till minst en verifieringsaktivitet, och länkarna SKA gå att följa i båda riktningarna i kravverktyget.
+      rationale: Allokeringen visar vem som bygger vad, och verifieringslänkarna visar när ett krav är bevisat, vilket tillsammans gör framsteg och ändringars påverkan synliga.
+      criteria:
+        - method: analysis
+          text: Spårbarhetsrapporten visar varje krav med en allokering och en verifieringslänk, och när ett arkitekturelement öppnas visas dess krav.
+          threshold: 0 krav utan allokering eller verifiering
+
+  - id: SYENG-08
+    type: business
+    obligation: must
+    priority: high
+    tags: [requirements-baseline, change-board]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)", "ISO 10007:2017 §5.4 (change control)"]
+    tests: [SYENG-T05]
+    en:
+      title: Requirements baselined before design and changed only through the board
+      description: The system requirements MUST be approved as a baseline before detailed design starts, and after that a requirement MUST change only through a change request approved by the change control board.
+      rationale: Requirements that change without control make the design chase a moving target and break the link to verification.
+      criteria:
+        - method: inspection
+          text: The baseline approval is dated before the design start, and each requirement changed after it has an approved change request in the history.
+    sv:
+      title: Kraven baslinjesätts före konstruktion och ändras bara via ändringsnämnden
+      description: Systemkraven SKA godkännas som en baslinje innan den detaljerade konstruktionen startar, och därefter SKA ett krav bara ändras genom en ändringsbegäran som godkänts av ändringsnämnden.
+      rationale: Krav som ändras utan styrning gör att konstruktionen jagar ett rörligt mål och bryter kopplingen till verifieringen.
+      criteria:
+        - method: inspection
+          text: Godkännandet av baslinjen är daterat före konstruktionsstart, och varje krav som ändrats efter den har en godkänd ändringsbegäran i historiken.
+
+  - id: SYENG-09
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [architecture-description, viewpoints]
+    refs: ["ISO/IEC/IEEE 42010:2022 (architecture description)", "ISO/IEC/IEEE 15288:2023 §6.4.4 (system architecture definition process)"]
+    tests: [SYENG-T06]
+    en:
+      title: Architecture description with stated viewpoints
+      description: The architecture description MUST name its stakeholders and their concerns, and for each concern provide at least one view (for example functional, physical, interface, deployment) drawn according to a stated viewpoint.
+      rationale: An architecture described only as a box diagram leaves out the concerns of safety, maintenance and operation that drive the design.
+      criteria:
+        - method: review
+          text: The description lists stakeholders and concerns, and each concern is addressed by a view whose viewpoint is named.
+    sv:
+      title: Arkitekturbeskrivning med angivna synsätt
+      description: Arkitekturbeskrivningen SKA ange sina intressenter och deras frågeställningar, och för varje frågeställning ge minst en vy (till exempel funktionell, fysisk, gränssnitt, driftsättning) ritad enligt ett angivet synsätt.
+      rationale: En arkitektur som bara beskrivs som ett lådschema utelämnar de frågor om säkerhet, underhåll och drift som styr konstruktionen.
+      criteria:
+        - method: review
+          text: Beskrivningen anger intressenter och frågeställningar, och varje frågeställning besvaras av en vy vars synsätt anges.
+
+  - id: SYENG-10
+    type: business
+    obligation: should
+    priority: medium
+    tags: [trade-off, decision-management]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.3 (decision management process)"]
+    tests: [SYENG-T06]
+    en:
+      title: Trade-off decisions recorded with alternatives and criteria
+      description: Each architecture decision that affects cost, safety or an external interface SHOULD be recorded with the alternatives considered, the weighted criteria, the evaluation, the decision and the decision maker.
+      rationale: Recorded decisions keep the reasons available when the decision is questioned years later or the context changes.
+      criteria:
+        - method: inspection
+          text: The decision log holds at least one entry per major subsystem, each with alternatives, criteria, evaluation, decision and decision maker.
+    sv:
+      title: Avvägningsbeslut registreras med alternativ och kriterier
+      description: Varje arkitekturbeslut som påverkar kostnad, säkerhet eller ett externt gränssnitt BÖR registreras med de alternativ som övervägts, de viktade kriterierna, utvärderingen, beslutet och beslutsfattaren.
+      rationale: Registrerade beslut gör att skälen finns kvar när beslutet ifrågasätts flera år senare eller förutsättningarna ändras.
+      criteria:
+        - method: inspection
+          text: Beslutsloggen innehåller minst en post per huvudsakligt delsystem, var och en med alternativ, kriterier, utvärdering, beslut och beslutsfattare.
+
+  - id: SYENG-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk-management, technical-risk]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.4 (risk management process)", "ISO 31000:2018 §6.4 (risk assessment)"]
+    tests: [SYENG-T07]
+    en:
+      title: Technical risk register reviewed every month
+      description: The project MUST keep a register of technical risks with likelihood, consequence, owner, treatment and trigger date, and MUST review it at least monthly with the review recorded.
+      rationale: Technical risks such as immature technology or unproven interfaces grow quietly unless someone owns and reviews them.
+      criteria:
+        - method: inspection
+          text: Each risk in the register has the five fields, and the review log shows a review in each of the last 6 months.
+          threshold: review at least monthly
+    sv:
+      title: Register över tekniska risker granskas varje månad
+      description: Projektet SKA föra ett register över tekniska risker med sannolikhet, konsekvens, ägare, åtgärd och datum för utlösande händelse, och granska det minst en gång i månaden med granskningen registrerad.
+      rationale: Tekniska risker som omogen teknik eller oprövade gränssnitt växer i det tysta om ingen äger och granskar dem.
+      criteria:
+        - method: inspection
+          text: Varje risk i registret har de fem fälten, och granskningsloggen visar en granskning under var och en av de senaste 6 månaderna.
+          threshold: granskning minst varje månad
+
+  - id: SYENG-12
+    type: functional
+    obligation: must
+    priority: high
+    tags: [configuration-identification, configuration-items]
+    refs: ["ISO 10007:2017 §5.3 (configuration identification)", "SAE EIA-649C (configuration management standard)", "ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)"]
+    tests: [SYENG-T08]
+    en:
+      title: Configuration items identified with versions
+      description: The project MUST list each configuration item of the system (hardware units, software components, documents, interface definitions) with a unique identifier, the current version and its owner.
+      rationale: What is not identified cannot be controlled, and a missing item breaks the link between the delivered system and its documentation.
+      criteria:
+        - method: inspection
+          text: The configuration item list covers the four kinds of items, and 10 sampled items each have identifier, version and owner and are found in their repository at that version.
+    sv:
+      title: Konfigurationsobjekt identifieras med versioner
+      description: Projektet SKA förteckna varje konfigurationsobjekt i systemet (hårdvaruenheter, programvarukomponenter, dokument, gränssnittsdefinitioner) med en unik identitet, aktuell version och ägare.
+      rationale: Det som inte är identifierat kan inte styras, och ett saknat objekt bryter kopplingen mellan det levererade systemet och dess dokumentation.
+      criteria:
+        - method: inspection
+          text: Förteckningen över konfigurationsobjekt omfattar de fyra slagen av objekt, och 10 objekt i ett stickprov har var och ett identitet, version och ägare och finns i sitt förråd i den versionen.
+
+  - id: SYENG-13
+    type: functional
+    obligation: must
+    priority: high
+    tags: [baselines, configuration-management]
+    refs: ["ISO 10007:2017 §5.3.3 (configuration baselines)", "SAE EIA-649C (configuration management standard)"]
+    tests: [SYENG-T08]
+    en:
+      title: Functional, allocated and product baselines
+      description: The project MUST establish a functional baseline at system requirements approval, an allocated baseline at architecture approval and a product baseline at production or delivery approval, each listing the configuration items and versions it contains.
+      rationale: Baselines are the agreed reference points that changes, audits and deliveries are measured against.
+      criteria:
+        - method: inspection
+          text: The three baselines exist with their dates matching the gate approvals, and each lists its items with versions.
+    sv:
+      title: Funktionell, allokerad och produktbaslinje
+      description: Projektet SKA upprätta en funktionell baslinje när systemkraven godkänns, en allokerad baslinje när arkitekturen godkänns och en produktbaslinje när produktion eller leverans godkänns, var och en med de konfigurationsobjekt och versioner som den innehåller.
+      rationale: Baslinjer är de överenskomna referenspunkter som ändringar, revisioner och leveranser mäts mot.
+      criteria:
+        - method: inspection
+          text: De tre baslinjerna finns med datum som stämmer med godkännandena vid beslutspunkterna, och var och en anger sina objekt med versioner.
+
+  - id: SYENG-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [change-control, impact-analysis]
+    refs: ["ISO 10007:2017 §5.4 (change control)", "SAE EIA-649C (configuration management standard)"]
+    tests: [SYENG-T05]
+    en:
+      title: Impact analysis before each change is approved
+      description: Each change request against a baseline MUST record its impact on requirements, interfaces, safety, cost and schedule and the configuration items affected before the change control board decides on it.
+      rationale: Changes approved without impact analysis break interfaces and safety arguments that nobody thought of.
+      criteria:
+        - method: inspection
+          text: 10 sampled approved change requests each have the five impact topics and a list of affected items, dated before the board decision.
+    sv:
+      title: Konsekvensanalys innan varje ändring godkänns
+      description: Varje ändringsbegäran mot en baslinje SKA registrera sin påverkan på krav, gränssnitt, säkerhet, kostnad och tidplan och vilka konfigurationsobjekt som berörs innan ändringsnämnden beslutar om den.
+      rationale: Ändringar som godkänns utan konsekvensanalys bryter gränssnitt och säkerhetsargument som ingen hade tänkt på.
+      criteria:
+        - method: inspection
+          text: 10 godkända ändringsbegäranden i ett stickprov har var och en de fem ämnena för påverkan och en lista över berörda objekt, daterade före nämndens beslut.
+
+  - id: SYENG-15
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [status-accounting, configuration-management]
+    refs: ["ISO 10007:2017 §5.5 (configuration status accounting)"]
+    tests: [SYENG-T09]
+    en:
+      title: Configuration status report on demand
+      description: The configuration management system MUST produce on demand a report of the current version of each configuration item, the baseline it belongs to, and each change request with its status since the last baseline.
+      rationale: Status accounting answers which configuration is installed where and what has changed, which every audit and incident investigation asks.
+      criteria:
+        - method: test
+          text: A report produced on demand lists each item with version and baseline and each change request since the last baseline, and 5 sampled entries match the repositories.
+    sv:
+      title: Rapport om konfigurationsstatus på begäran
+      description: Systemet för konfigurationsstyrning SKA på begäran ta fram en rapport över aktuell version av varje konfigurationsobjekt, den baslinje som det tillhör och varje ändringsbegäran med status sedan den senaste baslinjen.
+      rationale: Konfigurationsredovisningen svarar på vilken konfiguration som finns var och vad som har ändrats, vilket varje revision och utredning av incidenter frågar efter.
+      criteria:
+        - method: test
+          text: En rapport som tas fram på begäran anger varje objekt med version och baslinje och varje ändringsbegäran sedan den senaste baslinjen, och 5 poster i ett stickprov stämmer med förråden.
+
+  - id: SYENG-16
+    type: business
+    obligation: must
+    priority: high
+    tags: [configuration-audit, delivery]
+    refs: ["ISO 10007:2017 §5.6 (configuration audit)", "SAE EIA-649C (configuration management standard)"]
+    tests: [SYENG-T10]
+    en:
+      title: Functional and physical configuration audit before delivery
+      description: Before delivery, the project MUST carry out a functional configuration audit, confirming that each requirement of the baseline has a passed verification, and a physical configuration audit, confirming that the delivered items match the product baseline.
+      rationale: The audits show that what is delivered is what was specified, verified and documented.
+      criteria:
+        - method: inspection
+          text: The audit reports are dated before delivery, the functional audit lists 0 unverified requirements, and the physical audit lists 0 mismatches or each mismatch with an approved deviation.
+    sv:
+      title: Funktionell och fysisk konfigurationsrevision före leverans
+      description: Före leverans SKA projektet genomföra en funktionell konfigurationsrevision, som bekräftar att varje krav i baslinjen har en godkänd verifiering, och en fysisk konfigurationsrevision, som bekräftar att de levererade objekten motsvarar produktbaslinjen.
+      rationale: Revisionerna visar att det som levereras är det som specificerats, verifierats och dokumenterats.
+      criteria:
+        - method: inspection
+          text: Revisionsrapporterna är daterade före leverans, den funktionella revisionen anger 0 overifierade krav, och den fysiska revisionen anger 0 avvikelser eller varje avvikelse med ett godkänt undantag.
+
+  - id: SYENG-17
+    type: business
+    obligation: should
+    priority: low
+    tags: [technical-performance-measures, measurement]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.7 (measurement process)", "ISO/IEC/IEEE 15939:2017 (measurement process)"]
+    tests: [SYENG-T11]
+    en:
+      title: Technical performance measures tracked against targets
+      description: The project SHOULD track at least 3 technical performance measures (for example mass, power consumption, response time) with a target, a threshold and the current estimate, updated at each design review.
+      rationale: Tracking key technical values shows early when the design is drifting away from what the system has to achieve.
+      criteria:
+        - method: inspection
+          text: The measures report shows at least 3 measures with target, threshold and an estimate updated at each of the last 2 design reviews.
+          threshold: ≥ 3 measures
+    sv:
+      title: Tekniska prestandamått följs upp mot mål
+      description: Projektet BÖR följa upp minst 3 tekniska prestandamått (till exempel massa, effektförbrukning, svarstid) med mål, gränsvärde och aktuell uppskattning, uppdaterade vid varje konstruktionsgranskning.
+      rationale: Uppföljning av viktiga tekniska värden visar tidigt när konstruktionen glider bort från vad systemet ska uppnå.
+      criteria:
+        - method: inspection
+          text: Rapporten över måtten visar minst 3 mått med mål, gränsvärde och en uppskattning som uppdaterats vid var och en av de 2 senaste konstruktionsgranskningarna.
+          threshold: ≥ 3 mått
+
+tests:
+  - id: SYENG-T01
+    priority: high
+    execution: manual
+    tags: [life-cycle, decision-gates]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.2.1 (life cycle model management process)"]
+    en:
+      title: Life-cycle stages and gate decisions
+      description: Reviews the life-cycle model in the management plan and the records of the passed gates.
+      preconditions: The systems engineering management plan and the gate records of the project.
+      expected: The stages and gates are defined, and each passed gate was decided against its criteria.
+      steps:
+        - action: Read the stages and gate definitions in the plan.
+          expected: Each gate has entry criteria, expected evidence and a decision maker.
+        - action: Compare each passed gate record with its definition.
+          expected: The record addresses each criterion and is signed by the named decision maker.
+    sv:
+      title: Livscykelskeden och beslut vid beslutspunkter
+      description: Granskar livscykelmodellen i ledningsplanen och protokollen från passerade beslutspunkter.
+      preconditions: Planen för systemteknisk ledning och projektets protokoll från beslutspunkter.
+      expected: Skedena och beslutspunkterna är definierade, och varje passerad beslutspunkt har beslutats mot sina kriterier.
+      steps:
+        - action: Läs skedena och definitionerna av beslutspunkterna i planen.
+          expected: Varje beslutspunkt har ingångskriterier, förväntade belägg och en beslutsfattare.
+        - action: Jämför protokollet från varje passerad beslutspunkt med dess definition.
+          expected: Protokollet tar upp varje kriterium och är undertecknat av den angivna beslutsfattaren.
+
+  - id: SYENG-T02
+    priority: high
+    execution: manual
+    tags: [stakeholders, concept-of-operations]
+    refs: ["ISO/IEC/IEEE 29148:2018 §6.3 (stakeholder needs and requirements definition process)", "ISO/IEC/IEEE 29148:2018 Annex B (concept of operations)"]
+    en:
+      title: Stakeholder register and concept of operations
+      description: Reviews the stakeholder register, the recorded needs and the concept of operations.
+      preconditions: The stakeholder register, the needs database and the concept of operations with its review record.
+      expected: Stakeholders and needs are complete, and the concept of operations has the four scenario types.
+      steps:
+        - action: Map the stakeholders in the register to the six classes.
+          expected: Each class has a stakeholder or a reason why it does not apply.
+        - action: For each stakeholder, find at least one need with source and date.
+          expected: Each stakeholder has one.
+        - action: Read the scenarios of the concept of operations and its review record.
+          expected: Normal, degraded, maintenance and emergency scenarios are present with actors and behaviour, and stakeholder representatives took part in the review.
+    sv:
+      title: Intressentregister och driftkoncept
+      description: Granskar intressentregistret, de registrerade behoven och driftkonceptet.
+      preconditions: Intressentregistret, behovsdatabasen och driftkonceptet med sitt granskningsprotokoll.
+      expected: Intressenter och behov är fullständiga, och driftkonceptet har de fyra typerna av scenarier.
+      steps:
+        - action: Koppla intressenterna i registret till de sex klasserna.
+          expected: Varje klass har en intressent eller ett skäl till att den inte gäller.
+        - action: Leta upp minst ett behov med källa och datum för varje intressent.
+          expected: Varje intressent har ett.
+        - action: Läs driftkonceptets scenarier och dess granskningsprotokoll.
+          expected: Scenarier för normal drift, nedsatt drift, underhåll och nödläge finns med aktörer och beteende, och företrädare för intressenterna deltog i granskningen.
+
+  - id: SYENG-T03
+    priority: high
+    execution: manual
+    tags: [requirement-attributes, requirement-quality]
+    refs: ["ISO/IEC/IEEE 29148:2018 §5.2.8 (requirements attributes)", "ISO/IEC/IEEE 29148:2018 §5.2.5 (characteristics of individual requirements)"]
+    en:
+      title: Requirement attributes and wording
+      description: Checks the attributes of all system requirements and the wording of a sample.
+      preconditions: An export of the system requirements with their attributes and identifier history.
+      expected: Each requirement has its attributes, and the sampled requirements are singular, clear and measurable.
+      steps:
+        - action: Filter the export for empty attributes and reused identifiers.
+          expected: No requirement has an empty attribute and no identifier is reused.
+        - action: Review 30 randomly chosen requirements.
+          expected: Each states one need with one keyword and no vague term, and each performance requirement has a value with a unit.
+    sv:
+      title: Kravens attribut och formulering
+      description: Kontrollerar attributen för alla systemkrav och formuleringen i ett stickprov.
+      preconditions: En export av systemkraven med deras attribut och identitetshistorik.
+      expected: Varje krav har sina attribut, och kraven i stickprovet är enkla, tydliga och mätbara.
+      steps:
+        - action: Filtrera exporten på tomma attribut och återanvända identiteter.
+          expected: Inget krav har ett tomt attribut och ingen identitet är återanvänd.
+        - action: Granska 30 slumpvis valda krav.
+          expected: Vart och ett uttrycker ett behov med ett nyckelord och inget vagt ord, och varje prestandakrav har ett värde med enhet.
+
+  - id: SYENG-T04
+    priority: high
+    execution: automated
+    tags: [traceability]
+    refs: ["ISO/IEC/IEEE 29148:2018 §5.2.6 (characteristics of a set of requirements)", "ISO/IEC/IEEE 15288:2023 §6.4.4 (system architecture definition process)"]
+    en:
+      title: Traceability report from needs to verification
+      description: A script produces the traceability report from the requirements tool and counts the gaps.
+      preconditions: Read access to the requirements tool with needs, system requirements, architecture elements and verification activities.
+      expected: No gaps in any direction.
+      steps:
+        - action: Count needs without a requirement or a decision not to meet them.
+          expected: The count is 0.
+        - action: Count requirements without a need or derivation rationale, without an allocation, and without a verification link.
+          expected: Each count is 0.
+        - action: Open one architecture element in the tool.
+          expected: Its allocated requirements are listed.
+    sv:
+      title: Spårbarhetsrapport från behov till verifiering
+      description: Ett skript tar fram spårbarhetsrapporten ur kravverktyget och räknar luckorna.
+      preconditions: Läsbehörighet till kravverktyget med behov, systemkrav, arkitekturelement och verifieringsaktiviteter.
+      expected: Inga luckor i någon riktning.
+      steps:
+        - action: Räkna behov utan krav eller beslut om att inte uppfylla dem.
+          expected: Antalet är 0.
+        - action: Räkna krav utan behov eller motivering för härledning, utan allokering och utan verifieringslänk.
+          expected: Varje antal är 0.
+        - action: Öppna ett arkitekturelement i verktyget.
+          expected: Dess allokerade krav visas.
+
+  - id: SYENG-T05
+    priority: high
+    execution: manual
+    tags: [requirements-baseline, change-control]
+    refs: ["ISO 10007:2017 §5.4 (change control)"]
+    en:
+      title: Requirements baseline and change requests
+      description: Compares the requirement history after the baseline with the approved change requests.
+      preconditions: The baseline approval record, the design start date, the requirement change history and the change requests with their board decisions.
+      expected: Each change after the baseline went through an analysed and approved change request.
+      steps:
+        - action: Compare the baseline approval date with the design start date.
+          expected: The baseline was approved first.
+        - action: Match each requirement change after the baseline with a change request.
+          expected: Each change has an approved request.
+        - action: Read 10 approved change requests.
+          expected: Each has impact on requirements, interfaces, safety, cost and schedule and a list of affected items, dated before the decision.
+    sv:
+      title: Kravbaslinje och ändringsbegäranden
+      description: Jämför kravhistoriken efter baslinjen med de godkända ändringsbegärandena.
+      preconditions: Protokollet över godkännandet av baslinjen, datum för konstruktionsstart, kravens ändringshistorik och ändringsbegärandena med nämndens beslut.
+      expected: Varje ändring efter baslinjen har gått via en analyserad och godkänd ändringsbegäran.
+      steps:
+        - action: Jämför datumet för godkännandet av baslinjen med konstruktionsstarten.
+          expected: Baslinjen godkändes först.
+        - action: Para ihop varje kravändring efter baslinjen med en ändringsbegäran.
+          expected: Varje ändring har en godkänd begäran.
+        - action: Läs 10 godkända ändringsbegäranden.
+          expected: Var och en har påverkan på krav, gränssnitt, säkerhet, kostnad och tidplan och en lista över berörda objekt, daterade före beslutet.
+
+  - id: SYENG-T06
+    priority: medium
+    execution: manual
+    tags: [architecture-description, trade-off]
+    refs: ["ISO/IEC/IEEE 42010:2022 (architecture description)", "ISO/IEC/IEEE 15288:2023 §6.3.3 (decision management process)"]
+    en:
+      title: Architecture views and decision log
+      description: Reviews the architecture description and the decision log.
+      preconditions: The architecture description, the list of major subsystems and the decision log.
+      expected: Each concern has a view with a named viewpoint, and decisions are recorded for each major subsystem.
+      steps:
+        - action: Read the stakeholders and concerns of the architecture description and match each concern with a view.
+          expected: Each concern has a view whose viewpoint is named.
+        - action: Find at least one decision entry per major subsystem.
+          expected: Each entry has alternatives, criteria, evaluation, decision and decision maker.
+    sv:
+      title: Arkitekturvyer och beslutslogg
+      description: Granskar arkitekturbeskrivningen och beslutsloggen.
+      preconditions: Arkitekturbeskrivningen, listan över huvudsakliga delsystem och beslutsloggen.
+      expected: Varje frågeställning har en vy med ett angivet synsätt, och beslut finns registrerade för varje huvudsakligt delsystem.
+      steps:
+        - action: Läs arkitekturbeskrivningens intressenter och frågeställningar och para ihop varje frågeställning med en vy.
+          expected: Varje frågeställning har en vy vars synsätt anges.
+        - action: Leta upp minst en beslutspost per huvudsakligt delsystem.
+          expected: Varje post har alternativ, kriterier, utvärdering, beslut och beslutsfattare.
+
+  - id: SYENG-T07
+    priority: high
+    execution: manual
+    tags: [technical-risk]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.4 (risk management process)"]
+    en:
+      title: Technical risk register and monthly reviews
+      description: Reviews the fields of the risk register and the review log.
+      preconditions: The technical risk register and its review log for the last 6 months.
+      expected: Each risk is complete and each month has a review.
+      steps:
+        - action: Read the fields of each risk.
+          expected: Likelihood, consequence, owner, treatment and trigger date are filled in.
+        - action: Read the review log for the last 6 months.
+          expected: Each month has a recorded review.
+    sv:
+      title: Register över tekniska risker och månatliga granskningar
+      description: Granskar fälten i riskregistret och granskningsloggen.
+      preconditions: Registret över tekniska risker och dess granskningslogg för de senaste 6 månaderna.
+      expected: Varje risk är fullständig och varje månad har en granskning.
+      steps:
+        - action: Läs fälten för varje risk.
+          expected: Sannolikhet, konsekvens, ägare, åtgärd och datum för utlösande händelse är ifyllda.
+        - action: Läs granskningsloggen för de senaste 6 månaderna.
+          expected: Varje månad har en registrerad granskning.
+
+  - id: SYENG-T08
+    priority: high
+    execution: manual
+    tags: [configuration-identification, baselines]
+    refs: ["ISO 10007:2017 §5.3 (configuration identification)", "ISO 10007:2017 §5.3.3 (configuration baselines)"]
+    en:
+      title: Configuration items and baselines
+      description: Checks the configuration item list against the repositories and the baselines against the gate approvals.
+      preconditions: The configuration item list, access to the repositories, the baselines and the gate approval records.
+      expected: Items are identified and present at their versions, and the three baselines match the gates.
+      steps:
+        - action: Check that the item list covers hardware units, software components, documents and interface definitions.
+          expected: Each kind is present.
+        - action: For 10 sampled items, find the listed version in its repository.
+          expected: Each is present at the listed version with an owner.
+        - action: Compare the dates of the functional, allocated and product baselines with the gate approvals.
+          expected: Each baseline matches its gate and lists items with versions.
+    sv:
+      title: Konfigurationsobjekt och baslinjer
+      description: Kontrollerar förteckningen över konfigurationsobjekt mot förråden och baslinjerna mot godkännandena vid beslutspunkterna.
+      preconditions: Förteckningen över konfigurationsobjekt, åtkomst till förråden, baslinjerna och protokollen från godkännanden vid beslutspunkterna.
+      expected: Objekten är identifierade och finns i sina versioner, och de tre baslinjerna stämmer med beslutspunkterna.
+      steps:
+        - action: Kontrollera att förteckningen omfattar hårdvaruenheter, programvarukomponenter, dokument och gränssnittsdefinitioner.
+          expected: Varje slag finns med.
+        - action: Leta upp den angivna versionen i förrådet för 10 objekt i ett stickprov.
+          expected: Vart och ett finns i den angivna versionen med en ägare.
+        - action: Jämför datumen för den funktionella, den allokerade och produktbaslinjen med godkännandena vid beslutspunkterna.
+          expected: Varje baslinje stämmer med sin beslutspunkt och anger objekt med versioner.
+
+  - id: SYENG-T09
+    priority: medium
+    execution: manual
+    tags: [status-accounting]
+    refs: ["ISO 10007:2017 §5.5 (configuration status accounting)"]
+    en:
+      title: Configuration status report on demand
+      description: Requests a status report and checks sampled entries against the repositories.
+      preconditions: Access to the configuration management system and the repositories.
+      expected: The report is produced, complete and correct.
+      steps:
+        - action: Request a configuration status report.
+          expected: The report lists each item with version and baseline, and each change request since the last baseline with its status.
+        - action: Compare 5 sampled entries with the repositories.
+          expected: Each version matches.
+    sv:
+      title: Rapport om konfigurationsstatus på begäran
+      description: Begär en statusrapport och kontrollerar poster i ett stickprov mot förråden.
+      preconditions: Åtkomst till systemet för konfigurationsstyrning och förråden.
+      expected: Rapporten tas fram, är fullständig och korrekt.
+      steps:
+        - action: Begär en rapport om konfigurationsstatus.
+          expected: Rapporten anger varje objekt med version och baslinje och varje ändringsbegäran sedan den senaste baslinjen med status.
+        - action: Jämför 5 poster i ett stickprov med förråden.
+          expected: Varje version stämmer.
+
+  - id: SYENG-T10
+    priority: high
+    execution: manual
+    tags: [configuration-audit]
+    refs: ["ISO 10007:2017 §5.6 (configuration audit)"]
+    en:
+      title: Configuration audit reports before delivery
+      description: Reviews the functional and physical configuration audit reports of a delivery.
+      preconditions: The audit reports, the delivery date, the product baseline and the list of approved deviations.
+      expected: Both audits predate delivery with no unexplained gap.
+      steps:
+        - action: Read the date and result of the functional audit.
+          expected: It predates delivery and lists 0 unverified requirements.
+        - action: Read the date and result of the physical audit and compare mismatches with the approved deviations.
+          expected: It predates delivery, and each mismatch has an approved deviation.
+    sv:
+      title: Rapporter från konfigurationsrevision före leverans
+      description: Granskar rapporterna från den funktionella och den fysiska konfigurationsrevisionen för en leverans.
+      preconditions: Revisionsrapporterna, leveransdatum, produktbaslinjen och listan över godkända undantag.
+      expected: Båda revisionerna är äldre än leveransen utan oförklarade luckor.
+      steps:
+        - action: Läs datum och resultat för den funktionella revisionen.
+          expected: Den är äldre än leveransen och anger 0 overifierade krav.
+        - action: Läs datum och resultat för den fysiska revisionen och jämför avvikelserna med de godkända undantagen.
+          expected: Den är äldre än leveransen, och varje avvikelse har ett godkänt undantag.
+
+  - id: SYENG-T11
+    priority: low
+    execution: manual
+    tags: [technical-performance-measures]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.7 (measurement process)"]
+    en:
+      title: Technical performance measures at design reviews
+      description: Reviews the technical performance measures report against the last two design reviews.
+      preconditions: The measures report and the dates of the last 2 design reviews.
+      expected: At least 3 measures are tracked and updated at each review.
+      steps:
+        - action: Count the measures and read their target and threshold.
+          expected: At least 3 measures have both.
+        - action: Compare the update dates of the estimates with the review dates.
+          expected: Each estimate was updated at each of the last 2 reviews.
+    sv:
+      title: Tekniska prestandamått vid konstruktionsgranskningar
+      description: Granskar rapporten över tekniska prestandamått mot de två senaste konstruktionsgranskningarna.
+      preconditions: Rapporten över måtten och datumen för de 2 senaste konstruktionsgranskningarna.
+      expected: Minst 3 mått följs upp och uppdateras vid varje granskning.
+      steps:
+        - action: Räkna måtten och läs deras mål och gränsvärde.
+          expected: Minst 3 mått har båda.
+        - action: Jämför uppdateringsdatumen för uppskattningarna med granskningsdatumen.
+          expected: Varje uppskattning uppdaterades vid var och en av de 2 senaste granskningarna.

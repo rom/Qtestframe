@@ -1343,6 +1343,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboard/insights:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Dashboard insights
+      operationId: getProjectsByPidDashboardInsights
+      description: |-
+        Further key figures of the dashboard, counted on the server: `requirements` `{total, with_tests, passing, review: {none, pending, changes_requested, approved}, by_status}`, `tests` `{total, by_type: {manual|automated: {result: n}}}`, `risks` `{total, open, by_level (open), by_status, heat: [likelihood-1][impact-1] (not closed), mitigation: {state: n} (open)}`, `defects` `{open, buckets: {lt7, 7to30, 30to90, gt90}, by_severity: {severity: {bucket: n}}, average_days, oldest_days}`, `suspect` `{links, requirements}`, `trace_rules` `{rules, failed, errors, warnings, violations, passed}`, `release` (the current release's execution progress, or null) and `activity` `{from, to, days: [{day, changes, executions, defects}], total}` (the last 30 days). See "Dashboard and metrics" in docs/api.md.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/folders:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -1886,6 +1914,44 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/analytics/compliance:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Requirements
+      summary: Compliance with laws, standards and best practices
+      operationId: getProjectsByPidAnalyticsCompliance
+      description: |-
+        The project's compliance with reference sources of the catalogue (`GET /catalog/sources`): per source the catalogue requirements that cite it, how many the project has adopted (imported, `catalog_ref`, not rejected or obsolete) and which are missing, split by obligation (must, should, may); the project's own requirements that name the source in their `source` field; fulfilment by the latest results of the linked tests (passed: every linked test passed; failing, blocked, untested); the compliance percentage in total and per clause or article group; the gaps and the counted requirements → `{summary:{sources, catalogue, adopted, missing, own, fulfilment:{passed, failing, blocked, untested}, percent}, sources:[{id, kind, jurisdiction, short, name, url, catalogue, adopted, missing, own, fulfilment, adoption_percent, percent, mandatory_percent, obligations:[{obligation, catalogue, adopted, missing, own, fulfilled, percent}], clauses:[{clause, catalogue, adopted, missing, own, fulfilment, percent}], gaps:[{catalog_id, area, title, obligation, priority, clauses, refs, tests, inactive?}], items:[{id, key, title, obligation, state, catalog_ref?, own, clauses}], gaps_total, items_total}], unknown?:[id]}`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: source
+        in: query
+        required: false
+        description: reference source ids, comma-separated (default every source the project has adopted requirements of or cites)
+        schema:
+          type: string
+      - $ref: '#/components/parameters/catalogLang'
+      responses:
+        '200':
+          description: The compliance per source
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -5933,7 +5999,10 @@ paths:
       - Reports and export
       summary: Report templates
       operationId: getReportsTemplates
-      description: '**Permission:** any authenticated user; the handler checks: any member.'
+      description: |-
+        The standard reports `[{id, name, description, params, formats}]`: `project_status`, `requirements_coverage`, `traceability`, `run_summary`, `defects`, `test_inventory` and `risks` (see "Reports" in docs/api.md).
+
+        **Permission:** any authenticated user; the handler checks: any member.
       x-permission: authenticated
       responses:
         '200':
@@ -8763,7 +8832,7 @@ paths:
       summary: Catalogue overview
       operationId: getCatalog
       description: |-
-        The groups of the catalogue in display order, each with its areas and item counts, in `lang` → `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[{tag, count}]}`
+        The groups of the catalogue in display order, each with its areas and item counts, in `lang` → `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[{tag, count}], catalogues:[{id, name, description, areas, requirements, tests}]}`. Every area has `catalogue`, the catalogue type it belongs to.
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -8814,6 +8883,8 @@ paths:
           type: string
       - $ref: '#/components/parameters/catalogPriority'
       - $ref: '#/components/parameters/catalogTag'
+      - $ref: '#/components/parameters/catalogCatalogue'
+      - $ref: '#/components/parameters/catalogSource'
       - $ref: '#/components/parameters/catalogProject'
       - $ref: '#/components/parameters/catalogNotInProject'
       responses:
@@ -8874,6 +8945,41 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/catalog/sources:
+    get:
+      tags:
+      - Catalogue
+      summary: List the reference sources
+      operationId: getCatalogSources
+      description: |-
+        The laws, regulations, directives, standards, best practices and guidelines the catalogue cites (`internal/catalog/data/sources.yaml`), grouped by kind, in `lang` → `{lang, kinds:[{id, name}], sources:[{id, kind, jurisdiction?, short?, name, url?, requirements, tests, catalogues:[id]}]}`. `requirements` cite the source; `tests` cite it or verify such a requirement (what adding the requirements brings). Counts are over the catalogue types of `catalogue`; sources no item cites are left out unless `all=true`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogCatalogue'
+      - name: all
+        in: query
+        required: false
+        description: also list sources no item cites
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: The source kinds and sources
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/catalog/tests:
     get:
       tags:
@@ -8881,7 +8987,7 @@ paths:
       summary: List catalogue tests
       operationId: getCatalogTests
       description: |-
-        `{"items":[CatalogTest]}` in `lang`; filters as for the requirements, plus `execution` (manual, automated). `q` also searches the steps and the ids of the verified requirements
+        `{"items":[CatalogTest]}` in `lang`; filters as for the requirements, plus `execution` (manual, automated); `source` matches tests that cite a source or verify a requirement that cites it. `q` also searches the steps and the ids of the verified requirements
 
         **Permission:** `test.read`.
       x-permission: test.read
@@ -8898,6 +9004,8 @@ paths:
         description: execution types (manual, automated), comma-separated
         schema:
           type: string
+      - $ref: '#/components/parameters/catalogCatalogue'
+      - $ref: '#/components/parameters/catalogSource'
       - $ref: '#/components/parameters/catalogProject'
       - $ref: '#/components/parameters/catalogNotInProject'
       responses:
@@ -10589,7 +10697,7 @@ paths:
       summary: System settings
       operationId: getAdminSettings
       description: |-
-        The runtime-editable system settings (Administration → System settings): per setting its type, when it applies (`runtime`, `restart`, `readonly`), the effective `value`, the `file_value` without the database override and its `file_source` (`default`, `file`, `environment`), the effective `source` (adds `database`), `locked` with `lock_reason` (`environment`, `config` = system_settings.locked, `readonly`), `running_value`/`pending_restart` for restart settings. Secrets are never returned (`has_secret`). `oidc` lists the OIDC providers (`has_secret`, `secret_source`, `callback_url`). Only super administrators (sessions, not API tokens): the handler checks.
+        The runtime-editable system settings (Administration → System settings): per setting its type, when it applies (`runtime`, `restart`, `readonly`), the effective `value`, the `file_value` without the database override and its `file_source` (`default`, `file`, `environment`), the effective `source` (adds `database`), `locked` with `lock_reason` (`environment`, `config` = system_settings.locked, `readonly`), `running_value`/`pending_restart` for restart settings. Secrets are never returned (`has_secret`). `oidc` lists the OIDC providers (`has_secret`, `secret_source`, `callback_url`). `secrets` describes, read-only, the key provider of the encrypted stored secrets (`provider` local/tpm/pkcs11, `key_id` fingerprint, `info`, `active_key`, `keys`, `encrypted`, `plaintext`). Only super administrators (sessions, not API tokens): the handler checks.
 
         **Permission:** signed in.
       x-permission: authenticated
@@ -11486,6 +11594,20 @@ components:
       description: tags, comma-separated (any of them)
       schema:
         type: string
+    catalogCatalogue:
+      name: catalogue
+      in: query
+      required: false
+      description: catalogue types (software, hardware, …), comma-separated
+      schema:
+        type: string
+    catalogSource:
+      name: source
+      in: query
+      required: false
+      description: reference source ids (GET /catalog/sources), comma-separated (any of them)
+      schema:
+        type: string
     catalogProject:
       name: project_id
       in: query
@@ -11588,9 +11710,17 @@ components:
           type: array
           items:
             type: string
+        catalogue:
+          type: string
+          description: the catalogue type of its area
         refs:
           type: array
           description: the standards it is based on (cited, not copied)
+          items:
+            type: string
+        sources:
+          type: array
+          description: ids of the reference sources its refs cite
           items:
             type: string
         tests:
@@ -11623,8 +11753,16 @@ components:
           type: array
           items:
             type: string
+        catalogue:
+          type: string
+          description: the catalogue type of its area
         refs:
           type: array
+          items:
+            type: string
+        sources:
+          type: array
+          description: ids of the reference sources its refs cite
           items:
             type: string
         requirements:

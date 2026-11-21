@@ -1,0 +1,542 @@
+area: fc-fire-safety
+prefix: FCFIRE
+group: domain
+catalogue: facilities
+name: {en: Fire safety, sv: Brandskydd}
+description:
+  en: Fire safety documentation, systematic fire safety work, the fire alarm and its tests, escape routes and their inspection, emergency lighting, evacuation alarm and drills, fire stopping of penetrations, fire doors and hot work permits in a building.
+  sv: Brandskyddsdokumentation, systematiskt brandskyddsarbete, brandlarmet och dess prov, utrymningsvägar och kontrollen av dem, nödbelysning, utrymningslarm och utrymningsövningar, brandtätning av genomföringar, branddörrar och tillstånd för heta arbeten i en byggnad.
+
+requirements:
+  - id: FCFIRE-01
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [fire-documentation, building-code]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
+    tests: [FCFIRE-T01]
+    en:
+      title: Fire safety documentation kept up to date with each change
+      description: The building owner MUST keep a fire safety documentation for the building, with fire compartments, escape routes, fire safety installations and the building class, and update it before each change to the building or its use is taken into use.
+      rationale: Changes to rooms and use often break fire compartments or escape routes without anyone noticing, unless the documentation is checked and updated.
+      criteria:
+        - method: review
+          text: The documentation shows compartments, escape routes, installations and building class, and each building permit or change of use in the last 3 years has a matching update dated before occupation.
+    sv:
+      title: Brandskyddsdokumentationen hålls aktuell vid varje ändring
+      description: Byggnadens ägare SKA ha en brandskyddsdokumentation för byggnaden, med brandceller, utrymningsvägar, brandskyddsinstallationer och byggnadsklass, och uppdatera den innan varje ändring av byggnaden eller dess användning tas i bruk.
+      rationale: Ändringar av rum och användning bryter ofta brandceller eller utrymningsvägar utan att någon märker det, om inte dokumentationen kontrolleras och uppdateras.
+      criteria:
+        - method: review
+          text: Dokumentationen visar brandceller, utrymningsvägar, installationer och byggnadsklass, och varje bygglov eller ändrad användning under de senaste 3 åren har en motsvarande uppdatering daterad före inflyttningen.
+
+  - id: FCFIRE-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [systematic-fire-safety, organisation, follow-up]
+    refs: ["Lag (2003:778) om skydd mot olyckor 2 kap. 2 §"]
+    tests: [FCFIRE-T02]
+    en:
+      title: Systematic fire safety work with a yearly follow-up
+      description: The owner and the occupant MUST run documented systematic fire safety work with a named responsible person, written routines for checks and training, and a yearly follow-up with recorded actions.
+      rationale: Swedish law requires owners and users of buildings to keep equipment for extinguishing fires and saving lives and to take the measures needed to prevent fire and limit its damage, and a documented system shows that the duty is met.
+      criteria:
+        - method: review
+          text: The fire safety documentation names the responsible person, contains the routines, and the latest yearly follow-up is less than 12 months old with actions and owners.
+          threshold: follow-up every 12 months
+    sv:
+      title: Systematiskt brandskyddsarbete med årlig uppföljning
+      description: Ägaren och nyttjanderättshavaren SKA bedriva ett dokumenterat systematiskt brandskyddsarbete med en namngiven ansvarig, skriftliga rutiner för kontroller och utbildning och en årlig uppföljning med dokumenterade åtgärder.
+      rationale: Lagen kräver att ägare och nyttjanderättshavare håller utrustning för brandsläckning och livräddning och vidtar de åtgärder som behövs för att förebygga brand och begränsa skador av brand, och ett dokumenterat arbete visar att ansvaret tas.
+      criteria:
+        - method: review
+          text: Dokumentationen av brandskyddsarbetet namnger den ansvarige, innehåller rutinerna, och den senaste årliga uppföljningen är mindre än 12 månader gammal med åtgärder och ansvariga.
+          threshold: uppföljning var 12:e månad
+
+  - id: FCFIRE-03
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [fire-alarm, detection, alarm-transmission]
+    refs: ["EN 54 (fire detection and fire alarm systems)", "BFS 2024:7 (säkerhet i händelse av brand)"]
+    tests: [FCFIRE-T03]
+    en:
+      title: Automatic fire alarm in the areas stated in the documentation
+      description: The building MUST have an automatic fire alarm system with detection in each area stated in the fire safety documentation, and transmit fire alarms to the rescue service or a staffed alarm centre within 60 seconds.
+      rationale: Early detection and alarm transmission decide whether a fire is put out in its first minutes or spreads.
+      criteria:
+        - method: test
+          text: A test detector in each tested area raises a fire alarm at the panel, and the alarm centre confirms receipt within 60 seconds.
+          threshold: transmission ≤ 60 s
+    sv:
+      title: Automatiskt brandlarm i de utrymmen som dokumentationen anger
+      description: Byggnaden SKA ha ett automatiskt brandlarm med detektering i varje utrymme som anges i brandskyddsdokumentationen, och överföra brandlarm till räddningstjänsten eller en bemannad larmcentral inom 60 sekunder.
+      rationale: Tidig detektering och larmöverföring avgör om en brand släcks under de första minuterna eller sprider sig.
+      criteria:
+        - method: test
+          text: En testad detektor i varje provat utrymme ger brandlarm i centralapparaten, och larmcentralen bekräftar mottagandet inom 60 sekunder.
+          threshold: överföring ≤ 60 s
+
+  - id: FCFIRE-04
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [fire-alarm, testing, maintenance]
+    refs: ["EN 54 (fire detection and fire alarm systems)"]
+    tests: [FCFIRE-T03]
+    en:
+      title: Fire alarm tested each month and serviced each year
+      description: The person appointed to operate the fire alarm MUST test the alarm transmission each month, test each detector at least once a year and have the system serviced each year, with each result recorded in the log book.
+      rationale: Faults in detectors and transmission are found only by tests, and the log book shows that they are done.
+      criteria:
+        - method: review
+          text: The log book for the last 12 months shows 12 monthly transmission tests, a test of each detector and a yearly service report.
+          threshold: monthly and yearly
+    sv:
+      title: Brandlarmet provas varje månad och underhålls varje år
+      description: Den som utsetts att sköta brandlarmet SKA prova larmöverföringen varje månad, prova varje detektor minst en gång per år och låta systemet få service varje år, med varje resultat antecknat i kontrolljournalen.
+      rationale: Fel i detektorer och överföring hittas bara genom prov, och kontrolljournalen visar att de görs.
+      criteria:
+        - method: review
+          text: Kontrolljournalen för de senaste 12 månaderna visar 12 månatliga prov av larmöverföringen, ett prov av varje detektor och en årlig servicerapport.
+          threshold: varje månad och varje år
+
+  - id: FCFIRE-05
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [escape-routes, evacuation]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
+    tests: [FCFIRE-T04]
+    en:
+      title: Two independent escape routes from each fire compartment
+      description: Each fire compartment where people stay MUST have at least 2 independent escape routes, placed so that one fire cannot block both, as shown in the fire safety documentation.
+      rationale: A single escape route can be cut off by the fire itself, which traps the people in the compartment.
+      criteria:
+        - method: inspection
+          text: For each compartment where people stay, the documentation and a site check show 2 escape routes leading in different directions to a safe place.
+    sv:
+      title: Två oberoende utrymningsvägar från varje brandcell
+      description: Varje brandcell där människor vistas SKA ha minst 2 oberoende utrymningsvägar, placerade så att en brand inte kan blockera båda, enligt brandskyddsdokumentationen.
+      rationale: En enda utrymningsväg kan stängas av branden själv, vilket stänger in människorna i brandcellen.
+      criteria:
+        - method: inspection
+          text: För varje brandcell där människor vistas visar dokumentationen och en kontroll på plats 2 utrymningsvägar som leder i olika riktningar till en säker plats.
+
+  - id: FCFIRE-06
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [escape-routes, inspection, obstruction]
+    refs: ["Lag (2003:778) om skydd mot olyckor 2 kap. 2 §"]
+    tests: [FCFIRE-T04]
+    en:
+      title: Escape routes checked each week and kept free
+      description: The occupant MUST check each escape route once a week and record that it is free of stored goods, that its doors open from the inside without a key and that its signs are lit.
+      rationale: Escape routes are often blocked by deliveries or furniture, and a weekly check finds this before a fire does.
+      criteria:
+        - method: review
+          text: The checklist of the last 3 months shows a weekly check of each escape route, and a site walk finds no obstruction or locked escape door.
+          threshold: weekly
+    sv:
+      title: Utrymningsvägar kontrolleras varje vecka och hålls fria
+      description: Nyttjanderättshavaren SKA kontrollera varje utrymningsväg en gång per vecka och anteckna att den är fri från upplag, att dess dörrar går att öppna inifrån utan nyckel och att dess skyltar lyser.
+      rationale: Utrymningsvägar blockeras ofta av leveranser eller möbler, och en kontroll varje vecka hittar det innan en brand gör det.
+      criteria:
+        - method: review
+          text: Checklistan för de senaste 3 månaderna visar en kontroll per vecka av varje utrymningsväg, och en rundvandring hittar inget hinder och ingen låst utrymningsdörr.
+          threshold: varje vecka
+
+  - id: FCFIRE-07
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [emergency-lighting, escape-signs]
+    refs: ["EN 1838:2024 (escape route lighting)", "EN 50172"]
+    tests: [FCFIRE-T05]
+    en:
+      title: Emergency lighting of 1 lux on escape routes for 1 hour
+      description: The emergency lighting MUST give at least 1 lux on the floor along the centre line of each escape route for at least 1 hour after a mains failure.
+      rationale: People have to see the way out when the normal lighting fails, which is common in fires.
+      criteria:
+        - method: test
+          text: In a full-duration test, measurements on the centre line of 3 escape routes show at least 1 lux after 60 minutes on battery.
+          threshold: ≥ 1 lx for ≥ 1 h
+    sv:
+      title: Nödbelysning på 1 lux i utrymningsvägar under 1 timme
+      description: Nödbelysningen SKA ge minst 1 lux på golvet längs mittlinjen i varje utrymningsväg i minst 1 timme efter ett nätbortfall.
+      rationale: Människor behöver se vägen ut när den vanliga belysningen slocknar, vilket är vanligt vid bränder.
+      criteria:
+        - method: test
+          text: Vid ett prov över hela drifttiden visar mätningar på mittlinjen i 3 utrymningsvägar minst 1 lux efter 60 minuter på batteri.
+          threshold: ≥ 1 lx i ≥ 1 h
+
+  - id: FCFIRE-08
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [evacuation-alarm, audibility]
+    refs: ["EN 54 (fire detection and fire alarm systems)", "BFS 2024:7 (säkerhet i händelse av brand)"]
+    tests: [FCFIRE-T06]
+    en:
+      title: Evacuation alarm heard in each room
+      description: The evacuation alarm MUST reach each room where people stay with a sound level of at least 65 dB(A) and at least 10 dB above the background noise, with visual signals in rooms where people with impaired hearing work alone.
+      rationale: An alarm that is not heard in a meeting room or toilet leaves people inside when the building is evacuated.
+      criteria:
+        - method: test
+          text: Measurements in 10 rooms, including the noisiest and the most remote, show at least 65 dB(A) and 10 dB above background during an alarm test, and the listed rooms have flashing signals.
+          threshold: ≥ 65 dB(A) and ≥ 10 dB above background
+    sv:
+      title: Utrymningslarmet hörs i varje rum
+      description: Utrymningslarmet SKA nå varje rum där människor vistas med en ljudnivå på minst 65 dB(A) och minst 10 dB över bakgrundsljudet, med optiska signaler i rum där personer med nedsatt hörsel arbetar ensamma.
+      rationale: Ett larm som inte hörs i ett mötesrum eller på en toalett lämnar människor kvar när byggnaden utryms.
+      criteria:
+        - method: test
+          text: Mätningar i 10 rum, bland dem de bullrigaste och de mest avlägsna, visar minst 65 dB(A) och 10 dB över bakgrunden vid ett larmprov, och de listade rummen har blixtljus.
+          threshold: ≥ 65 dB(A) och ≥ 10 dB över bakgrund
+
+  - id: FCFIRE-09
+    type: business
+    obligation: must
+    priority: high
+    tags: [evacuation-drill, training]
+    refs: ["Lag (2003:778) om skydd mot olyckor 2 kap. 2 §"]
+    tests: [FCFIRE-T06]
+    en:
+      title: Evacuation drill each year with measured time
+      description: The occupant MUST hold an evacuation drill each year and record the time until the building is empty, the number of people at the assembly point and the problems found.
+      rationale: Drills train people to leave at once and reveal blocked routes and alarms that are not heard.
+      criteria:
+        - method: review
+          text: The drill record from the last 12 months states the evacuation time, the head count and the problems with actions.
+          threshold: once per 12 months
+    sv:
+      title: Utrymningsövning varje år med uppmätt tid
+      description: Nyttjanderättshavaren SKA hålla en utrymningsövning varje år och dokumentera tiden tills byggnaden är tom, antalet personer vid återsamlingsplatsen och de problem som hittats.
+      rationale: Övningar lär människor att gå ut direkt och avslöjar blockerade vägar och larm som inte hörs.
+      criteria:
+        - method: review
+          text: Protokollet från övningen under de senaste 12 månaderna anger utrymningstid, antal personer och problem med åtgärder.
+          threshold: en gång per 12 månader
+
+  - id: FCFIRE-10
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [fire-stopping, penetrations, compartments]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
+    tests: [FCFIRE-T07]
+    en:
+      title: Penetrations in fire compartment walls sealed after each installation
+      description: The installer MUST seal each new cable or pipe penetration through a fire compartment boundary with a fire-stopping system rated for the boundary's fire resistance, and label it with the system, the rating and the date.
+      rationale: Unsealed penetrations let smoke and fire pass between compartments and are among the most common faults found after fires.
+      criteria:
+        - method: inspection
+          text: A check of 10 penetrations made in the last year finds each sealed with a rated system and labelled with system, rating and date.
+    sv:
+      title: Genomföringar i brandcellsgränser tätas efter varje installation
+      description: Installatören SKA täta varje ny kabel- eller rörgenomföring genom en brandcellsgräns med ett brandtätningssystem som är klassat för gränsens brandmotstånd, och märka den med system, klass och datum.
+      rationale: Otätade genomföringar släpper igenom rök och brand mellan brandceller och hör till de vanligaste felen som hittas efter bränder.
+      criteria:
+        - method: inspection
+          text: En kontroll av 10 genomföringar som gjorts under det senaste året visar var och en tätad med ett klassat system och märkt med system, klass och datum.
+
+  - id: FCFIRE-11
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [fire-doors, door-closers, hold-open]
+    refs: ["EN 1155", "BFS 2024:7 (säkerhet i händelse av brand)"]
+    tests: [FCFIRE-T07]
+    en:
+      title: Fire doors close by themselves and are checked each quarter
+      description: Each fire door SHOULD close and latch by itself from fully open, be held open only by hold-open devices that release on fire alarm, and be checked each quarter.
+      rationale: Fire doors wedged open or with broken closers are a frequent reason why fire and smoke spread through buildings.
+      criteria:
+        - method: test
+          text: During a fire alarm test, each checked door with a hold-open device releases and each fire door closes and latches, and the checklist shows 4 checks in the last year.
+          threshold: checked every 3 months
+    sv:
+      title: Branddörrar stänger av sig själva och kontrolleras varje kvartal
+      description: Varje branddörr BÖR stänga och gå i lås av sig själv från helt öppet läge, hållas öppen bara med uppställningsanordningar som släpper vid brandlarm och kontrolleras varje kvartal.
+      rationale: Branddörrar som ställts upp med kil eller har trasiga dörrstängare är en vanlig orsak till att brand och rök sprider sig i byggnader.
+      criteria:
+        - method: test
+          text: Vid ett prov av brandlarmet släpper varje kontrollerad dörr med uppställningsanordning och varje branddörr stänger och går i lås, och checklistan visar 4 kontroller under det senaste året.
+          threshold: kontroll var 3:e månad
+
+  - id: FCFIRE-12
+    type: business
+    obligation: must
+    priority: high
+    tags: [hot-work, permit, fire-watch]
+    refs: []
+    tests: [FCFIRE-T08]
+    en:
+      title: Hot work only with a permit and a fire watch
+      description: Hot work such as welding, grinding and torch-on roofing MUST be done only with a written permit from the appointed permit holder and with a fire watch at the site for at least 1 hour after the work ends.
+      rationale: Sparks and heat from hot work start fires that smoulder unseen for a long time after the workers have left.
+      criteria:
+        - method: review
+          text: Each hot work job in the work log of the last 6 months has a signed permit, and each permit records a fire watch of at least 1 hour.
+          threshold: fire watch ≥ 1 h
+    sv:
+      title: Heta arbeten bara med tillstånd och brandvakt
+      description: Heta arbeten som svetsning, slipning och takarbeten med gasolbrännare SKA utföras bara med ett skriftligt tillstånd från den utsedda tillståndsansvarige och med brandvakt på platsen i minst 1 timme efter att arbetet avslutats.
+      rationale: Gnistor och värme från heta arbeten startar bränder som pyr osynligt långt efter att arbetarna gått därifrån.
+      criteria:
+        - method: review
+          text: Varje hett arbete i arbetsloggen för de senaste 6 månaderna har ett undertecknat tillstånd, och varje tillstånd anger en brandvakt i minst 1 timme.
+          threshold: brandvakt ≥ 1 h
+
+tests:
+  - id: FCFIRE-T01
+    priority: critical
+    execution: manual
+    tags: [fire-documentation]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
+    en:
+      title: Fire safety documentation compared with recent changes
+      description: Reviews the fire safety documentation and matches it with the building permits and changes of use of the last 3 years.
+      preconditions: The fire safety documentation with its version history and the list of building permits and changes of use.
+      expected: The documentation has the listed contents and an update before each change was taken into use.
+      steps:
+        - action: Check the documentation for compartments, escape routes, installations and building class.
+          expected: Each is present.
+        - action: For each permit or change of use, find the matching documentation update.
+          expected: Each has an update dated before the change was taken into use.
+    sv:
+      title: Brandskyddsdokumentationen jämförs med de senaste ändringarna
+      description: Granskar brandskyddsdokumentationen och matchar den mot bygglov och ändrad användning under de senaste 3 åren.
+      preconditions: Brandskyddsdokumentationen med versionshistorik och listan över bygglov och ändrad användning.
+      expected: Dokumentationen har det uppräknade innehållet och en uppdatering innan varje ändring togs i bruk.
+      steps:
+        - action: Kontrollera att dokumentationen har brandceller, utrymningsvägar, installationer och byggnadsklass.
+          expected: Var och en finns.
+        - action: Hitta motsvarande uppdatering av dokumentationen för varje bygglov eller ändrad användning.
+          expected: Var och en har en uppdatering daterad innan ändringen togs i bruk.
+
+  - id: FCFIRE-T02
+    priority: high
+    execution: manual
+    tags: [systematic-fire-safety]
+    refs: ["Lag (2003:778) om skydd mot olyckor 2 kap. 2 §"]
+    en:
+      title: Review of the systematic fire safety work
+      description: Reviews the documentation of the systematic fire safety work and its latest yearly follow-up.
+      preconditions: The documentation of the systematic fire safety work and the follow-up records.
+      expected: A responsible person and routines are documented, and the yearly follow-up is current with actions.
+      steps:
+        - action: Find the named responsible person and the routines for checks and training.
+          expected: Both are documented.
+        - action: Read the latest yearly follow-up.
+          expected: It is less than 12 months old and lists actions with owners.
+        - action: Pick 3 actions from the previous follow-up and check their status.
+          expected: Each is done or has a new date with a reason.
+    sv:
+      title: Granskning av det systematiska brandskyddsarbetet
+      description: Granskar dokumentationen av det systematiska brandskyddsarbetet och dess senaste årliga uppföljning.
+      preconditions: Dokumentationen av det systematiska brandskyddsarbetet och protokollen från uppföljningarna.
+      expected: En ansvarig och rutiner är dokumenterade, och den årliga uppföljningen är aktuell med åtgärder.
+      steps:
+        - action: Hitta den namngivna ansvarige och rutinerna för kontroller och utbildning.
+          expected: Båda är dokumenterade.
+        - action: Läs den senaste årliga uppföljningen.
+          expected: Den är mindre än 12 månader gammal och listar åtgärder med ansvariga.
+        - action: Välj 3 åtgärder från den föregående uppföljningen och kontrollera deras status.
+          expected: Var och en är klar eller har ett nytt datum med motivering.
+
+  - id: FCFIRE-T03
+    priority: critical
+    execution: manual
+    tags: [fire-alarm]
+    refs: ["EN 54 (fire detection and fire alarm systems)"]
+    en:
+      title: Detector test, alarm transmission and the log book
+      description: Tests detectors in chosen areas with the alarm centre informed and reviews the log book of the last 12 months.
+      preconditions: The alarm centre informed of the test, detector test equipment, the fire safety documentation and the log book.
+      expected: Each tested detector raises an alarm, the centre confirms within 60 seconds, and the log book shows the monthly, detector and yearly tests.
+      steps:
+        - action: Pick 5 areas from the documentation and test one detector in each.
+          expected: Each detector raises a fire alarm at the panel.
+        - action: Ask the alarm centre for the receipt time of each alarm.
+          expected: Each was received within 60 seconds.
+        - action: Read the log book for the last 12 months.
+          expected: It shows 12 transmission tests, a test of each detector and a yearly service report.
+    sv:
+      title: Prov av detektorer, larmöverföring och kontrolljournal
+      description: Provar detektorer i utvalda utrymmen med larmcentralen informerad och granskar kontrolljournalen för de senaste 12 månaderna.
+      preconditions: Larmcentralen informerad om provet, provutrustning för detektorer, brandskyddsdokumentationen och kontrolljournalen.
+      expected: Varje provad detektor ger larm, centralen bekräftar inom 60 sekunder, och kontrolljournalen visar månadsprov, detektorprov och årlig service.
+      steps:
+        - action: Välj 5 utrymmen ur dokumentationen och prova en detektor i vart och ett.
+          expected: Varje detektor ger brandlarm i centralapparaten.
+        - action: Fråga larmcentralen om tidpunkten för mottagandet av varje larm.
+          expected: Varje larm togs emot inom 60 sekunder.
+        - action: Läs kontrolljournalen för de senaste 12 månaderna.
+          expected: Den visar 12 prov av överföringen, ett prov av varje detektor och en årlig servicerapport.
+
+  - id: FCFIRE-T04
+    priority: critical
+    execution: manual
+    tags: [escape-routes]
+    refs: ["BFS 2024:7 (säkerhet i händelse av brand)"]
+    en:
+      title: Escape routes on the drawings and on site
+      description: Compares the escape routes of each compartment in the documentation with the site and reviews the weekly checklists.
+      preconditions: The fire safety documentation with escape route drawings and the weekly checklists of the last 3 months.
+      expected: Each compartment has 2 independent routes, the routes are free and their doors open without a key, and the weekly checks are recorded.
+      steps:
+        - action: For each compartment where people stay, find the 2 escape routes on the drawings.
+          expected: Each has 2 routes leading in different directions.
+        - action: Walk each route and open each escape door from the inside.
+          expected: No route is blocked, each door opens without a key and each sign is lit.
+        - action: Read the weekly checklists.
+          expected: Each week of the last 3 months has a check of each route.
+    sv:
+      title: Utrymningsvägar på ritningarna och på plats
+      description: Jämför utrymningsvägarna för varje brandcell i dokumentationen med verkligheten och granskar de veckovisa checklistorna.
+      preconditions: Brandskyddsdokumentationen med ritningar över utrymningsvägar och de veckovisa checklistorna för de senaste 3 månaderna.
+      expected: Varje brandcell har 2 oberoende vägar, vägarna är fria och deras dörrar öppnas utan nyckel, och de veckovisa kontrollerna är dokumenterade.
+      steps:
+        - action: Hitta de 2 utrymningsvägarna på ritningarna för varje brandcell där människor vistas.
+          expected: Var och en har 2 vägar som leder i olika riktningar.
+        - action: Gå varje väg och öppna varje utrymningsdörr inifrån.
+          expected: Ingen väg är blockerad, varje dörr öppnas utan nyckel och varje skylt lyser.
+        - action: Läs de veckovisa checklistorna.
+          expected: Varje vecka under de senaste 3 månaderna har en kontroll av varje väg.
+
+  - id: FCFIRE-T05
+    priority: high
+    execution: manual
+    tags: [emergency-lighting]
+    refs: ["EN 1838:2024 (escape route lighting)", "EN 50172"]
+    en:
+      title: Full-duration test of the emergency lighting
+      description: Switches off the normal supply to the emergency lighting and measures the illuminance after 60 minutes.
+      preconditions: A planned test outside working hours, a calibrated lux meter and 3 escape routes marked for measurement.
+      expected: Each measurement point shows at least 1 lux after 60 minutes.
+      steps:
+        - action: Switch off the normal supply to the emergency lighting circuits and note the time.
+          expected: The emergency luminaires and signs light up.
+        - action: After 60 minutes, measure the illuminance on the floor every 2 m along the centre line of each route.
+          expected: Each value is at least 1 lux.
+          data: ≥ 1 lx after 60 min
+        - action: Restore the supply.
+          expected: The luminaires return to charging, and the result is recorded in the log.
+    sv:
+      title: Prov av nödbelysningen över hela drifttiden
+      description: Bryter den ordinarie matningen till nödbelysningen och mäter belysningsstyrkan efter 60 minuter.
+      preconditions: Ett planerat prov utanför arbetstid, en kalibrerad luxmätare och 3 utrymningsvägar utmärkta för mätning.
+      expected: Varje mätpunkt visar minst 1 lux efter 60 minuter.
+      steps:
+        - action: Bryt den ordinarie matningen till nödbelysningens grupper och anteckna tiden.
+          expected: Nödbelysningsarmaturerna och skyltarna tänds.
+        - action: Mät belysningsstyrkan på golvet varannan meter längs mittlinjen i varje väg efter 60 minuter.
+          expected: Varje värde är minst 1 lux.
+          data: ≥ 1 lx efter 60 min
+        - action: Återställ matningen.
+          expected: Armaturerna går över till laddning, och resultatet antecknas i journalen.
+
+  - id: FCFIRE-T06
+    priority: critical
+    execution: manual
+    tags: [evacuation-alarm, evacuation-drill]
+    refs: ["Lag (2003:778) om skydd mot olyckor 2 kap. 2 §"]
+    en:
+      title: Evacuation alarm sound levels and the yearly drill
+      description: Measures the evacuation alarm in chosen rooms during an alarm test and reviews the latest drill record.
+      preconditions: An announced alarm test, a sound level meter, a list of rooms with visual signals and the latest drill record.
+      expected: The alarm reaches the levels in each measured room, flashing signals work, and the drill is recorded with time, head count and problems.
+      steps:
+        - action: Measure the background noise in 10 rooms, including the noisiest and the most remote.
+          expected: A background level is recorded for each room.
+        - action: Sound the evacuation alarm and measure in the same rooms.
+          expected: Each room has at least 65 dB(A) and 10 dB above its background.
+          data: ≥ 65 dB(A), ≥ 10 dB above background
+        - action: Check the rooms listed for visual signals during the alarm.
+          expected: Each has a working flashing signal.
+        - action: Read the latest drill record.
+          expected: It is less than 12 months old and states evacuation time, head count and problems with actions.
+    sv:
+      title: Ljudnivåer för utrymningslarmet och den årliga övningen
+      description: Mäter utrymningslarmet i utvalda rum vid ett larmprov och granskar protokollet från den senaste övningen.
+      preconditions: Ett aviserat larmprov, en ljudnivåmätare, en lista över rum med optiska signaler och protokollet från den senaste övningen.
+      expected: Larmet når nivåerna i varje mätt rum, blixtljusen fungerar, och övningen är dokumenterad med tid, antal personer och problem.
+      steps:
+        - action: Mät bakgrundsljudet i 10 rum, bland dem de bullrigaste och de mest avlägsna.
+          expected: En bakgrundsnivå antecknas för varje rum.
+        - action: Starta utrymningslarmet och mät i samma rum.
+          expected: Varje rum har minst 65 dB(A) och 10 dB över sin bakgrund.
+          data: ≥ 65 dB(A), ≥ 10 dB över bakgrund
+        - action: Kontrollera de rum som har optiska signaler under larmet.
+          expected: Vart och ett har ett fungerande blixtljus.
+        - action: Läs protokollet från den senaste övningen.
+          expected: Det är mindre än 12 månader gammalt och anger utrymningstid, antal personer och problem med åtgärder.
+
+  - id: FCFIRE-T07
+    priority: high
+    execution: manual
+    tags: [fire-stopping, fire-doors]
+    refs: ["EN 1155"]
+    en:
+      title: Penetrations and fire doors during an alarm test
+      description: Inspects recent penetrations through compartment boundaries and checks the fire doors during a fire alarm test.
+      preconditions: The list of installations of the last year, an announced fire alarm test and the fire door checklist.
+      expected: Each checked penetration is sealed and labelled, and each fire door closes and latches on alarm.
+      steps:
+        - action: Inspect 10 penetrations from the installations of the last year.
+          expected: Each is sealed with a rated system and labelled with system, rating and date.
+          data: 10 penetrations
+        - action: During the alarm test, watch the doors held open by hold-open devices.
+          expected: Each door releases and closes.
+        - action: Open 10 fire doors fully and let go.
+          expected: Each closes and latches by itself.
+        - action: Read the fire door checklist.
+          expected: It shows a check in each of the last 4 quarters.
+    sv:
+      title: Genomföringar och branddörrar vid ett larmprov
+      description: Granskar nya genomföringar genom brandcellsgränser och kontrollerar branddörrarna vid ett prov av brandlarmet.
+      preconditions: Listan över installationer under det senaste året, ett aviserat prov av brandlarmet och checklistan för branddörrar.
+      expected: Varje kontrollerad genomföring är tätad och märkt, och varje branddörr stänger och går i lås vid larm.
+      steps:
+        - action: Granska 10 genomföringar från installationerna under det senaste året.
+          expected: Var och en är tätad med ett klassat system och märkt med system, klass och datum.
+          data: 10 genomföringar
+        - action: Följ dörrarna som hålls öppna med uppställningsanordningar under larmprovet.
+          expected: Varje dörr släpper och stänger.
+        - action: Öppna 10 branddörrar helt och släpp dem.
+          expected: Var och en stänger och går i lås av sig själv.
+        - action: Läs checklistan för branddörrar.
+          expected: Den visar en kontroll i vart och ett av de senaste 4 kvartalen.
+
+  - id: FCFIRE-T08
+    priority: high
+    execution: manual
+    tags: [hot-work]
+    refs: []
+    en:
+      title: Hot work permits in the work log
+      description: Matches the hot work jobs in the work log with their permits.
+      preconditions: The work log and the hot work permits of the last 6 months.
+      expected: Each hot work job has a signed permit with a fire watch of at least 1 hour.
+      steps:
+        - action: List the jobs in the work log that involve welding, grinding, cutting or torch-on roofing.
+          expected: A list of hot work jobs is produced.
+        - action: Find the permit for each job.
+          expected: Each has a permit signed by the appointed permit holder before the work started.
+        - action: Read the fire watch entry of each permit.
+          expected: Each records a fire watch of at least 1 hour after the work ended.
+    sv:
+      title: Tillstånd för heta arbeten i arbetsloggen
+      description: Matchar de heta arbetena i arbetsloggen mot deras tillstånd.
+      preconditions: Arbetsloggen och tillstånden för heta arbeten för de senaste 6 månaderna.
+      expected: Varje hett arbete har ett undertecknat tillstånd med brandvakt i minst 1 timme.
+      steps:
+        - action: Lista de arbeten i arbetsloggen som omfattar svetsning, slipning, skärning eller takarbeten med gasolbrännare.
+          expected: En lista över heta arbeten tas fram.
+        - action: Hitta tillståndet för varje arbete.
+          expected: Vart och ett har ett tillstånd som undertecknats av den utsedda tillståndsansvarige innan arbetet började.
+        - action: Läs uppgiften om brandvakt i varje tillstånd.
+          expected: Varje tillstånd anger brandvakt i minst 1 timme efter att arbetet avslutats.

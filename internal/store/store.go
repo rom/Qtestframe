@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/rom/qtestframe/internal/db"
+	"github.com/rom/qtestframe/internal/secrets"
 )
 
 // Sentinel errors.
@@ -48,6 +49,8 @@ func Conflictf(format string, a ...any) error {
 type Store struct {
 	DB  *db.DB
 	now func() time.Time
+	// keys encrypts the stored secrets (nil: plaintext; see secrets.go)
+	keys *secrets.Keyring
 }
 
 // New returns a store over database d.
@@ -60,7 +63,7 @@ func (s *Store) SetClock(f func() time.Time) { s.now = f }
 
 // WithClock returns a store over the same database with another time
 // source (e.g. to record backdated demo data).
-func (s *Store) WithClock(f func() time.Time) *Store { return &Store{DB: s.DB, now: f} }
+func (s *Store) WithClock(f func() time.Time) *Store { return &Store{DB: s.DB, now: f, keys: s.keys} }
 
 // Now returns the current time of the store's clock.
 func (s *Store) Now() time.Time { return s.now() }

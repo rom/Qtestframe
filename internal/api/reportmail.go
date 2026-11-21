@@ -58,6 +58,8 @@ func reportReadPerms(job reportJob) []rbac.Permission {
 		return append(perms, rbac.RunRead, rbac.TestRead)
 	case report.Defects:
 		return append(perms, rbac.RunRead)
+	case report.Risks:
+		return append(perms, rbac.RequirementRd, rbac.TestRead)
 	}
 	return append(perms, rbac.RequirementRd, rbac.TestRead, rbac.RunRead)
 }

@@ -119,6 +119,21 @@ describe('dynamic keys', () => {
     expect(THEME_IDS.filter((id) => !(`theme.${id}` in EN))).toEqual([])
     expect(['theme.picker', 'theme.unset'].filter((k) => !(k in EN))).toEqual([])
   })
+  it('cover the dashboard insights', async () => {
+    const { ACTIVITY_SERIES, AGE_BUCKETS, MITIGATION_ORDER, REVIEW_ORDER, SEVERITY_ORDER, LEVELS_DESC } = await import('@/lib/insights')
+    const RELEASE_STATUSES = ['planned', 'active', 'released', 'cancelled'] // internal/model ReleaseStatuses
+    const keys = [
+      ...REVIEW_ORDER.map((k) => `dashboard.review.${k}`),
+      ...MITIGATION_ORDER.map((k) => `dashboard.mitigation.${k}`),
+      ...AGE_BUCKETS.map((k) => `dashboard.ageBucket.${k}`),
+      ...ACTIVITY_SERIES.map((k) => `dashboard.activitySeries.${k}`),
+      ...['rules', 'errors', 'warnings', 'violations'].map((k) => `dashboard.ruleCounts.${k}`),
+      ...SEVERITY_ORDER.map((k) => `defectsView.severity.${k}`),
+      ...LEVELS_DESC.map((k) => `risksView.level.${k}`),
+      ...RELEASE_STATUSES.map((k) => `releasesView.status.${k}`),
+    ]
+    expect(keys.filter((k) => !(k in EN))).toEqual([])
+  })
   it('cover the runner keyboard help', async () => {
     const { RUNNER_SHORTCUTS } = await import('@/lib/shortcuts')
     expect(RUNNER_SHORTCUTS.filter((s) => !(`runner.keys.${s.action}` in EN)).map((s) => s.action)).toEqual([])
@@ -135,6 +150,16 @@ describe('dynamic keys', () => {
     const kinds = ARCHIVE_KINDS.map((k) => `documents.kind.${k}`)
     const problems = ['entity', 'columns', 'run', 'group_by', 'sort_by', 'title'].map((p) => `reports.problem.${p}`)
     expect([...presets, ...perms, ...tpls, ...ents, ...kinds, ...problems].filter((k) => !(k in EN))).toEqual([])
+  })
+  it('cover the key providers of stored secrets', async () => {
+    const { SECRETS_INFO } = await import('@/lib/systemSettings')
+    const keys = [
+      ...['local', 'tpm', 'pkcs11'].map((p) => `sysSettings.secrets.provider.${p}`),
+      ...SECRETS_INFO.map((i) => `sysSettings.secrets.info.${i}`),
+      // values of info.key_source (internal/secrets)
+      ...['file', 'environment', 'ephemeral'].map((s) => `sysSettings.secrets.source.${s}`),
+    ]
+    expect(keys.filter((k) => !(k in EN))).toEqual([])
   })
   it('cover all analysis rules', async () => {
     const { ANALYSIS_RULES } = await import('./analysis')

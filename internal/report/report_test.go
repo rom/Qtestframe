@@ -59,7 +59,7 @@ func sampleData() *Data {
 	}
 	return &Data{
 		Project:      model.Project{Key: "P", Name: "Proj", DefectURLTemplate: "https://jira.example/browse/{id}"},
-		Requirements: reqs, Tests: tests, Links: links, Runs: runs, Executions: execs, Categories: cats, Now: t0,
+		Requirements: reqs, Tests: tests, Links: links, Runs: runs, Executions: execs, Categories: cats, Now: t0, Risks: sampleRisks(),
 	}
 }
 
@@ -114,7 +114,7 @@ func renderAll(t *testing.T, ds *export.Dataset) {
 
 func TestTemplatesList(t *testing.T) {
 	ts := Templates()
-	if len(ts) != 6 {
+	if len(ts) != 8 {
 		t.Fatal(len(ts))
 	}
 	b, _ := json.Marshal(ts)

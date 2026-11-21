@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/rom/qtestframe/internal/analytics"
 	"github.com/rom/qtestframe/internal/model"
@@ -80,4 +81,53 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request, p *Prin
 		}
 	}
 	writeJSON(w, http.StatusOK, analytics.Analyze(in))
+}
+
+// handleCompliance: GET /projects/{pid}/analytics/compliance?source=&lang=
+// — the project's compliance with reference sources of the catalogue
+// (comma-separated ids; none: every source the project uses), see
+// analytics.Compliance.
+func (s *Server) handleCompliance(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	c, lang, ok := s.catalogRead(w, r)
+	if !ok {
+		return
+	}
+	in, err := s.complianceInput(r, p, pr)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	in.Catalog, in.Lang = c, lang
+	if v := strings.TrimSpace(r.URL.Query().Get("source")); v != "" {
+		in.Sources = strings.Split(v, ",")
+	}
+	writeJSON(w, http.StatusOK, analytics.Compliance(in))
+}
+
+// complianceInput loads the project's requirements with the latest
+// results of their linked tests.
+func (s *Server) complianceInput(r *http.Request, p *Principal, pr *model.Project) (analytics.ComplianceInput, error) {
+	ctx := r.Context()
+	var in analytics.ComplianceInput
+	pc, err := s.loadContext(ctx, p.TenantID(), pr)
+	if err != nil {
+		return in, err
+	}
+	reqs, err := s.Store.ListRequirements(ctx, p.TenantID(), pr.ID)
+	if err != nil {
+		return in, err
+	}
+	for _, rq := range reqs {
+		x := analytics.ComplianceRequirement{ID: rq.ID, Key: rq.Key, Title: rq.Title, Status: rq.Status, Obligation: rq.Obligation,
+			CatalogRef: rq.CatalogRef, Source: rq.Source}
+		for _, tid := range pc.r2t[rq.ID] {
+			x.Results = append(x.Results, pc.last[tid])
+		}
+		in.Requirements = append(in.Requirements, x)
+	}
+	return in, nil
 }

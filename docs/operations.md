@@ -133,7 +133,10 @@ Environment overrides (e.g. in a drop-in `Environment=` line or a container):
 `QTF_SERVER_PORT` (port only),
 `QTF_SERVER_BASE_URL`, `QTF_LOG_LEVEL`, `QTF_LOG_FORMAT`, `QTF_COOKIE_SECURE`,
 `QTF_BOOTSTRAP_ADMIN_EMAIL`, `QTF_BOOTSTRAP_ADMIN_PASSWORD`,
-`QTF_OIDC_<NAME>_CLIENT_SECRET`.
+`QTF_OIDC_<NAME>_CLIENT_SECRET`, and for the encryption of stored secrets
+`QTF_SECRETS_PROVIDER`, `QTF_SECRETS_KEY`, `QTF_SECRETS_KEY_FILE`,
+`QTF_SECRETS_TPM_DEVICE`, `QTF_SECRETS_PKCS11_MODULE`,
+`QTF_SECRETS_PKCS11_PIN`.
 
 Local changes to the unit go into a drop-in, never into the unit file:
 
@@ -159,6 +162,90 @@ Secret files referenced with a **relative** path are looked up in
 Always set `server.base_url` to the URL users type (it is used for SSO
 redirect URIs, SAML entity/ACS URLs and the CSRF origin check). Behind a
 reverse proxy also set `server.trusted_proxies`.
+
+### Encryption of stored secrets (`secrets:`)
+
+Secrets the server must read back — authenticator-app (TOTP) secrets,
+webhook signing secrets, defect tracker tokens, secret web test variables,
+and the SMTP password and OIDC client secrets entered under System
+settings — are stored **encrypted** (AES-256-GCM, envelope encryption; the
+design is in [security.md](security.md#encryption-of-stored-secrets)).
+Earlier versions stored them in plain text; at the first start of this
+version they are encrypted in place, nothing has to be done. The key that
+protects them comes from a **key provider**:
+
+```yaml
+secrets:
+  provider: local            # local (default) | tpm | pkcs11
+  local:
+    # default: qtestframe-secrets.key next to the SQLite database, else in
+    # $STATE_DIRECTORY, /var/lib/qtestframe or the working directory.
+    # Created with mode 0600 when missing. QTF_SECRETS_KEY (base64/hex,
+    # `qtestframe secrets generate-key`) replaces the file.
+    key_file: /var/lib/qtestframe/qtestframe-secrets.key
+  tpm:
+    device: /dev/tpmrm0      # or the socket of a TPM emulator (swtpm)
+    pcrs: []                 # e.g. [7]: bind to the Secure Boot state
+    pcr_bank: sha256
+  pkcs11:                    # needs a binary built with `make go-pkcs11`
+    module: /usr/lib/softhsm/libsofthsm2.so
+    token_label: qtestframe  # or slot: 0
+    pin_file: hsm-pin        # or QTF_SECRETS_PKCS11_PIN; never the PIN itself
+    key_label: qtestframe-kek
+    generate_key: false      # create a non-extractable AES-256 key if missing
+```
+
+* **local** needs no configuration. **Back up the key file separately from
+  the database** (and not in the same backup set): without it the stored
+  secrets cannot be decrypted, with it anyone holding a database copy can.
+  Several server instances on one PostgreSQL database need the same key
+  (copy the file, or set `QTF_SECRETS_KEY` from a secret store); an
+  instance with another key refuses to start and names the key it expects.
+* **tpm** seals the data key to this machine's TPM 2.0 (static build, no
+  cgo). Give the service the device: add the `qtestframe` user to the
+  `tss` group and, in a drop-in, `PrivateDevices=no` and
+  `DeviceAllow=/dev/tpmrm0 rw`. With `pcrs` the key only unseals while
+  those PCRs keep their values: before a firmware or boot change, re-wrap
+  to a local key (`secrets rewrap`), and back afterwards. Keep a re-wrapped
+  local key (or a second installation's procedure) for disaster recovery:
+  a TPM cannot be backed up.
+* **pkcs11** wraps the data key with an AES key in an HSM. PKCS#11 modules
+  are C libraries, so build with HSM support:
+
+  ```sh
+  make go-pkcs11      # CGO_ENABLED=1 go build -tags pkcs11 ./cmd/qtestframe
+  ```
+
+  The result is dynamically linked against libc and loads the vendor's
+  module at run time. The default static binary refuses `provider: pkcs11`
+  with this instruction. Test it with SoftHSM2:
+
+  ```sh
+  sudo apt-get install softhsm2
+  softhsm2-util --init-token --free --label qtestframe --pin "$PIN" --so-pin "$SO_PIN"
+  make test-pkcs11    # the provider's tests against SoftHSM2
+  ```
+
+  With Landlock on, a file-based token (SoftHSM) needs its token directory
+  in `hardening.read_write_paths`.
+
+Command line (`--config FILE` as for the other commands):
+
+| Command | Does |
+| --- | --- |
+| `qtestframe secrets status` | provider, key fingerprint, data keys and how many secrets are encrypted (changes nothing) |
+| `qtestframe secrets migrate` | encrypt secrets still stored as plaintext (also done at every start) |
+| `qtestframe secrets rotate [--prune]` | new data key, every secret re-encrypted; `--prune` deletes old data keys (other servers stopped or restarted first) |
+| `qtestframe secrets rewrap [--from-config OLD.yaml]` | wrap the data keys with the configured provider; OLD.yaml describes the provider that wrapped them (new key file, local → tpm, local → pkcs11, …) |
+| `qtestframe secrets decrypt --yes` | store the secrets as plaintext again, before a downgrade to a version without encryption |
+| `qtestframe secrets generate-key` | print a new random key for `QTF_SECRETS_KEY` or a key file |
+
+Moving from the local key to the TPM, for example: copy `config.yaml` to
+`config.new.yaml`, set `secrets.provider: tpm` there, run
+`qtestframe secrets rewrap --config config.new.yaml --from-config config.yaml`,
+then make `config.new.yaml` the configuration and restart. The provider in
+use is shown read-only under **Administration → System settings →
+Security**.
 
 ### Runtime system settings (Administration → System settings)
 
@@ -232,7 +319,7 @@ Notes:
 * Every change is written to the audit log (`settings.update`, old → new
   value, secrets only as "set/changed") and to the server log / syslog.
   Backups (`qtestframe backup`) include the `system_settings` table with its
-  secrets; project archives do not.
+  secrets, encrypted; project archives do not.
 * New file options for the security section: `auth.password_min_length`
   (default 10), `auth.login_max_attempts` (10) and `auth.login_lockout`
   (5m); `auth.oidc[].enabled: false` hides a provider from the sign-in page.
@@ -762,9 +849,19 @@ image stays a static distroless one) and set
 ## 11. Backup and restore
 
 What to back up: the database, `/etc/qtestframe` (config, keys, secrets —
-encrypt the backup!). The runner directory is scratch space. Uploaded
-files (attachments, documents, reports, avatars) live in the database, so
-any database backup contains them.
+encrypt the backup!) and the **key of the stored secrets** (the local key
+file, `qtestframe-secrets.key`, or `QTF_SECRETS_KEY`; section 3) — kept
+apart from the database backups. The runner directory is scratch space.
+Uploaded files (attachments, documents, reports, avatars) live in the
+database, so any database backup contains them.
+
+Backups of every kind keep the stored secrets **encrypted**, together with
+the wrapped data keys (table `secret_keys`): restoring needs the same key
+provider and key (the same key file or `QTF_SECRETS_KEY`, the same TPM, the
+same HSM key). `qtestframe restore` and the web client refuse a backup
+whose data keys this server cannot unwrap, and leave the data as it was.
+To restore on a machine with a TPM-sealed key, re-wrap to a local key
+before the backup (`secrets rewrap`), or keep a recovery procedure.
 
 ### Built-in logical backup (recommended for moving data)
 
@@ -864,7 +961,7 @@ Copy the result off-host (restic, borg) and test restores regularly.
 ## 12. Upgrade
 
 1. Read the release notes.
-2. Back up (section 11).
+2. Back up (section 11), including the key of the stored secrets.
 3. Install the new binary: `sudo scripts/install.sh --binary bin/qtestframe`
    (keeps config; re-installs unit/policies) — or replace
    `/usr/bin/qtestframe` and `restorecon /usr/bin/qtestframe`.
@@ -874,7 +971,10 @@ Copy the result off-host (restic, borg) and test restores regularly.
 6. Compare `deploy/config.example.yaml` with your config for new options.
 
 Migrations are forward-only. Roll back by restoring the backup taken in
-step 2 together with the previous binary.
+step 2 together with the previous binary. Versions before the encryption of
+stored secrets cannot read the encrypted values: before going back to one,
+run `qtestframe secrets decrypt --yes` (or restore a backup taken before
+the upgrade). Upgrade all server instances of a database together.
 
 Containers: `docker compose pull`/`build`, `docker compose up -d` (the
 `migrate` service runs first).

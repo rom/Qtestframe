@@ -173,6 +173,11 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 			return nil, err
 		}
 	}
+	if id == report.Risks {
+		if d.Risks, err = s.Store.ListRisks(ctx, p.TenantID(), pr.ID); err != nil {
+			return nil, err
+		}
+	}
 	if id == report.RunSummary || id == report.Defects {
 		for _, run := range d.Runs {
 			if d.Executions[run.ID], err = s.Store.ListExecutions(ctx, p.TenantID(), run.ID); err != nil {

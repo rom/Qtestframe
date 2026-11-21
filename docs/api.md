@@ -223,6 +223,7 @@ default):
 | GET | `/projects/{pid}/dashboard` | project.read – see [Dashboard and metrics](#dashboard-and-metrics) |
 | GET | `/projects/{pid}/metrics/trends` | project.read – `?range=30\|90\|365` or `?since=YYYY-MM-DD` |
 | GET | `/projects/{pid}/flaky-tests` | project.read – `?limit=n` |
+| GET | `/projects/{pid}/dashboard/insights` | project.read – further key figures of the dashboard, see [Dashboard and metrics](#dashboard-and-metrics) |
 | GET | `/projects/{pid}/requirement-sources` | requirement.read – `{"configured":[...], "custom":bool, "used":[{"source","count"}]}`: the project's list and the sources requirements use, most used first |
 | GET | `/projects/{pid}/archive` | project.update + export – save the project as a [project archive](#project-archives-save-load-duplicate) (`application/zip`) |
 | POST | `/projects/import` | project.create – multipart `archive` + optional `key`, `name`, `dry_run=true`: load an archive as a new project → 201 `ProjectLoadResult` |
@@ -460,6 +461,43 @@ first; `window` is how many there are); a test with at least 2 flips is
 flaky. Tests carry `flakiness` (the score, when above 0) and `flaky`, and
 the test query fields `flaky` (`true`/`false`) and `flakiness` (alias
 `flips`), e.g. `flaky:true` or `flakiness>=3`.
+
+**Dashboard insights.** `GET /projects/{pid}/dashboard/insights` returns
+the further key figures and breakdowns of the dashboard, all counted on the
+server:
+```json
+{
+  "requirements": {"total": 10, "with_tests": 7, "passing": 5, "by_status": {"approved": 6},
+                   "review": {"none": 6, "pending": 2, "changes_requested": 1, "approved": 1}},
+  "tests": {"total": 20, "by_type": {"manual": {"passed": 8, "not_run": 4}, "automated": {"passed": 6, "failed": 2}}},
+  "risks": {"total": 6, "open": 4, "by_level": {"low": 0, "medium": 1, "high": 2, "critical": 1},
+            "by_status": {"identified": 3, "mitigating": 1, "mitigated": 1, "accepted": 0, "closed": 1},
+            "heat": [[0,0,0,0,0], [0,1,0,0,0], [0,0,0,1,0], [0,0,1,1,0], [0,0,0,0,1]],
+            "mitigation": {"no_requirements": 1, "untested": 0, "partly_tested": 1, "tested": 1, "verified": 1}},
+  "defects": {"open": 3, "buckets": {"lt7": 1, "7to30": 1, "30to90": 0, "gt90": 1},
+              "by_severity": {"critical": {"lt7": 1, "7to30": 0, "30to90": 0, "gt90": 0}},
+              "average_days": 41.3, "oldest_days": 112},
+  "suspect": {"links": 2, "requirements": 1},
+  "trace_rules": {"rules": 3, "failed": 1, "errors": 1, "warnings": 0, "violations": 4, "passed": false},
+  "release": {"id": "…", "name": "1.0", "version": "1.0.0", "status": "active", "target_date": "2026-04-01",
+              "runs": 2, "executions": {"passed": 12, "failed": 1, "not_run": 7}, "total": 20, "executed": 13, "passed": 12},
+  "activity": {"from": "2026-02-09", "to": "2026-03-10", "days": [{"day": "2026-03-10", "changes": 4, "executions": 9, "defects": 1}],
+               "total": {"day": "", "changes": 40, "executions": 120, "defects": 6}}
+}
+```
+`passing` counts the requirements whose linked tests all passed
+(coverage `passed`). `review` is the state of each requirement's latest
+review request that was not cancelled (`none` without one). `heat[l-1][i-1]`
+counts the risks that are not closed with likelihood `l` and impact `i`;
+`by_level` and `mitigation` count the open risks (identified, mitigating;
+the mitigation states are those of the risk report). Defect ages are whole
+days since the defect was reported, for open and in-progress defects.
+`trace_rules` evaluates the enabled [traceability rules](#traceability-rules).
+`release` is the newest active release, else the planned release with the
+earliest target date, else `null`; its executions are those of the runs
+assigned to it. `activity` covers the last 30 days (UTC, today included):
+`changes` are new revisions of requirements and tests, `executions` the
+executions finished, `defects` the defects reported.
 
 ## Folders (groups) and categories
 
@@ -787,14 +825,24 @@ Authentication). Requirement ids are `<PREFIX>-NN` (`AUTH-01`), test ids
 `<PREFIX>-TNN` (`AUTH-T01`); a requirement lists the catalogue tests that
 verify it (`tests`), a test the requirements it verifies (`requirements`).
 `lang` is `en` (default) or `sv`; a text missing in Swedish falls back to
-English. List filters take comma-separated values.
+English. List filters take comma-separated values. Every area belongs to a
+**catalogue type** (`catalogue`: software, hardware, equipment, system,
+communications, project, services, facilities, governance, documentation,
+education); `catalogue=` filters by it. Every entry of `refs` resolves to
+one **reference source** of the registry (`internal/catalog/data/sources.yaml`:
+the laws, regulations, directives, standards, best practices and guidelines
+cited, such as `gdpr`, `cra`, `nis2`, `cer`, `dora`, `red`,
+`se-cybersakerhetslag`, `se-sakerhetsskydd`, `iso-27001`, `iec-62443-3-3`,
+`owasp-asvs`, `wcag`); items list the ids in `sources`, and `source=`
+selects the items that comply with them.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[…]}` – groups in display order with item counts |
-| GET | `/catalog/requirements?lang=&area=&group=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, type, obligation, priority, tags, refs, tests, title, description, in_project?}]}`. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
+| GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[…], catalogues:[{id, name, description, areas, requirements, tests}]}` – groups in display order with item counts; `catalogues` are the catalogue types that have areas |
+| GET | `/catalog/sources?lang=&catalogue=&all=` | project.read | `{lang, kinds:[{id, name}], sources:[{id, kind, jurisdiction?, short?, name, url?, requirements, tests, catalogues:[id]}]}` – the reference sources grouped by kind (law, directive, standard, practice, guideline). `requirements` cite the source, `tests` cite it or verify such a requirement (what adding them brings), counted in the catalogue types of `catalogue`; sources nothing cites are left out unless `all=true` |
+| GET | `/catalog/requirements?lang=&area=&group=&catalogue=&source=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, type, obligation, priority, tags, refs, sources, tests, title, description, in_project?}]}`. `source`: requirements whose refs cite one of the sources. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
 | GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}]` |
-| GET | `/catalog/tests?lang=&area=&group=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, priority, execution, tags, refs, requirements, steps (count), title, description, in_project?}]}`; `q` also searches the steps and the ids of the verified requirements |
+| GET | `/catalog/tests?lang=&area=&group=&catalogue=&source=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, catalogue, priority, execution, tags, refs, sources, requirements, steps (count), title, description, in_project?}]}`; `source` matches tests that cite a source or verify a requirement citing it; `q` also searches the steps and the ids of the verified requirements |
 | GET | `/catalog/tests/{id}?lang=&project_id=` | test.read | the summary plus `area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}]` |
 | GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
 | POST | `/projects/{pid}/catalog/import` | project.read + see below | copies catalogue items into the project, see below |
@@ -900,6 +948,50 @@ another of the same meaning has ≥ 75 %), `mixed_keywords`,
 `duplicate_titles`, `conflicts`, `low_quality`, `many_drafts`, `no_owner` and
 `language_rule` (with `params.rule`, a language analysis rule). At most 200
 items per finding (`total` gives the full count).
+
+### Compliance
+
+`GET /projects/{pid}/analytics/compliance?source=&lang=` (requirement.read)
+measures how far the project complies with reference sources of the
+catalogue (`source`: ids from `GET /catalog/sources`, comma-separated;
+without it every source the project has adopted requirements of or cites
+itself). Per source:
+
+- **Catalogue requirements** are the catalogue requirements that cite it.
+  One is **adopted** when a project requirement was imported from it
+  (`catalog_ref`) and is not rejected or obsolete, else **missing** (a gap).
+  `obligations` splits them into must (MUST, MUST NOT), should and may.
+- **Own requirements** are project requirements not imported from those
+  items whose `source` field names the source (each part separated by `;`
+  or a line break is matched like a ref, also without regard to case, e.g.
+  `GDPR Art. 32; ISO/IEC 27001:2022 A.8.5`).
+- **Fulfilment** of each counted requirement from the latest results of its
+  linked tests: `passed` (it has tests and all passed), `failing` (one
+  failed), `blocked` (one blocked, none failed) or `untested`. Several
+  project copies of one catalogue item count as one, with the worst state.
+- `percent` = fulfilled / (catalogue + own requirements);
+  `adoption_percent` = adopted / catalogue; `mandatory_percent` the
+  compliance of the must group (-1 without one); `clauses` give the same
+  per clause or article group, derived from the refs (`Art. 32`, `A.8`,
+  `Annex I Part I`, `SR 1`; `""` for refs without a clause).
+
+```json
+{"summary": {"sources": 1, "catalogue": 34, "adopted": 12, "missing": 22, "own": 1,
+             "fulfilment": {"passed": 8, "failing": 1, "blocked": 0, "untested": 4}, "percent": 23},
+ "sources": [{"id": "cra", "kind": "law", "jurisdiction": "EU", "short": "CRA", "name": "Cyber Resilience Act, Regulation (EU) 2024/2847",
+              "catalogue": 34, "adopted": 12, "missing": 22, "own": 1, "fulfilment": {…}, "adoption_percent": 35, "percent": 23, "mandatory_percent": 25,
+              "obligations": [{"obligation": "must", "catalogue": 30, "adopted": 11, "missing": 19, "own": 1, "fulfilled": 8, "percent": 26}],
+              "clauses": [{"clause": "Annex I Part I", "catalogue": 11, "adopted": 5, "missing": 6, "own": 0, "fulfilment": {…}, "percent": 36}],
+              "gaps": [{"catalog_id": "VULN-03", "area": "vulnerability-handling", "title": "…", "obligation": "must", "priority": "high",
+                        "clauses": ["Annex I Part II"], "refs": ["…"], "tests": 1, "inactive": [{"kind": "requirement", "id": "…", "key": "…", "title": "…", "note": "rejected"}]}],
+              "items": [{"id": "…", "key": "WEB-REQ-4", "title": "…", "obligation": "must", "state": "failing", "catalog_ref": "SUP-02", "own": false, "clauses": ["Annex I Part I"]}],
+              "gaps_total": 22, "items_total": 13}],
+ "unknown": ["no-such-source"]}
+```
+
+Gaps come MUST first, then by priority; items not fulfilled first; at most
+200 of each (`gaps_total`, `items_total`). The standard report `compliance`
+presents the same.
 
 ## Traceability
 
@@ -1562,7 +1654,7 @@ All endpoints need a **super administrator signed in with a session**
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/admin/settings` | → `{sections, settings: [...], oidc: {providers, source, stored, locked}, locked_patterns, config_file, restart_pending, load_error, trash_retention_days, logging_runtime}` |
+| GET | `/admin/settings` | → `{sections, settings: [...], oidc: {providers, source, stored, locked}, locked_patterns, config_file, restart_pending, load_error, trash_retention_days, logging_runtime, secrets}`; `secrets` (read-only) is the key provider of the stored secrets: `{provider: local\|tpm\|pkcs11, key_id, info, active_key, keys, encrypted, plaintext}` (a key fingerprint, never a key) |
 | PUT | `/admin/settings` | `{"values": {key: value \| null}}`; returns the GET document |
 | DELETE | `/admin/settings/{key}` | reset `key` (e.g. `logging.level`, `auth.oidc`) to the file value |
 | GET | `/admin/settings/export` | effective configuration as YAML (attachment), secrets `REDACTED` |
@@ -1760,6 +1852,17 @@ params, formats}]`; `formats` is `pdf`, `docx`, `xlsx`, `csv`, `md`):
 | `run_summary` | one run: totals, executions, defects, durations | `run_id` (required) |
 | `defects` | defects recorded on executions, grouped by defect | – |
 | `test_inventory` | tests by folder, type, status and category | `query` |
+| `risks` | risk report: key figures (open, mitigated, accepted, closed, open per level, untested and verified mitigations, open risks not updated for 90 days), risks by level × status, open risks by mitigation state, the likelihood × impact heat map (risks not closed; every cell gives its count and level), the top 10 open risks, the risk register, risk → requirement → test traceability with coverage and latest results, open risks with untested mitigation, and open risks due for review | – |
+| `compliance` | compliance with reference sources: by source, by clause, missing catalogue requirements, requirements not fulfilled (see *Compliance*) | `sources` (comma-separated source ids; default: the sources the project uses) |
+
+The risk report's *mitigation state* of a risk is derived from the
+requirements that address it: `no_requirements`, `untested` (none has
+linked tests), `partly_tested` (some have), `tested` (all have, not all
+passed) or `verified` (all linked tests of all its requirements passed).
+A risk has a single likelihood × impact score and no review date: the
+register shows that score and level, and "due for review" lists the open
+risks whose `updated_at` is 90 days old or more. Recipients of an e-mailed
+risk report need requirement.read and test.read.
 
 Custom report config (`CustomConfig`):
 

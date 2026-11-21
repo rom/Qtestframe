@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"slices"
 	"strings"
@@ -127,6 +128,15 @@ func scanWebhook(r interface{ Scan(...any) error }) (*model.Webhook, error) {
 	return &w, nil
 }
 
+// openWebhook decrypts the signing secret of a scanned webhook.
+func (s *Store) openWebhook(ctx context.Context, w *model.Webhook) error {
+	var err error
+	if w.Secret, err = s.unseal(ctx, w.Secret, adWebhook(w.ID)); err != nil {
+		return fmt.Errorf("webhook %s: %w", w.ID, err)
+	}
+	return nil
+}
+
 // NewWebhookSecret returns a random signing secret.
 func NewWebhookSecret() string {
 	b := make([]byte, 24)
@@ -177,8 +187,12 @@ func (s *Store) CreateWebhook(ctx context.Context, tenantID string, w *model.Web
 	w.CreatedAt = s.now()
 	w.UpdatedAt = w.CreatedAt
 	ev, _ := json.Marshal(w.Events)
-	_, err := s.c(ctx).exec(ctx, `INSERT INTO webhooks (id, tenant_id, project_id, name, url, secret, events, enabled, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		w.ID, tenantID, w.ProjectID, w.Name, w.URL, w.Secret, string(ev), w.Enabled, w.CreatedBy, w.CreatedAt, w.UpdatedAt)
+	secret, err := s.seal(w.Secret, adWebhook(w.ID))
+	if err != nil {
+		return err
+	}
+	_, err = s.c(ctx).exec(ctx, `INSERT INTO webhooks (id, tenant_id, project_id, name, url, secret, events, enabled, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		w.ID, tenantID, w.ProjectID, w.Name, w.URL, secret, string(ev), w.Enabled, w.CreatedBy, w.CreatedAt, w.UpdatedAt)
 	return mapErr(err, "webhook")
 }
 
@@ -189,8 +203,12 @@ func (s *Store) UpdateWebhook(ctx context.Context, tenantID string, w *model.Web
 	}
 	w.UpdatedAt = s.now()
 	ev, _ := json.Marshal(w.Events)
+	secret, err := s.seal(w.Secret, adWebhook(w.ID))
+	if err != nil {
+		return err
+	}
 	res, err := s.c(ctx).exec(ctx, `UPDATE webhooks SET name = ?, url = ?, events = ?, enabled = ?, secret = CASE WHEN ? = '' THEN secret ELSE ? END, updated_at = ? WHERE id = ? AND tenant_id = ?`,
-		w.Name, w.URL, string(ev), w.Enabled, w.Secret, w.Secret, w.UpdatedAt, w.ID, tenantID)
+		w.Name, w.URL, string(ev), w.Enabled, secret, secret, w.UpdatedAt, w.ID, tenantID)
 	if err != nil {
 		return err
 	}
@@ -203,7 +221,10 @@ func (s *Store) UpdateWebhook(ctx context.Context, tenantID string, w *model.Web
 // GetWebhook returns a webhook including its secret.
 func (s *Store) GetWebhook(ctx context.Context, tenantID, id string) (*model.Webhook, error) {
 	w, err := scanWebhook(s.c(ctx).row(ctx, `SELECT `+webhookCols+` FROM webhooks WHERE id = ? AND tenant_id = ?`, id, tenantID))
-	return w, mapErr(err, "webhook")
+	if err != nil {
+		return nil, mapErr(err, "webhook")
+	}
+	return w, s.openWebhook(ctx, w)
 }
 
 // ListWebhooks lists a project's webhooks including secrets.
@@ -221,7 +242,16 @@ func (s *Store) ListWebhooks(ctx context.Context, tenantID, projectID string) ([
 		}
 		out = append(out, *w)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	for i := range out {
+		if err := s.openWebhook(ctx, &out[i]); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
 }
 
 // WebhooksFor returns the enabled webhooks of a project subscribed to event.

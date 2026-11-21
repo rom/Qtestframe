@@ -1,0 +1,726 @@
+area: sys-rams
+prefix: SYRAMS
+group: quality
+catalogue: system
+name: {en: RAMS and functional safety, sv: RAMS och funktionssäkerhet}
+description:
+  en: Reliability, availability, maintainability and safety of systems in the style of EN 50126, with functional safety after IEC 61508 at a high level, covering the RAMS plan, quantified and apportioned RAM targets, availability in operation, the hazard log and risk acceptance, hazard and risk analysis, safety integrity levels, hardware and systematic integrity, functional safety management and assessment, the safety case, modifications, proof tests, fault tree and failure mode analysis and common cause failures.
+  sv: Tillförlitlighet, tillgänglighet, underhållsmässighet och säkerhet för system i stil med EN 50126, med funktionssäkerhet enligt IEC 61508 på övergripande nivå, omfattande RAMS-plan, kvantifierade och fördelade RAM-mål, tillgänglighet i drift, risklogg och riskacceptans, risk- och riskkällsanalys, säkerhetsintegritetsnivåer, hårdvaruintegritet och systematisk integritet, ledning och bedömning av funktionssäkerhet, säkerhetsbevisning, ändringar, funktionsprov, felträds- och felsättsanalys samt fel av gemensam orsak.
+
+requirements:
+  - id: SYRAMS-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [rams-plan, life-cycle]
+    refs: ["EN 50126-1:2017 (RAMS management)", "IEC 60300-1:2014 (dependability management)"]
+    tests: [SYRAMS-T01]
+    en:
+      title: RAMS plan covering the whole life cycle
+      description: The project MUST approve a RAMS plan before the system definition phase ends, naming for each life-cycle phase the RAMS activities, their deliverables, the responsible roles and the reviews.
+      rationale: RAMS properties are built in through activities in each phase, and a plan makes sure that none is skipped or left without an owner.
+      criteria:
+        - method: inspection
+          text: The approved RAMS plan is dated before the end of system definition and lists activities, deliverables, roles and reviews for each phase.
+    sv:
+      title: RAMS-plan för hela livscykeln
+      description: Projektet SKA godkänna en RAMS-plan innan systemdefinitionsfasen avslutas, som för varje livscykelfas anger RAMS-aktiviteterna, deras leveranser, de ansvariga rollerna och granskningarna.
+      rationale: RAMS-egenskaper byggs in genom aktiviteter i varje fas, och en plan ser till att ingen hoppas över eller saknar ägare.
+      criteria:
+        - method: inspection
+          text: Den godkända RAMS-planen är daterad före slutet av systemdefinitionen och anger aktiviteter, leveranser, roller och granskningar för varje fas.
+
+  - id: SYRAMS-02
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [reliability, availability, maintainability, targets]
+    refs: ["EN 50126-1:2017 (RAM requirements)", "IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)"]
+    tests: [SYRAMS-T01]
+    en:
+      title: Quantified RAM targets for the system
+      description: The system requirements MUST state quantified targets for reliability (mean time between service-affecting failures), availability (99.95 % by default, with its formula and the events it counts) and maintainability (mean time to restore), each with the conditions under which it applies.
+      rationale: Unquantified RAM goals cannot be designed for, apportioned or demonstrated.
+      criteria:
+        - method: inspection
+          text: The requirements contain the three targets with values, units, formulas and operating conditions.
+          threshold: availability ≥ 99.95 % by default
+    sv:
+      title: Kvantifierade RAM-mål för systemet
+      description: Systemkraven SKA ange kvantifierade mål för tillförlitlighet (medeltid mellan fel som påverkar tjänsten), tillgänglighet (99,95 % som standardvärde, med formel och vilka händelser som räknas) och underhållsmässighet (medeltid till återställning), vart och ett med de förhållanden där det gäller.
+      rationale: RAM-mål som inte är kvantifierade kan inte konstrueras för, fördelas eller visas.
+      criteria:
+        - method: inspection
+          text: Kraven innehåller de tre målen med värden, enheter, formler och driftförhållanden.
+          threshold: tillgänglighet ≥ 99,95 % som standardvärde
+
+  - id: SYRAMS-03
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [apportionment, reliability-block-diagram]
+    refs: ["IEC 61078:2016 (reliability block diagrams)", "EN 50126-1:2017 (RAM requirements)"]
+    tests: [SYRAMS-T02]
+    en:
+      title: RAM targets apportioned to subsystems
+      description: The system reliability and availability targets MUST be apportioned to the subsystems with a reliability block diagram or an equivalent model whose combined result meets the system targets.
+      rationale: Subsystem suppliers can only design to targets they have been given, and the model shows that their targets add up to the system's.
+      criteria:
+        - method: analysis
+          text: The model lists each subsystem with its target, and recomputing the model from those targets gives values at or better than the system targets.
+    sv:
+      title: RAM-mål fördelade på delsystem
+      description: Systemets mål för tillförlitlighet och tillgänglighet SKA fördelas på delsystemen med ett tillförlitlighetsblockdiagram eller en likvärdig modell vars sammanlagda resultat uppfyller systemets mål.
+      rationale: Leverantörer av delsystem kan bara konstruera mot mål som de har fått, och modellen visar att deras mål tillsammans ger systemets.
+      criteria:
+        - method: analysis
+          text: Modellen anger varje delsystem med sitt mål, och en ny beräkning av modellen med dessa mål ger värden som är lika med eller bättre än systemets mål.
+
+  - id: SYRAMS-04
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [availability, demonstration, operation]
+    refs: ["IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)", "EN 50126-1:2017 (RAM demonstration)"]
+    tests: [SYRAMS-T03]
+    en:
+      title: Availability demonstrated over the first year in operation
+      description: The operator MUST measure the availability of the system over its first 12 months in operation with the formula and event rules of the requirement, and MUST start a corrective action when it is below the target.
+      rationale: Only data from real operation shows whether the RAM targets are met, and the first year reveals early failures.
+      criteria:
+        - method: analysis
+          text: The availability report for the first 12 months uses the stated formula and events, and either meets the target or references an open corrective action.
+          threshold: 12 months of operation
+    sv:
+      title: Tillgängligheten visas under första driftåret
+      description: Operatören SKA mäta systemets tillgänglighet under dess första 12 månader i drift med kravets formel och regler för händelser, och starta en korrigerande åtgärd när den ligger under målet.
+      rationale: Bara data från verklig drift visar om RAM-målen uppfylls, och det första året avslöjar tidiga fel.
+      criteria:
+        - method: analysis
+          text: Tillgänglighetsrapporten för de första 12 månaderna använder den angivna formeln och händelserna, och uppfyller antingen målet eller hänvisar till en öppen korrigerande åtgärd.
+          threshold: 12 månaders drift
+
+  - id: SYRAMS-05
+    type: business
+    obligation: must
+    priority: critical
+    tags: [hazard-log, safety-management]
+    refs: ["EN 50126-1:2017 (hazard log)", "EN 50126-2:2017 (systems approach to safety)"]
+    tests: [SYRAMS-T04]
+    en:
+      title: Hazard log maintained over the life cycle
+      description: The project MUST keep a hazard log in which each identified hazard has its causes, consequences, risk before and after mitigation, the mitigations with their verification evidence, an owner and a status, and MUST update it at each phase review.
+      rationale: The hazard log is the central record that links each hazard to the measures and the evidence that it is controlled.
+      criteria:
+        - method: inspection
+          text: Each hazard in the log has the seven fields, each closed hazard links to verification evidence, and the log has an update at each phase review.
+    sv:
+      title: Risklogg som förs under hela livscykeln
+      description: Projektet SKA föra en risklogg där varje identifierad riskkälla har sina orsaker, konsekvenser, risk före och efter åtgärd, åtgärderna med sina verifieringsbelägg, en ägare och en status, och uppdatera den vid varje fasgranskning.
+      rationale: Riskloggen är den centrala förteckning som kopplar varje riskkälla till åtgärderna och beläggen för att den är under kontroll.
+      criteria:
+        - method: inspection
+          text: Varje riskkälla i loggen har de sju fälten, varje stängd riskkälla länkar till verifieringsbelägg, och loggen har en uppdatering vid varje fasgranskning.
+
+  - id: SYRAMS-06
+    type: business
+    obligation: must
+    priority: critical
+    tags: [hazard-analysis, risk-analysis]
+    refs: ["IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "IEC 61508-1:2010 §7.3 (overall scope definition)"]
+    tests: [SYRAMS-T05]
+    en:
+      title: Hazard and risk analysis during the concept phase
+      description: The project MUST perform a hazard and risk analysis of the system and its environment during the concept phase, covering normal operation, foreseeable faults, misuse and maintenance, and MUST repeat it when the scope or the design changes.
+      rationale: Safety functions and their integrity are derived from this analysis, so hazards found late lead to expensive redesign.
+      criteria:
+        - method: inspection
+          text: The analysis is dated in the concept phase, covers the four kinds of situations, and has a revision after each scope or design change in the change log.
+    sv:
+      title: Risk- och riskkällsanalys under konceptfasen
+      description: Projektet SKA genomföra en risk- och riskkällsanalys av systemet och dess omgivning under konceptfasen, som omfattar normal drift, förutsebara fel, felanvändning och underhåll, och göra om den när omfattningen eller konstruktionen ändras.
+      rationale: Säkerhetsfunktionerna och deras integritet härleds ur denna analys, så riskkällor som hittas sent leder till dyr omkonstruktion.
+      criteria:
+        - method: inspection
+          text: Analysen är daterad i konceptfasen, omfattar de fyra slagen av situationer och har en revision efter varje ändring av omfattning eller konstruktion i ändringsloggen.
+
+  - id: SYRAMS-07
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk-acceptance, criteria]
+    refs: ["EN 50126-2:2017 (risk acceptance principles)", "IEC 61508-5:2010 (examples of methods for the determination of safety integrity levels)"]
+    tests: [SYRAMS-T04]
+    en:
+      title: Risk acceptance criteria agreed before risk evaluation
+      description: The project MUST agree risk acceptance criteria with the system owner and, where one exists, the safety authority, before the first risk evaluation, stating the principle used (for example a risk matrix, explicit risk targets or comparison with a reference system).
+      rationale: Criteria fixed after the risks are known invite choosing the criteria that make the design acceptable.
+      criteria:
+        - method: inspection
+          text: The criteria document is signed by the system owner and, where applicable, the authority, names the principle and is dated before the first risk evaluation.
+    sv:
+      title: Kriterier för riskacceptans överenskomna före riskvärderingen
+      description: Projektet SKA komma överens om kriterier för riskacceptans med systemägaren och, när en sådan finns, säkerhetsmyndigheten före den första riskvärderingen, med angivande av den princip som används (till exempel en riskmatris, uttryckliga riskmål eller jämförelse med ett referenssystem).
+      rationale: Kriterier som bestäms när riskerna redan är kända inbjuder till att välja de kriterier som gör konstruktionen godtagbar.
+      criteria:
+        - method: inspection
+          text: Kriteriedokumentet är undertecknat av systemägaren och, i förekommande fall, myndigheten, anger principen och är daterat före den första riskvärderingen.
+
+  - id: SYRAMS-08
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [safety-functions, sil, allocation]
+    refs: ["IEC 61508-1:2010 §7.5 (overall safety requirements)", "IEC 61508-1:2010 §7.6 (overall safety requirements allocation)"]
+    tests: [SYRAMS-T05]
+    en:
+      title: Safety functions specified with a safety integrity level
+      description: Each risk that needs a safety function to reach the acceptance criteria MUST lead to a specified safety function with its safe state, response time and safety integrity level (SIL 1 to 4), allocated to a named subsystem.
+      rationale: The SIL sets how rigorously the function is designed and verified, so each safety function needs one that follows from the risk.
+      criteria:
+        - method: analysis
+          text: The safety requirements specification lists each safety function with safe state, response time, SIL and allocated subsystem, and each is traced to a hazard in the log.
+    sv:
+      title: Säkerhetsfunktioner specificerade med säkerhetsintegritetsnivå
+      description: Varje risk som behöver en säkerhetsfunktion för att nå acceptanskriterierna SKA leda till en specificerad säkerhetsfunktion med säkert tillstånd, reaktionstid och säkerhetsintegritetsnivå (SIL 1–4), allokerad till ett namngivet delsystem.
+      rationale: SIL anger hur noggrant funktionen konstrueras och verifieras, så varje säkerhetsfunktion behöver en nivå som följer av risken.
+      criteria:
+        - method: analysis
+          text: Specifikationen av säkerhetskraven anger varje säkerhetsfunktion med säkert tillstånd, reaktionstid, SIL och allokerat delsystem, och var och en är spårad till en riskkälla i loggen.
+
+  - id: SYRAMS-09
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [hardware-integrity, pfh, sff]
+    refs: ["IEC 61508-2:2010 §7.4.4 (hardware safety integrity architectural constraints)", "IEC 61508-2:2010 §7.4.5 (requirements for quantifying the effect of random hardware failures)", "IEC 61508-6:2010 (guidelines on the application of IEC 61508-2 and IEC 61508-3)"]
+    tests: [SYRAMS-T06]
+    en:
+      title: Hardware failure measures meet the target SIL
+      description: For each safety function, the calculated probability of dangerous failure (PFH for high-demand or continuous mode, PFDavg for low-demand mode) and the architectural constraints (hardware fault tolerance and safe failure fraction) MUST meet the limits of its SIL.
+      rationale: Random hardware failures have to be rare enough for the function to give the risk reduction that its SIL claims.
+      criteria:
+        - method: analysis
+          text: The hardware integrity report shows for each safety function the mode, PFH or PFDavg, hardware fault tolerance and safe failure fraction, each within the limits of its SIL.
+    sv:
+      title: Hårdvarans felmått uppfyller mål-SIL
+      description: För varje säkerhetsfunktion SKA den beräknade sannolikheten för farligt fel (PFH vid hög belastning eller kontinuerlig drift, PFDavg vid låg belastning) och de arkitektoniska begränsningarna (hårdvarans feltolerans och andelen säkra fel) uppfylla gränserna för dess SIL.
+      rationale: Slumpmässiga hårdvarufel behöver vara tillräckligt sällsynta för att funktionen ska ge den riskreduktion som dess SIL anger.
+      criteria:
+        - method: analysis
+          text: Rapporten om hårdvaruintegritet visar för varje säkerhetsfunktion driftsätt, PFH eller PFDavg, hårdvarans feltolerans och andelen säkra fel, vart och ett inom gränserna för dess SIL.
+
+  - id: SYRAMS-10
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [systematic-capability, safety-software]
+    refs: ["IEC 61508-3:2010 §7 (software safety lifecycle requirements)"]
+    tests: [SYRAMS-T07]
+    en:
+      title: Safety software developed with the techniques for its SIL
+      description: The software of each safety function MUST be developed and verified with the techniques and measures that IEC 61508-3 rates HR for its SIL, or with a documented justification for each technique not used.
+      rationale: Systematic faults such as software errors cannot be calculated away and are controlled only by rigorous process.
+      criteria:
+        - method: inspection
+          text: The software safety plan lists the techniques per phase with their rating for the SIL, and each highly recommended technique is either applied with evidence or justified.
+    sv:
+      title: Säkerhetsprogramvara utvecklas med teknikerna för sin SIL
+      description: Programvaran för varje säkerhetsfunktion SKA utvecklas och verifieras med de tekniker och åtgärder som IEC 61508-3 anger som starkt rekommenderade för dess SIL, eller med en dokumenterad motivering för varje teknik som inte används.
+      rationale: Systematiska fel som programvarufel kan inte räknas bort och styrs bara genom en noggrann process.
+      criteria:
+        - method: inspection
+          text: Säkerhetsplanen för programvaran anger teknikerna per fas med deras klassning för SIL, och varje starkt rekommenderad teknik är antingen tillämpad med belägg eller motiverad.
+
+  - id: SYRAMS-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [functional-safety-management, competence]
+    refs: ["IEC 61508-1:2010 §6 (management of functional safety)"]
+    tests: [SYRAMS-T08]
+    en:
+      title: Functional safety management with named and competent roles
+      description: The organisation MUST have a functional safety plan that names the persons responsible for each safety life-cycle activity and records evidence of each person's competence for the SIL concerned.
+      rationale: Most functional safety failures trace back to organisational causes such as unclear responsibility or lack of competence.
+      criteria:
+        - method: inspection
+          text: The functional safety plan names a person for each activity, and the competence record of each named person covers the SIL and the technology.
+    sv:
+      title: Ledning av funktionssäkerhet med namngivna och kompetenta roller
+      description: Organisationen SKA ha en plan för funktionssäkerhet som anger de personer som ansvarar för varje aktivitet i säkerhetslivscykeln och registrerar belägg för varje persons kompetens för den aktuella SIL-nivån.
+      rationale: De flesta brister i funktionssäkerhet går tillbaka till organisatoriska orsaker som otydligt ansvar eller bristande kompetens.
+      criteria:
+        - method: inspection
+          text: Planen för funktionssäkerhet anger en person för varje aktivitet, och kompetensposten för varje angiven person omfattar SIL-nivån och tekniken.
+
+  - id: SYRAMS-12
+    type: business
+    obligation: must
+    priority: critical
+    tags: [functional-safety-assessment, independence]
+    refs: ["IEC 61508-1:2010 §8 (functional safety assessment)"]
+    tests: [SYRAMS-T08]
+    en:
+      title: Functional safety assessment with the independence the SIL calls for
+      description: Before the system is put into service, a functional safety assessment MUST be carried out by an assessor whose independence from the design team is at least the level that IEC 61508-1 sets for the highest SIL in the system (an independent organisation for SIL 3 and 4).
+      rationale: An independent assessment is the check that the safety life cycle was actually followed and that the evidence supports the claimed integrity.
+      criteria:
+        - method: inspection
+          text: The assessment report names the assessor and organisation, states the independence level, is dated before entry into service and has no open finding that blocks it.
+    sv:
+      title: Bedömning av funktionssäkerhet med det oberoende som SIL-nivån kräver
+      description: Innan systemet tas i drift SKA en bedömning av funktionssäkerheten genomföras av en bedömare vars oberoende av konstruktionsteamet minst motsvarar den nivå som IEC 61508-1 anger för den högsta SIL-nivån i systemet (en oberoende organisation för SIL 3 och 4).
+      rationale: En oberoende bedömning är kontrollen av att säkerhetslivscykeln verkligen följts och att beläggen stöder den angivna integriteten.
+      criteria:
+        - method: inspection
+          text: Bedömningsrapporten anger bedömare och organisation, anger nivån av oberoende, är daterad före driftstart och har inget öppet fynd som hindrar den.
+
+  - id: SYRAMS-13
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [safety-case, acceptance]
+    refs: ["EN 50126-1:2017 (safety case)", "EN 50129:2018 (safety case for safety-related electronic systems)"]
+    tests: [SYRAMS-T09]
+    en:
+      title: Safety case accepted before entry into service
+      description: The project MUST present a safety case that argues, with references to the hazard log, the verification and validation evidence and the assessment report, that the system is acceptably safe for its stated application, and the system MUST enter service only after the safety case has been accepted by the system owner.
+      rationale: The safety case gathers the evidence in one structured argument so that the owner and the authorities can judge the system as a whole.
+      criteria:
+        - method: review
+          text: The safety case states the application and its conditions, references the three kinds of evidence, and carries the owner's acceptance dated before entry into service.
+    sv:
+      title: Säkerhetsbevisning godkänd före driftstart
+      description: Projektet SKA lägga fram en säkerhetsbevisning som, med hänvisningar till riskloggen, beläggen från verifiering och validering och bedömningsrapporten, argumenterar för att systemet är godtagbart säkert för sin angivna tillämpning, och systemet SKA tas i drift först när säkerhetsbevisningen har godkänts av systemägaren.
+      rationale: Säkerhetsbevisningen samlar beläggen i ett strukturerat argument så att ägaren och myndigheterna kan bedöma systemet som helhet.
+      criteria:
+        - method: review
+          text: Säkerhetsbevisningen anger tillämpningen och dess villkor, hänvisar till de tre slagen av belägg och bär ägarens godkännande daterat före driftstart.
+
+  - id: SYRAMS-14
+    type: business
+    obligation: must
+    priority: critical
+    tags: [modification, impact-analysis, safety]
+    refs: ["IEC 61508-1:2010 §7.16 (overall modification and retrofit)", "EN 50126-1:2017 (modification and retrofit)"]
+    tests: [SYRAMS-T10]
+    en:
+      title: Safety impact analysis before each modification
+      description: Before a modification of a system in service is implemented, the owner MUST analyse its impact on the hazard log and the safety functions, decide which safety life-cycle activities to repeat, and record the approval of the functional safety responsible.
+      rationale: Modifications are a frequent cause of accidents because they change conditions that the original safety argument relied on.
+      criteria:
+        - method: inspection
+          text: Each modification of the last 24 months has an impact analysis, a list of repeated activities and an approval, each dated before implementation.
+    sv:
+      title: Konsekvensanalys för säkerheten före varje ändring
+      description: Innan en ändring av ett system i drift genomförs SKA ägaren analysera dess påverkan på riskloggen och säkerhetsfunktionerna, besluta vilka aktiviteter i säkerhetslivscykeln som ska upprepas och registrera godkännandet av den som ansvarar för funktionssäkerheten.
+      rationale: Ändringar är en vanlig orsak till olyckor eftersom de ändrar förutsättningar som det ursprungliga säkerhetsargumentet byggde på.
+      criteria:
+        - method: inspection
+          text: Varje ändring de senaste 24 månaderna har en konsekvensanalys, en lista över upprepade aktiviteter och ett godkännande, vart och ett daterat före genomförandet.
+
+  - id: SYRAMS-15
+    type: business
+    obligation: must
+    priority: high
+    tags: [proof-test, maintenance, safety-instrumented]
+    refs: ["IEC 61508-2:2010 §7.6 (E/E/PE system operation and maintenance procedures)", "IEC 61511-1:2016 §16.3 (proof testing and inspection)"]
+    tests: [SYRAMS-T11]
+    en:
+      title: Proof tests at the interval assumed in the calculation
+      description: Each safety function MUST be proof tested at no more than the interval used in its probability of failure calculation, with a procedure that reveals the dangerous undetected failures named in the safety manual and with each result recorded.
+      rationale: The calculated failure probability holds only when hidden failures are found and repaired at the assumed interval.
+      criteria:
+        - method: inspection
+          text: The proof test records of each safety function show tests at intervals no longer than the calculated interval, each with a result, and each failure found has a repair record.
+    sv:
+      title: Funktionsprov med det intervall som antas i beräkningen
+      description: Varje säkerhetsfunktion SKA funktionsprovas med högst det intervall som använts i beräkningen av dess sannolikhet för fel, med en procedur som avslöjar de farliga oupptäckta fel som anges i säkerhetsmanualen och med varje resultat registrerat.
+      rationale: Den beräknade felsannolikheten gäller bara när dolda fel upptäcks och repareras med det antagna intervallet.
+      criteria:
+        - method: inspection
+          text: Protokollen från funktionsprov för varje säkerhetsfunktion visar prov med intervall som inte är längre än det beräknade intervallet, vart och ett med resultat, och varje funnet fel har ett reparationsprotokoll.
+
+  - id: SYRAMS-16
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [fault-tree, fmeca, analysis]
+    refs: ["IEC 61025:2006 (fault tree analysis)", "IEC 60812:2018 (failure modes and effects analysis)"]
+    tests: [SYRAMS-T12]
+    en:
+      title: Fault tree for each top-level hazard
+      description: Each hazard with the highest severity in the hazard log SHOULD have a fault tree analysis down to the level of replaceable units, combined with a failure mode, effects and criticality analysis of the units, showing the minimum cut sets and the probability of the top event.
+      rationale: Fault trees show which combinations of failures lead to the hazard and expose single points of failure.
+      criteria:
+        - method: analysis
+          text: Each highest-severity hazard has a fault tree with minimal cut sets and a top event probability, and no minimal cut set of order one exists without a recorded justification.
+    sv:
+      title: Felträd för varje riskkälla på högsta nivån
+      description: Varje riskkälla med högsta allvarlighetsgrad i riskloggen BÖR ha en felträdsanalys ned till nivån utbytbara enheter, kombinerad med en felsätts-, feleffekts- och kritikalitetsanalys av enheterna, som visar de minimala snittmängderna och sannolikheten för topphändelsen.
+      rationale: Felträd visar vilka kombinationer av fel som leder till riskkällan och avslöjar enskilda felpunkter.
+      criteria:
+        - method: analysis
+          text: Varje riskkälla med högsta allvarlighetsgrad har ett felträd med minimala snittmängder och en sannolikhet för topphändelsen, och ingen minimal snittmängd av ordning ett finns utan en registrerad motivering.
+
+  - id: SYRAMS-17
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [common-cause-failure, redundancy]
+    refs: ["IEC 61508-6:2010 Annex D (common cause failures)", "IEC 61508-2:2010 §7.4.5 (requirements for quantifying the effect of random hardware failures)"]
+    tests: [SYRAMS-T06]
+    en:
+      title: Common cause failures assessed for redundant channels
+      description: Each redundant architecture of a safety function SHOULD have a common cause failure assessment that scores the measures for separation, diversity, environment and competence and uses the resulting beta factor in the failure probability calculation.
+      rationale: Redundancy gives little protection when both channels can fail from the same cause, such as a shared power supply or the same software fault.
+      criteria:
+        - method: analysis
+          text: The assessment of each redundant architecture shows the scores and the beta factor, and the same beta factor is used in the calculation.
+    sv:
+      title: Fel av gemensam orsak bedöms för redundanta kanaler
+      description: Varje redundant arkitektur för en säkerhetsfunktion BÖR ha en bedömning av fel av gemensam orsak som poängsätter åtgärderna för separation, diversitet, miljö och kompetens och använder den resulterande betafaktorn i beräkningen av felsannolikheten.
+      rationale: Redundans ger litet skydd när båda kanalerna kan fallera av samma orsak, till exempel en gemensam strömförsörjning eller samma programvarufel.
+      criteria:
+        - method: analysis
+          text: Bedömningen av varje redundant arkitektur visar poängen och betafaktorn, och samma betafaktor används i beräkningen.
+
+tests:
+  - id: SYRAMS-T01
+    priority: high
+    execution: manual
+    tags: [rams-plan, targets]
+    refs: ["EN 50126-1:2017 (RAMS management)", "EN 50126-1:2017 (RAM requirements)"]
+    en:
+      title: RAMS plan and quantified RAM targets
+      description: Reviews the RAMS plan and the RAM targets in the system requirements.
+      preconditions: The RAMS plan with its approval, the project schedule and the system requirements.
+      expected: The plan was approved in time and covers each phase, and the three targets are quantified.
+      steps:
+        - action: Compare the plan's approval date with the end of system definition in the schedule.
+          expected: The plan was approved first.
+        - action: Read the activities, deliverables, roles and reviews for each phase.
+          expected: Each phase has all four.
+        - action: Read the reliability, availability and maintainability targets.
+          expected: Each has a value, a unit, a formula or definition and operating conditions.
+    sv:
+      title: RAMS-plan och kvantifierade RAM-mål
+      description: Granskar RAMS-planen och RAM-målen i systemkraven.
+      preconditions: RAMS-planen med sitt godkännande, projektets tidplan och systemkraven.
+      expected: Planen godkändes i tid och omfattar varje fas, och de tre målen är kvantifierade.
+      steps:
+        - action: Jämför planens godkännandedatum med slutet av systemdefinitionen i tidplanen.
+          expected: Planen godkändes först.
+        - action: Läs aktiviteter, leveranser, roller och granskningar för varje fas.
+          expected: Varje fas har alla fyra.
+        - action: Läs målen för tillförlitlighet, tillgänglighet och underhållsmässighet.
+          expected: Vart och ett har värde, enhet, formel eller definition och driftförhållanden.
+
+  - id: SYRAMS-T02
+    priority: high
+    execution: manual
+    tags: [apportionment]
+    refs: ["IEC 61078:2016 (reliability block diagrams)"]
+    en:
+      title: Recalculation of the apportionment model
+      description: Recomputes the reliability block diagram from the subsystem targets and compares the result with the system targets.
+      preconditions: The apportionment model with subsystem targets and a reliability calculation tool.
+      expected: The recomputed system values meet the system targets.
+      steps:
+        - action: Enter the subsystem targets and the structure of the block diagram in the tool.
+          expected: The model is reproduced.
+        - action: Compute system reliability and availability.
+          expected: Both are at or better than the system targets.
+    sv:
+      title: Ny beräkning av fördelningsmodellen
+      description: Räknar om tillförlitlighetsblockdiagrammet utifrån delsystemens mål och jämför resultatet med systemets mål.
+      preconditions: Fördelningsmodellen med delsystemens mål och ett verktyg för tillförlitlighetsberäkning.
+      expected: De omräknade systemvärdena uppfyller systemets mål.
+      steps:
+        - action: Mata in delsystemens mål och blockdiagrammets struktur i verktyget.
+          expected: Modellen återskapas.
+        - action: Beräkna systemets tillförlitlighet och tillgänglighet.
+          expected: Båda är lika med eller bättre än systemets mål.
+
+  - id: SYRAMS-T03
+    priority: high
+    execution: manual
+    tags: [availability]
+    refs: ["IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)"]
+    en:
+      title: Availability report for the first year in operation
+      description: Checks the availability report and recalculates one month from the event log.
+      preconditions: The availability report for the first 12 months, the event log and the corrective action list.
+      expected: The report uses the agreed formula, the recalculation agrees, and a shortfall has an action.
+      steps:
+        - action: Read the formula and event rules used in the report.
+          expected: They match the requirement.
+        - action: Recalculate the availability of one month from the event log.
+          expected: The result is within 0.01 percentage points of the report.
+        - action: Compare the yearly result with the target.
+          expected: The target is met, or the report references an open corrective action.
+    sv:
+      title: Tillgänglighetsrapport för första driftåret
+      description: Kontrollerar tillgänglighetsrapporten och räknar om en månad ur händelseloggen.
+      preconditions: Tillgänglighetsrapporten för de första 12 månaderna, händelseloggen och listan över korrigerande åtgärder.
+      expected: Rapporten använder den överenskomna formeln, omräkningen stämmer och ett underskott har en åtgärd.
+      steps:
+        - action: Läs formeln och reglerna för händelser som rapporten använder.
+          expected: De stämmer med kravet.
+        - action: Räkna om tillgängligheten för en månad ur händelseloggen.
+          expected: Resultatet ligger inom 0,01 procentenheter från rapporten.
+        - action: Jämför årsresultatet med målet.
+          expected: Målet uppfylls, eller rapporten hänvisar till en öppen korrigerande åtgärd.
+
+  - id: SYRAMS-T04
+    priority: critical
+    execution: manual
+    tags: [hazard-log, risk-acceptance]
+    refs: ["EN 50126-1:2017 (hazard log)", "EN 50126-2:2017 (risk acceptance principles)"]
+    en:
+      title: Hazard log and risk acceptance criteria
+      description: Reviews the hazard log fields and evidence and the date and signatures of the risk acceptance criteria.
+      preconditions: The hazard log with history, the phase review dates and the risk acceptance criteria document.
+      expected: The log is complete and current, and the criteria were agreed before the first evaluation.
+      steps:
+        - action: Read the fields of each hazard and follow the evidence link of each closed hazard.
+          expected: Each hazard has the seven fields and each link leads to verification evidence.
+        - action: Compare the log history with the phase review dates.
+          expected: The log was updated at each review.
+        - action: Read the signatures, principle and date of the criteria document.
+          expected: It is signed by the owner and, where applicable, the authority, names its principle and predates the first risk evaluation.
+    sv:
+      title: Risklogg och kriterier för riskacceptans
+      description: Granskar fälten och beläggen i riskloggen och datum och underskrifter för kriterierna för riskacceptans.
+      preconditions: Riskloggen med historik, datumen för fasgranskningar och dokumentet med kriterier för riskacceptans.
+      expected: Loggen är fullständig och aktuell, och kriterierna överenskoms före den första värderingen.
+      steps:
+        - action: Läs fälten för varje riskkälla och följ belägglänken för varje stängd riskkälla.
+          expected: Varje riskkälla har de sju fälten och varje länk leder till verifieringsbelägg.
+        - action: Jämför loggens historik med datumen för fasgranskningarna.
+          expected: Loggen uppdaterades vid varje granskning.
+        - action: Läs underskrifter, princip och datum i kriteriedokumentet.
+          expected: Det är undertecknat av ägaren och, i förekommande fall, myndigheten, anger sin princip och är äldre än den första riskvärderingen.
+
+  - id: SYRAMS-T05
+    priority: critical
+    execution: manual
+    tags: [hazard-analysis, sil]
+    refs: ["IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "IEC 61508-1:2010 §7.6 (overall safety requirements allocation)"]
+    en:
+      title: Hazard analysis and SIL allocation
+      description: Reviews the hazard and risk analysis and traces the safety functions to it.
+      preconditions: The hazard and risk analysis with revisions, the change log, the safety requirements specification and the hazard log.
+      expected: The analysis was made early and kept current, and each safety function is specified and traced.
+      steps:
+        - action: Read the date and scope of the first revision of the analysis.
+          expected: It is in the concept phase and covers normal operation, faults, misuse and maintenance.
+        - action: Compare revisions with the scope and design changes in the change log.
+          expected: A revision follows each such change.
+        - action: Read each safety function in the specification and trace it to the hazard log.
+          expected: Each has safe state, response time, SIL and subsystem, and traces to a hazard.
+    sv:
+      title: Riskkällsanalys och allokering av SIL
+      description: Granskar risk- och riskkällsanalysen och spårar säkerhetsfunktionerna till den.
+      preconditions: Risk- och riskkällsanalysen med revisioner, ändringsloggen, specifikationen av säkerhetskrav och riskloggen.
+      expected: Analysen gjordes tidigt och har hållits aktuell, och varje säkerhetsfunktion är specificerad och spårad.
+      steps:
+        - action: Läs datum och omfattning för analysens första revision.
+          expected: Den ligger i konceptfasen och omfattar normal drift, fel, felanvändning och underhåll.
+        - action: Jämför revisionerna med ändringarna av omfattning och konstruktion i ändringsloggen.
+          expected: En revision följer efter varje sådan ändring.
+        - action: Läs varje säkerhetsfunktion i specifikationen och spåra den till riskloggen.
+          expected: Var och en har säkert tillstånd, reaktionstid, SIL och delsystem, och spåras till en riskkälla.
+
+  - id: SYRAMS-T06
+    priority: critical
+    execution: manual
+    tags: [hardware-integrity, common-cause-failure]
+    refs: ["IEC 61508-2:2010 §7.4.4 (hardware safety integrity architectural constraints)", "IEC 61508-2:2010 §7.4.5 (requirements for quantifying the effect of random hardware failures)", "IEC 61508-6:2010 Annex D (common cause failures)"]
+    en:
+      title: Hardware integrity figures and common cause assessment
+      description: Reviews the hardware integrity report against the SIL limits and the beta factors used.
+      preconditions: The hardware integrity report, the SIL limit tables, and the common cause assessment of each redundant architecture.
+      expected: Each function meets its SIL limits with a justified beta factor.
+      steps:
+        - action: Read mode, PFH or PFDavg, hardware fault tolerance and safe failure fraction of each safety function.
+          expected: Each value is within the limits of its SIL.
+          data: "SIL 2 high demand: PFH < 10⁻⁶ per hour"
+        - action: For each redundant architecture, compare the beta factor in the calculation with the common cause assessment.
+          expected: The assessment shows the scores and the same beta factor is used in the calculation.
+    sv:
+      title: Mått på hårdvaruintegritet och bedömning av gemensam orsak
+      description: Granskar rapporten om hårdvaruintegritet mot gränserna för SIL och de betafaktorer som används.
+      preconditions: Rapporten om hårdvaruintegritet, tabellerna med gränser för SIL och bedömningen av gemensam orsak för varje redundant arkitektur.
+      expected: Varje funktion uppfyller gränserna för sin SIL med en motiverad betafaktor.
+      steps:
+        - action: Läs driftsätt, PFH eller PFDavg, hårdvarans feltolerans och andelen säkra fel för varje säkerhetsfunktion.
+          expected: Varje värde ligger inom gränserna för dess SIL.
+          data: "SIL 2 hög belastning: PFH < 10⁻⁶ per timme"
+        - action: Jämför betafaktorn i beräkningen med bedömningen av gemensam orsak för varje redundant arkitektur.
+          expected: Bedömningen visar poängen och samma betafaktor används i beräkningen.
+
+  - id: SYRAMS-T07
+    priority: high
+    execution: manual
+    tags: [safety-software]
+    refs: ["IEC 61508-3:2010 §7 (software safety lifecycle requirements)"]
+    en:
+      title: Software techniques against the SIL tables
+      description: Compares the software safety plan with the technique tables of IEC 61508-3 and the evidence.
+      preconditions: The software safety plan, the technique tables for the SIL and the software verification evidence.
+      expected: Each highly recommended technique is applied with evidence or justified.
+      steps:
+        - action: List the highly recommended techniques for the SIL in each phase.
+          expected: The list is produced from the tables.
+        - action: For each, find the evidence of use or the justification in the plan.
+          expected: Each has evidence or a justification.
+    sv:
+      title: Programvarutekniker mot tabellerna för SIL
+      description: Jämför säkerhetsplanen för programvaran med teknikstabellerna i IEC 61508-3 och beläggen.
+      preconditions: Säkerhetsplanen för programvaran, teknikstabellerna för SIL-nivån och beläggen från verifieringen av programvaran.
+      expected: Varje starkt rekommenderad teknik är tillämpad med belägg eller motiverad.
+      steps:
+        - action: Lista de starkt rekommenderade teknikerna för SIL-nivån i varje fas.
+          expected: Listan tas fram ur tabellerna.
+        - action: Leta upp belägg för användning eller motiveringen i planen för var och en.
+          expected: Var och en har belägg eller en motivering.
+
+  - id: SYRAMS-T08
+    priority: critical
+    execution: manual
+    tags: [functional-safety-management, functional-safety-assessment]
+    refs: ["IEC 61508-1:2010 §6 (management of functional safety)", "IEC 61508-1:2010 §8 (functional safety assessment)"]
+    en:
+      title: Functional safety roles, competence and assessment
+      description: Reviews the functional safety plan, the competence records and the assessment report.
+      preconditions: The functional safety plan, the competence records, the assessment report, the design team list and the date of entry into service.
+      expected: Roles are filled by competent persons, and the assessment is independent enough and on time.
+      steps:
+        - action: Read the person named for each activity and their competence record.
+          expected: Each activity has a person whose record covers the SIL and the technology.
+        - action: Compare the assessor and organisation with the design team, and read the stated independence level.
+          expected: The independence matches the highest SIL, with an independent organisation for SIL 3 and 4.
+        - action: Compare the report date with entry into service and read its open findings.
+          expected: The report predates entry into service and no open finding blocks it.
+    sv:
+      title: Roller, kompetens och bedömning för funktionssäkerhet
+      description: Granskar planen för funktionssäkerhet, kompetensposterna och bedömningsrapporten.
+      preconditions: Planen för funktionssäkerhet, kompetensposterna, bedömningsrapporten, listan över konstruktionsteamet och datum för driftstart.
+      expected: Rollerna innehas av kompetenta personer, och bedömningen är tillräckligt oberoende och i tid.
+      steps:
+        - action: Läs den person som anges för varje aktivitet och personens kompetenspost.
+          expected: Varje aktivitet har en person vars post omfattar SIL-nivån och tekniken.
+        - action: Jämför bedömare och organisation med konstruktionsteamet och läs den angivna nivån av oberoende.
+          expected: Oberoendet motsvarar den högsta SIL-nivån, med en oberoende organisation för SIL 3 och 4.
+        - action: Jämför rapportens datum med driftstarten och läs dess öppna fynd.
+          expected: Rapporten är äldre än driftstarten och inget öppet fynd hindrar den.
+
+  - id: SYRAMS-T09
+    priority: critical
+    execution: manual
+    tags: [safety-case]
+    refs: ["EN 50126-1:2017 (safety case)", "EN 50129:2018 (safety case for safety-related electronic systems)"]
+    en:
+      title: Safety case content and acceptance
+      description: Reviews the structure, references and acceptance of the safety case.
+      preconditions: The safety case, the hazard log, the verification and validation reports, the assessment report and the date of entry into service.
+      expected: The safety case is complete and was accepted before entry into service.
+      steps:
+        - action: Read the stated application and its conditions.
+          expected: Both are stated.
+        - action: Follow the references to the hazard log, the verification and validation evidence and the assessment report.
+          expected: Each reference leads to the current version of the document.
+        - action: Read the owner's acceptance and its date.
+          expected: The acceptance is signed and dated before entry into service.
+    sv:
+      title: Säkerhetsbevisningens innehåll och godkännande
+      description: Granskar säkerhetsbevisningens struktur, hänvisningar och godkännande.
+      preconditions: Säkerhetsbevisningen, riskloggen, rapporterna från verifiering och validering, bedömningsrapporten och datum för driftstart.
+      expected: Säkerhetsbevisningen är fullständig och godkändes före driftstarten.
+      steps:
+        - action: Läs den angivna tillämpningen och dess villkor.
+          expected: Båda anges.
+        - action: Följ hänvisningarna till riskloggen, beläggen från verifiering och validering och bedömningsrapporten.
+          expected: Varje hänvisning leder till den aktuella versionen av dokumentet.
+        - action: Läs ägarens godkännande och dess datum.
+          expected: Godkännandet är undertecknat och daterat före driftstarten.
+
+  - id: SYRAMS-T10
+    priority: critical
+    execution: manual
+    tags: [modification]
+    refs: ["IEC 61508-1:2010 §7.16 (overall modification and retrofit)"]
+    en:
+      title: Safety impact analyses of modifications
+      description: Reviews the modifications of the last 24 months and their safety analyses.
+      preconditions: The modification log of the last 24 months, the impact analyses and the approvals.
+      expected: Each modification has an analysis, a decision on repeated activities and an approval before implementation.
+      steps:
+        - action: Match each modification with an impact analysis.
+          expected: Each has one covering the hazard log and the safety functions.
+        - action: Read the repeated activities and the approval of each.
+          expected: Each lists the repeated activities and has an approval dated before implementation.
+    sv:
+      title: Konsekvensanalyser för säkerheten vid ändringar
+      description: Granskar ändringarna de senaste 24 månaderna och deras säkerhetsanalyser.
+      preconditions: Ändringsloggen för de senaste 24 månaderna, konsekvensanalyserna och godkännandena.
+      expected: Varje ändring har en analys, ett beslut om upprepade aktiviteter och ett godkännande före genomförandet.
+      steps:
+        - action: Para ihop varje ändring med en konsekvensanalys.
+          expected: Var och en har en analys som omfattar riskloggen och säkerhetsfunktionerna.
+        - action: Läs de upprepade aktiviteterna och godkännandet för var och en.
+          expected: Var och en anger de upprepade aktiviteterna och har ett godkännande daterat före genomförandet.
+
+  - id: SYRAMS-T11
+    priority: high
+    execution: manual
+    tags: [proof-test]
+    refs: ["IEC 61511-1:2016 §16.3 (proof testing and inspection)"]
+    en:
+      title: Proof test intervals and results
+      description: Compares the proof test records of each safety function with the interval used in its calculation.
+      preconditions: The proof test intervals from the failure probability calculations, the proof test records and the repair records.
+      expected: Each function was tested within its interval and each failure found was repaired.
+      steps:
+        - action: For each safety function, compute the gaps between consecutive proof tests.
+          expected: No gap exceeds the calculated interval.
+        - action: Read the results and match each failure found with a repair record.
+          expected: Each test has a result and each failure has a repair record.
+    sv:
+      title: Intervall och resultat för funktionsprov
+      description: Jämför protokollen från funktionsprov för varje säkerhetsfunktion med det intervall som används i dess beräkning.
+      preconditions: Intervallen för funktionsprov ur beräkningarna av felsannolikhet, protokollen från funktionsprov och reparationsprotokollen.
+      expected: Varje funktion provades inom sitt intervall och varje funnet fel reparerades.
+      steps:
+        - action: Beräkna mellanrummen mellan funktionsprov i följd för varje säkerhetsfunktion.
+          expected: Inget mellanrum överstiger det beräknade intervallet.
+        - action: Läs resultaten och para ihop varje funnet fel med ett reparationsprotokoll.
+          expected: Varje prov har ett resultat och varje fel har ett reparationsprotokoll.
+
+  - id: SYRAMS-T12
+    priority: medium
+    execution: manual
+    tags: [fault-tree]
+    refs: ["IEC 61025:2006 (fault tree analysis)"]
+    en:
+      title: Fault trees of the highest-severity hazards
+      description: Checks that each highest-severity hazard has a fault tree and reviews its single points of failure.
+      preconditions: The hazard log, the fault tree analyses and the FMECA of the replaceable units.
+      expected: Each such hazard has a fault tree, and each first-order cut set is justified.
+      steps:
+        - action: Filter the hazard log on the highest severity and find the fault tree of each.
+          expected: Each has a fault tree with minimal cut sets and a top event probability.
+        - action: List the minimal cut sets of order one.
+          expected: Each has a recorded justification.
+    sv:
+      title: Felträd för riskkällorna med högsta allvarlighetsgrad
+      description: Kontrollerar att varje riskkälla med högsta allvarlighetsgrad har ett felträd och granskar dess enskilda felpunkter.
+      preconditions: Riskloggen, felträdsanalyserna och FMECA för de utbytbara enheterna.
+      expected: Varje sådan riskkälla har ett felträd, och varje snittmängd av första ordningen är motiverad.
+      steps:
+        - action: Filtrera riskloggen på högsta allvarlighetsgrad och leta upp felträdet för var och en.
+          expected: Var och en har ett felträd med minimala snittmängder och en sannolikhet för topphändelsen.
+        - action: Lista de minimala snittmängderna av ordning ett.
+          expected: Var och en har en registrerad motivering.

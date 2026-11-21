@@ -105,8 +105,14 @@ func (c *Catalog) OrderedAreas() []*Area {
 
 // Filter selects catalogue items. Every field is a comma-separated list of
 // accepted values ("" = any); Q is free text whose words must all occur.
+//
+// Source selects items by the reference sources they cite (sources.yaml):
+// a requirement whose refs cite one of them, a test that cites one or
+// verifies such a requirement.
 type Filter struct {
 	Area, Group, Type, Obligation, Priority, Tag, Execution string
+	Catalogue                                               string
+	Source                                                  string
 	Q                                                       string
 }
 
@@ -115,11 +121,13 @@ type ReqSummary struct {
 	ID          string   `json:"id"`
 	Area        string   `json:"area"`
 	Group       string   `json:"group"`
+	Catalogue   string   `json:"catalogue"`
 	Type        string   `json:"type"`
 	Obligation  string   `json:"obligation"`
 	Priority    string   `json:"priority"`
 	Tags        []string `json:"tags"`
 	Refs        []string `json:"refs"`
+	Sources     []string `json:"sources"`
 	Tests       []string `json:"tests"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
@@ -130,10 +138,12 @@ type TestSummary struct {
 	ID           string   `json:"id"`
 	Area         string   `json:"area"`
 	Group        string   `json:"group"`
+	Catalogue    string   `json:"catalogue"`
 	Priority     string   `json:"priority"`
 	Execution    string   `json:"execution"`
 	Tags         []string `json:"tags"`
 	Refs         []string `json:"refs"`
+	Sources      []string `json:"sources"`
 	Requirements []string `json:"requirements"`
 	Steps        int      `json:"steps"`
 	Title        string   `json:"title"`
@@ -150,23 +160,23 @@ func nonNil(s []string) []string {
 // SummarizeRequirement returns r in lang.
 func (c *Catalog) SummarizeRequirement(r *Requirement, lang string) ReqSummary {
 	x := r.Localized(lang)
-	g := ""
+	g, k := "", ""
 	if a := c.Area(r.Area); a != nil {
-		g = a.Group
+		g, k = a.Group, a.Catalogue
 	}
-	return ReqSummary{ID: r.ID, Area: r.Area, Group: g, Type: r.Type, Obligation: r.Obligation, Priority: r.Priority,
-		Tags: nonNil(r.Tags), Refs: nonNil(r.Refs), Tests: nonNil(r.Tests), Title: x.Title, Description: x.Description}
+	return ReqSummary{ID: r.ID, Area: r.Area, Group: g, Catalogue: k, Type: r.Type, Obligation: r.Obligation, Priority: r.Priority,
+		Tags: nonNil(r.Tags), Refs: nonNil(r.Refs), Sources: nonNil(r.Sources), Tests: nonNil(r.Tests), Title: x.Title, Description: x.Description}
 }
 
 // SummarizeTest returns t in lang.
 func (c *Catalog) SummarizeTest(t *Test, lang string) TestSummary {
 	x := t.Localized(lang)
-	g := ""
+	g, k := "", ""
 	if a := c.Area(t.Area); a != nil {
-		g = a.Group
+		g, k = a.Group, a.Catalogue
 	}
-	return TestSummary{ID: t.ID, Area: t.Area, Group: g, Priority: t.Priority, Execution: t.Execution,
-		Tags: nonNil(t.Tags), Refs: nonNil(t.Refs), Requirements: nonNil(t.Requirements), Steps: len(x.Steps), Title: x.Title, Description: x.Description}
+	return TestSummary{ID: t.ID, Area: t.Area, Group: g, Catalogue: k, Priority: t.Priority, Execution: t.Execution,
+		Tags: nonNil(t.Tags), Refs: nonNil(t.Refs), Sources: nonNil(t.Sources), Requirements: nonNil(t.Requirements), Steps: len(x.Steps), Title: x.Title, Description: x.Description}
 }
 
 // set parses a comma-separated filter value (nil = any).
@@ -258,6 +268,7 @@ func lower(ss ...string) string { return strings.ToLower(strings.Join(ss, " ")) 
 func (c *Catalog) FindRequirements(f Filter, lang string) []ReqSummary {
 	lang = Lang(lang)
 	areas, groups, types, obl, prio, tags := set(f.Area), set(f.Group), set(f.Type), set(f.Obligation), set(f.Priority), set(f.Tag)
+	kinds, sources := set(f.Catalogue), set(f.Source)
 	terms := Terms(f.Q)
 	type hit struct {
 		s     ReqSummary
@@ -265,12 +276,12 @@ func (c *Catalog) FindRequirements(f Filter, lang string) []ReqSummary {
 	}
 	var hits []hit
 	for _, a := range c.OrderedAreas() {
-		if !accepts(areas, a.ID) || !accepts(groups, a.Group) {
+		if !accepts(areas, a.ID) || !accepts(groups, a.Group) || !accepts(kinds, a.Catalogue) {
 			continue
 		}
 		for i := range a.Requirements {
 			r := &a.Requirements[i]
-			if !accepts(types, r.Type) || !accepts(obl, r.Obligation) || !accepts(prio, r.Priority) || !acceptsAny(tags, r.Tags) {
+			if !accepts(types, r.Type) || !accepts(obl, r.Obligation) || !accepts(prio, r.Priority) || !acceptsAny(tags, r.Tags) || !acceptsAny(sources, r.Sources) {
 				continue
 			}
 			x := r.Localized(lang)
@@ -298,6 +309,7 @@ func (c *Catalog) FindRequirements(f Filter, lang string) []ReqSummary {
 func (c *Catalog) FindTests(f Filter, lang string) []TestSummary {
 	lang = Lang(lang)
 	areas, groups, prio, tags, exec := set(f.Area), set(f.Group), set(f.Priority), set(f.Tag), set(f.Execution)
+	kinds, sources := set(f.Catalogue), set(f.Source)
 	terms := Terms(f.Q)
 	type hit struct {
 		s     TestSummary
@@ -305,12 +317,12 @@ func (c *Catalog) FindTests(f Filter, lang string) []TestSummary {
 	}
 	var hits []hit
 	for _, a := range c.OrderedAreas() {
-		if !accepts(areas, a.ID) || !accepts(groups, a.Group) {
+		if !accepts(areas, a.ID) || !accepts(groups, a.Group) || !accepts(kinds, a.Catalogue) {
 			continue
 		}
 		for i := range a.Tests {
 			t := &a.Tests[i]
-			if !accepts(prio, t.Priority) || !accepts(exec, t.Execution) || !acceptsAny(tags, t.Tags) {
+			if !accepts(prio, t.Priority) || !accepts(exec, t.Execution) || !acceptsAny(tags, t.Tags) || (sources != nil && !acceptsAny(sources, c.testSources(t))) {
 				continue
 			}
 			x := t.Localized(lang)
@@ -343,6 +355,7 @@ type AreaSummary struct {
 	ID           string `json:"id"`
 	Prefix       string `json:"prefix"`
 	Group        string `json:"group"`
+	Catalogue    string `json:"catalogue"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
 	Requirements int    `json:"requirements"`
@@ -369,7 +382,7 @@ func (c *Catalog) Overview(lang string) []GroupSummary {
 			if a.Group != g.ID {
 				continue
 			}
-			as := AreaSummary{ID: a.ID, Prefix: a.Prefix, Group: a.Group, Name: a.Name.Get(lang), Description: a.Description.Get(lang),
+			as := AreaSummary{ID: a.ID, Prefix: a.Prefix, Group: a.Group, Catalogue: a.Catalogue, Name: a.Name.Get(lang), Description: a.Description.Get(lang),
 				Requirements: len(a.Requirements), Tests: len(a.Tests)}
 			gs.Areas = append(gs.Areas, as)
 			gs.Requirements += as.Requirements
@@ -377,6 +390,37 @@ func (c *Catalog) Overview(lang string) []GroupSummary {
 		}
 		if len(gs.Areas) > 0 {
 			out = append(out, gs)
+		}
+	}
+	return out
+}
+
+// KindSummary is a catalogue type with its counts.
+type KindSummary struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Areas        int    `json:"areas"`
+	Requirements int    `json:"requirements"`
+	Tests        int    `json:"tests"`
+}
+
+// KindsOverview returns the catalogue types (in order) in lang; types
+// without areas are left out.
+func (c *Catalog) KindsOverview(lang string) []KindSummary {
+	lang = Lang(lang)
+	out := []KindSummary{}
+	for _, k := range c.Kinds {
+		ks := KindSummary{ID: k.ID, Name: k.Name.Get(lang), Description: k.Description.Get(lang)}
+		for _, a := range c.Areas {
+			if a.Catalogue == k.ID {
+				ks.Areas++
+				ks.Requirements += len(a.Requirements)
+				ks.Tests += len(a.Tests)
+			}
+		}
+		if ks.Areas > 0 {
+			out = append(out, ks)
 		}
 	}
 	return out

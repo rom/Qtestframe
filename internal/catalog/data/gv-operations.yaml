@@ -1,0 +1,742 @@
+area: gv-operations
+prefix: GVOP
+group: operations
+catalogue: governance
+name: {en: Operations management, sv: Driftstyrning}
+description:
+  en: Operational acceptance, runbooks, shift handover and the operations log, alarm handling by operators, change windows, staffing and operational indicators for a delivered solution.
+  sv: Driftgodkännande, driftinstruktioner, skiftöverlämning och driftlogg, operatörernas larmhantering, ändringsfönster, bemanning och nyckeltal för driften av en levererad lösning.
+
+requirements:
+  - id: GVOP-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [operational-acceptance, transition]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.2 (service design and transition)", "ITIL 4 Service validation and testing"]
+    tests: [GVOP-T01]
+    en:
+      title: Operational acceptance before taking over operation
+      description: The operations organisation MUST sign an operational acceptance, based on an agreed checklist, before a new or changed system enters operation.
+      rationale: Taking over a system without runbooks, monitoring or trained staff moves the project's open issues into operations as incidents.
+      criteria:
+        - method: review
+          text: Each system that entered operation in the last 12 months has a signed acceptance record in which every checklist item is marked as met or has an approved deviation.
+    sv:
+      title: Driftgodkännande före driftövertagande
+      description: Driftorganisationen SKA underteckna ett driftgodkännande utifrån en överenskommen checklista innan ett nytt eller ändrat system tas i drift.
+      rationale: Att ta över ett system utan driftinstruktioner, övervakning eller utbildad personal flyttar projektets öppna frågor till driften i form av incidenter.
+      criteria:
+        - method: review
+          text: Varje system som har tagits i drift under de senaste 12 månaderna har ett undertecknat godkännande där varje punkt i checklistan är markerad som uppfylld eller har ett godkänt avsteg.
+
+  - id: GVOP-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [runbook]
+    refs: ["ISO/IEC 27001:2022 A.5.37", "ITIL 4 Knowledge management"]
+    tests: [GVOP-T02]
+    en:
+      title: Runbook for each recurring operational task
+      description: Each recurring operational task MUST have a runbook that states the prerequisites, the numbered steps, the check of the result, the rollback and the contacts for escalation.
+      rationale: Written procedures make routine work repeatable regardless of who is on shift, and they shorten the time to train new operators.
+      criteria:
+        - method: inspection
+          text: Each task in the list of recurring operational tasks has a runbook with all five parts.
+    sv:
+      title: Driftinstruktion för varje återkommande driftuppgift
+      description: Varje återkommande driftuppgift SKA ha en driftinstruktion som anger förutsättningar, numrerade steg, kontroll av resultatet, återställning och kontaktvägar för eskalering.
+      rationale: Skrivna instruktioner gör rutinarbetet upprepbart oavsett vem som har skiftet, och de förkortar tiden det tar att lära upp nya operatörer.
+      criteria:
+        - method: inspection
+          text: Varje uppgift i listan över återkommande driftuppgifter har en driftinstruktion med alla fem delarna.
+
+  - id: GVOP-03
+    type: business
+    obligation: should
+    priority: medium
+    tags: [runbook, review]
+    refs: ["ISO/IEC 27001:2022 A.5.37"]
+    tests: [GVOP-T02]
+    en:
+      title: Runbook review every 12 months
+      description: The owner of each runbook SHOULD review it at least once every 12 months and within 10 working days after it was found wrong during use.
+      rationale: Systems change faster than their procedures; a runbook that is out of date can do more harm than none.
+      criteria:
+        - method: review
+          text: Each runbook has a review date less than 12 months old, and each reported runbook error of the last 12 months was corrected within 10 working days.
+          threshold: "≤ 12 months; ≤ 10 working days after an error"
+    sv:
+      title: Granskning av driftinstruktioner var 12:e månad
+      description: Ägaren till varje driftinstruktion BÖR granska den minst en gång var 12:e månad och inom 10 arbetsdagar efter att den visat sig vara fel vid användning.
+      rationale: System ändras snabbare än sina instruktioner; en inaktuell driftinstruktion kan göra mer skada än ingen alls.
+      criteria:
+        - method: review
+          text: Varje driftinstruktion har ett granskningsdatum som är yngre än 12 månader, och varje rapporterat fel i en driftinstruktion under de senaste 12 månaderna rättades inom 10 arbetsdagar.
+          threshold: "≤ 12 månader; ≤ 10 arbetsdagar efter ett fel"
+
+  - id: GVOP-04
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [runbook, dry-run]
+    refs: ["ISO/IEC 27001:2022 A.5.37"]
+    tests: [GVOP-T03]
+    en:
+      title: Runbook usable by an operator new to the task
+      description: An operator who has not done the task before SHOULD complete a critical runbook in a dry run using only the runbook and the access granted to the role.
+      rationale: A runbook that only its author can follow fails exactly when the author is unavailable.
+      criteria:
+        - method: demonstration
+          text: An operator new to the task completes the runbook in a test environment without help, and each question raised is recorded as a runbook change.
+    sv:
+      title: Driftinstruktion som fungerar för en ny operatör
+      description: En operatör som inte har utfört uppgiften tidigare BÖR genomföra en kritisk driftinstruktion i en övning med bara driftinstruktionen och rollens behörigheter.
+      rationale: En driftinstruktion som bara författaren kan följa fungerar inte just när författaren inte är tillgänglig.
+      criteria:
+        - method: demonstration
+          text: En operatör som är ny för uppgiften genomför instruktionen i en testmiljö utan hjälp, och varje fråga som uppstår registreras som en ändring av instruktionen.
+
+  - id: GVOP-05
+    type: business
+    obligation: must
+    priority: high
+    tags: [shift-handover]
+    refs: []
+    tests: [GVOP-T04]
+    en:
+      title: Written shift handover
+      description: The outgoing operator MUST record a shift handover that lists the active alarms, the ongoing work, the deviations from normal operation and the activities planned for the next shift.
+      rationale: Most information lost between shifts is lost in spoken handovers; a written structure makes the gaps visible.
+      criteria:
+        - method: inspection
+          text: For each shift of the last 14 days there is a handover record with all four sections filled in or marked as empty.
+          threshold: "4 sections"
+    sv:
+      title: Skriftlig skiftöverlämning
+      description: Den avgående operatören SKA dokumentera en skiftöverlämning som anger aktiva larm, pågående arbeten, avvikelser från normal drift och de aktiviteter som är planerade för nästa skift.
+      rationale: Det mesta som går förlorat mellan skift går förlorat vid muntliga överlämningar; en skriftlig struktur synliggör luckorna.
+      criteria:
+        - method: inspection
+          text: För varje skift under de senaste 14 dagarna finns en överlämning där alla fyra avsnitten är ifyllda eller markerade som tomma.
+          threshold: "4 avsnitt"
+
+  - id: GVOP-06
+    type: business
+    obligation: must
+    priority: high
+    tags: [shift-handover, acknowledgement]
+    refs: []
+    tests: [GVOP-T04]
+    en:
+      title: Incoming operator acknowledges the handover
+      description: The incoming operator MUST acknowledge the handover record before the outgoing operator leaves the shift.
+      rationale: The acknowledgement shows that responsibility has actually passed and gives a moment to ask questions.
+      criteria:
+        - method: inspection
+          text: Each handover record of the last 14 days has an acknowledgement by the incoming operator with a time before the end of the outgoing shift.
+    sv:
+      title: Tillträdande operatör kvitterar överlämningen
+      description: Den tillträdande operatören SKA kvittera överlämningen innan den avgående operatören lämnar skiftet.
+      rationale: Kvitteringen visar att ansvaret verkligen har gått över och ger ett tillfälle att ställa frågor.
+      criteria:
+        - method: inspection
+          text: Varje överlämning under de senaste 14 dagarna har en kvittering av den tillträdande operatören med en tidpunkt före slutet av det avgående skiftet.
+
+  - id: GVOP-07
+    type: business
+    obligation: should
+    priority: medium
+    tags: [operations-log]
+    refs: ["ISO/IEC 27001:2022 A.5.37"]
+    tests: [GVOP-T05]
+    en:
+      title: Operations log kept for 12 months
+      description: The operations log SHOULD record each operator action on a production system with time, operator identity and the reason, and keep the entries for 12 months.
+      rationale: A log of who did what and why is the first source when an incident or an audit asks what happened.
+      criteria:
+        - method: inspection
+          text: Log entries from 12 months ago can be retrieved, and each entry in a sample of 20 has a time, an operator identity and a reason.
+          threshold: "12 months"
+    sv:
+      title: Driftlogg som sparas i 12 månader
+      description: Driftloggen BÖR registrera varje operatörsåtgärd i ett produktionssystem med tidpunkt, operatörens identitet och orsak och spara posterna i 12 månader.
+      rationale: En logg över vem som gjorde vad och varför är den första källan när en incident eller en revision frågar vad som hände.
+      criteria:
+        - method: inspection
+          text: Loggposter från 12 månader tillbaka kan hämtas, och varje post i ett urval av 20 har tidpunkt, operatörens identitet och orsak.
+          threshold: "12 månader"
+
+  - id: GVOP-08
+    type: performance
+    obligation: must
+    priority: critical
+    tags: [alarm-handling, response-time]
+    refs: ["IEC 62682:2022", "ANSI/ISA-18.2-2016"]
+    tests: [GVOP-T06]
+    en:
+      title: Response procedure and time per alarm priority
+      description: The alarm philosophy MUST define a response procedure for each alarm priority and an acknowledgement time of at most 10 minutes for the highest priority.
+      rationale: Operators act faster and more consistently when each priority has a known meaning and a known expected response.
+      criteria:
+        - method: review
+          text: The alarm philosophy lists each priority with a response procedure and an acknowledgement time, and the time for the highest priority is 10 minutes or less.
+          threshold: "≤ 10 min for the highest priority"
+    sv:
+      title: Åtgärdsrutin och svarstid per larmprioritet
+      description: Larmfilosofin SKA fastställa en åtgärdsrutin för varje larmprioritet och en kvitteringstid på högst 10 minuter för den högsta prioriteten.
+      rationale: Operatörer agerar snabbare och mer enhetligt när varje prioritet har en känd innebörd och en känd förväntad åtgärd.
+      criteria:
+        - method: review
+          text: Larmfilosofin anger varje prioritet med åtgärdsrutin och kvitteringstid, och tiden för den högsta prioriteten är högst 10 minuter.
+          threshold: "≤ 10 min för högsta prioriteten"
+
+  - id: GVOP-09
+    type: performance
+    obligation: should
+    priority: high
+    tags: [alarm-handling, alarm-rate]
+    refs: ["IEC 62682:2022", "ANSI/ISA-18.2-2016"]
+    tests: [GVOP-T07]
+    en:
+      title: Alarm rate per operator
+      description: The average alarm rate SHOULD stay at or below 6 alarms per hour per operator position, measured over each month.
+      rationale: Operators who receive more alarms than they can assess start to ignore them, and the important ones are lost in the flood.
+      criteria:
+        - method: analysis
+          text: The monthly alarm statistics of the last 3 months show an average of 6 or fewer alarms per hour per operator position.
+          threshold: "≤ 6 alarms per hour"
+    sv:
+      title: Larmfrekvens per operatör
+      description: Den genomsnittliga larmfrekvensen BÖR ligga på högst 6 larm per timme och operatörsplats, mätt per månad.
+      rationale: Operatörer som får fler larm än de hinner bedöma börjar ignorera dem, och de viktiga larmen drunknar i flödet.
+      criteria:
+        - method: analysis
+          text: Månadsstatistiken för larm under de senaste 3 månaderna visar i genomsnitt högst 6 larm per timme och operatörsplats.
+          threshold: "≤ 6 larm per timme"
+
+  - id: GVOP-10
+    type: business
+    obligation: should
+    priority: medium
+    tags: [alarm-handling, standing-alarms]
+    refs: ["IEC 62682:2022"]
+    tests: [GVOP-T07]
+    en:
+      title: Weekly review of standing alarms
+      description: The operations team SHOULD review each alarm that has been active for more than 24 hours once a week and record a decision for it.
+      rationale: Alarms that stay active become background noise and hide new conditions on the same equipment.
+      criteria:
+        - method: review
+          text: The weekly review records of the last 4 weeks list each alarm active for more than 24 hours with a decision.
+          threshold: "> 24 hours; weekly"
+    sv:
+      title: Veckovis genomgång av stående larm
+      description: Driftteamet BÖR en gång i veckan gå igenom varje larm som har varit aktivt i mer än 24 timmar och dokumentera ett beslut för det.
+      rationale: Larm som förblir aktiva blir bakgrundsbrus och döljer nya tillstånd i samma utrustning.
+      criteria:
+        - method: review
+          text: Protokollen från de veckovisa genomgångarna under de senaste 4 veckorna anger varje larm som varit aktivt i mer än 24 timmar med ett beslut.
+          threshold: "> 24 timmar; varje vecka"
+
+  - id: GVOP-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [alarm-handling, shelving]
+    refs: ["IEC 62682:2022", "ANSI/ISA-18.2-2016"]
+    tests: [GVOP-T08]
+    en:
+      title: Shelved alarms with reason and expiry
+      description: Each shelved or suppressed alarm MUST be recorded with the operator, the reason and an expiry time of at most 8 hours.
+      rationale: Alarms that are switched off and forgotten remove protection without anyone noticing.
+      criteria:
+        - method: test
+          text: Shelving an alarm without a reason is refused, and a shelved alarm returns to active state when its expiry time of at most 8 hours has passed.
+          threshold: "≤ 8 hours"
+    sv:
+      title: Bortkopplade larm med orsak och sluttid
+      description: Varje tillfälligt bortkopplat eller undertryckt larm SKA registreras med operatör, orsak och en sluttid på högst 8 timmar.
+      rationale: Larm som kopplas bort och glöms tar bort skyddet utan att någon märker det.
+      criteria:
+        - method: test
+          text: Att koppla bort ett larm utan orsak avvisas, och ett bortkopplat larm blir aktivt igen när sluttiden på högst 8 timmar har passerat.
+          threshold: "≤ 8 timmar"
+
+  - id: GVOP-12
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [change-window, change-management]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC 27001:2022 A.8.32", "ISO/IEC 20000-1:2018 §8.5.1 (change management)"]
+    tests: [GVOP-T09]
+    en:
+      title: Normal changes only in agreed change windows
+      description: The operations organisation MUST carry out normal changes to production systems only within the change windows agreed with the service owner.
+      rationale: Agreed windows put planned disruption where the business can tolerate it and keep staff available to roll back.
+      criteria:
+        - method: analysis
+          text: Each normal change completed in the last 3 months has a start and end time inside an agreed change window.
+    sv:
+      title: Normala ändringar bara i överenskomna ändringsfönster
+      description: Driftorganisationen SKA genomföra normala ändringar i produktionssystem enbart inom de ändringsfönster som är överenskomna med tjänsteägaren.
+      rationale: Överenskomna fönster lägger planerade störningar där verksamheten tål dem och säkerställer att personal finns till hands för återställning.
+      criteria:
+        - method: analysis
+          text: Varje normal ändring som har slutförts under de senaste 3 månaderna har start- och sluttid inom ett överenskommet ändringsfönster.
+
+  - id: GVOP-13
+    type: business
+    obligation: should
+    priority: medium
+    tags: [change-window, change-calendar]
+    refs: ["ITIL 4 Change enablement"]
+    tests: [GVOP-T09]
+    en:
+      title: Change calendar for the next 4 weeks
+      description: The operations organisation SHOULD publish a change calendar that shows the approved changes of the next 4 weeks to the service owners and the service desk.
+      rationale: A shared calendar exposes clashes between changes and lets the service desk prepare for questions on the day.
+      criteria:
+        - method: inspection
+          text: The published calendar shows each approved change with a planned date in the next 4 weeks, and the service owners and the service desk have read access to it.
+          threshold: "4 weeks ahead"
+    sv:
+      title: Ändringskalender för de kommande 4 veckorna
+      description: Driftorganisationen BÖR publicera en ändringskalender som visar de godkända ändringarna för de kommande 4 veckorna för tjänsteägarna och servicedesken.
+      rationale: En gemensam kalender synliggör krockar mellan ändringar och låter servicedesken förbereda sig för frågor under dagen.
+      criteria:
+        - method: inspection
+          text: Den publicerade kalendern visar varje godkänd ändring med planerat datum inom de kommande 4 veckorna, och tjänsteägarna och servicedesken har läsbehörighet till den.
+          threshold: "4 veckor framåt"
+
+  - id: GVOP-14
+    type: security
+    obligation: must
+    priority: high
+    tags: [emergency-change, change-management]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC 27001:2022 A.8.32"]
+    tests: [GVOP-T10]
+    en:
+      title: Approval and follow-up of emergency changes
+      description: Each emergency change outside a change window MUST have the approval of the on-call change authority before it starts and a review within 5 working days after it.
+      rationale: Emergency changes bypass normal checks, so they need a named approver and a look back to stop them becoming a shortcut.
+      criteria:
+        - method: review
+          text: Each emergency change of the last 6 months has an approval time before its start time and a review record within 5 working days.
+          threshold: "≤ 5 working days"
+    sv:
+      title: Godkännande och uppföljning av akuta ändringar
+      description: Varje akut ändring utanför ett ändringsfönster SKA ha ett godkännande av ändringsansvarig i beredskap innan den påbörjas och en uppföljning inom 5 arbetsdagar efteråt.
+      rationale: Akuta ändringar går förbi de normala kontrollerna, så de behöver en namngiven godkännare och en uppföljning för att inte bli en genväg.
+      criteria:
+        - method: review
+          text: Varje akut ändring under de senaste 6 månaderna har ett godkännande före starttiden och en dokumenterad uppföljning inom 5 arbetsdagar.
+          threshold: "≤ 5 arbetsdagar"
+
+  - id: GVOP-15
+    type: business
+    obligation: should
+    priority: medium
+    tags: [kpi, service-reporting]
+    refs: ["ITIL 4 Measurement and reporting", "ISO/IEC 20000-1:2018 §9.4 (service reporting)"]
+    tests: [GVOP-T11]
+    en:
+      title: Monthly operational indicators
+      description: The operations manager SHOULD report availability, number of incidents per priority, mean time to restore and change success rate to the service owner every month.
+      rationale: A fixed set of operational indicators lets the service owner see trends and agree on actions with operations.
+      criteria:
+        - method: review
+          text: Each monthly report of the last 6 months contains the four indicators with their target values.
+          threshold: "4 indicators per month"
+    sv:
+      title: Nyckeltal för driften varje månad
+      description: Driftchefen BÖR varje månad rapportera tillgänglighet, antal incidenter per prioritet, medeltid för återställning och andel lyckade ändringar till tjänsteägaren.
+      rationale: En fast uppsättning nyckeltal för driften låter tjänsteägaren se trender och komma överens med driften om åtgärder.
+      criteria:
+        - method: review
+          text: Varje månadsrapport för de senaste 6 månaderna innehåller de fyra nyckeltalen med sina målvärden.
+          threshold: "4 nyckeltal per månad"
+
+  - id: GVOP-16
+    type: business
+    obligation: should
+    priority: medium
+    tags: [operations-review, service-level]
+    refs: ["ITIL 4 Service level management"]
+    tests: [GVOP-T11]
+    en:
+      title: Monthly operations review with the service owner
+      description: The operations manager and the service owner SHOULD hold an operations review every month and record its actions with owners and due dates.
+      rationale: A regular meeting turns the indicators into decisions and keeps operations and the business aligned.
+      criteria:
+        - method: review
+          text: Minutes exist for each month of the last 6 months, and each action in them has an owner and a due date.
+    sv:
+      title: Månatlig driftuppföljning med tjänsteägaren
+      description: Driftchefen och tjänsteägaren BÖR hålla en driftuppföljning varje månad och dokumentera dess åtgärder med ägare och slutdatum.
+      rationale: Ett regelbundet möte gör om nyckeltalen till beslut och håller driften och verksamheten samordnade.
+      criteria:
+        - method: review
+          text: Det finns protokoll för varje månad under de senaste 6 månaderna, och varje åtgärd i dem har ägare och slutdatum.
+
+  - id: GVOP-17
+    type: business
+    obligation: must
+    priority: high
+    tags: [staffing, on-call]
+    refs: ["ITIL 4 Service level management"]
+    tests: [GVOP-T12]
+    en:
+      title: Staffing plan that covers the service hours
+      description: The staffing plan MUST assign a named operator or on-call person with the right competence to each hour of the agreed service hours.
+      rationale: Gaps in the roster are discovered only when something goes wrong and no one answers.
+      criteria:
+        - method: inspection
+          text: The staffing plan for the next 4 weeks has no hour within the service hours without a named person whose training record covers the service.
+          threshold: "0 uncovered hours"
+    sv:
+      title: Bemanningsplan som täcker tjänstens öppettider
+      description: Bemanningsplanen SKA tilldela en namngiven operatör eller person i beredskap med rätt kompetens till varje timme av de överenskomna servicetiderna.
+      rationale: Luckor i schemat upptäcks först när något går fel och ingen svarar.
+      criteria:
+        - method: inspection
+          text: Bemanningsplanen för de kommande 4 veckorna har ingen timme inom servicetiden utan en namngiven person vars utbildningsregister omfattar tjänsten.
+          threshold: "0 timmar utan bemanning"
+
+tests:
+  - id: GVOP-T01
+    priority: high
+    execution: manual
+    tags: [operational-acceptance]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.2 (service design and transition)"]
+    en:
+      title: Review of operational acceptance records
+      description: Checks that systems taken into operation have a signed operational acceptance.
+      preconditions: The list of systems that entered operation in the last 12 months, the acceptance checklist and the signed acceptance records.
+      expected: Every system has a signed acceptance with each checklist item met or covered by an approved deviation.
+      steps:
+        - action: Match each system in the list to an acceptance record.
+          expected: Each system has a record signed by the operations organisation before its go-live date.
+        - action: Go through the checklist items in each record.
+          expected: Each item is marked as met or refers to an approved deviation.
+    sv:
+      title: Granskning av driftgodkännanden
+      description: Kontrollerar att system som har tagits i drift har ett undertecknat driftgodkännande.
+      preconditions: Listan över system som har tagits i drift under de senaste 12 månaderna, checklistan för driftgodkännande och de undertecknade godkännandena.
+      expected: Varje system har ett undertecknat godkännande där varje punkt i checklistan är uppfylld eller täcks av ett godkänt avsteg.
+      steps:
+        - action: Koppla varje system i listan till ett godkännande.
+          expected: Varje system har ett godkännande som driftorganisationen har undertecknat före driftstarten.
+        - action: Gå igenom punkterna i checklistan i varje godkännande.
+          expected: Varje punkt är markerad som uppfylld eller hänvisar till ett godkänt avsteg.
+
+  - id: GVOP-T02
+    priority: high
+    execution: manual
+    tags: [runbook]
+    refs: ["ISO/IEC 27001:2022 A.5.37"]
+    en:
+      title: Inspection of runbooks and their reviews
+      description: Checks that each recurring task has a complete runbook that has been reviewed within the interval.
+      preconditions: The list of recurring operational tasks, the runbook library and the list of reported runbook errors of the last 12 months.
+      expected: Every task has a complete runbook reviewed within 12 months, and every reported error was corrected within 10 working days.
+      steps:
+        - action: Find the runbook for each task in the list.
+          expected: Each runbook has prerequisites, numbered steps, a result check, a rollback and escalation contacts.
+        - action: Check the review date of each runbook.
+          expected: Each review date is less than 12 months old.
+        - action: For each reported runbook error, compare the report date with the date of the corrected version.
+          expected: Each error was corrected within 10 working days.
+    sv:
+      title: Inspektion av driftinstruktioner och deras granskning
+      description: Kontrollerar att varje återkommande uppgift har en fullständig driftinstruktion som har granskats inom intervallet.
+      preconditions: Listan över återkommande driftuppgifter, samlingen av driftinstruktioner och listan över rapporterade fel i driftinstruktioner under de senaste 12 månaderna.
+      expected: Varje uppgift har en fullständig driftinstruktion som har granskats inom 12 månader, och varje rapporterat fel har rättats inom 10 arbetsdagar.
+      steps:
+        - action: Leta upp driftinstruktionen för varje uppgift i listan.
+          expected: Varje instruktion har förutsättningar, numrerade steg, kontroll av resultatet, återställning och kontaktvägar för eskalering.
+        - action: Kontrollera granskningsdatumet för varje driftinstruktion.
+          expected: Varje granskningsdatum är yngre än 12 månader.
+        - action: Jämför för varje rapporterat fel rapportdatumet med datumet för den rättade versionen.
+          expected: Varje fel har rättats inom 10 arbetsdagar.
+
+  - id: GVOP-T03
+    priority: medium
+    execution: manual
+    tags: [runbook, dry-run]
+    refs: ["ISO/IEC 27001:2022 A.5.37"]
+    en:
+      title: Dry run of a critical runbook by a new operator
+      description: Demonstrates that an operator who has not done the task before can follow a critical runbook unaided.
+      preconditions: A test environment that mirrors production, a critical runbook, and an operator with the role's access who has not done the task before.
+      expected: The operator completes the runbook without help and each question raised becomes a runbook change.
+      steps:
+        - action: Give the operator the runbook and ask them to carry it out in the test environment while an observer notes questions and stops.
+          expected: The operator completes all steps and the result check passes.
+        - action: Compare the observer's notes with the change requests for the runbook.
+          expected: Each question or stop is recorded as a change request.
+    sv:
+      title: Övning av en kritisk driftinstruktion med en ny operatör
+      description: Visar att en operatör som inte har utfört uppgiften tidigare kan följa en kritisk driftinstruktion utan hjälp.
+      preconditions: En testmiljö som motsvarar produktion, en kritisk driftinstruktion och en operatör med rollens behörigheter som inte har utfört uppgiften tidigare.
+      expected: Operatören genomför driftinstruktionen utan hjälp och varje fråga som uppstår blir en ändring av instruktionen.
+      steps:
+        - action: Ge operatören driftinstruktionen och be operatören genomföra den i testmiljön medan en observatör noterar frågor och avbrott.
+          expected: Operatören genomför alla steg och kontrollen av resultatet godkänns.
+        - action: Jämför observatörens anteckningar med ändringsbegärandena för driftinstruktionen.
+          expected: Varje fråga eller avbrott är registrerat som ett ändringsbegärande.
+
+  - id: GVOP-T04
+    priority: high
+    execution: manual
+    tags: [shift-handover]
+    refs: []
+    en:
+      title: Inspection of shift handover records
+      description: Checks the content and acknowledgement of shift handovers over 14 days.
+      preconditions: The shift roster and the handover records of the last 14 days.
+      expected: Each shift has a complete handover record acknowledged by the incoming operator before the end of the outgoing shift.
+      steps:
+        - action: Match each shift in the roster to a handover record.
+          expected: Each shift has a record.
+        - action: Check the four sections of each record.
+          expected: Active alarms, ongoing work, deviations and planned activities are each filled in or marked as empty.
+        - action: Compare the acknowledgement time of each record with the end of the outgoing shift.
+          expected: Each record was acknowledged by the incoming operator before the outgoing shift ended.
+    sv:
+      title: Inspektion av skiftöverlämningar
+      description: Kontrollerar innehåll och kvittering av skiftöverlämningar under 14 dagar.
+      preconditions: Skiftschemat och överlämningarna för de senaste 14 dagarna.
+      expected: Varje skift har en fullständig överlämning som har kvitterats av den tillträdande operatören före slutet av det avgående skiftet.
+      steps:
+        - action: Koppla varje skift i schemat till en överlämning.
+          expected: Varje skift har en överlämning.
+        - action: Kontrollera de fyra avsnitten i varje överlämning.
+          expected: Aktiva larm, pågående arbeten, avvikelser och planerade aktiviteter är vart och ett ifyllt eller markerat som tomt.
+        - action: Jämför tidpunkten för kvitteringen av varje överlämning med slutet av det avgående skiftet.
+          expected: Varje överlämning kvitterades av den tillträdande operatören innan det avgående skiftet slutade.
+
+  - id: GVOP-T05
+    priority: medium
+    execution: manual
+    tags: [operations-log]
+    refs: ["ISO/IEC 27001:2022 A.5.37"]
+    en:
+      title: Inspection of the operations log
+      description: Checks the content and retention of the operations log.
+      preconditions: Read access to the operations log.
+      expected: Entries from 12 months ago can be retrieved, and each sampled entry has time, operator identity and reason.
+      steps:
+        - action: Search the log for entries from the same week 12 months ago.
+          expected: Entries from that week are returned.
+        - action: Pick 20 entries from the last month and check their fields.
+          expected: Each entry has a time, an operator identity and a reason.
+          data: "Sample of 20 log entries"
+    sv:
+      title: Inspektion av driftloggen
+      description: Kontrollerar driftloggens innehåll och lagringstid.
+      preconditions: Läsbehörighet till driftloggen.
+      expected: Poster från 12 månader tillbaka kan hämtas, och varje post i urvalet har tidpunkt, operatörens identitet och orsak.
+      steps:
+        - action: Sök i loggen efter poster från samma vecka för 12 månader sedan.
+          expected: Poster från den veckan visas.
+        - action: Välj 20 poster från den senaste månaden och kontrollera deras fält.
+          expected: Varje post har tidpunkt, operatörens identitet och orsak.
+          data: "Urval av 20 loggposter"
+
+  - id: GVOP-T06
+    priority: critical
+    execution: manual
+    tags: [alarm-handling]
+    refs: ["IEC 62682:2022", "ANSI/ISA-18.2-2016"]
+    en:
+      title: Review of the alarm philosophy and a test alarm
+      description: Checks the response procedures in the alarm philosophy and the acknowledgement of a highest-priority test alarm.
+      preconditions: The alarm philosophy document, an operator on shift and an agreed way to raise a test alarm of the highest priority.
+      expected: Each priority has a response procedure and an acknowledgement time, and the test alarm is acknowledged within 10 minutes.
+      steps:
+        - action: Check that each alarm priority in the philosophy has a response procedure and an acknowledgement time.
+          expected: Each priority has both, and the highest priority has an acknowledgement time of 10 minutes or less.
+        - action: Raise a test alarm of the highest priority without warning the operator in advance and measure the time to acknowledgement.
+          expected: The operator acknowledges the alarm within 10 minutes and starts the response procedure.
+          data: "Test alarm, highest priority"
+    sv:
+      title: Granskning av larmfilosofin och ett testlarm
+      description: Kontrollerar åtgärdsrutinerna i larmfilosofin och kvitteringen av ett testlarm med högsta prioritet.
+      preconditions: Dokumentet med larmfilosofin, en operatör i tjänst och ett överenskommet sätt att utlösa ett testlarm med högsta prioritet.
+      expected: Varje prioritet har en åtgärdsrutin och en kvitteringstid, och testlarmet kvitteras inom 10 minuter.
+      steps:
+        - action: Kontrollera att varje larmprioritet i larmfilosofin har en åtgärdsrutin och en kvitteringstid.
+          expected: Varje prioritet har båda, och den högsta prioriteten har en kvitteringstid på högst 10 minuter.
+        - action: Utlös ett testlarm med högsta prioritet utan att förvarna operatören och mät tiden till kvittering.
+          expected: Operatören kvitterar larmet inom 10 minuter och påbörjar åtgärdsrutinen.
+          data: "Testlarm, högsta prioritet"
+
+  - id: GVOP-T07
+    priority: high
+    execution: manual
+    tags: [alarm-rate, standing-alarms]
+    refs: ["IEC 62682:2022"]
+    en:
+      title: Alarm rate and standing alarm review
+      description: Recalculates the alarm rate per operator position and checks the weekly reviews of standing alarms.
+      preconditions: The alarm journal of the last 3 months, the number of operator positions per shift and the weekly review records of the last 4 weeks.
+      expected: The average rate is at most 6 alarms per hour per operator position, and each alarm active for more than 24 hours has a recorded decision.
+      steps:
+        - action: For each month, divide the number of alarms by the staffed hours and the number of operator positions.
+          expected: The result is 6 or fewer alarms per hour per operator position for each month.
+        - action: List the alarms in the journal that were active for more than 24 hours during the last 4 weeks and find them in the weekly review records.
+          expected: Each such alarm appears in a review record with a decision.
+    sv:
+      title: Larmfrekvens och genomgång av stående larm
+      description: Räknar om larmfrekvensen per operatörsplats och kontrollerar de veckovisa genomgångarna av stående larm.
+      preconditions: Larmjournalen för de senaste 3 månaderna, antalet operatörsplatser per skift och protokollen från de veckovisa genomgångarna under de senaste 4 veckorna.
+      expected: Den genomsnittliga frekvensen är högst 6 larm per timme och operatörsplats, och varje larm som varit aktivt i mer än 24 timmar har ett dokumenterat beslut.
+      steps:
+        - action: Dela för varje månad antalet larm med antalet bemannade timmar och antalet operatörsplatser.
+          expected: Resultatet är högst 6 larm per timme och operatörsplats för varje månad.
+        - action: Lista larmen i journalen som var aktiva i mer än 24 timmar under de senaste 4 veckorna och leta upp dem i protokollen från de veckovisa genomgångarna.
+          expected: Varje sådant larm finns i ett protokoll med ett beslut.
+
+  - id: GVOP-T08
+    priority: high
+    execution: manual
+    tags: [shelving]
+    refs: ["IEC 62682:2022"]
+    en:
+      title: Shelving an alarm needs a reason and expires
+      description: Tests that alarm shelving records a reason and ends automatically.
+      preconditions: An alarm system in a test configuration with an active test alarm and an operator account.
+      expected: Shelving without a reason is refused, and a shelved alarm returns to active state at its expiry time.
+      steps:
+        - action: Try to shelve the test alarm without entering a reason.
+          expected: The shelving is refused with a message that a reason is needed.
+        - action: Shelve the test alarm with a reason and an expiry of 10 minutes.
+          expected: The alarm is shown as shelved with operator, reason and expiry time.
+          data: "Expiry 10 minutes"
+        - action: Try to set an expiry of 9 hours on the shelved alarm.
+          expected: The value is refused because it exceeds 8 hours.
+          data: "Expiry 9 hours"
+        - action: Wait until the expiry time of 10 minutes has passed.
+          expected: The alarm returns to active state and is shown to the operator again.
+    sv:
+      title: Bortkoppling av larm kräver orsak och upphör
+      description: Testar att bortkoppling av larm registrerar en orsak och upphör automatiskt.
+      preconditions: Ett larmsystem i testkonfiguration med ett aktivt testlarm och ett operatörskonto.
+      expected: Bortkoppling utan orsak avvisas, och ett bortkopplat larm blir aktivt igen vid sin sluttid.
+      steps:
+        - action: Försök koppla bort testlarmet utan att ange en orsak.
+          expected: Bortkopplingen avvisas med ett meddelande om att en orsak behövs.
+        - action: Koppla bort testlarmet med en orsak och en sluttid om 10 minuter.
+          expected: Larmet visas som bortkopplat med operatör, orsak och sluttid.
+          data: "Sluttid 10 minuter"
+        - action: Försök ange en sluttid på 9 timmar för det bortkopplade larmet.
+          expected: Värdet avvisas eftersom det överstiger 8 timmar.
+          data: "Sluttid 9 timmar"
+        - action: Vänta tills sluttiden på 10 minuter har passerat.
+          expected: Larmet blir aktivt igen och visas åter för operatören.
+
+  - id: GVOP-T09
+    priority: high
+    execution: manual
+    tags: [change-window]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC 27001:2022 A.8.32"]
+    en:
+      title: Changes inside windows and the change calendar
+      description: Checks that normal changes were done inside agreed windows and that the change calendar shows the coming changes.
+      preconditions: The change log of the last 3 months, the agreed change windows, the published change calendar and the list of approved changes for the next 4 weeks.
+      expected: Every normal change lies inside a window, and the calendar shows every approved change of the next 4 weeks to service owners and the service desk.
+      steps:
+        - action: Compare the start and end time of each normal change with the agreed change windows.
+          expected: Each normal change starts and ends inside a window.
+        - action: Compare the approved changes of the next 4 weeks with the entries in the published change calendar, signed in as a member of the service desk.
+          expected: Each approved change appears in the calendar with its planned date.
+    sv:
+      title: Ändringar inom fönster och ändringskalendern
+      description: Kontrollerar att normala ändringar har gjorts inom överenskomna fönster och att ändringskalendern visar de kommande ändringarna.
+      preconditions: Ändringsloggen för de senaste 3 månaderna, de överenskomna ändringsfönstren, den publicerade ändringskalendern och listan över godkända ändringar för de kommande 4 veckorna.
+      expected: Varje normal ändring ligger inom ett fönster, och kalendern visar varje godkänd ändring för de kommande 4 veckorna för tjänsteägarna och servicedesken.
+      steps:
+        - action: Jämför start- och sluttid för varje normal ändring med de överenskomna ändringsfönstren.
+          expected: Varje normal ändring börjar och slutar inom ett fönster.
+        - action: Logga in som medlem i servicedesken och jämför de godkända ändringarna för de kommande 4 veckorna med posterna i den publicerade ändringskalendern.
+          expected: Varje godkänd ändring finns i kalendern med sitt planerade datum.
+
+  - id: GVOP-T10
+    priority: high
+    execution: manual
+    tags: [emergency-change]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC 27001:2022 A.8.32"]
+    en:
+      title: Review of emergency changes
+      description: Checks approval and follow-up of emergency changes made outside a change window.
+      preconditions: The emergency changes of the last 6 months with their approval and review records.
+      expected: Each emergency change was approved before it started and reviewed within 5 working days.
+      steps:
+        - action: Compare the approval time and the start time of each emergency change.
+          expected: Each approval is earlier than the start and was given by the on-call change authority.
+        - action: Compare the end time of each emergency change with the date of its review record.
+          expected: Each review took place within 5 working days.
+    sv:
+      title: Granskning av akuta ändringar
+      description: Kontrollerar godkännande och uppföljning av akuta ändringar som har gjorts utanför ett ändringsfönster.
+      preconditions: De akuta ändringarna under de senaste 6 månaderna med dokumentation av godkännanden och uppföljningar.
+      expected: Varje akut ändring godkändes innan den påbörjades och följdes upp inom 5 arbetsdagar.
+      steps:
+        - action: Jämför tidpunkten för godkännandet med starttiden för varje akut ändring.
+          expected: Varje godkännande ligger före starten och har getts av ändringsansvarig i beredskap.
+        - action: Jämför sluttiden för varje akut ändring med datumet för dess uppföljning.
+          expected: Varje uppföljning gjordes inom 5 arbetsdagar.
+
+  - id: GVOP-T11
+    priority: medium
+    execution: manual
+    tags: [kpi, operations-review]
+    refs: ["ITIL 4 Measurement and reporting", "ITIL 4 Service level management"]
+    en:
+      title: Operational indicators and monthly review
+      description: Checks the monthly indicator reports and the minutes of the monthly operations reviews.
+      preconditions: The monthly operations reports and the minutes of the operations reviews of the last 6 months.
+      expected: Each report contains the four indicators with targets, and each month has review minutes with owned and dated actions.
+      steps:
+        - action: Open each monthly report of the last 6 months.
+          expected: Each report shows availability, incidents per priority, mean time to restore and change success rate with targets.
+        - action: Open the minutes of each monthly operations review.
+          expected: Minutes exist for each month, and each action has an owner and a due date.
+    sv:
+      title: Nyckeltal för driften och månatlig uppföljning
+      description: Kontrollerar månadsrapporterna med nyckeltal och protokollen från de månatliga driftuppföljningarna.
+      preconditions: Driftens månadsrapporter och protokollen från driftuppföljningarna under de senaste 6 månaderna.
+      expected: Varje rapport innehåller de fyra nyckeltalen med målvärden, och varje månad har ett protokoll med åtgärder som har ägare och datum.
+      steps:
+        - action: Öppna varje månadsrapport för de senaste 6 månaderna.
+          expected: Varje rapport visar tillgänglighet, incidenter per prioritet, medeltid för återställning och andel lyckade ändringar med målvärden.
+        - action: Öppna protokollet från varje månatlig driftuppföljning.
+          expected: Det finns protokoll för varje månad, och varje åtgärd har ägare och slutdatum.
+
+  - id: GVOP-T12
+    priority: high
+    execution: manual
+    tags: [staffing]
+    refs: ["ITIL 4 Service level management"]
+    en:
+      title: Inspection of the staffing plan
+      description: Checks that every hour of the service hours is covered by a named and trained person.
+      preconditions: The staffing plan for the next 4 weeks, the agreed service hours and the training records of the staff.
+      expected: Each hour within the service hours has a named person whose training record covers the service.
+      steps:
+        - action: Lay the staffing plan over the agreed service hours and mark hours without a named person.
+          expected: No hour within the service hours is without a named person.
+        - action: For each named person, check the training record for the service.
+          expected: Each person has completed the training for the service.
+    sv:
+      title: Inspektion av bemanningsplanen
+      description: Kontrollerar att varje timme av servicetiden täcks av en namngiven och utbildad person.
+      preconditions: Bemanningsplanen för de kommande 4 veckorna, de överenskomna servicetiderna och personalens utbildningsregister.
+      expected: Varje timme inom servicetiden har en namngiven person vars utbildningsregister omfattar tjänsten.
+      steps:
+        - action: Lägg bemanningsplanen över de överenskomna servicetiderna och markera timmar utan namngiven person.
+          expected: Ingen timme inom servicetiden saknar en namngiven person.
+        - action: Kontrollera utbildningsregistret för tjänsten för varje namngiven person.
+          expected: Varje person har genomgått utbildningen för tjänsten.

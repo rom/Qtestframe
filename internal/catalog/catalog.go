@@ -42,6 +42,17 @@ type Group struct {
 	Name Names  `yaml:"name" json:"name"`
 }
 
+// Kind is a type of requirement catalogue (software, hardware, building …):
+// every area belongs to one, so a hardware team can browse only what fits.
+type Kind struct {
+	ID          string `yaml:"id" json:"id"`
+	Name        Names  `yaml:"name" json:"name"`
+	Description Names  `yaml:"description" json:"description"`
+}
+
+// DefaultKind is the catalogue of an area that names none.
+const DefaultKind = "software"
+
 // Criterion is an evaluation criterion of a requirement.
 type Criterion struct {
 	Method    string `yaml:"method" json:"method"`
@@ -68,6 +79,8 @@ type Requirement struct {
 	Refs       []string           `yaml:"refs" json:"refs"`
 	Tests      []string           `yaml:"tests" json:"tests"`
 	Text       map[string]ReqText `yaml:",inline" json:"text"`
+	// Sources are the ids of the sources its refs cite (derived).
+	Sources []string `yaml:"-" json:"sources"`
 }
 
 // Step is a test step.
@@ -98,6 +111,8 @@ type Test struct {
 	// Requirements are the catalogue requirements this test verifies
 	// (derived from the requirements' tests lists).
 	Requirements []string `yaml:"-" json:"requirements"`
+	// Sources are the ids of the sources its refs cite (derived).
+	Sources []string `yaml:"-" json:"sources"`
 }
 
 // Area is a topic with its requirements and tests.
@@ -105,6 +120,7 @@ type Area struct {
 	ID           string        `yaml:"area" json:"id"`
 	Prefix       string        `yaml:"prefix" json:"prefix"`
 	Group        string        `yaml:"group" json:"group"`
+	Catalogue    string        `yaml:"catalogue" json:"catalogue"` // a Kind id; "" = DefaultKind
 	Name         Names         `yaml:"name" json:"name"`
 	Description  Names         `yaml:"description" json:"description"`
 	Requirements []Requirement `yaml:"requirements" json:"-"`
@@ -113,10 +129,18 @@ type Area struct {
 
 // Catalog is the loaded library.
 type Catalog struct {
+	Kinds        []Kind
 	Groups       []Group
 	Areas        []Area
 	Requirements map[string]*Requirement
 	Tests        map[string]*Test
+	// SourceKinds and Sources are the reference source registry
+	// (sources.yaml).
+	SourceKinds []SourceKind
+	Sources     []Source
+
+	sourceByID map[string]*Source
+	refSource  map[string]string // ref → source id ("" none)
 }
 
 var (
@@ -145,7 +169,7 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 		return nil, err
 	}
 	sort.Strings(names)
-	groups := map[string]bool{}
+	groups, kinds := map[string]bool{}, map[string]bool{}
 	for _, n := range names {
 		b, err := fs.ReadFile(fsys, n)
 		if err != nil {
@@ -164,6 +188,30 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 			}
 			continue
 		}
+		if strings.HasSuffix(n, "/catalogues.yaml") {
+			var k struct {
+				Catalogues []Kind `yaml:"catalogues"`
+			}
+			if err := strictYAML(b, &k); err != nil {
+				return nil, fmt.Errorf("%s: %w", n, err)
+			}
+			c.Kinds = k.Catalogues
+			for _, x := range k.Catalogues {
+				kinds[x.ID] = true
+			}
+			continue
+		}
+		if strings.HasSuffix(n, "/sources.yaml") {
+			var sr struct {
+				Kinds   []SourceKind `yaml:"kinds"`
+				Sources []Source     `yaml:"sources"`
+			}
+			if err := strictYAML(b, &sr); err != nil {
+				return nil, fmt.Errorf("%s: %w", n, err)
+			}
+			c.SourceKinds, c.Sources = sr.Kinds, sr.Sources
+			continue
+		}
 		var a Area
 		if err := strictYAML(b, &a); err != nil {
 			return nil, fmt.Errorf("%s: %w", n, err)
@@ -172,6 +220,20 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 	}
 	var errs []string
 	bad := func(format string, args ...any) { errs = append(errs, fmt.Sprintf(format, args...)) }
+	if len(c.Kinds) == 0 {
+		c.Kinds = []Kind{{ID: DefaultKind, Name: Names{"en": "Software", "sv": "Programvara"}}}
+		kinds[DefaultKind] = true
+	}
+	for _, k := range c.Kinds {
+		if !areaRe.MatchString(k.ID) {
+			bad("catalogue %q: invalid id", k.ID)
+		}
+		for _, l := range Languages {
+			if strings.TrimSpace(k.Name[l]) == "" {
+				bad("catalogue %s: name is needed in %s", k.ID, l)
+			}
+		}
+	}
 	areaIDs, prefixes := map[string]bool{}, map[string]bool{}
 	for i := range c.Areas {
 		a := &c.Areas[i]
@@ -185,6 +247,20 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 		prefixes[a.Prefix] = true
 		if !groups[a.Group] {
 			bad("area %s: unknown group %q", a.ID, a.Group)
+		}
+		if a.Catalogue == "" {
+			a.Catalogue = DefaultKind
+		}
+		if !kinds[a.Catalogue] {
+			bad("area %s: unknown catalogue %q", a.ID, a.Catalogue)
+		}
+		for _, n := range []Names{a.Name, a.Description} {
+			for l := range n {
+				if !slices.Contains(Languages, l) {
+					// "{en: A, B}" in YAML makes "B" a key: quote texts with commas
+					bad("area %s: unexpected key %q in a name or description (quote texts that contain a comma)", a.ID, l)
+				}
+			}
 		}
 		for _, l := range Languages {
 			if strings.TrimSpace(a.Name[l]) == "" || strings.TrimSpace(a.Description[l]) == "" {
@@ -242,10 +318,12 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 			bad("%s: verifies no requirement (list it in a requirement's tests)", t.ID)
 		}
 	}
+	c.loadSources(bad)
 	if len(errs) > 0 {
 		sort.Strings(errs)
 		return nil, fmt.Errorf("catalogue: %d problem(s):\n  %s", len(errs), strings.Join(errs, "\n  "))
 	}
+	c.resolveRefs()
 	return c, nil
 }
 

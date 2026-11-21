@@ -1,0 +1,628 @@
+area: ed-training-material
+prefix: EDTM
+group: usability
+catalogue: education
+name: {en: "Training material, e-learning and evaluation", sv: "Utbildningsmaterial, e-lärande och utvärdering"}
+description:
+  en: Training material and its maintenance, languages, accessible e-learning per WCAG 2.2, packaging for the learning platform, and evaluation of training effect at four levels following the Kirkpatrick model.
+  sv: Utbildningsmaterial och förvaltningen av det, språk, tillgängligt e-lärande enligt WCAG 2.2, paketering för lärplattformen och utvärdering av utbildningens effekt på fyra nivåer enligt Kirkpatricks modell.
+
+requirements:
+  - id: EDTM-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [training-material, course-package]
+    refs: ["ISO 29993:2017"]
+    tests: [EDTM-T01]
+    en:
+      title: Complete material package for each course
+      description: Each course MUST have a trainer guide, participant material, exercises with model answers and an assessment with its marking guide.
+      rationale: A complete package lets another trainer deliver the same course with the same result.
+      criteria:
+        - method: inspection
+          text: Each course in the training plan has the four parts in the material library.
+          threshold: "4 parts"
+    sv:
+      title: Fullständigt materialpaket för varje kurs
+      description: Varje kurs SKA ha en lärarhandledning, deltagarmaterial, övningar med lösningsförslag och ett prov med bedömningsmall.
+      rationale: Ett fullständigt paket låter en annan utbildare hålla samma kurs med samma resultat.
+      criteria:
+        - method: inspection
+          text: Varje kurs i utbildningsplanen har de fyra delarna i materialbiblioteket.
+          threshold: "4 delar"
+
+  - id: EDTM-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [training-material, version, release]
+    refs: ["ISO 9001:2026 §7.5.2"]
+    tests: [EDTM-T02]
+    en:
+      title: Material updated within 20 working days of a release
+      description: The material owner MUST update the training material within 20 working days after a release that changes a task taught in the course.
+      rationale: Training on screens and steps that no longer exist confuses participants and undermines trust in the training.
+      criteria:
+        - method: review
+          text: For each release of the last 12 months that changed a trained task, the affected material has a new version dated no more than 20 working days after the release and names the system version.
+          threshold: "≤ 20 working days"
+    sv:
+      title: Materialet uppdateras inom 20 arbetsdagar efter en release
+      description: Materialägaren SKA uppdatera utbildningsmaterialet inom 20 arbetsdagar efter en release som ändrar en uppgift som kursen lär ut.
+      rationale: Utbildning i skärmbilder och steg som inte längre finns förvirrar deltagarna och undergräver förtroendet för utbildningen.
+      criteria:
+        - method: review
+          text: För varje release under de senaste 12 månaderna som ändrade en uppgift i utbildningen har det berörda materialet en ny version daterad högst 20 arbetsdagar efter releasen som anger systemversionen.
+          threshold: "≤ 20 arbetsdagar"
+
+  - id: EDTM-03
+    type: business
+    obligation: should
+    priority: medium
+    tags: [training-material, review]
+    refs: ["ISO 9001:2026 §7.5.2"]
+    tests: [EDTM-T02]
+    en:
+      title: Named owner and yearly review of material
+      description: Each course material SHOULD have a named owner who reviews it at least once every 12 months.
+      rationale: Material without an owner is not updated, and a yearly review catches changes in practice that no release note mentions.
+      criteria:
+        - method: inspection
+          text: Each course material in the library has an owner and a review date less than 12 months old.
+          threshold: "≤ 12 months between reviews"
+    sv:
+      title: Namngiven ägare och årlig granskning av materialet
+      description: Varje kursmaterial BÖR ha en namngiven ägare som granskar det minst en gång var 12:e månad.
+      rationale: Material utan ägare uppdateras inte, och en årlig granskning fångar ändrade arbetssätt som ingen versionsinformation nämner.
+      criteria:
+        - method: inspection
+          text: Varje kursmaterial i biblioteket har en ägare och ett granskningsdatum som är yngre än 12 månader.
+          threshold: "≤ 12 månader mellan granskningarna"
+
+  - id: EDTM-04
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [language, swedish, english]
+    refs: ["Språklag (2009:600)"]
+    tests: [EDTM-T03]
+    en:
+      title: Material in Swedish and English
+      description: The participant material and the e-learning courses SHOULD be available in Swedish and in English with the same content.
+      rationale: Participants learn best in the language they work in, and mixed teams need both languages.
+      criteria:
+        - method: inspection
+          text: Each participant material and e-learning course exists in both languages, and both versions have the same version number and module structure.
+    sv:
+      title: Material på svenska och engelska
+      description: Deltagarmaterialet och e-kurserna BÖR finnas på svenska och på engelska med samma innehåll.
+      rationale: Deltagare lär sig bäst på det språk som de arbetar på, och blandade team behöver båda språken.
+      criteria:
+        - method: inspection
+          text: Varje deltagarmaterial och e-kurs finns på båda språken, och båda versionerna har samma versionsnummer och modulstruktur.
+
+  - id: EDTM-05
+    type: usability
+    obligation: must
+    priority: high
+    tags: [e-learning, accessibility, wcag]
+    refs: ["WCAG 2.2 conformance level AA", "EN 301 549 V3.2.1 clause 9", "Lag (2018:1937) om tillgänglighet till digital offentlig service"]
+    tests: [EDTM-T04]
+    en:
+      title: E-learning conforms to WCAG 2.2 level AA
+      description: Each e-learning course MUST conform to WCAG 2.2 at level AA.
+      rationale: Staff with disabilities have the same need for training, and public sector bodies are bound by accessibility law.
+      criteria:
+        - method: test
+          text: An accessibility audit of each course with automated and manual checks reports no failures against the level A and AA success criteria.
+          threshold: "0 failures at level A and AA"
+    sv:
+      title: E-kurser uppfyller WCAG 2.2 nivå AA
+      description: Varje e-kurs SKA uppfylla WCAG 2.2 på nivå AA.
+      rationale: Anställda med funktionsnedsättning har samma behov av utbildning, och offentliga aktörer omfattas av lagen om tillgänglighet.
+      criteria:
+        - method: test
+          text: En tillgänglighetsgranskning av varje kurs med automatiska och manuella kontroller rapporterar inga brister mot framgångskriterierna på nivå A och AA.
+          threshold: "0 brister på nivå A och AA"
+
+  - id: EDTM-06
+    type: usability
+    obligation: must
+    priority: high
+    tags: [e-learning, keyboard, drag-and-drop]
+    refs: ["WCAG 2.2 SC 2.1.1", "WCAG 2.2 SC 2.5.7"]
+    tests: [EDTM-T04]
+    en:
+      title: Exercises and quizzes operable by keyboard
+      description: Each interactive exercise and quiz in an e-learning course MUST be operable by keyboard alone and offer a way to answer drag-and-drop questions without dragging.
+      rationale: Interactive parts are where e-learning most often excludes keyboard and switch users, and then the course cannot be completed.
+      criteria:
+        - method: test
+          text: A tester completes each exercise and quiz with keyboard only, including each drag-and-drop question, and reaches the end of the course.
+    sv:
+      title: Övningar och frågor kan användas med tangentbord
+      description: Varje interaktiv övning och fråga i en e-kurs SKA gå att använda med enbart tangentbord och erbjuda ett sätt att besvara dra-och-släpp-frågor utan att dra.
+      rationale: De interaktiva delarna är där e-lärande oftast utestänger användare av tangentbord och kontaktstyrning, och då kan kursen inte slutföras.
+      criteria:
+        - method: test
+          text: En testare genomför varje övning och fråga med enbart tangentbord, inklusive varje dra-och-släpp-fråga, och når kursens slut.
+
+  - id: EDTM-07
+    type: usability
+    obligation: must
+    priority: high
+    tags: [e-learning, video, captions]
+    refs: ["WCAG 2.2 SC 1.2.2", "WCAG 2.2 SC 1.2.5"]
+    tests: [EDTM-T05]
+    en:
+      title: Captions and audio description for training videos
+      description: Each training video MUST have synchronised captions in its language and audio description of the visual information that the soundtrack does not convey.
+      rationale: Deaf and hard-of-hearing participants need the captions, and blind participants miss the steps shown on screen without description.
+      criteria:
+        - method: inspection
+          text: Each video has captions that match the speech, and each on-screen action that is not spoken is described in an audio description track.
+    sv:
+      title: Undertexter och syntolkning för utbildningsfilmer
+      description: Varje utbildningsfilm SKA ha synkroniserade undertexter på filmens språk och syntolkning av den visuella information som ljudet inte förmedlar.
+      rationale: Döva och hörselskadade deltagare behöver undertexterna, och blinda deltagare missar de steg som visas på skärmen utan syntolkning.
+      criteria:
+        - method: inspection
+          text: Varje film har undertexter som stämmer med talet, och varje handling på skärmen som inte sägs beskrivs i ett spår med syntolkning.
+
+  - id: EDTM-08
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [e-learning, time-limits]
+    refs: ["WCAG 2.2 SC 2.2.1"]
+    tests: [EDTM-T06]
+    en:
+      title: Adjustable time limits in assessments
+      description: Each timed e-learning assessment SHOULD let the participant turn off the time limit or extend it to at least 10 times the default before it starts.
+      rationale: Fixed time limits penalise participants who read with assistive technology or in their second language, not their competence.
+      criteria:
+        - method: test
+          text: Before a timed assessment starts the participant can turn off the limit or extend it to at least 10 times the default, and the chosen setting applies during the assessment.
+          threshold: "≥ 10 × the default"
+    sv:
+      title: Justerbara tidsgränser i prov
+      description: Varje tidsbegränsat prov i en e-kurs BÖR låta deltagaren stänga av tidsgränsen eller förlänga den till minst 10 gånger standardtiden innan provet börjar.
+      rationale: Fasta tidsgränser straffar deltagare som läser med hjälpmedel eller på sitt andraspråk och mäter inte deras kompetens.
+      criteria:
+        - method: test
+          text: Innan ett tidsbegränsat prov börjar kan deltagaren stänga av gränsen eller förlänga den till minst 10 gånger standardtiden, och den valda inställningen gäller under provet.
+          threshold: "≥ 10 × standardtiden"
+
+  - id: EDTM-09
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [e-learning, lms, scorm]
+    refs: ["SCORM 2004 4th Edition", "IEEE 9274.1.1-2023 (xAPI)"]
+    tests: [EDTM-T07]
+    en:
+      title: E-learning packaged for the learning platform
+      description: The supplier SHOULD deliver each e-learning course as a SCORM 2004 or xAPI package that reports completion and score to the organisation's learning platform.
+      rationale: Standard packages run in the organisation's own platform and feed the training records without manual entry.
+      criteria:
+        - method: test
+          text: Each course package imports into the learning platform, and completing it in a test account records the completion and the score in the training record.
+    sv:
+      title: E-kurser paketerade för lärplattformen
+      description: Leverantören BÖR leverera varje e-kurs som ett paket enligt SCORM 2004 eller xAPI som rapporterar slutförande och resultat till organisationens lärplattform.
+      rationale: Standardpaket fungerar i organisationens egen plattform och för över resultaten till utbildningsregistret utan manuell inmatning.
+      criteria:
+        - method: test
+          text: Varje kurspaket går att importera i lärplattformen, och när det slutförs med ett testkonto registreras slutförandet och resultatet i utbildningsregistret.
+
+  - id: EDTM-10
+    type: business
+    obligation: should
+    priority: medium
+    tags: [evaluation, kirkpatrick, reaction]
+    refs: ["Kirkpatrick four-level training evaluation model", "ISO 10015:2019"]
+    tests: [EDTM-T08]
+    en:
+      title: Participant evaluation after each course
+      description: The training coordinator SHOULD collect a participant evaluation after each course session with a response rate of at least 70 %.
+      rationale: Participants' reactions are the first sign of problems with content, pace or trainer, and a high response rate makes the results representative.
+      criteria:
+        - method: analysis
+          text: For the sessions of the last 6 months each one has evaluation results, and the response rate is at least 70 % per session.
+          threshold: "≥ 70 % response rate"
+    sv:
+      title: Kursutvärdering efter varje kurs
+      description: Utbildningssamordnaren BÖR samla in en kursutvärdering från deltagarna efter varje kurstillfälle med en svarsfrekvens på minst 70 %.
+      rationale: Deltagarnas reaktioner är den första signalen om problem med innehåll, tempo eller utbildare, och en hög svarsfrekvens gör resultaten representativa.
+      criteria:
+        - method: analysis
+          text: För kurstillfällena under de senaste 6 månaderna har vart och ett utvärderingsresultat, och svarsfrekvensen är minst 70 % per tillfälle.
+          threshold: "≥ 70 % svarsfrekvens"
+
+  - id: EDTM-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [evaluation, kirkpatrick, assessment]
+    refs: ["Kirkpatrick four-level training evaluation model", "ISO 9001:2026 §7.2"]
+    tests: [EDTM-T08]
+    en:
+      title: Assessment with a pass mark of 80 %
+      description: Each course MUST end with an assessment of the learning objectives with a pass mark of 80 %, below which the participant is recorded as not having completed the course.
+      rationale: Attendance shows that someone was present; only an assessment shows that the objectives were reached.
+      criteria:
+        - method: test
+          text: A test participant with a score of 79 % is recorded as not passed, and one with 80 % is recorded as passed.
+          threshold: "pass mark 80 %"
+    sv:
+      title: Prov med gräns för godkänt på 80 %
+      description: Varje kurs SKA avslutas med ett prov på lärandemålen med en gräns för godkänt på 80 %, där en deltagare som inte når gränsen registreras som ej godkänd.
+      rationale: Närvaro visar att någon var där; bara ett prov visar att målen har nåtts.
+      criteria:
+        - method: test
+          text: En testdeltagare med resultatet 79 % registreras som ej godkänd, och en med 80 % registreras som godkänd.
+          threshold: "gräns för godkänt 80 %"
+
+  - id: EDTM-12
+    type: business
+    obligation: should
+    priority: medium
+    tags: [evaluation, kirkpatrick, behaviour]
+    refs: ["Kirkpatrick four-level training evaluation model"]
+    tests: [EDTM-T09]
+    en:
+      title: Follow-up of applied skills after 3 months
+      description: The training owner SHOULD follow up each operator and administrator course 3 months after delivery by observation or by the participants' managers, and record whether the skills are applied at work.
+      rationale: Training pays off only when it changes how people work, which can be seen only some time after the course.
+      criteria:
+        - method: review
+          text: For each operator and administrator course of the last 12 months there is a follow-up record dated 3 months after the course with the result for each participant.
+          threshold: "3 months after the course"
+    sv:
+      title: Uppföljning av tillämpade färdigheter efter 3 månader
+      description: Utbildningsansvarig BÖR följa upp varje operatörs- och administratörskurs 3 månader efter genomförandet genom observation eller via deltagarnas chefer och dokumentera om färdigheterna används i arbetet.
+      rationale: Utbildning lönar sig först när den ändrar hur människor arbetar, och det syns först en tid efter kursen.
+      criteria:
+        - method: review
+          text: För varje operatörs- och administratörskurs under de senaste 12 månaderna finns en uppföljning daterad 3 månader efter kursen med resultatet för varje deltagare.
+          threshold: "3 månader efter kursen"
+
+  - id: EDTM-13
+    type: business
+    obligation: may
+    priority: low
+    tags: [evaluation, kirkpatrick, results]
+    refs: ["Kirkpatrick four-level training evaluation model"]
+    tests: [EDTM-T09]
+    en:
+      title: Training effect on operational results
+      description: The training owner MAY report once a year how the number of incidents caused by operator or user error has changed since the training.
+      rationale: Linking training to operational results shows whether it is worth its cost and where it needs to change.
+      criteria:
+        - method: analysis
+          text: The yearly report compares the number of incidents classified as operator or user error before and after the training, for the same period length.
+    sv:
+      title: Utbildningens effekt på driftresultaten
+      description: Utbildningsansvarig FÅR en gång per år rapportera hur antalet incidenter som orsakats av operatörs- eller användarfel har förändrats sedan utbildningen.
+      rationale: Att koppla utbildningen till driftresultaten visar om den är värd sin kostnad och var den behöver ändras.
+      criteria:
+        - method: analysis
+          text: Årsrapporten jämför antalet incidenter som klassats som operatörs- eller användarfel före och efter utbildningen för lika långa perioder.
+
+  - id: EDTM-14
+    type: business
+    obligation: should
+    priority: medium
+    tags: [evaluation, improvement]
+    refs: ["ISO 10015:2019"]
+    tests: [EDTM-T10]
+    en:
+      title: Evaluation results lead to material changes
+      description: The material owner SHOULD register a change request for each recurring weakness that the evaluations or assessments show and decide on it within 30 days.
+      rationale: Evaluation is wasted unless its findings change the course.
+      criteria:
+        - method: review
+          text: Each assessment question failed by more than 30 % of participants, and each topic criticised in more than 3 evaluations, has a change request with a decision within 30 days.
+          threshold: "≤ 30 days"
+    sv:
+      title: Utvärderingsresultat leder till ändringar i materialet
+      description: Materialägaren BÖR registrera ett ändringsbegärande för varje återkommande svaghet som utvärderingarna eller proven visar och fatta beslut om det inom 30 dagar.
+      rationale: Utvärdering är bortkastad om resultaten inte ändrar kursen.
+      criteria:
+        - method: review
+          text: Varje provfråga som mer än 30 % av deltagarna missade och varje ämne som kritiserats i mer än 3 utvärderingar har ett ändringsbegärande med beslut inom 30 dagar.
+          threshold: "≤ 30 dagar"
+
+tests:
+  - id: EDTM-T01
+    priority: high
+    execution: manual
+    tags: [course-package]
+    refs: ["ISO 29993:2017"]
+    en:
+      title: Inspection of course material packages
+      description: Checks that each course in the training plan has a complete material package.
+      preconditions: The training plan and the material library.
+      expected: Each course has a trainer guide, participant material, exercises with model answers and an assessment with marking guide.
+      steps:
+        - action: Match each course in the training plan to a folder in the material library.
+          expected: Each course has a folder.
+        - action: Check each folder for the four parts.
+          expected: Each folder contains all four parts.
+    sv:
+      title: Inspektion av kursernas materialpaket
+      description: Kontrollerar att varje kurs i utbildningsplanen har ett fullständigt materialpaket.
+      preconditions: Utbildningsplanen och materialbiblioteket.
+      expected: Varje kurs har lärarhandledning, deltagarmaterial, övningar med lösningsförslag och ett prov med bedömningsmall.
+      steps:
+        - action: Koppla varje kurs i utbildningsplanen till en mapp i materialbiblioteket.
+          expected: Varje kurs har en mapp.
+        - action: Kontrollera att varje mapp innehåller de fyra delarna.
+          expected: Varje mapp innehåller alla fyra delarna.
+
+  - id: EDTM-T02
+    priority: high
+    execution: manual
+    tags: [version, review]
+    refs: ["ISO 9001:2026 §7.5.2"]
+    en:
+      title: Material follows releases and is reviewed yearly
+      description: Checks that material was updated after releases and has an owner and a recent review.
+      preconditions: The release list of the last 12 months with changed tasks, the training plan and the material library with version histories.
+      expected: Material affected by each release was updated within 20 working days and names the system version, and each material has an owner and a review less than 12 months old.
+      steps:
+        - action: For each release that changed a trained task, find the affected material and the date of its new version.
+          expected: The new version is dated no more than 20 working days after the release and names the system version.
+        - action: Check the owner and review date of each course material.
+          expected: Each material has an owner and a review date less than 12 months old.
+    sv:
+      title: Materialet följer releaserna och granskas årligen
+      description: Kontrollerar att materialet har uppdaterats efter releaser och har en ägare och en färsk granskning.
+      preconditions: Förteckningen över releaser under de senaste 12 månaderna med ändrade uppgifter, utbildningsplanen och materialbiblioteket med versionshistorik.
+      expected: Materialet som berörs av varje release uppdaterades inom 20 arbetsdagar och anger systemversionen, och varje material har en ägare och en granskning som är yngre än 12 månader.
+      steps:
+        - action: Leta för varje release som ändrade en uppgift i utbildningen upp det berörda materialet och datumet för dess nya version.
+          expected: Den nya versionen är daterad högst 20 arbetsdagar efter releasen och anger systemversionen.
+        - action: Kontrollera ägare och granskningsdatum för varje kursmaterial.
+          expected: Varje material har en ägare och ett granskningsdatum som är yngre än 12 månader.
+
+  - id: EDTM-T03
+    priority: medium
+    execution: manual
+    tags: [language]
+    refs: ["Språklag (2009:600)"]
+    en:
+      title: Swedish and English material versions
+      description: Compares the Swedish and English versions of participant material and e-learning courses.
+      preconditions: The material library and the course catalogue of the learning platform.
+      expected: Each participant material and e-learning course exists in both languages with the same version and structure.
+      steps:
+        - action: For each participant material, compare the version number and the table of contents of the two language versions.
+          expected: Both versions exist with the same version number and the same chapters.
+        - action: For each e-learning course, open both language versions in the learning platform and compare the module lists.
+          expected: Both versions exist and have the same modules in the same order.
+    sv:
+      title: Svenska och engelska versioner av materialet
+      description: Jämför de svenska och engelska versionerna av deltagarmaterial och e-kurser.
+      preconditions: Materialbiblioteket och lärplattformens kurskatalog.
+      expected: Varje deltagarmaterial och e-kurs finns på båda språken med samma version och struktur.
+      steps:
+        - action: Jämför för varje deltagarmaterial versionsnummer och innehållsförteckning i de två språkversionerna.
+          expected: Båda versionerna finns med samma versionsnummer och samma kapitel.
+        - action: Öppna båda språkversionerna av varje e-kurs i lärplattformen och jämför modullistorna.
+          expected: Båda versionerna finns och har samma moduler i samma ordning.
+
+  - id: EDTM-T04
+    priority: high
+    execution: manual
+    tags: [accessibility, keyboard]
+    refs: ["WCAG 2.2 conformance level AA", "WCAG 2.2 SC 2.1.1", "WCAG 2.2 SC 2.5.7"]
+    en:
+      title: Accessibility audit of an e-learning course
+      description: Audits an e-learning course against WCAG 2.2 AA and completes it with keyboard only.
+      preconditions: Access to the e-learning course in a test account, an automated accessibility checker, a screen reader and the WCAG 2.2 AA checklist.
+      expected: The audit finds no failures at level A or AA, and the whole course, including drag-and-drop questions, can be completed by keyboard.
+      steps:
+        - action: Run the automated checker on each page of the course.
+          expected: The checker reports no failures.
+        - action: Go through the WCAG 2.2 AA checklist manually with the screen reader on one module.
+          expected: No success criterion at level A or AA fails.
+        - action: Complete each exercise and quiz with keyboard only, including each drag-and-drop question.
+          expected: Each question can be answered without a mouse or dragging, and the course reaches its end.
+    sv:
+      title: Tillgänglighetsgranskning av en e-kurs
+      description: Granskar en e-kurs mot WCAG 2.2 AA och genomför den med enbart tangentbord.
+      preconditions: Tillgång till e-kursen med ett testkonto, ett automatiskt verktyg för tillgänglighetskontroll, en skärmläsare och checklistan för WCAG 2.2 AA.
+      expected: Granskningen hittar inga brister på nivå A eller AA, och hela kursen, även dra-och-släpp-frågorna, kan genomföras med tangentbord.
+      steps:
+        - action: Kör det automatiska verktyget på varje sida i kursen.
+          expected: Verktyget rapporterar inga brister.
+        - action: Gå manuellt igenom checklistan för WCAG 2.2 AA med skärmläsaren på en modul.
+          expected: Inget framgångskriterium på nivå A eller AA brister.
+        - action: Genomför varje övning och fråga med enbart tangentbord, inklusive varje dra-och-släpp-fråga.
+          expected: Varje fråga kan besvaras utan mus och utan att dra, och kursen når sitt slut.
+
+  - id: EDTM-T05
+    priority: high
+    execution: manual
+    tags: [video, captions]
+    refs: ["WCAG 2.2 SC 1.2.2", "WCAG 2.2 SC 1.2.5"]
+    en:
+      title: Captions and audio description of training videos
+      description: Checks captions and audio description of the training videos.
+      preconditions: The list of training videos and a player that can show captions and play the audio description track.
+      expected: Each video has captions that match the speech and an audio description of the actions that are not spoken.
+      steps:
+        - action: Play each video with captions on and compare the captions with the speech for 2 minutes.
+          expected: The captions are synchronised and match the speech.
+          data: "2 minutes per video"
+        - action: Play each video with the audio description track and note the on-screen actions.
+          expected: Each action shown on screen that is not spoken is described.
+    sv:
+      title: Undertexter och syntolkning av utbildningsfilmer
+      description: Kontrollerar undertexter och syntolkning i utbildningsfilmerna.
+      preconditions: Förteckningen över utbildningsfilmer och en spelare som kan visa undertexter och spela upp spåret med syntolkning.
+      expected: Varje film har undertexter som stämmer med talet och syntolkning av de handlingar som inte sägs.
+      steps:
+        - action: Spela upp varje film med undertexter och jämför undertexterna med talet under 2 minuter.
+          expected: Undertexterna är synkroniserade och stämmer med talet.
+          data: "2 minuter per film"
+        - action: Spela upp varje film med spåret med syntolkning och notera handlingarna på skärmen.
+          expected: Varje handling som visas på skärmen men inte sägs beskrivs.
+
+  - id: EDTM-T06
+    priority: medium
+    execution: manual
+    tags: [time-limits]
+    refs: ["WCAG 2.2 SC 2.2.1"]
+    en:
+      title: Adjusting the time limit of an assessment
+      description: Tests that a timed assessment lets the participant turn off or extend the time limit.
+      preconditions: A timed e-learning assessment with a default limit of 10 minutes and a test account.
+      expected: The participant can turn off the limit or extend it to at least 100 minutes before starting, and the setting applies.
+      steps:
+        - action: Open the assessment and look for the time limit setting before it starts.
+          expected: Options to turn off the limit and to extend it are offered.
+        - action: Extend the limit to 10 times the default and start the assessment.
+          expected: The timer shows 100 minutes.
+          data: "Default 10 minutes; extended 100 minutes"
+        - action: Restart the assessment with the limit turned off.
+          expected: No timer is shown and the assessment does not end on time.
+    sv:
+      title: Justera tidsgränsen för ett prov
+      description: Testar att ett tidsbegränsat prov låter deltagaren stänga av eller förlänga tidsgränsen.
+      preconditions: Ett tidsbegränsat prov i en e-kurs med en standardgräns på 10 minuter och ett testkonto.
+      expected: Deltagaren kan stänga av gränsen eller förlänga den till minst 100 minuter före starten, och inställningen gäller.
+      steps:
+        - action: Öppna provet och leta efter inställningen för tidsgräns innan det startar.
+          expected: Det finns val för att stänga av gränsen och för att förlänga den.
+        - action: Förläng gränsen till 10 gånger standardtiden och starta provet.
+          expected: Tidtagaren visar 100 minuter.
+          data: "Standard 10 minuter; förlängt 100 minuter"
+        - action: Starta om provet med tidsgränsen avstängd.
+          expected: Ingen tidtagare visas och provet avslutas inte på grund av tiden.
+
+  - id: EDTM-T07
+    priority: medium
+    execution: manual
+    tags: [lms, scorm]
+    refs: ["SCORM 2004 4th Edition", "IEEE 9274.1.1-2023 (xAPI)"]
+    en:
+      title: Import of a course package into the learning platform
+      description: Imports an e-learning package and checks that completion and score reach the training record.
+      preconditions: The delivered course package, administrator access to a test instance of the learning platform and a test participant account.
+      expected: The package imports, and completing it records completion and score in the test participant's training record.
+      steps:
+        - action: Import the course package into the test instance.
+          expected: The import succeeds and the course appears in the catalogue.
+        - action: Complete the course as the test participant with a known score.
+          expected: The course shows as completed.
+          data: "Answer to reach a score of 90 %"
+        - action: Open the test participant's training record.
+          expected: The record shows the course as completed with a score of 90 %.
+    sv:
+      title: Import av ett kurspaket i lärplattformen
+      description: Importerar ett paket för e-lärande och kontrollerar att slutförande och resultat når utbildningsregistret.
+      preconditions: Det levererade kurspaketet, administratörsbehörighet till en testinstans av lärplattformen och ett testkonto för en deltagare.
+      expected: Paketet går att importera, och när det slutförs registreras slutförande och resultat i testdeltagarens utbildningsregister.
+      steps:
+        - action: Importera kurspaketet i testinstansen.
+          expected: Importen lyckas och kursen visas i katalogen.
+        - action: Genomför kursen som testdeltagare med ett känt resultat.
+          expected: Kursen visas som slutförd.
+          data: "Svara så att resultatet blir 90 %"
+        - action: Öppna testdeltagarens utbildningsregister.
+          expected: Registret visar kursen som slutförd med resultatet 90 %.
+
+  - id: EDTM-T08
+    priority: high
+    execution: manual
+    tags: [evaluation, assessment]
+    refs: ["Kirkpatrick four-level training evaluation model"]
+    en:
+      title: Course evaluations and the pass mark
+      description: Checks the response rates of course evaluations and tests the pass mark of an assessment.
+      preconditions: The course sessions of the last 6 months with attendance and evaluation results, and two test participant accounts.
+      expected: Each session has an evaluation with a response rate of at least 70 %, and the pass mark of 80 % is applied.
+      steps:
+        - action: For each session, divide the number of evaluation responses by the number of participants.
+          expected: The response rate is at least 70 % for each session.
+        - action: Complete an assessment as the first test participant with a score of 79 %.
+          expected: The result is recorded as not passed, and the course is not marked as completed.
+          data: "Score 79 %"
+        - action: Complete the same assessment as the second test participant with a score of 80 %.
+          expected: The result is recorded as passed.
+          data: "Score 80 %"
+    sv:
+      title: Kursutvärderingar och gränsen för godkänt
+      description: Kontrollerar svarsfrekvensen för kursutvärderingar och testar gränsen för godkänt i ett prov.
+      preconditions: Kurstillfällena under de senaste 6 månaderna med närvaro och utvärderingsresultat och två testkonton för deltagare.
+      expected: Varje tillfälle har en utvärdering med minst 70 % svarsfrekvens, och gränsen för godkänt på 80 % tillämpas.
+      steps:
+        - action: Dela för varje tillfälle antalet svar på utvärderingen med antalet deltagare.
+          expected: Svarsfrekvensen är minst 70 % för varje tillfälle.
+        - action: Genomför ett prov som den första testdeltagaren med resultatet 79 %.
+          expected: Resultatet registreras som ej godkänt, och kursen markeras inte som slutförd.
+          data: "Resultat 79 %"
+        - action: Genomför samma prov som den andra testdeltagaren med resultatet 80 %.
+          expected: Resultatet registreras som godkänt.
+          data: "Resultat 80 %"
+
+  - id: EDTM-T09
+    priority: medium
+    execution: manual
+    tags: [evaluation, behaviour, results]
+    refs: ["Kirkpatrick four-level training evaluation model"]
+    en:
+      title: Follow-up of behaviour and results
+      description: Checks the 3-month follow-ups of operator and administrator courses and the yearly report on training effect.
+      preconditions: The operator and administrator courses of the last 12 months, their follow-up records and, if produced, the yearly report.
+      expected: Each course has a follow-up 3 months later with a result for each participant, and the yearly report compares incidents for equal periods.
+      steps:
+        - action: Match each course to its follow-up record and compare the dates.
+          expected: Each course has a follow-up dated 3 months after it with a result for each participant.
+        - action: Check the periods compared in the yearly report.
+          expected: The report compares operator and user error incidents for periods of equal length before and after the training.
+    sv:
+      title: Uppföljning av beteende och resultat
+      description: Kontrollerar uppföljningarna efter 3 månader för operatörs- och administratörskurser och årsrapporten om utbildningens effekt.
+      preconditions: Operatörs- och administratörskurserna under de senaste 12 månaderna, uppföljningarna av dem och årsrapporten, om en sådan har tagits fram.
+      expected: Varje kurs har en uppföljning 3 månader senare med resultat för varje deltagare, och årsrapporten jämför incidenter för lika långa perioder.
+      steps:
+        - action: Koppla varje kurs till dess uppföljning och jämför datumen.
+          expected: Varje kurs har en uppföljning daterad 3 månader efter kursen med resultat för varje deltagare.
+        - action: Kontrollera vilka perioder som jämförs i årsrapporten.
+          expected: Rapporten jämför incidenter med operatörs- och användarfel för lika långa perioder före och efter utbildningen.
+
+  - id: EDTM-T10
+    priority: medium
+    execution: manual
+    tags: [improvement]
+    refs: ["ISO 10015:2019"]
+    en:
+      title: Weaknesses found in evaluations lead to change requests
+      description: Checks that recurring weaknesses in assessments and evaluations lead to change requests with timely decisions.
+      preconditions: The assessment statistics and evaluation comments of the last 6 months and the change requests for the material.
+      expected: Each frequently failed question and each recurring criticised topic has a change request decided within 30 days.
+      steps:
+        - action: List the assessment questions failed by more than 30 % of participants.
+          expected: A list of questions exists.
+          data: "Failure share > 30 %"
+        - action: List the topics criticised in more than 3 evaluations.
+          expected: A list of topics exists.
+        - action: Find the change request for each listed question and topic and compare its decision date with its registration date.
+          expected: Each item has a change request decided within 30 days.
+    sv:
+      title: Svagheter i utvärderingar leder till ändringsbegäranden
+      description: Kontrollerar att återkommande svagheter i prov och utvärderingar leder till ändringsbegäranden med beslut i tid.
+      preconditions: Provstatistiken och utvärderingskommentarerna för de senaste 6 månaderna och ändringsbegärandena för materialet.
+      expected: Varje ofta missad fråga och varje återkommande kritiserat ämne har ett ändringsbegärande med beslut inom 30 dagar.
+      steps:
+        - action: Lista de provfrågor som mer än 30 % av deltagarna missade.
+          expected: Det finns en lista över frågor.
+          data: "Andel fel > 30 %"
+        - action: Lista de ämnen som kritiserats i mer än 3 utvärderingar.
+          expected: Det finns en lista över ämnen.
+        - action: Leta upp ändringsbegärandet för varje fråga och ämne i listorna och jämför datumet för beslutet med registreringsdatumet.
+          expected: Varje punkt har ett ändringsbegärande med beslut inom 30 dagar.

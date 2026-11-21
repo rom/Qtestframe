@@ -160,14 +160,16 @@ Implemented in `internal/auth/totp.go` (algorithms), `internal/api/mfa.go`
   `POST /auth/mfa/totp/confirm` with a valid code; until then it does not
   affect sign-in. The secret is never returned again (`GET /auth/mfa` shows
   only the state). MFA changes need a browser session; API tokens get 403.
-* **TOTP secrets at rest:** Qtestframe has no application-level
-  encryption key or secret-encryption helper, so secrets are stored **in
-  plain text** in `user_mfa.totp_secret` (the server must compute the
-  codes, so a hash is not possible). Whoever can read
-  the database (or a backup: `user_mfa` is part of `qtestframe backup`,
-  not of project archives) can compute a user's codes — but still needs
-  the password. Protect the database and backups accordingly
-  (section 7); after a suspected leak, reset the MFA of all users.
+* **TOTP secrets at rest:** the server must compute the codes, so a hash
+  is not possible; the secret in `user_mfa.totp_secret` is **encrypted**
+  with AES-256-GCM under the data-encryption key and bound to the user's
+  row (see [Encryption of stored secrets](#encryption-of-stored-secrets)).
+  *Earlier versions stored it in plain text; this no longer holds — values
+  written by them are encrypted in place at the first start.* Whoever can
+  read the database or a backup **and** has the key-encryption key (the
+  key file, the TPM, the HSM) can still compute a user's codes, but still
+  needs the password; after a suspected leak of both, reset the MFA of all
+  users.
 * **Recovery codes:** 10 codes of 12 characters from a 31-character
   alphabet without look-alikes (≈ 59 bits each), shown once, stored as
   SHA-256 hashes (`mfa_recovery_codes`), each usable once. New codes
@@ -542,24 +544,25 @@ Further measures:
   (SIGHUP re-reads only the TLS key pair); they are not logged. Core dumps
   are disabled (`LimitCORE=0`).
 * **Secrets stored in the database.** Defect tracker tokens (Jira, GitHub)
-  and webhook signing secrets are stored per project in the database, in
-  plain text, so that the server can use them; protect the database and
-  its backups accordingly. The API never returns a tracker token
+  and webhook signing secrets are stored per project in the database,
+  **encrypted** (see below; earlier versions stored them in plain text,
+  which no longer holds), so that the server can use them. The API never returns a tracker token
   (`has_token` only), and returns a webhook secret only once, when it is
   created or rotated. Use tracker tokens with the smallest scope that works
   (GitHub fine-grained token with Issues read/write on one repository; a
   Jira user that can only create and browse issues in the project).
 * **System settings secrets.** The SMTP password and OIDC client secrets
   entered in Administration → System settings are stored in the database
-  (table `system_settings`) in plain text, like tracker tokens, so that the
+  (table `system_settings`) **encrypted**, like tracker tokens (earlier
+  versions stored them in plain text; this no longer holds), so that the
   server can use them; they are **write-only** in the API (`has_secret`,
   `secret_source`), never logged, never in the audit log (only "set /
   changed / removed"), and redacted in the configuration export. Secrets of
   the configuration file or the environment are not copied into the
   database when providers are edited in the web client, and
   `QTF_OIDC_<NAME>_CLIENT_SECRET` / `QTF_EMAIL_PASSWORD` always win over a
-  stored value. Backups contain the table (restore applies it at once);
-  project archives do not. Operators who do not want secrets in the
+  stored value. Backups contain the table, still encrypted (restore
+  applies it at once); project archives do not. Operators who do not want secrets in the
   database lock the settings (`system_settings.locked: ["email.*",
   "auth.oidc"]`) and keep using `*_file` options.
 * **Project archives** (*Save project*, `GET /projects/{pid}/archive`)
@@ -583,6 +586,103 @@ Further measures:
   password (or needs a single sign-on session under 15 minutes old);
   API tokens cannot sign. Each signature stores a SHA-256 fingerprint of
   the baseline content and is audited; signed baselines cannot be deleted.
+
+### Encryption of stored secrets
+
+Secrets the server has to read back (they cannot be hashed) are encrypted
+before they are written to the database, in `internal/store/secrets.go`
+with the primitives of `internal/secrets`:
+
+| Secret | Where |
+| --- | --- |
+| TOTP secrets (authenticator apps) | `user_mfa.totp_secret` |
+| Webhook signing secrets | `webhooks.secret` |
+| Defect tracker token (Jira, GitHub) | `projects.defect_tracker` → `token` |
+| Values of secret web test variables | `projects.web_tests` → `variables[].value` |
+| SMTP password | `system_settings` `email.password` |
+| OIDC client secrets | `system_settings` `auth.oidc` → `client_secret` |
+
+Hashes stay hashes: passwords (bcrypt), API and SCIM tokens, sessions,
+invitations, remembered devices and recovery codes (SHA-256) are one-way
+and need no key. Secrets in the configuration file, `*_file` options and
+`QTF_*` variables are not stored in the database at all.
+
+**Envelope encryption.** A value is encrypted with AES-256-GCM (random
+96-bit nonce) under a 256-bit *data-encryption key* (DEK) and stored as
+
+    enc:v1:<dek id>:<base64url(nonce | ciphertext | tag)>
+
+The associated data names the table, the column, the row id and, inside
+JSON, the field (e.g. `webhooks.secret|<id>`,
+`projects.web_tests.variables.PASSWORD.value|<project id>`) and the DEK id,
+so a value copied into another row, another field or under another key id
+does not decrypt. The DEKs are random, created by the server, and stored
+in the table `secret_keys` (migration 0027) **only wrapped** by the
+*key-encryption key* (KEK) of the configured key provider; the KEK never
+enters the database. The unwrapped DEKs are kept in memory only.
+
+**Key providers** (`secrets.provider` in the configuration file; the
+system settings view shows the active one read-only, under Security):
+
+* `local` (default, no configuration needed): the KEK is a 256-bit key in a
+  key file, created with mode `0600` (directory `0700`) when missing, or
+  given in `QTF_SECRETS_KEY` (base64 or hex; then no file is used). The
+  default file is `qtestframe-secrets.key` next to a SQLite database, else
+  in `$STATE_DIRECTORY`, `/var/lib/qtestframe` or the working directory;
+  set `secrets.local.key_file` to keep it elsewhere (e.g. on another volume
+  than the database, or in `/etc/qtestframe` owned by root). The DEK is
+  wrapped with AES-256-GCM. This protects database dumps, backups and
+  replicas that leave the server without the key file; it does not protect
+  against someone who can read both the database and the key file.
+* `tpm`: the DEK is **sealed to a TPM 2.0** (`/dev/tpmrm0`, or an emulator
+  socket): a keyed-hash object under the storage root key (ECC P-256 SRK of
+  the owner hierarchy, recreated from the TPM's seed), created and
+  unsealed through a session salted to the SRK so the DEK never crosses
+  the bus in clear. It can only be unsealed by the same TPM (until the
+  owner hierarchy is cleared). With `secrets.tpm.pcrs` (e.g. `[7]`, the
+  Secure Boot state) it is also bound to the PCR values at sealing time:
+  a copied disk does not unseal on another machine, and a changed boot
+  chain does not unseal either — re-wrap to `local` before a firmware or
+  boot change that alters those PCRs, then back. Pure Go (go-tpm), so it
+  is part of the static build. The service needs access to the device (the
+  `tss` group; `PrivateDevices=no` with `DeviceAllow=/dev/tpmrm0 rw` in the
+  unit); the device is added to the Landlock paths.
+* `pkcs11`: the DEK is wrapped (CKM_AES_GCM) by an AES-256 key held in an
+  **HSM** through PKCS#11 (`module`, `token_label` or `slot`, `key_label`;
+  the PIN from `pin_file` or `QTF_SECRETS_PKCS11_PIN`, never in the YAML
+  itself). `generate_key: true` creates a non-extractable key when there
+  is none. PKCS#11 modules are C libraries, so this provider needs a
+  binary built with cgo and `-tags pkcs11` (`make go-pkcs11`); the default
+  static binary refuses the provider with that instruction.
+
+**Upgrades and legacy values.** Values without the `enc:v1:` prefix are
+plaintext written by an earlier version; they are read as they are (an
+upgrade never locks anyone out) and encrypted in place at every start of
+the server and by `qtestframe secrets migrate`. Upgrade all server
+processes of a database together: an older version reads ciphertext as a
+wrong secret. Before a downgrade, `qtestframe secrets decrypt --yes`
+stores the secrets as plaintext again.
+
+**Rotation.** `qtestframe secrets rotate` creates a new DEK, makes it the
+active one and re-encrypts every value; other processes pick the new key
+up when they meet a value encrypted with it. Old DEKs are kept (still
+wrapped) until `secrets rotate --prune`, which deletes the ones no value
+uses — run it with the other server processes stopped or restarted.
+`qtestframe secrets rewrap --from-config OLD.yaml` re-wraps the DEKs with
+the configured provider (a new local key, or moving from `local` to `tpm`
+or `pkcs11`); the stored values are unchanged. `qtestframe secrets
+status` shows the provider, the DEKs and how many values are encrypted.
+
+**Failure modes.** If the KEK is not available (key file lost, other TPM,
+HSM unreachable, PCRs changed), the server refuses to start with an error
+that names the expected key; it never falls back to plaintext. A value that
+does not decrypt (moved, damaged) is an error, not a wrong secret.
+**Back up the key file** (or keep the HSM key, and for the TPM a re-wrap
+to a recoverable key), **separately from the database backups**: a backup
+contains the ciphertext and the wrapped DEKs, and is useless without the
+KEK. A restore is refused when the server's key cannot unwrap the
+backup's DEKs, so restoring into a server with another key cannot leave
+undecryptable secrets behind.
 
 ## 8. Audit log and central logging
 
@@ -705,8 +805,9 @@ the font configuration.
 
 **Test variables** (project settings, `PUT /projects/{pid}/web-tests`) are
 passed to every automated script as `QTF_VAR_<NAME>`. Secret values are
-write-only like defect-tracker tokens: stored in the database (plain, like
-other project settings: protect database and backups), never returned by
+write-only like defect-tracker tokens: stored in the database, encrypted
+like the other stored secrets (section 7; earlier versions stored them in
+plain text), never returned by
 the API or shown in the UI, not written to the audit log (only variable
 names are), and replaced by `***` in the stored output and failure
 messages. Masking cannot reach into screenshots, traces or videos: a
@@ -951,6 +1052,7 @@ permissions (Landlock allows `/etc`); fork bombs are stopped by `TasksMax`.
 - [ ] SSO configured; `auth.local: false` or strong passwords + few local accounts
 - [ ] multi-factor authentication required at least for administrators (Administration › Multi-factor authentication, or MFA at the identity provider)
 - [ ] secrets via `*_file` / `LoadCredential=`, permissions `0640 root:qtestframe`
+- [ ] stored secrets: key file backed up separately from the database (or `secrets.provider: tpm` / `pkcs11`); `qtestframe secrets status` shows no plaintext
 - [ ] PostgreSQL with `sslmode=verify-full`, least-privilege DB role
 - [ ] `logging.syslog` to a central server over `tls`
 - [ ] `runner.enabled: false` unless needed; if enabled, only trusted roles, SELinux/AppArmor enforced, `runner.deny_network: true` if scripts need no network

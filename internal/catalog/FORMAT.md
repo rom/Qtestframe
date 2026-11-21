@@ -10,6 +10,7 @@ keyword, analysis, traceability and language rules below are enforced.
 area: authentication            # unique area id: lower case, a-z 0-9 and "-"
 prefix: AUTH                    # id prefix of the area's items: 2-6 capitals
 group: security                 # one of the groups in groups.yaml
+catalogue: software             # optional: a catalogue type of catalogues.yaml (default software)
 name: {en: Authentication, sv: Autentisering}
 description: {en: "…", sv: "…"} # one or two sentences
 
@@ -108,7 +109,8 @@ tests:
 ## Citing standards
 
 Use one spelling per source so that the catalogue search (which looks in
-`refs`) finds every item that cites it. An optional topic in brackets may
+`refs`) finds every item that cites it, and every ref resolves to its
+entry in the source registry (see *Reference sources*). An optional topic in brackets may
 follow the clause, e.g. `"ISO/IEC 27001:2022 A.8.13 (information backup)"`.
 A test cites the standards of the requirements it verifies that its steps
 actually check.
@@ -118,27 +120,86 @@ actually check.
 | ISO/IEC 27001 Annex A controls (2022 numbering) | `ISO/IEC 27001:2022 A.8.5` (not "Annex A 8.5") |
 | ISO/IEC 27002 implementation guidance | `ISO/IEC 27002:2022 §8.5` |
 | ISO/IEC 27005 information security risk management | `ISO/IEC 27005:2022 §7 (risk assessment process)` |
-| ISO/IEC 27017 cloud services | `ISO/IEC 27017:2015 CLD.9.5.1` |
-| ISO/IEC 27018 PII in public clouds | `ISO/IEC 27018:2019 (topic)` |
+| ISO/IEC 27017 cloud services | `ISO/IEC 27017:2026 (segregation in virtual computing environments)` |
+| ISO/IEC 27018 PII in public clouds | `ISO/IEC 27018:2025 (topic)` |
 | ISO/IEC 27019 energy utility industry | `ISO/IEC 27019:2024 (topic)` |
-| ISO/IEC 27031 ICT readiness for business continuity | `ISO/IEC 27031:2011` |
+| ISO/IEC 27031 ICT readiness for business continuity | `ISO/IEC 27031:2025` |
 | ISO/IEC 27033 network security | `ISO/IEC 27033-1:2015` |
 | ISO/IEC 27034 application security | `ISO/IEC 27034-1:2011` |
 | ISO/IEC 27035 incident management | `ISO/IEC 27035-1:2023`, `ISO/IEC 27035-2:2023` |
 | ISO/IEC 27036 supplier relationships | `ISO/IEC 27036-3:2023` |
 | ISO/IEC 27040 storage security | `ISO/IEC 27040:2024` |
-| ISO/IEC 27701 privacy information management | `ISO/IEC 27701:2019 §7.3.6` |
+| ISO/IEC 27701 privacy information management | `ISO/IEC 27701:2025 (access, correction or erasure)` |
 | IEC 62443-3-3 system security requirements | `IEC 62443-3-3 SR 1.7` |
 | IEC 62443-4-2 component security requirements | `IEC 62443-4-2 CR 1.7` |
 | IEC 62443-4-1 secure product development lifecycle | `IEC 62443-4-1 SM-9`, `SR-2`, `SI-1`, `SVV-3`, `DM-4`, `SUM-5` … |
-| IEC 62443-2-1 security programme, IEC 62443-2-4 service providers | `IEC 62443-2-1:2024 (topic)`, `IEC 62443-2-4 (topic)` |
+| IEC 62443-2-1 security programme, IEC 62443-2-4 service providers | `IEC 62443-2-1:2024 (topic)`, `IEC 62443-2-4:2023 SP.07 (remote access)` |
 | GDPR (Regulation (EU) 2016/679) | `GDPR Art. 32(1)(a)` |
 | Cyber Resilience Act | `Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)`, `… Annex I Part II §2`, `… Art. 14` |
 | DORA (digital operational resilience, financial sector) | `Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)` |
 | CER (resilience of critical entities) | `Directive (EU) 2022/2557 (CER) Art. 13(1)(d)` |
-| NIS2 | `NIS2 Directive (EU) 2022/2555 Art. 23` |
+| NIS2 | `Directive (EU) 2022/2555 (NIS2) Art. 23` |
+| Swedish Cybersecurity Act (implements NIS2) | `Cybersäkerhetslag (2025:1506) 2 kap. 3 §` |
 | Radio Equipment Directive, Art. 3(3)(d)–(f) as applied by Delegated Regulation (EU) 2022/30, with the harmonised standard EN 18031-1/-2/-3 and its mechanism (AUM, ACM, SCM, SSM, SUM, RLM, CCK, CRY, GEC, DLM …) | `Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)` |
 
 Cite the RED only for items that make sense for internet-connected radio
 equipment, and IEC 62443 where the item fits an industrial system or
 component.
+
+## Reference sources
+
+`data/sources.yaml` is the registry of the laws, regulations, directives,
+standards, best practices and guidelines the catalogue cites. **Every entry
+of `refs` must match exactly one source**; `go test ./internal/catalog`
+(`TestSourcesCoverEveryRef`) fails with the item id and the ref otherwise.
+The registry lets a team pick "comply with the CRA" in the catalogue
+browser and get every requirement that cites it, and lets the requirement
+analytics measure compliance per source and clause.
+
+```yaml
+kinds:                          # display order of the source kinds
+  - id: law                     # law | directive | standard | practice | guideline
+    name: {en: Laws and regulations, sv: Lagar och förordningar}
+
+sources:
+  - id: cra                     # unique: a-z 0-9 and "-"
+    kind: law                   # one of the kinds above
+    jurisdiction: EU            # optional: two capitals (EU, SE, US, UK, NO …) or international
+    short: CRA                  # optional short name, the same in every language
+    name: {en: "Cyber Resilience Act, Regulation (EU) 2024/2847", sv: "Cyberresiliensförordningen (EU) 2024/2847"}
+    match: ["Regulation (EU) 2024/2847"]   # prefixes a ref starts with (case sensitive)
+    regex: []                   # optional Go regular expressions, e.g. '^OWASP .*Cheat Sheet'
+    clause: ''                  # optional, see below
+    clause_format: ''           # optional, see below
+    url: https://eur-lex.europa.eu/eli/reg/2024/2847/oj   # optional, https only
+```
+
+- **Adding a source** is one entry: when a new item cites a law or
+  standard that no source matches, add an entry with an id, kind, names in
+  English and Swedish and a prefix that the ref starts with. Prefer a
+  prefix that is the spelling of *Citing standards* (`ISO/IEC 27001`,
+  `Directive (EU) 2022/2555`); list several prefixes when a source is
+  cited in more than one way (`"Directive (EU) 2022/2555", "NIS2 Directive"`).
+- **Exactly one.** Two sources whose patterns both match a ref are an
+  error too: make the prefixes longer (`"OWASP Top 10 2021"` and
+  `"OWASP Top 10 for LLM"`, not `"OWASP Top 10"`).
+- **Grain.** A source is what a team would claim compliance with: a law
+  with its implementing acts where they belong together (RED with
+  Delegated Regulation (EU) 2022/30 and EN 18031), one entry per part of a
+  standard series when the parts are used on their own (ISO/IEC 27001,
+  27002, 27701 …; IEC 62443-3-3, 4-1, 4-2 …), one entry for a family of
+  small specifications (IETF RFCs, W3C web standards, open source licences).
+- **Clauses.** The analytics group a source's requirements by clause or
+  article, derived from the ref without the matched prefix. The default
+  patterns, tried in order: `Annex I Part II`, `Art. 32`, `A.8`
+  (ISO/IEC 27001 Annex A), `SR 1`/`CR 2`/`SC 1`/`Req. 10` (the first
+  number), `A01`/`API3`/`LLM02`, `AC`/`SM`/`WSTG-ATHZ` (an upper-case
+  prefix before `-N`), `PO`/`CLD` (before `.N`), `V2`, `ch. 6`, `2 kap.`,
+  `§5`; none gives the source as a whole. A source can set `clause`, a
+  regular expression on the whole ref: the clause is the expansion of
+  `clause_format` (`'Req. $1'`) when set, else its first capture group,
+  else the whole match. The first letter is upper-cased.
+- **Project text.** The compliance analysis also counts project
+  requirements whose `source` field names a source: each part separated by
+  `;` or a line break is matched like a ref, and failing that without
+  regard to case (`gdpr art. 32`).

@@ -1,0 +1,608 @@
+area: cm-secure
+prefix: CMSEC
+group: security
+catalogue: communications
+name: {en: Secure communications, sv: Säker kommunikation}
+description:
+  en: Network zones and conduits, deny-by-default filtering, firewall rule reviews, encryption between sites and for remote access, port-based network access control, a separate management network, protection against denial of service, flow logs, validating DNS resolvers, certificate renewal and the separation of industrial control networks.
+  sv: Nätzoner och kommunikationskanaler, filtrering där allt är nekat från början, granskning av brandväggsregler, kryptering mellan platser och vid distansåtkomst, portbaserad behörighetskontroll till nätet, ett separat förvaltningsnät, skydd mot överbelastningsattacker, flödesloggar, validerande DNS-servrar, förnyelse av certifikat och avskiljning av industriella styrnät.
+
+requirements:
+  - id: CMSEC-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [segmentation, zones, conduits]
+    refs: ["ISO/IEC 27033-1:2015", "ISO/IEC 27001:2022 A.8.22", "IEC 62443-3-3 SR 5.1"]
+    tests: [CMSEC-T01]
+    en:
+      title: Network divided into documented security zones
+      description: The network MUST be divided into security zones, such as users, servers, management, guests and partner connections, with each zone and each permitted connection between zones listed in a zone and conduit register.
+      rationale: Zones limit how far an intruder or malware can move from the first compromised device.
+      criteria:
+        - method: inspection
+          text: The register lists each zone with its networks and each permitted conduit with source, destination, services and owner, and a sample of 10 networks matches the live configuration.
+    sv:
+      title: Nätet indelat i dokumenterade säkerhetszoner
+      description: Nätet SKA vara indelat i säkerhetszoner, till exempel användare, servrar, förvaltning, gäster och partneranslutningar, där varje zon och varje tillåten förbindelse mellan zoner finns i ett register över zoner och kommunikationskanaler.
+      rationale: Zoner begränsar hur långt en inkräktare eller skadlig kod kan ta sig från den första komprometterade enheten.
+      criteria:
+        - method: inspection
+          text: Registret listar varje zon med dess nät och varje tillåten kommunikationskanal med källa, mål, tjänster och ägare, och ett urval av 10 nät stämmer med den verkliga konfigurationen.
+
+  - id: CMSEC-02
+    type: security
+    obligation: must
+    priority: critical
+    tags: [firewall, deny-by-default, zones]
+    refs: ["IEC 62443-3-3 SR 5.2", "ISO/IEC 27033-4:2014", "ISO/IEC 27001:2022 A.8.20"]
+    tests: [CMSEC-T01]
+    en:
+      title: Traffic between zones denied by default
+      description: The firewalls between zones MUST deny each connection that is not listed as a permitted conduit in the zone and conduit register.
+      rationale: An explicit list of allowed traffic is the only way to know what can cross a zone boundary.
+      criteria:
+        - method: test
+          text: Connection attempts on 20 services that are not in the register, between 3 pairs of zones, are blocked and logged.
+    sv:
+      title: Trafik mellan zoner nekas från början
+      description: Brandväggarna mellan zoner SKA neka varje förbindelse som inte finns som tillåten kommunikationskanal i registret över zoner och kommunikationskanaler.
+      rationale: En uttrycklig lista över tillåten trafik är det enda sättet att veta vad som kan passera en zongräns.
+      criteria:
+        - method: test
+          text: Anslutningsförsök mot 20 tjänster som inte finns i registret, mellan 3 par av zoner, blockeras och loggas.
+
+  - id: CMSEC-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [firewall, rule-review]
+    refs: ["ISO/IEC 27033-4:2014", "ISO/IEC 27001:2022 A.8.20"]
+    tests: [CMSEC-T02]
+    en:
+      title: Firewall rules reviewed every 6 months
+      description: The network security team MUST review each firewall rule every 6 months with its owner and remove each rule that has no owner, no matching register entry or no hits in the last 90 days.
+      rationale: Rule sets grow with each project and seldom shrink, and forgotten rules are a common path for attackers.
+      criteria:
+        - method: review
+          text: The latest review is at most 6 months old, lists each rule with owner and decision, and the removed rules are gone from the live rule set.
+          threshold: every 6 months
+    sv:
+      title: Brandväggsregler granskas var 6:e månad
+      description: Nätsäkerhetsfunktionen SKA granska varje brandväggsregel var 6:e månad med dess ägare och ta bort varje regel som saknar ägare, saknar motsvarande post i registret eller inte har träffats under de senaste 90 dagarna.
+      rationale: Regeluppsättningar växer med varje projekt och krymper sällan, och bortglömda regler är en vanlig väg för angripare.
+      criteria:
+        - method: review
+          text: Den senaste granskningen är högst 6 månader gammal och listar varje regel med ägare och beslut, och de borttagna reglerna finns inte längre i den aktiva regeluppsättningen.
+          threshold: var 6:e månad
+
+  - id: CMSEC-04
+    type: security
+    obligation: must
+    priority: critical
+    tags: [encryption, site-to-site, ipsec]
+    refs: ["ISO/IEC 27033-5:2013", "IEC 62443-3-3 SR 4.1", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [CMSEC-T03]
+    en:
+      title: Traffic between sites encrypted over shared networks
+      description: The network MUST encrypt and integrity-protect each connection between sites that crosses a network not owned by the organisation, with IPsec or MACsec using AES-GCM with keys of at least 256 bits.
+      rationale: Leased lines and the internet pass through equipment run by others, where traffic can be read or changed.
+      criteria:
+        - method: inspection
+          text: The configuration of each site-to-site connection over a third-party network shows IPsec or MACsec with AES-GCM and 256-bit keys.
+        - method: test
+          text: A capture on a third-party segment of a site-to-site connection shows only encrypted packets.
+    sv:
+      title: Trafik mellan platser krypteras över delade nät
+      description: Nätet SKA kryptera och integritetsskydda varje förbindelse mellan platser som går över ett nät som organisationen inte äger, med IPsec eller MACsec med AES-GCM och nycklar på minst 256 bitar.
+      rationale: Hyrda förbindelser och internet passerar utrustning som drivs av andra, där trafiken kan läsas eller ändras.
+      criteria:
+        - method: inspection
+          text: Konfigurationen av varje förbindelse mellan platser över ett nät hos tredje part visar IPsec eller MACsec med AES-GCM och 256-bitarsnycklar.
+        - method: test
+          text: En inspelning på ett avsnitt hos tredje part av en förbindelse mellan platser visar bara krypterade paket.
+
+  - id: CMSEC-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [remote-access, vpn, mfa]
+    refs: ["ISO/IEC 27033-5:2013", "IEC 62443-3-3 SR 1.13", "ISO/IEC 27001:2022 A.6.7"]
+    tests: [CMSEC-T04]
+    en:
+      title: Remote access only through VPN with multi-factor authentication
+      description: The network MUST accept remote access to internal zones only through the organisation's VPN gateway after multi-factor authentication of the user.
+      rationale: Stolen passwords are the most common way into networks, and a second factor stops most of those attempts.
+      criteria:
+        - method: test
+          text: A VPN login with a valid password and no second factor is refused, the same login with the second factor succeeds, and an external scan finds no other remote access service.
+    sv:
+      title: Distansåtkomst bara via VPN med flerfaktorsautentisering
+      description: Nätet SKA ta emot distansåtkomst till interna zoner bara via organisationens VPN-gateway efter flerfaktorsautentisering av användaren.
+      rationale: Stulna lösenord är den vanligaste vägen in i nät, och en andra faktor stoppar de flesta av de försöken.
+      criteria:
+        - method: test
+          text: En VPN-inloggning med giltigt lösenord utan andra faktor nekas, samma inloggning med den andra faktorn lyckas, och en extern skanning hittar ingen annan tjänst för distansåtkomst.
+
+  - id: CMSEC-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [network-access-control, 802-1x, quarantine]
+    refs: ["IEEE 802.1X-2020", "IEC 62443-3-3 SR 1.2"]
+    tests: [CMSEC-T05]
+    en:
+      title: Unknown devices on wired ports placed in quarantine
+      description: Each wired access port in user areas MUST authenticate the connected device with IEEE 802.1X and place a device that fails authentication in a quarantine network that reaches only the onboarding portal.
+      rationale: Network ports in meeting rooms and corridors are open to anyone in the building.
+      criteria:
+        - method: test
+          text: An unregistered laptop connected to a user port gets an address in the quarantine network and reaches only the onboarding portal, while a registered laptop gets its normal network.
+    sv:
+      title: Okända enheter på fasta portar hamnar i karantän
+      description: Varje fast accessport i användarutrymmen SKA autentisera den anslutna enheten med IEEE 802.1X och lägga en enhet som inte autentiseras i ett karantännät som bara når registreringsportalen.
+      rationale: Nätuttag i mötesrum och korridorer är åtkomliga för alla som befinner sig i byggnaden.
+      criteria:
+        - method: test
+          text: En oregistrerad dator som ansluts till en användarport får en adress i karantännätet och når bara registreringsportalen, medan en registrerad dator får sitt vanliga nät.
+
+  - id: CMSEC-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [management-network, out-of-band, segmentation]
+    refs: ["ISO/IEC 27033-2:2012 (network security design)", "ISO/IEC 27001:2022 A.8.22"]
+    tests: [CMSEC-T06]
+    en:
+      title: Network elements managed from a separate management zone
+      description: The management interfaces of routers, switches, firewalls and access points MUST be reachable only from the management zone and from its jump hosts.
+      rationale: An attacker who reaches a management interface from a user network can take over the network itself.
+      criteria:
+        - method: test
+          text: Connections to the management addresses of 10 elements fail from a user, server and guest network and succeed from a jump host in the management zone.
+    sv:
+      title: Nätelement förvaltas från en separat förvaltningszon
+      description: Förvaltningsgränssnitten i routrar, switchar, brandväggar och accesspunkter SKA vara nåbara bara från förvaltningszonen och dess hoppservrar.
+      rationale: En angripare som når ett förvaltningsgränssnitt från ett användarnät kan ta över själva nätet.
+      criteria:
+        - method: test
+          text: Anslutningar till förvaltningsadresserna för 10 element misslyckas från ett användarnät, ett servernät och ett gästnät och lyckas från en hoppserver i förvaltningszonen.
+
+  - id: CMSEC-08
+    type: security
+    obligation: should
+    priority: high
+    tags: [ddos, availability, scrubbing]
+    refs: ["IEC 62443-3-3 SR 7.1", "ISO/IEC 27033-4:2014"]
+    tests: [CMSEC-T07]
+    en:
+      title: Denial-of-service attacks mitigated within 10 minutes
+      description: The internet connection SHOULD be covered by a mitigation service that starts filtering a volumetric denial-of-service attack within 10 minutes after it is detected.
+      rationale: A volumetric attack fills the access link before the organisation's own firewall sees it, so the filtering has to happen upstream.
+      criteria:
+        - method: test
+          text: In an attack simulation agreed with the provider, filtering starts within 10 minutes and legitimate test traffic reaches the organisation during the attack.
+          threshold: ≤ 10 min
+    sv:
+      title: Överbelastningsattacker motverkas inom 10 minuter
+      description: Internetanslutningen BÖR omfattas av en skyddstjänst som börjar filtrera en volymbaserad överbelastningsattack inom 10 minuter efter att den upptäckts.
+      rationale: En volymbaserad attack fyller anslutningen innan organisationens egen brandvägg ser den, så filtreringen behöver ske längre upp i nätet.
+      criteria:
+        - method: test
+          text: Vid en attacksimulering som avtalats med leverantören börjar filtreringen inom 10 minuter och legitim testtrafik når organisationen under attacken.
+          threshold: ≤ 10 min
+
+  - id: CMSEC-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [flow-logs, monitoring, siem]
+    refs: ["IEC 62443-3-3 SR 6.2", "ISO/IEC 27001:2022 A.8.15", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [CMSEC-T08]
+    en:
+      title: Flow logs of zone boundaries kept for 90 days
+      description: The firewalls at zone boundaries MUST send a flow record of each allowed and denied connection to the central log system within 5 minutes, where the records are kept for 90 days.
+      rationale: Flow records show where an intruder went and what was sent out, long after the connections have closed.
+      criteria:
+        - method: test
+          text: A test connection across a zone boundary is found in the central log system within 5 minutes, and records from 90 days ago are still searchable.
+          threshold: ≤ 5 min, 90 days
+    sv:
+      title: Flödesloggar från zongränser sparas i 90 dagar
+      description: Brandväggarna vid zongränser SKA skicka en flödespost för varje tillåten och nekad förbindelse till det centrala loggsystemet inom 5 minuter, där posterna sparas i 90 dagar.
+      rationale: Flödesposter visar vart en inkräktare tog sig och vad som skickades ut, långt efter att förbindelserna stängts.
+      criteria:
+        - method: test
+          text: En testförbindelse över en zongräns hittas i det centrala loggsystemet inom 5 minuter, och poster från 90 dagar tillbaka går fortfarande att söka fram.
+          threshold: ≤ 5 min, 90 dagar
+
+  - id: CMSEC-10
+    type: security
+    obligation: must
+    priority: medium
+    tags: [dns, dnssec, resolver]
+    refs: ["RFC 4035", "ISO/IEC 27001:2022 A.8.20"]
+    tests: [CMSEC-T09]
+    en:
+      title: Internal DNS resolvers validate DNSSEC
+      description: The internal DNS resolvers MUST validate DNSSEC signatures and return a failure for a signed domain whose signature does not validate.
+      rationale: Forged DNS answers send users and systems to the attacker's servers, and validation detects them for signed domains.
+      criteria:
+        - method: test
+          text: A query for a test domain with a deliberately broken signature returns SERVFAIL, and a query for a correctly signed domain returns an answer with the authenticated data flag set.
+    sv:
+      title: Interna DNS-servrar validerar DNSSEC
+      description: De interna DNS-resolvrarna SKA validera DNSSEC-signaturer och returnera ett fel för en signerad domän vars signatur inte går att validera.
+      rationale: Förfalskade DNS-svar skickar användare och system till angriparens servrar, och valideringen upptäcker dem för signerade domäner.
+      criteria:
+        - method: test
+          text: En fråga om en testdomän med en avsiktligt felaktig signatur ger SERVFAIL, och en fråga om en korrekt signerad domän ger ett svar med flaggan för autentiserade data satt.
+
+  - id: CMSEC-11
+    type: security
+    obligation: must
+    priority: medium
+    tags: [certificates, renewal, key-management]
+    refs: ["ISO/IEC 27001:2022 A.8.24"]
+    tests: [CMSEC-T10]
+    en:
+      title: Network certificates renewed 30 days before expiry
+      description: The network operator MUST renew each certificate used by VPN gateways, firewalls, wireless controllers and RADIUS servers at least 30 days before it expires.
+      rationale: An expired certificate stops VPN and wireless logins for every user at once.
+      criteria:
+        - method: analysis
+          text: The certificate inventory shows each network certificate with its expiry date, and none of the certificates in use expires within 30 days.
+          threshold: ≥ 30 days before expiry
+    sv:
+      title: Certifikat i nätet förnyas 30 dagar före utgång
+      description: Nätoperatören SKA förnya varje certifikat som används av VPN-gateways, brandväggar, styrenheter för trådlöst nät och RADIUS-servrar minst 30 dagar innan det går ut.
+      rationale: Ett utgånget certifikat stoppar inloggning till VPN och trådlöst nät för varje användare samtidigt.
+      criteria:
+        - method: analysis
+          text: Certifikatförteckningen visar varje certifikat i nätet med utgångsdatum, och inget av de certifikat som används går ut inom 30 dagar.
+          threshold: ≥ 30 dagar före utgång
+
+  - id: CMSEC-12
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [industrial-control, dmz, segmentation]
+    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 5.2"]
+    tests: [CMSEC-T11]
+    en:
+      title: No direct connection from office networks to control networks
+      description: The network MUST NOT route traffic directly between an office zone and an industrial control zone, so that each exchange passes through a demilitarised zone with its own servers.
+      rationale: Malware that reaches an office computer would otherwise have a direct path to the controllers of the physical process.
+      criteria:
+        - method: test
+          text: Connections from an office computer to 10 addresses in the control zone fail, and the routing tables show no route between the two zones that bypasses the demilitarised zone.
+    sv:
+      title: Ingen direkt förbindelse från kontorsnät till styrnät
+      description: Nätet SKA INTE vidarebefordra trafik direkt mellan en kontorszon och en zon för industriell styrning, så att varje utbyte passerar en demilitariserad zon med egna servrar.
+      rationale: Skadlig kod som når en kontorsdator skulle annars ha en direkt väg till styrsystemen för den fysiska processen.
+      criteria:
+        - method: test
+          text: Anslutningar från en kontorsdator till 10 adresser i styrzonen misslyckas, och routingtabellerna visar ingen väg mellan de två zonerna som går förbi den demilitariserade zonen.
+
+tests:
+  - id: CMSEC-T01
+    priority: critical
+    execution: manual
+    tags: [segmentation, firewall]
+    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 5.2"]
+    en:
+      title: Zone register compared with the network and blocked connections
+      description: Compares the zone and conduit register with the configuration and tries connections that are not in the register.
+      preconditions: The zone and conduit register, read access to the firewall and router configurations, and test hosts in 3 zones.
+      expected: The register matches the configuration, and unlisted connections are blocked and logged.
+      steps:
+        - action: Pick 10 networks from the routers and find each in the register.
+          expected: Each network is listed in the right zone.
+        - action: From the test hosts, try 20 services between 3 pairs of zones that the register does not permit.
+          expected: Each attempt is blocked.
+          data: For example remote desktop from users to the management zone
+        - action: Search the firewall logs for the attempts.
+          expected: Each blocked attempt is logged with source, destination and port.
+    sv:
+      title: Zonregistret jämförs med nätet och blockerade förbindelser
+      description: Jämför registret över zoner och kommunikationskanaler med konfigurationen och prövar förbindelser som inte finns i registret.
+      preconditions: Registret över zoner och kommunikationskanaler, läsbehörighet till konfigurationen i brandväggar och routrar, och testdatorer i 3 zoner.
+      expected: Registret stämmer med konfigurationen, och förbindelser som inte finns i det blockeras och loggas.
+      steps:
+        - action: Välj 10 nät från routrarna och hitta vart och ett i registret.
+          expected: Varje nät finns i rätt zon.
+        - action: Pröva från testdatorerna 20 tjänster mellan 3 par av zoner som registret inte tillåter.
+          expected: Varje försök blockeras.
+          data: Till exempel fjärrskrivbord från användare till förvaltningszonen
+        - action: Sök efter försöken i brandväggsloggarna.
+          expected: Varje blockerat försök är loggat med källa, mål och port.
+
+  - id: CMSEC-T02
+    priority: high
+    execution: manual
+    tags: [firewall, rule-review]
+    refs: []
+    en:
+      title: Review of the latest firewall rule review
+      description: Checks the latest rule review against the live rule set and the hit counters.
+      preconditions: The latest rule review record and read access to the firewall rule sets and hit counters.
+      expected: The review is at most 6 months old, each rule has an owner and a decision, and removed rules are gone.
+      steps:
+        - action: Check the date of the latest review.
+          expected: It is at most 6 months old.
+        - action: Compare the reviewed rules with the live rule set.
+          expected: Each live rule appears in the review with an owner and a decision.
+        - action: Look up 5 rules marked for removal in the live rule set.
+          expected: None of them is present.
+    sv:
+      title: Kontroll av den senaste granskningen av brandväggsregler
+      description: Kontrollerar den senaste regelgranskningen mot den aktiva regeluppsättningen och träffräknarna.
+      preconditions: Protokollet från den senaste regelgranskningen och läsbehörighet till brandväggarnas regeluppsättningar och träffräknare.
+      expected: Granskningen är högst 6 månader gammal, varje regel har ägare och beslut, och borttagna regler finns inte kvar.
+      steps:
+        - action: Kontrollera datumet för den senaste granskningen.
+          expected: Den är högst 6 månader gammal.
+        - action: Jämför de granskade reglerna med den aktiva regeluppsättningen.
+          expected: Varje aktiv regel finns i granskningen med ägare och beslut.
+        - action: Leta efter 5 regler som markerats för borttagning i den aktiva regeluppsättningen.
+          expected: Ingen av dem finns kvar.
+
+  - id: CMSEC-T03
+    priority: critical
+    execution: manual
+    tags: [encryption, site-to-site]
+    refs: ["ISO/IEC 27033-5:2013"]
+    en:
+      title: Encryption of site-to-site connections
+      description: Inspects the configuration of each connection between sites over third-party networks and captures traffic on one of them.
+      preconditions: A list of site-to-site connections with their carriers, read access to the gateways and a capture point outside the gateway at one site.
+      expected: Each connection uses IPsec or MACsec with AES-GCM and 256-bit keys, and the capture shows only encrypted packets.
+      steps:
+        - action: Read the cryptographic settings of each connection.
+          expected: Each uses IPsec or MACsec with AES-GCM and 256-bit keys.
+          data: AES-256-GCM
+        - action: Capture 5 minutes of traffic outside the gateway at the chosen site.
+          expected: Each packet between the sites is ESP or MACsec, and no application data is readable.
+    sv:
+      title: Kryptering av förbindelser mellan platser
+      description: Granskar konfigurationen av varje förbindelse mellan platser över nät hos tredje part och spelar in trafik på en av dem.
+      preconditions: En lista över förbindelser mellan platser med operatörer, läsbehörighet till gatewayerna och en inspelningspunkt utanför gatewayen på en plats.
+      expected: Varje förbindelse använder IPsec eller MACsec med AES-GCM och 256-bitarsnycklar, och inspelningen visar bara krypterade paket.
+      steps:
+        - action: Läs de kryptografiska inställningarna för varje förbindelse.
+          expected: Var och en använder IPsec eller MACsec med AES-GCM och 256-bitarsnycklar.
+          data: AES-256-GCM
+        - action: Spela in 5 minuters trafik utanför gatewayen på den valda platsen.
+          expected: Varje paket mellan platserna är ESP eller MACsec, och inga tillämpningsdata går att läsa.
+
+  - id: CMSEC-T04
+    priority: critical
+    execution: manual
+    tags: [remote-access, vpn, mfa]
+    refs: ["IEC 62443-3-3 SR 1.13"]
+    en:
+      title: VPN login with and without the second factor
+      description: Logs in to the VPN with and without the second factor and scans the external addresses for other remote access services.
+      preconditions: A test account with a second factor and permission to scan the organisation's external addresses.
+      expected: Only the login with both factors succeeds, and no other remote access service is exposed.
+      steps:
+        - action: Log in to the VPN with the correct password and without the second factor.
+          expected: The login is refused.
+        - action: Log in with the password and the second factor.
+          expected: The login succeeds and internal zones are reachable.
+        - action: Scan the external addresses for remote desktop, SSH and other remote access ports.
+          expected: Only the VPN gateway answers.
+    sv:
+      title: VPN-inloggning med och utan andra faktor
+      description: Loggar in i VPN med och utan andra faktor och skannar de externa adresserna efter andra tjänster för distansåtkomst.
+      preconditions: Ett testkonto med andra faktor och tillstånd att skanna organisationens externa adresser.
+      expected: Bara inloggningen med båda faktorerna lyckas, och ingen annan tjänst för distansåtkomst är exponerad.
+      steps:
+        - action: Logga in i VPN med rätt lösenord och utan andra faktor.
+          expected: Inloggningen nekas.
+        - action: Logga in med lösenordet och den andra faktorn.
+          expected: Inloggningen lyckas och interna zoner går att nå.
+        - action: Skanna de externa adresserna efter portar för fjärrskrivbord, SSH och annan distansåtkomst.
+          expected: Bara VPN-gatewayen svarar.
+
+  - id: CMSEC-T05
+    priority: high
+    execution: manual
+    tags: [network-access-control, quarantine]
+    refs: ["IEEE 802.1X-2020"]
+    en:
+      title: Registered and unregistered laptops on a user port
+      description: Connects a registered and an unregistered laptop to the same wired user port.
+      preconditions: A wired user port in a meeting room, a registered laptop and an unregistered laptop.
+      expected: The unregistered laptop lands in quarantine and reaches only the portal, and the registered laptop gets its normal network.
+      steps:
+        - action: Connect the unregistered laptop and read its address.
+          expected: The address is in the quarantine network.
+        - action: From the unregistered laptop, open the onboarding portal and an internal server.
+          expected: The portal opens and the internal server cannot be reached.
+        - action: Connect the registered laptop to the same port.
+          expected: It authenticates with 802.1X and gets an address in its normal user network.
+    sv:
+      title: Registrerad och oregistrerad dator på en användarport
+      description: Ansluter en registrerad och en oregistrerad dator till samma fasta användarport.
+      preconditions: En fast användarport i ett mötesrum, en registrerad dator och en oregistrerad dator.
+      expected: Den oregistrerade datorn hamnar i karantän och når bara portalen, och den registrerade datorn får sitt vanliga nät.
+      steps:
+        - action: Anslut den oregistrerade datorn och läs dess adress.
+          expected: Adressen ligger i karantännätet.
+        - action: Öppna registreringsportalen och en intern server från den oregistrerade datorn.
+          expected: Portalen öppnas och den interna servern går inte att nå.
+        - action: Anslut den registrerade datorn till samma port.
+          expected: Den autentiseras med 802.1X och får en adress i sitt vanliga användarnät.
+
+  - id: CMSEC-T06
+    priority: high
+    execution: automated
+    tags: [management-network]
+    refs: ["ISO/IEC 27001:2022 A.8.22"]
+    en:
+      title: Management interfaces reached from different zones
+      description: A script tries to connect to the management addresses of 10 elements from 4 zones.
+      preconditions: Test hosts in a user, server and guest network and a jump host in the management zone, and the management addresses of 10 elements.
+      expected: Only the jump host reaches the management interfaces.
+      steps:
+        - action: Try SSH and HTTPS to each management address from the user, server and guest test hosts.
+          expected: Each connection fails.
+          data: TCP 22 and 443
+        - action: Try the same connections from the jump host.
+          expected: Each connection succeeds.
+    sv:
+      title: Förvaltningsgränssnitt nås från olika zoner
+      description: Ett skript försöker ansluta till förvaltningsadresserna för 10 element från 4 zoner.
+      preconditions: Testdatorer i ett användarnät, ett servernät och ett gästnät och en hoppserver i förvaltningszonen, samt förvaltningsadresserna för 10 element.
+      expected: Bara hoppservern når förvaltningsgränssnitten.
+      steps:
+        - action: Pröva SSH och HTTPS mot varje förvaltningsadress från testdatorerna i användar-, server- och gästnätet.
+          expected: Varje anslutning misslyckas.
+          data: TCP 22 och 443
+        - action: Pröva samma anslutningar från hoppservern.
+          expected: Varje anslutning lyckas.
+
+  - id: CMSEC-T07
+    priority: high
+    execution: manual
+    tags: [ddos, scrubbing]
+    refs: ["IEC 62443-3-3 SR 7.1"]
+    en:
+      title: Denial-of-service simulation with the mitigation provider
+      description: Runs an agreed attack simulation against a test address and measures when filtering starts.
+      preconditions: A written agreement with the mitigation provider on time, volume and target, and a test service at the target address.
+      expected: Filtering starts within 10 minutes, and legitimate test traffic gets through during the attack.
+      steps:
+        - action: Start the simulated volumetric attack and note the time of detection.
+          expected: The provider's portal shows the attack as detected.
+          data: Volume agreed with the provider
+        - action: Note when filtering starts.
+          expected: Filtering starts within 10 minutes of detection.
+        - action: Send requests to the test service from an external test host during the attack.
+          expected: At least 95 % of the requests succeed after filtering has started.
+    sv:
+      title: Simulerad överbelastningsattack med skyddsleverantören
+      description: Genomför en avtalad attacksimulering mot en testadress och mäter när filtreringen börjar.
+      preconditions: En skriftlig överenskommelse med skyddsleverantören om tid, volym och mål, och en testtjänst på måladressen.
+      expected: Filtreringen börjar inom 10 minuter, och legitim testtrafik kommer fram under attacken.
+      steps:
+        - action: Starta den simulerade volymbaserade attacken och anteckna tidpunkten för upptäckt.
+          expected: Leverantörens portal visar attacken som upptäckt.
+          data: Volym enligt överenskommelse med leverantören
+        - action: Anteckna när filtreringen börjar.
+          expected: Filtreringen börjar inom 10 minuter från upptäckten.
+        - action: Skicka förfrågningar till testtjänsten från en extern testdator under attacken.
+          expected: Minst 95 % av förfrågningarna lyckas efter att filtreringen börjat.
+
+  - id: CMSEC-T08
+    priority: high
+    execution: manual
+    tags: [flow-logs, siem]
+    refs: ["ISO/IEC 27001:2022 A.8.15"]
+    en:
+      title: Flow record of a test connection in the central log system
+      description: Makes a test connection across a zone boundary and searches for it in the central log system, then searches for old records.
+      preconditions: A test host in one zone, a server in another zone and search access to the central log system.
+      expected: The test connection is found within 5 minutes, and records from 90 days ago are searchable.
+      steps:
+        - action: Connect from the test host to the server and note the time.
+          expected: The connection is allowed.
+        - action: Search the central log system for the connection.
+          expected: A flow record with source, destination, port and the allow decision is found within 5 minutes.
+        - action: Search for flow records of the same firewall from 90 days ago.
+          expected: Records from that day are returned.
+    sv:
+      title: Flödespost för en testförbindelse i det centrala loggsystemet
+      description: Gör en testförbindelse över en zongräns och söker efter den i det centrala loggsystemet, och söker sedan efter gamla poster.
+      preconditions: En testdator i en zon, en server i en annan zon och sökbehörighet i det centrala loggsystemet.
+      expected: Testförbindelsen hittas inom 5 minuter, och poster från 90 dagar tillbaka går att söka fram.
+      steps:
+        - action: Anslut från testdatorn till servern och anteckna tiden.
+          expected: Förbindelsen tillåts.
+        - action: Sök efter förbindelsen i det centrala loggsystemet.
+          expected: En flödespost med källa, mål, port och beslutet tillåten hittas inom 5 minuter.
+        - action: Sök efter flödesposter från samma brandvägg för 90 dagar sedan.
+          expected: Poster från den dagen visas.
+
+  - id: CMSEC-T09
+    priority: medium
+    execution: automated
+    tags: [dns, dnssec]
+    refs: ["RFC 4035"]
+    en:
+      title: DNSSEC validation by the internal resolvers
+      description: A script queries each internal resolver for a correctly signed and a deliberately broken test domain.
+      preconditions: The addresses of the internal resolvers, a correctly signed test domain and a public test domain with a broken signature.
+      expected: The broken domain gives SERVFAIL, and the signed domain gives an answer with the authenticated data flag.
+      steps:
+        - action: Query each resolver for the domain with the broken signature.
+          expected: Each resolver returns SERVFAIL.
+        - action: Query each resolver for the correctly signed domain.
+          expected: Each resolver returns the answer with the AD flag set.
+    sv:
+      title: DNSSEC-validering i de interna resolvrarna
+      description: Ett skript frågar varje intern resolver om en korrekt signerad och en avsiktligt felsignerad testdomän.
+      preconditions: Adresserna till de interna resolvrarna, en korrekt signerad testdomän och en publik testdomän med felaktig signatur.
+      expected: Den felsignerade domänen ger SERVFAIL, och den signerade domänen ger ett svar med flaggan för autentiserade data.
+      steps:
+        - action: Fråga varje resolver om domänen med den felaktiga signaturen.
+          expected: Varje resolver returnerar SERVFAIL.
+        - action: Fråga varje resolver om den korrekt signerade domänen.
+          expected: Varje resolver returnerar svaret med AD-flaggan satt.
+
+  - id: CMSEC-T10
+    priority: medium
+    execution: automated
+    tags: [certificates, renewal]
+    refs: []
+    en:
+      title: Expiry dates of certificates in use in the network
+      description: A script connects to each VPN gateway, firewall, wireless controller and RADIUS server and reads the certificate it presents.
+      preconditions: The certificate inventory and network access to each listed service.
+      expected: Each presented certificate is in the inventory and expires more than 30 days from today.
+      steps:
+        - action: Read the certificate presented by each service.
+          expected: Each certificate is found in the inventory.
+        - action: Compare each expiry date with today's date.
+          expected: Each certificate expires more than 30 days from today.
+          data: Limit 30 days
+    sv:
+      title: Utgångsdatum för certifikat som används i nätet
+      description: Ett skript ansluter till varje VPN-gateway, brandvägg, styrenhet för trådlöst nät och RADIUS-server och läser certifikatet den visar upp.
+      preconditions: Certifikatförteckningen och nätåtkomst till varje tjänst i den.
+      expected: Varje certifikat som visas upp finns i förteckningen och går ut mer än 30 dagar från i dag.
+      steps:
+        - action: Läs certifikatet som varje tjänst visar upp.
+          expected: Varje certifikat finns i förteckningen.
+        - action: Jämför varje utgångsdatum med dagens datum.
+          expected: Varje certifikat går ut mer än 30 dagar från i dag.
+          data: Gräns 30 dagar
+
+  - id: CMSEC-T11
+    priority: critical
+    execution: manual
+    tags: [industrial-control, dmz]
+    refs: ["IEC 62443-3-3 SR 5.1"]
+    en:
+      title: Office computer tries to reach the control network
+      description: Tries connections from an office computer to the control zone and reviews the routing between the zones.
+      preconditions: A test computer in an office zone, a list of 10 addresses in the control zone and read access to the routing tables.
+      expected: No connection succeeds, and no route bypasses the demilitarised zone.
+      steps:
+        - action: Try ping, SSH, remote desktop and the industrial protocol ports to the 10 control zone addresses.
+          expected: Each attempt fails.
+          data: For example TCP 502 and 44818
+        - action: Read the routing tables of the routers and firewalls between the zones.
+          expected: Each path between the office and the control zone ends in the demilitarised zone.
+    sv:
+      title: Kontorsdator försöker nå styrnätet
+      description: Prövar förbindelser från en kontorsdator till styrzonen och granskar routingen mellan zonerna.
+      preconditions: En testdator i en kontorszon, en lista över 10 adresser i styrzonen och läsbehörighet till routingtabellerna.
+      expected: Ingen förbindelse lyckas, och ingen väg går förbi den demilitariserade zonen.
+      steps:
+        - action: Pröva ping, SSH, fjärrskrivbord och portarna för de industriella protokollen mot de 10 adresserna i styrzonen.
+          expected: Varje försök misslyckas.
+          data: Till exempel TCP 502 och 44818
+        - action: Läs routingtabellerna i routrar och brandväggar mellan zonerna.
+          expected: Varje väg mellan kontorszonen och styrzonen slutar i den demilitariserade zonen.

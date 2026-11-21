@@ -127,6 +127,9 @@ const (
 	EnumSeverity    = "severity"
 	EnumScope       = "scope"
 	EnumEvalMethod  = "evaluation_method"
+	EnumRiskLevel   = "risk_level"
+	EnumRiskStatus  = "risk_status"
+	EnumMitigation  = "mitigation_state"
 	obligationUnset = "unspecified"
 )
 
@@ -174,6 +177,7 @@ var templateNames = map[string]map[string]string{
 		RunSummary:           "Sammanfattning av körning",
 		Defects:              "Defekter",
 		TestInventory:        "Testförteckning",
+		Risks:                "Riskrapport",
 	},
 }
 
@@ -192,6 +196,8 @@ var enums = map[string]map[string]map[string]string{
 		EnumObligation: {"must": "MUST", "must_not": "MUST NOT", "shall": "SHALL", "shall_not": "SHALL NOT", "should": "SHOULD",
 			"should_not": "SHOULD NOT", "may": "MAY", "optional": "OPTIONAL", "will": "WILL", "describe": "DESCRIBE", obligationUnset: "Unspecified"},
 		EnumScope: {"requirement": "Requirements", "test": "Tests"},
+		EnumMitigation: {MitigationNone: "No requirements", MitigationUntested: "Untested", MitigationPartly: "Partly tested",
+			MitigationTested: "Tested, not all passed", MitigationVerified: "Verified"},
 	},
 	Swedish: {
 		EnumStatus: {"draft": "Utkast", "review": "Granskning", "approved": "Godkänt", "implemented": "Implementerat", "verified": "Verifierat",
@@ -209,6 +215,10 @@ var enums = map[string]map[string]map[string]string{
 		EnumSeverity:   {"error": "Fel", "warning": "Varning"},
 		EnumScope:      {"requirement": "Krav", "test": "Testfall"},
 		EnumEvalMethod: {"test": "Test", "inspection": "Inspektion", "analysis": "Analys", "demonstration": "Demonstration", "review": "Granskning"},
+		EnumRiskLevel:  {"low": "Låg", "medium": "Medel", "high": "Hög", "critical": "Kritisk"},
+		EnumRiskStatus: {"identified": "Identifierad", "mitigating": "Åtgärdas", "mitigated": "Åtgärdad", "accepted": "Accepterad", "closed": "Stängd"},
+		EnumMitigation: {MitigationNone: "Inga krav", MitigationUntested: "Otestad", MitigationPartly: "Delvis testad",
+			MitigationTested: "Testad, inte alla godkända", MitigationVerified: "Verifierad"},
 	},
 }
 
@@ -362,5 +372,36 @@ var texts = map[string]map[string]string{
 		"In progress":               "Pågående",
 		"#":                         "#",
 		"Runs":                      "Testkörningar",
+		// risk report (terms as in the web client's "risksView")
+		"Level":                       "Nivå",
+		"Risks by level and status":   "Risker per nivå och status",
+		"Heat map (risks not closed)": "Värmekarta (risker som inte är stängda)",
+		"Likelihood \\ impact":        "Sannolikhet \\ konsekvens",
+		"Risk register":               "Riskregister",
+		"Likelihood":                  "Sannolikhet",
+		"Impact":                      "Konsekvens",
+		"Score":                       "Poäng",
+		"Mitigation":                  "Åtgärd",
+		"Mitigation state":            "Åtgärdens status",
+		"Traceability: risks, requirements and tests": "Spårbarhet: risker, krav och testfall",
+		"Risk":                                "Risk",
+		"Open risks with untested mitigation": "Öppna risker med otestad åtgärd",
+		"Requirements not passed":             "Krav som inte är godkända",
+		"Top open risks":                      "Största öppna risker",
+		"Open risks not updated for 90 days or more": "Öppna risker som inte uppdaterats på 90 dagar eller mer",
+		"Days since update":                          "Dagar sedan uppdatering",
+		"Risks":                                      "Risker",
+		"Open risks (identified or mitigating)":      "Öppna risker (identifierade eller under åtgärd)",
+		"Mitigated risks":                            "Åtgärdade risker",
+		"Accepted risks":                             "Accepterade risker",
+		"Closed risks":                               "Stängda risker",
+		"Open critical risks":                        "Öppna kritiska risker",
+		"Open high risks":                            "Öppna höga risker",
+		"Open medium risks":                          "Öppna medelhöga risker",
+		"Open low risks":                             "Öppna låga risker",
+		"Open risks without requirements":            "Öppna risker utan krav",
+		"Open risks with verified mitigation":        "Öppna risker med verifierad åtgärd",
+		"Share of open risks verified":               "Andel verifierade öppna risker",
+		"Open risks by mitigation state":             "Öppna risker per åtgärdsstatus",
 	},
 }

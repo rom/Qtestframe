@@ -2,10 +2,13 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/rom/qtestframe/internal/config"
 )
 
 func TestBackupRestoreCommands(t *testing.T) {
@@ -63,6 +66,13 @@ func TestBackupRestoreCommands(t *testing.T) {
 	if r := run(t, "", "restore", "--bogus"); r.code != 1 {
 		t.Fatal(r)
 	}
+	// the backup's secrets are encrypted: a server with another key refuses it
+	if r := run(t, "", "restore", "--config", dstCfg, "--in", out, "--yes"); r.code != 1 || !strings.Contains(r.stderr, "cannot be decrypted with this server's key") {
+		t.Fatal(r)
+	}
+	// with the source's key file it restores
+	srcKey := filepath.Join(filepath.Dir(srcCfg), config.DefaultKeyFileName)
+	dstCfg = writeConfig(t, fmt.Sprintf("secrets: {local: {key_file: %q}}", srcKey))
 	r = run(t, "", "restore", "--config", dstCfg, "--in", out, "--yes")
 	if r.code != 0 || !strings.Contains(r.stdout, "restored ") || !strings.Contains(r.stdout, "requirements") {
 		t.Fatal(r)

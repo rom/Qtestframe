@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"regexp"
 	"slices"
@@ -406,6 +407,10 @@ func (s *Store) DefectTracker(ctx context.Context, tenantID, projectID string) (
 	}
 	var t model.DefectTracker
 	_ = json.Unmarshal([]byte(raw), &t)
+	var err error
+	if t.Token, err = s.unseal(ctx, t.Token, adTracker(projectID)); err != nil {
+		return nil, fmt.Errorf("tracker token: %w", err)
+	}
 	t.HasToken = t.Token != ""
 	return &t, nil
 }
@@ -451,7 +456,11 @@ func (s *Store) SaveDefectTracker(ctx context.Context, tenantID, projectID strin
 		t.Token = cur.Token
 	}
 	t.HasToken = false
-	raw, _ := json.Marshal(t)
+	stored := *t
+	if stored.Token, err = s.seal(t.Token, adTracker(projectID)); err != nil {
+		return err
+	}
+	raw, _ := json.Marshal(stored)
 	_, err = s.c(ctx).exec(ctx, `UPDATE projects SET defect_tracker = ? WHERE id = ? AND tenant_id = ?`, string(raw), projectID, tenantID)
 	t.HasToken = t.Token != ""
 	return err

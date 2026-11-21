@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -45,7 +46,14 @@ func (s *Store) WebTestSettings(ctx context.Context, tenantID, projectID string)
 		w.Variables = []model.TestVariable{}
 	}
 	for i := range w.Variables {
-		w.Variables[i].HasValue = w.Variables[i].Value != ""
+		v := &w.Variables[i]
+		if v.Secret {
+			var err error
+			if v.Value, err = s.unseal(ctx, v.Value, adWebVar(projectID, v.Name)); err != nil {
+				return nil, fmt.Errorf("web test variable %s: %w", v.Name, err)
+			}
+		}
+		v.HasValue = v.Value != ""
 	}
 	return &w, nil
 }
@@ -136,7 +144,17 @@ func (s *Store) SaveWebTestSettings(ctx context.Context, tenantID, projectID str
 		vars = append(vars, v)
 	}
 	w.Variables = vars
-	raw, _ := json.Marshal(w)
+	stored := *w
+	stored.Variables = make([]model.TestVariable, len(vars))
+	for i, v := range vars {
+		if v.Secret {
+			if v.Value, err = s.seal(v.Value, adWebVar(projectID, v.Name)); err != nil {
+				return err
+			}
+		}
+		stored.Variables[i] = v
+	}
+	raw, _ := json.Marshal(stored)
 	_, err = s.c(ctx).exec(ctx, `UPDATE projects SET web_tests = ? WHERE id = ? AND tenant_id = ?`, string(raw), projectID, tenantID)
 	for i := range w.Variables {
 		w.Variables[i].HasValue = w.Variables[i].Value != ""

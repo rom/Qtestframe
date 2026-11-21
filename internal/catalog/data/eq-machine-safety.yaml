@@ -1,0 +1,744 @@
+area: eq-machine-safety
+prefix: EQSAF
+group: privacy
+catalogue: equipment
+name: {en: Machine safety and operator interface, sv: Maskinsäkerhet och operatörsgränssnitt}
+description:
+  en: Safety of machinery under the Machinery Regulation (EU) 2023/1230 and ISO 12100, covering risk assessment and the three-step method, performance levels of safety functions, emergency stop, prevention of unexpected start-up, guards and safety distances, energy isolation, operating modes, marking, warnings, substantial modification, and the design of controls, indicators, alarms and operator displays.
+  sv: Maskinsäkerhet enligt maskinförordningen (EU) 2023/1230 och ISO 12100, med riskbedömning och trestegsmetoden, prestandanivåer för säkerhetsfunktioner, nödstopp, skydd mot oväntad start, skydd och säkerhetsavstånd, frånskiljning av energi, driftlägen, märkning, varningar, väsentlig ändring samt utformning av manöverdon, indikatorer, larm och operatörsbilder.
+
+requirements:
+  - id: EQSAF-01
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [risk-assessment, hazards, life-cycle]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "Regulation (EU) 2023/1230 Annex III (general principles)"]
+    tests: [EQSAF-T01]
+    en:
+      title: Risk assessment covering each phase of the machine's life
+      description: The manufacturer MUST carry out and document a risk assessment of the machine that sets its limits of use, identifies the hazards in each life phase (transport, installation, operation, cleaning, maintenance, dismantling) including foreseeable misuse, and estimates and evaluates each risk.
+      rationale: The risk assessment is the basis for every safety measure on the machine and the first document a market surveillance authority asks for.
+      criteria:
+        - method: inspection
+          text: The risk assessment states the limits of use, covers the six life phases with foreseeable misuse, and each hazard has an estimated and an evaluated risk.
+    sv:
+      title: Riskbedömning som omfattar varje skede i maskinens liv
+      description: Tillverkaren SKA genomföra och dokumentera en riskbedömning av maskinen som fastställer dess användningsgränser, identifierar riskkällorna i varje livsskede (transport, installation, drift, rengöring, underhåll, nedmontering) inklusive förutsebar felanvändning, och uppskattar och värderar varje risk.
+      rationale: Riskbedömningen är grunden för varje skyddsåtgärd på maskinen och det första dokument som en marknadskontrollmyndighet frågar efter.
+      criteria:
+        - method: inspection
+          text: Riskbedömningen anger användningsgränserna, omfattar de sex livsskedena med förutsebar felanvändning, och varje riskkälla har en uppskattad och en värderad risk.
+
+  - id: EQSAF-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [risk-reduction, three-step-method]
+    refs: ["ISO 12100:2010 §6.1 (three-step method)", "Regulation (EU) 2023/1230 Annex III §1.1.2 (principles of safety integration)"]
+    tests: [EQSAF-T01]
+    en:
+      title: Risks reduced in the order of the three-step method
+      description: For each risk above the tolerable level, the risk assessment MUST record why inherently safe design could not remove it before safeguarding is chosen, and why safeguarding could not remove it before information for use is relied on.
+      rationale: Warnings and instructions are the weakest measures, and the regulation demands that design and safeguarding are used first.
+      criteria:
+        - method: inspection
+          text: For each risk reduced by safeguarding or information for use, the risk assessment records the reason why the preceding step was not enough.
+    sv:
+      title: Risker minskas i trestegsmetodens ordning
+      description: För varje risk över den tolererbara nivån SKA riskbedömningen ange varför en i sig säker konstruktion inte kunde ta bort den innan skydd väljs, och varför skydd inte kunde ta bort den innan man förlitar sig på information för användning.
+      rationale: Varningar och instruktioner är de svagaste åtgärderna, och förordningen kräver att konstruktion och skydd används först.
+      criteria:
+        - method: inspection
+          text: För varje risk som minskats med skydd eller information för användning anger riskbedömningen skälet till att det föregående steget inte räckte.
+
+  - id: EQSAF-03
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [safety-functions, performance-level, control-system]
+    refs: ["ISO 13849-1:2023", "ISO 13849-2:2012 (validation)", "Regulation (EU) 2023/1230 Annex III §1.2.1 (safety and reliability of control systems)", "IEC 62061:2021"]
+    tests: [EQSAF-T02]
+    en:
+      title: Achieved performance level of each safety function verified
+      description: For each safety function of the machine, the manufacturer MUST determine the PLr (the performance level that the risk calls for) from the risk assessment, calculate the achieved performance level from category, MTTFd, diagnostic coverage and common cause failure, and show that the achieved level is at least the PLr.
+      rationale: A safety function that fails more often than its risk allows gives a false sense of protection.
+      criteria:
+        - method: analysis
+          text: The safety function list gives PLr and the calculated PL for each function, and no function has a PL lower than its PLr.
+          threshold: PL ≥ PLr for each function
+    sv:
+      title: Uppnådd prestandanivå för varje säkerhetsfunktion verifieras
+      description: För varje säkerhetsfunktion i maskinen SKA tillverkaren bestämma den erforderliga prestandanivån utifrån riskbedömningen, beräkna den uppnådda prestandanivån utifrån kategori, MTTFd, diagnostisk täckning och fel av gemensam orsak, och visa att den uppnådda nivån är minst den erforderliga.
+      rationale: En säkerhetsfunktion som fallerar oftare än risken tillåter ger ett falskt intryck av skydd.
+      criteria:
+        - method: analysis
+          text: Förteckningen över säkerhetsfunktioner anger PLr och beräknad PL för varje funktion, och ingen funktion har en PL som är lägre än dess PLr.
+          threshold: PL ≥ PLr för varje funktion
+
+  - id: EQSAF-04
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [emergency-stop, stop-category]
+    refs: ["ISO 13850:2015 (emergency stop function)", "IEC 60204-1:2016 §10.7 (emergency stop devices)", "Regulation (EU) 2023/1230 Annex III §1.2.4.3 (emergency stop)"]
+    tests: [EQSAF-T03]
+    en:
+      title: Emergency stop at each operator position
+      description: Each operator and loading position MUST have an emergency stop device within reach that brings each hazardous motion to rest with a stop of category 0 or 1, latches in the actuated position, and only releases the machine for a new start command after a deliberate reset.
+      rationale: People in danger need one obvious action that stops the machine, and the machine must not restart by itself when the device is released.
+      criteria:
+        - method: test
+          text: Actuating each emergency stop during operation stops each hazardous motion within the stopping time stated in the risk assessment, and neither releasing the device nor the reset alone restarts the machine.
+    sv:
+      title: Nödstopp vid varje operatörsplats
+      description: Varje operatörs- och lastningsplats SKA ha ett nödstoppsdon inom räckhåll som stoppar varje farlig rörelse med ett stopp i kategori 0 eller 1, låser sig i påverkat läge och bara släpper maskinen för ett nytt startkommando efter en avsiktlig återställning.
+      rationale: Människor i fara behöver en uppenbar åtgärd som stoppar maskinen, och maskinen får inte starta av sig själv när donet släpps.
+      criteria:
+        - method: test
+          text: När varje nödstopp påverkas under drift stoppas varje farlig rörelse inom den stopptid som anges i riskbedömningen, och varken att donet släpps eller återställningen ensam startar maskinen.
+
+  - id: EQSAF-05
+    type: functional
+    obligation: must_not
+    priority: critical
+    tags: [unexpected-start-up, power-restoration]
+    refs: ["ISO 14118:2017 (prevention of unexpected start-up)", "Regulation (EU) 2023/1230 Annex III §1.2.6 (failure of the power supply)"]
+    tests: [EQSAF-T04]
+    en:
+      title: No restart when power returns
+      description: The machine MUST NOT start a hazardous motion when power, compressed air or hydraulic pressure returns after an interruption, so that each restart needs a deliberate start command.
+      rationale: An operator who is clearing a jam during a power cut can be caught by a machine that restarts on its own.
+      criteria:
+        - method: test
+          text: Interrupting and restoring each of the energy supplies during a running cycle leaves the machine at rest until a start command is given.
+    sv:
+      title: Ingen omstart när energin kommer tillbaka
+      description: Maskinen SKA INTE starta en farlig rörelse när el, tryckluft eller hydraultryck kommer tillbaka efter ett avbrott, så att varje omstart kräver ett avsiktligt startkommando.
+      rationale: En operatör som rensar ett stopp under ett strömavbrott kan fångas av en maskin som startar på egen hand.
+      criteria:
+        - method: test
+          text: När var och en av energitillförslarna bryts och återställs under en pågående cykel står maskinen still tills ett startkommando ges.
+
+  - id: EQSAF-06
+    type: constraint
+    obligation: must
+    priority: critical
+    tags: [guards, interlocking, access]
+    refs: ["ISO 14120:2015 (guards)", "ISO 14119:2024 (interlocking devices associated with guards)", "Regulation (EU) 2023/1230 Annex III §1.4 (guards and protective devices)"]
+    tests: [EQSAF-T05]
+    en:
+      title: Fixed guards need tools and movable guards are interlocked
+      description: Each fixed guard MUST need a tool to be removed and stay attached to the machine or its fixings when opened, and each movable guard that gives access to a hazardous motion MUST be interlocked so that the motion stops before it can be reached.
+      rationale: Guards that can be removed by hand or opened while the machine runs are bypassed in daily work.
+      criteria:
+        - method: test
+          text: No fixed guard can be removed without a tool, and opening each interlocked guard during operation stops the motion before a person can reach it.
+    sv:
+      title: Fasta skydd kräver verktyg och öppningsbara skydd är förreglade
+      description: Varje fast skydd SKA kräva ett verktyg för att tas bort och sitta kvar i maskinen eller i sina fästelement när det öppnas, och varje öppningsbart skydd som ger åtkomst till en farlig rörelse SKA vara förreglat så att rörelsen stoppar innan den kan nås.
+      rationale: Skydd som kan tas bort för hand eller öppnas medan maskinen går kringgås i det dagliga arbetet.
+      criteria:
+        - method: test
+          text: Inget fast skydd kan tas bort utan verktyg, och när varje förreglat skydd öppnas under drift stoppar rörelsen innan en person hinner nå den.
+
+  - id: EQSAF-07
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [safety-distances, light-curtain, stopping-time]
+    refs: ["ISO 13857:2019 (safety distances to prevent hazard zones being reached)", "ISO 13855:2024 (positioning of safeguards with respect to the approach of the human body)"]
+    tests: [EQSAF-T06]
+    en:
+      title: Safety distances based on measured stopping time
+      description: Each opening in a guard MUST meet the reach distances of ISO 13857, and each light curtain or other electro-sensitive device MUST be mounted at a distance calculated with the measured overall stopping time of the machine.
+      rationale: A light curtain placed too close lets a hand reach the hazard before the motion has stopped.
+      criteria:
+        - method: test
+          text: The stopping time measured 10 times at maximum speed and load, with the highest value used, gives a calculated distance that is at most the installed distance.
+          threshold: installed distance ≥ calculated distance
+    sv:
+      title: Säkerhetsavstånd grundade på uppmätt stopptid
+      description: Varje öppning i ett skydd SKA uppfylla räckavstånden i ISO 13857, och varje ljusridå eller annan beröringsfri skyddsanordning SKA monteras på ett avstånd som beräknats med maskinens uppmätta totala stopptid.
+      rationale: En ljusridå som sitter för nära låter en hand nå riskområdet innan rörelsen har stoppat.
+      criteria:
+        - method: test
+          text: Stopptiden mätt 10 gånger vid högsta hastighet och last, där det högsta värdet används, ger ett beräknat avstånd som högst är det monterade avståndet.
+          threshold: monterat avstånd ≥ beräknat avstånd
+
+  - id: EQSAF-08
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [energy-isolation, lockout, maintenance]
+    refs: ["IEC 60204-1:2016 §5.3 (supply disconnecting device)", "Regulation (EU) 2023/1230 Annex III §1.6.3 (isolation of energy sources)"]
+    tests: [EQSAF-T07]
+    en:
+      title: Lockable isolation of each energy source
+      description: The machine MUST have a supply disconnecting device for each energy source (electrical, pneumatic, hydraulic) that can be locked in the off position with a personal padlock, and a means to release stored energy before maintenance.
+      rationale: Maintenance staff are protected only when they can isolate and lock out every energy source themselves and check that no energy remains.
+      criteria:
+        - method: test
+          text: Each disconnecting device accepts a padlock in the off position, and after isolation and release the pressure gauges read zero and no actuator moves on a start command.
+    sv:
+      title: Låsbar frånskiljning av varje energikälla
+      description: Maskinen SKA ha en frånskiljare för varje energikälla (el, pneumatik, hydraulik) som kan låsas i frånläge med ett personligt hänglås, och ett sätt att släppa ut lagrad energi före underhåll.
+      rationale: Underhållspersonal är skyddad först när den själv kan frånskilja och låsa varje energikälla och kontrollera att ingen energi finns kvar.
+      criteria:
+        - method: test
+          text: Varje frånskiljare tar ett hänglås i frånläge, och efter frånskiljning och urladdning visar tryckmätarna noll och inget ställdon rör sig vid ett startkommando.
+
+  - id: EQSAF-09
+    type: functional
+    obligation: must
+    priority: high
+    tags: [operating-modes, enabling-device, reduced-speed]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.2.5 (selection of control or operating modes)", "IEC 60204-1:2016 §9.2.3 (operation)"]
+    tests: [EQSAF-T08]
+    en:
+      title: Setting mode with reduced speed and enabling device
+      description: When work with guards open is needed for setting or teaching, the machine MUST provide a lockable mode selector whose setting mode limits each hazardous motion to 250 mm/s and permits motion only while a three-position enabling device is held in its middle position.
+      rationale: Setting and teaching need access to the hazard zone, and reduced speed with a hold-to-run enabling device keeps that work survivable.
+      criteria:
+        - method: test
+          text: In setting mode the measured speed of each motion is at most 250 mm/s, and releasing or fully pressing the enabling device stops the motion.
+          threshold: ≤ 250 mm/s
+    sv:
+      title: Inställningsläge med reducerad hastighet och aktiveringsdon
+      description: När arbete med öppna skydd behövs för inställning eller inlärning SKA maskinen ha en låsbar driftlägesväljare vars inställningsläge begränsar varje farlig rörelse till 250 mm/s och bara tillåter rörelse medan ett aktiveringsdon med tre lägen hålls i mittläget.
+      rationale: Inställning och inlärning kräver åtkomst till riskområdet, och reducerad hastighet med ett aktiveringsdon som måste hållas in gör att arbetet går att överleva.
+      criteria:
+        - method: test
+          text: I inställningsläget är den uppmätta hastigheten för varje rörelse högst 250 mm/s, och när aktiveringsdonet släpps eller trycks i botten stoppar rörelsen.
+          threshold: ≤ 250 mm/s
+
+  - id: EQSAF-10
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [marking, ce-marking, data-plate]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.7.3 (marking of machinery)"]
+    tests: [EQSAF-T09]
+    en:
+      title: Machine marked with its identification and CE marking
+      description: Each machine MUST carry, legibly and indelibly, the name and address of the manufacturer, the designation and type, the serial number, the year of construction and the CE marking.
+      rationale: The marking identifies who is responsible and which machine a declaration of conformity or a recall concerns.
+      criteria:
+        - method: inspection
+          text: The data plate shows the five items and remains legible after cleaning with the agents named in the instructions.
+    sv:
+      title: Maskinen är märkt med sin identifiering och CE-märkning
+      description: Varje maskin SKA läsbart och outplånligt bära tillverkarens namn och adress, beteckning och typ, serienummer, tillverkningsår och CE-märkning.
+      rationale: Märkningen visar vem som är ansvarig och vilken maskin en försäkran om överensstämmelse eller en återkallelse gäller.
+      criteria:
+        - method: inspection
+          text: Märkskylten visar de fem uppgifterna och är läsbar efter rengöring med de medel som anges i instruktionerna.
+
+  - id: EQSAF-11
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [warning-signs, residual-risks, safety-signs]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.7.2 (warning of residual risks)", "ISO 7010:2019 (registered safety signs)"]
+    tests: [EQSAF-T09]
+    en:
+      title: Warning signs at the residual risks
+      description: Each residual risk listed in the risk assessment as reduced by information for use SHOULD be marked on the machine with an ISO 7010 safety sign placed where the risk can be reached.
+      rationale: A warning at the point of danger reaches people who never read the manual.
+      criteria:
+        - method: inspection
+          text: A walk around the machine with the list of residual risks finds an ISO 7010 sign at each listed location.
+    sv:
+      title: Varningsskyltar vid kvarstående risker
+      description: Varje kvarstående risk som riskbedömningen anger som minskad genom information för användning BÖR märkas på maskinen med en säkerhetsskylt enligt ISO 7010 placerad där risken kan nås.
+      rationale: En varning vid riskpunkten når människor som aldrig läser bruksanvisningen.
+      criteria:
+        - method: inspection
+          text: En rundvandring kring maskinen med listan över kvarstående risker hittar en skylt enligt ISO 7010 på varje angiven plats.
+
+  - id: EQSAF-12
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [substantial-modification, change-control]
+    refs: ["Regulation (EU) 2023/1230 Art. 18 (substantial modification)", "ISO 12100:2010 §5 (risk assessment)"]
+    tests: [EQSAF-T10]
+    en:
+      title: Safety assessment before each modification of the machine
+      description: Before a machine is modified in a way not foreseen by its manufacturer, the owner MUST assess whether the change creates a new hazard or increases a risk, record the conclusion on whether it is a substantial modification, and update the risk assessment.
+      rationale: A substantial modification makes the person who modifies the machine responsible as its manufacturer, with all the obligations of a new machine.
+      criteria:
+        - method: inspection
+          text: Each modification in the machine's change log of the last 24 months has a dated assessment with a conclusion and an updated risk assessment.
+    sv:
+      title: Säkerhetsbedömning före varje ändring av maskinen
+      description: Innan en maskin ändras på ett sätt som tillverkaren inte har förutsett SKA ägaren bedöma om ändringen skapar en ny riskkälla eller ökar en risk, registrera slutsatsen om huruvida det är en väsentlig ändring och uppdatera riskbedömningen.
+      rationale: En väsentlig ändring gör den som ändrar maskinen ansvarig som dess tillverkare, med alla skyldigheter för en ny maskin.
+      criteria:
+        - method: inspection
+          text: Varje ändring i maskinens ändringslogg för de senaste 24 månaderna har en daterad bedömning med slutsats och en uppdaterad riskbedömning.
+
+  - id: EQSAF-13
+    type: usability
+    obligation: must
+    priority: high
+    tags: [controls, colour-coding, actuating-direction]
+    refs: ["IEC 60073:2002 (coding principles for indicators and actuators)", "IEC 60447:2004 (actuating principles)", "IEC 60204-1:2016 §10.2 (push-buttons)"]
+    tests: [EQSAF-T11]
+    en:
+      title: Controls coded by colour and direction
+      description: The operator controls MUST use red only for stop and emergency stop, green or white for start, yellow for abnormal conditions, and the actuating directions of IEC 60447 (for example clockwise or upward to increase).
+      rationale: Operators act by habit under stress, and controls that follow the common conventions reduce wrong actions.
+      criteria:
+        - method: inspection
+          text: An inspection of each control panel finds no red control other than stop functions and no control that moves against the direction convention.
+    sv:
+      title: Manöverdon kodade med färg och riktning
+      description: Operatörens manöverdon SKA använda rött bara för stopp och nödstopp, grönt eller vitt för start, gult för onormala tillstånd, och påverkningsriktningarna i IEC 60447 (till exempel medurs eller uppåt för att öka).
+      rationale: Operatörer handlar av vana under stress, och manöverdon som följer de vanliga konventionerna minskar felhandlingar.
+      criteria:
+        - method: inspection
+          text: En kontroll av varje manöverpanel hittar inget rött manöverdon utöver stoppfunktioner och inget don som rör sig mot riktningskonventionen.
+
+  - id: EQSAF-14
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [alarms, operator-messages, hmi]
+    refs: ["ANSI/ISA-18.2-2016", "ANSI/ISA-101.01-2015 (human machine interfaces for process automation systems)", "IEC 61310-1:2007 (visual, acoustic and tactile signals)"]
+    tests: [EQSAF-T12]
+    en:
+      title: Alarm messages that state the cause and the action
+      description: Each alarm shown on the operator panel SHOULD state the affected unit, the cause and the operator action in the operators' language, and SHOULD carry one of at most four priorities coded by colour and symbol.
+      rationale: Alarms without a cause and an action lead to trial and error, and colour alone is missed by colour-blind operators.
+      criteria:
+        - method: inspection
+          text: A review of the alarm list finds unit, cause, action and priority for each alarm, and each priority has both a colour and a symbol.
+          threshold: ≤ 4 priorities
+    sv:
+      title: Larmmeddelanden som anger orsak och åtgärd
+      description: Varje larm som visas på operatörspanelen BÖR ange berörd enhet, orsak och operatörens åtgärd på operatörernas språk, och BÖR ha en av högst fyra prioriteter kodade med färg och symbol.
+      rationale: Larm utan orsak och åtgärd leder till att operatören prövar sig fram, och färg ensam missas av färgblinda operatörer.
+      criteria:
+        - method: inspection
+          text: En granskning av larmlistan hittar enhet, orsak, åtgärd och prioritet för varje larm, och varje prioritet har både färg och symbol.
+          threshold: ≤ 4 prioriteter
+
+  - id: EQSAF-15
+    type: usability
+    obligation: must
+    priority: high
+    tags: [control-devices, confirmation, hmi]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.2.2 (control devices)", "ISO 9241-110:2020 use error robustness"]
+    tests: [EQSAF-T11]
+    en:
+      title: Commands that start motion confirmed on touch panels
+      description: A command on a touch panel that starts a hazardous motion MUST require a confirmation step or a two-hand action, and its control MUST be placed at least 20 mm from any other control on the screen.
+      rationale: Touch screens are easy to press by mistake, and an unintended start of motion can injure a person.
+      criteria:
+        - method: test
+          text: A single touch on each motion command does not start the motion, and the measured spacing between it and the nearest other control is at least 20 mm.
+          threshold: spacing ≥ 20 mm
+    sv:
+      title: Kommandon som startar rörelse bekräftas på pekpaneler
+      description: Ett kommando på en pekpanel som startar en farlig rörelse SKA kräva ett bekräftelsesteg eller en tvåhandsmanöver, och dess knapp SKA placeras minst 20 mm från varje annan knapp på skärmen.
+      rationale: Pekskärmar är lätta att trycka på av misstag, och en oavsiktlig start av en rörelse kan skada en person.
+      criteria:
+        - method: test
+          text: En enkel tryckning på varje rörelsekommando startar inte rörelsen, och det uppmätta avståndet till närmaste andra knapp är minst 20 mm.
+          threshold: avstånd ≥ 20 mm
+
+  - id: EQSAF-16
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [display, legibility, language]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "ISO 9241-303:2011 (requirements for electronic visual displays)"]
+    tests: [EQSAF-T12]
+    en:
+      title: Legible operator display in the operators' language
+      description: The operator display SHOULD show its text in the language selected by the operator, with a character height of at least 3 mm at a viewing distance of 700 mm and a contrast ratio of at least 4.5:1 under the lighting of the workplace.
+      rationale: Operators read displays from a distance, with gloves and under poor lighting, and unreadable messages lead to wrong actions.
+      criteria:
+        - method: inspection
+          text: Measurements on the main screens show characters of at least 3 mm and a contrast of at least 4.5:1, and switching language changes each text on the screen.
+          threshold: ≥ 3 mm, contrast ≥ 4.5:1
+    sv:
+      title: Läsbar operatörsbild på operatörernas språk
+      description: Operatörsbilden BÖR visa sin text på det språk som operatören väljer, med en teckenhöjd på minst 3 mm vid ett betraktningsavstånd på 700 mm och ett kontrastförhållande på minst 4,5:1 i arbetsplatsens belysning.
+      rationale: Operatörer läser bilderna på avstånd, med handskar och i dålig belysning, och oläsbara meddelanden leder till felhandlingar.
+      criteria:
+        - method: inspection
+          text: Mätningar på huvudbilderna visar tecken på minst 3 mm och en kontrast på minst 4,5:1, och ett byte av språk ändrar varje text på skärmen.
+          threshold: ≥ 3 mm, kontrast ≥ 4,5:1
+
+  - id: EQSAF-17
+    type: usability
+    obligation: should
+    priority: low
+    tags: [ergonomics, reach, control-height]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.1.6 (ergonomics)", "EN 894-3:2000+A1:2008 (control actuators)"]
+    tests: [EQSAF-T12]
+    en:
+      title: Controls within the comfortable reach zone
+      description: The frequently used controls and the emergency stop SHOULD be placed between 600 mm and 1 700 mm above the standing surface and within 500 mm of the front edge of the operator position.
+      rationale: Controls that are too high, too low or too far away cause strain and slow reactions.
+      criteria:
+        - method: inspection
+          text: The measured height and depth of each frequently used control and each emergency stop are within the stated zone.
+          threshold: 600–1 700 mm high, ≤ 500 mm deep
+    sv:
+      title: Manöverdon inom den bekväma räckviddszonen
+      description: Ofta använda manöverdon och nödstoppet BÖR placeras mellan 600 mm och 1 700 mm över ståytan och inom 500 mm från operatörsplatsens framkant.
+      rationale: Manöverdon som sitter för högt, för lågt eller för långt bort ger belastning och långsamma reaktioner.
+      criteria:
+        - method: inspection
+          text: Uppmätt höjd och djup för varje ofta använt manöverdon och varje nödstopp ligger inom den angivna zonen.
+          threshold: 600–1 700 mm högt, ≤ 500 mm djupt
+
+tests:
+  - id: EQSAF-T01
+    priority: critical
+    execution: manual
+    tags: [risk-assessment]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "ISO 12100:2010 §6.1 (three-step method)"]
+    en:
+      title: Risk assessment review
+      description: Reviews the risk assessment of the machine for completeness and the order of risk reduction.
+      preconditions: The risk assessment of the machine and its list of hazards and measures.
+      expected: The assessment covers each life phase, and each measure follows the three-step order with reasons.
+      steps:
+        - action: Read the limits of use and the life phases covered.
+          expected: The limits are stated and transport, installation, operation, cleaning, maintenance and dismantling are covered with foreseeable misuse.
+        - action: For each hazard, read the estimated and evaluated risk.
+          expected: Each hazard has both.
+        - action: For each risk reduced by safeguarding or information for use, read the reason why the earlier step was not enough.
+          expected: Each has a reason.
+    sv:
+      title: Granskning av riskbedömningen
+      description: Granskar maskinens riskbedömning med avseende på fullständighet och ordningen för riskminskning.
+      preconditions: Maskinens riskbedömning och dess lista över riskkällor och åtgärder.
+      expected: Bedömningen omfattar varje livsskede, och varje åtgärd följer trestegsordningen med skäl.
+      steps:
+        - action: Läs användningsgränserna och de livsskeden som omfattas.
+          expected: Gränserna anges och transport, installation, drift, rengöring, underhåll och nedmontering omfattas med förutsebar felanvändning.
+        - action: Läs den uppskattade och värderade risken för varje riskkälla.
+          expected: Varje riskkälla har båda.
+        - action: Läs för varje risk som minskats med skydd eller information för användning skälet till att det tidigare steget inte räckte.
+          expected: Varje sådan risk har ett skäl.
+
+  - id: EQSAF-T02
+    priority: critical
+    execution: manual
+    tags: [safety-functions, performance-level]
+    refs: ["ISO 13849-1:2023", "ISO 13849-2:2012 (validation)"]
+    en:
+      title: Performance level calculation and validation of safety functions
+      description: Reviews the performance level calculation and runs a fault test on one safety function.
+      preconditions: The safety function list with PLr and PL, the calculation report, the circuit diagram of the safety system and the machine in a test state.
+      expected: Each PL is at least the PLr, and an injected fault is detected.
+      steps:
+        - action: Compare PL with PLr for each safety function.
+          expected: No PL is lower than its PLr.
+        - action: Check that the category, MTTFd, diagnostic coverage and common cause score in the report match the circuit diagram for 2 functions.
+          expected: They match.
+        - action: Disconnect one channel of a two-channel guard interlock and try to start the machine.
+          expected: The fault is detected and the machine does not start.
+    sv:
+      title: Beräkning av prestandanivå och validering av säkerhetsfunktioner
+      description: Granskar beräkningen av prestandanivå och gör ett feltest på en säkerhetsfunktion.
+      preconditions: Förteckningen över säkerhetsfunktioner med PLr och PL, beräkningsrapporten, kopplingsschemat för säkerhetssystemet och maskinen i testläge.
+      expected: Varje PL är minst PLr, och ett injicerat fel upptäcks.
+      steps:
+        - action: Jämför PL med PLr för varje säkerhetsfunktion.
+          expected: Ingen PL är lägre än sin PLr.
+        - action: Kontrollera att kategori, MTTFd, diagnostisk täckning och poäng för gemensam orsak i rapporten stämmer med kopplingsschemat för 2 funktioner.
+          expected: De stämmer.
+        - action: Koppla bort en kanal i en tvåkanalig förregling av ett skydd och försök starta maskinen.
+          expected: Felet upptäcks och maskinen startar inte.
+
+  - id: EQSAF-T03
+    priority: critical
+    execution: manual
+    tags: [emergency-stop]
+    refs: ["ISO 13850:2015 (emergency stop function)", "IEC 60204-1:2016 §10.7 (emergency stop devices)"]
+    en:
+      title: Emergency stop at each operator position
+      description: Actuates each emergency stop device during operation and checks stopping, latching and reset.
+      preconditions: The machine in production, the list of emergency stop devices and the stopping times in the risk assessment, and a stopwatch or stopping time meter.
+      expected: Each device stops the motion in time and the machine does not restart without a new start command.
+      steps:
+        - action: Actuate each emergency stop device during operation and measure the stopping time.
+          expected: Each hazardous motion stops within the stated time and the device stays latched.
+        - action: Release the device and then reset the emergency stop circuit.
+          expected: The machine stays at rest after both actions.
+        - action: Give a start command.
+          expected: The machine starts only now.
+    sv:
+      title: Nödstopp vid varje operatörsplats
+      description: Påverkar varje nödstoppsdon under drift och kontrollerar stopp, låsning och återställning.
+      preconditions: Maskinen i produktion, listan över nödstoppsdon och stopptiderna i riskbedömningen, och ett tidtagarur eller en stopptidsmätare.
+      expected: Varje don stoppar rörelsen i tid och maskinen startar inte om utan ett nytt startkommando.
+      steps:
+        - action: Påverka varje nödstoppsdon under drift och mät stopptiden.
+          expected: Varje farlig rörelse stoppar inom den angivna tiden och donet förblir låst.
+        - action: Släpp donet och återställ sedan nödstoppskretsen.
+          expected: Maskinen står still efter båda åtgärderna.
+        - action: Ge ett startkommando.
+          expected: Maskinen startar först nu.
+
+  - id: EQSAF-T04
+    priority: critical
+    execution: manual
+    tags: [unexpected-start-up]
+    refs: ["ISO 14118:2017 (prevention of unexpected start-up)"]
+    en:
+      title: Energy interruption during a running cycle
+      description: Interrupts and restores each energy supply while the machine runs.
+      preconditions: The machine in a running cycle with the area around it cleared, and access to the electrical, pneumatic and hydraulic supply valves and breakers.
+      expected: The machine stays at rest after each restoration until a start command.
+      steps:
+        - action: Switch off the electrical supply during a cycle and switch it on again after 10 s.
+          expected: No motion starts.
+        - action: Repeat with the compressed air supply and with the hydraulic supply.
+          expected: No motion starts after either restoration.
+        - action: Give a start command.
+          expected: The machine starts only now.
+    sv:
+      title: Avbrott i energitillförseln under en pågående cykel
+      description: Bryter och återställer varje energitillförsel medan maskinen går.
+      preconditions: Maskinen i en pågående cykel med området runt den utrymt, och åtkomst till ventiler och brytare för el, tryckluft och hydraulik.
+      expected: Maskinen står still efter varje återställning tills ett startkommando ges.
+      steps:
+        - action: Bryt elmatningen under en cykel och slå på den igen efter 10 s.
+          expected: Ingen rörelse startar.
+        - action: Upprepa med tryckluften och med hydrauliken.
+          expected: Ingen rörelse startar efter någon av återställningarna.
+        - action: Ge ett startkommando.
+          expected: Maskinen startar först nu.
+
+  - id: EQSAF-T05
+    priority: critical
+    execution: manual
+    tags: [guards, interlocking]
+    refs: ["ISO 14120:2015 (guards)", "ISO 14119:2024 (interlocking devices associated with guards)"]
+    en:
+      title: Fixed and interlocked guards
+      description: Tries to remove each fixed guard by hand and opens each interlocked guard during operation.
+      preconditions: The machine in operation and the list of fixed and interlocked guards.
+      expected: Fixed guards need tools and interlocked guards stop the motion before it can be reached.
+      steps:
+        - action: Try to remove each fixed guard without a tool.
+          expected: No guard can be removed, and a removed guard stays attached to its fixings.
+        - action: Open each interlocked guard during operation and reach towards the hazard at normal speed.
+          expected: The motion has stopped before the hand reaches the hazard zone.
+    sv:
+      title: Fasta och förreglade skydd
+      description: Försöker ta bort varje fast skydd för hand och öppnar varje förreglat skydd under drift.
+      preconditions: Maskinen i drift och listan över fasta och förreglade skydd.
+      expected: Fasta skydd kräver verktyg och förreglade skydd stoppar rörelsen innan den kan nås.
+      steps:
+        - action: Försök ta bort varje fast skydd utan verktyg.
+          expected: Inget skydd kan tas bort, och ett borttaget skydd sitter kvar i sina fästelement.
+        - action: Öppna varje förreglat skydd under drift och sträck dig mot riskområdet i normal takt.
+          expected: Rörelsen har stoppat innan handen når riskområdet.
+
+  - id: EQSAF-T06
+    priority: high
+    execution: manual
+    tags: [safety-distances, stopping-time]
+    refs: ["ISO 13855:2024 (positioning of safeguards with respect to the approach of the human body)", "ISO 13857:2019 (safety distances to prevent hazard zones being reached)"]
+    en:
+      title: Stopping time measurement and light curtain distance
+      description: Measures the overall stopping time and compares the calculated safety distance with the installed one.
+      preconditions: A stopping time meter, the machine at maximum speed and load, the light curtain data and a tape measure.
+      expected: The installed distance is at least the calculated distance, and guard openings meet the reach distances.
+      steps:
+        - action: Measure the overall stopping time 10 times by interrupting the light curtain.
+          expected: Ten values are recorded and the highest is used.
+        - action: Calculate the minimum distance with the highest stopping time and measure the installed distance.
+          expected: The installed distance is at least the calculated distance.
+          data: The formula of ISO 13855 for the detection capability and approach direction of the light curtain
+        - action: Measure each guard opening and its distance to the hazard.
+          expected: Each meets the values of ISO 13857.
+    sv:
+      title: Mätning av stopptid och avstånd för ljusridå
+      description: Mäter den totala stopptiden och jämför det beräknade säkerhetsavståndet med det monterade.
+      preconditions: En stopptidsmätare, maskinen vid högsta hastighet och last, ljusridåns data och ett måttband.
+      expected: Det monterade avståndet är minst det beräknade, och öppningarna i skydden uppfyller räckavstånden.
+      steps:
+        - action: Mät den totala stopptiden 10 gånger genom att bryta ljusridån.
+          expected: Tio värden registreras och det högsta används.
+        - action: Beräkna minsta avstånd med den högsta stopptiden och mät det monterade avståndet.
+          expected: Det monterade avståndet är minst det beräknade.
+          data: Formeln i ISO 13855 för ljusridåns detekteringsförmåga och närmanderiktning
+        - action: Mät varje öppning i skydden och dess avstånd till riskområdet.
+          expected: Var och en uppfyller värdena i ISO 13857.
+
+  - id: EQSAF-T07
+    priority: critical
+    execution: manual
+    tags: [energy-isolation, lockout]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.6.3 (isolation of energy sources)"]
+    en:
+      title: Lockout and release of stored energy
+      description: Isolates and locks out each energy source and checks that no energy remains.
+      preconditions: The machine at rest, personal padlocks and the lockout procedure.
+      expected: Each source can be locked off and no energy remains after release.
+      steps:
+        - action: Turn each disconnecting device to off and fit a padlock.
+          expected: Each device accepts the padlock in the off position and cannot be turned on.
+        - action: Release stored energy as described in the procedure and read the pressure gauges.
+          expected: Each gauge reads zero.
+        - action: Give a start command and operate each manual valve.
+          expected: No actuator moves.
+    sv:
+      title: Låsning och urladdning av lagrad energi
+      description: Frånskiljer och låser varje energikälla och kontrollerar att ingen energi finns kvar.
+      preconditions: Maskinen stillastående, personliga hänglås och rutinen för låsning.
+      expected: Varje källa kan låsas i frånläge och ingen energi finns kvar efter urladdning.
+      steps:
+        - action: Vrid varje frånskiljare till frånläge och sätt på ett hänglås.
+          expected: Varje frånskiljare tar hänglåset i frånläge och kan inte slås till.
+        - action: Släpp ut lagrad energi enligt rutinen och läs tryckmätarna.
+          expected: Varje mätare visar noll.
+        - action: Ge ett startkommando och manövrera varje handventil.
+          expected: Inget ställdon rör sig.
+
+  - id: EQSAF-T08
+    priority: high
+    execution: manual
+    tags: [operating-modes, enabling-device]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.2.5 (selection of control or operating modes)"]
+    en:
+      title: Setting mode speed and enabling device
+      description: Measures motion speed in setting mode and checks the three positions of the enabling device.
+      preconditions: The machine with the mode selector key, a three-position enabling device and a speed measuring device.
+      expected: Speed is limited and motion is only possible in the middle position.
+      steps:
+        - action: Select setting mode with the key and run each motion while holding the enabling device in its middle position.
+          expected: Each measured speed is at most 250 mm/s.
+        - action: Release the enabling device during a motion, then press it fully during a motion.
+          expected: The motion stops in both cases.
+    sv:
+      title: Hastighet i inställningsläge och aktiveringsdon
+      description: Mäter rörelsehastigheten i inställningsläget och kontrollerar aktiveringsdonets tre lägen.
+      preconditions: Maskinen med nyckeln till driftlägesväljaren, ett aktiveringsdon med tre lägen och ett instrument för hastighetsmätning.
+      expected: Hastigheten är begränsad och rörelse är bara möjlig i mittläget.
+      steps:
+        - action: Välj inställningsläge med nyckeln och kör varje rörelse med aktiveringsdonet i mittläget.
+          expected: Varje uppmätt hastighet är högst 250 mm/s.
+        - action: Släpp aktiveringsdonet under en rörelse och tryck det sedan i botten under en rörelse.
+          expected: Rörelsen stoppar i båda fallen.
+
+  - id: EQSAF-T09
+    priority: high
+    execution: manual
+    tags: [marking, warning-signs]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.7.3 (marking of machinery)", "ISO 7010:2019 (registered safety signs)"]
+    en:
+      title: Data plate and warning signs on the machine
+      description: Inspects the data plate and walks around the machine with the list of residual risks.
+      preconditions: The machine, the cleaning agents named in the instructions and the list of residual risks from the risk assessment.
+      expected: The data plate is complete and durable, and each residual risk has a sign.
+      steps:
+        - action: Read the data plate and clean it with the named agents.
+          expected: Name and address, designation and type, serial number, year and CE marking are present and remain legible.
+        - action: Walk around the machine and look for a sign at each listed residual risk.
+          expected: An ISO 7010 sign is present at each location.
+    sv:
+      title: Märkskylt och varningsskyltar på maskinen
+      description: Kontrollerar märkskylten och går runt maskinen med listan över kvarstående risker.
+      preconditions: Maskinen, de rengöringsmedel som anges i instruktionerna och listan över kvarstående risker ur riskbedömningen.
+      expected: Märkskylten är fullständig och beständig, och varje kvarstående risk har en skylt.
+      steps:
+        - action: Läs märkskylten och rengör den med de angivna medlen.
+          expected: Namn och adress, beteckning och typ, serienummer, år och CE-märkning finns och är fortfarande läsbara.
+        - action: Gå runt maskinen och leta efter en skylt vid varje angiven kvarstående risk.
+          expected: En skylt enligt ISO 7010 finns på varje plats.
+
+  - id: EQSAF-T10
+    priority: high
+    execution: manual
+    tags: [substantial-modification]
+    refs: ["Regulation (EU) 2023/1230 Art. 18 (substantial modification)"]
+    en:
+      title: Modifications assessed before they are made
+      description: Compares the machine's change log with the modification assessments and the risk assessment versions.
+      preconditions: The change log of the last 24 months, the modification assessments and the version history of the risk assessment.
+      expected: Each modification has a prior assessment with a conclusion and an updated risk assessment.
+      steps:
+        - action: Match each modification in the change log with an assessment.
+          expected: Each has an assessment dated before the modification with a conclusion on substantial modification.
+        - action: Compare the modification dates with the risk assessment versions.
+          expected: A new version follows each modification.
+    sv:
+      title: Ändringar bedöms innan de görs
+      description: Jämför maskinens ändringslogg med bedömningarna av ändringar och versionerna av riskbedömningen.
+      preconditions: Ändringsloggen för de senaste 24 månaderna, bedömningarna av ändringar och versionshistoriken för riskbedömningen.
+      expected: Varje ändring har en föregående bedömning med slutsats och en uppdaterad riskbedömning.
+      steps:
+        - action: Para ihop varje ändring i loggen med en bedömning.
+          expected: Var och en har en bedömning daterad före ändringen med en slutsats om väsentlig ändring.
+        - action: Jämför ändringsdatumen med versionerna av riskbedömningen.
+          expected: En ny version följer efter varje ändring.
+
+  - id: EQSAF-T11
+    priority: high
+    execution: manual
+    tags: [controls, hmi]
+    refs: ["IEC 60073:2002 (coding principles for indicators and actuators)", "Regulation (EU) 2023/1230 Annex III §1.2.2 (control devices)"]
+    en:
+      title: Control coding and motion commands on the touch panel
+      description: Inspects the colour and direction of each control and tries the motion commands on the touch panel.
+      preconditions: The machine with its control panels and touch panel, a ruler and the area around the machine cleared.
+      expected: Controls follow the conventions, and motion commands need confirmation and are spaced apart.
+      steps:
+        - action: Inspect the colour and actuating direction of each control.
+          expected: Red is used only for stop functions and each direction follows IEC 60447.
+        - action: Touch each motion command once.
+          expected: No motion starts without the confirmation step or two-hand action.
+        - action: Measure the distance from each motion command to the nearest other control.
+          expected: Each distance is at least 20 mm.
+    sv:
+      title: Kodning av manöverdon och rörelsekommandon på pekpanelen
+      description: Kontrollerar färg och riktning för varje manöverdon och provar rörelsekommandona på pekpanelen.
+      preconditions: Maskinen med sina manöverpaneler och sin pekpanel, en linjal och området runt maskinen utrymt.
+      expected: Manöverdonen följer konventionerna, och rörelsekommandon kräver bekräftelse och har avstånd till andra knappar.
+      steps:
+        - action: Kontrollera färg och påverkningsriktning för varje manöverdon.
+          expected: Rött används bara för stoppfunktioner och varje riktning följer IEC 60447.
+        - action: Tryck en gång på varje rörelsekommando.
+          expected: Ingen rörelse startar utan bekräftelsesteget eller tvåhandsmanövern.
+        - action: Mät avståndet från varje rörelsekommando till närmaste andra knapp.
+          expected: Varje avstånd är minst 20 mm.
+
+  - id: EQSAF-T12
+    priority: medium
+    execution: manual
+    tags: [alarms, display, ergonomics]
+    refs: ["ANSI/ISA-18.2-2016", "ISO 9241-303:2011 (requirements for electronic visual displays)", "EN 894-3:2000+A1:2008 (control actuators)"]
+    en:
+      title: Alarm texts, display legibility and control placement
+      description: Reviews the alarm list, measures text and contrast on the main screens and measures the position of the controls.
+      preconditions: The alarm list exported from the panel, a luminance meter, a ruler and a tape measure.
+      expected: Alarms are complete, the display is legible in each language and controls are within the reach zone.
+      steps:
+        - action: Read unit, cause, action and priority for each alarm in the list.
+          expected: Each is present and no more than four priorities are used, each with colour and symbol.
+        - action: Measure character height and contrast on the main screens and switch the language.
+          expected: Characters are at least 3 mm, contrast is at least 4.5:1 and each text changes language.
+        - action: Measure the height and depth of each frequently used control and each emergency stop.
+          expected: Each is between 600 mm and 1 700 mm high and within 500 mm of the front edge.
+    sv:
+      title: Larmtexter, läsbarhet i operatörsbilder och placering av manöverdon
+      description: Granskar larmlistan, mäter text och kontrast i huvudbilderna och mäter placeringen av manöverdonen.
+      preconditions: Larmlistan exporterad från panelen, en luminansmätare, en linjal och ett måttband.
+      expected: Larmen är fullständiga, bilderna är läsbara på varje språk och manöverdonen ligger inom räckviddszonen.
+      steps:
+        - action: Läs enhet, orsak, åtgärd och prioritet för varje larm i listan.
+          expected: Allt finns och högst fyra prioriteter används, var och en med färg och symbol.
+        - action: Mät teckenhöjd och kontrast i huvudbilderna och byt språk.
+          expected: Tecknen är minst 3 mm, kontrasten minst 4,5:1 och varje text byter språk.
+        - action: Mät höjd och djup för varje ofta använt manöverdon och varje nödstopp.
+          expected: Var och en ligger mellan 600 mm och 1 700 mm högt och inom 500 mm från framkanten.

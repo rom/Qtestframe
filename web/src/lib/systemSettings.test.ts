@@ -12,11 +12,30 @@ import {
   parseScopes,
   PROVIDER_NAME,
   SECTIONS,
+  secretsRows,
   sectionForm,
   sourceSeverity,
   testValues,
   type SettingView,
 } from './systemSettings'
+
+describe('stored secrets', () => {
+  it('lists the provider details in order and marks the key source as a message', () => {
+    const rows = secretsRows({
+      provider: 'local',
+      key_id: 'local:ab',
+      info: { key_file: '/var/lib/qtestframe/qtestframe-secrets.key', key_source: 'file', unknown: 'x' },
+      active_key: 'k1',
+      keys: 1,
+      encrypted: 2,
+      plaintext: 0,
+    })
+    expect(rows).toEqual([
+      { id: 'key_source', value: 'file', message: true },
+      { id: 'key_file', value: '/var/lib/qtestframe/qtestframe-secrets.key', message: false },
+    ])
+  })
+})
 
 function setting(p: Partial<SettingView>): SettingView {
   return {

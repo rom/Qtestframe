@@ -1,0 +1,694 @@
+area: dc-user-manuals
+prefix: DCUM
+group: usability
+catalogue: documentation
+name: {en: User and operator manuals, sv: Användar- och operatörshandböcker}
+description:
+  en: Information for use per IEC/IEEE 82079-1 for end users and operators, with target groups, task-based instructions, safety notices, user testing, Swedish and English versions, plain language and accessible PDF.
+  sv: Bruksanvisningar enligt IEC/IEEE 82079-1 för slutanvändare och operatörer, med målgrupper, uppgiftsbaserade instruktioner, säkerhetsmeddelanden, användartester, svenska och engelska versioner, klarspråk och tillgänglig PDF.
+
+requirements:
+  - id: DCUM-01
+    type: usability
+    obligation: must
+    priority: high
+    tags: [target-group, information-for-use]
+    refs: ["IEC/IEEE 82079-1:2019 §6.2.2 (target audiences)"]
+    tests: [DCUM-T01]
+    en:
+      title: Target groups stated for each manual
+      description: Each manual MUST state its target groups with the prior knowledge and training that it assumes of each group.
+      rationale: Writers who know the reader's starting point leave out neither the basics that novices need nor the details that experts look for.
+      criteria:
+        - method: review
+          text: Each manual has a section that names its target groups and the assumed knowledge and training of each group.
+    sv:
+      title: Målgrupper angivna för varje handbok
+      description: Varje handbok SKA ange sina målgrupper med de förkunskaper och den utbildning som den förutsätter hos varje grupp.
+      rationale: Skribenter som känner läsarens utgångsläge utelämnar varken grunderna som nybörjare behöver eller detaljerna som experter letar efter.
+      criteria:
+        - method: review
+          text: Varje handbok har ett avsnitt som anger målgrupperna och de förutsatta kunskaperna och utbildningen för varje grupp.
+
+  - id: DCUM-02
+    type: usability
+    obligation: must
+    priority: high
+    tags: [operator-manual, operating-modes]
+    refs: ["IEC/IEEE 82079-1:2019 §7 (content of information for use)"]
+    tests: [DCUM-T02]
+    en:
+      title: Operator manual covers each operating mode
+      description: The operator manual MUST describe start-up, normal operation, planned shutdown, emergency stop and the handling of abnormal situations.
+      rationale: Operators need instructions most in the rare modes, where they have the least practice.
+      criteria:
+        - method: review
+          text: The operator manual has a chapter for each of the five modes, and each abnormal situation in the alarm list is covered.
+          threshold: "5 modes"
+    sv:
+      title: Operatörshandboken täcker varje driftläge
+      description: Operatörshandboken SKA beskriva uppstart, normal drift, planerad avstängning, nödstopp och hantering av onormala situationer.
+      rationale: Operatörer behöver instruktioner mest i de sällsynta lägena, där de har minst övning.
+      criteria:
+        - method: review
+          text: Operatörshandboken har ett kapitel för vart och ett av de fem lägena, och varje onormal situation i larmlistan behandlas.
+          threshold: "5 lägen"
+
+  - id: DCUM-03
+    type: usability
+    obligation: may
+    priority: low
+    tags: [operator-manual, quick-reference]
+    refs: ["IEC/IEEE 82079-1:2019 §7 (content of information for use)"]
+    tests: [DCUM-T02]
+    en:
+      title: Quick reference card at the operator position
+      description: The supplier MAY deliver a reference card of at most 2 pages with the most frequent operator tasks and the emergency stop procedure.
+      rationale: A short card at the workstation answers the frequent questions without opening the full manual.
+      criteria:
+        - method: inspection
+          text: The card has at most 2 pages, contains the emergency stop procedure, and each task on it refers to the chapter of the full manual.
+          threshold: "≤ 2 pages"
+    sv:
+      title: Snabbreferens vid operatörsplatsen
+      description: Leverantören FÅR leverera en snabbreferens på högst 2 sidor med de vanligaste operatörsuppgifterna och rutinen för nödstopp.
+      rationale: Ett kort referensblad vid arbetsplatsen besvarar de vanliga frågorna utan att hela handboken behöver öppnas.
+      criteria:
+        - method: inspection
+          text: Referensbladet har högst 2 sidor, innehåller rutinen för nödstopp, och varje uppgift på det hänvisar till kapitlet i den fullständiga handboken.
+          threshold: "≤ 2 sidor"
+
+  - id: DCUM-04
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [instructions, task-based]
+    refs: ["IEC/IEEE 82079-1:2019 §8.3.4 (detailed structure of step-by-step instructions)", "ISO/IEC/IEEE 26514:2022"]
+    tests: [DCUM-T03]
+    en:
+      title: Numbered steps with one action each
+      description: Each procedure in a manual SHOULD consist of numbered steps that each contain one action and state the result the reader sees after it.
+      rationale: One action per step with a visible result lets the reader check progress and find the step where something went wrong.
+      criteria:
+        - method: inspection
+          text: In a sample of 10 procedures each step is numbered, contains one action and states the visible result.
+    sv:
+      title: Numrerade steg med en åtgärd vardera
+      description: Varje rutin i en handbok BÖR bestå av numrerade steg som vart och ett innehåller en åtgärd och anger det resultat som läsaren ser efteråt.
+      rationale: En åtgärd per steg med ett synligt resultat låter läsaren kontrollera framstegen och hitta det steg där något gick fel.
+      criteria:
+        - method: inspection
+          text: I ett urval av 10 rutiner är varje steg numrerat, innehåller en åtgärd och anger det synliga resultatet.
+
+  - id: DCUM-05
+    type: usability
+    obligation: must
+    priority: critical
+    tags: [safety, safety-notice]
+    refs: ["IEC/IEEE 82079-1:2019 §7.11 (safety-related information)", "ISO 3864-2:2016"]
+    tests: [DCUM-T04]
+    en:
+      title: Safety notices with signal word and consequence
+      description: Each safety notice MUST state a signal word for the level of hazard, the hazard, the consequence of ignoring it and the action that avoids it, and stand before the step it concerns.
+      rationale: A notice that names the hazard, the consequence and the action is understood and followed; a notice after the step comes too late.
+      criteria:
+        - method: inspection
+          text: Each safety notice in the manual has the four parts and is placed before the step it concerns, and the signal words follow the defined levels.
+    sv:
+      title: Säkerhetsmeddelanden med signalord och följd
+      description: Varje säkerhetsmeddelande SKA ange ett signalord för risknivån, risken, följden om den inte beaktas och den åtgärd som undviker den och stå före det steg som det gäller.
+      rationale: Ett meddelande som anger risk, följd och åtgärd förstås och följs; ett meddelande efter steget kommer för sent.
+      criteria:
+        - method: inspection
+          text: Varje säkerhetsmeddelande i handboken har de fyra delarna och står före det steg som det gäller, och signalorden följer de fastställda nivåerna.
+
+  - id: DCUM-06
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [usability-test, information-for-use]
+    refs: ["IEC/IEEE 82079-1:2019 §6.3.3 (reviewing, editing and testing)"]
+    tests: [DCUM-T05]
+    en:
+      title: Manual tested with representatives of the target group
+      description: The supplier SHOULD test each manual with at least 5 representatives of its target group who carry out 3 core tasks using only the manual, with a success rate of at least 80 %.
+      rationale: Only readers from the target group show whether the manual works; authors and experts fill gaps without noticing.
+      criteria:
+        - method: demonstration
+          text: The test report names at least 5 participants from the target group, 3 core tasks, and a success rate of at least 80 % over all attempts.
+          threshold: "≥ 5 participants; ≥ 80 % success"
+    sv:
+      title: Handboken testad med representanter för målgruppen
+      description: Leverantören BÖR testa varje handbok med minst 5 representanter för dess målgrupp som utför 3 huvuduppgifter med enbart handboken som stöd, med en lyckandegrad på minst 80 %.
+      rationale: Bara läsare ur målgruppen visar om handboken fungerar; författare och experter fyller i luckorna utan att märka det.
+      criteria:
+        - method: demonstration
+          text: Testrapporten anger minst 5 deltagare ur målgruppen, 3 huvuduppgifter och en lyckandegrad på minst 80 % över alla försök.
+          threshold: "≥ 5 deltagare; ≥ 80 % lyckade"
+
+  - id: DCUM-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [language, swedish, english]
+    refs: ["Språklag (2009:600)", "Regulation (EU) 2023/1230 Annex III §1.7.4"]
+    tests: [DCUM-T06]
+    en:
+      title: Manuals in Swedish and English
+      description: The supplier MUST deliver each user and operator manual in Swedish and in English with the same content and version number.
+      rationale: Swedish is needed for staff and authorities in Sweden, and English for international staff and suppliers; versions that differ in content cause errors.
+      criteria:
+        - method: inspection
+          text: Each manual exists in both languages, both versions have the same version number, and their chapter structures are identical.
+    sv:
+      title: Handböcker på svenska och engelska
+      description: Leverantören SKA leverera varje användar- och operatörshandbok på svenska och på engelska med samma innehåll och versionsnummer.
+      rationale: Svenska behövs för personal och myndigheter i Sverige och engelska för internationell personal och leverantörer; versioner med olika innehåll leder till fel.
+      criteria:
+        - method: inspection
+          text: Varje handbok finns på båda språken, båda versionerna har samma versionsnummer, och deras kapitelstruktur är identisk.
+
+  - id: DCUM-08
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [translation, review]
+    refs: ["ISO 17100:2015"]
+    tests: [DCUM-T06]
+    en:
+      title: Translation revised by a second person
+      description: A second qualified person with knowledge of the subject SHOULD revise each translated manual against the source text before its release.
+      rationale: An independent revision catches mistranslated technical terms and omissions that the translator does not see.
+      criteria:
+        - method: review
+          text: Each translated manual has a revision record naming a reviser other than the translator, dated before the release date.
+    sv:
+      title: Översättningen granskas av en andra person
+      description: En andra kvalificerad person med kunskap om ämnet BÖR granska varje översatt handbok mot källtexten innan den ges ut.
+      rationale: En oberoende granskning fångar felöversatta facktermer och utelämnanden som översättaren inte ser.
+      criteria:
+        - method: review
+          text: Varje översatt handbok har en granskningsanteckning som anger en granskare som inte är översättaren, daterad före utgivningsdatumet.
+
+  - id: DCUM-09
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [plain-language, readability]
+    refs: ["ISO 24495-1:2023", "Språklag (2009:600) 11 §"]
+    tests: [DCUM-T07]
+    en:
+      title: Plain language with defined terms
+      description: The manuals SHOULD be written with an average sentence length of at most 20 words, in active voice, with each technical term defined at its first use.
+      rationale: Readers who understand the text at first reading make fewer errors and need less support.
+      criteria:
+        - method: analysis
+          text: A readability analysis of 3 chapters shows an average sentence length of 20 words or fewer, and each technical term in them is defined at first use or in the glossary.
+          threshold: "≤ 20 words per sentence on average"
+    sv:
+      title: Klarspråk med definierade termer
+      description: Handböckerna BÖR skrivas med en genomsnittlig meningslängd på högst 20 ord, i aktiv form och med varje facklig term definierad där den först används.
+      rationale: Läsare som förstår texten vid första läsningen gör färre fel och behöver mindre stöd.
+      criteria:
+        - method: analysis
+          text: En läsbarhetsanalys av 3 kapitel visar en genomsnittlig meningslängd på högst 20 ord, och varje fackterm i dem är definierad där den först används eller i ordlistan.
+          threshold: "≤ 20 ord per mening i genomsnitt"
+
+  - id: DCUM-10
+    type: usability
+    obligation: must
+    priority: high
+    tags: [accessibility, pdf-ua]
+    refs: ["ISO 14289-1:2014 (PDF/UA-1)", "EN 301 549 V3.2.1 clause 10", "Directive (EU) 2016/2102"]
+    tests: [DCUM-T08]
+    en:
+      title: Manuals as tagged PDF conforming to PDF/UA
+      description: Each manual delivered as PDF MUST be a tagged PDF that passes a PDF/UA-1 validation without errors.
+      rationale: Tagged PDF lets screen reader users follow headings, lists and tables in the right order.
+      criteria:
+        - method: test
+          text: A PDF/UA-1 validator reports no errors for each delivered manual, and a screen reader reads the headings in document order.
+          threshold: "0 errors"
+    sv:
+      title: Handböcker som taggad PDF enligt PDF/UA
+      description: Varje handbok som levereras som PDF SKA vara en taggad PDF som klarar en validering mot PDF/UA-1 utan fel.
+      rationale: Taggad PDF låter användare av skärmläsare följa rubriker, listor och tabeller i rätt ordning.
+      criteria:
+        - method: test
+          text: En validator för PDF/UA-1 rapporterar inga fel för någon levererad handbok, och en skärmläsare läser upp rubrikerna i dokumentets ordning.
+          threshold: "0 fel"
+
+  - id: DCUM-11
+    type: usability
+    obligation: must
+    priority: high
+    tags: [accessibility, alternative-text]
+    refs: ["WCAG 2.2 SC 1.1.1", "EN 301 549 V3.2.1 clause 10"]
+    tests: [DCUM-T08]
+    en:
+      title: Alternative text for informative figures
+      description: Each informative figure in a manual MUST have an alternative text that conveys the information of the figure, with each decorative figure marked as an artefact.
+      rationale: Readers who cannot see a figure lose its information unless it is also given as text.
+      criteria:
+        - method: inspection
+          text: In each manual every figure tagged as content has an alternative text that states its information, and every decorative figure is tagged as an artefact.
+    sv:
+      title: Alternativtext för informativa bilder
+      description: Varje informativ bild i en handbok SKA ha en alternativtext som förmedlar bildens information, och varje dekorativ bild markeras som artefakt.
+      rationale: Läsare som inte kan se en bild går miste om dess information om den inte också ges som text.
+      criteria:
+        - method: inspection
+          text: I varje handbok har varje bild som är taggad som innehåll en alternativtext som anger dess information, och varje dekorativ bild är taggad som artefakt.
+
+  - id: DCUM-12
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [accessibility, language-of-parts]
+    refs: ["WCAG 2.2 SC 3.1.1", "WCAG 2.2 SC 3.1.2"]
+    tests: [DCUM-T08]
+    en:
+      title: Document language and language changes marked
+      description: Each manual SHOULD declare its main language in the document metadata and mark each passage in another language.
+      rationale: Screen readers choose the pronunciation from the declared language; unmarked English terms in a Swedish text are read out wrongly.
+      criteria:
+        - method: inspection
+          text: The document properties state the main language, and each passage in another language in a sample of 3 chapters carries its own language tag.
+    sv:
+      title: Dokumentets språk och språkbyten markerade
+      description: Varje handbok BÖR ange sitt huvudspråk i dokumentets metadata och markera varje avsnitt på ett annat språk.
+      rationale: Skärmläsare väljer uttal utifrån det angivna språket; omarkerade engelska termer i en svensk text läses upp fel.
+      criteria:
+        - method: inspection
+          text: Dokumentegenskaperna anger huvudspråket, och varje avsnitt på ett annat språk i ett urval av 3 kapitel har en egen språkmarkering.
+
+  - id: DCUM-13
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [accessibility, contrast]
+    refs: ["WCAG 2.2 SC 1.4.3", "WCAG 2.2 SC 1.4.11"]
+    tests: [DCUM-T09]
+    en:
+      title: Contrast of text and figure elements
+      description: Text in the manuals SHOULD have a contrast ratio of at least 4.5:1, and lines and symbols that carry information in figures at least 3:1, against their background.
+      rationale: Low contrast makes manuals hard to read for people with impaired vision, on printouts and in poor light in plant rooms.
+      criteria:
+        - method: test
+          text: A contrast checker measures at least 4.5:1 for body text and at least 3:1 for informative figure elements in a sample of 10 pages.
+          threshold: "≥ 4.5:1 text; ≥ 3:1 graphics"
+    sv:
+      title: Kontrast för text och bildelement
+      description: Text i handböckerna BÖR ha ett kontrastförhållande på minst 4,5:1 och linjer och symboler som bär information i bilder minst 3:1 mot bakgrunden.
+      rationale: Låg kontrast gör handböcker svårlästa för personer med nedsatt syn, på utskrifter och i dåligt ljus i tekniska utrymmen.
+      criteria:
+        - method: test
+          text: Ett kontrastverktyg mäter minst 4,5:1 för brödtext och minst 3:1 för informativa bildelement på ett urval av 10 sidor.
+          threshold: "≥ 4,5:1 text; ≥ 3:1 grafik"
+
+  - id: DCUM-14
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [identification, version]
+    refs: ["IEC/IEEE 82079-1:2019 §7.2.1 (identification of information for use)"]
+    tests: [DCUM-T10]
+    en:
+      title: Manual identifies the product version it applies to
+      description: Each manual MUST state on its title page the product, the product version it applies to, its own version number and its date of issue.
+      rationale: Readers can trust a manual only when they can see that it belongs to the version in front of them.
+      criteria:
+        - method: inspection
+          text: Each manual has the four items on its title page, and the stated product version matches the delivered product.
+    sv:
+      title: Handboken anger vilken produktversion den gäller
+      description: Varje handbok SKA på titelsidan ange produkten, den produktversion som den gäller, sitt eget versionsnummer och sitt utgivningsdatum.
+      rationale: Läsaren kan lita på en handbok bara när det framgår att den hör till den version som läsaren har framför sig.
+      criteria:
+        - method: inspection
+          text: Varje handbok har de fyra uppgifterna på titelsidan, och den angivna produktversionen stämmer med den levererade produkten.
+
+  - id: DCUM-15
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [contact, support]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex II"]
+    tests: [DCUM-T10]
+    en:
+      title: Contact details for support and safety reports
+      description: Each manual SHOULD give the supplier's name, address and support contact and state how to report a safety issue or a vulnerability.
+      rationale: Users who find a fault or a hazard need a known channel to report it to the party who can fix it.
+      criteria:
+        - method: inspection
+          text: Each manual contains the name, address, support contact and reporting route, and a test message to the reporting route receives an acknowledgement.
+    sv:
+      title: Kontaktuppgifter för support och säkerhetsrapporter
+      description: Varje handbok BÖR ange leverantörens namn, adress och kontaktväg till supporten och beskriva hur ett säkerhetsproblem eller en sårbarhet rapporteras.
+      rationale: Användare som hittar ett fel eller en risk behöver en känd kanal för att rapportera det till den part som kan åtgärda det.
+      criteria:
+        - method: inspection
+          text: Varje handbok innehåller namn, adress, kontaktväg till supporten och rapporteringsväg, och ett testmeddelande till rapporteringsvägen får en bekräftelse.
+
+  - id: DCUM-16
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [availability, retention]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(18) (information and instructions to the user)"]
+    tests: [DCUM-T11]
+    en:
+      title: Manuals available for 10 years
+      description: The supplier SHOULD keep each version of the manuals available for download for at least 10 years after the product version was last delivered.
+      rationale: Products stay in use long after their sale, and owners need the manual that belongs to their version.
+      criteria:
+        - method: inspection
+          text: The download page offers each manual version of each product version delivered during the last 10 years.
+          threshold: "≥ 10 years"
+    sv:
+      title: Handböcker tillgängliga i 10 år
+      description: Leverantören BÖR hålla varje version av handböckerna tillgänglig för nedladdning i minst 10 år efter att produktversionen senast levererades.
+      rationale: Produkter används långt efter att de har sålts, och ägarna behöver den handbok som hör till deras version.
+      criteria:
+        - method: inspection
+          text: Nedladdningssidan erbjuder varje handboksversion för varje produktversion som har levererats under de senaste 10 åren.
+          threshold: "≥ 10 år"
+
+tests:
+  - id: DCUM-T01
+    priority: high
+    execution: manual
+    tags: [target-group]
+    refs: ["IEC/IEEE 82079-1:2019 §6.2.2 (target audiences)"]
+    en:
+      title: Review of target group statements
+      description: Checks that each manual states its target groups and their assumed knowledge.
+      preconditions: The delivered user and operator manuals.
+      expected: Each manual has a section with its target groups and the assumed knowledge and training of each.
+      steps:
+        - action: Open each manual and find the section on target groups.
+          expected: The section exists in each manual.
+        - action: Check that each target group named has its assumed knowledge and training stated.
+          expected: Each group has both stated.
+    sv:
+      title: Granskning av angivna målgrupper
+      description: Kontrollerar att varje handbok anger sina målgrupper och deras förutsatta kunskaper.
+      preconditions: De levererade användar- och operatörshandböckerna.
+      expected: Varje handbok har ett avsnitt med sina målgrupper och de förutsatta kunskaperna och utbildningen för var och en.
+      steps:
+        - action: Öppna varje handbok och leta upp avsnittet om målgrupper.
+          expected: Avsnittet finns i varje handbok.
+        - action: Kontrollera att varje angiven målgrupp har förutsatta kunskaper och utbildning angivna.
+          expected: Varje grupp har båda angivna.
+
+  - id: DCUM-T02
+    priority: high
+    execution: manual
+    tags: [operator-manual, quick-reference]
+    refs: ["IEC/IEEE 82079-1:2019 §7 (content of information for use)"]
+    en:
+      title: Review of the operator manual and quick reference card
+      description: Checks that the operator manual covers each operating mode and the abnormal situations of the alarm list, and inspects the quick reference card.
+      preconditions: The operator manual, the system's alarm list and, if delivered, the quick reference card.
+      expected: The manual covers the five modes and each abnormal situation, and the card has at most 2 pages with the emergency stop procedure.
+      steps:
+        - action: Find the chapters for start-up, normal operation, planned shutdown, emergency stop and abnormal situations.
+          expected: Each of the five chapters exists.
+        - action: Match each abnormal situation in the alarm list to a section of the manual.
+          expected: Each situation is covered.
+        - action: Inspect the quick reference card.
+          expected: The card has at most 2 pages, contains the emergency stop procedure, and each task refers to a chapter of the manual.
+    sv:
+      title: Granskning av operatörshandboken och snabbreferensen
+      description: Kontrollerar att operatörshandboken täcker varje driftläge och de onormala situationerna i larmlistan och inspekterar snabbreferensen.
+      preconditions: Operatörshandboken, systemets larmlista och snabbreferensen, om en sådan har levererats.
+      expected: Handboken täcker de fem lägena och varje onormal situation, och referensbladet har högst 2 sidor med rutinen för nödstopp.
+      steps:
+        - action: Leta upp kapitlen för uppstart, normal drift, planerad avstängning, nödstopp och onormala situationer.
+          expected: Vart och ett av de fem kapitlen finns.
+        - action: Koppla varje onormal situation i larmlistan till ett avsnitt i handboken.
+          expected: Varje situation behandlas.
+        - action: Inspektera snabbreferensen.
+          expected: Referensbladet har högst 2 sidor, innehåller rutinen för nödstopp, och varje uppgift hänvisar till ett kapitel i handboken.
+
+  - id: DCUM-T03
+    priority: medium
+    execution: manual
+    tags: [instructions]
+    refs: ["IEC/IEEE 82079-1:2019 §8.3.4 (detailed structure of step-by-step instructions)"]
+    en:
+      title: Inspection of procedure steps
+      description: Checks the structure of the steps in a sample of procedures.
+      preconditions: The delivered manuals.
+      expected: Each step in the sampled procedures is numbered, contains one action and states its visible result.
+      steps:
+        - action: Pick 10 procedures from the manuals, at least 3 from the operator manual.
+          expected: 10 procedures are selected.
+          data: "Sample of 10 procedures"
+        - action: Check each step of each procedure.
+          expected: Each step is numbered, contains one action and states the result the reader sees.
+    sv:
+      title: Inspektion av stegen i rutinerna
+      description: Kontrollerar hur stegen är uppbyggda i ett urval av rutiner.
+      preconditions: De levererade handböckerna.
+      expected: Varje steg i rutinerna i urvalet är numrerat, innehåller en åtgärd och anger sitt synliga resultat.
+      steps:
+        - action: Välj 10 rutiner ur handböckerna, minst 3 ur operatörshandboken.
+          expected: 10 rutiner är valda.
+          data: "Urval av 10 rutiner"
+        - action: Kontrollera varje steg i varje rutin.
+          expected: Varje steg är numrerat, innehåller en åtgärd och anger det resultat som läsaren ser.
+
+  - id: DCUM-T04
+    priority: critical
+    execution: manual
+    tags: [safety-notice]
+    refs: ["IEC/IEEE 82079-1:2019 §7.11 (safety-related information)", "ISO 3864-2:2016"]
+    en:
+      title: Inspection of safety notices
+      description: Checks the content and placement of each safety notice.
+      preconditions: The delivered manuals and the defined signal word levels.
+      expected: Each safety notice has a signal word from the defined levels, the hazard, the consequence and the avoiding action, and stands before its step.
+      steps:
+        - action: Search each manual for safety notices.
+          expected: A list of all safety notices exists.
+        - action: Check each notice for signal word, hazard, consequence and avoiding action.
+          expected: Each notice has the four parts, and the signal word is one of the defined levels.
+        - action: Check the position of each notice relative to the step it concerns.
+          expected: Each notice stands before the step.
+    sv:
+      title: Inspektion av säkerhetsmeddelanden
+      description: Kontrollerar innehållet i och placeringen av varje säkerhetsmeddelande.
+      preconditions: De levererade handböckerna och de fastställda nivåerna för signalord.
+      expected: Varje säkerhetsmeddelande har ett signalord från de fastställda nivåerna, risken, följden och den åtgärd som undviker den och står före sitt steg.
+      steps:
+        - action: Sök fram säkerhetsmeddelandena i varje handbok.
+          expected: Det finns en lista över alla säkerhetsmeddelanden.
+        - action: Kontrollera att varje meddelande har signalord, risk, följd och åtgärd.
+          expected: Varje meddelande har de fyra delarna, och signalordet är en av de fastställda nivåerna.
+        - action: Kontrollera var varje meddelande står i förhållande till det steg som det gäller.
+          expected: Varje meddelande står före steget.
+
+  - id: DCUM-T05
+    priority: medium
+    execution: manual
+    tags: [usability-test]
+    refs: ["IEC/IEEE 82079-1:2019 §6.3.3 (reviewing, editing and testing)"]
+    en:
+      title: User test of a manual
+      description: Tests a manual with representatives of the target group carrying out core tasks with the manual as their only help.
+      preconditions: At least 5 participants from the target group who have not used the product, a test installation, the manual and 3 core tasks chosen from it.
+      expected: At least 80 % of all task attempts succeed with the manual as the only help.
+      steps:
+        - action: Give each participant the manual and the 3 tasks, and observe without helping.
+          expected: Each attempt is recorded as success or failure with the step where the participant got stuck.
+          data: "5 participants × 3 tasks"
+        - action: Calculate the success rate over all attempts.
+          expected: The success rate is at least 80 %.
+        - action: Record each point where a participant got stuck as a change request for the manual.
+          expected: Each such point has a change request.
+    sv:
+      title: Användartest av en handbok
+      description: Testar en handbok med representanter för målgruppen som utför huvuduppgifter med handboken som enda stöd.
+      preconditions: Minst 5 deltagare ur målgruppen som inte har använt produkten, en testinstallation, handboken och 3 huvuduppgifter valda ur den.
+      expected: Minst 80 % av alla försök lyckas med handboken som enda stöd.
+      steps:
+        - action: Ge varje deltagare handboken och de 3 uppgifterna och observera utan att hjälpa till.
+          expected: Varje försök registreras som lyckat eller misslyckat med det steg där deltagaren fastnade.
+          data: "5 deltagare × 3 uppgifter"
+        - action: Beräkna lyckandegraden över alla försök.
+          expected: Lyckandegraden är minst 80 %.
+        - action: Registrera varje ställe där en deltagare fastnade som ett ändringsbegärande för handboken.
+          expected: Varje sådant ställe har ett ändringsbegärande.
+
+  - id: DCUM-T06
+    priority: high
+    execution: manual
+    tags: [language, translation]
+    refs: ["Språklag (2009:600)", "ISO 17100:2015"]
+    en:
+      title: Swedish and English versions and their revision
+      description: Compares the Swedish and English versions of each manual and checks the translation revision.
+      preconditions: Both language versions of each manual and their revision records.
+      expected: Both versions exist with the same version number and chapter structure, and each translation was revised by a second person before release.
+      steps:
+        - action: For each manual, compare the version number and the table of contents of the two language versions.
+          expected: The version numbers are equal and the chapter structures are identical.
+        - action: Check the revision record of each translated version.
+          expected: The reviser is not the translator, and the revision is dated before the release.
+    sv:
+      title: Svenska och engelska versioner och granskningen av dem
+      description: Jämför den svenska och den engelska versionen av varje handbok och kontrollerar granskningen av översättningen.
+      preconditions: Båda språkversionerna av varje handbok och deras granskningsanteckningar.
+      expected: Båda versionerna finns med samma versionsnummer och kapitelstruktur, och varje översättning granskades av en andra person före utgivningen.
+      steps:
+        - action: Jämför för varje handbok versionsnumret och innehållsförteckningen i de två språkversionerna.
+          expected: Versionsnumren är lika och kapitelstrukturen är identisk.
+        - action: Kontrollera granskningsanteckningen för varje översatt version.
+          expected: Granskaren är inte översättaren, och granskningen är daterad före utgivningen.
+
+  - id: DCUM-T07
+    priority: medium
+    execution: manual
+    tags: [plain-language]
+    refs: ["ISO 24495-1:2023"]
+    en:
+      title: Readability analysis of 3 chapters
+      description: Measures sentence length and checks the definition of terms in a sample of chapters.
+      preconditions: The text of 3 chapters from the manuals, a readability tool and the glossary.
+      expected: The average sentence length is at most 20 words, and each technical term is defined at first use or in the glossary.
+      steps:
+        - action: Run the readability tool on each chapter.
+          expected: The average sentence length is 20 words or fewer in each chapter.
+          data: "3 chapters, one from each manual"
+        - action: List the technical terms in each chapter and look for their definitions.
+          expected: Each term is defined at its first use or in the glossary.
+    sv:
+      title: Läsbarhetsanalys av 3 kapitel
+      description: Mäter meningslängden och kontrollerar att termerna är definierade i ett urval av kapitel.
+      preconditions: Texten i 3 kapitel ur handböckerna, ett läsbarhetsverktyg och ordlistan.
+      expected: Den genomsnittliga meningslängden är högst 20 ord, och varje fackterm är definierad där den först används eller i ordlistan.
+      steps:
+        - action: Kör läsbarhetsverktyget på varje kapitel.
+          expected: Den genomsnittliga meningslängden är högst 20 ord i varje kapitel.
+          data: "3 kapitel, ett ur varje handbok"
+        - action: Lista facktermerna i varje kapitel och leta efter deras definitioner.
+          expected: Varje term är definierad där den först används eller i ordlistan.
+
+  - id: DCUM-T08
+    priority: high
+    execution: manual
+    tags: [accessibility, pdf-ua]
+    refs: ["ISO 14289-1:2014 (PDF/UA-1)", "WCAG 2.2 SC 1.1.1", "WCAG 2.2 SC 3.1.2", "EN 301 549 V3.2.1 clause 10"]
+    en:
+      title: Accessibility check of the PDF manuals
+      description: Validates the PDF manuals against PDF/UA-1 and checks alternative texts and language tags.
+      preconditions: The delivered PDF manuals, a PDF/UA-1 validator, a PDF tag inspector and a screen reader.
+      expected: Each manual passes validation, figures have meaningful alternative texts or are artefacts, and languages are declared and marked.
+      steps:
+        - action: Run the PDF/UA-1 validator on each manual.
+          expected: The validator reports 0 errors.
+        - action: Read the first 3 pages of each manual with the screen reader.
+          expected: The headings are read in document order.
+        - action: Inspect the tags of each figure in one manual.
+          expected: Each content figure has an alternative text that states its information, and each decorative figure is an artefact.
+        - action: Check the document language in the properties and the language tags of passages in another language in 3 chapters.
+          expected: The main language is declared, and each passage in another language has its own language tag.
+    sv:
+      title: Tillgänglighetskontroll av handböckerna i PDF
+      description: Validerar handböckerna i PDF mot PDF/UA-1 och kontrollerar alternativtexter och språkmarkeringar.
+      preconditions: De levererade handböckerna i PDF, en validator för PDF/UA-1, ett verktyg för att granska PDF-taggar och en skärmläsare.
+      expected: Varje handbok klarar valideringen, bilder har meningsfulla alternativtexter eller är artefakter, och språken är angivna och markerade.
+      steps:
+        - action: Kör validatorn för PDF/UA-1 på varje handbok.
+          expected: Validatorn rapporterar 0 fel.
+        - action: Läs de första 3 sidorna i varje handbok med skärmläsaren.
+          expected: Rubrikerna läses upp i dokumentets ordning.
+        - action: Granska taggarna för varje bild i en handbok.
+          expected: Varje innehållsbild har en alternativtext som anger dess information, och varje dekorativ bild är en artefakt.
+        - action: Kontrollera dokumentspråket i egenskaperna och språkmarkeringarna för avsnitt på ett annat språk i 3 kapitel.
+          expected: Huvudspråket är angivet, och varje avsnitt på ett annat språk har en egen språkmarkering.
+
+  - id: DCUM-T09
+    priority: medium
+    execution: manual
+    tags: [contrast]
+    refs: ["WCAG 2.2 SC 1.4.3", "WCAG 2.2 SC 1.4.11"]
+    en:
+      title: Contrast measurement on 10 pages
+      description: Measures the contrast of text and informative figure elements on a sample of pages.
+      preconditions: The delivered manuals and a contrast checker.
+      expected: Body text has at least 4.5:1 and informative figure elements at least 3:1 against their background.
+      steps:
+        - action: Pick 10 pages with text and figures and measure the contrast of the body text.
+          expected: Each measurement is at least 4.5:1.
+          data: "Sample of 10 pages"
+        - action: Measure the contrast of lines and symbols that carry information in the figures on the same pages.
+          expected: Each measurement is at least 3:1.
+    sv:
+      title: Kontrastmätning på 10 sidor
+      description: Mäter kontrasten för text och informativa bildelement på ett urval av sidor.
+      preconditions: De levererade handböckerna och ett kontrastverktyg.
+      expected: Brödtexten har minst 4,5:1 och informativa bildelement minst 3:1 mot bakgrunden.
+      steps:
+        - action: Välj 10 sidor med text och bilder och mät kontrasten för brödtexten.
+          expected: Varje mätning är minst 4,5:1.
+          data: "Urval av 10 sidor"
+        - action: Mät kontrasten för linjer och symboler som bär information i bilderna på samma sidor.
+          expected: Varje mätning är minst 3:1.
+
+  - id: DCUM-T10
+    priority: high
+    execution: manual
+    tags: [identification, contact]
+    refs: ["IEC/IEEE 82079-1:2019 §7.2.1 (identification of information for use)", "Regulation (EU) 2024/2847 (CRA) Annex II"]
+    en:
+      title: Title page identification and contact details
+      description: Checks the identification on the title page and the contact and reporting details in each manual.
+      preconditions: The delivered manuals, the delivered product with its version shown and a test mailbox.
+      expected: Each title page identifies product, product version, manual version and date, and the reporting route acknowledges a test message.
+      steps:
+        - action: Read the title page of each manual and compare the product version with the delivered product.
+          expected: The four items are present, and the product version matches.
+        - action: Find the supplier's name, address, support contact and reporting route in each manual.
+          expected: Each manual contains all four.
+        - action: Send a test message marked as a test to the reporting route.
+          expected: An acknowledgement arrives.
+    sv:
+      title: Identifiering på titelsidan och kontaktuppgifter
+      description: Kontrollerar identifieringen på titelsidan och kontakt- och rapporteringsuppgifterna i varje handbok.
+      preconditions: De levererade handböckerna, den levererade produkten med synlig version och en brevlåda för test.
+      expected: Varje titelsida anger produkt, produktversion, handbokens version och datum, och rapporteringsvägen bekräftar ett testmeddelande.
+      steps:
+        - action: Läs titelsidan i varje handbok och jämför produktversionen med den levererade produkten.
+          expected: De fyra uppgifterna finns, och produktversionen stämmer.
+        - action: Leta upp leverantörens namn, adress, kontaktväg till supporten och rapporteringsväg i varje handbok.
+          expected: Varje handbok innehåller alla fyra.
+        - action: Skicka ett testmeddelande märkt som test till rapporteringsvägen.
+          expected: En bekräftelse kommer.
+
+  - id: DCUM-T11
+    priority: medium
+    execution: manual
+    tags: [availability]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(18) (information and instructions to the user)"]
+    en:
+      title: Older manual versions can be downloaded
+      description: Checks that manuals for older product versions are still offered for download.
+      preconditions: The list of product versions delivered during the last 10 years and access to the supplier's download page.
+      expected: Each manual version for each listed product version can be downloaded.
+      steps:
+        - action: Pick the oldest product version on the list and two others.
+          expected: 3 product versions are selected.
+        - action: Download the manuals for each selected version from the download page.
+          expected: Each manual downloads and opens, and its title page states the selected product version.
+    sv:
+      title: Äldre handboksversioner kan laddas ned
+      description: Kontrollerar att handböcker för äldre produktversioner fortfarande erbjuds för nedladdning.
+      preconditions: Listan över produktversioner som har levererats under de senaste 10 åren och tillgång till leverantörens nedladdningssida.
+      expected: Varje handboksversion för varje produktversion på listan kan laddas ned.
+      steps:
+        - action: Välj den äldsta produktversionen på listan och två andra.
+          expected: 3 produktversioner är valda.
+        - action: Ladda ned handböckerna för varje vald version från nedladdningssidan.
+          expected: Varje handbok laddas ned och öppnas, och dess titelsida anger den valda produktversionen.

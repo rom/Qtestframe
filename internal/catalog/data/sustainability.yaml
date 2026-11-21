@@ -60,7 +60,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [right-sizing, utilisation]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "AWS Well-Architected Framework, Sustainability Pillar SUS02"]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "AWS Well-Architected Framework, Sustainability Pillar SUS02"]
     tests: [GRN-T02]
     en:
       title: Average CPU utilisation of at least 40 %
@@ -252,7 +252,7 @@ requirements:
     obligation: should
     priority: low
     tags: [region, hosting, carbon-intensity]
-    refs: ["Green Software Foundation: Principles of Green Software Engineering (carbon awareness)", "EU Energy Efficiency Directive (EU) 2023/1791 Art. 12 (data centres)"]
+    refs: ["Green Software Foundation: Principles of Green Software Engineering (carbon awareness)"]
     tests: [GRN-T02]
     en:
       title: Hosting region chosen with grid carbon intensity in mind

@@ -1,0 +1,644 @@
+area: sys-security
+prefix: SYSEC
+group: security
+catalogue: system
+name: {en: System security architecture, sv: Säkerhetsarkitektur för system}
+description:
+  en: Security engineered into a system of systems, covering the security architecture with trust boundaries, threat modelling, zones and conduits, defence in depth, least privilege between components, mutual authentication and encryption of internal communication, central security logging, allocation of security requirements to subsystems and suppliers, security testing of the integrated system, the interaction of safety and security, remote maintenance, the system bill of materials and recovery to a known good state.
+  sv: Säkerhet som konstrueras in i ett sammansatt system, med säkerhetsarkitektur och förtroendegränser, hotmodellering, zoner och ledningar, djupförsvar, minsta behörighet mellan komponenter, ömsesidig autentisering och kryptering av intern kommunikation, central säkerhetsloggning, fördelning av säkerhetskrav på delsystem och leverantörer, säkerhetstestning av det integrerade systemet, samspelet mellan safety och security, fjärrunderhåll, materialförteckning för systemet och återställning till ett känt fungerande läge.
+
+requirements:
+  - id: SYSEC-01
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-architecture, trust-boundaries, data-flows]
+    refs: ["ISO/IEC 27001:2022 A.8.27 (secure system architecture and engineering principles)", "NIST SP 800-160 Vol. 1 Rev. 1 (systems security engineering)"]
+    tests: [SYSEC-T01]
+    en:
+      title: Security architecture with trust boundaries and data flows
+      description: The system architecture description MUST include a security view that shows each trust boundary, each data flow across a boundary with its protocol and protection, and the location of each critical asset.
+      rationale: Security controls can only be placed and reviewed when the boundaries and the flows that cross them are visible.
+      criteria:
+        - method: inspection
+          text: The security view shows each boundary, each crossing flow with protocol and protection, and each critical asset from the asset list.
+    sv:
+      title: Säkerhetsarkitektur med förtroendegränser och dataflöden
+      description: Systemets arkitekturbeskrivning SKA innehålla en säkerhetsvy som visar varje förtroendegräns, varje dataflöde över en gräns med protokoll och skydd, och var varje kritisk tillgång finns.
+      rationale: Skyddsåtgärder kan bara placeras och granskas när gränserna och de flöden som passerar dem är synliga.
+      criteria:
+        - method: inspection
+          text: Säkerhetsvyn visar varje gräns, varje passerande flöde med protokoll och skydd, och varje kritisk tillgång i tillgångsförteckningen.
+
+  - id: SYSEC-02
+    type: security
+    obligation: must
+    priority: high
+    tags: [threat-model, risk-assessment]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "NIST SP 800-160 Vol. 1 Rev. 1 (systems security engineering)", "Regulation (EU) 2024/2847 (CRA) Art. 13(2)"]
+    tests: [SYSEC-T01]
+    en:
+      title: Threat model updated for each system release
+      description: The project MUST keep a threat model that lists, for each trust boundary, the threats, their likelihood and impact and the controls against them, and MUST update it before each system release that changes a boundary or a data flow.
+      rationale: A threat model that is not updated with the architecture misses the new attack paths that each change introduces.
+      criteria:
+        - method: inspection
+          text: The threat model covers each boundary of the current security view, and its version history shows an update before each release that changed a boundary or flow.
+    sv:
+      title: Hotmodell uppdateras för varje systemrelease
+      description: Projektet SKA hålla en hotmodell som för varje förtroendegräns anger hoten, deras sannolikhet och påverkan och skyddsåtgärderna mot dem, och uppdatera den före varje systemrelease som ändrar en gräns eller ett dataflöde.
+      rationale: En hotmodell som inte uppdateras med arkitekturen missar de nya angreppsvägar som varje ändring för med sig.
+      criteria:
+        - method: inspection
+          text: Hotmodellen omfattar varje gräns i den aktuella säkerhetsvyn, och dess versionshistorik visar en uppdatering före varje release som ändrade en gräns eller ett flöde.
+
+  - id: SYSEC-03
+    type: security
+    obligation: must
+    priority: critical
+    tags: [segmentation, zones-and-conduits]
+    refs: ["IEC 62443-3-2:2020 ZCR 3", "IEC 62443-3-3 SR 5.1"]
+    tests: [SYSEC-T02]
+    en:
+      title: Subsystems of different criticality separated into zones
+      description: Subsystems with different security criticality MUST be placed in separate network zones, and traffic between zones MUST pass through a controlled conduit that permits only the flows documented in the security view.
+      rationale: Segmentation stops a compromise of a less critical subsystem from reaching the critical ones.
+      criteria:
+        - method: test
+          text: A connection attempt from each zone to each other zone on undocumented ports is blocked and logged, and each documented flow works.
+          threshold: 0 undocumented inter-zone flows
+    sv:
+      title: Delsystem med olika kritikalitet åtskilda i zoner
+      description: Delsystem med olika säkerhetskritikalitet SKA placeras i separata nätverkszoner, och trafik mellan zoner SKA gå genom en styrd ledning som bara tillåter de flöden som dokumenterats i säkerhetsvyn.
+      rationale: Segmentering hindrar att ett intrång i ett mindre kritiskt delsystem når de kritiska.
+      criteria:
+        - method: test
+          text: Ett anslutningsförsök från varje zon till varje annan zon på odokumenterade portar blockeras och loggas, och varje dokumenterat flöde fungerar.
+          threshold: 0 odokumenterade flöden mellan zoner
+
+  - id: SYSEC-04
+    type: security
+    obligation: should
+    priority: medium
+    tags: [defence-in-depth, single-point-of-failure]
+    refs: ["NIST SP 800-160 Vol. 1 Rev. 1 (systems security engineering)", "ISO/IEC 27001:2022 A.8.27 (secure system architecture and engineering principles)"]
+    tests: [SYSEC-T02]
+    en:
+      title: At least two independent controls in front of each critical asset
+      description: The architecture SHOULD place at least two independent security controls (for example network filtering and authentication) between each external entry point and each critical asset, so that the failure of one control does not expose the asset.
+      rationale: Single controls fail through misconfiguration or vulnerabilities, and depth gives time to detect and respond.
+      criteria:
+        - method: analysis
+          text: For each critical asset, the threat model shows at least two independent controls on each path from an external entry point.
+          threshold: ≥ 2 controls per path
+    sv:
+      title: Minst två oberoende skyddsåtgärder framför varje kritisk tillgång
+      description: Arkitekturen BÖR placera minst två oberoende skyddsåtgärder (till exempel nätverksfiltrering och autentisering) mellan varje extern ingångspunkt och varje kritisk tillgång, så att ett fel i en åtgärd inte exponerar tillgången.
+      rationale: Enskilda skyddsåtgärder fallerar genom felkonfiguration eller sårbarheter, och djup ger tid att upptäcka och reagera.
+      criteria:
+        - method: analysis
+          text: För varje kritisk tillgång visar hotmodellen minst två oberoende skyddsåtgärder på varje väg från en extern ingångspunkt.
+          threshold: ≥ 2 åtgärder per väg
+
+  - id: SYSEC-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [least-privilege, service-accounts]
+    refs: ["NIST SP 800-53 AC-6", "IEC 62443-3-3 SR 2.1"]
+    tests: [SYSEC-T03]
+    en:
+      title: Least privilege between system components
+      description: Each component MUST access other components with its own service identity, and each identity MUST hold only the permissions listed for it in the architecture's access matrix.
+      rationale: Shared or over-privileged service accounts let one compromised component take over others.
+      criteria:
+        - method: inspection
+          text: The permissions exported from each component's access control match the access matrix, and no service identity is shared between components.
+          threshold: 0 permissions beyond the matrix
+    sv:
+      title: Minsta behörighet mellan systemkomponenter
+      description: Varje komponent SKA nå andra komponenter med en egen tjänsteidentitet, och varje identitet SKA bara ha de behörigheter som anges för den i arkitekturens behörighetsmatris.
+      rationale: Delade tjänstekonton eller tjänstekonton med för höga behörigheter låter en komprometterad komponent ta över andra.
+      criteria:
+        - method: inspection
+          text: De behörigheter som exporteras från varje komponents åtkomstkontroll stämmer med behörighetsmatrisen, och ingen tjänsteidentitet delas mellan komponenter.
+          threshold: 0 behörigheter utöver matrisen
+
+  - id: SYSEC-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [mutual-authentication, internal-communication]
+    refs: ["IEC 62443-3-3 SR 1.2", "NIST SP 800-207 (zero trust architecture)"]
+    tests: [SYSEC-T04]
+    en:
+      title: Mutual authentication between components
+      description: Each connection between components that crosses a trust boundary MUST authenticate both ends, for example with mutual TLS using certificates issued by the system's own certificate authority.
+      rationale: Without mutual authentication, an attacker inside the network can impersonate a component and send it commands or false data.
+      criteria:
+        - method: test
+          text: A client without a valid certificate, and a server presenting a certificate from another authority, are each refused by the other end of each tested connection.
+    sv:
+      title: Ömsesidig autentisering mellan komponenter
+      description: Varje förbindelse mellan komponenter som passerar en förtroendegräns SKA autentisera båda ändar, till exempel med ömsesidig TLS och certifikat som utfärdats av systemets egen certifikatutfärdare.
+      rationale: Utan ömsesidig autentisering kan en angripare inne i nätet utge sig för att vara en komponent och skicka kommandon eller falska data till den.
+      criteria:
+        - method: test
+          text: En klient utan giltigt certifikat, och en server som visar ett certifikat från en annan utfärdare, avvisas var för sig av den andra änden i varje testad förbindelse.
+
+  - id: SYSEC-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [encryption-in-transit, confidentiality]
+    refs: ["IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    tests: [SYSEC-T04]
+    en:
+      title: Data encrypted across untrusted networks
+      description: Data that crosses a network outside the system's own physically protected zones MUST be encrypted with TLS 1.2 or later, or an equivalent protocol listed in the system's cryptography policy.
+      rationale: Networks outside the system's control can be tapped, and unencrypted operational data reveals both secrets and the system's state.
+      criteria:
+        - method: test
+          text: A capture on each untrusted segment during normal operation shows only encrypted sessions with TLS 1.2 or later or a listed protocol.
+    sv:
+      title: Data krypteras över opålitliga nät
+      description: Data som passerar ett nät utanför systemets egna fysiskt skyddade zoner SKA krypteras med TLS 1.2 eller senare, eller ett likvärdigt protokoll som anges i systemets kryptografipolicy.
+      rationale: Nät utanför systemets kontroll kan avlyssnas, och okrypterade driftdata avslöjar både hemligheter och systemets tillstånd.
+      criteria:
+        - method: test
+          text: En inspelning på varje opålitligt segment under normal drift visar bara krypterade sessioner med TLS 1.2 eller senare eller ett angivet protokoll.
+
+  - id: SYSEC-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-logging, time-synchronisation, monitoring]
+    refs: ["IEC 62443-3-3 SR 6.1", "IEC 62443-3-3 SR 2.11", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [SYSEC-T05]
+    en:
+      title: Central security log with synchronised time
+      description: Each subsystem MUST send its security events (authentication, authorisation failures, configuration changes, start and stop) to a central log store within 60 seconds, with timestamps from a common time source that stays within 1 second of it.
+      rationale: Attacks on systems of systems span several components, and only a central, time-aligned log lets investigators follow them.
+      criteria:
+        - method: test
+          text: A failed login on each subsystem appears in the central store within 60 seconds, and the timestamps of simultaneous events on 3 subsystems differ by at most 1 second.
+          threshold: ≤ 60 s delivery, ≤ 1 s time offset
+    sv:
+      title: Central säkerhetslogg med synkroniserad tid
+      description: Varje delsystem SKA skicka sina säkerhetshändelser (autentisering, nekad behörighet, konfigurationsändringar, start och stopp) till ett centralt logglager inom 60 sekunder, med tidsstämplar från en gemensam tidskälla som det håller sig inom 1 sekund från.
+      rationale: Angrepp mot sammansatta system sträcker sig över flera komponenter, och bara en central logg med samordnad tid låter utredare följa dem.
+      criteria:
+        - method: test
+          text: En misslyckad inloggning på varje delsystem visas i det centrala lagret inom 60 sekunder, och tidsstämplarna för samtidiga händelser på 3 delsystem skiljer sig högst 1 sekund.
+          threshold: ≤ 60 s leverans, ≤ 1 s tidsavvikelse
+
+  - id: SYSEC-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-requirements, suppliers, allocation]
+    refs: ["IEC 62443-2-4:2023", "ISO/IEC 27001:2022 A.5.20"]
+    tests: [SYSEC-T06]
+    en:
+      title: Security requirements allocated to subsystems and suppliers
+      description: Each system security requirement MUST be allocated to the subsystems that implement it, and each allocated requirement MUST be included in the specification or contract of the supplier of that subsystem.
+      rationale: Security requirements that are not passed down to suppliers are not implemented, and gaps show up only at integration.
+      criteria:
+        - method: inspection
+          text: The traceability report shows each security requirement with an allocation, and 5 sampled allocated requirements appear in the supplier's specification or contract.
+    sv:
+      title: Säkerhetskrav fördelade på delsystem och leverantörer
+      description: Varje säkerhetskrav på systemet SKA allokeras till de delsystem som implementerar det, och varje allokerat krav SKA ingå i specifikationen eller avtalet för leverantören av det delsystemet.
+      rationale: Säkerhetskrav som inte förs vidare till leverantörer implementeras inte, och luckorna visar sig först vid integrationen.
+      criteria:
+        - method: inspection
+          text: Spårbarhetsrapporten visar varje säkerhetskrav med en allokering, och 5 allokerade krav i ett stickprov finns i leverantörens specifikation eller avtal.
+
+  - id: SYSEC-10
+    type: security
+    obligation: must
+    priority: critical
+    tags: [penetration-test, system-acceptance]
+    refs: ["IEC 62443-4-1 SVV-3", "ISO/IEC 27001:2022 A.8.29"]
+    tests: [SYSEC-T07]
+    en:
+      title: Penetration test of the integrated system before acceptance
+      description: Before acceptance, a team independent of the developers MUST carry out a penetration test of the integrated system from each external entry point in the security view, and each finding rated high or critical MUST be fixed and retested before acceptance.
+      rationale: Vulnerabilities often come from how components are combined, which only a test of the integrated system can reveal.
+      criteria:
+        - method: inspection
+          text: The penetration test report names the team, covers each external entry point, and each high or critical finding has a passed retest dated before acceptance.
+          threshold: 0 open high or critical findings
+    sv:
+      title: Penetrationstest av det integrerade systemet före godkännande
+      description: Före godkännandet SKA ett team som är oberoende av utvecklarna genomföra ett penetrationstest av det integrerade systemet från varje extern ingångspunkt i säkerhetsvyn, och varje fynd som klassas som högt eller kritiskt SKA åtgärdas och testas om före godkännandet.
+      rationale: Sårbarheter uppstår ofta i hur komponenterna kombineras, vilket bara ett test av det integrerade systemet kan avslöja.
+      criteria:
+        - method: inspection
+          text: Rapporten från penetrationstestet anger teamet, omfattar varje extern ingångspunkt, och varje högt eller kritiskt fynd har ett godkänt omtest daterat före godkännandet.
+          threshold: 0 öppna höga eller kritiska fynd
+
+  - id: SYSEC-11
+    type: security
+    obligation: should
+    priority: medium
+    tags: [safety-and-security, co-engineering]
+    refs: ["IEC TR 63069:2019 (framework for functional safety and security)", "IEC 61508-1:2010 §7.4 (hazard and risk analysis)"]
+    tests: [SYSEC-T08]
+    en:
+      title: Interaction of security controls and safety functions analysed
+      description: The project SHOULD analyse, for each security control that can act on a safety-related component (account lockout, patching, encryption delay, network blocking), whether it can prevent or delay a safety function, and record the resolution of each conflict.
+      rationale: Security measures that lock out an operator or delay a command can create a hazard, and security threats can defeat safety functions.
+      criteria:
+        - method: analysis
+          text: The interaction analysis lists each such control with its effect on safety functions, and each identified conflict has a resolution approved by both the safety and the security responsible.
+    sv:
+      title: Samspelet mellan skyddsåtgärder och säkerhetsfunktioner analyseras
+      description: Projektet BÖR för varje skyddsåtgärd som kan påverka en säkerhetsrelaterad komponent (kontospärr, uppdatering, fördröjning av kryptering, nätverksblockering) analysera om den kan hindra eller fördröja en säkerhetsfunktion, och registrera hur varje konflikt löses.
+      rationale: Skyddsåtgärder som låser ute en operatör eller fördröjer ett kommando kan skapa en fara, och hot mot informationssäkerheten kan slå ut säkerhetsfunktioner.
+      criteria:
+        - method: analysis
+          text: Analysen av samspelet anger varje sådan åtgärd med dess inverkan på säkerhetsfunktionerna, och varje identifierad konflikt har en lösning som godkänts av både den som ansvarar för funktionssäkerheten och den som ansvarar för informationssäkerheten.
+
+  - id: SYSEC-12
+    type: security
+    obligation: must
+    priority: critical
+    tags: [remote-maintenance, remote-access, mfa]
+    refs: ["IEC 62443-3-3 SR 1.13", "IEC 62443-2-4:2023"]
+    tests: [SYSEC-T09]
+    en:
+      title: Remote maintenance only through a controlled access point
+      description: Remote maintenance access by suppliers MUST go through a single controlled access point that requires multi-factor authentication and an approved request per session, records the session and ends it after 8 hours.
+      rationale: Supplier remote access is a common entry point for attacks on integrated systems, and one controlled point makes it visible and limited.
+      criteria:
+        - method: test
+          text: An access attempt without an approved request or with a password only is refused, an approved session is recorded and ends after 8 hours, and no other remote path is found by a scan.
+          threshold: session ≤ 8 h
+    sv:
+      title: Fjärrunderhåll bara via en styrd åtkomstpunkt
+      description: Leverantörers åtkomst för fjärrunderhåll SKA gå genom en enda styrd åtkomstpunkt som kräver flerfaktorsautentisering och en godkänd begäran per session, spelar in sessionen och avslutar den efter 8 timmar.
+      rationale: Leverantörers fjärråtkomst är en vanlig ingång för angrepp mot integrerade system, och en enda styrd punkt gör den synlig och begränsad.
+      criteria:
+        - method: test
+          text: Ett åtkomstförsök utan godkänd begäran eller med bara lösenord avvisas, en godkänd session spelas in och avslutas efter 8 timmar, och en skanning hittar ingen annan väg för fjärråtkomst.
+          threshold: session ≤ 8 h
+
+  - id: SYSEC-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [sbom, supply-chain, vulnerability-monitoring]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "ISO/IEC 27001:2022 A.5.21"]
+    tests: [SYSEC-T10]
+    en:
+      title: Bill of materials for the whole system monitored for vulnerabilities
+      description: The system owner MUST keep a machine-readable bill of materials that combines the software and firmware components of each subsystem, and MUST check it against vulnerability databases at least weekly with each match assigned to an owner.
+      rationale: A system inherits the vulnerabilities of each of its parts, and only a combined inventory shows where a newly published vulnerability applies.
+      criteria:
+        - method: inspection
+          text: The combined bill of materials includes each subsystem, and the vulnerability check log shows a run each week with each match assigned.
+          threshold: check at least weekly
+    sv:
+      title: Materialförteckning för hela systemet bevakas för sårbarheter
+      description: Systemägaren SKA hålla en maskinläsbar materialförteckning som samlar programvaru- och firmwarekomponenterna i varje delsystem, och kontrollera den mot sårbarhetsdatabaser minst en gång i veckan med varje träff tilldelad en ägare.
+      rationale: Ett system ärver sårbarheterna i var och en av sina delar, och bara en samlad förteckning visar var en nyligen publicerad sårbarhet gäller.
+      criteria:
+        - method: inspection
+          text: Den samlade materialförteckningen omfattar varje delsystem, och loggen från sårbarhetskontrollen visar en körning varje vecka med varje träff tilldelad.
+          threshold: kontroll minst varje vecka
+
+  - id: SYSEC-14
+    type: security
+    obligation: must
+    priority: high
+    tags: [recovery, backup, known-good-state]
+    refs: ["IEC 62443-3-3 SR 7.4", "ISO/IEC 27001:2022 A.8.13"]
+    tests: [SYSEC-T11]
+    en:
+      title: Recovery to a known good configuration within the target time
+      description: The system MUST be restorable from offline backups to its last approved configuration, including controller logic, configurations and credentials, within the recovery time objective stated in the security requirements (24 hours by default).
+      rationale: After a destructive attack, the ability to restore a trusted state quickly decides how long operations stand still.
+      criteria:
+        - method: test
+          text: A recovery exercise on a test system restores each subsystem from offline backups to the approved configuration within the recovery time objective, verified by comparing checksums.
+          threshold: ≤ 24 h by default
+    sv:
+      title: Återställning till en känd fungerande konfiguration inom måltiden
+      description: Systemet SKA kunna återställas från frånkopplade säkerhetskopior till sin senast godkända konfiguration, inklusive styrlogik, konfigurationer och inloggningsuppgifter, inom den måltid för återställning som anges i säkerhetskraven (24 timmar som standardvärde).
+      rationale: Efter ett förstörande angrepp avgör förmågan att snabbt återställa ett betrott läge hur länge verksamheten står still.
+      criteria:
+        - method: test
+          text: En återställningsövning på ett testsystem återställer varje delsystem från frånkopplade säkerhetskopior till den godkända konfigurationen inom måltiden, verifierat genom jämförelse av kontrollsummor.
+          threshold: ≤ 24 h som standardvärde
+
+tests:
+  - id: SYSEC-T01
+    priority: high
+    execution: manual
+    tags: [security-architecture, threat-model]
+    refs: ["ISO/IEC 27001:2022 A.8.27 (secure system architecture and engineering principles)", "IEC 62443-3-2:2020 ZCR 5"]
+    en:
+      title: Security view and threat model are current
+      description: Reviews the security view against the asset list and the threat model against the release history.
+      preconditions: The security view, the critical asset list, the threat model with version history and the release notes.
+      expected: The view is complete, and the threat model covers each boundary and was updated with each relevant release.
+      steps:
+        - action: Compare the security view with the critical asset list and the data flow list.
+          expected: Each boundary, crossing flow with protocol and protection, and critical asset is shown.
+        - action: Map each boundary in the view to entries in the threat model.
+          expected: Each boundary has threats with likelihood, impact and controls.
+        - action: Compare the threat model versions with releases that changed a boundary or flow.
+          expected: An update precedes each such release.
+    sv:
+      title: Säkerhetsvyn och hotmodellen är aktuella
+      description: Granskar säkerhetsvyn mot tillgångsförteckningen och hotmodellen mot releasehistoriken.
+      preconditions: Säkerhetsvyn, förteckningen över kritiska tillgångar, hotmodellen med versionshistorik och releaseanteckningarna.
+      expected: Vyn är fullständig, och hotmodellen omfattar varje gräns och har uppdaterats vid varje relevant release.
+      steps:
+        - action: Jämför säkerhetsvyn med förteckningen över kritiska tillgångar och listan över dataflöden.
+          expected: Varje gräns, passerande flöde med protokoll och skydd, och kritisk tillgång visas.
+        - action: Koppla varje gräns i vyn till poster i hotmodellen.
+          expected: Varje gräns har hot med sannolikhet, påverkan och skyddsåtgärder.
+        - action: Jämför hotmodellens versioner med releaser som ändrade en gräns eller ett flöde.
+          expected: En uppdatering föregår varje sådan release.
+
+  - id: SYSEC-T02
+    priority: critical
+    execution: automated
+    tags: [segmentation, defence-in-depth]
+    refs: ["IEC 62443-3-3 SR 5.1"]
+    en:
+      title: Zone boundaries block undocumented flows
+      description: A script attempts connections between all zone pairs and compares the results with the documented flows, and the paths to critical assets are reviewed.
+      preconditions: A test host in each zone, the list of documented flows and the threat model.
+      expected: Only documented flows pass, and each path to a critical asset has two controls.
+      steps:
+        - action: From each zone, attempt connections to each other zone on the documented ports and on 20 undocumented ports.
+          expected: Documented flows succeed, undocumented attempts are blocked and logged.
+        - action: For each critical asset, list the controls on each path from an external entry point in the threat model.
+          expected: Each path has at least two independent controls.
+    sv:
+      title: Zongränserna blockerar odokumenterade flöden
+      description: Ett skript försöker ansluta mellan alla zonpar och jämför resultaten med de dokumenterade flödena, och vägarna till kritiska tillgångar granskas.
+      preconditions: En testvärd i varje zon, listan över dokumenterade flöden och hotmodellen.
+      expected: Bara dokumenterade flöden passerar, och varje väg till en kritisk tillgång har två skyddsåtgärder.
+      steps:
+        - action: Försök från varje zon ansluta till varje annan zon på de dokumenterade portarna och på 20 odokumenterade portar.
+          expected: Dokumenterade flöden lyckas, odokumenterade försök blockeras och loggas.
+        - action: Lista skyddsåtgärderna på varje väg från en extern ingångspunkt för varje kritisk tillgång i hotmodellen.
+          expected: Varje väg har minst två oberoende skyddsåtgärder.
+
+  - id: SYSEC-T03
+    priority: high
+    execution: manual
+    tags: [least-privilege]
+    refs: ["NIST SP 800-53 AC-6"]
+    en:
+      title: Service identity permissions against the access matrix
+      description: Exports the permissions of each service identity and compares them with the access matrix.
+      preconditions: Administrator read access to each component's access control and the access matrix.
+      expected: No identity holds more than the matrix allows and none is shared.
+      steps:
+        - action: Export the permissions of each service identity.
+          expected: An export per component is produced.
+        - action: Compare each export with the access matrix and look for identities used by more than one component.
+          expected: No permission exceeds the matrix and no identity is shared.
+    sv:
+      title: Tjänsteidentiteters behörigheter mot behörighetsmatrisen
+      description: Exporterar behörigheterna för varje tjänsteidentitet och jämför dem med behörighetsmatrisen.
+      preconditions: Läsbehörighet som administratör till varje komponents åtkomstkontroll och behörighetsmatrisen.
+      expected: Ingen identitet har mer än matrisen tillåter och ingen delas.
+      steps:
+        - action: Exportera behörigheterna för varje tjänsteidentitet.
+          expected: En export per komponent tas fram.
+        - action: Jämför varje export med behörighetsmatrisen och leta efter identiteter som används av mer än en komponent.
+          expected: Ingen behörighet går utöver matrisen och ingen identitet delas.
+
+  - id: SYSEC-T04
+    priority: high
+    execution: automated
+    tags: [mutual-authentication, encryption-in-transit]
+    refs: ["IEC 62443-3-3 SR 1.2", "IEC 62443-3-3 SR 4.1"]
+    en:
+      title: Mutual TLS and encryption on boundary connections
+      description: A script tries connections with missing and foreign certificates and inspects captures on untrusted segments.
+      preconditions: A test client and test server, a certificate from a foreign authority, the list of boundary connections and a capture point on each untrusted segment.
+      expected: Unauthenticated ends are refused and traffic on untrusted segments is encrypted.
+      steps:
+        - action: Connect to each boundary service with a client without a certificate.
+          expected: The connection is refused.
+        - action: Let each boundary client connect to a test server presenting the foreign certificate.
+          expected: The client refuses the server.
+        - action: Capture traffic on each untrusted segment for 1 hour of normal operation.
+          expected: Only TLS 1.2 or later or listed protocols are seen.
+    sv:
+      title: Ömsesidig TLS och kryptering på förbindelser över gränser
+      description: Ett skript försöker ansluta med saknade och främmande certifikat och granskar inspelningar på opålitliga segment.
+      preconditions: En testklient och en testserver, ett certifikat från en främmande utfärdare, listan över förbindelser över gränser och en inspelningspunkt på varje opålitligt segment.
+      expected: Oautentiserade ändar avvisas och trafiken på opålitliga segment är krypterad.
+      steps:
+        - action: Anslut till varje tjänst vid en gräns med en klient utan certifikat.
+          expected: Anslutningen avvisas.
+        - action: Låt varje klient vid en gräns ansluta till en testserver som visar det främmande certifikatet.
+          expected: Klienten avvisar servern.
+        - action: Spela in trafiken på varje opålitligt segment under 1 timmes normal drift.
+          expected: Bara TLS 1.2 eller senare eller angivna protokoll förekommer.
+
+  - id: SYSEC-T05
+    priority: high
+    execution: manual
+    tags: [security-logging]
+    refs: ["IEC 62443-3-3 SR 6.1", "IEC 62443-3-3 SR 2.11"]
+    en:
+      title: Security events reach the central log with aligned time
+      description: Causes a failed login on each subsystem and a simultaneous event on three subsystems.
+      preconditions: Access to each subsystem's login, the central log store and a way to trigger an event on 3 subsystems at the same moment.
+      expected: Events arrive within 60 seconds with timestamps aligned within 1 second.
+      steps:
+        - action: Make a failed login on each subsystem and note the time.
+          expected: Each event appears in the central store within 60 seconds.
+        - action: Trigger a simultaneous configuration read on 3 subsystems and compare their timestamps in the store.
+          expected: The timestamps differ by at most 1 second.
+    sv:
+      title: Säkerhetshändelser når den centrala loggen med samordnad tid
+      description: Orsakar en misslyckad inloggning på varje delsystem och en samtidig händelse på tre delsystem.
+      preconditions: Åtkomst till inloggningen i varje delsystem, det centrala logglagret och ett sätt att utlösa en händelse på 3 delsystem i samma ögonblick.
+      expected: Händelserna kommer fram inom 60 sekunder med tidsstämplar samordnade inom 1 sekund.
+      steps:
+        - action: Gör en misslyckad inloggning på varje delsystem och anteckna tiden.
+          expected: Varje händelse visas i det centrala lagret inom 60 sekunder.
+        - action: Utlös en samtidig läsning av konfigurationen på 3 delsystem och jämför deras tidsstämplar i lagret.
+          expected: Tidsstämplarna skiljer sig högst 1 sekund.
+
+  - id: SYSEC-T06
+    priority: high
+    execution: manual
+    tags: [security-requirements, suppliers]
+    refs: ["ISO/IEC 27001:2022 A.5.20"]
+    en:
+      title: Security requirements reach the supplier contracts
+      description: Checks the allocation of the security requirements and samples supplier documents.
+      preconditions: The traceability report of the security requirements and the specifications or contracts of the subsystem suppliers.
+      expected: Each requirement is allocated and the sampled ones are in the supplier documents.
+      steps:
+        - action: Filter the traceability report on security requirements without allocation.
+          expected: The list is empty.
+        - action: Find 5 sampled allocated requirements in the documents of their suppliers.
+          expected: Each is present.
+    sv:
+      title: Säkerhetskraven når leverantörsavtalen
+      description: Kontrollerar fördelningen av säkerhetskraven och tar stickprov i leverantörernas dokument.
+      preconditions: Spårbarhetsrapporten för säkerhetskraven och specifikationerna eller avtalen för leverantörerna av delsystemen.
+      expected: Varje krav är allokerat och kraven i stickprovet finns i leverantörernas dokument.
+      steps:
+        - action: Filtrera spårbarhetsrapporten på säkerhetskrav utan allokering.
+          expected: Listan är tom.
+        - action: Leta upp 5 allokerade krav i ett stickprov i deras leverantörers dokument.
+          expected: Vart och ett finns med.
+
+  - id: SYSEC-T07
+    priority: critical
+    execution: manual
+    tags: [penetration-test]
+    refs: ["IEC 62443-4-1 SVV-3"]
+    en:
+      title: Penetration test report and retests
+      description: Reviews the scope, independence and closure of the penetration test of the integrated system.
+      preconditions: The penetration test report, the retest records, the developer team list, the security view and the acceptance date.
+      expected: The test was independent and complete, and no high or critical finding was open at acceptance.
+      steps:
+        - action: Compare the test team with the developer team list.
+          expected: No tester is a developer of the system.
+        - action: Compare the tested entry points with the external entry points in the security view.
+          expected: Each entry point was tested.
+        - action: Read the retest of each high or critical finding.
+          expected: Each has a passed retest dated before acceptance.
+    sv:
+      title: Rapport från penetrationstest och omtester
+      description: Granskar omfattning, oberoende och stängning av penetrationstestet av det integrerade systemet.
+      preconditions: Rapporten från penetrationstestet, protokollen från omtester, listan över utvecklingsteamet, säkerhetsvyn och datum för godkännandet.
+      expected: Testet var oberoende och fullständigt, och inget högt eller kritiskt fynd var öppet vid godkännandet.
+      steps:
+        - action: Jämför testteamet med listan över utvecklingsteamet.
+          expected: Ingen testare är utvecklare av systemet.
+        - action: Jämför de testade ingångspunkterna med de externa ingångspunkterna i säkerhetsvyn.
+          expected: Varje ingångspunkt har testats.
+        - action: Läs omtestet av varje högt eller kritiskt fynd.
+          expected: Vart och ett har ett godkänt omtest daterat före godkännandet.
+
+  - id: SYSEC-T08
+    priority: medium
+    execution: manual
+    tags: [safety-and-security]
+    refs: ["IEC TR 63069:2019 (framework for functional safety and security)"]
+    en:
+      title: Safety and security interaction analysis
+      description: Reviews the interaction analysis and the approval of conflict resolutions.
+      preconditions: The interaction analysis, the list of security controls on safety-related components and the safety function list.
+      expected: Each control is analysed and each conflict has a jointly approved resolution.
+      steps:
+        - action: Match each security control on a safety-related component with an entry in the analysis.
+          expected: Each has an entry stating its effect on the safety functions.
+          data: "account lockout on an operator station, patch reboot of a safety PLC gateway"
+        - action: Read the resolution and approvals of each conflict.
+          expected: Each is approved by both the safety and the security responsible.
+    sv:
+      title: Analys av samspelet mellan funktionssäkerhet och informationssäkerhet
+      description: Granskar analysen av samspelet och godkännandet av hur konflikter löses.
+      preconditions: Analysen av samspelet, listan över skyddsåtgärder på säkerhetsrelaterade komponenter och förteckningen över säkerhetsfunktioner.
+      expected: Varje åtgärd är analyserad och varje konflikt har en gemensamt godkänd lösning.
+      steps:
+        - action: Para ihop varje skyddsåtgärd på en säkerhetsrelaterad komponent med en post i analysen.
+          expected: Varje åtgärd har en post som anger dess inverkan på säkerhetsfunktionerna.
+          data: "kontospärr på en operatörsstation, omstart efter uppdatering av en gateway till ett säkerhets-PLC"
+        - action: Läs lösningen och godkännandena för varje konflikt.
+          expected: Var och en är godkänd av både den som ansvarar för funktionssäkerheten och den som ansvarar för informationssäkerheten.
+
+  - id: SYSEC-T09
+    priority: critical
+    execution: manual
+    tags: [remote-maintenance]
+    refs: ["IEC 62443-3-3 SR 1.13"]
+    en:
+      title: Supplier remote access through the controlled point only
+      description: Tries remote access without approval and with a password only, runs an approved session and scans for other remote paths.
+      preconditions: A supplier test account, the access request workflow, the session recording store and a scanner on the external network.
+      expected: Only approved multi-factor sessions get in, they are recorded and limited, and no other path exists.
+      steps:
+        - action: Try to connect without an approved request, then with a password only.
+          expected: Both attempts are refused.
+        - action: Connect with an approved request and multi-factor authentication and keep the session open.
+          expected: The session is recorded and ends after 8 hours.
+        - action: Scan the system's external addresses for remote access services.
+          expected: Only the controlled access point answers.
+    sv:
+      title: Leverantörers fjärråtkomst bara via den styrda punkten
+      description: Försöker med fjärråtkomst utan godkännande och med bara lösenord, kör en godkänd session och skannar efter andra vägar för fjärråtkomst.
+      preconditions: Ett testkonto för leverantör, flödet för åtkomstbegäran, lagret för sessionsinspelningar och en skanner på det externa nätet.
+      expected: Bara godkända sessioner med flerfaktorsautentisering kommer in, de spelas in och begränsas, och ingen annan väg finns.
+      steps:
+        - action: Försök ansluta utan godkänd begäran och sedan med bara lösenord.
+          expected: Båda försöken avvisas.
+        - action: Anslut med en godkänd begäran och flerfaktorsautentisering och håll sessionen öppen.
+          expected: Sessionen spelas in och avslutas efter 8 timmar.
+        - action: Skanna systemets externa adresser efter tjänster för fjärråtkomst.
+          expected: Bara den styrda åtkomstpunkten svarar.
+
+  - id: SYSEC-T10
+    priority: high
+    execution: manual
+    tags: [sbom, vulnerability-monitoring]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1"]
+    en:
+      title: Combined bill of materials and weekly vulnerability checks
+      description: Checks the coverage of the combined bill of materials and the vulnerability check log.
+      preconditions: The combined bill of materials, the subsystem list and the vulnerability check log of the last 8 weeks.
+      expected: Each subsystem is included and each week has a check with assigned matches.
+      steps:
+        - action: Compare the subsystems in the bill of materials with the subsystem list.
+          expected: Each subsystem is included.
+        - action: Read the vulnerability check log for the last 8 weeks.
+          expected: Each week has a run, and each match has an owner.
+    sv:
+      title: Samlad materialförteckning och veckovisa sårbarhetskontroller
+      description: Kontrollerar omfattningen av den samlade materialförteckningen och loggen från sårbarhetskontrollerna.
+      preconditions: Den samlade materialförteckningen, listan över delsystem och loggen från sårbarhetskontrollerna för de senaste 8 veckorna.
+      expected: Varje delsystem ingår och varje vecka har en kontroll med tilldelade träffar.
+      steps:
+        - action: Jämför delsystemen i materialförteckningen med listan över delsystem.
+          expected: Varje delsystem ingår.
+        - action: Läs loggen från sårbarhetskontrollerna för de senaste 8 veckorna.
+          expected: Varje vecka har en körning, och varje träff har en ägare.
+
+  - id: SYSEC-T11
+    priority: high
+    execution: manual
+    tags: [recovery]
+    refs: ["IEC 62443-3-3 SR 7.4"]
+    en:
+      title: Recovery exercise from offline backups
+      description: Restores each subsystem of a test system from offline backups and compares the result with the approved configuration.
+      preconditions: A test system, its offline backups, the checksums of the approved configuration and a timer.
+      expected: Each subsystem is restored to the approved configuration within the recovery time objective.
+      steps:
+        - action: Wipe the test system's controllers, servers and configurations and start the timer.
+          expected: The system is in a blank state.
+        - action: Restore each subsystem from the offline backups following the recovery procedure.
+          expected: The restore completes within the recovery time objective.
+          data: "default objective 24 h"
+        - action: Compare the checksums of logic, configurations and credentials with the approved values.
+          expected: Each checksum matches.
+    sv:
+      title: Återställningsövning från frånkopplade säkerhetskopior
+      description: Återställer varje delsystem i ett testsystem från frånkopplade säkerhetskopior och jämför resultatet med den godkända konfigurationen.
+      preconditions: Ett testsystem, dess frånkopplade säkerhetskopior, kontrollsummorna för den godkända konfigurationen och ett tidtagarur.
+      expected: Varje delsystem återställs till den godkända konfigurationen inom måltiden för återställning.
+      steps:
+        - action: Radera testsystemets styrsystem, servrar och konfigurationer och starta tidtagningen.
+          expected: Systemet är i ett tomt läge.
+        - action: Återställ varje delsystem från de frånkopplade säkerhetskopiorna enligt återställningsrutinen.
+          expected: Återställningen slutförs inom måltiden för återställning.
+          data: "måltid 24 h som standardvärde"
+        - action: Jämför kontrollsummorna för logik, konfigurationer och inloggningsuppgifter med de godkända värdena.
+          expected: Varje kontrollsumma stämmer.

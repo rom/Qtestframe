@@ -1,0 +1,570 @@
+area: pj-risk-quality
+prefix: PJRQ
+group: quality
+catalogue: project
+name: {en: Project risk and quality management, sv: Risk- och kvalitetsstyrning i projekt}
+description:
+  en: Risk criteria, the risk register and its reviews, treatment plans, quantitative schedule risk analysis, contingency, the issue log, the quality plan, deliverable reviews, nonconformities, independent audits and the control of project documents.
+  sv: Riskkriterier, riskregistret och dess genomgångar, åtgärdsplaner, kvantitativ riskanalys av tidplanen, reserver, ärendeloggen, kvalitetsplanen, granskning av leveranser, avvikelser, oberoende revisioner och styrning av projektdokument.
+
+requirements:
+  - id: PJRQ-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk-criteria, risk-management-plan]
+    refs: ["ISO 31000:2018 §6.3.4", "ISO 21502:2020 §7.8 (risk management)"]
+    tests: [PJRQ-T01]
+    en:
+      title: Risk criteria approved at initiation
+      description: The project MUST have risk criteria approved by the sponsor during initiation, with scales of 5 levels for likelihood and impact and the risk level that is escalated to the steering group.
+      rationale: Shared scales make the ratings of different people comparable, and a fixed escalation level decides which risks the steering group sees.
+      criteria:
+        - method: review
+          text: The approved risk management plan is dated within initiation and defines the 2 scales with 5 levels each and the escalation level.
+    sv:
+      title: Riskkriterier godkänns vid projektstarten
+      description: Projektet SKA ha riskkriterier som projektägaren godkänt under projektstarten, med skalor i 5 nivåer för sannolikhet och konsekvens och den risknivå som eskaleras till styrgruppen.
+      rationale: Gemensamma skalor gör olika personers bedömningar jämförbara, och en fast eskaleringsnivå avgör vilka risker styrgruppen ser.
+      criteria:
+        - method: review
+          text: Den godkända planen för riskhantering är daterad under projektstarten och definierar de 2 skalorna med 5 nivåer vardera och eskaleringsnivån.
+
+  - id: PJRQ-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk-register, risk-identification]
+    refs: ["ISO 31000:2018 §6.4.2", "ISO 31000:2018 §6.7"]
+    tests: [PJRQ-T02]
+    en:
+      title: Risk register with cause, effect, owner and response
+      description: The project MUST record each identified risk in a risk register with its cause, event, effect, likelihood, impact, owner, chosen response and next review date.
+      rationale: A risk described by cause, event and effect can be treated, while a vague worry cannot.
+      criteria:
+        - method: inspection
+          text: Each entry in the risk register has the 8 listed fields filled in.
+    sv:
+      title: Riskregister med orsak, konsekvens, ägare och åtgärd
+      description: Projektet SKA föra in varje identifierad risk i ett riskregister med orsak, händelse, konsekvens, sannolikhet, påverkan, ägare, vald åtgärd och datum för nästa genomgång.
+      rationale: En risk som beskrivs med orsak, händelse och konsekvens går att hantera, medan en otydlig oro inte gör det.
+      criteria:
+        - method: inspection
+          text: Varje post i riskregistret har de 8 uppräknade fälten ifyllda.
+
+  - id: PJRQ-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk-review, monitoring]
+    refs: ["ISO 31000:2018 §6.6"]
+    tests: [PJRQ-T02]
+    en:
+      title: Each open risk reviewed within 30 days
+      description: The risk owner MUST review each open risk at least every 30 days and record the date, the current rating and the status of its actions.
+      rationale: Risks change as the project progresses, and a register that is not reviewed gives a false picture.
+      criteria:
+        - method: inspection
+          text: No open risk in the register has a last review date older than 30 days.
+          threshold: ≤ 30 days
+    sv:
+      title: Varje öppen risk gås igenom inom 30 dagar
+      description: Riskägaren SKA gå igenom varje öppen risk minst var 30:e dag och anteckna datum, aktuell bedömning och status för åtgärderna.
+      rationale: Risker förändras när projektet går framåt, och ett register som inte gås igenom ger en falsk bild.
+      criteria:
+        - method: inspection
+          text: Ingen öppen risk i registret har ett datum för senaste genomgång som är äldre än 30 dagar.
+          threshold: ≤ 30 dagar
+
+  - id: PJRQ-04
+    type: business
+    obligation: must
+    priority: critical
+    tags: [risk-treatment, high-risk, action-plan]
+    refs: ["ISO 31000:2018 §6.5"]
+    tests: [PJRQ-T03]
+    en:
+      title: Treatment plan for a high risk within 10 working days
+      description: For each risk rated at or above the escalation level, the risk owner MUST record a treatment plan with actions, responsible persons and due dates within 10 working days of the rating.
+      rationale: A high risk without actions is only a prediction, and a time limit stops plans from waiting for the next meeting.
+      criteria:
+        - method: review
+          text: Each risk at or above the escalation level has a treatment plan dated at most 10 working days after the rating, with actions, responsible persons and due dates.
+          threshold: ≤ 10 working days
+    sv:
+      title: Åtgärdsplan för en hög risk inom 10 arbetsdagar
+      description: För varje risk som bedöms ligga på eller över eskaleringsnivån SKA riskägaren dokumentera en åtgärdsplan med åtgärder, ansvariga och slutdatum inom 10 arbetsdagar från bedömningen.
+      rationale: En hög risk utan åtgärder är bara en förutsägelse, och en tidsgräns hindrar att planerna väntar på nästa möte.
+      criteria:
+        - method: review
+          text: Varje risk på eller över eskaleringsnivån har en åtgärdsplan daterad högst 10 arbetsdagar efter bedömningen, med åtgärder, ansvariga och slutdatum.
+          threshold: ≤ 10 arbetsdagar
+
+  - id: PJRQ-05
+    type: business
+    obligation: should
+    priority: medium
+    tags: [schedule-risk, monte-carlo, uncertainty]
+    refs: ["ISO 31000:2018 §6.4.3", "PMBOK Guide 8th ed. Risk performance domain"]
+    tests: [PJRQ-T04]
+    en:
+      title: Quantitative schedule risk analysis with a P80 end date
+      description: For a project with a budget above 10 million SEK, the project manager SHOULD run a quantitative schedule risk analysis at each stage gate and report the end date that is met with 80 % probability.
+      rationale: A single-point end date hides the uncertainty, while a P80 date shows the steering group how likely the plan is.
+      criteria:
+        - method: analysis
+          text: The analysis for the latest stage gate uses three-point estimates for the critical activities, at least 1 000 iterations and states the P50 and P80 end dates.
+    sv:
+      title: Kvantitativ riskanalys av tidplanen med slutdatum för P80
+      description: För ett projekt med en budget över 10 miljoner kronor BÖR projektledaren göra en kvantitativ riskanalys av tidplanen vid varje beslutspunkt och rapportera det slutdatum som nås med 80 % sannolikhet.
+      rationale: Ett enda slutdatum döljer osäkerheten, medan ett P80-datum visar styrgruppen hur sannolik planen är.
+      criteria:
+        - method: analysis
+          text: Analysen för den senaste beslutspunkten använder trepunktsskattningar för de kritiska aktiviteterna, minst 1 000 iterationer och anger slutdatum för P50 och P80.
+
+  - id: PJRQ-06
+    type: business
+    obligation: should
+    priority: medium
+    tags: [contingency, reserve, budget]
+    refs: ["PMBOK Guide 8th ed. Risk performance domain"]
+    tests: [PJRQ-T05]
+    en:
+      title: Contingency reserve based on the risk analysis
+      description: The project budget SHOULD contain a contingency reserve calculated from the quantified risks, with each drawdown recorded against the risk that caused it.
+      rationale: A reserve tied to risks can be defended and released, while a flat percentage is either too little or hides waste.
+      criteria:
+        - method: review
+          text: The budget shows the reserve with its calculation from the risk register, and each drawdown in the cost records names a risk identifier.
+    sv:
+      title: Reserv som bygger på riskanalysen
+      description: Projektbudgeten BÖR innehålla en reserv beräknad från de kvantifierade riskerna, där varje uttag registreras mot den risk som orsakade det.
+      rationale: En reserv som är kopplad till risker går att försvara och släppa, medan ett schablonpåslag antingen räcker för lite eller döljer slöseri.
+      criteria:
+        - method: review
+          text: Budgeten visar reserven med dess beräkning från riskregistret, och varje uttag i kostnadsuppföljningen anger en risks identitet.
+
+  - id: PJRQ-07
+    type: business
+    obligation: must
+    priority: medium
+    tags: [issue-log, issues]
+    refs: ["ISO 21502:2020 §7.9 (issues management)", "PRINCE2 Issues"]
+    tests: [PJRQ-T06]
+    en:
+      title: Issue log with owner and due date
+      description: The project MUST record each issue that has occurred in an issue log, separate from the risk register, with a description, priority, owner, due date and resolution.
+      rationale: Issues need action now while risks need watching, and mixing them hides both.
+      criteria:
+        - method: inspection
+          text: Each open entry in the issue log has description, priority, owner and due date, and each closed entry has a resolution.
+    sv:
+      title: Ärendelogg med ägare och slutdatum
+      description: Projektet SKA föra in varje problem som har uppstått i en ärendelogg, åtskild från riskregistret, med beskrivning, prioritet, ägare, slutdatum och lösning.
+      rationale: Problem kräver åtgärd nu medan risker kräver bevakning, och att blanda dem döljer båda.
+      criteria:
+        - method: inspection
+          text: Varje öppen post i ärendeloggen har beskrivning, prioritet, ägare och slutdatum, och varje stängd post har en lösning.
+
+  - id: PJRQ-08
+    type: business
+    obligation: must
+    priority: high
+    tags: [quality-plan, quality-criteria]
+    refs: ["ISO 9001:2026 §8.1", "ISO 10006:2017", "PRINCE2 Quality"]
+    tests: [PJRQ-T07]
+    en:
+      title: Quality plan with criteria for each deliverable
+      description: The project MUST approve a quality plan before production starts that states for each deliverable its quality criteria, the review or test method and who accepts it.
+      rationale: Criteria agreed before work starts avoid disputes at delivery about what good enough means.
+      criteria:
+        - method: review
+          text: The quality plan is approved before the first production activity, and each deliverable in the product breakdown has criteria, method and acceptor.
+    sv:
+      title: Kvalitetsplan med kriterier för varje leverans
+      description: Projektet SKA godkänna en kvalitetsplan innan produktionen börjar som för varje leverans anger dess kvalitetskriterier, metoden för granskning eller test och vem som godkänner den.
+      rationale: Kriterier som överenskoms innan arbetet börjar undviker tvister vid leveransen om vad som räcker.
+      criteria:
+        - method: review
+          text: Kvalitetsplanen är godkänd före den första produktionsaktiviteten, och varje leverans i produktnedbrytningen har kriterier, metod och godkännare.
+
+  - id: PJRQ-09
+    type: business
+    obligation: must
+    priority: high
+    tags: [review, deliverables, release]
+    refs: ["ISO 9001:2026 §8.3.4", "ISO 9001:2026 §8.6"]
+    tests: [PJRQ-T07]
+    en:
+      title: Deliverable released only after a recorded review
+      description: The project MUST release a deliverable only after a review or test against its quality criteria, with a record of the reviewers, the findings and the approval.
+      rationale: The record shows that the check was made and is the basis for acceptance and later audits.
+      criteria:
+        - method: inspection
+          text: For a sample of 10 released deliverables, each has a review record dated before the release with reviewers, findings and approval.
+    sv:
+      title: En leverans släpps bara efter en dokumenterad granskning
+      description: Projektet SKA släppa en leverans bara efter en granskning eller ett test mot dess kvalitetskriterier, med ett protokoll över granskare, iakttagelser och godkännande.
+      rationale: Protokollet visar att kontrollen gjordes och är underlaget för godkännande och senare revisioner.
+      criteria:
+        - method: inspection
+          text: För ett urval av 10 släppta leveranser har var och en ett granskningsprotokoll daterat före släppet med granskare, iakttagelser och godkännande.
+
+  - id: PJRQ-10
+    type: business
+    obligation: must
+    priority: high
+    tags: [nonconformity, corrective-action]
+    refs: ["ISO 9001:2026 §8.7", "ISO 9001:2026 §10.2"]
+    tests: [PJRQ-T08]
+    en:
+      title: Nonconformities recorded and corrected
+      description: The project MUST record each nonconforming deliverable with the deviation, the correction and its verification, and analyse the root cause of each nonconformity that occurs a second time.
+      rationale: Corrections fix the instance, while root cause analysis of repeats stops the same error from coming back.
+      criteria:
+        - method: review
+          text: Each nonconformity in the log has deviation, correction and verification, and each repeated type has a root cause analysis with actions.
+    sv:
+      title: Avvikelser registreras och rättas
+      description: Projektet SKA registrera varje leverans som avviker med avvikelsen, rättelsen och dess verifiering, och analysera grundorsaken till varje avvikelse som inträffar en andra gång.
+      rationale: Rättelser åtgärdar det enskilda fallet, medan grundorsaksanalys av upprepningar hindrar samma fel från att komma tillbaka.
+      criteria:
+        - method: review
+          text: Varje avvikelse i loggen har avvikelse, rättelse och verifiering, och varje upprepad typ har en grundorsaksanalys med åtgärder.
+
+  - id: PJRQ-11
+    type: business
+    obligation: should
+    priority: medium
+    tags: [audit, independence, quality-assurance]
+    refs: ["ISO 9001:2026 §9.2"]
+    tests: [PJRQ-T09]
+    en:
+      title: Independent project audit once a year
+      description: A person outside the project team SHOULD audit the project's compliance with its plans and the organisation's project model once a year, with each finding answered by the project manager with an action and a date.
+      rationale: People inside the project get used to its shortcuts, and an outside view finds them before they cause problems.
+      criteria:
+        - method: review
+          text: An audit report from the last 12 months is signed by a person outside the team, and each finding has an action and a date.
+          threshold: once per 12 months
+    sv:
+      title: Oberoende projektrevision en gång per år
+      description: En person utanför projektgruppen BÖR en gång per år granska om projektet följer sina planer och organisationens projektmodell, där projektledaren besvarar varje iakttagelse med en åtgärd och ett datum.
+      rationale: De som arbetar i projektet vänjer sig vid dess genvägar, och en utomstående blick hittar dem innan de orsakar problem.
+      criteria:
+        - method: review
+          text: En revisionsrapport från de senaste 12 månaderna är undertecknad av en person utanför gruppen, och varje iakttagelse har en åtgärd och ett datum.
+          threshold: en gång per 12 månader
+
+  - id: PJRQ-12
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [document-control, versioning, approval]
+    refs: ["ISO 9001:2026 §7.5.3"]
+    tests: [PJRQ-T10]
+    en:
+      title: Project documents versioned, approved and stored in one place
+      description: The project MUST keep its controlled documents in one shared repository, with a version number, an approval record and a change history for each document.
+      rationale: Copies in e-mail and on laptops lead to work on outdated versions.
+      criteria:
+        - method: inspection
+          text: The project plan, requirements baseline and quality plan are found in the repository, each with version number, approval and change history, and no other version is in use by the team.
+    sv:
+      title: Projektdokument versionshanteras, godkänns och lagras på ett ställe
+      description: Projektet SKA förvara sina styrda dokument i ett gemensamt arkiv, med versionsnummer, godkännande och ändringshistorik för varje dokument.
+      rationale: Kopior i e-post och på bärbara datorer leder till arbete med inaktuella versioner.
+      criteria:
+        - method: inspection
+          text: Projektplanen, kravbaslinjen och kvalitetsplanen finns i arkivet, var och en med versionsnummer, godkännande och ändringshistorik, och gruppen använder ingen annan version.
+
+tests:
+  - id: PJRQ-T01
+    priority: high
+    execution: manual
+    tags: [risk-criteria]
+    refs: ["ISO 31000:2018 §6.3.4"]
+    en:
+      title: Review of the risk management plan
+      description: Checks the approval date and the contents of the risk management plan.
+      preconditions: The risk management plan and the dates of the initiation stage.
+      expected: The plan was approved during initiation and defines both 5-level scales and the escalation level.
+      steps:
+        - action: Compare the approval date of the plan with the start and end of initiation.
+          expected: The approval falls within initiation and is signed by the sponsor.
+        - action: Read the scales for likelihood and impact.
+          expected: Each has 5 levels with a definition of each level.
+        - action: Find the escalation level.
+          expected: The plan states the risk level from which risks go to the steering group.
+    sv:
+      title: Granskning av planen för riskhantering
+      description: Kontrollerar godkännandedatum och innehåll i planen för riskhantering.
+      preconditions: Planen för riskhantering och datumen för projektstartsfasen.
+      expected: Planen godkändes under projektstarten och definierar båda skalorna i 5 nivåer och eskaleringsnivån.
+      steps:
+        - action: Jämför planens godkännandedatum med början och slutet av projektstarten.
+          expected: Godkännandet ligger inom projektstarten och är undertecknat av projektägaren.
+        - action: Läs skalorna för sannolikhet och konsekvens.
+          expected: Var och en har 5 nivåer med en definition av varje nivå.
+        - action: Hitta eskaleringsnivån.
+          expected: Planen anger från vilken risknivå riskerna går till styrgruppen.
+
+  - id: PJRQ-T02
+    priority: high
+    execution: automated
+    tags: [risk-register, risk-review]
+    refs: ["ISO 31000:2018 §6.6"]
+    en:
+      title: Completeness and review dates of the risk register
+      description: A script exports the risk register and checks the fields and the review dates of each entry.
+      preconditions: An export of the risk register with the last review date of each risk.
+      expected: Each entry has the 8 fields, and no open risk was last reviewed more than 30 days ago.
+      steps:
+        - action: Check each entry for cause, event, effect, likelihood, impact, owner, response and next review date.
+          expected: No field is empty.
+        - action: Compare the last review date of each open risk with today's date.
+          expected: Each difference is at most 30 days.
+          data: Limit 30 days
+    sv:
+      title: Riskregistrets fullständighet och datum för genomgång
+      description: Ett skript exporterar riskregistret och kontrollerar fälten och datumen för genomgång i varje post.
+      preconditions: En export av riskregistret med datum för senaste genomgång för varje risk.
+      expected: Varje post har de 8 fälten, och ingen öppen risk gicks senast igenom för mer än 30 dagar sedan.
+      steps:
+        - action: Kontrollera varje post med avseende på orsak, händelse, konsekvens, sannolikhet, påverkan, ägare, åtgärd och datum för nästa genomgång.
+          expected: Inget fält är tomt.
+        - action: Jämför datumet för senaste genomgång för varje öppen risk med dagens datum.
+          expected: Varje skillnad är högst 30 dagar.
+          data: Gräns 30 dagar
+
+  - id: PJRQ-T03
+    priority: critical
+    execution: manual
+    tags: [risk-treatment]
+    refs: ["ISO 31000:2018 §6.5"]
+    en:
+      title: Treatment plans for risks at the escalation level
+      description: Finds each risk at or above the escalation level and checks its treatment plan.
+      preconditions: The risk register with the rating history and the treatment plans.
+      expected: Each such risk has a complete treatment plan within 10 working days of the rating.
+      steps:
+        - action: Filter the risks rated at or above the escalation level and note the rating dates.
+          expected: A list of risks with rating dates is produced.
+        - action: Open the treatment plan of each listed risk.
+          expected: Each plan has actions, responsible persons and due dates and is dated at most 10 working days after the rating.
+    sv:
+      title: Åtgärdsplaner för risker på eskaleringsnivån
+      description: Letar upp varje risk på eller över eskaleringsnivån och kontrollerar dess åtgärdsplan.
+      preconditions: Riskregistret med bedömningshistorik och åtgärdsplanerna.
+      expected: Varje sådan risk har en komplett åtgärdsplan inom 10 arbetsdagar från bedömningen.
+      steps:
+        - action: Filtrera fram riskerna som bedömts på eller över eskaleringsnivån och anteckna datumen för bedömningen.
+          expected: En lista med risker och bedömningsdatum tas fram.
+        - action: Öppna åtgärdsplanen för varje listad risk.
+          expected: Varje plan har åtgärder, ansvariga och slutdatum och är daterad högst 10 arbetsdagar efter bedömningen.
+
+  - id: PJRQ-T04
+    priority: medium
+    execution: manual
+    tags: [schedule-risk, monte-carlo]
+    refs: ["ISO 31000:2018 §6.4.3"]
+    en:
+      title: Review of the latest schedule risk analysis
+      description: Reviews the inputs and results of the schedule risk analysis made for the latest stage gate.
+      preconditions: The schedule risk analysis report and its model file.
+      expected: Critical activities have three-point estimates, the run has at least 1 000 iterations, and P50 and P80 dates are reported.
+      steps:
+        - action: List the critical activities of the schedule and find their estimates in the model.
+          expected: Each has an optimistic, most likely and pessimistic duration.
+        - action: Read the number of iterations of the run.
+          expected: At least 1 000.
+          data: ≥ 1 000 iterations
+        - action: Read the results in the report.
+          expected: The P50 and P80 end dates are stated and were presented at the stage gate.
+    sv:
+      title: Granskning av den senaste riskanalysen av tidplanen
+      description: Granskar indata och resultat i den riskanalys av tidplanen som gjordes inför den senaste beslutspunkten.
+      preconditions: Rapporten från riskanalysen av tidplanen och dess modellfil.
+      expected: Kritiska aktiviteter har trepunktsskattningar, körningen har minst 1 000 iterationer, och datum för P50 och P80 rapporteras.
+      steps:
+        - action: Lista tidplanens kritiska aktiviteter och hitta deras skattningar i modellen.
+          expected: Var och en har en optimistisk, en mest sannolik och en pessimistisk varaktighet.
+        - action: Läs antalet iterationer i körningen.
+          expected: Minst 1 000.
+          data: ≥ 1 000 iterationer
+        - action: Läs resultaten i rapporten.
+          expected: Slutdatum för P50 och P80 anges och presenterades vid beslutspunkten.
+
+  - id: PJRQ-T05
+    priority: medium
+    execution: manual
+    tags: [contingency]
+    refs: []
+    en:
+      title: Contingency calculation and drawdowns
+      description: Traces the contingency reserve to the risk register and each drawdown to a risk.
+      preconditions: The project budget, the risk register and the cost records.
+      expected: The reserve is calculated from the risks, and each drawdown names a risk.
+      steps:
+        - action: Recalculate the reserve from the quantified risks in the register.
+          expected: The result matches the reserve in the budget.
+        - action: List each drawdown from the reserve in the cost records.
+          expected: Each names a risk identifier that exists in the register.
+    sv:
+      title: Beräkning av och uttag ur reserven
+      description: Spårar reserven till riskregistret och varje uttag till en risk.
+      preconditions: Projektbudgeten, riskregistret och kostnadsuppföljningen.
+      expected: Reserven är beräknad från riskerna, och varje uttag anger en risk.
+      steps:
+        - action: Räkna om reserven från de kvantifierade riskerna i registret.
+          expected: Resultatet stämmer med reserven i budgeten.
+        - action: Lista varje uttag ur reserven i kostnadsuppföljningen.
+          expected: Varje uttag anger en risks identitet som finns i registret.
+
+  - id: PJRQ-T06
+    priority: medium
+    execution: manual
+    tags: [issue-log]
+    refs: ["PRINCE2 Issues"]
+    en:
+      title: Inspection of the issue log
+      description: Inspects the open and closed entries of the issue log.
+      preconditions: The issue log and the risk register of the project.
+      expected: Open entries have the 4 fields, closed entries have a resolution, and the log is separate from the risk register.
+      steps:
+        - action: Check each open entry for description, priority, owner and due date.
+          expected: No field is empty.
+        - action: Check each closed entry for a resolution.
+          expected: Each closed entry has a resolution.
+        - action: Compare the entries with the risk register.
+          expected: The issues are kept in their own log and not as risks.
+    sv:
+      title: Granskning av ärendeloggen
+      description: Granskar de öppna och stängda posterna i ärendeloggen.
+      preconditions: Projektets ärendelogg och riskregister.
+      expected: Öppna poster har de 4 fälten, stängda poster har en lösning, och loggen är åtskild från riskregistret.
+      steps:
+        - action: Kontrollera varje öppen post med avseende på beskrivning, prioritet, ägare och slutdatum.
+          expected: Inget fält är tomt.
+        - action: Kontrollera att varje stängd post har en lösning.
+          expected: Varje stängd post har en lösning.
+        - action: Jämför posterna med riskregistret.
+          expected: Problemen förs i en egen logg och inte som risker.
+
+  - id: PJRQ-T07
+    priority: high
+    execution: manual
+    tags: [quality-plan, review]
+    refs: ["ISO 9001:2026 §8.6"]
+    en:
+      title: Quality plan and review records of released deliverables
+      description: Checks the quality plan and the review records of a sample of released deliverables.
+      preconditions: The quality plan, the product breakdown, the release log and the review records.
+      expected: The plan predates production and covers each deliverable, and each sampled release has a review record before it.
+      steps:
+        - action: Compare the approval date of the quality plan with the first production activity.
+          expected: The plan was approved first.
+        - action: Match each deliverable of the product breakdown with the quality plan.
+          expected: Each has criteria, method and acceptor.
+        - action: Pick 10 released deliverables and find their review records.
+          expected: Each record is dated before the release and lists reviewers, findings and approval.
+          data: 10 deliverables
+    sv:
+      title: Kvalitetsplan och granskningsprotokoll för släppta leveranser
+      description: Kontrollerar kvalitetsplanen och granskningsprotokollen för ett urval av släppta leveranser.
+      preconditions: Kvalitetsplanen, produktnedbrytningen, loggen över släpp och granskningsprotokollen.
+      expected: Planen är äldre än produktionen och täcker varje leverans, och varje vald leverans har ett granskningsprotokoll före släppet.
+      steps:
+        - action: Jämför kvalitetsplanens godkännandedatum med den första produktionsaktiviteten.
+          expected: Planen godkändes först.
+        - action: Para ihop varje leverans i produktnedbrytningen med kvalitetsplanen.
+          expected: Var och en har kriterier, metod och godkännare.
+        - action: Välj 10 släppta leveranser och hitta deras granskningsprotokoll.
+          expected: Varje protokoll är daterat före släppet och anger granskare, iakttagelser och godkännande.
+          data: 10 leveranser
+
+  - id: PJRQ-T08
+    priority: high
+    execution: manual
+    tags: [nonconformity]
+    refs: ["ISO 9001:2026 §10.2"]
+    en:
+      title: Review of the nonconformity log
+      description: Reviews the nonconformity log for complete entries and root cause analyses of repeats.
+      preconditions: The nonconformity log of the project.
+      expected: Each entry is complete, and each repeated type has a root cause analysis with actions.
+      steps:
+        - action: Check each entry for deviation, correction and verification.
+          expected: Each entry has the 3 parts.
+        - action: Group the entries by type and find the types that occur at least twice.
+          expected: A list of repeated types is produced.
+        - action: Find the root cause analysis of each repeated type.
+          expected: Each has an analysis with actions.
+    sv:
+      title: Granskning av avvikelseloggen
+      description: Granskar avvikelseloggen med avseende på fullständiga poster och grundorsaksanalyser av upprepningar.
+      preconditions: Projektets avvikelselogg.
+      expected: Varje post är fullständig, och varje upprepad typ har en grundorsaksanalys med åtgärder.
+      steps:
+        - action: Kontrollera att varje post har avvikelse, rättelse och verifiering.
+          expected: Varje post har de 3 delarna.
+        - action: Gruppera posterna efter typ och ta fram de typer som förekommer minst två gånger.
+          expected: En lista med upprepade typer tas fram.
+        - action: Hitta grundorsaksanalysen för varje upprepad typ.
+          expected: Var och en har en analys med åtgärder.
+
+  - id: PJRQ-T09
+    priority: medium
+    execution: manual
+    tags: [audit]
+    refs: ["ISO 9001:2026 §9.2"]
+    en:
+      title: Independent audit report and responses
+      description: Checks the latest project audit report, the independence of the auditor and the responses to the findings.
+      preconditions: The latest audit report and the project team list.
+      expected: The report is at most 12 months old, the auditor is outside the team, and each finding has an action and a date.
+      steps:
+        - action: Check the date and the signature of the report.
+          expected: The report is at most 12 months old and signed.
+        - action: Look up the auditor in the team list.
+          expected: The auditor is not a member of the project team.
+        - action: Read the response to each finding.
+          expected: Each finding has an action and a date.
+    sv:
+      title: Oberoende revisionsrapport och svar
+      description: Kontrollerar den senaste projektrevisionen, revisorns oberoende och svaren på iakttagelserna.
+      preconditions: Den senaste revisionsrapporten och listan över projektgruppen.
+      expected: Rapporten är högst 12 månader gammal, revisorn står utanför gruppen, och varje iakttagelse har en åtgärd och ett datum.
+      steps:
+        - action: Kontrollera rapportens datum och underskrift.
+          expected: Rapporten är högst 12 månader gammal och undertecknad.
+        - action: Leta upp revisorn i listan över projektgruppen.
+          expected: Revisorn är inte medlem i projektgruppen.
+        - action: Läs svaret på varje iakttagelse.
+          expected: Varje iakttagelse har en åtgärd och ett datum.
+
+  - id: PJRQ-T10
+    priority: medium
+    execution: manual
+    tags: [document-control]
+    refs: ["ISO 9001:2026 §7.5.3"]
+    en:
+      title: Controlled documents in the project repository
+      description: Inspects 3 controlled documents in the repository and asks the team which versions they use.
+      preconditions: Read access to the project repository and 3 team members available for a short interview.
+      expected: Each document has version, approval and history, and the team uses the repository versions.
+      steps:
+        - action: Open the project plan, the requirements baseline and the quality plan in the repository.
+          expected: Each has a version number, an approval record and a change history.
+        - action: Ask 3 team members which version of each document they work from.
+          expected: Each names the current repository version.
+    sv:
+      title: Styrda dokument i projektets arkiv
+      description: Granskar 3 styrda dokument i arkivet och frågar gruppen vilka versioner de använder.
+      preconditions: Läsbehörighet till projektets arkiv och 3 gruppmedlemmar tillgängliga för en kort intervju.
+      expected: Varje dokument har version, godkännande och historik, och gruppen använder arkivets versioner.
+      steps:
+        - action: Öppna projektplanen, kravbaslinjen och kvalitetsplanen i arkivet.
+          expected: Var och en har versionsnummer, godkännande och ändringshistorik.
+        - action: Fråga 3 gruppmedlemmar vilken version av varje dokument de arbetar efter.
+          expected: Var och en anger den aktuella versionen i arkivet.

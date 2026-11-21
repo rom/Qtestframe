@@ -1,0 +1,528 @@
+area: sv-outsourcing
+prefix: SVOUT
+group: security
+catalogue: services
+name: {en: "Outsourcing, service security and exit", sv: "Utkontraktering, tjänstesäkerhet och utträde"}
+description:
+  en: Security clauses and assurance from service providers, the data processing agreement, subcontractors, data location, incident notification, supplier access, yearly security follow-up, the exit plan, return and deletion of data and assistance during the transition to a new provider.
+  sv: Säkerhetsklausuler och försäkran från tjänsteleverantörer, personuppgiftsbiträdesavtalet, underleverantörer, var data finns, rapportering av incidenter, leverantörens åtkomst, årlig säkerhetsuppföljning, utträdesplanen, återlämnande och radering av data och stöd under övergången till en ny leverantör.
+
+requirements:
+  - id: SVOUT-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [contract, security-requirements, audit-right]
+    refs: ["ISO/IEC 27001:2022 A.5.20", "ISO/IEC 27036-2:2022"]
+    tests: [SVOUT-T01]
+    en:
+      title: Security requirements and audit right in the service contract
+      description: The service contract MUST contain the customer's information security requirements, the provider's duty to meet them and the customer's right to audit the provider, by itself or through a third party, with 30 days' notice.
+      rationale: Requirements outside the contract cannot be enforced, and an audit right is the customer's way to check them.
+      criteria:
+        - method: review
+          text: The signed contract or its security appendix contains the requirements, the duty to meet them and the audit right with a notice period of at most 30 days.
+    sv:
+      title: Säkerhetskrav och revisionsrätt i tjänsteavtalet
+      description: Tjänsteavtalet SKA innehålla kundens krav på informationssäkerhet, leverantörens skyldighet att uppfylla dem och kundens rätt att granska leverantören, själv eller genom tredje part, med 30 dagars varsel.
+      rationale: Krav utanför avtalet går inte att hävda, och en revisionsrätt är kundens sätt att kontrollera dem.
+      criteria:
+        - method: review
+          text: Det undertecknade avtalet eller dess säkerhetsbilaga innehåller kraven, skyldigheten att uppfylla dem och revisionsrätten med en varseltid på högst 30 dagar.
+
+  - id: SVOUT-02
+    type: security
+    obligation: must
+    priority: high
+    tags: [assurance, certification, iso-27001]
+    refs: ["ISO/IEC 27001:2022 A.5.19", "ISO/IEC 27036-2:2022", "ISAE 3402"]
+    tests: [SVOUT-T01]
+    en:
+      title: Yearly independent assurance of the provider's security
+      description: The provider MUST give the customer each year either a valid ISO/IEC 27001 certificate whose scope covers the service or an independent assurance report on the controls of the service for the past 12 months.
+      rationale: Few customers can audit each provider themselves, and an independent report gives a comparable view of the controls.
+      criteria:
+        - method: review
+          text: The latest certificate or report is less than 12 months old, and its scope statement names the contracted service.
+          threshold: ≤ 12 months old
+    sv:
+      title: Årlig oberoende försäkran om leverantörens säkerhet
+      description: Leverantören SKA varje år lämna kunden antingen ett giltigt ISO/IEC 27001-certifikat vars omfattning täcker tjänsten eller en oberoende granskningsrapport om tjänstens kontroller för de senaste 12 månaderna.
+      rationale: Få kunder kan själva granska varje leverantör, och en oberoende rapport ger en jämförbar bild av kontrollerna.
+      criteria:
+        - method: review
+          text: Det senaste certifikatet eller den senaste rapporten är mindre än 12 månader gammal, och dess beskrivning av omfattningen nämner den avtalade tjänsten.
+          threshold: ≤ 12 månader gammal
+
+  - id: SVOUT-03
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [gdpr, processor, data-processing-agreement]
+    refs: ["GDPR Art. 28 (processor)"]
+    tests: [SVOUT-T02]
+    en:
+      title: Data processing agreement before personal data is processed
+      description: When the provider processes personal data for the customer, the parties MUST sign a data processing agreement with the contents set out in Article 28 of the GDPR before the processing starts.
+      rationale: Processing personal data through a provider without such an agreement is a breach of the GDPR for the customer as controller.
+      criteria:
+        - method: review
+          text: The data processing agreement is signed before the service start date and covers subject matter, duration, purpose, types of data, instructions, confidentiality, security, sub-processors, assistance, deletion or return, and audits.
+    sv:
+      title: Personuppgiftsbiträdesavtal innan personuppgifter behandlas
+      description: När leverantören behandlar personuppgifter för kundens räkning SKA parterna underteckna ett personuppgiftsbiträdesavtal med det innehåll som artikel 28 i dataskyddsförordningen anger innan behandlingen börjar.
+      rationale: Att låta en leverantör behandla personuppgifter utan ett sådant avtal är ett brott mot dataskyddsförordningen för kunden som personuppgiftsansvarig.
+      criteria:
+        - method: review
+          text: Personuppgiftsbiträdesavtalet är undertecknat före tjänstens startdatum och omfattar föremål, varaktighet, syfte, typer av uppgifter, instruktioner, sekretess, säkerhet, underbiträden, bistånd, radering eller återlämnande och granskning.
+
+  - id: SVOUT-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [subcontractors, sub-processors, notice]
+    refs: ["GDPR Art. 28(2) (engaging sub-processors)", "ISO/IEC 27036-3:2023"]
+    tests: [SVOUT-T02]
+    en:
+      title: New subcontractors announced 30 days ahead with a right to object
+      description: The provider MUST notify the customer at least 30 days before a new subcontractor starts to take part in the service and give the customer the right to object within that period.
+      rationale: A subcontractor gets access to the customer's data and systems, and the customer has to be able to judge the new risk.
+      criteria:
+        - method: review
+          text: The contract contains the 30-day notice and the right to object, and the subcontractor list matches the notices received in the last 12 months.
+          threshold: ≥ 30 days notice
+    sv:
+      title: Nya underleverantörer aviseras 30 dagar i förväg med rätt att invända
+      description: Leverantören SKA meddela kunden minst 30 dagar innan en ny underleverantör börjar delta i tjänsten och ge kunden rätt att invända inom den tiden.
+      rationale: En underleverantör ges åtkomst till kundens data och system, och kunden behöver kunna bedöma den nya risken.
+      criteria:
+        - method: review
+          text: Avtalet innehåller varseltiden på 30 dagar och rätten att invända, och listan över underleverantörer stämmer med de meddelanden som kommit in under de senaste 12 månaderna.
+          threshold: ≥ 30 dagars varsel
+
+  - id: SVOUT-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [data-location, third-country-transfer]
+    refs: ["GDPR Art. 44–46 (transfers to third countries)", "ISO/IEC 27001:2022 A.5.23"]
+    tests: [SVOUT-T03]
+    en:
+      title: Customer data stored only in the agreed EU and EEA countries
+      description: The provider MUST store and process the customer's data, including backups and support access, only in the EU and EEA countries listed in the contract.
+      rationale: Data in other countries can fall under foreign laws on access and needs safeguards that the customer has not agreed to.
+      criteria:
+        - method: review
+          text: The provider's data location statement lists each site of storage, backup and support, and each is in a country listed in the contract.
+    sv:
+      title: Kundens data lagras bara i de avtalade länderna inom EU och EES
+      description: Leverantören SKA lagra och behandla kundens data, även säkerhetskopior och supportåtkomst, bara i de länder inom EU och EES som anges i avtalet.
+      rationale: Data i andra länder kan omfattas av utländska lagar om åtkomst och kräver skyddsåtgärder som kunden inte har godkänt.
+      criteria:
+        - method: review
+          text: Leverantörens redovisning av var data finns listar varje plats för lagring, säkerhetskopiering och support, och var och en ligger i ett land som anges i avtalet.
+
+  - id: SVOUT-06
+    type: security
+    obligation: must
+    priority: critical
+    tags: [incident-notification, breach]
+    refs: ["GDPR Art. 33(2)", "ISO/IEC 27001:2022 A.5.20", "ISO/IEC 27036-3:2023"]
+    tests: [SVOUT-T04]
+    en:
+      title: Security incidents reported to the customer within 24 hours
+      description: The provider MUST report each information security incident that affects the customer's data or service to the customer's security contact within 24 hours of detection, with the scope known so far and the actions taken.
+      rationale: The customer often has 72 hours to notify a supervisory authority and cannot meet that deadline without early information from the provider.
+      criteria:
+        - method: review
+          text: The contract contains the 24-hour limit, and each provider incident report of the last 12 months arrived within 24 hours of the stated detection time.
+          threshold: ≤ 24 h
+    sv:
+      title: Säkerhetsincidenter rapporteras till kunden inom 24 timmar
+      description: Leverantören SKA rapportera varje informationssäkerhetsincident som berör kundens data eller tjänst till kundens säkerhetskontakt inom 24 timmar från upptäckten, med det som är känt om omfattningen och de åtgärder som vidtagits.
+      rationale: Kunden har ofta 72 timmar på sig att anmäla till en tillsynsmyndighet och klarar inte den tidsgränsen utan tidig information från leverantören.
+      criteria:
+        - method: review
+          text: Avtalet innehåller gränsen på 24 timmar, och varje incidentrapport från leverantören under de senaste 12 månaderna kom inom 24 timmar från den angivna tidpunkten för upptäckt.
+          threshold: ≤ 24 h
+
+  - id: SVOUT-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [supplier-access, privileged-access, mfa]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-2-4:2023 SP.07 (remote access)"]
+    tests: [SVOUT-T05]
+    en:
+      title: Provider staff access customer systems with personal accounts and logging
+      description: The provider's staff MUST access the customer's systems only with personal accounts, multi-factor authentication and session logging that the customer can read.
+      rationale: Shared provider accounts make it impossible to tell who did what, and unlogged access hides misuse.
+      criteria:
+        - method: test
+          text: A list of provider accounts shows only named persons with a second factor, and a test session by the provider is found in the session log with the person's name.
+    sv:
+      title: Leverantörens personal når kundens system med personliga konton och loggning
+      description: Leverantörens personal SKA få åtkomst till kundens system bara med personliga konton, flerfaktorsautentisering och sessionsloggning som kunden kan läsa.
+      rationale: Delade leverantörskonton gör det omöjligt att se vem som gjorde vad, och åtkomst utan loggning döljer missbruk.
+      criteria:
+        - method: test
+          text: En lista över leverantörskonton visar bara namngivna personer med andra faktor, och en testsession av leverantören hittas i sessionsloggen med personens namn.
+
+  - id: SVOUT-08
+    type: security
+    obligation: should
+    priority: medium
+    tags: [supplier-review, follow-up]
+    refs: ["ISO/IEC 27001:2022 A.5.22"]
+    tests: [SVOUT-T06]
+    en:
+      title: Yearly security follow-up of each critical provider
+      description: The customer SHOULD follow up each critical provider once a year with a security questionnaire and the evidence behind the answers, and track each finding to closure.
+      rationale: The provider's security changes over a contract of several years, and a yearly follow-up keeps the risk picture current.
+      criteria:
+        - method: review
+          text: Each critical provider has a follow-up from the last 12 months with answers, evidence and findings, and each finding has an owner and a status.
+          threshold: once per 12 months
+    sv:
+      title: Årlig säkerhetsuppföljning av varje kritisk leverantör
+      description: Kunden BÖR följa upp varje kritisk leverantör en gång per år med ett frågeformulär om säkerhet och underlaget för svaren, och följa varje iakttagelse tills den är stängd.
+      rationale: Leverantörens säkerhet förändras under ett avtal som löper i flera år, och en årlig uppföljning håller riskbilden aktuell.
+      criteria:
+        - method: review
+          text: Varje kritisk leverantör har en uppföljning från de senaste 12 månaderna med svar, underlag och iakttagelser, och varje iakttagelse har en ägare och en status.
+          threshold: en gång per 12 månader
+
+  - id: SVOUT-09
+    type: business
+    obligation: must
+    priority: high
+    tags: [exit-plan, transition]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(8)", "ISO/IEC 27036-2:2022"]
+    tests: [SVOUT-T07]
+    en:
+      title: Exit plan delivered within 3 months and updated each year
+      description: The provider MUST deliver an exit plan within 3 months of the service start and update it each year, describing the data and documents handed over, the formats, the transition steps, the roles and the timetable.
+      rationale: An exit planned while the relationship works is far cheaper and safer than one negotiated after it has broken down.
+      criteria:
+        - method: review
+          text: The first exit plan is dated within 3 months of the service start, the latest is less than 12 months old, and both cover the 5 listed parts.
+          threshold: ≤ 3 months, updated every 12 months
+    sv:
+      title: Utträdesplan levereras inom 3 månader och uppdateras varje år
+      description: Leverantören SKA leverera en utträdesplan inom 3 månader från tjänstens start och uppdatera den varje år, med de data och dokument som lämnas över, format, stegen i övergången, roller och tidplan.
+      rationale: Ett utträde som planeras medan samarbetet fungerar är mycket billigare och säkrare än ett som förhandlas fram när det har brutit samman.
+      criteria:
+        - method: review
+          text: Den första utträdesplanen är daterad inom 3 månader från tjänstens start, den senaste är mindre än 12 månader gammal, och båda omfattar de 5 uppräknade delarna.
+          threshold: ≤ 3 månader, uppdateras var 12:e månad
+
+  - id: SVOUT-10
+    type: business
+    obligation: must
+    priority: critical
+    tags: [data-return, portability, exit]
+    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "EU Data Act (Regulation (EU) 2023/2854) Art. 23–25 (switching between data processing services)"]
+    tests: [SVOUT-T08]
+    en:
+      title: Customer data returned in an open format within 30 days of exit
+      description: At the end of the contract, the provider MUST return the customer's data, with its metadata and change history, in the open machine-readable formats named in the exit plan within 30 days.
+      rationale: Data that cannot be taken out, or only in a closed format, locks the customer to the provider.
+      criteria:
+        - method: test
+          text: In an exit test, a full export is delivered within 30 days in the agreed formats, and a sample of 100 records with history is loaded into a test system without loss.
+          threshold: ≤ 30 days
+    sv:
+      title: Kundens data återlämnas i ett öppet format inom 30 dagar vid utträde
+      description: När avtalet upphör SKA leverantören återlämna kundens data, med metadata och ändringshistorik, i de öppna maskinläsbara format som anges i utträdesplanen inom 30 dagar.
+      rationale: Data som inte går att ta ut, eller bara i ett slutet format, låser kunden till leverantören.
+      criteria:
+        - method: test
+          text: Vid ett utträdestest levereras en fullständig export inom 30 dagar i de avtalade formaten, och ett urval av 100 poster med historik läses in i ett testsystem utan förlust.
+          threshold: ≤ 30 dagar
+
+  - id: SVOUT-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [deletion, exit, certificate]
+    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "ISO/IEC 27001:2022 A.8.10"]
+    tests: [SVOUT-T08]
+    en:
+      title: Data deleted with a certificate after a confirmed return
+      description: After the customer confirms that the returned data is complete, the provider MUST delete each copy of the customer's data, backups included, within 30 days and deliver a signed deletion certificate.
+      rationale: Copies left with a former provider are outside the customer's control and still a risk.
+      criteria:
+        - method: review
+          text: A deletion certificate signed by the provider is dated at most 30 days after the customer's confirmation and names production, backup and archive copies.
+          threshold: ≤ 30 days
+    sv:
+      title: Data raderas med intyg efter bekräftat återlämnande
+      description: När kunden har bekräftat att de återlämnade uppgifterna är kompletta SKA leverantören radera varje kopia av kundens data, även säkerhetskopior, inom 30 dagar och leverera ett undertecknat intyg om radering.
+      rationale: Kopior som blir kvar hos en tidigare leverantör ligger utanför kundens kontroll och är fortfarande en risk.
+      criteria:
+        - method: review
+          text: Ett intyg om radering undertecknat av leverantören är daterat högst 30 dagar efter kundens bekräftelse och omfattar produktions-, säkerhets- och arkivkopior.
+          threshold: ≤ 30 dagar
+
+  - id: SVOUT-12
+    type: business
+    obligation: must
+    priority: high
+    tags: [transition-assistance, exit, continuity]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 23–25 (switching between data processing services)"]
+    tests: [SVOUT-T07]
+    en:
+      title: Service and transition assistance for up to 6 months after notice
+      description: The contract MUST oblige the provider to continue the service and assist the new provider for up to 6 months after the end of the contract at the contracted prices, at the customer's request.
+      rationale: Moving a service takes time, and a provider that stops on the last day of the contract leaves the customer without service.
+      criteria:
+        - method: review
+          text: The contract contains the obligation to continue and assist for up to 6 months at the contracted prices.
+          threshold: ≤ 6 months
+    sv:
+      title: Tjänst och stöd vid övergång i upp till 6 månader efter avtalets slut
+      description: Avtalet SKA förplikta leverantören att på kundens begäran fortsätta leverera tjänsten och bistå den nya leverantören i upp till 6 månader efter avtalets slut till de avtalade priserna.
+      rationale: Att flytta en tjänst tar tid, och en leverantör som slutar på avtalets sista dag lämnar kunden utan tjänst.
+      criteria:
+        - method: review
+          text: Avtalet innehåller skyldigheten att fortsätta och bistå i upp till 6 månader till de avtalade priserna.
+          threshold: ≤ 6 månader
+
+tests:
+  - id: SVOUT-T01
+    priority: critical
+    execution: manual
+    tags: [contract, assurance]
+    refs: ["ISO/IEC 27001:2022 A.5.20"]
+    en:
+      title: Security clauses in the contract and the provider's assurance
+      description: Reviews the security clauses of the service contract and the latest certificate or assurance report.
+      preconditions: The signed contract with its security appendix and the latest certificate or assurance report from the provider.
+      expected: The contract has the requirements, the duty and the audit right, and the assurance is current and covers the service.
+      steps:
+        - action: Find the security requirements, the duty to meet them and the audit right in the contract.
+          expected: Each is present, and the notice period for an audit is at most 30 days.
+        - action: Check the date of the certificate or report.
+          expected: It is less than 12 months old.
+        - action: Read the scope statement.
+          expected: It names the contracted service.
+    sv:
+      title: Säkerhetsklausuler i avtalet och leverantörens försäkran
+      description: Granskar säkerhetsklausulerna i tjänsteavtalet och det senaste certifikatet eller den senaste granskningsrapporten.
+      preconditions: Det undertecknade avtalet med säkerhetsbilaga och leverantörens senaste certifikat eller granskningsrapport.
+      expected: Avtalet har kraven, skyldigheten och revisionsrätten, och försäkran är aktuell och täcker tjänsten.
+      steps:
+        - action: Hitta säkerhetskraven, skyldigheten att uppfylla dem och revisionsrätten i avtalet.
+          expected: Var och en finns, och varseltiden för en revision är högst 30 dagar.
+        - action: Kontrollera datumet för certifikatet eller rapporten.
+          expected: Det är mindre än 12 månader gammalt.
+        - action: Läs beskrivningen av omfattningen.
+          expected: Den nämner den avtalade tjänsten.
+
+  - id: SVOUT-T02
+    priority: critical
+    execution: manual
+    tags: [gdpr, processor, subcontractors]
+    refs: ["GDPR Art. 28 (processor)"]
+    en:
+      title: Data processing agreement and subcontractor notices
+      description: Reviews the data processing agreement and compares the subcontractor list with the notices received.
+      preconditions: The data processing agreement, the service start date, the provider's subcontractor list and the notices of the last 12 months.
+      expected: The agreement predates the service and has the listed contents, and each new subcontractor was announced at least 30 days ahead.
+      steps:
+        - action: Compare the signature date of the agreement with the service start date.
+          expected: The agreement was signed first.
+        - action: Check the agreement for each of the listed contents.
+          expected: Each is covered.
+        - action: For each subcontractor added in the last 12 months, find the notice and compare its date with the start of the subcontractor.
+          expected: Each notice came at least 30 days before the start and offered the right to object.
+    sv:
+      title: Personuppgiftsbiträdesavtal och meddelanden om underleverantörer
+      description: Granskar personuppgiftsbiträdesavtalet och jämför listan över underleverantörer med de meddelanden som kommit in.
+      preconditions: Personuppgiftsbiträdesavtalet, tjänstens startdatum, leverantörens lista över underleverantörer och meddelandena från de senaste 12 månaderna.
+      expected: Avtalet är äldre än tjänsten och har det uppräknade innehållet, och varje ny underleverantör aviserades minst 30 dagar i förväg.
+      steps:
+        - action: Jämför avtalets datum för undertecknande med tjänstens startdatum.
+          expected: Avtalet undertecknades först.
+        - action: Kontrollera att avtalet omfattar vart och ett av de uppräknade innehållen.
+          expected: Vart och ett finns med.
+        - action: Hitta meddelandet för varje underleverantör som lagts till under de senaste 12 månaderna och jämför dess datum med underleverantörens start.
+          expected: Varje meddelande kom minst 30 dagar före starten och gav rätt att invända.
+
+  - id: SVOUT-T03
+    priority: high
+    execution: manual
+    tags: [data-location]
+    refs: ["GDPR Art. 44–46 (transfers to third countries)"]
+    en:
+      title: Data location statement compared with the contract
+      description: Compares the provider's statement of data locations with the countries allowed in the contract.
+      preconditions: The contract with its list of countries and the provider's current data location statement.
+      expected: Each storage, backup and support location is in an allowed country.
+      steps:
+        - action: List each location of storage, backup and support in the statement.
+          expected: Each location names a country.
+        - action: Compare each country with the contract list.
+          expected: Each country is in the list.
+    sv:
+      title: Redovisningen av var data finns jämförs med avtalet
+      description: Jämför leverantörens redovisning av var data finns med de länder som avtalet tillåter.
+      preconditions: Avtalet med dess lista över länder och leverantörens aktuella redovisning av var data finns.
+      expected: Varje plats för lagring, säkerhetskopiering och support ligger i ett tillåtet land.
+      steps:
+        - action: Lista varje plats för lagring, säkerhetskopiering och support i redovisningen.
+          expected: Varje plats anger ett land.
+        - action: Jämför varje land med avtalets lista.
+          expected: Varje land finns i listan.
+
+  - id: SVOUT-T04
+    priority: critical
+    execution: manual
+    tags: [incident-notification]
+    refs: ["GDPR Art. 33(2)"]
+    en:
+      title: Timeliness of the provider's incident reports
+      description: Checks the notification clause and the timing of each incident report from the provider in the last 12 months.
+      preconditions: The contract and the provider's incident reports of the last 12 months with detection and sending times.
+      expected: The contract has the 24-hour limit, and each report arrived within 24 hours of detection.
+      steps:
+        - action: Find the notification clause in the contract.
+          expected: It sets 24 hours from detection.
+        - action: For each report, compare the stated detection time with the time it arrived at the customer.
+          expected: Each difference is at most 24 hours.
+        - action: Read the contents of each report.
+          expected: Each describes the known scope and the actions taken.
+    sv:
+      title: Leverantörens incidentrapporter i tid
+      description: Kontrollerar rapporteringsklausulen och tidpunkten för varje incidentrapport från leverantören under de senaste 12 månaderna.
+      preconditions: Avtalet och leverantörens incidentrapporter för de senaste 12 månaderna med tidpunkter för upptäckt och utskick.
+      expected: Avtalet har gränsen på 24 timmar, och varje rapport kom inom 24 timmar från upptäckten.
+      steps:
+        - action: Hitta rapporteringsklausulen i avtalet.
+          expected: Den anger 24 timmar från upptäckten.
+        - action: Jämför den angivna tidpunkten för upptäckt med tidpunkten då rapporten kom till kunden för varje rapport.
+          expected: Varje skillnad är högst 24 timmar.
+        - action: Läs innehållet i varje rapport.
+          expected: Varje rapport beskriver den kända omfattningen och vidtagna åtgärder.
+
+  - id: SVOUT-T05
+    priority: high
+    execution: manual
+    tags: [supplier-access]
+    refs: ["ISO/IEC 27001:2022 A.5.18"]
+    en:
+      title: Provider accounts and a logged test session
+      description: Lists the provider accounts in the customer's systems and asks the provider for a test session.
+      preconditions: Administrator access to the customer's identity system and session log, and an agreed test session with the provider.
+      expected: Each provider account is personal with a second factor, and the test session is logged with the person's name.
+      steps:
+        - action: List each account that belongs to the provider.
+          expected: Each account names one person, and none is shared.
+        - action: Check the authentication settings of each account.
+          expected: Each requires a second factor.
+        - action: Let the provider log in for the agreed test session and search the session log.
+          expected: The session is logged with the person's name, start and end time.
+    sv:
+      title: Leverantörskonton och en loggad testsession
+      description: Listar leverantörens konton i kundens system och ber leverantören om en testsession.
+      preconditions: Administratörsbehörighet till kundens identitetssystem och sessionslogg, och en avtalad testsession med leverantören.
+      expected: Varje leverantörskonto är personligt med andra faktor, och testsessionen loggas med personens namn.
+      steps:
+        - action: Lista varje konto som tillhör leverantören.
+          expected: Varje konto anger en person, och inget är delat.
+        - action: Kontrollera autentiseringsinställningarna för varje konto.
+          expected: Varje konto kräver en andra faktor.
+        - action: Låt leverantören logga in för den avtalade testsessionen och sök i sessionsloggen.
+          expected: Sessionen är loggad med personens namn, start- och sluttid.
+
+  - id: SVOUT-T06
+    priority: medium
+    execution: manual
+    tags: [supplier-review]
+    refs: ["ISO/IEC 27001:2022 A.5.22"]
+    en:
+      title: Yearly follow-up records of critical providers
+      description: Reviews the follow-up of each critical provider in the last 12 months.
+      preconditions: The list of critical providers and the follow-up records.
+      expected: Each critical provider has a follow-up with evidence, and each finding has an owner and a status.
+      steps:
+        - action: Find the latest follow-up for each critical provider.
+          expected: Each is less than 12 months old.
+        - action: Check that the answers are supported by evidence.
+          expected: Each answer that claims a control has evidence attached.
+        - action: Read the findings list of each follow-up.
+          expected: Each finding has an owner and a current status.
+    sv:
+      title: Protokoll från den årliga uppföljningen av kritiska leverantörer
+      description: Granskar uppföljningen av varje kritisk leverantör under de senaste 12 månaderna.
+      preconditions: Listan över kritiska leverantörer och uppföljningsprotokollen.
+      expected: Varje kritisk leverantör har en uppföljning med underlag, och varje iakttagelse har en ägare och en status.
+      steps:
+        - action: Hitta den senaste uppföljningen för varje kritisk leverantör.
+          expected: Var och en är mindre än 12 månader gammal.
+        - action: Kontrollera att svaren stöds av underlag.
+          expected: Varje svar som anger en kontroll har underlag bifogat.
+        - action: Läs listan över iakttagelser i varje uppföljning.
+          expected: Varje iakttagelse har en ägare och en aktuell status.
+
+  - id: SVOUT-T07
+    priority: high
+    execution: manual
+    tags: [exit-plan, transition-assistance]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(8)"]
+    en:
+      title: Exit plan and transition clause
+      description: Reviews the exit plans and the transition assistance clause of the contract.
+      preconditions: The service start date, the exit plan versions and the contract.
+      expected: The first plan came within 3 months, the latest is current with the 5 parts, and the contract has the 6-month assistance.
+      steps:
+        - action: Compare the date of the first exit plan with the service start.
+          expected: It is at most 3 months later.
+        - action: Check the date and the contents of the latest exit plan.
+          expected: It is less than 12 months old and covers data and documents, formats, steps, roles and timetable.
+        - action: Find the transition assistance clause in the contract.
+          expected: It obliges the provider to continue and assist for up to 6 months at the contracted prices.
+    sv:
+      title: Utträdesplan och övergångsklausul
+      description: Granskar utträdesplanerna och avtalets klausul om stöd vid övergång.
+      preconditions: Tjänstens startdatum, versionerna av utträdesplanen och avtalet.
+      expected: Den första planen kom inom 3 månader, den senaste är aktuell med de 5 delarna, och avtalet har stödet i 6 månader.
+      steps:
+        - action: Jämför datumet för den första utträdesplanen med tjänstens start.
+          expected: Det är högst 3 månader senare.
+        - action: Kontrollera datum och innehåll i den senaste utträdesplanen.
+          expected: Den är mindre än 12 månader gammal och omfattar data och dokument, format, steg, roller och tidplan.
+        - action: Hitta klausulen om stöd vid övergång i avtalet.
+          expected: Den förpliktar leverantören att fortsätta och bistå i upp till 6 månader till de avtalade priserna.
+
+  - id: SVOUT-T08
+    priority: critical
+    execution: manual
+    tags: [data-return, deletion]
+    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)"]
+    en:
+      title: Exit test with data return and deletion certificate
+      description: Requests a full export as an exit test, loads a sample into a test system and reviews the deletion certificate of a finished exit.
+      preconditions: An agreed exit test with the provider, a test system that reads the agreed formats, and the deletion certificate from a finished exit, if there is one.
+      expected: The export arrives within 30 days and loads without loss, and the certificate covers each copy within 30 days of confirmation.
+      steps:
+        - action: Request the full export and note the date.
+          expected: The export arrives within 30 days in the formats of the exit plan.
+        - action: Load 100 records with their history into the test system and compare them with the service.
+          expected: Each record and its history match.
+          data: 100 records
+        - action: Read the deletion certificate and compare its date with the customer's confirmation.
+          expected: It is signed, dated at most 30 days later and names production, backup and archive copies.
+    sv:
+      title: Utträdestest med återlämnande av data och intyg om radering
+      description: Begär en fullständig export som utträdestest, läser in ett urval i ett testsystem och granskar intyget om radering från ett avslutat utträde.
+      preconditions: Ett avtalat utträdestest med leverantören, ett testsystem som läser de avtalade formaten och intyget om radering från ett avslutat utträde, om ett sådant finns.
+      expected: Exporten kommer inom 30 dagar och läses in utan förlust, och intyget omfattar varje kopia inom 30 dagar från bekräftelsen.
+      steps:
+        - action: Begär den fullständiga exporten och anteckna datumet.
+          expected: Exporten kommer inom 30 dagar i utträdesplanens format.
+        - action: Läs in 100 poster med historik i testsystemet och jämför dem med tjänsten.
+          expected: Varje post och dess historik stämmer.
+          data: 100 poster
+        - action: Läs intyget om radering och jämför dess datum med kundens bekräftelse.
+          expected: Det är undertecknat, daterat högst 30 dagar senare och omfattar produktions-, säkerhets- och arkivkopior.

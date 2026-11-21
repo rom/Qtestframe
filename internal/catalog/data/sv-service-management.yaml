@@ -1,0 +1,526 @@
+area: sv-service-management
+prefix: SVSM
+group: operations
+catalogue: services
+name: {en: Service management and service desk, sv: Tjänstehantering och servicedesk}
+description:
+  en: Incident, major incident and problem management, the known error database, change enablement with backout plans, service requests, the service desk with its channels, answer times and first contact resolution, the configuration management database and service continuity plans.
+  sv: Incidenthantering, hantering av allvarliga incidenter och problemhantering, databasen över kända fel, ändringshantering med återställningsplaner, beställningar, servicedesken med kanaler, svarstider och lösning vid första kontakten, konfigurationsdatabasen och kontinuitetsplaner för tjänster.
+
+requirements:
+  - id: SVSM-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [incident-management, ticket]
+    refs: ["ISO/IEC 20000-1:2018 §8.6.1", "ITIL 4 Incident management"]
+    tests: [SVSM-T01]
+    en:
+      title: Each incident recorded with time stamps, priority and configuration item
+      description: The service desk MUST record each incident in the service management tool with the time it was reported, the priority, the category, the affected configuration item and each status change with its time.
+      rationale: Complete records are the basis for the service level figures, for trend analysis and for problem management.
+      criteria:
+        - method: inspection
+          text: A sample of 20 incidents from the last month each has report time, priority, category, configuration item and a time-stamped status history.
+    sv:
+      title: Varje incident registreras med tidsstämplar, prioritet och konfigurationsobjekt
+      description: Servicedesken SKA registrera varje incident i verktyget för tjänstehantering med tidpunkten för anmälan, prioritet, kategori, berört konfigurationsobjekt och varje statusändring med tidpunkt.
+      rationale: Fullständiga poster är underlaget för siffrorna om servicenivåer, för trendanalys och för problemhantering.
+      criteria:
+        - method: inspection
+          text: Ett urval av 20 incidenter från den senaste månaden har var och en tidpunkt för anmälan, prioritet, kategori, konfigurationsobjekt och en statushistorik med tidsstämplar.
+
+  - id: SVSM-02
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [major-incident, communication]
+    refs: ["ITIL 4 Incident management", "ISO/IEC 20000-1:2018 §8.6.1"]
+    tests: [SVSM-T02]
+    en:
+      title: Customer informed within 30 minutes of a major incident
+      description: When an incident is classified as a major incident, the provider MUST appoint a major incident manager and inform the customer's contact within 30 minutes, with a status update at least every 60 minutes until the service is restored.
+      rationale: During a major outage the customer has to make decisions, and regular updates replace guessing and repeated calls to the service desk.
+      criteria:
+        - method: review
+          text: For each major incident in the last 6 months, the first notice was sent within 30 minutes of classification and no gap between updates was longer than 60 minutes.
+          threshold: first notice ≤ 30 min, updates ≤ 60 min apart
+    sv:
+      title: Kunden informeras inom 30 minuter vid en allvarlig incident
+      description: När en incident klassas som allvarlig SKA leverantören utse en ansvarig för den allvarliga incidenten och informera kundens kontaktperson inom 30 minuter, med en lägesuppdatering minst var 60:e minut tills tjänsten är återställd.
+      rationale: Under ett allvarligt avbrott behöver kunden fatta beslut, och regelbundna uppdateringar ersätter gissningar och upprepade samtal till servicedesken.
+      criteria:
+        - method: review
+          text: För varje allvarlig incident under de senaste 6 månaderna skickades det första meddelandet inom 30 minuter från klassningen och inget uppehåll mellan uppdateringarna var längre än 60 minuter.
+          threshold: första meddelande ≤ 30 min, uppdateringar ≤ 60 min isär
+
+  - id: SVSM-03
+    type: functional
+    obligation: must
+    priority: high
+    tags: [problem-management, root-cause]
+    refs: ["ISO/IEC 20000-1:2018 §8.6.3", "ITIL 4 Problem management"]
+    tests: [SVSM-T03]
+    en:
+      title: Root cause analysis within 10 working days for major and repeated incidents
+      description: The provider MUST open a problem record for each major incident and for each group of 3 incidents with the same symptom within 30 days, and complete a root cause analysis within 10 working days.
+      rationale: Incident management restores the service, while problem management stops the same failure from coming back.
+      criteria:
+        - method: review
+          text: Each major incident and each repeated group in the last 6 months has a problem record with a root cause analysis completed within 10 working days.
+          threshold: ≤ 10 working days
+    sv:
+      title: Grundorsaksanalys inom 10 arbetsdagar för allvarliga och upprepade incidenter
+      description: Leverantören SKA öppna ett problemärende för varje allvarlig incident och för varje grupp om 3 incidenter med samma symtom inom 30 dagar, och slutföra en grundorsaksanalys inom 10 arbetsdagar.
+      rationale: Incidenthanteringen återställer tjänsten, medan problemhanteringen hindrar samma fel från att komma tillbaka.
+      criteria:
+        - method: review
+          text: Varje allvarlig incident och varje upprepad grupp under de senaste 6 månaderna har ett problemärende med en grundorsaksanalys som slutförts inom 10 arbetsdagar.
+          threshold: ≤ 10 arbetsdagar
+
+  - id: SVSM-04
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [known-errors, knowledge-management, workaround]
+    refs: ["ITIL 4 Problem management", "ITIL 4 Knowledge management"]
+    tests: [SVSM-T03]
+    en:
+      title: Known errors with workarounds available to the service desk
+      description: The provider SHOULD publish each known error with its symptoms and workaround in a knowledge base that the service desk searches when it registers an incident.
+      rationale: A documented workaround lets the first line restore the service in minutes instead of escalating each repeat.
+      criteria:
+        - method: demonstration
+          text: Searching the knowledge base from a new incident with the symptom of a known error shows the known error and its workaround.
+    sv:
+      title: Kända fel med tillfälliga lösningar tillgängliga för servicedesken
+      description: Leverantören BÖR publicera varje känt fel med symtom och tillfällig lösning i en kunskapsdatabas som servicedesken söker i när den registrerar en incident.
+      rationale: En dokumenterad tillfällig lösning låter första linjen återställa tjänsten på minuter i stället för att eskalera varje upprepning.
+      criteria:
+        - method: demonstration
+          text: En sökning i kunskapsdatabasen från en ny incident med symtomet för ett känt fel visar det kända felet och dess tillfälliga lösning.
+
+  - id: SVSM-05
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [change-enablement, approval, risk-assessment]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.1", "ITIL 4 Change enablement"]
+    tests: [SVSM-T04]
+    en:
+      title: Production changes assessed and approved before implementation
+      description: The provider MUST record each change to the production environment with a risk assessment and an approval by the change authority for its change type (standard, normal or emergency) before it is implemented.
+      rationale: Unplanned and unassessed changes are a leading cause of incidents.
+      criteria:
+        - method: review
+          text: A comparison of the deployment log with the change records for the last month finds no production change without an approved record dated before the deployment.
+    sv:
+      title: Ändringar i produktion bedöms och godkänns före genomförandet
+      description: Leverantören SKA registrera varje ändring i produktionsmiljön med en riskbedömning och ett godkännande av den som har beslutsmandat för ändringstypen (standard, normal eller akut) innan den genomförs.
+      rationale: Oplanerade ändringar som inte bedömts är en av de vanligaste orsakerna till incidenter.
+      criteria:
+        - method: review
+          text: En jämförelse mellan driftsättningsloggen och ändringsposterna för den senaste månaden hittar ingen ändring i produktion utan godkänd post daterad före driftsättningen.
+
+  - id: SVSM-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [change-enablement, backout-plan]
+    refs: ["ITIL 4 Change enablement"]
+    tests: [SVSM-T04]
+    en:
+      title: Backout plan for each normal change
+      description: Each normal change MUST have a documented backout plan with the steps and the time it takes before the change is approved.
+      rationale: A change that fails without a way back turns a short maintenance window into a long outage.
+      criteria:
+        - method: inspection
+          text: Each of 10 approved normal changes has a backout plan with steps and estimated duration attached before the approval date.
+    sv:
+      title: Återställningsplan för varje normal ändring
+      description: Varje normal ändring SKA ha en dokumenterad återställningsplan med stegen och den tid de tar innan ändringen godkänns.
+      rationale: En ändring som misslyckas utan väg tillbaka gör ett kort servicefönster till ett långt avbrott.
+      criteria:
+        - method: inspection
+          text: Var och en av 10 godkända normala ändringar har en återställningsplan med steg och beräknad tid bifogad före godkännandedatumet.
+
+  - id: SVSM-07
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [service-request, catalogue, fulfilment]
+    refs: ["ISO/IEC 20000-1:2018 §8.6.2", "ITIL 4 Service request management"]
+    tests: [SVSM-T05]
+    en:
+      title: Catalogue requests fulfilled within their published times
+      description: The provider MUST fulfil 95 % of the standard requests in the service catalogue within the time published for each, such as 1 working day for a new user account.
+      rationale: Published fulfilment times let the customer plan, for example the first day of a new employee.
+      criteria:
+        - method: analysis
+          text: The request data of the last month shows at least 95 % of each request type fulfilled within its published time.
+          threshold: ≥ 95 % within the published time
+    sv:
+      title: Beställningar ur tjänstekatalogen utförs inom publicerad tid
+      description: Leverantören SKA utföra 95 % av standardbeställningarna i tjänstekatalogen inom den tid som publicerats för var och en, till exempel 1 arbetsdag för ett nytt användarkonto.
+      rationale: Publicerade leveranstider låter kunden planera, till exempel den första dagen för en nyanställd.
+      criteria:
+        - method: analysis
+          text: Beställningsdata för den senaste månaden visar att minst 95 % av varje beställningstyp utförts inom sin publicerade tid.
+          threshold: ≥ 95 % inom publicerad tid
+
+  - id: SVSM-08
+    type: functional
+    obligation: must
+    priority: high
+    tags: [service-desk, channels, answer-time]
+    refs: ["ITIL 4 Service desk"]
+    tests: [SVSM-T06]
+    en:
+      title: Service desk calls answered within 60 seconds
+      description: The service desk MUST be reachable by phone, web portal and e-mail during the service hours and answer 80 % of the phone calls of each month within 60 seconds.
+      rationale: The service desk is the single point of contact, and long queues make users bypass it or give up.
+      criteria:
+        - method: analysis
+          text: The phone statistics of the last month show at least 80 % of calls answered within 60 seconds, and test contacts in each channel are registered as tickets.
+          threshold: ≥ 80 % within 60 s
+    sv:
+      title: Samtal till servicedesken besvaras inom 60 sekunder
+      description: Servicedesken SKA vara nåbar via telefon, webbportal och e-post under servicetiden och besvara 80 % av telefonsamtalen varje månad inom 60 sekunder.
+      rationale: Servicedesken är den gemensamma kontaktpunkten, och långa köer får användarna att gå förbi den eller ge upp.
+      criteria:
+        - method: analysis
+          text: Telefonistatistiken för den senaste månaden visar att minst 80 % av samtalen besvarats inom 60 sekunder, och testkontakter i varje kanal registreras som ärenden.
+          threshold: ≥ 80 % inom 60 s
+
+  - id: SVSM-09
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [service-desk, first-contact-resolution]
+    refs: ["ITIL 4 Service desk"]
+    tests: [SVSM-T06]
+    en:
+      title: 60 % of contacts resolved at the first contact
+      description: The service desk SHOULD resolve at least 60 % of the incidents and requests of each month during the first contact, without escalation to another team.
+      rationale: Each escalation adds waiting time for the user and work for the specialist teams.
+      criteria:
+        - method: analysis
+          text: The ticket data of the last month shows at least 60 % of tickets closed by the service desk in the first contact.
+          threshold: ≥ 60 %
+    sv:
+      title: 60 % av kontakterna löses vid första kontakten
+      description: Servicedesken BÖR lösa minst 60 % av incidenterna och beställningarna varje månad vid den första kontakten, utan eskalering till en annan grupp.
+      rationale: Varje eskalering ger användaren väntetid och specialistgrupperna mer arbete.
+      criteria:
+        - method: analysis
+          text: Ärendedata för den senaste månaden visar att minst 60 % av ärendena stängts av servicedesken vid den första kontakten.
+          threshold: ≥ 60 %
+
+  - id: SVSM-10
+    type: usability
+    obligation: should
+    priority: low
+    tags: [service-desk, language]
+    refs: []
+    tests: [SVSM-T06]
+    en:
+      title: Service desk in Swedish and English
+      description: The service desk SHOULD serve each user in Swedish or English, at the user's choice, in each channel during the service hours.
+      rationale: Users explain problems best in their own language, and misunderstandings lengthen each ticket.
+      criteria:
+        - method: demonstration
+          text: Test contacts in Swedish and in English by phone, portal and e-mail are each handled in the language used.
+    sv:
+      title: Servicedesk på svenska och engelska
+      description: Servicedesken BÖR betjäna varje användare på svenska eller engelska, efter användarens val, i varje kanal under servicetiden.
+      rationale: Användare förklarar problem bäst på sitt eget språk, och missförstånd förlänger varje ärende.
+      criteria:
+        - method: demonstration
+          text: Testkontakter på svenska och på engelska via telefon, portal och e-post hanteras var och en på det språk som använts.
+
+  - id: SVSM-11
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [cmdb, configuration-management]
+    refs: ["ISO/IEC 20000-1:2018 §8.2.6", "ITIL 4 Service configuration management"]
+    tests: [SVSM-T07]
+    en:
+      title: Configuration database at least 98 % correct
+      description: The provider MUST record each configuration item that supports the service, with its owner, version and relationships, in a configuration management database whose entries are at least 98 % correct at each yearly audit.
+      rationale: Impact analysis of incidents and changes is only as good as the configuration data behind it.
+      criteria:
+        - method: inspection
+          text: An audit of 50 randomly chosen configuration items against the live environment finds at most 1 item with a wrong owner, version or relationship.
+          threshold: ≥ 98 % correct
+    sv:
+      title: Konfigurationsdatabas som är minst 98 % korrekt
+      description: Leverantören SKA registrera varje konfigurationsobjekt som tjänsten bygger på, med ägare, version och relationer, i en konfigurationsdatabas vars poster är minst 98 % korrekta vid varje årlig revision.
+      rationale: Konsekvensanalysen av incidenter och ändringar blir aldrig bättre än konfigurationsdata bakom den.
+      criteria:
+        - method: inspection
+          text: En revision av 50 slumpvis valda konfigurationsobjekt mot den verkliga miljön hittar högst 1 objekt med fel ägare, version eller relation.
+          threshold: ≥ 98 % korrekt
+
+  - id: SVSM-12
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [service-continuity, rto, rpo, exercise]
+    refs: ["ISO/IEC 20000-1:2018 §8.7.2", "ISO 22301:2019 §8.4", "ITIL 4 Service continuity management"]
+    tests: [SVSM-T08]
+    en:
+      title: Continuity plan per service tested each year
+      description: The provider MUST keep a continuity plan for each service that states its recovery time and recovery point objectives, and test the plan each year with a recorded result.
+      rationale: A plan that is never tested is likely to fail when a site, a data centre or a supplier is lost.
+      criteria:
+        - method: review
+          text: Each service has a plan with recovery time and recovery point objectives, and a test report from the last 12 months shows the achieved times against them.
+          threshold: test every 12 months
+    sv:
+      title: Kontinuitetsplan per tjänst som testas varje år
+      description: Leverantören SKA ha en kontinuitetsplan för varje tjänst som anger dess mål för återställningstid och återställningspunkt, och testa planen varje år med ett dokumenterat resultat.
+      rationale: En plan som aldrig testats fallerar troligen när en plats, ett datacenter eller en leverantör går förlorad.
+      criteria:
+        - method: review
+          text: Varje tjänst har en plan med mål för återställningstid och återställningspunkt, och en testrapport från de senaste 12 månaderna visar uppnådda tider mot målen.
+          threshold: test var 12:e månad
+
+tests:
+  - id: SVSM-T01
+    priority: high
+    execution: manual
+    tags: [incident-management]
+    refs: ["ITIL 4 Incident management"]
+    en:
+      title: Completeness of incident records
+      description: Inspects a random sample of incident records from the last month.
+      preconditions: Read access to the service management tool.
+      expected: Each sampled incident has the listed fields and a time-stamped status history.
+      steps:
+        - action: Pick 20 incidents from the last month at random.
+          expected: The sample covers each priority.
+          data: 20 incidents
+        - action: Check report time, priority, category and configuration item of each.
+          expected: Each field is filled in.
+        - action: Open the status history of each.
+          expected: Each status change has a time stamp.
+    sv:
+      title: Fullständighet i incidentposter
+      description: Granskar ett slumpvis urval av incidentposter från den senaste månaden.
+      preconditions: Läsbehörighet till verktyget för tjänstehantering.
+      expected: Varje vald incident har de uppräknade fälten och en statushistorik med tidsstämplar.
+      steps:
+        - action: Välj 20 incidenter från den senaste månaden slumpvis.
+          expected: Urvalet omfattar varje prioritet.
+          data: 20 incidenter
+        - action: Kontrollera tidpunkt för anmälan, prioritet, kategori och konfigurationsobjekt för var och en.
+          expected: Varje fält är ifyllt.
+        - action: Öppna statushistoriken för var och en.
+          expected: Varje statusändring har en tidsstämpel.
+
+  - id: SVSM-T02
+    priority: critical
+    execution: manual
+    tags: [major-incident]
+    refs: []
+    en:
+      title: Communication during major incidents
+      description: Reviews the notices sent to the customer during each major incident of the last 6 months.
+      preconditions: The major incident records with classification and restoration times and the notices sent.
+      expected: Each first notice came within 30 minutes, and updates were at most 60 minutes apart.
+      steps:
+        - action: For each major incident, compare the classification time with the first notice.
+          expected: The first notice was sent within 30 minutes and names the major incident manager.
+        - action: List the update times until restoration.
+          expected: No gap between updates exceeds 60 minutes.
+    sv:
+      title: Kommunikation under allvarliga incidenter
+      description: Granskar de meddelanden som skickats till kunden under varje allvarlig incident de senaste 6 månaderna.
+      preconditions: Posterna för allvarliga incidenter med tidpunkter för klassning och återställning och de skickade meddelandena.
+      expected: Varje första meddelande kom inom 30 minuter, och uppdateringarna låg högst 60 minuter isär.
+      steps:
+        - action: Jämför tidpunkten för klassning med det första meddelandet för varje allvarlig incident.
+          expected: Det första meddelandet skickades inom 30 minuter och namnger den ansvarige för incidenten.
+        - action: Lista tidpunkterna för uppdateringar fram till återställningen.
+          expected: Inget uppehåll mellan uppdateringarna är längre än 60 minuter.
+
+  - id: SVSM-T03
+    priority: high
+    execution: manual
+    tags: [problem-management, known-errors]
+    refs: ["ITIL 4 Problem management"]
+    en:
+      title: Problem records and known errors
+      description: Checks that major and repeated incidents led to problem records with timely root cause analyses and that a known error is found from a new incident.
+      preconditions: The incident and problem records of the last 6 months and a known error with a documented symptom.
+      expected: Each qualifying case has a problem record with analysis within 10 working days, and the known error is found by its symptom.
+      steps:
+        - action: List the major incidents and the groups of 3 incidents with the same symptom within 30 days.
+          expected: A list of qualifying cases is produced.
+        - action: Find the problem record of each case and the completion date of its root cause analysis.
+          expected: Each has a record, and each analysis was completed within 10 working days.
+        - action: Register a test incident with the symptom of the known error and search the knowledge base.
+          expected: The known error and its workaround are shown.
+    sv:
+      title: Problemärenden och kända fel
+      description: Kontrollerar att allvarliga och upprepade incidenter lett till problemärenden med grundorsaksanalyser i tid och att ett känt fel hittas från en ny incident.
+      preconditions: Incident- och problemposterna för de senaste 6 månaderna och ett känt fel med dokumenterat symtom.
+      expected: Varje fall som uppfyller villkoren har ett problemärende med analys inom 10 arbetsdagar, och det kända felet hittas via sitt symtom.
+      steps:
+        - action: Lista de allvarliga incidenterna och grupperna om 3 incidenter med samma symtom inom 30 dagar.
+          expected: En lista med fall som uppfyller villkoren tas fram.
+        - action: Hitta problemärendet för varje fall och datumet då dess grundorsaksanalys slutfördes.
+          expected: Varje fall har ett ärende, och varje analys slutfördes inom 10 arbetsdagar.
+        - action: Registrera en testincident med det kända felets symtom och sök i kunskapsdatabasen.
+          expected: Det kända felet och dess tillfälliga lösning visas.
+
+  - id: SVSM-T04
+    priority: critical
+    execution: manual
+    tags: [change-enablement]
+    refs: ["ITIL 4 Change enablement"]
+    en:
+      title: Deployment log compared with change records
+      description: Matches each production deployment of the last month with an approved change record and checks backout plans of normal changes.
+      preconditions: The deployment log of the production environment and the change records of the last month.
+      expected: Each deployment has an approved change dated before it, and each sampled normal change had a backout plan before approval.
+      steps:
+        - action: Match each deployment in the log with a change record.
+          expected: Each deployment has a record.
+        - action: Compare the approval time of each record with the deployment time.
+          expected: Each approval is earlier, by the authority for its change type.
+        - action: Pick 10 normal changes and open their attachments.
+          expected: Each has a backout plan with steps and duration, attached before the approval.
+          data: 10 normal changes
+    sv:
+      title: Driftsättningsloggen jämförs med ändringsposterna
+      description: Matchar varje driftsättning i produktion under den senaste månaden mot en godkänd ändringspost och kontrollerar återställningsplanerna för normala ändringar.
+      preconditions: Driftsättningsloggen för produktionsmiljön och ändringsposterna för den senaste månaden.
+      expected: Varje driftsättning har en godkänd ändring daterad före den, och varje vald normal ändring hade en återställningsplan före godkännandet.
+      steps:
+        - action: Matcha varje driftsättning i loggen mot en ändringspost.
+          expected: Varje driftsättning har en post.
+        - action: Jämför tidpunkten för godkännandet i varje post med tidpunkten för driftsättningen.
+          expected: Varje godkännande är tidigare och gjort av den som har mandat för ändringstypen.
+        - action: Välj 10 normala ändringar och öppna deras bilagor.
+          expected: Var och en har en återställningsplan med steg och tid, bifogad före godkännandet.
+          data: 10 normala ändringar
+
+  - id: SVSM-T05
+    priority: medium
+    execution: automated
+    tags: [service-request]
+    refs: []
+    en:
+      title: Fulfilment times of catalogue requests
+      description: A script compares the fulfilment time of each request of the last month with the time published for its type.
+      preconditions: The service catalogue with published times and the request export with creation and fulfilment time stamps.
+      expected: At least 95 % of each request type is fulfilled within its published time.
+      steps:
+        - action: Compute the fulfilment time of each request in working time.
+          expected: Each request has a time.
+        - action: Compute the share within the published time per request type.
+          expected: Each type is at least 95 %.
+          data: For example new user account 1 working day
+    sv:
+      title: Leveranstider för beställningar ur katalogen
+      description: Ett skript jämför leveranstiden för varje beställning under den senaste månaden med den tid som publicerats för dess typ.
+      preconditions: Tjänstekatalogen med publicerade tider och exporten av beställningar med tidsstämplar för registrering och utförande.
+      expected: Minst 95 % av varje beställningstyp utförs inom sin publicerade tid.
+      steps:
+        - action: Beräkna leveranstiden för varje beställning i arbetstid.
+          expected: Varje beställning har en tid.
+        - action: Beräkna andelen inom publicerad tid per beställningstyp.
+          expected: Varje typ ligger på minst 95 %.
+          data: Till exempel nytt användarkonto 1 arbetsdag
+
+  - id: SVSM-T06
+    priority: high
+    execution: manual
+    tags: [service-desk]
+    refs: ["ITIL 4 Service desk"]
+    en:
+      title: Service desk channels, answer time, first contact resolution and language
+      description: Makes test contacts in each channel and language and analyses the service desk statistics of the last month.
+      preconditions: The phone statistics and ticket data of the last month, and 2 testers, one writing and speaking Swedish and one English.
+      expected: Each test contact is registered and handled in its language, 80 % of calls are answered within 60 seconds, and 60 % of tickets are resolved at first contact.
+      steps:
+        - action: Contact the service desk once by phone, portal and e-mail in each language.
+          expected: Each contact becomes a ticket and is handled in the language used.
+          data: 6 test contacts
+        - action: Compute the share of calls answered within 60 seconds from the phone statistics.
+          expected: The share is at least 80 %.
+        - action: Compute the share of tickets closed by the service desk at the first contact.
+          expected: The share is at least 60 %.
+    sv:
+      title: Servicedeskens kanaler, svarstid, lösning vid första kontakten och språk
+      description: Gör testkontakter i varje kanal och språk och analyserar servicedeskens statistik för den senaste månaden.
+      preconditions: Telefonistatistiken och ärendedata för den senaste månaden, och 2 testare, en som skriver och talar svenska och en engelska.
+      expected: Varje testkontakt registreras och hanteras på sitt språk, 80 % av samtalen besvaras inom 60 sekunder, och 60 % av ärendena löses vid första kontakten.
+      steps:
+        - action: Kontakta servicedesken en gång via telefon, portal och e-post på vartdera språket.
+          expected: Varje kontakt blir ett ärende och hanteras på det språk som använts.
+          data: 6 testkontakter
+        - action: Beräkna andelen samtal som besvarats inom 60 sekunder från telefonistatistiken.
+          expected: Andelen är minst 80 %.
+        - action: Beräkna andelen ärenden som stängts av servicedesken vid den första kontakten.
+          expected: Andelen är minst 60 %.
+
+  - id: SVSM-T07
+    priority: high
+    execution: manual
+    tags: [cmdb]
+    refs: ["ISO/IEC 20000-1:2018 §8.2.6"]
+    en:
+      title: Audit of configuration items against the live environment
+      description: Compares a random sample of configuration items with the live environment.
+      preconditions: An export of the configuration database and read access to the live environment.
+      expected: At most 1 of 50 items has a wrong owner, version or relationship.
+      steps:
+        - action: Pick 50 configuration items at random.
+          expected: The sample covers servers, applications and network devices.
+          data: 50 items
+        - action: Check the owner, version and relationships of each against the live environment.
+          expected: At most 1 item has an error.
+    sv:
+      title: Revision av konfigurationsobjekt mot den verkliga miljön
+      description: Jämför ett slumpvis urval av konfigurationsobjekt med den verkliga miljön.
+      preconditions: En export av konfigurationsdatabasen och läsbehörighet till den verkliga miljön.
+      expected: Högst 1 av 50 objekt har fel ägare, version eller relation.
+      steps:
+        - action: Välj 50 konfigurationsobjekt slumpvis.
+          expected: Urvalet omfattar servrar, tillämpningar och nätenheter.
+          data: 50 objekt
+        - action: Kontrollera ägare, version och relationer för vart och ett mot den verkliga miljön.
+          expected: Högst 1 objekt har ett fel.
+
+  - id: SVSM-T08
+    priority: critical
+    execution: manual
+    tags: [service-continuity]
+    refs: ["ISO 22301:2019 §8.4"]
+    en:
+      title: Continuity plans and their latest tests
+      description: Reviews the continuity plan and the latest test report of each service.
+      preconditions: The list of services, their continuity plans and the test reports of the last 12 months.
+      expected: Each service has a plan with objectives and a test in the last 12 months with achieved times.
+      steps:
+        - action: Find the continuity plan of each service.
+          expected: Each plan states the recovery time and recovery point objectives.
+        - action: Find the latest test report of each plan.
+          expected: Each is at most 12 months old and states the achieved recovery time and recovery point.
+        - action: Compare the achieved times with the objectives.
+          expected: Each objective is met, or the report has an action with a date for each miss.
+    sv:
+      title: Kontinuitetsplaner och deras senaste test
+      description: Granskar kontinuitetsplanen och den senaste testrapporten för varje tjänst.
+      preconditions: Listan över tjänster, deras kontinuitetsplaner och testrapporterna för de senaste 12 månaderna.
+      expected: Varje tjänst har en plan med mål och ett test under de senaste 12 månaderna med uppnådda tider.
+      steps:
+        - action: Hitta kontinuitetsplanen för varje tjänst.
+          expected: Varje plan anger mål för återställningstid och återställningspunkt.
+        - action: Hitta den senaste testrapporten för varje plan.
+          expected: Var och en är högst 12 månader gammal och anger uppnådd återställningstid och återställningspunkt.
+        - action: Jämför de uppnådda tiderna med målen.
+          expected: Varje mål nås, eller så har rapporten en åtgärd med datum för varje miss.

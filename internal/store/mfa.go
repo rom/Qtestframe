@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/rom/qtestframe/internal/model"
@@ -25,6 +26,9 @@ func (s *Store) GetUserMFA(ctx context.Context, userID string) (*model.UserMFA, 
 		return nil, mapErr(err, "mfa enrolment")
 	}
 	m.EnabledAt = timePtr(enabled)
+	if m.Secret, err = s.unseal(ctx, m.Secret, adTOTP(m.UserID)); err != nil {
+		return nil, fmt.Errorf("mfa enrolment: %w", err)
+	}
 	if err := s.c(ctx).row(ctx, `SELECT COUNT(*), COALESCE(SUM(CASE WHEN used_at IS NULL THEN 1 ELSE 0 END), 0) FROM mfa_recovery_codes WHERE user_id = ?`, userID).
 		Scan(&m.CodesTotal, &m.CodesLeft); err != nil {
 		return nil, err
@@ -35,6 +39,10 @@ func (s *Store) GetUserMFA(ctx context.Context, userID string) (*model.UserMFA, 
 // StartTOTP stores a new, unconfirmed TOTP secret, replacing an earlier
 // unconfirmed one. A confirmed enrolment must be removed first.
 func (s *Store) StartTOTP(ctx context.Context, userID, secret string) error {
+	stored, err := s.seal(secret, adTOTP(userID))
+	if err != nil {
+		return err
+	}
 	return s.tx(ctx, func(c conn) error {
 		var n int
 		if err := c.row(ctx, `SELECT COUNT(*) FROM user_mfa WHERE user_id = ? AND enabled_at IS NOT NULL`, userID).Scan(&n); err != nil {
@@ -46,7 +54,7 @@ func (s *Store) StartTOTP(ctx context.Context, userID, secret string) error {
 		if _, err := c.exec(ctx, `DELETE FROM user_mfa WHERE user_id = ?`, userID); err != nil {
 			return err
 		}
-		_, err := c.exec(ctx, `INSERT INTO user_mfa (user_id, totp_secret, last_step, created_at) VALUES (?, ?, 0, ?)`, userID, secret, s.now())
+		_, err := c.exec(ctx, `INSERT INTO user_mfa (user_id, totp_secret, last_step, created_at) VALUES (?, ?, 0, ?)`, userID, stored, s.now())
 		return mapErr(err, "mfa enrolment")
 	})
 }

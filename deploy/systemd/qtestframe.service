@@ -86,6 +86,9 @@ ProtectHome=yes
 PrivateTmp=yes
 # Minimal /dev (null, zero, random, urandom, tty...); no physical devices.
 PrivateDevices=yes
+# secrets.provider: tpm needs the TPM resource manager (and the tss group):
+# in a drop-in set PrivateDevices=no, DeviceAllow=/dev/tpmrm0 rw and
+# SupplementaryGroups=tss.
 # Explicit, in case the defaults change; StateDirectory= already implies it.
 ReadWritePaths=/var/lib/qtestframe /run/qtestframe
 # Nothing outside /usr (and the classic /bin,/lib on non-merged-/usr systems)

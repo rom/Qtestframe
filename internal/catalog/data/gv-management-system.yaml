@@ -1,0 +1,730 @@
+area: gv-management-system
+prefix: GVMS
+group: privacy
+catalogue: governance
+name: {en: Management system and compliance, sv: Ledningssystem och regelefterlevnad}
+description:
+  en: Scope, policies, roles and responsibilities (RACI), objectives, compliance register, internal audit, corrective action and management review for an information security or quality management system.
+  sv: Omfattning, policyer, roller och ansvar (RACI), mål, register över krav att följa, internrevision, korrigerande åtgärder och ledningens genomgång för ett ledningssystem för informationssäkerhet eller kvalitet.
+
+requirements:
+  - id: GVMS-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [scope, management-system]
+    refs: ["ISO/IEC 27001:2022 §4.3", "ISO 9001:2026 §4.3"]
+    tests: [GVMS-T01]
+    en:
+      title: Documented scope of the management system
+      description: The organisation MUST document the scope of the management system with the sites, services, systems and interfaces to external parties that it covers.
+      rationale: Audits, risk work and certification all depend on knowing exactly what the management system covers.
+      criteria:
+        - method: review
+          text: The scope document names the covered sites, services, systems and external interfaces, and each exclusion has a written justification.
+    sv:
+      title: Dokumenterad omfattning av ledningssystemet
+      description: Organisationen SKA dokumentera ledningssystemets omfattning med de platser, tjänster, system och gränssnitt mot externa parter som det omfattar.
+      rationale: Revisioner, riskarbete och certifiering förutsätter att det är känt exakt vad ledningssystemet omfattar.
+      criteria:
+        - method: review
+          text: Dokumentet om omfattning anger de platser, tjänster, system och externa gränssnitt som omfattas, och varje undantag har en skriftlig motivering.
+
+  - id: GVMS-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [policy, top-management]
+    refs: ["ISO/IEC 27001:2022 §5.2", "ISO/IEC 27001:2022 A.5.1", "ISO 9001:2026 §5.2"]
+    tests: [GVMS-T02]
+    en:
+      title: Approved policy reviewed every 12 months
+      description: Top management MUST approve the management system policy and review it at least once every 12 months.
+      rationale: A policy that is approved at the top and kept current gives the rest of the management system its direction and authority.
+      criteria:
+        - method: review
+          text: The policy carries the approval of top management, and its review history shows no gap longer than 12 months.
+          threshold: "≤ 12 months between reviews"
+    sv:
+      title: Fastställd policy som granskas var 12:e månad
+      description: Högsta ledningen SKA fastställa ledningssystemets policy och granska den minst en gång var 12:e månad.
+      rationale: En policy som fastställs av högsta ledningen och hålls aktuell ger resten av ledningssystemet dess inriktning och mandat.
+      criteria:
+        - method: review
+          text: Policyn är fastställd av högsta ledningen, och granskningshistoriken visar inget uppehåll längre än 12 månader.
+          threshold: "≤ 12 månader mellan granskningarna"
+
+  - id: GVMS-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [roles, raci]
+    refs: ["ISO/IEC 27001:2022 §5.3", "ISO/IEC 27001:2022 A.5.2", "ISO 9001:2026 §5.3", "RACI responsibility assignment matrix"]
+    tests: [GVMS-T03]
+    en:
+      title: RACI matrix with one accountable role per process
+      description: The organisation MUST maintain a RACI matrix in which each management system process has exactly one accountable role.
+      rationale: When two roles or no role is accountable, decisions stall and gaps are found only in an audit or an incident.
+      criteria:
+        - method: inspection
+          text: Each process in the process map appears in the RACI matrix with exactly one role marked accountable and at least one role marked responsible.
+    sv:
+      title: RACI-matris med en ansvarig roll per process
+      description: Organisationen SKA förvalta en RACI-matris där varje process i ledningssystemet har exakt en ytterst ansvarig roll.
+      rationale: När två roller eller ingen roll är ytterst ansvarig stannar besluten, och luckorna upptäcks först vid en revision eller en incident.
+      criteria:
+        - method: inspection
+          text: Varje process i processkartan finns i RACI-matrisen med exakt en roll markerad som ytterst ansvarig och minst en roll markerad som utförande.
+
+  - id: GVMS-04
+    type: security
+    obligation: should
+    priority: medium
+    tags: [roles, segregation-of-duties]
+    refs: ["ISO/IEC 27001:2022 A.5.3"]
+    tests: [GVMS-T03]
+    en:
+      title: Segregation of conflicting duties
+      description: The RACI matrix SHOULD assign the approval and the execution of a change to a critical system to two different persons.
+      rationale: Separating approval from execution reduces the risk of errors and misuse going unnoticed.
+      criteria:
+        - method: inspection
+          text: For each critical system the role that approves changes and the role that carries them out are held by different named persons.
+    sv:
+      title: Åtskillnad av oförenliga arbetsuppgifter
+      description: RACI-matrisen BÖR tilldela godkännandet och genomförandet av en ändring i ett kritiskt system till två olika personer.
+      rationale: Att skilja godkännande från genomförande minskar risken att fel och missbruk passerar obemärkt.
+      criteria:
+        - method: inspection
+          text: För varje kritiskt system innehas rollen som godkänner ändringar och rollen som genomför dem av olika namngivna personer.
+
+  - id: GVMS-05
+    type: business
+    obligation: must
+    priority: medium
+    tags: [objectives]
+    refs: ["ISO/IEC 27001:2022 §6.2", "ISO 9001:2026 §6.2"]
+    tests: [GVMS-T04]
+    en:
+      title: Measurable objectives with owner and due date
+      description: Each management system objective MUST have a measurable target, a named owner and a due date.
+      rationale: Objectives without a target, owner or date cannot be followed up and do not steer the work.
+      criteria:
+        - method: review
+          text: Every objective in the objectives list states a target value with its unit, an owner and a due date.
+    sv:
+      title: Mätbara mål med ägare och slutdatum
+      description: Varje mål för ledningssystemet SKA ha ett mätbart målvärde, en namngiven ägare och ett slutdatum.
+      rationale: Mål utan målvärde, ägare eller datum kan inte följas upp och styr inte arbetet.
+      criteria:
+        - method: review
+          text: Varje mål i mållistan anger ett målvärde med enhet, en ägare och ett slutdatum.
+
+  - id: GVMS-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [risk, risk-register]
+    refs: ["ISO/IEC 27001:2022 §6.1.2", "ISO/IEC 27001:2022 §8.2", "ISO 9001:2026 §6.1"]
+    tests: [GVMS-T05]
+    en:
+      title: Risk register reviewed every 6 months
+      description: The organisation MUST keep a risk register in which each risk has an owner, a rating and a review date no more than 6 months after the previous review.
+      rationale: A risk register that is reviewed on a fixed cycle keeps the treatment of risks in step with changes to the business and the threats.
+      criteria:
+        - method: review
+          text: Each entry in the risk register names an owner and a rating, and no entry has gone more than 6 months without a recorded review.
+          threshold: "≤ 6 months between reviews"
+    sv:
+      title: Riskregister som granskas var 6:e månad
+      description: Organisationen SKA föra ett riskregister där varje risk har en ägare, en värdering och ett granskningsdatum högst 6 månader efter den föregående granskningen.
+      rationale: Ett riskregister som granskas med fast intervall håller riskhanteringen i takt med förändringar i verksamheten och hotbilden.
+      criteria:
+        - method: review
+          text: Varje post i riskregistret anger en ägare och en värdering, och ingen post har gått mer än 6 månader utan registrerad granskning.
+          threshold: "≤ 6 månader mellan granskningarna"
+
+  - id: GVMS-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [compliance, legal]
+    refs: ["ISO/IEC 27001:2022 §4.2", "ISO/IEC 27001:2022 A.5.31", "ISO 9001:2026 §4.2"]
+    tests: [GVMS-T06]
+    en:
+      title: Register of legal and contractual requirements
+      description: The organisation MUST keep a compliance register that lists each applicable law, regulation and contractual obligation with an owner and the date of the last check.
+      rationale: Obligations that are not listed with an owner are forgotten when laws change or staff move on.
+      criteria:
+        - method: review
+          text: The register lists each obligation with its source, an owner and the date of the last check, and the laws named in the scope document are all present.
+    sv:
+      title: Register över lagkrav och avtalskrav
+      description: Organisationen SKA föra ett register som anger varje tillämplig lag, förordning och avtalsförpliktelse med en ägare och datumet för den senaste kontrollen.
+      rationale: Förpliktelser som inte är förtecknade med en ägare glöms bort när lagar ändras eller personal byts ut.
+      criteria:
+        - method: review
+          text: Registret anger varje förpliktelse med källa, ägare och datum för senaste kontroll, och de lagar som nämns i dokumentet om omfattning finns med.
+
+  - id: GVMS-08
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [compliance, policy]
+    refs: ["ISO/IEC 27001:2022 A.5.36"]
+    tests: [GVMS-T06]
+    en:
+      title: Yearly compliance check of each policy
+      description: Each policy owner SHOULD check compliance with the policy at least once every 12 months and record the result with any deviations found.
+      rationale: Regular checks show whether policies are followed in practice and give early warning before an external audit.
+      criteria:
+        - method: review
+          text: For each policy there is a compliance check record from the last 12 months that lists the deviations found or states that none were found.
+          threshold: "≥ 1 check per policy every 12 months"
+    sv:
+      title: Årlig kontroll av efterlevnaden av varje policy
+      description: Varje policyägare BÖR kontrollera efterlevnaden av policyn minst en gång var 12:e månad och dokumentera resultatet med de avvikelser som har upptäckts.
+      rationale: Regelbundna kontroller visar om policyerna följs i praktiken och ger tidig varning före en extern revision.
+      criteria:
+        - method: review
+          text: För varje policy finns en dokumenterad kontroll från de senaste 12 månaderna som anger de avvikelser som har upptäckts eller att inga har upptäckts.
+          threshold: "≥ 1 kontroll per policy var 12:e månad"
+
+  - id: GVMS-09
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [internal-audit, audit-programme]
+    refs: ["ISO/IEC 27001:2022 §9.2.2", "ISO 9001:2026 §9.2", "ISO 19011:2026 §5.4 (establishing the audit programme)"]
+    tests: [GVMS-T07]
+    en:
+      title: Audit programme covering each process within 3 years
+      description: The internal audit programme MUST cover each process in the scope of the management system at least once within a 3-year cycle.
+      rationale: A programme that reaches every process within the certification cycle finds weaknesses before an external auditor does.
+      criteria:
+        - method: review
+          text: The audit programme for the current 3-year cycle includes each process in the process map with a planned or completed audit date.
+          threshold: "each process ≥ 1 audit per 3 years"
+    sv:
+      title: Revisionsprogram som täcker varje process inom 3 år
+      description: Internrevisionsprogrammet SKA omfatta varje process inom ledningssystemets omfattning minst en gång under en treårscykel.
+      rationale: Ett program som når varje process inom certifieringscykeln hittar svagheter innan en extern revisor gör det.
+      criteria:
+        - method: review
+          text: Revisionsprogrammet för den aktuella treårscykeln innehåller varje process i processkartan med ett planerat eller genomfört revisionsdatum.
+          threshold: "varje process ≥ 1 revision per 3 år"
+
+  - id: GVMS-10
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [internal-audit, independence]
+    refs: ["ISO 19011:2026 §4.6 (independence)", "ISO/IEC 27001:2022 §9.2.2"]
+    tests: [GVMS-T07]
+    en:
+      title: Auditors do not audit their own work
+      description: An internal auditor MUST NOT audit a process in which the auditor has worked during the previous 12 months.
+      rationale: Independence is what makes audit findings credible to management and to certification bodies.
+      criteria:
+        - method: inspection
+          text: For each completed audit the auditor's assignments during the previous 12 months do not include the audited process.
+          threshold: "12 months"
+    sv:
+      title: Revisorer granskar inte sitt eget arbete
+      description: En internrevisor SKA INTE revidera en process som revisorn har arbetat i under de föregående 12 månaderna.
+      rationale: Oberoendet är det som gör revisionsiakttagelserna trovärdiga för ledningen och för certifieringsorgan.
+      criteria:
+        - method: inspection
+          text: För varje genomförd revision omfattar revisorns uppdrag under de föregående 12 månaderna inte den reviderade processen.
+          threshold: "12 månader"
+
+  - id: GVMS-11
+    type: business
+    obligation: should
+    priority: medium
+    tags: [internal-audit, audit-report]
+    refs: ["ISO 19011:2026 §6.5 (preparing and distributing the audit report)"]
+    tests: [GVMS-T08]
+    en:
+      title: Audit report within 10 working days
+      description: The lead auditor SHOULD distribute the audit report to the auditee and the process owner within 10 working days of the closing meeting.
+      rationale: A report that arrives while the audit is still fresh is acted on; a late one is filed and forgotten.
+      criteria:
+        - method: review
+          text: For each audit of the last 12 months the distribution date of the report is no more than 10 working days after the closing meeting.
+          threshold: "≤ 10 working days"
+    sv:
+      title: Revisionsrapport inom 10 arbetsdagar
+      description: Revisionsledaren BÖR skicka revisionsrapporten till den reviderade enheten och processägaren inom 10 arbetsdagar efter slutmötet.
+      rationale: En rapport som kommer medan revisionen är i färskt minne leder till åtgärder; en sen rapport arkiveras och glöms.
+      criteria:
+        - method: review
+          text: För varje revision under de senaste 12 månaderna har rapporten skickats högst 10 arbetsdagar efter slutmötet.
+          threshold: "≤ 10 arbetsdagar"
+
+  - id: GVMS-12
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [nonconformity, corrective-action]
+    refs: ["ISO/IEC 27001:2022 §10.2", "ISO 9001:2026 §10.2", "ISO 19011:2026 §6.7 (conducting the audit follow-up)"]
+    tests: [GVMS-T09]
+    en:
+      title: Corrective action with root cause and effectiveness check
+      description: Each recorded nonconformity MUST have a root cause analysis, a corrective action with an owner and a due date, and a recorded check of the action's effectiveness.
+      rationale: Fixing only the symptom lets the same nonconformity come back; the effectiveness check closes the loop.
+      criteria:
+        - method: review
+          text: Each closed nonconformity in the log has a root cause, an action with owner and due date, and an effectiveness check signed before closure.
+    sv:
+      title: Korrigerande åtgärd med grundorsak och effektkontroll
+      description: Varje registrerad avvikelse SKA ha en grundorsaksanalys, en korrigerande åtgärd med ägare och slutdatum och en dokumenterad kontroll av att åtgärden har haft effekt.
+      rationale: Att bara åtgärda symtomet låter samma avvikelse komma tillbaka; kontrollen av effekten sluter cirkeln.
+      criteria:
+        - method: review
+          text: Varje stängd avvikelse i loggen har en grundorsak, en åtgärd med ägare och slutdatum och en effektkontroll som är signerad före stängningen.
+
+  - id: GVMS-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [management-review]
+    refs: ["ISO/IEC 27001:2022 §9.3.2", "ISO 9001:2026 §9.3.2"]
+    tests: [GVMS-T10]
+    en:
+      title: Management review every 12 months with defined inputs
+      description: Top management MUST hold a management review at least once every 12 months that covers audit results, nonconformities, objectives, risks and changes in external issues.
+      rationale: The management review is where top management takes ownership of how the management system performs.
+      criteria:
+        - method: review
+          text: The minutes of the last management review are less than 12 months old and contain an agenda item for each of the five listed inputs.
+          threshold: "≤ 12 months between reviews"
+    sv:
+      title: Ledningens genomgång var 12:e månad med fastställt underlag
+      description: Högsta ledningen SKA genomföra en ledningens genomgång minst en gång var 12:e månad som omfattar revisionsresultat, avvikelser, mål, risker och förändringar i yttre förhållanden.
+      rationale: Ledningens genomgång är där högsta ledningen tar ansvar för hur ledningssystemet fungerar.
+      criteria:
+        - method: review
+          text: Protokollet från den senaste ledningens genomgång är yngre än 12 månader och har en dagordningspunkt för var och en av de fem angivna underlagen.
+          threshold: "≤ 12 månader mellan genomgångarna"
+
+  - id: GVMS-14
+    type: business
+    obligation: must
+    priority: medium
+    tags: [management-review, decisions]
+    refs: ["ISO/IEC 27001:2022 §9.3.3", "ISO 9001:2026 §9.3.3"]
+    tests: [GVMS-T10]
+    en:
+      title: Management review decisions with owners
+      description: The management review minutes MUST record each decision with a named owner and a due date.
+      rationale: Decisions without an owner and date are rarely carried out, and the next review cannot follow them up.
+      criteria:
+        - method: review
+          text: Each decision in the minutes names an owner and a due date, and the next review reports the status of each decision.
+    sv:
+      title: Beslut från ledningens genomgång med ägare
+      description: Protokollet från ledningens genomgång SKA ange varje beslut med en namngiven ägare och ett slutdatum.
+      rationale: Beslut utan ägare och datum genomförs sällan, och nästa genomgång kan inte följa upp dem.
+      criteria:
+        - method: review
+          text: Varje beslut i protokollet anger en ägare och ett slutdatum, och nästa genomgång redovisar status för varje beslut.
+
+  - id: GVMS-15
+    type: business
+    obligation: should
+    priority: medium
+    tags: [kpi, performance-evaluation]
+    refs: ["ISO/IEC 27001:2022 §9.1", "ISO 9001:2026 §9.1.3"]
+    tests: [GVMS-T11]
+    en:
+      title: Quarterly report of management system indicators
+      description: The management system owner SHOULD report the defined management system indicators to top management once per quarter.
+      rationale: A fixed reporting rhythm lets management see trends between the yearly reviews and act before targets are missed.
+      criteria:
+        - method: review
+          text: Four indicator reports exist for the last 12 months, each with the value, target and trend of every defined indicator.
+          threshold: "1 report per quarter"
+    sv:
+      title: Kvartalsrapport om ledningssystemets indikatorer
+      description: Ledningssystemets ägare BÖR rapportera ledningssystemets fastställda indikatorer till högsta ledningen en gång per kvartal.
+      rationale: En fast rapporteringsrytm låter ledningen se trender mellan de årliga genomgångarna och agera innan målen missas.
+      criteria:
+        - method: review
+          text: Det finns fyra indikatorrapporter för de senaste 12 månaderna, var och en med värde, målvärde och trend för varje fastställd indikator.
+          threshold: "1 rapport per kvartal"
+
+  - id: GVMS-16
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [independent-review]
+    refs: ["ISO/IEC 27001:2022 A.5.35"]
+    tests: [GVMS-T12]
+    en:
+      title: Independent review every 3 years
+      description: The organisation SHOULD have its approach to information security reviewed by a party independent of the security function at least once every 3 years.
+      rationale: An outside view finds blind spots that internal audits, run by people close to the work, tend to miss.
+      criteria:
+        - method: review
+          text: A report from an independent review less than 3 years old exists, and the reviewer has no reporting line to the security function.
+          threshold: "≤ 3 years between reviews"
+    sv:
+      title: Oberoende granskning vart 3:e år
+      description: Organisationen BÖR låta en part som är oberoende av säkerhetsfunktionen granska organisationens arbete med informationssäkerhet minst en gång vart 3:e år.
+      rationale: En utomstående blick hittar blinda fläckar som internrevisioner, utförda av personer nära verksamheten, ofta missar.
+      criteria:
+        - method: review
+          text: Det finns en rapport från en oberoende granskning som är yngre än 3 år, och granskaren har ingen rapporteringsväg till säkerhetsfunktionen.
+          threshold: "≤ 3 år mellan granskningarna"
+
+  - id: GVMS-17
+    type: business
+    obligation: should
+    priority: low
+    tags: [communication]
+    refs: ["ISO/IEC 27001:2022 §7.4", "ISO 9001:2026 §7.4"]
+    tests: [GVMS-T12]
+    en:
+      title: Communication plan for the management system
+      description: The organisation SHOULD keep a communication plan that states for each management system topic what is communicated, to whom, how often and by which role.
+      rationale: Planned communication makes sure that staff, suppliers and customers hear about policy changes and results in time to act on them.
+      criteria:
+        - method: inspection
+          text: The communication plan has an entry for each policy and for audit results, and each entry names the audience, channel, frequency and responsible role.
+    sv:
+      title: Kommunikationsplan för ledningssystemet
+      description: Organisationen BÖR ha en kommunikationsplan som för varje ämne i ledningssystemet anger vad som kommuniceras, till vem, hur ofta och av vilken roll.
+      rationale: Planerad kommunikation säkerställer att personal, leverantörer och kunder får veta om ändrade policyer och resultat i tid för att agera.
+      criteria:
+        - method: inspection
+          text: Kommunikationsplanen har en post för varje policy och för revisionsresultat, och varje post anger målgrupp, kanal, frekvens och ansvarig roll.
+
+tests:
+  - id: GVMS-T01
+    priority: high
+    execution: manual
+    tags: [scope]
+    refs: ["ISO/IEC 27001:2022 §4.3", "ISO 9001:2026 §4.3"]
+    en:
+      title: Review of the management system scope
+      description: Checks that the scope document is complete and matches the organisation's actual sites and services.
+      preconditions: The current scope document and a list of the organisation's sites, services and external interfaces from the asset register.
+      expected: Every site, service, system and external interface is either inside the scope or listed as a justified exclusion.
+      steps:
+        - action: Compare the sites and services in the scope document with the list from the asset register.
+          expected: Each site and service in the list is named in the scope or listed as an exclusion.
+        - action: Check each exclusion in the scope document.
+          expected: Each exclusion has a written justification.
+        - action: Check that the external interfaces in the scope document match the interfaces in the asset register.
+          expected: No interface in the asset register is missing from the scope document.
+    sv:
+      title: Granskning av ledningssystemets omfattning
+      description: Kontrollerar att dokumentet om omfattning är fullständigt och stämmer med organisationens faktiska platser och tjänster.
+      preconditions: Det aktuella dokumentet om omfattning och en lista över organisationens platser, tjänster och externa gränssnitt från tillgångsregistret.
+      expected: Varje plats, tjänst, system och externt gränssnitt ligger antingen inom omfattningen eller står som ett motiverat undantag.
+      steps:
+        - action: Jämför platserna och tjänsterna i dokumentet om omfattning med listan från tillgångsregistret.
+          expected: Varje plats och tjänst i listan nämns i omfattningen eller står som ett undantag.
+        - action: Kontrollera varje undantag i dokumentet om omfattning.
+          expected: Varje undantag har en skriftlig motivering.
+        - action: Kontrollera att de externa gränssnitten i dokumentet om omfattning stämmer med gränssnitten i tillgångsregistret.
+          expected: Inget gränssnitt i tillgångsregistret saknas i dokumentet om omfattning.
+
+  - id: GVMS-T02
+    priority: high
+    execution: manual
+    tags: [policy]
+    refs: ["ISO/IEC 27001:2022 §5.2", "ISO 9001:2026 §5.2"]
+    en:
+      title: Review of policy approval and review history
+      description: Checks that the policy is approved by top management and has been reviewed within the interval.
+      preconditions: Read access to the document management system with the policy and its version history.
+      expected: The current policy version is approved by top management and no review interval exceeds 12 months.
+      steps:
+        - action: Open the current version of the policy and note the approver and the approval date.
+          expected: The approver is a member of top management and the approval date is recorded.
+        - action: List the review dates in the version history for the last 3 years.
+          expected: No two consecutive reviews are more than 12 months apart.
+    sv:
+      title: Granskning av policyns fastställelse och granskningshistorik
+      description: Kontrollerar att policyn är fastställd av högsta ledningen och har granskats inom intervallet.
+      preconditions: Läsbehörighet till dokumenthanteringssystemet med policyn och dess versionshistorik.
+      expected: Den gällande versionen av policyn är fastställd av högsta ledningen och inget granskningsintervall överstiger 12 månader.
+      steps:
+        - action: Öppna den gällande versionen av policyn och notera vem som har fastställt den och datumet.
+          expected: Den som har fastställt policyn ingår i högsta ledningen och datumet är registrerat.
+        - action: Lista granskningsdatumen i versionshistoriken för de senaste 3 åren.
+          expected: Inga två på varandra följande granskningar ligger mer än 12 månader isär.
+
+  - id: GVMS-T03
+    priority: high
+    execution: manual
+    tags: [raci, segregation-of-duties]
+    refs: ["ISO/IEC 27001:2022 §5.3", "ISO/IEC 27001:2022 A.5.3", "RACI responsibility assignment matrix"]
+    en:
+      title: Inspection of the RACI matrix
+      description: Checks that every process has one accountable role and that change approval and execution are separated for critical systems.
+      preconditions: The current RACI matrix, the process map and the list of critical systems with their role holders.
+      expected: Each process has exactly one accountable role, and no person both approves and executes changes to the same critical system.
+      steps:
+        - action: For each process in the process map, count the roles marked accountable in the RACI matrix.
+          expected: Each process has exactly one accountable role and at least one responsible role.
+        - action: For each critical system, compare the person who approves changes with the person who carries them out.
+          expected: The two roles are held by different named persons.
+    sv:
+      title: Inspektion av RACI-matrisen
+      description: Kontrollerar att varje process har en ytterst ansvarig roll och att godkännande och genomförande av ändringar är åtskilda för kritiska system.
+      preconditions: Den aktuella RACI-matrisen, processkartan och listan över kritiska system med rollinnehavare.
+      expected: Varje process har exakt en ytterst ansvarig roll, och ingen person både godkänner och genomför ändringar i samma kritiska system.
+      steps:
+        - action: Räkna för varje process i processkartan de roller som är markerade som ytterst ansvariga i RACI-matrisen.
+          expected: Varje process har exakt en ytterst ansvarig roll och minst en utförande roll.
+        - action: Jämför för varje kritiskt system den person som godkänner ändringar med den som genomför dem.
+          expected: De två rollerna innehas av olika namngivna personer.
+
+  - id: GVMS-T04
+    priority: medium
+    execution: manual
+    tags: [objectives]
+    refs: ["ISO/IEC 27001:2022 §6.2", "ISO 9001:2026 §6.2"]
+    en:
+      title: Review of the objectives list
+      description: Checks that each objective is measurable and has an owner and a due date.
+      preconditions: The current list of management system objectives.
+      expected: Every objective has a target value with unit, an owner and a due date.
+      steps:
+        - action: Go through each objective in the list and check for a target value with a unit.
+          expected: Each objective has a target value with a unit, for example a percentage or a number of days.
+        - action: Check each objective for a named owner and a due date.
+          expected: No objective lacks an owner or a due date.
+    sv:
+      title: Granskning av mållistan
+      description: Kontrollerar att varje mål är mätbart och har en ägare och ett slutdatum.
+      preconditions: Den aktuella listan över mål för ledningssystemet.
+      expected: Varje mål har ett målvärde med enhet, en ägare och ett slutdatum.
+      steps:
+        - action: Gå igenom varje mål i listan och kontrollera att det har ett målvärde med enhet.
+          expected: Varje mål har ett målvärde med enhet, till exempel en procentsats eller ett antal dagar.
+        - action: Kontrollera att varje mål har en namngiven ägare och ett slutdatum.
+          expected: Inget mål saknar ägare eller slutdatum.
+
+  - id: GVMS-T05
+    priority: high
+    execution: manual
+    tags: [risk-register]
+    refs: ["ISO/IEC 27001:2022 §6.1.2", "ISO/IEC 27001:2022 §8.2"]
+    en:
+      title: Review of the risk register
+      description: Checks owners, ratings and review dates in the risk register.
+      preconditions: An export of the risk register with its review history, taken on the day of the test.
+      expected: Every risk has an owner and a rating, and none has gone more than 6 months without review.
+      steps:
+        - action: Filter the export for entries without an owner or without a rating.
+          expected: The filter returns no entries.
+        - action: Calculate for each entry the time since the last recorded review.
+          expected: No entry has a time since review longer than 6 months.
+          data: "Review date older than today minus 6 months"
+    sv:
+      title: Granskning av riskregistret
+      description: Kontrollerar ägare, värderingar och granskningsdatum i riskregistret.
+      preconditions: En export av riskregistret med granskningshistorik, tagen samma dag som testet.
+      expected: Varje risk har en ägare och en värdering, och ingen har gått mer än 6 månader utan granskning.
+      steps:
+        - action: Filtrera exporten på poster utan ägare eller utan värdering.
+          expected: Filtret ger inga poster.
+        - action: Beräkna för varje post tiden sedan den senaste registrerade granskningen.
+          expected: Ingen post har längre tid sedan granskning än 6 månader.
+          data: "Granskningsdatum äldre än dagens datum minus 6 månader"
+
+  - id: GVMS-T06
+    priority: high
+    execution: manual
+    tags: [compliance]
+    refs: ["ISO/IEC 27001:2022 A.5.31", "ISO/IEC 27001:2022 A.5.36"]
+    en:
+      title: Review of the compliance register and policy checks
+      description: Checks that the compliance register is complete and that each policy has been checked for compliance in the last 12 months.
+      preconditions: The compliance register, the scope document, the list of policies and the compliance check records.
+      expected: The register lists every obligation with owner and last check, and each policy has a check record from the last 12 months.
+      steps:
+        - action: Compare the laws and regulations named in the scope document with the entries in the compliance register.
+          expected: Each named law and regulation is in the register with an owner and the date of the last check.
+        - action: For each policy in the list, find the latest compliance check record.
+          expected: Each policy has a record less than 12 months old that lists the deviations or states that none were found.
+    sv:
+      title: Granskning av registret över krav att följa och policykontroller
+      description: Kontrollerar att registret över krav att följa är fullständigt och att efterlevnaden av varje policy har kontrollerats de senaste 12 månaderna.
+      preconditions: Registret över krav att följa, dokumentet om omfattning, listan över policyer och dokumentationen från kontrollerna av efterlevnad.
+      expected: Registret anger varje förpliktelse med ägare och senaste kontroll, och varje policy har en dokumenterad kontroll från de senaste 12 månaderna.
+      steps:
+        - action: Jämför de lagar och förordningar som nämns i dokumentet om omfattning med posterna i registret.
+          expected: Varje nämnd lag och förordning finns i registret med ägare och datum för senaste kontroll.
+        - action: Leta för varje policy i listan upp den senaste dokumenterade kontrollen av efterlevnad.
+          expected: Varje policy har en dokumenterad kontroll som är yngre än 12 månader och som anger avvikelserna eller att inga har upptäckts.
+
+  - id: GVMS-T07
+    priority: high
+    execution: manual
+    tags: [internal-audit]
+    refs: ["ISO/IEC 27001:2022 §9.2.2", "ISO 19011:2026 §5.4 (establishing the audit programme)", "ISO 19011:2026 §4.6 (independence)"]
+    en:
+      title: Review of the audit programme and auditor independence
+      description: Checks that the audit programme covers each process within 3 years and that no auditor audited their own work.
+      preconditions: The audit programme for the current 3-year cycle, the process map, the completed audit reports and the auditors' assignment history.
+      expected: Each process has a planned or completed audit in the cycle, and no audit was led by someone who worked in the audited process in the previous 12 months.
+      steps:
+        - action: Map each process in the process map to an entry in the audit programme.
+          expected: Each process has a planned or completed audit date within the 3-year cycle.
+        - action: For each completed audit, compare the auditor's assignments during the 12 months before the audit with the audited process.
+          expected: No auditor worked in the process that they audited.
+    sv:
+      title: Granskning av revisionsprogrammet och revisorernas oberoende
+      description: Kontrollerar att revisionsprogrammet täcker varje process inom 3 år och att ingen revisor har reviderat sitt eget arbete.
+      preconditions: Revisionsprogrammet för den aktuella treårscykeln, processkartan, rapporterna från genomförda revisioner och revisorernas uppdragshistorik.
+      expected: Varje process har en planerad eller genomförd revision i cykeln, och ingen revision har letts av någon som arbetat i den reviderade processen under de föregående 12 månaderna.
+      steps:
+        - action: Koppla varje process i processkartan till en post i revisionsprogrammet.
+          expected: Varje process har ett planerat eller genomfört revisionsdatum inom treårscykeln.
+        - action: Jämför för varje genomförd revision revisorns uppdrag under de 12 månaderna före revisionen med den reviderade processen.
+          expected: Ingen revisor har arbetat i den process som revisorn har reviderat.
+
+  - id: GVMS-T08
+    priority: medium
+    execution: manual
+    tags: [audit-report]
+    refs: ["ISO 19011:2026 §6.5 (preparing and distributing the audit report)"]
+    en:
+      title: Timeliness of audit reports
+      description: Checks the time from closing meeting to distribution of the audit report.
+      preconditions: The audit records of the last 12 months with the dates of each closing meeting and report distribution.
+      expected: Every report was distributed within 10 working days of the closing meeting.
+      steps:
+        - action: For each audit, count the working days between the closing meeting and the distribution of the report.
+          expected: The count is 10 working days or fewer for each audit.
+        - action: Check the distribution list of each report.
+          expected: Each report was sent to both the auditee and the process owner.
+    sv:
+      title: Revisionsrapporter i tid
+      description: Kontrollerar tiden från slutmöte till utskick av revisionsrapporten.
+      preconditions: Revisionsdokumentationen för de senaste 12 månaderna med datum för varje slutmöte och utskick av rapport.
+      expected: Varje rapport skickades inom 10 arbetsdagar efter slutmötet.
+      steps:
+        - action: Räkna för varje revision antalet arbetsdagar mellan slutmötet och utskicket av rapporten.
+          expected: Antalet är högst 10 arbetsdagar för varje revision.
+        - action: Kontrollera sändlistan för varje rapport.
+          expected: Varje rapport har skickats både till den reviderade enheten och till processägaren.
+
+  - id: GVMS-T09
+    priority: high
+    execution: manual
+    tags: [corrective-action]
+    refs: ["ISO/IEC 27001:2022 §10.2", "ISO 9001:2026 §10.2"]
+    en:
+      title: Review of closed nonconformities
+      description: Checks a sample of closed nonconformities for root cause, action and effectiveness check.
+      preconditions: The nonconformity log with at least 10 nonconformities closed during the last 12 months.
+      expected: Each sampled nonconformity has a root cause, an action with owner and due date, and an effectiveness check signed before closure.
+      steps:
+        - action: Pick 10 nonconformities closed in the last 12 months at random.
+          expected: 10 records are selected.
+          data: "Sample of 10 closed nonconformities"
+        - action: Check each selected record for a root cause and an action with owner and due date.
+          expected: Each record has all three entries.
+        - action: Compare the date of the effectiveness check with the closure date of each record.
+          expected: Each record has a signed effectiveness check dated on or before the closure date.
+    sv:
+      title: Granskning av stängda avvikelser
+      description: Kontrollerar ett urval av stängda avvikelser med avseende på grundorsak, åtgärd och effektkontroll.
+      preconditions: Avvikelseloggen med minst 10 avvikelser som har stängts under de senaste 12 månaderna.
+      expected: Varje avvikelse i urvalet har en grundorsak, en åtgärd med ägare och slutdatum och en effektkontroll som signerats före stängningen.
+      steps:
+        - action: Välj slumpvis 10 avvikelser som har stängts under de senaste 12 månaderna.
+          expected: 10 poster är valda.
+          data: "Urval av 10 stängda avvikelser"
+        - action: Kontrollera att varje vald post har en grundorsak och en åtgärd med ägare och slutdatum.
+          expected: Varje post har alla tre uppgifterna.
+        - action: Jämför datumet för effektkontrollen med stängningsdatumet för varje post.
+          expected: Varje post har en signerad effektkontroll daterad senast samma dag som stängningen.
+
+  - id: GVMS-T10
+    priority: high
+    execution: manual
+    tags: [management-review]
+    refs: ["ISO/IEC 27001:2022 §9.3.2", "ISO/IEC 27001:2022 §9.3.3", "ISO 9001:2026 §9.3"]
+    en:
+      title: Review of management review minutes
+      description: Checks the date, inputs and decisions of the last two management reviews.
+      preconditions: The minutes of the last two management reviews.
+      expected: The last review is less than 12 months old, covers the five inputs, and every decision has an owner, a due date and a follow-up.
+      steps:
+        - action: Check the date of the latest minutes.
+          expected: The review took place less than 12 months ago.
+        - action: Check the agenda for audit results, nonconformities, objectives, risks and changes in external issues.
+          expected: Each of the five inputs has its own agenda item.
+        - action: For each decision in the earlier minutes, find its status in the later minutes.
+          expected: Each decision has an owner and a due date, and its status is reported in the later review.
+    sv:
+      title: Granskning av protokoll från ledningens genomgång
+      description: Kontrollerar datum, underlag och beslut i de två senaste ledningens genomgångar.
+      preconditions: Protokollen från de två senaste ledningens genomgångar.
+      expected: Den senaste genomgången är yngre än 12 månader, omfattar de fem underlagen, och varje beslut har ägare, slutdatum och uppföljning.
+      steps:
+        - action: Kontrollera datumet för det senaste protokollet.
+          expected: Genomgången hölls för mindre än 12 månader sedan.
+        - action: Kontrollera att dagordningen tar upp revisionsresultat, avvikelser, mål, risker och förändringar i yttre förhållanden.
+          expected: Vart och ett av de fem underlagen har en egen dagordningspunkt.
+        - action: Leta för varje beslut i det tidigare protokollet upp dess status i det senare protokollet.
+          expected: Varje beslut har ägare och slutdatum, och dess status redovisas i den senare genomgången.
+
+  - id: GVMS-T11
+    priority: medium
+    execution: manual
+    tags: [kpi]
+    refs: ["ISO/IEC 27001:2022 §9.1", "ISO 9001:2026 §9.1.3"]
+    en:
+      title: Review of quarterly indicator reports
+      description: Checks that the management system indicators were reported every quarter.
+      preconditions: The list of defined indicators and the indicator reports of the last 12 months.
+      expected: There are four quarterly reports, and each shows value, target and trend for every defined indicator.
+      steps:
+        - action: Count the indicator reports sent to top management during the last 12 months.
+          expected: There is one report for each of the last four quarters.
+        - action: Compare the indicators in each report with the list of defined indicators.
+          expected: Each report shows the value, target and trend of every defined indicator.
+    sv:
+      title: Granskning av kvartalsrapporter om indikatorer
+      description: Kontrollerar att ledningssystemets indikatorer har rapporterats varje kvartal.
+      preconditions: Listan över fastställda indikatorer och indikatorrapporterna för de senaste 12 månaderna.
+      expected: Det finns fyra kvartalsrapporter, och varje rapport visar värde, målvärde och trend för varje fastställd indikator.
+      steps:
+        - action: Räkna de indikatorrapporter som har skickats till högsta ledningen under de senaste 12 månaderna.
+          expected: Det finns en rapport för vart och ett av de fyra senaste kvartalen.
+        - action: Jämför indikatorerna i varje rapport med listan över fastställda indikatorer.
+          expected: Varje rapport visar värde, målvärde och trend för varje fastställd indikator.
+
+  - id: GVMS-T12
+    priority: medium
+    execution: manual
+    tags: [independent-review, communication]
+    refs: ["ISO/IEC 27001:2022 A.5.35", "ISO/IEC 27001:2022 §7.4"]
+    en:
+      title: Independent review and communication plan
+      description: Checks the latest independent review and the coverage of the communication plan.
+      preconditions: The latest independent review report, the organisation chart, the communication plan and the list of policies.
+      expected: The independent review is less than 3 years old and done by an independent party, and the communication plan covers each policy and the audit results.
+      steps:
+        - action: Check the date of the independent review report and the reviewer's position in the organisation chart.
+          expected: The report is less than 3 years old and the reviewer has no reporting line to the security function.
+        - action: Compare the entries of the communication plan with the list of policies.
+          expected: Each policy and the audit results have an entry with audience, channel, frequency and responsible role.
+    sv:
+      title: Oberoende granskning och kommunikationsplan
+      description: Kontrollerar den senaste oberoende granskningen och vad kommunikationsplanen täcker.
+      preconditions: Rapporten från den senaste oberoende granskningen, organisationsschemat, kommunikationsplanen och listan över policyer.
+      expected: Den oberoende granskningen är yngre än 3 år och utförd av en oberoende part, och kommunikationsplanen täcker varje policy och revisionsresultaten.
+      steps:
+        - action: Kontrollera datumet för granskningsrapporten och granskarens placering i organisationsschemat.
+          expected: Rapporten är yngre än 3 år och granskaren har ingen rapporteringsväg till säkerhetsfunktionen.
+        - action: Jämför posterna i kommunikationsplanen med listan över policyer.
+          expected: Varje policy och revisionsresultaten har en post med målgrupp, kanal, frekvens och ansvarig roll.

@@ -1,0 +1,508 @@
+area: pj-delivery
+prefix: PJDEL
+group: operations
+catalogue: project
+name: {en: "Procurement, acceptance and closure", sv: "Upphandling, godkännande och avslut"}
+description:
+  en: Verifiable requirements and published award criteria in tender documents, supplier assessment, contract contents, supplier follow-up, the acceptance test plan, formal acceptance, handover to operations, warranty, the closure report, lessons learned and the benefits review.
+  sv: Verifierbara krav och publicerade utvärderingskriterier i förfrågningsunderlaget, bedömning av leverantörer, avtalets innehåll, uppföljning av leverantörer, plan för acceptanstest, formellt godkännande, överlämning till förvaltning och drift, garanti, slutrapport, erfarenhetsåterföring och uppföljning av nyttor.
+
+requirements:
+  - id: PJDEL-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [procurement, tender, requirements]
+    refs: ["ISO/IEC/IEEE 29148:2018", "ISO 21502:2020 §7.17 (procurement)"]
+    tests: [PJDEL-T01]
+    en:
+      title: Each tender requirement has a verification method
+      description: The tender documents MUST state for each mandatory requirement how the buyer verifies it, by the tenderer's statement, a document, a demonstration or a test.
+      rationale: Requirements that cannot be checked at evaluation or delivery cannot be enforced against the supplier.
+      criteria:
+        - method: review
+          text: Each mandatory requirement in the tender documents has one of the 4 verification methods stated.
+    sv:
+      title: Varje krav i upphandlingen har en verifieringsmetod
+      description: Förfrågningsunderlaget SKA för varje skallkrav ange hur beställaren verifierar det, genom anbudsgivarens intygande, ett dokument, en demonstration eller ett test.
+      rationale: Krav som inte går att kontrollera vid utvärdering eller leverans går inte att hävda mot leverantören.
+      criteria:
+        - method: review
+          text: Varje skallkrav i förfrågningsunderlaget har en av de 4 verifieringsmetoderna angiven.
+
+  - id: PJDEL-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [procurement, award-criteria, evaluation]
+    refs: ["Directive 2014/24/EU Art. 67 (contract award criteria)", "Lag (2016:1145) om offentlig upphandling (LOU) 16 kap. 1–6 §§ (tilldelning av kontrakt)"]
+    tests: [PJDEL-T01]
+    en:
+      title: Award criteria and weights published before tenders are received
+      description: In a public procurement, the buyer MUST publish the award criteria and their relative weights in the tender documents and evaluate the tenders against those criteria and weights only.
+      rationale: Published criteria give each tenderer equal conditions, and an evaluation that departs from them can be overturned on review.
+      criteria:
+        - method: review
+          text: The tender documents list each award criterion with its weight, and the evaluation report uses exactly those criteria and weights.
+    sv:
+      title: Tilldelningskriterier och viktning publiceras innan anbuden kommer in
+      description: I en offentlig upphandling SKA beställaren publicera tilldelningskriterierna och deras inbördes viktning i förfrågningsunderlaget och utvärdera anbuden bara mot de kriterierna och den viktningen.
+      rationale: Publicerade kriterier ger varje anbudsgivare lika villkor, och en utvärdering som avviker från dem kan underkännas vid en överprövning.
+      criteria:
+        - method: review
+          text: Förfrågningsunderlaget listar varje tilldelningskriterium med dess vikt, och utvärderingsrapporten använder exakt de kriterierna och vikterna.
+
+  - id: PJDEL-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [supplier-assessment, due-diligence]
+    refs: ["ISO 9001:2026 §8.4.1", "ISO/IEC 27001:2022 A.5.19"]
+    tests: [PJDEL-T02]
+    en:
+      title: Supplier assessed before the contract is signed
+      description: The buyer MUST assess each supplier before signing the contract for financial standing, at least 2 references from comparable deliveries and the supplier's information security controls.
+      rationale: A supplier that fails during the project costs far more than the time spent on an assessment before signing.
+      criteria:
+        - method: review
+          text: The assessment record is dated before the contract signature and covers financial standing, 2 checked references and information security.
+    sv:
+      title: Leverantören bedöms innan avtalet undertecknas
+      description: Beställaren SKA bedöma varje leverantör innan avtalet undertecknas med avseende på ekonomisk ställning, minst 2 referenser från jämförbara leveranser och leverantörens informationssäkerhetsåtgärder.
+      rationale: En leverantör som fallerar under projektet kostar mycket mer än tiden för en bedömning före undertecknandet.
+      criteria:
+        - method: review
+          text: Bedömningen är daterad före avtalets undertecknande och omfattar ekonomisk ställning, 2 kontrollerade referenser och informationssäkerhet.
+
+  - id: PJDEL-04
+    type: business
+    obligation: must
+    priority: high
+    tags: [contract, deliverables, acceptance]
+    refs: ["ISO 9001:2026 §8.4.3", "ISO/IEC 27001:2022 A.5.20"]
+    tests: [PJDEL-T02]
+    en:
+      title: Contract with deliverables, milestones and acceptance procedure
+      description: The supplier contract MUST list the deliverables, the milestones with dates, the acceptance procedure with its time limits and the consequences of late or rejected delivery.
+      rationale: Disputes at delivery are settled by the contract, and gaps in it are settled in favour of the party with more patience.
+      criteria:
+        - method: review
+          text: The signed contract contains each of the 4 listed parts.
+    sv:
+      title: Avtal med leveranser, milstolpar och godkännandeprocess
+      description: Leverantörsavtalet SKA lista leveranserna, milstolparna med datum, godkännandeprocessen med tidsgränser och följderna av sen eller underkänd leverans.
+      rationale: Tvister vid leveransen avgörs av avtalet, och luckor i det avgörs till förmån för den part som har mest tålamod.
+      criteria:
+        - method: review
+          text: Det undertecknade avtalet innehåller var och en av de 4 uppräknade delarna.
+
+  - id: PJDEL-05
+    type: business
+    obligation: should
+    priority: medium
+    tags: [supplier-performance, follow-up, kpi]
+    refs: ["ISO 9001:2026 §8.4.2", "ISO/IEC 27001:2022 A.5.22"]
+    tests: [PJDEL-T03]
+    en:
+      title: Monthly supplier follow-up against agreed measures
+      description: The project manager SHOULD hold a follow-up meeting with each main supplier every month, reviewing delivery against milestones, defect counts and open actions, and record the outcome.
+      rationale: Regular follow-up finds slipping deliveries while there is still time to act.
+      criteria:
+        - method: review
+          text: The records of the last 6 months show a follow-up for each main supplier each month, each with milestones, defects and actions.
+    sv:
+      title: Månatlig uppföljning av leverantörer mot överenskomna mått
+      description: Projektledaren BÖR varje månad hålla ett uppföljningsmöte med varje huvudleverantör där leverans mot milstolpar, antal fel och öppna åtgärder gås igenom, och dokumentera resultatet.
+      rationale: Regelbunden uppföljning hittar leveranser som halkar efter medan det fortfarande finns tid att agera.
+      criteria:
+        - method: review
+          text: Protokollen för de senaste 6 månaderna visar en uppföljning med varje huvudleverantör varje månad, var och en med milstolpar, fel och åtgärder.
+
+  - id: PJDEL-06
+    type: business
+    obligation: must
+    priority: high
+    tags: [acceptance-test, test-plan, entry-exit-criteria]
+    refs: ["ISO 9001:2026 §8.6"]
+    tests: [PJDEL-T04]
+    en:
+      title: Acceptance test plan agreed before acceptance testing
+      description: The buyer and the supplier MUST agree on an acceptance test plan before acceptance testing, with the scope, the entry and exit criteria and the defect severity levels that block acceptance.
+      rationale: Exit criteria agreed in advance keep the acceptance decision factual instead of a negotiation at the end.
+      criteria:
+        - method: review
+          text: The acceptance test plan is signed by both parties before the first acceptance test and contains scope, entry criteria, exit criteria and blocking severity levels.
+    sv:
+      title: Plan för acceptanstest överenskoms före acceptanstestet
+      description: Beställaren och leverantören SKA komma överens om en plan för acceptanstest innan acceptanstestet börjar, med omfattning, kriterier för start och avslut och de allvarlighetsgrader för fel som hindrar godkännande.
+      rationale: Avslutskriterier som överenskommits i förväg gör godkännandet till ett sakligt beslut i stället för en förhandling i slutet.
+      criteria:
+        - method: review
+          text: Planen för acceptanstest är undertecknad av båda parter före det första acceptanstestet och innehåller omfattning, startkriterier, avslutskriterier och blockerande allvarlighetsgrader.
+
+  - id: PJDEL-07
+    type: business
+    obligation: must
+    priority: critical
+    tags: [acceptance, sign-off, deviations]
+    refs: ["ISO 9001:2026 §8.6", "PRINCE2 Closing a project"]
+    tests: [PJDEL-T04]
+    en:
+      title: Signed acceptance with open deviations and deadlines
+      description: The buyer MUST record the acceptance of each delivery in a signed acceptance certificate that lists the accepted deliverables and each open deviation with the date by which the supplier corrects it.
+      rationale: Accepting with known deviations is common, and only a written list with deadlines makes sure they are corrected.
+      criteria:
+        - method: inspection
+          text: The acceptance certificate is signed by the buyer, lists the deliverables and has a correction date for each open deviation in the defect log.
+    sv:
+      title: Undertecknat godkännande med öppna avvikelser och tidsgränser
+      description: Beställaren SKA dokumentera godkännandet av varje leverans i ett undertecknat leveransgodkännande som listar de godkända leveranserna och varje öppen avvikelse med det datum då leverantören rättar den.
+      rationale: Att godkänna med kända avvikelser är vanligt, och bara en skriftlig lista med tidsgränser säkerställer att de rättas.
+      criteria:
+        - method: inspection
+          text: Leveransgodkännandet är undertecknat av beställaren, listar leveranserna och har ett datum för rättelse för varje öppen avvikelse i fellistan.
+
+  - id: PJDEL-08
+    type: business
+    obligation: must
+    priority: high
+    tags: [handover, operations, transition]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.2", "ITIL 4 Service validation and testing"]
+    tests: [PJDEL-T05]
+    en:
+      title: Handover checklist completed before go-live
+      description: Before go-live, the project MUST complete a handover checklist signed by the receiving operations manager, covering the operations documentation, the trained support staff, the support agreements and the monitoring in place.
+      rationale: A solution handed over without documentation, trained staff and support contracts becomes the project team's problem long after the project ends.
+      criteria:
+        - method: review
+          text: The handover checklist is signed by the operations manager before the go-live date, and each of the 4 items is marked done with a reference to evidence.
+    sv:
+      title: Checklista för överlämning klar före driftsättning
+      description: Före driftsättningen SKA projektet slutföra en checklista för överlämning som undertecknats av den mottagande driftchefen och som omfattar driftdokumentationen, utbildad supportpersonal, supportavtalen och övervakningen.
+      rationale: En lösning som lämnas över utan dokumentation, utbildad personal och supportavtal blir projektgruppens problem långt efter att projektet avslutats.
+      criteria:
+        - method: review
+          text: Checklistan för överlämning är undertecknad av driftchefen före datumet för driftsättning, och var och en av de 4 punkterna är markerad som klar med hänvisning till underlag.
+
+  - id: PJDEL-09
+    type: business
+    obligation: must
+    priority: medium
+    tags: [warranty, defects, contract]
+    refs: []
+    tests: [PJDEL-T06]
+    en:
+      title: Defects in the warranty period corrected at no cost
+      description: The supplier MUST correct at no cost each defect reported during the warranty period of 6 months after acceptance, within the correction times of the contract.
+      rationale: Some defects only show in production use, and the warranty keeps the supplier responsible for them.
+      criteria:
+        - method: review
+          text: The contract states the 6-month warranty and the correction times, and each defect reported during the warranty was corrected within its time without an invoice.
+          threshold: 6 months
+    sv:
+      title: Fel under garantitiden rättas utan kostnad
+      description: Leverantören SKA utan kostnad rätta varje fel som anmäls under garantitiden på 6 månader efter godkännandet, inom avtalets tider för rättelse.
+      rationale: Vissa fel visar sig först i produktion, och garantin håller leverantören ansvarig för dem.
+      criteria:
+        - method: review
+          text: Avtalet anger garantin på 6 månader och tiderna för rättelse, och varje fel som anmälts under garantitiden rättades inom sin tid utan faktura.
+          threshold: 6 månader
+
+  - id: PJDEL-10
+    type: business
+    obligation: must
+    priority: high
+    tags: [closure, closure-report]
+    refs: ["ISO 21502:2020 §6.8 (closing or terminating a project)", "PRINCE2 Closing a project"]
+    tests: [PJDEL-T07]
+    en:
+      title: Closure report approved by the sponsor
+      description: The project manager MUST submit a closure report to the sponsor that compares the outcome with the objectives, the baseline cost and the baseline schedule and lists the open items with their new owners.
+      rationale: A formal closure releases the team and the budget and makes sure nothing is left without an owner.
+      criteria:
+        - method: review
+          text: The closure report is approved by the sponsor and contains objectives against outcome, cost and schedule against baseline, and each open item with a named owner outside the project.
+    sv:
+      title: Slutrapport godkänd av projektägaren
+      description: Projektledaren SKA lämna en slutrapport till projektägaren som jämför utfallet med målen, kostnadsbaslinjen och tidplanens baslinje och listar de öppna punkterna med deras nya ägare.
+      rationale: Ett formellt avslut frigör gruppen och budgeten och säkerställer att inget blir kvar utan ägare.
+      criteria:
+        - method: review
+          text: Slutrapporten är godkänd av projektägaren och innehåller mål mot utfall, kostnad och tidplan mot baslinje, och varje öppen punkt med en namngiven ägare utanför projektet.
+
+  - id: PJDEL-11
+    type: business
+    obligation: should
+    priority: medium
+    tags: [lessons-learned, knowledge]
+    refs: ["PRINCE2 Learn from experience", "ISO 21502:2020 §7.18 (lessons learned)"]
+    tests: [PJDEL-T07]
+    en:
+      title: Lessons learned recorded within 4 weeks of closure
+      description: The project SHOULD hold a lessons learned session within 4 weeks of closure and enter each lesson, with its cause and a recommendation, in the organisation's shared lessons register.
+      rationale: Lessons kept in a closed project folder are not read by the next project, while a shared register is.
+      criteria:
+        - method: review
+          text: The session record is dated at most 4 weeks after closure, and its lessons are found in the shared register with cause and recommendation.
+          threshold: ≤ 4 weeks
+    sv:
+      title: Erfarenheter dokumenteras inom 4 veckor efter avslutet
+      description: Projektet BÖR hålla ett möte för erfarenhetsåterföring inom 4 veckor efter avslutet och föra in varje erfarenhet, med orsak och rekommendation, i organisationens gemensamma erfarenhetsregister.
+      rationale: Erfarenheter som ligger i en stängd projektmapp läses inte av nästa projekt, medan ett gemensamt register gör det.
+      criteria:
+        - method: review
+          text: Anteckningarna från mötet är daterade högst 4 veckor efter avslutet, och erfarenheterna finns i det gemensamma registret med orsak och rekommendation.
+          threshold: ≤ 4 veckor
+
+  - id: PJDEL-12
+    type: business
+    obligation: should
+    priority: medium
+    tags: [benefits, benefits-review, business-case]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)", "PRINCE2 Continued business justification"]
+    tests: [PJDEL-T08]
+    en:
+      title: Benefits measured 12 months after closure
+      description: The benefits owner SHOULD measure each benefit of the business case 12 months after closure, using the measures defined in it, and report the result to the sponsor.
+      rationale: Most benefits appear after the project has ended, and without a review nobody knows whether the investment paid off.
+      criteria:
+        - method: review
+          text: A benefits report dated 12 months after closure, with a tolerance of 1 month, shows each benefit of the business case with its measure, target and actual value.
+          threshold: 12 months ± 1 month
+    sv:
+      title: Nyttor mäts 12 månader efter avslutet
+      description: Nyttoägaren BÖR mäta varje nytta i projektmotivet 12 månader efter avslutet, med de mått som anges där, och rapportera resultatet till projektägaren.
+      rationale: De flesta nyttor visar sig efter att projektet avslutats, och utan uppföljning vet ingen om investeringen lönade sig.
+      criteria:
+        - method: review
+          text: En nyttorapport daterad 12 månader efter avslutet, med en tolerans på 1 månad, visar varje nytta i projektmotivet med mått, mål och verkligt värde.
+          threshold: 12 månader ± 1 månad
+
+tests:
+  - id: PJDEL-T01
+    priority: high
+    execution: manual
+    tags: [procurement, tender]
+    refs: ["Directive 2014/24/EU Art. 67 (contract award criteria)"]
+    en:
+      title: Review of the tender documents and the evaluation
+      description: Reviews the requirements and award criteria in the tender documents and compares the evaluation report with them.
+      preconditions: The published tender documents and the evaluation report.
+      expected: Each mandatory requirement has a verification method, and the evaluation uses the published criteria and weights.
+      steps:
+        - action: Go through each mandatory requirement in the tender documents.
+          expected: Each states a verification by statement, document, demonstration or test.
+        - action: List the award criteria and weights in the tender documents.
+          expected: Each criterion has a weight, and the weights add up to 100 %.
+        - action: Compare the criteria and weights used in the evaluation report with the list.
+          expected: They are the same.
+    sv:
+      title: Granskning av förfrågningsunderlaget och utvärderingen
+      description: Granskar kraven och tilldelningskriterierna i förfrågningsunderlaget och jämför utvärderingsrapporten med dem.
+      preconditions: Det publicerade förfrågningsunderlaget och utvärderingsrapporten.
+      expected: Varje skallkrav har en verifieringsmetod, och utvärderingen använder de publicerade kriterierna och vikterna.
+      steps:
+        - action: Gå igenom varje skallkrav i förfrågningsunderlaget.
+          expected: Varje krav anger verifiering genom intygande, dokument, demonstration eller test.
+        - action: Lista tilldelningskriterierna och vikterna i förfrågningsunderlaget.
+          expected: Varje kriterium har en vikt, och vikterna summeras till 100 %.
+        - action: Jämför de kriterier och vikter som används i utvärderingsrapporten med listan.
+          expected: De är desamma.
+
+  - id: PJDEL-T02
+    priority: high
+    execution: manual
+    tags: [supplier-assessment, contract]
+    refs: ["ISO 9001:2026 §8.4.1"]
+    en:
+      title: Supplier assessment and contract contents
+      description: Checks the supplier assessment record and the contents of the signed contract.
+      preconditions: The supplier assessment record and the signed contract with its signature date.
+      expected: The assessment predates the signature and covers the 3 areas, and the contract has the 4 listed parts.
+      steps:
+        - action: Compare the date of the assessment with the contract signature date.
+          expected: The assessment is earlier.
+        - action: Read the assessment.
+          expected: It covers financial standing, 2 checked references and information security.
+        - action: Look for the deliverables, milestones, acceptance procedure and consequences of late or rejected delivery in the contract.
+          expected: Each of the 4 parts is present.
+    sv:
+      title: Leverantörsbedömning och avtalets innehåll
+      description: Kontrollerar bedömningen av leverantören och innehållet i det undertecknade avtalet.
+      preconditions: Bedömningen av leverantören och det undertecknade avtalet med datum för undertecknandet.
+      expected: Bedömningen är äldre än undertecknandet och omfattar de 3 områdena, och avtalet har de 4 uppräknade delarna.
+      steps:
+        - action: Jämför bedömningens datum med datumet för avtalets undertecknande.
+          expected: Bedömningen är tidigare.
+        - action: Läs bedömningen.
+          expected: Den omfattar ekonomisk ställning, 2 kontrollerade referenser och informationssäkerhet.
+        - action: Leta efter leveranser, milstolpar, godkännandeprocess och följder av sen eller underkänd leverans i avtalet.
+          expected: Var och en av de 4 delarna finns.
+
+  - id: PJDEL-T03
+    priority: medium
+    execution: manual
+    tags: [supplier-performance]
+    refs: []
+    en:
+      title: Records of monthly supplier follow-up
+      description: Reviews the follow-up records of each main supplier for the last 6 months.
+      preconditions: The list of main suppliers and the follow-up records.
+      expected: Each main supplier has a follow-up each month with milestones, defects and actions.
+      steps:
+        - action: For each main supplier, list the follow-up records of the last 6 months.
+          expected: There is one record per month.
+        - action: Read each record.
+          expected: Each covers milestones, defect counts and open actions.
+    sv:
+      title: Protokoll från månatlig uppföljning av leverantörer
+      description: Granskar uppföljningsprotokollen för varje huvudleverantör för de senaste 6 månaderna.
+      preconditions: Listan över huvudleverantörer och uppföljningsprotokollen.
+      expected: Varje huvudleverantör har en uppföljning varje månad med milstolpar, fel och åtgärder.
+      steps:
+        - action: Lista uppföljningsprotokollen för de senaste 6 månaderna för varje huvudleverantör.
+          expected: Det finns ett protokoll per månad.
+        - action: Läs varje protokoll.
+          expected: Vart och ett omfattar milstolpar, antal fel och öppna åtgärder.
+
+  - id: PJDEL-T04
+    priority: critical
+    execution: manual
+    tags: [acceptance, acceptance-test]
+    refs: ["ISO 9001:2026 §8.6"]
+    en:
+      title: Acceptance test plan and acceptance certificate
+      description: Checks the acceptance test plan against the test log and the acceptance certificate against the defect log.
+      preconditions: The signed acceptance test plan, the acceptance test log, the acceptance certificate and the defect log.
+      expected: The plan was signed before testing with the 4 parts, and the certificate lists each open deviation with a correction date.
+      steps:
+        - action: Compare the plan's signature date with the date of the first acceptance test.
+          expected: The plan was signed by both parties first.
+        - action: Read the plan.
+          expected: Scope, entry criteria, exit criteria and blocking severity levels are present.
+        - action: Compare the open deviations in the defect log with the acceptance certificate.
+          expected: Each open deviation is listed in the certificate with a correction date.
+    sv:
+      title: Plan för acceptanstest och leveransgodkännande
+      description: Kontrollerar planen för acceptanstest mot testloggen och leveransgodkännandet mot fellistan.
+      preconditions: Den undertecknade planen för acceptanstest, loggen från acceptanstestet, leveransgodkännandet och fellistan.
+      expected: Planen undertecknades före testet med de 4 delarna, och godkännandet listar varje öppen avvikelse med ett datum för rättelse.
+      steps:
+        - action: Jämför planens datum för undertecknande med datumet för det första acceptanstestet.
+          expected: Planen undertecknades av båda parter först.
+        - action: Läs planen.
+          expected: Omfattning, startkriterier, avslutskriterier och blockerande allvarlighetsgrader finns.
+        - action: Jämför de öppna avvikelserna i fellistan med leveransgodkännandet.
+          expected: Varje öppen avvikelse finns i godkännandet med ett datum för rättelse.
+
+  - id: PJDEL-T05
+    priority: high
+    execution: manual
+    tags: [handover, operations]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.2"]
+    en:
+      title: Handover checklist and its evidence
+      description: Checks the signed handover checklist and samples the evidence for each item.
+      preconditions: The handover checklist, the go-live date and access to the referenced evidence.
+      expected: The checklist was signed before go-live, and each item has evidence.
+      steps:
+        - action: Compare the signature date of the checklist with the go-live date.
+          expected: The checklist was signed by the operations manager before go-live.
+        - action: Open the evidence for operations documentation, trained staff, support agreements and monitoring.
+          expected: Each exists, for example a document link, a training attendance list, a signed agreement and a monitoring dashboard.
+    sv:
+      title: Checklistan för överlämning och dess underlag
+      description: Kontrollerar den undertecknade checklistan för överlämning och stickprovar underlaget för varje punkt.
+      preconditions: Checklistan för överlämning, datumet för driftsättning och åtkomst till det underlag som hänvisas till.
+      expected: Checklistan undertecknades före driftsättningen, och varje punkt har underlag.
+      steps:
+        - action: Jämför checklistans datum för undertecknande med datumet för driftsättning.
+          expected: Checklistan undertecknades av driftchefen före driftsättningen.
+        - action: Öppna underlaget för driftdokumentation, utbildad personal, supportavtal och övervakning.
+          expected: Vart och ett finns, till exempel en dokumentlänk, en närvarolista från utbildningen, ett undertecknat avtal och en översiktsvy i övervakningen.
+
+  - id: PJDEL-T06
+    priority: medium
+    execution: manual
+    tags: [warranty]
+    refs: []
+    en:
+      title: Defects handled during the warranty period
+      description: Reviews the warranty terms and the defects reported during the warranty period.
+      preconditions: The contract, the acceptance date and the defect log with report and correction dates.
+      expected: The warranty is 6 months, and each warranty defect was corrected within its time without an invoice.
+      steps:
+        - action: Read the warranty clause of the contract.
+          expected: It states 6 months from acceptance and the correction times.
+        - action: Filter the defects reported in the 6 months after acceptance.
+          expected: A list with report and correction dates is produced.
+        - action: Compare each correction time with the contract and look for invoices for the corrections.
+          expected: Each was corrected within its time, and no correction was invoiced.
+    sv:
+      title: Fel som hanterats under garantitiden
+      description: Granskar garantivillkoren och de fel som anmälts under garantitiden.
+      preconditions: Avtalet, datumet för godkännandet och fellistan med datum för anmälan och rättelse.
+      expected: Garantin är 6 månader, och varje garantifel rättades inom sin tid utan faktura.
+      steps:
+        - action: Läs avtalets garantiklausul.
+          expected: Den anger 6 månader från godkännandet och tiderna för rättelse.
+        - action: Filtrera fram felen som anmälts under de 6 månaderna efter godkännandet.
+          expected: En lista med datum för anmälan och rättelse tas fram.
+        - action: Jämför varje rättelsetid med avtalet och leta efter fakturor för rättelserna.
+          expected: Varje fel rättades inom sin tid, och ingen rättelse fakturerades.
+
+  - id: PJDEL-T07
+    priority: high
+    execution: manual
+    tags: [closure, lessons-learned]
+    refs: ["PRINCE2 Closing a project"]
+    en:
+      title: Closure report and lessons learned
+      description: Reviews the closure report and finds the project's lessons in the shared register.
+      preconditions: The closure report, the closure date, the lessons session record and access to the shared lessons register.
+      expected: The closure report has the listed contents and approval, and the lessons are in the register within 4 weeks.
+      steps:
+        - action: Read the closure report.
+          expected: It is approved by the sponsor and compares objectives, cost and schedule with the baseline.
+        - action: Check each open item in the report.
+          expected: Each has a named owner outside the project.
+        - action: Compare the date of the lessons session with the closure date and search the register for the project.
+          expected: The session was at most 4 weeks after closure, and each lesson is in the register with cause and recommendation.
+    sv:
+      title: Slutrapport och erfarenhetsåterföring
+      description: Granskar slutrapporten och hittar projektets erfarenheter i det gemensamma registret.
+      preconditions: Slutrapporten, datumet för avslutet, anteckningarna från erfarenhetsmötet och åtkomst till det gemensamma erfarenhetsregistret.
+      expected: Slutrapporten har det uppräknade innehållet och godkännandet, och erfarenheterna finns i registret inom 4 veckor.
+      steps:
+        - action: Läs slutrapporten.
+          expected: Den är godkänd av projektägaren och jämför mål, kostnad och tidplan med baslinjen.
+        - action: Kontrollera varje öppen punkt i rapporten.
+          expected: Var och en har en namngiven ägare utanför projektet.
+        - action: Jämför datumet för erfarenhetsmötet med datumet för avslutet och sök efter projektet i registret.
+          expected: Mötet hölls högst 4 veckor efter avslutet, och varje erfarenhet finns i registret med orsak och rekommendation.
+
+  - id: PJDEL-T08
+    priority: medium
+    execution: manual
+    tags: [benefits]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
+    en:
+      title: Benefits report 12 months after closure
+      description: Compares the benefits report with the benefits listed in the business case.
+      preconditions: The final business case, the closure date and the benefits report.
+      expected: The report is dated 12 months after closure, within 1 month, and covers each benefit with measure, target and actual value.
+      steps:
+        - action: Compare the report date with the closure date.
+          expected: The difference is between 11 and 13 months.
+        - action: Match each benefit of the business case with the report.
+          expected: Each benefit has its measure, target and actual value.
+    sv:
+      title: Nyttorapport 12 månader efter avslutet
+      description: Jämför nyttorapporten med de nyttor som listas i projektmotivet.
+      preconditions: Det slutliga projektmotivet, datumet för avslutet och nyttorapporten.
+      expected: Rapporten är daterad 12 månader efter avslutet, med en marginal på 1 månad, och täcker varje nytta med mått, mål och verkligt värde.
+      steps:
+        - action: Jämför rapportens datum med datumet för avslutet.
+          expected: Skillnaden är mellan 11 och 13 månader.
+        - action: Para ihop varje nytta i projektmotivet med rapporten.
+          expected: Varje nytta har sitt mått, mål och verkliga värde.

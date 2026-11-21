@@ -989,11 +989,23 @@ Open **Catalogue** in the project sidebar, or select **Add from catalogue** at t
 
 - Switch between **Requirements** and **Tests** at the top.
 - Choose **English** or **Svenska** for the language of the texts. The items are added in this language.
+- **Catalogue type** limits the catalogue to one kind of work: *Software*, *Hardware*, *Equipment*, *Systems*, *Communications solutions*, *Projects*, *Services*, *Buildings and facilities*, *Governance*, *Documentation* or *Education* (only the types that have content are listed). It starts with the type that fits the project: software projects show *Software*, hardware projects *Hardware*, system projects *Systems* and business projects *Governance*; general projects show **All types**. The tree, the lists and the laws and standards follow the choice.
 - On the left, **Groups and areas** lists the catalogue's groups (for example *Security*) and their areas (for example *Authentication*) with the number of items that match the current search and filters. Select **Everything** to see all areas. Use the arrow keys to move in the tree and Enter to select. On a narrow screen the tree opens with the **Areas** button.
 - The **search** field finds items whose title, ID, tags, cited standards or description contain all the words you type (type `62443` or `27001`, for example, to list the items that cite that standard). The best matches come first: an exact ID such as `AUTH-01`, then the words in the title, then the other fields.
 - Narrow the list with **Type**, **Obligation** and **Priority** (requirements), **Execution** (tests) and **Tags**. **Hide items already in the project** leaves out what you have added before.
 
 Each row shows the ID, the title, the obligation and priority, and how many catalogue tests verify the requirement (or how many requirements the test verifies). **In project** marks items that the project already has; hover over it to see their keys.
+
+## Comply with laws, standards and best practices
+
+When the project has to meet a regulation or a standard, let the catalogue find the requirements for it:
+
+1. Under **Comply with laws, standards and best practices**, select **Choose laws and standards…**.
+2. The dialog lists every law, regulation, directive, standard, best practice and guideline that the catalogue cites, grouped by kind (*Laws and regulations*, *Directives*, *Standards and specifications*, *Best practices and frameworks*, *Guidelines and guidance*). Each shows its abbreviation, its jurisdiction (EU, Sweden, international …) and how many catalogue requirements cite it and how many tests verify them, counted in the chosen catalogue type. Type in the search field to find one by name, abbreviation or jurisdiction (`CRA`, `27001`, `Sweden`). Tick the sources one by one, or a whole kind with the box at its heading; the link icon opens the text of the source where one is known.
+3. Select **Show the requirements**. Both tabs now list only the items for the chosen sources: the requirements that cite one of them and, under each, the catalogue tests that verify it (**Verified by:**; select a test to preview it). A tag on each requirement shows which of the chosen sources it cites.
+4. The box sums up how many requirements cite the sources, how many tests verify them and how many the project already has. **Add the N missing requirements with their tests** ticks the requirements the project does not have yet and opens the usual dialog (see below), which adds them with their tests and trace links, skips duplicates and creates the folders you choose.
+
+Remove a source with the × on its chip, or **Clear the choice** to see the whole catalogue again. The choice is part of the page address, so you can bookmark or share it. Among the sources are the EU regulations and directives (GDPR, CRA, NIS2 and its implementing regulation, DORA, CER, RED with EN 18031, the AI Act, ePrivacy, eIDAS …), Swedish law (the Cybersecurity Act, the Protective Security Act and Ordinance, the Act on accessibility of digital public services …), standards (ISO/IEC 27001, 27002 and the other 27000 parts, IEC 62443-2-1 to 4-2, ISO/IEC 29147 and 30111, ISO/IEC 25010, WCAG 2.2, IEC 61508, 61511, 61850 …) and best practices (OWASP ASVS and Top 10, NIST SP 800-63, ITIL 4, Google SRE …). How far the project meets them is shown under [Compliance with laws and standards](#compliance-with-laws-and-standards) in the requirement analytics.
 
 ## Preview an item
 
@@ -1455,6 +1467,10 @@ The exit criterion **Risks mitigated** with the level *High* blocks a release wh
 3. Add **Risks mitigated** with the level you can accept to the exit criteria.
 4. Test the requirements in the release's runs; as the mitigation works, set the risks to *Mitigated*.
 
+## The risk report
+
+The **Risk report** under **Reports** summarises the register for a review meeting or an audit: key figures, risks by level and status, the heat map, the top risks, the register, the traceability from each risk to its requirements, their tests and latest results, and the open risks whose mitigation is not tested yet. See [Standard reports](#standard-reports). The [dashboard](#the-dashboard) shows the open risks per level and a small heat map.
+
 # Defects
 
 A **defect** (bug) is a problem found while testing. Every defect has a key such as `SHOP-BUG-3`, a title, a description, a status, a severity, a priority and an assignee, and it is linked to the requirements, tests and executions it concerns. Defects are under **Defects** in the project sidebar.
@@ -1820,13 +1836,18 @@ Coverage appears as a column and quick filter in the requirements list, as the q
 - **Recent runs**: the five newest runs with their progress; **All runs →** opens the run list.
 - **Requirements by status** and **Requirements by obligation** (requirements without a keyword count as *unspecified*).
 - **Tests by status**.
+- **More key figures** (below the first ones): **Verified requirements** (the share of requirements whose linked tests all passed), **Open risks** (with how many are critical and high), **Open defects** (with their average age), **Suspect links** (links whose requirement or test changed since, and how many requirements have one, see [the traceability matrix](#the-traceability-matrix)), **Trace-rule violations** (items that break the enabled [traceability rules](#traceability-rules), and how many rules are broken) and **Release progress** (the share of executions with a result in the current release).
+- **Manual and automated tests by last result**: one bar for manual and one for automated tests, split into passed, failed, blocked, skipped and not run.
+- **Requirement review state**: the requirements by the state of their latest review request: *Not reviewed*, *Review pending*, *Changes requested* or *Approved* (cancelled requests do not count). See [Reviews](#reviews-and-notifications).
+- **Release execution progress**: for the current release (the active one, else the planned one with the earliest target date), the results of all executions in its runs, and how many have a result and passed. The release name opens it.
 
-On the dashboard, a requirement counts as *covered* as soon as at least one test is linked, regardless of results.
+On the dashboard, a requirement counts as *covered* as soon as at least one test is linked, regardless of results. *Verified* requirements are those whose linked tests all passed.
 
 **Trends**
 
 - **Coverage and pass rate over time**: the coverage (share of requirements with linked tests) and the pass rate (share of executed tests whose latest result passed) per day. Choose the period above the chart: 30, 90 or 365 days.
 - **Defects opened and closed per week**: new defects and defects that were resolved, closed or rejected, per week (Monday to Sunday).
+- **Activity in the last 30 days**: per day, the changes to requirements and tests (every saved version), the executions finished and the defects reported. This chart always covers the last 30 days, whatever the period above.
 - **Release burn-up**: for the release chosen in the list, the requirements in its scope, how many of them have linked tests and how many have all their tests passed in the release's runs, day by day from the creation of the release. The target date of the release is shown above the chart. See [Releases](#releases-and-risks).
 
 The trends come from a snapshot of the figures that Qtestframe saves once a day for every project (and when the dashboard is opened and today's snapshot is missing). A new project, or a project from before this feature, does not start empty: on the first snapshot, the earlier days are reconstructed from what has dates — when requirements, tests and links were created, the results of the runs and when defects were reported and resolved (up to a year back). Days without a snapshot are bridged by the line.
@@ -1836,8 +1857,15 @@ The trends come from a snapshot of the figures that Qtestframe saves once a day 
 - **Flaky tests**: the ten tests whose results change most often between passed and failed, with their latest results (oldest first; a ring marks every flip) and when the result last flipped. Click a test to open it. See [Flaky tests](#flaky-tests).
 - **Open defects by severity**: open and in-progress defects per severity.
 - **Requirement coverage by group**: the coverage per top-level folder (requirements in subfolders count for the top folder) or, with **Category**, per requirement category; the twelve largest groups.
+- **Open risks by level**: open risks (*Identified* or *Mitigating*) per level; **Risk register →** opens the [risk register](#the-risk-register).
+- **Risk heat map**: a small 5 × 5 table of the risks that are not closed, by likelihood (rows, 5 at the top) and impact (columns). Besides its colour, each level has its own border (dotted for medium, dashed for high, solid with stripes for critical), explained below the table.
+- **Mitigation of open risks**: the open risks by how far the requirements that address them are tested: *No requirements*, *Untested*, *Partly tested*, *Tested, not all passed* and *Verified* (as in the [risk report](#standard-reports)).
+- **Age of open defects**: open and in-progress defects by age (under 7 days, 7–30, 30–90, over 90 days), split by severity, with the average and the oldest age.
+- **Traceability rules**: whether all enabled rules of severity *error* are met, how many rules are enabled, how many are broken (errors and warnings) and the number of violations. **Traceability →** opens the matrix with the rules.
 
-Every chart has a text alternative with its figures for screen readers, and the legend names each colour.
+The further key figures and these charts are counted on the server in one request, loaded next to the rest of the dashboard.
+
+Every chart has a text alternative with its figures for screen readers, and the legend names each colour. The heat map is a table with a caption, and every cell names its likelihood, impact, level and number of risks.
 
 ## Dependency graphs
 
@@ -1879,6 +1907,20 @@ Cycles (for example two requirements that depend on each other) are drawn, but o
 **Languages of the requirements** shows how many requirements are written in each language. Only texts long enough to tell the language are counted; a title of one or two words is not enough.
 
 **Language** chooses the language of the analysis (detected per requirement by default). Test findings are shown when you may read tests.
+
+### Compliance with laws and standards
+
+At the bottom of **Analytics**, **Compliance with laws, standards and best practices** shows how far the project meets the regulations and standards of the [catalogue](#comply-with-laws-standards-and-best-practices). Without a choice it shows every source the project uses; choose others in the list (grouped by kind, with a search field) to see what is missing for them too.
+
+For each source:
+
+- **Catalogue requirements** are the catalogue requirements that cite it. One is **adopted** when the project has a requirement added from it that is not rejected or obsolete; otherwise it is **missing**. **Own** requirements are project requirements that were not added from those items but name the source in their **Source** field, for example `GDPR Art. 32; ISO/IEC 27001:2022 A.8.5` (written as in the catalogue's *Based on*; upper and lower case do not matter).
+- **Fulfilment**: a requirement is *fulfilled* when it has tests and the latest result of every one of them is passed, *failing* when one failed, *blocked* when one is blocked, and *untested* otherwise. When the project has several copies of one catalogue item, the worst state counts.
+- **Compliance** is the share of fulfilled requirements of all catalogue and own requirements for the source; **Adopted** is the share of catalogue requirements the project has; **MUST requirements** is the compliance of the mandatory ones. The bar shows the fulfilled, failing, blocked, untested and missing requirements.
+- **By obligation** splits the counts into MUST (including MUST NOT), SHOULD and MAY. **By clause** gives the compliance per article, annex or control group, taken from the citations (`Art. 32`, `A.8`, `Annex I Part I`, `SR 1` …; *(general)* for citations of the source as a whole).
+- **Missing requirements** lists the gaps, MUST first: select one to open it in the catalogue, or **Add the missing from the catalogue** to open the catalogue with the source chosen. **Adopted but not fulfilled** lists the project's requirements that still fail or lack passing tests; select a key to open the requirement.
+
+The standard report **Compliance** (see [Reports and export](#reports-and-export)) contains the same figures, per source and clause, with the gaps. The analysis helps you plan and follow up; it is not a legal assessment.
 
 # Baselines
 
@@ -2168,6 +2210,22 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 | **Run summary** | one run: totals, executions, defects and durations | the run (required) |
 | **Defects** | all defects recorded on executions, grouped by defect | – |
 | **Test inventory** | tests by folder, type, status and category | optional filter |
+| **Risk report** | the [risks](#releases-and-risks) with key figures, a heat map, the risk register, traceability to requirements and tests, untested mitigations and the top risks | – |
+| **Compliance** | compliance with laws, standards and best practices: per source, per clause, the missing catalogue requirements and the requirements not fulfilled (see [Compliance with laws and standards](#compliance-with-laws-and-standards)) | optional laws, standards and best practices (default: those the project uses) |
+
+**The risk report** contains:
+
+- **Key figures**: all risks; open risks (*Identified* or *Mitigating*); mitigated, accepted and closed risks; open risks per level; open risks without requirements, with an untested mitigation and with a verified mitigation; and open risks that have not been changed for 90 days or more.
+- **Risks by level and status**: a table with one row per level and one column per status.
+- **Open risks by mitigation state** (see below).
+- **Heat map**: likelihood (rows, 5 at the top) × impact (columns). Each cell gives the number of risks that are not closed and the cell's level, for example *2 · High*, so the table can be read without colours.
+- **Top open risks**: the ten open risks with the highest score.
+- **Risk register**: every risk with key, title, category, owner, likelihood, impact, score, level, status, mitigation, the requirements that address it, the mitigation state and when it was last changed.
+- **Traceability**: one row per risk, requirement and linked test, with the requirement's coverage and the test's latest result.
+- **Open risks with untested mitigation**: open risks without requirements, or with requirements that have no tests, and which of their requirements have no tests or have not passed.
+- **Open risks not updated for 90 days or more**: a reminder to review them.
+
+The **mitigation state** of a risk comes from the requirements that address it: *No requirements*, *Untested* (none of them has linked tests), *Partly tested* (some have), *Tested, not all passed* (all have tests, but not all tests passed) or *Verified* (all linked tests of all its requirements passed). A risk has one likelihood × impact score; the report shows that score and its level, and how far the mitigation is verified by tests.
 
 ![The reports page with the standard reports and the custom report builder](images/en-reports.png)
 
@@ -2611,6 +2669,8 @@ Users who sign in with OIDC or SAML single sign-on can be created automatically 
 
 Restore is meant for disaster recovery and moving to a new server. To recover a single item, use its [history](#history-and-restore) instead. A backup also contains the system settings (below), including the secrets stored there; they apply as soon as the restore is done.
 
+Secrets in a backup (authenticator-app secrets, webhook secrets, tracker tokens, secret test variables, the e-mail password and client secrets) stay **encrypted** in the file. A backup can only be restored on a server that has the same key as the server it came from (see [Encryption of stored secrets](#encryption-of-stored-secrets)); otherwise the restore is refused and nothing is changed. The server administrator keeps that key safe, apart from the backups.
+
 ## System settings
 
 *(Super admin)* **Administration → System settings** changes the configuration of the server while it runs: single sign-on, logging and syslog, the e-mail server, sign-in security and the test runner. Organisation admins do not see this page: every setting applies to the whole installation.
@@ -2661,6 +2721,18 @@ The SMTP server for notifications, invitations and reports: host, port, encrypti
 ### Security
 
 The **session lifetime** (how long a sign-in lasts; applies to new sign-ins), the **minimum password length** of local accounts, the number of **failed sign-ins** after which further attempts from the same address for the same account are refused, and for how long. **Local sign-in** (e-mail and password) can only be turned off while at least one single sign-on provider is enabled.
+
+### Encryption of stored secrets
+
+The **Security** section also shows, read-only, how the secrets that the server must be able to read back are protected: the secrets of authenticator apps, webhook signing secrets, defect tracker tokens, secret test variables, and the e-mail password and client secrets entered on this page. They are stored **encrypted** (AES-256-GCM) in the database. Earlier versions stored them unencrypted; that no longer holds, and values saved by an earlier version are encrypted when the server starts. Passwords and access tokens were never stored as such: only their hashes are kept.
+
+The page shows:
+
+- **Key provider** – what protects the key: a **local key** (a key file on the server or an environment variable), the server's **TPM 2.0** chip, or a **hardware security module** (PKCS#11).
+- The details of the provider, such as the key file or the TPM device, and the **key fingerprint**, which identifies the key without revealing it.
+- The **active data key** and how many **stored secrets** are encrypted. If some are not encrypted yet, a note says so; they are encrypted at the next start of the server.
+
+The key provider is chosen in the server's configuration file (section `secrets`) and cannot be changed here. Without its key, the stored secrets – and backups – cannot be read; ask the server administrator to keep it safe. The server administrator manages the keys on the command line, for example `qtestframe secrets status` and `qtestframe secrets rotate`; see the operations guide.
 
 ### Test runner
 

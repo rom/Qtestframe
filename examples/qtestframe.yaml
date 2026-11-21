@@ -139,3 +139,25 @@ bootstrap:
 # See docs/operations.md, "Runtime system settings".
 system_settings:
   locked: []
+
+# Encryption of stored secrets (TOTP secrets, webhook secrets, tracker
+# tokens, secret test variables, the SMTP password and OIDC client secrets
+# entered in System settings). They are encrypted with a data key that is
+# itself protected by a key provider. The default needs no configuration: a
+# key file qtestframe-secrets.key is created (mode 0600) next to the SQLite
+# database. Back it up separately from the database: backups keep the
+# secrets encrypted and cannot be restored without it.
+# See docs/security.md, "Encryption of stored secrets".
+secrets:
+  provider: local            # local | tpm | pkcs11 (QTF_SECRETS_PROVIDER)
+  local:
+    key_file: ""             # default: next to the database; or QTF_SECRETS_KEY
+  # tpm:                     # seal the data key to the TPM 2.0 of this machine
+  #   device: /dev/tpmrm0
+  #   pcrs: [7]              # optional: also bind it to the Secure Boot state
+  # pkcs11:                  # an HSM; needs a binary built with `make go-pkcs11`
+  #   module: /usr/lib/softhsm/libsofthsm2.so
+  #   token_label: qtestframe
+  #   pin_file: /run/secrets/hsm-pin   # or QTF_SECRETS_PKCS11_PIN
+  #   key_label: qtestframe-kek
+  #   generate_key: true
