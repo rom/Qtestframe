@@ -82,6 +82,24 @@ async function save() {
   }
 }
 
+// ---------- MFA reset (lost authenticator) ----------
+function resetMfa(u: User) {
+  notify.confirmDanger(
+    t('mfa.reset.confirm', { user: u.email }),
+    async () => {
+      try {
+        await api.post(`/users/${u.id}/mfa/reset`)
+        u.mfa_enabled = false
+        notify.ok(t('mfa.reset.done'), u.email)
+      } catch (e) {
+        notify.fail(e, t('mfa.reset.failed'))
+      }
+    },
+    t('mfa.reset.header'),
+    t('mfa.reset.action'),
+  )
+}
+
 // ---------- password reset (generated temporary password) ----------
 const tempOpen = ref(false)
 const tempPassword = ref('')
@@ -127,11 +145,12 @@ function resetPassword(u: User) {
             <Tag v-if="data.super_admin" :value="t('admin.superAdmin')" severity="danger" />
             <Tag v-if="data.disabled" :value="t('admin.disabled')" severity="contrast" />
             <Tag v-if="data.must_change_password" :value="t('admin.mustChange')" severity="warn" />
+            <Tag v-if="data.mfa_enabled" :value="t('mfa.tag')" severity="success" icon="pi pi-shield" />
           </div>
         </template>
       </Column>
       <Column field="created_at" :header="t('common.created')" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column style="width: 100px"><template #body="{ data }"><Button v-if="isLocal(data) && data.id !== auth.user?.id" icon="pi pi-key" text rounded severity="secondary" :aria-label="t('admin.resetPasswordOf', { user: data.email })" v-tooltip="t('admin.resetPasswordAction')" @click="resetPassword(data)" /><Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('admin.editNamed', { name: data.email })" v-tooltip="t('common.edit')" @click="openEdit(data)" /></template></Column>
+      <Column style="width: 140px; white-space: nowrap"><template #body="{ data }"><Button v-if="data.mfa_enabled && data.id !== auth.user?.id" icon="pi pi-shield" text rounded severity="secondary" :aria-label="t('mfa.reset.of', { user: data.email })" v-tooltip="t('mfa.reset.action')" @click="resetMfa(data)" /><Button v-if="isLocal(data) && data.id !== auth.user?.id" icon="pi pi-key" text rounded severity="secondary" :aria-label="t('admin.resetPasswordOf', { user: data.email })" v-tooltip="t('admin.resetPasswordAction')" @click="resetPassword(data)" /><Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('admin.editNamed', { name: data.email })" v-tooltip="t('common.edit')" @click="openEdit(data)" /></template></Column>
     </DataTable>
   </div>
   <Dialog v-model:visible="dialog" :header="editing ? t('admin.editUser') : t('admin.newUser')" modal style="width: min(460px, 95vw)">

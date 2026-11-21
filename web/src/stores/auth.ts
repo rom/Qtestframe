@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { api, ApiError, setCsrfToken } from '@/lib/api'
 import { can } from '@/lib/permissions'
 import type { Me } from '@/lib/types'
+import { isChallenge, type MfaChallenge } from '@/lib/mfa'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({ me: null as Me | null, loaded: false }),
@@ -31,8 +32,16 @@ export const useAuthStore = defineStore('auth', {
       }
       return this.me
     },
-    async login(email: string, password: string, tenant?: string) {
-      const me = await api.post<Me>('/auth/login', { email, password, tenant: tenant || undefined }, { noAuthRedirect: true })
+    /** Password sign-in: the session (Me), or the second factor still to give. */
+    async login(email: string, password: string, tenant?: string): Promise<Me | MfaChallenge> {
+      const res = await api.post<Me | MfaChallenge>('/auth/login', { email, password, tenant: tenant || undefined }, { noAuthRedirect: true })
+      if (isChallenge(res)) return res
+      this.set(res)
+      return res
+    },
+    /** The second factor of a pending sign-in (authenticator or recovery code). */
+    async verifyMfa(code: string, remember: boolean) {
+      const me = await api.post<Me>('/auth/mfa/verify', { code, remember }, { noAuthRedirect: true })
       this.set(me)
       return me
     },

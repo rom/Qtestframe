@@ -1,4 +1,5 @@
 // TypeScript mirrors of internal/model/model.go (JSON tags are authoritative).
+import type { MfaStatus } from './mfa'
 import type { FlakyTest, GroupCoverage } from './metrics'
 import type { ScriptJob } from './webTests'
 
@@ -23,6 +24,8 @@ export interface User {
   avatar?: string
   /** set after an administrator reset the password */
   must_change_password?: boolean
+  /** has a confirmed second factor (user lists, /auth/me) */
+  mfa_enabled?: boolean
 }
 
 /** Per-user settings (all optional; empty = default). */
@@ -69,6 +72,10 @@ export interface Membership {
   avatar?: string
   /** provisioned by SCIM: the identity provider manages role and membership */
   scim?: boolean
+  /** has a confirmed second factor (members lists) */
+  mfa_enabled?: boolean
+  /** the MFA policy requires a second factor for this member's role here */
+  mfa_required?: boolean
   /** open e-mail invitation (members list of the tenant) */
   invitation?: InvitationInfo
 }
@@ -137,6 +144,8 @@ export interface Me {
   previous_login?: PreviousLogin | null
   failed_logins_since_previous?: number
   first_login?: boolean
+  /** multi-factor state of the signed-in user (sessions only) */
+  mfa?: MfaStatus
 }
 
 /** GET /auth/logins */
