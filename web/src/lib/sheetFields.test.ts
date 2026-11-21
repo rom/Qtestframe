@@ -150,3 +150,32 @@ describe('helpers', () => {
     expect(applyValues(row, { steps: [1, 2] }, folders).step_count).toBe(2)
   })
 })
+
+describe('read-only and computed columns', () => {
+  it('show and sort counts, results and versions', () => {
+    const rq = sheetFields(ctx())
+    const r: SheetRow = { ...row, coverage: 'passed', linked_tests: 3, version: 7 }
+    expect(['coverage', 'linked_tests', 'version'].map((id) => byId(rq, id).text(r))).toEqual(['passed', '3', '7'])
+    expect(byId(rq, 'linked_tests').sortKey!(r)).toBe(3)
+    expect(byId(rq, 'version').sortKey!({ ...r, version: undefined })).toBe(0)
+    expect(byId(rq, 'folder').sortKey!(r)).toBe('Web / Login')
+    expect(byId(rq, 'owner').value!({ ...r, owner: null })).toBe('')
+    const ts = sheetFields(ctx({ kind: 'test' }))
+    const tc: SheetRow = { id: 't', key: 'T-1', last_result: 'passed', linked_requirements: 2, created_by: 'a@b.c', estimated_minutes: 5, version: 1 }
+    expect(['last_result', 'linked_requirements', 'created_by', 'estimated_minutes', 'version'].map((id) => byId(ts, id).text(tc))).toEqual(['passed', '2', 'a@b.c', '5', '1'])
+    expect(byId(ts, 'estimated_minutes').sortKey!(tc)).toBe(5)
+    expect(byId(ts, 'estimated_minutes').value!(tc)).toBe(5)
+    expect(byId(ts, 'linked_requirements').sortKey!(tc)).toBe(2)
+    expect(byId(ts, 'step_count').sortKey!({ ...tc, step_count: 4 })).toBe(4)
+    expect(byId(ts, 'execution_type').sortKey!({ ...tc, execution_type: 'automated' })).toBe(1)
+    expect(byId(ts, 'execution_type').options!(null).map((o) => o.label)).toEqual(['Manual', 'Automated'])
+  })
+  it('labels the empty obligation and lists category options', () => {
+    const rq = sheetFields(ctx())
+    expect(byId(rq, 'obligation').options!(row)[0]).toEqual({ value: '', label: 'sheet.autoObligation' })
+    expect(byId(rq, 'category_ids').options!(row).map((o) => o.label)).toEqual(['Area/Security', 'Area/UI', 'Risk/UI'])
+    expect(byId(rq, 'folder').options!(row)[0].value).toBe('')
+    expect(byId(rq, 'tags').parse!('x'.repeat(65), row).ok).toBe(false)
+    expect(byId(rq, 'owner').parse!(' anna \n', row)).toEqual({ ok: true, value: 'anna' })
+  })
+})

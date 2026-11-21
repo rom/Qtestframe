@@ -160,10 +160,15 @@ const isLayout = (v: unknown): v is Layout => v === 'list' || v === 'sheet'
 const layoutKey = () => `qtf.layout.${props.kind}`
 const storedLayout = readPref(layoutKey())
 const layoutMode = ref<Layout>(isLayout(route.query.view) ? route.query.view : isLayout(storedLayout) ? storedLayout : 'list')
-watch(layoutMode, (v) => {
-  writePref(layoutKey(), v)
-  if ((route.query.view ?? 'list') !== v) void router.replace({ query: { ...route.query, view: v === 'sheet' ? 'sheet' : undefined } })
-})
+// the choice is stored (also one that came with the link) and shown in the address
+watch(
+  layoutMode,
+  (v) => {
+    writePref(layoutKey(), v)
+    if ((route.query.view ?? 'list') !== v) void router.replace({ query: { ...route.query, view: v === 'sheet' ? 'sheet' : undefined } })
+  },
+  { immediate: true },
+)
 watch(
   () => route.query.view,
   (v) => {

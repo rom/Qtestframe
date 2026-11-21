@@ -33,7 +33,7 @@ import {
   type SheetField,
   type SheetOption,
 } from '@/lib/sheet'
-import type { SheetRow } from '@/lib/sheetFields'
+import { emptyValue, type SheetRow } from '@/lib/sheetFields'
 
 export type CellState = { state: 'pending' | 'saved' | 'error'; message?: string }
 export type ApplyKind = 'edit' | 'paste' | 'fill' | 'clear' | 'cut'
@@ -163,7 +163,9 @@ function scrollIntoView(cell: Cell) {
   else if (top + ROW_H > el.scrollTop + el.clientHeight) el.scrollTop = top + ROW_H - el.clientHeight
   // columns behind the frozen ones (select + first column) scroll into view
   const frozen = SEL_W + (props.fields[0] ? width(props.fields[0]) : 0)
-  if (cell.c > 0) {
+  // the frozen first column: back to the start of the row, as Home does in a spreadsheet
+  if (cell.c === 0) el.scrollLeft = 0
+  else {
     let left = SEL_W
     for (let i = 0; i < cell.c; i++) left += width(props.fields[i])
     const right = left + width(props.fields[cell.c])
@@ -287,9 +289,10 @@ function cancelEdit() {
   void nextTick(() => gridEl.value?.focus({ preventScroll: true }))
 }
 type CommitHow = 'enter' | 'shift-enter' | 'tab' | 'shift-tab' | 'none' | 'up' | 'down' | 'left' | 'right'
-function commitEdit(how: CommitHow, refocus = true) {
+/** Save the edit and move; false when the value was refused (the editor stays open). */
+function commitEdit(how: CommitHow, refocus = true): boolean {
   const e = editing.value
-  if (!e) return
+  if (!e) return true
   const f = props.fields[e.c]
   const row = isNewRow(e.r) ? null : rowAt(e.r)
   if (isNewRow(e.r)) {
@@ -297,7 +300,7 @@ function commitEdit(how: CommitHow, refocus = true) {
     if (!p.ok) {
       e.error = p.error
       emit('announce', p.error, true)
-      return
+      return false
     }
     const shown = f.editor === 'select' ? (editOptions.value.find((o) => o.value === e.text)?.label ?? '') : e.text
     editing.value = null
@@ -307,7 +310,7 @@ function commitEdit(how: CommitHow, refocus = true) {
     if (res.error) {
       e.error = res.error.message
       emit('announce', res.error.message, true)
-      return
+      return false
     }
     editing.value = null
     if (res.change && row) emit('apply', { changes: [res.change], errors: [], range: { r1: e.r, c1: e.c, r2: e.r, c2: e.c } }, 'edit')
@@ -320,6 +323,7 @@ function commitEdit(how: CommitHow, refocus = true) {
   }
   setActive(next, false)
   if (refocus) void nextTick(() => gridEl.value?.focus({ preventScroll: true }))
+  return true
 }
 function onEditorKey(ev: KeyboardEvent) {
   const e = editing.value
@@ -354,8 +358,8 @@ function onEditorKey(ev: KeyboardEvent) {
 function onEditorBlur(ev: FocusEvent) {
   const to = ev.relatedTarget as Node | null
   if (to && (ev.currentTarget as HTMLElement).closest('.sheet-cell')?.contains(to)) return
-  // clicking elsewhere commits (a refused value stays in the editor)
-  if (editing.value) commitEdit('none', false)
+  // leaving the cell commits; a refused value is dropped (the error was announced)
+  if (editing.value && !commitEdit('none', false)) editing.value = null
 }
 function toggleCategory(id: string, on: boolean) {
   const e = editing.value
@@ -369,6 +373,7 @@ function toggleCategory(id: string, on: boolean) {
     .filter(Boolean)
   const rest = cur.filter((x) => x.toLowerCase() !== label.toLowerCase())
   e.text = (on ? [...rest, label] : rest).join(', ')
+  void nextTick(() => editorEl.value?.focus({ preventScroll: true }))
 }
 const checkedCategory = (label: string) =>
   !!editing.value &&
@@ -404,7 +409,7 @@ function onKeydown(e: KeyboardEvent) {
     if (text === null) return
     viaClip(text)
     if (key.toLowerCase() === 'x' && dataRange.value) {
-      const plan = planClear(planCtx.value, dataRange.value)
+      const plan = planClear(planCtx.value, dataRange.value, emptyValue)
       if (!plan.refused) emit('apply', plan, 'cut')
     }
     return
@@ -442,7 +447,7 @@ function onKeydown(e: KeyboardEvent) {
   if ((key === 'Delete' || key === 'Backspace') && !ctrl && !e.altKey) {
     e.preventDefault()
     if (!dataRange.value) return
-    const plan = planClear(planCtx.value, dataRange.value)
+    const plan = planClear(planCtx.value, dataRange.value, emptyValue)
     if (plan.refused === 'nothing') emit('announce', t('sheet.nothingToClear'))
     else emit('apply', plan, 'clear')
     return
@@ -479,7 +484,7 @@ function toggleRows(rangeRows: boolean) {
 // its selected text and pastes into it, which works in every browser (the
 // document listeners cover the browser's Edit menu while the grid has focus)
 const clip = ref<HTMLTextAreaElement | null>(null)
-const ours = () => !editing.value && document.activeElement === gridEl.value
+const ours = (e?: Event) => !editing.value && document.activeElement === gridEl.value && (!e || e.target !== clip.value)
 function viaClip(text: string | null) {
   const el = clip.value
   if (!el) return
@@ -496,6 +501,8 @@ function viaClip(text: string | null) {
 }
 function onClipPaste(e: ClipboardEvent) {
   e.preventDefault()
+  // handled here only (the document listener would see the grid focused again)
+  e.stopPropagation()
   const text = e.clipboardData?.getData('text/plain') ?? ''
   gridEl.value?.focus({ preventScroll: true })
   pasteText(text)
@@ -507,18 +514,18 @@ function copyText(): string | null {
   return toTSV(block) + '\r\n'
 }
 function onCopy(e: ClipboardEvent) {
-  if (!ours() || !dataRange.value || !e.clipboardData) return
+  if (!ours(e) || !dataRange.value || !e.clipboardData) return
   e.preventDefault()
   e.clipboardData.setData('text/plain', copyText() ?? '')
 }
 function onCut(e: ClipboardEvent) {
-  if (!ours() || !dataRange.value) return
+  if (!ours(e) || !dataRange.value) return
   onCopy(e)
-  const plan = planClear(planCtx.value, dataRange.value)
+  const plan = planClear(planCtx.value, dataRange.value, emptyValue)
   if (!plan.refused) emit('apply', plan, 'cut')
 }
 function onPaste(e: ClipboardEvent) {
-  if (!ours() || !e.clipboardData) return
+  if (!ours(e) || !e.clipboardData) return
   e.preventDefault()
   pasteText(e.clipboardData.getData('text/plain'))
 }
@@ -547,7 +554,7 @@ let dragging = false
 function onCellDown(e: MouseEvent, r: number, c: number) {
   if (e.button !== 0) return
   if (editing.value && editing.value.r === r && editing.value.c === c) return
-  if (editing.value) commitEdit('none', false)
+  if (editing.value && !commitEdit('none', false)) editing.value = null
   e.preventDefault()
   gridEl.value?.focus({ preventScroll: true })
   setActive({ r, c }, e.shiftKey)
@@ -729,7 +736,7 @@ const stateText = (s: CellState | undefined) => (s ? t(`sheet.state.${s.state}`)
                   {{ o.label }}
                 </label>
               </div>
-              <div v-if="editing.error" :id="editorErrId" class="cell-error" role="alert">{{ editing.error }}</div>
+              <div v-if="editing.error" :id="editorErrId" class="cell-error">{{ editing.error }}</div>
             </template>
             <template v-else>
               <span v-if="isNewRow(r) && !cellText(r, c)" class="placeholder">{{ c === 1 ? newRow : c === 0 ? t('sheet.newRowKey') : '' }}</span>

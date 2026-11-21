@@ -115,9 +115,27 @@ const sortField = computed({
   get: () => sort.value?.field ?? '',
   set: (v: string) => (sort.value = v ? { field: v, dir: sort.value?.dir ?? 1 } : null),
 })
-const rows = computed(() => {
+// The order is decided when the sort or the set of rows changes, not when a
+// value changes: an edited row stays where it is (as in a spreadsheet) and a
+// new item is added at the bottom until the next sort.
+const order = ref<string[]>([])
+function resort() {
   const s = sort.value
-  return s ? sortRows(props.items, allFields.value.find((f) => f.id === s.field), s.dir) : [...props.items]
+  order.value = (s ? sortRows(props.items, allFields.value.find((f) => f.id === s.field), s.dir) : props.items).map((r) => r.id)
+}
+const idList = computed(() => props.items.map((r) => r.id).join('\n'))
+watch([sort, () => props.kind], resort, { immediate: true })
+watch(idList, (_now, before) => {
+  const known = new Set(order.value)
+  const ids = props.items.map((r) => r.id)
+  const added = ids.filter((id) => !known.has(id))
+  // a created item joins at the bottom; anything else (a reload, a filter) sorts again
+  if (before && added.length === 1 && ids.length === order.value.length + 1) order.value = [...order.value, added[0]]
+  else resort()
+})
+const rows = computed(() => {
+  const by = new Map(props.items.map((r) => [r.id, r]))
+  return order.value.map((id) => by.get(id)).filter((r): r is SheetRow => !!r)
 })
 
 // ---------------------------------------------------------------- announcements
@@ -199,7 +217,8 @@ async function apply(plan: Plan, kind: ApplyKind) {
         () => api.post(batchPath.value, { items: plain }),
       ),
     )
-    announce(t('sheet.saved', plan.changes.length))
+    const one = plan.changes.length === 1 ? plan.changes[0] : null
+    announce(one ? t('sheet.savedCell', { field: fields.value[one.col]?.header ?? '', key: shown[one.row]?.key ?? '' }) : t('sheet.saved', plan.changes.length))
   } catch (e) {
     // nothing was saved (one transaction): show the saved values again
     emit('replace', oldRows)

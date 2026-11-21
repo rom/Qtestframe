@@ -1882,6 +1882,7 @@ const en = {
     exportTitleTests: 'Tests',
     exported: 'Exported {name}',
     saving: 'Saving…',
+    savedCell: 'Saved {field} of {key}',
     saved: 'Saved 1 cell | Saved {n} cells',
     copied: 'Copied 1 cell | Copied {n} cells',
     created: 'Created {key}',
