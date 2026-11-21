@@ -1,0 +1,646 @@
+area: service-level-objectives
+prefix: SLO
+group: operations
+catalogue: software
+name: {en: "Service level objectives", sv: "Mål för tjänstenivå"}
+description:
+  en: Service level indicators, objectives and error budgets in the way of site reliability engineering, with burn-rate alerting, reviews and toil limits.
+  sv: Indikatorer, mål och felbudgetar för tjänstenivå enligt arbetssättet site reliability engineering, med larm på förbrukningstakt, uppföljning och gränser för rutinarbete.
+
+requirements:
+  - id: SLO-01
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [sli, user-journey, definition]
+    refs: ["Google SRE workbook ch. 2 (Implementing SLOs)", "Google SRE book ch. 4 (Service Level Objectives)"]
+    tests: [SLO-T01]
+    en:
+      title: Indicators for each critical user journey
+      description: The supplier MUST define for each critical user journey at least one service level indicator as the share of valid events that were good, with the exact rule for a good and a valid event.
+      rationale: An indicator that is not tied to what users do measures the servers rather than the service, and a vague rule lets everyone read the figure their own way.
+      criteria:
+        - method: inspection
+          text: The SLO document lists each critical user journey with its indicators, and each indicator states the data source and the rules for good and valid events.
+          threshold: "≥ 1 indicator per critical journey"
+    sv:
+      title: Indikatorer för varje kritiskt användarflöde
+      description: Leverantören SKA för varje kritiskt användarflöde definiera minst en indikator för tjänstenivå som andelen giltiga händelser som var bra, med den exakta regeln för en bra och en giltig händelse.
+      rationale: En indikator som inte är kopplad till vad användarna gör mäter servrarna snarare än tjänsten, och en vag regel låter alla läsa siffran på sitt eget sätt.
+      criteria:
+        - method: inspection
+          text: SLO-dokumentet listar varje kritiskt användarflöde med sina indikatorer, och varje indikator anger datakälla och reglerna för bra och giltiga händelser.
+          threshold: "≥ 1 indikator per kritiskt flöde"
+
+  - id: SLO-02
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [slo, target, window]
+    refs: ["Google SRE book ch. 4 (Service Level Objectives)", "ITIL 4 Service level management"]
+    tests: [SLO-T02]
+    en:
+      title: Target and window for each indicator
+      description: Each service level indicator MUST have a documented objective with a target percentage and a rolling measurement window, such as 99.9 % over 28 days.
+      rationale: Without a target and a window a figure cannot be judged as good or bad, and a calendar month resets the budget at an arbitrary moment.
+      criteria:
+        - method: inspection
+          text: Each indicator in the SLO document has a target and a rolling window, and the monitoring computes it over the same window.
+          threshold: "1 target and window per indicator"
+    sv:
+      title: Mål och tidsfönster för varje indikator
+      description: Varje indikator för tjänstenivå SKA ha ett dokumenterat mål med en målprocent och ett rullande mätfönster, till exempel 99,9 % över 28 dagar.
+      rationale: Utan mål och fönster går en siffra inte att bedöma som bra eller dålig, och en kalendermånad nollställer budgeten vid en godtycklig tidpunkt.
+      criteria:
+        - method: inspection
+          text: Varje indikator i SLO-dokumentet har ett mål och ett rullande fönster, och övervakningen beräknar den över samma fönster.
+          threshold: "1 mål och fönster per indikator"
+
+  - id: SLO-03
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [measurement, load-balancer, user-perspective]
+    refs: ["Google SRE workbook ch. 2 (Implementing SLOs)", "ISO/IEC 25023:2016 §8.6 (reliability measures)"]
+    tests: [SLO-T03]
+    en:
+      title: Indicators measured at the user-facing boundary
+      description: Service level indicators MUST be measured at the load balancer, the API gateway or the client, so that requests that never reach the application count as failed.
+      rationale: Measuring inside the application misses failures in front of it, such as an overloaded proxy or a broken certificate, which users see as an outage.
+      criteria:
+        - method: test
+          text: Stopping all application instances behind the load balancer lowers the indicator, while application metrics alone would show no requests.
+          threshold: "measured at the boundary"
+    sv:
+      title: Indikatorer mäts vid gränsen mot användarna
+      description: Indikatorerna för tjänstenivå SKA mätas i lastbalanseraren, API-gatewayen eller klienten, så att anrop som aldrig når applikationen räknas som misslyckade.
+      rationale: Mätning inne i applikationen missar fel framför den, som en överbelastad proxy eller ett trasigt certifikat, vilket användarna upplever som ett avbrott.
+      criteria:
+        - method: test
+          text: Om alla applikationsinstanser bakom lastbalanseraren stoppas sjunker indikatorn, medan applikationens egna mätvärden bara skulle visa att inga anrop kom in.
+          threshold: "mäts vid gränsen"
+
+  - id: SLO-04
+    type: performance
+    obligation: must
+    priority: high
+    tags: [latency, slo, percentile]
+    refs: ["Google SRE book ch. 4 (Service Level Objectives)", "ISO/IEC 25010:2023 time behaviour"]
+    tests: [SLO-T04]
+    en:
+      title: Latency objective
+      description: The supplier MUST set a latency objective for each critical user journey, stated as the share of requests that complete within a threshold, such as 99 % within 500 ms over 28 days.
+      rationale: Slow responses hurt users as much as errors, and a latency objective lets slowness consume the error budget like failures do.
+      criteria:
+        - method: inspection
+          text: Each critical journey has a latency objective in the SLO document and a matching dashboard panel that shows its current value.
+          threshold: "e.g. 99 % ≤ 500 ms over 28 days"
+    sv:
+      title: Mål för svarstid
+      description: Leverantören SKA sätta ett mål för svarstid för varje kritiskt användarflöde, uttryckt som andelen anrop som slutförs inom en gräns, till exempel 99 % inom 500 ms över 28 dagar.
+      rationale: Långsamma svar skadar användarna lika mycket som fel, och ett mål för svarstid gör att långsamhet förbrukar felbudgeten på samma sätt som fel.
+      criteria:
+        - method: inspection
+          text: Varje kritiskt flöde har ett mål för svarstid i SLO-dokumentet och en motsvarande panel som visar aktuellt värde.
+          threshold: "t.ex. 99 % ≤ 500 ms över 28 dagar"
+
+  - id: SLO-05
+    type: business
+    obligation: must
+    priority: high
+    tags: [error-budget, policy, release-freeze]
+    refs: ["Google SRE workbook Appendix B (example error budget policy)", "Google SRE book ch. 3 (Embracing Risk)"]
+    tests: [SLO-T05]
+    en:
+      title: Error budget policy
+      description: The supplier MUST have an error budget policy, approved by product and engineering management, that stops releases other than reliability fixes while the budget of the 28-day window is used up.
+      rationale: An error budget only changes behaviour if running out of it has an agreed consequence that nobody needs to negotiate during an outage.
+      criteria:
+        - method: inspection
+          text: The policy is approved and dated, and the release log shows that only reliability fixes were released during the last period with an exhausted budget.
+          threshold: "0 feature releases with an exhausted budget"
+    sv:
+      title: Policy för felbudget
+      description: Leverantören SKA ha en policy för felbudget, godkänd av produkt- och teknikledningen, som stoppar andra releaser än tillförlitlighetsrättningar så länge budgeten för 28-dagarsfönstret är förbrukad.
+      rationale: En felbudget ändrar bara beteendet om det har en överenskommen följd att den tar slut, som ingen behöver förhandla om mitt under ett avbrott.
+      criteria:
+        - method: inspection
+          text: Policyn är godkänd och daterad, och releaseloggen visar att bara tillförlitlighetsrättningar släpptes under den senaste perioden med förbrukad budget.
+          threshold: "0 funktionsreleaser med förbrukad budget"
+
+  - id: SLO-06
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [burn-rate, alerting, paging]
+    refs: ["Google SRE workbook ch. 5 (Alerting on SLOs)", "ITIL 4 Monitoring and event management"]
+    tests: [SLO-T06]
+    en:
+      title: Alerts on error budget burn rate
+      description: The monitoring MUST page the on-call engineer when 2 % of the 28-day error budget is consumed within 1 hour and open a ticket when 10 % is consumed within 3 days.
+      rationale: Alerts on burn rate catch both sudden outages and slow leaks while ignoring short blips that the budget can absorb.
+      criteria:
+        - method: test
+          text: Injecting errors at 14.4 times the allowed rate pages within 5 minutes, and a rate of 1.5 times the allowed rate over 3 days opens a ticket and no page.
+          threshold: "page at 2 %/1 h; ticket at 10 %/3 days"
+    sv:
+      title: Larm på förbrukningstakt för felbudgeten
+      description: Övervakningen SKA larma jourhavande tekniker när 2 % av 28-dagarsbudgeten förbrukas inom 1 timme och öppna ett ärende när 10 % förbrukas inom 3 dagar.
+      rationale: Larm på förbrukningstakt fångar både plötsliga avbrott och långsamma läckor, men struntar i korta störningar som budgeten kan bära.
+      criteria:
+        - method: test
+          text: Att lägga in fel i 14,4 gånger den tillåtna takten larmar inom 5 minuter, och en takt på 1,5 gånger den tillåtna under 3 dagar öppnar ett ärende utan larm.
+          threshold: "larm vid 2 %/1 h; ärende vid 10 %/3 dagar"
+
+  - id: SLO-07
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [dashboard, error-budget, visibility]
+    refs: ["Google SRE workbook ch. 2 (Implementing SLOs)", "ITIL 4 Service level management"]
+    tests: [SLO-T07]
+    en:
+      title: Error budget dashboard
+      description: A dashboard MUST show for each service the current value of each objective, the remaining error budget and its trend over the window, and be readable by the product owners.
+      rationale: Decisions on releases and priorities need a shared view of how much risk is left, not one known only to operations.
+      criteria:
+        - method: demonstration
+          text: A product owner opens the dashboard without operations help and reads the remaining budget of each service.
+          threshold: "1 dashboard per service"
+    sv:
+      title: Översiktspanel för felbudget
+      description: En översiktspanel SKA för varje tjänst visa aktuellt värde för varje mål, kvarvarande felbudget och dess utveckling över fönstret, och vara läsbar för produktägarna.
+      rationale: Beslut om releaser och prioriteringar behöver en gemensam bild av hur mycket risk som finns kvar, inte en som bara driften känner till.
+      criteria:
+        - method: demonstration
+          text: En produktägare öppnar panelen utan hjälp från driften och läser av kvarvarande budget för varje tjänst.
+          threshold: "1 panel per tjänst"
+
+  - id: SLO-08
+    type: business
+    obligation: must
+    priority: medium
+    tags: [review, targets, governance]
+    refs: ["Google SRE workbook ch. 2 (Implementing SLOs)", "ISO/IEC 20000-1:2018 §8.3.3 (service level management)"]
+    tests: [SLO-T08]
+    en:
+      title: Quarterly review of objectives
+      description: The supplier MUST review each objective every quarter against the measured values, the incidents and user feedback, and record whether the target is kept, raised or lowered.
+      rationale: Targets that are never revisited drift away from what users need, either wasting effort on unneeded reliability or tolerating pain.
+      criteria:
+        - method: inspection
+          text: Minutes of the last 4 quarterly reviews list each objective with the decision and the reason.
+          threshold: "4 reviews per year"
+    sv:
+      title: Kvartalsvis genomgång av målen
+      description: Leverantören SKA varje kvartal gå igenom varje mål mot uppmätta värden, incidenter och synpunkter från användarna, och registrera om målet behålls, höjs eller sänks.
+      rationale: Mål som aldrig ses över glider bort från vad användarna behöver och slösar antingen arbete på onödig tillförlitlighet eller tolererar problem.
+      criteria:
+        - method: inspection
+          text: Protokollen från de 4 senaste kvartalsgenomgångarna listar varje mål med beslutet och skälet.
+          threshold: "4 genomgångar per år"
+
+  - id: SLO-09
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [maintenance, error-budget, counting]
+    refs: ["ITIL 4 Service level management", "Google SRE book ch. 4 (Service Level Objectives)"]
+    tests: [SLO-T09]
+    en:
+      title: Treatment of planned maintenance stated
+      description: The SLO document MUST state for each objective whether planned maintenance counts against the error budget, and the indicator MUST be computed by that rule.
+      rationale: When the rule is unwritten, the same downtime is counted one way in the dashboard and another in the customer report.
+      criteria:
+        - method: inspection
+          text: Each objective states the rule, and the indicator for a month with planned maintenance matches the rule when recomputed.
+          threshold: "1 stated rule per objective"
+    sv:
+      title: Hantering av planerat underhåll angiven
+      description: SLO-dokumentet SKA för varje mål ange om planerat underhåll räknas mot felbudgeten, och indikatorn ska beräknas enligt den regeln.
+      rationale: När regeln inte är nedskriven räknas samma avbrott på ett sätt i panelen och på ett annat i kundrapporten.
+      criteria:
+        - method: inspection
+          text: Varje mål anger regeln, och indikatorn för en månad med planerat underhåll stämmer med regeln när den räknas om.
+          threshold: "1 angiven regel per mål"
+
+  - id: SLO-10
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [dependencies, internal-services, targets]
+    refs: ["Google SRE book ch. 4 (Service Level Objectives)", "Google SRE workbook ch. 2 (Implementing SLOs)"]
+    tests: [SLO-T10]
+    en:
+      title: Internal dependencies with stricter objectives
+      description: Each internal service that a user-facing journey calls in series SHOULD have an availability objective at least as strict as the objective of that journey.
+      rationale: A journey cannot be more reliable than the services it depends on, so weaker internal targets make the external target impossible to meet.
+      criteria:
+        - method: analysis
+          text: For each critical journey, the objectives of its internal dependencies are equal to or stricter than the journey's own objective.
+          threshold: "dependency target ≥ journey target"
+    sv:
+      title: Interna beroenden med striktare mål
+      description: Varje intern tjänst som ett användarflöde anropar i serie BÖR ha ett mål för tillgänglighet som är minst lika strikt som flödets eget mål.
+      rationale: Ett flöde kan inte vara mer tillförlitligt än de tjänster det är beroende av, så svagare interna mål gör det externa målet omöjligt att nå.
+      criteria:
+        - method: analysis
+          text: För varje kritiskt flöde är målen för dess interna beroenden lika med eller striktare än flödets eget mål.
+          threshold: "beroendets mål ≥ flödets mål"
+
+  - id: SLO-11
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [toil, operations, automation]
+    refs: ["Google SRE book ch. 5 (Eliminating Toil)"]
+    tests: [SLO-T11]
+    en:
+      title: Limit on operational toil
+      description: Manual, repetitive operational work SHOULD take at most 50 % of each operations engineer's working time, measured every quarter, with the largest sources of toil scheduled for automation.
+      rationale: When toil grows without limit, no time is left for the engineering that would reduce it, and reliability work stops.
+      criteria:
+        - method: analysis
+          text: The quarterly toil measurement shows at most 50 % per engineer and lists the top 3 sources with planned automation.
+          threshold: "≤ 50 % of working time"
+    sv:
+      title: Gräns för rutinarbete i driften
+      description: Manuellt och upprepat driftarbete BÖR ta högst 50 % av varje drifttekniker arbetstid, mätt varje kvartal, med de största källorna till rutinarbete planerade för automatisering.
+      rationale: När rutinarbetet växer utan gräns finns ingen tid kvar för det tekniska arbete som skulle minska det, och tillförlitlighetsarbetet stannar.
+      criteria:
+        - method: analysis
+          text: Den kvartalsvisa mätningen av rutinarbete visar högst 50 % per tekniker och listar de 3 största källorna med planerad automatisering.
+          threshold: "≤ 50 % av arbetstiden"
+
+  - id: SLO-12
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [postmortem, error-budget, learning]
+    refs: ["Google SRE book ch. 15 (Postmortem Culture)", "ISO/IEC 27001:2022 A.5.27 (learning from information security incidents)"]
+    tests: [SLO-T12]
+    en:
+      title: Postmortem after a large budget loss
+      description: Each event that consumes more than 20 % of the 28-day error budget of an objective MUST get a blameless postmortem with root cause and actions.
+      rationale: Large budget losses are the events most worth learning from, also when they did not reach the severity that triggers an incident review.
+      criteria:
+        - method: inspection
+          text: For each event above 20 % budget loss in the last 6 months a postmortem exists with root cause, owner and dated actions.
+          threshold: "trigger > 20 % of the budget"
+    sv:
+      title: Efteranalys efter en stor budgetförlust
+      description: Varje händelse som förbrukar mer än 20 % av 28-dagarsbudgeten för ett mål SKA få en efteranalys utan skuldbeläggning med grundorsak och åtgärder.
+      rationale: Stora budgetförluster är de händelser som är mest värda att lära av, även när de inte nådde den allvarlighetsgrad som utlöser en incidentgenomgång.
+      criteria:
+        - method: inspection
+          text: För varje händelse över 20 % budgetförlust de senaste 6 månaderna finns en efteranalys med grundorsak, ägare och daterade åtgärder.
+          threshold: "gräns > 20 % av budgeten"
+
+tests:
+  - id: SLO-T01
+    priority: high
+    execution: manual
+    tags: [sli, user-journey]
+    refs: ["Google SRE workbook ch. 2 (Implementing SLOs)"]
+    en:
+      title: Indicators cover the critical user journeys
+      description: Compares the list of critical user journeys with the defined indicators.
+      preconditions: The SLO document and the product's list of critical user journeys.
+      expected: Each journey has at least one indicator with data source and event rules.
+      steps:
+        - action: List the critical user journeys.
+          expected: The list is produced.
+          data: "sign in, search, save a record, export"
+        - action: Find the indicators of each journey in the SLO document.
+          expected: Each journey has at least one indicator.
+        - action: Read the definition of each indicator.
+          expected: Each names the data source and the rules for good and valid events.
+    sv:
+      title: Indikatorerna täcker de kritiska användarflödena
+      description: Jämför listan över kritiska användarflöden med de definierade indikatorerna.
+      preconditions: SLO-dokumentet och produktens lista över kritiska användarflöden.
+      expected: Varje flöde har minst en indikator med datakälla och regler för händelser.
+      steps:
+        - action: Lista de kritiska användarflödena.
+          expected: Listan tas fram.
+          data: "logga in, söka, spara en post, exportera"
+        - action: Leta upp indikatorerna för varje flöde i SLO-dokumentet.
+          expected: Varje flöde har minst en indikator.
+        - action: Läs definitionen av varje indikator.
+          expected: Var och en anger datakällan och reglerna för bra och giltiga händelser.
+
+  - id: SLO-T02
+    priority: high
+    execution: manual
+    tags: [slo, window]
+    refs: ["Google SRE book ch. 4 (Service Level Objectives)"]
+    en:
+      title: Target and window match the monitoring
+      description: Compares each documented target and window with the computation in the monitoring.
+      preconditions: The SLO document and read access to the monitoring rules.
+      expected: Each indicator has a target and rolling window, computed over the same window in the monitoring.
+      steps:
+        - action: Read the target and window of each indicator.
+          expected: Each has a target percentage and a rolling window.
+          data: "for example 99.9 % over 28 days"
+        - action: Open the monitoring rule that computes each indicator.
+          expected: The rule uses the same rolling window and the target appears as its threshold.
+    sv:
+      title: Mål och fönster stämmer med övervakningen
+      description: Jämför varje dokumenterat mål och fönster med beräkningen i övervakningen.
+      preconditions: SLO-dokumentet och läsbehörighet till övervakningens regler.
+      expected: Varje indikator har mål och rullande fönster, beräknat över samma fönster i övervakningen.
+      steps:
+        - action: Läs målet och fönstret för varje indikator.
+          expected: Var och en har en målprocent och ett rullande fönster.
+          data: "till exempel 99,9 % över 28 dagar"
+        - action: Öppna den övervakningsregel som beräknar varje indikator.
+          expected: Regeln använder samma rullande fönster och målet finns som gränsvärde.
+
+  - id: SLO-T03
+    priority: medium
+    execution: manual
+    tags: [measurement, load-balancer]
+    refs: ["Google SRE workbook ch. 2 (Implementing SLOs)"]
+    en:
+      title: Outage behind the load balancer lowers the indicator
+      description: Stops the application behind the load balancer in staging and watches the indicator.
+      preconditions: A staging environment with the same SLI pipeline as production and steady synthetic traffic.
+      expected: The indicator falls during the stop.
+      steps:
+        - action: Note the current indicator value.
+          expected: The value is recorded.
+          data: "synthetic traffic 10 requests per second"
+        - action: Stop all application instances for 5 minutes.
+          expected: The load balancer answers with server errors.
+        - action: Read the indicator for the period.
+          expected: The 5 minutes are counted as bad events and the indicator falls.
+    sv:
+      title: Avbrott bakom lastbalanseraren sänker indikatorn
+      description: Stoppar applikationen bakom lastbalanseraren i staging och följer indikatorn.
+      preconditions: En stagingmiljö med samma SLI-kedja som produktion och jämn syntetisk trafik.
+      expected: Indikatorn sjunker under stoppet.
+      steps:
+        - action: Notera indikatorns aktuella värde.
+          expected: Värdet noteras.
+          data: "syntetisk trafik 10 anrop per sekund"
+        - action: Stoppa alla applikationsinstanser i 5 minuter.
+          expected: Lastbalanseraren svarar med serverfel.
+        - action: Läs av indikatorn för perioden.
+          expected: De 5 minuterna räknas som dåliga händelser och indikatorn sjunker.
+
+  - id: SLO-T04
+    priority: medium
+    execution: manual
+    tags: [latency, slo]
+    refs: ["Google SRE book ch. 4 (Service Level Objectives)"]
+    en:
+      title: Latency objectives on the dashboard
+      description: Checks the latency objectives in the document and on the dashboard.
+      preconditions: The SLO document and the SLO dashboard.
+      expected: Each critical journey has a latency objective shown with its current value.
+      steps:
+        - action: List the latency objectives in the SLO document.
+          expected: Each critical journey has a share and a threshold.
+          data: "99 % within 500 ms over 28 days"
+        - action: Open the dashboard panel of each latency objective.
+          expected: The panel shows the current share against the target.
+    sv:
+      title: Mål för svarstid på översiktspanelen
+      description: Kontrollerar målen för svarstid i dokumentet och på panelen.
+      preconditions: SLO-dokumentet och SLO-panelen.
+      expected: Varje kritiskt flöde har ett mål för svarstid som visas med aktuellt värde.
+      steps:
+        - action: Lista målen för svarstid i SLO-dokumentet.
+          expected: Varje kritiskt flöde har en andel och en gräns.
+          data: "99 % inom 500 ms över 28 dagar"
+        - action: Öppna panelen för varje mål för svarstid.
+          expected: Panelen visar aktuell andel mot målet.
+
+  - id: SLO-T05
+    priority: high
+    execution: manual
+    tags: [error-budget, policy]
+    refs: ["Google SRE workbook Appendix B (example error budget policy)"]
+    en:
+      title: Error budget policy applied
+      description: Checks the approval of the policy and the releases made during an exhausted budget.
+      preconditions: The error budget policy and the release log of the last period with an exhausted budget.
+      expected: The policy is approved and only reliability fixes were released while the budget was used up.
+      steps:
+        - action: Read the policy and its approvals.
+          expected: It is approved by product and engineering management and dated.
+        - action: Find the last period with an exhausted budget on the dashboard.
+          expected: The start and end of the period are identified.
+        - action: List the releases in that period.
+          expected: Each release is a reliability fix or has a recorded exception approved under the policy.
+    sv:
+      title: Policyn för felbudget tillämpas
+      description: Kontrollerar godkännandet av policyn och de releaser som gjordes under en förbrukad budget.
+      preconditions: Policyn för felbudget och releaseloggen för den senaste perioden med förbrukad budget.
+      expected: Policyn är godkänd och bara tillförlitlighetsrättningar släpptes när budgeten var slut.
+      steps:
+        - action: Läs policyn och dess godkännanden.
+          expected: Den är godkänd av produkt- och teknikledningen och daterad.
+        - action: Leta upp den senaste perioden med förbrukad budget på panelen.
+          expected: Periodens början och slut är identifierade.
+        - action: Lista releaserna under perioden.
+          expected: Varje release är en tillförlitlighetsrättning eller har ett registrerat undantag godkänt enligt policyn.
+
+  - id: SLO-T06
+    priority: high
+    execution: automated
+    tags: [burn-rate, alerting]
+    refs: ["Google SRE workbook ch. 5 (Alerting on SLOs)"]
+    en:
+      title: Fast and slow burn alerts
+      description: Replays synthetic error rates against the alert rules in a test instance of the monitoring.
+      preconditions: A test instance of the alert rules with a 99.9 % objective over 28 days.
+      expected: A fast burn pages within 5 minutes; a slow burn opens a ticket and does not page.
+      steps:
+        - action: Feed an error rate of 1.44 % for 1 hour.
+          expected: A page is sent within 5 minutes of the burn rate reaching 14.4.
+          data: "14.4 × the allowed 0.1 %"
+        - action: Reset and feed an error rate of 0.15 % for 3 days.
+          expected: A ticket is opened and no page is sent.
+          data: "1.5 × the allowed 0.1 %"
+        - action: Feed an error spike of 5 % for 2 minutes only.
+          expected: Neither a page nor a ticket is created.
+    sv:
+      title: Larm för snabb och långsam förbrukning
+      description: Spelar upp syntetiska felandelar mot larmreglerna i en testinstans av övervakningen.
+      preconditions: En testinstans av larmreglerna med målet 99,9 % över 28 dagar.
+      expected: En snabb förbrukning larmar inom 5 minuter; en långsam öppnar ett ärende utan larm.
+      steps:
+        - action: Mata in en felandel på 1,44 % i 1 timme.
+          expected: Ett larm skickas inom 5 minuter efter att förbrukningstakten nått 14,4.
+          data: "14,4 × tillåtna 0,1 %"
+        - action: Nollställ och mata in en felandel på 0,15 % i 3 dagar.
+          expected: Ett ärende öppnas och inget larm skickas.
+          data: "1,5 × tillåtna 0,1 %"
+        - action: Mata in en kort felspik på 5 % i bara 2 minuter.
+          expected: Varken larm eller ärende skapas.
+
+  - id: SLO-T07
+    priority: medium
+    execution: manual
+    tags: [dashboard, error-budget]
+    refs: ["Google SRE workbook ch. 2 (Implementing SLOs)"]
+    en:
+      title: Product owner reads the error budget
+      description: A product owner uses the dashboard on their own.
+      preconditions: A product owner account with read access and the SLO dashboard.
+      expected: The product owner reads each service's objective values and remaining budget without help.
+      steps:
+        - action: Ask the product owner to open the dashboard and state the remaining budget of each service.
+          expected: The product owner finds and states the values without help.
+        - action: Compare the stated values with the monitoring data.
+          expected: The values match.
+    sv:
+      title: Produktägaren läser av felbudgeten
+      description: En produktägare använder panelen på egen hand.
+      preconditions: Ett konto för en produktägare med läsbehörighet och SLO-panelen.
+      expected: Produktägaren läser av varje tjänsts målvärden och kvarvarande budget utan hjälp.
+      steps:
+        - action: Be produktägaren öppna panelen och ange kvarvarande budget för varje tjänst.
+          expected: Produktägaren hittar och anger värdena utan hjälp.
+        - action: Jämför de angivna värdena med övervakningsdata.
+          expected: Värdena stämmer.
+
+  - id: SLO-T08
+    priority: medium
+    execution: manual
+    tags: [review, targets]
+    refs: ["Google SRE workbook ch. 2 (Implementing SLOs)"]
+    en:
+      title: Records of quarterly objective reviews
+      description: Reads the minutes of the last four quarterly reviews.
+      preconditions: The review minutes of the last 12 months.
+      expected: Each review covers each objective with a decision and a reason.
+      steps:
+        - action: Open the minutes of the last 4 quarters.
+          expected: 4 reviews are recorded.
+        - action: Check that each objective appears in each review with a decision.
+          expected: Each objective has a decision to keep, raise or lower the target with a reason.
+    sv:
+      title: Protokoll från kvartalsvisa genomgångar av målen
+      description: Läser protokollen från de fyra senaste kvartalsgenomgångarna.
+      preconditions: Protokollen från genomgångarna de senaste 12 månaderna.
+      expected: Varje genomgång omfattar varje mål med beslut och skäl.
+      steps:
+        - action: Öppna protokollen för de 4 senaste kvartalen.
+          expected: 4 genomgångar är protokollförda.
+        - action: Kontrollera att varje mål finns med i varje genomgång med ett beslut.
+          expected: Varje mål har ett beslut om att behålla, höja eller sänka målet med skäl.
+
+  - id: SLO-T09
+    priority: medium
+    execution: manual
+    tags: [maintenance, counting]
+    refs: ["ITIL 4 Service level management"]
+    en:
+      title: Planned maintenance counted by the stated rule
+      description: Recomputes the indicator for a month with planned maintenance.
+      preconditions: The SLO document, the maintenance calendar and the raw indicator data of a month with planned maintenance.
+      expected: The computed value follows the stated rule.
+      steps:
+        - action: Read the rule for planned maintenance of the objective.
+          expected: The rule states whether maintenance counts.
+          data: "for example: maintenance excluded"
+        - action: Recompute the indicator for the month by the rule.
+          expected: The result matches the value on the dashboard and in the customer report.
+    sv:
+      title: Planerat underhåll räknas enligt den angivna regeln
+      description: Räknar om indikatorn för en månad med planerat underhåll.
+      preconditions: SLO-dokumentet, underhållskalendern och råa indikatordata för en månad med planerat underhåll.
+      expected: Det beräknade värdet följer den angivna regeln.
+      steps:
+        - action: Läs målets regel för planerat underhåll.
+          expected: Regeln anger om underhåll räknas.
+          data: "till exempel: underhåll undantas"
+        - action: Räkna om indikatorn för månaden enligt regeln.
+          expected: Resultatet stämmer med värdet på panelen och i kundrapporten.
+
+  - id: SLO-T10
+    priority: medium
+    execution: manual
+    tags: [dependencies, internal-services]
+    refs: ["Google SRE book ch. 4 (Service Level Objectives)"]
+    en:
+      title: Dependency objectives against journey objectives
+      description: Compares the objectives of internal dependencies with those of the journeys that call them.
+      preconditions: The SLO document and the dependency map of the critical journeys.
+      expected: Each dependency's objective is at least as strict as the journey's.
+      steps:
+        - action: List the internal services each critical journey calls in series.
+          expected: The list is produced from the dependency map.
+          data: "journey \"save a record\": API, database proxy, search indexer"
+        - action: Compare each dependency's availability objective with the journey's objective.
+          expected: No dependency has a weaker objective.
+    sv:
+      title: Beroendenas mål mot flödenas mål
+      description: Jämför målen för interna beroenden med målen för de flöden som anropar dem.
+      preconditions: SLO-dokumentet och beroendekartan för de kritiska flödena.
+      expected: Varje beroendes mål är minst lika strikt som flödets.
+      steps:
+        - action: Lista de interna tjänster som varje kritiskt flöde anropar i serie.
+          expected: Listan tas fram ur beroendekartan.
+          data: "flödet \"spara en post\": API, databasproxy, sökindexerare"
+        - action: Jämför varje beroendes mål för tillgänglighet med flödets mål.
+          expected: Inget beroende har ett svagare mål.
+
+  - id: SLO-T11
+    priority: medium
+    execution: manual
+    tags: [toil, operations]
+    refs: ["Google SRE book ch. 5 (Eliminating Toil)"]
+    en:
+      title: Quarterly toil measurement
+      description: Reads the latest toil measurement and the automation plan.
+      preconditions: The quarterly toil report based on time tracking or sampling.
+      expected: Toil is at most 50 % per engineer and the top sources have planned automation.
+      steps:
+        - action: Read the share of toil per engineer in the latest report.
+          expected: No engineer is above 50 %.
+          data: "sampled over 4 weeks"
+        - action: Read the top 3 sources of toil.
+          expected: Each has an automation item with an owner and a target quarter.
+    sv:
+      title: Kvartalsvis mätning av rutinarbete
+      description: Läser den senaste mätningen av rutinarbete och planen för automatisering.
+      preconditions: Den kvartalsvisa rapporten om rutinarbete grundad på tidrapportering eller stickprov.
+      expected: Rutinarbetet är högst 50 % per tekniker och de största källorna har planerad automatisering.
+      steps:
+        - action: Läs andelen rutinarbete per tekniker i den senaste rapporten.
+          expected: Ingen tekniker ligger över 50 %.
+          data: "stickprov under 4 veckor"
+        - action: Läs de 3 största källorna till rutinarbete.
+          expected: Var och en har en automatiseringspost med ägare och målkvartal.
+
+  - id: SLO-T12
+    priority: medium
+    execution: manual
+    tags: [postmortem, error-budget]
+    refs: ["Google SRE book ch. 15 (Postmortem Culture)"]
+    en:
+      title: Postmortems for large budget losses
+      description: Finds the events with large budget losses and their postmortems.
+      preconditions: The error budget history and the postmortem archive of the last 6 months.
+      expected: Each event above 20 % budget loss has a postmortem with root cause and dated actions.
+      steps:
+        - action: Find the events that consumed more than 20 % of a 28-day budget.
+          expected: The events are listed with their budget loss.
+          data: "budget history of 6 months"
+        - action: Open the postmortem of each event.
+          expected: Each has a root cause, an owner and dated actions, and names no person as the cause.
+    sv:
+      title: Efteranalyser för stora budgetförluster
+      description: Letar upp händelserna med stora budgetförluster och deras efteranalyser.
+      preconditions: Felbudgetens historik och arkivet med efteranalyser för de senaste 6 månaderna.
+      expected: Varje händelse över 20 % budgetförlust har en efteranalys med grundorsak och daterade åtgärder.
+      steps:
+        - action: Leta upp händelserna som förbrukade mer än 20 % av en 28-dagarsbudget.
+          expected: Händelserna listas med sin budgetförlust.
+          data: "budgethistorik för 6 månader"
+        - action: Öppna efteranalysen för varje händelse.
+          expected: Var och en har grundorsak, ägare och daterade åtgärder och pekar inte ut någon person som orsak.
