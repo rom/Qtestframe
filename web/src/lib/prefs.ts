@@ -1,6 +1,7 @@
 // User preferences (Me.user.preferences): normalisation, defaults and the
 // pure decisions the app derives from them.
 import type { Preferences } from './types'
+import { AUTOCOMPLETE_MODES } from './suggest'
 import { THEME_IDS, concreteTheme, isDecorative, isThemeId, schemeOf, type ConcreteThemeId, type ThemeId } from '@/themes/registry'
 
 /** All values of the theme preference: light, dark, system and the decorative themes. */
@@ -26,6 +27,7 @@ export function normalizePrefs(raw: Partial<Preferences> | null | undefined): Pr
   if (p.compact_tables === true) out.compact_tables = true
   if (p.hide_analysis === true) out.hide_analysis = true
   if (typeof p.create_linked_test === 'boolean') out.create_linked_test = p.create_linked_test
+  if (p.autocomplete && (AUTOCOMPLETE_MODES as readonly string[]).includes(p.autocomplete)) out.autocomplete = p.autocomplete
   return out
 }
 
@@ -40,6 +42,7 @@ const KEYS: (keyof Preferences)[] = [
   'compact_tables',
   'hide_analysis',
   'create_linked_test',
+  'autocomplete',
 ]
 
 /**

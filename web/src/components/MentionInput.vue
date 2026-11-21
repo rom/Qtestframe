@@ -2,21 +2,26 @@
 // A text field (or textarea with `multiline`) where typing "@" suggests the
 // people of the project: users of the organisation and names already used
 // as owner or assignee. Arrow keys move through the list, Enter or Tab
-// inserts "@handle", Escape closes the list. All other attributes and
-// listeners go to the inner PrimeVue field.
+// inserts "@handle", Escape closes the list. With `suggest` (a field key of
+// lib/suggest.ts) the field also suggests the values saved in it before
+// whenever no "@" list is open (composables/suggest.ts). All other
+// attributes and listeners go to the inner PrimeVue field.
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import UserAvatar from './UserAvatar.vue'
+import SuggestList from './SuggestList.vue'
+import { useSuggest } from '@/composables/suggest'
+import type { SuggestField } from '@/lib/suggest'
 import { activeMention, insertMention, rankPeople, type Person } from '@/lib/mentions'
 import { uid } from '@/lib/a11y'
 import { useProjectPeopleStore } from '@/stores/projectPeople'
 
 defineOptions({ inheritAttrs: false })
 const model = defineModel<string>({ default: '' })
-const props = defineProps<{ multiline?: boolean; projectId?: string }>()
+const props = defineProps<{ multiline?: boolean; projectId?: string; suggest?: SuggestField }>()
 const { t } = useI18n()
 const route = useRoute()
 const store = useProjectPeopleStore()
@@ -29,6 +34,14 @@ const status = ref('')
 let mention: { start: number; query: string } | null = null
 const listId = uid('mention-list')
 const pid = computed(() => props.projectId ?? (typeof route.params.projectId === 'string' ? route.params.projectId : ''))
+const sg = useSuggest({
+  field: () => props.suggest,
+  projectId: () => pid.value,
+  model,
+  el: () => el(),
+  multiline: () => !!props.multiline,
+  suppressed: () => open.value,
+})
 
 function el(): HTMLInputElement | HTMLTextAreaElement | null {
   return field.value?.$el ?? null
@@ -48,6 +61,7 @@ async function refresh() {
   options.value = rankPeople(store.people, m.query)
   active.value = 0
   open.value = options.value.length > 0
+  if (open.value) sg.close()
   status.value = open.value ? t('mentions.count', { count: options.value.length }) : t('mentions.none')
 }
 function choose(p: Person) {
@@ -63,7 +77,10 @@ function choose(p: Person) {
   })
 }
 function onKeydown(e: KeyboardEvent) {
-  if (!open.value) return
+  if (!open.value) {
+    sg.onKeydown(e)
+    return
+  }
   const n = options.value.length
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     e.preventDefault()
@@ -81,6 +98,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 function onInput() {
   void nextTick(refresh)
+  sg.onInput()
 }
 function onKeyup(e: KeyboardEvent) {
   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') void refresh()
@@ -88,9 +106,11 @@ function onKeyup(e: KeyboardEvent) {
 let blurTimer: ReturnType<typeof setTimeout> | undefined
 function onBlur() {
   blurTimer = setTimeout(close, 150)
+  sg.onBlur()
 }
 function onFocus() {
   clearTimeout(blurTimer)
+  sg.onFocus()
 }
 watch(pid, () => close())
 onMounted(() => {
@@ -98,10 +118,12 @@ onMounted(() => {
   if (pid.value) void store.ensure(pid.value)
 })
 const optionId = (i: number) => `${listId}-${i}`
+// the @mention list while it is open, otherwise the suggestions (if any)
 const comboAttrs = computed(() => ({
+  ...sg.attrs.value,
   'aria-autocomplete': 'list' as const,
-  'aria-controls': open.value ? listId : undefined,
-  'aria-activedescendant': open.value ? optionId(active.value) : undefined,
+  ...(open.value ? { 'aria-controls': listId, 'aria-activedescendant': optionId(active.value) } : {}),
+  ...(open.value && sg.attrs.value.role ? { 'aria-expanded': 'true' as const } : {}),
 }))
 </script>
 
@@ -151,6 +173,7 @@ const comboAttrs = computed(() => ({
       </li>
     </ul>
     <span class="sr-only" aria-live="polite">{{ status }}</span>
+    <SuggestList :state="sg" />
   </div>
 </template>
 

@@ -39,6 +39,7 @@ describe('normalizePrefs', () => {
         compact_tables: true,
         hide_analysis: true,
         create_linked_test: false,
+        autocomplete: 'history',
       }),
     ).toEqual({
       theme: 'dark',
@@ -51,8 +52,9 @@ describe('normalizePrefs', () => {
       compact_tables: true,
       hide_analysis: true,
       create_linked_test: false,
+      autocomplete: 'history',
     })
-    expect(normalizePrefs({ theme: 'pink', start_page: 'x', page_size: 7, date_format: 'y', compact_tables: false, create_linked_test: null })).toEqual({})
+    expect(normalizePrefs({ theme: 'pink', start_page: 'x', page_size: 7, date_format: 'y', compact_tables: false, create_linked_test: null, autocomplete: 'sometimes' })).toEqual({})
   })
 })
 
@@ -69,8 +71,10 @@ describe('preferencesPatch', () => {
       compact_tables: null,
       hide_analysis: true,
       create_linked_test: false,
+      autocomplete: null,
     })
     expect(preferencesPatch({ create_linked_test: null }).create_linked_test).toBeNull()
+    expect(preferencesPatch({ autocomplete: 'off' }).autocomplete).toBe('off')
     expect(preferencesPatch({ page_size: 25 }).page_size).toBe(25)
   })
 })

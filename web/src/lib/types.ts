@@ -46,6 +46,8 @@ export interface Preferences {
   intro_done?: boolean
   /** e-mail for notifications: off (default) | immediate | digest */
   email_notifications?: string
+  /** autocomplete in free-text fields: '' = on | history | project | off (lib/suggest.ts) */
+  autocomplete?: string
 }
 
 export interface SessionInfo {
