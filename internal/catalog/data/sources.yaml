@@ -1883,3 +1883,15 @@ sources:
     name: {en: "NIST SP 800-204D Software supply chain security in DevSecOps CI/CD pipelines", sv: "NIST SP 800-204D Säkerhet i leveranskedjan för programvara i CI/CD-pipelines för DevSecOps"}
     match: ["NIST SP 800-204D"]
     url: https://csrc.nist.gov/pubs/sp/800/204/d/final
+  - id: cis-benchmarks
+    kind: practice
+    jurisdiction: international
+    name: {en: "CIS Benchmarks for containers (CIS Kubernetes Benchmark, CIS Docker Benchmark)", sv: "CIS-riktmärken för containrar (CIS Kubernetes Benchmark, CIS Docker Benchmark)"}
+    match: ["CIS Kubernetes Benchmark", "CIS Docker Benchmark"]
+    url: https://www.cisecurity.org/benchmark/kubernetes
+  - id: kubernetes-security
+    kind: practice
+    jurisdiction: international
+    name: {en: "Kubernetes security documentation (Pod Security Standards, RBAC good practices, auditing, encryption at rest)", sv: "Kubernetes säkerhetsdokumentation (Pod Security Standards, god praxis för RBAC, granskning, kryptering vid lagring)"}
+    match: ["Kubernetes "]
+    url: https://kubernetes.io/docs/concepts/security/
