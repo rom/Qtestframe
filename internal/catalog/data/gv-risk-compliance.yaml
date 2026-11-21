@@ -309,7 +309,7 @@ requirements:
     obligation: must
     priority: high
     tags: [archives, digital-preservation, fixity]
-    refs: ["ISO 14721 (open archival information system)", "ISO 15489-1:2016"]
+    refs: ["ISO 14721:2025 (open archival information system)", "ISO 15489-1:2016"]
     tests: [GVRC-T08]
     en:
       title: Checksums of archived electronic records verified each year
@@ -543,7 +543,7 @@ tests:
     priority: high
     execution: manual
     tags: [registration, digital-preservation]
-    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 §", "ISO 14721 (open archival information system)"]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 §", "ISO 14721:2025 (open archival information system)"]
     en:
       title: Registration delay and checksum verification in the e-archive
       description: Samples registered records for their registration delay and tests the fixity check of the electronic archive.

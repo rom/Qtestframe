@@ -103,7 +103,7 @@ requirements:
     obligation: must
     priority: high
     tags: [usability-evaluation, iterations, representative-users]
-    refs: ["ISO 9241-210:2019 §7.5 (evaluating the designs against requirements)"]
+    refs: ["ISO 9241-210:2019 §7.5 (evaluating the design)"]
     tests: [SYHF-T03]
     en:
       title: Usability evaluation with representative users in each design iteration
@@ -397,7 +397,7 @@ tests:
     priority: high
     execution: manual
     tags: [usability-evaluation]
-    refs: ["ISO 9241-210:2019 §7.5 (evaluating the designs against requirements)"]
+    refs: ["ISO 9241-210:2019 §7.5 (evaluating the design)"]
     en:
       title: Usability evaluation reports of the design iterations
       description: Checks the number and selection of participants and the handling of serious problems in each iteration's evaluation.

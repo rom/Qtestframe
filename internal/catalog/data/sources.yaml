@@ -952,6 +952,7 @@ sources:
     short: DNV-RP-G108
     name: {en: "DNV-RP-G108 Cyber security in the oil and gas industry", sv: "DNV-RP-G108 Cybersäkerhet inom olje- och gasindustrin"}
     match: ["DNV-RP-G108"]
+    url: https://www.dnv.com/cybersecurity/recommended-practices/dnv-rp-g108-cyber-security-in-the-oil-and-gas-industry-based-on-IEC-62443.html
   - id: pics
     kind: guideline
     jurisdiction: international
@@ -1040,6 +1041,9 @@ sources:
     jurisdiction: EU
     name: {en: "EN 14181 and EN 17255 Automated emission monitoring", sv: "EN 14181 och EN 17255 Automatisk utsläppsmätning"}
     match: ["EN 14181", "EN 17255"]
+    url: https://www.sis.se/en/produkter/environment-health-protection-safety/air-quality/ssen141812014/
+    links:
+      - {label: "EN 14181", url: "https://www.sis.se/en/produkter/environment-health-protection-safety/air-quality/ssen141812014/"}
 
   # ---------------------------------------------------------------- telecom, accessibility, ETSI
   - id: en-301-549
@@ -1096,8 +1100,12 @@ sources:
     kind: guideline
     jurisdiction: international
     short: GSMA
-    name: {en: "GSMA guidelines (FS and NG series)", sv: "GSMA:s riktlinjer (FS- och NG-serien)"}
+    name: {en: "GSMA specifications and guidelines (FS, NG and SGP series, IoT Security Guidelines)", sv: "GSMA:s specifikationer och riktlinjer (FS-, NG- och SGP-serierna, IoT Security Guidelines)"}
     match: ["GSMA "]
+    url: https://www.gsma.com/solutions-and-impact/technologies/security/cybersecurity-knowledge-base/interworking-security/
+    links:
+      - {label: "GSMA SGP.32", url: "https://www.gsma.com/solutions-and-impact/technologies/esim/gsma_resources/sgp-32-v1-3"}
+      - {label: "GSMA IoT Security Guidelines", url: "https://www.gsma.com/solutions-and-impact/technologies/internet-of-things/introduction-gsma-iot-security-guidelines-assessment/"}
   - id: itu-t
     kind: standard
     jurisdiction: international
@@ -2009,28 +2017,41 @@ sources:
     jurisdiction: EU
     name: {en: "European maintenance standards (EN 13269, EN 13460, EN 15341, EN 17007)", sv: "Europeiska underhållsstandarder (EN 13269, EN 13460, EN 15341, EN 17007)"}
     match: ["EN 13269", "EN 13460", "EN 15341", "EN 17007"]
+    url: https://www.sis.se/en/produkter/image-technology/graphic-technology/reproduction-equipment/ss-en-153412019a12022/
+    links:
+      - {label: "EN 15341", url: "https://www.sis.se/en/produkter/image-technology/graphic-technology/reproduction-equipment/ss-en-153412019a12022/"}
+      - {label: "EN 13460", url: "https://www.sis.se/en/produkter/standardization/technical-product-documentation/ss-en-134602009/"}
   - id: en-50110
     kind: standard
     jurisdiction: EU
     short: EN 50110-1
     name: {en: "EN 50110-1 Operation of electrical installations", sv: "EN 50110-1 Skötsel av elektriska anläggningar"}
     match: ["EN 50110"]
+    url: https://elstandard.se/standard/3246401
   - id: en-50600
     kind: standard
     jurisdiction: EU
     short: EN 50600
     name: {en: "EN 50600 Data centre facilities and infrastructures", sv: "EN 50600 Datacenteranläggningar och infrastruktur"}
     match: ["EN 50600"]
+    url: https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen506001/
+    links:
+      - {label: "EN 50600-1", url: "https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen506001/"}
+      - {label: "EN 50600-3-1", url: "https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen5060031/"}
   - id: en-building-security
     kind: standard
     jurisdiction: EU
     name: {en: "European security and safety standards for buildings (EN 1627, EN 50131, EN 60839-11-1, EN 62676-4)", sv: "Europeiska standarder för skydd av byggnader (EN 1627, EN 50131, EN 60839-11-1, EN 62676-4)"}
     match: ["EN 1627", "EN 50131", "EN 60839", "EN 62676"]
+    url: https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-crime/ss-en-50131-1-6a7cf25e/
+    links:
+      - {label: "EN 50131-1", url: "https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-crime/ss-en-50131-1-6a7cf25e/"}
   - id: en-fire-safety
     kind: standard
     jurisdiction: EU
     name: {en: "European fire and emergency standards (EN 54, EN 1155, EN 1838, EN 15004-1, EN 50172)", sv: "Europeiska standarder för brand och nödbelysning (EN 54, EN 1155, EN 1838, EN 15004-1, EN 50172)"}
     match: ["EN 54", "EN 1155", "EN 1838", "EN 15004", "EN 50172"]
+    url: https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/fire-protection/ss-en-54-120212/
   - id: en-accessibility-built
     kind: standard
     jurisdiction: EU
@@ -2254,6 +2275,7 @@ sources:
       - {label: "IEC 60664-1", url: "https://webstore.iec.ch/en/publication/59671"}
       - {label: "IEC 60204-1", url: "https://webstore.iec.ch/en/publication/26037"}
       - {label: "IEC 60364-6", url: "https://webstore.iec.ch/en/publication/24656"}
+      - {label: "IEC 60364-4-41", url: "https://webstore.iec.ch/en/publication/60169"}
   - id: emc-standards
     kind: standard
     jurisdiction: international
@@ -2265,6 +2287,7 @@ sources:
       - {label: "CISPR 35 (EN 55035)", url: "https://webstore.iec.ch/en/publication/25667", match: ["EN 55035"]}
       - {label: "IEC 61000-4-2", url: "https://webstore.iec.ch/en/publication/68954"}
       - {label: "IEC 61000-4-11", url: "https://webstore.iec.ch/en/publication/63503"}
+      - {label: "IEC 61000-4-6", url: "https://webstore.iec.ch/en/publication/65586"}
   - id: iec-environmental-testing
     kind: standard
     jurisdiction: international
@@ -2385,7 +2408,7 @@ sources:
     short: ISO 21504
     name: {en: "ISO 21504 Project, programme and portfolio management: guidance on portfolio management", sv: "ISO 21504 Projekt-, program- och portföljstyrning: vägledning för portföljstyrning"}
     match: ["ISO 21504"]
-    url: https://www.iso.org/search.html?q=ISO%2021504
+    url: https://www.iso.org/standard/82867.html
   - id: se-elsakerhetslag
     kind: law
     jurisdiction: SE
@@ -2398,34 +2421,37 @@ sources:
     short: SS 436 40 00
     name: {en: "SS 436 40 00 Electrical low-voltage installations: rules for design and erection", sv: "SS 436 40 00 Elinstallationer för lågspänning: utförande av elinstallationer"}
     match: ["SS 436 40 00"]
-    url: https://www.elstandard.se/
+    url: https://www.sis.se/en/produkter/construction-materials-and-building/installations-in-buildings/electricity-supply-systems/ss-436-40-00-utg-42023r12024/
   - id: en-16798
     kind: standard
     jurisdiction: EU
     short: EN 16798-1
     name: {en: "EN 16798-1 Energy performance of buildings: indoor environmental input parameters", sv: "EN 16798-1 Byggnaders energiprestanda: indata för inomhusmiljön"}
     match: ["EN 16798"]
-    url: https://standards.cencenelec.eu/
+    url: https://www.sis.se/en/produkter/construction-materials-and-building/installations-in-buildings/general/ss-en-16798-12019/
   - id: cen-tr-16355
     kind: guideline
     jurisdiction: EU
     short: CEN/TR 16355
     name: {en: "CEN/TR 16355 Recommendations for prevention of Legionella growth in installations inside buildings conveying water for human consumption", sv: "CEN/TR 16355 Rekommendationer för att förhindra tillväxt av legionella i dricksvatteninstallationer i byggnader"}
     match: ["CEN/TR 16355"]
-    url: https://standards.cencenelec.eu/
+    url: https://www.din.de/en/wdc-beuth:din21:154167737
   - id: en-1717
     kind: standard
     jurisdiction: EU
     short: EN 1717
-    name: {en: "EN 1717 Protection against pollution of potable water in water installations (backflow)", sv: "EN 1717 Skydd mot förorening av dricksvatten i vatteninstallationer (återströmning)"}
+    name: {en: "EN 1717 Protection against pollution of water intended for human consumption in potable water installations (backflow)", sv: "EN 1717 Skydd mot förorening av dricksvatten i dricksvatteninstallationer (återströmning)"}
     match: ["EN 1717"]
-    url: https://standards.cencenelec.eu/
+    url: https://www.sis.se/en/produkter/fluid-systems-and-components-for-general-use/valves/general/ss-en-17172025/
   - id: lift-escalator-safety
     kind: standard
     jurisdiction: EU
     name: {en: "Safety rules for lifts and escalators (EN 81-20, EN 81-28, EN 115-1)", sv: "Säkerhetsregler för hissar och rulltrappor (EN 81-20, EN 81-28, EN 115-1)"}
     match: ["EN 81-20", "EN 81-28", "EN 115-"]
-    url: https://standards.cencenelec.eu/
+    url: https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-81-202020/
+    links:
+      - {label: "EN 81-20", url: "https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-81-202020/"}
+      - {label: "EN 115-1", url: "https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-115-12017/"}
   - id: se-afs
     kind: law
     jurisdiction: SE
@@ -2440,35 +2466,35 @@ sources:
     short: EN 12464-1
     name: {en: "EN 12464-1 Light and lighting: lighting of indoor work places", sv: "EN 12464-1 Ljus och belysning: belysning av arbetsplatser inomhus"}
     match: ["EN 12464"]
-    url: https://standards.cencenelec.eu/
+    url: https://www.sis.se/en/produkter/construction-materials-and-building/lighting/interior-lighting/ss-en-12464-12021-f17a3ebb/
   - id: iso-3382
     kind: standard
     jurisdiction: international
     short: ISO 3382-3
     name: {en: "ISO 3382-3 Acoustics: measurement of room acoustic parameters in open plan offices", sv: "ISO 3382-3 Akustik: mätning av rumsakustiska parametrar i kontorslandskap"}
     match: ["ISO 3382"]
-    url: https://www.iso.org/search.html?q=ISO%203382-3
+    url: https://www.iso.org/standard/77437.html
   - id: en-12845
     kind: standard
     jurisdiction: EU
     short: EN 12845
     name: {en: "EN 12845 Fixed firefighting systems: automatic sprinkler systems", sv: "EN 12845 Fasta släcksystem: automatiska sprinklersystem"}
     match: ["EN 12845"]
-    url: https://standards.cencenelec.eu/
+    url: https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/firefighting/ss-en-128452015a22026/
   - id: en-3
     kind: standard
     jurisdiction: EU
     short: EN 3
     name: {en: "EN 3 Portable fire extinguishers", sv: "EN 3 Handbrandsläckare"}
     match: ["EN 3-"]
-    url: https://standards.cencenelec.eu/
+    url: https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/firefighting/ssen372004a12007/
   - id: en-50518
     kind: standard
     jurisdiction: EU
     short: EN 50518
     name: {en: "EN 50518 Monitoring and alarm receiving centre", sv: "EN 50518 Larmcentraler för övervakning och larmmottagning"}
     match: ["EN 50518"]
-    url: https://standards.cencenelec.eu/
+    url: https://www.sis.se/en/produkter/environment-health-protection-safety/alarm-and-warning-systems/ss-en-50518/
   - id: se-flammable-goods
     kind: law
     jurisdiction: SE
@@ -2514,20 +2540,23 @@ sources:
     short: ISO 14721
     name: {en: "ISO 14721 Open archival information system (OAIS) reference model", sv: "ISO 14721 Referensmodell för öppna arkivinformationssystem (OAIS)"}
     match: ["ISO 14721"]
-    url: https://www.iso.org/search.html?q=ISO%2014721
+    url: https://www.iso.org/standard/87471.html
   - id: iec-62740
     kind: standard
     jurisdiction: international
     short: IEC 62740
     name: {en: "IEC 62740 Root cause analysis (RCA)", sv: "IEC 62740 Grundorsaksanalys (RCA)"}
     match: ["IEC 62740"]
-    url: https://webstore.iec.ch/
+    url: https://webstore.iec.ch/en/publication/21810
   - id: technical-drawings
     kind: standard
     jurisdiction: international
     name: {en: "Technical product documentation: title blocks and drawing principles (ISO 7200, ISO 128)", sv: "Teknisk produktdokumentation: namnrutor och ritningsprinciper (ISO 7200, ISO 128)"}
     match: ["ISO 7200", "ISO 128-"]
-    url: https://www.iso.org/search.html?q=ISO%207200
+    url: https://www.iso.org/standard/35446.html
+    links:
+      - {label: "ISO 7200", url: "https://www.iso.org/standard/35446.html"}
+      - {label: "ISO 128-1", url: "https://www.iso.org/standard/65296.html"}
 
   # --- Sources added for the hardware, equipment, system and communications catalogues ---
   - id: iec-lithium-batteries
@@ -2573,7 +2602,9 @@ sources:
     short: IEC 61340
     name: {en: "IEC 61340 Electrostatics, protection of electronic devices from electrostatic phenomena", sv: "IEC 61340 Elektrostatik, skydd av elektroniska komponenter mot elektrostatiska fenomen"}
     match: ["IEC 61340"]
-    url: https://www.iec.ch/
+    url: https://webstore.iec.ch/en/publication/74748
+    links:
+      - {label: "IEC 61340-5-1", url: "https://webstore.iec.ch/en/publication/74748"}
   - id: fcc-47-cfr
     kind: law
     jurisdiction: US

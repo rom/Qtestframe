@@ -105,7 +105,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [electrical, rcd, shock-protection]
-    refs: ["IEC 60364-4-41:2005 §411.3.3 (additional protection by RCD)", "SS 436 40 00 (protection against electric shock)"]
+    refs: ["IEC 60364-4-41:2005+AMD1:2017 §411.3.3 (additional protection by RCD)", "SS 436 40 00 (protection against electric shock)"]
     tests: [FCTI-T03]
     en:
       title: Residual current devices of 30 mA on socket outlets up to 32 A
@@ -132,33 +132,33 @@ requirements:
     refs: ["EN 16798-1:2019 (category II)", "Plan- och byggförordning (2011:338) 5 kap. 1–7 §§ (funktionskontroll av ventilationssystem)"]
     tests: [FCTI-T04]
     en:
-      title: Outdoor air flow of at least 7 l/s per person plus 0.35 l/s per m²
-      description: The ventilation system MUST supply each occupied room with an outdoor air flow of at least 7 l/s per person at design occupancy plus 0.35 l/s per m² of floor area.
-      rationale: Too little outdoor air raises contaminants and carbon dioxide, which causes headaches, tiredness and complaints.
+      title: Outdoor air flow of at least 7 l/s per person plus 0.7 l/s per m²
+      description: The ventilation system MUST supply each occupied room with an outdoor air flow of at least 7 l/s per person at design occupancy plus 0.7 l/s per m² of floor area.
+      rationale: Too little outdoor air raises contaminants and carbon dioxide, which causes headaches, tiredness and complaints. The two rates are the category II rates of EN 16798-1 for a low-polluting building; an organisation that only uses certified very low-emitting materials can lower the floor area rate to 0.35 l/s per m².
       criteria:
         - method: test
           text: Measured supply air flows in 5 sampled rooms meet the calculated minimum for the room's design occupancy and floor area.
-          threshold: "≥ 7 l/s per person + 0.35 l/s·m²"
+          threshold: "≥ 7 l/s per person + 0.7 l/s·m²"
     sv:
-      title: Uteluftsflöde på minst 7 l/s per person plus 0,35 l/s per m²
-      description: Ventilationssystemet SKA tillföra varje vistelserum ett uteluftsflöde på minst 7 l/s per person vid dimensionerande personantal plus 0,35 l/s per m² golvyta.
-      rationale: För lite uteluft höjer halten av föroreningar och koldioxid, vilket ger huvudvärk, trötthet och klagomål.
+      title: Uteluftsflöde på minst 7 l/s per person plus 0,7 l/s per m²
+      description: Ventilationssystemet SKA tillföra varje vistelserum ett uteluftsflöde på minst 7 l/s per person vid dimensionerande personantal plus 0,7 l/s per m² golvyta.
+      rationale: För lite uteluft höjer halten av föroreningar och koldioxid, vilket ger huvudvärk, trötthet och klagomål. De två flödena är kategori II i EN 16798-1 för en lågemitterande byggnad; en organisation som enbart använder certifierade mycket lågemitterande material kan sänka flödet per golvyta till 0,35 l/s per m².
       criteria:
         - method: test
           text: Uppmätta tilluftsflöden i 5 utvalda rum uppfyller det beräknade minimiflödet för rummets dimensionerande personantal och golvyta.
-          threshold: "≥ 7 l/s per person + 0,35 l/s·m²"
+          threshold: "≥ 7 l/s per person + 0,7 l/s·m²"
 
   - id: FCTI-07
     type: non_functional
     obligation: should
     priority: medium
     tags: [indoor-climate, carbon-dioxide, monitoring]
-    refs: ["EN 16798-1:2019 (category II)"]
+    refs: ["EN 16798-1:2019 (indoor air quality)"]
     tests: [FCTI-T04]
     en:
       title: Carbon dioxide below 1 000 ppm in meeting rooms
       description: The building automation SHOULD keep the carbon dioxide level in each meeting room below 1 000 ppm during occupancy by increasing the air flow on demand, and log the level every 10 minutes.
-      rationale: The carbon dioxide level is a practical indicator of whether the air flow matches the actual number of people in the room.
+      rationale: The carbon dioxide level is a practical indicator of whether the air flow matches the actual number of people in the room. The limit of 1 000 ppm is the organisation's own value and is stricter than category II of EN 16798-1, which allows 800 ppm above the outdoor level.
       criteria:
         - method: analysis
           text: The logs of 3 meeting rooms for 4 working weeks show the level above 1 000 ppm in at most 5 % of occupied 10-minute intervals.
@@ -166,7 +166,7 @@ requirements:
     sv:
       title: Koldioxidhalt under 1 000 ppm i mötesrum
       description: Fastighetsautomationen BÖR hålla koldioxidhalten i varje mötesrum under 1 000 ppm när rummet används, genom att öka luftflödet efter behovet, och logga halten var 10:e minut.
-      rationale: Koldioxidhalten är en praktisk indikator på om luftflödet motsvarar det faktiska antalet personer i rummet.
+      rationale: Koldioxidhalten är en praktisk indikator på om luftflödet motsvarar det faktiska antalet personer i rummet. Gränsen 1 000 ppm är organisationens eget värde och är strängare än kategori II i EN 16798-1, som tillåter 800 ppm över utomhusnivån.
       criteria:
         - method: analysis
           text: Loggarna för 3 mötesrum under 4 arbetsveckor visar en halt över 1 000 ppm i högst 5 % av de 10-minutersintervall då rummet används.
@@ -206,7 +206,7 @@ requirements:
     en:
       title: Hot water at least 60 °C in storage and 50 °C in circulation
       description: The hot water system MUST keep stored hot water at 60 °C or higher and the water in the circulation loop at 50 °C or higher at the return to the heater.
-      rationale: Legionella bacteria multiply in water between 25 and 45 °C and cause a severe pneumonia when inhaled with spray.
+      rationale: Legionella bacteria multiply in water between 25 and 45 °C and cause a severe pneumonia when inhaled with spray. CEN/TR 16355 describes temperature control as the main measure; the limits of 60 °C and 50 °C are values the organisation sets to match its national rules.
       criteria:
         - method: test
           text: Readings at the storage outlet and at the circulation return, logged each hour for 7 days, never fall below 60 °C and 50 °C.
@@ -214,7 +214,7 @@ requirements:
     sv:
       title: Varmvatten minst 60 °C i beredaren och 50 °C i cirkulationen
       description: Varmvattensystemet SKA hålla lagrat varmvatten vid 60 °C eller mer och vattnet i varmvattencirkulationen vid 50 °C eller mer vid returen till beredaren.
-      rationale: Legionellabakterier förökar sig i vatten mellan 25 och 45 °C och orsakar en svår lunginflammation när de andas in med vattendimma.
+      rationale: Legionellabakterier förökar sig i vatten mellan 25 och 45 °C och orsakar en svår lunginflammation när de andas in med vattendimma. CEN/TR 16355 beskriver temperaturstyrning som den viktigaste åtgärden; gränserna 60 °C och 50 °C är värden som organisationen bestämmer utifrån nationella regler.
       criteria:
         - method: test
           text: Avläsningar vid beredarens utlopp och vid cirkulationsreturen, loggade varje timme under 7 dagar, understiger aldrig 60 °C respektive 50 °C.
@@ -225,7 +225,7 @@ requirements:
     obligation: must
     priority: high
     tags: [water, backflow, drinking-water]
-    refs: ["EN 1717:2000"]
+    refs: ["EN 1717:2025"]
     tests: [FCTI-T06]
     en:
       title: Backflow preventers tested every 12 months
@@ -411,7 +411,7 @@ tests:
     priority: critical
     execution: manual
     tags: [electrical, rcd]
-    refs: ["IEC 60364-4-41:2005 §411.3.3 (additional protection by RCD)"]
+    refs: ["IEC 60364-4-41:2005+AMD1:2017 §411.3.3 (additional protection by RCD)"]
     en:
       title: Trip test of residual current devices on socket outlets
       description: An authorised electrician tests the residual current devices of socket outlet circuits with an RCD tester.
@@ -443,7 +443,7 @@ tests:
     priority: high
     execution: manual
     tags: [ventilation, carbon-dioxide]
-    refs: ["EN 16798-1:2019 (category II)"]
+    refs: ["EN 16798-1:2019 (category II)", "EN 16798-1:2019 (indoor air quality)"]
     en:
       title: Air flow measurement and carbon dioxide logs
       description: Measures supply air flows in sampled rooms and analyses the carbon dioxide logs of meeting rooms.
@@ -452,7 +452,7 @@ tests:
       steps:
         - action: Calculate the minimum outdoor air flow of 5 sampled rooms from design occupancy and floor area.
           expected: A minimum value per room.
-          data: "8 persons and 25 m²: 8 × 7 + 25 × 0.35 = 64.75 l/s"
+          data: "8 persons and 25 m²: 8 × 7 + 25 × 0.7 = 73.5 l/s"
         - action: Measure the supply air flow at each terminal of the 5 rooms.
           expected: The total per room is at least the minimum.
         - action: Count the occupied 10-minute intervals above 1 000 ppm in the logs.
@@ -465,7 +465,7 @@ tests:
       steps:
         - action: Beräkna minsta uteluftsflöde för 5 utvalda rum utifrån dimensionerande personantal och golvyta.
           expected: Ett minimivärde per rum.
-          data: "8 personer och 25 m²: 8 × 7 + 25 × 0,35 = 64,75 l/s"
+          data: "8 personer och 25 m²: 8 × 7 + 25 × 0,7 = 73,5 l/s"
         - action: Mät tilluftsflödet vid varje don i de 5 rummen.
           expected: Summan per rum är minst minimivärdet.
         - action: Räkna de 10-minutersintervall med personer som ligger över 1 000 ppm i loggarna.
@@ -501,7 +501,7 @@ tests:
     priority: critical
     execution: manual
     tags: [water, legionella, backflow]
-    refs: ["CEN/TR 16355:2012 (prevention of Legionella growth)", "EN 1717:2000"]
+    refs: ["CEN/TR 16355:2012 (prevention of Legionella growth)", "EN 1717:2025"]
     en:
       title: Hot water temperatures and backflow preventer tests
       description: Analyses the logged hot water temperatures and checks the test records of the backflow preventers.

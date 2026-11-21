@@ -412,7 +412,7 @@ requirements:
     en:
       title: Real-time text in calls for users who cannot use voice
       description: The telephony and calling clients MUST support real-time text during a call, sent character by character, between users of the organisation's clients.
-      rationale: Deaf and hard-of-hearing users and people with speech impairments need text in the same call to communicate on equal terms.
+      rationale: Deaf and hard-of-hearing users and people with speech impairments need text in the same call to communicate on equal terms. EN 301 549 §6.2.4 limits the client's own sending delay to 500 ms; the limit of 1 second from typing to display is the organisation's end-to-end target.
       criteria:
         - method: test
           text: During a call between two clients, characters typed on one appear on the other within 1 second of typing.
@@ -420,7 +420,7 @@ requirements:
     sv:
       title: Realtidstext i samtal för användare som inte kan använda tal
       description: Telefoni- och samtalsklienterna SKA stödja realtidstext under ett samtal, som skickas tecken för tecken, mellan användare av organisationens klienter.
-      rationale: Döva och hörselskadade användare och personer med talsvårigheter behöver text i samma samtal för att kunna kommunicera på lika villkor.
+      rationale: Döva och hörselskadade användare och personer med talsvårigheter behöver text i samma samtal för att kunna kommunicera på lika villkor. EN 301 549 §6.2.4 begränsar klientens egen fördröjning vid sändning till 500 ms; gränsen 1 sekund från inmatning till visning är organisationens mål för hela vägen.
       criteria:
         - method: test
           text: Under ett samtal mellan två klienter visas tecken som skrivs på den ena på den andra inom 1 sekund.

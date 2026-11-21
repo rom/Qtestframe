@@ -109,7 +109,7 @@ requirements:
     obligation: must
     priority: high
     tags: [generator, load-test, maintenance]
-    refs: ["EN 50600-2-6 (management and operational information)"]
+    refs: ["EN 50600-3-1 (management and operational information)"]
     tests: [FCDC-T04]
     en:
       title: Monthly generator run and yearly full-load test
@@ -157,7 +157,7 @@ requirements:
     obligation: must
     priority: high
     tags: [monitoring, temperature, alarms]
-    refs: ["EN 50600-2-6 (management and operational information)"]
+    refs: ["EN 50600-3-1 (management and operational information)"]
     tests: [FCDC-T05]
     en:
       title: Temperature alarm within 5 minutes above 27 °C
@@ -435,7 +435,7 @@ requirements:
     obligation: must
     priority: high
     tags: [change-control, method-statement, critical-infrastructure]
-    refs: ["EN 50600-2-6 (management and operational information)"]
+    refs: ["EN 50600-3-1 (management and operational information)"]
     tests: [FCDC-T14]
     en:
       title: Approved method statement before work on power or cooling
@@ -841,7 +841,7 @@ tests:
     priority: medium
     execution: manual
     tags: [waste-heat, method-statement]
-    refs: ["Directive (EU) 2023/1791 Art. 26 (heating and cooling supply)", "EN 50600-2-6 (management and operational information)"]
+    refs: ["Directive (EU) 2023/1791 Art. 26 (heating and cooling supply)", "EN 50600-3-1 (management and operational information)"]
     en:
       title: Waste heat analysis and method statements for critical work
       description: Checks the waste heat analysis for a large data centre and the method statements of recent work on power and cooling.
