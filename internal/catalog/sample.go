@@ -58,6 +58,7 @@ func SampleFS(areas, n int) fstest.MapFS {
       criteria:
         - method: test
           text: Post %[2]d skrivs inom 2 sekunder.
+          threshold: "≤ 2 s"
 `, prefix, i, types[i%len(types)], o.ob, priorities[i%len(priorities)], i%5, tests, a+1, o.en, o.sv)
 		}
 		b.WriteString("tests:\n")

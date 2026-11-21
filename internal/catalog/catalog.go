@@ -221,6 +221,9 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 	// requirement → tests; the reverse is derived
 	for _, a := range c.Areas {
 		for _, r := range a.Requirements {
+			if len(r.Tests) == 0 {
+				bad("%s: lists no test that verifies it", r.ID)
+			}
 			for _, tid := range r.Tests {
 				t := c.Tests[tid]
 				if t == nil {
@@ -235,6 +238,9 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 	}
 	for _, t := range c.Tests {
 		sort.Strings(t.Requirements)
+		if len(t.Requirements) == 0 {
+			bad("%s: verifies no requirement (list it in a requirement's tests)", t.ID)
+		}
 	}
 	if len(errs) > 0 {
 		sort.Strings(errs)
@@ -310,6 +316,39 @@ func checkRequirement(r *Requirement, bad func(string, ...any)) {
 			bad("%s: unknown field or language %q", r.ID, l)
 		}
 	}
+	checkReqTranslations(r, bad)
+}
+
+// missing reports a field that has text in English but not in lang.
+func missing(en, x string) bool {
+	return strings.TrimSpace(en) != "" && strings.TrimSpace(x) == ""
+}
+
+// checkReqTranslations checks that every language has the same criteria
+// as English (count, methods) and no field left empty that English fills.
+func checkReqTranslations(r *Requirement, bad func(string, ...any)) {
+	en, ok := r.Text["en"]
+	if !ok {
+		return
+	}
+	for _, l := range Languages[1:] {
+		x, ok := r.Text[l]
+		if !ok {
+			continue // reported above
+		}
+		if len(x.Criteria) != len(en.Criteria) {
+			bad("%s: en and %s must have the same number of criteria", r.ID, l)
+			continue
+		}
+		for i, cr := range en.Criteria {
+			if x.Criteria[i].Method != cr.Method {
+				bad("%s (%s): criterion %d has method %q, en has %q", r.ID, l, i+1, x.Criteria[i].Method, cr.Method)
+			}
+			if missing(cr.Threshold, x.Criteria[i].Threshold) {
+				bad("%s (%s): criterion %d needs the threshold that en has", r.ID, l, i+1)
+			}
+		}
+	}
 }
 
 func checkTest(t *Test, bad func(string, ...any)) {
@@ -322,8 +361,8 @@ func checkTest(t *Test, bad func(string, ...any)) {
 	checkTags(t.ID, t.Tags, bad)
 	for _, l := range Languages {
 		x, ok := t.Text[l]
-		if !ok || strings.TrimSpace(x.Title) == "" || strings.TrimSpace(x.Description) == "" || strings.TrimSpace(x.Expected) == "" {
-			bad("%s: title, description and expected are needed in %s", t.ID, l)
+		if !ok || strings.TrimSpace(x.Title) == "" || strings.TrimSpace(x.Description) == "" || strings.TrimSpace(x.Preconditions) == "" || strings.TrimSpace(x.Expected) == "" {
+			bad("%s: title, description, preconditions and expected are needed in %s", t.ID, l)
 			continue
 		}
 		if strings.HasSuffix(x.Title, ".") {
@@ -337,8 +376,16 @@ func checkTest(t *Test, bad func(string, ...any)) {
 				bad("%s (%s): step %d needs an action and an expected result", t.ID, l, i+1)
 			}
 		}
-		if en, sv := t.Text["en"], t.Text["sv"]; l == "sv" && len(en.Steps) != len(sv.Steps) {
-			bad("%s: en and sv must have the same number of steps", t.ID)
+		if en := t.Text["en"]; l != "en" {
+			if len(en.Steps) != len(x.Steps) {
+				bad("%s: en and %s must have the same number of steps", t.ID, l)
+			} else {
+				for i, s := range en.Steps {
+					if missing(s.Data, x.Steps[i].Data) {
+						bad("%s (%s): step %d needs the test data that en has", t.ID, l, i+1)
+					}
+				}
+			}
 		}
 	}
 	for l := range t.Text {
