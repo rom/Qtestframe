@@ -1,0 +1,764 @@
+area: ai-management
+prefix: AIMS
+group: domain
+catalogue: software
+name: {en: AI management system and AI risk management, sv: Ledningssystem och riskhantering för AI}
+description:
+  en: Organisation-level governance of AI based on ISO/IEC 42001:2023 (AI management system), ISO/IEC 23894:2023 (AI risk management), the terms of ISO/IEC 22989 and the Govern, Map, Measure and Manage functions of the NIST AI Risk Management Framework 1.0.
+  sv: Styrning av AI på organisationsnivå utifrån ISO/IEC 42001:2023 (ledningssystem för AI), ISO/IEC 23894:2023 (riskhantering för AI), begreppen i ISO/IEC 22989 och funktionerna Govern, Map, Measure och Manage i NIST:s ramverk för riskhantering av AI (AI RMF 1.0).
+
+requirements:
+  - id: AIMS-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [ai-policy, governance, top-management]
+    refs: ["ISO/IEC 42001:2023 §5.2 (AI policy)", "ISO/IEC 42001:2023 Annex A.2.2 (AI policy)", "NIST AI RMF 1.0 GOVERN 1.2 (trustworthy AI characteristics in policies)"]
+    tests: [AIMS-T01]
+    en:
+      title: AI policy approved by top management
+      description: The organisation MUST have an AI policy, approved by top management, that states its principles for the development and use of AI, its commitment to meet the legal requirements that apply, and the date of its next review within 12 months.
+      rationale: A policy approved at the top sets the direction that every AI decision is measured against and shows that leadership takes responsibility.
+      criteria:
+        - method: inspection
+          text: The current AI policy carries the approval of a member of top management, the principles, the commitment to legal requirements and a review date at most 12 months after approval.
+          threshold: review ≤ 12 months
+    sv:
+      title: AI-policy godkänd av högsta ledningen
+      description: Organisationen SKA ha en AI-policy, godkänd av högsta ledningen, som anger dess principer för utveckling och användning av AI, dess åtagande att uppfylla de rättsliga krav som gäller och datum för nästa översyn inom 12 månader.
+      rationale: En policy som godkänts högst upp anger riktningen som varje AI-beslut mäts mot och visar att ledningen tar ansvar.
+      criteria:
+        - method: inspection
+          text: Den gällande AI-policyn bär godkännande av en person i högsta ledningen, principerna, åtagandet om rättsliga krav och ett översynsdatum högst 12 månader efter godkännandet.
+          threshold: översyn ≤ 12 månader
+
+  - id: AIMS-02
+    type: business
+    obligation: must
+    priority: medium
+    tags: [scope, management-system]
+    refs: ["ISO/IEC 42001:2023 §4.3 (scope of the AI management system)", "ISO/IEC 42001:2023 §4.1 (context of the organization)"]
+    tests: [AIMS-T01]
+    en:
+      title: Documented scope of the AI management system
+      description: The organisation MUST document the scope of its AI management system by naming the AI systems, the organisational units and the roles (provider, developer, deployer or user) that it covers.
+      rationale: An undefined scope makes it impossible to tell which AI systems the controls are meant to apply to.
+      criteria:
+        - method: inspection
+          text: The scope statement lists AI systems, units and roles, and each AI system in the register is either inside the scope or listed as excluded with a reason.
+    sv:
+      title: Dokumenterad omfattning av ledningssystemet för AI
+      description: Organisationen SKA dokumentera omfattningen av sitt ledningssystem för AI genom att ange vilka AI-system, organisatoriska enheter och roller (leverantör, utvecklare, tillhandahållare eller användare) som omfattas.
+      rationale: En odefinierad omfattning gör det omöjligt att avgöra vilka AI-system som åtgärderna är avsedda att gälla.
+      criteria:
+        - method: inspection
+          text: Beskrivningen av omfattningen anger AI-system, enheter och roller, och varje AI-system i registret är antingen inom omfattningen eller angivet som undantaget med en motivering.
+
+  - id: AIMS-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [roles, accountability, governance]
+    refs: ["ISO/IEC 42001:2023 §5.3 (roles, responsibilities and authorities)", "ISO/IEC 42001:2023 Annex A.3.2 (AI roles and responsibilities)", "NIST AI RMF 1.0 GOVERN 2.1 (roles and responsibilities documented)"]
+    tests: [AIMS-T01]
+    en:
+      title: Named owner for each AI system
+      description: The organisation MUST assign a named owner to each AI system in the register who is accountable for its risk assessment, its monitoring and the decision to keep it in use.
+      rationale: Risks without an owner are not followed up, and a named owner gives authorities and staff one person to turn to.
+      criteria:
+        - method: inspection
+          text: Each AI system in the register has a named owner who is a current employee, and 3 sampled owners confirm their responsibilities.
+          threshold: 0 systems without an owner
+    sv:
+      title: Namngiven ägare för varje AI-system
+      description: Organisationen SKA utse en namngiven ägare till varje AI-system i registret som ansvarar för dess riskbedömning, dess övervakning och beslutet att fortsätta använda det.
+      rationale: Risker utan ägare följs inte upp, och en namngiven ägare ger myndigheter och personal en person att vända sig till.
+      criteria:
+        - method: inspection
+          text: Varje AI-system i registret har en namngiven ägare som är anställd, och 3 ägare i ett stickprov bekräftar sitt ansvar.
+          threshold: 0 system utan ägare
+
+  - id: AIMS-04
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk-criteria, risk-management]
+    refs: ["ISO/IEC 23894:2023 §6.3 (scope, context and criteria)", "ISO/IEC 42001:2023 §6.1.1 (actions to address risks and opportunities)"]
+    tests: [AIMS-T02]
+    en:
+      title: AI risk criteria defined
+      description: The organisation MUST define AI risk criteria with scales for likelihood and consequence, the levels at which a risk is accepted, treated or escalated, and the kinds of consequence covered (individuals, groups, society and the organisation).
+      rationale: Shared criteria make risk assessments of different AI systems comparable and decisions on acceptance consistent.
+      criteria:
+        - method: inspection
+          text: The risk criteria document contains the two scales, the acceptance, treatment and escalation levels and the four kinds of consequence.
+    sv:
+      title: Definierade riskkriterier för AI
+      description: Organisationen SKA definiera riskkriterier för AI med skalor för sannolikhet och konsekvens, de nivåer där en risk godtas, behandlas eller eskaleras och vilka typer av konsekvenser som omfattas (individer, grupper, samhället och organisationen).
+      rationale: Gemensamma kriterier gör riskbedömningar av olika AI-system jämförbara och besluten om att godta risker konsekventa.
+      criteria:
+        - method: inspection
+          text: Dokumentet med riskkriterier innehåller de två skalorna, nivåerna för att godta, behandla och eskalera samt de fyra typerna av konsekvenser.
+
+  - id: AIMS-05
+    type: business
+    obligation: must
+    priority: critical
+    tags: [risk-assessment, risk-management]
+    refs: ["ISO/IEC 42001:2023 §6.1.2 (AI risk assessment)", "ISO/IEC 42001:2023 §8.2 (AI risk assessment)", "ISO/IEC 23894:2023 §6.4 (risk assessment)", "NIST AI RMF 1.0 MAP 5.1 (likelihood and magnitude of impacts)"]
+    tests: [AIMS-T02]
+    en:
+      title: Risk assessment for each AI system before deployment
+      description: The owner MUST carry out a documented risk assessment of each AI system before deployment and after each change of model, data source or intended use, using the defined risk criteria.
+      rationale: The risks of an AI system change when its model, data or use changes, so a single early assessment goes out of date.
+      criteria:
+        - method: inspection
+          text: For 5 sampled AI systems, an assessment using the defined criteria exists before the deployment date and after each change recorded in the change log.
+    sv:
+      title: Riskbedömning av varje AI-system före driftsättning
+      description: Ägaren SKA genomföra en dokumenterad riskbedömning av varje AI-system före driftsättning och efter varje byte av modell, datakälla eller avsedd användning, med de definierade riskkriterierna.
+      rationale: Riskerna med ett AI-system ändras när dess modell, data eller användning ändras, så en enda tidig bedömning blir inaktuell.
+      criteria:
+        - method: inspection
+          text: För 5 AI-system i ett stickprov finns en bedömning enligt de definierade kriterierna före driftsättningsdatum och efter varje ändring i ändringsloggen.
+
+  - id: AIMS-06
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk-treatment, statement-of-applicability, controls]
+    refs: ["ISO/IEC 42001:2023 §6.1.3 (AI risk treatment)", "ISO/IEC 42001:2023 §8.3 (AI risk treatment)", "ISO/IEC 23894:2023 §6.5 (risk treatment)"]
+    tests: [AIMS-T03]
+    en:
+      title: Risk treatment plan and statement of applicability
+      description: The organisation MUST keep a risk treatment plan that links each risk above the acceptance level to its controls, owner and due date, and a statement of applicability that gives for each control of ISO/IEC 42001 Annex A whether it is applied and why.
+      rationale: The treatment plan turns assessments into action, and the statement of applicability shows auditors which controls were chosen and on what grounds.
+      criteria:
+        - method: inspection
+          text: Each risk above the acceptance level appears in the treatment plan with controls, owner and due date, and each Annex A control appears in the statement of applicability with a decision and reason.
+    sv:
+      title: Plan för riskbehandling och uttalande om tillämplighet
+      description: Organisationen SKA hålla en plan för riskbehandling som kopplar varje risk över acceptansnivån till dess åtgärder, ansvarig och slutdatum, och ett uttalande om tillämplighet som för varje åtgärd i bilaga A till ISO/IEC 42001 anger om den tillämpas och varför.
+      rationale: Behandlingsplanen omsätter bedömningarna i handling, och uttalandet om tillämplighet visar revisorer vilka åtgärder som valts och på vilka grunder.
+      criteria:
+        - method: inspection
+          text: Varje risk över acceptansnivån finns i behandlingsplanen med åtgärder, ansvarig och slutdatum, och varje åtgärd i bilaga A finns i uttalandet om tillämplighet med beslut och motivering.
+
+  - id: AIMS-07
+    type: business
+    obligation: must
+    priority: high
+    tags: [impact-assessment, fundamental-rights, society]
+    refs: ["ISO/IEC 42001:2023 §6.1.4 (AI system impact assessment)", "ISO/IEC 42001:2023 Annex A.5.2 (AI system impact assessment process)", "ISO/IEC 42001:2023 Annex A.5.4 (assessing impact on individuals or groups)"]
+    tests: [AIMS-T04]
+    en:
+      title: Impact assessment on individuals, groups and society
+      description: The owner MUST document an impact assessment of each AI system that names the individuals and groups affected, the possible consequences for them and for society, and the measures taken, and MUST repeat it when the intended use changes.
+      rationale: An impact assessment looks beyond the organisation's own risks to the people the system affects, who otherwise have no voice in the design.
+      criteria:
+        - method: inspection
+          text: Each AI system has an impact assessment naming affected individuals and groups, consequences and measures, dated after the last change of intended use.
+    sv:
+      title: Konsekvensbedömning för individer, grupper och samhället
+      description: Ägaren SKA dokumentera en konsekvensbedömning av varje AI-system som anger vilka individer och grupper som påverkas, möjliga följder för dem och för samhället och vidtagna åtgärder, och göra om den när den avsedda användningen ändras.
+      rationale: En konsekvensbedömning ser bortom organisationens egna risker till de människor som systemet påverkar, och som annars saknar röst i utformningen.
+      criteria:
+        - method: inspection
+          text: Varje AI-system har en konsekvensbedömning som anger berörda individer och grupper, följder och åtgärder, daterad efter den senaste ändringen av avsedd användning.
+
+  - id: AIMS-08
+    type: business
+    obligation: must
+    priority: high
+    tags: [intended-use, context, map]
+    refs: ["NIST AI RMF 1.0 MAP 1.1 (intended purposes and context of use)", "ISO/IEC 42001:2023 Annex A.9.4 (intended use of the AI system)"]
+    tests: [AIMS-T05]
+    en:
+      title: Intended use, users and context of use documented
+      description: The owner MUST document for each AI system its intended purpose, its intended users, the setting in which it operates, the uses that are not intended, and the assumptions on the operating environment.
+      rationale: Risks can only be mapped against a clear picture of how and where a system is meant to be used and what is outside that use.
+      criteria:
+        - method: inspection
+          text: The system description of each AI system contains purpose, users, setting, uses not intended and assumptions, each with at least one sentence.
+    sv:
+      title: Dokumenterad avsedd användning, användare och användningssammanhang
+      description: Ägaren SKA för varje AI-system dokumentera dess avsedda ändamål, dess avsedda användare, den miljö där det verkar, de användningar som inte är avsedda och antagandena om driftmiljön.
+      rationale: Risker går bara att kartlägga mot en tydlig bild av hur och var ett system är avsett att användas och vad som ligger utanför den användningen.
+      criteria:
+        - method: inspection
+          text: Systembeskrivningen för varje AI-system innehåller ändamål, användare, miljö, användningar som inte är avsedda och antaganden, var och en med minst en mening.
+
+  - id: AIMS-09
+    type: business
+    obligation: must
+    priority: high
+    tags: [metrics, trustworthiness, measure, fairness]
+    refs: ["NIST AI RMF 1.0 MEASURE 1.1 (approaches and metrics selected)", "NIST AI RMF 1.0 MEASURE 2.11 (fairness and bias evaluated)", "ISO/IEC 42001:2023 §9.1 (monitoring, measurement, analysis and evaluation)"]
+    tests: [AIMS-T05]
+    en:
+      title: Measurable trustworthiness metrics for each AI system
+      description: The owner MUST select for each AI system at least one measurable metric with a target value for each of accuracy, fairness, robustness and privacy, and MUST record the method and frequency of measurement.
+      rationale: Trustworthiness that is not measured cannot be managed, and fixed targets show when a system drifts out of its accepted behaviour.
+      criteria:
+        - method: inspection
+          text: The metrics sheet of each AI system has a metric, target, method and frequency for accuracy, fairness, robustness and privacy, and the latest measurement of each is no older than its frequency.
+    sv:
+      title: Mätbara mått på tillförlitlighet för varje AI-system
+      description: Ägaren SKA för varje AI-system välja minst ett mätbart mått med målvärde för var och en av noggrannhet, rättvisa, robusthet och integritet, och registrera mätmetod och mätfrekvens.
+      rationale: Tillförlitlighet som inte mäts kan inte styras, och fasta mål visar när ett system glider bort från sitt godtagna beteende.
+      criteria:
+        - method: inspection
+          text: Måttbladet för varje AI-system har mått, mål, metod och frekvens för noggrannhet, rättvisa, robusthet och integritet, och den senaste mätningen av varje mått är inte äldre än dess frekvens.
+
+  - id: AIMS-10
+    type: business
+    obligation: must
+    priority: high
+    tags: [go-no-go, decision, manage]
+    refs: ["NIST AI RMF 1.0 MANAGE 1.1 (determination whether the AI system achieves its purpose)", "NIST AI RMF 1.0 MANAGE 1.3 (responses to high-priority risks)", "ISO/IEC 42001:2023 Annex A.6.2.5 (AI system deployment)"]
+    tests: [AIMS-T06]
+    en:
+      title: Documented go or no-go decision before deployment
+      description: The owner MUST record a decision to deploy, deploy with conditions or not deploy each AI system, based on the risk assessment, the impact assessment and the latest metrics, signed by the role named in the AI policy.
+      rationale: An explicit decision makes someone accountable for accepting the remaining risk instead of letting deployment happen by default.
+      criteria:
+        - method: inspection
+          text: Each deployment in the last 12 months has a signed decision that references the risk assessment, the impact assessment and the metrics, and each condition attached has an owner.
+    sv:
+      title: Dokumenterat beslut om driftsättning före driftsättning
+      description: Ägaren SKA registrera ett beslut om att driftsätta, driftsätta med villkor eller inte driftsätta varje AI-system, grundat på riskbedömningen, konsekvensbedömningen och de senaste måtten och undertecknat av den roll som anges i AI-policyn.
+      rationale: Ett uttryckligt beslut gör någon ansvarig för att godta den kvarvarande risken i stället för att driftsättningen sker av sig själv.
+      criteria:
+        - method: inspection
+          text: Varje driftsättning de senaste 12 månaderna har ett undertecknat beslut som hänvisar till riskbedömningen, konsekvensbedömningen och måtten, och varje villkor har en ansvarig.
+
+  - id: AIMS-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [third-party, suppliers, govern]
+    refs: ["ISO/IEC 42001:2023 Annex A.10.3 (suppliers)", "ISO/IEC 42001:2023 Annex A.10.2 (allocating responsibilities)", "NIST AI RMF 1.0 GOVERN 6.1 (third-party risks)"]
+    tests: [AIMS-T07]
+    en:
+      title: Assessment of third-party AI models and services
+      description: Before a third-party AI model, data set or AI service is used, the organisation MUST assess it against the AI policy and record the split of responsibilities with the supplier for data, model updates, monitoring and incident handling.
+      rationale: Bought or open AI components bring risks the organisation did not create but remains answerable for.
+      criteria:
+        - method: inspection
+          text: Each third-party AI component in the register has a supplier assessment and a responsibility matrix covering data, updates, monitoring and incidents, dated before first use.
+    sv:
+      title: Bedömning av AI-modeller och AI-tjänster från tredje part
+      description: Innan en AI-modell, datamängd eller AI-tjänst från tredje part används SKA organisationen bedöma den mot AI-policyn och registrera ansvarsfördelningen med leverantören för data, modelluppdateringar, övervakning och incidenthantering.
+      rationale: Köpta eller öppna AI-komponenter för med sig risker som organisationen inte har skapat men ändå ansvarar för.
+      criteria:
+        - method: inspection
+          text: Varje AI-komponent från tredje part i registret har en leverantörsbedömning och en ansvarsmatris för data, uppdateringar, övervakning och incidenter, daterade före första användningen.
+
+  - id: AIMS-12
+    type: business
+    obligation: must
+    priority: medium
+    tags: [reporting-concerns, whistleblowing]
+    refs: ["ISO/IEC 42001:2023 Annex A.3.3 (reporting of concerns)", "NIST AI RMF 1.0 GOVERN 4.3 (practices to enable testing, incident identification and information sharing)"]
+    tests: [AIMS-T08]
+    en:
+      title: Channel for reporting concerns about AI systems
+      description: The organisation MUST provide a channel where employees and external parties can report concerns over an AI system, anonymously at the reporter's choice, and MUST acknowledge each report within 5 working days.
+      rationale: People who work with or are affected by an AI system often notice harm first, and a known channel brings this to the owner.
+      criteria:
+        - method: test
+          text: A named and an anonymous test report each receive an acknowledgement within 5 working days and appear in the concern log with the AI system named.
+          threshold: acknowledgement ≤ 5 working days
+    sv:
+      title: Kanal för att rapportera farhågor om AI-system
+      description: Organisationen SKA tillhandahålla en kanal där anställda och externa parter kan rapportera farhågor om ett AI-system, anonymt om rapportören väljer det, och bekräfta varje rapport inom 5 arbetsdagar.
+      rationale: Personer som arbetar med eller påverkas av ett AI-system märker ofta skador först, och en känd kanal för informationen till ägaren.
+      criteria:
+        - method: test
+          text: En namngiven och en anonym testrapport får var sin bekräftelse inom 5 arbetsdagar och visas i loggen över farhågor med AI-systemet angivet.
+          threshold: bekräftelse ≤ 5 arbetsdagar
+
+  - id: AIMS-13
+    type: constraint
+    obligation: should
+    priority: low
+    tags: [terminology, glossary]
+    refs: ["ISO/IEC 22989:2022 §3 (terms and definitions)"]
+    tests: [AIMS-T09]
+    en:
+      title: AI terms follow ISO/IEC 22989
+      description: The AI policy, the risk assessments and the system descriptions SHOULD use the terms of ISO/IEC 22989 (such as AI system, AI model, training data, validation data, test data and AI producer) and list any deviating local term in a glossary with its ISO/IEC 22989 counterpart.
+      rationale: Shared terms prevent misunderstandings between teams, suppliers and auditors, for example between validation data and test data.
+      criteria:
+        - method: review
+          text: A review of the AI policy and 3 risk assessments finds no AI term used in a sense different from ISO/IEC 22989 that is missing in the glossary.
+    sv:
+      title: AI-begrepp enligt ISO/IEC 22989
+      description: AI-policyn, riskbedömningarna och systembeskrivningarna BÖR använda begreppen i ISO/IEC 22989 (till exempel AI-system, AI-modell, träningsdata, valideringsdata, testdata och AI-producent) och ta upp varje avvikande lokalt begrepp i en ordlista med motsvarande begrepp i ISO/IEC 22989.
+      rationale: Gemensamma begrepp förhindrar missförstånd mellan team, leverantörer och revisorer, till exempel mellan valideringsdata och testdata.
+      criteria:
+        - method: review
+          text: En granskning av AI-policyn och 3 riskbedömningar hittar inget AI-begrepp som används i en annan betydelse än i ISO/IEC 22989 och saknas i ordlistan.
+
+  - id: AIMS-14
+    type: business
+    obligation: should
+    priority: medium
+    tags: [life-cycle, stage-gates]
+    refs: ["ISO/IEC 22989:2022 §6 (AI system life cycle)", "ISO/IEC 42001:2023 Annex A.6.1.2 (objectives for responsible development)", "ISO/IEC 23894:2023 Annex C (risk management and the AI system life cycle)"]
+    tests: [AIMS-T09]
+    en:
+      title: Review gates at the stages of the AI life cycle
+      description: The development process SHOULD define a review gate at the end of each AI life-cycle stage (inception, design and development, verification and validation, deployment, operation and monitoring, retirement) with the evidence each gate expects.
+      rationale: Gates at each stage catch problems when they are cheapest to fix and make sure that no stage is skipped.
+      criteria:
+        - method: inspection
+          text: The process description lists the six stages with a gate and its expected evidence, and 2 sampled AI systems have gate records for each stage they have passed.
+    sv:
+      title: Granskningspunkter i AI-livscykelns skeden
+      description: Utvecklingsprocessen BÖR definiera en granskningspunkt i slutet av varje skede i AI-livscykeln (idé, utformning och utveckling, verifiering och validering, driftsättning, drift och övervakning, avveckling) med de belägg som varje granskningspunkt förutsätter.
+      rationale: Granskningspunkter i varje skede fångar problem när de är billigast att rätta och ser till att inget skede hoppas över.
+      criteria:
+        - method: inspection
+          text: Processbeskrivningen anger de sex skedena med en granskningspunkt och dess förväntade belägg, och 2 AI-system i ett stickprov har granskningsprotokoll för varje skede de har passerat.
+
+  - id: AIMS-15
+    type: business
+    obligation: must
+    priority: high
+    tags: [internal-audit, management-system]
+    refs: ["ISO/IEC 42001:2023 §9.2 (internal audit)"]
+    tests: [AIMS-T10]
+    en:
+      title: Internal audit of the AI management system every year
+      description: The organisation MUST audit its AI management system against ISO/IEC 42001 and its own AI policy at least every 12 months, with auditors who do not audit their own work, and MUST report the findings to top management.
+      rationale: Internal audits show whether the management system works in practice and not only on paper.
+      criteria:
+        - method: inspection
+          text: The audit programme covers each clause and the applied Annex A controls within 12 months, the auditor of each part is independent of it, and the report was sent to top management.
+          threshold: interval ≤ 12 months
+    sv:
+      title: Internrevision av ledningssystemet för AI varje år
+      description: Organisationen SKA revidera sitt ledningssystem för AI mot ISO/IEC 42001 och den egna AI-policyn minst var 12:e månad, med revisorer som inte granskar sitt eget arbete, och rapportera resultatet till högsta ledningen.
+      rationale: Internrevisioner visar om ledningssystemet fungerar i praktiken och inte bara på papperet.
+      criteria:
+        - method: inspection
+          text: Revisionsprogrammet omfattar varje avsnitt och de tillämpade åtgärderna i bilaga A inom 12 månader, revisorn för varje del är oberoende av den och rapporten har skickats till högsta ledningen.
+          threshold: intervall ≤ 12 månader
+
+  - id: AIMS-16
+    type: business
+    obligation: must
+    priority: medium
+    tags: [management-review, governance]
+    refs: ["ISO/IEC 42001:2023 §9.3 (management review)"]
+    tests: [AIMS-T11]
+    en:
+      title: Management review with recorded decisions
+      description: Top management MUST review the AI management system at least every 12 months, based on audit results, metrics, incidents, concerns reported and changes in legal requirements, and MUST record the decisions taken with owners.
+      rationale: The management review is where leadership decides on resources and changes, and recorded decisions make the follow-up possible.
+      criteria:
+        - method: inspection
+          text: The minutes of the latest review are less than 12 months old, cover the five inputs and list each decision with an owner and a due date.
+          threshold: interval ≤ 12 months
+    sv:
+      title: Ledningens genomgång med registrerade beslut
+      description: Högsta ledningen SKA gå igenom ledningssystemet för AI minst var 12:e månad, utifrån revisionsresultat, mått, incidenter, rapporterade farhågor och ändringar i rättsliga krav, och registrera fattade beslut med ansvariga.
+      rationale: Ledningens genomgång är där ledningen beslutar om resurser och förändringar, och registrerade beslut gör uppföljningen möjlig.
+      criteria:
+        - method: inspection
+          text: Protokollet från den senaste genomgången är mindre än 12 månader gammalt, tar upp de fem underlagen och anger varje beslut med ansvarig och slutdatum.
+          threshold: intervall ≤ 12 månader
+
+  - id: AIMS-17
+    type: business
+    obligation: must
+    priority: high
+    tags: [nonconformity, corrective-action]
+    refs: ["ISO/IEC 42001:2023 §10.2 (nonconformity and corrective action)"]
+    tests: [AIMS-T12]
+    en:
+      title: Corrective action for each nonconformity
+      description: For each nonconformity found in audits, incidents or monitoring, the organisation MUST record its cause, the corrective action, the owner and the due date, and MUST check after the due date that the action has removed the cause.
+      rationale: Without root cause analysis and a check of effect, the same nonconformity comes back.
+      criteria:
+        - method: inspection
+          text: Each nonconformity in the log of the last 12 months has cause, action, owner, due date and an effectiveness check dated after the due date or an open status if the due date has not passed.
+    sv:
+      title: Korrigerande åtgärd för varje avvikelse
+      description: För varje avvikelse som upptäcks vid revisioner, incidenter eller övervakning SKA organisationen registrera dess orsak, den korrigerande åtgärden, ansvarig och slutdatum, och efter slutdatum kontrollera att åtgärden har undanröjt orsaken.
+      rationale: Utan orsaksanalys och kontroll av effekten kommer samma avvikelse tillbaka.
+      criteria:
+        - method: inspection
+          text: Varje avvikelse i loggen för de senaste 12 månaderna har orsak, åtgärd, ansvarig, slutdatum och en effektkontroll daterad efter slutdatum, eller status öppen när slutdatum ännu inte har passerats.
+
+  - id: AIMS-18
+    type: business
+    obligation: must
+    priority: high
+    tags: [incident-communication, interested-parties]
+    refs: ["ISO/IEC 42001:2023 Annex A.8.4 (communication of incidents)", "NIST AI RMF 1.0 MANAGE 4.3 (incidents and errors communicated)"]
+    tests: [AIMS-T13]
+    en:
+      title: Incidents with AI systems communicated to affected parties
+      description: The organisation MUST have a plan that names, for each AI system, which users, customers and authorities are informed of an incident, by whom and within which deadline in days, and MUST follow it for each incident.
+      rationale: Affected parties can only protect themselves when they are told about an incident in time.
+      criteria:
+        - method: review
+          text: The plan lists recipients, sender and deadline per AI system, and each incident in the last 12 months has records showing that the listed recipients were informed within the deadline.
+    sv:
+      title: Incidenter med AI-system meddelas berörda parter
+      description: Organisationen SKA ha en plan som för varje AI-system anger vilka användare, kunder och myndigheter som informeras om en incident, av vem och inom vilken tidsfrist i dagar, och följa den vid varje incident.
+      rationale: Berörda parter kan bara skydda sig när de informeras om en incident i tid.
+      criteria:
+        - method: review
+          text: Planen anger mottagare, avsändare och tidsfrist per AI-system, och varje incident de senaste 12 månaderna har protokoll som visar att de angivna mottagarna informerades inom tidsfristen.
+
+tests:
+  - id: AIMS-T01
+    priority: high
+    execution: manual
+    tags: [ai-policy, scope, roles]
+    refs: ["ISO/IEC 42001:2023 §5.2 (AI policy)", "ISO/IEC 42001:2023 §4.3 (scope of the AI management system)", "ISO/IEC 42001:2023 §5.3 (roles, responsibilities and authorities)"]
+    en:
+      title: AI policy, scope and system owners
+      description: Reviews the AI policy, the scope statement and the owners in the AI system register.
+      preconditions: The AI policy, the scope statement, the AI system register and access to the staff directory.
+      expected: The policy is approved and current, the scope covers the register, and each system has a current owner.
+      steps:
+        - action: Read the approval, principles, legal commitment and review date of the AI policy.
+          expected: All are present and the review date is at most 12 months after approval.
+        - action: Compare the AI systems in the register with the scope statement.
+          expected: Each system is in scope or listed as excluded with a reason.
+        - action: Look up the owner of each AI system in the staff directory and interview 3 owners.
+          expected: Each owner is a current employee, and the 3 owners describe their responsibilities in line with the register.
+    sv:
+      title: AI-policy, omfattning och systemägare
+      description: Granskar AI-policyn, beskrivningen av omfattningen och ägarna i registret över AI-system.
+      preconditions: AI-policyn, beskrivningen av omfattningen, registret över AI-system och åtkomst till personalkatalogen.
+      expected: Policyn är godkänd och aktuell, omfattningen täcker registret och varje system har en aktuell ägare.
+      steps:
+        - action: Läs AI-policyns godkännande, principer, rättsliga åtagande och översynsdatum.
+          expected: Allt finns och översynsdatumet ligger högst 12 månader efter godkännandet.
+        - action: Jämför AI-systemen i registret med beskrivningen av omfattningen.
+          expected: Varje system är inom omfattningen eller angivet som undantaget med motivering.
+        - action: Slå upp ägaren till varje AI-system i personalkatalogen och intervjua 3 ägare.
+          expected: Varje ägare är anställd, och de 3 ägarna beskriver sitt ansvar i enlighet med registret.
+
+  - id: AIMS-T02
+    priority: critical
+    execution: manual
+    tags: [risk-criteria, risk-assessment]
+    refs: ["ISO/IEC 23894:2023 §6.3 (scope, context and criteria)", "ISO/IEC 42001:2023 §8.2 (AI risk assessment)"]
+    en:
+      title: Risk criteria applied in each risk assessment
+      description: Checks the risk criteria and that the risk assessments of sampled systems use them at the right times.
+      preconditions: The risk criteria document, the AI system register with change logs and the risk assessments of 5 AI systems.
+      expected: The criteria are complete and each sampled system has an assessment before deployment and after each change.
+      steps:
+        - action: Read the risk criteria document.
+          expected: It contains likelihood and consequence scales, acceptance, treatment and escalation levels and the four kinds of consequence.
+        - action: For each of the 5 systems, compare the assessment dates with the deployment date and the change log.
+          expected: An assessment using the criteria exists before deployment and after each change of model, data source or intended use.
+    sv:
+      title: Riskkriterierna används i varje riskbedömning
+      description: Kontrollerar riskkriterierna och att riskbedömningarna för system i ett stickprov använder dem vid rätt tillfällen.
+      preconditions: Dokumentet med riskkriterier, registret över AI-system med ändringsloggar och riskbedömningarna för 5 AI-system.
+      expected: Kriterierna är fullständiga och varje system i stickprovet har en bedömning före driftsättning och efter varje ändring.
+      steps:
+        - action: Läs dokumentet med riskkriterier.
+          expected: Det innehåller skalor för sannolikhet och konsekvens, nivåer för att godta, behandla och eskalera och de fyra typerna av konsekvenser.
+        - action: Jämför för vart och ett av de 5 systemen bedömningsdatumen med driftsättningsdatum och ändringsloggen.
+          expected: En bedömning enligt kriterierna finns före driftsättning och efter varje byte av modell, datakälla eller avsedd användning.
+
+  - id: AIMS-T03
+    priority: high
+    execution: manual
+    tags: [risk-treatment, statement-of-applicability]
+    refs: ["ISO/IEC 42001:2023 §6.1.3 (AI risk treatment)"]
+    en:
+      title: Treatment plan and statement of applicability are complete
+      description: Traces the risks above the acceptance level to the treatment plan and checks the statement of applicability.
+      preconditions: The risk register, the risk treatment plan, the statement of applicability and the list of Annex A controls.
+      expected: Each risk above the acceptance level is treated and each control has a decision.
+      steps:
+        - action: Filter the risk register on risks above the acceptance level and look up each in the treatment plan.
+          expected: Each has controls, an owner and a due date.
+        - action: Compare the statement of applicability with the list of Annex A controls.
+          expected: Each control is listed with applied or not applied and a reason.
+    sv:
+      title: Behandlingsplan och uttalande om tillämplighet är fullständiga
+      description: Spårar riskerna över acceptansnivån till behandlingsplanen och kontrollerar uttalandet om tillämplighet.
+      preconditions: Riskregistret, planen för riskbehandling, uttalandet om tillämplighet och listan över åtgärder i bilaga A.
+      expected: Varje risk över acceptansnivån behandlas och varje åtgärd har ett beslut.
+      steps:
+        - action: Filtrera riskregistret på risker över acceptansnivån och slå upp var och en i behandlingsplanen.
+          expected: Var och en har åtgärder, ansvarig och slutdatum.
+        - action: Jämför uttalandet om tillämplighet med listan över åtgärder i bilaga A.
+          expected: Varje åtgärd anges som tillämpad eller inte tillämpad med motivering.
+
+  - id: AIMS-T04
+    priority: high
+    execution: manual
+    tags: [impact-assessment]
+    refs: ["ISO/IEC 42001:2023 §6.1.4 (AI system impact assessment)"]
+    en:
+      title: Impact assessments are current
+      description: Checks that each AI system has an impact assessment that is newer than its last change of intended use.
+      preconditions: The AI system register with change logs and the impact assessments.
+      expected: Each system has a complete impact assessment dated after its last change of intended use.
+      steps:
+        - action: Open the impact assessment of each AI system.
+          expected: It names affected individuals and groups, the consequences for them and for society, and the measures.
+        - action: Compare its date with the last change of intended use in the change log.
+          expected: The assessment is dated after that change.
+    sv:
+      title: Konsekvensbedömningarna är aktuella
+      description: Kontrollerar att varje AI-system har en konsekvensbedömning som är nyare än den senaste ändringen av avsedd användning.
+      preconditions: Registret över AI-system med ändringsloggar och konsekvensbedömningarna.
+      expected: Varje system har en fullständig konsekvensbedömning daterad efter den senaste ändringen av avsedd användning.
+      steps:
+        - action: Öppna konsekvensbedömningen för varje AI-system.
+          expected: Den anger berörda individer och grupper, följderna för dem och för samhället samt åtgärderna.
+        - action: Jämför dess datum med den senaste ändringen av avsedd användning i ändringsloggen.
+          expected: Bedömningen är daterad efter den ändringen.
+
+  - id: AIMS-T05
+    priority: high
+    execution: manual
+    tags: [intended-use, metrics]
+    refs: ["NIST AI RMF 1.0 MAP 1.1 (intended purposes and context of use)", "NIST AI RMF 1.0 MEASURE 1.1 (approaches and metrics selected)"]
+    en:
+      title: System description and metrics sheet of each AI system
+      description: Reviews the system descriptions and metrics sheets and the age of the latest measurements.
+      preconditions: The system descriptions, the metrics sheets and the measurement records of the AI systems.
+      expected: Each description is complete and each metric has a current measurement.
+      steps:
+        - action: Read the system description of each AI system.
+          expected: Purpose, users, setting, uses not intended and assumptions are each described.
+        - action: Read the metrics sheet and the latest measurement of each metric.
+          expected: Accuracy, fairness, robustness and privacy each have a metric with target, method and frequency, and no measurement is older than its frequency.
+    sv:
+      title: Systembeskrivning och måttblad för varje AI-system
+      description: Granskar systembeskrivningarna och måttbladen och åldern på de senaste mätningarna.
+      preconditions: Systembeskrivningarna, måttbladen och mätprotokollen för AI-systemen.
+      expected: Varje beskrivning är fullständig och varje mått har en aktuell mätning.
+      steps:
+        - action: Läs systembeskrivningen för varje AI-system.
+          expected: Ändamål, användare, miljö, användningar som inte är avsedda och antaganden beskrivs var för sig.
+        - action: Läs måttbladet och den senaste mätningen av varje mått.
+          expected: Noggrannhet, rättvisa, robusthet och integritet har var och en ett mått med mål, metod och frekvens, och ingen mätning är äldre än sin frekvens.
+
+  - id: AIMS-T06
+    priority: high
+    execution: manual
+    tags: [go-no-go]
+    refs: ["NIST AI RMF 1.0 MANAGE 1.1 (determination whether the AI system achieves its purpose)"]
+    en:
+      title: Deployment decisions signed with their basis
+      description: Checks the deployment decisions of the last 12 months.
+      preconditions: The deployment log of the last 12 months, the decision records and the AI policy.
+      expected: Each deployment has a signed decision with its basis and owners for its conditions.
+      steps:
+        - action: Match each deployment in the log with a decision record.
+          expected: Each deployment has a decision signed by the role named in the AI policy.
+        - action: Read the references and conditions of each decision.
+          expected: Each references the risk assessment, impact assessment and metrics, and each condition has an owner.
+    sv:
+      title: Beslut om driftsättning undertecknade med sitt underlag
+      description: Kontrollerar besluten om driftsättning de senaste 12 månaderna.
+      preconditions: Driftsättningsloggen för de senaste 12 månaderna, beslutsprotokollen och AI-policyn.
+      expected: Varje driftsättning har ett undertecknat beslut med underlag och ansvariga för sina villkor.
+      steps:
+        - action: Para ihop varje driftsättning i loggen med ett beslutsprotokoll.
+          expected: Varje driftsättning har ett beslut undertecknat av den roll som anges i AI-policyn.
+        - action: Läs hänvisningarna och villkoren i varje beslut.
+          expected: Varje beslut hänvisar till riskbedömning, konsekvensbedömning och mått, och varje villkor har en ansvarig.
+
+  - id: AIMS-T07
+    priority: high
+    execution: manual
+    tags: [third-party, suppliers]
+    refs: ["ISO/IEC 42001:2023 Annex A.10.3 (suppliers)"]
+    en:
+      title: Third-party AI components assessed before first use
+      description: Checks the supplier assessments and responsibility matrices of the third-party AI components.
+      preconditions: The list of third-party AI models, data sets and services with their first-use dates, the supplier assessments and the responsibility matrices.
+      expected: Each component was assessed before first use with a complete responsibility matrix.
+      steps:
+        - action: For each component, compare the assessment date with the first-use date.
+          expected: The assessment is dated before first use.
+        - action: Read the responsibility matrix of each component.
+          expected: Data, model updates, monitoring and incident handling each have a responsible party.
+    sv:
+      title: AI-komponenter från tredje part bedöms före första användningen
+      description: Kontrollerar leverantörsbedömningarna och ansvarsmatriserna för AI-komponenterna från tredje part.
+      preconditions: Listan över AI-modeller, datamängder och tjänster från tredje part med datum för första användning, leverantörsbedömningarna och ansvarsmatriserna.
+      expected: Varje komponent har bedömts före första användningen med en fullständig ansvarsmatris.
+      steps:
+        - action: Jämför för varje komponent bedömningsdatumet med datumet för första användning.
+          expected: Bedömningen är daterad före första användningen.
+        - action: Läs ansvarsmatrisen för varje komponent.
+          expected: Data, modelluppdateringar, övervakning och incidenthantering har var och en en ansvarig part.
+
+  - id: AIMS-T08
+    priority: medium
+    execution: manual
+    tags: [reporting-concerns]
+    refs: ["ISO/IEC 42001:2023 Annex A.3.3 (reporting of concerns)"]
+    en:
+      title: Named and anonymous concern reports are acknowledged
+      description: Sends two test reports through the concern channel and measures the time to acknowledgement.
+      preconditions: Access to the concern channel from outside the organisation and the agreement of the channel owner to the test.
+      expected: Both reports are acknowledged within 5 working days and logged with the AI system.
+      steps:
+        - action: Send a named report about an AI system through the channel.
+          expected: An acknowledgement arrives within 5 working days.
+          data: "Concern that the screening model rejects applicants from one postal area"
+        - action: Send an anonymous report about another AI system.
+          expected: An acknowledgement is posted through the anonymous reply route within 5 working days.
+        - action: Ask the channel owner to show the concern log.
+          expected: Both reports appear with the AI system named and no identity recorded for the anonymous one.
+    sv:
+      title: Namngivna och anonyma rapporter om farhågor bekräftas
+      description: Skickar två testrapporter via kanalen för farhågor och mäter tiden till bekräftelse.
+      preconditions: Åtkomst till kanalen för farhågor utanför organisationen och kanalägarens medgivande till testet.
+      expected: Båda rapporterna bekräftas inom 5 arbetsdagar och loggas med AI-systemet.
+      steps:
+        - action: Skicka en namngiven rapport om ett AI-system via kanalen.
+          expected: En bekräftelse kommer inom 5 arbetsdagar.
+          data: "Farhåga om att urvalsmodellen avvisar sökande från ett visst postnummerområde"
+        - action: Skicka en anonym rapport om ett annat AI-system.
+          expected: En bekräftelse lämnas via den anonyma svarsvägen inom 5 arbetsdagar.
+        - action: Be kanalägaren visa loggen över farhågor.
+          expected: Båda rapporterna finns med AI-systemet angivet och utan identitet för den anonyma.
+
+  - id: AIMS-T09
+    priority: low
+    execution: manual
+    tags: [terminology, life-cycle]
+    refs: ["ISO/IEC 22989:2022 §3 (terms and definitions)", "ISO/IEC 22989:2022 §6 (AI system life cycle)"]
+    en:
+      title: Terminology and life-cycle gates reviewed
+      description: Reviews the use of AI terms in the governance documents and the gate records of two AI systems.
+      preconditions: The AI policy, 3 risk assessments, the glossary, the process description and the gate records of 2 AI systems.
+      expected: Terms follow ISO/IEC 22989 or are in the glossary, and each passed stage has a gate record.
+      steps:
+        - action: Mark each AI term in the policy and the 3 risk assessments and compare its use with ISO/IEC 22989.
+          expected: Each term is used as defined or appears in the glossary with its counterpart.
+        - action: Compare the stages each of the 2 systems has passed with its gate records.
+          expected: Each passed stage has a gate record with the expected evidence.
+    sv:
+      title: Begrepp och granskningspunkter i livscykeln granskas
+      description: Granskar användningen av AI-begrepp i styrdokumenten och protokollen från granskningspunkterna för två AI-system.
+      preconditions: AI-policyn, 3 riskbedömningar, ordlistan, processbeskrivningen och protokollen från granskningspunkterna för 2 AI-system.
+      expected: Begreppen följer ISO/IEC 22989 eller finns i ordlistan, och varje passerat skede har ett granskningsprotokoll.
+      steps:
+        - action: Markera varje AI-begrepp i policyn och de 3 riskbedömningarna och jämför användningen med ISO/IEC 22989.
+          expected: Varje begrepp används enligt definitionen eller finns i ordlistan med sin motsvarighet.
+        - action: Jämför de skeden som vart och ett av de 2 systemen har passerat med dess granskningsprotokoll.
+          expected: Varje passerat skede har ett granskningsprotokoll med de förväntade beläggen.
+
+  - id: AIMS-T10
+    priority: high
+    execution: manual
+    tags: [internal-audit]
+    refs: ["ISO/IEC 42001:2023 §9.2 (internal audit)"]
+    en:
+      title: Internal audit programme covers the management system
+      description: Checks the coverage, interval and independence of the internal audits.
+      preconditions: The audit programme, the audit reports of the last 12 months and the list of applied Annex A controls.
+      expected: Each clause and applied control was audited within 12 months by an independent auditor and reported.
+      steps:
+        - action: Map the audit reports to the clauses and the applied Annex A controls.
+          expected: Each clause and applied control was audited in the last 12 months.
+        - action: Compare each auditor with the owners of the parts they audited, and check the distribution of the report.
+          expected: No auditor audited their own area, and the report was sent to top management.
+    sv:
+      title: Programmet för internrevision omfattar ledningssystemet
+      description: Kontrollerar internrevisionernas omfattning, intervall och oberoende.
+      preconditions: Revisionsprogrammet, revisionsrapporterna för de senaste 12 månaderna och listan över tillämpade åtgärder i bilaga A.
+      expected: Varje avsnitt och tillämpad åtgärd har reviderats inom 12 månader av en oberoende revisor och rapporterats.
+      steps:
+        - action: Koppla revisionsrapporterna till avsnitten och de tillämpade åtgärderna i bilaga A.
+          expected: Varje avsnitt och tillämpad åtgärd har reviderats de senaste 12 månaderna.
+        - action: Jämför varje revisor med ägarna till de delar som revisorn granskat och kontrollera vart rapporten skickats.
+          expected: Ingen revisor har granskat sitt eget område, och rapporten har skickats till högsta ledningen.
+
+  - id: AIMS-T11
+    priority: medium
+    execution: manual
+    tags: [management-review]
+    refs: ["ISO/IEC 42001:2023 §9.3 (management review)"]
+    en:
+      title: Minutes of the management review
+      description: Reads the minutes of the latest management review.
+      preconditions: The minutes of the latest management review of the AI management system.
+      expected: The review is recent, covers the five inputs and records decisions with owners.
+      steps:
+        - action: Read the date and the agenda of the minutes.
+          expected: The review is less than 12 months old and covers audit results, metrics, incidents, concerns and legal changes.
+        - action: Read the decisions in the minutes.
+          expected: Each decision has an owner and a due date.
+    sv:
+      title: Protokoll från ledningens genomgång
+      description: Läser protokollet från den senaste genomgången av ledningen.
+      preconditions: Protokollet från ledningens senaste genomgång av ledningssystemet för AI.
+      expected: Genomgången är aktuell, tar upp de fem underlagen och registrerar beslut med ansvariga.
+      steps:
+        - action: Läs protokollets datum och dagordning.
+          expected: Genomgången är mindre än 12 månader gammal och tar upp revisionsresultat, mått, incidenter, farhågor och rättsliga ändringar.
+        - action: Läs besluten i protokollet.
+          expected: Varje beslut har en ansvarig och ett slutdatum.
+
+  - id: AIMS-T12
+    priority: high
+    execution: manual
+    tags: [corrective-action]
+    refs: ["ISO/IEC 42001:2023 §10.2 (nonconformity and corrective action)"]
+    en:
+      title: Nonconformities closed with an effectiveness check
+      description: Checks the nonconformity log of the last 12 months.
+      preconditions: The nonconformity log of the last 12 months.
+      expected: Each entry is complete and each passed due date has an effectiveness check.
+      steps:
+        - action: Read cause, action, owner and due date of each entry.
+          expected: All four fields are filled in for each entry.
+        - action: For each entry whose due date has passed, read the effectiveness check.
+          expected: A check dated after the due date states whether the cause is removed.
+    sv:
+      title: Avvikelser stängs med en effektkontroll
+      description: Kontrollerar loggen över avvikelser för de senaste 12 månaderna.
+      preconditions: Loggen över avvikelser för de senaste 12 månaderna.
+      expected: Varje post är fullständig och varje passerat slutdatum har en effektkontroll.
+      steps:
+        - action: Läs orsak, åtgärd, ansvarig och slutdatum för varje post.
+          expected: Alla fyra fälten är ifyllda för varje post.
+        - action: Läs effektkontrollen för varje post vars slutdatum har passerats.
+          expected: En kontroll daterad efter slutdatum anger om orsaken är undanröjd.
+
+  - id: AIMS-T13
+    priority: high
+    execution: manual
+    tags: [incident-communication]
+    refs: ["ISO/IEC 42001:2023 Annex A.8.4 (communication of incidents)"]
+    en:
+      title: Incident communication follows the plan
+      description: Compares the communication records of past incidents with the communication plan.
+      preconditions: The communication plan and the records of the incidents with AI systems in the last 12 months.
+      expected: Each incident's listed recipients were informed within the deadline.
+      steps:
+        - action: Read the plan for the AI systems involved in the incidents.
+          expected: Each system has recipients, a sender and a deadline.
+        - action: Compare the communication records of each incident with the plan.
+          expected: Each listed recipient was informed by the named sender within the deadline.
+    sv:
+      title: Kommunikation om incidenter följer planen
+      description: Jämför kommunikationsprotokollen från tidigare incidenter med kommunikationsplanen.
+      preconditions: Kommunikationsplanen och protokollen från incidenterna med AI-system de senaste 12 månaderna.
+      expected: Varje incidents angivna mottagare informerades inom tidsfristen.
+      steps:
+        - action: Läs planen för de AI-system som berördes av incidenterna.
+          expected: Varje system har mottagare, avsändare och tidsfrist.
+        - action: Jämför kommunikationsprotokollen för varje incident med planen.
+          expected: Varje angiven mottagare informerades av den angivna avsändaren inom tidsfristen.
