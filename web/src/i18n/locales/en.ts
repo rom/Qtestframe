@@ -1518,6 +1518,23 @@ const en = {
       describe: { keywords: '(no keyword)', meaning: 'Descriptive information, not a requirement.', example: 'This section describes the payment flow.' },
     },
   },
+  // obligation keyword highlighting (descriptions, editor, profile)
+  obligationKw: {
+    title: 'Obligation keyword {keyword}: {hint}',
+    sr: '(obligation: {level})',
+    preview: 'Obligation keyword',
+    previewLabel: 'Obligation keywords in the description',
+    none: 'No obligation keyword yet; write one in capitals, e.g. {examples}.',
+    matches: 'Matches the obligation field.',
+    mismatch: 'The text says {detected}, but the obligation field is {chosen}.',
+    apply: 'Set the obligation to {level}',
+    multiple: 'Several obligation keywords ({keywords}): a requirement should have one.',
+    lowercase: 'In lower case: {keywords}. Only keywords in capitals have the normative meaning.',
+    help: 'What do the keywords mean?',
+    prefGroup: 'Obligation keywords',
+    pref: 'Highlight obligation keywords',
+    prefHint: 'Marks MUST, SHOULD, MAY, SKA, BÖR, FÅR … in requirement descriptions.',
+  },
   suspect: {
     label: 'Suspect',
     confirm: 'Confirm',

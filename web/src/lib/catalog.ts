@@ -4,7 +4,6 @@
 // once per language and filters here, so typing in the search field stays
 // instant with several hundred items.
 import { anyOf } from './query'
-import type { Segment } from './highlight'
 
 export type CatalogKind = 'requirement' | 'test'
 export type CatalogLang = 'en' | 'sv'
@@ -503,28 +502,7 @@ export function importPlan(
 
 // ---------------------------------------------------------------- display
 
-const KEYWORDS: [RegExp, string][] = [
-  [/MUST NOT|SHALL NOT|SKA INTE/u, 'kw-strong'],
-  [/MUST|SHALL|SKA/u, 'kw-strong'],
-  [/SHOULD NOT|BÖR INTE/u, 'kw-medium'],
-  [/SHOULD|BÖR/u, 'kw-medium'],
-  [/MAY|FÅR/u, 'kw-weak'],
-]
-const KEYWORD_RE = /(?<![\p{L}\p{N}])(MUST NOT|SHALL NOT|SKA INTE|SHOULD NOT|BÖR INTE|MUST|SHALL|SKA|SHOULD|BÖR|MAY|FÅR)(?![\p{L}\p{N}])/gu
-
-/** The text split at its upper-case obligation keywords (as the requirement editor marks them). */
-export function keywordSegments(text: string): Segment[] {
-  const out: Segment[] = []
-  let last = 0
-  for (const m of text.matchAll(KEYWORD_RE)) {
-    const i = m.index ?? 0
-    if (i > last) out.push({ text: text.slice(last, i), mark: false })
-    out.push({ text: m[0], mark: true, kind: KEYWORDS.find(([re]) => re.test(m[0]))?.[1] })
-    last = i + m[0].length
-  }
-  if (last < text.length) out.push({ text: text.slice(last), mark: false })
-  return out
-}
+// Obligation keywords in catalogue texts: see obligationKeywords.ts.
 
 /** A list filter for the created items: their keys, or every catalogue item when too long. */
 export function createdQuery(keys: readonly string[], max = 3500): string {

@@ -52,6 +52,9 @@ describe('normalizePrefs', () => {
       hide_analysis: true,
       create_linked_test: false,
     })
+    // obligation keyword highlighting: on unless turned off
+    expect(normalizePrefs({ hide_obligation_highlight: true })).toEqual({ hide_obligation_highlight: true })
+    expect(normalizePrefs({ hide_obligation_highlight: false })).toEqual({})
     expect(normalizePrefs({ theme: 'pink', start_page: 'x', page_size: 7, date_format: 'y', compact_tables: false, create_linked_test: null })).toEqual({})
   })
 })
@@ -69,9 +72,12 @@ describe('preferencesPatch', () => {
       compact_tables: null,
       hide_analysis: true,
       create_linked_test: false,
+      hide_obligation_highlight: null,
     })
     expect(preferencesPatch({ create_linked_test: null }).create_linked_test).toBeNull()
     expect(preferencesPatch({ page_size: 25 }).page_size).toBe(25)
+    expect(preferencesPatch({ hide_obligation_highlight: true }).hide_obligation_highlight).toBe(true)
+    expect(preferencesPatch({ hide_obligation_highlight: false }).hide_obligation_highlight).toBeNull()
   })
 })
 

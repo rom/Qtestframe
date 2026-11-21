@@ -116,6 +116,7 @@ Inställningarna sparas med ditt konto och gäller på alla enheter. Ändra dem 
 | **Skapa även länkat testfall (nya krav)** | Ditt personliga standardval för kryssrutan i kravredigeraren. |
 | **Kompakta tabeller** | Tätare tabellrader, så att du ser mer på en gång. |
 | **Dölj den löpande språkanalysen av kraven** | Stänger av analysrutan i kravredigeraren. |
+| **Markera nyckelord för kravnivå** | På från början: markerar SKA, BÖR, FÅR, MUST, SHOULD, MAY … i kravens beskrivningar och visar raden med nyckelord under beskrivningen i redigeraren. Se [Markerade nyckelord för kravnivå](requirements.md#markerade-nyckelord-för-kravnivå). |
 
 ### Säkerhet
 

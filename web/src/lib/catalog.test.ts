@@ -13,7 +13,6 @@ import {
   inProjectSet,
   isRequirement,
   itemSources,
-  keywordSegments,
   matchesNode,
   nodeCounts,
   nodeLabel,
@@ -190,26 +189,6 @@ describe('selection', () => {
 })
 
 describe('display', () => {
-  it('marks obligation keywords', () => {
-    expect(keywordSegments('The system MUST NOT log it; it SHOULD warn and MAY retry.')).toEqual([
-      { text: 'The system ', mark: false },
-      { text: 'MUST NOT', mark: true, kind: 'kw-strong' },
-      { text: ' log it; it ', mark: false },
-      { text: 'SHOULD', mark: true, kind: 'kw-medium' },
-      { text: ' warn and ', mark: false },
-      { text: 'MAY', mark: true, kind: 'kw-weak' },
-      { text: ' retry.', mark: false },
-    ])
-    expect(keywordSegments('Systemet SKA INTE spara det och BÖR INTE visa det. FÅRA')).toEqual([
-      { text: 'Systemet ', mark: false },
-      { text: 'SKA INTE', mark: true, kind: 'kw-strong' },
-      { text: ' spara det och ', mark: false },
-      { text: 'BÖR INTE', mark: true, kind: 'kw-medium' },
-      { text: ' visa det. FÅRA', mark: false },
-    ])
-    expect(keywordSegments('SKA')).toEqual([{ text: 'SKA', mark: true, kind: 'kw-strong' }])
-    expect(keywordSegments('')).toEqual([])
-  })
   it('builds the list query of created items', () => {
     expect(createdQuery(['P-REQ-1'])).toBe('key=P-REQ-1')
     expect(createdQuery(['P-REQ-1', 'P-REQ-2'])).toBe('(key=P-REQ-1 OR key=P-REQ-2)')

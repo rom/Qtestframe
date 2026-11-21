@@ -1520,6 +1520,23 @@ const sv: Messages = {
       describe: { keywords: '(inget nyckelord) · ANMÄRKNING:', meaning: 'Beskrivande information, inte ett krav.', example: 'Avsnittet beskriver betalflödet.' },
     },
   },
+  // markering av kravnivåns nyckelord (beskrivningar, redigering, profil)
+  obligationKw: {
+    title: 'Nyckelord för kravnivå {keyword}: {hint}',
+    sr: '– kravnivå: {level}',
+    preview: 'Nyckelord för kravnivå',
+    previewLabel: 'Nyckelord för kravnivå i beskrivningen',
+    none: 'Inget nyckelord för kravnivå ännu; skriv ett med versaler, t.ex. {examples}.',
+    matches: 'Stämmer med fältet Kravnivå.',
+    mismatch: 'Texten säger {detected}, men fältet Kravnivå är {chosen}.',
+    apply: 'Sätt kravnivån till {level}',
+    multiple: 'Flera nyckelord för kravnivå ({keywords}): ett krav bör ha ett.',
+    lowercase: 'Med gemener: {keywords}. Bara nyckelord med versaler har den normativa betydelsen.',
+    help: 'Vad betyder nyckelorden?',
+    prefGroup: 'Nyckelord för kravnivå',
+    pref: 'Markera nyckelord för kravnivå',
+    prefHint: 'Markerar SKA, BÖR, FÅR, MUST, SHOULD, MAY … i kravens beskrivningar.',
+  },
   suspect: {
     label: 'Misstänkt',
     confirm: 'Bekräfta',

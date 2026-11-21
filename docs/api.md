@@ -1268,6 +1268,7 @@ dimensions and values up to 100 characters, names up to 200.
 | `compact_tables` | bool | denser tables |
 | `hide_analysis` | bool | hide the live requirement-language analysis in the editor |
 | `create_linked_test` | bool | personal default for "Also create linked test" (overrides the server default) |
+| `hide_obligation_highlight` | bool | do not highlight obligation keywords (MUST, SKA INTE …) in requirement descriptions; highlighting is on by default |
 
 ## Revision history
 

@@ -12506,6 +12506,9 @@ components:
           - 'null'
         intro_done:
           type: boolean
+        hide_obligation_highlight:
+          type: boolean
+          description: Do not highlight obligation keywords in requirement descriptions (highlighting is on by default).
     SessionInfo:
       type: object
       properties:

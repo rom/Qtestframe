@@ -6,8 +6,9 @@ import ProgressSpinner from 'primevue/progressspinner'
 import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import StatusTag from './StatusTag.vue'
+import ObligationText from './ObligationText.vue'
 import { api, errorMessage } from '@/lib/api'
-import { keywordSegments, refLinks, type CatalogKind, type CatalogLinked, type CatalogRequirementDetail, type CatalogTestDetail } from '@/lib/catalog'
+import { refLinks, type CatalogKind, type CatalogLinked, type CatalogRequirementDetail, type CatalogTestDetail } from '@/lib/catalog'
 import { enumLabel } from '@/i18n/labels'
 import { useI18n } from 'vue-i18n'
 
@@ -45,7 +46,6 @@ watch(() => [props.kind, props.id, props.lang, props.projectId], load, { immedia
 const item = computed(() => req.value ?? test.value)
 const linked = computed<CatalogLinked[]>(() => req.value?.linked_tests ?? test.value?.linked_requirements ?? [])
 const otherKind = computed<CatalogKind>(() => (props.kind === 'requirement' ? 'test' : 'requirement'))
-const segments = computed(() => keywordSegments(item.value?.description ?? ''))
 // the cited standards, linked to their text where the source registry knows it
 const refs = computed(() => refLinks(item.value?.refs ?? [], item.value?.ref_targets))
 const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key).join(', ')
@@ -71,12 +71,7 @@ const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key)
       <Message v-if="item.in_project?.length" severity="info" :closable="false" class="small">{{ t('catalog.inProjectAs', { keys: keys(item.in_project) }) }}</Message>
 
       <h3>{{ t('catalog.description') }}</h3>
-      <p class="text">
-        <template v-for="(s, i) in segments" :key="i">
-          <span v-if="s.mark" :class="['kw', s.kind]">{{ s.text }}</span>
-          <template v-else>{{ s.text }}</template>
-        </template>
-      </p>
+      <p class="text"><ObligationText :text="item.description" :lang="lang" /></p>
 
       <template v-if="req">
         <h3>{{ t('catalog.rationale') }}</h3>

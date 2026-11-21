@@ -46,6 +46,9 @@ export interface Preferences {
   intro_done?: boolean
   /** e-mail for notifications: off (default) | immediate | digest */
   email_notifications?: string
+  // --- obligation keyword highlighting ---
+  /** do not highlight obligation keywords in requirement texts (default: highlight) */
+  hide_obligation_highlight?: boolean
 }
 
 export interface SessionInfo {
