@@ -151,6 +151,16 @@ describe('dynamic keys', () => {
     const problems = ['entity', 'columns', 'run', 'group_by', 'sort_by', 'title'].map((p) => `reports.problem.${p}`)
     expect([...presets, ...perms, ...tpls, ...ents, ...kinds, ...problems].filter((k) => !(k in EN))).toEqual([])
   })
+  it('cover the key providers of stored secrets', async () => {
+    const { SECRETS_INFO } = await import('@/lib/systemSettings')
+    const keys = [
+      ...['local', 'tpm', 'pkcs11'].map((p) => `sysSettings.secrets.provider.${p}`),
+      ...SECRETS_INFO.map((i) => `sysSettings.secrets.info.${i}`),
+      // values of info.key_source (internal/secrets)
+      ...['file', 'environment', 'ephemeral'].map((s) => `sysSettings.secrets.source.${s}`),
+    ]
+    expect(keys.filter((k) => !(k in EN))).toEqual([])
+  })
   it('cover all analysis rules', async () => {
     const { ANALYSIS_RULES } = await import('./analysis')
     expect(ANALYSIS_RULES.filter((r) => !(`analysis.rules.${r}` in EN))).toEqual([])

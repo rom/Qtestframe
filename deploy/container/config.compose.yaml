@@ -33,3 +33,9 @@ bootstrap:
   tenant_name: "Default"
   admin_email: admin@example.com
   admin_password_file: /run/secrets/admin_password
+# Stored secrets are encrypted; the key file lives on the data volume. Back
+# it up separately from the database (docs/security.md).
+secrets:
+  provider: local
+  local:
+    key_file: /var/lib/qtestframe/qtestframe-secrets.key

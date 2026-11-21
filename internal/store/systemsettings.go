@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -32,12 +33,39 @@ func (s *Store) SystemSettings(ctx context.Context) (map[string]SystemSetting, e
 		x.Value, x.UpdatedAt = json.RawMessage(v), x.UpdatedAt.UTC()
 		out[x.Key] = x
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	// secrets (the SMTP password, OIDC client secrets) are stored encrypted
+	for k, x := range out {
+		if _, ok := SecretSettings[k]; !ok {
+			continue
+		}
+		v, err := transformSetting(k, x.Value, func(_, old, ad string) (string, error) { return s.unseal(ctx, old, ad) })
+		if err != nil {
+			return nil, fmt.Errorf("setting %s: %w", k, err)
+		}
+		x.Value = v
+		out[k] = x
+	}
+	return out, nil
 }
 
 // SaveSystemSettings stores overrides (a nil value deletes the key's
 // override) in one transaction.
 func (s *Store) SaveSystemSettings(ctx context.Context, values map[string]json.RawMessage, by string) error {
+	stored := make(map[string]json.RawMessage, len(values))
+	for k, v := range values {
+		if _, ok := SecretSettings[k]; ok && v != nil {
+			var err error
+			if v, err = transformSetting(k, v, func(_, old, ad string) (string, error) { return s.seal(old, ad) }); err != nil {
+				return err
+			}
+		}
+		stored[k] = v
+	}
+	values = stored
 	return s.tx(ctx, func(c conn) error {
 		for k, v := range values {
 			if _, err := c.exec(ctx, `DELETE FROM system_settings WHERE key = ?`, k); err != nil {

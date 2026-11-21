@@ -36,6 +36,9 @@ type Config struct {
 	// SystemSettings controls the settings super administrators can change
 	// at runtime (Administration → System settings, stored in the database).
 	SystemSettings SystemSettings `yaml:"system_settings"`
+	// Secrets configures the encryption of the secrets stored in the
+	// database (see internal/secrets and docs/security.md).
+	Secrets Secrets `yaml:"secrets"`
 
 	// Meta records where values came from (file keys, environment
 	// variables); filled by Load, not part of the YAML.
@@ -49,6 +52,128 @@ type SystemSettings struct {
 	// administration view; their database overrides are ignored. Settings
 	// set by a QTF_* environment variable are always locked.
 	Locked []string `yaml:"locked"`
+}
+
+// Secret key providers (secrets.provider).
+const (
+	SecretsLocal  = "local"
+	SecretsTPM    = "tpm"
+	SecretsPKCS11 = "pkcs11"
+)
+
+// DefaultKeyFileName is the name of the local key file when
+// secrets.local.key_file is not set.
+const DefaultKeyFileName = "qtestframe-secrets.key"
+
+// Secrets configures how the data-encryption key of stored secrets (TOTP
+// secrets, the SMTP password, OIDC client secrets, webhook secrets, tracker
+// tokens, secret web test variables) is protected.
+type Secrets struct {
+	// Provider is local (default), tpm or pkcs11.
+	Provider string    `yaml:"provider"`
+	Local    LocalKey  `yaml:"local"`
+	TPM      TPMKey    `yaml:"tpm"`
+	PKCS11   PKCS11Key `yaml:"pkcs11"`
+}
+
+// LocalKey is the key-encryption key of the local provider: a 256-bit key
+// in a file (created with mode 0600 when missing) or, when set, in the
+// environment variable QTF_SECRETS_KEY (base64 or hex; never in the file).
+type LocalKey struct {
+	// KeyFile defaults to qtestframe-secrets.key next to a SQLite
+	// database, else in $STATE_DIRECTORY, /var/lib/qtestframe or the
+	// working directory (see KeyFilePath).
+	KeyFile string `yaml:"key_file"`
+	// Key is the key from QTF_SECRETS_KEY.
+	Key string `yaml:"-"`
+}
+
+// TPMKey seals the data-encryption key to a TPM 2.0.
+type TPMKey struct {
+	// Device is the TPM resource manager (default /dev/tpmrm0) or the Unix
+	// socket of a TPM emulator (swtpm --server type=unixio).
+	Device string `yaml:"device"`
+	// PCRs, when set, bind the sealed key to the current values of these
+	// PCRs (e.g. [7] for the Secure Boot state): unsealing fails after
+	// they change.
+	PCRs []int `yaml:"pcrs"`
+	// PCRBank is the PCR bank of the policy: sha256 (default) or sha1.
+	PCRBank string `yaml:"pcr_bank"`
+}
+
+// PKCS11Key wraps the data-encryption key with an AES key held in an HSM
+// (PKCS#11). Needs a binary built with -tags pkcs11 (make go-pkcs11).
+type PKCS11Key struct {
+	// Module is the PKCS#11 library, e.g. /usr/lib/softhsm/libsofthsm2.so.
+	Module string `yaml:"module"`
+	// TokenLabel selects the token; Slot (when set) selects the slot
+	// instead.
+	TokenLabel string `yaml:"token_label"`
+	Slot       *uint  `yaml:"slot"`
+	// PINFile holds the user PIN (or QTF_SECRETS_PKCS11_PIN); the PIN is
+	// never written in the configuration file.
+	PINFile string `yaml:"pin_file"`
+	PIN     string `yaml:"-"`
+	// KeyLabel is the CKA_LABEL of the AES key (default qtestframe-kek).
+	KeyLabel string `yaml:"key_label"`
+	// GenerateKey creates a non-extractable AES-256 key with KeyLabel in
+	// the token when there is none.
+	GenerateKey bool `yaml:"generate_key"`
+}
+
+// KeyFilePath returns the key file of the local provider: key_file, else
+// qtestframe-secrets.key next to a SQLite database file, else in
+// $STATE_DIRECTORY (systemd), /var/lib/qtestframe (when it exists) or the
+// working directory. It returns "" for an in-memory SQLite database
+// without key_file (an ephemeral key is used, as the data is ephemeral).
+func (c *Config) KeyFilePath() string {
+	if f := c.Secrets.Local.KeyFile; f != "" {
+		return f
+	}
+	if c.Database.Driver == "sqlite" {
+		path := strings.TrimPrefix(strings.SplitN(c.Database.DSN, "?", 2)[0], "file:")
+		if path == "" || strings.HasPrefix(path, ":memory:") || strings.Contains(c.Database.DSN, "mode=memory") {
+			return ""
+		}
+		return filepath.Join(filepath.Dir(path), DefaultKeyFileName)
+	}
+	if dir := strings.Split(os.Getenv("STATE_DIRECTORY"), ":")[0]; dir != "" {
+		return filepath.Join(dir, DefaultKeyFileName)
+	}
+	if fi, err := os.Stat("/var/lib/qtestframe"); err == nil && fi.IsDir() {
+		return filepath.Join("/var/lib/qtestframe", DefaultKeyFileName)
+	}
+	return DefaultKeyFileName
+}
+
+func (s Secrets) validate() []error {
+	var errs []error
+	switch s.Provider {
+	case "", SecretsLocal, SecretsTPM:
+	case SecretsPKCS11:
+		if s.PKCS11.Module == "" {
+			errs = append(errs, errors.New("secrets.pkcs11.module is required"))
+		}
+		if s.PKCS11.TokenLabel == "" && s.PKCS11.Slot == nil {
+			errs = append(errs, errors.New("secrets.pkcs11: token_label or slot is required"))
+		}
+		if s.PKCS11.KeyLabel == "" {
+			errs = append(errs, errors.New("secrets.pkcs11.key_label is required"))
+		}
+	default:
+		errs = append(errs, fmt.Errorf("secrets.provider must be local, tpm or pkcs11, got %q", s.Provider))
+	}
+	switch s.TPM.PCRBank {
+	case "", "sha1", "sha256":
+	default:
+		errs = append(errs, fmt.Errorf("secrets.tpm.pcr_bank must be sha1 or sha256, got %q", s.TPM.PCRBank))
+	}
+	for _, p := range s.TPM.PCRs {
+		if p < 0 || p > 23 {
+			errs = append(errs, fmt.Errorf("secrets.tpm.pcrs: %d is not a PCR (0-23)", p))
+		}
+	}
+	return errs
 }
 
 // Meta records the origin of loaded values.
@@ -354,6 +479,8 @@ func Default() Config {
 		Hardening:    Hardening{NoNewPrivs: true, Landlock: true, Seccomp: true, DropCapabilities: true},
 		Bootstrap:    Bootstrap{TenantSlug: "default", TenantName: "Default"},
 		Email:        Email{Port: 587, TLS: "starttls", Timeout: 30 * time.Second, DigestHour: 7, FromName: "Qtestframe"},
+		Secrets: Secrets{Provider: SecretsLocal, TPM: TPMKey{Device: "/dev/tpmrm0", PCRBank: "sha256"},
+			PKCS11: PKCS11Key{KeyLabel: "qtestframe-kek"}},
 	}
 }
 
@@ -484,6 +611,12 @@ var EnvVars = map[string]string{
 	"QTF_RUNNER_WEB_PLAYWRIGHT_DIR": "runner.web.playwright_dir",
 	"QTF_RUNNER_WEB_BROWSERS_PATH":  "runner.web.browsers_path",
 	"QTF_COOKIE_SECURE":             "auth.cookie_secure",
+	"QTF_SECRETS_PROVIDER":          "secrets.provider",
+	"QTF_SECRETS_KEY_FILE":          "secrets.local.key_file",
+	"QTF_SECRETS_KEY":               "secrets.local.key",
+	"QTF_SECRETS_TPM_DEVICE":        "secrets.tpm.device",
+	"QTF_SECRETS_PKCS11_MODULE":     "secrets.pkcs11.module",
+	"QTF_SECRETS_PKCS11_PIN":        "secrets.pkcs11.pin",
 }
 
 func (c *Config) initMeta() {
@@ -542,6 +675,10 @@ func applyEnv(c *Config) {
 	set("QTF_RUNNER_WEB_PLAYWRIGHT_DIR", &c.Runner.Web.PlaywrightDir)
 	set("QTF_RUNNER_WEB_BROWSERS_PATH", &c.Runner.Web.BrowsersPath)
 	setBool("QTF_COOKIE_SECURE", &c.Auth.CookieSecure)
+	set("QTF_SECRETS_PROVIDER", &c.Secrets.Provider)
+	set("QTF_SECRETS_KEY_FILE", &c.Secrets.Local.KeyFile)
+	set("QTF_SECRETS_TPM_DEVICE", &c.Secrets.TPM.Device)
+	set("QTF_SECRETS_PKCS11_MODULE", &c.Secrets.PKCS11.Module)
 }
 
 // readSecret returns the trimmed contents of file. A relative path is
@@ -581,6 +718,19 @@ func (c *Config) resolveSecrets() error {
 	if env := os.Getenv("QTF_EMAIL_PASSWORD"); env != "" {
 		c.Email.Password = env
 		c.Meta.EnvKeys["email.password"] = "QTF_EMAIL_PASSWORD"
+	}
+	if c.Secrets.PKCS11.PINFile != "" {
+		if c.Secrets.PKCS11.PIN, err = readSecret(c.Secrets.PKCS11.PINFile); err != nil {
+			return err
+		}
+	}
+	if env := os.Getenv("QTF_SECRETS_PKCS11_PIN"); env != "" {
+		c.Secrets.PKCS11.PIN = env
+		c.Meta.EnvKeys["secrets.pkcs11.pin"] = "QTF_SECRETS_PKCS11_PIN"
+	}
+	if env := os.Getenv("QTF_SECRETS_KEY"); env != "" {
+		c.Secrets.Local.Key = env
+		c.Meta.EnvKeys["secrets.local.key"] = "QTF_SECRETS_KEY"
 	}
 	for i := range c.Auth.OIDC {
 		o := &c.Auth.OIDC[i]
@@ -680,6 +830,7 @@ func (c *Config) Validate() error {
 	}
 	errs = append(errs, c.Runner.Web.validate()...)
 	errs = append(errs, c.Email.validate()...)
+	errs = append(errs, c.Secrets.validate()...)
 	if c.Email.On() && c.Server.BaseURL == "" {
 		errs = append(errs, errors.New("server.base_url is required for e-mail (links in the messages)"))
 	}

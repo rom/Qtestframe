@@ -106,7 +106,7 @@ func run(t *testing.T, stdin string, args ...string) result {
 
 func openTestStore(t *testing.T, cfgPath string) *store.Store {
 	t.Helper()
-	cfg, st, err := openStore(context.Background(), cfgPath)
+	cfg, st, err := openStore(context.Background(), cfgPath, io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}

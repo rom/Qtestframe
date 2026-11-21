@@ -10620,7 +10620,7 @@ paths:
       summary: System settings
       operationId: getAdminSettings
       description: |-
-        The runtime-editable system settings (Administration → System settings): per setting its type, when it applies (`runtime`, `restart`, `readonly`), the effective `value`, the `file_value` without the database override and its `file_source` (`default`, `file`, `environment`), the effective `source` (adds `database`), `locked` with `lock_reason` (`environment`, `config` = system_settings.locked, `readonly`), `running_value`/`pending_restart` for restart settings. Secrets are never returned (`has_secret`). `oidc` lists the OIDC providers (`has_secret`, `secret_source`, `callback_url`). Only super administrators (sessions, not API tokens): the handler checks.
+        The runtime-editable system settings (Administration → System settings): per setting its type, when it applies (`runtime`, `restart`, `readonly`), the effective `value`, the `file_value` without the database override and its `file_source` (`default`, `file`, `environment`), the effective `source` (adds `database`), `locked` with `lock_reason` (`environment`, `config` = system_settings.locked, `readonly`), `running_value`/`pending_restart` for restart settings. Secrets are never returned (`has_secret`). `oidc` lists the OIDC providers (`has_secret`, `secret_source`, `callback_url`). `secrets` describes, read-only, the key provider of the encrypted stored secrets (`provider` local/tpm/pkcs11, `key_id` fingerprint, `info`, `active_key`, `keys`, `encrypted`, `plaintext`). Only super administrators (sessions, not API tokens): the handler checks.
 
         **Permission:** signed in.
       x-permission: authenticated

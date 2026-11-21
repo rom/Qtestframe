@@ -1600,7 +1600,7 @@ All endpoints need a **super administrator signed in with a session**
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/admin/settings` | → `{sections, settings: [...], oidc: {providers, source, stored, locked}, locked_patterns, config_file, restart_pending, load_error, trash_retention_days, logging_runtime}` |
+| GET | `/admin/settings` | → `{sections, settings: [...], oidc: {providers, source, stored, locked}, locked_patterns, config_file, restart_pending, load_error, trash_retention_days, logging_runtime, secrets}`; `secrets` (read-only) is the key provider of the stored secrets: `{provider: local\|tpm\|pkcs11, key_id, info, active_key, keys, encrypted, plaintext}` (a key fingerprint, never a key) |
 | PUT | `/admin/settings` | `{"values": {key: value \| null}}`; returns the GET document |
 | DELETE | `/admin/settings/{key}` | reset `key` (e.g. `logging.level`, `auth.oidc`) to the file value |
 | GET | `/admin/settings/export` | effective configuration as YAML (attachment), secrets `REDACTED` |
