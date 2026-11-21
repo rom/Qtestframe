@@ -173,7 +173,7 @@ requirements:
     obligation: must
     priority: high
     tags: [security-awareness, onboarding]
-    refs: ["ISO/IEC 27001:2022 §7.3", "ISO/IEC 27001:2022 A.6.3"]
+    refs: ["ISO/IEC 27001:2022 §7.3", "ISO/IEC 27001:2022 A.6.3", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK M1017 (user training)"]
     tests: [EDTR-T06]
     en:
       title: Security awareness training at start and every 12 months
@@ -221,7 +221,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [security-awareness, phishing-simulation]
-    refs: ["ISO/IEC 27001:2022 A.6.3"]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK M1017 (user training)"]
     tests: [EDTR-T07]
     en:
       title: Quarterly phishing simulation with reported results
@@ -293,7 +293,7 @@ requirements:
     obligation: must
     priority: high
     tags: [contractors, security-awareness]
-    refs: ["ISO/IEC 27001:2022 A.6.3", "ISO/IEC 27001:2022 A.5.20"]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "ISO/IEC 27001:2022 A.5.20", "MITRE ATT&CK M1017 (user training)"]
     tests: [EDTR-T10]
     en:
       title: Awareness training for contractors before access
@@ -315,7 +315,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [phishing, targeted-training, awareness]
-    refs: ["ISO/IEC 27001:2022 A.6.3", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(g)"]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(g)", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK M1017 (user training)"]
     tests: [EDTR-T11]
     en:
       title: Targeted training after 2 failed phishing simulations in 12 months
@@ -339,7 +339,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [phishing, reporting-rate, indicator]
-    refs: ["ISO/IEC 27001:2022 A.6.8", "ISO/IEC 27001:2022 A.6.3"]
+    refs: ["ISO/IEC 27001:2022 A.6.8", "ISO/IEC 27001:2022 A.6.3", "MITRE ATT&CK T1566 (phishing)"]
     tests: [EDTR-T11]
     en:
       title: At least 60 % of users report a simulated phishing message
@@ -563,7 +563,7 @@ tests:
     priority: high
     execution: manual
     tags: [security-awareness]
-    refs: ["ISO/IEC 27001:2022 §7.3", "ISO/IEC 27001:2022 A.6.3"]
+    refs: ["ISO/IEC 27001:2022 §7.3", "ISO/IEC 27001:2022 A.6.3", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK M1017 (user training)"]
     en:
       title: Awareness training coverage and content
       description: Checks that employees complete awareness training on time and that the content reflects recent incidents.
@@ -593,7 +593,7 @@ tests:
     priority: medium
     execution: manual
     tags: [phishing-simulation]
-    refs: ["ISO/IEC 27001:2022 A.6.3"]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK M1017 (user training)"]
     en:
       title: Review of phishing simulation reports
       description: Checks that phishing simulations were run every quarter with results per unit.
@@ -675,7 +675,7 @@ tests:
     priority: high
     execution: manual
     tags: [contractors]
-    refs: ["ISO/IEC 27001:2022 A.6.3"]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "MITRE ATT&CK M1017 (user training)"]
     en:
       title: Contractors trained before first access
       description: Compares the awareness training dates of contractors with the first access dates of their accounts.
@@ -701,7 +701,7 @@ tests:
     priority: medium
     execution: automated
     tags: [phishing, awareness]
-    refs: ["ISO/IEC 27001:2022 A.6.3", "ISO/IEC 27001:2022 A.6.8"]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "ISO/IEC 27001:2022 A.6.8", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK M1017 (user training)"]
     en:
       title: Follow-up of phishing simulation results
       description: A script reads the results of the phishing simulations and the training records and checks targeted training and reporting rates.

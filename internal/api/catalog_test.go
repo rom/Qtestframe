@@ -44,6 +44,16 @@ func TestCatalogBuiltIn(t *testing.T) {
 			t.Errorf("ref target %v", tg)
 		}
 	}
+	// CWE and ATT&CK refs link to the weakness and technique pages
+	links := map[string]string{}
+	for _, x := range targets {
+		tg := x.(map[string]any)
+		links[tg["ref"].(string)] = tg["url"].(string)
+	}
+	if links["CWE-521 (weak password requirements)"] != "https://cwe.mitre.org/data/definitions/521.html" ||
+		links["MITRE ATT&CK T1110 (brute force)"] != "https://attack.mitre.org/techniques/T1110/" {
+		t.Errorf("CWE/ATT&CK links: %v", links)
+	}
 	tt := a.m("GET", "/api/v1/catalog/tests/AUTH-T01?lang=en", nil, 200)
 	if len(anyList(tt["ref_targets"])) != len(anyList(tt["refs"])) {
 		t.Errorf("test ref_targets: %v", tt["ref_targets"])

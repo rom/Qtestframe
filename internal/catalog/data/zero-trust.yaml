@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [implicit-trust, internal-services, authentication]
-    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "CISA Zero Trust Maturity Model 2.0 (applications and workloads)", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 1.2"]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "CISA Zero Trust Maturity Model 2.0 (applications and workloads)", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 1.2", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1021 (remote services)"]
     tests: [ZTA-T01]
     en:
       title: No access granted for being on the internal network
@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: high
     tags: [mutual-tls, workload-identity, service-to-service]
-    refs: ["NIST SP 800-207A (service identity)", "NIST SP 800-207 §3.1.1 (enhanced identity governance)", "IEC 62443-3-3 SR 1.2", "ISO/IEC 27001:2022 A.8.5"]
+    refs: ["NIST SP 800-207A (service identity)", "NIST SP 800-207 §3.1.1 (enhanced identity governance)", "IEC 62443-3-3 SR 1.2", "ISO/IEC 27001:2022 A.8.5", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     tests: [ZTA-T02]
     en:
       title: Services prove their identity with short-lived certificates
@@ -59,7 +59,7 @@ requirements:
     obligation: must
     priority: high
     tags: [micro-segmentation, network-policy, default-deny]
-    refs: ["NIST SP 800-207 §3.1.2 (micro-segmentation)", "IEC 62443-3-3 SR 5.1", "ISO/IEC 27001:2022 A.8.22", "NIST SP 800-53 SC-7"]
+    refs: ["NIST SP 800-207 §3.1.2 (micro-segmentation)", "IEC 62443-3-3 SR 5.1", "ISO/IEC 27001:2022 A.8.22", "NIST SP 800-53 SC-7", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
     tests: [ZTA-T03]
     en:
       title: Workloads accept connections only from listed callers
@@ -107,7 +107,7 @@ requirements:
     obligation: must
     priority: high
     tags: [fail-closed, policy-decision-point, availability]
-    refs: ["NIST SP 800-207 §5.2 (denial-of-service or network disruption)", "NIST SP 800-53 AC-3", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["NIST SP 800-207 §5.2 (denial-of-service or network disruption)", "NIST SP 800-53 AC-3", "ISO/IEC 27001:2022 A.8.3", "CWE-636 (not failing securely)"]
     tests: [ZTA-T05]
     en:
       title: Access denied when the policy decision point is unreachable
@@ -131,7 +131,7 @@ requirements:
     obligation: should
     priority: high
     tags: [device-posture, managed-devices, administration]
-    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "CISA Zero Trust Maturity Model 2.0 (devices)", "ISO/IEC 27001:2022 A.8.1", "NIST SP 800-53 IA-3"]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "CISA Zero Trust Maturity Model 2.0 (devices)", "ISO/IEC 27001:2022 A.8.1", "NIST SP 800-53 IA-3", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [ZTA-T06]
     en:
       title: Administration only from compliant managed devices
@@ -155,7 +155,7 @@ requirements:
     obligation: must
     priority: high
     tags: [continuous-evaluation, risk-signals, revocation]
-    refs: ["NIST SP 800-207 §3.3 (trust algorithm)", "CISA Zero Trust Maturity Model 2.0 (identity)", "ISO/IEC 27001:2022 A.5.18"]
+    refs: ["NIST SP 800-207 §3.3 (trust algorithm)", "CISA Zero Trust Maturity Model 2.0 (identity)", "ISO/IEC 27001:2022 A.5.18", "CWE-1464 (improper session invalidation)", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [ZTA-T07]
     en:
       title: Sessions re-evaluated when a risk signal arrives
@@ -179,7 +179,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [identity-aware-proxy, vpn, remote-access]
-    refs: ["NIST SP 800-207 §3.1.3 (network infrastructure and software defined perimeters)", "CISA Zero Trust Maturity Model 2.0 (networks)", "ISO/IEC 27001:2022 A.8.20"]
+    refs: ["NIST SP 800-207 §3.1.3 (network infrastructure and software defined perimeters)", "CISA Zero Trust Maturity Model 2.0 (networks)", "ISO/IEC 27001:2022 A.8.20", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK M1035 (limit access to resource over network)"]
     tests: [ZTA-T08]
     en:
       title: Remote access per application instead of network-wide VPN
@@ -223,7 +223,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [decision-logging, observability]
-    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15"]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15", "CWE-778 (insufficient logging)"]
     tests: [ZTA-T10]
     en:
       title: Access decisions logged with their inputs
@@ -245,7 +245,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [step-up, risk-based-authentication]
-    refs: ["NIST SP 800-207 §3.3 (trust algorithm)", "NIST SP 800-63B-4 (reauthentication)", "ISO/IEC 27001:2022 A.8.5"]
+    refs: ["NIST SP 800-207 §3.3 (trust algorithm)", "NIST SP 800-63B-4 (reauthentication)", "ISO/IEC 27001:2022 A.8.5", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [ZTA-T11]
     en:
       title: Step-up authentication on higher risk
@@ -267,7 +267,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [ssh-certificates, privileged-access, short-lived-credentials]
-    refs: ["NIST SP 800-207 §3.1.1 (enhanced identity governance)", "NIST SP 800-53 IA-5", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 1.5"]
+    refs: ["NIST SP 800-207 §3.1.1 (enhanced identity governance)", "NIST SP 800-53 IA-5", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 1.5", "MITRE ATT&CK T1098.004 (SSH authorized keys)", "MITRE ATT&CK T1552.004 (private keys)"]
     tests: [ZTA-T12]
     en:
       title: Short-lived certificates for administrator shell access
@@ -315,7 +315,7 @@ tests:
     priority: critical
     execution: automated
     tags: [implicit-trust, internal-services]
-    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)"]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1021 (remote services)"]
     en:
       title: Internal services refuse unauthenticated requests from inside
       description: A script inside the production network calls each internal service without credentials.
@@ -341,7 +341,7 @@ tests:
     priority: high
     execution: automated
     tags: [mutual-tls, workload-identity]
-    refs: ["NIST SP 800-207A (service identity)"]
+    refs: ["NIST SP 800-207A (service identity)", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     en:
       title: Service connections need a valid workload certificate
       description: A script connects to an internal service with no certificate, a foreign certificate and a valid one, and reads the issued certificate lifetimes.
@@ -375,7 +375,7 @@ tests:
     priority: high
     execution: automated
     tags: [micro-segmentation]
-    refs: ["NIST SP 800-207 §3.1.2 (micro-segmentation)", "IEC 62443-3-3 SR 5.1"]
+    refs: ["NIST SP 800-207 §3.1.2 (micro-segmentation)", "IEC 62443-3-3 SR 5.1", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
     en:
       title: Unlisted workloads cannot reach the database
       description: Starts a test workload that is not on the database's allow list and tries to connect.
@@ -431,7 +431,7 @@ tests:
     priority: high
     execution: automated
     tags: [fail-closed]
-    refs: ["NIST SP 800-53 AC-3"]
+    refs: ["NIST SP 800-53 AC-3", "CWE-636 (not failing securely)"]
     en:
       title: Enforcement points deny when the decision point is down
       description: Stops the policy decision point and sends requests with and without a cached decision.
@@ -461,7 +461,7 @@ tests:
     priority: high
     execution: manual
     tags: [device-posture]
-    refs: ["CISA Zero Trust Maturity Model 2.0 (devices)"]
+    refs: ["CISA Zero Trust Maturity Model 2.0 (devices)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Administration refused from non-compliant devices
       description: Signs in as administrator from an unmanaged device, an out-of-date managed device and a compliant one.
@@ -491,7 +491,7 @@ tests:
     priority: high
     execution: manual
     tags: [continuous-evaluation]
-    refs: ["NIST SP 800-207 §3.3 (trust algorithm)"]
+    refs: ["NIST SP 800-207 §3.3 (trust algorithm)", "CWE-1464 (improper session invalidation)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: A compromised-device signal ends the session on that device
       description: Sends a test risk signal for one of the user's devices and watches both sessions.
@@ -517,7 +517,7 @@ tests:
     priority: medium
     execution: manual
     tags: [identity-aware-proxy]
-    refs: ["NIST SP 800-207 §3.1.3 (network infrastructure and software defined perimeters)"]
+    refs: ["NIST SP 800-207 §3.1.3 (network infrastructure and software defined perimeters)", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK M1035 (limit access to resource over network)"]
     en:
       title: Remote user reaches one application and nothing else
       description: Connects as a remote user with access to one internal application and probes other internal hosts.
@@ -573,7 +573,7 @@ tests:
     priority: medium
     execution: automated
     tags: [decision-logging]
-    refs: ["NIST SP 800-53 AU-2"]
+    refs: ["NIST SP 800-53 AU-2", "CWE-778 (insufficient logging)"]
     en:
       title: Decision log records carry subject, device and policy version
       description: Sends a denied request and an allowed administration request and reads the decision log.
@@ -603,7 +603,7 @@ tests:
     priority: medium
     execution: manual
     tags: [step-up]
-    refs: ["NIST SP 800-207 §3.3 (trust algorithm)"]
+    refs: ["NIST SP 800-207 §3.3 (trust algorithm)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Sign-in from a new country asks for the second factor
       description: Signs in from the usual context and from a new country.
@@ -629,7 +629,7 @@ tests:
     priority: medium
     execution: manual
     tags: [ssh-certificates]
-    refs: ["NIST SP 800-53 IA-5"]
+    refs: ["NIST SP 800-53 IA-5", "MITRE ATT&CK T1098.004 (SSH authorized keys)", "MITRE ATT&CK T1552.004 (private keys)"]
     en:
       title: Static SSH keys and expired certificates are refused
       description: Tries shell access with a static key, an expired certificate and a fresh certificate.

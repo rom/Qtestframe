@@ -58,7 +58,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [classification, declassification, audit]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "CWE-862 (missing authorization)"]
     tests: [SAKS-T03]
     en:
       title: Only an authorised role lowers a classification level
@@ -80,7 +80,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [security-clearance, access-control]
-    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)", "Säkerhetsskyddsförordning (2021:955)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)", "Säkerhetsskyddsförordning (2021:955)", "CWE-863 (incorrect authorization)"]
     tests: [SAKS-T04]
     en:
       title: Access to classified records only with a matching security clearance
@@ -102,7 +102,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [need-to-know, access-control]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "CWE-863 (incorrect authorization)"]
     tests: [SAKS-T04]
     en:
       title: Need-to-know is checked in addition to the clearance
@@ -124,7 +124,7 @@ requirements:
     obligation: must
     priority: high
     tags: [security-clearance, revocation]
-    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)", "CWE-1464 (improper session invalidation)", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [SAKS-T05]
     en:
       title: Access ends within 1 hour when a clearance ends
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: high
     tags: [logging, audit]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "CWE-778 (insufficient logging)"]
     tests: [SAKS-T06]
     en:
       title: Logging of each access to classified records
@@ -176,7 +176,7 @@ requirements:
     obligation: should
     priority: high
     tags: [logging, log-review]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (kontroll av säkerhetsskyddet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (kontroll av säkerhetsskyddet)", "PMFS 2022:1", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [SAKS-T06]
     en:
       title: Weekly review of the access log
@@ -200,7 +200,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [network-separation, isolation]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1", "MITRE ATT&CK M1030 (network segmentation)"]
     tests: [SAKS-T07]
     en:
       title: Classified systems separated from other networks
@@ -248,7 +248,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [encryption, approved-products]
-    refs: ["Säkerhetsskyddsförordning (2021:955)", "Försvarsmaktens föreskrifter om säkerhetsskydd (FFS)"]
+    refs: ["Säkerhetsskyddsförordning (2021:955)", "Försvarsmaktens föreskrifter om säkerhetsskydd (FFS)", "CWE-311 (missing encryption of sensitive data)", "MITRE ATT&CK T1040 (network sniffing)"]
     tests: [SAKS-T09]
     en:
       title: Encryption with products approved by the Swedish Armed Forces
@@ -274,7 +274,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [removable-media, data-loss-prevention]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "MITRE ATT&CK T1052.001 (exfiltration over USB)", "MITRE ATT&CK T1091 (replication through removable media)"]
     tests: [SAKS-T09]
     en:
       title: Only registered removable media can be written
@@ -498,7 +498,7 @@ tests:
     priority: high
     execution: manual
     tags: [classification, declassification, audit]
-    refs: []
+    refs: ["CWE-862 (missing authorization)"]
     en:
       title: Lowering a classification level needs the permission and is logged
       description: Tries to lower the level of a test record as users with and without the declassification permission.
@@ -528,7 +528,7 @@ tests:
     priority: critical
     execution: manual
     tags: [security-clearance, need-to-know, access-control]
-    refs: []
+    refs: ["CWE-863 (incorrect authorization)"]
     en:
       title: Access needs both clearance and need-to-know
       description: Tries to open a classified test record as users with different clearances and group memberships.
@@ -566,7 +566,7 @@ tests:
     priority: high
     execution: manual
     tags: [security-clearance, revocation]
-    refs: []
+    refs: ["CWE-1464 (improper session invalidation)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: An ended clearance blocks an open session
       description: Ends the clearance of a signed-in user and measures when access to classified records stops.
@@ -598,7 +598,7 @@ tests:
     priority: high
     execution: manual
     tags: [logging, log-review]
-    refs: []
+    refs: ["CWE-778 (insufficient logging)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Access log entries and weekly reviews
       description: Performs each logged action on a test record, checks the log entries and reviews the records of the weekly log reviews.
@@ -632,7 +632,7 @@ tests:
     priority: critical
     execution: manual
     tags: [network-separation, isolation]
-    refs: []
+    refs: ["MITRE ATT&CK M1030 (network segmentation)"]
     en:
       title: No connection from the classified system to other networks
       description: Inspects the network documentation and tries outbound connections from a server and a client of the system.
@@ -696,7 +696,7 @@ tests:
     priority: critical
     execution: manual
     tags: [encryption, removable-media]
-    refs: []
+    refs: ["CWE-311 (missing encryption of sensitive data)", "MITRE ATT&CK T1040 (network sniffing)", "MITRE ATT&CK T1052.001 (exfiltration over USB)", "MITRE ATT&CK T1091 (replication through removable media)"]
     en:
       title: Approved encryption on links and media, and blocked unregistered media
       description: Checks the encryption products in use, captures traffic between two sites and tries to write to removable media.

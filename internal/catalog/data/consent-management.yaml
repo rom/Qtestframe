@@ -195,7 +195,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [server-side-tracking, circumvention]
-    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "EDPB Guidelines 2/2023 on technical scope of Art. 5(3) of ePrivacy Directive", "GDPR Art. 6(1)(a)"]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "EDPB Guidelines 2/2023 on technical scope of Art. 5(3) of ePrivacy Directive", "GDPR Art. 6(1)(a)", "CWE-359 (exposure of private personal information)"]
     tests: [CONS-T09]
     en:
       title: No server-side forwarding of tracking data without consent
@@ -557,7 +557,7 @@ tests:
     priority: high
     execution: manual
     tags: [server-side-tracking]
-    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "CWE-359 (exposure of private personal information)"]
     en:
       title: Server-side gateway sends nothing after a refusal
       description: Rejects all purposes and captures the outbound traffic of the server-side tag gateway during a session.

@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [tenant-context, authorisation]
-    refs: ["OWASP ASVS 4.0.3 §4.1.2", "OWASP Top 10:2021 A01 (broken access control)", "CSA Cloud Controls Matrix v4 DSP-17", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
+    refs: ["OWASP ASVS 4.0.3 §4.1.2", "OWASP Top 10:2021 A01 (broken access control)", "CSA Cloud Controls Matrix v4 DSP-17", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "CWE-639 (authorization bypass through user-controlled key)", "CWE-807 (reliance on untrusted inputs in a security decision)"]
     tests: [TEN-T01]
     en:
       title: The tenant comes from the authenticated session
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [data-layer, row-level-security]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2026 (segregation in virtual computing environments)", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2026 (segregation in virtual computing environments)", "ISO/IEC 27001:2022 A.8.3", "CWE-639 (authorization bypass through user-controlled key)"]
     tests: [TEN-T02]
     en:
       title: Tenant filter enforced in the data layer
@@ -82,7 +82,7 @@ requirements:
     obligation: must
     priority: high
     tags: [search, isolation]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2026 (segregation in virtual computing environments)"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2026 (segregation in virtual computing environments)", "CWE-639 (authorization bypass through user-controlled key)"]
     tests: [TEN-T03]
     en:
       title: Search results contain only the tenant's documents
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [background-jobs, tenant-context]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2026 (segregation in virtual computing environments)"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2026 (segregation in virtual computing environments)", "CWE-653 (improper isolation or compartmentalization)"]
     tests: [TEN-T04]
     en:
       title: Background jobs run in the tenant that queued them
@@ -148,7 +148,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [quota, noisy-neighbour, rate-limit]
-    refs: ["ISO/IEC 25010:2023 resource utilization", "AWS Well-Architected SaaS Lens (noisy neighbour)", "ISO/IEC 27001:2022 A.8.6", "IEC 62443-3-3 SR 7.2"]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "AWS Well-Architected SaaS Lens (noisy neighbour)", "ISO/IEC 27001:2022 A.8.6", "IEC 62443-3-3 SR 7.2", "CWE-770 (allocation of resources without limits or throttling)", "MITRE ATT&CK T1499 (endpoint denial of service)"]
     tests: [TEN-T06]
     en:
       title: Resource quota per tenant
@@ -196,7 +196,7 @@ requirements:
     obligation: must
     priority: high
     tags: [deletion, offboarding]
-    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "ISO/IEC 27001:2022 A.8.10 (information deletion)", "ISO/IEC 27017:2026 (removal of cloud service customer assets)", "ISO/IEC 27018:2025 (return, transfer and disposal of PII)"]
+    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "ISO/IEC 27001:2022 A.8.10 (information deletion)", "ISO/IEC 27017:2026 (removal of cloud service customer assets)", "ISO/IEC 27018:2025 (return, transfer and disposal of PII)", "CWE-459 (incomplete cleanup)"]
     tests: [TEN-T07, TEN-T09]
     en:
       title: Deletion of a tenant after the contract ends
@@ -220,7 +220,7 @@ requirements:
     obligation: must
     priority: high
     tags: [regression-test, pipeline, isolation]
-    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4 (insecure direct object references)", "ISO/IEC 27001:2022 A.8.29"]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4 (insecure direct object references)", "ISO/IEC 27001:2022 A.8.29", "CWE-639 (authorization bypass through user-controlled key)"]
     tests: [TEN-T02]
     en:
       title: Cross-tenant tests for each endpoint
@@ -242,7 +242,7 @@ requirements:
     obligation: should
     priority: high
     tags: [support-access, approval]
-    refs: ["ISO/IEC 27001:2022 A.8.2 (privileged access rights)", "CSA Cloud Controls Matrix v4 IAM-09", "IEC 62443-2-4:2023 SP.07 (remote access)"]
+    refs: ["ISO/IEC 27001:2022 A.8.2 (privileged access rights)", "CSA Cloud Controls Matrix v4 IAM-09", "IEC 62443-2-4:2023 SP.07 (remote access)", "MITRE ATT&CK T1199 (trusted relationship)"]
     tests: [TEN-T08]
     en:
       title: Support access to a tenant needs its approval
@@ -292,7 +292,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [audit-log, tenant-administration]
-    refs: ["ISO/IEC 27017:2026 (monitoring of cloud services)", "CSA Cloud Controls Matrix v4 LOG", "ISO/IEC 27001:2022 A.8.15"]
+    refs: ["ISO/IEC 27017:2026 (monitoring of cloud services)", "CSA Cloud Controls Matrix v4 LOG", "ISO/IEC 27001:2022 A.8.15", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [TEN-T11]
     en:
       title: Tenant administrators read their own audit log
@@ -316,7 +316,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [logging, tenant-id]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3", "CWE-223 (omission of security-relevant information)"]
     tests: [TEN-T12]
     en:
       title: Tenant identifier in each log record
@@ -338,7 +338,7 @@ requirements:
     obligation: must
     priority: high
     tags: [custom-domains, dns, subdomain-takeover]
-    refs: ["OWASP Web Security Testing Guide WSTG-CONF-10", "ISO/IEC 27001:2022 A.8.20"]
+    refs: ["OWASP Web Security Testing Guide WSTG-CONF-10", "ISO/IEC 27001:2022 A.8.20", "MITRE ATT&CK T1584.001 (domains)"]
     tests: [TEN-T13]
     en:
       title: Custom domains verified before use and released when removed
@@ -362,7 +362,7 @@ tests:
     priority: critical
     execution: automated
     tags: [tenant-context, api]
-    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "CWE-639 (authorization bypass through user-controlled key)", "CWE-807 (reliance on untrusted inputs in a security decision)"]
     en:
       title: A tenant id chosen by the client is ignored
       description: Sends requests from organisation A in which the id of organisation B is placed in the URL, a header and the body.
@@ -398,7 +398,7 @@ tests:
     priority: critical
     execution: automated
     tags: [data-layer, regression-test, pipeline]
-    refs: []
+    refs: ["CWE-639 (authorization bypass through user-controlled key)"]
     en:
       title: Cross-tenant suite covers every endpoint and the data layer
       description: Runs the cross-tenant test suite, compares it with the endpoint list and runs a query without tenant context.
@@ -432,7 +432,7 @@ tests:
     priority: high
     execution: automated
     tags: [cache, search]
-    refs: []
+    refs: ["CWE-639 (authorization bypass through user-controlled key)"]
     en:
       title: Cache and search keep tenants apart
       description: Makes the same cached request from two tenants and searches for a word that occurs only in one of them.
@@ -464,7 +464,7 @@ tests:
     priority: high
     execution: automated
     tags: [background-jobs]
-    refs: []
+    refs: ["CWE-653 (improper isolation or compartmentalization)"]
     en:
       title: Background jobs carry the tenant
       description: Queues an export job for one tenant and a job without tenant, and checks their results.
@@ -524,7 +524,7 @@ tests:
     priority: medium
     execution: automated
     tags: [quota, load-test]
-    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2", "ISO/IEC 27001:2022 A.8.6", "IEC 62443-3-3 SR 7.2"]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2", "ISO/IEC 27001:2022 A.8.6", "IEC 62443-3-3 SR 7.2", "CWE-770 (allocation of resources without limits or throttling)", "MITRE ATT&CK T1499 (endpoint denial of service)"]
     en:
       title: One busy tenant does not slow down the others
       description: A load test runs normal traffic for nine tenants while a tenth sends five times its quota.
@@ -556,7 +556,7 @@ tests:
     priority: high
     execution: manual
     tags: [export, deletion, offboarding]
-    refs: []
+    refs: ["CWE-459 (incomplete cleanup)"]
     en:
       title: Export and deletion of a closed tenant
       description: Exports a test tenant, closes it and checks after the deletion period that no data remains.
@@ -590,7 +590,7 @@ tests:
     priority: high
     execution: manual
     tags: [support-access, approval, audit]
-    refs: []
+    refs: ["MITRE ATT&CK T1199 (trusted relationship)"]
     en:
       title: Support access with and without approval
       description: A support engineer tries to open a tenant before and after its administrator approves, and the audit trail is checked.
@@ -626,7 +626,7 @@ tests:
     priority: medium
     execution: automated
     tags: [deletion, orphaned-data]
-    refs: []
+    refs: ["CWE-459 (incomplete cleanup)"]
     en:
       title: Scheduled check for data of closed tenants
       description: A scheduled job counts rows, files, index entries and cache entries per tenant id and compares them with the list of active and closing tenants.
@@ -688,7 +688,7 @@ tests:
     priority: medium
     execution: manual
     tags: [audit-log, tenant-administration]
-    refs: ["ISO/IEC 27017:2026 (monitoring of cloud services)"]
+    refs: ["ISO/IEC 27017:2026 (monitoring of cloud services)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Tenant administrator searches and exports own events
       description: Generates events in two tenants and searches the audit log as one tenant's administrator.
@@ -718,7 +718,7 @@ tests:
     priority: medium
     execution: automated
     tags: [logging, tenant-id]
-    refs: ["NIST SP 800-53 AU-3"]
+    refs: ["NIST SP 800-53 AU-3", "CWE-223 (omission of security-relevant information)"]
     en:
       title: Log records carry the tenant identifier
       description: A script sends requests and queues a job for two tenants and checks the log records.
@@ -744,7 +744,7 @@ tests:
     priority: high
     execution: manual
     tags: [custom-domains, subdomain-takeover]
-    refs: ["OWASP Web Security Testing Guide WSTG-CONF-10"]
+    refs: ["OWASP Web Security Testing Guide WSTG-CONF-10", "MITRE ATT&CK T1584.001 (domains)"]
     en:
       title: Custom domain needs DNS proof and is released on removal
       description: Adds a custom domain with and without the verification record and then removes it.

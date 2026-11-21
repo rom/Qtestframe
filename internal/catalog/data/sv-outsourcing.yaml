@@ -151,7 +151,7 @@ requirements:
     obligation: must
     priority: high
     tags: [supplier-access, privileged-access, mfa]
-    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-2-4:2023 SP.07 (remote access)"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-2-4:2023 SP.07 (remote access)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1199 (trusted relationship)", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [SVOUT-T05]
     en:
       title: Provider staff access customer systems with personal accounts and logging
@@ -381,7 +381,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [outsourcing, subcontractors, supply-chain]
-    refs: ["ISO/IEC 27001:2022 A.5.21", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(d)"]
+    refs: ["ISO/IEC 27001:2022 A.5.21", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(d)", "MITRE ATT&CK T1199 (trusted relationship)"]
     tests: [SVOUT-T11]
     en:
       title: Security requirements passed on to subcontractors
@@ -543,7 +543,7 @@ tests:
     priority: high
     execution: manual
     tags: [supplier-access]
-    refs: ["ISO/IEC 27001:2022 A.5.18"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1199 (trusted relationship)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Provider accounts and a logged test session
       description: Lists the provider accounts in the customer's systems and asks the provider for a test session.
@@ -725,7 +725,7 @@ tests:
     priority: medium
     execution: manual
     tags: [termination, subcontractors]
-    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(7)", "ISO/IEC 27001:2022 A.5.21"]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(7)", "ISO/IEC 27001:2022 A.5.21", "MITRE ATT&CK T1199 (trusted relationship)"]
     en:
       title: Termination grounds and flow-down to subcontractors
       description: Reviews the termination clause and asks the provider to show the security clauses of its subcontracts.

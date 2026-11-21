@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [zones-and-conduits, segmentation, architecture]
-    refs: ["IEC 62443-3-2:2020 ZCR 3", "IEC 62443-3-3:2013 SR 5.1", "NIST SP 800-82r3 §5"]
+    refs: ["IEC 62443-3-2:2020 ZCR 3", "IEC 62443-3-3:2013 SR 5.1", "NIST SP 800-82r3 §5", "MITRE ATT&CK M0930 (network segmentation)"]
     tests: [ICS-T01, ICS-T02]
     en:
       title: Every asset belongs to a documented zone
@@ -36,7 +36,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [segmentation, dmz, firewall]
-    refs: ["IEC 62443-3-3:2013 SR 5.1", "IEC 62443-3-3:2013 SR 5.2", "NIST SP 800-82r3 §5"]
+    refs: ["IEC 62443-3-3:2013 SR 5.1", "IEC 62443-3-3:2013 SR 5.2", "NIST SP 800-82r3 §5", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
     tests: [ICS-T01]
     en:
       title: No direct traffic from the enterprise network to the control zone
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [remote-access, mfa, jump-host]
-    refs: ["IEC 62443-3-3:2013 SR 1.13", "IEC 62443-3-3:2013 SR 1.1 RE 2", "IEC 62443-2-4:2023 SP.07 (remote access)", "NIST SP 800-82r3 §6"]
+    refs: ["IEC 62443-3-3:2013 SR 1.13", "IEC 62443-3-3:2013 SR 1.1 RE 2", "IEC 62443-2-4:2023 SP.07 (remote access)", "NIST SP 800-82r3 §6", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T0822 (external remote services)", "MITRE ATT&CK M0932 (multi-factor authentication)"]
     tests: [ICS-T03]
     en:
       title: Remote access only through a jump host with multi-factor authentication
@@ -128,7 +128,7 @@ requirements:
     obligation: must
     priority: high
     tags: [remote-access, session-recording, audit]
-    refs: ["IEC 62443-3-3:2013 SR 2.8", "IEC 62443-3-3:2013 SR 2.12", "IEC 62443-2-4:2023 SP.07 (remote access)"]
+    refs: ["IEC 62443-3-3:2013 SR 2.8", "IEC 62443-3-3:2013 SR 2.12", "IEC 62443-2-4:2023 SP.07 (remote access)", "MITRE ATT&CK T0822 (external remote services)"]
     tests: [ICS-T03]
     en:
       title: Remote sessions are recorded
@@ -152,7 +152,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [opc-ua, protocol-security, integrity]
-    refs: ["IEC 62541-2 (OPC UA security model)", "IEC 62443-3-3:2013 SR 3.1 RE 1", "IEC 62443-4-2:2019 CR 3.1", "IEC 62443-3-3:2013 SR 1.2"]
+    refs: ["IEC 62541-2 (OPC UA security model)", "IEC 62443-3-3:2013 SR 3.1 RE 1", "IEC 62443-4-2:2019 CR 3.1", "IEC 62443-3-3:2013 SR 1.2", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1692.001 (unauthorized command message)", "MITRE ATT&CK T0830 (adversary-in-the-middle)"]
     tests: [ICS-T04]
     en:
       title: Industrial protocols authenticated and integrity protected
@@ -244,7 +244,7 @@ requirements:
     obligation: must
     priority: high
     tags: [patch-management, vendor-approval, test-bench]
-    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)", "IEC TR 62443-2-3:2015", "IEC 62443-4-1:2018 SUM-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II"]
+    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)", "IEC TR 62443-2-3:2015", "IEC 62443-4-1:2018 SUM-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II", "MITRE ATT&CK M0951 (update software)"]
     tests: [ICS-T08]
     en:
       title: Patches approved by the vendor and tested before installation
@@ -272,7 +272,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [backup, restore, controller-configuration]
-    refs: ["IEC 62443-3-3:2013 SR 7.3", "IEC 62443-3-3:2013 SR 7.4", "IEC 62443-2-4:2023 SP.12 (backup/restore)", "IEC 62443-4-2:2019 CR 7.3"]
+    refs: ["IEC 62443-3-3:2013 SR 7.3", "IEC 62443-3-3:2013 SR 7.4", "IEC 62443-2-4:2023 SP.12 (backup/restore)", "IEC 62443-4-2:2019 CR 7.3", "MITRE ATT&CK T0809 (data destruction)", "MITRE ATT&CK M0953 (data backup)"]
     tests: [ICS-T09]
     en:
       title: Controller configurations backed up and restorable
@@ -296,7 +296,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [change-management, logic, integrity]
-    refs: ["IEC 62443-3-3:2013 SR 3.4", "IEC 62443-4-2:2019 CR 3.4", "IEC 62443-2-4:2023 SP.06 (configuration management)", "IEC 61511-1:2016 §17"]
+    refs: ["IEC 62443-3-3:2013 SR 3.4", "IEC 62443-4-2:2019 CR 3.4", "IEC 62443-2-4:2023 SP.06 (configuration management)", "IEC 61511-1:2016 §17", "MITRE ATT&CK T0889 (modify program)", "MITRE ATT&CK T0843 (program download)"]
     tests: [ICS-T10]
     en:
       title: Unapproved logic changes detected
@@ -344,7 +344,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [safe-state, communication-loss, watchdog]
-    refs: ["IEC 61511-1:2016 §11.3", "IEC 61508-2:2010", "IEC 62443-3-3:2013 SR 7.1"]
+    refs: ["IEC 61511-1:2016 §11.3", "IEC 61508-2:2010", "IEC 62443-3-3:2013 SR 7.1", "MITRE ATT&CK T0814 (denial of service)"]
     tests: [ICS-T12]
     en:
       title: Safe state on loss of communication
@@ -368,7 +368,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [sis, functional-safety, separation]
-    refs: ["IEC 61511-1:2016 §11.2", "IEC 61511-1:2016 §8.2.4", "IEC 61508-1:2010", "IEC 62443-3-3:2013 SR 5.1"]
+    refs: ["IEC 61511-1:2016 §11.2", "IEC 61511-1:2016 §8.2.4", "IEC 61508-1:2010", "IEC 62443-3-3:2013 SR 5.1", "MITRE ATT&CK T0880 (loss of safety)", "MITRE ATT&CK M0930 (network segmentation)"]
     tests: [ICS-T13]
     en:
       title: Safety instrumented system separated from basic control
@@ -418,7 +418,7 @@ requirements:
     obligation: must
     priority: high
     tags: [ot-monitoring, logging, intrusion-detection]
-    refs: ["IEC 62443-3-3:2013 SR 2.8", "IEC 62443-3-3:2013 SR 6.2", "NIST SP 800-82r3 §6", "Directive (EU) 2022/2555 (NIS2) Art. 21"]
+    refs: ["IEC 62443-3-3:2013 SR 2.8", "IEC 62443-3-3:2013 SR 6.2", "NIST SP 800-82r3 §6", "Directive (EU) 2022/2555 (NIS2) Art. 21", "MITRE ATT&CK T0858 (change operating mode)", "MITRE ATT&CK T0843 (program download)"]
     tests: [ICS-T15]
     en:
       title: Security events from the control system monitored centrally
@@ -442,7 +442,7 @@ requirements:
     obligation: must
     priority: high
     tags: [application-allowlisting, hmi, malware]
-    refs: ["IEC 62443-3-3 SR 3.2", "IEC 62443-4-2 CR 3.2", "NIST SP 800-82r3 (application allowlisting)"]
+    refs: ["IEC 62443-3-3 SR 3.2", "IEC 62443-4-2 CR 3.2", "NIST SP 800-82r3 (application allowlisting)", "MITRE ATT&CK T0863 (user execution)", "MITRE ATT&CK M0938 (execution prevention)"]
     tests: [ICS-T16]
     en:
       title: Only approved programs on HMIs and engineering stations
@@ -466,7 +466,7 @@ requirements:
     obligation: must
     priority: high
     tags: [removable-media, usb, control-stations]
-    refs: ["IEC 62443-3-3 SR 2.3", "NIST SP 800-82r3 (removable media)"]
+    refs: ["IEC 62443-3-3 SR 2.3", "NIST SP 800-82r3 (removable media)", "MITRE ATT&CK T0847 (replication through removable media)", "MITRE ATT&CK M0934 (limit hardware installation)"]
     tests: [ICS-T17]
     en:
       title: Removable media blocked at control stations
@@ -490,7 +490,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [least-functionality, hardening, services]
-    refs: ["IEC 62443-3-3 SR 7.7", "IEC 62443-4-2 CR 7.7"]
+    refs: ["IEC 62443-3-3 SR 7.7", "IEC 62443-4-2 CR 7.7", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0942 (disable or remove feature or program)"]
     tests: [ICS-T18]
     en:
       title: Unused ports and services disabled
@@ -514,7 +514,7 @@ requirements:
     obligation: must
     priority: high
     tags: [firmware, integrity, signatures]
-    refs: ["IEC 62443-4-2 CR 3.10", "IEC 62443-3-3 SR 3.4"]
+    refs: ["IEC 62443-4-2 CR 3.10", "IEC 62443-3-3 SR 3.4", "CWE-494 (download of code without integrity check)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1693.001 (system firmware)", "MITRE ATT&CK T1693.002 (module firmware)"]
     tests: [ICS-T19]
     en:
       title: Firmware integrity checked before installation
@@ -538,7 +538,7 @@ tests:
     priority: critical
     execution: manual
     tags: [segmentation, firewall]
-    refs: ["IEC 62443-3-3:2013 SR 5.1"]
+    refs: ["IEC 62443-3-3:2013 SR 5.1", "MITRE ATT&CK M0930 (network segmentation)", "MITRE ATT&CK T0886 (remote services)"]
     en:
       title: Traffic between enterprise network and control zone is blocked
       description: Tries to reach control zone devices from the office network and compares observed inter-zone traffic with the conduit register.
@@ -568,7 +568,7 @@ tests:
     priority: high
     execution: manual
     tags: [asset-inventory, security-level]
-    refs: []
+    refs: ["MITRE ATT&CK M0930 (network segmentation)"]
     en:
       title: Asset inventory and zone register are complete
       description: Checks that devices are inventoried with zone and version, that a new device is reported, and that each zone has a target security level.
@@ -598,7 +598,7 @@ tests:
     priority: critical
     execution: manual
     tags: [remote-access, mfa, session-recording]
-    refs: ["IEC 62443-3-3:2013 SR 1.13"]
+    refs: ["IEC 62443-3-3:2013 SR 1.13", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T0822 (external remote services)", "MITRE ATT&CK M0932 (multi-factor authentication)"]
     en:
       title: Remote access through the jump host
       description: Tries remote access with and without an approved request and multi-factor authentication, and replays the recording.
@@ -632,7 +632,7 @@ tests:
     priority: critical
     execution: automated
     tags: [opc-ua, protocol-security]
-    refs: ["IEC 62541-2"]
+    refs: ["IEC 62541-2", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1692.001 (unauthorized command message)", "MITRE ATT&CK T0830 (adversary-in-the-middle)"]
     en:
       title: OPC UA server rejects unsecured and untrusted clients
       description: A script connects to each OPC UA server with different security modes and certificates.
@@ -758,7 +758,7 @@ tests:
     priority: high
     execution: manual
     tags: [patch-management, test-bench]
-    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)"]
+    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)", "MITRE ATT&CK M0951 (update software)"]
     en:
       title: Patch record shows vendor approval and test bench result
       description: Follows one security update through the process and samples past update records.
@@ -788,7 +788,7 @@ tests:
     priority: critical
     execution: manual
     tags: [backup, restore]
-    refs: ["IEC 62443-3-3:2013 SR 7.4"]
+    refs: ["IEC 62443-3-3:2013 SR 7.4", "MITRE ATT&CK T0809 (data destruction)", "MITRE ATT&CK M0953 (data backup)"]
     en:
       title: Restore a controller from its backup
       description: Restores the latest backup of a production PLC to a spare controller and compares the result.
@@ -818,7 +818,7 @@ tests:
     priority: critical
     execution: manual
     tags: [change-management, logic]
-    refs: []
+    refs: ["MITRE ATT&CK T0889 (modify program)", "MITRE ATT&CK T0843 (program download)"]
     en:
       title: Logic download without a change record raises an alarm
       description: Downloads a harmless logic change to a test controller without and with an approved change record.
@@ -876,7 +876,7 @@ tests:
     priority: critical
     execution: manual
     tags: [safe-state, communication-loss]
-    refs: []
+    refs: ["MITRE ATT&CK T0814 (denial of service)"]
     en:
       title: Outputs go to safe state when the remote I/O link is lost
       description: Breaks the link to a remote I/O station on the test system and observes the outputs.
@@ -906,7 +906,7 @@ tests:
     priority: critical
     execution: manual
     tags: [sis, separation]
-    refs: ["IEC 61511-1:2016 §11.2"]
+    refs: ["IEC 61511-1:2016 §11.2", "MITRE ATT&CK T0880 (loss of safety)", "MITRE ATT&CK M0930 (network segmentation)"]
     en:
       title: Safety controller rejects writes from the control zone
       description: Checks the separation of the safety instrumented system on a test or shutdown system, under the site's safety procedures.
@@ -966,7 +966,7 @@ tests:
     priority: high
     execution: manual
     tags: [ot-monitoring, logging]
-    refs: ["IEC 62443-3-3:2013 SR 6.2"]
+    refs: ["IEC 62443-3-3:2013 SR 6.2", "MITRE ATT&CK T0858 (change operating mode)", "MITRE ATT&CK T0843 (program download)"]
     en:
       title: OT monitoring sees mode changes and unexpected writes
       description: Triggers controller events on a test controller and checks the central OT monitoring service.
@@ -996,7 +996,7 @@ tests:
     priority: high
     execution: manual
     tags: [application-allowlisting, hmi]
-    refs: ["IEC 62443-3-3 SR 3.2"]
+    refs: ["IEC 62443-3-3 SR 3.2", "MITRE ATT&CK T0863 (user execution)", "MITRE ATT&CK M0938 (execution prevention)"]
     en:
       title: Unlisted program blocked on an HMI
       description: Tries to start a program that is not on the allowlist of a test HMI.
@@ -1028,7 +1028,7 @@ tests:
     priority: high
     execution: manual
     tags: [removable-media, usb]
-    refs: ["IEC 62443-3-3 SR 2.3"]
+    refs: ["IEC 62443-3-3 SR 2.3", "MITRE ATT&CK T0847 (replication through removable media)", "MITRE ATT&CK M0934 (limit hardware installation)"]
     en:
       title: USB storage at an operator station
       description: Plugs a USB storage device into an operator station and then uses the scanning station.
@@ -1056,7 +1056,7 @@ tests:
     priority: medium
     execution: manual
     tags: [least-functionality, hardening]
-    refs: ["IEC 62443-3-3 SR 7.7"]
+    refs: ["IEC 62443-3-3 SR 7.7", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0942 (disable or remove feature or program)"]
     en:
       title: Port scan of control zone devices
       description: Scans the devices of the control zone and compares with their documented lists.
@@ -1084,7 +1084,7 @@ tests:
     priority: high
     execution: manual
     tags: [firmware, integrity]
-    refs: ["IEC 62443-4-2 CR 3.10"]
+    refs: ["IEC 62443-4-2 CR 3.10", "CWE-494 (download of code without integrity check)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1693.001 (system firmware)", "MITRE ATT&CK T1693.002 (module firmware)"]
     en:
       title: Tampered firmware refused
       description: Loads an altered and an original firmware package into a test controller.

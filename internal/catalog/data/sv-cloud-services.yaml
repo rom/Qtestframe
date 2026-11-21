@@ -265,7 +265,7 @@ requirements:
     obligation: must
     priority: high
     tags: [managed-security, log-sources, monitoring]
-    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27001:2022 A.8.15"]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27001:2022 A.8.15", "MITRE ATT&CK T1685.002 (disable or modify cloud log)"]
     tests: [SVCLD-T08]
     en:
       title: Alert when an agreed log source stops sending for 1 hour
@@ -569,7 +569,7 @@ tests:
     priority: high
     execution: manual
     tags: [managed-security, log-sources, reporting]
-    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27035-2:2023"]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27035-2:2023", "MITRE ATT&CK T1685.002 (disable or modify cloud log)"]
     en:
       title: Silent log source alert and the monthly report
       description: Stops a test log source and reviews the monthly reports of the service.

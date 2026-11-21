@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [tls, transport-encryption]
-    refs: ["OWASP ASVS 4.0 V9.1", "NIST SP 800-52 Rev. 2", "OWASP Top 10 2021 A02", "PCI DSS 4.0 Req. 4.2.1", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)"]
+    refs: ["OWASP ASVS 4.0 V9.1", "NIST SP 800-52 Rev. 2", "OWASP Top 10 2021 A02", "PCI DSS 4.0 Req. 4.2.1", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)", "CWE-327 (broken or risky cryptographic algorithm)", "MITRE ATT&CK T1689 (downgrade attack)"]
     tests: [CRY-T01]
     en:
       title: TLS 1.2 or later for external connections
@@ -38,7 +38,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [tls, hsts]
-    refs: ["OWASP ASVS 4.0 V14.4.5", "RFC 6797", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["OWASP ASVS 4.0 V14.4.5", "RFC 6797", "ISO/IEC 27001:2022 A.8.24", "CWE-1428 (reliance on HTTP instead of HTTPS)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     tests: [CRY-T01]
     en:
       title: HTTP Strict Transport Security
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [tls, internal-traffic]
-    refs: ["OWASP ASVS 4.0 V9.2.2", "NIST SP 800-53 SC-8", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.1", "IEC 62443-3-3 SR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "ISO/IEC 27033-1:2015", "Regulation (EU) 2022/2554 (DORA) Art. 9(3)(a)"]
+    refs: ["OWASP ASVS 4.0 V9.2.2", "NIST SP 800-53 SC-8", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.1", "IEC 62443-3-3 SR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "ISO/IEC 27033-1:2015", "Regulation (EU) 2022/2554 (DORA) Art. 9(3)(a)", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1040 (network sniffing)"]
     tests: [CRY-T02]
     en:
       title: Encrypted connections between internal components
@@ -82,7 +82,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [tls, certificate-validation]
-    refs: ["OWASP ASVS 4.0 V9.2.1", "OWASP Top 10 2021 A02", "OWASP Transport Layer Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)"]
+    refs: ["OWASP ASVS 4.0 V9.2.1", "OWASP Top 10 2021 A02", "OWASP Transport Layer Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)", "CWE-295 (improper certificate validation)", "CWE-297 (improper validation of certificate with host mismatch)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     tests: [CRY-T03]
     en:
       title: Certificate validation is never turned off
@@ -108,7 +108,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [password-hashing, argon2]
-    refs: ["OWASP Password Storage Cheat Sheet", "OWASP ASVS 4.0 V2.4.1", "NIST SP 800-63B §5.1.1.2", "RFC 9106", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5"]
+    refs: ["OWASP Password Storage Cheat Sheet", "OWASP ASVS 4.0 V2.4.1", "NIST SP 800-63B §5.1.1.2", "RFC 9106", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5", "CWE-916 (password hash with insufficient computational effort)", "MITRE ATT&CK T1110.002 (password cracking)"]
     tests: [CRY-T04]
     en:
       title: Password hashing algorithm and work factor
@@ -134,7 +134,7 @@ requirements:
     obligation: must
     priority: high
     tags: [encryption-at-rest, aes]
-    refs: ["OWASP ASVS 4.0 V6.1", "NIST SP 800-53 SC-28", "ISO/IEC 27001:2022 A.8.24", "PCI DSS 4.0 Req. 3.5", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "GDPR Art. 32(1)(a)", "ISO/IEC 27040:2024"]
+    refs: ["OWASP ASVS 4.0 V6.1", "NIST SP 800-53 SC-28", "ISO/IEC 27001:2022 A.8.24", "PCI DSS 4.0 Req. 3.5", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "GDPR Art. 32(1)(a)", "ISO/IEC 27040:2024", "CWE-311 (missing encryption of sensitive data)", "MITRE ATT&CK T1530 (data from cloud storage)"]
     tests: [CRY-T05]
     en:
       title: Encryption of stored data
@@ -156,7 +156,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [secrets, source-code]
-    refs: ["OWASP ASVS 4.0 V2.10.4", "OWASP ASVS 4.0 V6.4.1", "OWASP Secrets Management Cheat Sheet", "OWASP Top 10 2021 A05", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-4-1 SM-8", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CCK)"]
+    refs: ["OWASP ASVS 4.0 V2.10.4", "OWASP ASVS 4.0 V6.4.1", "OWASP Secrets Management Cheat Sheet", "OWASP Top 10 2021 A05", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-4-1 SM-8", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CCK)", "CWE-798 (use of hard-coded credentials)", "CWE-540 (inclusion of sensitive information in source code)", "MITRE ATT&CK T1552.001 (credentials in files)"]
     tests: [CRY-T06]
     en:
       title: No secrets in source code or images
@@ -182,7 +182,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [key-management, key-rotation]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.3", "ISO/IEC 27001:2022 A.8.24", "PCI DSS 4.0 Req. 3.7.4", "IEC 62443-3-3 SR 4.3"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.3", "ISO/IEC 27001:2022 A.8.24", "PCI DSS 4.0 Req. 3.7.4", "IEC 62443-3-3 SR 4.3", "CWE-324 (use of a key past its expiration date)"]
     tests: [CRY-T07]
     en:
       title: Rotation of encryption keys
@@ -208,7 +208,7 @@ requirements:
     obligation: must
     priority: high
     tags: [randomness, csprng]
-    refs: ["OWASP ASVS 4.0 V6.3", "NIST SP 800-90A Rev. 1", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3"]
+    refs: ["OWASP ASVS 4.0 V6.3", "NIST SP 800-90A Rev. 1", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3", "CWE-338 (cryptographically weak PRNG)", "CWE-330 (use of insufficiently random values)"]
     tests: [CRY-T08, SESS-T01]
     en:
       title: Cryptographically secure random numbers
@@ -230,7 +230,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [weak-algorithms]
-    refs: ["OWASP ASVS 4.0 V6.2", "NIST SP 800-131A Rev. 2", "OWASP Top 10 2021 A02", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)"]
+    refs: ["OWASP ASVS 4.0 V6.2", "NIST SP 800-131A Rev. 2", "OWASP Top 10 2021 A02", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)", "CWE-327 (broken or risky cryptographic algorithm)", "CWE-328 (use of weak hash)"]
     tests: [CRY-T09]
     en:
       title: No broken cryptographic algorithms
@@ -252,7 +252,7 @@ requirements:
     obligation: may
     priority: low
     tags: [key-management, hsm, kms]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5", "PCI DSS 4.0 Req. 3.6", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5", "PCI DSS 4.0 Req. 3.6", "ISO/IEC 27001:2022 A.8.24", "CWE-522 (insufficiently protected credentials)", "MITRE ATT&CK T1552.004 (private keys)"]
     tests: [CRY-T10]
     en:
       title: Master keys in a hardware security module
@@ -302,7 +302,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [post-quantum, tls, key-exchange, ml-kem]
-    refs: ["NIST FIPS 203", "IETF draft-ietf-tls-ecdhe-mlkem", "NIST IR 8547 (hybrid key establishment)", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["NIST FIPS 203", "IETF draft-ietf-tls-ecdhe-mlkem", "NIST IR 8547 (hybrid key establishment)", "ISO/IEC 27001:2022 A.8.24", "CWE-326 (inadequate encryption strength)"]
     tests: [CRY-T12]
     en:
       title: Hybrid post-quantum key exchange on external TLS
@@ -368,7 +368,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [post-quantum, data-at-rest, long-term-confidentiality]
-    refs: ["NIST IR 8547 (symmetric algorithms)", "NIST FIPS 197", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["NIST IR 8547 (symmetric algorithms)", "NIST FIPS 197", "ISO/IEC 27001:2022 A.8.24", "CWE-326 (inadequate encryption strength)"]
     tests: [CRY-T15]
     en:
       title: 256-bit keys for data with long confidentiality needs
@@ -390,7 +390,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [post-quantum, migration-plan]
-    refs: ["NIST IR 8547 (transition timeline)", "NIS Cooperation Group PQC Roadmap (transition timeline)", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["NIST IR 8547 (transition timeline)", "NIS Cooperation Group PQC Roadmap (transition timeline)", "ISO/IEC 27001:2022 A.8.24", "CWE-327 (broken or risky cryptographic algorithm)"]
     tests: [CRY-T11]
     en:
       title: Migration plan for quantum-vulnerable algorithms
@@ -414,7 +414,7 @@ tests:
     priority: critical
     execution: automated
     tags: [tls, hsts]
-    refs: ["OWASP Web Security Testing Guide WSTG-CRYP-01", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)"]
+    refs: ["OWASP Web Security Testing Guide WSTG-CRYP-01", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)", "CWE-327 (broken or risky cryptographic algorithm)", "MITRE ATT&CK T1689 (downgrade attack)", "CWE-1428 (reliance on HTTP instead of HTTPS)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     en:
       title: TLS scan of public host names
       description: A TLS scanner checks protocol versions, cipher suites and the HSTS header of each public host name.
@@ -444,7 +444,7 @@ tests:
     priority: high
     execution: manual
     tags: [tls, internal-traffic]
-    refs: ["NIST SP 800-53 SC-8", "IEC 62443-3-3 SR 4.1", "IEC 62443-3-3 SR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "ISO/IEC 27033-1:2015", "Regulation (EU) 2022/2554 (DORA) Art. 9(3)(a)"]
+    refs: ["NIST SP 800-53 SC-8", "IEC 62443-3-3 SR 4.1", "IEC 62443-3-3 SR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "ISO/IEC 27033-1:2015", "Regulation (EU) 2022/2554 (DORA) Art. 9(3)(a)", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1040 (network sniffing)"]
     en:
       title: Internal connections are encrypted
       description: Inspects the configuration of internal connections and captures traffic on the internal network.
@@ -470,7 +470,7 @@ tests:
     priority: critical
     execution: automated
     tags: [certificate-validation]
-    refs: ["OWASP Transport Layer Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)"]
+    refs: ["OWASP Transport Layer Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)", "CWE-295 (improper certificate validation)", "CWE-297 (improper validation of certificate with host mismatch)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     en:
       title: Outgoing calls fail on invalid certificates
       description: A script points the system's outgoing integrations at test servers with invalid certificates.
@@ -502,7 +502,7 @@ tests:
     priority: critical
     execution: manual
     tags: [password-hashing, argon2]
-    refs: ["OWASP Password Storage Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    refs: ["OWASP Password Storage Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-916 (password hash with insufficient computational effort)", "CWE-257 (storing passwords in a recoverable format)", "MITRE ATT&CK T1110.002 (password cracking)"]
     en:
       title: Password hashes use Argon2id with the agreed work factor
       description: Inspects the stored password hashes and checks the upgrade of old hashes.
@@ -530,7 +530,7 @@ tests:
     priority: high
     execution: manual
     tags: [encryption-at-rest]
-    refs: ["NIST SP 800-53 SC-28", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "GDPR Art. 32(1)(a)", "ISO/IEC 27040:2024"]
+    refs: ["NIST SP 800-53 SC-28", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "GDPR Art. 32(1)(a)", "ISO/IEC 27040:2024", "CWE-311 (missing encryption of sensitive data)", "MITRE ATT&CK T1530 (data from cloud storage)"]
     en:
       title: Stored data and backups are encrypted
       description: Inspects the encryption settings of each data store and backup target.
@@ -560,7 +560,7 @@ tests:
     priority: critical
     execution: automated
     tags: [secrets, secret-scanning]
-    refs: ["OWASP Secrets Management Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-4-1 SM-8", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CCK)"]
+    refs: ["OWASP Secrets Management Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-4-1 SM-8", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CCK)", "CWE-798 (use of hard-coded credentials)", "CWE-540 (inclusion of sensitive information in source code)", "MITRE ATT&CK T1552.001 (credentials in files)"]
     en:
       title: Secret scan of history and images
       description: A secret scanner runs over the full version control history and every released container image.
@@ -590,7 +590,7 @@ tests:
     priority: medium
     execution: manual
     tags: [key-rotation]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.3", "IEC 62443-3-3 SR 4.3"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.3", "IEC 62443-3-3 SR 4.3", "CWE-324 (use of a key past its expiration date)"]
     en:
       title: Key rotation under load
       description: Rotates the data encryption key while the system is in use and checks the key inventory.
@@ -620,7 +620,7 @@ tests:
     priority: high
     execution: automated
     tags: [randomness, csprng, static-analysis]
-    refs: ["OWASP ASVS 4.0 V6.3", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3"]
+    refs: ["OWASP ASVS 4.0 V6.3", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3", "CWE-338 (cryptographically weak PRNG)", "CWE-330 (use of insufficiently random values)"]
     en:
       title: No general-purpose random functions for security values
       description: A static analysis rule searches the code for general-purpose random functions near security values.
@@ -648,7 +648,7 @@ tests:
     priority: high
     execution: automated
     tags: [weak-algorithms, static-analysis]
-    refs: ["NIST SP 800-131A Rev. 2", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)"]
+    refs: ["NIST SP 800-131A Rev. 2", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)", "CWE-327 (broken or risky cryptographic algorithm)", "CWE-328 (use of weak hash)"]
     en:
       title: Scan for weak cryptographic algorithms
       description: A static analysis rule and a configuration check look for weak algorithms and modes.
@@ -674,7 +674,7 @@ tests:
     priority: low
     execution: manual
     tags: [hsm, kms]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5", "ISO/IEC 27001:2022 A.8.24", "CWE-522 (insufficiently protected credentials)", "MITRE ATT&CK T1552.004 (private keys)"]
     en:
       title: Key-encryption key cannot be exported
       description: Inspects the key management service and how the application uses the key-encryption key.
@@ -704,7 +704,7 @@ tests:
     priority: high
     execution: manual
     tags: [crypto-inventory, post-quantum]
-    refs: ["NIST IR 8547 (quantum-vulnerable algorithms)", "CycloneDX 1.6 (cryptography bill of materials)"]
+    refs: ["NIST IR 8547 (quantum-vulnerable algorithms)", "CycloneDX 1.6 (cryptography bill of materials)", "CWE-327 (broken or risky cryptographic algorithm)"]
     en:
       title: Cryptographic inventory is complete and has a migration plan
       description: Compares the inventory with a code and configuration search and checks the migration plan for high-risk entries.
@@ -736,7 +736,7 @@ tests:
     priority: medium
     execution: automated
     tags: [post-quantum, tls]
-    refs: ["NIST FIPS 203", "IETF draft-ietf-tls-ecdhe-mlkem"]
+    refs: ["NIST FIPS 203", "IETF draft-ietf-tls-ecdhe-mlkem", "CWE-326 (inadequate encryption strength)"]
     en:
       title: TLS endpoint negotiates the hybrid key exchange
       description: A TLS client that supports ML-KEM connects to each external endpoint with different group lists.
@@ -818,7 +818,7 @@ tests:
     priority: medium
     execution: manual
     tags: [long-term-confidentiality]
-    refs: ["NIST FIPS 197"]
+    refs: ["NIST FIPS 197", "CWE-326 (inadequate encryption strength)"]
     en:
       title: Long-term confidential data uses AES-256
       description: Checks the encryption settings of data stores that hold long-term confidential data.

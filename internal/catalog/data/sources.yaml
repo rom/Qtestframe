@@ -1218,15 +1218,24 @@ sources:
     url: https://cwe.mitre.org/
     ref_links:
       - {regex: '^CWE-(\d+)\b', label: 'CWE-$1', url: 'https://cwe.mitre.org/data/definitions/$1.html'}
+      - {regex: '^CWE Top 25\b', label: 'CWE Top 25', url: 'https://cwe.mitre.org/top25/'}
+  # Enterprise, ICS and Mobile share one id space and one url scheme:
+  # techniques T1110 and T0886, sub-techniques T1110.001 (techniques/T1110/001/),
+  # mitigations M1032 and M0930, tactics TA0010.
   - id: mitre-attack
     kind: practice
     jurisdiction: international
     short: MITRE ATT&CK
     name: {en: "MITRE ATT&CK", sv: "MITRE ATT&CK"}
     match: ["MITRE ATT&CK"]
+    clause: '\b(?:TA|T|M)\d{4}\b'
     url: https://attack.mitre.org/
     ref_links:
+      - {regex: '^MITRE ATT&CK (T\d{4})\.(\d{3})\b', label: 'MITRE ATT&CK $1.$2', url: 'https://attack.mitre.org/techniques/$1/$2/'}
       - {regex: '^MITRE ATT&CK (T\d{4})\b', label: 'MITRE ATT&CK $1', url: 'https://attack.mitre.org/techniques/$1/'}
+      - {regex: '^MITRE ATT&CK (M\d{4})\b', label: 'MITRE ATT&CK $1', url: 'https://attack.mitre.org/mitigations/$1/'}
+      - {regex: '^MITRE ATT&CK (TA\d{4})\b', label: 'MITRE ATT&CK $1', url: 'https://attack.mitre.org/tactics/$1/'}
+      - {regex: '^MITRE ATT&CK Containers Matrix\b', label: 'MITRE ATT&CK Containers Matrix', url: 'https://attack.mitre.org/matrices/enterprise/containers/'}
   - id: cve
     kind: practice
     jurisdiction: international

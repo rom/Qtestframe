@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [non-root, pod-security, runtime-user]
-    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "Kubernetes Pod Security Standards (restricted)", "CIS Kubernetes Benchmark (pod security)", "ISO/IEC 27001:2022 A.8.9"]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "Kubernetes Pod Security Standards (restricted)", "CIS Kubernetes Benchmark (pod security)", "ISO/IEC 27001:2022 A.8.9", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)"]
     tests: [CNSEC-T01]
     en:
       title: Containers run as a non-root user
@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [admission-control, privileged, host-namespaces]
-    refs: ["Kubernetes Pod Security Standards (restricted)", "NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (pod security)", "IEC 62443-3-3 SR 7.6"]
+    refs: ["Kubernetes Pod Security Standards (restricted)", "NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (pod security)", "IEC 62443-3-3 SR 7.6", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)", "MITRE ATT&CK T1610 (deploy container)"]
     tests: [CNSEC-T02]
     en:
       title: Restricted pod security enforced at admission
@@ -57,7 +57,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [read-only-filesystem, immutability]
-    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (general policies)", "ISO/IEC 27001:2022 A.8.9"]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (general policies)", "ISO/IEC 27001:2022 A.8.9", "MITRE ATT&CK T1105 (ingress tool transfer)", "MITRE ATT&CK M1022 (restrict file and directory permissions)"]
     tests: [CNSEC-T03]
     en:
       title: Read-only root file system
@@ -79,7 +79,7 @@ requirements:
     obligation: must
     priority: high
     tags: [linux-capabilities, seccomp, least-privilege]
-    refs: ["Kubernetes Pod Security Standards (restricted)", "NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (pod security)", "ISO/IEC 27001:2022 A.8.2"]
+    refs: ["Kubernetes Pod Security Standards (restricted)", "NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (pod security)", "ISO/IEC 27001:2022 A.8.2", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)", "MITRE ATT&CK T1068 (exploitation for privilege escalation)"]
     tests: [CNSEC-T04]
     en:
       title: All capabilities dropped and a seccomp profile applied
@@ -101,7 +101,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [resource-limits, denial-of-service, noisy-neighbour]
-    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (general policies)", "ISO/IEC 27001:2022 A.8.6"]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (general policies)", "ISO/IEC 27001:2022 A.8.6", "CWE-770 (allocation of resources without limits or throttling)", "MITRE ATT&CK T1496 (resource hijacking)"]
     tests: [CNSEC-T05]
     en:
       title: CPU and memory limits on every container
@@ -123,7 +123,7 @@ requirements:
     obligation: must
     priority: high
     tags: [image-provenance, registry, digest]
-    refs: ["NIST SP 800-190 §4.2 (registry countermeasures)", "NIST SP 800-190 §4.1 (image countermeasures)", "SLSA v1.0", "ISO/IEC 27001:2022 A.8.32"]
+    refs: ["NIST SP 800-190 §4.2 (registry countermeasures)", "NIST SP 800-190 §4.1 (image countermeasures)", "SLSA v1.0", "ISO/IEC 27001:2022 A.8.32", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1525 (implant internal image)", "MITRE ATT&CK T1610 (deploy container)"]
     tests: [CNSEC-T06]
     en:
       title: Images only from the approved registry and by digest
@@ -145,7 +145,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [minimal-images, distroless, attack-surface]
-    refs: ["NIST SP 800-190 §4.1 (image countermeasures)", "CIS Docker Benchmark (container images and build file)", "ISO/IEC 27001:2022 A.8.9"]
+    refs: ["NIST SP 800-190 §4.1 (image countermeasures)", "CIS Docker Benchmark (container images and build file)", "ISO/IEC 27001:2022 A.8.9", "MITRE ATT&CK T1059.004 (Unix shell)", "MITRE ATT&CK M1042 (disable or remove feature or program)"]
     tests: [CNSEC-T07]
     en:
       title: Production images without shell or package manager
@@ -167,7 +167,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [api-server, cluster-access, authentication]
-    refs: ["CIS Kubernetes Benchmark (control plane components)", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.20", "IEC 62443-3-3 SR 1.1"]
+    refs: ["CIS Kubernetes Benchmark (control plane components)", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.20", "IEC 62443-3-3 SR 1.1", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1609 (container administration command)", "MITRE ATT&CK T1133 (external remote services)"]
     tests: [CNSEC-T08]
     en:
       title: Cluster API reachable only through single sign-on from listed networks
@@ -189,7 +189,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [rbac, service-accounts, least-privilege]
-    refs: ["CIS Kubernetes Benchmark (RBAC and service accounts)", "Kubernetes RBAC Good Practices", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.2"]
+    refs: ["CIS Kubernetes Benchmark (RBAC and service accounts)", "Kubernetes RBAC Good Practices", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.2", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1552.007 (container API)", "MITRE ATT&CK T1098.006 (additional container cluster roles)"]
     tests: [CNSEC-T09]
     en:
       title: No cluster-admin for workloads and no automatic service account tokens
@@ -211,7 +211,7 @@ requirements:
     obligation: must
     priority: high
     tags: [secrets, etcd, encryption-at-rest]
-    refs: ["CIS Kubernetes Benchmark (control plane components)", "Kubernetes Encrypting Confidential Data at Rest", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["CIS Kubernetes Benchmark (control plane components)", "Kubernetes Encrypting Confidential Data at Rest", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.24", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1552.007 (container API)"]
     tests: [CNSEC-T10]
     en:
       title: Cluster secrets encrypted at rest with an external key
@@ -233,7 +233,7 @@ requirements:
     obligation: should
     priority: high
     tags: [runtime-detection, alerting]
-    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "MITRE ATT&CK Containers Matrix", "ISO/IEC 27001:2022 A.8.16"]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "MITRE ATT&CK Containers Matrix", "ISO/IEC 27001:2022 A.8.16", "MITRE ATT&CK T1609 (container administration command)", "MITRE ATT&CK T1059.004 (Unix shell)"]
     tests: [CNSEC-T11]
     en:
       title: Alert on unexpected processes in a container
@@ -257,7 +257,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [audit-logging, kubernetes-api]
-    refs: ["CIS Kubernetes Benchmark (logging)", "Kubernetes Auditing", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15"]
+    refs: ["CIS Kubernetes Benchmark (logging)", "Kubernetes Auditing", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1609 (container administration command)"]
     tests: [CNSEC-T12]
     en:
       title: Cluster API audit log sent to the central store
@@ -281,7 +281,7 @@ requirements:
     obligation: must
     priority: high
     tags: [supported-versions, patching, nodes]
-    refs: ["Kubernetes Version Skew Policy", "NIST SP 800-190 §4.5 (host OS countermeasures)", "ISO/IEC 27001:2022 A.8.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2"]
+    refs: ["Kubernetes Version Skew Policy", "NIST SP 800-190 §4.5 (host OS countermeasures)", "ISO/IEC 27001:2022 A.8.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "CWE-1104 (use of unmaintained third-party components)", "MITRE ATT&CK T1611 (escape to host)"]
     tests: [CNSEC-T13]
     en:
       title: Cluster on a supported version with patched nodes
@@ -305,7 +305,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [benchmark, configuration-scan]
-    refs: ["CIS Kubernetes Benchmark", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.9"]
+    refs: ["CIS Kubernetes Benchmark", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.9", "MITRE ATT&CK M1054 (software configuration)"]
     tests: [CNSEC-T14]
     en:
       title: Monthly benchmark scan of each cluster
@@ -329,7 +329,7 @@ tests:
     priority: high
     execution: automated
     tags: [non-root]
-    refs: ["Kubernetes Pod Security Standards (restricted)"]
+    refs: ["Kubernetes Pod Security Standards (restricted)", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)"]
     en:
       title: No application container runs as root
       description: A script reads the user id of each running container and tries to start a root container.
@@ -355,7 +355,7 @@ tests:
     priority: critical
     execution: automated
     tags: [admission-control, privileged]
-    refs: ["Kubernetes Pod Security Standards (restricted)"]
+    refs: ["Kubernetes Pod Security Standards (restricted)", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)", "MITRE ATT&CK T1610 (deploy container)"]
     en:
       title: Dangerous pod settings are rejected at admission
       description: A script applies six test manifests, each with one dangerous setting, to an application namespace.
@@ -383,7 +383,7 @@ tests:
     priority: medium
     execution: manual
     tags: [read-only-filesystem]
-    refs: ["NIST SP 800-190 §4.4 (container countermeasures)"]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "MITRE ATT&CK T1105 (ingress tool transfer)", "MITRE ATT&CK M1022 (restrict file and directory permissions)"]
     en:
       title: Root file system cannot be written
       description: Tries to write to the root file system and to the temporary volume of a running container in a test environment.
@@ -409,7 +409,7 @@ tests:
     priority: high
     execution: automated
     tags: [linux-capabilities, seccomp]
-    refs: ["Kubernetes Pod Security Standards (restricted)"]
+    refs: ["Kubernetes Pod Security Standards (restricted)", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)", "MITRE ATT&CK T1068 (exploitation for privilege escalation)"]
     en:
       title: Workloads drop capabilities and use seccomp
       description: A script inspects every workload specification in the application namespaces.
@@ -435,7 +435,7 @@ tests:
     priority: medium
     execution: automated
     tags: [resource-limits]
-    refs: ["CIS Kubernetes Benchmark (general policies)"]
+    refs: ["CIS Kubernetes Benchmark (general policies)", "CWE-770 (allocation of resources without limits or throttling)", "MITRE ATT&CK T1496 (resource hijacking)"]
     en:
       title: Workloads without limits are refused and limits hold
       description: Applies a manifest without a memory limit and runs a container that exceeds its limit.
@@ -465,7 +465,7 @@ tests:
     priority: high
     execution: automated
     tags: [image-provenance, registry]
-    refs: ["NIST SP 800-190 §4.2 (registry countermeasures)"]
+    refs: ["NIST SP 800-190 §4.2 (registry countermeasures)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1525 (implant internal image)", "MITRE ATT&CK T1610 (deploy container)"]
     en:
       title: Only digest references to the approved registry are admitted
       description: Applies manifests with different image references.
@@ -497,7 +497,7 @@ tests:
     priority: medium
     execution: automated
     tags: [minimal-images]
-    refs: ["NIST SP 800-190 §4.1 (image countermeasures)"]
+    refs: ["NIST SP 800-190 §4.1 (image countermeasures)", "MITRE ATT&CK T1059.004 (Unix shell)", "MITRE ATT&CK M1042 (disable or remove feature or program)"]
     en:
       title: Production images lack shells and build tools
       description: A script tries to run common tools in each production image.
@@ -521,7 +521,7 @@ tests:
     priority: critical
     execution: manual
     tags: [api-server, cluster-access]
-    refs: ["CIS Kubernetes Benchmark (control plane components)"]
+    refs: ["CIS Kubernetes Benchmark (control plane components)", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1609 (container administration command)", "MITRE ATT&CK T1133 (external remote services)"]
     en:
       title: Cluster API refuses anonymous and outside access
       description: Calls the API server anonymously, from outside the listed networks and as a single sign-on user.
@@ -551,7 +551,7 @@ tests:
     priority: high
     execution: automated
     tags: [rbac, service-accounts]
-    refs: ["CIS Kubernetes Benchmark (RBAC and service accounts)"]
+    refs: ["CIS Kubernetes Benchmark (RBAC and service accounts)", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1552.007 (container API)", "MITRE ATT&CK T1098.006 (additional container cluster roles)"]
     en:
       title: Service accounts have no broad rights and tokens are not mounted by default
       description: A script reviews role bindings and pod token settings.
@@ -577,7 +577,7 @@ tests:
     priority: high
     execution: manual
     tags: [secrets, etcd]
-    refs: ["Kubernetes Encrypting Confidential Data at Rest"]
+    refs: ["Kubernetes Encrypting Confidential Data at Rest", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1552.007 (container API)"]
     en:
       title: Secrets in the datastore are encrypted
       description: Creates a secret and reads its raw value from the cluster datastore.
@@ -609,7 +609,7 @@ tests:
     priority: high
     execution: manual
     tags: [runtime-detection]
-    refs: ["MITRE ATT&CK Containers Matrix"]
+    refs: ["MITRE ATT&CK Containers Matrix", "MITRE ATT&CK T1609 (container administration command)", "MITRE ATT&CK T1059.004 (Unix shell)"]
     en:
       title: A shell in a production container raises an alert
       description: Starts an interactive shell in a test pod in production and watches the alert channel.
@@ -635,7 +635,7 @@ tests:
     priority: medium
     execution: automated
     tags: [audit-logging]
-    refs: ["Kubernetes Auditing"]
+    refs: ["Kubernetes Auditing", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1609 (container administration command)"]
     en:
       title: Changes and secret reads appear in the central audit log
       description: Creates a role binding and reads a secret, then searches the central log store.
@@ -661,7 +661,7 @@ tests:
     priority: high
     execution: manual
     tags: [supported-versions, patching]
-    refs: ["Kubernetes Version Skew Policy"]
+    refs: ["Kubernetes Version Skew Policy", "CWE-1104 (use of unmaintained third-party components)", "MITRE ATT&CK T1611 (escape to host)"]
     en:
       title: Cluster version is supported and nodes are patched
       description: Compares the cluster version with the supported versions and checks pending node updates.
@@ -687,7 +687,7 @@ tests:
     priority: medium
     execution: manual
     tags: [benchmark]
-    refs: ["CIS Kubernetes Benchmark"]
+    refs: ["CIS Kubernetes Benchmark", "MITRE ATT&CK M1054 (software configuration)"]
     en:
       title: Benchmark failures are fixed or accepted
       description: Reviews the monthly benchmark reports of the last 3 months.

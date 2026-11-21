@@ -108,7 +108,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [dast, staging]
-    refs: ["NIST SP 800-218 (SSDF) PW.8.2", "OWASP Web Security Testing Guide v4.2", "ISO/IEC 27001:2022 A.8.29", "IEC 62443-4-1 SVV-3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "Regulation (EU) 2022/2554 (DORA) Art. 25"]
+    refs: ["NIST SP 800-218 (SSDF) PW.8.2", "OWASP Web Security Testing Guide v4.2", "ISO/IEC 27001:2022 A.8.29", "IEC 62443-4-1 SVV-3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "Regulation (EU) 2022/2554 (DORA) Art. 25", "MITRE ATT&CK M1016 (vulnerability scanning)"]
     tests: [SDL-T04]
     en:
       title: Weekly dynamic security scan of staging
@@ -180,7 +180,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [training, awareness]
-    refs: ["NIST SP 800-218 (SSDF) PO.2.2", "ISO/IEC 27001:2022 A.6.3 (information security awareness, education and training)", "IEC 62443-4-1 SM-4", "Regulation (EU) 2022/2554 (DORA) Art. 13(6)", "IEC 62443-2-1:2024 (security awareness and training)"]
+    refs: ["NIST SP 800-218 (SSDF) PO.2.2", "ISO/IEC 27001:2022 A.6.3 (information security awareness, education and training)", "IEC 62443-4-1 SM-4", "Regulation (EU) 2022/2554 (DORA) Art. 13(6)", "IEC 62443-2-1:2024 (security awareness and training)", "MITRE ATT&CK M1013 (application developer guidance)"]
     tests: [SDL-T06]
     en:
       title: Yearly secure coding training
@@ -276,7 +276,7 @@ requirements:
     obligation: must
     priority: high
     tags: [security-testing, authorisation, test-matrix]
-    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-02", "OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.8.29", "IEC 62443-4-1 SVV-1"]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-02", "OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.8.29", "IEC 62443-4-1 SVV-1", "CWE-862 (missing authorization)", "CWE-863 (incorrect authorization)"]
     tests: [SDL-T09]
     en:
       title: Automated authorisation test matrix
@@ -492,7 +492,7 @@ tests:
     priority: medium
     execution: manual
     tags: [dast, staging]
-    refs: []
+    refs: ["MITRE ATT&CK M1016 (vulnerability scanning)"]
     en:
       title: Dynamic scan history and follow-up
       description: Checks the history of dynamic scans against staging and the tickets for their findings.
@@ -554,7 +554,7 @@ tests:
     priority: medium
     execution: manual
     tags: [training]
-    refs: []
+    refs: ["MITRE ATT&CK M1013 (application developer guidance)"]
     en:
       title: Training records of the developers
       description: Compares the list of developers with the training records.
@@ -646,7 +646,7 @@ tests:
     priority: high
     execution: automated
     tags: [authorisation, test-matrix]
-    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-02"]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-02", "CWE-862 (missing authorization)", "CWE-863 (incorrect authorization)"]
     en:
       title: Permission matrix test fails on a missing check
       description: Checks that the authorisation matrix test covers the API and catches a removed permission check.

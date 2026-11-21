@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sbom, dependency-inventory]
-    refs: ["OWASP ASVS 4.0 V14.2.5", "NIST SP 800-218 PS.3.2", "ISO/IEC 27001:2022 A.5.9", "CycloneDX 1.5", "SPDX 2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1"]
+    refs: ["OWASP ASVS 4.0 V14.2.5", "NIST SP 800-218 PS.3.2", "ISO/IEC 27001:2022 A.5.9", "CycloneDX 1.5", "SPDX 2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T01]
     en:
       title: Software bill of materials for each release
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [vulnerability-scanning, ci]
-    refs: ["OWASP Top 10 2021 A06", "NIST SP 800-218 RV.1.1", "ISO/IEC 27001:2022 A.8.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "IEC 62443-4-1 SVV-3"]
+    refs: ["OWASP Top 10 2021 A06", "NIST SP 800-218 RV.1.1", "ISO/IEC 27001:2022 A.8.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "IEC 62443-4-1 SVV-3", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T02]
     en:
       title: Dependency vulnerability scan on every build
@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [patching, critical-vulnerabilities]
-    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)"]
+    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     tests: [SUP-T03]
     en:
       title: Critical vulnerabilities fixed within 7 days
@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [patching, high-vulnerabilities]
-    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)"]
+    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)"]
     tests: [SUP-T03]
     en:
       title: High vulnerabilities fixed within 30 days
@@ -100,7 +100,7 @@ requirements:
     obligation: must
     priority: high
     tags: [code-signing, deployment]
-    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.2.1", "OWASP Top 10 2021 A08", "IEC 62443-3-3 SR 3.4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §7", "IEC 62443-4-1 SM-6", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)"]
+    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.2.1", "OWASP Top 10 2021 A08", "IEC 62443-3-3 SR 3.4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §7", "IEC 62443-4-1 SM-6", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)", "MITRE ATT&CK M1045 (code signing)"]
     tests: [SUP-T04]
     en:
       title: Signed release artefacts
@@ -122,7 +122,7 @@ requirements:
     obligation: must
     priority: high
     tags: [pinned-versions, lock-file]
-    refs: ["NIST SP 800-218 PW.4.1", "OWASP Top 10 2021 A08", "SLSA v1.0", "ISO/IEC 27001:2022 A.5.21", "IEC 62443-4-1 SM-9"]
+    refs: ["NIST SP 800-218 PW.4.1", "OWASP Top 10 2021 A08", "SLSA v1.0", "ISO/IEC 27001:2022 A.5.21", "IEC 62443-4-1 SM-9", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T05]
     en:
       title: Pinned dependency versions
@@ -144,7 +144,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [third-party-review, dependency-selection]
-    refs: ["ISO/IEC 27001:2022 A.5.19", "ISO/IEC 27001:2022 A.5.21", "NIST SP 800-218 PW.4.4", "OpenSSF Scorecard", "Regulation (EU) 2024/2847 (CRA) Art. 13(5)", "IEC 62443-4-1 SM-9", "ISO/IEC 27036-3:2023"]
+    refs: ["ISO/IEC 27001:2022 A.5.19", "ISO/IEC 27001:2022 A.5.21", "NIST SP 800-218 PW.4.4", "OpenSSF Scorecard", "Regulation (EU) 2024/2847 (CRA) Art. 13(5)", "IEC 62443-4-1 SM-9", "ISO/IEC 27036-3:2023", "CWE-1357 (reliance on insufficiently trustworthy component)", "CWE-1104 (use of unmaintained third-party components)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T06]
     en:
       title: Review before adding a third-party component
@@ -166,7 +166,7 @@ requirements:
     obligation: must
     priority: high
     tags: [build-pipeline, provenance]
-    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PO.5", "ISO/IEC 27001:2022 A.8.32", "IEC 62443-4-1 SM-7"]
+    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PO.5", "ISO/IEC 27001:2022 A.8.32", "IEC 62443-4-1 SM-7", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)"]
     tests: [SUP-T07]
     en:
       title: Releases are built only by the pipeline
@@ -188,7 +188,7 @@ requirements:
     obligation: should_not
     priority: medium
     tags: [end-of-life, unmaintained]
-    refs: ["OWASP Top 10 2021 A06", "OWASP ASVS 4.0 V14.2.1", "ISO/IEC 27001:2022 A.8.8"]
+    refs: ["OWASP Top 10 2021 A06", "OWASP ASVS 4.0 V14.2.1", "ISO/IEC 27001:2022 A.8.8", "CWE-1104 (use of unmaintained third-party components)"]
     tests: [SUP-T08]
     en:
       title: No end-of-life components
@@ -210,7 +210,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [container-images, base-image]
-    refs: ["NIST SP 800-190 §4.1", "ISO/IEC 27001:2022 A.8.8"]
+    refs: ["NIST SP 800-190 §4.1", "ISO/IEC 27001:2022 A.8.8", "CWE-1395 (dependency on vulnerable third-party component)"]
     tests: [SUP-T09]
     en:
       title: Container images rebuilt every 30 days
@@ -232,7 +232,7 @@ requirements:
     obligation: may
     priority: low
     tags: [package-registry, mirror]
-    refs: ["NIST SP 800-218 PO.3", "SLSA v1.0", "ISO/IEC 27001:2022 A.5.21"]
+    refs: ["NIST SP 800-218 PO.3", "SLSA v1.0", "ISO/IEC 27001:2022 A.5.21", "CWE-829 (inclusion of functionality from untrusted control sphere)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T10]
     en:
       title: Packages fetched through an internal mirror
@@ -254,7 +254,7 @@ requirements:
     obligation: must
     priority: high
     tags: [provenance, slsa, attestation]
-    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.3.1", "NIST SP 800-204D", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)"]
+    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.3.1", "NIST SP 800-204D", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)"]
     tests: [SUP-T11]
     en:
       title: Signed build provenance for each release artefact
@@ -276,7 +276,7 @@ requirements:
     obligation: must
     priority: high
     tags: [dependency-confusion, registry, internal-packages]
-    refs: ["CWE-427", "OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "NIST SP 800-218 PW.4.1", "ISO/IEC 27001:2022 A.8.30"]
+    refs: ["CWE-427 (uncontrolled search path element)", "OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "NIST SP 800-218 PW.4.1", "ISO/IEC 27001:2022 A.8.30", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T12]
     en:
       title: Internal package names resolved only from the internal registry
@@ -298,7 +298,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [dependencies, cooldown, malicious-packages]
-    refs: ["OpenSSF Scorecard", "NIST SP 800-218 PW.4.4", "ISO/IEC 27001:2022 A.8.30"]
+    refs: ["OpenSSF Scorecard", "NIST SP 800-218 PW.4.4", "ISO/IEC 27001:2022 A.8.30", "CWE-506 (embedded malicious code)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T13]
     en:
       title: New dependency versions wait 7 days
@@ -322,7 +322,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [install-scripts, build, dependencies]
-    refs: ["OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "NIST SP 800-204D", "ISO/IEC 27001:2022 A.8.30"]
+    refs: ["OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "NIST SP 800-204D", "ISO/IEC 27001:2022 A.8.30", "CWE-829 (inclusion of functionality from untrusted control sphere)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T14]
     en:
       title: Package install scripts are turned off
@@ -344,7 +344,7 @@ requirements:
     obligation: must
     priority: high
     tags: [ci-cd, pinning, third-party-actions]
-    refs: ["OpenSSF Scorecard", "OWASP Top 10 CI/CD Security Risks CICD-SEC-8", "SLSA v1.0", "ISO/IEC 27001:2022 A.8.30"]
+    refs: ["OpenSSF Scorecard", "OWASP Top 10 CI/CD Security Risks CICD-SEC-8", "SLSA v1.0", "ISO/IEC 27001:2022 A.8.30", "CWE-829 (inclusion of functionality from untrusted control sphere)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T15]
     en:
       title: Third-party pipeline steps pinned by commit hash
@@ -366,7 +366,7 @@ tests:
     priority: high
     execution: automated
     tags: [sbom]
-    refs: ["CycloneDX 1.5", "SPDX 2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1"]
+    refs: ["CycloneDX 1.5", "SPDX 2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     en:
       title: Release contains a complete and valid SBOM
       description: A pipeline step validates the SBOM of a release and compares it with the resolved dependency tree.
@@ -392,7 +392,7 @@ tests:
     priority: critical
     execution: automated
     tags: [vulnerability-scanning, ci]
-    refs: ["OWASP Top 10 2021 A06", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "IEC 62443-4-1 SVV-3"]
+    refs: ["OWASP Top 10 2021 A06", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "IEC 62443-4-1 SVV-3", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     en:
       title: A known vulnerable dependency stops the build
       description: A test branch adds a dependency version with a published critical vulnerability and runs the pipeline.
@@ -424,7 +424,7 @@ tests:
     priority: critical
     execution: manual
     tags: [patching]
-    refs: ["PCI DSS 4.0 Req. 6.3.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)"]
+    refs: ["PCI DSS 4.0 Req. 6.3.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     en:
       title: Patch times meet the deadlines
       description: Reviews the vulnerability records of the last 12 months against the patch deadlines.
@@ -454,7 +454,7 @@ tests:
     priority: high
     execution: automated
     tags: [code-signing, deployment]
-    refs: ["SLSA v1.0", "IEC 62443-3-3 SR 3.4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §7", "IEC 62443-4-1 SM-6", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)"]
+    refs: ["SLSA v1.0", "IEC 62443-3-3 SR 3.4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §7", "IEC 62443-4-1 SM-6", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)", "MITRE ATT&CK M1045 (code signing)"]
     en:
       title: Unsigned or altered artefacts are not deployed
       description: A script feeds the deployment step a correct, an altered and an unsigned artefact.
@@ -484,7 +484,7 @@ tests:
     priority: high
     execution: automated
     tags: [pinned-versions, lock-file]
-    refs: ["NIST SP 800-218 PW.4.1", "ISO/IEC 27001:2022 A.5.21", "IEC 62443-4-1 SM-9"]
+    refs: ["NIST SP 800-218 PW.4.1", "ISO/IEC 27001:2022 A.5.21", "IEC 62443-4-1 SM-9", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     en:
       title: Builds use the lock file in frozen mode
       description: A pipeline check verifies that lock files exist and that the build refuses to change them.
@@ -510,7 +510,7 @@ tests:
     priority: medium
     execution: manual
     tags: [third-party-review]
-    refs: ["ISO/IEC 27001:2022 A.5.21", "Regulation (EU) 2024/2847 (CRA) Art. 13(5)", "IEC 62443-4-1 SM-9", "ISO/IEC 27036-3:2023"]
+    refs: ["ISO/IEC 27001:2022 A.5.21", "Regulation (EU) 2024/2847 (CRA) Art. 13(5)", "IEC 62443-4-1 SM-9", "ISO/IEC 27036-3:2023", "CWE-1357 (reliance on insufficiently trustworthy component)", "CWE-1104 (use of unmaintained third-party components)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     en:
       title: New dependencies have a review record
       description: Compares dependencies added in the last 6 months with the review records.
@@ -536,7 +536,7 @@ tests:
     priority: high
     execution: manual
     tags: [build-pipeline, provenance]
-    refs: ["SLSA v1.0 Build L2", "IEC 62443-4-1 SM-7"]
+    refs: ["SLSA v1.0 Build L2", "IEC 62443-4-1 SM-7", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)"]
     en:
       title: Production artefacts trace back to the pipeline
       description: Follows the provenance of each production artefact to a pipeline run and a commit.
@@ -566,7 +566,7 @@ tests:
     priority: medium
     execution: automated
     tags: [end-of-life]
-    refs: ["OWASP Top 10 2021 A06", "ISO/IEC 27001:2022 A.8.8"]
+    refs: ["OWASP Top 10 2021 A06", "ISO/IEC 27001:2022 A.8.8", "CWE-1104 (use of unmaintained third-party components)"]
     en:
       title: SBOM check against end-of-life dates
       description: A script compares the components in the SBOM with a database of published end-of-life dates.
@@ -592,7 +592,7 @@ tests:
     priority: medium
     execution: automated
     tags: [container-images]
-    refs: ["NIST SP 800-190 §4.1"]
+    refs: ["NIST SP 800-190 §4.1", "CWE-1395 (dependency on vulnerable third-party component)"]
     en:
       title: Running images are less than 30 days old
       description: A script reads the build date and base image of every image running in production.
@@ -618,7 +618,7 @@ tests:
     priority: low
     execution: automated
     tags: [package-registry, mirror]
-    refs: ["NIST SP 800-218 PO.3", "ISO/IEC 27001:2022 A.5.21"]
+    refs: ["NIST SP 800-218 PO.3", "ISO/IEC 27001:2022 A.5.21", "CWE-829 (inclusion of functionality from untrusted control sphere)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     en:
       title: Build succeeds with only the internal mirror
       description: The pipeline runs a build in a network where public package registries are blocked.
@@ -644,7 +644,7 @@ tests:
     priority: high
     execution: automated
     tags: [provenance, slsa]
-    refs: ["SLSA v1.0 Build L2"]
+    refs: ["SLSA v1.0 Build L2", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)"]
     en:
       title: Provenance of release artefacts verifies
       description: Verifies the provenance of the latest release and of a locally built artefact.
@@ -670,7 +670,7 @@ tests:
     priority: high
     execution: manual
     tags: [dependency-confusion]
-    refs: ["CWE-427"]
+    refs: ["CWE-427 (uncontrolled search path element)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     en:
       title: Build ignores a public package with an internal name
       description: Publishes a package with an internal name and a higher version to a test public registry and runs the build.
@@ -696,7 +696,7 @@ tests:
     priority: medium
     execution: manual
     tags: [cooldown]
-    refs: ["OpenSSF Scorecard"]
+    refs: ["OpenSSF Scorecard", "CWE-506 (embedded malicious code)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     en:
       title: Recently published versions are not proposed
       description: Checks the dependency update tool's behaviour for a version published a few days ago.
@@ -722,7 +722,7 @@ tests:
     priority: medium
     execution: automated
     tags: [install-scripts]
-    refs: ["OWASP Top 10 CI/CD Security Risks CICD-SEC-3"]
+    refs: ["OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "CWE-829 (inclusion of functionality from untrusted control sphere)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     en:
       title: Install scripts of unlisted packages do not run
       description: Adds two test packages with install scripts, one of them on the allow-list, and runs the build.
@@ -748,7 +748,7 @@ tests:
     priority: high
     execution: automated
     tags: [pinning, third-party-actions]
-    refs: ["OpenSSF Scorecard"]
+    refs: ["OpenSSF Scorecard", "CWE-829 (inclusion of functionality from untrusted control sphere)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     en:
       title: Pipeline definitions pin third-party steps
       description: A script scans the pipeline definitions for third-party references.

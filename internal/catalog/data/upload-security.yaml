@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [file-type, allow-list, content-sniffing]
-    refs: ["OWASP ASVS 4.0.3 §12.2 (file integrity)", "OWASP File Upload Cheat Sheet", "CWE-434 (unrestricted upload of file with dangerous type)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
+    refs: ["OWASP ASVS 4.0.3 §12.2 (file integrity)", "OWASP File Upload Cheat Sheet", "CWE-434 (unrestricted upload of file with dangerous type)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "MITRE ATT&CK T1505.003 (web shell)"]
     tests: [UPLS-T01]
     en:
       title: Allow-list of file types checked against the content
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [file-type, extension]
-    refs: ["OWASP File Upload Cheat Sheet (extension validation)", "CWE-434", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP File Upload Cheat Sheet (extension validation)", "CWE-434 (unrestricted upload of file with dangerous type)", "ISO/IEC 27001:2022 A.8.28", "CWE-646 (reliance on file name or extension of externally-supplied file)"]
     tests: [UPLS-T01]
     en:
       title: File extension matches the detected type
@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [malware, scanning]
-    refs: ["ISO/IEC 27001:2022 A.8.7 (protection against malware)", "OWASP File Upload Cheat Sheet (file content validation)", "IEC 62443-3-3 SR 3.2"]
+    refs: ["ISO/IEC 27001:2022 A.8.7 (protection against malware)", "OWASP File Upload Cheat Sheet (file content validation)", "IEC 62443-3-3 SR 3.2", "MITRE ATT&CK T1204.002 (malicious file)", "MITRE ATT&CK T1080 (taint shared content)"]
     tests: [UPLS-T02]
     en:
       title: Malware scan before a file is shared
@@ -84,7 +84,7 @@ requirements:
     obligation: must
     priority: high
     tags: [malware, quarantine, notification]
-    refs: ["ISO/IEC 27001:2022 A.8.7 (protection against malware)", "IEC 62443-3-3 SR 3.2"]
+    refs: ["ISO/IEC 27001:2022 A.8.7 (protection against malware)", "IEC 62443-3-3 SR 3.2", "MITRE ATT&CK T1080 (taint shared content)"]
     tests: [UPLS-T02]
     en:
       title: Infected files are quarantined and the uploader is told
@@ -108,7 +108,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [storage, file-name, path-traversal]
-    refs: ["OWASP ASVS 4.0.3 §12.3 (file execution)", "CWE-22 (path traversal)", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP ASVS 4.0.3 §12.3 (file execution)", "CWE-22 (path traversal)", "ISO/IEC 27001:2022 A.8.28", "CWE-552 (files or directories accessible to external parties)", "MITRE ATT&CK T1505.003 (web shell)"]
     tests: [UPLS-T03]
     en:
       title: Files are stored under generated names outside the web root
@@ -134,7 +134,7 @@ requirements:
     obligation: must
     priority: high
     tags: [download, headers, xss]
-    refs: ["OWASP ASVS 4.0.3 §12.5.2", "OWASP HTTP Headers Cheat Sheet (X-Content-Type-Options)"]
+    refs: ["OWASP ASVS 4.0.3 §12.5.2", "OWASP HTTP Headers Cheat Sheet (X-Content-Type-Options)", "CWE-79 (cross-site scripting)"]
     tests: [UPLS-T04]
     en:
       title: User files are delivered as downloads
@@ -156,7 +156,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [download, domain-isolation, cookies]
-    refs: ["OWASP File Upload Cheat Sheet (file storage location)", "Google Web Fundamentals: sandboxed domains for user content"]
+    refs: ["OWASP File Upload Cheat Sheet (file storage location)", "Google Web Fundamentals: sandboxed domains for user content", "CWE-79 (cross-site scripting)", "MITRE ATT&CK T1539 (steal web session cookie)"]
     tests: [UPLS-T04]
     en:
       title: Previews are served from a separate domain
@@ -178,7 +178,7 @@ requirements:
     obligation: must
     priority: high
     tags: [archive, zip-bomb, denial-of-service]
-    refs: ["OWASP ASVS 4.0.3 §12.1.2 (compressed files)", "CWE-409 (improper handling of highly compressed data)", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP ASVS 4.0.3 §12.1.2 (compressed files)", "CWE-409 (improper handling of highly compressed data)", "ISO/IEC 27001:2022 A.8.28", "MITRE ATT&CK T1499.004 (application or system exploitation)"]
     tests: [UPLS-T05]
     en:
       title: Limits on unpacked archives
@@ -202,7 +202,7 @@ requirements:
     obligation: must
     priority: high
     tags: [archive, path-traversal, zip-slip]
-    refs: ["CWE-22 (path traversal)", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["CWE-22 (path traversal)", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "CWE-59 (link following)"]
     tests: [UPLS-T05, UPLS-T09]
     en:
       title: Archive entries stay in the target directory
@@ -224,7 +224,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [image, metadata, privacy]
-    refs: ["GDPR Art. 5(1)(c) (data minimisation)", "OWASP File Upload Cheat Sheet (image rewriting)", "GDPR Art. 25(2)", "ISO/IEC 27001:2022 A.5.34"]
+    refs: ["GDPR Art. 5(1)(c) (data minimisation)", "OWASP File Upload Cheat Sheet (image rewriting)", "GDPR Art. 25(2)", "ISO/IEC 27001:2022 A.5.34", "CWE-212 (improper removal of sensitive information before storage or transfer)", "CWE-359 (exposure of private personal information)"]
     tests: [UPLS-T06]
     en:
       title: Location and device data are removed from images
@@ -246,7 +246,7 @@ requirements:
     obligation: must
     priority: high
     tags: [download, authorisation, signed-url]
-    refs: ["OWASP ASVS 4.0.3 §4.2.1 (operation level access control)", "OWASP Top 10:2021 A01 (broken access control)", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP ASVS 4.0.3 §4.2.1 (operation level access control)", "OWASP Top 10:2021 A01 (broken access control)", "ISO/IEC 27001:2022 A.8.3", "CWE-862 (missing authorization)", "CWE-1472 (generation of credential with long expiration)"]
     tests: [UPLS-T07]
     en:
       title: Download links are checked and expire after 15 minutes
@@ -270,7 +270,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [file-name, xss, display]
-    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79 (cross-site scripting)", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79 (cross-site scripting)", "ISO/IEC 27001:2022 A.8.28", "CWE-116 (improper encoding or escaping of output)"]
     tests: [UPLS-T08]
     en:
       title: Original file names are shown as plain text
@@ -292,7 +292,7 @@ requirements:
     obligation: should
     priority: high
     tags: [active-content, macros, content-disarm]
-    refs: ["OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.7 (protection against malware)", "NIST SP 800-53 SI-3"]
+    refs: ["OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.7 (protection against malware)", "NIST SP 800-53 SI-3", "MITRE ATT&CK T1204.002 (malicious file)"]
     tests: [UPLS-T10]
     en:
       title: Office files with macros and PDFs with scripts are flagged
@@ -314,7 +314,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [images, re-encoding, polyglot]
-    refs: ["OWASP File Upload Cheat Sheet", "CWE-434", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["OWASP File Upload Cheat Sheet", "CWE-434 (unrestricted upload of file with dangerous type)", "ISO/IEC 27001:2022 A.8.28"]
     tests: [UPLS-T11]
     en:
       title: Uploaded images are re-encoded
@@ -336,7 +336,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [resumable-upload, cleanup, storage]
-    refs: ["OWASP File Upload Cheat Sheet", "CWE-400", "ISO/IEC 27001:2022 A.8.6"]
+    refs: ["OWASP File Upload Cheat Sheet", "CWE-400 (uncontrolled resource consumption)", "ISO/IEC 27001:2022 A.8.6", "CWE-459 (incomplete cleanup)"]
     tests: [UPLS-T12]
     en:
       title: Incomplete uploads are removed after 24 hours
@@ -360,7 +360,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [malware-scan, rescan, signatures]
-    refs: ["ISO/IEC 27001:2022 A.8.7 (protection against malware)", "NIST SP 800-53 SI-3", "OWASP File Upload Cheat Sheet"]
+    refs: ["ISO/IEC 27001:2022 A.8.7 (protection against malware)", "NIST SP 800-53 SI-3", "OWASP File Upload Cheat Sheet", "MITRE ATT&CK T1204.002 (malicious file)", "MITRE ATT&CK T1080 (taint shared content)"]
     tests: [UPLS-T13]
     en:
       title: Recent files are scanned again with new signatures
@@ -384,7 +384,7 @@ tests:
     priority: critical
     execution: automated
     tags: [file-type, upload]
-    refs: ["OWASP Web Security Testing Guide v4.2 §4.10.9 (test upload of malicious files)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.10.9 (test upload of malicious files)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "MITRE ATT&CK T1505.003 (web shell)", "CWE-646 (reliance on file name or extension of externally-supplied file)"]
     en:
       title: Uploads are checked by content and extension
       description: Uploads valid files and files whose name or content type has been changed, and checks which are accepted.
@@ -416,7 +416,7 @@ tests:
     priority: critical
     execution: manual
     tags: [malware, quarantine]
-    refs: []
+    refs: ["MITRE ATT&CK T1204.002 (malicious file)", "MITRE ATT&CK T1080 (taint shared content)"]
     en:
       title: The anti-malware test file is stopped and quarantined
       description: Uploads the standard anti-malware test file and checks that no other user can get it and that it is quarantined.
@@ -450,7 +450,7 @@ tests:
     priority: critical
     execution: automated
     tags: [storage, path-traversal]
-    refs: []
+    refs: ["CWE-552 (files or directories accessible to external parties)", "MITRE ATT&CK T1505.003 (web shell)"]
     en:
       title: Uploaded files get generated names outside the web root
       description: Uploads a file with a path in its name and checks how and where it is stored.
@@ -486,7 +486,7 @@ tests:
     priority: high
     execution: automated
     tags: [download, headers, domain-isolation]
-    refs: []
+    refs: ["CWE-79 (cross-site scripting)", "MITRE ATT&CK T1539 (steal web session cookie)"]
     en:
       title: Downloads and previews of an SVG file with a script
       description: Uploads an SVG file that contains a script and checks the download headers and the preview domain.
@@ -516,7 +516,7 @@ tests:
     priority: high
     execution: automated
     tags: [archive, zip-bomb, zip-slip]
-    refs: []
+    refs: ["MITRE ATT&CK T1499.004 (application or system exploitation)", "CWE-59 (link following)"]
     en:
       title: Crafted archives are rejected
       description: Uploads an archive that expands far beyond its size and an archive with entries that point outside the target directory.
@@ -548,7 +548,7 @@ tests:
     priority: medium
     execution: automated
     tags: [image, metadata]
-    refs: []
+    refs: ["CWE-212 (improper removal of sensitive information before storage or transfer)", "CWE-359 (exposure of private personal information)"]
     en:
       title: Image metadata is removed on upload
       description: Uploads a photo with location and device metadata and reads the metadata of the stored copy.
@@ -578,7 +578,7 @@ tests:
     priority: high
     execution: automated
     tags: [download, authorisation, signed-url]
-    refs: []
+    refs: ["CWE-862 (missing authorization)", "CWE-1472 (generation of credential with long expiration)"]
     en:
       title: Download access is checked each time and direct links expire
       description: Removes a user from a project after a download and checks access to the file and the lifetime of a direct storage link.
@@ -610,7 +610,7 @@ tests:
     priority: medium
     execution: manual
     tags: [file-name, xss]
-    refs: []
+    refs: ["CWE-116 (improper encoding or escaping of output)"]
     en:
       title: A file name with markup and control characters is shown safely
       description: Uploads a file whose name contains a script tag, a right-to-left override character and a slash, and looks at every place where the name is shown.
@@ -642,7 +642,7 @@ tests:
     priority: high
     execution: automated
     tags: [archive, zip-slip, unit-test]
-    refs: ["CWE-22", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["CWE-22 (path traversal)", "ISO/IEC 27001:2022 A.8.28", "CWE-59 (link following)"]
     en:
       title: Archive extraction rejects unsafe entries
       description: A unit test feeds the archive extraction routine with entries that point outside the target directory.
@@ -674,7 +674,7 @@ tests:
     priority: high
     execution: manual
     tags: [active-content, macros]
-    refs: ["OWASP File Upload Cheat Sheet"]
+    refs: ["OWASP File Upload Cheat Sheet", "MITRE ATT&CK T1204.002 (malicious file)"]
     en:
       title: Documents with macros or PDF scripts carry a warning
       description: Uploads documents with active content and downloads them as another user.
@@ -726,7 +726,7 @@ tests:
     priority: medium
     execution: automated
     tags: [resumable-upload, cleanup]
-    refs: ["CWE-400"]
+    refs: ["CWE-400 (uncontrolled resource consumption)", "CWE-459 (incomplete cleanup)"]
     en:
       title: Abandoned partial uploads are deleted
       description: A script starts a chunked upload, stops it halfway and checks the storage after the time limit.
@@ -756,7 +756,7 @@ tests:
     priority: medium
     execution: manual
     tags: [rescan, malware-scan]
-    refs: ["NIST SP 800-53 SI-3"]
+    refs: ["NIST SP 800-53 SI-3", "MITRE ATT&CK T1204.002 (malicious file)", "MITRE ATT&CK T1080 (taint shared content)"]
     en:
       title: A file is quarantined after a signature update
       description: Uploads a harmless test file, then adds a custom signature that detects it.

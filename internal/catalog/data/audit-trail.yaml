@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [audit-trail, change-history]
-    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3", "IEC 62443-3-3 SR 2.8", "IEC 62443-4-2 CR 2.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(l)"]
+    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3", "IEC 62443-3-3 SR 2.8", "IEC 62443-4-2 CR 2.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(l)", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1565.001 (stored data manipulation)"]
     tests: [AUD-T01]
     en:
       title: Every change is recorded in the audit trail
@@ -34,7 +34,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [audit-trail, immutability]
-    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "NIST SP 800-53 AU-9", "ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)"]
+    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "NIST SP 800-53 AU-9", "ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "MITRE ATT&CK T1070 (indicator removal)"]
     tests: [AUD-T02]
     en:
       title: Audit entries cannot be changed or deleted
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [tamper-evidence, hash-chain]
-    refs: ["NIST SP 800-53 AU-9(3)", "NIST SP 800-53 AU-10", "ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9"]
+    refs: ["NIST SP 800-53 AU-9(3)", "NIST SP 800-53 AU-10", "ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9", "CWE-353 (missing support for integrity check)", "MITRE ATT&CK T1070 (indicator removal)", "MITRE ATT&CK T1565.001 (stored data manipulation)"]
     tests: [AUD-T03]
     en:
       title: Tamper-evident audit trail
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [e-signature, re-authentication]
-    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)", "EU GMP Annex 11 §14", "eIDAS Regulation (EU) No 910/2014 Art. 26", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12"]
+    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)", "EU GMP Annex 11 §14", "eIDAS Regulation (EU) No 910/2014 Art. 26", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12", "CWE-306 (missing authentication for critical function)"]
     tests: [AUD-T07]
     en:
       title: Electronic signature with re-authentication
@@ -170,7 +170,7 @@ requirements:
     obligation: must
     priority: high
     tags: [e-signature, record-linking]
-    refs: ["21 CFR Part 11 §11.70", "EU GMP Annex 11 §14", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12"]
+    refs: ["21 CFR Part 11 §11.70", "EU GMP Annex 11 §14", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12", "CWE-347 (improper verification of cryptographic signature)"]
     tests: [AUD-T08]
     en:
       title: Signatures are bound to the signed content
@@ -236,7 +236,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [audit-trail, read-access, sensitive-data]
-    refs: ["Swedish Patient Data Act (2008:355) Ch. 4 §3 (access logging)", "HIPAA Security Rule 45 CFR §164.312(b) (audit controls)", "ISO/IEC 27001:2022 A.8.15", "GDPR Art. 32(1)(b)"]
+    refs: ["Swedish Patient Data Act (2008:355) Ch. 4 §3 (access logging)", "HIPAA Security Rule 45 CFR §164.312(b) (audit controls)", "ISO/IEC 27001:2022 A.8.15", "GDPR Art. 32(1)(b)", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1213 (data from information repositories)"]
     tests: [AUD-T11]
     en:
       title: Reading a sensitive record is recorded
@@ -282,7 +282,7 @@ requirements:
     obligation: must
     priority: high
     tags: [configuration-changes, administration]
-    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15"]
+    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1098 (account manipulation)"]
     tests: [AUD-T13]
     en:
       title: Configuration and permission changes are audited
@@ -304,7 +304,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [fail-closed, audit-failure]
-    refs: ["IEC 62443-3-3 SR 2.10", "IEC 62443-4-2 CR 2.10", "NIST SP 800-53 AU-5", "21 CFR Part 11 §11.10(e)"]
+    refs: ["IEC 62443-3-3 SR 2.10", "IEC 62443-4-2 CR 2.10", "NIST SP 800-53 AU-5", "21 CFR Part 11 §11.10(e)", "CWE-778 (insufficient logging)"]
     tests: [AUD-T14]
     en:
       title: No change without an audit entry
@@ -326,7 +326,7 @@ requirements:
     obligation: must
     priority: high
     tags: [impersonation, support-access]
-    refs: ["ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3", "OWASP Logging Cheat Sheet"]
+    refs: ["ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3", "OWASP Logging Cheat Sheet", "CWE-223 (omission of security-relevant information)"]
     tests: [AUD-T15]
     en:
       title: Both identities recorded during impersonation
@@ -348,7 +348,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [trusted-timestamp, tamper-evidence]
-    refs: ["RFC 3161", "eIDAS Regulation (EU) No 910/2014 Art. 41 (qualified electronic time stamps)", "ISO/IEC 27001:2022 A.8.15"]
+    refs: ["RFC 3161", "eIDAS Regulation (EU) No 910/2014 Art. 41 (qualified electronic time stamps)", "ISO/IEC 27001:2022 A.8.15", "MITRE ATT&CK T1070 (indicator removal)"]
     tests: [AUD-T16]
     en:
       title: Daily external time stamp on the audit chain
@@ -396,7 +396,7 @@ tests:
     priority: critical
     execution: automated
     tags: [audit-trail, change-history]
-    refs: ["21 CFR Part 11 §11.10(e)", "IEC 62443-3-3 SR 2.8", "IEC 62443-4-2 CR 2.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(l)"]
+    refs: ["21 CFR Part 11 §11.10(e)", "IEC 62443-3-3 SR 2.8", "IEC 62443-4-2 CR 2.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(l)", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1565.001 (stored data manipulation)"]
     en:
       title: Create, change and delete appear in the audit trail
       description: A script creates, changes and deletes a record and reads the resulting audit entries.
@@ -428,7 +428,7 @@ tests:
     priority: critical
     execution: manual
     tags: [audit-trail, immutability]
-    refs: ["NIST SP 800-53 AU-9", "ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)"]
+    refs: ["NIST SP 800-53 AU-9", "ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "MITRE ATT&CK T1070 (indicator removal)"]
     en:
       title: Administrators cannot alter the audit trail
       description: Tries to change and delete audit entries as an administrator and inspects the database rights.
@@ -458,7 +458,7 @@ tests:
     priority: high
     execution: automated
     tags: [tamper-evidence, hash-chain]
-    refs: ["NIST SP 800-53 AU-9(3)", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9"]
+    refs: ["NIST SP 800-53 AU-9(3)", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9", "CWE-353 (missing support for integrity check)", "MITRE ATT&CK T1070 (indicator removal)", "MITRE ATT&CK T1565.001 (stored data manipulation)"]
     en:
       title: Hash chain verification detects tampering
       description: A script verifies the audit hash chain, alters the database directly and verifies again.
@@ -570,7 +570,7 @@ tests:
     priority: critical
     execution: manual
     tags: [e-signature, re-authentication]
-    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12"]
+    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12", "CWE-306 (missing authentication for critical function)"]
     en:
       title: Signing requires re-authentication and records its meaning
       description: Signs a record with and without re-authentication and checks what is stored.
@@ -600,7 +600,7 @@ tests:
     priority: high
     execution: manual
     tags: [e-signature, record-linking]
-    refs: ["21 CFR Part 11 §11.70", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12"]
+    refs: ["21 CFR Part 11 §11.70", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12", "CWE-347 (improper verification of cryptographic signature)"]
     en:
       title: Changing a signed record invalidates the signature
       description: Changes a field of a signed record and checks the signature status.
@@ -690,7 +690,7 @@ tests:
     priority: medium
     execution: manual
     tags: [audit-trail, read-access]
-    refs: []
+    refs: ["CWE-778 (insufficient logging)", "MITRE ATT&CK T1213 (data from information repositories)"]
     en:
       title: Opening a sensitive record leaves an audit entry
       description: Opens a sensitive and an ordinary record and checks the audit trail.
@@ -752,7 +752,7 @@ tests:
     priority: high
     execution: manual
     tags: [configuration-changes]
-    refs: ["NIST SP 800-53 AU-2"]
+    refs: ["NIST SP 800-53 AU-2", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1098 (account manipulation)"]
     en:
       title: Settings and role changes appear in the audit trail
       description: Changes a role, a workflow and a signature setting and searches the audit trail.
@@ -778,7 +778,7 @@ tests:
     priority: critical
     execution: automated
     tags: [fail-closed]
-    refs: ["IEC 62443-3-3 SR 2.10"]
+    refs: ["IEC 62443-3-3 SR 2.10", "CWE-778 (insufficient logging)"]
     en:
       title: Edits are refused when the audit store is down
       description: Makes the audit store unavailable in a test environment and tries to edit a record.
@@ -808,7 +808,7 @@ tests:
     priority: high
     execution: manual
     tags: [impersonation]
-    refs: ["NIST SP 800-53 AU-3"]
+    refs: ["NIST SP 800-53 AU-3", "CWE-223 (omission of security-relevant information)"]
     en:
       title: Impersonated changes name the support engineer
       description: A support engineer acts as a customer user, changes a record and the audit entry is inspected.
@@ -834,7 +834,7 @@ tests:
     priority: medium
     execution: automated
     tags: [trusted-timestamp]
-    refs: ["RFC 3161"]
+    refs: ["RFC 3161", "MITRE ATT&CK T1070 (indicator removal)"]
     en:
       title: Daily time-stamp tokens verify against the chain
       description: A script verifies the time-stamp tokens of the last 7 days against the authority certificate and the audit chain.
