@@ -329,6 +329,126 @@ requirements:
         - method: demonstration
           text: När nivån ändras till debug syns debugposter inom 1 minut, utan att processen startas om.
 
+  - id: OBS-15
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [telemetry, absence, alerting]
+    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems)", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [OBS-T12]
+    en:
+      title: Alert when telemetry stops
+      description: The monitoring MUST alert the on-call engineer when a production service sends no logs or no metrics for 10 minutes.
+      rationale: A service that has stopped reporting looks healthy on every dashboard, so silence has to be treated as a fault.
+      criteria:
+        - method: test
+          text: Stopping the metrics export of one service raises an alert within 15 minutes that names the service.
+          threshold: "alert after 10 min of silence"
+    sv:
+      title: Larm när telemetrin upphör
+      description: Övervakningen SKA larma jourhavande tekniker när en produktionstjänst inte skickar loggar eller mätvärden på 10 minuter.
+      rationale: En tjänst som har slutat rapportera ser frisk ut på varje översiktspanel, så tystnad behöver behandlas som ett fel.
+      criteria:
+        - method: test
+          text: Om export av mätvärden stoppas för en tjänst kommer ett larm inom 15 minuter som anger tjänsten.
+          threshold: "larm efter 10 min tystnad"
+
+  - id: OBS-16
+    type: non_functional
+    obligation: must_not
+    priority: medium
+    tags: [metrics, cardinality, labels]
+    refs: ["OpenTelemetry specification (metrics data model)", "Google SRE book ch. 6 (Monitoring Distributed Systems)"]
+    tests: [OBS-T13]
+    en:
+      title: No unbounded values in metric labels
+      description: Metric labels MUST NOT contain user identities, request identities, full URLs or other values without a fixed upper number of distinct values.
+      rationale: Each distinct label value creates a new time series, and unbounded values overload the metric store and raise its cost without limit.
+      criteria:
+        - method: inspection
+          text: A review of the metric definitions and a cardinality report show no label with user, request or full URL values.
+          threshold: "≤ 1 000 series per metric"
+    sv:
+      title: Inga obegränsade värden i etiketter för mätvärden
+      description: Etiketter för mätvärden SKA INTE innehålla användaridentiteter, anropsidentiteter, fullständiga URL:er eller andra värden utan ett fast tak för antalet olika värden.
+      rationale: Varje nytt etikettvärde skapar en ny tidsserie, och obegränsade värden överbelastar mätvärdeslagret och höjer kostnaden utan gräns.
+      criteria:
+        - method: inspection
+          text: En granskning av definitionerna av mätvärden och en rapport över antalet serier visar ingen etikett med värden för användare, anrop eller fullständig URL.
+          threshold: "≤ 1 000 serier per mätvärde"
+
+  - id: OBS-17
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [alerts, noise, review]
+    refs: ["Google SRE workbook ch. 5 (Alerting on SLOs)", "ITIL 4 Monitoring and event management"]
+    tests: [OBS-T14]
+    en:
+      title: Monthly review of noisy alerts
+      description: The operations team SHOULD review every month each alert rule that fired more than 5 times without leading to an action, and change or remove it.
+      rationale: Alerts that need no action train engineers to ignore pages, including the one that matters.
+      criteria:
+        - method: inspection
+          text: The monthly review notes list each rule above the threshold with the decision taken.
+          threshold: "> 5 firings without action triggers review"
+    sv:
+      title: Månatlig genomgång av störande larm
+      description: Driften BÖR varje månad gå igenom varje larmregel som utlöstes mer än 5 gånger utan att leda till en åtgärd, och ändra eller ta bort den.
+      rationale: Larm som inte kräver åtgärd lär teknikerna att strunta i larm, också det som verkligen gäller.
+      criteria:
+        - method: inspection
+          text: Anteckningarna från månadsgenomgången listar varje regel över gränsen med det beslut som togs.
+          threshold: "> 5 utlösningar utan åtgärd ger genomgång"
+
+  - id: OBS-18
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [frontend, errors, real-user-monitoring]
+    refs: ["ISO/IEC 25010:2023 analysability", "OpenTelemetry specification (client instrumentation)"]
+    tests: [OBS-T15]
+    en:
+      title: Browser errors reported with the release version
+      description: The web client MUST report uncaught script errors and failed API calls to the monitoring with page, browser and release version, without personal data.
+      rationale: Errors in the browser never reach the server logs, so without client reporting they are only known when users complain.
+      criteria:
+        - method: test
+          text: An error thrown in the browser appears in the monitoring within 5 minutes with page, browser and release version and without user name or e-mail.
+          threshold: "≤ 5 min to appear"
+    sv:
+      title: Fel i webbläsaren rapporteras med releaseversion
+      description: Webbklienten SKA rapportera ohanterade skriptfel och misslyckade API-anrop till övervakningen med sida, webbläsare och releaseversion, utan personuppgifter.
+      rationale: Fel i webbläsaren når aldrig serverns loggar, så utan rapportering från klienten blir de kända först när användarna klagar.
+      criteria:
+        - method: test
+          text: Ett fel som kastas i webbläsaren syns i övervakningen inom 5 minuter med sida, webbläsare och releaseversion och utan användarnamn eller e-postadress.
+          threshold: "≤ 5 min tills det syns"
+
+  - id: OBS-19
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [queues, age, alerting]
+    refs: ["ITIL 4 Monitoring and event management", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [OBS-T16]
+    en:
+      title: Alert on old messages in queues
+      description: The monitoring MUST alert when the oldest unprocessed message in a production queue is older than 15 minutes.
+      rationale: Queue length alone hides a stuck consumer when the queue is short, while the age of the oldest message shows that work has stopped.
+      criteria:
+        - method: test
+          text: A queue whose consumer is paused triggers an alert once the oldest message passes 15 minutes.
+          threshold: "oldest message > 15 min"
+    sv:
+      title: Larm vid gamla meddelanden i köer
+      description: Övervakningen SKA larma när det äldsta obehandlade meddelandet i en produktionskö är äldre än 15 minuter.
+      rationale: Köns längd döljer en konsument som har fastnat när kön är kort, medan åldern på det äldsta meddelandet visar att arbetet har stannat.
+      criteria:
+        - method: test
+          text: En kö vars konsument är pausad ger larm när det äldsta meddelandet passerar 15 minuter.
+          threshold: "äldsta meddelande > 15 min"
+
 tests:
   - id: OBS-T01
     priority: high
@@ -653,3 +773,145 @@ tests:
           expected: Debugposter för anropet syns inom 1 minut.
         - action: Jämför processens starttid med det noterade värdet och sätt tillbaka nivån till info.
           expected: Starttiden är oförändrad och debugposterna upphör.
+
+  - id: OBS-T12
+    priority: high
+    execution: manual
+    tags: [telemetry, absence]
+    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems)"]
+    en:
+      title: Silent service raises an alert
+      description: Stops the telemetry of one service in staging and waits for the absence alert.
+      preconditions: A staging environment monitored like production and a way to stop the metrics export of one service.
+      expected: An alert naming the service reaches the on-call channel within 15 minutes.
+      steps:
+        - action: Stop the metrics export of the service and note the time.
+          expected: The service keeps running but no metrics arrive.
+          data: "service: notification worker"
+        - action: Wait for the alert.
+          expected: An alert arrives within 15 minutes and names the silent service.
+        - action: Restart the export.
+          expected: The alert resolves when metrics arrive again.
+    sv:
+      title: Tyst tjänst ger larm
+      description: Stoppar telemetrin för en tjänst i stagingmiljön och väntar på larmet om uteblivna data.
+      preconditions: En stagingmiljö som övervakas som produktion och ett sätt att stoppa exporten av mätvärden från en tjänst.
+      expected: Ett larm som anger tjänsten når jourkanalen inom 15 minuter.
+      steps:
+        - action: Stoppa exporten av mätvärden från tjänsten och notera tiden.
+          expected: Tjänsten fortsätter köra men inga mätvärden kommer in.
+          data: "tjänst: arbetare för aviseringar"
+        - action: Vänta på larmet.
+          expected: Ett larm kommer inom 15 minuter och anger den tysta tjänsten.
+        - action: Starta exporten igen.
+          expected: Larmet återställs när mätvärdena kommer in igen.
+
+  - id: OBS-T13
+    priority: medium
+    execution: manual
+    tags: [metrics, cardinality]
+    refs: ["OpenTelemetry specification (metrics data model)"]
+    en:
+      title: Cardinality of metric labels
+      description: Reviews the metric definitions and the series count per metric.
+      preconditions: Access to the metric definitions in the code and to the metric store's series statistics.
+      expected: No label holds unbounded values and no metric exceeds 1 000 series.
+      steps:
+        - action: List the labels of each custom metric in the code.
+          expected: No label is filled from a user identity, request identity or full URL.
+          data: "search for label names such as user_id, request_id, url"
+        - action: Read the series count per metric in the metric store.
+          expected: No metric has more than 1 000 series.
+    sv:
+      title: Antal värden i etiketter för mätvärden
+      description: Granskar definitionerna av mätvärden och antalet serier per mätvärde.
+      preconditions: Åtkomst till definitionerna av mätvärden i koden och till mätvärdeslagrets statistik över serier.
+      expected: Ingen etikett innehåller obegränsade värden och inget mätvärde överstiger 1 000 serier.
+      steps:
+        - action: Lista etiketterna för varje eget mätvärde i koden.
+          expected: Ingen etikett fylls från en användaridentitet, anropsidentitet eller fullständig URL.
+          data: "sök efter etikettnamn som user_id, request_id, url"
+        - action: Läs av antalet serier per mätvärde i mätvärdeslagret.
+          expected: Inget mätvärde har fler än 1 000 serier.
+
+  - id: OBS-T14
+    priority: medium
+    execution: manual
+    tags: [alerts, noise]
+    refs: ["Google SRE workbook ch. 5 (Alerting on SLOs)"]
+    en:
+      title: Noisy alert rules handled in the monthly review
+      description: Compares the alert history with the review notes of the month.
+      preconditions: The alert history and the notes of the last monthly review.
+      expected: Each rule that fired more than 5 times without action has a recorded decision.
+      steps:
+        - action: Count the firings per rule in the last month and mark those without a linked action.
+          expected: The rules with more than 5 firings without action are listed.
+        - action: Look up each listed rule in the review notes.
+          expected: Each has a decision to change, remove or keep it with a reason.
+    sv:
+      title: Störande larmregler hanteras vid månadsgenomgången
+      description: Jämför larmhistoriken med anteckningarna från månadens genomgång.
+      preconditions: Larmhistoriken och anteckningarna från senaste månadsgenomgången.
+      expected: Varje regel som utlöstes mer än 5 gånger utan åtgärd har ett noterat beslut.
+      steps:
+        - action: Räkna utlösningarna per regel förra månaden och markera dem utan kopplad åtgärd.
+          expected: Reglerna med mer än 5 utlösningar utan åtgärd listas.
+        - action: Slå upp varje listad regel i anteckningarna.
+          expected: Var och en har ett beslut om att ändra, ta bort eller behålla den, med skäl.
+
+  - id: OBS-T15
+    priority: medium
+    execution: manual
+    tags: [frontend, errors]
+    refs: ["ISO/IEC 25010:2023 analysability"]
+    en:
+      title: Script error reaches the monitoring
+      description: Throws an error in the web client and looks for it in the monitoring.
+      preconditions: A staging deployment with client error reporting and a signed-in test user.
+      expected: The error appears with page, browser and release version and without personal data.
+      steps:
+        - action: In the browser console, throw an uncaught error on an item page.
+          expected: The page keeps working.
+          data: "throw new Error(\"monitoring test\")"
+        - action: Search the monitoring for the error within 5 minutes.
+          expected: The error is listed with page, browser, release version and no user name or e-mail address.
+    sv:
+      title: Skriptfel når övervakningen
+      description: Kastar ett fel i webbklienten och letar efter det i övervakningen.
+      preconditions: En driftsättning i staging med felrapportering från klienten och en inloggad testanvändare.
+      expected: Felet syns med sida, webbläsare och releaseversion och utan personuppgifter.
+      steps:
+        - action: Kasta ett ohanterat fel i webbläsarens konsol på en objektsida.
+          expected: Sidan fortsätter fungera.
+          data: "throw new Error(\"monitoring test\")"
+        - action: Sök efter felet i övervakningen inom 5 minuter.
+          expected: Felet listas med sida, webbläsare och releaseversion och utan användarnamn eller e-postadress.
+
+  - id: OBS-T16
+    priority: medium
+    execution: manual
+    tags: [queues, age]
+    refs: ["ITIL 4 Monitoring and event management"]
+    en:
+      title: Paused consumer triggers the queue age alert
+      description: Pauses a queue consumer and waits for the alert on message age.
+      preconditions: A staging queue with its consumer and the queue age alert configured.
+      expected: The alert fires after the oldest message passes 15 minutes.
+      steps:
+        - action: Pause the consumer and publish 10 messages.
+          expected: The messages stay in the queue.
+          data: "10 test messages"
+        - action: Wait and note when the alert fires.
+          expected: The alert fires between 15 and 20 minutes after the first message and names the queue.
+    sv:
+      title: Pausad konsument utlöser larmet för meddelandeålder
+      description: Pausar en kökonsument och väntar på larmet om meddelandenas ålder.
+      preconditions: En kö i staging med sin konsument och larmet för köålder inställt.
+      expected: Larmet utlöses när det äldsta meddelandet passerar 15 minuter.
+      steps:
+        - action: Pausa konsumenten och publicera 10 meddelanden.
+          expected: Meddelandena ligger kvar i kön.
+          data: "10 testmeddelanden"
+        - action: Vänta och notera när larmet utlöses.
+          expected: Larmet utlöses mellan 15 och 20 minuter efter det första meddelandet och anger kön.
