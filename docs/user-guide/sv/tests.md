@@ -120,7 +120,7 @@ Ett objekt kan ha hur många kategorivärden som helst, även flera i samma dime
 
 I frågor matchar `category:Negative` värdets namn och `dimension:Polarity/Negative` den fullständiga formen.
 
-På samma sida finns projektets **Namn**, **Beskrivning**, **URL-mall för felhanteringssystem** (se [Defekter](runs.md#defekter)) och, för administratörer, **Ta bort projekt**. Att redigera kategorier kräver **Ansvarig** (eller skrivbehörighet för deras område, Testare för testfallskategorier).
+På samma sida finns projektets **Namn**, **Beskrivning**, **URL-mall för felhanteringssystem** (se [Defekter](runs.md#defekter)), avsnittet [Spara och läs in](reports-and-export.md#spara-och-läs-in-projekt) (**Spara projekt**, **Duplicera projekt**, **Läs in projekt**) och, för administratörer, **Ta bort projekt**. Att redigera kategorier kräver **Ansvarig** (eller skrivbehörighet för deras område, Testare för testfallskategorier).
 
 ## Markera många tester som klara på en gång
 

@@ -89,6 +89,7 @@ const guideEn = {
     export_aspects: "The parts of the project to export. An optional query below limits the requirements and tests.",
     query_filter: "Filter with the query language, for example status:approved priority=high or -has:criteria. Press Enter to apply.",
     settings_defectTemplate: "A URL with {'{'}id{'}'}, for example https://jira.example.com/browse/{'{'}id{'}'}. Defect IDs in executions become links to your tracker.",
+    settings_archive: 'Save the project as one file with everything in it except secrets, and load such a file as a new project with a key of your choice, here or on another server. Duplicate does both in one step.',
     settings_sources: "The sources offered in a requirement's Source field, one per line. Sources already used in the project are offered too, and any other text can still be typed. Empty the list to return to the defaults.",
     settings_dimension: "A dimension groups category values, for example Area with Payment and UI. Each item can have values of several dimensions.",
   },

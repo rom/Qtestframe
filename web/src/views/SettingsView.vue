@@ -15,7 +15,7 @@ import Message from 'primevue/message'
 import Checkbox from 'primevue/checkbox'
 import Select from 'primevue/select'
 import { entry, recordUndo } from '@/lib/undoActions'
-import { api, errorMessage } from '@/lib/api'
+import { api, asItems, errorMessage } from '@/lib/api'
 import AvatarPicker from '@/components/AvatarPicker.vue'
 import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
 import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
@@ -23,10 +23,13 @@ import DefectTrackerSettings from '@/components/DefectTrackerSettings.vue'
 import WebhooksCard from '@/components/WebhooksCard.vue'
 import ConfigurationsSettings from '@/components/ConfigurationsSettings.vue'
 import WebTestSettings from '@/components/WebTestSettings.vue'
+import ProjectLoadDialog from '@/components/ProjectLoadDialog.vue'
+import ProjectDuplicateDialog from '@/components/ProjectDuplicateDialog.vue'
+import { totalRows, type ProjectLoadResult } from '@/lib/projectArchive'
 import { groupBy } from '@/lib/collections'
 import { defaultCategoryColor, normalizeHex, readableTextColor } from '@/lib/colors'
 import { P } from '@/lib/permissions'
-import type { Category, ItemKind, Project } from '@/lib/types'
+import type { Category, ItemKind, ListResponse, Project } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
@@ -233,6 +236,41 @@ function onIconUploaded(res: unknown) {
   const p = res as Project | null
   if (proj.project && p?.id) Object.assign(proj.project, p)
 }
+// save, duplicate and load (project archives)
+const canSave = computed(() => auth.can([P.projectUpdate, P.export]))
+const canDuplicate = computed(() => auth.can([P.projectCreate, P.projectUpdate, P.export]))
+const takenKeys = ref<string[]>([])
+const loadDialog = ref(false)
+const duplicateDialog = ref(false)
+const savingArchive = ref(false)
+async function saveArchive() {
+  const p = proj.project
+  if (!p) return
+  savingArchive.value = true
+  try {
+    const name = await api.download(`/projects/${p.id}/archive`, undefined, `${p.key.toLowerCase()}-project.zip`)
+    notify.ok(t('projectArchive.saved'), name)
+  } catch (e) {
+    notify.fail(e, t('projectArchive.saveFailed'))
+  } finally {
+    savingArchive.value = false
+  }
+}
+async function openArchiveDialog(which: 'load' | 'duplicate') {
+  try {
+    takenKeys.value = asItems(await api.get<ListResponse<Project>>('/projects')).map((p) => p.key)
+  } catch {
+    takenKeys.value = proj.project ? [proj.project.key] : []
+  }
+  if (which === 'load') loadDialog.value = true
+  else duplicateDialog.value = true
+}
+function openArchived(p: Project, res: ProjectLoadResult, summary: string) {
+  const skipped = totalRows(res.skipped)
+  notify.ok(summary, `${p.key} · ${p.name}` + (skipped ? ` · ${t('projectArchive.skipped', { n: skipped }, skipped)}` : ''))
+  router.push({ name: 'dashboard', params: { projectId: p.id } })
+}
+
 function deleteProject() {
   notify.confirmDanger(t('settings.confirmDeleteProject', { key: proj.project?.key ?? '' }), async () => {
     try {
@@ -376,6 +414,20 @@ function deleteProject() {
         </section>
         <DefectTrackerSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <WebhooksCard v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
+        <section v-if="canSave || auth.can(P.projectCreate)" class="card project-archive" style="max-width: 640px; margin-top: 16px" aria-labelledby="h-archive">
+          <div class="row nowrap" style="margin-bottom: 6px">
+            <h2 id="h-archive" class="plain-heading" style="margin: 0">{{ t('projectArchive.sectionTitle') }}</h2>
+            <HelpTip id="settings.archive" :label="t('projectArchive.sectionTitle')" />
+          </div>
+          <p class="small muted" style="margin-top: 0">{{ t('projectArchive.sectionText') }}</p>
+          <div class="row">
+            <Button v-if="canSave" :label="t('projectArchive.save')" icon="pi pi-download" :loading="savingArchive" @click="saveArchive" />
+            <Button v-if="canDuplicate" :label="t('projectArchive.duplicate')" icon="pi pi-copy" severity="secondary" outlined @click="openArchiveDialog('duplicate')" />
+            <Button v-if="auth.can(P.projectCreate)" :label="t('projectArchive.load')" icon="pi pi-upload" severity="secondary" outlined @click="openArchiveDialog('load')" />
+          </div>
+        </section>
+        <ProjectLoadDialog v-model:visible="loadDialog" :taken-keys="takenKeys" @loaded="(p, res) => openArchived(p, res, t('projectArchive.loaded'))" />
+        <ProjectDuplicateDialog v-model:visible="duplicateDialog" :project="proj.project" :taken-keys="takenKeys" @duplicated="(p, res) => openArchived(p, res, t('projectArchive.duplicated'))" />
       </TabPanel>
     </TabPanels>
   </Tabs>
