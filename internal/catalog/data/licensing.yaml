@@ -231,6 +231,98 @@ requirements:
         - method: test
           text: En validering av SBOM för den senaste releasen visar ett giltigt SPDX-licensuttryck för varje komponent och inget värde NOASSERTION.
 
+  - id: LIC-11
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [containers, os-packages, notices]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.4 (compliance artifacts)", "SPDX 2.3", "GNU GPL v2 §3 (source code offer)"]
+    tests: [LIC-T09]
+    en:
+      title: Licences of packages in container images are covered
+      description: The organisation MUST include every operating system package and runtime in each distributed container image in the licence check, the software bill of materials and the notices file.
+      rationale: Base images bring hundreds of packages, many under copyleft licences, and distributing an image is distributing all of them.
+      criteria:
+        - method: test
+          text: A scan of the released image lists the same packages as its SBOM, and each package's licence appears in the notices file.
+    sv:
+      title: Licenserna för paket i containeravbilder omfattas
+      description: Organisationen SKA ta med varje operativsystempaket och körmiljö i varje distribuerad containeravbild i licenskontrollen, programvaruförteckningen och filen med upphovsrättsmeddelanden.
+      rationale: Basavbilder för med sig hundratals paket, många under copyleftlicenser, och att distribuera en avbild är att distribuera dem alla.
+      criteria:
+        - method: test
+          text: En skanning av den levererade avbilden listar samma paket som dess programvaruförteckning, och varje pakets licens finns i filen med upphovsrättsmeddelanden.
+
+  - id: LIC-12
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [relicensing, dependency-updates]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.3 (content review and approval)", "SPDX 2.3"]
+    tests: [LIC-T10]
+    en:
+      title: Licence changes on upgrade stop the update
+      description: The build pipeline SHOULD stop a dependency update when the new version declares a licence that differs from the licence approved for the previous version, until the licence policy owner approves it.
+      rationale: Projects do change licence between versions, sometimes to terms that forbid the product's use, and an automatic update would bring that in unnoticed.
+      criteria:
+        - method: test
+          text: Updating a test dependency to a version with another declared licence fails the build with a message naming both licences.
+    sv:
+      title: Licensbyte vid uppgradering stoppar uppdateringen
+      description: Byggpipelinen BÖR stoppa en uppdatering av ett beroende när den nya versionen anger en annan licens än den som godkändes för den tidigare versionen, tills ägaren av licenspolicyn godkänner den.
+      rationale: Projekt byter faktiskt licens mellan versioner, ibland till villkor som förbjuder produktens användning, och en automatisk uppdatering skulle föra in det obemärkt.
+      criteria:
+        - method: test
+          text: När ett testberoende uppdateras till en version med en annan angiven licens fallerar bygget med ett meddelande som anger båda licenserna.
+
+  - id: LIC-13
+    type: business
+    obligation: should
+    priority: medium
+    tags: [openchain, compliance-programme]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.1 (program foundation)", "OpenChain ISO/IEC 5230:2020 §3.2 (relevant tasks defined and supported)"]
+    tests: [LIC-T11]
+    en:
+      title: Open source compliance programme with named roles
+      description: The organisation SHOULD run an open source licence compliance programme with a written policy, a named compliance officer, a public contact for licence questions and a review of the programme every 12 months.
+      rationale: Licence duties are met reliably only when someone owns them and outsiders know where to send requests for source code or attribution.
+      criteria:
+        - method: review
+          text: The policy, the officer's appointment, the published contact address and a programme review less than 12 months old are all available.
+          threshold: "review ≤ 12 months ago"
+    sv:
+      title: Program för efterlevnad av öppen källkod med namngivna roller
+      description: Organisationen BÖR driva ett program för efterlevnad av licenser för öppen källkod med en skriftlig policy, en utsedd ansvarig, en offentlig kontaktadress för licensfrågor och en översyn av programmet var 12:e månad.
+      rationale: Licensskyldigheterna uppfylls bara pålitligt när någon äger dem och utomstående vet vart de ska skicka begäranden om källkod eller erkännanden.
+      criteria:
+        - method: review
+          text: Policyn, beslutet om den ansvarige, den publicerade kontaktadressen och en översyn av programmet som är yngre än 12 månader finns alla tillgängliga.
+          threshold: "översyn ≤ 12 månader sedan"
+
+  - id: LIC-14
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [ai-generated-code, snippet-matching]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.3 (content review and approval)", "ISO/IEC 27001:2022 A.5.32"]
+    tests: [LIC-T12]
+    en:
+      title: Generated code checked against public code
+      description: The organisation SHOULD scan code produced with AI coding assistants for matches of 20 lines or more with public open source code before it is merged, and handle each match like a copied snippet.
+      rationale: Code assistants can reproduce licensed code verbatim, and the licence duties follow the code regardless of how it was produced.
+      criteria:
+        - method: test
+          text: A pull request with a 25-line block copied from a GPL project is flagged with the source project and licence before merge.
+          threshold: "match ≥ 20 lines"
+    sv:
+      title: Genererad kod kontrolleras mot publik kod
+      description: Organisationen BÖR skanna kod som tagits fram med AI-assistenter för programmering efter matchningar på 20 rader eller mer mot publik öppen källkod innan den slås samman, och hantera varje matchning som ett kopierat kodstycke.
+      rationale: Kodassistenter kan återge licensierad kod ordagrant, och licensskyldigheterna följer koden oavsett hur den kommit till.
+      criteria:
+        - method: test
+          text: En pull request med ett block på 25 rader kopierat från ett GPL-projekt flaggas med källprojekt och licens före sammanslagning.
+          threshold: "matchning ≥ 20 rader"
+
 tests:
   - id: LIC-T01
     priority: high
@@ -479,3 +571,117 @@ tests:
           data: "SPDX: LGPL-2.1-or-later"
         - action: Bifoga källkodsarkivet för exakt den versionen och kör pipelinen igen.
           expected: Kontrollen går igenom och releasen publiceras med arkivet.
+
+  - id: LIC-T09
+    priority: high
+    execution: automated
+    tags: [containers, os-packages]
+    refs: ["SPDX 2.3"]
+    en:
+      title: Image packages match the SBOM and notices
+      description: A script scans a released container image and compares its packages with the SBOM and the notices file.
+      preconditions: The latest released container image, its SBOM and the notices file of the release.
+      expected: Every package in the image is in the SBOM, and its licence is in the notices file.
+      steps:
+        - action: Scan the image with a package scanner and list each package with its licence.
+          expected: A package list is produced, including operating system packages.
+        - action: Compare the list with the SBOM.
+          expected: No package in the image is missing from the SBOM.
+        - action: Look up each licence in the notices file.
+          expected: Each licence text and copyright statement is present.
+    sv:
+      title: Paketen i avbilden stämmer med programvaruförteckningen och meddelandena
+      description: Ett skript skannar en levererad containeravbild och jämför dess paket med programvaruförteckningen och filen med upphovsrättsmeddelanden.
+      preconditions: Den senast levererade containeravbilden, dess programvaruförteckning och leveransens fil med upphovsrättsmeddelanden.
+      expected: Varje paket i avbilden finns i förteckningen, och dess licens finns i meddelandefilen.
+      steps:
+        - action: Skanna avbilden med en paketskanner och lista varje paket med dess licens.
+          expected: En paketlista tas fram, inklusive operativsystempaket.
+        - action: Jämför listan med programvaruförteckningen.
+          expected: Inget paket i avbilden saknas i förteckningen.
+        - action: Slå upp varje licens i meddelandefilen.
+          expected: Varje licenstext och upphovsrättsangivelse finns med.
+
+  - id: LIC-T10
+    priority: medium
+    execution: automated
+    tags: [relicensing]
+    refs: ["SPDX 2.3"]
+    en:
+      title: A dependency that changes licence fails the build
+      description: Updates a test dependency to a version whose declared licence differs from the approved one.
+      preconditions: A test branch, a private test package published in two versions with the licences MIT and BUSL-1.1, and the MIT version approved in the licence policy.
+      expected: The update stops the build until it is approved.
+      steps:
+        - action: Update the test package from the MIT version to the BUSL-1.1 version and run the build.
+          expected: The build fails and names MIT and BUSL-1.1.
+          data: "SPDX: MIT → BUSL-1.1"
+        - action: Record the approval by the licence policy owner and run the build again.
+          expected: The build passes.
+    sv:
+      title: Ett beroende som byter licens stoppar bygget
+      description: Uppdaterar ett testberoende till en version vars angivna licens skiljer sig från den godkända.
+      preconditions: En testgren, ett privat testpaket publicerat i två versioner med licenserna MIT och BUSL-1.1, och MIT-versionen godkänd i licenspolicyn.
+      expected: Uppdateringen stoppar bygget tills den har godkänts.
+      steps:
+        - action: Uppdatera testpaketet från MIT-versionen till BUSL-1.1-versionen och kör bygget.
+          expected: Bygget fallerar och anger MIT och BUSL-1.1.
+          data: "SPDX: MIT → BUSL-1.1"
+        - action: Registrera godkännandet från ägaren av licenspolicyn och kör bygget igen.
+          expected: Bygget går igenom.
+
+  - id: LIC-T11
+    priority: medium
+    execution: manual
+    tags: [openchain]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.1 (program foundation)"]
+    en:
+      title: Compliance programme documents are in place
+      description: Reviews the documents of the open source compliance programme.
+      preconditions: Access to the organisation's policy repository and its public website.
+      expected: Policy, officer, contact and a recent review exist.
+      steps:
+        - action: Open the open source policy and the appointment of the compliance officer.
+          expected: Both exist and are approved.
+        - action: Find the public contact for licence questions on the website and send a test question.
+          expected: The address is published and the question is acknowledged.
+        - action: Open the latest programme review.
+          expected: It is less than 12 months old and lists actions.
+    sv:
+      title: Dokumenten för efterlevnadsprogrammet finns
+      description: Granskar dokumenten i programmet för efterlevnad av öppen källkod.
+      preconditions: Åtkomst till organisationens policyarkiv och dess offentliga webbplats.
+      expected: Policy, ansvarig, kontaktadress och en ny översyn finns.
+      steps:
+        - action: Öppna policyn för öppen källkod och beslutet om den ansvarige.
+          expected: Båda finns och är godkända.
+        - action: Leta upp den offentliga kontaktadressen för licensfrågor på webbplatsen och skicka en testfråga.
+          expected: Adressen är publicerad och frågan bekräftas.
+        - action: Öppna den senaste översynen av programmet.
+          expected: Den är yngre än 12 månader och listar åtgärder.
+
+  - id: LIC-T12
+    priority: medium
+    execution: manual
+    tags: [snippet-matching]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.3 (content review and approval)"]
+    en:
+      title: Copied public code is flagged before merge
+      description: Opens a pull request with a block copied from a GPL project and a block of original code.
+      preconditions: A test branch with the snippet scanner enabled and a 25-line function copied from a well-known GPL project.
+      expected: Only the copied block is flagged, with source and licence.
+      steps:
+        - action: Open a pull request with the copied function and a 25-line function written for the test.
+          expected: The snippet scan runs on the pull request.
+        - action: Read the scan result.
+          expected: The copied function is flagged with the source project and GPL licence, the original one is not, and merge waits for a decision.
+    sv:
+      title: Kopierad publik kod flaggas före sammanslagning
+      description: Öppnar en pull request med ett block kopierat från ett GPL-projekt och ett block egen kod.
+      preconditions: En testgren med skannern för kodstycken påslagen och en funktion på 25 rader kopierad från ett välkänt GPL-projekt.
+      expected: Endast det kopierade blocket flaggas, med källa och licens.
+      steps:
+        - action: Öppna en pull request med den kopierade funktionen och en funktion på 25 rader som skrivits för testet.
+          expected: Skanningen av kodstycken körs på pull requesten.
+        - action: Läs skanningens resultat.
+          expected: Den kopierade funktionen flaggas med källprojekt och GPL-licens, den egna gör det inte, och sammanslagningen väntar på ett beslut.

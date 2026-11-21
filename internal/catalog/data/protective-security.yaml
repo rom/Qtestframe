@@ -337,6 +337,96 @@ requirements:
         - method: review
           text: Varje leverantör med åtkomst till systemet har ett undertecknat avtal daterat före den första åtkomsten, och varje namngiven person hos leverantören med åtkomst har en registrerad säkerhetsprövning för systemets nivå.
 
+  - id: SAKS-15
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [procurement, outsourcing, security-assessment]
+    refs: ["Säkerhetsskyddslag (2018:585) 4 kap. (säkerhetsskyddad upphandling)", "Säkerhetsskyddsförordning (2021:955)"]
+    tests: [SAKS-T12]
+    en:
+      title: Protective security assessment before outsourcing or procurement
+      description: The organisation MUST complete and document a protective security assessment before it procures, outsources or hands over operation of a function that gives a supplier access to classified information or security-sensitive activity.
+      rationale: Cloud services, operations contracts and consultants can give a supplier the same access as staff, and the law requires the risk to be assessed and controlled before the contract is signed.
+      criteria:
+        - method: review
+          text: Each procurement in the last 24 months that touches the security protection analysis has an assessment dated before the contract, with its conclusion and required measures.
+    sv:
+      title: Säkerhetsskyddsbedömning före upphandling eller utkontraktering
+      description: Organisationen SKA genomföra och dokumentera en säkerhetsskyddsbedömning innan den upphandlar, lägger ut eller överlåter driften av en funktion som ger en leverantör tillgång till säkerhetsskyddsklassificerade uppgifter eller säkerhetskänslig verksamhet.
+      rationale: Molntjänster, driftavtal och konsulter kan ge en leverantör samma åtkomst som egen personal, och lagen kräver att risken bedöms och hanteras innan avtalet tecknas.
+      criteria:
+        - method: review
+          text: Varje upphandling de senaste 24 månaderna som berör säkerhetsskyddsanalysen har en bedömning daterad före avtalet, med slutsats och krävda åtgärder.
+
+  - id: SAKS-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [copy-register, printing, export]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "Försvarsmaktens föreskrifter om säkerhetsskydd (FFS)", "PMFS 2022:1"]
+    tests: [SAKS-T13]
+    en:
+      title: Every printout and export of a classified record is registered
+      description: The system MUST register each printout and export of a record classified as confidential or higher, with a copy number, the user, the UTC time and the destination, and print the copy number on each page.
+      rationale: Copies on paper or file are the hardest part of classified information to keep track of, and a register makes each copy accountable.
+      criteria:
+        - method: test
+          text: Printing a classified record twice gives two register entries with consecutive copy numbers, and each page of each printout shows its number.
+    sv:
+      title: Varje utskrift och export av en klassificerad post registreras
+      description: Systemet SKA registrera varje utskrift och export av en post som är klassificerad som konfidentiell eller högre, med exemplarnummer, användare, UTC-tid och mottagare, och skriva ut exemplarnumret på varje sida.
+      rationale: Kopior på papper eller i filer är den del av säkerhetsskyddsklassificerade uppgifter som är svårast att hålla reda på, och ett register gör att varje kopia kan redovisas.
+      criteria:
+        - method: test
+          text: Två utskrifter av en klassificerad post ger två registerposter med löpande exemplarnummer, och varje sida i varje utskrift visar sitt nummer.
+
+  - id: SAKS-17
+    type: security
+    obligation: must
+    priority: high
+    tags: [destruction, sanitisation, classified-data]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "Försvarsmaktens föreskrifter om säkerhetsskydd (FFS)", "NIST SP 800-88 Rev. 2"]
+    tests: [SAKS-T14]
+    en:
+      title: Destruction of classified data is approved and recorded
+      description: The system MUST let classified records be destroyed only after approval by a second authorised person, and record the record id, classification, method, both persons and the time in the register.
+      rationale: Destruction must be provable, both to show that a copy no longer exists and to prevent someone from removing evidence alone.
+      criteria:
+        - method: test
+          text: A destruction request by one user waits for a second user's approval, and after approval the register shows the six items and the record cannot be restored.
+    sv:
+      title: Förstöring av klassificerade uppgifter godkänns och registreras
+      description: Systemet SKA tillåta att säkerhetsskyddsklassificerade poster förstörs först efter godkännande av en andra behörig person, och registrera postens id, klassificering, metod, båda personerna och tiden i registret.
+      rationale: Förstöring måste kunna bevisas, både för att visa att en kopia inte längre finns och för att hindra att någon ensam tar bort bevis.
+      criteria:
+        - method: test
+          text: En begäran om förstöring från en användare väntar på en andra användares godkännande, och efter godkännandet visar registret de sex uppgifterna och posten går inte att återställa.
+
+  - id: SAKS-18
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [training, security-clearance, staff]
+    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    tests: [SAKS-T15]
+    en:
+      title: Protective security training before access and every 12 months
+      description: The system MUST grant access to classified records only to users who have completed protective security training in the last 12 months, and withdraw it when the training expires.
+      rationale: People with clearance must know how to handle classified information and how to report incidents, and the training is part of the continuous control that follows the vetting.
+      criteria:
+        - method: test
+          text: A cleared user with training dated 13 months ago is refused access to a classified record, and regains access when new training is registered.
+          threshold: "training ≤ 12 months old"
+    sv:
+      title: Utbildning i säkerhetsskydd före åtkomst och var 12:e månad
+      description: Systemet SKA ge åtkomst till säkerhetsskyddsklassificerade poster endast till användare som har genomgått utbildning i säkerhetsskydd de senaste 12 månaderna, och dra in åtkomsten när utbildningen löper ut.
+      rationale: Personer med placering i säkerhetsklass behöver veta hur klassificerade uppgifter hanteras och hur incidenter rapporteras, och utbildningen är en del av den fortlöpande kontrollen efter säkerhetsprövningen.
+      criteria:
+        - method: test
+          text: En användare med placering och en utbildning daterad för 13 månader sedan nekas åtkomst till en klassificerad post, och får åtkomst igen när en ny utbildning registreras.
+          threshold: "utbildning ≤ 12 månader gammal"
+
 tests:
   - id: SAKS-T01
     priority: high
@@ -701,3 +791,119 @@ tests:
           expected: Varje leverantör har ett avtal daterat före den första inloggningen.
         - action: Leta för varje leverantörskonto upp personens uppgifter om säkerhetsprövning.
           expected: Varje person har en registrerad säkerhetsprövning för systemets nivå som inte har upphört.
+
+  - id: SAKS-T12
+    priority: critical
+    execution: manual
+    tags: [procurement]
+    refs: ["Säkerhetsskyddslag (2018:585) 4 kap. (säkerhetsskyddad upphandling)"]
+    en:
+      title: Procurements have a protective security assessment
+      description: Compares the procurements of the last 24 months with the protective security assessments.
+      preconditions: The procurement register, the security protection analysis and the archive of protective security assessments.
+      expected: Each relevant procurement has an assessment dated before the contract.
+      steps:
+        - action: Select the procurements in the last 24 months whose supplier gets access to classified information or security-sensitive activity.
+          expected: A list is produced with contract dates.
+        - action: Find the assessment for each and compare its date with the contract date.
+          expected: Each has an assessment dated before the contract with a conclusion and required measures.
+    sv:
+      title: Upphandlingar har en säkerhetsskyddsbedömning
+      description: Jämför upphandlingarna de senaste 24 månaderna med säkerhetsskyddsbedömningarna.
+      preconditions: Upphandlingsregistret, säkerhetsskyddsanalysen och arkivet med säkerhetsskyddsbedömningar.
+      expected: Varje berörd upphandling har en bedömning daterad före avtalet.
+      steps:
+        - action: Välj ut de upphandlingar de senaste 24 månaderna där leverantören får tillgång till säkerhetsskyddsklassificerade uppgifter eller säkerhetskänslig verksamhet.
+          expected: En lista tas fram med avtalsdatum.
+        - action: Leta upp bedömningen för var och en och jämför dess datum med avtalsdatumet.
+          expected: Var och en har en bedömning daterad före avtalet med slutsats och krävda åtgärder.
+
+  - id: SAKS-T13
+    priority: high
+    execution: manual
+    tags: [copy-register]
+    refs: ["PMFS 2022:1"]
+    en:
+      title: Printouts and exports get copy numbers
+      description: Prints a classified test record twice and exports it once, and checks the register and the pages.
+      preconditions: A user with access to a classified test record, an approved printer and the register view.
+      expected: Each copy is registered with a unique number that appears on every page.
+      steps:
+        - action: Print the record twice.
+          expected: Two printouts come out, each page marked with its copy number.
+        - action: Export the record to an approved file destination.
+          expected: The export carries its copy number.
+        - action: Open the register.
+          expected: Three entries with consecutive copy numbers, user, UTC time and destination are listed.
+    sv:
+      title: Utskrifter och exporter får exemplarnummer
+      description: Skriver ut en klassificerad testpost två gånger och exporterar den en gång, och kontrollerar registret och sidorna.
+      preconditions: En användare med åtkomst till en klassificerad testpost, en godkänd skrivare och vyn för registret.
+      expected: Varje exemplar registreras med ett unikt nummer som syns på varje sida.
+      steps:
+        - action: Skriv ut posten två gånger.
+          expected: Två utskrifter kommer ut, och varje sida är märkt med sitt exemplarnummer.
+        - action: Exportera posten till en godkänd filmottagare.
+          expected: Exporten har sitt exemplarnummer.
+        - action: Öppna registret.
+          expected: Tre poster med löpande exemplarnummer, användare, UTC-tid och mottagare listas.
+
+  - id: SAKS-T14
+    priority: high
+    execution: manual
+    tags: [destruction]
+    refs: ["Försvarsmaktens föreskrifter om säkerhetsskydd (FFS)"]
+    en:
+      title: Destruction needs a second person and is registered
+      description: Requests the destruction of a classified test record and approves it as a second user.
+      preconditions: Two users with destruction rights and a classified test record.
+      expected: Destruction happens only after the second approval and is fully registered.
+      steps:
+        - action: As user 1, request destruction of the record.
+          expected: The record is marked as pending destruction and is still present.
+        - action: As user 1, try to approve the own request.
+          expected: The approval is refused.
+        - action: As user 2, approve the request.
+          expected: The record is destroyed, cannot be restored, and the register shows record id, classification, method, both users and the time.
+    sv:
+      title: Förstöring kräver en andra person och registreras
+      description: Begär förstöring av en klassificerad testpost och godkänner den som en andra användare.
+      preconditions: Två användare med rätt att förstöra och en klassificerad testpost.
+      expected: Förstöringen sker först efter det andra godkännandet och registreras fullständigt.
+      steps:
+        - action: Begär som användare 1 att posten förstörs.
+          expected: Posten markeras som väntande förstöring och finns kvar.
+        - action: Försök som användare 1 godkänna den egna begäran.
+          expected: Godkännandet avvisas.
+        - action: Godkänn begäran som användare 2.
+          expected: Posten förstörs, går inte att återställa, och registret visar postens id, klassificering, metod, båda användarna och tiden.
+
+  - id: SAKS-T15
+    priority: high
+    execution: automated
+    tags: [training, security-clearance]
+    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)"]
+    en:
+      title: Expired training withdraws access to classified records
+      description: A script sets the training date of a cleared user and requests a classified record.
+      preconditions: A cleared test user with need-to-know for a classified test record, and a test environment clock the script can advance.
+      expected: Access follows the validity of the training.
+      steps:
+        - action: Register training for the user dated 11 months ago and open the record.
+          expected: The record opens.
+        - action: Advance the clock by 2 months and open the record again.
+          expected: Access is refused with a message that the training has expired.
+        - action: Register new training today and open the record.
+          expected: The record opens.
+    sv:
+      title: Utgången utbildning drar in åtkomsten till klassificerade poster
+      description: Ett skript sätter utbildningsdatum för en användare med placering och begär en klassificerad post.
+      preconditions: En testanvändare med placering och behov av att känna till en klassificerad testpost, och en klocka i testmiljön som skriptet kan ställa fram.
+      expected: Åtkomsten följer utbildningens giltighet.
+      steps:
+        - action: Registrera en utbildning för användaren daterad för 11 månader sedan och öppna posten.
+          expected: Posten öppnas.
+        - action: Ställ fram klockan 2 månader och öppna posten igen.
+          expected: Åtkomsten nekas med ett meddelande om att utbildningen har gått ut.
+        - action: Registrera en ny utbildning med dagens datum och öppna posten.
+          expected: Posten öppnas.
