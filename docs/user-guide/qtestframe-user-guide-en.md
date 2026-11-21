@@ -2344,6 +2344,7 @@ Files are stored in the Qtestframe database, not on a separate file share. That 
 | **Organisations** | Super admins |
 | **Users** | Super admins |
 | **Backup** | Super admins |
+| **System settings** | Super admins |
 
 ## Organisations and roles
 
@@ -2608,7 +2609,64 @@ Users who sign in with OIDC or SAML single sign-on can be created automatically 
 - **Download backup** creates a ZIP file with all organisations, projects, items, history, comments and files (sessions are not included). Store it somewhere safe; it contains all data, including password hashes.
 - **Restore**: choose the backup file, type `RESTORE` to confirm and select **Restore backup**. This **replaces all data** of the installation with the content of the file, in one step. The backup must come from the same version of the database schema. Everyone, including you, is signed out afterwards.
 
-Restore is meant for disaster recovery and moving to a new server. To recover a single item, use its [history](#history-and-restore) instead.
+Restore is meant for disaster recovery and moving to a new server. To recover a single item, use its [history](#history-and-restore) instead. A backup also contains the system settings (below), including the secrets stored there; they apply as soon as the restore is done.
+
+## System settings
+
+*(Super admin)* **Administration → System settings** changes the configuration of the server while it runs: single sign-on, logging and syslog, the e-mail server, sign-in security and the test runner. Organisation admins do not see this page: every setting applies to the whole installation.
+
+Choose a section in the list on the left (on a phone: at the top). Each section has its own **Save** button; only the values you changed are sent. **Export configuration** downloads the effective configuration as a YAML file, with every secret replaced by `REDACTED`, for example to copy it into the server's configuration file.
+
+### Where a value comes from
+
+Every setting shows a badge with the source of its current value:
+
+- **Default** – the built-in value.
+- **Configuration file** – set in the server's configuration file.
+- **Environment** – set by a `QTF_…` environment variable of the server.
+- **Changed here** – changed on this page (stored in the database).
+
+A value changed here wins over the configuration file and the default. **Reset to file value** removes your change, and the value of the configuration file (or the default) applies again.
+
+Some settings cannot be changed here. They show a lock and say why:
+
+- **Set by the environment** – an environment variable always wins; ask the server administrator to change it.
+- **Locked by the server administrator** – the configuration file lists the setting under `system_settings.locked`.
+- **Configuration file only** – shown for information (for example the listen address or the database), because they can only change with a restart of the server.
+
+Most settings apply at once. Settings with the badge **Applies after restart** (the test runner) are saved now and take effect the next time the server starts; until then the page shows the value in use. If the stored settings ever become invalid (for example after a change of the configuration file), the server ignores them at start-up and the page shows a warning.
+
+Every change is recorded in the [audit log](#audit-log) with the old and the new value; passwords and client secrets are never written there, only that they were set or changed.
+
+### Single sign-on (OIDC)
+
+The **Single sign-on (OIDC)** section lists the OpenID Connect providers that appear as buttons on the sign-in page.
+
+- **Add provider** asks for a name (lower-case letters, digits, `-` and `_`; it is part of the callback address), the **Button label**, the **Issuer** URL, the **Client ID** and the **Client secret**, the **Scopes**, the claims that hold the e-mail address, the name and the groups, and how users are provisioned: **Create users on first sign-in**, the **Default role** and organisation, and a **Group → role** mapping.
+- **Test connection** fetches the issuer's discovery document (`/.well-known/openid-configuration`) from the server and tells you whether it was found and lists its endpoints. A failure shows the reason, for example that the server cannot reach the address or that the issuer in the document does not match.
+- Register the **Callback URL** shown for the provider in your identity provider.
+- The client secret is write-only: it is never shown again. Leave the field empty to keep it; **Remove the stored secret** deletes it.
+- The switch in the list turns a provider off without deleting it. Changes apply at once; people who are signing in at an unchanged provider are not interrupted.
+
+Once you change the providers here, this list replaces the providers of the configuration file. Secrets of providers from the file stay in the file and are not copied. **Reset to file value** brings back the providers of the configuration file.
+
+### Logging and syslog
+
+Choose the **Log level** and **Log format** of the server log, and whether the log (including the audit trail) is also sent to a central **syslog** server: network (`udp`, `tcp`, `tls` or a local socket), address, message format, facility and tag. **Send test message** sends one message with the values in the form, before you save them; the result is shown and read out next to the button. Changes apply at once. Certificates for syslog over TLS are set in the configuration file.
+
+### E-mail server
+
+The SMTP server for notifications, invitations and reports: host, port, encryption (`starttls`, `tls` or `none`), user name, password, sender address and name, timeout and the hour of the daily digest. The password is write-only. **Send test e-mail** sends a message to your own address with the values in the form (and the stored password, unless you typed a new one). Turning e-mail off stops all outgoing mail.
+
+### Security
+
+The **session lifetime** (how long a sign-in lasts; applies to new sign-ins), the **minimum password length** of local accounts, the number of **failed sign-ins** after which further attempts from the same address for the same account are refused, and for how long. **Local sign-in** (e-mail and password) can only be turned off while at least one single sign-on provider is enabled.
+
+### Test runner
+
+Whether automated scripts and web tests may run on the server, their timeouts and limits, and what web tests record as evidence. These settings **apply after a restart** of the server, because the runner and its sandbox are prepared when the server starts. Turning the runner on lets members with the right permission run code on the server; read the security notes of the operations guide first.
+
+Retention: deleted items stay in the [trash](#history-and-restore) for 30 days; this is not configurable. For backups, see [Backup and restore](#backup-and-restore). Multi-factor authentication has its own page, linked from the system settings.
 
 The server administrator can do the same on the command line:
 
