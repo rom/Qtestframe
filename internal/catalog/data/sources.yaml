@@ -62,6 +62,13 @@ sources:
     name: {en: "Artificial Intelligence Act, Regulation (EU) 2024/1689", sv: "AI-förordningen (EU) 2024/1689"}
     match: ["EU AI Act", "Regulation (EU) 2024/1689"]
     url: https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+  - id: ai-act-omnibus
+    kind: law
+    jurisdiction: EU
+    short: Digital Omnibus on AI
+    name: {en: "Digital Omnibus on AI, Regulation (EU) 2026/1744 amending the AI Act", sv: "Digital omnibusförordning om AI, förordning (EU) 2026/1744 om ändring av AI-förordningen"}
+    match: ["Regulation (EU) 2026/1744"]
+    url: https://eur-lex.europa.eu/eli/reg/2026/1744/oj
   - id: data-act
     kind: law
     jurisdiction: EU

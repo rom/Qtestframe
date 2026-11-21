@@ -4,8 +4,8 @@ group: domain
 catalogue: software
 name: {en: EU AI Act compliance, sv: Efterlevnad av AI-förordningen}
 description:
-  en: Obligations of the EU Artificial Intelligence Act (Regulation (EU) 2024/1689) for providers and deployers of AI systems, covering risk classification, prohibited practices, the high-risk obligations (risk management system, data governance, technical documentation, record-keeping, transparency, human oversight, accuracy, robustness and cybersecurity, post-market monitoring and serious incident reporting), general-purpose AI models, AI literacy and the labelling of AI-generated content.
-  sv: Skyldigheter enligt EU:s AI-förordning (förordning (EU) 2024/1689) för leverantörer och tillhandahållare av AI-system, med riskklassificering, förbjudna AI-metoder, skyldigheterna för AI-system med hög risk (riskhanteringssystem, dataförvaltning, teknisk dokumentation, registrering av händelser, transparens, mänsklig tillsyn, noggrannhet, robusthet och cybersäkerhet, övervakning efter utsläppande på marknaden och rapportering av allvarliga incidenter), AI-modeller för allmänna ändamål, AI-kunnighet och märkning av AI-genererat innehåll.
+  en: Obligations of the EU Artificial Intelligence Act (Regulation (EU) 2024/1689) for providers and deployers of AI systems, covering risk classification, prohibited practices, the high-risk obligations (risk management system, data governance, technical documentation, record-keeping, transparency, human oversight, accuracy, robustness and cybersecurity, post-market monitoring and serious incident reporting), general-purpose AI models, AI literacy and the labelling of AI-generated content. The items follow the text as amended by the Digital Omnibus on AI (Regulation (EU) 2026/1744, in force since 27 July 2026), under which the high-risk obligations of Chapter III, Sections 1 to 3 apply from 2 December 2027 for Annex III systems and from 2 August 2028 for Annex I systems.
+  sv: Skyldigheter enligt EU:s AI-förordning (förordning (EU) 2024/1689) för leverantörer och tillhandahållare av AI-system, med riskklassificering, förbjudna AI-metoder, skyldigheterna för AI-system med hög risk (riskhanteringssystem, dataförvaltning, teknisk dokumentation, registrering av händelser, transparens, mänsklig tillsyn, noggrannhet, robusthet och cybersäkerhet, övervakning efter utsläppande på marknaden och rapportering av allvarliga incidenter), AI-modeller för allmänna ändamål, AI-kunnighet och märkning av AI-genererat innehåll. Kraven följer lydelsen efter ändringarna genom den digitala omnibusförordningen om AI (förordning (EU) 2026/1744, i kraft sedan den 27 juli 2026), enligt vilken skyldigheterna för AI-system med hög risk i kapitel III avsnitt 1–3 gäller från den 2 december 2027 för system i bilaga III och från den 2 augusti 2028 för system i bilaga I.
 
 requirements:
   - id: AIACT-01
@@ -13,12 +13,12 @@ requirements:
     obligation: must
     priority: critical
     tags: [risk-classification, high-risk, inventory]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 6 (classification rules for high-risk AI systems)", "EU AI Act (Regulation (EU) 2024/1689) Annex III (high-risk use cases)", "NIST AI RMF 1.0 GOVERN 1.6 (inventory of AI systems)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 6 (classification rules for high-risk AI systems)", "EU AI Act (Regulation (EU) 2024/1689) Annex III (high-risk use cases)", "EU AI Act (Regulation (EU) 2024/1689) Art. 113 (dates of application, as amended by Regulation (EU) 2026/1744)", "Regulation (EU) 2026/1744 (Digital Omnibus on AI) Art. 1(40) (new dates of application in AI Act Art. 113)", "NIST AI RMF 1.0 GOVERN 1.6 (inventory of AI systems)"]
     tests: [AIACT-T01]
     en:
       title: Risk category recorded for each AI system
       description: The organisation MUST record, for each AI system it provides or deploys, its intended purpose and its category under the AI Act (prohibited, high-risk under Annex I, high-risk under Annex III, transparency obligations only, or no specific obligations) with the reasoning and the date of the assessment.
-      rationale: The obligations of the AI Act depend entirely on the category, so a missing or undocumented classification leaves every later obligation unclear.
+      rationale: The obligations of the AI Act and their dates of application depend on the category, since the high-risk obligations apply from 2 December 2027 for Annex III systems and from 2 August 2028 for Annex I systems, so a missing or undocumented classification leaves every later obligation unclear.
       criteria:
         - method: inspection
           text: The AI system register lists each AI system in production with intended purpose, category, reasoning, assessor and date, and a sample of 5 systems matches their actual use.
@@ -26,7 +26,7 @@ requirements:
     sv:
       title: Riskkategori registrerad för varje AI-system
       description: Organisationen SKA för varje AI-system som den levererar eller tillhandahåller registrera dess avsedda ändamål och dess kategori enligt AI-förordningen (förbjuden, hög risk enligt bilaga I, hög risk enligt bilaga III, endast transparenskrav eller inga särskilda krav) med motivering och datum för bedömningen.
-      rationale: Skyldigheterna i AI-förordningen beror helt på kategorin, så en saknad eller odokumenterad klassificering gör alla senare skyldigheter oklara.
+      rationale: Skyldigheterna i AI-förordningen och från när de gäller beror på kategorin, eftersom skyldigheterna för hög risk gäller från den 2 december 2027 för system i bilaga III och från den 2 augusti 2028 för system i bilaga I, så en saknad eller odokumenterad klassificering gör alla senare skyldigheter oklara.
       criteria:
         - method: inspection
           text: Registret över AI-system visar varje AI-system i produktion med avsett ändamål, kategori, motivering, bedömare och datum, och ett stickprov på 5 system stämmer med hur de faktiskt används.
@@ -37,22 +37,22 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [prohibited-practices, release-gate]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 5(1) (prohibited AI practices)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 5(1) (prohibited AI practices, as amended by Regulation (EU) 2026/1744)", "Regulation (EU) 2026/1744 (Digital Omnibus on AI) Art. 1(7) (new points (ba) and (bb) of AI Act Art. 5(1))"]
     tests: [AIACT-T01]
     en:
       title: No release without a prohibited-practice screening
       description: The organisation MUST NOT put an AI feature into service before a documented screening against each prohibited practice in Art. 5(1) of the AI Act shows that none of them applies to the feature.
-      rationale: Prohibited practices carry the highest fines of the regulation, and a screening at the release gate stops them before they reach users.
+      rationale: Prohibited practices carry the highest fines of the regulation, and a screening at the release gate stops them before they reach users. The prohibitions of intimate images made without consent and of child sexual abuse material in points (ba) and (bb) apply from 2 December 2026.
       criteria:
         - method: review
-          text: Each AI feature released in the last 12 months has a signed screening record that addresses each of the practices in Art. 5(1)(a) to (h) and is dated before the release.
+          text: Each AI feature released in the last 12 months has a signed screening record that addresses each of the practices in Art. 5(1)(a) to (h), for releases from 2 December 2026 also points (ba) and (bb), and is dated before the release.
     sv:
       title: Ingen release utan granskning mot förbjudna metoder
       description: Organisationen SKA INTE ta en AI-funktion i bruk innan en dokumenterad granskning mot varje förbjuden metod i artikel 5.1 i AI-förordningen visar att ingen av dem gäller för funktionen.
-      rationale: Förbjudna metoder ger de högsta sanktionsavgifterna i förordningen, och en granskning vid releasebeslutet stoppar dem innan de når användarna.
+      rationale: Förbjudna metoder ger de högsta sanktionsavgifterna i förordningen, och en granskning vid releasebeslutet stoppar dem innan de når användarna. Förbuden mot intima bilder som skapats utan samtycke och mot material med sexuella övergrepp mot barn i leden ba och bb gäller från den 2 december 2026.
       criteria:
         - method: review
-          text: Varje AI-funktion som släppts de senaste 12 månaderna har ett undertecknat granskningsprotokoll som tar upp var och en av metoderna i artikel 5.1 a–h och är daterat före releasen.
+          text: Varje AI-funktion som släppts de senaste 12 månaderna har ett undertecknat granskningsprotokoll som tar upp var och en av metoderna i artikel 5.1 a–h, för releaser från den 2 december 2026 även leden ba och bb, och är daterat före releasen.
 
   - id: AIACT-03
     type: regulatory
@@ -173,20 +173,20 @@ requirements:
     obligation: must
     priority: high
     tags: [technical-documentation, high-risk]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 11(1) (technical documentation)", "EU AI Act (Regulation (EU) 2024/1689) Annex IV (content of technical documentation)", "EU AI Act (Regulation (EU) 2024/1689) Art. 18 (documentation keeping)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 11(1) (technical documentation)", "EU AI Act (Regulation (EU) 2024/1689) Annex IV (content of technical documentation)", "EU AI Act (Regulation (EU) 2024/1689) Art. 18 (documentation keeping)", "Regulation (EU) 2026/1744 (Digital Omnibus on AI) Art. 1(10) (simplified technical documentation for SMEs and SMCs)"]
     tests: [AIACT-T05]
     en:
       title: Technical documentation complete before market placement
-      description: The provider MUST complete the technical documentation of a high-risk AI system with each element listed in Annex IV before the system is placed on the market, update it with each substantial modification and keep it for 10 years after the last unit is placed on the market.
-      rationale: The technical documentation is the evidence of conformity that authorities and notified bodies examine.
+      description: The provider MUST complete the technical documentation of a high-risk AI system with each element listed in Annex IV before the system is placed on the market, update it with each substantial modification and keep it for 10 years after the system is placed on the market or put into service.
+      rationale: The technical documentation is the evidence of conformity that authorities and notified bodies examine. SMEs and small mid-cap enterprises can give the Annex IV elements in the simplified form of the Commission, which notified bodies accept.
       criteria:
         - method: inspection
           text: A checklist of the Annex IV elements is filled in with a reference for each, the document version matches the deployed model version, and the retention period is set to 10 years in the document management system.
           threshold: retention ≥ 10 years
     sv:
       title: Fullständig teknisk dokumentation före utsläppande på marknaden
-      description: Leverantören SKA färdigställa den tekniska dokumentationen för ett AI-system med hög risk med varje del som anges i bilaga IV innan systemet släpps ut på marknaden, uppdatera den vid varje väsentlig ändring och bevara den i 10 år efter att den sista enheten släppts ut på marknaden.
-      rationale: Den tekniska dokumentationen är beviset på överensstämmelse som myndigheter och anmälda organ granskar.
+      description: Leverantören SKA färdigställa den tekniska dokumentationen för ett AI-system med hög risk med varje del som anges i bilaga IV innan systemet släpps ut på marknaden, uppdatera den vid varje väsentlig ändring och bevara den i 10 år efter att systemet släppts ut på marknaden eller tagits i bruk.
+      rationale: Den tekniska dokumentationen är beviset på överensstämmelse som myndigheter och anmälda organ granskar. Små och medelstora företag och små midcap-företag kan lämna delarna i bilaga IV i kommissionens förenklade formulär, som anmälda organ godtar.
       criteria:
         - method: inspection
           text: En checklista över delarna i bilaga IV är ifylld med en hänvisning för varje del, dokumentversionen motsvarar den driftsatta modellversionen och bevarandetiden är satt till 10 år i dokumenthanteringssystemet.
@@ -427,19 +427,19 @@ requirements:
     obligation: must
     priority: high
     tags: [generated-content, watermark, labelling]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 50(2) (marking of synthetic content)", "C2PA Technical Specification 2.1 (content credentials)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 50(2) (marking of synthetic content)", "EU AI Act (Regulation (EU) 2024/1689) Art. 111(4) (transition for systems placed on the market before 2 August 2026)", "Regulation (EU) 2026/1744 (Digital Omnibus on AI) Art. 1(39) (new AI Act Art. 111(4))", "C2PA Technical Specification 2.1 (content credentials)"]
     tests: [AIACT-T11]
     en:
       title: Machine-readable marking of generated content
       description: A system that generates synthetic audio, images, video or text MUST mark each output in a machine-readable format that identifies it as artificially generated and that survives saving and download of the file.
-      rationale: Machine-readable marks let platforms and readers detect synthetic content automatically, which limits disinformation.
+      rationale: Machine-readable marks let platforms and readers detect synthetic content automatically, which limits disinformation. The duty applies from 2 August 2026, and a system placed on the market before that date has until 2 December 2026 to comply.
       criteria:
         - method: test
           text: A generated image and a generated audio file, downloaded and opened in a metadata reader, each carry a mark that identifies them as AI-generated.
     sv:
       title: Maskinläsbar märkning av genererat innehåll
       description: Ett system som genererar syntetiskt ljud, bilder, video eller text SKA märka varje utdata i ett maskinläsbart format som anger att det är artificiellt genererat och som bevaras när filen sparas och laddas ned.
-      rationale: Maskinläsbar märkning gör att plattformar och läsare kan upptäcka syntetiskt innehåll automatiskt, vilket begränsar desinformation.
+      rationale: Maskinläsbar märkning gör att plattformar och läsare kan upptäcka syntetiskt innehåll automatiskt, vilket begränsar desinformation. Skyldigheten gäller från den 2 augusti 2026, och ett system som släppts ut på marknaden före det datumet ska uppfylla den senast den 2 december 2026.
       criteria:
         - method: test
           text: En genererad bild och en genererad ljudfil som laddas ned och öppnas i ett verktyg för metadata bär var och en en märkning som anger att de är AI-genererade.
@@ -537,31 +537,31 @@ requirements:
     obligation: must
     priority: medium
     tags: [ai-literacy, training, staff]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 4 (AI literacy)", "ISO/IEC 42001:2023 §7.2 (competence)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 4(1) (AI literacy, as amended by Regulation (EU) 2026/1744)", "Regulation (EU) 2026/1744 (Digital Omnibus on AI) Art. 1(5) (new AI Act Art. 4)", "ISO/IEC 42001:2023 §7.2 (competence)"]
     tests: [AIACT-T14]
     en:
-      title: AI literacy training for staff who operate AI systems
-      description: The organisation MUST give each employee and contractor who operates or oversees an AI system a training on its capabilities, limits and risks before they start, and MUST record the completed training.
-      rationale: Staff who understand what an AI system can and cannot do use it more safely and notice when it goes wrong.
+      title: AI literacy measures for staff who operate AI systems
+      description: The organisation MUST offer each employee and contractor who operates or oversees an AI system a training on its capabilities, limits and risks, adapted to the person's role and to the context of use, before they start, and MUST record who was offered and who completed the training.
+      rationale: Since 27 July 2026 the AI Act requires providers and deployers to take measures that support the AI literacy of these persons, without a guaranteed level for each individual, and a recorded training offer before first access is a verifiable such measure.
       criteria:
         - method: inspection
-          text: The training records list each person with an AI operation or oversight role and a completed training dated before their first access.
-          threshold: 100 % of the role holders trained
+          text: The training records list each person with an AI operation or oversight role with a training offer dated before their first access and the completion status, and the training content names the role and the context of use it was adapted to.
+          threshold: 100 % of the role holders offered the training
     sv:
-      title: Utbildning i AI-kunnighet för personal som använder AI-system
-      description: Organisationen SKA ge varje anställd och konsult som använder eller övervakar ett AI-system en utbildning om dess förmågor, gränser och risker innan de börjar, och registrera den genomförda utbildningen.
-      rationale: Personal som förstår vad ett AI-system kan och inte kan göra använder det säkrare och märker när något går fel.
+      title: Åtgärder för AI-kunnighet för personal som använder AI-system
+      description: Organisationen SKA erbjuda varje anställd och konsult som använder eller övervakar ett AI-system en utbildning om dess förmågor, gränser och risker, anpassad efter personens roll och användningssammanhanget, innan de börjar, och registrera vem som erbjudits och vem som genomfört utbildningen.
+      rationale: Sedan den 27 juli 2026 kräver AI-förordningen att leverantörer och tillhandahållare vidtar åtgärder som främjar dessa personers AI-kunnighet, utan en garanterad nivå för varje enskild person, och ett registrerat utbildningserbjudande före första åtkomst är en sådan åtgärd som går att kontrollera.
       criteria:
         - method: inspection
-          text: Utbildningsregistret visar varje person med en roll för användning eller tillsyn av AI och en genomförd utbildning daterad före personens första åtkomst.
-          threshold: 100 % av rollinnehavarna utbildade
+          text: Utbildningsregistret visar varje person med en roll för användning eller tillsyn av AI med ett utbildningserbjudande daterat före personens första åtkomst och status för genomförandet, och utbildningsinnehållet anger den roll och det användningssammanhang det anpassats efter.
+          threshold: 100 % av rollinnehavarna har erbjudits utbildningen
 
 tests:
   - id: AIACT-T01
     priority: critical
     execution: manual
     tags: [risk-classification, prohibited-practices]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 5(1) (prohibited AI practices)", "EU AI Act (Regulation (EU) 2024/1689) Art. 6 (classification rules for high-risk AI systems)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 5(1) (prohibited AI practices, as amended by Regulation (EU) 2026/1744)", "EU AI Act (Regulation (EU) 2024/1689) Art. 6 (classification rules for high-risk AI systems)"]
     en:
       title: AI system register with classification and prohibited-practice screening
       description: Reviews the AI system register, the classification of each system and the screening records against prohibited practices.
@@ -571,7 +571,7 @@ tests:
         - action: Compare the list of AI features in production with the register.
           expected: Each feature appears in the register with intended purpose, category, reasoning and date.
         - action: For 5 released features, open the screening record and compare its date with the release date.
-          expected: Each record addresses each practice in Art. 5(1) and is dated before the release.
+          expected: Each record addresses each practice in Art. 5(1), for releases from 2 December 2026 including points (ba) and (bb), and is dated before the release.
         - action: Open the assessment of each Annex III system marked as not high-risk.
           expected: The assessment names the condition of Art. 6(3) used and states that the system does not profile persons.
     sv:
@@ -583,7 +583,7 @@ tests:
         - action: Jämför listan över AI-funktioner i produktion med registret.
           expected: Varje funktion finns i registret med avsett ändamål, kategori, motivering och datum.
         - action: Öppna granskningsprotokollet för 5 släppta funktioner och jämför dess datum med releasedatum.
-          expected: Varje protokoll tar upp varje metod i artikel 5.1 och är daterat före releasen.
+          expected: Varje protokoll tar upp varje metod i artikel 5.1, för releaser från den 2 december 2026 även leden ba och bb, och är daterat före releasen.
         - action: Öppna bedömningen för varje system i bilaga III som markerats som inte högrisk.
           expected: Bedömningen anger det villkor i artikel 6.3 som används och slår fast att systemet inte profilerar personer.
 
@@ -933,24 +933,28 @@ tests:
     priority: medium
     execution: manual
     tags: [ai-literacy, training]
-    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 4 (AI literacy)"]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 4(1) (AI literacy, as amended by Regulation (EU) 2026/1744)"]
     en:
-      title: AI literacy training recorded before first access
+      title: AI literacy training offered before first access
       description: Compares the list of AI role holders with the training records and the access logs.
-      preconditions: The list of persons with AI operation or oversight roles, the training records and the access log of the AI systems.
-      expected: Each role holder completed the training before their first access.
+      preconditions: The list of persons with AI operation or oversight roles, the training records, the training content and the access log of the AI systems.
+      expected: Each role holder was offered a training adapted to their role before their first access, and the completion status is recorded.
       steps:
         - action: Match each role holder with a training record.
-          expected: Each role holder has a completed training.
-        - action: Compare the training date with the first access in the access log for 10 role holders.
-          expected: The training date is before the first access for each of them.
+          expected: Each role holder has a recorded training offer and a completion status.
+        - action: Compare the date of the training offer with the first access in the access log for 10 role holders.
+          expected: The offer is dated before the first access for each of them.
+        - action: Read the training content offered to 3 role holders with different roles.
+          expected: The content names the role and the context of use it is adapted to.
     sv:
-      title: Utbildning i AI-kunnighet registrerad före första åtkomst
+      title: Utbildning i AI-kunnighet erbjuden före första åtkomst
       description: Jämför listan över rollinnehavare för AI med utbildningsregistret och åtkomstloggarna.
-      preconditions: Listan över personer med roller för användning eller tillsyn av AI, utbildningsregistret och åtkomstloggen för AI-systemen.
-      expected: Varje rollinnehavare har genomfört utbildningen före sin första åtkomst.
+      preconditions: Listan över personer med roller för användning eller tillsyn av AI, utbildningsregistret, utbildningsinnehållet och åtkomstloggen för AI-systemen.
+      expected: Varje rollinnehavare har erbjudits en utbildning anpassad efter sin roll före sin första åtkomst, och status för genomförandet är registrerad.
       steps:
         - action: Para ihop varje rollinnehavare med en utbildningspost.
-          expected: Varje rollinnehavare har en genomförd utbildning.
-        - action: Jämför utbildningsdatum med första åtkomst i åtkomstloggen för 10 rollinnehavare.
-          expected: Utbildningsdatum ligger före första åtkomst för var och en av dem.
+          expected: Varje rollinnehavare har ett registrerat utbildningserbjudande och en status för genomförandet.
+        - action: Jämför datum för utbildningserbjudandet med första åtkomst i åtkomstloggen för 10 rollinnehavare.
+          expected: Erbjudandet är daterat före första åtkomst för var och en av dem.
+        - action: Läs det utbildningsinnehåll som erbjudits 3 rollinnehavare med olika roller.
+          expected: Innehållet anger den roll och det användningssammanhang det är anpassat efter.

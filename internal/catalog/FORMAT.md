@@ -136,6 +136,8 @@ actually check.
 | IEC 62443-2-1 security programme, IEC 62443-2-4 service providers | `IEC 62443-2-1:2024 (topic)`, `IEC 62443-2-4:2023 SP.07 (remote access)` |
 | GDPR (Regulation (EU) 2016/679) | `GDPR Art. 32(1)(a)` |
 | Cyber Resilience Act | `Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)`, `… Annex I Part II §2`, `… Art. 14` |
+| AI Act (consolidated text; mark amended provisions) | `EU AI Act (Regulation (EU) 2024/1689) Art. 4(1) (AI literacy, as amended by Regulation (EU) 2026/1744)` |
+| Digital Omnibus on AI (amends the AI Act) | `Regulation (EU) 2026/1744 (Digital Omnibus on AI) Art. 1(5) (new AI Act Art. 4)` |
 | DORA (digital operational resilience, financial sector) | `Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)` |
 | CER (resilience of critical entities) | `Directive (EU) 2022/2557 (CER) Art. 13(1)(d)` |
 | NIS2 | `Directive (EU) 2022/2555 (NIS2) Art. 23` |
