@@ -263,6 +263,120 @@ requirements:
           text: När en användare skickar 60 inbjudningar inom en timme avvisas den 51:a och senare med ett meddelande, och administratören aviseras.
           threshold: "≤ 50 per användare och timme"
 
+  - id: MAILS-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [inbound-email, dmarc, reply-by-email]
+    refs: ["RFC 7489 §6.6 (mail receiver actions)", "RFC 6376", "ISO/IEC 27001:2022 A.5.14"]
+    tests: [MAILS-T10]
+    en:
+      title: Inbound email is authenticated before it changes data
+      description: The system MUST act on an inbound email, such as a reply that adds a comment, only when the message passes DMARC alignment for the sender's domain and the sender address belongs to a user with the right to do the action.
+      rationale: The From header of an email is trivial to forge, so acting on it lets anyone write comments or approvals in another user's name.
+      criteria:
+        - method: test
+          text: A forged reply that fails DMARC is discarded without a change, and a genuine reply from the user adds the comment.
+    sv:
+      title: Inkommande e-post autentiseras innan den ändrar data
+      description: Systemet SKA agera på ett inkommande e-postmeddelande, till exempel ett svar som lägger till en kommentar, endast när meddelandet klarar DMARC-anpassningen för avsändarens domän och avsändaradressen tillhör en användare med rätt att utföra åtgärden.
+      rationale: Ett e-postmeddelandes From-huvud är lätt att förfalska, så att agera på det låter vem som helst skriva kommentarer eller godkännanden i en annan användares namn.
+      criteria:
+        - method: test
+          text: Ett förfalskat svar som inte klarar DMARC kastas utan ändring, och ett äkta svar från användaren lägger till kommentaren.
+
+  - id: MAILS-13
+    type: security
+    obligation: must
+    priority: medium
+    tags: [parked-domains, spf, dmarc]
+    refs: ["M3AAWG Protecting Parked Domains Best Common Practices", "RFC 7208", "RFC 7489", "ISO/IEC 27001:2022 A.5.14"]
+    tests: [MAILS-T11]
+    en:
+      title: Domains that send no email say so
+      description: Each domain of the organisation that sends no email MUST publish the SPF record "v=spf1 -all" and a DMARC record with the policy reject.
+      rationale: Attackers prefer to spoof unused domains of a trusted brand, because nobody watches them and receivers have no policy to apply.
+      criteria:
+        - method: inspection
+          text: A DNS lookup of every registered domain without mail traffic shows both records.
+    sv:
+      title: Domäner som inte skickar e-post anger det
+      description: Varje domän hos organisationen som inte skickar e-post SKA publicera SPF-posten "v=spf1 -all" och en DMARC-post med policyn reject.
+      rationale: Angripare förfalskar helst oanvända domäner för ett betrott varumärke, eftersom ingen bevakar dem och mottagarna saknar en policy att tillämpa.
+      criteria:
+        - method: inspection
+          text: En DNS-uppslagning av varje registrerad domän utan e-posttrafik visar båda posterna.
+
+  - id: MAILS-14
+    type: security
+    obligation: should
+    priority: medium
+    tags: [dmarc-reports, monitoring]
+    refs: ["RFC 7489 §7 (DMARC feedback)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [MAILS-T12]
+    en:
+      title: Weekly review of DMARC aggregate reports
+      description: The operator SHOULD review the DMARC aggregate reports of each sending domain every week and open a ticket for each source that sends more than 10 messages that fail authentication.
+      rationale: The reports show both forgotten legitimate senders, whose mail will be rejected, and spoofing campaigns against the domain.
+      criteria:
+        - method: inspection
+          text: The review log has an entry for each of the last 4 weeks, and each failing source above the threshold has a ticket.
+          threshold: "> 10 failing messages per source and week"
+    sv:
+      title: Veckovis granskning av DMARC-sammanställningar
+      description: Driftansvarig BÖR granska DMARC-sammanställningarna för varje sändande domän varje vecka och öppna ett ärende för varje källa som skickar mer än 10 meddelanden som inte klarar autentiseringen.
+      rationale: Rapporterna visar både bortglömda legitima avsändare, vars e-post kommer att avvisas, och förfalskningskampanjer mot domänen.
+      criteria:
+        - method: inspection
+          text: Granskningsloggen har en post för var och en av de senaste 4 veckorna, och varje felande källa över tröskeln har ett ärende.
+          threshold: "> 10 felande meddelanden per källa och vecka"
+
+  - id: MAILS-15
+    type: security
+    obligation: should
+    priority: medium
+    tags: [dkim, key-rotation]
+    refs: ["M3AAWG DKIM Key Rotation Best Common Practices", "RFC 6376", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [MAILS-T13]
+    en:
+      title: DKIM keys rotated every 12 months
+      description: The operator SHOULD replace the DKIM signing key of each sending domain at least every 12 months with a new selector, and remove the old public key from DNS 7 days after the switch.
+      rationale: A long-lived signing key has more time to leak, and a leaked key lets anyone send perfectly signed mail in the domain's name.
+      criteria:
+        - method: inspection
+          text: The current selector of each sending domain is less than 12 months old, and the previous selector no longer resolves.
+          threshold: "≤ 12 months"
+    sv:
+      title: DKIM-nycklar byts var 12:e månad
+      description: Driftansvarig BÖR byta DKIM-signeringsnyckeln för varje sändande domän minst var 12:e månad med en ny selektor, och ta bort den gamla publika nyckeln från DNS 7 dagar efter bytet.
+      rationale: En långlivad signeringsnyckel har längre tid att läcka, och en läckt nyckel låter vem som helst skicka korrekt signerad e-post i domänens namn.
+      criteria:
+        - method: inspection
+          text: Den aktuella selektorn för varje sändande domän är yngre än 12 månader, och den föregående selektorn ger inget svar i DNS.
+          threshold: "≤ 12 månader"
+
+  - id: MAILS-16
+    type: security
+    obligation: should
+    priority: medium
+    tags: [links, phishing, https]
+    refs: ["M3AAWG Sender Best Common Practices", "ISO/IEC 27001:2022 A.8.23"]
+    tests: [MAILS-T14]
+    en:
+      title: Email links point to the system's own HTTPS domains
+      description: The system SHOULD put only HTTPS links to its own published domains in the emails it sends, without URL shorteners or third-party redirectors.
+      rationale: Users can only learn to recognise phishing when genuine messages always link to the same known domains.
+      criteria:
+        - method: test
+          text: The links in each email template resolve to HTTPS addresses on the system's domains with no redirect through another host.
+    sv:
+      title: Länkar i e-post går till systemets egna HTTPS-domäner
+      description: Systemet BÖR enbart lägga HTTPS-länkar till sina egna publicerade domäner i den e-post det skickar, utan länkförkortare eller omdirigering via tredje part.
+      rationale: Användare kan bara lära sig känna igen nätfiske när äkta meddelanden alltid länkar till samma kända domäner.
+      criteria:
+        - method: test
+          text: Länkarna i varje e-postmall leder till HTTPS-adresser på systemets domäner utan omdirigering via en annan värd.
+
 tests:
   - id: MAILS-T01
     priority: high
@@ -547,3 +661,137 @@ tests:
         - action: Läs andelen meddelanden som klarade DMARC.
           expected: Minst 99 % av meddelandena från tillåtna tjänster klarar kontrollen.
           data: "gränsvärde 99 %"
+
+  - id: MAILS-T10
+    priority: high
+    execution: manual
+    tags: [inbound-email, dmarc]
+    refs: ["RFC 7489 §6.6 (mail receiver actions)"]
+    en:
+      title: Forged replies do not add comments
+      description: Sends a genuine and a forged reply to a notification email.
+      preconditions: A test user with a mailbox on a domain with DMARC policy reject, a notification email with a reply address, and an SMTP server the tester controls that is not authorised for that domain.
+      expected: Only the genuine reply changes the record.
+      steps:
+        - action: Reply to the notification from the user's mailbox.
+          expected: The reply appears as a comment by the user on the record.
+        - action: Send a reply with the user's address in From through the tester's SMTP server.
+          expected: The message fails DMARC, no comment is added and the event is logged.
+        - action: Send a reply from a valid mailbox of a user without access to the record.
+          expected: No comment is added.
+    sv:
+      title: Förfalskade svar lägger inte till kommentarer
+      description: Skickar ett äkta och ett förfalskat svar på ett aviseringsmejl.
+      preconditions: En testanvändare med brevlåda på en domän med DMARC-policyn reject, ett aviseringsmejl med svarsadress och en SMTP-server som testaren styr och som inte är behörig för domänen.
+      expected: Endast det äkta svaret ändrar posten.
+      steps:
+        - action: Svara på aviseringen från användarens brevlåda.
+          expected: Svaret visas som en kommentar av användaren på posten.
+        - action: Skicka ett svar med användarens adress i From via testarens SMTP-server.
+          expected: Meddelandet klarar inte DMARC, ingen kommentar läggs till och händelsen loggas.
+        - action: Skicka ett svar från en giltig brevlåda för en användare utan åtkomst till posten.
+          expected: Ingen kommentar läggs till.
+
+  - id: MAILS-T11
+    priority: medium
+    execution: automated
+    tags: [parked-domains]
+    refs: ["RFC 7208", "RFC 7489"]
+    en:
+      title: Non-sending domains publish restrictive records
+      description: A script looks up SPF and DMARC records for each registered domain that sends no email.
+      preconditions: The list of the organisation's registered domains, marked as sending or not sending.
+      expected: Each non-sending domain has "v=spf1 -all" and DMARC p=reject.
+      steps:
+        - action: Query the TXT record of each non-sending domain.
+          expected: Each returns exactly "v=spf1 -all".
+        - action: Query the TXT record of _dmarc on each non-sending domain.
+          expected: Each returns a DMARC record with p=reject.
+    sv:
+      title: Domäner som inte skickar e-post publicerar strikta poster
+      description: Ett skript slår upp SPF- och DMARC-poster för varje registrerad domän som inte skickar e-post.
+      preconditions: Listan över organisationens registrerade domäner, markerade som sändande eller inte sändande.
+      expected: Varje domän som inte skickar e-post har "v=spf1 -all" och DMARC p=reject.
+      steps:
+        - action: Fråga efter TXT-posten för varje domän som inte skickar e-post.
+          expected: Var och en returnerar exakt "v=spf1 -all".
+        - action: Fråga efter TXT-posten för _dmarc på varje domän som inte skickar e-post.
+          expected: Var och en returnerar en DMARC-post med p=reject.
+
+  - id: MAILS-T12
+    priority: medium
+    execution: manual
+    tags: [dmarc-reports]
+    refs: ["RFC 7489 §7 (DMARC feedback)"]
+    en:
+      title: DMARC reports are reviewed and acted on
+      description: Compares the DMARC aggregate reports of the last 4 weeks with the review log and tickets.
+      preconditions: Access to the DMARC report mailbox or tool, the review log and the ticket system.
+      expected: Each week was reviewed and each failing source above the threshold has a ticket.
+      steps:
+        - action: List the review log entries of the last 4 weeks.
+          expected: There is one entry per week.
+        - action: From the reports, list the sources with more than 10 failing messages in a week.
+          expected: Each source has a ticket that names it and a decision.
+    sv:
+      title: DMARC-rapporter granskas och följs upp
+      description: Jämför DMARC-sammanställningarna för de senaste 4 veckorna med granskningsloggen och ärendena.
+      preconditions: Åtkomst till brevlådan eller verktyget för DMARC-rapporter, granskningsloggen och ärendesystemet.
+      expected: Varje vecka har granskats och varje felande källa över tröskeln har ett ärende.
+      steps:
+        - action: Lista granskningsloggens poster för de senaste 4 veckorna.
+          expected: Det finns en post per vecka.
+        - action: Lista utifrån rapporterna de källor som haft mer än 10 felande meddelanden under en vecka.
+          expected: Varje källa har ett ärende som namnger den och ett beslut.
+
+  - id: MAILS-T13
+    priority: medium
+    execution: manual
+    tags: [dkim, key-rotation]
+    refs: ["RFC 6376"]
+    en:
+      title: DKIM selectors are current and old ones removed
+      description: Reads the DKIM selector of recent messages and looks up the previous selector in DNS.
+      preconditions: A recent message from each sending domain and the key rotation record with the dates of the last switch.
+      expected: Each current key is less than 12 months old and the old key is gone.
+      steps:
+        - action: Read the s= tag of the DKIM-Signature header in each message and find its creation date in the rotation record.
+          expected: Each selector was created less than 12 months ago.
+        - action: Look up the previous selector of each domain in DNS.
+          expected: No public key is returned.
+    sv:
+      title: DKIM-selektorer är aktuella och gamla har tagits bort
+      description: Läser DKIM-selektorn i nyliga meddelanden och slår upp den föregående selektorn i DNS.
+      preconditions: Ett nyligt meddelande från varje sändande domän och registret över nyckelbyten med datum för det senaste bytet.
+      expected: Varje aktuell nyckel är yngre än 12 månader och den gamla nyckeln är borta.
+      steps:
+        - action: Läs taggen s= i huvudet DKIM-Signature i varje meddelande och leta upp dess skapandedatum i registret.
+          expected: Varje selektor skapades för mindre än 12 månader sedan.
+        - action: Slå upp den föregående selektorn för varje domän i DNS.
+          expected: Ingen publik nyckel returneras.
+
+  - id: MAILS-T14
+    priority: medium
+    execution: automated
+    tags: [links]
+    refs: ["M3AAWG Sender Best Common Practices"]
+    en:
+      title: Template links stay on the system's domains
+      description: A script renders each email template and follows every link without running scripts.
+      preconditions: The list of email templates, test data to render them and the list of the system's published domains.
+      expected: Every link is HTTPS on a listed domain and does not redirect elsewhere.
+      steps:
+        - action: Render each template and extract the href of each link.
+          expected: Each link starts with https:// and a listed domain.
+        - action: Request each link and follow the redirects.
+          expected: No redirect leads to a host outside the list.
+    sv:
+      title: Länkar i mallar stannar på systemets domäner
+      description: Ett skript skapar varje e-postmall och följer varje länk utan att köra skript.
+      preconditions: Listan över e-postmallar, testdata för att fylla dem och listan över systemets publicerade domäner.
+      expected: Varje länk är HTTPS på en listad domän och omdirigerar inte någon annanstans.
+      steps:
+        - action: Skapa varje mall och plocka ut href för varje länk.
+          expected: Varje länk börjar med https:// och en listad domän.
+        - action: Anropa varje länk och följ omdirigeringarna.
+          expected: Ingen omdirigering leder till en värd utanför listan.
