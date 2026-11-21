@@ -53,6 +53,10 @@ jobs:
       - name: unit tests with 85% coverage floor
         run: npm run coverage
         working-directory: web
+      - name: single-file Markdown guides are up to date (make guide-docs)
+        run: |
+          node web/scripts/guide-export.mjs --no-pdf --out docs/user-guide
+          git diff --exit-code -- docs/user-guide/qtestframe-user-guide-*.md
 
   build:
     needs: [go, web]

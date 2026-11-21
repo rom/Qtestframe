@@ -38,6 +38,13 @@ Anchors are GitHub-style slugs of the headings.
 make guide
 ```
 
+The latest build of both is published by the `user-guide` workflow on the
+[user-guide release](https://github.com/rom/Qtestframe/releases/tag/user-guide).
+The single-file Markdown is also kept in this folder
+([English](qtestframe-user-guide-en.md), [svenska](qtestframe-user-guide-sv.md)),
+next to the images it uses: after changing the guide, run `make guide-docs`
+to refresh it (CI fails when it is out of date).
+
 `make guide-md` writes only the Markdown files. `GUIDE_LANGS=sv` limits the
 languages, `GUIDE_OUT=…` changes the folder. The export uses the guide code of
 the web client (`web/src/guide/compile.ts`, through
