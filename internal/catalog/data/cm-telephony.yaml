@@ -1,0 +1,520 @@
+area: cm-telephony
+prefix: CMTEL
+group: domain
+catalogue: communications
+name: {en: Unified communications and telephony, sv: Samordnad kommunikation och telefoni}
+description:
+  en: Enterprise telephony and unified communications, with emergency calls and caller location, survivable sites, call setup time and voice quality, number portability in the contract, protected signalling and media, toll fraud, presence and call records.
+  sv: Företagstelefoni och samordnad kommunikation, med nödsamtal och uppringarens position, platser som klarar avbrott mot centralen, uppkopplingstid och röstkvalitet, nummerportabilitet i avtalet, skyddad signalering och media, telefonibedrägerier, närvaro och samtalsposter.
+
+requirements:
+  - id: CMTEL-01
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [emergency-call, 112]
+    refs: ["Directive (EU) 2018/1972 Art. 109"]
+    tests: [CMTEL-T01]
+    en:
+      title: Calls to 112 from each phone without prefix or sign-in
+      description: Each desk phone, softphone and conference phone MUST connect a call to 112 when dialled without an outside-line prefix, with no user signed in and while the phone is locked.
+      rationale: A person in an emergency dials the number they know and has no time to look for a prefix or a password.
+      criteria:
+        - method: test
+          text: Test calls to the emergency test number set up with the operator succeed from each phone model without prefix, without sign-in and from the locked state.
+    sv:
+      title: Samtal till 112 från varje telefon utan prefix och inloggning
+      description: Varje bordstelefon, mjukvarutelefon och konferenstelefon SKA koppla fram ett samtal till 112 som slås utan prefix för extern linje, utan inloggad användare och när telefonen är låst.
+      rationale: Den som är i en nödsituation slår det nummer hen känner till och har inte tid att leta efter ett prefix eller ett lösenord.
+      criteria:
+        - method: test
+          text: Testsamtal till det testnummer för nödsamtal som avtalats med operatören lyckas från varje telefonmodell utan prefix, utan inloggning och från låst läge.
+
+  - id: CMTEL-02
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [emergency-call, caller-location]
+    refs: ["Directive (EU) 2018/1972 Art. 109"]
+    tests: [CMTEL-T01]
+    en:
+      title: Site address sent with each emergency call
+      description: The telephony system MUST send to the operator, with each emergency call, the street address registered for the site where the calling extension is connected at the time of the call.
+      rationale: The emergency service sends help to the address it receives, and an extension moved to another site keeps sending the old address unless the system follows the move.
+      criteria:
+        - method: test
+          text: A test emergency call from an extension moved from site A to site B is received by the operator's test service with the address of site B.
+    sv:
+      title: Platsens adress skickas med varje nödsamtal
+      description: Telefonisystemet SKA med varje nödsamtal skicka den gatuadress till operatören som är registrerad för den plats där den uppringande anknytningen är ansluten vid samtalet.
+      rationale: Larmcentralen skickar hjälp till den adress den får, och en anknytning som flyttats till en annan plats skickar annars fortfarande den gamla adressen.
+      criteria:
+        - method: test
+          text: Ett testnödsamtal från en anknytning som flyttats från plats A till plats B tas emot av operatörens testtjänst med adressen till plats B.
+
+  - id: CMTEL-03
+    type: functional
+    obligation: should
+    priority: high
+    tags: [emergency-call, notification, security-desk]
+    refs: []
+    tests: [CMTEL-T01]
+    en:
+      title: Security desk alerted when 112 is called
+      description: The telephony system SHOULD alert the reception or security desk within 10 seconds of a call to 112, with the extension, the user name and the room registered for the phone.
+      rationale: Staff on site can meet the ambulance at the entrance, open doors and give first aid before help arrives.
+      criteria:
+        - method: test
+          text: A test emergency call shows an alert with extension, user and room at the security desk within 10 seconds.
+          threshold: ≤ 10 s
+    sv:
+      title: Säkerhetsdisken larmas när 112 rings
+      description: Telefonisystemet BÖR larma receptionen eller säkerhetsdisken inom 10 sekunder efter ett samtal till 112, med anknytningen, användarnamnet och det rum som är registrerat för telefonen.
+      rationale: Personal på plats kan möta ambulansen vid entrén, öppna dörrar och ge första hjälpen innan hjälpen kommer fram.
+      criteria:
+        - method: test
+          text: Ett testnödsamtal visar ett larm med anknytning, användare och rum hos säkerhetsdisken inom 10 sekunder.
+          threshold: ≤ 10 s
+
+  - id: CMTEL-04
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [survivability, emergency-call, local-gateway]
+    refs: ["ISO/IEC 27001:2022 A.8.14"]
+    tests: [CMTEL-T02]
+    en:
+      title: Emergency calls from a site cut off from the call server
+      description: When a site loses its connection to the central call server, the phones at the site MUST connect calls to 112 through a local gateway or a mobile fallback within 60 seconds of the loss.
+      rationale: A cut cable can isolate a site at the same time as the incident that makes people call for help.
+      criteria:
+        - method: test
+          text: With the site's wide area links disconnected, a test emergency call from a desk phone at the site connects within 60 seconds of the disconnection.
+          threshold: ≤ 60 s
+    sv:
+      title: Nödsamtal från en plats som tappat kontakten med samtalsservern
+      description: När en plats förlorar sin anslutning till den centrala samtalsservern SKA platsens telefoner koppla fram samtal till 112 via en lokal gateway eller en reservväg i mobilnätet inom 60 sekunder från avbrottet.
+      rationale: En avgrävd kabel kan isolera en plats samtidigt som den händelse som får människor att ringa efter hjälp.
+      criteria:
+        - method: test
+          text: När platsens förbindelser till kärnnätet är bortkopplade kopplas ett testnödsamtal från en bordstelefon på platsen fram inom 60 sekunder från bortkopplingen.
+          threshold: ≤ 60 s
+
+  - id: CMTEL-05
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [call-setup, performance]
+    refs: []
+    tests: [CMTEL-T03]
+    en:
+      title: Internal call set up within 2 seconds
+      description: The telephony system MUST start ringing the called internal extension within 2 seconds after the last digit is dialled for 99 % of internal calls.
+      rationale: Callers who hear silence for longer than this hang up and redial, which doubles the load and the frustration.
+      criteria:
+        - method: test
+          text: Of 500 automated internal test calls during office hours, at least 99 % reach the ringing state within 2 seconds.
+          threshold: ≤ 2 s for 99 %
+    sv:
+      title: Internt samtal kopplas upp inom 2 sekunder
+      description: Telefonisystemet SKA börja ringa på den uppringda interna anknytningen inom 2 sekunder efter att den sista siffran slagits för 99 % av de interna samtalen.
+      rationale: Den som ringer och hör tystnad längre än så lägger på och ringer igen, vilket fördubblar både lasten och irritationen.
+      criteria:
+        - method: test
+          text: Av 500 automatiska interna testsamtal under kontorstid når minst 99 % ringande läge inom 2 sekunder.
+          threshold: ≤ 2 s för 99 %
+
+  - id: CMTEL-06
+    type: performance
+    obligation: must
+    priority: high
+    tags: [voice-quality, r-factor, mos]
+    refs: ["ITU-T G.107"]
+    tests: [CMTEL-T03]
+    en:
+      title: Estimated voice quality R-factor of at least 80
+      description: The telephony system MUST report an estimated R-factor of at least 80 under the E-model of ITU-T G.107 for 95 % of the internal calls in each week.
+      rationale: An R-factor of 80 corresponds to a quality that most callers rate as good, and the weekly figure shows degradation before it becomes a complaint.
+      criteria:
+        - method: analysis
+          text: The call quality statistics for 4 weeks show an R-factor of at least 80 for at least 95 % of internal calls in each week.
+          threshold: R ≥ 80 for ≥ 95 % of calls
+    sv:
+      title: Uppskattad röstkvalitet med R-värde på minst 80
+      description: Telefonisystemet SKA rapportera ett uppskattat R-värde på minst 80 enligt E-modellen i ITU-T G.107 för 95 % av de interna samtalen varje vecka.
+      rationale: Ett R-värde på 80 motsvarar en kvalitet som de flesta som ringer bedömer som god, och veckosiffran visar en försämring innan den blir ett klagomål.
+      criteria:
+        - method: analysis
+          text: Statistiken över samtalskvalitet för 4 veckor visar ett R-värde på minst 80 för minst 95 % av de interna samtalen varje vecka.
+          threshold: R ≥ 80 för ≥ 95 % av samtalen
+
+  - id: CMTEL-07
+    type: business
+    obligation: must
+    priority: high
+    tags: [number-portability, contract, exit]
+    refs: ["Directive (EU) 2018/1972 Art. 106"]
+    tests: [CMTEL-T04]
+    en:
+      title: Contract keeps the numbers portable
+      description: The contract with the telephony provider MUST state that the organisation keeps the right to port its numbers to another provider and that the provider hands over the porting data within 1 working day of a request.
+      rationale: Published numbers are part of the organisation's identity, and a provider that holds them back locks the organisation in.
+      criteria:
+        - method: review
+          text: The contract contains a clause on porting out of the organisation's numbers and a time limit of 1 working day for the porting data.
+          threshold: ≤ 1 working day
+    sv:
+      title: Avtalet håller numren portabla
+      description: Avtalet med telefonileverantören SKA ange att organisationen behåller rätten att flytta sina nummer till en annan leverantör och att leverantören lämnar ut uppgifterna för flytten inom 1 arbetsdag efter en begäran.
+      rationale: Publicerade nummer är en del av organisationens identitet, och en leverantör som håller kvar dem låser in organisationen.
+      criteria:
+        - method: review
+          text: Avtalet innehåller en klausul om att flytta ut organisationens nummer och en tidsgräns på 1 arbetsdag för uppgifterna för flytten.
+          threshold: ≤ 1 arbetsdag
+
+  - id: CMTEL-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [sip, tls, srtp, encryption]
+    refs: ["RFC 3261", "RFC 3711", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [CMTEL-T05]
+    en:
+      title: Signalling over TLS and media over SRTP
+      description: The telephony system MUST carry SIP signalling between phones, call servers and gateways over TLS 1.2 or later and the speech over SRTP.
+      rationale: Unencrypted calls can be recorded by anyone with access to the network, and unprotected signalling lets an attacker redirect calls.
+      criteria:
+        - method: test
+          text: A capture of a test call between two sites shows TLS 1.2 or later for signalling and SRTP for media, with no readable speech.
+    sv:
+      title: Signalering över TLS och media över SRTP
+      description: Telefonisystemet SKA föra SIP-signaleringen mellan telefoner, samtalsservrar och gateways över TLS 1.2 eller senare och talet över SRTP.
+      rationale: Okrypterade samtal kan spelas in av vem som helst med åtkomst till nätet, och oskyddad signalering låter en angripare styra om samtal.
+      criteria:
+        - method: test
+          text: En inspelning av ett testsamtal mellan två platser visar TLS 1.2 eller senare för signaleringen och SRTP för media, utan läsbart tal.
+
+  - id: CMTEL-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [toll-fraud, call-barring]
+    refs: []
+    tests: [CMTEL-T06]
+    en:
+      title: International and premium-rate calls only for granted extensions
+      description: The telephony system MUST block calls to international and premium-rate numbers from each extension, voicemail box and conference bridge that has not been granted those call classes by an administrator.
+      rationale: Toll fraud through hijacked extensions and voicemail call-forwarding can cost tens of thousands in a weekend.
+      criteria:
+        - method: test
+          text: A call to an international number from an extension without the grant is blocked, and the same call succeeds after the grant is added.
+    sv:
+      title: Utlandssamtal och betalsamtal bara för behöriga anknytningar
+      description: Telefonisystemet SKA spärra samtal till utländska nummer och betalnummer från varje anknytning, röstbrevlåda och konferensbrygga som inte av en administratör har tilldelats de samtalsklasserna.
+      rationale: Telefonibedrägerier via kapade anknytningar och vidarekoppling från röstbrevlådor kan kosta tiotusentals kronor under en helg.
+      criteria:
+        - method: test
+          text: Ett samtal till ett utländskt nummer från en anknytning utan behörighet spärras, och samma samtal lyckas när behörigheten lagts till.
+
+  - id: CMTEL-10
+    type: security
+    obligation: should
+    priority: medium
+    tags: [toll-fraud, cost-alarm, monitoring]
+    refs: []
+    tests: [CMTEL-T06]
+    en:
+      title: Alarm on high call costs from one extension
+      description: The telephony system SHOULD alert the administrator within 15 minutes when the calls from one extension in 1 hour cost more than the set limit of 100 EUR.
+      rationale: Fraud is usually detected only on the next invoice, and an hourly cost alarm limits the loss to the first hours.
+      criteria:
+        - method: test
+          text: Simulated calls from a test extension that pass the limit within 1 hour raise an alert to the administrator within 15 minutes.
+          threshold: limit 100 EUR per hour, alert ≤ 15 min
+    sv:
+      title: Larm vid höga samtalskostnader från en anknytning
+      description: Telefonisystemet BÖR larma administratören inom 15 minuter när samtalen från en anknytning under 1 timme kostar mer än den inställda gränsen på 1 000 kr.
+      rationale: Bedrägerier upptäcks oftast först på nästa faktura, och ett kostnadslarm per timme begränsar förlusten till de första timmarna.
+      criteria:
+        - method: test
+          text: Simulerade samtal från en testanknytning som passerar gränsen inom 1 timme ger ett larm till administratören inom 15 minuter.
+          threshold: gräns 1 000 kr per timme, larm ≤ 15 min
+
+  - id: CMTEL-11
+    type: functional
+    obligation: should
+    priority: low
+    tags: [presence, unified-communications]
+    refs: []
+    tests: [CMTEL-T07]
+    en:
+      title: Presence shown within 5 seconds of a change
+      description: The communications client SHOULD show a colleague's new presence state (available, busy, in a call, away) within 5 seconds after it changes.
+      rationale: Callers use presence to decide whether to call or write, and a stale state leads to unanswered calls.
+      criteria:
+        - method: test
+          text: When user A starts a call, user B's client shows A as in a call within 5 seconds in 10 out of 10 tries.
+          threshold: ≤ 5 s
+    sv:
+      title: Närvaro visas inom 5 sekunder efter en ändring
+      description: Kommunikationsklienten BÖR visa en kollegas nya närvarostatus (tillgänglig, upptagen, i samtal, borta) inom 5 sekunder efter att den ändrats.
+      rationale: Den som vill nå någon använder närvaron för att välja mellan att ringa och skriva, och en inaktuell status leder till obesvarade samtal.
+      criteria:
+        - method: test
+          text: När användare A startar ett samtal visar användare B:s klient A som i samtal inom 5 sekunder i 10 av 10 försök.
+          threshold: ≤ 5 s
+
+  - id: CMTEL-12
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [call-records, retention, privacy]
+    refs: ["GDPR Art. 5(1)(e)", "GDPR Art. 5(1)(c)"]
+    tests: [CMTEL-T08]
+    en:
+      title: Call records erased after 90 days
+      description: The telephony system MUST erase each call detail record 90 days after the call and keep only aggregated statistics without numbers or user names after that.
+      rationale: Call records show who talked to whom and when, which is personal data that is needed for troubleshooting and invoicing only for a limited time.
+      criteria:
+        - method: test
+          text: A search for a test call older than 90 days returns no record, while the monthly statistics still count it without number or user.
+          threshold: ≤ 90 days
+    sv:
+      title: Samtalsposter raderas efter 90 dagar
+      description: Telefonisystemet SKA radera varje samtalspost 90 dagar efter samtalet och därefter bara behålla sammanställd statistik utan nummer och användarnamn.
+      rationale: Samtalsposter visar vem som talade med vem och när, vilket är personuppgifter som behövs för felsökning och fakturering bara under en begränsad tid.
+      criteria:
+        - method: test
+          text: En sökning efter ett testsamtal som är äldre än 90 dagar ger ingen post, medan månadsstatistiken fortfarande räknar samtalet utan nummer och användare.
+          threshold: ≤ 90 dagar
+
+tests:
+  - id: CMTEL-T01
+    priority: critical
+    execution: manual
+    tags: [emergency-call, caller-location]
+    refs: ["Directive (EU) 2018/1972 Art. 109"]
+    en:
+      title: Test emergency calls with location and security desk alert
+      description: Places test emergency calls from each phone model and from a moved extension, using the test number agreed with the operator.
+      preconditions: A test number for emergency calls agreed with the operator, one phone of each model, and an extension registered at site A that can be moved to site B.
+      expected: Each call connects without prefix or sign-in, the operator's test service receives the right site address, and the security desk is alerted within 10 seconds.
+      steps:
+        - action: From each phone model, dial the test number without prefix, once with no user signed in and once from the locked state.
+          expected: Each call connects.
+        - action: Move the extension to site B and place a test call.
+          expected: The operator's test service shows the address of site B.
+          data: Address of site B from the site register
+        - action: Watch the security desk console during the call.
+          expected: An alert with extension, user and room appears within 10 seconds.
+    sv:
+      title: Testnödsamtal med position och larm till säkerhetsdisken
+      description: Ringer testnödsamtal från varje telefonmodell och från en flyttad anknytning, till det testnummer som avtalats med operatören.
+      preconditions: Ett testnummer för nödsamtal avtalat med operatören, en telefon av varje modell och en anknytning registrerad på plats A som går att flytta till plats B.
+      expected: Varje samtal kopplas fram utan prefix och inloggning, operatörens testtjänst får rätt adress för platsen, och säkerhetsdisken larmas inom 10 sekunder.
+      steps:
+        - action: Slå testnumret utan prefix från varje telefonmodell, en gång utan inloggad användare och en gång från låst läge.
+          expected: Varje samtal kopplas fram.
+        - action: Flytta anknytningen till plats B och ring ett testsamtal.
+          expected: Operatörens testtjänst visar adressen till plats B.
+          data: Adressen till plats B från platsregistret
+        - action: Följ säkerhetsdiskens skärm under samtalet.
+          expected: Ett larm med anknytning, användare och rum visas inom 10 sekunder.
+
+  - id: CMTEL-T02
+    priority: critical
+    execution: manual
+    tags: [survivability, emergency-call]
+    refs: []
+    en:
+      title: Emergency call from an isolated site
+      description: Disconnects a site from the core network in a maintenance window and places a test emergency call.
+      preconditions: A maintenance window at the site, the agreed test number for emergency calls and a desk phone at the site.
+      expected: The test emergency call connects within 60 seconds of the disconnection.
+      steps:
+        - action: Disconnect each wide area link of the site and note the time.
+          expected: The phones show that they have lost the call server or have moved to the local gateway.
+        - action: Dial the test emergency number from the desk phone.
+          expected: The call connects within 60 seconds of the disconnection.
+        - action: Reconnect the links.
+          expected: The phones return to the central call server within 5 minutes.
+    sv:
+      title: Nödsamtal från en isolerad plats
+      description: Kopplar bort en plats från kärnnätet i ett servicefönster och ringer ett testnödsamtal.
+      preconditions: Ett servicefönster på platsen, det avtalade testnumret för nödsamtal och en bordstelefon på platsen.
+      expected: Testnödsamtalet kopplas fram inom 60 sekunder från bortkopplingen.
+      steps:
+        - action: Koppla bort varje förbindelse från platsen till kärnnätet och anteckna tiden.
+          expected: Telefonerna visar att de tappat samtalsservern eller gått över till den lokala gatewayen.
+        - action: Slå testnumret för nödsamtal från bordstelefonen.
+          expected: Samtalet kopplas fram inom 60 sekunder från bortkopplingen.
+        - action: Återanslut förbindelserna.
+          expected: Telefonerna går tillbaka till den centrala samtalsservern inom 5 minuter.
+
+  - id: CMTEL-T03
+    priority: high
+    execution: automated
+    tags: [call-setup, voice-quality]
+    refs: ["ITU-T G.107"]
+    en:
+      title: Call setup time and voice quality statistics
+      description: A call generator places automated internal calls and the quality statistics of 4 weeks are evaluated.
+      preconditions: A call generator with 2 registered test extensions and 4 weeks of call quality statistics.
+      expected: At least 99 % of test calls ring within 2 seconds, and each week has an R-factor of at least 80 for 95 % of calls.
+      steps:
+        - action: Place 500 internal test calls spread over office hours and measure the time from the last digit to ringing.
+          expected: At least 495 calls ring within 2 seconds.
+          data: 500 calls
+        - action: Compute the share of internal calls with an R-factor of at least 80 for each of the last 4 weeks.
+          expected: The share is at least 95 % in each week.
+    sv:
+      title: Statistik över uppkopplingstid och röstkvalitet
+      description: En samtalsgenerator ringer automatiska interna samtal, och kvalitetsstatistiken för 4 veckor utvärderas.
+      preconditions: En samtalsgenerator med 2 registrerade testanknytningar och 4 veckors statistik över samtalskvalitet.
+      expected: Minst 99 % av testsamtalen ringer inom 2 sekunder, och varje vecka har ett R-värde på minst 80 för 95 % av samtalen.
+      steps:
+        - action: Ring 500 interna testsamtal fördelade över kontorstiden och mät tiden från sista siffran till ringning.
+          expected: Minst 495 samtal ringer inom 2 sekunder.
+          data: 500 samtal
+        - action: Beräkna andelen interna samtal med ett R-värde på minst 80 för var och en av de senaste 4 veckorna.
+          expected: Andelen är minst 95 % varje vecka.
+
+  - id: CMTEL-T04
+    priority: high
+    execution: manual
+    tags: [number-portability, contract]
+    refs: ["Directive (EU) 2018/1972 Art. 106"]
+    en:
+      title: Contract review for number portability
+      description: Reviews the telephony contract for the right to port numbers and the time limit for the porting data.
+      preconditions: The signed telephony contract with its appendices.
+      expected: The contract keeps the right to port out and sets 1 working day for the porting data.
+      steps:
+        - action: Find the clause on porting numbers out to another provider.
+          expected: The clause gives the organisation the right to port each of its numbers.
+        - action: Find the time limit for handing over the porting data.
+          expected: The limit is at most 1 working day after a request.
+    sv:
+      title: Avtalsgranskning för nummerportabilitet
+      description: Granskar telefoniavtalet med avseende på rätten att flytta nummer och tidsgränsen för uppgifterna för flytten.
+      preconditions: Det undertecknade telefoniavtalet med bilagor.
+      expected: Avtalet behåller rätten att flytta ut nummer och anger 1 arbetsdag för uppgifterna för flytten.
+      steps:
+        - action: Hitta klausulen om att flytta nummer till en annan leverantör.
+          expected: Klausulen ger organisationen rätt att flytta vart och ett av sina nummer.
+        - action: Hitta tidsgränsen för att lämna ut uppgifterna för flytten.
+          expected: Gränsen är högst 1 arbetsdag efter en begäran.
+
+  - id: CMTEL-T05
+    priority: high
+    execution: manual
+    tags: [sip, tls, srtp]
+    refs: ["RFC 3711"]
+    en:
+      title: Capture of a call between two sites
+      description: Captures the signalling and media of a test call on the path between two sites.
+      preconditions: A packet capture point on the path between the sites and 2 test extensions.
+      expected: Signalling uses TLS 1.2 or later, media uses SRTP, and no speech can be played back from the capture.
+      steps:
+        - action: Start the capture and place a call between the test extensions for 1 minute.
+          expected: The capture contains the call.
+        - action: Inspect the signalling packets.
+          expected: They are TLS 1.2 or later, and no SIP message is readable.
+        - action: Try to play back the media stream with a protocol analyser.
+          expected: The stream is SRTP and no speech can be heard.
+    sv:
+      title: Inspelning av ett samtal mellan två platser
+      description: Spelar in signalering och media för ett testsamtal på vägen mellan två platser.
+      preconditions: En punkt för paketinspelning på vägen mellan platserna och 2 testanknytningar.
+      expected: Signaleringen använder TLS 1.2 eller senare, media använder SRTP, och inget tal går att spela upp från inspelningen.
+      steps:
+        - action: Starta inspelningen och ring ett samtal mellan testanknytningarna i 1 minut.
+          expected: Inspelningen innehåller samtalet.
+        - action: Granska signaleringspaketen.
+          expected: De är TLS 1.2 eller senare, och inget SIP-meddelande går att läsa.
+        - action: Försök spela upp mediaströmmen med ett protokollanalysverktyg.
+          expected: Strömmen är SRTP och inget tal hörs.
+
+  - id: CMTEL-T06
+    priority: high
+    execution: manual
+    tags: [toll-fraud, call-barring, cost-alarm]
+    refs: []
+    en:
+      title: Call barring and cost alarm on a test extension
+      description: Calls international numbers from a test extension with and without the grant, and simulates high-cost calls.
+      preconditions: A test extension without the international call class and a call cost simulator or a test tariff in the system.
+      expected: Calls are blocked without the grant and allowed with it, and passing the cost limit alerts the administrator within 15 minutes.
+      steps:
+        - action: Dial an international number from the test extension.
+          expected: The call is blocked with a message or tone.
+        - action: Grant the international call class and dial again.
+          expected: The call connects.
+        - action: Generate calls from the extension that cost more than the limit within 1 hour.
+          expected: The administrator gets an alert within 15 minutes.
+          data: Limit 100 EUR per hour
+    sv:
+      title: Samtalsspärr och kostnadslarm på en testanknytning
+      description: Ringer utländska nummer från en testanknytning med och utan behörighet och simulerar dyra samtal.
+      preconditions: En testanknytning utan samtalsklassen för utlandssamtal och en simulator för samtalskostnader eller en testtaxa i systemet.
+      expected: Samtal spärras utan behörighet och tillåts med den, och när kostnadsgränsen passeras larmas administratören inom 15 minuter.
+      steps:
+        - action: Slå ett utländskt nummer från testanknytningen.
+          expected: Samtalet spärras med ett meddelande eller en ton.
+        - action: Tilldela samtalsklassen för utlandssamtal och ring igen.
+          expected: Samtalet kopplas fram.
+        - action: Skapa samtal från anknytningen som kostar mer än gränsen inom 1 timme.
+          expected: Administratören får ett larm inom 15 minuter.
+          data: Gräns 1 000 kr per timme
+
+  - id: CMTEL-T07
+    priority: low
+    execution: manual
+    tags: [presence]
+    refs: []
+    en:
+      title: Presence change seen by a colleague
+      description: Changes the state of one user and times when another user's client shows it.
+      preconditions: Two signed-in test users who have each other as contacts.
+      expected: The new state is shown within 5 seconds in each try.
+      steps:
+        - action: Let user A start a call and time when user B's client shows A as in a call.
+          expected: The state is shown within 5 seconds.
+        - action: Repeat 10 times with the states busy, away and available.
+          expected: Each change is shown within 5 seconds.
+    sv:
+      title: En kollega ser en ändrad närvarostatus
+      description: Ändrar status för en användare och mäter när en annan användares klient visar den.
+      preconditions: Två inloggade testanvändare som har varandra som kontakter.
+      expected: Den nya statusen visas inom 5 sekunder i varje försök.
+      steps:
+        - action: Låt användare A starta ett samtal och mät när användare B:s klient visar A som i samtal.
+          expected: Statusen visas inom 5 sekunder.
+        - action: Upprepa 10 gånger med statusarna upptagen, borta och tillgänglig.
+          expected: Varje ändring visas inom 5 sekunder.
+
+  - id: CMTEL-T08
+    priority: medium
+    execution: manual
+    tags: [call-records, retention]
+    refs: ["GDPR Art. 5(1)(e)"]
+    en:
+      title: Call records older than 90 days
+      description: Searches the call records for a known test call older than 90 days and checks the monthly statistics.
+      preconditions: A test call made 91 days ago with a known time and extension.
+      expected: The record is gone, and the statistics count the call without number or user.
+      steps:
+        - action: Search the call records for the test call by time and extension.
+          expected: No record is found.
+        - action: Open the monthly statistics for that month.
+          expected: The call is counted, and the statistics show no number or user name.
+    sv:
+      title: Samtalsposter som är äldre än 90 dagar
+      description: Söker i samtalsposterna efter ett känt testsamtal som är äldre än 90 dagar och kontrollerar månadsstatistiken.
+      preconditions: Ett testsamtal som ringdes för 91 dagar sedan med känd tid och anknytning.
+      expected: Posten är borta, och statistiken räknar samtalet utan nummer och användare.
+      steps:
+        - action: Sök i samtalsposterna efter testsamtalet via tid och anknytning.
+          expected: Ingen post hittas.
+        - action: Öppna månadsstatistiken för den månaden.
+          expected: Samtalet räknas, och statistiken visar inget nummer och inget användarnamn.
