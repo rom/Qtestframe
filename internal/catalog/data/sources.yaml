@@ -1952,3 +1952,28 @@ sources:
     name: {en: "UN Regulation No. 156 – Software update and software update management system", sv: "FN-föreskrift nr 156 – Programuppdateringar och ledningssystem för programuppdateringar"}
     match: ["UN Regulation No. 156"]
     url: https://unece.org/transport/documents/2021/03/standards/un-regulation-no-156-software-update-and-software-update
+  - id: sdg
+    kind: law
+    jurisdiction: EU
+    short: SDG
+    name: {en: "Single Digital Gateway Regulation (EU) 2018/1724", sv: "Förordningen om en gemensam digital ingång (EU) 2018/1724"}
+    match: ["Regulation (EU) 2018/1724"]
+    url: https://eur-lex.europa.eu/eli/reg/2018/1724/oj
+  - id: interoperable-europe
+    kind: law
+    jurisdiction: EU
+    name: {en: "Interoperable Europe Act, Regulation (EU) 2024/903", sv: "Förordningen om ett kompatibelt Europa (EU) 2024/903"}
+    match: ["Regulation (EU) 2024/903"]
+    url: https://eur-lex.europa.eu/eli/reg/2024/903/oj
+  - id: se-forvaltningslag
+    kind: law
+    jurisdiction: SE
+    name: {en: "Swedish Administrative Procedure Act (2017:900)", sv: "Förvaltningslag (2017:900)"}
+    match: ["Förvaltningslag (2017:900)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/forvaltningslag-2017900_sfs-2017-900/
+  - id: se-osl
+    kind: law
+    jurisdiction: SE
+    name: {en: "Swedish Public Access to Information and Secrecy Act (2009:400)", sv: "Offentlighets- och sekretesslag (2009:400)"}
+    match: ["Offentlighets- och sekretesslag (2009:400)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/offentlighets-och-sekretesslag-2009400_sfs-2009-400/
