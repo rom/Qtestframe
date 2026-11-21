@@ -730,7 +730,7 @@ const stateText = (s: CellState | undefined) => (s ? t(`sheet.state.${s.state}`)
                 @keydown="onEditorKey"
                 @blur="onEditorBlur"
               />
-              <div v-if="f.editor === 'categories' && editOptions.length" class="cat-pick" role="group" :aria-label="f.header" @mousedown.stop>
+              <div v-if="f.editor === 'categories' && editOptions.length" class="cat-pick" role="group" :aria-label="f.header" @mousedown.stop.prevent>
                 <label v-for="o in editOptions" :key="o.value" class="small">
                   <input type="checkbox" tabindex="-1" :checked="checkedCategory(o.label)" @change="toggleCategory(o.value, ($event.target as HTMLInputElement).checked)" />
                   {{ o.label }}

@@ -13,7 +13,7 @@ import Menu from 'primevue/menu'
 import SpreadsheetGrid, { type ApplyKind, type CellState } from './SpreadsheetGrid.vue'
 import ColumnsMenu from './ColumnsMenu.vue'
 import { api, ApiError, errorMessage } from '@/lib/api'
-import { sortRows, toBatch, type Plan, type SheetField } from '@/lib/sheet'
+import { sortRows, toBatch, type BatchItem, type Plan, type SheetField } from '@/lib/sheet'
 import { applyValues, DEFAULT_SHEET_COLUMNS, sheetFields, type SheetRow } from '@/lib/sheetFields'
 import { folderColors } from '@/lib/tree'
 import { createdEntry, entry, recordUndo } from '@/lib/undoActions'
@@ -182,46 +182,69 @@ const undoLabel = (plan: Plan, kind: ApplyKind, row?: SheetRow) => {
   return t(`undo.a.sheet_${kind}`, { n }, n)
 }
 
-async function apply(plan: Plan, kind: ApplyKind) {
+// Saves run one after another: a second edit of a row waits for the first,
+// so it is sent with the version the first one produced.
+let queue: Promise<void> = Promise.resolve()
+const current = (id: string) => props.items.find((r) => r.id === id)
+
+function apply(plan: Plan, kind: ApplyKind) {
   if (!plan.changes.length) return
   const shown = rows.value
-  const { items, before } = toBatch(shown, plan.changes)
-  const byId = new Map(shown.map((r) => [r.id, r]))
-  const oldRows = items.map((it) => byId.get(it.id)!).filter(Boolean)
+  const { items, before } = toBatch(shown, plan.changes, false)
   const keys = items.flatMap((it) => Object.keys(it.set).map((f) => cellKey(it.id, f)))
+  const label = undoLabel(plan, kind, shown[plan.changes[0].row])
+  const one = plan.changes.length === 1 ? plan.changes[0] : null
+  const done = one ? t('sheet.savedCell', { field: fields.value[one.col]?.header ?? '', key: shown[one.row]?.key ?? '' }) : t('sheet.saved', plan.changes.length)
   // optimistic: show the new values while saving
   emit(
     'replace',
-    items.map((it) => applyValues(byId.get(it.id)!, it.set, props.folders)),
+    items.map((it) => applyValues(current(it.id) ?? (shown.find((r) => r.id === it.id) as SheetRow), it.set, props.folders)),
   )
   for (const k of keys) cellStates.set(k, { state: 'pending' })
   for (const it of items) conflicts.delete(it.id)
+  queue = queue.then(() => send(items, before, keys, label, done))
+}
+
+async function send(items: BatchItem[], before: BatchItem[], keys: string[], label: string, done: string) {
   busy.value = true
+  // the versions the rows have now (after earlier saves of this sheet)
+  const withVersions = items.map((it) => {
+    const v = current(it.id)?.version
+    return v ? { ...it, version: v } : it
+  })
   try {
-    const res = await api.post<{ updated: number; items: { id: string; version: number; updated_at?: string }[] }>(batchPath.value, { items })
+    const res = await api.post<{ updated: number; items: { id: string; version: number; updated_at?: string }[] }>(batchPath.value, { items: withVersions })
     const ver = new Map(res.items.map((x) => [x.id, x]))
     emit(
       'replace',
-      items.map((it) => {
-        const v = ver.get(it.id)
-        return { ...applyValues(byId.get(it.id)!, it.set, props.folders), version: v?.version ?? byId.get(it.id)!.version, ...(v?.updated_at ? { updated_at: v.updated_at } : {}) }
-      }),
+      items
+        .map((it) => current(it.id))
+        .filter((r): r is SheetRow => !!r)
+        .map((r) => {
+          const v = ver.get(r.id)
+          return { ...r, version: v?.version ?? r.version, ...(v?.updated_at ? { updated_at: v.updated_at } : {}) }
+        }),
     )
     markSaved(keys)
-    const label = undoLabel(plan, kind, oldRows[0])
-    const plain = items.map((it) => ({ id: it.id, set: it.set }))
     recordUndo(
       entry(
         label,
         () => api.post(batchPath.value, { items: before }),
-        () => api.post(batchPath.value, { items: plain }),
+        () => api.post(batchPath.value, { items }),
       ),
     )
-    const one = plan.changes.length === 1 ? plan.changes[0] : null
-    announce(one ? t('sheet.savedCell', { field: fields.value[one.col]?.header ?? '', key: shown[one.row]?.key ?? '' }) : t('sheet.saved', plan.changes.length))
+    announce(done)
   } catch (e) {
     // nothing was saved (one transaction): show the saved values again
-    emit('replace', oldRows)
+    emit(
+      'replace',
+      before
+        .map((b) => {
+          const r = current(b.id)
+          return r ? applyValues(r, b.set, props.folders) : null
+        })
+        .filter((r): r is SheetRow => !!r),
+    )
     if (e instanceof ApiError && e.status === 409 && e.code === 'stale') {
       const list = ((e.body as { conflicts?: { id: string; key: string; current: SheetRow }[] })?.conflicts ?? []).filter((c) => c?.id)
       for (const c of list) {

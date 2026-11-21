@@ -174,7 +174,8 @@ have their own tests.
 with Playwright and runs [axe-core](https://github.com/dequelabs/axe-core)
 against a running server with the demo data. It signs in as the bootstrap
 administrator and visits the login page, projects, dashboard, requirements
-(list and with the editor open), tests, runs, a run, the execution runner,
+(list, spreadsheet view and with the editor open), tests (list and
+spreadsheet view), runs, a run, the execution runner,
 traceability, baselines, settings, export, documents, reports, search,
 profile and the administration pages (members, tokens, audit, role matrix,
 organisations, users, backup):
@@ -187,8 +188,9 @@ organisations, users, backup):
 * at the viewports 390×844 (phone), 820×1180 (tablet), 1024×768 (tablet
   landscape) and 1440×900 (desktop), with touch emulation on the tablets
   and the phone;
-* including open states: the editor drawer, the attachments tabs of a
-  requirement and a run, the "new run" dialog and the off-canvas navigation
+* including open states: the editor drawer, the spreadsheet view with a
+  cell editor open (a list, a multi-line text), a refused value, ticked rows
+  and the keyboard help, the attachments tabs of a requirement and a run, the "new run" dialog and the off-canvas navigation
   (phone and tablet);
 * with the axe tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, and
   asserting `document.documentElement.scrollWidth <= innerWidth` (no
@@ -198,7 +200,9 @@ It then checks keyboard and focus behaviour in the light theme: the skip
 link is the first focusable element and moves focus to the page heading, a
 route change focuses the new `h1` and announces the page title, the editor
 drawer and the off-canvas navigation keep focus inside and give it back on
-close (Escape), and the execution runner's P/F/B/S shortcuts do not fire
+close (Escape), the spreadsheet grid moves its active cell with the arrows
+and Ctrl+End, opens a cell editor with F2 and returns focus to the grid on
+Escape, and the execution runner's P/F/B/S shortcuts do not fire
 while typing.
 
 It exits non-zero on any serious or critical violation, any overflow or a
@@ -237,6 +241,8 @@ attempts) is not an issue for repeated runs.
 `web/e2e/` is a Playwright suite (`@playwright/test`, headless Chromium)
 for the main user journeys, one spec each: sign-in/out and a wrong
 password, writing a requirement (language analysis, edit, Ctrl+Z undo),
+editing requirements in the spreadsheet view (a cell edit, a 2×2 paste
+from the clipboard, a refused invalid paste, undo of the paste as one step),
 a manual test with steps (copy, delete, undo the delete), planning and
 executing a run in the runner (run completed, dashboard and traceability
 show the pass), the readiness banner of a draft test, language and theme
