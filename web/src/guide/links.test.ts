@@ -29,6 +29,11 @@ describe('classifyHref', () => {
     expect(classifyHref('./').kind).toBe('invalid')
     expect(classifyHref('../../secret/file.txt').kind).toBe('invalid')
   })
+  it('recognises links into the other guide', () => {
+    expect(classifyHref('../../user-guide/en/administration.md#members')).toEqual({ kind: 'page', page: 'administration', hash: 'members', book: 'user' })
+    expect(classifyHref('../../admin-guide/sv/security.md')).toEqual({ kind: 'page', page: 'security', hash: '', book: 'admin' })
+    expect(classifyHref('../../other-guide/en/x.md').kind).toBe('invalid')
+  })
 })
 
 describe('helpPath', () => {
@@ -37,6 +42,11 @@ describe('helpPath', () => {
     expect(helpPath('faq')).toBe('/help/faq')
     expect(helpPath('faq', 'why-not')).toBe('/help/faq#why-not')
     expect(helpPath('index', 'x')).toBe('/help#x')
+  })
+  it('builds paths of the administrator guide', () => {
+    expect(helpPath('index', '', 'admin')).toBe('/admin-guide')
+    expect(helpPath('security', 'key-providers', 'admin')).toBe('/admin-guide/security#key-providers')
+    expect(helpPath('faq', '', 'user')).toBe('/help/faq')
   })
 })
 

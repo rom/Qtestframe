@@ -1,8 +1,13 @@
 // Links and images inside guide pages: relative Markdown links between pages
-// become router paths below /help, image paths become bundled asset URLs.
+// become router paths below /help (the user guide) or /admin-guide (the
+// administrator guide), image paths become bundled asset URLs.
+
+/** The two guides: docs/user-guide and docs/admin-guide. */
+export type GuideBook = 'user' | 'admin'
 
 export type LinkTarget =
-  | { kind: 'page'; page: string; hash: string }
+  /** book is set for a link into a named guide ("../../user-guide/en/x.md"), else the page is in the same guide */
+  | { kind: 'page'; page: string; hash: string; book?: GuideBook }
   | { kind: 'anchor'; hash: string }
   | { kind: 'app'; path: string }
   | { kind: 'external'; href: string }
@@ -20,6 +25,9 @@ export function classifyHref(raw: string): LinkTarget {
   if (href.startsWith('/')) return { kind: 'app', path: href }
   const [pathPart, ...hashParts] = href.split('#')
   const hash = decodeHash(hashParts.join('#'))
+  // ../../user-guide/en/x.md, ../../admin-guide/sv/x.md: a page of the other guide (as on GitHub)
+  const other = /^(?:\.\.\/)+(user|admin)-guide\/[a-z]{2}\/([a-z0-9][a-z0-9-]*)\.md$/i.exec(pathPart)
+  if (other) return { kind: 'page', page: other[2].toLowerCase(), hash, book: other[1].toLowerCase() as GuideBook }
   // ./x.md, x.md, ../en/x.md, ../sv/x.md (links into the other language resolve to the current one)
   const path = pathPart.replace(/^(\.\/)+/, '').replace(/^\.\.\/[a-z]{2}\//, '')
   if (!path) return hash ? { kind: 'anchor', hash } : { kind: 'invalid' }
@@ -36,9 +44,10 @@ function decodeHash(h: string): string {
   }
 }
 
-/** The router path of a guide page: /help, /help/faq, /help/faq#why. */
-export function helpPath(page: string, hash = ''): string {
-  const base = page === 'index' ? '/help' : `/help/${page}`
+/** The router path of a guide page: /help, /help/faq, /help/faq#why; /admin-guide/… for the administrator guide. */
+export function helpPath(page: string, hash = '', book: GuideBook = 'user'): string {
+  const root = book === 'admin' ? '/admin-guide' : '/help'
+  const base = page === 'index' ? root : `${root}/${page}`
   return hash ? `${base}#${encodeURIComponent(hash)}` : base
 }
 

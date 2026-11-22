@@ -1,6 +1,7 @@
 <script setup lang="ts">
-// The in-app user guide (/help/:page?): docs/user-guide rendered in the UI
-// language (English when a page is missing), with contents, search and
+// The in-app guides: the user guide (/help/:page?, docs/user-guide) and the
+// administrator guide (/admin-guide/:page?, docs/admin-guide), rendered in the
+// UI language (English when a page is missing), with contents, search and
 // previous/next navigation.
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -12,9 +13,11 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import Message from 'primevue/message'
 import { useBreakpoint } from '@/lib/breakpoint'
+import { useAuthStore } from '@/stores/auth'
+import { canSeeAdminGuide } from './access'
 import { queryTerms, splitByTerms } from '@/lib/highlight'
-import { ASSETS, getOrder, getPage, getSections, getTitles } from './content'
-import { helpPath } from './links'
+import { ASSETS, guideContent } from './content'
+import { helpPath as bookPath, type GuideBook } from './links'
 import { neighbours, normalizePageId } from './pages'
 import { renderGuide } from './render'
 import { searchGuide } from './search'
@@ -24,20 +27,29 @@ const router = useRouter()
 const { t, locale } = useI18n()
 
 const lang = computed(() => String(locale.value || 'en'))
+/** the guide this route shows */
+const book = computed<GuideBook>(() => (route.name === 'adminGuide' ? 'admin' : 'user'))
+const content = computed(() => guideContent(book.value))
+/** a page of the guide on screen */
+const helpPath = (page: string, hash = '') => bookPath(page, hash, book.value)
 const pageId = computed(() => normalizePageId(route.params.page))
-const resolved = computed(() => getPage(lang.value, pageId.value))
+// administrators can switch between the two guides
+const auth = useAuthStore()
+const otherGuide = computed<GuideBook | null>(() => (book.value === 'admin' ? 'user' : canSeeAdminGuide(auth.me) ? 'admin' : null))
+const resolved = computed(() => content.value.getPage(lang.value, pageId.value))
 const rendered = computed(() =>
   resolved.value
     ? renderGuide(resolved.value.markdown, {
         lang: resolved.value.lang,
         assets: ASSETS,
+        book: book.value,
         tableLabel: t('guide.table'),
         missingImage: (alt) => t('guide.missingImage', { alt }),
       })
     : null,
 )
-const order = computed(() => getOrder(lang.value))
-const titles = computed(() => getTitles(lang.value))
+const order = computed(() => content.value.getOrder(lang.value))
+const titles = computed(() => content.value.getTitles(lang.value))
 const pager = computed(() => neighbours(order.value, pageId.value))
 
 const narrow = useBreakpoint('tablet')
@@ -45,7 +57,7 @@ const tocOpen = ref(false)
 
 // ---------- search ----------
 const query = ref('')
-const hits = computed(() => (query.value.trim() ? searchGuide(getSections(lang.value), query.value, { order: order.value, limit: 20 }) : []))
+const hits = computed(() => (query.value.trim() ? searchGuide(content.value.getSections(lang.value), query.value, { order: order.value, limit: 20 }) : []))
 const marks = computed(() => queryTerms(query.value))
 function clearSearch() {
   query.value = ''
@@ -74,7 +86,7 @@ function onArticleClick(e: MouseEvent) {
   const hash = a.getAttribute('data-guide-hash') ?? ''
   if (page) {
     e.preventDefault()
-    router.push(helpPath(page, hash))
+    router.push(bookPath(page, hash, a.getAttribute('data-guide-book') === 'admin' ? 'admin' : 'user'))
   } else if (hash) {
     e.preventDefault()
     router.push({ hash: '#' + encodeURIComponent(hash) }).then(() => focusAnchor(hash))
@@ -91,11 +103,11 @@ function goTo(page: string, anchor = '') {
 }
 
 watch(
-  () => [pageId.value, route.hash] as const,
-  async ([, hash], old) => {
+  () => [book.value, pageId.value, route.hash] as const,
+  async ([b, , hash], old) => {
     await nextTick()
     if (hash && focusAnchor(hash)) return
-    if (old && old[0] !== pageId.value) window.scrollTo?.({ top: 0 })
+    if (old && (old[0] !== b || old[1] !== pageId.value)) window.scrollTo?.({ top: 0 })
   },
 )
 onMounted(async () => {
@@ -107,7 +119,7 @@ onMounted(async () => {
 <template>
   <div class="guide" :class="{ narrow }">
     <aside v-if="!narrow" class="guide-toc card">
-      <nav :aria-label="t('guide.contentsNav')">
+      <nav :aria-label="t(book === 'admin' ? 'guide.adminContentsNav' : 'guide.contentsNav')">
         <h2 class="guide-toc-title">{{ t('guide.contents') }}</h2>
         <ol class="guide-pages">
           <li v-for="id in order" :key="id">
@@ -119,6 +131,9 @@ onMounted(async () => {
             </ul>
           </li>
         </ol>
+        <RouterLink v-if="otherGuide" :to="bookPath('index', '', otherGuide)" class="guide-switch">
+          <i class="pi pi-book" aria-hidden="true" /> {{ t(otherGuide === 'admin' ? 'guide.adminGuide' : 'guide.userGuide') }}
+        </RouterLink>
       </nav>
     </aside>
 
@@ -182,7 +197,7 @@ onMounted(async () => {
     </div>
 
     <Drawer v-if="narrow" v-model:visible="tocOpen" position="left" :header="t('guide.contents')" class="guide-toc-drawer" block-scroll>
-      <nav :aria-label="t('guide.contentsNav')">
+      <nav :aria-label="t(book === 'admin' ? 'guide.adminContentsNav' : 'guide.contentsNav')">
         <ol class="guide-pages">
           <li v-for="id in order" :key="id">
             <a :href="helpPath(id)" :aria-current="id === pageId ? 'page' : undefined" :class="{ active: id === pageId }" @click.prevent="goTo(id)">{{ titles[id] }}</a>
@@ -193,6 +208,9 @@ onMounted(async () => {
             </ul>
           </li>
         </ol>
+        <RouterLink v-if="otherGuide" :to="bookPath('index', '', otherGuide)" class="guide-switch" @click="tocOpen = false">
+          <i class="pi pi-book" aria-hidden="true" /> {{ t(otherGuide === 'admin' ? 'guide.adminGuide' : 'guide.userGuide') }}
+        </RouterLink>
       </nav>
     </Drawer>
   </div>
@@ -244,6 +262,16 @@ onMounted(async () => {
   background: color-mix(in srgb, var(--p-primary-color) 14%, transparent);
   color: var(--qtf-text);
   font-weight: 600;
+}
+.guide-switch {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 12px 8px 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--qtf-border);
+  font-size: 14px;
+  color: var(--p-primary-color);
 }
 .guide-headings a {
   padding-left: 20px;

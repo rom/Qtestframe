@@ -7,6 +7,7 @@ import { usePrefsStore } from './stores/prefs'
 import type { Project } from './lib/types'
 import { watch } from 'vue'
 import { i18n, t } from './i18n'
+import { canSeeAdminGuide } from './guide/access'
 
 const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'login', component: () => import('./views/LoginView.vue'), meta: { public: true } },
@@ -83,6 +84,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'profile', name: 'profile', component: () => import('./views/ProfileView.vue') },
       // user guide (src/guide); its page title titles.help comes from i18n/locales/guide.*.ts
       { path: 'help/:page?', component: () => import('./guide/HelpView.vue'), name: 'help' },
+      // administrator guide (docs/admin-guide): super admins and organisation admins (see beforeEach)
+      { path: 'admin-guide/:page?', component: () => import('./guide/HelpView.vue'), name: 'adminGuide', meta: { adminGuide: true } },
       { path: ':pathMatch(.*)*', name: 'notfound', component: () => import('./views/NotFoundView.vue') },
     ],
   },
@@ -119,6 +122,7 @@ router.beforeEach(async (to) => {
   if (to.meta.mfaEnrol) return { path: '/' }
   if (to.name === 'home') return await homeRoute()
   if (to.meta.superAdmin && !auth.me.user.super_admin) return { name: 'projects' }
+  if (to.meta.adminGuide && !canSeeAdminGuide(auth.me)) return { name: 'help' }
   if (typeof to.meta.perm === 'string' && !auth.can(to.meta.perm)) return { name: 'projects' }
   return true
 })
