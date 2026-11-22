@@ -562,7 +562,7 @@ func combineStep(prev, st string) string {
 // VerificationInput loads what package verification needs for a project.
 // last may be passed when the caller has it already (nil: loaded).
 func (s *Store) VerificationInput(ctx context.Context, tenantID, projectID string, last map[string]string) (*verification.Input, error) {
-	reqs, err := s.ListRequirements(ctx, tenantID, projectID)
+	reqs, err := s.verificationRequirements(ctx, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -570,17 +570,9 @@ func (s *Store) VerificationInput(ctx context.Context, tenantID, projectID strin
 	if err != nil {
 		return nil, err
 	}
-	tests, err := s.ListTests(ctx, tenantID, projectID)
-	if err != nil {
+	in := &verification.Input{Requirements: reqs, Links: links, Today: s.today()}
+	if in.Tests, err = s.verificationTests(ctx, tenantID, projectID); err != nil {
 		return nil, err
-	}
-	in := &verification.Input{Requirements: reqs, Links: links, Tests: map[string]verification.TestInfo{}, Today: s.today()}
-	for _, t := range tests {
-		ti := verification.TestInfo{Key: t.Key, Title: t.Title, StepPos: map[string]int{}}
-		for i, st := range t.Steps {
-			ti.StepPos[st.ID] = i + 1
-		}
-		in.Tests[t.ID] = ti
 	}
 	if last == nil {
 		if last, err = s.LastResults(ctx, tenantID, projectID); err != nil {
@@ -640,4 +632,77 @@ func (s *Store) IsVerified(ctx context.Context, tenantID, requirementID string) 
 		return false, "", err
 	}
 	return v.Verified, verification.Why(v), nil
+}
+
+// verificationRequirements loads what the verification needs of the
+// requirements of a project: key, title, status and criteria (lighter
+// than ListRequirements).
+func (s *Store) verificationRequirements(ctx context.Context, tenantID, projectID string) ([]model.Requirement, error) {
+	rows, err := s.c(ctx).query(ctx, `SELECT id, project_id, key, title, status FROM requirements WHERE tenant_id = ? AND project_id = ? ORDER BY position, seq`, tenantID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	out := []model.Requirement{}
+	for rows.Next() {
+		var r model.Requirement
+		if err := rows.Scan(&r.ID, &r.ProjectID, &r.Key, &r.Title, &r.Status); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	crit, err := s.listCriteria(ctx, s.c(ctx), `WHERE requirement_id IN (SELECT id FROM requirements WHERE project_id = ?)`, projectID)
+	if err != nil {
+		return nil, err
+	}
+	byReq := map[string][]model.EvaluationCriterion{}
+	for _, c := range crit {
+		byReq[c.RequirementID] = append(byReq[c.RequirementID], c)
+	}
+	for i := range out {
+		out[i].Criteria = byReq[out[i].ID]
+	}
+	return out, nil
+}
+
+// verificationTests returns test id → key, title and step positions.
+func (s *Store) verificationTests(ctx context.Context, tenantID, projectID string) (map[string]verification.TestInfo, error) {
+	rows, err := s.c(ctx).query(ctx, `SELECT id, key, title FROM test_cases WHERE tenant_id = ? AND project_id = ?`, tenantID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]verification.TestInfo{}
+	for rows.Next() {
+		var id string
+		ti := verification.TestInfo{StepPos: map[string]int{}}
+		if err := rows.Scan(&id, &ti.Key, &ti.Title); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		out[id] = ti
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows, err = s.c(ctx).query(ctx, `SELECT s.id, s.test_case_id, s.position FROM test_steps s JOIN test_cases t ON t.id = s.test_case_id WHERE t.project_id = ?`, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var sid, tid string
+		var pos int
+		if err := rows.Scan(&sid, &tid, &pos); err != nil {
+			return nil, err
+		}
+		if ti, ok := out[tid]; ok {
+			ti.StepPos[sid] = pos + 1
+		}
+	}
+	return out, rows.Err()
 }

@@ -431,9 +431,6 @@ func ownReasons(v *model.RequirementVerification) []model.VerificationReason {
 		}
 	}
 	for _, e := range v.Evidence {
-		if v.CriteriaTotal > 0 && e.State != model.EvidenceFailed {
-			continue
-		}
 		p := map[string]string{"kind": e.Kind, "key": e.Key}
 		switch e.State {
 		case model.EvidenceFailed:
