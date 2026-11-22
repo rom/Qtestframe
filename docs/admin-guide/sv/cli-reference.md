@@ -157,7 +157,7 @@ Begär `/healthz` från den lokala servern (adress från `server.listen`, `https
 
 ### `qtestframe report`
 
-Laddar upp JUnit XML- eller JSON-resultat från ett CI-jobb till en körning på en server, via REST-API:t med en API-token. Fler argument är rapportfiler (`*.json` som JSON, övriga som JUnit XML).
+Laddar upp JUnit XML- eller JSON-resultat från ett CI-jobb till en körning på en server, via REST-API:t med en API-nyckel. Fler argument är rapportfiler (`*.json` som JSON, övriga som JUnit XML).
 
 | Flagga | Värde | Betydelse |
 |---|---|---|

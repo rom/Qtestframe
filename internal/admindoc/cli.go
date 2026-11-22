@@ -87,7 +87,7 @@ var commands = []command{
 	}},
 	{[]string{"report"}, text{
 		"Uploads JUnit XML or JSON results of a CI job to a run on a server, through the REST API with an API token. Further arguments are report files (`*.json` as JSON, others as JUnit XML).",
-		"Laddar upp JUnit XML- eller JSON-resultat från ett CI-jobb till en körning på en server, via REST-API:t med en API-token. Fler argument är rapportfiler (`*.json` som JSON, övriga som JUnit XML).",
+		"Laddar upp JUnit XML- eller JSON-resultat från ett CI-jobb till en körning på en server, via REST-API:t med en API-nyckel. Fler argument är rapportfiler (`*.json` som JSON, övriga som JUnit XML).",
 	}},
 	{[]string{"version"}, text{
 		"Prints the version (also `--version`, `-v`).",
