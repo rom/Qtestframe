@@ -1799,7 +1799,8 @@ secret>`, and body
 `run.created/updated/completed`, `execution.updated`,
 `defect.created/updated/status/assigned`, `risk.created/updated`,
 `release.created/updated/released`, `comment.created`,
-`review.requested/completed`, `baseline.signed`. Deliveries run in the
+`review.requested/completed`, `baseline.signed`,
+`waiver.requested/approved/rejected/revoked`. Deliveries run in the
 background with a 10 s timeout, are not retried and do not follow
 redirects; the latest outcome is stored as `last_status`, `last_error`.
 

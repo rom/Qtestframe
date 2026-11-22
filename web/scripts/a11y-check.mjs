@@ -297,7 +297,7 @@ async function discover(request) {
     { name: 'waiver-new-dialog', path: `${p}/waivers`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #wv-title' },
     hasWaivers && { name: 'waiver-detail', path: `${p}/waivers`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog .wv-fields' },
     { name: 'soa', path: `${p}/soa`, wait: '[role="grid"] [role="gridcell"]' },
-    { name: 'soa-control', path: `${p}/soa`, open: '.sheet-body [role="gridcell"][aria-colindex="2"]', keys: ['Control+Enter'], wait: '.p-dialog' },
+    { name: 'soa-control', path: `${p}/soa`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: ['Control+Enter'], wait: '.p-dialog' },
     hasReleases && { name: 'release-waivers', path: `${p}/releases`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.rel-waivers' },
     { name: 'defects', path: `${p}/defects` },
     // with a selected row (bulk toolbar); only when the project has defects / risks

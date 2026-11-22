@@ -445,7 +445,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         </div>
         <div class="row small threshold-row">
           <label for="risk-threshold"><b>{{ t('residual.threshold') }}</b></label>
-          <Select :model-value="threshold" input-id="risk-threshold" :options="thresholdOptions" option-label="label" option-value="value" size="small" :disabled="!canSetThreshold" @update:model-value="(v: string) => setThreshold(v)" />
+          <Select :model-value="threshold" input-id="risk-threshold" :aria-label="t('residual.threshold')" :options="thresholdOptions" option-label="label" option-value="value" size="small" :disabled="!canSetThreshold" @update:model-value="(v: string) => setThreshold(v)" />
           <span class="muted">{{ t('residual.aboveCount', { count: aboveCount, level: levelLabel(effectiveThreshold) }, aboveCount) }}</span>
         </div>
       </section>
