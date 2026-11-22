@@ -131,6 +131,7 @@ const en = {
   nav: {
     myWork: 'My work',
     myWorkCount: 'My work, {n} item | My work, {n} items',
+    myWorkItems: 'item waiting | items waiting',
     releases: 'Releases',
     defects: 'Defects',
     risks: 'Risks',

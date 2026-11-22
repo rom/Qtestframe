@@ -16,6 +16,7 @@ import Select from 'primevue/select'
 import Message from 'primevue/message'
 import ItemPickerDialog from './ItemPickerDialog.vue'
 import SuggestInput from './SuggestInput.vue'
+import MentionInput from './MentionInput.vue'
 import { rememberValues, savedEntries } from '@/lib/suggest'
 import { usePrefsStore } from '@/stores/prefs'
 import { api, asItems, errorMessage } from '@/lib/api'
@@ -150,7 +151,7 @@ async function save() {
         <div v-field class="field"><label>{{ t('defectsView.severityLabel') }}</label><Select v-model="form.severity" :options="severityOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('common.priority') }}</label><Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('quality.foundIn') }}</label><Select v-model="form.found_in" :options="phaseOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
-        <div v-field class="field"><label>{{ t('defectsView.assignee') }}</label><InputText v-model="form.assignee" :disabled="!canEdit" :placeholder="t('defectsView.assigneePlaceholder')" /></div>
+        <div v-field class="field"><label>{{ t('defectsView.assignee') }}</label><MentionInput v-model="form.assignee" :project-id="projectId" :disabled="!canEdit" :placeholder="t('defectsView.assigneePlaceholder')" /></div>
       </div>
       <div v-field class="field"><label>{{ t('common.description') }}</label><SuggestInput v-model="form.description" field="defect.description" :project-id="projectId" multiline rows="5" auto-resize :disabled="!canEdit" :placeholder="t('defectsView.descriptionPlaceholder')" /></div>
 

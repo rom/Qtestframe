@@ -133,6 +133,7 @@ const sv: Messages = {
   nav: {
     myWork: 'Mitt arbete',
     myWorkCount: 'Mitt arbete, {n} post | Mitt arbete, {n} poster',
+    myWorkItems: 'post väntar | poster väntar',
     releases: 'Releaser',
     defects: 'Defekter',
     risks: 'Risker',
