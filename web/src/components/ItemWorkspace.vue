@@ -26,6 +26,9 @@ import TagsInput from './TagsInput.vue'
 import RequirementEditor from './RequirementEditor.vue'
 import TestEditor from './TestEditor.vue'
 import RequirementImportDialog from './RequirementImportDialog.vue'
+import ExchangeImportDialog from './ExchangeImportDialog.vue'
+import Menu from 'primevue/menu'
+import type { ExchangeMode } from '@/lib/exchange'
 import BulkReviewDialog from './BulkReviewDialog.vue'
 import BulkRelationsDialog from './BulkRelationsDialog.vue'
 import BulkItemLinksDialog from './BulkItemLinksDialog.vue'
@@ -316,10 +319,37 @@ watch(
 
 // ---------- import (requirements only) ----------
 const importOpen = ref(false)
-async function onImported(res: ImportResult) {
+async function onImported(res: ImportResult | { folders_created: number }) {
   if (res.folders_created) await proj.loadFolders(props.kind)
   await load()
 }
+
+// ---------- exchange: ReqIF with updates, the Excel round-trip ----------
+const exchangeOpen = ref(false)
+const exchangeMode = ref<ExchangeMode>('xlsx')
+const exchangeMenu = ref<InstanceType<typeof Menu> | null>(null)
+function openExchange(mode: ExchangeMode) {
+  exchangeMode.value = mode
+  exchangeOpen.value = true
+}
+async function exportRoundTrip() {
+  try {
+    const name = await api.download(`/projects/${pid.value}/exchange/xlsx`, { kind: props.kind, q: composed.value || undefined, folder_id: selectedFolder.value || undefined, recursive: String(recursive.value) }, `${props.kind}s-roundtrip.xlsx`)
+    notify.ok(t('exchange.exported', { name }))
+  } catch (e) {
+    notify.fail(e, t('exchange.exportFailed'))
+  }
+}
+const exchangeItems = computed(() => [
+  ...(isReq.value && canWrite.value
+    ? [
+        { label: t('exchange.fromFile'), icon: 'pi pi-upload', command: () => (importOpen.value = true) },
+        { label: t('exchange.fromReqif'), icon: 'pi pi-sitemap', command: () => openExchange('reqif') },
+      ]
+    : []),
+  ...(canExport.value ? [{ label: t('exchange.exportXlsx'), icon: 'pi pi-file-excel', command: exportRoundTrip }] : []),
+  ...(canWrite.value ? [{ label: t('exchange.importXlsx'), icon: 'pi pi-file-import', command: () => openExchange('xlsx') }] : []),
+])
 
 async function onFoldersChanged() {
   await proj.loadFolders(props.kind)
@@ -530,15 +560,18 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             @click="router.push({ name: 'catalog', params: { projectId: pid }, query: isReq ? {} : { tab: 'tests' } })"
           />
           <Button
-            v-if="isReq && canWrite"
+            v-if="exchangeItems.length"
             :label="t('reqImport.button')"
             icon="pi pi-upload"
             severity="secondary"
             outlined
-            aria-haspopup="dialog"
-            v-tooltip.bottom="t('reqImport.buttonHint')"
-            @click="importOpen = true"
+            class="exchange-menu"
+            aria-haspopup="menu"
+            aria-controls="exchange-menu"
+            v-tooltip.bottom="t('exchange.menuHint')"
+            @click="exchangeMenu?.toggle($event)"
           />
+          <Menu id="exchange-menu" ref="exchangeMenu" :model="exchangeItems" popup />
           <Button
             v-if="canReview && !selection.length && items.length"
             :label="t('bulkReview.toolbar')"
@@ -835,6 +868,17 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
   </Dialog>
   <FolderPickerDialog v-model:visible="moveDialog" :folders="folders" :header="t('workspace.moveSelection')" @pick="onPickFolder" />
   <RequirementImportDialog v-if="isReq && canWrite" v-model:visible="importOpen" :project-id="pid" :folders="folders" :folder-id="selectedFolder" @imported="onImported" />
+  <ExchangeImportDialog
+    v-if="canWrite"
+    v-model:visible="exchangeOpen"
+    :project-id="pid"
+    :kind="kind"
+    :mode="exchangeMode"
+    :folders="folders"
+    :folder-id="selectedFolder"
+    :can-export="canExport"
+    @imported="onImported"
+  />
   <BulkReviewDialog
     v-model:visible="bulkReviewOpen"
     :kind="isReq ? 'requirement' : 'test'"
