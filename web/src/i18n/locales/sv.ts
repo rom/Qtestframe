@@ -1249,7 +1249,7 @@ const sv: Messages = {
       group: 'Gruppering',
       custom: 'Eget fält (med dess nyckel)',
       sort: 'Sortera resultatet (- för fallande)',
-      me: 'Poster du äger / som är tilldelade dig; owner:anna@example.com för en medlem',
+      me: 'Poster du äger / som är tilldelade dig; eller owner: och en medlems e-postadress',
       opContains: 'innehåller (skiftlägesokänsligt; jokertecken med * / ?)',
       opEquals: 'lika med / inte lika med (skiftlägesokänsligt)',
       opRegex: 'reguljärt uttryck matchar / matchar inte',

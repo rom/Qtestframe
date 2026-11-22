@@ -141,7 +141,7 @@ export const QUERY_HELP: QueryHelpEntry[] = [
   { example: '(a OR b) AND c', meaning: 'Grouping', id: 'group' },
   { example: 'cf.supplier:"Acme"  cf.mass>2', meaning: 'Custom field (by its key)', id: 'custom' },
   { example: 'sort:-cf.mass  sort:title', meaning: 'Sort the result (- for descending)', id: 'sort' },
-  { example: 'owner:me  assignee:me', meaning: 'Items you own / that are assigned to you; owner:anna@example.com for one member', id: 'me' },
+  { example: 'owner:me  assignee:me', meaning: 'Items you own / that are assigned to you; or owner: and the e-mail address of a member', id: 'me' },
 ]
 
 export const QUERY_OPERATORS: QueryHelpEntry[] = [

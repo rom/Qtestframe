@@ -1247,7 +1247,7 @@ const en = {
       group: 'Grouping',
       custom: 'Custom field (by its key)',
       sort: 'Sort the result (- for descending)',
-      me: 'Items you own / that are assigned to you; owner:anna@example.com for one member',
+      me: 'Items you own / that are assigned to you; or owner: and the e-mail address of a member',
       opContains: 'contains (case-insensitive; glob with * / ?)',
       opEquals: 'equals / not equals (case-insensitive)',
       opRegex: 'regex matches / does not match',
