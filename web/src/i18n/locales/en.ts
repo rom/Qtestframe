@@ -6063,7 +6063,7 @@ const en = {
     editNoteOf: 'Edit the note at {time}',
     deleteNoteOf: 'Delete the note at {time}',
     raiseDefect: 'Raise defect',
-    raiseDefectOf: 'Raise a defect from the note at {time}',
+    raiseDefectOf: 'Raise defect from the note at {time}',
     defectExplain: 'The defect is linked to this session and to the requirements in its scope.',
     defectCharter: 'Charter',
     defectFoundIn: 'Found in exploratory session {key} {title} at {time} of session time.',

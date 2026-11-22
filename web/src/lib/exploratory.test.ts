@@ -110,7 +110,12 @@ describe('exploratory', () => {
   it('prefills a defect title and filters sessions', () => {
     expect(noteDefectTitle('  First line\nmore')).toBe('First line')
     expect(noteDefectTitle('x'.repeat(250)).length).toBe(201)
-    const a = session({ scope: [{ type: 'folder', id: 'f1', title: 'Checkout' }, { type: 'requirement', id: 'r1', key: 'P-REQ-1', title: 'Pay' }] })
+    const a = session({
+      scope: [
+        { type: 'folder', id: 'f1', title: 'Checkout' },
+        { type: 'requirement', id: 'r1', key: 'P-REQ-1', title: 'Pay' },
+      ],
+    })
     const b = session({ id: 'x2', key: 'P-EXP-2', title: 'Refunds', tester: '', status: 'debriefed' })
     expect(filterSessions([a, b], { text: 'p-req-1' })).toEqual([a])
     expect(filterSessions([a, b], { statuses: ['debriefed'] })).toEqual([b])

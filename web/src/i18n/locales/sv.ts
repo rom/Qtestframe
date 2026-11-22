@@ -6062,7 +6062,7 @@ const sv: Messages = {
     editNoteOf: 'Redigera anteckningen vid {time}',
     deleteNoteOf: 'Ta bort anteckningen vid {time}',
     raiseDefect: 'Skapa defekt',
-    raiseDefectOf: 'Skapa en defekt från anteckningen vid {time}',
+    raiseDefectOf: 'Skapa defekt från anteckningen vid {time}',
     defectExplain: 'Defekten länkas till sessionen och till kraven i dess omfattning.',
     defectCharter: 'Uppdrag',
     defectFoundIn: 'Hittad i utforskande session {key} {title} vid {time} sessionstid.',
