@@ -56,7 +56,7 @@ const categoryName = (id: string) => t(`frameworks.emb3d.category.${slug(id)}`)
       </p>
       <section class="card" aria-labelledby="emb-table-title">
         <h2 id="emb-table-title" class="pane-title">{{ t('frameworks.coverage.byCategory') }}</h2>
-        <div class="table-scroll">
+        <div class="table-scroll" tabindex="0" role="region" aria-labelledby="emb-table-title">
           <table class="fw-table">
             <thead>
               <tr>

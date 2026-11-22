@@ -49,7 +49,7 @@ const reqLink = (id: string) => ({ name: 'catalog', params: { projectId: proj.pi
       </p>
       <section class="card" aria-labelledby="d3-table-title">
         <h2 id="d3-table-title" class="pane-title">{{ t('frameworks.coverage.byTactic') }}</h2>
-        <div class="table-scroll">
+        <div class="table-scroll" tabindex="0" role="region" aria-labelledby="d3-table-title">
           <table class="fw-table">
             <thead>
               <tr>
