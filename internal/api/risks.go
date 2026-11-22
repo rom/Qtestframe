@@ -103,6 +103,10 @@ func (s *Server) handleCreateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 		Impact: req.Impact, Status: req.Status, Mitigation: req.Mitigation, Owner: req.Owner, CreatedBy: p.User.Email, RequirementIDs: req.RequirementIDs,
 		ResidualLikelihood: req.ResidualLikelihood, ResidualImpact: req.ResidualImpact, ResidualManual: req.ResidualManual, ResidualJustification: req.ResidualJustification,
 		ReviewDate: req.ReviewDate, ReviewOwner: req.ReviewOwner, CustomFields: req.CustomFields}
+	// catalog_ref only names a risk of the catalogue (an undone import created again)
+	if c, err := s.catalogue(); err == nil && c.Risks[req.CatalogRef] != nil {
+		k.CatalogRef = req.CatalogRef
+	}
 	if err := s.Store.CreateRisk(r.Context(), p.TenantID(), k); err != nil {
 		s.fail(w, r, err)
 		return

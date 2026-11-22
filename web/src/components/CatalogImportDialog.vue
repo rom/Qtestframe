@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Options of a catalogue import (POST /projects/{pid}/catalog/import):
-// language, target folders, subfolders, status, the verifying tests and a
-// summary of what will be added.
+// language, target folders, subfolders, status, the verifying tests, the
+// risks and their mitigating requirements, and a summary of what will be
+// added.
 import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
@@ -10,7 +11,7 @@ import SelectButton from 'primevue/selectbutton'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Message from 'primevue/message'
 import { api } from '@/lib/api'
-import { importPlan, type CatalogImportResult, type CatalogRequirement } from '@/lib/catalog'
+import { importPlan, type CatalogImportResult, type CatalogRequirement, type CatalogRisk } from '@/lib/catalog'
 import { buildTree, flatten } from '@/lib/tree'
 import type { Folder } from '@/lib/types'
 import { enumOptions } from '@/i18n/labels'
@@ -32,6 +33,9 @@ const props = defineProps<{
   testFolders: Folder[]
   sources: string[]
   canTests: boolean
+  riskIds?: string[]
+  riskById?: Map<string, CatalogRisk>
+  inRisks?: Set<string>
 }>()
 const emit = defineEmits<{ imported: [res: CatalogImportResult] }>()
 const { t } = useI18n()
@@ -47,6 +51,9 @@ const status = ref('draft')
 const testStatus = ref('draft')
 const includeTests = ref(true)
 const addCopies = ref(false)
+const includeRequirements = ref(true)
+const includeRisks = ref(false)
+const riskStatus = ref('identified')
 const source = ref(NONE)
 const busy = ref(false)
 watch(visible, (v) => {
@@ -70,17 +77,31 @@ const langOptions = [
 ]
 const statusOptions = computed(() => enumOptions('status', meta.meta.requirement_statuses))
 const testStatusOptions = computed(() => enumOptions('status', meta.meta.test_statuses))
+const riskStatusOptions = computed(() => ['identified', 'mitigating'].map((v) => ({ label: t(`risksView.status.${v}`), value: v })))
 const sourceOptions = computed(() => [{ label: t('catalog.dialog.sourceRefs'), value: NONE }, ...props.sources.map((s) => ({ label: s, value: s }))])
 
 const plan = computed(() =>
   importPlan(props.requirementIds, props.canTests ? props.testIds : [], props.reqById, props.inReqs, props.inTests, {
     includeTests: includeTests.value && props.canTests,
     addCopies: addCopies.value,
+    riskIds: props.riskIds ?? [],
+    riskById: props.riskById,
+    inRisks: props.inRisks,
+    includeRequirements: includeRequirements.value,
+    includeRisks: includeRisks.value,
   }),
 )
-const total = computed(() => plan.value.requirements.length + plan.value.tests.length)
-const skipped = computed(() => plan.value.skippedRequirements.length + plan.value.skippedTests.length)
-const hasReqs = computed(() => props.requirementIds.length > 0)
+const total = computed(() => plan.value.requirements.length + plan.value.tests.length + plan.value.risks.length)
+const skipped = computed(() => plan.value.skippedRequirements.length + plan.value.skippedTests.length + plan.value.skippedRisks.length)
+const hasRisks = computed(() => (props.riskIds ?? []).length > 0)
+const hasReqs = computed(() => props.requirementIds.length > 0 || plan.value.requirements.length > 0)
+/** risks the chosen requirements mitigate (offered with "also add the risks") */
+const mitigatedRisks = computed(() => {
+  const chosen = new Set(props.riskIds ?? [])
+  const out = new Set<string>()
+  for (const id of props.requirementIds) for (const k of props.reqById.get(id)?.risks ?? []) if (!chosen.has(k)) out.add(k)
+  return out.size
+})
 const hasTests = computed(() => plan.value.tests.length > 0 || props.testIds.length > 0)
 
 async function submit() {
@@ -97,6 +118,8 @@ async function submit() {
       test_status: testStatus.value,
       include_tests: includeTests.value && props.canTests,
       add_copies: addCopies.value,
+      ...(hasRisks.value ? { risk_ids: props.riskIds, include_requirements: includeRequirements.value, risk_status: riskStatus.value } : {}),
+      ...(includeRisks.value && mitigatedRisks.value ? { include_risks: true } : {}),
       ...(source.value !== NONE ? { source: source.value } : {}),
     })
     visible.value = false
@@ -140,6 +163,18 @@ async function submit() {
         <label for="ci-source">{{ t('catalog.dialog.source') }}</label>
         <Select v-model="source" input-id="ci-source" :aria-label="t('catalog.dialog.source')" :options="sourceOptions" option-label="label" option-value="value" />
       </div>
+      <div v-if="hasRisks" class="field">
+        <label for="ci-risk-status">{{ t('catalog.dialog.riskStatus') }}</label>
+        <Select v-model="riskStatus" input-id="ci-risk-status" :aria-label="t('catalog.dialog.riskStatus')" :options="riskStatusOptions" option-label="label" option-value="value" />
+      </div>
+      <div v-if="hasRisks" class="row switch-row">
+        <ToggleSwitch v-model="includeRequirements" input-id="ci-include-reqs" />
+        <label for="ci-include-reqs">{{ t('catalog.dialog.includeRequirements') }}</label>
+      </div>
+      <div v-if="mitigatedRisks" class="row switch-row">
+        <ToggleSwitch v-model="includeRisks" input-id="ci-include-risks" />
+        <label for="ci-include-risks">{{ t('catalog.dialog.includeRisks', { n: mitigatedRisks }, mitigatedRisks) }}</label>
+      </div>
       <div v-if="hasReqs && canTests" class="row switch-row">
         <ToggleSwitch v-model="includeTests" input-id="ci-include" />
         <label for="ci-include">{{ t('catalog.dialog.includeTests') }}</label>
@@ -154,13 +189,21 @@ async function submit() {
         <h3 id="ci-summary">{{ t('catalog.dialog.summary') }}</h3>
         <div role="status" aria-live="polite">
         <ul>
-          <li v-if="hasReqs">{{ t('catalog.dialog.willAddRequirements', { n: plan.requirements.length }, plan.requirements.length) }}</li>
+          <li v-if="plan.risks.length || hasRisks">
+            {{ t('catalog.dialog.willAddRisks', { n: plan.risks.length }, plan.risks.length) }}
+            <span v-if="plan.includedRisks.length" class="muted"> – {{ t('catalog.dialog.includedRisks', { n: plan.includedRisks.length }) }}</span>
+          </li>
+          <li v-if="hasReqs">
+            {{ t('catalog.dialog.willAddRequirements', { n: plan.requirements.length }, plan.requirements.length) }}
+            <span v-if="plan.includedRequirements.length" class="muted"> – {{ t('catalog.dialog.includedRequirements', { n: plan.includedRequirements.length }) }}</span>
+          </li>
           <li>
             {{ t('catalog.dialog.willAddTests', { n: plan.tests.length }, plan.tests.length) }}
             <span v-if="plan.included.length" class="muted"> – {{ t('catalog.dialog.includedTests', { n: plan.included.length }) }}</span>
           </li>
           <li v-if="skipped">{{ t('catalog.dialog.skipped', { n: skipped }) }}</li>
           <li v-if="plan.requirements.length + plan.tests.length && canTests" class="muted">{{ t('catalog.dialog.links') }}</li>
+          <li v-if="plan.risks.length || (plan.requirements.length && hasRisks)" class="muted">{{ t('catalog.dialog.riskLinks') }}</li>
         </ul>
         </div>
         <Message v-if="!total" severity="warn" :closable="false">{{ t('catalog.dialog.nothing') }}</Message>
