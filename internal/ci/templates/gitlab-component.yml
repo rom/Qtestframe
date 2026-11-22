@@ -35,7 +35,8 @@ spec:
 qtestframe:
   stage: $[[ inputs.stage ]]
   image: $[[ inputs.image ]]
-  when: always
+  rules:
+    - when: always
   variables:
     QTF_URL: "$[[ inputs.server_url ]]"
     QTF_PROJECT: "$[[ inputs.project ]]"

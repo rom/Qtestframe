@@ -223,7 +223,7 @@ func TestChildPipeline(t *testing.T) {
 	}
 	rep := doc["qtestframe-report"].(map[string]any)
 	script := rep["script"].([]any)
-	if rep["when"] != "always" || rep["image"] != "$QTF_CLI_IMAGE" || len(rep["needs"].([]any)) != 3 ||
+	if rep["rules"].([]any)[0].(map[string]any)["when"] != "always" || py["rules"] == nil || rep["image"] != "$QTF_CLI_IMAGE" || len(rep["needs"].([]any)) != 3 ||
 		script[0] != "qtestframe report --run-id run-1 --junit 'qtf-results/*.xml'" || script[1] != "qtestframe gate --run-id run-1 --release '1.0 beta' --format junit --output qtf-gate.xml" {
 		t.Fatal(rep)
 	}

@@ -101,7 +101,7 @@ func (s *Selection) ChildPipeline(o PipelineOptions) (string, error) {
 	}
 	groups := s.Groups()
 	if len(groups) == 0 {
-		b.WriteString("qtestframe-no-tests:\n  stage: report\n  image: " + q(cli) + "\n  script:\n    - echo " + q("Qtestframe selected no automated tests for this change.") + "\n")
+		b.WriteString("qtestframe-no-tests:\n  stage: report\n  rules:\n    - when: always\n  image: " + q(cli) + "\n  script:\n    - echo " + q("Qtestframe selected no automated tests for this change.") + "\n")
 		return b.String(), nil
 	}
 	var names []string
@@ -122,7 +122,9 @@ func (s *Selection) ChildPipeline(o PipelineOptions) (string, error) {
 		}
 		name := "qtestframe-tests:" + g.Runner
 		names = append(names, name)
-		fmt.Fprintf(&b, "%s:\n  stage: test\n", q(name))
+		// rules: jobs without them do not run in the child of a merge
+		// request pipeline
+		fmt.Fprintf(&b, "%s:\n  stage: test\n  rules:\n    - when: on_success\n", q(name))
 		img := o.Images[g.Runner]
 		if img == "" {
 			img = o.Image
@@ -154,7 +156,7 @@ func (s *Selection) ChildPipeline(o PipelineOptions) (string, error) {
 	report = append(report, o.ReportArgs...)
 	gate = append(gate, o.GateArgs...)
 	gate = append(gate, "--format", "junit", "--output", "qtf-gate.xml")
-	b.WriteString("qtestframe-report:\n  stage: report\n  when: always\n")
+	b.WriteString("qtestframe-report:\n  stage: report\n  rules:\n    - when: always\n")
 	fmt.Fprintf(&b, "  image: %s\n", q(cli))
 	b.WriteString("  needs:\n")
 	for _, n := range names {
