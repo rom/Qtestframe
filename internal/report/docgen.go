@@ -102,6 +102,10 @@ type DocOptions struct {
 	Variant string `json:"variant,omitempty"`
 	// Discussions adds an appendix with the discussions of the items.
 	Discussions bool `json:"include_discussions,omitempty"`
+	// DependencyGraph adds the dependency graph appendix to a requirements
+	// specification: the relations between its requirements as figures
+	// and as a table (default true; not for a test plan).
+	DependencyGraph *bool `json:"dependency_graph,omitempty"`
 }
 
 // Normalize validates o for a document of kind and fills in defaults.
@@ -146,6 +150,11 @@ func (o *DocOptions) Normalize(kind string) error {
 	}
 	if o.Glossary == nil {
 		o.Glossary = &t
+	}
+	if kind == DocTestPlan {
+		o.DependencyGraph = nil
+	} else if o.DependencyGraph == nil {
+		o.DependencyGraph = &t
 	}
 	return nil
 }
@@ -830,13 +839,14 @@ func (g *docGen) requirementsSpec() {
 	}
 
 	waivers := g.specWaivers()
-	if *g.o.Traceability || *g.o.Glossary || waivers || g.hasDiscussions() {
+	if *g.o.Traceability || *g.o.Glossary || waivers || g.hasDiscussions() || g.hasDependencyGraph() {
 		g.appendices()
 	}
 	if *g.o.Traceability {
 		g.add(export.PageBreak())
 		g.traceabilityMatrix()
 	}
+	g.dependencyGraphAppendix()
 	if waivers {
 		g.waiverAppendix()
 	}

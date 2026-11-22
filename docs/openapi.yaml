@@ -9242,6 +9242,10 @@ paths:
                     include_discussions:
                       type: boolean
                       description: add an appendix with the discussions of the items
+                    dependency_graph:
+                      type: boolean
+                      default: true
+                      description: 'requirements specification: add the dependency graph appendix (the relations between the requirements as figures and as a table; left out without relations)'
                     lang:
                       type: string
                       enum:

@@ -2817,10 +2817,20 @@ format, file name, item counts and duration).
     "fields": ["description", "tests"], // default: all but "results"
     "traceability": true, "glossary": true,
     "include_discussions": false,       // appendix with the items' discussions
+    "dependency_graph": true,           // specification: dependency graph appendix (default true)
     "lang": "sv"                        // default: the user's language
   }
 }
 ```
+
+`dependency_graph` (requirements specification only, default `true`)
+adds an appendix with the relations between the requirements of the
+specification: layered graphs as vector figures (drawn in PDF, SVG in
+Markdown, SVG with a PNG fallback in DOCX) of at most 24 requirements each
+(connected groups packed together, larger groups split by top-level
+folder, references to the other figures), a legend of the relation types
+and statuses, and a table of every relation as text. It is left out when
+the requirements have no relations.
 
 → `201` with the `File` (`kind: document`). Its name defaults to
 `<KEY>-requirements-specification-v<version>.<ext>` or

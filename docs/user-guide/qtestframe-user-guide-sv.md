@@ -3603,7 +3603,7 @@ Den största tillåtna storleken är 25 MB per fil om administratören inte har 
 
 Qtestframe kan skriva två kompletta dokument åt dig och spara dem i arkivet:
 
-- en **kravspecifikation** enligt ISO/IEC/IEEE 29148: titelsida, dokumentinformation med revisionshistorik, innehållsförteckning, en inledning (syfte, projektets beskrivning som omfattning och vad nyckelorden SKA, BÖR och FÅR betyder), kraven grupperade efter mapp, kategori eller typ, en spårbarhetsmatris och en ordlista med referenser;
+- en **kravspecifikation** enligt ISO/IEC/IEEE 29148: titelsida, dokumentinformation med revisionshistorik, innehållsförteckning, en inledning (syfte, projektets beskrivning som omfattning och vad nyckelorden SKA, BÖR och FÅR betyder), kraven grupperade efter mapp, kategori eller typ, en spårbarhetsmatris, en [beroendegraf](#bilagan-beroendegraf) över relationerna mellan kraven och en ordlista med referenser;
 - en **testplan** med **testspecifikation** enligt ISO/IEC/IEEE 29119-3: egenskaperna som ska testas (kraven som testfallen verifierar), testansatsen med startkriterier (organisationens [regler för körning](#när-kan-ett-testfall-exekveras)) och slutkriterier (era [releasers](#releaser-och-risker)), testmiljön (konfigurationer och körningarnas miljöer), roller, tidplanen (releaser och körningar), därefter varje testfall med sina steg, och en bilaga om täckning med de krav som saknar testfall.
 
 1. Välj **Skapa dokument** och välj **Kravspecifikation** eller **Testplan**. (Sidan **Rapporter** har samma två dokument under **Dokument**.)
@@ -3615,10 +3615,19 @@ Qtestframe kan skriva två kompletta dokument åt dig och spara dem i arkivet:
    - **Filter**: en [fråga](#sökning-och-filter) på kraven (specifikation) eller testfallen (testplan), till exempel `status:approved` eller `folder:Kassa`.
    - **Ta med avvisade och inaktuella krav** (och, för en testplan, utfasade testfall). De utelämnas som standard.
    - **Gruppera kraven efter** mapp, kategori (en dimension) eller typ (bara specifikation; en testplan grupperas alltid efter mapp).
-   - Vilka **fält** som visas för varje krav eller testfall, och vilka **bilagor**. *Senaste utfall* är avstängt som standard: en specifikation beskriver, den rapporterar inte. **Diskussioner om objekten** lägger till en bilaga med trådarna i kravens eller testfallens [diskussioner](#diskussioner) (borttagna kommentarer utelämnas; lösta trådar är markerade).
+   - Vilka **fält** som visas för varje krav eller testfall, och vilka **bilagor**. *Senaste utfall* är avstängt som standard: en specifikation beskriver, den rapporterar inte. **Diskussioner om objekten** lägger till en bilaga med trådarna i kravens eller testfallens [diskussioner](#diskussioner) (borttagna kommentarer utelämnas; lösta trådar är markerade). **Beroendegraf över kraven** (bara specifikation, påslaget som standard) lägger till [bilagan Beroendegraf](#bilagan-beroendegraf).
 3. Välj **Skapa**. En förloppsindikator visas medan dokumentet skrivs; ett projekt med tusentals krav tar några sekunder.
 
 Det nya dokumentet visas överst i arkivet, markerat, med **Öppna** (PDF) och **Ladda ner**. Det är ett *dokument* med taggarna `generated`, `requirements-specification` eller `test-plan` och versionen (till exempel `v2.0`); de tidigare versionerna av samma typ utgör dess revisionshistorik. Nyckelord i kravtexterna (MUST, SHALL, SKA …) skrivs i fetstil.
+
+### Bilagan Beroendegraf
+
+Bilagan Beroendegraf i en kravspecifikation ritar [relationerna](#relationer) mellan kraven (*förfinar*, *beror på*, *tillhandahåller*, *härlett från*, *står i konflikt med*, *duplicerar*, *relaterar till*), placerade som i appens [beroendegraf](#beroendegrafer): krav som bygger på andra till höger om (eller under) det de bygger på, en pil från ett krav till det krav det förfinar, beror på, tillhandahåller något åt eller är härlett från, och linjer utan pil för relationer utan riktning. Varje relationstyp har sin egen färg och linjestil, varje ruta visar nyckeln, statusen (också som färgen till vänster) och den förkortade titeln, och varje figur har en teckenförklaring.
+
+- Figurerna är vektorgrafik i alla format: ritade direkt i PDF, som SVG i Markdown och i Word som SVG med en bild för ordbehandlare som inte kan visa SVG. Zooma in så långt du behöver.
+- Bara krav med relationer ritas. En stor specifikation får flera figurer med högst 24 krav: sammanhängande grupper av krav läggs ihop, och en grupp som är för stor för en figur delas upp efter mapp på översta nivån (och sedan i delar). Ett krav som är relaterat till ett krav i en annan figur ritas som en grå hänvisning till den figuren.
+- Efter figurerna listar en tabell varje relation som text ("REQ-1 beror på REQ-3"), med de figurer som de två kraven finns i; relationer till krav som inte finns i specifikationen listas också där. Skärmläsare och textsökning använder tabellen; varje figur har också en textbeskrivning.
+- Utan några relationer utelämnas bilagan.
 
 Att skapa dokument kräver rätten att exportera, att läsa krav (och testfall för en testplan) och att ladda upp dokument (**Testare** eller **Ansvarig**).
 
