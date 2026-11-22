@@ -34,6 +34,11 @@ function openSource(url: string): EventSourceLike | null {
 
 /** A tab in the background keeps its stream this long, then closes it. */
 export const HIDDEN_GRACE_MS = 60_000
+/**
+ * The stream opens this long after the app started: the page loads its
+ * data first (and tools that wait for an idle network see one).
+ */
+export const START_DELAY_MS = 2000
 /** At most one screen reader announcement per this interval. */
 export const ANNOUNCE_INTERVAL_MS = 30_000
 
@@ -62,6 +67,8 @@ export const useLiveStore = defineStore('live', () => {
   let source: EventSourceLike | null = null
   let attempt = 0
   let retryTimer: ReturnType<typeof setTimeout> | null = null
+  let startTimer: ReturnType<typeof setTimeout> | null = null
+  let notBefore = 0
   let hiddenTimer: ReturnType<typeof setTimeout> | null = null
   let wanted = false
   const throttle = makeThrottle(ANNOUNCE_INTERVAL_MS)
@@ -91,7 +98,8 @@ export const useLiveStore = defineStore('live', () => {
 
   function clearTimers() {
     if (retryTimer) clearTimeout(retryTimer)
-    retryTimer = null
+    if (startTimer) clearTimeout(startTimer)
+    retryTimer = startTimer = null
   }
 
   function disconnect(next: LiveStatus) {
@@ -178,8 +186,16 @@ export const useLiveStore = defineStore('live', () => {
       presence.value = {}
       return
     }
-    if (hidden()) return
-    if (!source && !retryTimer) connect()
+    if (hidden() || source || retryTimer || startTimer) return
+    const wait = notBefore - Date.now()
+    if (wait > 0) {
+      startTimer = setTimeout(() => {
+        startTimer = null
+        sync()
+      }, wait)
+      return
+    }
+    connect()
   }
 
   function onVisibility() {
@@ -201,6 +217,7 @@ export const useLiveStore = defineStore('live', () => {
 
   /** Open the stream (once signed in); idempotent. */
   function start() {
+    if (!wanted) notBefore = Date.now() + START_DELAY_MS
     wanted = true
     visibilityHandler = onVisibility
     if (!visibilityHooked && typeof document !== 'undefined') {

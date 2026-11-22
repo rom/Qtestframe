@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -427,4 +428,30 @@ func TestLiveStreamEnds(t *testing.T) {
 	if s := other.openStream(nil, ""); s.res.StatusCode != 503 {
 		t.Fatal(s.res.StatusCode)
 	}
+}
+
+// TestLiveStreamOutlivesTimeouts: the server's read and write timeouts do
+// not end an open stream.
+func TestLiveStreamOutlivesTimeouts(t *testing.T) {
+	e := liveEnv(t)
+	hs := httptest.NewUnstartedServer(e.srv.Handler())
+	hs.Config.ReadTimeout = 200 * time.Millisecond
+	hs.Config.WriteTimeout = 200 * time.Millisecond
+	hs.Start()
+	t.Cleanup(hs.Close)
+	e.hs = hs
+	a := e.login("admin@example.com")
+	s := a.openStream(nil, "")
+	pid := a.project("TMO")
+	time.Sleep(700 * time.Millisecond)
+	for len(s.pings) > 0 {
+		<-s.pings
+	}
+	select {
+	case <-s.pings:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the stream ended after the timeouts")
+	}
+	rq := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "late"}, 201)["id"].(string)
+	s.wantEntity(rq)
 }

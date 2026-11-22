@@ -103,6 +103,35 @@ async function api(request, method, path, body, csrf) {
 }
 const items = (x) => (Array.isArray(x) ? x : (x?.items ?? []))
 
+// ---- live updates: a second user on the item (presence) who saves a newer
+// version while the page is open (the notice in the editor; route
+// requirement-live) ----
+const LIVE_EMAIL = 'a11y.live@example.com'
+const LIVE_PASSWORD = 'A11y-live-check-2468'
+let liveUser = null
+
+/** Creates the second user (once) and signs it in, in a context of its own. */
+async function setupLiveUser(browser, request, csrf) {
+  if (!items(await api(request, 'GET', '/members')).some((x) => x.email === LIVE_EMAIL)) {
+    await api(request, 'POST', '/members', { email: LIVE_EMAIL, role: 'manager', display_name: 'Lena Live', password: LIVE_PASSWORD }, csrf)
+  }
+  const ctx = await browser.newContext()
+  const me = await api(ctx.request, 'POST', '/auth/login', { email: LIVE_EMAIL, password: LIVE_PASSWORD })
+  liveUser = { ctx, csrf: me.csrf_token }
+}
+
+/** The second user views and edits the item (presence lasts 45 s). */
+async function liveBefore(id) {
+  await api(liveUser.ctx.request, 'POST', '/presence', { entity_type: 'requirement', entity_id: id, state: 'editing' }, liveUser.csrf)
+}
+
+/** The second user saves a newer version (the rationale gains or loses a full stop). */
+async function liveAfter(id) {
+  const rq = await api(liveUser.ctx.request, 'GET', `/requirements/${id}`)
+  const r = rq.rationale ?? ''
+  await api(liveUser.ctx.request, 'PATCH', `/requirements/${id}`, { rationale: r.endsWith('.') ? r.slice(0, -1) : r + '.' }, liveUser.csrf)
+}
+
 // ---- multi-factor authentication: a user with an authenticator app, for the
 // second step of the sign-in page (route login-mfa) ----
 const MFA_EMAIL = 'a11y.mfa@example.com'
@@ -267,6 +296,8 @@ async function discover(request) {
     { name: 'dashboard-quality-metrics', path: `${p}/dashboard?tab=quality`, wait: 'section.quality .qkpis' },
     { name: 'requirements', path: `${p}/requirements` },
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
+    // live updates: someone else is editing, then saves a newer version (presence and the notice)
+    reqs[0] && { name: 'requirement-live', path: `${p}/requirements?item=${reqs[0].id}`, live: reqs[0].id, wait: '[data-testid="live-banner"]' },
     { name: 'tests', path: `${p}/tests` },
     // the spreadsheet view: grid, an open cell editor, a refused value, row selection, keyboard help
     { name: 'requirements-sheet', path: `${p}/requirements?view=sheet`, wait: '[role="grid"] [role="gridcell"]' },
@@ -801,6 +832,7 @@ async function main() {
     // recent searches for the search-suggestions route
     await api(authCtx.request, 'POST', '/suggest/history', { entries: [{ field: 'search', value: 'status:approved' }, { field: 'search', value: 'login' }] }, csrf).catch(() => undefined)
     if (routes.some((r) => r.mfa)) await setupMfaUser(browser, authCtx.request, csrf)
+    if (routes.some((r) => r.live) && (!ONLY.length || routes.some((r) => r.live && ONLY.includes(r.name)))) await setupLiveUser(browser, authCtx.request, csrf)
 
     for (const cfg of CONFIGS) {
       // the user's preferences decide theme and language once signed in
@@ -836,7 +868,14 @@ async function main() {
           const errors = []
           page.on('pageerror', (e) => errors.push(e.message))
           try {
+            if (r.live && liveUser) await liveBefore(r.live)
             await page.goto(BASE + r.path, { waitUntil: 'domcontentloaded' })
+            if (r.live && liveUser) {
+              // the event stream opens a moment after the page has loaded
+              await settle(page, '[data-testid="live-presence"]')
+              await page.waitForTimeout(2500)
+              await liveAfter(r.live)
+            }
             // open: a selector, or several clicked one after another
             for (const sel of r.open ? [].concat(r.open) : []) {
               await settle(page)

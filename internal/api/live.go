@@ -268,6 +268,10 @@ func (s *Server) handleEventStream(w http.ResponseWriter, r *http.Request, p *Pr
 	defer s.live.Unsubscribe(sub)
 
 	rc := http.NewResponseController(w)
+	// a stream outlives server.read_timeout and server.write_timeout: no
+	// read deadline (it would cancel the request), the write deadline is
+	// extended before every write
+	_ = rc.SetReadDeadline(time.Time{})
 	h := w.Header()
 	h.Set("Content-Type", "text/event-stream; charset=utf-8")
 	h.Set("Cache-Control", "no-store, no-transform")

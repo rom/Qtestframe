@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
-import { HIDDEN_GRACE_MS, setEventSourceFactory, useLiveStore, type EventSourceLike } from './live'
+import { HIDDEN_GRACE_MS, START_DELAY_MS, setEventSourceFactory, useLiveStore, type EventSourceLike } from './live'
 import { useAuthStore } from './auth'
 import { useMetaStore } from './meta'
 import type { LiveEvent } from '@/lib/live'
@@ -65,6 +65,7 @@ describe('live store', () => {
     signIn()
     await nextTick()
     expect(s.enabled).toBe(true)
+    vi.advanceTimersByTime(START_DELAY_MS)
     expect(FakeSource.all).toHaveLength(1)
     expect(s.status).toBe('connecting')
   })
@@ -74,6 +75,8 @@ describe('live store', () => {
     const s = useLiveStore()
     s.start()
     s.start() // idempotent
+    expect(FakeSource.all).toHaveLength(0) // the page loads first
+    vi.advanceTimersByTime(START_DELAY_MS)
     expect(FakeSource.all).toHaveLength(1)
     const got: LiveEvent[] = []
     const off = s.subscribe((e) => got.push(e))
@@ -105,6 +108,7 @@ describe('live store', () => {
     signIn()
     const s = useLiveStore()
     s.start()
+    vi.advanceTimersByTime(START_DELAY_MS)
     last().emit('hello', {})
     last().emit('change', { type: 'run', entity_id: 'x' }, 'abc-7')
     last().fail()
@@ -141,6 +145,7 @@ describe('live store', () => {
     signIn()
     const s = useLiveStore()
     s.start()
+    vi.advanceTimersByTime(START_DELAY_MS)
     last().emit('hello', {})
     last().emit('change', { type: 'test', entity_id: 'x' }, 'id-1')
     visibility = 'hidden'
@@ -166,6 +171,7 @@ describe('live store', () => {
     signIn()
     const s = useLiveStore()
     s.start()
+    vi.advanceTimersByTime(START_DELAY_MS)
     last().emit('hello', {})
     last().emit('presence', { type: 'requirement', entity_id: 'r1', presence: { user_id: 'u2', name: 'Bea', state: 'viewing' } })
     last().emit('presence', { type: 'requirement', entity_id: 'r1', presence: { user_id: 'u1', name: 'Al', state: 'editing' } })
@@ -206,6 +212,7 @@ describe('live store', () => {
     signIn()
     const s = useLiveStore()
     s.start()
+    vi.advanceTimersByTime(START_DELAY_MS)
     expect(s.status).toBe('off')
     if (had) (globalThis as { EventSource?: unknown }).EventSource = had
   })
