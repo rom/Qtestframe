@@ -28,6 +28,8 @@ describe('notificationTarget', () => {
     expect(notificationTarget(n('waiver'))).toEqual({ name: 'waivers', params: { projectId: 'p1' }, query: { waiver: 'x' } })
     expect(notificationTarget(n('risk'))?.query).toEqual({ risk: 'x' })
     expect(notificationTarget(n('execution'))).toEqual({ name: 'runs', params: { projectId: 'p1' } })
+    expect(notificationTarget(n('run'))).toEqual({ name: 'run', params: { projectId: 'p1', runId: 'x' }, query: { tab: 'discussion' } })
+    expect(notificationTarget(n('review'))).toEqual({ name: 'reviews', query: { review: 'x' } })
     expect(notificationTarget(n('other'))?.name).toBe('dashboard')
   })
   it('needs a project', () => {
