@@ -1,0 +1,52 @@
+# Qtestframe test selection in GitLab CI/CD: run only the tests this change
+# needs, in a generated child pipeline, then upload the results and check
+# the quality gate.
+#
+# qtestframe select reads the change (the commits and changed files of
+# CI_MERGE_REQUEST_DIFF_BASE_SHA..CI_COMMIT_SHA), finds the requirements
+# and tests it refers to (code links, keys in commit messages, the path map
+# qtestframe-map.yml), adds the regression selection and the tests tagged
+# always-run, creates a run of them and writes a child pipeline: one job
+# per runner (tags runner:pytest, runner:go, runner:playwright,
+# runner:maven) with that runner's filter, and a final job with
+# qtestframe report and qtestframe gate.
+#
+# CI/CD variables: QTF_TOKEN, QTF_CLI_IMAGE and optionally QTF_GITLAB_TOKEN
+# and QTF_RELEASE, as in gitlab-ci.yml. The test jobs need the images of
+# your test runners: pass --image pytest=python:3.13 and so on.
+
+variables:
+  QTF_URL: "https://qtestframe.example.com"
+  QTF_PROJECT: "SHOP"
+  QTF_RUN: "Pipeline $CI_PIPELINE_IID ($CI_COMMIT_REF_NAME)"
+  QTF_POST_STATUS: "true"
+  QTF_POST_COMMENT: "true"
+  GIT_DEPTH: "0"
+
+stages: [select, test]
+
+qtestframe:select:
+  stage: select
+  image: $QTF_CLI_IMAGE
+  script:
+    - >
+      qtestframe select --format gitlab-child-pipeline --output qtestframe-pipeline.yml
+      --create-run --run "$QTF_RUN" --tag always-run
+      ${QTF_RELEASE:+--gate-release "$QTF_RELEASE"}
+  artifacts:
+    paths: [qtestframe-pipeline.yml]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+qtestframe:tests:
+  stage: test
+  needs: [qtestframe:select]
+  trigger:
+    include:
+      - artifact: qtestframe-pipeline.yml
+        job: qtestframe:select
+    strategy: depend
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

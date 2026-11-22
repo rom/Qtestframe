@@ -1,0 +1,15 @@
+# Path map for qtestframe select: which tests a change to these files
+# needs. Put it in the repository root (qtestframe select reads
+# qtestframe-map.yml there, or the file given with --map).
+#
+# paths: file patterns; * matches within a directory, ** any directories,
+#        a pattern ending in / everything below it
+# tests: test keys; tags: tests with these tags; requirements: the tests
+#        of these requirements
+- paths: ["src/cart/**", "api/cart.go"]
+  tests: [SHOP-TC-3]
+  tags: [cart]
+- paths: ["src/payment/"]
+  requirements: [SHOP-REQ-4]
+- paths: ["db/migrations/*.sql"]
+  tags: [smoke]

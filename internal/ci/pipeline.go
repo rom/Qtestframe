@@ -16,10 +16,10 @@ const ResultsDir = "qtf-results"
 // tests), $QTF_TESTS (the keys, space-separated) and write JUnit XML to
 // $QTF_RESULTS.
 var DefaultCommands = map[string]string{
-	"pytest":     `pytest -k "$QTF_FILTER" --junitxml="$QTF_RESULTS/pytest.xml"`,
-	"go":         `gotestsum --junitfile "$QTF_RESULTS/go.xml" -- -run "$QTF_FILTER" ./...`,
-	"playwright": `PLAYWRIGHT_JUNIT_OUTPUT_NAME="$QTF_RESULTS/playwright.xml" npx playwright test --grep "$QTF_FILTER" --reporter=junit`,
-	"maven":      `mvn -B test -Dtest="$QTF_FILTER" -Dsurefire.failIfNoSpecifiedTests=false; s=$?; cp target/surefire-reports/*.xml "$QTF_RESULTS/" 2>/dev/null; exit $s`,
+	"pytest":      `pytest -k "$QTF_FILTER" --junitxml="$QTF_RESULTS/pytest.xml"`,
+	"go":          `gotestsum --junitfile "$QTF_RESULTS/go.xml" -- -run "$QTF_FILTER" ./...`,
+	"playwright":  `PLAYWRIGHT_JUNIT_OUTPUT_NAME="$QTF_RESULTS/playwright.xml" npx playwright test --grep "$QTF_FILTER" --reporter=junit`,
+	"maven":       `mvn -B test -Dtest="$QTF_FILTER" -Dsurefire.failIfNoSpecifiedTests=false; s=$?; cp target/surefire-reports/*.xml "$QTF_RESULTS/" 2>/dev/null; exit $s`,
 	RunnerDefault: `echo "No test command for runner $QTF_RUNNER: pass qtestframe select --job $QTF_RUNNER=COMMAND. Tests: $QTF_TESTS"; exit 1`,
 }
 
