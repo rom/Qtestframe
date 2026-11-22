@@ -44,6 +44,8 @@ var BackupTables = []string{
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",
 	"system_settings",
+	// custom fields, their archived values and item templates
+	"custom_fields", "field_set_fields", "custom_field_archive", "item_templates", "org_item_templates", "project_template_defaults",
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available
 	"secret_keys",
@@ -61,6 +63,8 @@ var boolColumns = map[string]bool{
 	"users.super_admin": true, "users.disabled": true, "users.must_change_password": true,
 	"login_events.success": true, "scim_users.active": true, "trace_rules.enabled": true,
 	"invitations.sso": true, "report_subscriptions.enabled": true, "secret_keys.active": true,
+	"custom_fields.required": true, "custom_fields.show_in_list": true,
+	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

@@ -17,15 +17,17 @@ import (
 // Defects: problems found while testing, linked to requirements, tests,
 // executions and runs, optionally mirrored in Jira or GitHub Issues.
 
-const defectCols = `id, project_id, key, title, description, status, severity, priority, assignee, external_system, external_key, external_url, external_status, synced_at, created_by, created_at, updated_at, resolved_at`
+const defectCols = `id, project_id, key, title, description, status, severity, priority, assignee, external_system, external_key, external_url, external_status, synced_at, created_by, created_at, updated_at, resolved_at, custom_fields`
 
 func scanDefect(r interface{ Scan(...any) error }) (*model.Defect, error) {
 	var d model.Defect
 	var synced, resolved sql.NullTime
+	var custom string
 	if err := r.Scan(&d.ID, &d.ProjectID, &d.Key, &d.Title, &d.Description, &d.Status, &d.Severity, &d.Priority, &d.Assignee,
-		&d.ExternalSystem, &d.ExternalKey, &d.ExternalURL, &d.ExternalStatus, &synced, &d.CreatedBy, &d.CreatedAt, &d.UpdatedAt, &resolved); err != nil {
+		&d.ExternalSystem, &d.ExternalKey, &d.ExternalURL, &d.ExternalStatus, &synced, &d.CreatedBy, &d.CreatedAt, &d.UpdatedAt, &resolved, &custom); err != nil {
 		return nil, err
 	}
+	d.CustomFields = decodeCustom(custom)
 	d.SyncedAt, d.ResolvedAt = timePtr(synced), timePtr(resolved)
 	return &d, nil
 }
@@ -87,15 +89,20 @@ func (s *Store) CreateDefect(ctx context.Context, tenantID string, d *model.Defe
 		d.ResolvedAt = &t
 	}
 	return s.tx(ctx, func(c conn) error {
+		custom, err := checkCustom(ctx, c, tenantID, d.ProjectID, model.KindDefect, d.CustomFields, nil, true)
+		if err != nil {
+			return err
+		}
+		d.CustomFields = custom
 		seq, key, err := nextKey(ctx, c, d.ProjectID, model.KindDefect)
 		if err != nil {
 			return err
 		}
 		d.Key = key
-		if _, err := c.exec(ctx, `INSERT INTO defects (id, tenant_id, project_id, seq, key, title, description, status, severity, priority, assignee, external_system, external_key, external_url, external_status, synced_at, created_by, created_at, updated_at, resolved_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		if _, err := c.exec(ctx, `INSERT INTO defects (id, tenant_id, project_id, seq, key, title, description, status, severity, priority, assignee, external_system, external_key, external_url, external_status, synced_at, created_by, created_at, updated_at, resolved_at, custom_fields)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			d.ID, tenantID, d.ProjectID, seq, d.Key, d.Title, d.Description, d.Status, d.Severity, d.Priority, d.Assignee,
-			d.ExternalSystem, d.ExternalKey, d.ExternalURL, d.ExternalStatus, nullTime(d.SyncedAt), d.CreatedBy, d.CreatedAt, d.UpdatedAt, nullTime(d.ResolvedAt)); err != nil {
+			d.ExternalSystem, d.ExternalKey, d.ExternalURL, d.ExternalStatus, nullTime(d.SyncedAt), d.CreatedBy, d.CreatedAt, d.UpdatedAt, nullTime(d.ResolvedAt), encodeCustom(d.CustomFields)); err != nil {
 			return mapErr(err, "defect")
 		}
 		for _, l := range d.Links {
@@ -119,8 +126,13 @@ func (s *Store) UpdateDefect(ctx context.Context, tenantID string, d *model.Defe
 		t := d.UpdatedAt
 		d.ResolvedAt = &t
 	}
-	res, err := s.c(ctx).exec(ctx, `UPDATE defects SET title = ?, description = ?, status = ?, severity = ?, priority = ?, assignee = ?, external_system = ?, external_key = ?, external_url = ?, external_status = ?, synced_at = ?, updated_at = ?, resolved_at = ? WHERE id = ? AND tenant_id = ?`,
-		d.Title, d.Description, d.Status, d.Severity, d.Priority, d.Assignee, d.ExternalSystem, d.ExternalKey, d.ExternalURL, d.ExternalStatus, nullTime(d.SyncedAt), d.UpdatedAt, nullTime(d.ResolvedAt), d.ID, tenantID)
+	custom, err := s.checkItemCustom(ctx, tenantID, model.KindDefect, d.ID, d.CustomFields)
+	if err != nil {
+		return err
+	}
+	d.CustomFields = custom
+	res, err := s.c(ctx).exec(ctx, `UPDATE defects SET title = ?, description = ?, status = ?, severity = ?, priority = ?, assignee = ?, external_system = ?, external_key = ?, external_url = ?, external_status = ?, synced_at = ?, updated_at = ?, resolved_at = ?, custom_fields = ? WHERE id = ? AND tenant_id = ?`,
+		d.Title, d.Description, d.Status, d.Severity, d.Priority, d.Assignee, d.ExternalSystem, d.ExternalKey, d.ExternalURL, d.ExternalStatus, nullTime(d.SyncedAt), d.UpdatedAt, nullTime(d.ResolvedAt), encodeCustom(d.CustomFields), d.ID, tenantID)
 	if err != nil {
 		return err
 	}

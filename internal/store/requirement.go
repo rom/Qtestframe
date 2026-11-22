@@ -8,16 +8,17 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 )
 
-const reqCols = `id, project_id, folder_id, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at, catalog_ref`
+const reqCols = `id, project_id, folder_id, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at, catalog_ref, custom_fields`
 
 func scanRequirement(r interface{ Scan(...any) error }) (*model.Requirement, error) {
 	var q model.Requirement
 	var folder sql.NullString
-	var tags string
+	var tags, custom string
 	if err := r.Scan(&q.ID, &q.ProjectID, &folder, &q.Key, &q.Title, &q.Description, &q.Obligation, &q.Type, &q.Priority, &q.Status,
-		&q.Source, &q.Rationale, &q.Owner, &tags, &q.Version, &q.Position, &q.CreatedBy, &q.CreatedAt, &q.UpdatedAt, &q.CatalogRef); err != nil {
+		&q.Source, &q.Rationale, &q.Owner, &tags, &q.Version, &q.Position, &q.CreatedBy, &q.CreatedAt, &q.UpdatedAt, &q.CatalogRef, &custom); err != nil {
 		return nil, err
 	}
+	q.CustomFields = decodeCustom(custom)
 	q.FolderID = strPtr(folder)
 	q.Tags = decodeTags(tags)
 	q.CategoryIDs = []string{}
@@ -112,16 +113,21 @@ func (s *Store) CreateRequirement(ctx context.Context, tenantID string, r *model
 // insertRequirement allocates the key of a validated requirement and
 // inserts it with its categories and criteria.
 func insertRequirement(ctx context.Context, c conn, tenantID string, r *model.Requirement) error {
+	custom, err := checkCustom(ctx, c, tenantID, r.ProjectID, model.KindRequirement, r.CustomFields, nil, true)
+	if err != nil {
+		return err
+	}
+	r.CustomFields = custom
 	seq, key, err := nextKey(ctx, c, r.ProjectID, model.KindRequirement)
 	if err != nil {
 		return err
 	}
 	r.Key = key
 	r.Position = seq
-	if _, err := c.exec(ctx, `INSERT INTO requirements (id, tenant_id, project_id, folder_id, seq, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at, catalog_ref)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	if _, err := c.exec(ctx, `INSERT INTO requirements (id, tenant_id, project_id, folder_id, seq, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at, catalog_ref, custom_fields)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, tenantID, r.ProjectID, nullStr(r.FolderID), seq, r.Key, r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status,
-		r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.Position, r.CreatedBy, r.CreatedAt, r.UpdatedAt, r.CatalogRef); err != nil {
+		r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.Position, r.CreatedBy, r.CreatedAt, r.UpdatedAt, r.CatalogRef, encodeCustom(r.CustomFields)); err != nil {
 		return mapErr(err, "requirement")
 	}
 	if err := setCategories(ctx, c, model.KindRequirement, r.ProjectID, r.ID, r.CategoryIDs); err != nil {
@@ -282,9 +288,14 @@ func (s *Store) UpdateRequirement(ctx context.Context, tenantID string, r *model
 		if err := s.checkFolder(ctx, c, tenantID, r.ProjectID, model.KindRequirement, r.FolderID); err != nil {
 			return err
 		}
+		custom, err := checkCustom(ctx, c, tenantID, r.ProjectID, model.KindRequirement, r.CustomFields, old.CustomFields, false)
+		if err != nil {
+			return err
+		}
+		r.CustomFields = custom
 		// AND version: a save that raced with another one fails (ErrStale)
-		res, err := c.exec(ctx, `UPDATE requirements SET folder_id = ?, title = ?, description = ?, obligation = ?, type = ?, priority = ?, status = ?, source = ?, rationale = ?, owner = ?, tags = ?, version = ?, updated_at = ? WHERE id = ? AND version = ?`,
-			nullStr(r.FolderID), r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status, r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.UpdatedAt, r.ID, old.Version)
+		res, err := c.exec(ctx, `UPDATE requirements SET folder_id = ?, title = ?, description = ?, obligation = ?, type = ?, priority = ?, status = ?, source = ?, rationale = ?, owner = ?, tags = ?, custom_fields = ?, version = ?, updated_at = ? WHERE id = ? AND version = ?`,
+			nullStr(r.FolderID), r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status, r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), encodeCustom(r.CustomFields), r.Version, r.UpdatedAt, r.ID, old.Version)
 		if err != nil {
 			return err
 		}

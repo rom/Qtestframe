@@ -12,13 +12,15 @@ import (
 // Risks: likelihood × impact, status, mitigation and the requirements that
 // address them.
 
-const riskCols = `id, project_id, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at`
+const riskCols = `id, project_id, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at, custom_fields`
 
 func scanRisk(r interface{ Scan(...any) error }) (*model.Risk, error) {
 	var k model.Risk
-	if err := r.Scan(&k.ID, &k.ProjectID, &k.Key, &k.Title, &k.Description, &k.Category, &k.Likelihood, &k.Impact, &k.Status, &k.Mitigation, &k.Owner, &k.CreatedBy, &k.CreatedAt, &k.UpdatedAt); err != nil {
+	var custom string
+	if err := r.Scan(&k.ID, &k.ProjectID, &k.Key, &k.Title, &k.Description, &k.Category, &k.Likelihood, &k.Impact, &k.Status, &k.Mitigation, &k.Owner, &k.CreatedBy, &k.CreatedAt, &k.UpdatedAt, &custom); err != nil {
 		return nil, err
 	}
+	k.CustomFields = decodeCustom(custom)
 	k.Score = k.Likelihood * k.Impact
 	k.Level = model.RiskLevel(k.Likelihood, k.Impact)
 	return &k, nil
@@ -68,13 +70,18 @@ func (s *Store) CreateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 	k.CreatedAt = s.now()
 	k.UpdatedAt = k.CreatedAt
 	return s.tx(ctx, func(c conn) error {
+		custom, err := checkCustom(ctx, c, tenantID, k.ProjectID, model.KindRisk, k.CustomFields, nil, true)
+		if err != nil {
+			return err
+		}
+		k.CustomFields = custom
 		seq, key, err := nextKey(ctx, c, k.ProjectID, model.KindRisk)
 		if err != nil {
 			return err
 		}
 		k.Key = key
-		if _, err := c.exec(ctx, `INSERT INTO risks (id, tenant_id, project_id, seq, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			k.ID, tenantID, k.ProjectID, seq, k.Key, k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.CreatedBy, k.CreatedAt, k.UpdatedAt); err != nil {
+		if _, err := c.exec(ctx, `INSERT INTO risks (id, tenant_id, project_id, seq, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at, custom_fields) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			k.ID, tenantID, k.ProjectID, seq, k.Key, k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.CreatedBy, k.CreatedAt, k.UpdatedAt, encodeCustom(k.CustomFields)); err != nil {
 			return mapErr(err, "risk")
 		}
 		return setRiskRequirements(ctx, c, tenantID, k.ProjectID, k.ID, k.RequirementIDs, nil)
@@ -87,8 +94,13 @@ func (s *Store) UpdateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 		return err
 	}
 	k.UpdatedAt = s.now()
-	res, err := s.c(ctx).exec(ctx, `UPDATE risks SET title = ?, description = ?, category = ?, likelihood = ?, impact = ?, status = ?, mitigation = ?, owner = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
-		k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.UpdatedAt, k.ID, tenantID)
+	custom, err := s.checkItemCustom(ctx, tenantID, model.KindRisk, k.ID, k.CustomFields)
+	if err != nil {
+		return err
+	}
+	k.CustomFields = custom
+	res, err := s.c(ctx).exec(ctx, `UPDATE risks SET title = ?, description = ?, category = ?, likelihood = ?, impact = ?, status = ?, mitigation = ?, owner = ?, custom_fields = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+		k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, encodeCustom(k.CustomFields), k.UpdatedAt, k.ID, tenantID)
 	if err != nil {
 		return err
 	}

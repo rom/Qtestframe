@@ -462,6 +462,9 @@ type Requirement struct {
 	// relations and the tests that verify it ("verifies", incoming).
 	RelationRefs  []ItemRef `json:"relations,omitempty"`
 	CriteriaCount int       `json:"criteria_count,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // ItemRef is a derived reference from a requirement or test to a related
@@ -557,6 +560,9 @@ type TestCase struct {
 	// reaches the threshold (see store.FlakyWindow, store.FlakyMinFlips).
 	Flakiness int  `json:"flakiness,omitempty"`
 	Flaky     bool `json:"flaky,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -632,6 +638,9 @@ type TestRun struct {
 	// Derived.
 	Summary     map[string]int `json:"summary,omitempty"`
 	ReleaseName string         `json:"release_name,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // StepResult is the outcome of one manual step.
@@ -757,6 +766,9 @@ type Defect struct {
 	ResolvedAt     *time.Time `json:"resolved_at"`
 	// Links to requirements, tests, executions and runs.
 	Links []DefectLink `json:"links,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // DefectLink connects a defect to an item.
@@ -854,6 +866,9 @@ type Risk struct {
 	// Requirements with tests, and with all tests passed.
 	Covered  int `json:"covered"`
 	Verified int `json:"verified"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // Notification is an in-app message to one user.
