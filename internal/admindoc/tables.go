@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/rom/qtestframe/internal/chat"
 	"github.com/rom/qtestframe/internal/db"
 	"github.com/rom/qtestframe/internal/hardening"
 	"github.com/rom/qtestframe/internal/model"
@@ -64,6 +65,25 @@ func webhookEvents(lang string) (string, error) {
 	b.WriteString(head.in(lang) + "\n")
 	for _, g := range order {
 		fmt.Fprintf(&b, "| %s | %s |\n", g, strings.Join(groups[g], ", "))
+	}
+	return b.String(), nil
+}
+
+// chatEvents lists the events of a chat channel by group (the groups of
+// the channel settings, derived from the event registry).
+func chatEvents(lang string) (string, error) {
+	groups := map[string][]string{}
+	for _, e := range model.WebhookEvents {
+		g := chat.Group(e)
+		groups[g] = append(groups[g], "`"+e+"` ("+chat.EventLabel(lang, e)+")")
+	}
+	head := text{"| Group | Events |\n|---|---|", "| Grupp | Händelser |\n|---|---|"}
+	var b strings.Builder
+	b.WriteString(head.in(lang) + "\n")
+	for _, g := range chat.Groups {
+		if len(groups[g]) > 0 {
+			fmt.Fprintf(&b, "| %s | %s |\n", chat.GroupLabel(lang, g), strings.Join(groups[g], ", "))
+		}
 	}
 	return b.String(), nil
 }

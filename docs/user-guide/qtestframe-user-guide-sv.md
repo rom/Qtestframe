@@ -1860,7 +1860,7 @@ Defektdialogen visar en defekts **Regressionshistorik**, och fliken **Påverkan*
 
 # Granskningar och notiser
 
-Qtestframe säger till när något behöver din uppmärksamhet, låter dig be kollegor granska ett krav eller ett test och sparar elektroniska signeringar av baslinjer. Webhooks skickar samma händelser vidare till andra system.
+Qtestframe säger till när något behöver din uppmärksamhet, låter dig be kollegor granska ett krav eller ett test och sparar elektroniska signeringar av baslinjer. Webhooks och chattkanaler skickar samma händelser vidare till andra system och till Slack, Teams och andra chattverktyg.
 
 ## Notiser
 
@@ -1954,6 +1954,25 @@ Under **Kategorier & inställningar** kan projektets administratörer (behörigh
 Leveranser görs inte om och omdirigeringar följs inte.
 
 Kryssa i webhooks i listan för att **Slå på** eller **Stäng av** flera på en gång, **Lägg till händelser** eller **Ta bort händelser** (varje webhook måste ha minst en händelse kvar, annars ändras ingenting), **Skicka test** till alla (resultatet för varje visas) eller **Ta bort** dem. Andra ändringar än borttagning kan ångras med ångra-knappen.
+
+## Chattaviseringar
+
+Under **Kategorier & inställningar** kan projektets administratörer (behörighet att ändra projektet) skicka projektets händelser till en chattkanal i **Slack**, **Microsoft Teams**, **Mattermost**, **Rocket.Chat**, **Google Chat**, **Matrix** eller **Discord**. Välj **Lägg till chattkanal**, välj chattverktyg och klistra in den webhook-URL som verktyget ger dig (Matrix: hemservern, rummet och åtkomsttoken för en botanvändare). Administratörshandboken beskriver hur du får fram URL:en i varje verktyg.
+
+Varje meddelande anger händelsen, länkar objektets nyckel och titel till objektet i Qtestframe och visar dess status (i ord och färg), prioritet, vem som gjorde det och en kort sammanfattning, till exempel ”9 passed, 2 failed” för en avslutad körning eller början av en ny defekts beskrivning. Meddelandena skrivs på det språk du väljer för kanalen (engelska eller svenska) och hålls inom varje chattverktygs längdgränser.
+
+För varje kanal väljer du:
+
+- **Händelser**: **Alla händelser** (även händelser som senare versioner av Qtestframe lägger till) eller ett urval, grupperat i testkörningar, defekter, krav och tester, granskningar, releaser, undantag och risker.
+- **Filter**: **bara underkända** testkörningar och resultat; en **lägsta prioritet** (till exempel *Hög*: bara objekt med hög eller kritisk prioritet; defekter använder sin prioritet eller allvarlighetsgrad, risker sin nivå; händelser utan prioritet, som en avslutad körning, släpps ändå igenom); en **release** (bara releasen själv, dess körningar och resultat och dess undantag).
+- **Sammandrag**: 0 skickar varje händelse direkt. Med till exempel 60 minuter samlas händelserna och skickas som ett meddelande varje timme (”12 händelser i BANK …”, med de första händelserna och ”… och 4 till”).
+- **Aktiv**: stäng av kanalen utan att förlora dess inställningar.
+
+Webhook-URL:en och token är hemligheter: de lagras krypterade och visas aldrig igen; listan visar bara vart kanalen skickar (till exempel `hooks.slack.com`). Ange en ny för att byta; lämna fältet tomt för att behålla den sparade.
+
+**Skicka testmeddelande** skickar ett testmeddelande direkt, även till en avstängd kanal, och visar om det kom fram. **Leveranslogg** listar de senaste 50 meddelandena med HTTP-status och fel. Ett meddelande som misslyckas försöks igen efter 1, 2, 4, 8 och 16 minuter (en URL eller token som chattverktyget vägrar försöks inte igen). Efter 5 misslyckade meddelanden i rad stänger kanalen av sig själv, listan visar varför och projektets administratörer får en avisering. Rätta URL:en, skicka ett testmeddelande och slå på kanalen igen.
+
+I ett **begränsat** projekt visar meddelandena bara händelse, objektets nyckel, status och länk, så att titlar och beskrivningar inte hamnar i en chatt som personer utanför projektet kan läsa. En organisationsadministratör kan tillåta att en kanal visar hela innehållet.
 
 # Spårbarhet och täckning
 

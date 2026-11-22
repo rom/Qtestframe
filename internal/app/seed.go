@@ -283,6 +283,9 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedCustomFields(ctx, st, tenantID, p.ID, reqs); err != nil {
 		return nil, err
 	}
+	if err := seedChat(ctx, st, tenantID, p); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 
