@@ -1,7 +1,11 @@
 package api
 
 import (
+	"os"
+	"path/filepath"
+	"regexp"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/rom/qtestframe/internal/rbac"
@@ -233,6 +237,8 @@ func TestDashboardWidgetData(t *testing.T) {
 		w("fw-emb", "framework_coverage", map[string]any{"framework": "emb3d"}),
 		w("fw-bad", "framework_coverage", map[string]any{"framework": "x"}),
 		w("trend90", "test_results_trend", map[string]any{"range": 90}),
+		w("trend365", "defects_per_week", map[string]any{"range": "365"}),
+		w("trendbad", "defects_per_week", map[string]any{"range": "x"}),
 		w("ready", "release_readiness", map[string]any{"release_id": rel}),
 		map[string]any{"id": "noproj", "type": "coverage"},
 		map[string]any{"id": "badproj", "type": "coverage", "project_id": "../x"},
@@ -279,6 +285,12 @@ func TestDashboardWidgetData(t *testing.T) {
 		t.Fatal(gaps)
 	}
 	if d := dataOf(t, res, "trend90"); d["range"].(float64) != 90 || d["points"] == nil {
+		t.Fatal(d)
+	}
+	if d := dataOf(t, res, "trend365"); d["range"].(float64) != 365 || d["defect_weeks"] == nil {
+		t.Fatal(d)
+	}
+	if d := dataOf(t, res, "trendbad"); d["range"].(float64) != 30 {
 		t.Fatal(d)
 	}
 	if d := dataOf(t, res, "ready"); d["release"].(map[string]any)["id"] != rel || d["report"] == nil {
@@ -345,5 +357,33 @@ func TestDashboardWidgetPermissions(t *testing.T) {
 	res = a.m("POST", "/api/v1/dashboards/data", req, 200)
 	if d := dataOf(t, res, "q"); d["total"].(float64) != 1 {
 		t.Fatal(d)
+	}
+}
+
+// TestWidgetRegistryInSync: the client's widget registry
+// (web/src/lib/widgets.ts) has the types of the server's.
+func TestWidgetRegistryInSync(t *testing.T) {
+	src, err := os.ReadFile(filepath.Join("..", "..", "web", "src", "lib", "widgets.ts"))
+	if err != nil {
+		t.Skip("web sources not available:", err)
+	}
+	var client []string
+	for _, m := range regexp.MustCompile(`\{ type: '([a-z_]+)'|type: '([a-z_]+)',\n`).FindAllStringSubmatch(string(src), -1) {
+		client = append(client, m[1]+m[2])
+	}
+	var server []string
+	for k := range widgetTypes {
+		server = append(server, k)
+	}
+	slices.Sort(client)
+	slices.Sort(server)
+	if !slices.Equal(client, server) {
+		t.Fatalf("client %v\nserver %v", client, server)
+	}
+	// and the breakdown dimensions and query entities
+	for _, want := range append(BreakdownDimensions(), SavedQueryEntities()...) {
+		if !strings.Contains(string(src), "'"+want+"'") {
+			t.Errorf("web/src/lib/widgets.ts lacks %s", want)
+		}
 	}
 }

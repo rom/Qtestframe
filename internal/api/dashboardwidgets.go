@@ -39,7 +39,7 @@ type widgetType struct {
 // widgetTypes is the registry. The client has the matching one in
 // web/src/lib/widgets.ts (titles, settings and renderers).
 var widgetTypes = map[string]widgetType{
-	"key_figures":         {Project: true, Home: true, W: 12, H: 2, fetch: fetchKeyFigures},
+	"key_figures":         {Project: true, Home: true, W: 12, H: 3, fetch: fetchKeyFigures},
 	"coverage":            {Project: true, Home: true, W: 6, H: 4, fetch: pickDashboard("coverage")},
 	"execution_results":   {Project: true, Home: true, W: 6, H: 4, fetch: pickDashboard("results")},
 	"active_runs":         {Project: true, Home: true, W: 6, H: 4, fetch: pickDashboard("active_runs")},
@@ -289,8 +289,17 @@ func (c *widgetCall) str(key string) string {
 func (c *widgetCall) num(key string, def, lo, hi int) int {
 	var v float64
 	raw, ok := c.settings[key]
-	if !ok || json.Unmarshal(raw, &v) != nil {
+	if !ok {
 		return def
+	}
+	if json.Unmarshal(raw, &v) != nil {
+		// a number in a string (a select of the client)
+		var str string
+		n, err := strconv.ParseFloat(strings.TrimSpace(func() string { _ = json.Unmarshal(raw, &str); return str }()), 64)
+		if err != nil {
+			return def
+		}
+		v = n
 	}
 	return max(lo, min(hi, int(v)))
 }
@@ -607,11 +616,11 @@ func fetchMyWork(c *widgetCall) (any, error) {
 func fetchDiscussions(c *widgetCall) (any, error) {
 	limit := c.num("limit", 8, 1, 50)
 	q := url.Values{"limit": {strconv.Itoa(limit)}}
-	if st := c.str("status"); st != "" && st != "all" {
-		q.Set("status", st)
-	} else if st == "" {
-		q.Set("status", "open")
+	st := c.str("status")
+	if st == "" {
+		st = "open"
 	}
+	q.Set("status", st)
 	path := "/discussions"
 	if c.pid != "" {
 		path = c.project("/discussions")

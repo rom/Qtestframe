@@ -62,18 +62,18 @@ func builtinLayout(key string) []model.DashboardWidget {
 	switch key {
 	case "overview":
 		return []model.DashboardWidget{
-			wg("ov-kpis", "key_figures", 0, 0, 12, 2),
-			wg("ov-mywork", "my_work", 0, 2, 12, 3),
-			wg("ov-coverage", "coverage", 0, 5, 6, 4),
-			wg("ov-results", "execution_results", 6, 5, 6, 4),
-			wg("ov-active", "active_runs", 0, 9, 6, 4),
-			wg("ov-recent", "recent_runs", 6, 9, 6, 4),
-			wg("ov-reqstatus", "breakdown", 0, 13, 6, 4, "dimension", "requirement_status"),
-			wg("ov-obligation", "breakdown", 6, 13, 6, 4, "dimension", "requirement_obligation", "chart", "hbar"),
-			wg("ov-teststatus", "breakdown", 0, 17, 6, 4, "dimension", "test_status"),
-			wg("ov-testtypes", "test_types", 6, 17, 6, 4),
-			wg("ov-review", "breakdown", 0, 21, 6, 4, "dimension", "review_state", "chart", "hbar"),
-			wg("ov-release", "release_progress", 6, 21, 6, 4),
+			wg("ov-kpis", "key_figures", 0, 0, 12, 3),
+			wg("ov-mywork", "my_work", 0, 3, 12, 3),
+			wg("ov-coverage", "coverage", 0, 6, 6, 4),
+			wg("ov-results", "execution_results", 6, 6, 6, 4),
+			wg("ov-active", "active_runs", 0, 10, 6, 4),
+			wg("ov-recent", "recent_runs", 6, 10, 6, 4),
+			wg("ov-reqstatus", "breakdown", 0, 14, 6, 4, "dimension", "requirement_status"),
+			wg("ov-obligation", "breakdown", 6, 14, 6, 4, "dimension", "requirement_obligation", "chart", "hbar"),
+			wg("ov-teststatus", "breakdown", 0, 18, 6, 4, "dimension", "test_status"),
+			wg("ov-testtypes", "test_types", 6, 18, 6, 4),
+			wg("ov-review", "breakdown", 0, 22, 6, 4, "dimension", "review_state", "chart", "hbar"),
+			wg("ov-release", "release_progress", 6, 22, 6, 4),
 		}
 	case "trends":
 		return []model.DashboardWidget{

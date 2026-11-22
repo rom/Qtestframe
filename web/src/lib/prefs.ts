@@ -6,7 +6,7 @@ import { THEME_IDS, concreteTheme, isDecorative, isThemeId, schemeOf, type Concr
 
 /** All values of the theme preference: light, dark, system and the decorative themes. */
 export const THEMES = THEME_IDS
-export const START_PAGES = ['projects', 'last_project', 'default_project', 'search'] as const
+export const START_PAGES = ['projects', 'last_project', 'default_project', 'search', 'home_dashboard'] as const
 export const PAGE_SIZES = [10, 25, 50, 100] as const
 export const DATE_FORMATS = ['locale', 'iso', 'relative'] as const
 
@@ -130,6 +130,8 @@ export function startRoute(prefs: Preferences | null | undefined, ctx: { lastPro
   switch (prefs?.start_page) {
     case 'search':
       return { name: 'search' }
+    case 'home_dashboard':
+      return { name: 'homeDashboard' }
     case 'last_project':
       return known(ctx.lastProjectId) ? { name: 'dashboard', params: { projectId: ctx.lastProjectId } } : { name: 'projects' }
     case 'default_project':

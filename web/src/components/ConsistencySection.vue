@@ -22,6 +22,8 @@ const props = defineProps<{
   projectId: string
   /** dashboard: a short summary with the failing checks only */
   compact?: boolean
+  /** a dashboard widget: no card and title of its own (the frame has them) */
+  bare?: boolean
 }>()
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -70,9 +72,10 @@ async function install() {
 </script>
 
 <template>
-  <section class="card consistency" :aria-busy="loading" aria-labelledby="h-consistency">
+  <section :class="['consistency', { card: !bare }]" :aria-busy="loading" :aria-labelledby="bare ? undefined : 'h-consistency'">
     <div class="row" style="justify-content: space-between; flex-wrap: wrap; gap: 8px">
-      <h2 id="h-consistency" class="plain-heading">{{ t('consistency.title') }}</h2>
+      <h2 v-if="!bare" id="h-consistency" class="plain-heading">{{ t('consistency.title') }}</h2>
+      <span v-else />
       <div class="row" style="gap: 8px; flex-wrap: wrap">
         <RouterLink :to="rulesRoute(projectId)" class="small">{{ t('consistency.manage') }}</RouterLink>
         <Button v-if="!compact" icon="pi pi-refresh" text rounded size="small" severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" :loading="loading" @click="load" />

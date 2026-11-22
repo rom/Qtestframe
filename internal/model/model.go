@@ -214,7 +214,7 @@ type ReportDefinition struct {
 type Preferences struct {
 	Theme            string `json:"theme,omitempty"`      // see Themes
 	Language         string `json:"language,omitempty"`   // en | sv; "" = browser
-	StartPage        string `json:"start_page,omitempty"` // projects | last_project | default_project | search
+	StartPage        string `json:"start_page,omitempty"` // projects | last_project | default_project | search | home_dashboard
 	DefaultProject   string `json:"default_project_id,omitempty"`
 	DefaultTenant    string `json:"default_tenant_id,omitempty"` // tenant selected at login
 	PageSize         int    `json:"page_size,omitempty"`         // 10 | 25 | 50 | 100
@@ -246,7 +246,7 @@ var (
 		"ocean", "forest", "sunset", "nordic", "lavender", "rose", "high_contrast", "high_contrast_light"}
 	// Languages of the web client ("" = browser language).
 	Languages   = []string{"en", "sv"}
-	StartPages  = []string{"projects", "last_project", "default_project", "search"}
+	StartPages  = []string{"projects", "last_project", "default_project", "search", "home_dashboard"}
 	PageSizes   = []int{10, 25, 50, 100}
 	DateFormats = []string{"locale", "iso", "relative"}
 	// AutocompleteModes: the values of Preferences.Autocomplete besides ""
