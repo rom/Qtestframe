@@ -1932,6 +1932,7 @@ with the role `tester` can call all of them.
 |---|---|---|---|
 | GET, POST | `/projects/{pid}/gate` | project.read | the quality gate, see below; the results of a run or build also need run.read |
 | POST | `/projects/{pid}/ci/select` | test.read | the tests of a change, see below; `create_run` needs run.write |
+| GET, POST | `/projects/{pid}/tests/stubs` | test.read | generated test code stubs (zip, JSON or one file), see below; `mark_script` (POST) needs test.write |
 | GET | `/projects/{pid}/ci/setup` | project.read | `{server_url, project_key, project_id, token_role, variables: [{name, value?, masked, required, description}], templates: [{name, kind: gitlab\|gitlab-selection\|gitlab-component\|github, file, url, content}]}`: the CI setup panel, with the server URL and project key filled in |
 | GET | `/ci/templates/{name}` | none (public) | a template (`gitlab-ci.yml`, `gitlab-ci-selection.yml`, `gitlab-component.yml`, `github-actions.yml`) as `text/yaml` with the server URL filled in; `?project=KEY`, `?download=true`. For GitLab's `include: remote:`; templates contain no secrets |
 | PUT | `/projects/{pid}/ci-settings` | project.update | `{"ci": {provider: ""\|gitlab, api_url, project, post_status, post_note, release_id, conditions: [...]}, "ci_token"?, "clear_ci_token"?}` → the code settings. The token is write-only and stored encrypted; empty keeps it. Audited as `project.ci_settings` |
@@ -1987,6 +1988,42 @@ test's `runner:<name>` tag, else `playwright` / `pytest` from the script
 language, else `default`; `identifier` is the key with underscores
 (`SHOP_TC_12`), as automated tests name it. A run is created only when
 tests are selected.
+
+**Test stubs.** `GET /projects/{pid}/tests/stubs?framework=pytest&q=execution_type:automated has:!script`
+(or POST with the body `{"framework", "query", "ids": [...], "format",
+"package", "dir", "mark_script"}`) generates one stub per selected test
+(`q` or `query`, and/or `ids`: test ids or keys; at most 2000) for
+`framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`,
+`robot` or `cucumber` (aliases `py`, `golang`, `java`, `junit`,
+`gherkin`, `robotframework`). Each file is named after the key
+(`test_SHOP_TC_12.py`, `shop_tc_12_test.go`, `SHOP_TC_12Test.java`,
+`SHOP-TC-12.spec.ts`, `SHOP-TC-12.test.ts`, `SHOP-TC-12.robot`,
+`SHOP-TC-12.feature`), and so is the test function, class or scenario,
+which is how [JUnit results](#operations) map back. A header block
+between `qtestframe:begin KEY FRAMEWORK body=HASH` and `qtestframe:end`
+holds the title, link, requirements, priority, tags, description,
+preconditions and expected result; the body has the steps as numbered
+TODO comments (with data and expected results), the test data as a
+parametrised test (pytest `parametrize`, Go table with subtests, JUnit
+`@ParameterizedTest @CsvSource`, a loop of Playwright tests, `test.each`,
+Robot test cases calling one keyword, a Cucumber Scenario Outline) and a
+skip marker (`pytest.mark.skip`, `t.Skip`, `@Disabled`, `test.fixme`,
+`test.skip`, `Skip`; Cucumber: undefined steps and the tag
+`@qtestframe-stub`), so an unimplemented stub reports as skipped.
+`format`: `zip` (default; `<key>-<framework>-stubs.zip`), `json`
+(`{"framework": {id, name, language, runner, script_language,
+parametrised}, "files": [{path, content, key, framework, test_id}],
+"marked"}`) or `file` (exactly one test, as `text/plain`). `package`:
+the Go package (default `tests`) or Java package; `dir`: a relative
+directory put before the paths. With `mark_script` (POST, test.write)
+each selected test without a script (or with an earlier stub reference)
+gets the script `qtestframe:stub <dir/path>`, becomes automated, gets the
+framework's script language (where there is one) and the tag
+`runner:<runner>` (pytest, playwright, go, maven, jest, vitest, robot,
+cucumber) unless it has a runner tag; `marked` counts them. The server
+never executes such a script: `run-automated` skips it with the code
+`external` and `run-script` refuses it. Regeneration is the client's job:
+`qtestframe stubs` merges with the files on disk (see the CI/CD guide).
 
 **Server-side posting.** With `ci.provider` `gitlab`, a token and
 `post_status` or `post_note`, every result upload (`POST /runs/{id}/junit`,
@@ -3628,6 +3665,7 @@ key:*-REQ-1*                               glob (* and ?) over the whole value
 version>=2 created_at<2026-01-01           numeric / date comparison
 category:Negative  category:"Network based"
 has:criteria   (or field:* )               field not empty
+has:!script    (or -has:script)            field empty
 (a OR b) AND c                             grouping
 ```
 

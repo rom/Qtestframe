@@ -19424,6 +19424,109 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/stubs:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - CI/CD
+      summary: Test code stubs
+      operationId: getProjectsByPidTestsStubs
+      description: |-
+        Generated automated-test stubs (`qtestframe stubs`, the *Generate test code* action of the tests list): one file per test, named after its key so that JUnit results map back, with the title, requirements, preconditions, steps as numbered TODO comments and the test data as a parametrised test, marked as skipped until implemented. Parameters: `framework` (pytest, playwright, go, junit5, jest, vitest, robot, cucumber), `q` (or `query`: the tests, query language), `ids` (test ids or keys, comma-separated or repeated; with `q` both must match), `format` (`zip`, the default; `json` → `{framework: {id, name, language, runner, script_language, parametrised}, files: [{path, content, key, framework, test_id}], marked}`; `file`: the one selected stub as text), `package` (Go or Java package), `dir` (a relative directory prefixed to the paths). At most 2000 tests
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      parameters:
+      - name: framework
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [pytest, playwright, go, junit5, jest, vitest, robot, cucumber]
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: ids
+        in: query
+        schema:
+          type: string
+      - name: format
+        in: query
+        schema:
+          type: string
+          enum: [zip, json, file]
+      - name: package
+        in: query
+        schema:
+          type: string
+      - name: dir
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+            text/plain:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - CI/CD
+      summary: Test code stubs (and mark the scripts)
+      operationId: postProjectsByPidTestsStubs
+      description: |-
+        The same as GET with a body `{framework, query, ids: [...], format, package, dir, mark_script}`. `mark_script: true` (needs `test.write`) also sets the script of each selected test that has none to `qtestframe:stub <dir/path>`, makes it automated, sets the script language of the framework (python, playwright, javascript) and adds the tag `runner:<runner>` unless it has a runner tag; such a script is not run by the server (`run-automated` skips it with the code `external`). The answer's `marked` counts the changed tests. Audited as `test.update`; supports `?dry_run=impact` and `?impact=` like other test changes
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/ci/setup:
     parameters:
     - $ref: '#/components/parameters/pid'

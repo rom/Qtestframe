@@ -68,7 +68,9 @@ func strOf(v any) string {
 
 func TestStubsCommand(t *testing.T) {
 	f, hs := newFakeStubs(t)
-	withEnv(t, func(k string) string { return map[string]string{"QTF_URL": hs.URL, "QTF_TOKEN": "qtf_tok", "QTF_PROJECT": "SHOP"}[k] })
+	withEnv(t, func(k string) string {
+		return map[string]string{"QTF_URL": hs.URL, "QTF_TOKEN": "qtf_tok", "QTF_PROJECT": "SHOP"}[k]
+	})
 	dir := filepath.Join(t.TempDir(), "e2e-tests")
 	file := filepath.Join(dir, "shop_tc_1_test.go")
 	read := func() string {
@@ -147,7 +149,9 @@ func TestStubsCommand(t *testing.T) {
 	if r = run(t, "", "stubs", "--framework", "go"); r.code == 0 || !strings.Contains(r.stderr, "--project KEY is required") {
 		t.Fatalf("%+v", r)
 	}
-	withEnv(t, func(k string) string { return map[string]string{"QTF_URL": hs.URL, "QTF_TOKEN": "qtf_tok", "QTF_PROJECT": "SHOP"}[k] })
+	withEnv(t, func(k string) string {
+		return map[string]string{"QTF_URL": hs.URL, "QTF_TOKEN": "qtf_tok", "QTF_PROJECT": "SHOP"}[k]
+	})
 	f.path = "../evil.go"
 	if r = run(t, "", "stubs", "--framework", "go", "--out", dir); r.code == 0 || !strings.Contains(r.stderr, "unexpected stub path") {
 		t.Fatalf("%+v", r)

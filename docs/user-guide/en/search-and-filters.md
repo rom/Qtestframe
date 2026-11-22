@@ -46,6 +46,7 @@ With permission to edit both requirements and tests, the selected tags can also 
 | `version>=2` | numeric comparison |
 | `updated_at>=2026-01-01` | date comparison |
 | `has:criteria` or `criteria:*` | the field is not empty |
+| `has:!script` or `-has:script` | the field is empty |
 
 ### Operators
 

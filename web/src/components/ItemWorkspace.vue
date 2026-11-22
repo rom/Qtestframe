@@ -40,6 +40,7 @@ import { useVariants } from '@/composables/variants'
 import BulkRelationsDialog from './BulkRelationsDialog.vue'
 import BulkItemLinksDialog from './BulkItemLinksDialog.vue'
 import BulkRequirementIssuesDialog from './BulkRequirementIssuesDialog.vue'
+import TestStubsDialog from './TestStubsDialog.vue'
 import type { ImportResult } from '@/lib/reqImport'
 import { api, ApiError, asItems } from '@/lib/api'
 import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
@@ -108,6 +109,8 @@ const bulkApplicabilityOpen = ref(false)
 const bulkRelationsOpen = ref(false)
 const bulkLinksOpen = ref(false)
 const bulkIssuesOpen = ref(false)
+/** "Generate test code" of the selection or the listed tests */
+const stubsOpen = ref(false)
 const shownIds = computed(() => items.value.map((i) => i.id))
 const canLink = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
 const folders = computed(() => proj.folders[props.kind])
@@ -612,6 +615,17 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           />
           <Menu id="exchange-menu" ref="exchangeMenu" :model="exchangeItems" popup />
           <Button
+            v-if="!isReq && items.length"
+            :label="t('stubs.button')"
+            icon="pi pi-code"
+            severity="secondary"
+            outlined
+            class="stubs-button"
+            aria-haspopup="dialog"
+            v-tooltip.bottom="t('stubs.buttonHint')"
+            @click="stubsOpen = true"
+          />
+          <Button
             v-if="canReview && !selection.length && items.length"
             :label="t('bulkReview.toolbar')"
             icon="pi pi-verified"
@@ -692,6 +706,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           aria-haspopup="dialog"
           @click="bulkReviewOpen = true"
         />
+        <Button v-if="!isReq" :label="t('stubs.button')" icon="pi pi-code" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="stubsOpen = true" />
         <template v-if="canWrite">
         <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.setStatus')" :aria-label="t('workspace.setStatus')" size="small" style="min-width: 140px" />
         <Select v-model="bulkPriority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.setPriority')" :aria-label="t('workspace.setPriority')" size="small" style="min-width: 140px" />
@@ -960,4 +975,5 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
   <BulkItemLinksDialog v-if="canWrite" v-model:visible="bulkLinksOpen" :source-type="isReq ? 'requirement' : 'test'" :project-id="pid" :selected="selectedIds" />
   <BulkRelationsDialog v-if="isReq && canWrite" v-model:visible="bulkRelationsOpen" :project-id="pid" :selected="selectedIds" @done="load" />
   <BulkRequirementIssuesDialog v-if="isReq && canWrite" v-model:visible="bulkIssuesOpen" :project-id="pid" :selected="selectedIds" />
+  <TestStubsDialog v-if="!isReq" v-model:visible="stubsOpen" :project-id="pid" :ids="selectedIds" :query="composed" :shown="items.length" :can-write="canWrite" @marked="load" />
 </template>

@@ -48,6 +48,7 @@ Med behörighet att redigera både krav och testfall kan de valda taggarna ocks�
 | `version>=2` | jämförelse av tal |
 | `updated_at>=2026-01-01` | jämförelse av datum |
 | `has:criteria` eller `criteria:*` | fältet är inte tomt |
+| `has:!script` eller `-has:script` | fältet är tomt |
 
 ### Operatorer
 
