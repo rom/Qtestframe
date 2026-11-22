@@ -182,11 +182,26 @@ func TestERecordsReasonAndSignatures(t *testing.T) {
 	e.member("rita@example.com", rbac.RoleManager)
 	rc := e.login("rita@example.com")
 	rec := a.m("POST", "/api/v1/requirements/"+r1+"/verification-records", map[string]any{"method": "inspection", "result": "pass"}, 201)["id"].(string)
-	rc.m("POST", "/api/v1/verification-records/"+rec+"/signoff", map[string]any{"comment": "ok"}, 400)
+	if res := rc.m("POST", "/api/v1/verification-records/"+rec+"/signoff", map[string]any{"comment": "ok"}, 428); res["action"] != "verification.signoff" {
+		t.Fatal(res)
+	}
 	rc.m("POST", "/api/v1/verification-records/"+rec+"/signoff", map[string]any{"comment": "ok", "meaning": "reviewed"}, 403)
 	rc.m("POST", "/api/v1/verification-records/"+rec+"/signoff", map[string]any{"comment": "ok", "password": testPassword, "meaning": "reviewed"}, 200)
 	if l := items(rc.m("GET", "/api/v1/esignatures?entity_type=verification_record&entity_id="+rec, nil, 200)); len(l) != 1 || l[0]["user_email"] != "rita@example.com" {
 		t.Fatal(l)
+	}
+	// or with a signing ticket, as the web client does after the 428
+	rc.m("DELETE", "/api/v1/verification-records/"+rec+"/signoff", nil, 200)
+	tk = ticket(rc, "verification.signoff", 201, map[string]any{"meaning": "reviewed"})
+	rc.with(map[string]string{"X-Signature-Ticket": tk}).m("POST", "/api/v1/verification-records/"+rec+"/signoff", map[string]any{}, 200)
+	rc.with(map[string]string{"X-Signature-Ticket": tk}).m("POST", "/api/v1/verification-records/"+rec+"/signoff", map[string]any{}, 428)
+	if l := items(rc.m("GET", "/api/v1/esignatures?entity_type=verification_record&entity_id="+rec, nil, 200)); len(l) != 2 || l[0]["meaning"] != "reviewed" {
+		t.Fatal(l)
+	}
+	// a baseline sign-off with a ticket takes its meaning
+	tk = ticket(a, "baseline.signoff", 201, map[string]any{"meaning": "reviewed"})
+	if so := a.with(map[string]string{"X-Signature-Ticket": tk}).m("POST", "/api/v1/baselines/"+bid+"/signoffs", map[string]any{}, 201); so["meaning"] != "reviewed" {
+		t.Fatal(so)
 	}
 	a.m("GET", "/api/v1/esignatures?entity_type=nonsense&entity_id=x", nil, 400)
 }

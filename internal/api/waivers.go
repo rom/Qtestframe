@@ -303,7 +303,7 @@ func (s *Server) handleDecideWaiver(w http.ResponseWriter, r *http.Request, p *P
 		writeError(w, http.StatusForbidden, "forbidden", "you are not one of the waiver's approvers")
 		return
 	}
-	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, nil)
+	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, nil, model.SignWaiverDecision)
 	if !ok {
 		return
 	}
@@ -506,7 +506,7 @@ func (s *Server) handleAcceptRisk(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
-	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, nil)
+	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, nil, model.SignRiskAccept)
 	if !ok {
 		return
 	}

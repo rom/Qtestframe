@@ -354,8 +354,11 @@ func (s *Server) checkSigner(w http.ResponseWriter, r *http.Request, p *Principa
 		s.fail(w, r, err)
 		return false
 	}
-	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, model.SignoffMeanings)
+	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, model.SignoffMeanings, model.SignBaselineSignoff)
 	req.proof = proof
+	if ok && req.Meaning == "" {
+		req.Meaning = proof.Meaning // from a signing ticket
+	}
 	return ok
 }
 

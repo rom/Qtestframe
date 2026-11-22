@@ -187,7 +187,11 @@ func cleanTimeZone(tz string) string {
 // second-factor code (single sign-on accounts: a sign-in within the
 // configured window, and the code when enrolled here), and a meaning from
 // the organisation's list. It writes the error and returns false otherwise.
-func (s *Server) confirmSigner(w http.ResponseWriter, r *http.Request, p *Principal, c signerCreds, meanings []string) (*signerProof, bool) {
+//
+// In electronic-records mode a request may instead carry a signing ticket
+// for action (X-Signature-Ticket); a request without credentials answers
+// 428 signature_required, so the client asks for them in its own dialog.
+func (s *Server) confirmSigner(w http.ResponseWriter, r *http.Request, p *Principal, c signerCreds, meanings []string, action string) (*signerProof, bool) {
 	if p.Token != nil || p.Session == nil {
 		writeError(w, http.StatusForbidden, "forbidden", "electronic signatures are given in the browser, not with an API token")
 		return nil, false
@@ -195,6 +199,20 @@ func (s *Server) confirmSigner(w http.ResponseWriter, r *http.Request, p *Princi
 	ctx := r.Context()
 	st := s.erecords(ctx, p.TenantID())
 	proof := &signerProof{Meaning: strings.TrimSpace(c.Meaning), TimeZone: cleanTimeZone(c.TimeZone)}
+	if st.Enabled && action != "" {
+		if tk := strings.TrimSpace(r.Header.Get(headerSignatureTicket)); tk != "" {
+			t, ok := s.takeTicket(ctx, p, tk, action)
+			if !ok {
+				signatureRequired(w, action, st, "the signature is not valid for this action (expired, used or of someone else): sign again")
+				return nil, false
+			}
+			return &signerProof{Method: t.Method, Meaning: t.Meaning, TimeZone: t.TimeZone}, true
+		}
+		if c.Password == "" && c.MFACode == "" && proof.Meaning == "" {
+			signatureRequired(w, action, st, "this action needs your electronic signature (electronic-records mode)")
+			return nil, false
+		}
+	}
 	if st.Enabled {
 		meanings = st.Meanings
 		if proof.Meaning == "" {
@@ -300,8 +318,8 @@ func (s *Server) handleSigningTicket(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, err)
 		return
 	}
-	if !slices.Contains(model.ERecordsSignatureActions, req.Action) {
-		s.fail(w, r, badRequest("action must be one of %s", strings.Join(model.ERecordsSignatureActions, ", ")))
+	if !slices.Contains(signableActions, req.Action) {
+		s.fail(w, r, badRequest("action must be one of %s", strings.Join(signableActions, ", ")))
 		return
 	}
 	if len([]rune(req.Comment)) > 2000 {
@@ -313,7 +331,7 @@ func (s *Server) handleSigningTicket(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, badRequest("electronic-records mode is off: this action needs no signature"))
 		return
 	}
-	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, nil)
+	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, nil, "")
 	if !ok {
 		return
 	}
@@ -326,6 +344,24 @@ func (s *Server) handleSigningTicket(w http.ResponseWriter, r *http.Request, p *
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"ticket": tok, "action": t.Action, "meaning": t.Meaning, "expires_at": t.ExpiresAt})
 }
+
+// signatureRequired answers 428: the action needs a signature (ticket).
+func signatureRequired(w http.ResponseWriter, action string, st *model.ERecordsSettings, msg string) {
+	writeJSON(w, http.StatusPreconditionRequired, map[string]any{"error": msg, "code": "signature_required", "action": action, "meanings": st.Meanings})
+}
+
+// takeTicket uses up a signing ticket of the caller's session for action.
+func (s *Server) takeTicket(ctx context.Context, p *Principal, ticket, action string) (*store.SigningTicket, bool) {
+	t, err := s.Store.TakeSigningTicket(ctx, auth.HashToken(ticket))
+	if err != nil || p.Session == nil || t.UserID != p.User.ID || t.TenantID != p.TenantID() || t.SessionID != p.Session.ID || t.Action != action {
+		return nil, false
+	}
+	return t, true
+}
+
+// signableActions are the actions a signing ticket can be for.
+var signableActions = append(append([]string{}, model.ERecordsSignatureActions...),
+	model.SignBaselineSignoff, model.SignWaiverDecision, model.SignRiskAccept, model.SignVerificationSignoff)
 
 // ---------------------------------------------------------------- record hashes
 
@@ -721,16 +757,13 @@ func (s *Server) serveERecords(fn handlerFunc, w http.ResponseWriter, r *http.Re
 		return
 	}
 	ticket := strings.TrimSpace(r.Header.Get(headerSignatureTicket))
-	required := func(msg string) {
-		writeJSON(w, http.StatusPreconditionRequired, map[string]any{"error": msg, "code": "signature_required", "action": need.action, "meanings": st.Meanings})
-	}
 	if ticket == "" {
-		required("this action needs your electronic signature (electronic-records mode)")
+		signatureRequired(w, need.action, st, "this action needs your electronic signature (electronic-records mode)")
 		return
 	}
-	t, err := s.Store.TakeSigningTicket(r.Context(), auth.HashToken(ticket))
-	if err != nil || p.Session == nil || t.UserID != p.User.ID || t.TenantID != p.TenantID() || t.SessionID != p.Session.ID || t.Action != need.action {
-		required("the signature is not valid for this action (expired, used or of someone else): sign again")
+	t, ok := s.takeTicket(r.Context(), p, ticket, need.action)
+	if !ok {
+		signatureRequired(w, need.action, st, "the signature is not valid for this action (expired, used or of someone else): sign again")
 		return
 	}
 	cw := &capture{ResponseWriter: w}

@@ -355,7 +355,7 @@ func (s *Server) handleSignRecord(sign bool) handlerFunc {
 		var proof *signerProof
 		if sign && s.erecords(r.Context(), p.TenantID()).Enabled {
 			var ok bool
-			if proof, ok = s.confirmSigner(w, r, p, req.signerCreds, nil); !ok {
+			if proof, ok = s.confirmSigner(w, r, p, req.signerCreds, nil, model.SignVerificationSignoff); !ok {
 				return
 			}
 		}

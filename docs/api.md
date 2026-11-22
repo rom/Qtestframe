@@ -3122,7 +3122,10 @@ An organisation setting, off by default. When it is on, the server enforces:
   sign-offs: the password and, when the signer has a second factor, a code
   (`mfa_code`); single sign-on accounts sign within `sso_reauth_minutes` of
   signing in. `meaning` must be one of `meanings`; `time_zone` (IANA) is
-  recorded with the UTC time.
+  recorded with the UTC time. These requests may instead carry a ticket
+  (`X-Signature-Ticket`) for `baseline.signoff`, `waiver.decision`,
+  `risk.accept` or `verification.signoff`; without any credentials they
+  answer 428 `signature_required` like the actions above.
 - **Inactivity timeout**: a browser session ends after
   `idle_timeout_minutes` without requests (requests with the header
   `X-Qtf-Background: 1`, the client's polling, do not count).
@@ -3131,7 +3134,7 @@ An organisation setting, off by default. When it is on, the server enforces:
 |---|---|---|---|
 | GET | `/erecords` | signed in | `{"settings": {"enabled", "meanings", "signature_actions", "reason_edits", "idle_timeout_minutes", "sso_reauth_minutes", "updated_by", "updated_at"}, "signature_actions": [...], "reason_edits": [...]}` (the last two: what can be chosen) |
 | PUT | `/erecords` | tenant.manage | replaces the settings; recorded as `erecords.enable`, `erecords.disable` or `erecords.update` |
-| POST | `/esign/tickets` | signed in | `{"action", "password", "mfa_code", "meaning", "comment", "time_zone"}` → 201 `{"ticket", "action", "meaning", "expires_at"}`: single use, 5 minutes, this session only. API tokens cannot sign (403). Errors 403 `reauth_failed`, `reauth_required`, `mfa_required`, `mfa_invalid`, 400 `meaning_required`, 429 |
+| POST | `/esign/tickets` | signed in | `action`: one of `signature_actions` or `baseline.signoff`, `waiver.decision`, `risk.accept`, `verification.signoff`; `{"action", "password", "mfa_code", "meaning", "comment", "time_zone"}` → 201 `{"ticket", "action", "meaning", "expires_at"}`: single use, 5 minutes, this session only. API tokens cannot sign (403). Errors 403 `reauth_failed`, `reauth_required`, `mfa_required`, `mfa_invalid`, 400 `meaning_required`, 429 |
 | GET | `/esignatures?entity_type=&entity_id=` | read permission on the record | the signatures of a record (`requirement`, `test`, `release`, `baseline`, `waiver`, `risk`, `verification_record`), newest first: `user_name`, `user_email`, `signed_at` (UTC), `time_zone`, `meaning`, `action`, `method` (`password`, `password+mfa`, `sso`, `sso+mfa`), `comment`, `content_hash` and `valid` (the record still has the signed content) |
 | GET | `/esignatures?project_id=` | audit.read | all signatures of a project (without parameters: of the organisation) |
 | GET | `/erecords/report?format=json\|md` | audit.read | the "Part 11 / Annex 11 controls" report: per control `references`, `provider` (`tool`, `shared`, `customer`), `status` (`met`, `not_configured`, `attention`, `procedural`), what the tool does, what the customer's procedures must cover, and `evidence` (it verifies the audit chain) |
