@@ -63,7 +63,7 @@ is unreachable); all other paths serve the web client.
 | Method | Path | Body / Notes | Response |
 |---|---|---|---|
 | GET | `/auth/providers` | public | `{"local":true,"oidc":[{"name","display_name","login_url"}],"saml":[{"name","display_name","login_url"}]}` |
-| POST | `/auth/login` | `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after 10 attempts in 5 min per IP + e-mail, 403 if local login is disabled | `Me` + `qtf_session` cookie, or `{"mfa_required": true, …}` + `qtf_mfa` cookie when a second factor is needed (see [Multi-factor authentication](#multi-factor-authentication)) |
+| POST | `/auth/login` | `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after `auth.login_max_attempts` attempts (default 10) within `auth.login_lockout` (default 5 min) per IP + e-mail, 403 if local login is disabled | `Me` + `qtf_session` cookie, or `{"mfa_required": true, …}` + `qtf_mfa` cookie when a second factor is needed (see [Multi-factor authentication](#multi-factor-authentication)) |
 | POST | `/auth/logout` | deletes the session | 204 |
 | GET | `/auth/me` | | `Me` |
 | POST | `/auth/switch-tenant` | `{"tenant_id"}` | `Me` |

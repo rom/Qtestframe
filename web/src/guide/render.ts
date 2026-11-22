@@ -9,7 +9,7 @@ import MarkdownIt from 'markdown-it'
 import type { Token } from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { createSlugger } from './slug'
-import { classifyHref, helpPath, resolveImage } from './links'
+import { classifyHref, helpPath, resolveImage, type GuideBook } from './links'
 
 export interface Heading {
   level: number
@@ -22,6 +22,8 @@ export interface RenderOptions {
   lang: string
   /** image file name → bundled URL */
   assets: Record<string, string>
+  /** the guide the page belongs to (default the user guide): links between its pages stay in it */
+  book?: GuideBook
   /** accessible name of the scrollable region around tables */
   tableLabel?: string
   /** text shown for a screenshot that is not available */
@@ -77,7 +79,7 @@ export function inlineText(tok: Token | undefined): string {
 }
 
 /** Parse a page and rewrite its tokens in place; returns the tokens, headings and title. */
-export function processTokens(markdown: string, opts: Pick<RenderOptions, 'lang' | 'assets'>): { tokens: Token[]; headings: Heading[]; title: string } {
+export function processTokens(markdown: string, opts: Pick<RenderOptions, 'lang' | 'assets' | 'book'>): { tokens: Token[]; headings: Heading[]; title: string } {
   const tokens = md.parse(markdown ?? '', {})
   const slug = createSlugger()
   const headings: Heading[] = []
@@ -100,15 +102,18 @@ export function processTokens(markdown: string, opts: Pick<RenderOptions, 'lang'
   return { tokens, headings, title }
 }
 
-function rewriteInline(tok: Token, opts: Pick<RenderOptions, 'lang' | 'assets'>) {
+function rewriteInline(tok: Token, opts: Pick<RenderOptions, 'lang' | 'assets' | 'book'>) {
   if (tok.type === 'link_open') {
     const target = classifyHref(attr(tok, 'href'))
     switch (target.kind) {
-      case 'page':
-        tok.attrSet('href', helpPath(target.page, target.hash))
+      case 'page': {
+        const book = target.book ?? opts.book ?? 'user'
+        tok.attrSet('href', helpPath(target.page, target.hash, book))
         tok.attrSet('data-guide-page', target.page)
+        tok.attrSet('data-guide-book', book)
         if (target.hash) tok.attrSet('data-guide-hash', target.hash)
         break
+      }
       case 'anchor':
         tok.attrSet('href', '#' + encodeURIComponent(target.hash))
         tok.attrSet('data-guide-hash', target.hash)
@@ -148,7 +153,7 @@ export function renderGuide(markdown: string, opts: RenderOptions): RenderedPage
 /** DOMPurify with the attributes the guide needs; no scripts, handlers or forms survive. */
 export function sanitize(html: string): string {
   return DOMPurify.sanitize(html, {
-    ADD_ATTR: ['data-guide-page', 'data-guide-hash', 'data-guide-app', 'loading', 'decoding'],
+    ADD_ATTR: ['data-guide-page', 'data-guide-book', 'data-guide-hash', 'data-guide-app', 'loading', 'decoding'],
     FORBID_TAGS: ['style', 'form', 'input', 'button', 'textarea', 'select', 'iframe'],
     FORBID_ATTR: ['style'],
   })

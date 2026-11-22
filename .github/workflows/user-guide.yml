@@ -1,13 +1,14 @@
 name: user-guide
-# Builds the user guide as PDF and single-file Markdown (make guide) and
-# publishes it on the rolling "user-guide" release, so README.md can link to
-# the latest files. Pull requests get the files as a build artifact.
+# Builds the user guide and the administrator guide as PDF and single-file
+# Markdown (make guide admin-guide) and publishes them on the rolling
+# "user-guide" release, so README.md can link to the latest files. Pull
+# requests get the files as a build artifact.
 on:
   push:
     branches: [rom]
-    paths: ['docs/user-guide/**', 'web/src/guide/**', 'web/scripts/guide-export.mjs', '.github/workflows/user-guide.yml']
+    paths: ['docs/user-guide/**', 'docs/admin-guide/**', 'web/src/guide/**', 'web/scripts/guide-export.mjs', '.github/workflows/user-guide.yml']
   pull_request:
-    paths: ['docs/user-guide/**', 'web/src/guide/**', 'web/scripts/guide-export.mjs']
+    paths: ['docs/user-guide/**', 'docs/admin-guide/**', 'web/src/guide/**', 'web/scripts/guide-export.mjs']
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,8 +32,10 @@ jobs:
         working-directory: web
       - name: build the guide (PDF and Markdown, English and Swedish)
         run: make guide GUIDE_OUT=dist/user-guide
+      - name: build the administrator guide (PDF and Markdown, English and Swedish)
+        run: make admin-guide ADMIN_GUIDE_OUT=dist/user-guide
       - name: bundle the Markdown with its images
-        run: cd dist && zip -qr user-guide/qtestframe-user-guide-markdown.zip user-guide/*.md user-guide/images
+        run: cd dist && zip -qr user-guide/qtestframe-user-guide-markdown.zip user-guide/qtestframe-user-guide-*.md user-guide/images
       - uses: actions/upload-artifact@v4
         with:
           name: user-guide
@@ -42,5 +45,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view user-guide >/dev/null 2>&1 || gh release create user-guide --title "User guide (latest)" --notes "The Qtestframe user guide as PDF and single-file Markdown, rebuilt on every change to the guide on the main branch." --prerelease --target "$GITHUB_SHA"
-          gh release upload user-guide --clobber dist/user-guide/qtestframe-user-guide-*.pdf dist/user-guide/qtestframe-user-guide-*.md dist/user-guide/qtestframe-user-guide-markdown.zip
+          gh release view user-guide >/dev/null 2>&1 || gh release create user-guide --title "User guide (latest)" --notes "The Qtestframe user guide and administrator guide as PDF and single-file Markdown, rebuilt on every change to the guides on the main branch." --prerelease --target "$GITHUB_SHA"
+          gh release upload user-guide --clobber dist/user-guide/qtestframe-user-guide-*.pdf dist/user-guide/qtestframe-user-guide-*.md dist/user-guide/qtestframe-user-guide-markdown.zip \
+            dist/user-guide/qtestframe-admin-guide-*.pdf dist/user-guide/qtestframe-admin-guide-*.md

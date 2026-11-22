@@ -199,7 +199,7 @@ requirements:
 runner:
   # Execute automated test scripts attached to test cases. DISABLED by
   # default: enabling it means users with the script.execute permission
-  # (manager, admin) can run code on this host – inside the sandbox
+  # (test lead, manager and admin by default) can run code on this host – inside the sandbox
   # (Landlock + seccomp + rlimits + no_new_privs), but still.
   # On SELinux hosts also: setsebool -P qtestframe_run_scripts on
   enabled: false

@@ -2559,7 +2559,7 @@ Filerna lagras i Qtestframes databas, inte på en separat filserver. Det betyder
 | **API-nycklar** | Testare och uppåt (dina egna nycklar) |
 | **Provisionering (SCIM)** | Administratörer |
 | **Tvåstegsverifiering** | Administratörer (organisationens policy); superadministratörer ställer också in serverpolicyn |
-| **Händelselogg** | Ansvarig och uppåt |
+| **Händelselogg** | Testledare och uppåt |
 | **Organisationer** | Superadministratörer |
 | **Användare** | Superadministratörer |
 | **Säkerhetskopiering** | Superadministratörer |
@@ -2791,7 +2791,7 @@ Så fungerar det:
 
 ## Händelselogg
 
-*(Ansvarig)* **Administration → Händelselogg** registrerar vem som gjorde vad och när i organisationen: skapande, ändring och borttagning av objekt, in- och utloggningar, ändringar av medlemskap med mera. De nyaste posterna visas först. Varje post visar avataren för den som utförde händelsen.
+*(Testledare och uppåt)* **Administration → Händelselogg** registrerar vem som gjorde vad och när i organisationen: skapande, ändring och borttagning av objekt, inloggningar, ändringar av medlemskap med mera. De nyaste posterna visas först. Varje post visar avataren för den som utförde händelsen.
 
 ![Händelseloggen med tid, användare, åtgärd, objekt och detaljer](images/sv-admin-audit.png)
 
@@ -2819,7 +2819,7 @@ Så fungerar det:
 - **Redigera användare**: ändra visningsnamnet, ange ett nytt lösenord (**Återställ lösenord (valfritt)**), gör användaren till superadministratör eller markera kontot som **Inaktiverad**. Att inaktivera ett konto eller ange ett lösenord loggar ut användaren överallt. **Måste byta lösenord** tvingar fram ett nytt lösenord vid nästa inloggning.
 - Du kan inte ta bort din egen superadministratörsflagga eller inaktivera dig själv.
 
-Användare som loggar in med enkel inloggning via OIDC eller SAML kan skapas automatiskt vid första inloggningen, med en roll som hämtas från grupperna hos identitetsleverantören; det konfigureras på servern (se driftdokumentationen).
+Användare som loggar in med enkel inloggning via OIDC eller SAML kan skapas automatiskt vid första inloggningen, med en roll som hämtas från grupperna hos identitetsleverantören; det konfigureras på servern (se [administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authentication.md#provisionering-av-anv%C3%A4ndare-med-single-sign-on)).
 
 ## Säkerhetskopiering och återställning
 
@@ -2895,11 +2895,11 @@ Sidan visar:
 - Leverantörens uppgifter, till exempel nyckelfilen eller TPM-enheten, och **nyckelns fingeravtryck**, som identifierar nyckeln utan att avslöja den.
 - Den **aktiva datanyckeln** och hur många **lagrade hemligheter** som är krypterade. Om några inte är krypterade ännu visas ett meddelande; de krypteras nästa gång servern startar.
 
-Nyckelleverantören väljs i serverns konfigurationsfil (avsnittet `secrets`) och kan inte ändras här. Utan dess nyckel går de lagrade hemligheterna – och säkerhetskopiorna – inte att läsa; be serveradministratören att förvara den säkert. Serveradministratören hanterar nycklarna på kommandoraden, till exempel `qtestframe secrets status` och `qtestframe secrets rotate`; se driftguiden.
+Nyckelleverantören väljs i serverns konfigurationsfil (avsnittet `secrets`) och kan inte ändras här. Utan dess nyckel går de lagrade hemligheterna – och säkerhetskopiorna – inte att läsa; be serveradministratören att förvara den säkert. Serveradministratören hanterar nycklarna på kommandoraden, till exempel `qtestframe secrets status` och `qtestframe secrets rotate`; se [administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/security.md#kryptering-av-lagrade-hemligheter).
 
 ### Testkörning
 
-Om automatiserade skript och webbtester får köras på servern, deras tidsgränser och begränsningar, och vad webbtester sparar som bevis. Inställningarna **gäller efter omstart** av servern, eftersom körningen och dess sandlåda förbereds när servern startar. Slår du på körningen kan medlemmar med rätt behörighet köra kod på servern; läs säkerhetsavsnitten i driftguiden först.
+Om automatiserade skript och webbtester får köras på servern, deras tidsgränser och begränsningar, och vad webbtester sparar som bevis. Inställningarna **gäller efter omstart** av servern, eftersom körningen och dess sandlåda förbereds när servern startar. Slår du på körningen kan medlemmar med rätt behörighet köra kod på servern; läs [säkerhetsavsnitten i administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/security.md#sandl%C3%A5dan-f%C3%B6r-skript-och-webbtester) först.
 
 Gallring: borttagna objekt ligger i [papperskorgen](#versionshistorik-och-återställning) i 30 dagar; det går inte att ändra. Om säkerhetskopior, se [Säkerhetskopiering och återställning](#säkerhetskopiering-och-återställning). Flerfaktorsautentisering har en egen sida som länkas från systeminställningarna.
 

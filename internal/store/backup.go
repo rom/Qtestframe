@@ -56,6 +56,18 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "
 	// personal autocomplete history: a convenience, not project data
 	"suggest_history": true}
 
+// NotBackedUpTables returns the tables that exist but are deliberately not
+// part of a backup, sorted (for the administrator guide, see
+// internal/admindoc).
+func NotBackedUpTables() []string {
+	out := make([]string, 0, len(notBackedUp))
+	for t := range notBackedUp {
+		out = append(out, t)
+	}
+	sort.Strings(out)
+	return out
+}
+
 // boolColumns are stored as INTEGER 0/1 on SQLite and BOOLEAN on PostgreSQL.
 var boolColumns = map[string]bool{
 	"users.super_admin": true, "users.disabled": true, "users.must_change_password": true,

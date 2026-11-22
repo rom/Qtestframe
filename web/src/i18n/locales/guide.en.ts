@@ -3,6 +3,7 @@
 const guideEn = {
   titles: {
     help: 'Help',
+    adminGuide: 'Administrator guide',
   },
   guide: {
     queryGuide: 'Full description and examples in the user guide',
@@ -15,11 +16,13 @@ const guideEn = {
     help: 'Help',
     helpMenu: 'Help menu',
     userGuide: 'User guide',
+    adminGuide: 'Administrator guide',
     restartTour: 'Restart intro tour',
     thisPage: 'Help for this page',
     contextHelp: 'Help: {topic}',
     contents: 'Contents',
     contentsNav: 'User guide contents',
+    adminContentsNav: 'Administrator guide contents',
     onThisPage: 'On this page',
     openContents: 'Show contents',
     search: 'Search the guide',

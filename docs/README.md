@@ -11,6 +11,7 @@ PrimeVue client, backed by SQLite or PostgreSQL.
 
 | Document | Audience | Contents |
 |---|---|---|
+| [admin-guide/en/index.md](admin-guide/en/index.md) ([sv](admin-guide/sv/index.md)) | administrators, operators | the administrator guide: architecture, installation, configuration reference, first start, authentication, authorisation, system settings, security and key management, integrations, logging, backup and migration, runbook, command line reference |
 | [architecture.md](architecture.md) | developers, reviewers | components, package map, request lifecycle and middleware chain, multi-tenancy model, data model (ER diagram), deployment topologies, build pipeline |
 | [design.md](design.md) | product owners, developers, testers | functional design: views, requirement language and lint rules, categories and folders, move semantics, evaluation criteria, coverage, runs and executions, query language, search, export formats, RBAC matrix |
 | [api.md](api.md) | integrators, client developers | REST API v1: conventions, errors, every endpoint, query language reference |
@@ -46,7 +47,7 @@ Status, Context, Decision, Consequences).
 
 * Trying it out: `scripts/dev.sh --seed`, then open http://localhost:5173
   ([operations.md §15](operations.md#15-development-setup)).
-* Installing a server: [operations.md §2](operations.md#2-installation),
+* Installing a server: the [administrator guide](admin-guide/en/installation.md) or [operations.md §2](operations.md#2-installation),
   then the checklist in [security.md §12](security.md#12-hardening-checklist).
 * Integrating CI: create an API token (`POST /api/v1/tokens`) and post results
   to `POST /api/v1/runs/{id}/results` ([api.md](api.md#operations-runs-and-executions)).

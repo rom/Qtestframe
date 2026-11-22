@@ -9,7 +9,7 @@
 | **API tokens** | Tester and up (your own tokens) |
 | **Provisioning (SCIM)** | Admins |
 | **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
-| **Audit log** | Manager and up |
+| **Audit log** | Test lead and up |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
 | **Backup** | Super admins |
@@ -241,7 +241,7 @@ How it works:
 
 ## Audit log
 
-*(Manager)* **Administration → Audit log** records who did what and when in the organisation: creating, changing and deleting items, sign-ins and sign-outs, membership changes and more. Newest entries come first. Each entry shows the avatar of the person who did it.
+*(Test lead and up)* **Administration → Audit log** records who did what and when in the organisation: creating, changing and deleting items, sign-ins, membership changes and more. Newest entries come first. Each entry shows the avatar of the person who did it.
 
 ![The audit log with time, user, action, entity and details](../images/en-admin-audit.png)
 
@@ -269,7 +269,7 @@ How it works:
 - **Edit user**: change the display name, set a new password (**Reset password (optional)**), make the user a super administrator, or mark the account **Disabled**. Disabling an account or setting a password signs the user out everywhere. **Must change password** forces a new password at the next sign-in.
 - You cannot remove your own super admin flag or disable yourself.
 
-Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the operations guide).
+Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the [administrator guide](../../admin-guide/en/authentication.md#provisioning-of-single-sign-on-users)).
 
 ## Backup and restore
 
@@ -345,11 +345,11 @@ The page shows:
 - The details of the provider, such as the key file or the TPM device, and the **key fingerprint**, which identifies the key without revealing it.
 - The **active data key** and how many **stored secrets** are encrypted. If some are not encrypted yet, a note says so; they are encrypted at the next start of the server.
 
-The key provider is chosen in the server's configuration file (section `secrets`) and cannot be changed here. Without its key, the stored secrets – and backups – cannot be read; ask the server administrator to keep it safe. The server administrator manages the keys on the command line, for example `qtestframe secrets status` and `qtestframe secrets rotate`; see the operations guide.
+The key provider is chosen in the server's configuration file (section `secrets`) and cannot be changed here. Without its key, the stored secrets – and backups – cannot be read; ask the server administrator to keep it safe. The server administrator manages the keys on the command line, for example `qtestframe secrets status` and `qtestframe secrets rotate`; see the [administrator guide](../../admin-guide/en/security.md#encryption-of-stored-secrets).
 
 ### Test runner
 
-Whether automated scripts and web tests may run on the server, their timeouts and limits, and what web tests record as evidence. These settings **apply after a restart** of the server, because the runner and its sandbox are prepared when the server starts. Turning the runner on lets members with the right permission run code on the server; read the security notes of the operations guide first.
+Whether automated scripts and web tests may run on the server, their timeouts and limits, and what web tests record as evidence. These settings **apply after a restart** of the server, because the runner and its sandbox are prepared when the server starts. Turning the runner on lets members with the right permission run code on the server; read the [security notes of the administrator guide](../../admin-guide/en/security.md#the-script-and-web-test-sandbox) first.
 
 Retention: deleted items stay in the [trash](requirements.md#history-and-restore) for 30 days; this is not configurable. For backups, see [Backup and restore](#backup-and-restore). Multi-factor authentication has its own page, linked from the system settings.
 

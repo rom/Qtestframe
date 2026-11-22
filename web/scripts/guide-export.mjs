@@ -1,16 +1,19 @@
 #!/usr/bin/env node
-// Exports the user guide (docs/user-guide) as one document per language:
+// Exports the user guide (docs/user-guide) or, with --guide admin, the
+// administrator guide (docs/admin-guide) as one document per language:
 //
-//   <out>/qtestframe-user-guide-<lang>.md    all pages joined, links between
-//                                             pages turned into anchors
-//   <out>/images/                            the screenshots it uses
-//   <out>/qtestframe-user-guide-<lang>.pdf   printed from the same content
+//   <out>/qtestframe-<guide>-guide-<lang>.md    all pages joined, links between
+//                                                pages turned into anchors
+//   <out>/images/                               the screenshots it uses
+//   <out>/qtestframe-<guide>-guide-<lang>.pdf   printed from the same content
+//
+// Links from one guide into the other become links to the page on GitHub.
 //
 // It uses the guide code of the web client (src/guide: page order, language
 // fallback, heading anchors, link and image rules), loaded through Vite,
 // and Chromium for the PDF. Run `make guide` (or guide-md / guide-pdf).
 //
-//   node scripts/guide-export.mjs [--out DIR] [--lang en,sv] [--no-pdf]
+//   node scripts/guide-export.mjs [--guide user|admin] [--out DIR] [--lang en,sv] [--no-pdf]
 //
 //   QTF_CHROME   Chrome/Chromium executable (default: Playwright's, else a system Chrome)
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -19,24 +22,33 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const web = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const repo = resolve(web, '..')
-const docs = join(repo, 'docs', 'user-guide')
+// the screenshots of both guides live with the user guide
+const imagesDir = join(repo, 'docs', 'user-guide', 'images')
 const PAGE_OF = { en: 'Page', sv: 'Sida' }
+// links from one guide into the other point at the page in the repository
+const REPO_DOCS = 'https://github.com/rom/Qtestframe/blob/rom/docs'
 
 function args(argv) {
-  const o = { out: join(repo, 'dist', 'user-guide'), langs: null, pdf: true }
+  const o = { out: null, langs: null, pdf: true, guide: 'user' }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--out') o.out = resolve(argv[++i] ?? '')
+    else if (a === '--guide') o.guide = argv[++i] ?? ''
     else if (a === '--lang') o.langs = (argv[++i] ?? '').split(',').map((s) => s.trim()).filter(Boolean)
     else if (a === '--no-pdf') o.pdf = false
     else if (a === '-h' || a === '--help') {
-      console.log('usage: guide-export.mjs [--out DIR] [--lang en,sv] [--no-pdf]')
+      console.log('usage: guide-export.mjs [--guide user|admin] [--out DIR] [--lang en,sv] [--no-pdf]')
       process.exit(0)
     } else {
       console.error(`unknown argument ${a}`)
       process.exit(2)
     }
   }
+  if (o.guide !== 'user' && o.guide !== 'admin') {
+    console.error(`--guide must be user or admin, not "${o.guide}"`)
+    process.exit(2)
+  }
+  o.out ??= join(repo, 'dist', `${o.guide}-guide`)
   return o
 }
 
@@ -73,6 +85,9 @@ async function loadGuideCode() {
 
 const opts = args(process.argv.slice(2))
 const g = await loadGuideCode()
+const docs = join(repo, 'docs', `${opts.guide}-guide`)
+const pageList = opts.guide === 'admin' ? g.ADMIN_GUIDE_PAGES : g.GUIDE_PAGES
+const otherGuideUrl = (lang) => (book, page, hash) => `${REPO_DOCS}/${book}-guide/${lang}/${page}.md${hash ? '#' + encodeURIComponent(hash) : ''}`
 
 // the Markdown sources, as the web client bundles them
 const files = {}
@@ -81,7 +96,7 @@ for (const lang of langs) {
   for (const f of readdirSync(join(docs, lang))) if (f.endsWith('.md')) files[`${lang}/${f}`] = readFileSync(join(docs, lang, f), 'utf8')
 }
 const sources = g.collectSources(files)
-const images = readdirSync(join(docs, 'images')).filter((f) => /\.(png|jpe?g|gif|webp|svg)$/i.test(f))
+const images = readdirSync(imagesDir).filter((f) => /\.(png|jpe?g|gif|webp|svg)$/i.test(f))
 const wanted = opts.langs ?? langs
 for (const l of wanted) {
   if (!langs.includes(l)) {
@@ -90,16 +105,18 @@ for (const l of wanted) {
   }
 }
 
-mkdirSync(join(opts.out, 'images'), { recursive: true })
+mkdirSync(opts.out, { recursive: true })
 const built = []
 for (const lang of wanted) {
-  const pages = g.pageOrder(sources, lang).map((page) => ({ page, markdown: g.resolvePage(sources, lang, page).markdown }))
-  const guide = g.compileGuide(pages, { lang, images })
-  const base = join(opts.out, `qtestframe-user-guide-${lang}`)
+  const pages = g.pageOrder(sources, lang, 'en', pageList).map((page) => ({ page, markdown: g.resolvePage(sources, lang, page).markdown }))
+  const guide = g.compileGuide(pages, { lang, images, book: opts.guide, otherGuideUrl: otherGuideUrl(lang) })
+  const base = join(opts.out, `qtestframe-${opts.guide}-guide-${lang}`)
   writeFileSync(base + '.md', guide.markdown)
   // writing into docs/user-guide itself: the images are already there
-  if (resolve(join(docs, 'images')) !== resolve(join(opts.out, 'images')))
-    for (const name of guide.images) copyFileSync(join(docs, 'images', name), join(opts.out, 'images', name))
+  if (guide.images.length && resolve(imagesDir) !== resolve(join(opts.out, 'images'))) {
+    mkdirSync(join(opts.out, 'images'), { recursive: true })
+    for (const name of guide.images) copyFileSync(join(imagesDir, name), join(opts.out, 'images', name))
+  }
   console.log(`${base}.md (${pages.length} pages, ${guide.images.length} images)`)
   built.push({ lang, guide, base })
 }
@@ -115,7 +132,7 @@ if (opts.pdf) {
     process.exit(1)
   }
   try {
-    const assets = Object.fromEntries(images.map((n) => [n, pathToFileURL(join(docs, 'images', n)).href]))
+    const assets = Object.fromEntries(images.map((n) => [n, pathToFileURL(join(imagesDir, n)).href]))
     for (const { lang, guide, base } of built) {
       const html = g.printableHtml(guide, { lang, assets })
       const htmlFile = base + '.print.html'

@@ -10,6 +10,15 @@ the fallback (`web/src/guide/`). Links between pages are written as relative
 Markdown links (`[FAQ](faq.md#anchor)`); the viewer turns them into app links.
 Anchors are GitHub-style slugs of the headings.
 
+The **administrator guide** (`docs/admin-guide/<lang>/`) is built the same
+way: the web client shows it at `/admin-guide/:page` to super administrators
+and organisation admins (pages and order in `ADMIN_GUIDE_PAGES`), `make
+admin-guide` exports it (`guide-export.mjs --guide admin`), and links of the
+form `../../admin-guide/<lang>/<page>.md` (or `../../user-guide/…` from the
+other side) lead from one guide into the other. Its reference parts between
+`<!-- BEGIN GENERATED … -->` markers are written by `make admin-guide-ref`
+(`internal/admindoc`); edit the text around them, not inside.
+
 ## Writing rules
 
 - Use the labels of the user interface exactly as `web/src/i18n/locales/en.ts`
