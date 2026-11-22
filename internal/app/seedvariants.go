@@ -126,6 +126,9 @@ func seedVariantsAndCode(ctx context.Context, st *store.Store, tenantID string, 
 			return err
 		}
 	}
+	if err := seedStubTests(ctx, st, tenantID, p, reqs); err != nil {
+		return err
+	}
 	return seedCI(ctx, st, tenantID, p, regression, rc1)
 }
 
