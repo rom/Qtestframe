@@ -44,6 +44,9 @@ var BackupTables = []string{
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",
 	"system_settings",
+	// verification correlations (0030)
+	"link_criteria", "system_elements", "requirement_elements", "test_elements",
+	"verification_settings", "verification_records", "verification_record_files",
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available
 	"secret_keys",
@@ -61,6 +64,7 @@ var boolColumns = map[string]bool{
 	"users.super_admin": true, "users.disabled": true, "users.must_change_password": true,
 	"login_events.success": true, "scim_users.active": true, "trace_rules.enabled": true,
 	"invitations.sso": true, "report_subscriptions.enabled": true, "secret_keys.active": true,
+	"verification_records.until_change": true, "verification_settings.strict_criteria": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).
@@ -68,7 +72,7 @@ var blobColumns = map[string]bool{"file_blobs.data": true}
 
 // selfReferences names tables whose rows reference rows of the same table;
 // restore inserts parents before children.
-var selfReferences = map[string]string{"folders": "parent_id"}
+var selfReferences = map[string]string{"folders": "parent_id", "system_elements": "parent_id"}
 
 // Restore limits (variables so that tests can lower them).
 var (

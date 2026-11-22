@@ -58,6 +58,8 @@ tags:
   description: Test cases, dependencies and readiness
 - name: Traceability
   description: Requirement–test links and the traceability matrix
+- name: Verification
+  description: Criterion-level verification, verification records, hierarchy roll-up and system elements
 - name: Item links
   description: Links between requirements, tests, runs, files and URLs
 - name: Runs and executions
@@ -3849,6 +3851,129 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/verification:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: Verification of the project
+      operationId: getProjectVerification
+      description: '**Permission:** `requirement.read`. Whether every requirement is verified, and why: criteria with their evidence (tests, steps, verification records), the roll-up of refining children, reasons and inconsistencies.'
+      x-permission: requirement.read
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+        description: query-language filter of the requirements
+      - name: folder_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectVerification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/verification-records:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: List verification records
+      operationId: listVerificationRecords
+      description: '**Permission:** `requirement.read`. Newest first; ?requirement_id= filters.'
+      x-permission: requirement.read
+      parameters:
+      - name: requirement_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/verification-settings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: Verification settings
+      operationId: getVerificationSettings
+      description: '**Permission:** `project.read`. '
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Verification
+      summary: Change verification settings
+      operationId: putVerificationSettings
+      description: '**Permission:** `project.update`. strict_criteria: every criterion needs its own evidence. Statuses that follow evidence are updated.'
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/trash/{id}/restore:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -4345,6 +4470,42 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/links/{id}/criteria:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    put:
+      tags:
+      - Verification
+      summary: Map a link to criteria
+      operationId: putLinkCriteria
+      description: '**Permission:** `test.write`. The criteria the test verifies, each optionally through one test step; an empty list makes it a plain link.'
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                criteria:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/LinkCriterion'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraceLink'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -7122,6 +7283,47 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/elements:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    put:
+      tags:
+      - Verification
+      summary: Allocate a test
+      operationId: putTestElements
+      description: '**Permission:** `test.write`. Replaces its elements.'
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                element_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  element_ids:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/test-dependencies/{id}:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -7923,6 +8125,47 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/elements:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    put:
+      tags:
+      - Verification
+      summary: Allocate a requirement
+      operationId: putRequirementElements
+      description: '**Permission:** `requirement.write`. Replaces its elements.'
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                element_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  element_ids:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/tests/{id}/defects:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -8363,6 +8606,120 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/elements/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Verification
+      summary: Get system element
+      operationId: getElement
+      description: '**Permission:** `project.read`. '
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemElement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Verification
+      summary: Update system element
+      operationId: patchElement
+      description: '**Permission:** `requirement.write`. name, kind, description, parent_id (move), position.'
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemElementInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemElement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Verification
+      summary: Delete system element
+      operationId: deleteElement
+      description: '**Permission:** `requirement.write`. With the elements below it and their allocations.'
+      x-permission: requirement.write
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/elements/{id}/allocations:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Verification
+      summary: Allocate requirements or tests
+      operationId: allocateToElement
+      description: '**Permission:** `project.read`. Also needs `requirement.write` (kind requirement) or `test.write` (kind test).'
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum: [requirement, test]
+                add:
+                  type: array
+                  items:
+                    type: string
+                remove:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemElement'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -10252,6 +10609,89 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/verification:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Verification
+      summary: Is the requirement verified, and why
+      operationId: getRequirementVerification
+      description: '**Permission:** `requirement.read`. Criteria, evidence, children and reasons.'
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequirementVerification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/verification-records:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Verification
+      summary: Verification records of a requirement
+      operationId: listRequirementVerificationRecords
+      description: '**Permission:** `requirement.read`. '
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Verification
+      summary: Record verification evidence
+      operationId: createVerificationRecord
+      description: '**Permission:** `run.execute`. Inspection, analysis, demonstration, review or test evidence about a criterion (or the requirement as a whole). The status follows the evidence.'
+      x-permission: run.execute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRecordInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/tests/{id}/trace-rules:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -11089,6 +11529,100 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/elements:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: List system elements
+      operationId: listElements
+      description: '**Permission:** `project.read`. In tree order, with paths and direct allocations.'
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SystemElement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Verification
+      summary: Create system element
+      operationId: createElement
+      description: '**Permission:** `requirement.write`. '
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemElementInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemElement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/elements/coverage:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: Coverage and verification per element
+      operationId: getElementCoverage
+      description: '**Permission:** `requirement.read`. Requirements allocated to the element or below it (of those matching ?q=), with evidence and verified; tests allocated and passed.'
+      x-permission: requirement.read
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+        description: query-language filter of the requirements
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ElementCoverage'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -12161,6 +12695,133 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/verification-records/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Verification
+      summary: Get verification record
+      operationId: getVerificationRecord
+      description: '**Permission:** `requirement.read`. '
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Verification
+      summary: Update verification record
+      operationId: patchVerificationRecord
+      description: '**Permission:** `run.execute`. A change of the evidence removes the sign-off.'
+      x-permission: run.execute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRecordInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Verification
+      summary: Delete verification record
+      operationId: deleteVerificationRecord
+      description: '**Permission:** `run.execute`. '
+      x-permission: run.execute
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/verification-records/{id}/signoff:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Verification
+      summary: Sign a verification record off
+      operationId: signVerificationRecord
+      description: '**Permission:** `requirement.read`. Also needs `requirement.review` or `run.execute`; the signer must be a second person (not the author nor the performer: 409).'
+      x-permission: requirement.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Verification
+      summary: Remove the sign-off
+      operationId: unsignVerificationRecord
+      description: '**Permission:** `requirement.read`. Also needs `requirement.review` or `run.execute`.'
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -13752,6 +14413,11 @@ components:
           type: string
         test_case_key:
           type: string
+        criteria:
+          type: array
+          description: the criteria the test verifies (criterion_id is the first)
+          items:
+            $ref: '#/components/schemas/LinkCriterion'
     TestRun:
       type: object
       properties:
@@ -14364,6 +15030,360 @@ components:
           type: string
         other_last_result:
           type: string
+    LinkCriterion:
+      type: object
+      required:
+      - criterion_id
+      properties:
+        criterion_id:
+          type: string
+        step_id:
+          type: string
+          description: a step of the test ('' or absent = the whole test)
+    VerificationSettings:
+      type: object
+      properties:
+        strict_criteria:
+          type: boolean
+        updated_by:
+          type: string
+        updated_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    VerificationRecordInput:
+      type: object
+      properties:
+        criterion_id:
+          type:
+          - string
+          - 'null'
+        method:
+          type: string
+          enum: [test, inspection, analysis, demonstration, review]
+          description: default the criterion's method
+        result:
+          type: string
+          enum: [pass, fail, conditional]
+        performed_by:
+          type: string
+        performed_on:
+          type: string
+          format: date
+        note:
+          type: string
+        file_ids:
+          type: array
+          items:
+            type: string
+          description: documents of the project's archive
+        valid_until:
+          type: string
+          description: YYYY-MM-DD or ''
+        until_change:
+          type: boolean
+          description: stops counting when the requirement's content changes
+    VerificationRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        requirement_id:
+          type: string
+        requirement_key:
+          type: string
+        criterion_id:
+          type:
+          - string
+          - 'null'
+        criterion_text:
+          type: string
+        method:
+          type: string
+        result:
+          type: string
+        performed_by:
+          type: string
+        performed_on:
+          type: string
+        note:
+          type: string
+        file_ids:
+          type: array
+          items:
+            type: string
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              kind:
+                type: string
+        valid_until:
+          type: string
+        until_change:
+          type: boolean
+        invalidated_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        invalidated_reason:
+          type: string
+        validity:
+          type: string
+          enum: [valid, expired, invalidated]
+        signoff:
+          type:
+          - object
+          - 'null'
+          properties:
+            by:
+              type: string
+            name:
+              type: string
+            comment:
+              type: string
+            at:
+              type: string
+              format: date-time
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Evidence:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [test, record]
+        id:
+          type: string
+        link_id:
+          type: string
+        key:
+          type: string
+        title:
+          type: string
+        step_id:
+          type: string
+        step_position:
+          type: integer
+        result:
+          type: string
+        state:
+          type: string
+          enum: [passed, failed, pending, void]
+        plain:
+          type: boolean
+        note:
+          type: string
+        date:
+          type: string
+    VerificationReason:
+      type: object
+      properties:
+        code:
+          type: string
+        params:
+          type: object
+          additionalProperties:
+            type: string
+        text:
+          type: string
+    RequirementVerification:
+      type: object
+      properties:
+        requirement_id:
+          type: string
+        key:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        strict:
+          type: boolean
+        own:
+          type: string
+          enum: [verified, partial, failed, pending, none]
+        state:
+          type: string
+          enum: [verified, partial, failed, pending, none]
+        verified:
+          type: boolean
+        criteria:
+          type: array
+          items:
+            type: object
+            properties:
+              criterion_id:
+                type: string
+              position:
+                type: integer
+              description:
+                type: string
+              method:
+                type: string
+              state:
+                type: string
+              evidence:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Evidence'
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/Evidence'
+        criteria_verified:
+          type: integer
+        criteria_total:
+          type: integer
+        children:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              key:
+                type: string
+              title:
+                type: string
+              status:
+                type: string
+              state:
+                type: string
+        children_verified:
+          type: integer
+        parent_ids:
+          type: array
+          items:
+            type: string
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationReason'
+        inconsistencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationReason'
+    ProjectVerification:
+      type: object
+      properties:
+        strict:
+          type: boolean
+        counts:
+          type: object
+          additionalProperties:
+            type: integer
+        criteria_verified:
+          type: integer
+        criteria_total:
+          type: integer
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequirementVerification'
+        inconsistent:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequirementVerification'
+    SystemElementInput:
+      type: object
+      properties:
+        parent_id:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [system, subsystem, component, product, supplier, other]
+        description:
+          type: string
+        position:
+          type: integer
+    SystemElement:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        parent_id:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        kind:
+          type: string
+        description:
+          type: string
+        position:
+          type: integer
+        path:
+          type: string
+        requirement_ids:
+          type: array
+          items:
+            type: string
+        test_ids:
+          type: array
+          items:
+            type: string
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ElementCoverage:
+      type: object
+      properties:
+        element_id:
+          type: string
+        parent_id:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        kind:
+          type: string
+        path:
+          type: string
+        depth:
+          type: integer
+        requirements:
+          type: integer
+        covered:
+          type: integer
+        verified:
+          type: integer
+        failed:
+          type: integer
+        tests:
+          type: integer
+        tests_passed:
+          type: integer
+        percent:
+          type: number
     Revision:
       type: object
       properties:

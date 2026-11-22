@@ -808,6 +808,24 @@ type traceReq struct {
 	Title      string `json:"title"`
 	Obligation string `json:"obligation"`
 	Coverage   string `json:"coverage"`
+	// Verification: the rolled-up verification state; Criteria: the
+	// criteria with their states (criterion rows of the matrix);
+	// Records: the number of verification records that count.
+	Verification string           `json:"verification"`
+	Criteria     []traceCriterion `json:"criteria"`
+	Records      int              `json:"records"`
+	ParentIDs    []string         `json:"parent_ids"`
+}
+
+// traceCriterion is a criterion row of the traceability matrix.
+type traceCriterion struct {
+	ID          string `json:"id"`
+	Position    int    `json:"position"`
+	Description string `json:"description"`
+	Method      string `json:"method"`
+	State       string `json:"state"`
+	// Records counted for it.
+	Records int `json:"records"`
 }
 
 type traceTest struct {
@@ -862,7 +880,27 @@ func (s *Server) handleTraceability(w http.ResponseWriter, r *http.Request, p *P
 		if filtered {
 			cov = store.CoverageInConfiguration(pc.r2t[rq.ID], pc.cfgResults, cfg)
 		}
-		res.Requirements = append(res.Requirements, traceReq{rq.ID, rq.Key, rq.Title, rq.Obligation, cov})
+		tr := traceReq{ID: rq.ID, Key: rq.Key, Title: rq.Title, Obligation: rq.Obligation, Coverage: cov, Verification: rq.Verification,
+			Criteria: []traceCriterion{}, ParentIDs: []string{}}
+		if v := pc.verification()[rq.ID]; v != nil {
+			tr.ParentIDs = v.ParentIDs
+			for _, c := range v.Criteria {
+				tc := traceCriterion{ID: c.CriterionID, Position: c.Position, Description: c.Description, Method: c.Method, State: c.State}
+				for _, e := range c.Evidence {
+					if e.Kind == "record" && e.State != model.EvidenceVoid {
+						tc.Records++
+						tr.Records++
+					}
+				}
+				tr.Criteria = append(tr.Criteria, tc)
+			}
+			for _, e := range v.Evidence {
+				if e.Kind == "record" && e.State != model.EvidenceVoid {
+					tr.Records++
+				}
+			}
+		}
+		res.Requirements = append(res.Requirements, tr)
 	}
 	for _, t := range tests {
 		last := t.LastResult

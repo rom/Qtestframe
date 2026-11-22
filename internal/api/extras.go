@@ -270,6 +270,10 @@ func (s *Server) handleCreateRelation(w http.ResponseWriter, r *http.Request, p 
 	}
 	rel.Direction = "outgoing"
 	s.audit(r.Context(), p, "relation.create", "relation", rel.ID, rel.SourceKey+" "+rel.Type+" "+rel.TargetKey)
+	if rel.Type == "refines" {
+		// the parent's verification rolls up its children
+		s.syncEvidence(r.Context(), p, rel.ProjectID, []string{rel.SourceID, rel.TargetID})
+	}
 	writeJSON(w, http.StatusCreated, rel)
 }
 
@@ -283,6 +287,9 @@ func (s *Server) handleDeleteRelation(w http.ResponseWriter, r *http.Request, p 
 		return
 	}
 	s.audit(r.Context(), p, "relation.delete", "relation", rel.ID, rel.SourceKey+" "+rel.Type+" "+rel.TargetKey)
+	if rel.Type == "refines" {
+		s.syncEvidence(r.Context(), p, rel.ProjectID, []string{rel.SourceID, rel.TargetID})
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

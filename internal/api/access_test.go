@@ -62,6 +62,8 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	if err := e.st.CreateRun(ctx, e.tenant.ID, run, []string{t1}); err != nil {
 		t.Fatal(err)
 	}
+	a.m("POST", "/api/v1/requirements/"+r1+"/verification-records", map[string]any{"method": "inspection", "result": "pass"}, 201)
+	a.m("POST", pp+"/elements", map[string]any{"name": "Secret unit"}, 201)
 	a.m("PUT", pp+"/access", map[string]any{"access": "restricted"}, 200)
 	// an id of each resource, read from the database
 	q := map[string]string{
@@ -77,7 +79,9 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"configurations": `SELECT id FROM configurations WHERE project_id = ?`, "test-dependencies": `SELECT id FROM test_dependencies WHERE project_id = ?`,
 		"reports/definitions": `SELECT id FROM report_definitions WHERE project_id = ?`, "reports/subscriptions": `SELECT id FROM report_subscriptions WHERE project_id = ?`,
 		"reviews": `SELECT id FROM review_requests WHERE project_id = ?`, "files": `SELECT id FROM files WHERE project_id = ?`,
-		"comments": `SELECT c.id FROM comments c JOIN requirements r ON r.id = c.entity_id WHERE r.project_id = ?`,
+		"comments":             `SELECT c.id FROM comments c JOIN requirements r ON r.id = c.entity_id WHERE r.project_id = ?`,
+		"verification-records": `SELECT id FROM verification_records WHERE project_id = ?`,
+		"elements":             `SELECT id FROM system_elements WHERE project_id = ?`,
 	}
 	for res, sql := range q {
 		var id string

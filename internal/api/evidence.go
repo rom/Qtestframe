@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
@@ -43,6 +44,17 @@ func (s *Server) afterContentChange(ctx context.Context, p *Principal, kind, id,
 	if err != nil {
 		s.Log.Warn("mark links suspect", "err", err)
 		return
+	}
+	if kind == model.KindRequirement {
+		// verification records valid "until a change" stop counting
+		if n, err := s.Store.InvalidateRecords(ctx, p.TenantID(), id, "", reason); err != nil {
+			s.Log.Warn("invalidate verification records", "err", err)
+		} else if n > 0 {
+			s.audit(ctx, p, "verification.invalidate", kind, id, reason)
+			if !slices.Contains(reqs, id) {
+				reqs = append(reqs, id)
+			}
+		}
 	}
 	if len(reqs) == 0 {
 		return

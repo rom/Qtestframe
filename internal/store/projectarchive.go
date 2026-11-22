@@ -126,6 +126,14 @@ var projectArchiveTables = []archiveTable{
 	{"baseline_signoffs", inBaseline},
 	{"metric_snapshots", ofProject},
 	{"trace_rules", ofProject},
+	// verification correlations
+	{"link_criteria", `link_id IN (SELECT id FROM trace_links WHERE project_id = ?)`},
+	{"system_elements", ofProject},
+	{"requirement_elements", inReqs},
+	{"test_elements", inTests},
+	{"verification_settings", ofProject},
+	{"verification_records", ofProject},
+	{"verification_record_files", `record_id IN (SELECT id FROM verification_records WHERE project_id = ?)`},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},

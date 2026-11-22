@@ -462,6 +462,12 @@ type Requirement struct {
 	// relations and the tests that verify it ("verifies", incoming).
 	RelationRefs  []ItemRef `json:"relations,omitempty"`
 	CriteriaCount int       `json:"criteria_count,omitempty"`
+	// Verification (derived, see RequirementVerification): the rolled-up
+	// verification state; CriteriaVerified: criteria with passing
+	// evidence; ElementIDs: the system elements it is allocated to.
+	Verification     string   `json:"verification,omitempty"`
+	CriteriaVerified int      `json:"criteria_verified,omitempty"`
+	ElementIDs       []string `json:"element_ids,omitempty"`
 }
 
 // ItemRef is a derived reference from a requirement or test to a related
@@ -557,6 +563,8 @@ type TestCase struct {
 	// reaches the threshold (see store.FlakyWindow, store.FlakyMinFlips).
 	Flakiness int  `json:"flakiness,omitempty"`
 	Flaky     bool `json:"flaky,omitempty"`
+	// ElementIDs: the system elements it is allocated to (derived).
+	ElementIDs []string `json:"element_ids,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -574,6 +582,9 @@ type TraceLink struct {
 	// Derived.
 	RequirementKey string `json:"requirement_key,omitempty"`
 	TestCaseKey    string `json:"test_case_key,omitempty"`
+	// Criteria are the criteria the test verifies (CriterionID is the
+	// first of them), each optionally through one test step.
+	Criteria []LinkCriterion `json:"criteria"`
 }
 
 // DataRow is one row of a data-driven test: values by parameter name and an

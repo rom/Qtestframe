@@ -184,6 +184,10 @@ func snapshotItems(ctx context.Context, c conn, kind string, ids []string) (*tra
 			{"requirement_categories", `requirement_id IN (` + in + `)`},
 			{"evaluation_criteria", `requirement_id IN (` + in + `)`},
 			{"trace_links", `requirement_id IN (` + in + `)`},
+			{"link_criteria", `link_id IN (SELECT id FROM trace_links WHERE requirement_id IN (` + in + `))`},
+			{"verification_records", `requirement_id IN (` + in + `)`},
+			{"verification_record_files", `record_id IN (SELECT id FROM verification_records WHERE requirement_id IN (` + in + `))`},
+			{"requirement_elements", `requirement_id IN (` + in + `)`},
 		} {
 			if _, err := add(q.table, q.where, idArgs...); err != nil {
 				return nil, err
@@ -200,6 +204,8 @@ func snapshotItems(ctx context.Context, c conn, kind string, ids []string) (*tra
 			{"test_steps", `test_case_id IN (` + in + `)`},
 			{"test_case_categories", `test_case_id IN (` + in + `)`},
 			{"trace_links", `test_case_id IN (` + in + `)`},
+			{"link_criteria", `link_id IN (SELECT id FROM trace_links WHERE test_case_id IN (` + in + `))`},
+			{"test_elements", `test_case_id IN (` + in + `)`},
 		} {
 			if _, err := add(q.table, q.where, idArgs...); err != nil {
 				return nil, err
@@ -548,6 +554,28 @@ func (s *Store) RestoreTrash(ctx context.Context, tenantID, id string) (*TrashEn
 							}
 						}
 					}
+				case "link_criteria":
+					ignoreConflict = true
+					ok, err = need(row, "trace_links", "link_id", "evaluation_criteria", "criterion_id")
+				case "verification_records":
+					if ok, err = need(row, "requirements", "requirement_id"); ok {
+						if cr, _ := row["criterion_id"].(string); cr != "" {
+							if in, err2 := exists("evaluation_criteria", cr); err2 != nil {
+								return err2
+							} else if !in {
+								row["criterion_id"] = nil
+							}
+						}
+					}
+				case "verification_record_files":
+					ignoreConflict = true
+					ok, err = need(row, "verification_records", "record_id", "files", "file_id")
+				case "requirement_elements":
+					ignoreConflict = true
+					ok, err = need(row, "requirements", "requirement_id", "system_elements", "element_id")
+				case "test_elements":
+					ignoreConflict = true
+					ok, err = need(row, "test_cases", "test_case_id", "system_elements", "element_id")
 				case "requirement_relations":
 					ok, err = need(row, "requirements", "source_id", "requirements", "target_id")
 				case "test_dependencies":

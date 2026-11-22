@@ -169,6 +169,10 @@ func replaceCriteria(ctx context.Context, c conn, r *model.Requirement) error {
 			if _, err := c.exec(ctx, `UPDATE trace_links SET criterion_id = NULL WHERE criterion_id = ?`, e); err != nil {
 				return err
 			}
+			// records about a removed criterion no longer count
+			if _, err := c.exec(ctx, `UPDATE verification_records SET invalidated_at = ?, invalidated_reason = 'criterion removed' WHERE criterion_id = ? AND invalidated_at IS NULL`, r.UpdatedAt, e); err != nil {
+				return err
+			}
 			if _, err := c.exec(ctx, `DELETE FROM evaluation_criteria WHERE id = ?`, e); err != nil {
 				return err
 			}
