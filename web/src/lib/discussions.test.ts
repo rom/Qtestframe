@@ -62,7 +62,7 @@ describe('comment helpers', () => {
     expect(threadTarget({ root: { ...root, entity_type: 'defect' } }).query).toEqual({ item: 'r1' })
     expect(threadTarget({ root: { ...root, entity_type: 'risk' } }).query).toEqual({ risk: 'r1' })
     expect(threadTarget({ root: { ...root, entity_type: 'run' } })).toEqual({ name: 'run', params: { projectId: 'p1', runId: 'r1' }, query: { tab: 'discussion' } })
-    expect(threadTarget({ root: { ...root, entity_type: 'review' } })).toEqual({ name: 'reviews', params: {}, query: { review: 'r1' } })
+    expect(threadTarget({ root: { ...root, entity_type: 'review' } })).toEqual({ name: 'myWork', params: {}, query: { view: 'reviews', review: 'r1' } })
     expect(threadTarget({ root: { ...root, entity_type: 'other' } }).name).toBe('dashboard')
   })
 })

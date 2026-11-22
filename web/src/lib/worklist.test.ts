@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { emptySummary, filterByReason, presentReasons, reasonSeverity, workItemRoute, workKindIcon, type WorkItem } from './worklist'
+import { emptySummary, filterByReason, isWaiting, presentReasons, reasonSeverity, reviewsRoute, rowReviewId, workItemRoute, workKindIcon, workViewQuery, workViewState, type WorkItem } from './worklist'
 
 const row = (over: Partial<WorkItem>): WorkItem => ({
   kind: 'requirement',
@@ -49,5 +49,33 @@ describe('worklist', () => {
     const s = emptySummary()
     s.by_reason = { owner: 2, overdue: 1, mention: 3, stale: 0 }
     expect(presentReasons(s)).toEqual(['overdue', 'owner', 'mention'])
+  })
+  it('routes review requests to the reviews view of My work', () => {
+    expect(workItemRoute(row({ entity_type: 'review', entity_id: 'rv' }))).toEqual({ name: 'myWork', query: { view: 'reviews', review: 'rv' } })
+    expect(reviewsRoute()).toEqual({ name: 'myWork', query: { view: 'reviews' } })
+    expect(reviewsRoute(undefined, 'requested')).toEqual({ name: 'myWork', query: { view: 'reviews', side: 'requested' } })
+    expect(reviewsRoute('x', 'mine')).toEqual({ name: 'myWork', query: { view: 'reviews', review: 'x' } })
+    expect(rowReviewId(row({}))).toBe('')
+    expect(rowReviewId(row({ review_ids: ['a', 'b'] }))).toBe('a')
+  })
+  it('tells rows that only wait for others', () => {
+    expect(isWaiting(row({ reasons: ['awaiting_review'] }))).toBe(true)
+    expect(isWaiting(row({ reasons: ['in_review', 'awaiting_review'] }))).toBe(true)
+    expect(isWaiting(row({ reasons: ['in_review', 'review_returned'] }))).toBe(false)
+    expect(isWaiting(row({ reasons: [] }))).toBe(false)
+    expect(reasonSeverity('review_returned')).toBe('warn')
+    expect(reasonSeverity('in_review')).toBe('info')
+    expect(reasonSeverity('awaiting_review')).toBe('secondary')
+    const s = emptySummary()
+    s.by_reason = { awaiting_review: 1, review_returned: 1, owner: 1 }
+    expect(presentReasons(s)).toEqual(['review_returned', 'owner', 'awaiting_review'])
+  })
+  it('keeps the view in the query', () => {
+    expect(workViewState({})).toEqual({ view: 'all', side: 'mine', status: 'pending' })
+    expect(workViewState({ view: 'reviews', side: 'in_review', status: 'all' })).toEqual({ view: 'reviews', side: 'in_review', status: 'all' })
+    expect(workViewState({ view: 'other', side: 'nope', status: 'x' })).toEqual({ view: 'all', side: 'mine', status: 'pending' })
+    expect(workViewQuery({ view: 'all', side: 'requested', status: 'all' })).toEqual({ view: undefined, side: undefined, status: undefined })
+    expect(workViewQuery({ view: 'reviews', side: 'mine', status: 'pending' })).toEqual({ view: 'reviews', side: undefined, status: undefined })
+    expect(workViewQuery({ view: 'reviews', side: 'requested', status: 'all' })).toEqual({ view: 'reviews', side: 'requested', status: 'all' })
   })
 })

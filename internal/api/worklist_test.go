@@ -247,3 +247,93 @@ func TestMyWork(t *testing.T) {
 		t.Fatal(workKeys(got))
 	}
 }
+
+func TestMyWorkReviews(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	e.member("lead@example.com", rbac.RoleManager)
+	e.member("rev@example.com", rbac.RoleReviewer)
+	lead, rev := e.login("lead@example.com"), e.login("rev@example.com")
+	pid := a.project("MR")
+	base := "/api/v1/projects/" + pid
+
+	// the lead writes a requirement, puts it in review and asks two reviewers
+	rq := lead.m("POST", base+"/requirements", map[string]any{"title": "Needs eyes"}, 201)["id"].(string)
+	lead.m("PATCH", "/api/v1/requirements/"+rq, map[string]any{"status": "review"}, 200)
+	created := lead.m("POST", "/api/v1/reviews", map[string]any{"entity_type": "requirement", "entity_id": rq, "reviewers": []string{"rev@example.com", "admin@example.com"}}, 201)
+	var revID string
+	for _, v := range items(created) {
+		if v["reviewer_email"] == "rev@example.com" {
+			revID = v["id"].(string)
+		}
+	}
+	if revID == "" {
+		t.Fatal(created)
+	}
+	ids := func(it map[string]any, field string) []string {
+		var out []string
+		if l, ok := it[field].([]any); ok {
+			for _, x := range l {
+				out = append(out, x.(string))
+			}
+		}
+		return out
+	}
+	row := func(c *client, path string) (map[string]any, map[string]any) {
+		t.Helper()
+		res := c.m("GET", path, nil, 200)
+		return workRow(t, items(res), "requirement", rq), res["summary"].(map[string]any)
+	}
+
+	// the reviewer: one row, to review and in review, with the request id
+	it, sum := row(rev, "/api/v1/my-work")
+	if it == nil || !slices.Contains(reasonsOf(it), "review_requested") || !slices.Contains(reasonsOf(it), "in_review") || !slices.Equal(ids(it, "review_ids"), []string{revID}) || sum["count"] != 1.0 {
+		t.Fatal(it, sum)
+	}
+
+	// the requester: waiting for two reviews; listed, not counted
+	it, sum = row(lead, "/api/v1/my-work")
+	if it == nil || !slices.Contains(reasonsOf(it), "awaiting_review") || !slices.Contains(reasonsOf(it), "in_review") || len(ids(it, "requested_review_ids")) != 2 || it["status"] != "review" {
+		t.Fatal(it)
+	}
+	if sum["count"] != 0.0 || sum["waiting"] != 1.0 {
+		t.Fatal(sum)
+	}
+
+	// changes requested: back with the requester, counted
+	rev.m("PATCH", "/api/v1/reviews/"+revID, map[string]any{"decision": "changes_requested", "comment": "Too vague"}, 200)
+	it, sum = row(lead, "/api/v1/my-work?source=requested_reviews")
+	if it == nil || !slices.Contains(reasonsOf(it), "review_returned") || !slices.Contains(reasonsOf(it), "awaiting_review") || sum["count"] != 1.0 || sum["waiting"] != 0.0 {
+		t.Fatal(it, sum)
+	}
+	if it, _ := row(rev, "/api/v1/my-work?source=reviews"); it != nil {
+		t.Fatal("decided review still listed", it)
+	}
+
+	// editing the item answers the requested changes
+	lead.m("PATCH", "/api/v1/requirements/"+rq, map[string]any{"description": "Clearer now"}, 200)
+	if it, _ := row(lead, "/api/v1/my-work?reason=review_returned"); it != nil {
+		t.Fatal(it)
+	}
+
+	// an item in review only because the caller may review its kind is not
+	// personal work (GET /reviews/in-review still lists it)
+	other := a.m("POST", base+"/requirements", map[string]any{"title": "Someone else's"}, 201)["id"].(string)
+	a.m("PATCH", "/api/v1/requirements/"+other, map[string]any{"status": "review"}, 200)
+	if workRow(t, items(rev.m("GET", "/api/v1/my-work?source=in_review", nil, 200)), "requirement", other) != nil {
+		t.Fatal("reviewer-only item listed")
+	}
+	found := false
+	for _, x := range items(rev.m("GET", "/api/v1/reviews/in-review", nil, 200)) {
+		found = found || x["entity_id"] == other
+	}
+	if !found {
+		t.Fatal("in-review list lost the item")
+	}
+
+	// a project the reviewer may no longer see drops out
+	a.m("PUT", base+"/access", map[string]any{"access": "restricted"}, 200)
+	if got := items(rev.m("GET", "/api/v1/my-work", nil, 200)); len(got) != 0 {
+		t.Fatal(workKeys(got))
+	}
+}

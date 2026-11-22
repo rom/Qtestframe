@@ -137,6 +137,27 @@ func SeedDemoWorkList(ctx context.Context, st *store.Store, tenantID string, p *
 		}
 	}
 
+	// reviews the administrator asked Dana for: one still pending (awaiting
+	// review), one that came back with changes requested
+	if len(reqs) > 3 {
+		if _, err := st.CreateReviewRequests(ctx, tenantID, model.ReviewRequest{EntityType: model.KindRequirement, EntityID: reqs[2].ID,
+			RequestedBy: admin.Email, Message: "Does this match what the testers need?"}, []string{dana.ID}); err != nil && !errors.Is(err, store.ErrConflict) {
+			return err
+		}
+		back, err := st.CreateReviewRequests(ctx, tenantID, model.ReviewRequest{EntityType: model.KindRequirement, EntityID: reqs[3].ID,
+			RequestedBy: admin.Email, Message: "Please review before we baseline."}, []string{dana.ID})
+		if err != nil && !errors.Is(err, store.ErrConflict) {
+			return err
+		}
+		for i := range back {
+			v := &back[i]
+			v.Status, v.Comment = "changes_requested", "The acceptance criteria do not say what happens on a timeout."
+			if err := st.UpdateReviewRequest(ctx, tenantID, v); err != nil {
+				return err
+			}
+		}
+	}
+
 	// a waiver waiting for the administrator's approval
 	if len(reqs) > 6 {
 		w := &model.Waiver{ProjectID: p.ID, Type: "waiver", Title: "Accept the slower statement export for 1.4", RequirementIDs: []string{reqs[6].ID},

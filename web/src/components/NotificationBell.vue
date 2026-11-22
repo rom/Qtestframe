@@ -66,7 +66,7 @@ async function open(n: AppNotification) {
         </ul>
         <div class="row foot">
           <RouterLink :to="{ name: 'notifications' }" class="small" @click="panel?.hide()">{{ t('notifications.seeAll') }}</RouterLink>
-          <RouterLink :to="{ name: 'reviews' }" class="small" @click="panel?.hide()">{{ t('nav.reviews') }}</RouterLink>
+          <RouterLink :to="{ name: 'myWork', query: { view: 'reviews' } }" class="small" @click="panel?.hide()">{{ t('nav.reviews') }}</RouterLink>
         </div>
       </div>
     </Popover>

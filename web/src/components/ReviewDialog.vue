@@ -13,12 +13,14 @@ import DiscussionPanel from './DiscussionPanel.vue'
 import { api } from '@/lib/api'
 import { REVIEW_COMMENT, rememberValues, savedEntries } from '@/lib/suggest'
 import { usePrefsStore } from '@/stores/prefs'
-import { canApprove, canRequestChanges, openChecklistItems } from '@/lib/notifications'
+import { canApprove, canRequestChanges, notificationTarget, openChecklistItems } from '@/lib/notifications'
 import { useNotify } from '@/composables/notify'
 import { useNotificationsStore } from '@/stores/notifications'
 import type { ChecklistItem, ReviewRequest } from '@/lib/types'
 
-const props = defineProps<{ review: ReviewRequest | null }>()
+// showItem: offer a link to the reviewed item (where the dialog is opened
+// away from it, as in My work)
+const props = defineProps<{ review: ReviewRequest | null; showItem?: boolean }>()
 const visible = defineModel<boolean>('visible', { default: false })
 const emit = defineEmits<{ saved: [review: ReviewRequest] }>()
 const { t } = useI18n()
@@ -41,6 +43,7 @@ watch(
 
 const open = computed(() => openChecklistItems(list.value))
 const pending = computed(() => props.review?.status === 'pending')
+const itemTarget = computed(() => (props.review ? notificationTarget({ project_id: props.review.project_id, entity_type: props.review.entity_type, entity_id: props.review.entity_id }) : null))
 
 async function save(decision = '') {
   if (!props.review) return
@@ -73,7 +76,9 @@ async function save(decision = '') {
   <Dialog v-model:visible="visible" modal :header="review ? t('reviews.reviewHeader', { key: review.entity_key }) : ''" :style="{ width: 'min(640px, 96vw)' }">
     <template v-if="review">
       <p class="title">{{ review.entity_title }}</p>
-      <p class="small muted">{{ t('reviews.requestedBy', { who: review.requested_by }) }}<template v-if="review.due_date"> · {{ t('reviews.due', { date: review.due_date }) }}</template></p>
+      <p class="small muted">{{ t('reviews.requestedBy', { who: review.requested_by }) }}<template v-if="review.due_date"> · {{ t('reviews.due', { date: review.due_date }) }}</template>
+        <template v-if="showItem && itemTarget"> · <RouterLink :to="itemTarget" class="open-item" @click="visible = false"><i class="pi pi-external-link" aria-hidden="true" /> {{ t('reviews.openItem', { key: review.entity_key }) }}</RouterLink></template>
+      </p>
       <Message v-if="review.outdated" severity="warn" :closable="false">{{ t('reviews.outdated') }}</Message>
       <p v-if="review.message" class="message">{{ review.message }}</p>
       <fieldset class="checklist">
