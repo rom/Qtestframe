@@ -8,6 +8,7 @@ import { ADMIN_GUIDE, ASSETS, SOURCES, getOrder, getPage, getSections, getTitles
 import { GUIDE_PAGES } from './pages'
 import { classifyHref, imageName } from './links'
 import { processTokens, renderGuide } from './render'
+import { searchGuide } from './search'
 import MarkdownIt from 'markdown-it'
 import type { Token } from 'markdown-it'
 
@@ -92,6 +93,57 @@ describe('the bundled user guide', () => {
     for (const lang of LANGS) {
       const { headings } = processTokens(getPage(lang, 'faq')!.markdown, { lang, assets: {} })
       expect(headings.filter((h) => h.level === 3).length, lang).toBeGreaterThanOrEqual(25)
+    }
+  })
+  it('has a glossary of anchored, alphabetical entries with a topic index in both languages', () => {
+    const LABELS: Record<string, { inTool: string; seeAlso: string }> = {
+      en: { inTool: '**In Qtestframe:**', seeAlso: '**See also:**' },
+      sv: { inTool: '**I Qtestframe:**', seeAlso: '**Se även:**' },
+    }
+    const counts: number[] = []
+    for (const lang of LANGS) {
+      const md = getPage(lang, 'glossary')!.markdown
+      const { headings } = processTokens(md, { lang, assets: {} })
+      // level 2: the topic index, then one heading per initial letter; level 3: the entries
+      const [topics, ...letters] = headings.filter((h) => h.level === 2)
+      expect(letters.every((h) => /^\p{Lu}$/u.test(h.text)), lang).toBe(true)
+      const entries = headings.filter((h) => h.level === 3)
+      counts.push(entries.length)
+      expect(entries.length, lang).toBeGreaterThanOrEqual(150)
+      // alphabetical in the language's own order (Swedish puts Å, Ä, Ö last), each under its letter
+      const coll = new Intl.Collator(lang, { sensitivity: 'base' })
+      const sorted = [...entries].sort((a, b) => coll.compare(a.text, b.text))
+      expect(entries.map((e) => e.text), lang).toEqual(sorted.map((e) => e.text))
+      let letter = ''
+      for (const h of headings) {
+        if (h.level === 2) letter = h.text
+        else if (h.level === 3) expect(coll.compare(h.text[0], letter), `${lang}: ${h.text} under ${letter}`).toBe(0)
+      }
+      // every entry: a definition, "In Qtestframe" and "See also"
+      const bodies = md.split(/^### .*$/m).slice(1)
+      expect(bodies.length, lang).toBe(entries.length)
+      bodies.forEach((body, i) => {
+        const text = body.split(/^## /m)[0]
+        expect(text, `${lang}: ${entries[i].text}`).toContain(LABELS[lang].inTool)
+        expect(text, `${lang}: ${entries[i].text}`).toContain(LABELS[lang].seeAlso)
+      })
+      // the topic index lists every entry exactly once
+      const index = md.slice(md.indexOf(`## ${topics.text}`), md.indexOf(`## ${letters[0].text}\n`))
+      const listed = [...index.matchAll(/\]\(#([^)]+)\)/g)].map((m) => decodeURIComponent(m[1])).sort()
+      expect(listed, lang).toEqual(entries.map((e) => e.id).sort())
+    }
+    expect(counts[1]).toBe(counts[0])
+  })
+  it('finds glossary entries with the guide search', () => {
+    const cases: [string, string, string][] = [
+      ['en', 'boundary value', 'boundary-value-analysis'],
+      ['en', 'suspect link', 'suspect-link'],
+      ['sv', 'gränsvärdesanalys', 'gränsvärdesanalys'],
+      ['sv', 'misstänkt länk', 'misstänkt-länk'],
+    ]
+    for (const [lang, query, anchor] of cases) {
+      const hits = searchGuide(getSections(lang), query, { order: getOrder(lang) })
+      expect(hits.some((h) => h.page === 'glossary' && h.anchor === anchor), `${lang}: ${query}`).toBe(true)
     }
   })
   it('is searchable', () => {

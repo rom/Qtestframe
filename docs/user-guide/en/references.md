@@ -19,15 +19,19 @@ These define the obligation levels and the [language analysis](requirements.md#t
 
 | Document | Where |
 |---|---|
-| [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) – *HTTP Semantics* | The REST API |
+| [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) – *HTTP Semantics* | The REST API, OSLC and SCIM, including conditional updates with `ETag` and `If-Match` |
 | [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259) – *JSON* | API requests and responses, backups |
 | [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) – *Date and Time on the Internet: Timestamps* | Dates in the API, in queries (`updated_at>=2026-01-01`) and the audit log filter |
 | [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) – *CSV Files* | CSV export |
-| [RFC 5424](https://www.rfc-editor.org/rfc/rfc5424) – *The Syslog Protocol* | Server logging to syslog |
+| [RFC 5424](https://www.rfc-editor.org/rfc/rfc5424) – *The Syslog Protocol* and [RFC 3164](https://www.rfc-editor.org/rfc/rfc3164) – *The BSD syslog Protocol* | Server logging to syslog (both formats can be chosen) |
 | [RFC 5280](https://www.rfc-editor.org/rfc/rfc5280) – *X.509 Certificate and CRL Profile* | TLS certificates and the certificate scripts |
 | [RFC 6265](https://www.rfc-editor.org/rfc/rfc6265) – *HTTP State Management Mechanism* (cookies) | Session cookies |
 | [RFC 6749](https://www.rfc-editor.org/rfc/rfc6749) – *OAuth 2.0* and [RFC 7519](https://www.rfc-editor.org/rfc/rfc7519) – *JSON Web Token* | Single sign-on with [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html) |
+| [RFC 7636](https://www.rfc-editor.org/rfc/rfc7636) – *Proof Key for Code Exchange by OAuth Public Clients* (PKCE) | OpenID Connect sign-in (method S256) |
+| [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750) – *OAuth 2.0 Bearer Token Usage* | The `Authorization: Bearer` header of API tokens and SCIM tokens |
 | [SAML 2.0 Core](https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf) (OASIS) | Single sign-on with SAML |
+| [RFC 7643](https://www.rfc-editor.org/rfc/rfc7643) – *SCIM: Core Schema* and [RFC 7644](https://www.rfc-editor.org/rfc/rfc7644) – *SCIM: Protocol* | User and group provisioning at `/scim/v2` |
+| [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238) – *TOTP: Time-Based One-Time Password Algorithm* and [RFC 4226](https://www.rfc-editor.org/rfc/rfc4226) – *HOTP* | The second factor of multi-factor authentication |
 
 ## NIST publications
 
@@ -63,11 +67,27 @@ The US National Institute of Standards and Technology publishes free guidance th
 | Document | Relevance |
 |---|---|
 | [ISO/IEC/IEEE 29119](https://committee.iso.org/sites/jtc1sc7/home/projects/flagship-standards/isoiecieee-29119-series.html) – *Software testing* series, especially [Part 1: General concepts](https://www.iso.org/standard/81291.html) (2022) and [Part 3: Test documentation](https://www.iso.org/standard/79429.html) (2021) | Test processes, documentation templates (test plan, test case, test log, incident report) and techniques. Part 3 replaces IEEE 829. |
+| [ISO/IEC/IEEE 29119-4:2021](https://www.iso.org/standard/79430.html) – *Test techniques* | Specification-, structure- and experience-based test design techniques such as equivalence partitioning, boundary value analysis, decision tables, state transitions and combinatorial testing; see the [Glossary](glossary.md#test-design-technique). |
 | [IEEE 1012-2016](https://standards.ieee.org/ieee/1012/5609/) – *System, Software, and Hardware Verification and Validation* | V&V activities and integrity levels. |
 | [ISTQB Glossary](https://glossary.istqb.org/) and [Certified Tester Foundation Level v4.0](https://www.istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/) | The common vocabulary of testing (test case, test run, defect, coverage …) used in this guide. |
 | [OWASP Application Security Verification Standard (ASVS)](https://owasp.org/www-project-application-security-verification-standard/) | A ready-made list of testable security requirements for web applications, in three levels. |
 | [OWASP Web Security Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) | How to test the security of web applications; complements ASVS. |
 | [WCAG 2.2](https://www.w3.org/TR/WCAG22/) (and [WCAG 2.1](https://www.w3.org/TR/WCAG21/)) – *Web Content Accessibility Guidelines* | Testable accessibility success criteria. Qtestframe itself aims at WCAG 2.1 AA, see [Accessibility and languages](accessibility-and-languages.md). |
+
+## Formats, protocols and frameworks
+
+The exchange formats, interfaces and knowledge bases that Qtestframe reads, writes or is built on, with where they show up in the tool. The [Glossary](glossary.md#entries-by-topic) explains each in a few sentences.
+
+| Document | Used in Qtestframe for |
+|---|---|
+| [ReqIF 1.2](https://www.omg.org/spec/ReqIF/) – *Requirements Interchange Format* (OMG) | [ReqIF export and import](interoperability.md) of requirements, tests, relations, trace links and attachments |
+| [OSLC](https://open-services.net/) – *Open Services for Lifecycle Collaboration* (OASIS Open Project), Requirements Management 2.1 and Quality Management 2.1 | The [OSLC provider](interoperability.md#oslc) for DOORS Next, Polarion, Codebeamer and other tools |
+| [OpenAPI Specification 3.1](https://spec.openapis.org/oas/v3.1.0) (OpenAPI Initiative) | The description of the REST API at `/api/v1/openapi.json` |
+| JUnit XML (a de facto format without a formal specification, written by most test frameworks) | [Importing results from CI](runs.md#junit-xml) |
+| [CommonMark](https://spec.commonmark.org/) – a specification of Markdown | Comments in [discussions](discussions.md), this guide and the Markdown export |
+| [STIX 2.1](https://docs.oasis-open.org/cti/stix/v2.1/stix-v2.1.html) – *Structured Threat Information Expression* (OASIS) | The format of MITRE's ATT&CK, ATLAS and EMB3D data, from which the catalogue's lists are generated |
+| [MITRE ATT&CK](https://attack.mitre.org/), [MITRE ATLAS](https://atlas.mitre.org/), [MITRE D3FEND](https://d3fend.mitre.org/), [MITRE EMB3D](https://emb3d.mitre.org/) and [CWE](https://cwe.mitre.org/) | Techniques, defences, threats and weaknesses on [catalogue](catalogue.md#mitre-attck) risks, requirements and tests |
+| [Landlock](https://docs.kernel.org/userspace-api/landlock.html) and [seccomp](https://docs.kernel.org/userspace-api/seccomp_filter.html) (Linux kernel documentation) | The [hardening](../../admin-guide/en/security.md#hardening) of the server and the script sandbox |
 
 ## Domain-specific standards
 

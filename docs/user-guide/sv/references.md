@@ -19,15 +19,19 @@ Dessa dokument definierar kravnivåerna och [språkanalysen](requirements.md#spr
 
 | Dokument | Var |
 |---|---|
-| [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) – *HTTP Semantics* | REST-API:t |
+| [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) – *HTTP Semantics* | REST-API:t, OSLC och SCIM, även villkorade uppdateringar med `ETag` och `If-Match` |
 | [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259) – *JSON* | Anrop och svar i API:t, säkerhetskopior |
 | [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) – *Date and Time on the Internet: Timestamps* | Datum i API:t, i frågor (`updated_at>=2026-01-01`) och i händelseloggens filter |
 | [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) – *CSV Files* | CSV-export |
-| [RFC 5424](https://www.rfc-editor.org/rfc/rfc5424) – *The Syslog Protocol* | Serverns loggning till syslog |
+| [RFC 5424](https://www.rfc-editor.org/rfc/rfc5424) – *The Syslog Protocol* och [RFC 3164](https://www.rfc-editor.org/rfc/rfc3164) – *The BSD syslog Protocol* | Serverns loggning till syslog (båda formaten kan väljas) |
 | [RFC 5280](https://www.rfc-editor.org/rfc/rfc5280) – *X.509 Certificate and CRL Profile* | TLS-certifikat och certifikatskripten |
 | [RFC 6265](https://www.rfc-editor.org/rfc/rfc6265) – *HTTP State Management Mechanism* (kakor) | Sessionskakor |
 | [RFC 6749](https://www.rfc-editor.org/rfc/rfc6749) – *OAuth 2.0* och [RFC 7519](https://www.rfc-editor.org/rfc/rfc7519) – *JSON Web Token* | Enkel inloggning med [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html) |
+| [RFC 7636](https://www.rfc-editor.org/rfc/rfc7636) – *Proof Key for Code Exchange by OAuth Public Clients* (PKCE) | Inloggning med OpenID Connect (metoden S256) |
+| [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750) – *OAuth 2.0 Bearer Token Usage* | Huvudet `Authorization: Bearer` för API-nycklar och SCIM-nycklar |
 | [SAML 2.0 Core](https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf) (OASIS) | Enkel inloggning med SAML |
+| [RFC 7643](https://www.rfc-editor.org/rfc/rfc7643) – *SCIM: Core Schema* och [RFC 7644](https://www.rfc-editor.org/rfc/rfc7644) – *SCIM: Protocol* | Provisionering av användare och grupper via `/scim/v2` |
+| [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238) – *TOTP: Time-Based One-Time Password Algorithm* och [RFC 4226](https://www.rfc-editor.org/rfc/rfc4226) – *HOTP* | Den andra faktorn i tvåstegsverifieringen |
 
 ## NIST-publikationer
 
@@ -63,11 +67,27 @@ Amerikanska National Institute of Standards and Technology ger ut fritt tillgän
 | Dokument | Relevans |
 |---|---|
 | [ISO/IEC/IEEE 29119](https://committee.iso.org/sites/jtc1sc7/home/projects/flagship-standards/isoiecieee-29119-series.html) – serien *Software testing*, särskilt [Part 1: General concepts](https://www.iso.org/standard/81291.html) (2022) och [Part 3: Test documentation](https://www.iso.org/standard/79429.html) (2021) | Testprocesser, dokumentmallar (testplan, testfall, testlogg, incidentrapport) och testtekniker. Del 3 ersätter IEEE 829. |
+| [ISO/IEC/IEEE 29119-4:2021](https://www.iso.org/standard/79430.html) – *Test techniques* | Specifikations-, struktur- och erfarenhetsbaserade testdesigntekniker som ekvivalensklassindelning, gränsvärdesanalys, beslutstabeller, tillståndsövergångar och kombinatorisk testning; se [Ordlistan](glossary.md#testdesignteknik). |
 | [IEEE 1012-2016](https://standards.ieee.org/ieee/1012/5609/) – *System, Software, and Hardware Verification and Validation* | Verifierings- och valideringsaktiviteter och integritetsnivåer. |
 | [ISTQB Glossary](https://glossary.istqb.org/) och [Certified Tester Foundation Level v4.0](https://www.istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/) | Den gemensamma testterminologin (testfall, testkörning, defekt, täckning …). |
 | [OWASP Application Security Verification Standard (ASVS)](https://owasp.org/www-project-application-security-verification-standard/) | En färdig lista med testbara säkerhetskrav för webbapplikationer, i tre nivåer. |
 | [OWASP Web Security Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) | Hur säkerheten i webbapplikationer testas; kompletterar ASVS. |
 | [WCAG 2.2](https://www.w3.org/TR/WCAG22/) (och [WCAG 2.1](https://www.w3.org/TR/WCAG21/)) – *Web Content Accessibility Guidelines* | Testbara framgångskriterier för tillgänglighet. Qtestframe siktar själv på WCAG 2.1 AA, se [Tillgänglighet och språk](accessibility-and-languages.md). |
+
+## Format, protokoll och ramverk
+
+Utbytesformat, gränssnitt och kunskapsbaser som Qtestframe läser, skriver eller bygger på, och var de syns i verktyget. [Ordlistan](glossary.md#uppslagsord-efter-ämne) förklarar vart och ett med några meningar.
+
+| Dokument | Används i Qtestframe till |
+|---|---|
+| [ReqIF 1.2](https://www.omg.org/spec/ReqIF/) – *Requirements Interchange Format* (OMG) | [Export och import med ReqIF](interoperability.md) av krav, testfall, relationer, spårlänkar och bilagor |
+| [OSLC](https://open-services.net/) – *Open Services for Lifecycle Collaboration* (OASIS Open Project), Requirements Management 2.1 och Quality Management 2.1 | [OSLC-tjänsten](interoperability.md#oslc) för DOORS Next, Polarion, Codebeamer och andra verktyg |
+| [OpenAPI Specification 3.1](https://spec.openapis.org/oas/v3.1.0) (OpenAPI Initiative) | Beskrivningen av REST-API:t på `/api/v1/openapi.json` |
+| JUnit XML (ett de facto-format utan formell specifikation, som de flesta testramverk skriver) | [Import av utfall från CI](runs.md#junit-xml) |
+| [CommonMark](https://spec.commonmark.org/) – en specifikation av Markdown | Kommentarer i [diskussioner](discussions.md), den här handboken och Markdown-exporten |
+| [STIX 2.1](https://docs.oasis-open.org/cti/stix/v2.1/stix-v2.1.html) – *Structured Threat Information Expression* (OASIS) | Formatet för MITRE:s data om ATT&CK, ATLAS och EMB3D, som katalogens listor genereras från |
+| [MITRE ATT&CK](https://attack.mitre.org/), [MITRE ATLAS](https://atlas.mitre.org/), [MITRE D3FEND](https://d3fend.mitre.org/), [MITRE EMB3D](https://emb3d.mitre.org/) och [CWE](https://cwe.mitre.org/) | Tekniker, försvar, hot och svagheter på risker, krav och testfall i [katalogen](catalogue.md#mitre-attck) |
+| [Landlock](https://docs.kernel.org/userspace-api/landlock.html) och [seccomp](https://docs.kernel.org/userspace-api/seccomp_filter.html) (Linuxkärnans dokumentation) | [Härdningen](../../admin-guide/sv/security.md#härdning) av servern och sandlådan för skript |
 
 ## Branschspecifika standarder
 

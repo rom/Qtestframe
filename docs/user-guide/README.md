@@ -27,9 +27,20 @@ other side) lead from one guide into the other. Its reference parts between
   says what the screenshot shows). Swedish pages reference `sv-*.png`, English
   pages `en-*.png`, and both languages use the same set of screenshots.
 - Pages and their order are listed in `web/src/guide/pages.ts` (`GUIDE_PAGES`).
+- Diagrams are PNG images like the screenshots, drawn from SVG by
+  `web/scripts/guide-diagrams.mjs` (`npm run guide:diagrams`, no server needed);
+  change their labels there, for both languages.
+- The glossary (`glossary.md`) has one `###` entry per term, sorted
+  alphabetically in the page's language under a `##` heading per letter, each
+  with a short definition, an **In Qtestframe:** (**I Qtestframe:**) paragraph
+  and a **See also:** (**Se även:**) line, and is listed once in the topic
+  index at the top. Avoid headings whose anchor is a DOM property name (such as
+  `role`): the sanitiser drops such ids. Cite standards by name; never copy
+  their text.
 - `npm run test` in `web/` checks that both languages have the same pages, that
-  all links and anchors resolve, that images have alt texts, and that the FAQ
-  has at least 25 questions (`web/src/guide/content.test.ts`).
+  all links and anchors resolve, that images have alt texts, that the FAQ
+  has at least 25 questions, and that the glossary follows the rules above in
+  both languages and is found by the guide search (`web/src/guide/content.test.ts`).
 
 ## PDF and single-file Markdown
 

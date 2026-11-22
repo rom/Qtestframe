@@ -13,6 +13,7 @@ const guideEn = {
     tipMore: 'Read more in the user guide',
     queryLanguage: 'Query language',
     references: 'References and standards',
+    glossary: 'Glossary',
     help: 'Help',
     helpMenu: 'Help menu',
     userGuide: 'User guide',

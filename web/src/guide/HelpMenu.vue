@@ -48,6 +48,7 @@ const items = computed(() => [
   { label: t('guide.userGuide'), icon: 'pi pi-book', command: () => router.push(helpPath('index')) },
   ...(contextPage.value ? [{ label: t('guide.thisPage'), icon: 'pi pi-question-circle', command: () => router.push(helpPath(contextPage.value!)) }] : []),
   { label: t('guide.queryLanguage'), icon: 'pi pi-filter', command: () => router.push(helpPath('search-and-filters')) },
+  { label: t('guide.glossary'), icon: 'pi pi-list', command: () => router.push(helpPath('glossary')) },
   { label: t('guide.references'), icon: 'pi pi-bookmark', command: () => router.push(helpPath('references')) },
   ...(canSeeAdminGuide(auth.me) ? [{ label: t('guide.adminGuide'), icon: 'pi pi-server', command: () => router.push(helpPath('index', '', 'admin')) }] : []),
   { separator: true },

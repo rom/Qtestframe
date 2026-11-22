@@ -9,7 +9,8 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 ## Where to start
 
 - **New to Qtestframe?** Read [Getting started](getting-started.md), then work through the tutorial [Your first test campaign](tutorial.md). It takes about 30 minutes and touches every important feature.
-- **Looking for an answer?** Try the [FAQ](faq.md) or the search field at the top of the guide.
+- **Looking for an answer?** Try the [FAQ](faq.md) or the search field at the top of the guide. Unknown words are explained in the [Glossary](glossary.md).
+- **Want the big picture?** [How Qtestframe works](how-it-works.md) explains how the tool is built up and how its items relate.
 - **Administrator?** Go straight to [Administration](administration.md).
 
 ## Contents
@@ -36,8 +37,10 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Documents](documents.md) | The project's document archive: uploads, previews and links |
 | [Administration](administration.md) | Organisations, users, members and roles, project sharing, password resets, API tokens, the audit log, backup and restore |
 | [Accessibility and languages](accessibility-and-languages.md) | Keyboard use, screen readers, themes, English and Swedish, phones and tablets |
-| [FAQ](faq.md) | Answers to common questions |
-| [References](references.md) | RFC 2119, RFC 8174 and other RFCs, NIST publications, and standards for requirements and testing |
+| [How Qtestframe works](how-it-works.md) | The program, where data lives, organisations, projects and roles, the items and how they relate (with a diagram), the query language, background work, notifications, integrations, security, backups, and pointers for administrators |
+| [FAQ](faq.md) | Answers to common questions about using the tool, testing and requirements concepts, standards and formats, and how Qtestframe works |
+| [Glossary](glossary.md) | Alphabetical explanations of testing, requirements, standards and Qtestframe terms, each with what it means in Qtestframe |
+| [References](references.md) | RFC 2119, RFC 8174 and other RFCs, NIST publications, standards for requirements and testing, and the formats, protocols and frameworks Qtestframe uses |
 
 ## Key concepts
 

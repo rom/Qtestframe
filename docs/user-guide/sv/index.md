@@ -9,7 +9,8 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 ## Var börjar jag?
 
 - **Ny i Qtestframe?** Läs [Kom igång](getting-started.md) och gå sedan igenom handledningen [Din första testkampanj](tutorial.md). Den tar ungefär 30 minuter och berör alla viktiga funktioner.
-- **Letar du efter ett svar?** Titta i [Vanliga frågor](faq.md) eller använd sökfältet högst upp i handboken.
+- **Letar du efter ett svar?** Titta i [Vanliga frågor](faq.md) eller använd sökfältet högst upp i handboken. Okända ord förklaras i [Ordlistan](glossary.md).
+- **Vill du se helheten?** [Så fungerar Qtestframe](how-it-works.md) förklarar hur verktyget är uppbyggt och hur objekten hänger ihop.
 - **Administratör?** Gå direkt till [Administration](administration.md).
 
 ## Innehåll
@@ -36,8 +37,10 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Dokument](documents.md) | Projektets dokumentarkiv: uppladdning, förhandsvisning och länkar |
 | [Administration](administration.md) | Organisationer, användare, medlemmar och roller, delning av projekt, återställning av lösenord, API-nycklar, händelseloggen, säkerhetskopiering och återställning |
 | [Tillgänglighet och språk](accessibility-and-languages.md) | Tangentbord, skärmläsare, teman, engelska och svenska, mobiler och surfplattor |
-| [Vanliga frågor](faq.md) | Svar på vanliga frågor |
-| [Referenser](references.md) | RFC 2119, RFC 8174 och andra RFC:er, NIST-publikationer samt standarder för krav och test |
+| [Så fungerar Qtestframe](how-it-works.md) | Programmet, var data finns, organisationer, projekt och roller, objekten och hur de hänger ihop (med ett diagram), frågespråket, arbete i bakgrunden, notiser, integrationer, säkerhet, säkerhetskopior och hänvisningar för administratörer |
+| [Vanliga frågor](faq.md) | Svar på vanliga frågor om hur verktyget används, begrepp inom test och kravhantering, standarder och format, och hur Qtestframe fungerar |
+| [Ordlista](glossary.md) | Begrepp inom test, kravhantering, standarder och Qtestframe i bokstavsordning, vart och ett med vad det betyder i Qtestframe |
+| [Referenser](references.md) | RFC 2119, RFC 8174 och andra RFC:er, NIST-publikationer, standarder för krav och test samt de format, protokoll och ramverk som Qtestframe använder |
 
 ## Viktiga begrepp
 

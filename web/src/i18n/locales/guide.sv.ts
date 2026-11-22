@@ -15,6 +15,7 @@ const guideSv: GuideMessages = {
     tipMore: 'Läs mer i användarhandboken',
     queryLanguage: 'Frågespråket',
     references: 'Referenser och standarder',
+    glossary: 'Ordlista',
     help: 'Hjälp',
     helpMenu: 'Hjälpmeny',
     userGuide: 'Användarhandbok',
