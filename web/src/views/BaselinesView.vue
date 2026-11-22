@@ -31,6 +31,8 @@ import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 
 const proj = useProjectStore()
+/** a changed field of the comparison; custom_fields.<key> shows the field's label */
+const changedLabel = (f: string) => (f.startsWith('custom_fields.') ? (proj.customFields.find((x) => x.key === f.slice(14))?.label ?? f.slice(14)) : f)
 const auth = useAuthStore()
 const prefs = usePrefsStore()
 const route = useRoute()
@@ -456,7 +458,7 @@ function remove(b: Baseline) {
               <span v-else-if="s.kind === 'added' && c.to_version" class="small mono muted">v{{ c.to_version }}</span>
               <span v-else-if="s.kind === 'removed' && c.from_version" class="small mono muted">v{{ c.from_version }}</span>
               <span v-if="c.changed_fields?.length" style="flex-basis: 100%; padding-left: 22px">
-                <span v-for="f in c.changed_fields" :key="f" class="field-chip">{{ f }}</span>
+                <span v-for="f in c.changed_fields" :key="f" class="field-chip">{{ changedLabel(f) }}</span>
               </span>
             </div>
           </div>
