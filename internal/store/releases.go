@@ -70,6 +70,9 @@ func validateRelease(r *model.Release) error {
 		if c.Threshold == 0 && percentCriterion(c.Type) {
 			c.Threshold = 100
 		}
+		if c.Type == "residual_risk" && !ValidRiskThreshold(c.Level) {
+			return Invalidf("the level of residual_risk must be one of %s (or empty for the project's threshold)", strings.Join(model.RiskLevels, ", "))
+		}
 		if c.Type == "trace_rules" {
 			if c.Level == "" {
 				c.Level = "error"
@@ -289,13 +292,21 @@ type ReleaseRequirement struct {
 	ID, Key, Title, Obligation, Status string
 	Tests                              []string
 	Suspect                            bool
+	// Blocking: open defects that block the requirement (DefectBlocks).
+	Blocking []model.DefectBlock
+	// Waiver: the keys of the approved, unexpired waivers that accept the
+	// requirement for the release ("" none).
+	Waiver string
 }
 
 // ReleaseData is everything the exit criteria are evaluated on.
 type ReleaseData struct {
 	Requirements []ReleaseRequirement
-	// Results: test id → latest result in the release's runs.
+	// Results: test id → latest result in the release's runs (a stale
+	// pass is no result).
 	Results map[string]string
+	// Stale: tests whose latest pass in the release's runs is stale.
+	Stale map[string]bool
 	// Executions in the release's runs and how many have a result.
 	Executions, Executed int
 	// FailedTests: keys of tests whose latest result in the release failed or is blocked.
@@ -307,6 +318,12 @@ type ReleaseData struct {
 	// RuleViolations returns the items of the scope that break traceability
 	// rules of at least a severity (nil when unknown).
 	RuleViolations func(level string) []ReleaseItem
+	// TestRequirements: test id → the scope requirements it verifies.
+	TestRequirements map[string][]string
+	// ResidualRisks returns the risks of the scope whose residual level is
+	// above a threshold ("" = the project's): those not accepted and those
+	// accepted with a valid sign-off (nil when unknown).
+	ResidualRisks func(threshold string) (open, accepted []ReleaseItem)
 }
 
 // ReleaseItem is something a criterion refers to.
@@ -330,6 +347,12 @@ type CriterionResult struct {
 	Items []ReleaseItem `json:"items"`
 	// Available is false when the data for the criterion does not exist.
 	Available bool `json:"available"`
+	// Waived: requirements (or tests of only such requirements) that would
+	// keep the criterion from being met but are accepted by a waiver.
+	Waived []ReleaseItem `json:"waived"`
+	// Accepted: risks above the threshold with a valid "accept risk"
+	// sign-off (residual_risk).
+	Accepted []ReleaseItem `json:"accepted,omitempty"`
 }
 
 // ReleaseStatusReport is the go / no-go of a release.
@@ -338,6 +361,16 @@ type ReleaseStatusReport struct {
 	Go       bool              `json:"go"`
 	Criteria []CriterionResult `json:"criteria"`
 	Summary  map[string]int    `json:"summary"`
+	// Waivers in force for the release (approved, not expired; for the
+	// release or the whole project) that cover scope requirements.
+	Waivers []model.Waiver `json:"waivers"`
+	// RiskThreshold in effect and ResidualRisks: the risks of the scope
+	// whose residual level is above it (Note: the residual level, with
+	// ", accepted" when signed off).
+	RiskThreshold string        `json:"risk_threshold"`
+	ResidualRisks []ReleaseItem `json:"residual_risks"`
+	// Variant the release was evaluated for (nil: all variants).
+	Variant *model.VariantRef `json:"variant,omitempty"`
 }
 
 func mandatory(ob string) bool {
@@ -351,6 +384,13 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 	reqItem := func(r ReleaseRequirement, note string) ReleaseItem {
 		return ReleaseItem{Kind: model.KindRequirement, ID: r.ID, Key: r.Key, Title: r.Title, Note: note}
 	}
+	waivedItem := func(r ReleaseRequirement) ReleaseItem { return reqItem(r, r.Waiver) }
+	waivedReq := map[string]string{}
+	for _, r := range d.Requirements {
+		if r.Waiver != "" {
+			waivedReq[r.ID] = r.Waiver
+		}
+	}
 	allPassed := func(r ReleaseRequirement) (bool, string) {
 		if len(r.Tests) == 0 {
 			return false, "none"
@@ -362,7 +402,11 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 			case model.ResultFailed, model.ResultBlocked:
 				return false, model.ResultFailed
 			default:
-				state = model.ResultNotRun
+				if d.Stale[t] && state == model.ResultPassed {
+					state = "stale"
+				} else {
+					state = model.ResultNotRun
+				}
 			}
 		}
 		return state == model.ResultPassed, state
@@ -373,50 +417,94 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 			return CriterionResult{ExitCriterion: c, Met: false, Total: 0, Items: []ReleaseItem{}, Available: false}
 		}
 		actual := round1(float64(ok) * 100 / float64(total))
-		return CriterionResult{ExitCriterion: c, Met: actual >= c.Threshold, Actual: actual, Total: total, Items: limitItems(items), Available: true}
+		return CriterionResult{ExitCriterion: c, Met: actual >= c.Threshold, Actual: actual, Total: total, Items: limitItems(items), Available: true, Waived: []ReleaseItem{}}
+	}
+	withWaived := func(r CriterionResult, waived []ReleaseItem) CriterionResult {
+		r.Waived = limitItems(waived)
+		return r
 	}
 	var out []CriterionResult
 	for _, c := range criteria {
 		switch c.Type {
 		case "coverage":
 			ok := 0
-			var miss []ReleaseItem
+			var miss, waived []ReleaseItem
 			for _, r := range d.Requirements {
-				if len(r.Tests) > 0 {
+				switch {
+				case len(r.Tests) > 0:
 					ok++
-				} else {
+				case r.Waiver != "":
+					ok++
+					waived = append(waived, waivedItem(r))
+				default:
 					miss = append(miss, reqItem(r, ""))
 				}
 			}
-			out = append(out, pctResult(c, ok, len(d.Requirements), miss))
+			out = append(out, withWaived(pctResult(c, ok, len(d.Requirements), miss), waived))
 		case "passed":
 			ok := 0
-			var miss []ReleaseItem
+			var miss, waived []ReleaseItem
 			for _, r := range d.Requirements {
 				if p, state := allPassed(r); p {
 					ok++
+				} else if r.Waiver != "" {
+					ok++
+					waived = append(waived, waivedItem(r))
 				} else {
 					miss = append(miss, reqItem(r, state))
 				}
 			}
-			out = append(out, pctResult(c, ok, len(d.Requirements), miss))
+			out = append(out, withWaived(pctResult(c, ok, len(d.Requirements), miss), waived))
 		case "mandatory_passed":
 			total := 0
-			var miss []ReleaseItem
+			var miss, waived []ReleaseItem
 			for _, r := range d.Requirements {
 				if !mandatory(r.Obligation) {
 					continue
 				}
 				total++
 				if p, state := allPassed(r); !p {
-					miss = append(miss, reqItem(r, state))
+					if r.Waiver != "" {
+						waived = append(waived, waivedItem(r))
+					} else {
+						miss = append(miss, reqItem(r, state))
+					}
 				}
 			}
-			out = append(out, CriterionResult{ExitCriterion: c, Met: len(miss) == 0, Actual: float64(len(miss)), Total: total, Items: limitItems(miss), Available: true})
+			out = append(out, CriterionResult{ExitCriterion: c, Met: len(miss) == 0, Actual: float64(len(miss)), Total: total, Items: limitItems(miss), Available: true, Waived: limitItems(waived)})
 		case "executed":
 			out = append(out, pctResult(c, d.Executed, d.Executions, nil))
 		case "no_failed":
-			out = append(out, CriterionResult{ExitCriterion: c, Met: len(d.FailedTests) == 0, Actual: float64(len(d.FailedTests)), Items: limitItems(d.FailedTests), Available: true})
+			// a failed test of only waived requirements is accepted with them
+			var failed, waived []ReleaseItem
+			for _, t := range d.FailedTests {
+				reqs := d.TestRequirements[t.ID]
+				all := len(reqs) > 0
+				var keys []string
+				for _, id := range reqs {
+					if waivedReq[id] == "" {
+						all = false
+						break
+					}
+					if !slices.Contains(keys, waivedReq[id]) {
+						keys = append(keys, waivedReq[id])
+					}
+				}
+				if all {
+					t.Note = strings.Join(keys, ", ")
+					waived = append(waived, t)
+				} else {
+					failed = append(failed, t)
+				}
+			}
+			out = append(out, CriterionResult{ExitCriterion: c, Met: len(failed) == 0, Actual: float64(len(failed)), Items: limitItems(failed), Available: true, Waived: limitItems(waived)})
+		case "residual_risk":
+			if d.ResidualRisks == nil {
+				out = append(out, CriterionResult{ExitCriterion: c, Met: true})
+				continue
+			}
+			open, accepted := d.ResidualRisks(c.Level)
+			out = append(out, CriterionResult{ExitCriterion: c, Met: len(open) == 0, Actual: float64(len(open)), Items: limitItems(open), Available: true, Accepted: accepted})
 		case "approved":
 			ok := 0
 			var miss []ReleaseItem
@@ -436,6 +524,22 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 				}
 			}
 			out = append(out, CriterionResult{ExitCriterion: c, Met: len(miss) == 0, Actual: float64(len(miss)), Items: limitItems(miss), Available: true})
+		case "no_blocking_defects":
+			// a waiver in force accepts a blocked requirement too
+			var miss, waived []ReleaseItem
+			for _, r := range d.Requirements {
+				for _, b := range r.Blocking {
+					if b.Level == model.DefectBlocks {
+						if r.Waiver != "" {
+							waived = append(waived, reqItem(r, r.Waiver))
+						} else {
+							miss = append(miss, reqItem(r, b.Key+" "+b.Severity))
+						}
+						break
+					}
+				}
+			}
+			out = append(out, CriterionResult{ExitCriterion: c, Met: len(miss) == 0, Actual: float64(len(miss)), Items: limitItems(miss), Available: true, Waived: limitItems(waived)})
 		case "no_open_defects":
 			if d.OpenDefects == nil {
 				out = append(out, CriterionResult{ExitCriterion: c, Met: true})
@@ -459,6 +563,14 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 			out = append(out, CriterionResult{ExitCriterion: c, Met: len(open) == 0, Actual: float64(len(open)), Items: limitItems(open), Available: true})
 		}
 	}
+	for i := range out {
+		if out[i].Items == nil {
+			out[i].Items = []ReleaseItem{}
+		}
+		if out[i].Waived == nil {
+			out[i].Waived = []ReleaseItem{}
+		}
+	}
 	if out == nil {
 		out = []CriterionResult{}
 	}
@@ -480,6 +592,14 @@ func limitItems(items []ReleaseItem) []ReleaseItem {
 // requirements and the tests linked to them) that break traceability rules
 // (each nil when not available).
 func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
+	return s.ReleaseStatusForVariant(ctx, tenantID, id, "", defects, risks, rules...)
+}
+
+// ReleaseStatusForVariant evaluates a release for one variant (id or name;
+// "" for all): the scope is the release's requirements that apply to the
+// variant, each verified by its linked tests that apply to it, and only
+// results that count for the variant are used (see VariantCoverage).
+func (s *Store) ReleaseStatusForVariant(ctx context.Context, tenantID, id, variant string, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
 	rel, err := s.GetRelease(ctx, tenantID, id)
 	if err != nil {
 		return nil, err
@@ -488,6 +608,26 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	if err != nil {
 		return nil, err
 	}
+	var vc *VariantCoverage
+	var variantRef *model.VariantRef
+	variantID := ""
+	if strings.TrimSpace(variant) != "" {
+		v, err := s.FindVariant(ctx, tenantID, rel.ProjectID, variant)
+		if err != nil {
+			return nil, err
+		}
+		if vc, err = s.LoadVariantCoverage(ctx, tenantID, rel.ProjectID, nil); err != nil {
+			return nil, err
+		}
+		variantID, variantRef = v.ID, &model.VariantRef{ID: v.ID, Name: v.Name}
+		in := []string{}
+		for _, rid := range rel.RequirementIDs {
+			if vc.AppliesTo(rid, variantID) {
+				in = append(in, rid)
+			}
+		}
+		rel.RequirementIDs = in
+	}
 	scope := map[string]bool{}
 	for _, rid := range rel.RequirementIDs {
 		scope[rid] = true
@@ -495,16 +635,24 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	tests := map[string][]string{}
 	suspect := map[string]bool{}
 	for _, l := range links {
-		if scope[l.RequirementID] {
+		if scope[l.RequirementID] && (vc == nil || vc.AppliesTo(l.TestCaseID, variantID)) {
 			tests[l.RequirementID] = append(tests[l.RequirementID], l.TestCaseID)
 			if l.SuspectSince != nil {
 				suspect[l.RequirementID] = true
 			}
 		}
 	}
-	d := ReleaseData{Results: map[string]string{}}
+	d := ReleaseData{Results: map[string]string{}, Stale: map[string]bool{}}
+	stale, err := s.LoadStaleIndex(ctx, tenantID, rel.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	blocks, err := s.DefectBlocks(ctx, tenantID, rel.ProjectID, stale.Settings())
+	if err != nil {
+		return nil, err
+	}
 	// latest result per test and configuration in the release's runs
-	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, t.key, t.title, e.configuration_id, e.status, e.finished_at, e.started_at, r.created_at FROM test_executions e
+	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, t.key, t.title, e.configuration_id, e.status, e.finished_at, e.started_at, r.created_at, r.variant_id FROM test_executions e
 		JOIN test_runs r ON r.id = e.run_id JOIN test_cases t ON t.id = e.test_case_id WHERE r.release_id = ? AND r.tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return nil, err
@@ -517,12 +665,15 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	names := map[string][2]string{}
 	for rows.Next() {
 		var tid, key, title, st string
-		var cfg sql.NullString
+		var cfg, runVariant sql.NullString
 		var fin, sta sql.NullTime
 		var at time.Time
-		if err := rows.Scan(&tid, &key, &title, &cfg, &st, &fin, &sta, &at); err != nil {
+		if err := rows.Scan(&tid, &key, &title, &cfg, &st, &fin, &sta, &at, &runVariant); err != nil {
 			rows.Close()
 			return nil, err
+		}
+		if vc != nil && (!vc.AppliesTo(tid, variantID) || !vc.Counts(runVariant.String, cfg.String, variantID)) {
+			continue
 		}
 		if fin.Valid {
 			at = fin.Time
@@ -553,6 +704,11 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 			if r.status == model.ResultNotRun {
 				units[tid][cfg] = ""
 			}
+			// a stale pass is no evidence (staleness.go)
+			if r.status == model.ResultPassed && stale.Check(r.at, tid).Stale {
+				units[tid][cfg] = ""
+				d.Stale[tid] = true
+			}
 		}
 		// a test counts as passed only when it passed in every configuration
 		st := units.Combined(tid)
@@ -562,16 +718,43 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 		}
 	}
 	sort.Slice(d.FailedTests, func(i, j int) bool { return naturalLess(d.FailedTests[i].Key, d.FailedTests[j].Key) })
-	sum := map[string]int{"requirements": len(rel.RequirementIDs), "runs": rel.Runs, "executions": 0, "executed": 0, "covered": 0, "passed": 0, "failed": 0, "not_run": 0}
+	sum := map[string]int{"requirements": len(rel.RequirementIDs), "runs": rel.Runs, "executions": 0, "executed": 0, "covered": 0, "passed": 0, "failed": 0, "not_run": 0,
+		"waived": 0, "blocked": 0, "stale": len(d.Stale)}
+	waivers, err := s.ActiveWaivers(ctx, tenantID, rel.ProjectID, rel.ID)
+	if err != nil {
+		return nil, err
+	}
+	inForce := []model.Waiver{}
+	seenWaiver := map[string]bool{}
+	d.TestRequirements = map[string][]string{}
+	for _, rid := range rel.RequirementIDs {
+		for _, tid := range tests[rid] {
+			d.TestRequirements[tid] = append(d.TestRequirements[tid], rid)
+		}
+	}
 	for _, rid := range rel.RequirementIDs {
 		r, err := s.GetRequirement(ctx, tenantID, rid)
 		if err != nil {
 			continue
 		}
-		rr := ReleaseRequirement{ID: r.ID, Key: r.Key, Title: r.Title, Obligation: r.Obligation, Status: r.Status, Tests: tests[r.ID], Suspect: suspect[r.ID]}
+		var keys []string
+		for _, w := range waivers[r.ID] {
+			keys = append(keys, w.Key)
+			if !seenWaiver[w.ID] {
+				seenWaiver[w.ID] = true
+				inForce = append(inForce, w)
+			}
+		}
+		rr := ReleaseRequirement{ID: r.ID, Key: r.Key, Title: r.Title, Obligation: r.Obligation, Status: r.Status, Tests: tests[r.ID], Suspect: suspect[r.ID], Blocking: blocks[r.ID], Waiver: strings.Join(keys, ", ")}
+		if rr.Waiver != "" {
+			sum["waived"]++
+		}
 		d.Requirements = append(d.Requirements, rr)
 		if len(rr.Tests) > 0 {
 			sum["covered"]++
+		}
+		if n, _ := BlockCounts(rr.Blocking); n > 0 {
+			sum["blocked"]++
 		}
 		switch CoverageOf(rr.Tests, units) {
 		case model.ResultPassed:
@@ -604,7 +787,28 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 			return rules[0](rel.ProjectID, rel.RequirementIDs, scopeTests, level)
 		}
 	}
-	rep := &ReleaseStatusReport{Release: rel, Criteria: EvaluateExitCriteria(rel.ExitCriteria, d), Summary: sum}
+	projectThreshold, err := s.RiskThreshold(ctx, tenantID, rel.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	projectRisks, err := s.ListRisks(ctx, tenantID, rel.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	d.ResidualRisks = func(threshold string) (open, accepted []ReleaseItem) {
+		return residualAbove(projectRisks, scope, EffectiveThreshold(threshold, projectThreshold))
+	}
+	releaseThreshold := ""
+	for _, c := range rel.ExitCriteria {
+		if c.Type == "residual_risk" && c.Level != "" {
+			releaseThreshold = c.Level
+		}
+	}
+	rep := &ReleaseStatusReport{Release: rel, Criteria: EvaluateExitCriteria(rel.ExitCriteria, d), Summary: sum, Waivers: inForce,
+		RiskThreshold: EffectiveThreshold(releaseThreshold, projectThreshold), ResidualRisks: []ReleaseItem{}, Variant: variantRef}
+	open, accepted := residualAbove(projectRisks, scope, rep.RiskThreshold)
+	rep.ResidualRisks = append(append(rep.ResidualRisks, open...), accepted...)
+	sum["residual_above_threshold"] = len(open)
 	rep.Go = true
 	for _, c := range rep.Criteria {
 		if !c.Met {
@@ -637,3 +841,23 @@ func ValidateRelease(r *model.Release) error { return validateRelease(r) }
 
 // ValidDate reports whether s is a YYYY-MM-DD date.
 func ValidDate(s string) bool { return dateRe.MatchString(s) }
+
+// residualAbove returns the risks (not closed) linked to scope requirements
+// whose residual level is above threshold: those without and those with a
+// valid "accept risk" sign-off.
+func residualAbove(risks []model.Risk, scope map[string]bool, threshold string) (open, accepted []ReleaseItem) {
+	open, accepted = []ReleaseItem{}, []ReleaseItem{}
+	for _, k := range risks {
+		if k.Status == "closed" || !LevelAbove(k.ResidualLevel, threshold) || !slices.ContainsFunc(k.RequirementIDs, func(id string) bool { return scope[id] }) {
+			continue
+		}
+		it := ReleaseItem{Kind: model.KindRisk, ID: k.ID, Key: k.Key, Title: k.Title, Note: k.ResidualLevel}
+		if k.AcceptanceValid {
+			it.Note += ", accepted"
+			accepted = append(accepted, it)
+		} else {
+			open = append(open, it)
+		}
+	}
+	return open, accepted
+}

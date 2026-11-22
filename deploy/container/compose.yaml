@@ -72,6 +72,10 @@ services:
         condition: service_healthy
     command: ["migrate", "--config", "/etc/qtestframe/config.yaml"]
     restart: "no"
+    environment:
+      # the image defaults to SQLite (QTF_DATABASE_DRIVER=sqlite), and
+      # environment variables win over the configuration file
+      QTF_DATABASE_DRIVER: postgres
     secrets:
       - source: db_dsn
         target: /run/secrets/db_dsn
@@ -100,6 +104,8 @@ services:
     command: ["serve", "--config", "/etc/qtestframe/config.yaml"]
     environment:
       QTF_CONFIG: /etc/qtestframe/config.yaml
+      # the image defaults to SQLite; environment variables win over the file
+      QTF_DATABASE_DRIVER: postgres
       QTF_SERVER_BASE_URL: ${QTF_BASE_URL:-https://localhost:8443}
     ports:
       - "8443:8443"

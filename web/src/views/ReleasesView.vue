@@ -55,6 +55,8 @@ import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
+import VariantSelect from '@/components/VariantSelect.vue'
+import { useVariants } from '@/composables/variants'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -78,10 +80,14 @@ const reports = ref<Record<string, ReleaseStatusReport | null>>({})
 const loading = ref(false)
 const error = ref('')
 
+// readiness for one variant (?variant=): its requirements, tests and results
+const variants = useVariants(() => proj.pid)
+const readinessVariant = ref<string | null>(null)
+watch(readinessVariant, () => void Promise.all(releases.value.map((r) => loadReport(r.id))))
 async function loadReport(id: string) {
   let rep: ReleaseStatusReport | null = null
   try {
-    rep = await api.get<ReleaseStatusReport>(`/releases/${id}/status`)
+    rep = await api.get<ReleaseStatusReport>(`/releases/${id}/status`, { variant: readinessVariant.value || undefined })
   } catch {
     rep = null
   }
@@ -217,7 +223,7 @@ async function loadRuns() {
     runs.value = []
   }
 }
-onMounted(() => Promise.all([load(), loadRequirements(), loadRuns()]))
+onMounted(() => Promise.all([load(), loadRequirements(), loadRuns(), variants.load()]))
 
 // ---------- selected release ----------
 type TabName = 'status' | 'scope' | 'runs' | 'criteria'
@@ -380,6 +386,7 @@ const typeOptions = computed(() => CRITERION_TYPES.map((v) => ({ label: t(`relea
 const severityOptions = computed(() => [{ label: t('releasesView.anySeverity'), value: '' }, ...DEFECT_SEVERITIES.map((v) => ({ label: t(`releasesView.severity.${v}`), value: v }))])
 const ruleLevelOptions = computed(() => RULE_LEVELS.map((v) => ({ label: t(`releasesView.ruleLevel.${v}`), value: v })))
 const riskLevelOptions = computed(() => [{ label: t('releasesView.anyLevel'), value: '' }, ...RISK_LEVELS.map((v) => ({ label: t(`risksView.level.${v}`), value: v }))])
+const thresholdOptions = computed(() => [{ label: t('residual.projectThreshold'), value: '' }, ...RISK_LEVELS.map((v) => ({ label: t(`risksView.level.${v}`), value: v }))])
 function touch() {
   criteriaDirty.value = true
 }
@@ -476,9 +483,11 @@ const itemKindLabel = (kind: string) => t(`releasesView.kind.${kind === 'test' |
 /** note of a blocking item: a risk level, a severity, a result or a requirement status */
 function itemNote(c: CriterionResult, note?: string) {
   if (!note) return ''
-  if (c.type === 'risks_mitigated') return t(`risksView.level.${note}`)
+  if (c.type === 'risks_mitigated' || c.type === 'residual_risk') return t(`risksView.level.${note}`)
   if (c.type === 'no_open_defects') return t(`releasesView.severity.${note}`)
   if (c.type === 'trace_rules') return note // the names of the rules the item breaks
+  if (c.type === 'no_blocking_defects') return note // the blocking defect: key and severity
+  if (note === 'stale') return t('correlations.staleResult')
   if (note === 'none') return t('releasesView.noteNoTests')
   return c.type === 'approved' ? enumLabel('status', note) : enumLabel('result', note)
 }
@@ -492,6 +501,7 @@ function itemNote(c: CriterionResult, note?: string) {
     </div>
     <div class="actions">
       <HelpLink page="releases-and-risks" />
+      <VariantSelect v-if="variants.variants.value.length" v-model="readinessVariant" :variants="variants.variants.value" :aria-label="t('variants.readinessFor')" :placeholder="t('variants.readinessAll')" />
       <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
       <Button v-if="canWrite" :label="t('releasesView.new')" icon="pi pi-plus" @click="openCreate" />
     </div>
@@ -629,12 +639,41 @@ function itemNote(c: CriterionResult, note?: string) {
                 <li v-for="it in c.items" :key="it.kind + it.id" class="row nowrap">
                   <span class="sr-only">{{ itemKindLabel(it.kind) }}</span>
                   <ItemRef :to="releaseItemRoute(it, proj.pid)" :item-key="it.key" :title="it.title" title-class="ellipsis" grow />
-                  <Tag v-if="c.type === 'risks_mitigated' && it.note" :value="itemNote(c, it.note)" :severity="riskLevelSeverity(it.note)" />
+                  <Tag v-if="(c.type === 'risks_mitigated' || c.type === 'residual_risk') && it.note" :value="itemNote(c, it.note)" :severity="riskLevelSeverity(it.note)" />
                   <span v-else-if="it.note" class="small muted">{{ itemNote(c, it.note) }}</span>
+                </li>
+              </ul>
+              <ul v-if="c.waived?.length || c.accepted?.length" class="blocking waived" :aria-label="t('waivers.acceptedItemsOf', { criterion: describe(c) })">
+                <li v-for="it in [...(c.waived ?? []), ...(c.accepted ?? [])]" :key="'w' + it.kind + it.id" class="row nowrap">
+                  <span class="sr-only">{{ itemKindLabel(it.kind) }}</span>
+                  <ItemRef :to="releaseItemRoute(it, proj.pid)" :item-key="it.key" :title="it.title" title-class="ellipsis" grow />
+                  <Tag v-if="it.kind === 'risk'" :value="t('waivers.riskAccepted')" severity="contrast" icon="pi pi-pen-to-square" />
+                  <Tag v-else :value="t('waivers.waivedBy', { keys: it.note || '' })" severity="contrast" icon="pi pi-verified" />
                 </li>
               </ul>
             </li>
           </ul>
+          <section class="rel-waivers" :aria-labelledby="`rel-waivers-${detail.id}`">
+            <div class="row">
+              <h3 :id="`rel-waivers-${detail.id}`" class="plain-heading small grow"><i class="pi pi-verified" aria-hidden="true" /> {{ t('waivers.inForceForRelease', { count: report.waivers?.length ?? 0 }, report.waivers?.length ?? 0) }}</h3>
+              <RouterLink v-if="auth.can(P.requirementWrite)" :to="{ name: 'waivers', params: { projectId: proj.pid }, query: { new: '1', release: detail.id } }" class="small">{{ t('waivers.request') }}</RouterLink>
+              <RouterLink :to="{ name: 'waivers', params: { projectId: proj.pid } }" class="small">{{ t('waivers.all') }}</RouterLink>
+            </div>
+            <div v-if="!report.waivers?.length" class="small muted">{{ t('waivers.noneForRelease') }}</div>
+            <div v-for="w in report.waivers ?? []" :key="w.id" class="row nowrap" style="padding: 3px 0">
+              <ItemRef :to="{ name: 'waivers', params: { projectId: proj.pid }, query: { waiver: w.id } }" :item-key="w.key" :title="w.title" title-class="ellipsis" grow />
+              <span class="small muted">{{ w.release_id ? w.release_name : t('waivers.wholeProject') }}</span>
+              <span class="small muted">{{ w.requirements.map((r) => r.key).join(', ') }}</span>
+            </div>
+            <h3 class="plain-heading small" style="margin-top: 10px">
+              <i class="pi pi-shield" aria-hidden="true" /> {{ t('residual.aboveThresholdRelease', { count: report.residual_risks?.length ?? 0, threshold: t(`risksView.level.${report.risk_threshold || 'medium'}`) }, report.residual_risks?.length ?? 0) }}
+            </h3>
+            <div v-for="it in report.residual_risks ?? []" :key="'r' + it.id" class="row nowrap" style="padding: 3px 0">
+              <ItemRef :to="releaseItemRoute(it, proj.pid)" :item-key="it.key" :title="it.title" title-class="ellipsis" grow />
+              <Tag :value="t(`risksView.level.${(it.note || '').split(',')[0]}`)" :severity="riskLevelSeverity((it.note || '').split(',')[0])" />
+              <Tag v-if="(it.note || '').includes('accepted')" :value="t('waivers.riskAccepted')" severity="contrast" icon="pi pi-pen-to-square" />
+            </div>
+          </section>
         </template>
       </div>
 
@@ -715,7 +754,7 @@ function itemNote(c: CriterionResult, note?: string) {
           <Select
             v-else-if="criterionParam(c.type) === 'riskLevel'"
             v-model="c.level"
-            :options="riskLevelOptions"
+            :options="c.type === 'residual_risk' ? thresholdOptions : riskLevelOptions"
             option-label="label"
             option-value="value"
             class="crit-param"
@@ -856,6 +895,8 @@ function itemNote(c: CriterionResult, note?: string) {
 .values { white-space: nowrap; }
 .blocking { list-style: none; margin: 6px 0 0; padding: 0 0 0 24px; display: grid; gap: 2px; max-height: 260px; overflow: auto; }
 .blocking li { padding: 2px 0; border-bottom: 1px dashed var(--qtf-border); }
+.blocking.waived { border-left: 3px solid var(--qtf-border); margin-left: 24px; padding-left: 8px; }
+.rel-waivers { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--qtf-border); }
 .crit-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--qtf-border); }
 .crit-type { width: 260px; max-width: 100%; }
 .crit-param { width: 170px; max-width: 100%; }

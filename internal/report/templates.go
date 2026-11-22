@@ -53,6 +53,16 @@ func (d *Data) linkedRequirementIDs() map[string]bool {
 	return m
 }
 
+// resultText is the localized latest result of a test, marked when it is
+// stale (no passing evidence; see store/staleness.go).
+func (l loc) resultText(t *model.TestCase) string {
+	out := l.enum(EnumResult, lastResult(t))
+	if t.Stale {
+		out += " (" + l.t("stale") + ")"
+	}
+	return out
+}
+
 func lastResult(t *model.TestCase) string {
 	if t.LastResult == "" {
 		return model.ResultNotRun
@@ -159,7 +169,7 @@ func buildRequirementsCoverage(d *Data, _ map[string]string) (*export.Dataset, e
 				continue
 			}
 			keys = append(keys, t.Key)
-			results = append(results, t.Key+": "+l.enum(EnumResult, lastResult(t)))
+			results = append(results, t.Key+": "+l.resultText(t))
 		}
 		detail.Rows = append(detail.Rows, []string{r.Key, r.Title, l.enum(EnumStatus, r.Status), l.enum(EnumObligation, r.Obligation),
 			l.enum(EnumPriority, r.Priority), strings.Join(keys, ", "), strings.Join(results, "\n"), l.enum(EnumCoverage, r.Coverage)})
@@ -199,7 +209,7 @@ func buildTraceability(d *Data, _ map[string]string) (*export.Dataset, error) {
 				continue
 			}
 			n++
-			matrix.Rows = append(matrix.Rows, []string{r.Key, r.Title, l.enum(EnumCoverage, r.Coverage), t.Key, t.Title, l.enum(EnumResult, lastResult(t))})
+			matrix.Rows = append(matrix.Rows, []string{r.Key, r.Title, l.enum(EnumCoverage, r.Coverage), t.Key, t.Title, l.resultText(t)})
 		}
 		if n == 0 {
 			uncovered++
@@ -213,7 +223,7 @@ func buildTraceability(d *Data, _ map[string]string) (*export.Dataset, error) {
 	for i := range d.Tests {
 		t := &d.Tests[i]
 		if !linked[t.ID] {
-			orphans.Rows = append(orphans.Rows, []string{t.Key, t.Title, l.enum(EnumStatus, t.Status), l.enum(EnumResult, lastResult(t))})
+			orphans.Rows = append(orphans.Rows, []string{t.Key, t.Title, l.enum(EnumStatus, t.Status), l.resultText(t)})
 		}
 	}
 	sections := []export.Section{
@@ -238,7 +248,7 @@ func (l loc) traceRuleSections(results []tracerules.Result) []export.Section {
 	rules := export.Section{Name: "trace_rules", Title: l.t("Traceability rules"),
 		Columns: l.cols("Rule", "Severity", "Applies to", "Selector", "Matching items", "Violations", "Result")}
 	viol := export.Section{Name: "trace_rule_violations", Title: l.t("Traceability rule violations"),
-		Columns: l.cols("Rule", "Severity", "Item", "Title", "Found", "Required")}
+		Columns: l.cols("Rule", "Severity", "Item", "Title", "Found", "Required", "Involved items")}
 	for _, res := range results {
 		result := l.tc("rule", "Passed")
 		switch {
@@ -250,7 +260,15 @@ func (l loc) traceRuleSections(results []tracerules.Result) []export.Section {
 		rules.Rows = append(rules.Rows, []string{res.Rule.Name, l.enum(EnumSeverity, res.Rule.Severity), l.enum(EnumScope, res.Rule.Scope), res.Rule.Selector,
 			itoa(res.Matched), itoa(res.ViolationCount), result})
 		for _, v := range res.Violations {
-			viol.Rows = append(viol.Rows, []string{res.Rule.Name, l.enum(EnumSeverity, res.Rule.Severity), v.Key, v.Title, itoa(v.Found), itoa(v.Required)})
+			var involved []string
+			for _, rl := range v.Related {
+				x := rl.Key
+				if rl.Note != "" {
+					x += " (" + rl.Note + ")"
+				}
+				involved = append(involved, x)
+			}
+			viol.Rows = append(viol.Rows, []string{res.Rule.Name, l.enum(EnumSeverity, res.Rule.Severity), v.Key, v.Title, itoa(v.Found), itoa(v.Required), strings.Join(involved, ", ")})
 		}
 	}
 	return []export.Section{rules, viol}
@@ -438,7 +456,7 @@ func buildTestInventory(d *Data, _ map[string]string) (*export.Dataset, error) {
 		}
 		estimate += t.EstimatedMin
 		list.Rows = append(list.Rows, []string{t.Key, t.Title, t.FolderPath, l.enum(EnumExecution, t.ExecutionType), l.enum(EnumStatus, t.Status), l.enum(EnumPriority, t.Priority),
-			d.categoryNames(t.CategoryIDs), itoa(t.LinkedReqs), l.enum(EnumResult, lastResult(t))})
+			d.categoryNames(t.CategoryIDs), itoa(t.LinkedReqs), l.resultText(t)})
 	}
 	folderNames := make([]string, 0, len(folders))
 	for f := range folders {

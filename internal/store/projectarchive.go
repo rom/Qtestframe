@@ -103,6 +103,8 @@ var projectArchiveTables = []archiveTable{
 	{"test_steps", inTests},
 	{"test_case_categories", inTests},
 	{"trace_links", ofProject},
+	{"variants", ofProject},
+	{"builds", ofProject},
 	{"test_runs", ofProject},
 	{"run_configurations", inRuns},
 	{"test_executions", inRuns},
@@ -126,6 +128,31 @@ var projectArchiveTables = []archiveTable{
 	{"baseline_signoffs", inBaseline},
 	{"metric_snapshots", ofProject},
 	{"trace_rules", ofProject},
+	{"document_items", inFiles},
+	{"defect_regressions", ofProject},
+	// the ReqIF identifiers of the items, so a loaded project can be
+	// updated from the same documents
+	{"external_refs", ofProject},
+	// verification correlations
+	{"link_criteria", `link_id IN (SELECT id FROM trace_links WHERE project_id = ?)`},
+	{"system_elements", ofProject},
+	{"requirement_elements", inReqs},
+	{"test_elements", inTests},
+	{"verification_settings", ofProject},
+	{"verification_records", ofProject},
+	{"verification_record_files", `record_id IN (SELECT id FROM verification_records WHERE project_id = ?)`},
+	{"waivers", ofProject},
+	{"waiver_requirements", `waiver_id IN (SELECT id FROM waivers WHERE project_id = ?)`},
+	{"waiver_signoffs", `waiver_id IN (SELECT id FROM waivers WHERE project_id = ?)`},
+	{"soa_decisions", ofProject},
+	{"item_applicability", ofProject},
+	{"code_changes", ofProject},
+	{"code_change_items", `change_id IN (SELECT id FROM code_changes WHERE project_id = ?)`},
+	{"consistency_dismissals", ofProject},
+	{"custom_fields", ofProject},
+	{"custom_field_archive", ofProject},
+	{"item_templates", ofProject},
+	{"project_template_defaults", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},
@@ -157,6 +184,9 @@ var ProjectArchiveExcluded = map[string]string{
 	"user_mfa":             "secret (second factors)",
 	"mfa_recovery_codes":   "secret (second factors)",
 	"mfa_policies":         "organisation",
+	"code_settings":        "secret (webhook secret of the code integration)",
+	"field_set_fields":     "organisation field sets (the project has its own copies)",
+	"org_item_templates":   "organisation templates",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.
@@ -180,6 +210,10 @@ var mustMapColumns = map[string]string{
 	"revisions":       "entity_id",
 	"review_requests": "entity_id",
 	"item_links":      "source_id",
+	"external_refs":   "entity_id",
+	// polymorphic references to requirements and tests
+	"item_applicability": "item_id",
+	"code_change_items":  "item_id",
 }
 
 // sanitizeArchiveRow removes secrets from a row (when saving and again

@@ -2,8 +2,16 @@
 import { QUERY_FIELDS, QUERY_HELP, QUERY_OPERATORS } from '@/lib/query'
 import { useI18n } from 'vue-i18n'
 import { queryGuidePath } from '@/guide/tips'
-defineProps<{ scope: keyof typeof QUERY_FIELDS }>()
+import { computed } from 'vue'
+import { useProjectStore } from '@/stores/project'
+import { cfField } from '@/lib/customFields'
+const props = defineProps<{ scope: keyof typeof QUERY_FIELDS }>()
 const { t, locale } = useI18n()
+const proj = useProjectStore()
+/** the project's custom fields of the scope (cf.<key>) */
+const customKeys = computed(() =>
+  ['requirement', 'test', 'run', 'defect'].includes(props.scope) ? proj.customFieldsFor(props.scope as 'requirement').map((f) => cfField(f.key)) : [],
+)
 </script>
 
 <template>
@@ -30,6 +38,7 @@ const { t, locale } = useI18n()
     <div style="font-weight: 700; margin: 10px 0 4px">{{ t('query.fields') }}</div>
     <div style="display: flex; flex-wrap: wrap; gap: 4px">
       <code v-for="f in QUERY_FIELDS[scope]" :key="f" class="tag-chip">{{ f }}</code>
+      <code v-for="f in customKeys" :key="f" class="tag-chip">{{ f }}</code>
     </div>
     <RouterLink :to="queryGuidePath(String(locale))" class="row nowrap" style="gap: 6px; margin-top: 10px; font-weight: 600">
       <i class="pi pi-book" aria-hidden="true" />{{ t('guide.queryGuide') }}

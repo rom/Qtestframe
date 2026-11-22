@@ -2,7 +2,11 @@
 
 Installing, configuring, running and maintaining a Qtestframe server. The
 security design behind these defaults is described in
-[security.md](security.md).
+[security.md](security.md). The [administrator guide](admin-guide/en/index.md)
+([svenska](admin-guide/sv/index.md)) covers the same ground for operators,
+with a reference of every configuration key, environment variable and
+command generated from the code; this document keeps the provider-specific
+recipes (Keycloak, Entra ID, Okta, ADFS, rsyslog, syslog-ng, PostgreSQL).
 
 - [1. Layout](#1-layout)
 - [2. Installation](#2-installation)
@@ -30,7 +34,7 @@ security design behind these defaults is described in
 | `/etc/qtestframe/secrets/` | root:qtestframe 0750 | secret files referenced by `*_file` options |
 | `/var/lib/qtestframe/` | qtestframe 0750 | `qtestframe.db` (SQLite), `runner/` work dir |
 | `/run/qtestframe/` | qtestframe 0750 | runtime files |
-| `/var/log/qtestframe/` | qtestframe 0750 | optional file logs (default: journald) |
+| `/var/log/qtestframe/` | qtestframe 0750 | created by the unit (`LogsDirectory=`), not written by the server: logs go to the journal |
 | `/etc/systemd/system/qtestframe.service` | root 0644 | unit ([source](../deploy/systemd/qtestframe.service)) |
 
 The service runs as the system user/group `qtestframe` and, with the
@@ -133,10 +137,18 @@ Environment overrides (e.g. in a drop-in `Environment=` line or a container):
 `QTF_SERVER_PORT` (port only),
 `QTF_SERVER_BASE_URL`, `QTF_LOG_LEVEL`, `QTF_LOG_FORMAT`, `QTF_COOKIE_SECURE`,
 `QTF_BOOTSTRAP_ADMIN_EMAIL`, `QTF_BOOTSTRAP_ADMIN_PASSWORD`,
-`QTF_OIDC_<NAME>_CLIENT_SECRET`, and for the encryption of stored secrets
+`QTF_OIDC_<NAME>_CLIENT_SECRET`, the e-mail settings `QTF_EMAIL_HOST`,
+`QTF_EMAIL_PORT`, `QTF_EMAIL_USERNAME`, `QTF_EMAIL_FROM`,
+`QTF_EMAIL_PASSWORD`, the runner settings `QTF_RUNNER_ENABLED`,
+`QTF_RUNNER_WORK_DIR`, `QTF_RUNNER_WEB_ENABLED`, `QTF_RUNNER_WEB_NODE`,
+`QTF_RUNNER_WEB_PLAYWRIGHT_DIR`, `QTF_RUNNER_WEB_BROWSERS_PATH`, and for the
+encryption of stored secrets
 `QTF_SECRETS_PROVIDER`, `QTF_SECRETS_KEY`, `QTF_SECRETS_KEY_FILE`,
 `QTF_SECRETS_TPM_DEVICE`, `QTF_SECRETS_PKCS11_MODULE`,
-`QTF_SECRETS_PKCS11_PIN`.
+`QTF_SECRETS_PKCS11_PIN`. The complete, generated list is in the
+[administrator guide](admin-guide/en/configuration.md#environment-variables).
+`database.dsn_file` and `bootstrap.admin_password_file`, when set, win over
+`QTF_DATABASE_DSN` and `QTF_BOOTSTRAP_ADMIN_PASSWORD`.
 
 Local changes to the unit go into a drop-in, never into the unit file:
 
@@ -152,8 +164,9 @@ MemoryMax=4G
 
 Secret files referenced with a **relative** path are looked up in
 `$CREDENTIALS_DIRECTORY` (`client_secret_file: oidc-corp`). This applies to
-`database.dsn_file`, `auth.oidc[].client_secret_file` and
-`bootstrap.admin_password_file`; key and certificate paths (`tls_key`,
+`database.dsn_file`, `auth.oidc[].client_secret_file`,
+`bootstrap.admin_password_file`, `email.password_file` and
+`secrets.pkcs11.pin_file`; key and certificate paths (`tls_key`,
 `sp_key_file`, syslog `key_file`, ...) are used as given.
 
 `qtestframe check-config [--config FILE]` validates a configuration
@@ -401,11 +414,11 @@ a drop-in; for the unix socket (`host=/run/postgresql`) add
 
 SELinux: `sudo setsebool -P qtestframe_connect_postgresql on`.
 
-Migrating SQLite → PostgreSQL: export each project (`/projects/{pid}/export`)
-is for reporting only; for a full migration stop the service, run
-`qtestframe migrate` against the empty PostgreSQL database, and copy the
-tables with a tool such as `pgloader` (schema created by `migrate`, data
-only: `pgloader --with "data only" sqlite:///var/lib/qtestframe/qtestframe.db pgsql://...`).
+Migrating SQLite → PostgreSQL (or back): use the built-in logical backup
+(section 11): `qtestframe backup` on the old database, `qtestframe migrate`
+and `qtestframe restore` with a configuration for the new one, keeping the
+same key of the stored secrets. Project exports (`/projects/{pid}/export`)
+are for reporting only.
 
 ## 5. TLS certificates
 
@@ -620,7 +633,7 @@ needed.
 
 ## 8. Logging and central syslog
 
-By default logs go to stdout → journald: `journalctl -u qtestframe -f`
+By default logs go to standard error → journald: `journalctl -u qtestframe -f`
 (`-o json` for structured fields). Set `logging.format: json` for machine
 processing.
 
@@ -718,10 +731,13 @@ environment overrides.
 | `migrate` | apply pending database migrations, print how many were applied |
 | `user create --email E [--name N] [--password-stdin] [--super-admin]` | create a user; the password is read as one line from stdin (without `--password-stdin` the user has no password and can only use SSO) |
 | `tenant create --slug S --name N` | create a tenant (slug: 2–63 characters `a-z0-9-`) |
-| `member add --tenant SLUG --email E --role admin\|manager\|tester\|viewer` | add a user to a tenant or change their role (default role `viewer`) |
+| `member add --tenant SLUG --email E --role ROLE` | add a user to a tenant or change their role: `admin`, `manager`, `test_lead`, `tester`, `reviewer`, `viewer` or a custom role of the tenant (default `viewer`) |
 | `seed-demo [--tenant SLUG]` | create the demo project (`DEMO`, `DEMO2`, ...) in the tenant, default `bootstrap.tenant_slug`; the tenant is created if missing |
 | `check-config` | load and validate the configuration, print `configuration OK` |
 | `healthcheck [--url URL]` | GET `/healthz` of the local server (URL derived from `server.listen`), exit 0 on 200 |
+| `backup --out FILE.zip` / `restore --in FILE.zip --yes` | logical backup and restore of all data (section 11) |
+| `secrets status\|migrate\|rotate\|rewrap\|decrypt\|generate-key` | encryption of stored secrets (section 3) |
+| `report ...` | upload automated test results to a server (README) |
 | `version` | print the version |
 | `sandbox-exec ...` | internal: entry point of the script runner sandbox, started by the server itself |
 
@@ -764,8 +780,9 @@ Without `work_dir` the runner uses `$TMPDIR/qtestframe-runner` (the private
 adds it to its Landlock read-write paths.
 
 SELinux: `setsebool -P qtestframe_run_scripts on`. AppArmor: the profile
-already contains the `runner` child profile. Only managers and admins
-(`script.execute`) can run scripts. JavaScript requires relaxing
+already contains the `runner` child profile. Only roles with
+`script.execute` (by default test leads, managers and admins) can run
+scripts. JavaScript requires relaxing
 `MemoryDenyWriteExecute` (see security.md §9). Read the security
 considerations in security.md §9 before enabling.
 
@@ -867,8 +884,12 @@ before the backup (`secrets rewrap`), or keep a recovery procedure.
 
 Qtestframe can export all data — every tenant, user, project, history,
 comment and file — as one ZIP and restore it into SQLite *or* PostgreSQL.
-This is also the way to migrate from SQLite to PostgreSQL. Only super
-administrators can do it; sessions are not included.
+This is also the way to migrate from SQLite to PostgreSQL. In the web
+client only super administrators can do it; on the command line, whoever
+can read the configuration and the database. Sessions, pending MFA sign-ins,
+remembered devices, queued jobs and the personal autocomplete history are
+not included (list in the
+[administrator guide](admin-guide/en/backup-and-migration.md#what-a-backup-contains)).
 
 ```sh
 sudo -u qtestframe qtestframe backup --config /etc/qtestframe/config.yaml --out /var/backups/qtf-$(date +%F).zip
@@ -1014,7 +1035,7 @@ curl -fsS --max-time 5 https://qtf.example.com:8443/readyz >/dev/null || echo "q
 | PostgreSQL TLS errors | `sslrootcert` path readable by `qtestframe`; `sslmode=verify-full` requires the server name in the certificate SAN |
 | `landlock: …` in the `skipped` list of the `hardening` start-up log line | kernel < 5.13 or `lsm=` without landlock: protection is skipped; add `landlock` to the `lsm=` boot parameter |
 | `permission denied` for a file after start-up | Landlock: the path is not in the rule set; add it to `hardening.read_only_paths` / `read_write_paths` |
-| `429 rate_limited` on login | 10 attempts per 5 minutes per client IP and e-mail; wait, or check `trusted_proxies` if all users appear with the proxy's IP |
+| `429 rate_limited` on login | `auth.login_max_attempts` (default 10) per `auth.login_lockout` (default 5 minutes) per client IP and e-mail; wait, or check `trusted_proxies` if all users appear with the proxy's IP |
 
 ## 15. Development setup
 

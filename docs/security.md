@@ -3,7 +3,8 @@
 This document describes the security design of Qtestframe, the threat model
 it is built against, and the operating-system hardening shipped in `deploy/`.
 It is written for operators and security reviewers. For installation and
-day-to-day operation see [operations.md](operations.md).
+day-to-day operation see the [administrator guide](admin-guide/en/index.md)
+and [operations.md](operations.md).
 
 - [1. Scope and assets](#1-scope-and-assets)
 - [2. Threat model (STRIDE)](#2-threat-model-stride)
@@ -51,7 +52,7 @@ volumetric network attacks (use upstream filtering).
 
 | | Threat | Main mitigations |
 |---|---|---|
-| **S**poofing | credential stuffing / brute force on local login | bcrypt (cost 12), login rate limit of 10 attempts per 5 minutes per client IP + e-mail (HTTP 429), generic error messages, SSO preferred (local login can be disabled: `auth.local: false`) |
+| **S**poofing | credential stuffing / brute force on local login | bcrypt (cost 12), login rate limit per client IP + e-mail (default 10 attempts per 5 minutes, `auth.login_max_attempts` / `auth.login_lockout`; HTTP 429), generic error messages, SSO preferred (local login can be disabled: `auth.local: false`) |
 | | session hijacking | random 256-bit session tokens, only their SHA-256 hash stored server-side, cookie `qtf_session` `HttpOnly; Secure; SameSite=Lax`, absolute TTL (`auth.session_ttl`), new session at every login, revocation on logout and on admin password reset/disable, HSTS |
 | | forged SSO responses | OIDC: authorization code + PKCE (S256), `state` and `nonce` kept in a signed, single-use, 10-minute cookie, ID token signature/issuer/audience/expiry checked against the discovered JWKS. SAML (crewjam/saml): signed response or signed assertions required, audience/destination/recipient/time window validated, `InResponseTo` must equal the AuthnRequest ID from the signed single-use state cookie (no assertion replay cache, see §3) |
 | | TLS interception | TLS 1.2+ only, modern AEAD suites, HSTS; outbound connections verify certificates (`sslmode=verify-full` for PostgreSQL, CA pinning for syslog) |
@@ -61,7 +62,7 @@ volumetric network attacks (use upstream filtering).
 | | binary/config tampering | binary and config owned by root and read-only for the service (`ProtectSystem=strict`, Landlock, SELinux/AppArmor) |
 | **R**epudiation | users denying actions | audit log with tenant, user ID and e-mail, action, entity and timestamp; the request log line carries the client IP (from `X-Forwarded-For` only for `trusted_proxies`); both forwarded via RFC 5424 syslog, over TLS if configured |
 | **I**nformation disclosure | cross-tenant data access (IDOR) | every query is scoped by `tenant_id` taken from the authenticated session/token, never from the request; object lookups by ID include the tenant predicate and return 404 (not 403) on mismatch |
-| | XSS | Vue templates auto-escape; no `v-html` in the client; CSP `script-src 'self'` (no inline scripts, no `unsafe-eval`; `style-src` needs `'unsafe-inline'` for PrimeVue); `X-Content-Type-Options: nosniff`; exports served with `Content-Disposition: attachment` |
+| | XSS | Vue templates auto-escape; `v-html` only for the built-in guides, whose Markdown is bundled at build time and sanitised with DOMPurify; CSP `script-src 'self'` (no inline scripts, no `unsafe-eval`; `style-src` needs `'unsafe-inline'` for PrimeVue); `X-Content-Type-Options: nosniff`; exports served with `Content-Disposition: attachment` |
 | | CSV/spreadsheet formula injection in exports | CSV cells starting with `=`, `+`, `-`, `@`, TAB or CR are prefixed with `'`; XLSX cells are written as string values, never formulas; PDF/DOCX are generated, not templated from user HTML |
 | | secrets in logs | passwords, tokens, cookies and `Authorization` headers are not logged (failed logins log the e-mail and client IP); API tokens are stored as SHA-256 hashes and shown once |
 | | verbose errors | error bodies `{"error","code"}`; unexpected errors return only "internal server error", details go to the server log (method, path, error) |
@@ -77,17 +78,21 @@ volumetric network attacks (use upstream filtering).
 
 * Passwords are hashed with **bcrypt**, cost 12 (`auth.BcryptCost`).
   Existing hashes are not re-hashed when the cost changes. Policy
-  (`auth.ValidatePassword`): 10 to 72 bytes (longer passwords are rejected
-  rather than silently truncated by bcrypt), at least one letter and at
-  least one non-letter.
+  (`auth.ValidatePasswordMin`): at least `auth.password_min_length` bytes
+  (default 10, 8–72) and at most 72 (longer passwords are rejected rather
+  than silently truncated by bcrypt), at least one letter and at least one
+  non-letter. `qtestframe user create` and the bootstrap administrator are
+  checked against the default of 10.
 * Login: `POST /api/v1/auth/login`. Unknown users, SSO-only users, wrong
   passwords and disabled users all get the same `401 invalid credentials`.
   For a missing hash a bcrypt comparison against a dummy hash is still
   performed. The dummy hash uses the configured bcrypt cost, so failed
   logins take the same time whether or not the account exists.
-* **Rate limiting** (`rateLimiter` in `internal/api/server.go`): at most 10
-  login attempts per 5-minute sliding window per key *client IP + normalised
-  e-mail*; further attempts get **HTTP 429** `rate_limited`. A successful
+* **Rate limiting** (`rateLimiter` in `internal/api/server.go`): at most
+  `auth.login_max_attempts` login attempts (default 10) per
+  `auth.login_lockout` sliding window (default 5 minutes) per key *client
+  IP + normalised e-mail*; further attempts get **HTTP 429** `rate_limited`.
+  Both can be changed at runtime in the system settings. A successful
   login (with multi-factor authentication: after the second factor) resets
   the key. The limiter is in memory (per process, lost on
   restart). Failed logins are logged at WARN (`login failed`, e-mail,
@@ -183,7 +188,7 @@ Implemented in `internal/auth/totp.go` (algorithms), `internal/api/mfa.go`
   5 minutes). `POST /auth/mfa/verify` with a TOTP or recovery code then
   creates the session. Protections against guessing the 6-digit code:
   * every attempt counts against the existing sign-in rate limit of
-    *client IP + e-mail* (10 per 5 minutes; the limit is **not** reset by
+    *client IP + e-mail* (by default 10 per 5 minutes; the limit is **not** reset by
     the correct password, only after the second factor);
   * a per-account limit of 10 attempts per 15 minutes, whatever the
     client address;
@@ -366,7 +371,7 @@ OIDC/SAML login neither creates nor changes that membership, so
 | requirement.review | | ✔ | | | ✔ | ✔ |
 | test.write, run.write, run.execute, token.manage | | | ✔ | ✔ | ✔ | ✔ |
 | script.execute, audit.read, settings.manage | | | | ✔ | ✔ | ✔ |
-| requirement.write, project.create, project.update | | | | | ✔ | ✔ |
+| requirement.write, waiver.approve, project.create, project.update | | | | | ✔ | ✔ |
 | project.delete, member.manage, role.manage, tenant.manage | | | | | | ✔ |
 
 * **Separation of duties:** approving requirements and marking tests
@@ -500,7 +505,7 @@ Response headers set on every response:
 
 | Header | Value |
 |---|---|
-| `Content-Security-Policy` | `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https:; object-src 'none'` (constant `contentSecurityPolicy` in `internal/api/server.go`; `'unsafe-inline'` styles are needed because PrimeVue injects styles at runtime; `form-action https:` allows the SAML/OIDC redirects) |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https:; object-src 'none'` (constant `contentSecurityPolicy` in `internal/api/server.go`; `'unsafe-inline'` styles are needed because PrimeVue injects styles at runtime; `form-action https:` allows the SAML/OIDC redirects) |
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains`, only when `server.hsts: true` **and** the request arrived over TLS at the binary (set HSTS at a TLS-terminating proxy yourself) |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `DENY` (legacy companion of `frame-ancestors 'none'`) |
@@ -557,13 +562,14 @@ Further measures:
 ## 7. Secrets handling
 
 * Never write secrets inline in `config.yaml`. Use the secret-file options
-  `database.dsn_file`, `auth.oidc[].client_secret_file` and
-  `bootstrap.admin_password_file` (contents are trimmed), and key files
+  `database.dsn_file`, `auth.oidc[].client_secret_file`,
+  `bootstrap.admin_password_file`, `email.password_file` and
+  `secrets.pkcs11.pin_file` (contents are trimmed), and key files
   (`server.tls_key`, SAML `sp_key_file`, syslog `key_file`).
 * **systemd credentials** (recommended): `LoadCredential=name:/path` in a
   drop-in copies the secret to `/run/credentials/qtestframe.service/name`
   (ramfs, not swappable, only readable by the service). Relative paths of
-  the three secret-file options are resolved against
+  these secret-file options are resolved against
   `$CREDENTIALS_DIRECTORY` (`readSecret` in `internal/config/config.go`), so
   `client_secret_file: oidc-corp` is enough; key file paths are used as
   given. The credentials directory is added to the Landlock read-only
@@ -724,17 +730,21 @@ undecryptable secrets behind.
 
 * `Server.audit` writes an `audit_log` row (tenant, user ID, user e-mail,
   action, entity type, entity ID, short details, timestamp) and an INFO log
-  record `audit` with the same fields. Audited actions: successful logins
+  record `audit` with the tenant, user e-mail, action, entity type and
+  entity ID (not the details). Audited actions: successful logins
   (`login`, with the method `local` or the provider), `password.change`,
   create/update/delete/move/bulk operations on projects, folders,
   categories, requirements, tests and links, run and execution changes
   (including CI imports and script runs), member and token changes, tenant
   and user administration, and exports. Old/new values, client IP, user
   agent and request IDs are not recorded in the audit entry; failed logins
-  and logouts appear only in the server log (`login failed` at WARN).
+  are not audited: they appear in the server log (`login failed` at WARN)
+  and, for existing accounts, in the user's sign-in history (`login_events`,
+  with client IP and user agent). Logouts are not audited either (only the
+  request log shows them).
   Readable per tenant with `audit.read` (`GET /api/v1/audit?limit=&q=`,
   newest first, default 500, maximum 5000).
-* Logs are structured (`logging.format: json`) to stdout → journald.
+* Logs are structured (`logging.format: json`) to standard error → journald.
 * **Central syslog** (`logging.syslog`, `internal/logging`): every log
   record (including the `audit` records) is also sent as JSON in a syslog
   message, RFC 5424 (default) or RFC 3164, over `udp`, `tcp`, `tls`, `unix`
@@ -753,7 +763,8 @@ server can execute. This is remote code execution by design, so it is
 **disabled by default** (`runner.enabled: false`) and wrapped in several
 independent layers when enabled:
 
-1. **Permission**: only roles with `script.execute` (manager, admin).
+1. **Permission**: only roles with `script.execute` (by default test lead,
+   manager and admin).
 2. **Re-exec** (`runner.sandbox: true`, the default; `internal/runner`):
    the server does not run the interpreter directly. It starts its own
    binary as `qtestframe sandbox-exec --workdir DIR --cpu N

@@ -2,9 +2,10 @@
 import { computed } from 'vue'
 import Tag from 'primevue/tag'
 import { coverageSeverity, obligationSeverity, prioritySeverity, resultSeverity, statusSeverity } from '@/lib/colors'
+import { verificationIcon, verificationSeverity } from '@/lib/verification'
 import { enumLabel, obligationHint, obligationKeyword } from '@/i18n/labels'
 
-const props = defineProps<{ value?: string | null; kind?: 'status' | 'result' | 'coverage' | 'obligation' | 'priority'; empty?: string }>()
+const props = defineProps<{ value?: string | null; kind?: 'status' | 'result' | 'coverage' | 'obligation' | 'priority' | 'verification'; empty?: string }>()
 
 const severity = computed(() => {
   switch (props.kind) {
@@ -16,6 +17,8 @@ const severity = computed(() => {
       return obligationSeverity(props.value)
     case 'priority':
       return prioritySeverity(props.value)
+    case 'verification':
+      return verificationSeverity(props.value)
     default:
       return statusSeverity(props.value)
   }
@@ -30,6 +33,7 @@ const hint = computed(() => (props.kind === 'obligation' ? obligationHint(props.
     v-if="value"
     v-tooltip.top="hint || undefined"
     :value="label"
+    :icon="kind === 'verification' ? verificationIcon(value) : undefined"
     :severity="severity"
     :class="{ 'obligation-tag': kind === 'obligation' }"
     style="white-space: nowrap"

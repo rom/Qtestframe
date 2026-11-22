@@ -1,7 +1,7 @@
 // Compliance with reference sources (GET /projects/{pid}/analytics/compliance,
 // see internal/analytics/compliance.go): types and small display helpers.
 
-export const COMPLIANCE_STATES = ['passed', 'failing', 'blocked', 'untested'] as const
+export const COMPLIANCE_STATES = ['passed', 'failing', 'blocked', 'untested', 'waived'] as const
 export type ComplianceState = (typeof COMPLIANCE_STATES)[number]
 
 export type Fulfilment = Record<ComplianceState, number>

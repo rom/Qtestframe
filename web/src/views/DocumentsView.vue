@@ -372,6 +372,10 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
               <a v-else :href="contentUrl(data.id)" :download="data.name" class="doc-name">{{ data.name }}</a>
               <div v-if="data.description" class="small muted">{{ data.description }}</div>
               <div v-if="data.tags?.length" class="row" style="gap: 4px; margin-top: 2px"><span v-for="tg in data.tags" :key="tg" class="tag-chip" :class="tagClass(tg)">{{ tg }}</span></div>
+              <div v-if="data.outdated" class="stale-badge doc-outdated" :title="t('correlations.documentOutdatedHint', { keys: (data.outdated_items ?? []).join(', ') })">
+                <i class="pi pi-history" aria-hidden="true" />{{ t('correlations.documentOutdated') }}
+                <span class="sr-only">: {{ t('correlations.documentOutdatedHint', { keys: (data.outdated_items ?? []).join(', ') }) }}</span>
+              </div>
             </div>
           </div>
         </template>

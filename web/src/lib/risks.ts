@@ -103,7 +103,31 @@ export function heatGrid(risks: readonly Pick<Risk, 'likelihood' | 'impact' | 's
   return rows
 }
 
+/** Where a residual score comes from (internal/model ResidualOf). */
+export const RESIDUAL_SOURCES = ['inherent', 'verified', 'manual'] as const
+
+type ResidualFields = Pick<Risk, 'likelihood' | 'impact'> & Partial<Pick<Risk, 'residual_likelihood' | 'residual_impact' | 'residual_source'>>
+
+/** The likelihood and impact in effect after mitigation: the residual assessment once it applies, else the inherent one. */
+export function residualPoint(r: ResidualFields): { likelihood: number; impact: number } {
+  if (r.residual_source && r.residual_source !== 'inherent' && r.residual_likelihood && r.residual_impact) return { likelihood: r.residual_likelihood, impact: r.residual_impact }
+  return { likelihood: r.likelihood, impact: r.impact }
+}
+
+/** Risks placed at their residual point (for heatGrid "after mitigation"). */
+export function atResidual<T extends ResidualFields>(risks: readonly T[]): T[] {
+  return risks.map((r) => ({ ...r, ...residualPoint(r) }))
+}
+
+/** Whether a level is above a risk acceptance threshold (default medium). */
+export function aboveThreshold(level: string, threshold: string | null | undefined): boolean {
+  const t = levelRank(threshold) < 0 ? levelRank('medium') : levelRank(threshold)
+  return levelRank(level) > t
+}
+
 export interface RiskFilter {
+  /** filter the heat-map cell on the residual point instead of the inherent one */
+  residual?: boolean
   likelihood?: number | null
   impact?: number | null
   levels?: readonly string[]
@@ -116,8 +140,8 @@ export function filterRisks<T extends Risk>(risks: readonly T[], f: RiskFilter):
   const text = (f.text ?? '').trim().toLowerCase()
   return risks.filter(
     (r) =>
-      (!f.likelihood || r.likelihood === f.likelihood) &&
-      (!f.impact || r.impact === f.impact) &&
+      (!f.likelihood || (f.residual ? residualPoint(r).likelihood : r.likelihood) === f.likelihood) &&
+      (!f.impact || (f.residual ? residualPoint(r).impact : r.impact) === f.impact) &&
       (!f.levels?.length || f.levels.includes(r.level)) &&
       (!f.statuses?.length || f.statuses.includes(r.status)) &&
       (!text || [r.key, r.title, r.category, r.owner, r.description, r.mitigation].some((v) => (v ?? '').toLowerCase().includes(text))),

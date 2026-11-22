@@ -116,6 +116,16 @@ async function remove(r: Relation) {
     notify.fail(e)
   }
 }
+/** the relation still holds after the change at the other end (correlations) */
+async function confirmRelation(r: Relation) {
+  try {
+    await api.post(`/relations/${r.id}/confirm`)
+    notify.ok(t('correlations.relationsConfirmed', { n: 1 }, 1))
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
 </script>
 
 <template>
@@ -148,6 +158,10 @@ async function remove(r: Relation) {
       <div v-for="r in g.items" :key="r.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
         <Checkbox v-if="canWrite && relations.length > 1" v-model="sel" :value="r.id" :aria-label="t('relations.bulk.selectOne', { key: otherEnd(r, requirementId).key, type: relationText(g.type, g.direction) })" />
         <ItemRef :to="{ name: 'requirements', params: { projectId }, query: { item: otherEnd(r, requirementId).id } }" :item-key="otherEnd(r, requirementId).key" :title="otherEnd(r, requirementId).title" title-class="ellipsis" grow />
+        <span v-if="r.suspect_since" class="suspect row nowrap" :title="r.suspect_reason">
+          <i class="pi pi-exclamation-triangle" aria-hidden="true" />{{ t('suspect.label') }}<span class="sr-only">: {{ r.suspect_reason }}</span>
+          <Button v-if="canWrite" :label="t('suspect.confirm')" size="small" text :aria-label="t('correlations.confirmRelation', { key: otherEnd(r, requirementId).key })" @click="confirmRelation(r)" />
+        </span>
         <Button v-if="canWrite" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('relations.remove')" v-tooltip="t('relations.remove')" @click="remove(r)" />
       </div>
     </div>

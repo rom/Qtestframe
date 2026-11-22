@@ -19,6 +19,8 @@ const BY_ROUTE: Record<string, string> = {
   settings: 'tests',
   export: 'reports-and-export',
   reports: 'reports-and-export',
+  waivers: 'waivers-and-soa',
+  soa: 'waivers-and-soa',
   documents: 'documents',
   search: 'search-and-filters',
   profile: 'getting-started',

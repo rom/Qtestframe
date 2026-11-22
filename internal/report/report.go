@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/analytics"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/tracerules"
@@ -123,6 +124,21 @@ type Data struct {
 	TraceRules []tracerules.Result
 	// Risks of the project with their requirement IDs (risk report).
 	Risks []model.Risk
+	// Verification of the requirements, records and element coverage
+	// (verification report).
+	Verification *VerificationData
+	// RiskThreshold is the project's risk acceptance threshold ("" = the
+	// default, model.RiskThresholdDefault).
+	RiskThreshold string
+	// Waivers of the project (compliance, SoA and release readiness
+	// reports); Release is the evaluated release of the release readiness
+	// report (nil: none); SoADecisions the applicability decisions of the
+	// SoA report's source.
+	Waivers      []model.Waiver
+	Release      *ReleaseReport
+	SoADecisions map[string]model.SoADecision
+	// Quality: the computed quality metrics (quality metrics report).
+	Quality *analytics.QualityReport
 	// Query is the filter applied by the caller (shown in the subtitle).
 	Query string
 	Now   time.Time

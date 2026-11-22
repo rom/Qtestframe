@@ -49,6 +49,8 @@ Every defect is checked before any is changed, so one wrong value changes nothin
 
 Severity says how bad the problem is; **priority** (critical, high, medium, low) says how soon it should be fixed.
 
+**Found in** records the phase in which the defect was found: *Requirements*, *Design*, *Development*, *Test*, *Acceptance* or *Production* (empty when unknown). Defects found in production count as escaped in the [quality metrics](traceability-and-coverage.md#quality-metrics); filter with `found_in:production`.
+
 ## Linking defects to items
 
 A defect can be linked to any number of **requirements**, **tests** and **executions** of the project. In the defect dialog, under **Linked items**, select **Link requirement** or **Link test** to pick items, or **Link execution** to choose a run and one of its executions. Remove a link with ×.
@@ -135,6 +137,14 @@ Sync reads only; it never changes the issue. Changes you make to a defect in Qte
 If the tracker cannot be reached or refuses a request, for example because the token expired or lacks a permission, a red notice at the top of the list shows the tracker's own answer. Check the settings with **Check connection**. The notice explains the common answers: **401** the token was rejected (wrong, expired or revoked), **403** the token lacks a scope or role, **404** the project, repository or issue does not exist or the token cannot see it, **422** the tracker refused the content (for example an unknown label or milestone). When the tracker limits the rate, Qtestframe waits and tries again if the tracker asks for a short wait, and otherwise says how long to wait.
 
 Qtestframe reaches the tracker from the server, through the server's outbound proxy (`HTTPS_PROXY`, `NO_PROXY`) if one is set, and trusts the certificates the server's system trusts. For a self-managed GitLab or Jira with a certificate from your own CA, install that CA on the server.
+
+## Regressions
+
+When a test that verified the fix of a defect fails again, the defect has come back. A test verified the fix when the defect is **Resolved** or **Closed**, it is linked to the test or to one of its executions, and the test passed after the defect was resolved. When such a test fails (by hand, in bulk, from a script or from imported results), Qtestframe by default **reopens** the defect and links it to the failing execution. **Categories & settings → Change impact → Regressions** can instead **create a linked regression defect** ("Regression: …", with the same severity, priority and assignee) or do nothing.
+
+The defect's assignee (or, without one, its author) gets a notification, and the webhooks get the event `defect.regression`. Each failing execution counts once per defect.
+
+The defect dialog shows the **Regression history** of a defect, and the **Impact** tab of a test that of the test: when the test failed again, in which run, and whether the defect was reopened or a regression defect was created.
 
 ## Open defects and releases
 

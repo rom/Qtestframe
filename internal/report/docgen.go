@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/customfield"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/reqlang"
@@ -41,9 +42,9 @@ var DocGroupings = []string{GroupByFolder, GroupByCategory, GroupByType}
 // Document fields: what is shown of each requirement and test.
 var (
 	RequirementDocFields = []string{"description", "rationale", "criteria", "type", "priority", "obligation", "status", "source",
-		"owner", "tags", "categories", "relations", "tests", "results", "version"}
+		"owner", "tags", "categories", "relations", "tests", "results", "version", "custom_fields"}
 	TestDocFields = []string{"description", "preconditions", "steps", "expected", "priority", "execution_type", "status",
-		"estimate", "tags", "categories", "dependencies", "requirements", "data", "results", "version"}
+		"estimate", "tags", "categories", "dependencies", "requirements", "data", "results", "version", "custom_fields"}
 )
 
 // DefaultDocFields are the fields shown when none are chosen: all but the
@@ -95,6 +96,10 @@ type DocOptions struct {
 	Glossary *bool `json:"glossary,omitempty"`
 	// Lang of the document's own texts (en, sv; default: the user's).
 	Lang string `json:"lang"`
+	// Variant generates the document for one variant (id or name): only
+	// the requirements and tests that apply to it, with its coverage and
+	// results.
+	Variant string `json:"variant,omitempty"`
 }
 
 // Normalize validates o for a document of kind and fills in defaults.
@@ -104,6 +109,7 @@ func (o *DocOptions) Normalize(kind string) error {
 	}
 	o.Title, o.Version, o.Author = strings.TrimSpace(o.Title), strings.TrimSpace(o.Version), strings.TrimSpace(o.Author)
 	o.Query, o.BaselineID, o.Dimension = strings.TrimSpace(o.Query), strings.TrimSpace(o.BaselineID), strings.TrimSpace(o.Dimension)
+	o.Variant = strings.TrimSpace(o.Variant)
 	if len([]rune(o.Title)) > 200 || len([]rune(o.Version)) > 40 || len([]rune(o.Author)) > 200 {
 		return invalidf("title (200), version (40) or author (200) is too long")
 	}
@@ -179,10 +185,21 @@ type DocData struct {
 	Members        []model.ProjectMember
 	Settings       model.TenantSettings
 	// Baseline the items come from (nil: current data) and its signatures.
-	Baseline  *model.Baseline
-	Signoffs  []model.Signoff
+	Baseline *model.Baseline
+	Signoffs []model.Signoff
+	// Variant the document is for (nil: all variants).
+	Variant   *model.VariantRef
 	Revisions []Revision
 	Now       time.Time
+	// Verification: requirement id → its verification (current data only;
+	// nil leaves the verification out of the document).
+	Verification map[string]*model.RequirementVerification
+	// Waivers of the project (requirements specification: marked in the
+	// requirements and listed in an appendix).
+	Waivers []model.Waiver
+	// CustomFields are the project's custom field definitions per item
+	// kind (requirement, test), shown with the "custom_fields" field.
+	CustomFields map[string][]model.CustomField
 }
 
 // DocTitle is the default title of a document of kind in lang.
@@ -294,6 +311,10 @@ func newDocGen(kind string, d *DocData, o DocOptions) *docGen {
 	}
 	if b := d.Baseline; b != nil {
 		g.doc.TitleFields = append(g.doc.TitleFields, export.Item{Label: g.l.t("Baseline"), Value: b.Name + " (" + b.CreatedAt.UTC().Format("2006-01-02") + ")"})
+	}
+	if v := d.Variant; v != nil {
+		g.doc.TitleFields = append(g.doc.TitleFields, export.Item{Label: g.l.t("Variant"), Value: v.Name})
+		g.doc.Subtitle += " · " + v.Name
 	}
 	return g
 }
@@ -413,6 +434,14 @@ func keywordSpans(text string) []export.Span {
 
 // ---------------------------------------------------------------- shared sections
 
+// variantLabel names the variant of the document ("All variants" without one).
+func (g *docGen) variantLabel() string {
+	if g.d.Variant != nil {
+		return g.d.Variant.Name
+	}
+	return g.l.t("All variants")
+}
+
 func (g *docGen) documentControl() {
 	l := g.l
 	d := g.d
@@ -441,6 +470,7 @@ func (g *docGen) documentControl() {
 		{Label: l.t("Project"), Value: d.Project.Key + " – " + d.Project.Name},
 		{Label: l.t("Based on"), Value: basis},
 		{Label: l.t("Filter"), Value: filter},
+		{Label: l.t("Variant"), Value: g.variantLabel()},
 		{Label: l.t("Inactive items"), Value: inactive},
 	}
 	if g.kind == DocRequirementsSpec {
@@ -800,12 +830,16 @@ func (g *docGen) requirementsSpec() {
 		g.byFolder(model.KindRequirement, n, func(i int) *string { return d.Requirements[i].FolderID }, g.reqOrder, emit)
 	}
 
-	if *g.o.Traceability || *g.o.Glossary {
+	waivers := g.specWaivers()
+	if *g.o.Traceability || *g.o.Glossary || waivers {
 		g.appendices()
 	}
 	if *g.o.Traceability {
 		g.add(export.PageBreak())
 		g.traceabilityMatrix()
+	}
+	if waivers {
+		g.waiverAppendix()
 	}
 	if *g.o.Glossary {
 		g.add(export.PageBreak())
@@ -919,6 +953,7 @@ func (g *docGen) requirement(rq *model.Requirement, level int) {
 	add("source", "Source", src)
 	add("owner", "Owner", rq.Owner)
 	add("tags", "Tags", strings.Join(rq.Tags, ", "))
+	fs = append(fs, g.customItems(model.KindRequirement, rq.CustomFields)...)
 	if o.has("categories") {
 		fs = append(fs, export.Item{Label: l.t("Categories"), Value: g.categoryNames(rq.CategoryIDs)})
 	}
@@ -939,8 +974,19 @@ func (g *docGen) requirement(rq *model.Requirement, level int) {
 		}
 		fs = append(fs, export.Item{Label: l.t("Verified by"), Value: tests})
 	}
+	if v := g.waiverField(rq.ID); v != "" {
+		fs = append(fs, export.Item{Label: l.t("Waived by"), Value: v})
+	}
 	if o.has("version") && rq.Version > 0 {
 		fs = append(fs, export.Item{Label: l.t("Version"), Value: strconv.Itoa(rq.Version)})
+	}
+	v := g.d.Verification[rq.ID]
+	if v != nil && (o.has("tests") || o.has("criteria")) {
+		val := g.enum(EnumVerification, v.State)
+		if v.CriteriaTotal > 0 {
+			val += " · " + g.f("{n} of {total} criteria verified", "n", strconv.Itoa(v.CriteriaVerified), "total", strconv.Itoa(v.CriteriaTotal))
+		}
+		fs = append(fs, export.Item{Label: l.t("Verification"), Value: val})
 	}
 	if len(fs) > 0 {
 		g.add(export.Fields(fs...))
@@ -948,10 +994,26 @@ func (g *docGen) requirement(rq *model.Requirement, level int) {
 	if o.has("criteria") && len(rq.Criteria) > 0 {
 		g.add(g.label("Acceptance criteria"))
 		rows := make([][]string, len(rq.Criteria))
-		for i, c := range rq.Criteria {
-			rows[i] = []string{strconv.Itoa(i + 1), c.Description, g.enum(EnumEvalMethod, c.Method), c.Threshold}
+		if v != nil {
+			states := map[string]model.CriterionVerification{}
+			for _, c := range v.Criteria {
+				states[c.CriterionID] = c
+			}
+			for i, c := range rq.Criteria {
+				cv := states[c.ID]
+				state := g.enum(EnumVerification, cv.State)
+				if ev := g.l.evidenceList(cv.Evidence); ev != "" {
+					state += "\n" + ev
+				}
+				rows[i] = []string{strconv.Itoa(i + 1), c.Description, g.enum(EnumEvalMethod, c.Method), c.Threshold, state}
+			}
+			g.add(export.Table([]string{"#", l.t("Criterion"), l.t("Method"), l.t("Threshold"), l.t("Verification")}, rows, 0.4, 3.6, 1.2, 1.2, 2.4))
+		} else {
+			for i, c := range rq.Criteria {
+				rows[i] = []string{strconv.Itoa(i + 1), c.Description, g.enum(EnumEvalMethod, c.Method), c.Threshold}
+			}
+			g.add(export.Table([]string{"#", l.t("Criterion"), l.t("Method"), l.t("Threshold")}, rows, 0.4, 5, 1.4, 1.6))
 		}
-		g.add(export.Table([]string{"#", l.t("Criterion"), l.t("Method"), l.t("Threshold")}, rows, 0.4, 5, 1.4, 1.6))
 	}
 }
 
@@ -988,9 +1050,24 @@ func (g *docGen) traceabilityMatrix() {
 		if obl == "" {
 			obl = obligationUnset
 		}
-		rows = append(rows, []string{rq.Key, rq.Title, g.enum(EnumObligation, obl), strings.Join(tests, ", ")})
+		row := []string{rq.Key, rq.Title, g.enum(EnumObligation, obl), strings.Join(tests, ", ")}
+		if g.d.Verification != nil {
+			state := ""
+			if v := g.d.Verification[rq.ID]; v != nil {
+				state = g.enum(EnumVerification, v.State)
+				if v.CriteriaTotal > 0 {
+					state += " (" + strconv.Itoa(v.CriteriaVerified) + "/" + strconv.Itoa(v.CriteriaTotal) + ")"
+				}
+			}
+			row = append(row, state)
+		}
+		rows = append(rows, row)
 	}
-	g.add(export.Table(cols, rows, 1.3, 3, 1.3, 2.4))
+	if g.d.Verification != nil {
+		g.add(export.Table(append(cols, l.t("Verification")), rows, 1.2, 2.6, 1.2, 2, 1.6))
+	} else {
+		g.add(export.Table(cols, rows, 1.3, 3, 1.3, 2.4))
+	}
 	g.add(export.Paragraph(l.n("{n} requirement has no test.", "{n} requirements have no test.", without)))
 }
 
@@ -1258,6 +1335,11 @@ func (g *docGen) criterion(c model.ExitCriterion) string {
 			lvl = "low"
 		}
 		return g.f("Every risk of level {level} or higher linked to the scope is mitigated or accepted.", "level", g.enum(EnumRiskLevel, lvl))
+	case "residual_risk":
+		if c.Level != "" {
+			return g.f("No risk linked to the scope has a residual level above {level} unless its acceptance is signed.", "level", g.enum(EnumRiskLevel, c.Level))
+		}
+		return g.l.t("No risk linked to the scope has a residual level above the project's risk acceptance threshold unless its acceptance is signed.")
 	case "trace_rules":
 		if c.Level == "warning" {
 			return g.l.t("The traceability rules pass on the scope, without errors or warnings.")
@@ -1398,6 +1480,7 @@ func (g *docGen) test(t *model.TestCase, level int) {
 		add("estimate", "Estimated time", g.f("{n} min", "n", strconv.Itoa(t.EstimatedMin)))
 	}
 	add("tags", "Tags", strings.Join(t.Tags, ", "))
+	fs = append(fs, g.customItems(model.KindTest, t.CustomFields)...)
 	if o.has("categories") {
 		fs = append(fs, export.Item{Label: l.t("Categories"), Value: g.categoryNames(t.CategoryIDs)})
 	}
@@ -1503,4 +1586,19 @@ func (g *docGen) coverage(in, out []*model.Requirement) {
 		rows = append(rows, []string{rq.Key, rq.Title, g.enum(EnumStatus, rq.Status), g.enum(EnumObligation, obl)})
 	}
 	g.add(export.Table([]string{l.t("Key"), l.t("Title"), l.t("Status"), l.t("Obligation")}, rows, 1.3, 3.6, 1.2, 1.4))
+}
+
+// customItems are the custom field values of an item (fields without a
+// value are left out) when the document shows custom fields.
+func (g *docGen) customItems(kind string, values model.CustomValues) []export.Item {
+	if !g.o.has("custom_fields") || len(values) == 0 {
+		return nil
+	}
+	var out []export.Item
+	for _, f := range g.d.CustomFields[kind] {
+		if v, ok := values[f.Key]; ok {
+			out = append(out, export.Item{Label: f.Label, Value: customfield.Text(&f, v, g.l.lang)})
+		}
+	}
+	return out
 }

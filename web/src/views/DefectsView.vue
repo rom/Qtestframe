@@ -2,6 +2,7 @@
 // Defects of the project: filter, report and edit them, and mirror them in
 // the project's Jira or GitHub Issues (push, sync, import).
 import { computed, onMounted, ref, watch } from 'vue'
+import { customCellText, customColumns } from '@/lib/customColumns'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -54,6 +55,10 @@ const notify = useNotify()
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+
+/** custom fields shown in lists (show_in_list) as columns */
+const listedCols = computed(() => customColumns(useProjectStore().customFieldsFor('defect').filter((f) => f.show_in_list)))
+const cellOf = (row: { custom_fields?: Record<string, unknown> }, field: string) => customCellText(useProjectStore().customFieldsFor('defect'), row, field, [t('common.yes'), t('common.no')])
 
 const canReport = computed(() => auth.can(P.runExecute))
 const canDelete = computed(() => auth.can(P.projectUpdate))
@@ -406,6 +411,9 @@ onMounted(() => {
       <Column :header="t('common.status')" sortable :sort-field="sortStatus" style="width: 130px"><template #body="{ data }"><DefectTag :value="data.status" /></template></Column>
       <Column :header="t('defectsView.severityLabel')" sortable :sort-field="sortSeverity" style="width: 130px"><template #body="{ data }"><DefectTag :value="data.severity" kind="severity" /></template></Column>
       <Column field="assignee" :header="t('defectsView.assignee')" sortable style="width: 150px"><template #body="{ data }"><span class="small">{{ data.assignee || '—' }}</span></template></Column>
+      <Column v-for="c in listedCols" :key="c.field" :header="c.header" sortable :sort-field="c.sortField" :style="c.width ? { width: c.width } : {}">
+        <template #body="{ data }"><span class="small">{{ cellOf(data, c.field) }}</span></template>
+      </Column>
       <Column :header="t('defectsView.linkedItems')" style="min-width: 160px">
         <template #body="{ data }">
           <span v-if="data.links?.length" class="row" style="gap: 4px 8px">

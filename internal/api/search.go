@@ -248,13 +248,18 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 		_, dims := pc.catValues(ids)
 		return strings.Join(dims, ", ")
 	}
+	cf, err := s.Store.CustomFieldsByKind(ctx, p.TenantID(), pr.ID)
+	if err != nil {
+		return nil, err
+	}
 	if want["requirements"] {
 		sec := export.Section{Name: "requirements", Title: "Requirements",
-			Columns: []string{"Key", "Title", "Obligation", "Type", "Priority", "Status", "Folder", "Categories", "Tags", "Description", "Rationale", "Source", "Owner", "Version", "Linked tests", "Coverage"}}
+			Columns: append([]string{"Key", "Title", "Obligation", "Type", "Priority", "Status", "Folder", "Categories", "Tags", "Description", "Rationale", "Source", "Owner", "Version", "Linked tests", "Coverage"},
+				customColumns(cf[model.KindRequirement])...)}
 		for _, rq := range reqs {
-			sec.Rows = append(sec.Rows, []string{rq.Key, rq.Title, strings.ToUpper(strings.ReplaceAll(rq.Obligation, "_", " ")), rq.Type, rq.Priority, rq.Status,
+			sec.Rows = append(sec.Rows, append([]string{rq.Key, rq.Title, strings.ToUpper(strings.ReplaceAll(rq.Obligation, "_", " ")), rq.Type, rq.Priority, rq.Status,
 				rq.FolderPath, cats(rq.CategoryIDs), strings.Join(rq.Tags, ", "), rq.Description, rq.Rationale, rq.Source, rq.Owner,
-				strconv.Itoa(rq.Version), strconv.Itoa(rq.LinkedTests), rq.Coverage})
+				strconv.Itoa(rq.Version), strconv.Itoa(rq.LinkedTests), rq.Coverage}, customCells(cf[model.KindRequirement], rq.CustomFields)...))
 		}
 		ds.Sections = append(ds.Sections, sec)
 	}
@@ -269,7 +274,8 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 	}
 	if want["tests"] {
 		sec := export.Section{Name: "tests", Title: "Test cases",
-			Columns: []string{"Key", "Title", "Execution", "Status", "Priority", "Folder", "Categories", "Tags", "Preconditions", "Steps", "Expected result", "Script language", "Linked requirements", "Last result", "Parameters", "Data rows"}}
+			Columns: append([]string{"Key", "Title", "Execution", "Status", "Priority", "Folder", "Categories", "Tags", "Preconditions", "Steps", "Expected result", "Script language", "Linked requirements", "Last result", "Parameters", "Data rows"},
+				customColumns(cf[model.KindTest])...)}
 		for _, t := range tests {
 			var steps []string
 			for i, st := range t.Steps {
@@ -279,9 +285,9 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 				}
 				steps = append(steps, line)
 			}
-			sec.Rows = append(sec.Rows, []string{t.Key, t.Title, t.ExecutionType, t.Status, t.Priority, t.FolderPath, cats(t.CategoryIDs),
+			sec.Rows = append(sec.Rows, append([]string{t.Key, t.Title, t.ExecutionType, t.Status, t.Priority, t.FolderPath, cats(t.CategoryIDs),
 				strings.Join(t.Tags, ", "), t.Preconditions, strings.Join(steps, "\n"), t.ExpectedResult, t.ScriptLanguage,
-				strconv.Itoa(t.LinkedReqs), t.LastResult, strings.Join(t.Parameters, ", "), strconv.Itoa(len(t.DataRows))})
+				strconv.Itoa(t.LinkedReqs), t.LastResult, strings.Join(t.Parameters, ", "), strconv.Itoa(len(t.DataRows))}, customCells(cf[model.KindTest], t.CustomFields)...))
 		}
 		ds.Sections = append(ds.Sections, sec)
 	}
@@ -327,15 +333,16 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 			return nil, err
 		}
 		sort.SliceStable(runs, func(i, j int) bool { return runs[i].CreatedAt.Before(runs[j].CreatedAt) })
-		sec := export.Section{Name: "runs", Title: "Test runs", Columns: []string{"Run", "Run status", "Environment", "Build", "Created", "Test", "Title", "Result", "Executed by", "Duration (ms)", "Defects", "Notes", "Configuration", "Iterations"}}
+		sec := export.Section{Name: "runs", Title: "Test runs", Columns: append([]string{"Run", "Run status", "Environment", "Build", "Created", "Test", "Title", "Result", "Executed by", "Duration (ms)", "Defects", "Notes", "Configuration", "Iterations"},
+			customColumns(cf["run"])...)}
 		for _, run := range runs {
 			es, err := s.Store.ListExecutions(ctx, p.TenantID(), run.ID)
 			if err != nil {
 				return nil, err
 			}
 			for _, e := range es {
-				sec.Rows = append(sec.Rows, []string{run.Name, run.Status, run.Environment, run.Build, ts(run.CreatedAt), e.TestKey, e.TestTitle,
-					e.Status, e.ExecutedBy, strconv.FormatInt(e.DurationMS, 10), strings.Join(e.Defects, ", "), e.Notes, e.ConfigurationName, strconv.Itoa(e.IterationCount)})
+				sec.Rows = append(sec.Rows, append([]string{run.Name, run.Status, run.Environment, run.Build, ts(run.CreatedAt), e.TestKey, e.TestTitle,
+					e.Status, e.ExecutedBy, strconv.FormatInt(e.DurationMS, 10), strings.Join(e.Defects, ", "), e.Notes, e.ConfigurationName, strconv.Itoa(e.IterationCount)}, customCells(cf["run"], run.CustomFields)...))
 			}
 		}
 		ds.Sections = append(ds.Sections, sec)

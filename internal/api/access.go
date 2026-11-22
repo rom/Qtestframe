@@ -47,7 +47,7 @@ import (
 // projectScoped lists the permissions a project role governs.
 var projectScoped = map[string]bool{
 	string(rbac.ProjectRead): true, string(rbac.ProjectUpdate): true, string(rbac.ProjectDelete): true,
-	string(rbac.RequirementRd): true, string(rbac.RequirementWr): true, string(rbac.RequirementRev): true,
+	string(rbac.RequirementRd): true, string(rbac.RequirementWr): true, string(rbac.RequirementRev): true, string(rbac.WaiverApprove): true,
 	string(rbac.TestRead): true, string(rbac.TestWrite): true, string(rbac.TestReview): true,
 	string(rbac.RunRead): true, string(rbac.RunWrite): true, string(rbac.RunExecute): true,
 	string(rbac.ScriptExecute): true, string(rbac.Export): true,
@@ -327,9 +327,16 @@ var resourceProjects = map[string]string{
 	"releases":              `SELECT project_id FROM releases WHERE id = ? AND tenant_id = ?`,
 	"defects":               `SELECT project_id FROM defects WHERE id = ? AND tenant_id = ?`,
 	"risks":                 `SELECT project_id FROM risks WHERE id = ? AND tenant_id = ?`,
+	"verification-records":  `SELECT project_id FROM verification_records WHERE id = ? AND tenant_id = ?`,
+	"elements":              `SELECT project_id FROM system_elements WHERE id = ? AND tenant_id = ?`,
+	"waivers":               `SELECT project_id FROM waivers WHERE id = ? AND tenant_id = ?`,
 	"webhooks":              `SELECT project_id FROM webhooks WHERE id = ? AND tenant_id = ?`,
 	"trace-rules":           `SELECT project_id FROM trace_rules WHERE id = ? AND tenant_id = ?`,
+	"custom-fields":         `SELECT project_id FROM custom_fields WHERE id = ? AND tenant_id = ?`,
+	"templates":             `SELECT project_id FROM item_templates WHERE id = ? AND tenant_id = ?`,
 	"configurations":        `SELECT project_id FROM configurations WHERE id = ? AND tenant_id = ?`,
+	"variants":              `SELECT project_id FROM variants WHERE id = ? AND tenant_id = ?`,
+	"builds":                `SELECT project_id FROM builds WHERE id = ? AND tenant_id = ?`,
 	"test-dependencies":     `SELECT project_id FROM test_dependencies WHERE id = ? AND tenant_id = ?`,
 	"reports/definitions":   `SELECT project_id FROM report_definitions WHERE id = ? AND tenant_id = ?`,
 	"reports/subscriptions": `SELECT project_id FROM report_subscriptions WHERE id = ? AND tenant_id = ?`,
@@ -346,6 +353,8 @@ var nonProjectResources = map[string]bool{
 	"auth/sessions": true, "tenants": true, "users": true, "tokens": true,
 	"scim/tokens": true, "scim/groups": true, "avatars": true,
 	"catalog/requirements": true, "catalog/tests": true,
+	// the organisation's field sets and templates per project type
+	"field-sets/fields": true, "template-sets/templates": true,
 }
 
 // resourceOf returns the resource of a route pattern with {id} ("" for

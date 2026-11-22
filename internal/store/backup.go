@@ -33,17 +33,32 @@ const BackupFormatVersion = 1
 var BackupTables = []string{
 	"tenants", "users", "memberships", "api_tokens", "projects", "configurations", "releases", "folders", "categories",
 	"requirements", "requirement_categories", "evaluation_criteria", "test_cases", "test_steps",
-	"test_case_categories", "trace_links", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
+	"test_case_categories", "trace_links", "variants", "builds", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
 	"audit_log", "revisions", "requirement_relations", "baselines", "baseline_items", "comments",
 	"files", "file_blobs", "attachments", "report_definitions", "login_events", "roles", "test_dependencies",
 	"trash", "item_links", "release_requirements", "defects", "defect_links", "risks", "risk_requirements", "notifications", "webhooks", "review_requests", "baseline_signoffs",
 	"scim_tokens", "scim_settings", "scim_users", "scim_groups", "scim_group_members",
 	"metric_snapshots",
 	"trace_rules",
+	// change and defect correlations: generated document contents, regressions
+	"document_items", "defect_regressions",
+	"consistency_dismissals",
 	"invitations", "report_subscriptions",
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",
+	// waivers and deviations with their approvals, the Statement of
+	// Applicability decisions
+	"waivers", "waiver_requirements", "waiver_signoffs", "soa_decisions",
 	"system_settings",
+	// where items came from in other tools (the ReqIF import)
+	"external_refs",
+	// verification correlations (0030)
+	"link_criteria", "system_elements", "requirement_elements", "test_elements",
+	"verification_settings", "verification_records", "verification_record_files",
+	// variants and applicability, code links (0036)
+	"item_applicability", "code_changes", "code_change_items", "code_settings",
+	// custom fields, their archived values and item templates
+	"custom_fields", "field_set_fields", "custom_field_archive", "item_templates", "org_item_templates", "project_template_defaults",
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available
 	"secret_keys",
@@ -56,11 +71,26 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "
 	// personal autocomplete history: a convenience, not project data
 	"suggest_history": true}
 
+// NotBackedUpTables returns the tables that exist but are deliberately not
+// part of a backup, sorted (for the administrator guide, see
+// internal/admindoc).
+func NotBackedUpTables() []string {
+	out := make([]string, 0, len(notBackedUp))
+	for t := range notBackedUp {
+		out = append(out, t)
+	}
+	sort.Strings(out)
+	return out
+}
+
 // boolColumns are stored as INTEGER 0/1 on SQLite and BOOLEAN on PostgreSQL.
 var boolColumns = map[string]bool{
 	"users.super_admin": true, "users.disabled": true, "users.must_change_password": true,
 	"login_events.success": true, "scim_users.active": true, "trace_rules.enabled": true,
 	"invitations.sso": true, "report_subscriptions.enabled": true, "secret_keys.active": true,
+	"verification_records.until_change": true, "verification_settings.strict_criteria": true,
+	"custom_fields.required": true, "custom_fields.show_in_list": true,
+	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).
@@ -68,7 +98,7 @@ var blobColumns = map[string]bool{"file_blobs.data": true}
 
 // selfReferences names tables whose rows reference rows of the same table;
 // restore inserts parents before children.
-var selfReferences = map[string]string{"folders": "parent_id"}
+var selfReferences = map[string]string{"folders": "parent_id", "system_elements": "parent_id", "variants": "parent_id"}
 
 // Restore limits (variables so that tests can lower them).
 var (

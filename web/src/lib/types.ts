@@ -1,4 +1,5 @@
 // TypeScript mirrors of internal/model/model.go (JSON tags are authoritative).
+import type { Applicability } from './variants'
 import type { MfaStatus } from './mfa'
 import type { FlakyTest, GroupCoverage } from './metrics'
 import type { ScriptJob } from './webTests'
@@ -192,6 +193,9 @@ export interface FileInfo {
   created_at: string
   url: string
   links: FileLink[] | null
+  /** generated document: an item it contains changed since (keys in outdated_items) */
+  outdated?: boolean
+  outdated_items?: string[] | null
 }
 
 /** A saved custom report. */
@@ -337,7 +341,11 @@ export interface EvaluationCriterion {
 }
 
 export interface Requirement {
+  /** the variants it applies to (absent: all variants) */
+  applicability?: Applicability | null
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   folder_id: string | null
   key: string
@@ -374,6 +382,19 @@ export interface Requirement {
   risk_level?: string
   /** open defects linked to it or its tests */
   open_defects?: number
+  /** open defects that block it / warn about it (the project's severity rules) */
+  blocking_defects?: number
+  defect_warnings?: number
+  /** linked tests whose latest result is stale */
+  stale_results?: number
+  /** its relations that are suspect (the requirement at the other end changed) */
+  suspect_relations?: number
+  /** rolled-up verification state (see lib/verification.ts) */
+  verification?: VerificationState
+  /** criteria with passing evidence */
+  criteria_verified?: number
+  /** system elements it is allocated to */
+  element_ids?: string[]
 }
 
 /** A reference from a list item to a related item (see lib/itemRefs.ts). */
@@ -407,7 +428,11 @@ export interface TestRef {
 }
 
 export interface TestCase {
+  /** the variants it applies to (absent: all variants) */
+  applicability?: Applicability | null
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   folder_id: string | null
   key: string
@@ -441,6 +466,11 @@ export interface TestCase {
   /** pass/fail flips among the last results; flaky when at the threshold */
   flakiness?: number
   flaky?: boolean
+  /** the latest result is stale (age, test_changed, requirement_changed) */
+  stale?: boolean
+  stale_reason?: string
+  /** system elements it is allocated to */
+  element_ids?: string[]
   /** Requirements it verifies, tests it calls and tests that call it. */
   relations?: ItemRef[] | null
   step_count?: number
@@ -504,10 +534,14 @@ export interface TraceLink {
   suspect_reason?: string
   requirement_key?: string
   test_case_key?: string
+  /** the criteria the test verifies, each optionally through one step */
+  criteria?: LinkCriterion[]
 }
 
 export interface TestRun {
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   name: string
   description: string
@@ -523,6 +557,11 @@ export interface TestRun {
   summary?: Record<string, number>
   /** configurations the run targets (each test is executed once per configuration) */
   configurations?: ConfigurationRef[] | null
+  /** the variant the run tests (null: variant-neutral) and the CI build of its results */
+  variant_id?: string | null
+  variant_name?: string
+  build_id?: string | null
+  build_label?: string
 }
 
 export interface StepResult {
@@ -601,6 +640,9 @@ export interface LinkedIssue {
   state: 'open' | 'closed' | string
   synced_at: string | null
   passed_at?: string
+  /** the requirement changed after the issue was created or updated from it */
+  outdated_since?: string | null
+  outdated_reason?: string
 }
 
 /** GET /requirements/{id}/issue */
@@ -674,6 +716,10 @@ export interface Relation {
   target_key: string
   target_title: string
   direction?: 'outgoing' | 'incoming' | string
+  /** suspect: the requirement at the other end changed (suspect_end: source | target) */
+  suspect_since?: string | null
+  suspect_reason?: string
+  suspect_end?: string
 }
 
 export interface Revision {
@@ -811,6 +857,8 @@ export interface Dashboard {
   coverage_by_category?: GroupCoverage[] | null
   defects_by_severity?: Record<string, number>
   flaky?: { total: number; items: FlakyTest[] | null; window: number; min_flips: number }
+  /** change and defect correlations */
+  correlations?: { blocked_requirements: number; warned_requirements: number; stale_results: number; suspect_relations: number }
 }
 
 export interface KeywordHit {
@@ -840,8 +888,20 @@ export interface Analysis {
 }
 
 export interface Traceability {
-  requirements: { id: string; key: string; title: string; obligation: string; coverage: string }[]
-  tests: { id: string; key: string; title: string; last_result: string }[]
+  requirements: {
+    id: string
+    key: string
+    title: string
+    obligation: string
+    coverage: string
+    verification?: VerificationState
+    criteria?: TraceCriterion[]
+    records?: number
+    parent_ids?: string[]
+    blocked?: boolean
+    stale_results?: number
+  }[]
+  tests: { id: string; key: string; title: string; last_result: string; stale?: boolean }[]
   links: TraceLink[]
   /** the configuration coverage and results are filtered to ('none': without configuration) */
   configuration?: string
@@ -869,6 +929,10 @@ export interface TraceRuleFields {
   target_type?: string
   target_query?: string
   every?: boolean
+  /** duplicate_suspect: least similarity (0.5–1) */
+  threshold?: number
+  /** unmitigated_risk: least risk level */
+  level?: string
 }
 
 export interface TraceRule extends TraceRuleFields {
@@ -885,9 +949,42 @@ export interface TraceViolation {
   id: string
   key: string
   title: string
+  status?: string
   found: number
   required: number
   total: number
+  /** built-in checks: reason code, detail, other items involved, fix actions */
+  check?: string
+  note?: string
+  related?: TraceRelated[]
+  fixes?: string[]
+}
+
+/** Another item involved in a violation of a built-in check. */
+export interface TraceRelated {
+  /** requirement | test | risk | release */
+  kind: string
+  id: string
+  key: string
+  title: string
+  status?: string
+  role: string
+  /** id of the relation, trace link or prerequisite connecting it */
+  link?: string
+  check?: string
+  note?: string
+}
+
+/** A built-in consistency check with its project default (GET trace-rules/builtins). */
+export interface BuiltinCheck {
+  kind: string
+  scope: string
+  name: string
+  description: string
+  severity: string
+  enabled: boolean
+  installed: boolean
+  rule?: TraceRule
 }
 
 export interface TraceRuleResult {
@@ -897,12 +994,19 @@ export interface TraceRuleResult {
   violation_count: number
   passed: boolean
   error?: string
+  waived?: number
 }
 
 export interface TraceRulesReport {
   results: TraceRuleResult[]
   passed: boolean
   summary: Record<string, number>
+}
+
+/** GET /projects/{pid}/analytics/consistency */
+export interface ConsistencyReport extends TraceRulesReport {
+  checks: BuiltinCheck[]
+  installed: number
 }
 
 export interface ItemTraceViolation extends TraceViolation {
@@ -953,7 +1057,7 @@ export interface TenantSettings {
 // ---------------------------------------------------------------- releases
 
 export interface ExitCriterion {
-  /** coverage, passed, mandatory_passed, executed, no_failed, approved, no_suspect, no_open_defects, risks_mitigated, trace_rules */
+  /** coverage, passed, mandatory_passed, executed, no_failed, approved, no_suspect, no_open_defects, risks_mitigated, trace_rules, no_blocking_defects */
   type: string
   /** percent for percentage criteria */
   threshold?: number
@@ -996,6 +1100,10 @@ export interface CriterionResult extends ExitCriterion {
   total: number
   items: ReleaseItem[] | null
   available: boolean
+  /** items accepted by a waiver (note: the waiver keys) */
+  waived?: ReleaseItem[] | null
+  /** risks above the threshold with a valid "accept risk" sign-off (residual_risk) */
+  accepted?: ReleaseItem[] | null
 }
 
 export interface ReleaseStatusReport {
@@ -1003,6 +1111,11 @@ export interface ReleaseStatusReport {
   go: boolean
   criteria: CriterionResult[]
   summary: Record<string, number>
+  /** waivers in force for the release (lib/waivers Waiver) */
+  waivers?: import('./waivers').Waiver[]
+  risk_threshold?: string
+  /** risks of the scope whose residual level is above the threshold (note: level, ", accepted") */
+  residual_risks?: ReleaseItem[]
 }
 
 // ---------------------------------------------------------------- defects
@@ -1016,6 +1129,8 @@ export interface DefectLink {
 
 export interface Defect {
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   key: string
   title: string
@@ -1035,6 +1150,8 @@ export interface Defect {
   created_at: string
   updated_at: string
   resolved_at: string | null
+  /** phase found in (requirements … production, '' unknown) */
+  found_in?: string
   links?: DefectLink[]
 }
 
@@ -1070,6 +1187,8 @@ export interface DefectTracker {
 
 export interface Risk {
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   key: string
   title: string
@@ -1090,6 +1209,25 @@ export interface Risk {
   requirement_ids: string[]
   covered: number
   verified: number
+  /** residual risk after mitigation (0 = not assessed; see lib/risks residualPoint) */
+  residual_likelihood?: number
+  residual_impact?: number
+  residual_manual?: boolean
+  residual_justification?: string
+  review_date?: string
+  review_owner?: string
+  accepted_by?: string
+  accepted_name?: string
+  accepted_at?: string | null
+  acceptance_comment?: string
+  /** derived: the residual score and level in effect, and where they come from (inherent, verified, manual) */
+  residual_score?: number
+  residual_level?: string
+  residual_source?: string
+  threshold?: string
+  above_threshold?: boolean
+  acceptance_valid?: boolean
+  review_due?: boolean
 }
 
 // ---------------------------------------------------------------- notifications
@@ -1170,4 +1308,215 @@ export interface Signoff {
   content_hash: string
   signed_at: string
   valid: boolean
+}
+
+// ---------- verification correlations (internal/model/verification.go) ----------
+
+/** verified | partial | failed | pending | none */
+export type VerificationState = 'verified' | 'partial' | 'failed' | 'pending' | 'none'
+
+/** A criterion a trace link verifies (step_id: one step of the test). */
+export interface LinkCriterion {
+  criterion_id: string
+  step_id?: string
+}
+
+/** A criterion row of the traceability matrix. */
+export interface TraceCriterion {
+  id: string
+  position: number
+  description: string
+  method: string
+  state: VerificationState
+  records: number
+}
+
+/** One piece of evidence about a criterion or requirement. */
+export interface Evidence {
+  kind: 'test' | 'record'
+  id: string
+  link_id?: string
+  /** test key, or the method of a record */
+  key: string
+  /** test title, or who performed a record */
+  title: string
+  step_id?: string
+  step_position?: number
+  result: string
+  /** passed | failed | pending | void */
+  state: 'passed' | 'failed' | 'pending' | 'void'
+  plain?: boolean
+  note?: string
+  date?: string
+}
+
+export interface CriterionVerification {
+  criterion_id: string
+  position: number
+  description: string
+  method: string
+  state: VerificationState
+  evidence: Evidence[]
+}
+
+export interface VerificationReason {
+  code: string
+  params?: Record<string, string>
+  text: string
+}
+
+/** GET /requirements/{id}/verification: is it verified, and why. */
+export interface RequirementVerification {
+  requirement_id: string
+  key: string
+  title: string
+  status: string
+  strict: boolean
+  own: VerificationState
+  state: VerificationState
+  verified: boolean
+  criteria: CriterionVerification[]
+  evidence: Evidence[]
+  criteria_verified: number
+  criteria_total: number
+  children: { id: string; key: string; title: string; status: string; state: VerificationState }[]
+  children_verified: number
+  parent_ids: string[]
+  reasons: VerificationReason[]
+  inconsistencies: VerificationReason[]
+}
+
+/** GET /projects/{pid}/verification */
+export interface ProjectVerification {
+  strict: boolean
+  counts: Record<string, number>
+  criteria_verified: number
+  criteria_total: number
+  requirements: RequirementVerification[]
+  inconsistent: RequirementVerification[]
+}
+
+export interface VerificationRecord {
+  id: string
+  project_id: string
+  requirement_id: string
+  requirement_key?: string
+  criterion_id: string | null
+  criterion_text?: string
+  method: string
+  /** pass | fail | conditional */
+  result: string
+  performed_by: string
+  performed_on: string
+  note: string
+  file_ids: string[]
+  files: { id: string; name: string; kind: string }[]
+  valid_until: string
+  until_change: boolean
+  invalidated_at: string | null
+  invalidated_reason: string
+  /** valid | expired | invalidated */
+  validity: string
+  signoff: { by: string; name: string; comment: string; at: string } | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface VerificationSettings {
+  strict_criteria: boolean
+  updated_by?: string
+  updated_at?: string | null
+}
+
+/** A node of the project's product breakdown. */
+export interface SystemElement {
+  id: string
+  project_id: string
+  parent_id: string | null
+  name: string
+  kind: string
+  description: string
+  position: number
+  path?: string
+  requirement_ids: string[]
+  test_ids: string[]
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+/** Coverage and verification of the requirements allocated to an element or below it. */
+export interface ElementCoverage {
+  element_id: string
+  parent_id: string | null
+  name: string
+  kind: string
+  path: string
+  depth: number
+  requirements: number
+  covered: number
+  verified: number
+  failed: number
+  tests: number
+  tests_passed: number
+  percent: number
+}
+/** Quality metrics (GET /projects/{pid}/analytics/quality, internal/analytics quality.go). */
+export interface QualityPeriod {
+  period: string
+  value: number
+  count: number
+  total: number
+}
+export interface QualityItem {
+  kind: string
+  id: string
+  key: string
+  title: string
+  count: number
+  value?: number
+  note?: string
+}
+export interface QualityCount {
+  value: string
+  count: number
+  percent: number
+}
+export interface QualityGroup {
+  name: string
+  requirements: number
+  defects: number
+  density: number
+}
+export interface QualityDurations {
+  count: number
+  mean_hours: number
+  median_hours: number
+  p90_hours: number
+}
+export interface QualityReport {
+  from: string
+  to: string
+  period: 'week' | 'month'
+  periods: string[]
+  stale_days: number
+  volatility: { changes: number; requirements: number; changed: number; per_requirement: number; trend: QualityPeriod[]; most_changed: QualityItem[] }
+  defect_density: { defects: number; requirements: number; per_requirement: number; by_severity: QualityCount[]; by_requirement: QualityItem[]; by_folder: QualityGroup[]; by_category: QualityGroup[] }
+  escaped: {
+    defects: number
+    escaped: number
+    percent: number
+    production: number
+    after_release: number
+    by_phase: QualityCount[]
+    by_release: { id: string; name: string; released_at: string; escaped: number }[]
+    trend: QualityPeriod[]
+    items: QualityItem[]
+  }
+  effectiveness: { defects: number; tests: number; executions: number; hours: number; per_test: number; per_hour: number; top_tests: QualityItem[]; trend: QualityPeriod[]; untimed_percent: number }
+  result_age: { tests: number; with_result: number; never: number; buckets: QualityCount[]; stale_days: number; stale: number; stale_percent: number; median_days: number; oldest: QualityItem[] }
+  review_turnaround: QualityDurations & { pending: number; oldest_pending_days: number; trend: QualityPeriod[] }
+  fix_time: QualityDurations & { open: number; by_severity: (QualityDurations & { severity: string })[]; trend: QualityPeriod[] }
+  requirement_quality: { requirements: number; with_warnings: number; percent: number; by_rule: QualityCount[]; trend: QualityPeriod[]; items: QualityItem[] }
 }

@@ -25,6 +25,9 @@ var errDryRun = errors.New("dry run")
 // everything is rolled back at the end, so keys and folder counts show what
 // an import would do. It returns the number of folders created.
 func (s *Store) ImportRequirements(ctx context.Context, tenantID, projectID string, root *string, items []ImportItem, dryRun bool) (int, error) {
+	// imported requirements get the defaults of the custom fields; a
+	// required field that the file does not fill is left empty
+	ctx = lenientCustomFields(ctx)
 	for i, it := range items {
 		if err := ValidateRequirement(it.Requirement); err != nil {
 			return 0, fmt.Errorf("requirement %d (%s): %w", i+1, it.Requirement.Title, err)

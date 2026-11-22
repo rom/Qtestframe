@@ -131,7 +131,7 @@ Under **Utvärderingskriterier** anger du hur uppfyllelsen bedöms. Varje kriter
 | **Demonstration** | funktionen visas för en granskare |
 | **Granskning** | en formell granskning |
 
-Välj **Lägg till kriterium** för att lägga till ett; använd pilarna för att ändra ordningen och papperskorgen för att ta bort. När du sparar ersätts listan. När du länkar ett testfall kan du välja vilket kriterium det verifierar under **Kriterium för nya länkar**.
+Välj **Lägg till kriterium** för att lägga till ett; använd pilarna för att ändra ordningen och papperskorgen för att ta bort. När du sparar ersätts listan. När du länkar ett testfall kan du välja vilket kriterium det verifierar under **Kriterium för nya länkar**. Fliken **Verifiering** visar beläggen för varje kriterium, kopplar testfall (och teststeg) till kriterier och registrerar inspektioner, analyser, demonstrationer och granskningar; ett krav är verifierat först när varje kriterium har godkända belägg (se [Verifiering](traceability-and-coverage.md#verifiering)).
 
 ## Länkade testfall
 
@@ -343,7 +343,7 @@ Att ladda upp och ta bort bilagor kräver rollen **Ansvarig** (samma som att red
 
 ## Importera krav
 
-Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt kravverktyg eller ett Word-dokument. **Importera** i sidhuvudet på kravsidan läser en sådan fil och skapar alla krav på en gång. Import kräver behörighet att redigera krav (**Manager** som standard).
+Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt kravverktyg eller ett Word-dokument. **Importera → Från en fil** i sidhuvudet på kravsidan läser en sådan fil och skapar alla krav på en gång. För att uppdatera krav från ett DOORS- eller Polarion-dokument gång på gång, eller redigera krav i Excel och hämta tillbaka ändringarna, se [Utbyta data med andra verktyg](reports-and-export.md#utbyta-data-med-andra-verktyg). Import kräver behörighet att redigera krav (**Manager** som standard).
 
 1. Dra filen till dialogrutan eller välj den. Filformat som stöds är **CSV** (separerad med komma, semikolon eller tabb; UTF-8 med eller utan BOM, UTF-16 och Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` och den zippade `.reqifz`) och **Word** (`.docx`), högst 20 MB och 5 000 krav per fil.
 2. Granska **förhandsvisningen**: det upptäckta formatet, hur varje kolumn läses och de första 50 kraven med anmärkningar (härledd rubrik, okänt värde, dubblett). Inget har sparats än.
@@ -385,6 +385,35 @@ Värden för typ, prioritet, status och kravnivå kan skrivas på svenska eller 
 - **Hoppa över dubbletter:** en rad hoppas över när dess ID redan finns registrerat i ett krav i projektet, eller när ett krav med samma rubrik (oavsett versaler) finns; rader som upprepas i filen räknas också.
 
 Ett importerat kravs ID sparas i fältet **Källa** som `ID: REQ-12` (efter filens källa, om den finns), och det är så dubbletter hittas nästa gång. Importen är allt eller inget: kan ett krav inte sparas, sparas inget. Varje import loggas i granskningsloggen.
+
+## Egna fält
+
+Ett projekt kan ha egna fält för krav, testfall, defekter, risker och körningar, till exempel *Leverantör*, *Massa (kg)* eller *Avtalsklausul*. De definieras under **Kategorier & inställningar → Egna fält** *(Manager och Admin, eller en roll med `project.update`)*:
+
+- **Nytt fält**: en **Etikett**, **Nyckel** (härleds från etiketten; används i sökningar som `cf.<nyckel>`, i exporter och importer, och kan inte ändras senare) och **Typ**: **Text**, **Lång text**, **Tal** (med en valfri **Enhet**), **Datum**, **Enkelval**, **Flerval** (ett alternativ per rad), **Kryssruta**, **Användare** (en medlem i organisationen) eller **Länk**.
+- **Obligatoriskt**, ett **Standardvärde** för nya objekt, en **Hjälptext** som visas under fältet, ordningen (pilarna) och **Visa i listor** (fältet är en kolumn i listan från början).
+- **Tillämpa fältuppsättning** kopierar organisationens [fältuppsättning](administration.md#fältuppsättningar-och-mallar) för en projekttyp till projektet; fält som projektet redan har hoppas över. Ett nytt projekt får automatiskt fältuppsättningen för sin typ.
+- **Ta bort** ber om en bekräftelse och visar hur många objekt som har ett värde. Värdena försvinner inte: de flyttas till fältarkivet, som visas längst ned på sidan.
+
+Fälten visas i redigeraren för varje objekt under **Egna fält**. Servern kontrollerar varje värde mot sitt fält (ett tal, ett datum, ett av alternativen, en befintlig medlem, en http(s)-länk); ett obligatoriskt fält måste fyllas i när ett objekt skapas och kan inte tömmas senare. Objekt som skapades innan ett fält blev obligatoriskt kan fortfarande sparas utan det.
+
+Egna fält är kolumner i listorna (**Kolumner**) och i [kalkylbladsvyn](#kalkylbladsvy), där de kan redigeras, klistras in och fyllas nedåt. De ingår i CSV- och Excel-exporterna (en kolumn per fält, enheten i rubriken), i ReqIF-exporten (som attribut i kravtypen), i egna rapporter (som kolumner), i genererade dokument (alternativet **Egna fält**), i baslinjer och deras jämförelse, i historiken (en ändring per fält), i projektarkiv och i säkerhetskopior. En import från CSV, Excel eller ReqIF fyller ett eget fält från en kolumn som heter som etiketten, *Etikett (enhet)* eller nyckeln; värden som inte passar hoppas över med en varning. I [frågespråket](search-and-filters.md#fält) filtrerar `cf.supplier:"Acme"` och `cf.mass>2` på egna fält och `sort:-cf.mass` sorterar efter dem.
+
+## Mallar
+
+**Nytt krav** och **Nytt testfall** erbjuder en **Mall** som fyller i det nya objektet: titel, ett beskrivningsskelett, prioritet, status, kravnivå och typ, acceptanskriterier eller steg, taggar och värden i egna fält. Fält som mallen inte anger lämnas som de är, och allt kan ändras innan du sparar.
+
+Väljaren visar projektets mallar, organisationens mallar för projekttypen och de inbyggda, på svenska eller engelska efter ditt språk:
+
+| Projekttyp | Inbyggda mallar |
+|---|---|
+| Allmänt | Krav med acceptanskriterier; Manuellt test |
+| Mjukvara | Funktionellt krav (användarberättelse); Icke-funktionellt krav (mätbart); API-test (anrop/svar) |
+| Hårdvara | Konstruktionskrav med tolerans; Miljötest (enligt IEC 60068); EMC-test |
+| System | Gränssnittskrav; Integrationstest |
+| Verksamhet | Affärsregel; Acceptanstest |
+
+Mallar hanteras under **Kategorier & inställningar → Mallar** *(Manager och Admin)*: **Ny mall**, redigera eller ta bort projektets egna, kopiera vilken mall som helst (även en inbyggd) till en ny, och stjärnan gör en mall till projektets **standardmall**, som väljs så fort ett nytt objekt öppnas.
 
 ## Kopiera ett krav
 

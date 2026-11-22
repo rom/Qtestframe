@@ -3,6 +3,8 @@
 // choose a file, check the preview and the column mapping, set the options
 // and import. The server parses the file; nothing is stored before Import.
 import { computed, nextTick, ref, watch } from 'vue'
+import { useProjectStore } from '@/stores/project'
+import { cfField, fieldLabel } from '@/lib/customFields'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
@@ -55,6 +57,8 @@ const result = ref<ImportResult | null>(null)
 const busy = ref(false)
 const error = ref('')
 const sheet = ref<string | null>(null)
+/** mapping preset of another tool's export ('' = detect the columns) */
+const preset = ref('')
 const choices = ref<Record<string, string>>({})
 /** columns as the server guessed them (no mapping sent): the base of the overrides */
 const guessed = ref<ImportColumn[]>([])
@@ -73,6 +77,7 @@ watch(visible, (v) => {
   result.value = null
   error.value = ''
   sheet.value = null
+  preset.value = ''
   choices.value = {}
   guessed.value = []
   excluded.value = new Set()
@@ -82,6 +87,10 @@ watch(visible, (v) => {
 const fieldOptions = computed(() => [
   { label: t('reqImport.field.ignore'), value: '' },
   ...IMPORT_FIELDS.map((f) => ({ label: t(`reqImport.field.${f}`), value: f })),
+  // the project's custom fields (cf.<key>)
+  ...useProjectStore()
+    .customFieldsFor('requirement')
+    .map((f) => ({ label: fieldLabel(f), value: cfField(f.key) })),
 ])
 const statusOptions = computed(() =>
   enumOptions(
@@ -102,7 +111,7 @@ async function runPreview() {
   try {
     const mapping = changedMapping(guessed.value, choices.value)
     const res = await upload<ImportPreview>(`/projects/${props.projectId}/requirements/import/preview`, file.value, {
-      fields: importFields({ sheet: sheet.value, mapping }),
+      fields: importFields({ sheet: sheet.value, mapping, preset: preset.value }),
     })
     preview.value = res
     sheet.value = res.sheet || null
@@ -140,6 +149,18 @@ function onSheet(v: string) {
   void runPreview()
 }
 
+const presetOptions = computed(() => [
+  { label: t('exchange.presetAuto'), value: '' },
+  ...(preview.value?.presets ?? []).map((p) => ({ label: p.name, value: p.id })),
+])
+
+function onPreset(v: string) {
+  preset.value = v
+  choices.value = {}
+  guessed.value = []
+  void runPreview()
+}
+
 function onMapping(header: string, field: string) {
   choices.value = { ...choices.value, [header]: field }
   void runPreview()
@@ -159,7 +180,7 @@ async function doImport() {
   try {
     const mapping = changedMapping(guessed.value, choices.value)
     const res = await upload<ImportResult>(`/projects/${props.projectId}/requirements/import`, file.value, {
-      fields: importFields({ sheet: sheet.value, mapping }, options.value, excluded.value),
+      fields: importFields({ sheet: sheet.value, mapping, preset: preset.value }, options.value, excluded.value),
     })
     result.value = res
     emit('imported', res)
@@ -242,6 +263,11 @@ function dupLabel(d: string | undefined) {
         <section :aria-labelledby="ids.mapping">
           <h3 :id="ids.mapping" class="section-title">{{ t('reqImport.columns') }}</h3>
           <p class="small muted" style="margin: 0 0 8px">{{ t('reqImport.columnsHint') }}</p>
+          <div v-if="preview.format === 'csv' || preview.format === 'xlsx'" v-field class="field" style="max-width: 320px; margin-bottom: 8px">
+            <label>{{ t('exchange.preset') }}</label>
+            <Select :model-value="preset" :options="presetOptions" option-label="label" option-value="value" :disabled="busy" class="import-preset" @update:model-value="onPreset" />
+            <span class="small muted">{{ t('exchange.presetHint') }}</span>
+          </div>
           <div v-if="sheetOptions.length > 1" v-field class="field" style="max-width: 320px; margin-bottom: 8px">
             <label>{{ t('reqImport.sheet') }}</label>
             <Select :model-value="sheet" :options="sheetOptions" option-label="label" option-value="value" :disabled="busy" @update:model-value="onSheet" />

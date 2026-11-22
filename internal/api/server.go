@@ -161,6 +161,8 @@ func (s *Server) routes() {
 	pub("GET /api/v1/auth/oidc/{name}/login", s.handleOIDCLogin)
 	pub("GET /api/v1/auth/oidc/{name}/callback", s.handleOIDCCallback)
 	pub("GET /api/v1/auth/saml/{name}/metadata", s.handleSAMLMetadata)
+	// GitLab and GitHub webhooks (code.go): the signature or secret token is the credential
+	s.routesCodeHooks(pub)
 	pub("GET /api/v1/auth/saml/{name}/login", s.handleSAMLLogin)
 	pub("POST /api/v1/auth/saml/{name}/acs", s.handleSAMLACS)
 	h("GET /api/v1/auth/me", s.handleMe)
@@ -219,6 +221,7 @@ func (s *Server) routes() {
 	h("GET /api/v1/projects/{pid}/people", s.handlePeople, "requirement.read")
 	h("GET /api/v1/projects/{pid}/analytics", s.handleAnalytics, "requirement.read")
 	h("GET /api/v1/projects/{pid}/analytics/compliance", s.handleCompliance, "requirement.read")
+	h("GET /api/v1/projects/{pid}/analytics/quality", s.handleQuality, "project.read")
 	h("POST /api/v1/projects/{pid}/prompts", s.handlePrompt, "project.read") // read of the items' kind: see prompts.go
 	h("GET /api/v1/projects/{pid}/requirement-sources", s.handleRequirementSources, "requirement.read")
 	h("POST /api/v1/projects/{pid}/tags/suggest", s.handleSuggestTags, "requirement.read")
@@ -333,16 +336,25 @@ func (s *Server) routes() {
 	s.routesDefects(h)
 	s.routesRequirementIssues(h)
 	s.routesRisks(h)
+	s.routesWaivers(h)
+	s.routesSoA(h)
 	s.routesNotifications(h)
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)
+	// Excel round-trip and ReqIF import (exchange.go), OSLC (oslc.go)
+	s.routesExchange(h)
+	s.routesOSLC(pub, h)
 	// SCIM provisioning: its own token authentication (scim.go)
 	s.routesSCIM(m)
 	s.routesSCIMAdmin(h)
 	s.routesTraceRules(h)
 	s.routesEmail(h)
 	s.routesConfigurations(h)
+	s.routesVerification(h)
+	// variants and applicability (variants.go), code and builds (code.go)
+	s.routesVariants(h)
+	s.routesCode(h)
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)
@@ -352,6 +364,10 @@ func (s *Server) routes() {
 	s.routesSuggest(h)
 	// Administration → System settings (systemsettings.go)
 	s.routesSystemSettings(h)
+	// change and defect correlations (correlations.go)
+	s.routesCorrelations(h)
+	// custom fields, field sets and item templates (customfields.go)
+	s.routesCustomFields(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -539,7 +555,10 @@ func writeError(w http.ResponseWriter, status int, code, msg string) {
 // fail maps an error to an HTTP response.
 func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error) {
 	var qe *query.Error
+	var ae *apiErr
 	switch {
+	case errors.As(err, &ae):
+		writeError(w, ae.status, ae.code, ae.msg)
 	case errors.As(err, &qe):
 		pos := qe.Pos
 		// err may name the query it belongs to ("selector: query: …")

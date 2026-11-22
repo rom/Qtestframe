@@ -114,7 +114,7 @@ Under **Evaluation criteria** you state how fulfilment is judged. Each criterion
 | **Demonstration** | showing the function to a reviewer |
 | **Review** | a formal review |
 
-Select **Add criterion** to add one; use the arrows to reorder and the bin to remove one. Saving replaces the list. When you link a test, you can choose the criterion it verifies in **Criterion for new links**.
+Select **Add criterion** to add one; use the arrows to reorder and the bin to remove one. Saving replaces the list. When you link a test, you can choose the criterion it verifies in **Criterion for new links**. The **Verification** tab shows the evidence of every criterion, maps tests (and test steps) to criteria and records inspections, analyses, demonstrations and reviews; a requirement is verified only when every criterion has passing evidence (see [Verification](traceability-and-coverage.md#verification)).
 
 ## Linked tests
 
@@ -326,7 +326,7 @@ Uploading and removing attachments needs the **Manager** role (the same as editi
 
 ## Import requirements
 
-Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import** in the header of the requirements page reads such a file and creates the requirements in one go. Importing needs the permission to edit requirements (**Manager** by default).
+Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import → From a file** in the header of the requirements page reads such a file and creates the requirements in one go. To update requirements from a DOORS or Polarion document again and again, or to edit requirements in Excel and bring the changes back, see [Exchanging data with other tools](reports-and-export.md#exchanging-data-with-other-tools). Importing needs the permission to edit requirements (**Manager** by default).
 
 1. Drag the file onto the dialog or choose it. Supported are **CSV** (comma, semicolon or tab separated; UTF-8 with or without byte order mark, UTF-16 and Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` and the zipped `.reqifz`) and **Word** (`.docx`), up to 20 MB and 5,000 requirements per file.
 2. Check the **preview**: the detected format, how each column is read and the first 50 requirements with notes (a derived title, an unknown value, a duplicate). Nothing is stored yet.
@@ -368,6 +368,35 @@ Values of type, priority, status and obligation may be written in English or Swe
 - **Skip duplicates:** a row is skipped when its ID is already recorded in a requirement of the project, or when a requirement with the same title (ignoring case) exists; rows repeated within the file count too.
 
 The ID of an imported requirement is kept in its **Source** field as `ID: REQ-12` (after the source of the file, if there is one), which is how duplicates are found the next time. The import is all or nothing: if one requirement cannot be stored, none is. Every import is recorded in the audit log.
+
+## Custom fields
+
+A project can have fields of its own for requirements, tests, defects, risks and runs, for example *Supplier*, *Mass (kg)* or *Contract clause*. They are defined under **Categories & settings → Custom fields** *(Manager and Admin, or any role with `project.update`)*:
+
+- **New field**: a **Label**, the **Key** (derived from the label; used in queries as `cf.<key>`, in exports and imports, and it cannot be changed later) and the **Type**: **Text**, **Long text**, **Number** (with an optional **Unit**), **Date**, **Single select**, **Multi select** (one option per line), **Checkbox**, **User** (a member of the organisation) or **URL**.
+- **Required**, a **Default value** for new items, a **Help text** shown under the field, the order (the arrows) and **Show in lists** (the field is a column of the list by default).
+- **Apply field set** copies the organisation's [field set](administration.md#field-sets-and-templates) of a project type into the project; fields the project already has are skipped. A new project gets the field set of its type automatically.
+- **Delete** asks for confirmation and says how many items have a value. The values are not lost: they move to the field archive, listed at the bottom of the page.
+
+The fields appear in the editor of each item under **Custom fields**. The server checks every value against its field (a number, a date, one of the options, an existing member, an http(s) link); a required field must be filled in when an item is created and cannot be emptied later. Items created before a field became required can still be saved without it.
+
+Custom fields are columns of the lists (**Columns**) and of the [spreadsheet view](#spreadsheet-view), where they can be edited, pasted and filled down. They are part of the CSV and Excel exports (one column per field, the unit in the header), the ReqIF export (as attributes of the requirement type), custom reports (as columns), generated documents (the **Custom fields** option), baselines and their comparison, the history (one change per field), project archives and backups. A CSV, Excel or ReqIF import fills a custom field from a column named like its label, *Label (unit)* or its key; values that do not fit are left out with a warning. In the [query language](search-and-filters.md#fields), `cf.supplier:"Acme"` and `cf.mass>2` filter by custom fields and `sort:-cf.mass` sorts by them.
+
+## Templates
+
+**New requirement** and **New test** offer a **Template** that fills in the new item: title, a description skeleton, priority, status, obligation and type, acceptance criteria or steps, tags and custom field values. Fields the template does not set are left as they are, and everything can be changed before you save.
+
+The picker lists the templates of the project, those of the organisation for the project's type and the built-in ones, in English or Swedish after your language:
+
+| Project type | Built-in templates |
+|---|---|
+| General | Requirement with acceptance criteria; Manual test |
+| Software | Functional requirement (user story); Non-functional requirement (measurable); API test (request/response) |
+| Hardware | Design requirement with tolerance; Environmental test (IEC 60068 style); EMC test |
+| System | Interface requirement; Integration test |
+| Business | Business rule; Acceptance test |
+
+Templates are managed under **Categories & settings → Templates** *(Manager and Admin)*: **New template**, edit or delete the project's own, copy any template (also a built-in one) into a new one, and the star makes a template the project's **default**, which is chosen as soon as a new item is opened.
 
 ## Copy a requirement
 

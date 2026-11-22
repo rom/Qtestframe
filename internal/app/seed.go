@@ -8,6 +8,7 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/reqlang"
 	"github.com/rom/qtestframe/internal/store"
+	"github.com/rom/qtestframe/internal/tracerules"
 )
 
 // SeedDemo creates a demonstration project with folders, requirements,
@@ -116,7 +117,7 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	for _, sp := range specs {
 		r := &model.Requirement{ProjectID: p.ID, FolderID: &sp.folder.ID, Title: sp.title, Description: sp.desc,
 			Obligation: reqlang.DetectObligation(sp.desc), Type: sp.typ, Priority: sp.prio, Status: sp.status,
-			CategoryIDs: []string{cat("Area", sp.area)}, Criteria: sp.criteria, CreatedBy: "seed", Source: "Customer RFP v1.2",
+			CategoryIDs: []string{cat("Area", sp.area)}, Criteria: sp.criteria, CreatedBy: "seed", Source: seedSource(sp.title),
 			// a tag per area, so the tag cloud has something to show
 			Tags: []string{strings.ToLower(sp.area)}}
 		if strings.HasPrefix(sp.desc, "This section describes") {
@@ -211,6 +212,25 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 			return nil, err
 		}
 	}
+	// the built-in consistency checks, with something for them to find: a
+	// near-duplicate of "Account lockout" and a high risk nobody mitigates
+	for _, b := range tracerules.Builtins {
+		rule := tracerules.BuiltinRule(b, p.ID)
+		rule.CreatedBy = "seed"
+		if err := st.CreateTraceRule(ctx, tenantID, &rule); err != nil {
+			return nil, err
+		}
+	}
+	dup := &model.Requirement{ProjectID: p.ID, FolderID: &rf.ID, Title: "Account lockout after failed logins",
+		Description: "The system MUST NOT allow more than 10 failed login attempts per account within 5 minutes.", Obligation: model.ObligationMustNot,
+		Type: "security", Priority: "high", Status: "draft", CategoryIDs: []string{cat("Area", "Security")}, CreatedBy: "seed", Tags: []string{"security"}}
+	if err := st.CreateRequirement(ctx, tenantID, dup); err != nil {
+		return nil, err
+	}
+	if err := st.CreateRisk(ctx, tenantID, &model.Risk{ProjectID: p.ID, Title: "Credential stuffing takes over accounts", Category: "security",
+		Likelihood: 4, Impact: 5, Owner: "security team", CreatedBy: "seed"}); err != nil {
+		return nil, err
+	}
 	run := &model.TestRun{ProjectID: p.ID, Name: "Sprint 12 regression", Environment: "staging", Build: "1.4.0-rc1", CreatedBy: "seed"}
 	if err := st.CreateRun(ctx, tenantID, run, testIDs); err != nil {
 		return nil, err
@@ -243,7 +263,74 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedCoverageTests(ctx, st, tenantID, p.ID, reqs, tf, tf3, tf4); err != nil {
 		return nil, err
 	}
+	// change impact, stale results, blocking defects and a regression (seedcorrelations.go)
+	var changed *model.Requirement
+	if len(reqs) > 4 {
+		changed = reqs[3] // reqs[4] refines it
+	}
+	if err := seedCorrelations(ctx, st, tenantID, run, changed); err != nil {
+		return nil, err
+	}
+	if err := seedVerification(ctx, st, tenantID, p, reqs, testIDs); err != nil {
+		return nil, err
+	}
+	if err := seedWaivers(ctx, st, tenantID, p, reqs); err != nil {
+		return nil, err
+	}
+	if err := seedVariantsAndCode(ctx, st, tenantID, p, reqs, testIDs, run); err != nil {
+		return nil, err
+	}
+	if err := seedCustomFields(ctx, st, tenantID, p.ID, reqs); err != nil {
+		return nil, err
+	}
 	return p, nil
+}
+
+// seedCustomFields gives the demo project custom fields (with values on
+// some requirements) and a project template for new requirements.
+func seedCustomFields(ctx context.Context, st *store.Store, tenantID, projectID string, reqs []*model.Requirement) error {
+	for _, f := range []model.CustomField{
+		{EntityType: model.KindRequirement, Label: "Component", Type: model.FieldSingleSelect, Options: []string{"Web portal", "Mobile app", "Core banking"}, ShowInList: true,
+			Help: "The part of the product the requirement is about."},
+		{EntityType: model.KindRequirement, Label: "Effort", Type: model.FieldNumber, Unit: "d", Help: "Estimated implementation effort in person-days."},
+		{EntityType: model.KindRequirement, Label: "Contract clause", Type: model.FieldText},
+		{EntityType: model.KindTest, Label: "Test environment", Type: model.FieldSingleSelect, Options: []string{"staging", "pre-production"}, Default: "staging"},
+		{EntityType: model.KindDefect, Label: "Found in build", Type: model.FieldText},
+	} {
+		f.ProjectID = projectID
+		if err := st.CreateCustomField(ctx, tenantID, &f); err != nil {
+			return err
+		}
+	}
+	values := []model.CustomValues{
+		{"component": "Web portal", "effort": 3.0, "contract_clause": "4.2.1"},
+		{"component": "Web portal", "effort": 5.0},
+		{"component": "Core banking", "effort": 8.0, "contract_clause": "6.1"},
+		{"component": "Core banking", "effort": 2.0},
+	}
+	for i, v := range values {
+		if i >= len(reqs) {
+			break
+		}
+		r, err := st.GetRequirement(ctx, tenantID, reqs[i].ID)
+		if err != nil {
+			return err
+		}
+		r.CustomFields = v
+		if err := st.UpdateRequirement(ctx, tenantID, r, false); err != nil {
+			return err
+		}
+	}
+	tpl := &model.ItemTemplate{ProjectID: projectID, Kind: model.KindRequirement, Name: "Banking security requirement", CreatedBy: "seed",
+		Description: "A MUST requirement with an abuse case and a review criterion.",
+		Content: model.TemplateContent{Title: "The portal shall protect <asset>", Obligation: model.ObligationMust, Type: "security", Priority: "high",
+			Description: "The portal MUST <control> so that <threat> is prevented.\n\n## Abuse case\n<How an attacker would try>",
+			Tags:        []string{"security"},
+			Criteria: []model.EvaluationCriterion{{Description: "Abuse case is rejected", Method: "test"},
+				{Description: "Control reviewed by the security officer", Method: "review"}},
+			CustomFields: model.CustomValues{"component": "Web portal"}}}
+	// not the default: "New requirement" offers it in the template picker
+	return st.CreateTemplate(ctx, tenantID, tpl)
 }
 
 // seedCoverageTests gives every demo requirement without a test one that

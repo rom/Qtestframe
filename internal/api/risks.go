@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/store"
 )
 
@@ -29,12 +30,26 @@ func (s *Server) handleListRisks(w http.ResponseWriter, r *http.Request, p *Prin
 	if !ok {
 		return
 	}
+	q, err := query.Parse(r.URL.Query().Get("q"), riskSchema)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	list, err := s.Store.ListRisks(r.Context(), p.TenantID(), pr.ID)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, listOf(list))
+	out := []model.Risk{}
+	var recs []query.MapRecord
+	for i := range list {
+		if rec := riskRecord(&list[i]); q.Match(rec) {
+			out = append(out, list[i])
+			recs = append(recs, rec)
+		}
+	}
+	sortByQuery(q, out, recs)
+	writeJSON(w, http.StatusOK, listOf(out))
 }
 
 func (s *Server) handleCreateRisk(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -48,7 +63,9 @@ func (s *Server) handleCreateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	k := &model.Risk{ProjectID: pr.ID, Title: req.Title, Description: req.Description, Category: req.Category, Likelihood: req.Likelihood,
-		Impact: req.Impact, Status: req.Status, Mitigation: req.Mitigation, Owner: req.Owner, CreatedBy: p.User.Email, RequirementIDs: req.RequirementIDs}
+		Impact: req.Impact, Status: req.Status, Mitigation: req.Mitigation, Owner: req.Owner, CreatedBy: p.User.Email, RequirementIDs: req.RequirementIDs,
+		ResidualLikelihood: req.ResidualLikelihood, ResidualImpact: req.ResidualImpact, ResidualManual: req.ResidualManual, ResidualJustification: req.ResidualJustification,
+		ReviewDate: req.ReviewDate, ReviewOwner: req.ReviewOwner, CustomFields: req.CustomFields}
 	if err := s.Store.CreateRisk(r.Context(), p.TenantID(), k); err != nil {
 		s.fail(w, r, err)
 		return
@@ -87,8 +104,14 @@ func (s *Server) handleUpdateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, badRequest("invalid JSON: %v", err))
 		return
 	}
+	if err := mergeCustom(raw["custom_fields"], &k.CustomFields); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	for name, dst := range map[string]any{"title": &k.Title, "description": &k.Description, "category": &k.Category, "status": &k.Status,
-		"mitigation": &k.Mitigation, "owner": &k.Owner, "likelihood": &k.Likelihood, "impact": &k.Impact} {
+		"mitigation": &k.Mitigation, "owner": &k.Owner, "likelihood": &k.Likelihood, "impact": &k.Impact,
+		"residual_likelihood": &k.ResidualLikelihood, "residual_impact": &k.ResidualImpact, "residual_manual": &k.ResidualManual,
+		"residual_justification": &k.ResidualJustification, "review_date": &k.ReviewDate, "review_owner": &k.ReviewOwner} {
 		if v, ok := raw[name]; ok {
 			if err := json.Unmarshal(v, dst); err != nil {
 				s.fail(w, r, badRequest("invalid %s: %v", name, err))

@@ -14,6 +14,7 @@ import SpreadsheetGrid, { type ApplyKind, type CellState } from './SpreadsheetGr
 import ColumnsMenu from './ColumnsMenu.vue'
 import { api, ApiError, errorMessage } from '@/lib/api'
 import { sortRows, toBatch, type BatchItem, type Plan, type SheetField } from '@/lib/sheet'
+import { useProjectStore } from '@/stores/project'
 import { applyValues, DEFAULT_SHEET_COLUMNS, sheetFields, type SheetRow } from '@/lib/sheetFields'
 import { folderColors } from '@/lib/tree'
 import { createdEntry, entry, recordUndo } from '@/lib/undoActions'
@@ -64,6 +65,7 @@ const allFields = computed(() =>
     folders: props.folders,
     canWrite: props.canWrite,
     canReview: props.canReview,
+    customFields: useProjectStore().customFieldsFor(props.kind),
   }),
 )
 const optional = computed(() => allFields.value.filter((f) => !f.fixed).map((f) => ({ field: f.id, header: f.header })))

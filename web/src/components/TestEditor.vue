@@ -3,12 +3,19 @@ import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
+import ImpactPanel from './ImpactPanel.vue'
+import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
+import StaleBadge from './StaleBadge.vue'
+import { contentChanges, needsImpactConfirm, type ChangeImpact } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import ConflictDialog from './ConflictDialog.vue'
 import CatalogOrigin from './CatalogOrigin.vue'
+import CustomFieldsEditor from './CustomFieldsEditor.vue'
+import TemplatePicker from './TemplatePicker.vue'
+import { applyTemplate, defaultValues, type CustomValues, type TemplateContent } from '@/lib/customFields'
 import { fieldConflicts, staleOf, TEST_FIELDS, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 import ReviewBar from './ReviewBar.vue'
@@ -33,6 +40,8 @@ import TagsInput from './TagsInput.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
 import TestDependenciesPanel from './TestDependenciesPanel.vue'
+import ApplicabilityPanel from './ApplicabilityPanel.vue'
+import CodePanel from './CodePanel.vue'
 import CommentsPanel from './CommentsPanel.vue'
 import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
@@ -73,6 +82,8 @@ const notify = useNotify()
 const { t } = useI18n()
 const tabsId = newId('test-tabs')
 const linkCount = ref<number | null>(null)
+/** commits and merge / pull requests of the Code tab */
+const codeCount = ref<number | null>(null)
 watch(
   () => props.itemId,
   () => {
@@ -128,7 +139,14 @@ function blank() {
     steps: [] as StepRow[],
     parameters: [] as string[],
     data_rows: [] as DataRow[],
+    custom_fields: defaultValues(useProjectStore().customFieldsFor('test')) as CustomValues,
   }
+}
+/** "New test" with a template: fill in what it defines */
+function onTemplate(c: TemplateContent) {
+  const next = applyTemplate(form.value, c, useProjectStore().customFieldsFor('test'))
+  next.steps = next.steps.map((s) => ({ ...s, uid: s.uid || ++uid }))
+  form.value = next
 }
 
 const form = ref(blank())
@@ -191,6 +209,7 @@ async function load() {
           call_test_key: s.call_test_key,
           call_test_title: s.call_test_title,
         })),
+      custom_fields: { ...(t.custom_fields ?? {}) } as CustomValues,
       parameters: [...(t.parameters ?? [])],
       data_rows: (t.data_rows ?? []).map((r) => ({ name: r.name ?? '', values: { ...(r.values ?? {}) } })),
     }
@@ -359,7 +378,28 @@ async function mergeMine() {
   }
 }
 
+// ---------- change impact: confirm before saving a change of substance ----------
+const impactOpen = ref(false)
+const impactPreview = ref<ChangeImpact | null>(null)
+const impactFields = ref<string[]>([])
 async function save() {
+  if (isNew.value || !loaded.value || !props.itemId) return doSave()
+  const changed = contentChanges('test', loaded.value, bodyOf(form.value) as Record<string, unknown>)
+  if (!changed.length) return doSave()
+  try {
+    impactPreview.value = await api.get<ChangeImpact>(`/tests/${props.itemId}/impact`)
+  } catch {
+    return doSave() // the preview is a help; saving does not depend on it
+  }
+  if (!needsImpactConfirm(changed, impactPreview.value)) return doSave()
+  impactFields.value = changed
+  impactOpen.value = true
+}
+async function confirmImpact() {
+  await doSave()
+  impactOpen.value = false
+}
+async function doSave() {
   saving.value = true
   error.value = ''
   const body = bodyOf(form.value)
@@ -476,14 +516,18 @@ const scriptPlaceholder = computed(() => {
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="executions"><i class="pi pi-play-circle" aria-hidden="true" /> {{ t('common.executions') }} <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
+      <Tab value="code"><i class="pi pi-code" aria-hidden="true" /> {{ t('code.tab') }} <span v-if="codeCount" class="count">{{ codeCount }}</span></Tab>
       <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
+      <Tab value="impact"><i class="pi pi-share-alt" aria-hidden="true" /> {{ t('correlations.tab') }}</Tab>
     </TabList>
   </Tabs>
+  <div v-if="item && tab === 'code'" v-bind="panel('code')"><CodePanel item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (codeCount = n)" /></div>
   <div v-if="item && tab === 'executions'" v-bind="panel('executions')"><TestExecutionsPanel :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" /></div>
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
+  <div v-if="item && tab === 'impact'" v-bind="panel('impact')"><ImpactPanel kind="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @changed="load" /></div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
@@ -502,10 +546,12 @@ const scriptPlaceholder = computed(() => {
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
       <Tag v-if="item?.version" :value="t('common.versionShort', { version: item.version })" severity="secondary" />
       <StatusTag v-if="item?.last_result" :value="item.last_result" kind="result" />
+      <StaleBadge :stale="item?.stale" :reason="item?.stale_reason" />
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
     </div>
     <CatalogOrigin v-if="item?.catalog_ref" kind="test" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+    <TemplatePicker v-if="isNew && canWrite" kind="test" :project-id="projectId" @apply="onTemplate" />
     <ReviewBar v-if="item" kind="test" :item="item" @changed="onReviewed" />
     <TraceRuleViolations v-if="item" kind="test" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${linkCount}`" />
 
@@ -556,6 +602,7 @@ const scriptPlaceholder = computed(() => {
         <TagSuggestions v-model="form.tags" :project-id="projectId" :title="form.title" :description="tagText" :disabled="!canWrite" />
       </div>
     </div>
+    <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('test')" :disabled="!canWrite" :project-id="projectId" />
 
     <template v-if="form.execution_type === 'automated'">
       <div class="section-title"><i class="pi pi-code" /> {{ t('tests.script') }} <HelpTip id="test.script" :label="t('tests.script')" /></div>
@@ -655,6 +702,7 @@ const scriptPlaceholder = computed(() => {
     </div>
 
     <TestDependenciesPanel v-if="item" :project-id="projectId" :test-id="item.id" :can-write="canWrite" @changed="emit('saved', item)" />
+    <ApplicabilityPanel v-if="item" item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
@@ -686,5 +734,6 @@ const scriptPlaceholder = computed(() => {
     />
   </form>
   </template>
+  <ImpactConfirmDialog v-model:visible="impactOpen" :impact="impactPreview" :project-id="projectId" :changed="impactFields" :saving="saving" @confirm="confirmImpact" />
   <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

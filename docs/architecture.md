@@ -92,9 +92,14 @@ pair.
 | `internal/model` | Domain types shared by store, API and export; JSON tags define the REST contract; enumerations (statuses, obligation levels, evaluation methods, ...). |
 | `internal/rbac` | Permissions, built-in roles (`admin`, `manager`, `test_lead`, `tester`, `viewer`) with defaults, and `Set`: a tenant's roles after its changes and custom roles (ADR 0014). |
 | `internal/mention`, `internal/tagsuggest` | @mention handles and the people directory; tag suggestions from title and description. |
+| `internal/customfield` | Custom field definitions and values (types, validation, defaults, text forms for exports and imports) and the built-in item templates per project type, in English and Swedish. |
 | `internal/query` | Lexer, parser and evaluator of the filter/search language; matched-field and term extraction for highlighting. |
+| `internal/verification` | Whether requirements are verified, and why: evidence per evaluation criterion (tests, test steps, verification records), plain links for compatibility or strict criterion coverage, the roll-up along `refines` (parent/child) with inconsistencies, and coverage per system element. Pure functions over data the store loads (`Store.ProjectVerification`, `Store.RequirementVerification`, `Store.IsVerified`). |
 | `internal/reqlang` | RFC 2119 / RFC 8174 keyword detection, obligation level, requirement lint rules and score. |
+| `internal/soa` | Statement of Applicability: the controls of a reference source (shipped lists in `data/*.yaml`, ISO/IEC 27001:2022 Annex A; otherwise the clause groups of the catalogue refs), joined with the project's applicability decisions and the implementation status derived from the requirements and their test results. |
 | `internal/export` | Format-neutral `Dataset` rendered as CSV (ZIP for several sections), XLSX (`excelize`), PDF (`go-pdf/fpdf`) and DOCX (hand-written OOXML). |
+| `internal/interop` | Exchange with other tools and with Excel: a field registry (built-in fields plus `Register`ed extensions such as custom fields), the round-trip workbook (write / read), the diff of a file against the stored items (new, changed, unchanged, conflict, error per cell) and the ReqIF attribute mapping with hierarchy and relations. The API applies a confirmed diff in one transaction through the regular create / PATCH handlers (`internal/api/exchange*.go`). |
+| `internal/oslc` | RDF/XML, Turtle and JSON-LD writers and the `oslc.where` parser of the read-only OSLC RM / QM provider (`internal/api/oslc.go`). |
 | `internal/runner` | Executes automated test scripts with timeout and output cap; optional re-exec through `qtestframe sandbox-exec` (rlimits, no_new_privs, Landlock, seccomp). |
 | `internal/hardening` | In-process Linux hardening: `PR_SET_NO_NEW_PRIVS`, capability dropping, Landlock (`go-landlock`), seccomp deny-list (`go-seccomp-bpf`), rlimits; no-ops on other platforms. |
 | `internal/logging` | `log/slog` setup (text or JSON) with fan-out to a syslog writer (RFC 5424 or RFC 3164; UDP, TCP, TLS, Unix; RFC 6587 octet counting on streams). |
@@ -441,7 +446,7 @@ LB / proxy ─┤                   ├──▶ PostgreSQL (primary + replicas)
     affinity for `/api/v1/auth/` (or run SSO through one node). A restart
     during a login invalidates in-flight logins.
   * The login rate limiter is in memory per process, so the effective limit
-    is 10 attempts per window per node.
+    is `auth.login_max_attempts` (default 10) per window per node.
   * Each node runs its own hourly session purge (harmless) and its own
     script runner.
 * `max_open_conns` (default 20) is the pool size per node.

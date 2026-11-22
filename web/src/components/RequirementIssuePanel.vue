@@ -44,6 +44,18 @@ async function load() {
 }
 watch(() => props.requirementId, load, { immediate: true })
 
+/** the issue is still right although the requirement changed (correlations) */
+async function confirmIssue() {
+  if (!link.value) return
+  try {
+    await api.post(`/item-links/${link.value.id}/issue/confirm`)
+    await load()
+    emit('changed')
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+
 function fail(e: unknown) {
   notify.fail(e, t('reqIssue.failed'))
 }
@@ -123,6 +135,11 @@ async function sync() {
         <Button :label="t('reqIssue.sync')" icon="pi pi-refresh" size="small" text :loading="busy === 'sync'" :disabled="!!busy" @click="sync" />
       </template>
     </div>
+    <Message v-if="link?.issue?.outdated_since" severity="warn" :closable="false" class="issue-outdated">
+      <span>{{ t('correlations.issueOutdated', { time: formatDateTime(link.issue.outdated_since) }) }}</span>
+      <span v-if="link.issue.outdated_reason" class="small muted"> {{ link.issue.outdated_reason }}</span>
+      <Button v-if="canWrite" :label="t('correlations.issueStillRight')" size="small" text @click="confirmIssue" />
+    </Message>
     <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
 
     <Dialog v-model:visible="dialog" modal :header="t('reqIssue.create', { tracker })" style="width: min(760px, 95vw)">

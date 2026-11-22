@@ -7,8 +7,16 @@ import ObligationKeywordLine from './ObligationKeywordLine.vue'
 import MentionText from './MentionText.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
+import ApplicabilityPanel from '@/components/ApplicabilityPanel.vue'
+import CodePanel from '@/components/CodePanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
+import VerificationPanel from './VerificationPanel.vue'
+import RequirementWaivers from './RequirementWaivers.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
+import ImpactPanel from './ImpactPanel.vue'
+import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
+import StaleBadge from './StaleBadge.vue'
+import { contentChanges, needsImpactConfirm, type ChangeImpact } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
 import AutoComplete from 'primevue/autocomplete'
@@ -48,7 +56,7 @@ import { displayLevel } from '@/lib/obligationKeywords'
 import { formatDateTime } from '@/lib/format'
 import { useI18n } from 'vue-i18n'
 import { uid } from '@/lib/a11y'
-import { enumOptions, obligationHint, obligationKeyword } from '@/i18n/labels'
+import { enumLabel, enumOptions, obligationHint, obligationKeyword } from '@/i18n/labels'
 import { issueMessage } from '@/i18n/analysis'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Analysis, Category, EvaluationCriterion, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
@@ -61,6 +69,9 @@ import ConflictDialog from './ConflictDialog.vue'
 import SuggestInput from './SuggestInput.vue'
 import { autocompleteEnabled, fetchSuggestions, rememberValues, savedEntries } from '@/lib/suggest'
 import CatalogOrigin from './CatalogOrigin.vue'
+import CustomFieldsEditor from './CustomFieldsEditor.vue'
+import TemplatePicker from './TemplatePicker.vue'
+import { applyTemplate, defaultValues, type CustomValues, type TemplateContent } from '@/lib/customFields'
 import { fieldConflicts, REQUIREMENT_FIELDS, staleOf, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 
@@ -94,6 +105,8 @@ async function openObligationHelp() {
   el?.querySelector<HTMLElement>('summary')?.focus()
 }
 const linkCount = ref<number | null>(null)
+/** commits and merge / pull requests of the Code tab */
+const codeCount = ref<number | null>(null)
 /** bumped when an issue link changed (reloads the links panel) */
 const linksVersion = ref(0)
 watch(
@@ -127,7 +140,12 @@ function blank() {
     category_ids: [] as string[],
     folder_id: (props.folderId ?? null) as string | null,
     criteria: [] as CriterionRow[],
+    custom_fields: defaultValues(useProjectStore().customFieldsFor('requirement')) as CustomValues,
   }
+}
+/** "New requirement" with a template: fill in what it defines */
+function onTemplate(c: TemplateContent) {
+  form.value = applyTemplate(form.value, c, useProjectStore().customFieldsFor('requirement'))
 }
 
 const form = ref(blank())
@@ -259,6 +277,7 @@ async function load() {
       tags: [...(r.tags ?? [])],
       category_ids: [...(r.category_ids ?? [])],
       folder_id: r.folder_id,
+      custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues,
       criteria: [...(r.criteria ?? [])]
         .sort((a, b) => a.position - b.position)
         .map((c) => ({ id: c.id, description: c.description, method: c.method, threshold: c.threshold })),
@@ -269,6 +288,23 @@ async function load() {
     error.value = errorMessage(e)
   } finally {
     loading.value = false
+  }
+}
+
+/** evidence changed in the verification tab: the status may follow it */
+async function onVerificationChanged() {
+  if (!props.itemId) return
+  try {
+    const r = await api.get<Requirement>(`/requirements/${props.itemId}`)
+    const clean = JSON.stringify(bodyOf(form.value)) === JSON.stringify(loaded.value)
+    item.value = r
+    if (clean) {
+      form.value.status = r.status
+      loaded.value = clone(bodyOf(form.value))
+    }
+    emit('saved', r)
+  } catch {
+    /* the panel shows its own state */
   }
 }
 
@@ -468,7 +504,28 @@ async function mergeMine() {
   }
 }
 
+// ---------- change impact: confirm before saving a change of substance ----------
+const impactOpen = ref(false)
+const impactPreview = ref<ChangeImpact | null>(null)
+const impactFields = ref<string[]>([])
 async function save() {
+  if (isNew.value || !loaded.value || !props.itemId) return doSave()
+  const changed = contentChanges('requirement', loaded.value, bodyOf(form.value) as Record<string, unknown>)
+  if (!changed.length) return doSave()
+  try {
+    impactPreview.value = await api.get<ChangeImpact>(`/requirements/${props.itemId}/impact`)
+  } catch {
+    return doSave() // the preview is a help; saving does not depend on it
+  }
+  if (!needsImpactConfirm(changed, impactPreview.value)) return doSave()
+  impactFields.value = changed
+  impactOpen.value = true
+}
+async function confirmImpact() {
+  await doSave()
+  impactOpen.value = false
+}
+async function doSave() {
   saving.value = true
   error.value = ''
   const body = bodyOf(form.value)
@@ -572,15 +629,23 @@ function criterionLabel(id: string | null) {
     <TabList>
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="relations"><i class="pi pi-sitemap" aria-hidden="true" /> {{ t('common.relations') }} <span class="count">{{ relationCount }}</span></Tab>
+      <Tab value="verification"><i class="pi pi-verified" aria-hidden="true" /> {{ t('verification.tab') }}</Tab>
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
+      <Tab value="code"><i class="pi pi-code" aria-hidden="true" /> {{ t('code.tab') }} <span v-if="codeCount" class="count">{{ codeCount }}</span></Tab>
       <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
+      <Tab value="impact"><i class="pi pi-share-alt" aria-hidden="true" /> {{ t('correlations.tab') }}</Tab>
     </TabList>
   </Tabs>
+  <div v-if="item && tab === 'code'" v-bind="panel('code')"><CodePanel item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (codeCount = n)" /></div>
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
+  <div v-if="item && tab === 'impact'" v-bind="panel('impact')"><ImpactPanel kind="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @changed="load" /></div>
   <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
+  <div v-if="item && tab === 'verification'" v-bind="panel('verification')">
+    <VerificationPanel :project-id="projectId" :requirement-id="item.id" :criteria="item.criteria ?? []" :can-write="canWrite" :stamp="`${item.version}/${links.length}`" @changed="onVerificationChanged" />
+  </div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')">
     <RequirementIssuePanel :requirement-id="item.id" :can-write="canWrite" @changed="linksVersion++" />
     <ItemLinksPanel :key="linksVersion" item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" />
@@ -602,6 +667,21 @@ function criterionLabel(id: string | null) {
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
       <Tag v-if="item" :value="t('common.versionShort', { version: item.version })" severity="secondary" />
       <StatusTag v-if="item?.coverage" :value="item.coverage" kind="coverage" />
+      <button v-if="item?.blocking_defects" type="button" class="blocked-badge link-button" @click="tab = 'impact'">
+        <i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blockedCount', { n: item.blocking_defects }, item.blocking_defects) }}
+      </button>
+      <button v-else-if="item?.defect_warnings" type="button" class="warned-badge link-button" @click="tab = 'impact'">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true" />{{ t('correlations.warnedCount', { n: item.defect_warnings }, item.defect_warnings) }}
+      </button>
+      <button v-if="item?.stale_results" type="button" class="stale-badge link-button" @click="tab = 'impact'">
+        <i class="pi pi-clock" aria-hidden="true" />{{ t('correlations.staleCount', { n: item.stale_results }, item.stale_results) }}
+      </button>
+      <button v-if="item?.suspect_relations" type="button" class="suspect link-button" @click="tab = 'impact'">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true" />{{ t('correlations.suspectRelations', { n: item.suspect_relations }, item.suspect_relations) }}
+      </button>
+      <button v-if="item?.verification" type="button" class="verification-badge" :aria-label="t('verification.openTab', { state: enumLabel('verification', item.verification) })" @click="tab = 'verification'">
+        <StatusTag :value="item.verification" kind="verification" />
+      </button>
       <button v-if="item && openDefects" type="button" class="open-defects-badge" @click="tab = 'defects'">
         <i class="pi pi-exclamation-circle" aria-hidden="true" />{{ t('defectsView.openCount', { n: openDefects }, openDefects) }}
       </button>
@@ -609,6 +689,7 @@ function criterionLabel(id: string | null) {
     </div>
     <CatalogOrigin v-if="item?.catalog_ref" kind="requirement" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+    <TemplatePicker v-if="isNew && canWrite" kind="requirement" :project-id="projectId" @apply="onTemplate" />
     <ReviewBar v-if="item" kind="requirement" :item="item" @changed="onReviewed" />
     <TraceRuleViolations v-if="item" kind="requirement" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${relationCount}/${linkCount}`" />
 
@@ -750,6 +831,7 @@ function criterionLabel(id: string | null) {
         <TagSuggestions v-model="form.tags" :project-id="projectId" :title="form.title" :description="form.description" :disabled="!canWrite" />
       </div>
     </div>
+    <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('requirement')" :disabled="!canWrite" :project-id="projectId" />
 
     <div>
       <div class="section-title">
@@ -790,12 +872,15 @@ function criterionLabel(id: string | null) {
         <span v-if="l.criterion_id" class="small muted">{{ criterionLabel(l.criterion_id) }}</span>
         <SuspectLink :link="l" :can-confirm="canLink" @confirmed="onSuspectConfirmed" />
         <StatusTag :value="testById.get(l.test_case_id)?.last_result" kind="result" empty="" />
+        <StaleBadge :stale="testById.get(l.test_case_id)?.stale" :reason="testById.get(l.test_case_id)?.stale_reason" />
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.test_case_key || testById.get(l.test_case_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>
       <ConfigurationCoverage v-if="links.length" :requirement-id="item.id" :project-id="projectId" :refresh="links.length" />
     </div>
 
     <RequirementRisks v-if="item" :requirement-id="item.id" :project-id="projectId" />
+    <RequirementWaivers v-if="item" :requirement-id="item.id" :project-id="projectId" />
+    <ApplicabilityPanel v-if="item" item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" :refresh="links.length" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
@@ -833,5 +918,6 @@ function criterionLabel(id: string | null) {
     />
   </form>
   </template>
+  <ImpactConfirmDialog v-model:visible="impactOpen" :impact="impactPreview" :project-id="projectId" :changed="impactFields" :saving="saving" @confirm="confirmImpact" />
   <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

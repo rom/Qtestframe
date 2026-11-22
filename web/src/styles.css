@@ -315,6 +315,9 @@ table.matrix td.cell.linked { background: color-mix(in srgb, var(--mark, var(--p
 /* the mark's colour is the linked test's result; suspect links get a dashed amber frame */
 table.matrix td.cell.linked .pi { color: color-mix(in srgb, var(--mark, var(--qtf-text)) 55%, var(--qtf-text)); }
 table.matrix td.cell.suspect { box-shadow: inset 0 0 0 2px #d97706; }
+/* criterion rows (verification): which test verifies which criterion, through a step or as a whole */
+table.matrix tr.crit-row th { padding: 2px 8px 2px 24px; }
+table.matrix tr.crit-row .crit-label { display: inline-block; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
 .trace-legends { display: grid; gap: 4px; margin-left: auto; justify-items: end; }
 .trace-legends .trace-legend { margin-left: 0; }
 .mark-swatch { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 3px; background: color-mix(in srgb, var(--mark, var(--p-primary-color)) 30%, var(--qtf-card)); border: 1px solid var(--qtf-border); }
@@ -460,7 +463,18 @@ kbd { font-family: var(--qtf-mono); font-size: 11px; padding: 1px 6px; border-ra
 .plain-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .search-hit { display: block; padding: 10px 0; border-top: 1px solid var(--qtf-border); color: inherit; text-decoration: none; }
 .search-hit:hover { text-decoration: none; background: var(--qtf-hover); }
-.project-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); }
+.project-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); }
+/* Project card: name and badges get the full width (they wrap instead of
+   being overlapped by the action buttons, which sit in the footer). */
+.project-card { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.project-card .pc-head { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.project-card .pc-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
+.project-card .pc-name { font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.project-card .pc-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.project-card .pc-desc { line-height: 1.4; min-height: 2.8em; max-height: 2.8em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.project-card .pc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; margin-top: auto; border-top: 1px solid var(--p-content-border-color, var(--border)); padding-top: 6px; }
+.project-card .pc-updated { min-width: 0; }
+.project-card .pc-actions { display: flex; flex-wrap: wrap; gap: 0; margin-left: auto; }
 .project-link { font-weight: 650; color: var(--qtf-text); display: block; min-width: 0; }
 .project-link:hover { color: var(--p-primary-color); }
 html, body { overflow-x: clip; }
@@ -1153,3 +1167,24 @@ button.readiness-cell:focus-visible { outline: 2px solid var(--p-primary-color);
 :root[data-theme="high_contrast_light"] .card, :root[data-theme="high_contrast_light"] .p-datatable, :root[data-theme="high_contrast_light"] .p-dialog { border: 1px solid #000000; }
 :root[data-theme="high_contrast_light"] a { text-decoration: underline; }
 :root[data-theme="high_contrast_light"] :focus-visible { outline-width: 3px !important; }
+
+/* change and defect correlations: a requirement blocked by / warned about by open defects (text and icon, not only colour) */
+.blocked-badge,
+.warned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+.blocked-badge {
+  color: var(--p-red-700, #b91c1c);
+}
+.warned-badge {
+  color: var(--p-amber-700, #b45309);
+}
+.app-dark .blocked-badge {
+  color: var(--p-red-300, #fca5a5);
+}
+.app-dark .warned-badge {
+  color: var(--p-amber-300, #fcd34d);
+}

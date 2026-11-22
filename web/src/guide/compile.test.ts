@@ -43,6 +43,20 @@ describe('compileGuide', () => {
   })
 })
 
+describe('compileGuide with two guides', () => {
+  const admin = [{ page: 'index', markdown: '# Admin\n\nSee [members](../../user-guide/en/administration.md#members), [security](security.md) and [x](../../admin-guide/en/index.md).\n' }]
+  it('links into the other guide with its URL, and keeps own links as anchors', () => {
+    const g = compileGuide(admin, { lang: 'en', images: [], book: 'admin', otherGuideUrl: (book, page, hash) => `https://example.org/${book}/${page}.md#${hash}` })
+    expect(g.markdown).toContain('[members](https://example.org/user/administration.md#members)')
+    expect(g.markdown).toContain('[security](security.md)')
+    expect(g.markdown).toContain('[x](#admin)')
+  })
+  it('leaves links into the other guide as written without a URL', () => {
+    const g = compileGuide(admin, { lang: 'en', images: [], book: 'admin' })
+    expect(g.markdown).toContain('[members](../../user-guide/en/administration.md#members)')
+  })
+})
+
 describe('printableHtml', () => {
   it('renders the joined document with anchors that match its links', () => {
     const g = compileGuide(pages, { lang: 'en', images: ['en-layout.png', 'en-run.png'] })

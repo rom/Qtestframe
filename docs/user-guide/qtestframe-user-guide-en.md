@@ -22,7 +22,9 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Tests](#tests) | Manual steps, automated scripts, shared steps, categories, execution history, comments, history and attachments |
 | [Catalogue](#catalogue) | Standard requirements and tests to add to a project: browsing, searching, the preview and adding with tests and trace links |
 | [Test runs and execution](#test-runs-and-execution) | Runs, the execution runner and its keyboard shortcuts, defects, CI import with API tokens, attachments |
+| [Waivers, residual risk and the SoA](#waivers-residual-risk-and-the-statement-of-applicability) | Waivers and deviations with signed approvals, residual risk and its acceptance, the Statement of Applicability (ISO/IEC 27001 Annex A) |
 | [Traceability and coverage](#traceability-and-coverage) | The traceability matrix, how coverage is calculated, the dashboard |
+| [Variants and code](#variants-and-code) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
 | [Baselines](#baselines) | Freezing a release and comparing versions |
 | [Search and filters](#search-and-filters) | The query language with many examples |
 | [Reports and export](#reports-and-export) | Standard reports, the custom report builder, export formats and the document archive |
@@ -566,7 +568,7 @@ Under **Evaluation criteria** you state how fulfilment is judged. Each criterion
 | **Demonstration** | showing the function to a reviewer |
 | **Review** | a formal review |
 
-Select **Add criterion** to add one; use the arrows to reorder and the bin to remove one. Saving replaces the list. When you link a test, you can choose the criterion it verifies in **Criterion for new links**.
+Select **Add criterion** to add one; use the arrows to reorder and the bin to remove one. Saving replaces the list. When you link a test, you can choose the criterion it verifies in **Criterion for new links**. The **Verification** tab shows the evidence of every criterion, maps tests (and test steps) to criteria and records inspections, analyses, demonstrations and reviews; a requirement is verified only when every criterion has passing evidence (see [Verification](#verification)).
 
 ## Linked tests
 
@@ -778,7 +780,7 @@ Uploading and removing attachments needs the **Manager** role (the same as editi
 
 ## Import requirements
 
-Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import** in the header of the requirements page reads such a file and creates the requirements in one go. Importing needs the permission to edit requirements (**Manager** by default).
+Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import → From a file** in the header of the requirements page reads such a file and creates the requirements in one go. To update requirements from a DOORS or Polarion document again and again, or to edit requirements in Excel and bring the changes back, see [Exchanging data with other tools](#exchanging-data-with-other-tools). Importing needs the permission to edit requirements (**Manager** by default).
 
 1. Drag the file onto the dialog or choose it. Supported are **CSV** (comma, semicolon or tab separated; UTF-8 with or without byte order mark, UTF-16 and Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` and the zipped `.reqifz`) and **Word** (`.docx`), up to 20 MB and 5,000 requirements per file.
 2. Check the **preview**: the detected format, how each column is read and the first 50 requirements with notes (a derived title, an unknown value, a duplicate). Nothing is stored yet.
@@ -820,6 +822,35 @@ Values of type, priority, status and obligation may be written in English or Swe
 - **Skip duplicates:** a row is skipped when its ID is already recorded in a requirement of the project, or when a requirement with the same title (ignoring case) exists; rows repeated within the file count too.
 
 The ID of an imported requirement is kept in its **Source** field as `ID: REQ-12` (after the source of the file, if there is one), which is how duplicates are found the next time. The import is all or nothing: if one requirement cannot be stored, none is. Every import is recorded in the audit log.
+
+## Custom fields
+
+A project can have fields of its own for requirements, tests, defects, risks and runs, for example *Supplier*, *Mass (kg)* or *Contract clause*. They are defined under **Categories & settings → Custom fields** *(Manager and Admin, or any role with `project.update`)*:
+
+- **New field**: a **Label**, the **Key** (derived from the label; used in queries as `cf.<key>`, in exports and imports, and it cannot be changed later) and the **Type**: **Text**, **Long text**, **Number** (with an optional **Unit**), **Date**, **Single select**, **Multi select** (one option per line), **Checkbox**, **User** (a member of the organisation) or **URL**.
+- **Required**, a **Default value** for new items, a **Help text** shown under the field, the order (the arrows) and **Show in lists** (the field is a column of the list by default).
+- **Apply field set** copies the organisation's [field set](#field-sets-and-templates) of a project type into the project; fields the project already has are skipped. A new project gets the field set of its type automatically.
+- **Delete** asks for confirmation and says how many items have a value. The values are not lost: they move to the field archive, listed at the bottom of the page.
+
+The fields appear in the editor of each item under **Custom fields**. The server checks every value against its field (a number, a date, one of the options, an existing member, an http(s) link); a required field must be filled in when an item is created and cannot be emptied later. Items created before a field became required can still be saved without it.
+
+Custom fields are columns of the lists (**Columns**) and of the [spreadsheet view](#spreadsheet-view), where they can be edited, pasted and filled down. They are part of the CSV and Excel exports (one column per field, the unit in the header), the ReqIF export (as attributes of the requirement type), custom reports (as columns), generated documents (the **Custom fields** option), baselines and their comparison, the history (one change per field), project archives and backups. A CSV, Excel or ReqIF import fills a custom field from a column named like its label, *Label (unit)* or its key; values that do not fit are left out with a warning. In the [query language](#fields-2), `cf.supplier:"Acme"` and `cf.mass>2` filter by custom fields and `sort:-cf.mass` sorts by them.
+
+## Templates
+
+**New requirement** and **New test** offer a **Template** that fills in the new item: title, a description skeleton, priority, status, obligation and type, acceptance criteria or steps, tags and custom field values. Fields the template does not set are left as they are, and everything can be changed before you save.
+
+The picker lists the templates of the project, those of the organisation for the project's type and the built-in ones, in English or Swedish after your language:
+
+| Project type | Built-in templates |
+|---|---|
+| General | Requirement with acceptance criteria; Manual test |
+| Software | Functional requirement (user story); Non-functional requirement (measurable); API test (request/response) |
+| Hardware | Design requirement with tolerance; Environmental test (IEC 60068 style); EMC test |
+| System | Interface requirement; Integration test |
+| Business | Business rule; Acceptance test |
+
+Templates are managed under **Categories & settings → Templates** *(Manager and Admin)*: **New template**, edit or delete the project's own, copy any template (also a built-in one) into a new one, and the star makes a template the project's **default**, which is chosen as soon as a new item is opened.
 
 ## Copy a requirement
 
@@ -1469,8 +1500,12 @@ The **Exit criteria** tab lists the conditions the release must meet. Select **A
 | No open defects | no open defect of at least the chosen severity is linked to a scope requirement or its tests | minimum severity |
 | Risks mitigated | every risk of at least the chosen level that a scope requirement addresses is mitigated, accepted or closed | minimum risk level |
 | Traceability rules | no requirement in scope and no test linked to one breaks an enabled [traceability rule](#traceability-rules) of the chosen severity; the status tab lists the items with the rules they break | errors only, or errors and warnings |
+| No blocking defects | no requirement in scope is [blocked by an open defect](#blocking-defects) under the project's severity rules; a stale pass does not count for **Passed** and **Mandatory passed** | — |
+| Residual risk | no risk linked to the scope that is not closed has a [residual level](#residual-risk) above the threshold, unless its acceptance is signed | the project's risk acceptance threshold, or a level |
 
 A release without exit criteria is always a go.
+
+An approved [waiver](#waivers-and-deviations) for the release or for the whole project makes the criteria accept its requirements: they are listed under each criterion as *waived* instead of blocking it. The **Status** tab also lists the waivers in force and the risks of the scope above the risk acceptance threshold.
 
 ## Go / no-go
 
@@ -1559,6 +1594,91 @@ The exit criterion **Risks mitigated** with the level *High* blocks a release wh
 
 The **Risk report** under **Reports** summarises the register for a review meeting or an audit: key figures, risks by level and status, the heat map, the top risks, the register, the traceability from each risk to its requirements, their tests and latest results, and the open risks whose mitigation is not tested yet. See [Standard reports](#standard-reports). The [dashboard](#the-dashboard) shows the open risks per level and a small heat map.
 
+# Waivers, residual risk and the Statement of Applicability
+
+Not every requirement is met in time, and not every risk can be removed. This page explains three ways to record such decisions formally, so that they are visible, approved and time-limited:
+
+- a **waiver** accepts that requirements are not met for now; a **deviation** accepts that they are met by a different solution;
+- the **residual risk** of a risk is what is left after its mitigation, compared with a **risk acceptance threshold** and accepted with a sign-off;
+- the **Statement of Applicability** (SoA) records, for every control of a standard such as ISO/IEC 27001, whether it applies, why, who owns it and how far it is implemented.
+
+| Action | Role needed |
+|---|---|
+| View waivers, residual risks and the Statement of Applicability | Viewer |
+| Create, edit, request and withdraw waivers; enter residual risk; edit the SoA | Manager (`requirement.write`) |
+| Approve, reject and revoke waivers; accept a residual risk | Manager (`waiver.approve`) |
+| Change the project's risk acceptance threshold | Manager (`project.update`) |
+
+## Waivers and deviations
+
+**Waivers** in the project sidebar lists every waiver and deviation with its type, status, what it applies to (a release or the whole project), its requirements and its expiry date. Filter by text, status, type and release, or tick **In force only**. The figures above the list show how many waivers are in force, how many await approval and how many expire within 30 days.
+
+To request one, select **New waiver** (or **Request a waiver** in a requirement or on the status tab of a release) and fill in:
+
+- **Type**: *Waiver* (the requirements are failed, untested or not fulfilled, and that is accepted for now) or *Deviation* (they are met by a different solution).
+- **Applies to**: one release, or the whole project.
+- **Requirements**: the requirements it accepts.
+- **Justification**, **Compensating measures** (for a deviation: the solution chosen instead) and **Conditions**.
+- **Linked risk**: an existing risk, or **Create a new risk** with a likelihood and impact; the new risk is linked to the same requirements.
+- **Expires**: the last day the waiver counts. Leave it empty for no expiry date.
+- **Approvers**: the e-mail addresses of the people who must all approve it. Leave it empty to let one person with the permission `waiver.approve` decide.
+
+A new waiver is a **draft**. **Request approval** makes it **requested** and notifies the approvers. Until it is decided you can still edit it or **Withdraw** it back to a draft.
+
+### Approve or reject
+
+Open a requested waiver and select **Approve or reject**. Choose the decision, add a comment (required for a rejection) and confirm with your password: this is an **electronic signature** over the exact content of the waiver, like the [sign-off of a baseline](#baselines). If the waiver changes afterwards, earlier signatures no longer count and are shown as *not valid*. You cannot decide a waiver you requested yourself, and API tokens cannot sign.
+
+The waiver is **approved** when every designated approver has approved it (or, without approvers, after one approval) and **rejected** at the first rejection. The requester and the approvers are notified.
+
+### What an approved waiver does
+
+While a waiver is approved and its expiry date has not passed, it is **in force**:
+
+- **Release readiness**: the [exit criteria](#exit-criteria) treat its requirements as accepted. *Coverage* and *Passed* count them as met, *MUST and SHALL requirements passed* does not list them, and a failed test of only waived requirements does not count for *No failed tests*. They are listed separately under each criterion as *waived*, and the **Status** tab of the release lists the waivers in force.
+- **Analytics and compliance**: requirements under a project-wide waiver are shown separately (the finding *Requirements accepted by a waiver*, and *Waived* in the compliance analysis) and are not counted as gaps or as fulfilled.
+- **Reports and documents**: the compliance report and the release readiness report have a section on waivers, and the [requirements specification](#documents-1) marks waived requirements (**Waived by**) and lists the waivers in an appendix.
+
+A requirement shows its waivers below its risks in the requirement editor.
+
+### Expiry and revocation
+
+The day after its expiry date, an approved waiver becomes **expired**: its requirements are no longer accepted, and the requester and approvers are notified. An approver can also **Revoke** an approved waiver at any time, with a reason. An approved waiver cannot be edited or deleted; revoke it and request a new one instead. Every step is recorded in the audit log.
+
+## Residual risk
+
+The [risk register](#the-risk-register) scores each risk by likelihood × impact. Under **Residual risk after mitigation** in the risk dialog you enter the likelihood and impact you expect once the mitigation works:
+
+- The residual score takes effect when the mitigation is **verified**: every requirement linked to the risk has passed all its tests. Until then the inherent score still applies.
+- Tick **Enter the residual score by hand** and give a **justification** to make it take effect at once, for example when the mitigation is organisational.
+- **Review date** and **Review owner** plan the next review; a risk whose review date has passed is marked *Review due*.
+
+The **Residual** column of the register shows the score and level in effect, with an icon for a verified or hand-entered score. Switch the heat map between **Before mitigation** and **After mitigation**; selecting a cell filters the register on that view.
+
+### Risk acceptance threshold and accepting a risk
+
+The **Risk acceptance threshold** below the heat map is the highest residual level the project accepts without a sign-off (by default *Medium*). Risks whose residual level is above it are flagged with a warning icon.
+
+To accept such a risk, open it and select **Accept risk** *(waiver.approve)*: confirm with your password to sign. The risk becomes *Accepted*. The signature covers the residual assessment as it is: when the assessment changes, the acceptance is shown as *out of date* and no longer counts. **Withdraw acceptance** removes it.
+
+A release flags the risks of its scope whose residual level is above the threshold on its **Status** tab. Add the exit criterion **Residual risk** to make them block the release unless they are accepted; the criterion can use the project's threshold or a level of its own. The [risk report](#reports-and-export) shows the heat map before and after mitigation and lists the risks above the threshold.
+
+## Statement of Applicability
+
+**SoA** in the project sidebar lists every control of a reference source. Choose the source at the top: **ISO/IEC 27001:2022 Annex A** comes with its 93 controls (A.5.1–A.5.37, A.6.1–A.6.8, A.7.1–A.7.14 and A.8.1–A.8.34, with their short names). For any other law or standard of the [catalogue's sources](#catalogue), the controls are the clauses that the catalogue and your requirements cite.
+
+For each control the table shows:
+
+- **Applicable**: *Applicable*, *Excluded* or *Not decided*, with the **Justification** for including or excluding it (required for an exclusion) and the **Owner**;
+- **Implementation**, derived from the requirements that cite the control: *Implemented* (all of them passed their tests), *Partially implemented* (some passed, or are accepted by a waiver), *Planned* (requirements exist, none passed yet) or *Not implemented* (no requirement cites it);
+- the **Requirements** and the **Evidence** (the tests that verify them).
+
+A requirement cites a control when it was added from a catalogue requirement whose references name the control (for example `ISO/IEC 27001:2022 A.8.5`), or when its own **Source** field names it.
+
+The table works like the [spreadsheet view](#requirements): type in the **Applicable**, **Justification** and **Owner** cells, paste a block from a spreadsheet or fill down with <kbd>Ctrl</kbd>+<kbd>D</kbd>. Each change is saved at once. Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> on a control (or double-click it in the first column) to see its requirements and evidence. Filter by text, applicability, implementation and group; the figures above the table count the controls.
+
+**Download** creates the statement as PDF, Word, Excel or Markdown; **Save to archive** stores it in the [document archive](#documents-1). It is also the standard report **Statement of Applicability** on the **Reports** page.
+
 # Defects
 
 A **defect** (bug) is a problem found while testing. Every defect has a key such as `SHOP-BUG-3`, a title, a description, a status, a severity, a priority and an assignee, and it is linked to the requirements, tests and executions it concerns. Defects are under **Defects** in the project sidebar.
@@ -1609,6 +1729,8 @@ Every defect is checked before any is changed, so one wrong value changes nothin
 | **Trivial** | Cosmetic, e.g. a typo |
 
 Severity says how bad the problem is; **priority** (critical, high, medium, low) says how soon it should be fixed.
+
+**Found in** records the phase in which the defect was found: *Requirements*, *Design*, *Development*, *Test*, *Acceptance* or *Production* (empty when unknown). Defects found in production count as escaped in the [quality metrics](#quality-metrics); filter with `found_in:production`.
 
 ## Linking defects to items
 
@@ -1696,6 +1818,14 @@ Sync reads only; it never changes the issue. Changes you make to a defect in Qte
 If the tracker cannot be reached or refuses a request, for example because the token expired or lacks a permission, a red notice at the top of the list shows the tracker's own answer. Check the settings with **Check connection**. The notice explains the common answers: **401** the token was rejected (wrong, expired or revoked), **403** the token lacks a scope or role, **404** the project, repository or issue does not exist or the token cannot see it, **422** the tracker refused the content (for example an unknown label or milestone). When the tracker limits the rate, Qtestframe waits and tries again if the tracker asks for a short wait, and otherwise says how long to wait.
 
 Qtestframe reaches the tracker from the server, through the server's outbound proxy (`HTTPS_PROXY`, `NO_PROXY`) if one is set, and trusts the certificates the server's system trusts. For a self-managed GitLab or Jira with a certificate from your own CA, install that CA on the server.
+
+## Regressions
+
+When a test that verified the fix of a defect fails again, the defect has come back. A test verified the fix when the defect is **Resolved** or **Closed**, it is linked to the test or to one of its executions, and the test passed after the defect was resolved. When such a test fails (by hand, in bulk, from a script or from imported results), Qtestframe by default **reopens** the defect and links it to the failing execution. **Categories & settings → Change impact → Regressions** can instead **create a linked regression defect** ("Regression: …", with the same severity, priority and assignee) or do nothing.
+
+The defect's assignee (or, without one, its author) gets a notification, and the webhooks get the event `defect.regression`. Each failing execution counts once per defect.
+
+The defect dialog shows the **Regression history** of a defect, and the **Impact** tab of a test that of the test: when the test failed again, in which run, and whether the defect was reopened or a regression defect was created.
 
 ## Open defects and releases
 
@@ -1886,6 +2016,85 @@ The presets:
 
 The rules are also evaluated on a release's scope by the exit criterion [Traceability rules](#exit-criteria), and the **Traceability** report lists every enabled rule with its result and the items that break it.
 
+### Built-in consistency checks
+
+Besides the rules you write, Qtestframe has **built-in checks** with a fixed condition. They find items whose state contradicts their relations, links or release:
+
+| Check | An item breaks it when |
+|---|---|
+| Conflicting requirements in a release | two requirements related by *conflicts with* are both approved (or implemented or verified) and in the same release |
+| Approved requirement with an unmet dependency | an approved requirement *depends on* one that is rejected, obsolete or deleted (still in the trash) |
+| Active requirement with an obsolete parent | a requirement that *refines* or is *derived from* an obsolete requirement is not rejected or obsolete itself |
+| Test verifies an inactive requirement | a test verifies a rejected or obsolete requirement |
+| Broken test prerequisite | a prerequisite of a test is deleted, its latest result failed, or prerequisites form a cycle |
+| MUST requirement in a release without passing evidence | a MUST or SHALL requirement in a planned or active release has no linked test that is not suspect and passed its latest execution |
+| High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or none of its requirements is verified |
+| Regulatory requirement rejected without justification | a requirement added from a regulation of the [catalogue](#catalogue) (a law or directive) is rejected, and it has no comment and no rationale of its own |
+| Suspected duplicate requirements | two active requirements have nearly identical title and description (similarity of at least 0.9 by default) and no *duplicates* relation |
+
+A project gets them with **Add built-in checks** (on the rules or in **Analytics**): they are added as rules with the severity *warning*, so they show up in the release exit criterion [Traceability rules](#exit-criteria) only when it counts warnings, or after you raise a check to *error*. A built-in check is marked **Built-in**; you can rename it, change its severity, turn it off, narrow it with a query and, for the duplicate check, set the **Similarity threshold** (0.5 to 1) or, for the risk check, the **Least risk level**.
+
+Each violation names the other items involved (the conflicting requirement and the release, the obsolete parent, the failing prerequisite …), each a link, and offers a fix where one is obvious: **Remove relation**, **Unlink**, **Remove prerequisite**, **Remove from** the release, **Set obsolete**, **Record a justification**, **Link a mitigation**, and for a suspected duplicate **Mark as duplicate** (adds the *duplicates* relation) or **Not a problem** (the pair is not reported again). **Not a problem** also acknowledges a dependency on a deleted item.
+
+## Change impact
+
+A change of a requirement rarely stays with that requirement. When the **substance** of a requirement changes (its title, description, obligation or criteria), Qtestframe marks what may no longer be right:
+
+- the tests that verify it: their links become [suspect](#the-traceability-matrix);
+- the requirements related to it: by default those that **refine**, are **derived from** or **depend on** it. Their relation becomes suspect, and so do the links of their tests;
+- its issue in the tracker: it is marked **out of date** until you update the issue from the requirement (**Update issue**) or select **The issue is still right**;
+- the generated documents in the archive that contain it: they are shown as **Outdated** in **Documents**, with the items that changed since;
+- the latest results of its tests: they become [stale](#stale-results).
+
+A change of a test's title, description, preconditions, steps, expected result, script or execution type makes its links suspect and its latest result stale.
+
+### Before you save
+
+When you save a change of substance and something would be marked, a dialog lists everything that becomes suspect, out of date, outdated or stale. Select **Save and mark** to save, or **Cancel** to go back to the editor. Items that are already marked are shown as such and are not counted again.
+
+### The Impact tab
+
+The **Impact** tab of a requirement or test shows the same list at any time, under **If this requirement changes** (or **If this test changes**). For a requirement it also shows:
+
+- **Blocking defects**: the open defects that block it or warn about it (see [Blocking defects](#blocking-defects));
+- **Suspect now**: its suspect relations, with **Confirm** for each (and **Confirm all**), and the linked tests whose result is stale.
+
+The badges next to the requirement's key (**Blocked by 1 defect**, **1 stale result**, **1 suspect relation**) open the tab. For a test, the tab also shows its **Regression history** (see [Defects](#regressions)).
+
+### The impact of a baseline
+
+In **Baselines**, compare a baseline with the current state and select **Impact**. The dialog lists every requirement and test whose substance changed since the baseline, the largest impact first, with the totals of the items affected. Open an item to see what its change makes suspect, out of date, outdated or stale.
+
+### Along which relations
+
+**Categories & settings → Change impact** decides, per relation type, which requirement becomes suspect when the one at the other end changes:
+
+| Setting | Meaning |
+|---|---|
+| **Incoming (the requirement pointing at it)** | A *refines* B: when B changes, A becomes suspect (the default for refines, derived from and depends on) |
+| **Outgoing (the requirement it points at)** | A *provides* B: when A changes, B becomes suspect |
+| **Both directions** | either end changing makes the other suspect |
+| **Off** | changes do not travel along this type (the default for the other types) |
+
+**Mark the tracker issues of a changed requirement out of date** can be turned off.
+
+## Stale results
+
+A test result goes **stale** when
+
+- it is older than the project allows (by default 90 days; **Results go stale after** can be changed or turned off), or
+- the test, or a requirement it verifies, changed in substance after the result was recorded (**Results go stale when the test or a requirement it verifies changes**).
+
+A stale result does not count as passing evidence. A requirement does not become **Verified** on it (and a verified one goes back to **Implemented**), coverage counts it as not run, and the release exit criteria **Passed** and **Mandatory passed** list the requirement with *stale result*. Stale results have a **Stale** badge in the test list, in the coverage column of the requirement list, in the traceability matrix and in reports. Run the test again to get a fresh result.
+
+In the search, `stale:true` finds tests with a stale latest result and `stale>0` requirements with one.
+
+## Blocking defects
+
+An open defect linked to a requirement, to a test that verifies it or to an execution of such a test **blocks** the requirement, or only **warns** about it, depending on its severity. By default critical and major defects block, minor ones warn and trivial ones do neither; **Categories & settings → Change impact → Defects that block requirements** changes this per project.
+
+Blocked requirements show **Blocked** in the requirement list and in the traceability matrix, the requirement shows **Blocked by 1 defect** next to its key, and the **Quality** section of the dashboard counts blocked requirements, requirements with warnings, stale results and suspect relations. In the search, `blocked>0` finds blocked requirements. The release exit criterion **No blocking defects** fails while a requirement in scope is blocked.
+
 ## How coverage is calculated
 
 Coverage is derived from the **last result** of every linked test. It is computed every time you look at it and never stored, so it is always current.
@@ -1922,11 +2131,58 @@ Without configurations nothing changes: each test has one result, its last resul
 
 Things to keep in mind:
 
-- Coverage is calculated per requirement, not per evaluation criterion. A link can name the criterion a test verifies, but every link counts the same.
+- Coverage is calculated per requirement, not per evaluation criterion; every link counts the same. Which criteria the tests and other evidence verify is shown by [Verification](#verification).
 - Only runs of the same project count. A test that was moved from another project keeps its old executions, but they no longer count.
 - A newer *Passed* result replaces an older *Failed* one; there is no need to delete old runs.
 
 Coverage appears as a column and quick filter in the requirements list, as the query field `coverage` (for example `coverage:failed` or `coverage:none category:Security`), in the matrix, in exports, in reports and on the dashboard.
+
+## Verification
+
+Coverage says whether the linked tests passed. **Verification** goes one step further: a requirement counts as **verified** only when **every evaluation criterion has passing evidence**, and — in a hierarchy — when every requirement that refines it is verified too. Evidence is a passed test, a passed test step, or a **verification record** for an inspection, analysis, demonstration or review. So hardware, facility and governance requirements that no test can verify can be verified too.
+
+Open a requirement and choose the **Verification** tab. It shows the state with the reasons when the requirement is not verified (for example *Criterion 2 has no evidence.*), the evidence of every criterion, the requirements that refine it, the verification records, the criteria of the linked tests and the system elements the requirement is allocated to. The badge next to the coverage in the editor's header opens the tab.
+
+| State | When |
+|---|---|
+| **Verified** | every criterion (and every child) has passing evidence |
+| **Partly verified** | some of it is verified, not all |
+| **Failed** | some evidence failed: a test failed or was blocked, a record's result is *Fail* |
+| **Not yet passed** | there is evidence, but none of it has passed yet (not run, a suspect link, a step not executed) |
+| **No evidence** | no test and no verification record |
+
+### Tests for criteria and test steps
+
+A test linked to a requirement can be mapped to the criteria it verifies. In the **Verification** tab choose **Map criteria** next to the test, tick the criteria and, if you want, the **step** of the test that shows it. A criterion mapped to a step is passed when that step passed in the test's latest execution. When you link a test you can also choose a criterion right away (the selector next to **Link tests**).
+
+A link **without** criteria counts for the whole requirement, as before: for every criterion that has no evidence of its own. A project that wants every criterion to have its own evidence turns on **strict criterion coverage** under **Settings → Project → Verification**. A failing test always fails the requirement, mapped or not.
+
+### Verification records
+
+For a criterion that is verified by inspection, analysis, demonstration or review choose **Record evidence for criterion n** (or **Record evidence** for the whole requirement) and fill in:
+
+- **Method** and **Result**: *Pass*, *Fail* or *Conditional pass* (counts as passed and is shown as conditional);
+- **Performed by** and the **Date**;
+- a **Note** and **Documents from the archive** (for example the inspection protocol uploaded to [Documents](#documents-1));
+- **Valid until**: the record stops counting after that day; **Valid until the requirement changes**: when the title, description, obligation or criteria change, the record is invalidated (like a suspect link) and has to be recorded again.
+
+For each criterion only the newest valid record counts; older ones are shown as superseded. A second person can **Sign off** a record (anyone with the review or execute permission except its author and its performer). Changing the method, result, criterion, dates or performer removes the sign-off.
+
+### Requirement hierarchy and roll-up
+
+The hierarchy is built from the relation **refines**: a requirement that refines another is its child (see [Relations](#requirements)). A parent is verified only when its own criteria are verified and all its children (except rejected and obsolete ones) are. A parent without criteria or evidence of its own is verified when all its children are.
+
+**Verification** in the project navigation shows the hierarchy as a tree with badges: the state, the criteria verified (*2/3 criteria*) and the children verified (*1/2 children*). **Only not verified** keeps the branches that still need work.
+
+With the default setting the status follows the evidence (**Administration → Test execution**, see [Test execution settings](#test-execution-settings)): an implemented requirement becomes verified when it is verified, and a verified requirement falls back to implemented when a child or criterion no longer is — so a verified parent with an unverified child cannot remain. When the organisation verifies manually, such a requirement is listed under **Verification → Inconsistencies** and in the [analytics](#requirement-analytics) (*Verified requirements with unverified children*).
+
+### System elements
+
+**Verification → System elements** holds the product breakdown of the project: systems, subsystems, components, products and suppliers, as a tree. Requirements and tests are allocated to elements in the **Verification** tab of a requirement (and with the API). Every element shows how many of the requirements allocated to it **or to an element below it** are verified (*42/50 verified*), how many have evidence or failed, and how many of its tests passed. The counts link to the lists filtered by the element.
+
+In the query language `element:"Power unit"` finds the requirements and tests allocated to *Power unit* or to an element below it, and `verification:verified`, `verification:none` … filter by the verification state.
+
+The **Verification** report and the requirements specification show the same: the report has the evidence per criterion, the requirements that are not verified and why, the records, the roll-up, the inconsistencies and the coverage per element; the specification shows the verification of every requirement and criterion.
 
 ## The dashboard
 
@@ -1969,6 +2225,7 @@ The trends come from a snapshot of the figures that Qtestframe saves once a day 
 - **Mitigation of open risks**: the open risks by how far the requirements that address them are tested: *No requirements*, *Untested*, *Partly tested*, *Tested, not all passed* and *Verified* (as in the [risk report](#standard-reports)).
 - **Age of open defects**: open and in-progress defects by age (under 7 days, 7–30, 30–90, over 90 days), split by severity, with the average and the oldest age.
 - **Traceability rules**: whether all enabled rules of severity *error* are met, how many rules are enabled, how many are broken (errors and warnings) and the number of violations. **Traceability →** opens the matrix with the rules.
+- **Quality metrics** and **Consistency checks** (the failing ones): the same as in [Analytics](#quality-metrics).
 
 The further key figures and these charts are counted on the server in one request, loaded next to the rest of the dashboard.
 
@@ -2015,6 +2272,27 @@ Cycles (for example two requirements that depend on each other) are drawn, but o
 
 **Language** chooses the language of the analysis (detected per requirement by default). Test findings are shown when you may read tests.
 
+### Consistency checks
+
+**Consistency checks** in **Analytics** evaluates every [built-in consistency check](#built-in-consistency-checks) on the project, also those it has not added as rules yet (marked **Default**; they do not count for releases until they are added). **Show violations** lists the items with the items involved and the fixes.
+
+### Quality metrics
+
+**Quality metrics** in **Analytics** (and on the dashboard's **Quality** tab) measures the project from its history. Choose the period (30, 90, 180 or 365 days) and after how many days a latest result counts as stale. Trends are per week, or per month for periods over 120 days.
+
+| Metric | What it measures |
+|---|---|
+| **Requirements volatility** | the changes to requirements after their creation (every saved version; moves do not count), per period, as changes per requirement and period, and the most changed requirements |
+| **Defect density** | defects per active requirement, per folder and per category; a defect counts for a requirement when it is linked to it, to a test that verifies it or to an execution of such a test |
+| **Escaped defects** | defects found in production (the defect's **Found in** field, see [Defects](#defects-1)) or reported after a release they concern was released; the share of all defects, per phase found and per release |
+| **Test effectiveness** | defects found by tests (linked to a test or one of its executions) per test executed and per execution hour; executions without a duration are not counted in the hours |
+| **Result age** | how old the latest result of each test is (0–7, 8–30, 31–90, 91–180 and more days, never run) and how many are older than the limit |
+| **Review turnaround** | the time from a review request to its decision (median, mean and 90th percentile), and the pending requests |
+| **Time to fix defects** | the time from reporting a defect to resolving it, per severity (rejected defects do not count) |
+| **Requirement quality** | the share of active requirements whose text has warnings of the language analysis; the trend replays each requirement's text from its history |
+
+Every chart has a text alternative and **Show as table** shows its figures as a table. **Export as report** opens the reports: the standard report **Quality metrics** contains the same figures.
+
 ### Compliance with laws and standards
 
 At the bottom of **Analytics**, **Compliance with laws, standards and best practices** shows how far the project meets the regulations and standards of the [catalogue](#comply-with-laws-standards-and-best-practices). Without a choice it shows every source the project uses; choose others in the list (grouped by kind, with a search field) to see what is missing for them too.
@@ -2028,6 +2306,109 @@ For each source:
 - **Missing requirements** lists the gaps, MUST first: select one to open it in the catalogue, or **Add the missing from the catalogue** to open the catalogue with the source chosen. **Adopted but not fulfilled** lists the project's requirements that still fail or lack passing tests; select a key to open the requirement.
 
 The standard report **Compliance** (see [Reports and export](#reports-and-export)) contains the same figures, per source and clause, with the gaps. The analysis helps you plan and follow up; it is not a legal assessment.
+
+# Variants and code
+
+A product is often built in several **variants**: models, markets or customer configurations. Not every requirement applies to every variant, and a test run on one variant says nothing about another. Qtestframe keeps track of which requirements and tests apply to which variants and computes coverage per variant.
+
+The second half of this page is about **code**: the commits, merge requests and pull requests that refer to requirements and tests, the CI **builds** whose results were uploaded, and the **regression selection** that proposes which tests to run after a change.
+
+## Variants
+
+Select **Variants** in the project sidebar, then the **Variants** tab. With the **Manager** role (permission `project.update`) you can add, change and remove variants.
+
+Each variant has:
+
+- a **name**, unique in the project, such as *EU model*;
+- optionally a place **below** another variant: variants form a hierarchy, for example *EU* → *EU model DE*;
+- a **kind**: product variant, market, customer configuration or other;
+- **feature attributes**: names and values such as `region = EU` or `voltage = 230V`. A variant inherits the attributes of the variants above it; its own values win;
+- the **test configurations** it is tested in. When you choose some, only results in those configurations (and results without a configuration) count for the variant. Leave it empty to count every configuration. See [test configurations](#test-runs-and-execution).
+
+Removing a variant moves the variants below it up one level. Runs for it become variant-neutral, and requirements and tests that applied only to it apply to all variants again.
+
+## Applicability
+
+A requirement or test **applies** to all variants until you say otherwise. Open it, and in the **Variants** section of its details choose **Change**:
+
+- **All variants**: the default; it also covers variants added later.
+- **Selected variants**: the item applies to the chosen variants and to the variants below them. Choosing *EU* covers *EU model DE* too.
+- **Expression**: a [query](#search-and-filters) evaluated against each variant. The fields are `name` and `variant` (the variant and the ones above it), `kind` and the feature attributes. Examples: `region:EU`, `region:EU AND NOT voltage:110V`, `kind:customer OR variant:"EU model"`.
+
+To set the applicability of many items at once, select them in the list and choose **Applies to** in the toolbar.
+
+### Show for a variant
+
+In the requirement and test lists, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
+
+| Query | Finds |
+|---|---|
+| `variant:"EU model"` | items that apply to the variant *EU model* |
+| `applicability:selected` | items that apply only to some variants |
+| `applicability:all` | items that apply to all variants |
+
+## Coverage per variant
+
+Coverage is computed per **variant × test configuration**:
+
+1. A requirement counts in a variant when it applies to it. Otherwise its coverage there is **Not applicable**.
+2. Only its linked tests that apply to the variant count.
+3. Only results that count for the variant are used: results of runs for the variant or a variant above it, and results of **variant-neutral** runs. Results in configurations the variant is not tested in are left out.
+
+When you create a run, choose the **Variant** it tests, or leave it variant-neutral. CI uploads can name the variant too (see [builds](#builds)).
+
+The **Coverage matrix** tab shows every requirement against every variant, with the number of applicable requirements that passed. Filter the requirements with a query, and choose **In configuration** to see one test configuration only. In a requirement's details, the **Variants** section shows its coverage in every variant and, per variant, in every configuration.
+
+### Releases and documents for a variant
+
+On the **Releases** page, choose a variant in **Readiness for variant** to evaluate the exit criteria for it: only the release's requirements that apply to the variant, the tests that apply and the results that count. Releasing a release still checks all variants.
+
+When you [create a document](#documents-1), choose **For variant**: the requirements specification or test plan then contains only what applies to the variant, with its coverage and results, and names the variant on the title page.
+
+## Code links
+
+Requirements and tests can be linked to **commits** and **merge or pull requests**. Open an item and select the **Code** tab. It lists the linked changes with their status (open, merged or closed), repository, branch, author and the builds of each commit.
+
+Links are made in two ways:
+
+- **Automatically**: when a commit message, or the title, description or branch name of a merge or pull request, names an item key, the change is linked to it. Full keys (`DEMO-REQ-12`) and short keys (`REQ-12`, `TC-3`, meaning this project's) both work. A key of another project (`OTHER-REQ-1`) is ignored.
+- **By hand**: choose **Link commit or MR** in the **Code** tab and give the SHA or number, the address and a title.
+
+### Webhooks
+
+The automatic links come from webhooks. With the **Manager** role, open **Settings → Project → Code integration**:
+
+1. Choose **Generate** (or type a secret of 16 to 200 characters) and **Save**. Copy the secret now: it is never shown again.
+2. In **GitLab**, open *Settings → Webhooks* of the repository, enter the **GitLab webhook URL**, put the secret into *Secret token* and tick *Push events* and *Merge request events*.
+3. In **GitHub**, open *Settings → Webhooks → Add webhook*, enter the **GitHub webhook URL**, choose *application/json*, put the secret into *Secret* and choose the *Pushes* and *Pull requests* events.
+
+Qtestframe checks every delivery: GitLab must send the secret token, GitHub must sign the body with the secret (HMAC-SHA256). Deliveries without a valid signature are rejected. **Remove secret** turns the webhooks off.
+
+## Builds
+
+A **build** is a CI build that test results were uploaded for. The CI passes it with the upload of [JUnit results](#test-runs-and-execution) or of JSON results, as query parameters:
+
+```
+POST /api/v1/runs/{run}/junit?build_id=4711&build_number=1.4.41&commit=3f2c9e1&branch=main&pipeline_url=https://ci.example.org/p/4711&variant=EU%20model
+```
+
+`build_id` is the CI's own id (unique per project); `build_number`, `commit`, `branch` and `pipeline_url` are optional, and `variant` makes the run a run for that variant. The run is then associated with the build.
+
+- **Verified in build**: the **Code** tab of a requirement shows the latest build in which every linked test passed, and the builds its tests ran in with the coverage in each.
+- **Build history**: the **Code** tab of a test lists the builds it ran in, newest first, with the result in each.
+- **Code → Builds** lists all builds with their runs and pass rate.
+
+## Regression selection
+
+Select **Code → Regression selection** to find the tests to run after changes:
+
+- **Changed requirements**: keys of requirements that changed;
+- **Commits since build**: the commits after a build's own commit (on the build's branch), and the requirements and tests they name;
+- **Variant**: only requirements and tests that apply to it;
+- **Include requirements that depend on, refine or derive from them**: one step along these [relations](#requirements);
+- **Include prerequisite tests**: the tests the selected tests depend on.
+
+**Propose tests** lists the tests with the reason each is included. Deprecated tests are left out. **Create run** makes a run of them (for the chosen variant), named after the build when you start from one. CI can do the same with `POST /api/v1/projects/{pid}/regression/run`.
 
 # Baselines
 
@@ -2164,16 +2545,22 @@ Keywords and field names are case-insensitive. Values with spaces need quotes: `
 
 ### Requirements
 
-`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (the folder path, e.g. `Checkout / Payment`), `category` (`categories`, value names), `dimension` (`Dimension/Name`), `coverage`, `linked` (keys of linked tests), `related`, `parent`, `child` (keys of related, parent and child requirements), `comments`, `mention` (`mentions`: [@handles](#mention-people) in owner, title, description, rationale and source), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: description, method and threshold), `risk` (the highest level of the open [risks](#risk-levels) it addresses: `risk:high`), `defects` (number of open defects on it or its tests: `defects>0`), `catalog` (the [catalogue](#catalogue) entry it was copied from: `catalog:AUTH-01`, `has:catalog`).
+`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (the folder path, e.g. `Checkout / Payment`), `category` (`categories`, value names), `dimension` (`Dimension/Name`), `coverage`, `linked` (keys of linked tests), `related`, `parent`, `child` (keys of related, parent and child requirements), `comments`, `mention` (`mentions`: [@handles](#mention-people) in owner, title, description, rationale and source), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: description, method and threshold), `risk` (the highest level of the open [risks](#risk-levels) it addresses: `risk:high`), `defects` (number of open defects on it or its tests: `defects>0`), `catalog` (the [catalogue](#catalogue) entry it was copied from: `catalog:AUTH-01`, `has:catalog`), `verification` (`verified`: the [verification](#verification) state, `verification:failed`), `element` (`elements`: a [system element](#system-elements) it is allocated to, or one above it: `element:"Power unit"`), `variant` (`variants`: the [variants](#variants-and-code) it applies to: `variant:"EU model"`), `applicability` (`all` or `selected`).
 
 ### Tests
 
-`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `mention` (@handles in the texts and steps), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from).
+`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `mention` (@handles in the texts and steps), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from), `variant` (`variants`: the variants it applies to), `applicability` (`all` or `selected`).
 
 ### Runs and executions
 
 Runs: `id`, `name`, `description`, `status`, `environment` (`env`), `build`, `created_by`, `created_at`.
 Executions (the filter on a run page): `id`, `key`, `title`, `status`, `assignee`, `executed_by`, `notes`, `output`, `defect`, `mention` (@handles in assignee and notes).
+
+### Custom fields and sorting
+
+Every [custom field](#custom-fields) of the project is a field `cf.<key>` of its list (requirements, tests, runs, defects and risks): `cf.supplier:"Acme"`, `cf.mass>2` (numbers compare as numbers), `cf.due<2026-07-01`, `cf.coating=zinc` (one of the chosen options), `cf.reviewed=true` (a checkbox) and `has:cf.supplier`. A key the project does not have matches nothing.
+
+`sort:<field>` sorts the result, `sort:-<field>` (or `sort:<field>:desc`) in descending order, for example `status:draft sort:-cf.mass sort:title`. Items without a value come last. A sort term cannot be negated or used inside `OR`.
 
 ### Other lists
 
@@ -2303,7 +2690,7 @@ What the ReqIF file contains:
 - **Formatting.** Paragraphs, line breaks, lists, headings, code blocks, bold, italics, links and images in descriptions are converted to formatted text. In a `.reqifz` file, images and other attachments are files in the archive and are listed in the *Attachments* attribute.
 - **Stable identifiers.** Every object keeps the same identifier in every export, so a tool can recognise requirements it already has and update them.
 
-**Importing it again.** A ReqIF file from Qtestframe can be [imported](#import-requirements) into any project. Titles, descriptions with their formatting, obligation, type, priority, status, source, rationale, owner, tags, criteria and folders come back; the original key is kept as the external ID (*ID: SHOP-REQ-12* in the source), and the new requirements get keys of the target project. Relations, categories and attachments are not imported.
+**Importing it again.** A ReqIF file from Qtestframe can be [imported](#import-requirements) into any project. Titles, descriptions with their formatting, obligation, type, priority, status, source, rationale, owner, tags, criteria and folders come back; the original key is kept as the external ID (*ID: SHOP-REQ-12* in the source), and the new requirements get keys of the target project. Categories and attachments are not imported. To bring an edited version back into the **same** project as updates, with relations, use the [ReqIF import with updates](#reqif-from-doors-and-polarion).
 
 ## Standard reports
 
@@ -2317,8 +2704,11 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 | **Run summary** | one run: totals, executions, defects and durations | the run (required) |
 | **Defects** | all defects recorded on executions, grouped by defect | – |
 | **Test inventory** | tests by folder, type, status and category | optional filter |
-| **Risk report** | the [risks](#releases-and-risks) with key figures, a heat map, the risk register, traceability to requirements and tests, untested mitigations and the top risks | – |
+| **Risk report** | the [risks](#releases-and-risks) with key figures, the heat map before and after mitigation, the risks above the acceptance threshold, the risk register with the [residual risk](#residual-risk), traceability to requirements and tests, untested mitigations and the top risks | – |
 | **Compliance** | compliance with laws, standards and best practices: per source, per clause, the missing catalogue requirements and the requirements not fulfilled (see [Compliance with laws and standards](#compliance-with-laws-and-standards)) | optional laws, standards and best practices (default: those the project uses) |
+| **Statement of Applicability** | every control of a standard with applicability, justification, implementation, owner, requirements and evidence (see [Statement of Applicability](#statement-of-applicability)) | the standard (default: ISO/IEC 27001:2022 Annex A) |
+| **Release readiness** | one release: go / no-go, every exit criterion with what blocks it and what a [waiver](#waivers-and-deviations) or risk sign-off accepts, the waivers in force and the risks above the acceptance threshold | the release (default: the current one) |
+| **Quality metrics** | requirements volatility, defect density, escaped defects, test effectiveness, result age, review turnaround, time to fix defects and requirement quality, with their trends (see [Quality metrics](#quality-metrics)) | optional history in days (30, 90, 180 or 365) and the days after which a result is stale |
 
 **The risk report** contains:
 
@@ -2421,6 +2811,71 @@ What to know about loaded projects:
 
 The file contains the project data in plain form. Store it as carefully as the project itself.
 
+## Exchanging data with other tools
+
+Requirements often live in more than one place: a customer keeps them in IBM DOORS or Siemens Polarion, a colleague prefers to review them in Excel, and an ALM tool wants to link to them. Qtestframe exchanges data in four ways, all under **Import** on the requirements and tests pages and through the API:
+
+| Way | Direction | Good for |
+|---|---|---|
+| [Excel round-trip](#edit-in-excel-and-import-back) | out and back in | editing many items at once in Excel, also offline |
+| [ReqIF import with updates](#reqif-from-doors-and-polarion) | in, again and again | a specification maintained in DOORS, DOORS Next or Polarion |
+| [CSV and Excel exports of DOORS and Polarion](#csv-and-excel-from-doors-and-polarion) | in, once | a first import when ReqIF is not available |
+| [OSLC](#oslc-links-from-alm-tools) | read by other tools | links from IBM ELM, Polarion, Codebeamer and other OSLC clients |
+
+Every import shows a **preview** first and saves nothing until you select **Save**. The preview compares the file with the project, row by row:
+
+- **New**: an item that does not exist yet and will be created.
+- **Changed**: an item that the file changes; each changed field is listed with its old and new value.
+- **Unchanged**: nothing to do.
+- **Conflict**: someone saved the item in Qtestframe after your file was made, and the file has other values. A conflict is not saved unless you select **Overwrite the conflicts with the file**. Open the item to see what was changed, or export again.
+- **Error**: a value that cannot be imported, with the cell (for example `F12`) and the reason: an unknown priority, an unknown requirement key, an empty title, a status you may not set.
+
+Use the status buttons above the table to show only some rows, and clear the box of rows you do not want. **Save** stores all selected rows in one go: if one of them cannot be saved, nothing is. Every saved item gets a new version in its history, changed links become suspect as with a normal edit, and the import is recorded in the audit log.
+
+### Edit in Excel and import back
+
+1. On the requirements or tests page, select **Import → Export for editing in Excel**. The workbook contains the items of the current list (with its filter and folder) *(Viewer with the export permission)*.
+2. Edit the workbook in Excel or another spreadsheet program. Keep the columns **ID** and **Version**: they tell Qtestframe which item a row is and which version you started from.
+3. Select **Import → Import an edited Excel workbook**, choose the file, check the preview and select **Save** *(Manager)*.
+
+What the workbook contains:
+
+- **One row per item** with *ID*, *Key*, *Version* and one column per field: folder, title, description, obligation, type, priority, status, source, rationale, owner, tags, acceptance criteria (one per line, for example `test: Login works (threshold: 2 s)`) and one column per relation type (*Refines*, *Depends on* …) with the keys of the related requirements. Tests have preconditions, expected result, execution type, estimated minutes and *Verifies* (the keys of the requirements the test verifies) instead.
+- **Steps of tests** on the sheet *Steps*, one row per step: the test, the step number, action, data, expected result and, for a shared step, the key of the called test. The steps of a test listed on the *Tests* sheet are replaced by its rows on the *Steps* sheet.
+- **Drop-down lists** for the fields with fixed values, grey columns that are only for information (*Verified by*), and a sheet *Instructions*.
+
+Tips:
+
+- **New items:** add a row and leave *ID* empty. To give a new test steps, type a temporary key such as `NEW-1` in *Key* and use it on the *Steps* sheet.
+- **Folders:** write a path such as `Security/Login`; missing folders are created.
+- **Columns** may be deleted or reordered: a missing column changes nothing. Columns Qtestframe does not know are listed and ignored.
+- **Another project:** rows with the ID of an item of another project are errors; clear the IDs to create the items in this project.
+
+### ReqIF from DOORS and Polarion
+
+ReqIF is the format IBM DOORS, DOORS Next, Siemens Polarion and most requirements tools export. **Import → ReqIF from DOORS or Polarion, with updates** imports such a file (`.reqif` or `.reqifz`) and remembers where every requirement came from, so that importing a newer version of the same document **updates** the requirements instead of creating them again *(Manager)*.
+
+1. Choose the file. The preview lists the document's **attributes** with their type, a sample value and the field each is read into.
+2. Check the fields. Qtestframe recognises the ReqIF standard names (*ReqIF.Name*, *ReqIF.Text*, *ReqIF.ChapterName*, *ReqIF.ForeignID*) and common names of DOORS and Polarion (*Title*, *Description*, *Status*, *Priority*, *Severity* as obligation, *Assignee* as owner, *ID*). Choose another field or *ignore* for any attribute; the preview updates at once. **Heading (folder)** marks the attribute with chapter names; **ID in the other tool** is recorded in the source of new requirements (*ID: BRK-12*).
+3. Choose the **Target folder** and whether **Headings become folders**: the chapters of the document's hierarchy become folders below the target folder (in DOORS, objects with a chapter name and no text; in Polarion, work items of type *Heading*).
+4. Check the rows and the **relations**, and select **Save**.
+
+What happens:
+
+- **Relations** between the imported requirements (DOORS link modules, Polarion link roles) become requirement relations. Their type is taken from the name: *refines*, *satisfies* and *has parent* become *refines*, *derived from* becomes *derived from*, *depends on* and *requires* become *depends on*, and so on; others become *relates to*.
+- **Formatted text** (XHTML) becomes plain text with its line breaks and lists.
+- **Importing again** updates the requirements created by earlier imports of the same document and adds new ones. A requirement edited in Qtestframe since the last import shows as a conflict when the document has other values. Relations that were removed in the other tool are removed here too; relations you made in Qtestframe stay. Requirements are never deleted by an import.
+- A requirement without a title in the document gets the first words of its text when it is created; later imports keep the title you gave it.
+- A ReqIF file **exported from the same project** (see [above](#reqif-for-requirements-tools)) is matched to its requirements, so you can send a specification to a supplier and import their edited version back with the same preview.
+
+### CSV and Excel from DOORS and Polarion
+
+When only a CSV or Excel export is available, use **Import → From a file** and choose **Exported from: IBM DOORS** or **Siemens Polarion**. The preset reads the typical columns of these exports: from DOORS *Absolute Number*, *Object Heading*, *Object Text*, *Object Level* and *Object Number*; from Polarion *ID*, *Title*, *Description*, *Status*, *Type*, *Priority*, *Severity*, *Assignee* and *Outline Number*. Heading rows become folders, nested by their level. You can still change the field of any column. This import creates requirements once; for repeated updates use ReqIF.
+
+### OSLC: links from ALM tools
+
+OSLC (Open Services for Lifecycle Collaboration) lets other tools find Qtestframe's requirements and test cases and link to them. Qtestframe is a read-only OSLC provider for Requirements Management 2.0 and Quality Management 2.0. Give the tool the address of the catalog, `<server address>/api/v1/oslc/catalog` (or the discovery document `/api/v1/oslc/rootservices`), and an [API token](#api-tokens). The tool then sees the projects you may read, can search requirements and test cases by key, title or change date, and shows them with their links (which tests verify a requirement, which requirements a test verifies, relations). Selection dialogs inside the other tool and creating items through OSLC are not supported. Your administrator can find the details in [Administration](#oslc).
+
 ## Which one to use?
 
 | Need | Use |
@@ -2428,6 +2883,9 @@ The file contains the project data in plain form. Store it as carefully as the p
 | Work with the data in Excel or another tool | **Export**, XLSX or CSV |
 | Put the data or a report into a wiki, a pull request or a Git repository | **Export** or **Reports**, Markdown |
 | Hand requirements over to a requirements tool (DOORS, Polarion …) or another Qtestframe | **Export**, ReqIF |
+| Edit many requirements or tests in Excel and bring the changes back | **Import → Export for editing in Excel** and **Import an edited Excel workbook** |
+| Keep requirements maintained in DOORS or Polarion up to date | **Import → ReqIF from DOORS or Polarion, with updates** |
+| Let an ALM tool link to requirements and tests | [OSLC](#oslc-links-from-alm-tools) |
 | A specification document to review or sign | **Documents → Create document → Requirements specification** (PDF or Word, from a baseline if it is to be signed); for a plain table **Export**, DOCX |
 | A test plan with the test specification | **Documents → Create document → Test plan** |
 | A status report for a steering meeting | **Reports → Project status**, PDF |
@@ -2534,7 +2992,8 @@ Files are stored in the Qtestframe database, not on a separate file share. That 
 | **API tokens** | Tester and up (your own tokens) |
 | **Provisioning (SCIM)** | Admins |
 | **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
-| **Audit log** | Manager and up |
+| **Audit log** | Test lead and up |
+| **Field sets** (custom fields and templates per project type) | Admins and Test leads |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
 | **Backup** | Super admins |
@@ -2567,8 +3026,10 @@ The default matrix of permissions:
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
 | `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
-| `requirement.write`, `project.create`, `project.update` | | | | | ✔ | ✔ |
+| `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
+
+**Waivers and risk acceptance.** Approving, rejecting and revoking [waivers and deviations](#waivers-residual-risk-and-the-statement-of-applicability) and signing the acceptance of a residual risk need `waiver.approve` (a project permission, so a project role can grant it in one project). Every decision is an electronic signature (password, or a recent single sign-on) and is recorded in the audit log; the requester of a waiver cannot decide it. Grant `waiver.approve` only to people who may accept not meeting requirements.
 
 **Review decisions.** Setting a requirement to *Approved* or *Rejected* needs `requirement.review`; setting a test to *Ready* needs `test.review`. The same applies to bulk edits, to creating an item with that status and to restoring a version that has it. A reviewer without the write permission may change only the status; editing anything else still needs `requirement.write` or `test.write`. Each decision is recorded in the audit log as `requirement.review` or `test.review`. A copied requirement or test starts as *Draft*, so it is reviewed again.
 
@@ -2681,6 +3142,12 @@ What a rule forbids is refused by the server, also for API clients and CI import
 - in the execution runner, a red box lists the reasons, with links to the test, requirement or prerequisite, and **Pass**, **Fail** and **Run script** are disabled. You can still mark the test **Blocked** or **Skipped**, assign it and write notes;
 - when a rule is relaxed, the same reasons appear as an amber warning, and the test can be executed.
 
+**Requirement status follows test results** (on by default) lets an implemented requirement become **Verified** when it is [verified](#verification) — every criterion has passing evidence and every child requirement is verified — and go back to **Implemented** when that no longer holds. Turned off, statuses change only by hand and disagreements are listed under **Verification → Inconsistencies**. Whether each criterion needs evidence of its own is a project setting (**Settings → Project → Verification**).
+
+## Field sets and templates
+
+*(Admin and Test lead, or any role with `settings.manage`)* **Administration → Field sets** keeps, per **project type**, the [custom fields](#custom-fields) a new project of that type gets and the organisation's [templates](#templates) for new requirements and tests. Changing a field set does not change existing projects: they keep their own copies and can apply the set again under **Categories & settings → Custom fields → Apply field set** (fields they already have are skipped). Organisation templates are offered in every project of the type, next to the built-in ones. Everyone in the organisation can read the field sets.
+
 ## Test configurations
 
 *(Manager and Admin, or any role with `project.update`)* **Categories & settings → Configurations** holds the test configurations of a project: named combinations of **dimension values** such as *Browser = Chrome* and *OS = Windows*, a hardware revision or a firmware version. A [run](#configurations-in-a-run) that targets configurations executes each of its tests once per configuration. Everyone who can read the project sees the configurations.
@@ -2691,6 +3158,14 @@ What a rule forbids is refused by the server, also for API clients and CI import
 - **Delete** (also for several ticked configurations) removes configurations that no run targets. A configuration that is in use cannot be deleted; remove it from the runs first, or delete those runs.
 
 The **Runs** column shows how many runs target each configuration. Creating configurations can be undone with the undo button.
+
+## Change impact, staleness and defects
+
+*(Manager and Admin, or any role with `project.update`)* **Categories & settings → Change impact** holds a project's rules for [change impact](#change-impact), [stale results](#stale-results), [blocking defects](#blocking-defects) and [regressions](#regressions). Everyone who can read the project sees them. Changes apply from then on: what was already marked stays marked.
+
+## Variants and code integration
+
+*(Manager and Admin, or any role with `project.update`)* **Variants** holds the project's product variants, markets and customer configurations; **Settings → Project → Code integration** holds the shared secret of the project's GitLab and GitHub webhooks. The secret is stored encrypted with the other secrets, is write-only and is not part of project archives: set a new one after loading a project. Deliveries are checked with the secret token (GitLab) or the HMAC-SHA256 signature (GitHub), and every delivery is written to the audit log as `code.webhook`. CI tokens need `run.execute` to upload results for a build and `run.write` to create a regression run. See [Variants and code](#variants-and-code).
 
 ## Web tests
 
@@ -2724,6 +3199,10 @@ Only members with the permission *script.execute* (by default **Test lead** and 
    ```
 
 3. Restart the server. **Run script** now works for web tests; the demo project of `qtestframe seed-demo` has one (*Login page shows the sign-in form*) that opens the server's own login page — set `server.base_url` to the address the server is reachable at.
+
+## Consistency checks
+
+Projects do not get the [built-in consistency checks](#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*) are part of backups and project archives.
 
 ## API tokens
 
@@ -2764,9 +3243,20 @@ How it works:
 
 **Recent provisioning events** on the same page shows the latest changes; each is also in the [audit log](#audit-log), with the actor *SCIM: token name*. **Revoke** a token when you replace it or it may have leaked; the provider then stops provisioning until it gets a new one. Every change of a request is saved together or not at all, and a provider that sends too many requests is slowed down (HTTP 429).
 
+## OSLC
+
+Qtestframe serves a read-only OSLC provider (Requirements Management 2.0 and Quality Management 2.0) at `/api/v1/oslc/`, so that ALM tools such as IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion or Codebeamer can find requirements and test cases and link to them. It is always on; there is nothing to configure.
+
+- **Addresses:** the catalog `/api/v1/oslc/catalog` (one service provider per project), the discovery document `/api/v1/oslc/rootservices` (public, contains no data). Set **Base URL** under [System settings](#system-settings) (`server.base_url`) so that the resource addresses are the ones clients can reach.
+- **Accounts:** clients sign in with an [API token](#api-tokens) as `Authorization: Bearer …`; clients that only offer user name and password can send the token as the password (any user name). Create the token for a person or service account with the **Viewer** role or higher. Project sharing applies: restricted projects are only listed for their members.
+- **Supported:** RDF/XML, Turtle and JSON-LD; requirements and test cases with title, description, dates, creator, tags, status, priority, verification links and relations; queries with `oslc.where` on identifier, title, created and modified, and paging.
+- **Not supported:** writing through OSLC (creation factories, updates), delegated selection and creation dialogs, previews, resource shapes, OAuth 1.0a, tracked resource sets and configuration management. For moving requirements in and out, use [ReqIF and the Excel round-trip](#exchanging-data-with-other-tools).
+
+The API reference (`docs/api.md`, section *OSLC*) lists the properties and the query syntax.
+
 ## Audit log
 
-*(Manager)* **Administration → Audit log** records who did what and when in the organisation: creating, changing and deleting items, sign-ins and sign-outs, membership changes and more. Newest entries come first. Each entry shows the avatar of the person who did it.
+*(Test lead and up)* **Administration → Audit log** records who did what and when in the organisation: creating, changing and deleting items, sign-ins, membership changes and more. Newest entries come first. Each entry shows the avatar of the person who did it.
 
 ![The audit log with time, user, action, entity and details](images/en-admin-audit.png)
 
@@ -2794,7 +3284,7 @@ How it works:
 - **Edit user**: change the display name, set a new password (**Reset password (optional)**), make the user a super administrator, or mark the account **Disabled**. Disabling an account or setting a password signs the user out everywhere. **Must change password** forces a new password at the next sign-in.
 - You cannot remove your own super admin flag or disable yourself.
 
-Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the operations guide).
+Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the [administrator guide](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/en/authentication.md#provisioning-of-single-sign-on-users)).
 
 ## Backup and restore
 
@@ -2870,11 +3360,11 @@ The page shows:
 - The details of the provider, such as the key file or the TPM device, and the **key fingerprint**, which identifies the key without revealing it.
 - The **active data key** and how many **stored secrets** are encrypted. If some are not encrypted yet, a note says so; they are encrypted at the next start of the server.
 
-The key provider is chosen in the server's configuration file (section `secrets`) and cannot be changed here. Without its key, the stored secrets – and backups – cannot be read; ask the server administrator to keep it safe. The server administrator manages the keys on the command line, for example `qtestframe secrets status` and `qtestframe secrets rotate`; see the operations guide.
+The key provider is chosen in the server's configuration file (section `secrets`) and cannot be changed here. Without its key, the stored secrets – and backups – cannot be read; ask the server administrator to keep it safe. The server administrator manages the keys on the command line, for example `qtestframe secrets status` and `qtestframe secrets rotate`; see the [administrator guide](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/en/security.md#encryption-of-stored-secrets).
 
 ### Test runner
 
-Whether automated scripts and web tests may run on the server, their timeouts and limits, and what web tests record as evidence. These settings **apply after a restart** of the server, because the runner and its sandbox are prepared when the server starts. Turning the runner on lets members with the right permission run code on the server; read the security notes of the operations guide first.
+Whether automated scripts and web tests may run on the server, their timeouts and limits, and what web tests record as evidence. These settings **apply after a restart** of the server, because the runner and its sandbox are prepared when the server starts. Turning the runner on lets members with the right permission run code on the server; read the [security notes of the administrator guide](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/en/security.md#the-script-and-web-test-sandbox) first.
 
 Retention: deleted items stay in the [trash](#history-and-restore) for 30 days; this is not configurable. For backups, see [Backup and restore](#backup-and-restore). Multi-factor authentication has its own page, linked from the system settings.
 

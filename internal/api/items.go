@@ -58,15 +58,36 @@ func (s *Server) filterRequirements(r *http.Request, p *Principal, pr *model.Pro
 	if err != nil {
 		return nil, err
 	}
+	// ?variant=: only the requirements that apply to it, with their coverage there
+	variant, err := pc.listVariant(r)
+	if err != nil {
+		return nil, err
+	}
+	var vc *store.VariantCoverage
+	if variant != "" {
+		if vc, err = s.variantCoverage(r.Context(), p.TenantID(), pc); err != nil {
+			return nil, err
+		}
+	}
 	inFolder := pc.folderFilter(folder, recursive)
 	out := make([]model.Requirement, 0, len(reqs))
+	var recs []query.MapRecord
 	for i := range reqs {
 		rq := &reqs[i]
 		pc.decorateRequirement(rq)
-		if inFolder(rq.FolderID) && q.Match(pc.requirementRecord(rq)) {
+		if vc != nil {
+			if !vc.AppliesTo(rq.ID, variant) {
+				continue
+			}
+			rq.Coverage = vc.Requirement(rq.ID, variant)
+			rq.LinkedTests = len(vc.Tests(rq.ID, variant))
+		}
+		if rec := pc.requirementRecord(rq); inFolder(rq.FolderID) && q.Match(rec) {
 			out = append(out, *rq)
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	return out, nil
 }
 
@@ -187,7 +208,8 @@ func (s *Server) createLinkedTest(ctx context.Context, p *Principal, rq *model.R
 	if len(t.Steps) == 0 {
 		t.Steps = []model.TestStep{{Action: "Verify that the requirement is fulfilled: " + rq.Title, Expected: rq.Description}}
 	}
-	if err := s.Store.CreateTest(ctx, p.TenantID(), t); err != nil {
+	// the linked test gets the defaults of the test custom fields
+	if err := s.Store.CreateTest(store.LenientCustomFields(ctx), p.TenantID(), t); err != nil {
 		return nil, err
 	}
 	link := &model.TraceLink{RequirementID: rq.ID, TestCaseID: t.ID}
@@ -498,15 +520,35 @@ func (s *Server) filterTests(r *http.Request, p *Principal, pr *model.Project, p
 		return nil, err
 	}
 	pc.indexCalls(tests)
+	// ?variant=: only the tests that apply to it, with their result there
+	variant, err := pc.listVariant(r)
+	if err != nil {
+		return nil, err
+	}
+	var vc *store.VariantCoverage
+	if variant != "" {
+		if vc, err = s.variantCoverage(r.Context(), p.TenantID(), pc); err != nil {
+			return nil, err
+		}
+	}
 	inFolder := pc.folderFilter(folder, recursive)
 	out := make([]model.TestCase, 0, len(tests))
+	var recs []query.MapRecord
 	for i := range tests {
 		t := &tests[i]
 		pc.decorateTest(t)
-		if inFolder(t.FolderID) && q.Match(pc.testRecord(t)) {
+		if vc != nil {
+			if !vc.AppliesTo(t.ID, variant) {
+				continue
+			}
+			t.LastResult = vc.TestResult(t.ID, variant)
+		}
+		if rec := pc.testRecord(t); inFolder(t.FolderID) && q.Match(rec) {
 			out = append(out, *t)
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	return out, nil
 }
 
@@ -808,6 +850,28 @@ type traceReq struct {
 	Title      string `json:"title"`
 	Obligation string `json:"obligation"`
 	Coverage   string `json:"coverage"`
+	// Blocked: open defects block it; StaleResults: linked tests with a
+	// stale latest result (correlations.go).
+	Blocked      bool `json:"blocked,omitempty"`
+	StaleResults int  `json:"stale_results,omitempty"`
+	// Verification: the rolled-up verification state; Criteria: the
+	// criteria with their states (criterion rows of the matrix);
+	// Records: the number of verification records that count.
+	Verification string           `json:"verification"`
+	Criteria     []traceCriterion `json:"criteria"`
+	Records      int              `json:"records"`
+	ParentIDs    []string         `json:"parent_ids"`
+}
+
+// traceCriterion is a criterion row of the traceability matrix.
+type traceCriterion struct {
+	ID          string `json:"id"`
+	Position    int    `json:"position"`
+	Description string `json:"description"`
+	Method      string `json:"method"`
+	State       string `json:"state"`
+	// Records counted for it.
+	Records int `json:"records"`
 }
 
 type traceTest struct {
@@ -815,6 +879,8 @@ type traceTest struct {
 	Key        string `json:"key"`
 	Title      string `json:"title"`
 	LastResult string `json:"last_result"`
+	// Stale: the latest result is stale (no passing evidence).
+	Stale bool `json:"stale,omitempty"`
 }
 
 func (s *Server) handleTraceability(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -844,6 +910,9 @@ func (s *Server) handleTraceability(w http.ResponseWriter, r *http.Request, p *P
 		// Configuration the coverage and results are filtered to ("none":
 		// results without configuration), when given.
 		Configuration string `json:"configuration,omitempty"`
+		// Variant the requirements, tests, coverage and results are of
+		// (?variant=), when given.
+		Variant string `json:"variant,omitempty"`
 	}{Requirements: []traceReq{}, Tests: []traceTest{}, Links: pc.links}
 	// ?configuration=<id> | none: coverage and results in that configuration only
 	cfg, filtered := r.URL.Query().Get("configuration"), false
@@ -857,22 +926,64 @@ func (s *Server) handleTraceability(w http.ResponseWriter, r *http.Request, p *P
 			return
 		}
 	}
+	// with ?variant= the requirements and tests are already those of the variant
+	variant, _ := pc.listVariant(r)
+	var vc *store.VariantCoverage
+	if variant != "" {
+		if vc, err = s.variantCoverage(r.Context(), p.TenantID(), pc); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		res.Variant = variant
+	}
 	for _, rq := range reqs {
 		cov := rq.Coverage
-		if filtered {
+		if filtered && vc != nil {
+			cov = vc.RequirementIn(rq.ID, variant, cfg)
+		} else if filtered {
 			cov = store.CoverageInConfiguration(pc.r2t[rq.ID], pc.cfgResults, cfg)
 		}
-		res.Requirements = append(res.Requirements, traceReq{rq.ID, rq.Key, rq.Title, rq.Obligation, cov})
+		tr := traceReq{ID: rq.ID, Key: rq.Key, Title: rq.Title, Obligation: rq.Obligation, Coverage: cov, Verification: rq.Verification,
+			Criteria: []traceCriterion{}, ParentIDs: []string{},
+			Blocked: rq.BlockingDefects > 0, StaleResults: rq.StaleResults}
+		if v := pc.verification()[rq.ID]; v != nil {
+			tr.ParentIDs = v.ParentIDs
+			for _, c := range v.Criteria {
+				tc := traceCriterion{ID: c.CriterionID, Position: c.Position, Description: c.Description, Method: c.Method, State: c.State}
+				for _, e := range c.Evidence {
+					if e.Kind == "record" && e.State != model.EvidenceVoid {
+						tc.Records++
+						tr.Records++
+					}
+				}
+				tr.Criteria = append(tr.Criteria, tc)
+			}
+			for _, e := range v.Evidence {
+				if e.Kind == "record" && e.State != model.EvidenceVoid {
+					tr.Records++
+				}
+			}
+		}
+		res.Requirements = append(res.Requirements, tr)
 	}
 	for _, t := range tests {
 		last := t.LastResult
-		if filtered {
-			last = pc.cfgResults[t.ID][cfg]
+		if filtered && vc != nil {
+			last = vc.Results(variant)[t.ID][cfg]
+			if last == "" {
+				last = model.ResultNotRun
+			}
+		} else if filtered {
+			last = pc.cfgRaw[t.ID][cfg]
 			if last == "" {
 				last = model.ResultNotRun
 			}
 		}
-		res.Tests = append(res.Tests, traceTest{t.ID, t.Key, t.Title, last})
+		stale := t.Stale
+		if filtered {
+			stale = pc.stale.Unit(t.ID, cfg).Stale
+		}
+		res.Tests = append(res.Tests, traceTest{t.ID, t.Key, t.Title, last, stale})
 	}
 	writeJSON(w, http.StatusOK, res)
 }

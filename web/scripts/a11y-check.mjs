@@ -17,10 +17,13 @@
 // the login fails.
 import { createHmac } from 'node:crypto'
 import { existsSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
 import { AxeBuilder } from '@axe-core/playwright'
 
+/** the repository (test fixtures for uploads) */
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const BASE = (process.env.QTF_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '')
 const EMAIL = process.env.QTF_EMAIL || 'admin@example.com'
 const PASSWORD = process.env.QTF_PASSWORD || 'Change-me-1234'
@@ -196,6 +199,7 @@ async function discover(request) {
   const hasDefects = items(await api(request, 'GET', `/projects/${pid}/defects`)).length > 0
   const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
   const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
+  const hasWaivers = items(await api(request, 'GET', `/projects/${pid}/waivers`)).length > 0
   const hasBaselines = items(await api(request, 'GET', `/projects/${pid}/baselines`)).length > 0
   const firstBaseline = hasBaselines ? items(await api(request, 'GET', `/projects/${pid}/baselines`))[0] : null
   const documents = items(await api(request, 'GET', `/projects/${pid}/documents`))
@@ -224,6 +228,15 @@ async function discover(request) {
   const webTest = tests.find((t) => t.script_language === 'playwright')
   const webRun = runs.find((r) => r.name === 'Web smoke')
   const webEx = webRun ? items(await api(request, 'GET', `/runs/${webRun.id}/executions`)).find((e) => e.test_case_id === webTest?.id) : null
+  // change and defect correlations: a defect with a regression (seed-demo reopens one), a requirement with linked tests
+  let regressedDefect = null
+  for (const d of items(await api(request, 'GET', `/projects/${pid}/defects`))) {
+    if (items(await api(request, 'GET', `/defects/${d.id}/regressions`).catch(() => [])).length) {
+      regressedDefect = d
+      break
+    }
+  }
+  const linkedReq = reqs.find((r) => r.linked_tests > 0) ?? reqs[0]
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -233,6 +246,7 @@ async function discover(request) {
     { name: 'dashboard', path: `${p}/dashboard`, wait: 'canvas' },
     { name: 'dashboard-trends', path: `${p}/dashboard?tab=trends`, wait: 'canvas, .empty' },
     { name: 'dashboard-quality', path: `${p}/dashboard?tab=quality`, wait: 'canvas, .empty' },
+    { name: 'dashboard-quality-metrics', path: `${p}/dashboard?tab=quality`, wait: 'section.quality .qkpis' },
     { name: 'requirements', path: `${p}/requirements` },
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
     { name: 'tests', path: `${p}/tests` },
@@ -256,10 +270,22 @@ async function discover(request) {
     { name: 'traceability', path: `${p}/traceability` },
     { name: 'trace-rules', path: `${p}/traceability?view=rules`, wait: '.trace-rules .rule-list' },
     { name: 'trace-rules-violations', path: `${p}/traceability?view=rules`, open: '.trace-rules .violations-toggle', wait: '.trace-rules .violations' },
+    { name: 'trace-rule-builtin-dialog', path: `${p}/traceability?view=rules`, open: '.trace-rules .rule:has(.pi-shield) button:has(.pi-pencil)', wait: '.p-dialog .trace-rule-form' },
     { name: 'trace-rule-dialog', path: `${p}/traceability?view=rules`, open: '.trace-rules .filterbar button:has(.pi-plus)', wait: '.p-dialog .trace-rule-form' },
     ruleViolator && { name: 'requirement-trace-rules', path: `${p}/requirements?item=${ruleViolator.id}`, wait: '.p-drawer .trace-violations' },
     { name: 'traceability-selected', path: `${p}/traceability`, open: '.trace-bulk .p-checkbox', wait: '.trace-bulk' },
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
+    // variants and code (VariantsView, CodeView, the Code tab and the applicability dialog)
+    { name: 'variants', path: `${p}/variants`, wait: '.matrix, .empty-state' },
+    { name: 'variants-manage', path: `${p}/variants?tab=manage`, wait: '.variant-list, .empty-state' },
+    { name: 'variant-dialog', path: `${p}/variants`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
+    { name: 'code', path: `${p}/code`, wait: '#h-regression' },
+    { name: 'code-builds', path: `${p}/code?tab=builds`, wait: '#h-builds' },
+    { name: 'code-changes', path: `${p}/code?tab=changes`, wait: '#h-changes' },
+    { name: 'requirement-code', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-code)', wait: '.code-panel' },
+    { name: 'test-code', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-code)', wait: '.code-panel' },
+    { name: 'applicability-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer .applicability button:has(.pi-pencil)', wait: '.p-dialog' },
+    { name: 'code-settings', path: `${p}/settings?tab=project`, wait: '#h-code-settings' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
     // the requirement and test catalogue: both tabs, a selection, the preview, the import dialog, the areas drawer
@@ -278,6 +304,9 @@ async function discover(request) {
     run && { name: 'flow-run', path: `${p}/flow?run=${run.id}`, wait: '.stages, .empty' },
     { name: 'analytics', path: `${p}/analytics`, wait: '.analytics-cards, .empty' },
     { name: 'analytics-compliance', path: `${p}/analytics`, wait: 'section.compliance' },
+    { name: 'analytics-consistency', path: `${p}/analytics`, open: 'section.consistency .toggle', wait: 'section.consistency .violations' },
+    { name: 'analytics-quality', path: `${p}/analytics`, wait: 'section.quality .qkpis' },
+    { name: 'analytics-quality-table', path: `${p}/analytics`, open: 'section.quality .table-toggle', wait: 'section.quality .data-table' },
     { name: 'test-links', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-link)', wait: '.item-links' },
     { name: 'link-dialog', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: ['.p-drawer [role="tab"]:has(.pi-link)', '.item-links button:has(.pi-link)'], wait: '.link-types' },
     { name: 'new-requirement', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-plus)', wait: '.obligation-help' },
@@ -288,6 +317,25 @@ async function discover(request) {
     { name: 'baselines', path: `${p}/baselines` },
     { name: 'releases', path: `${p}/releases` },
     { name: 'risks', path: `${p}/risks`, wait: '.heat' },
+    // verification correlations: overview tabs, the requirement's verification tab and its dialogs, criterion rows of the matrix
+    { name: 'verification', path: `${p}/verification`, wait: '.ver-counts' },
+    { name: 'verification-elements', path: `${p}/verification?tab=elements`, wait: '.ver-counts' },
+    { name: 'verification-inconsistent', path: `${p}/verification?tab=inconsistent`, wait: '.ver-counts' },
+    { name: 'element-dialog', path: `${p}/verification?tab=elements`, open: 'button.add-element', wait: '.p-dialog form' },
+    { name: 'requirement-verification', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-verified)', wait: '.verification-panel .ver-summary' },
+    { name: 'verification-record-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: ['.p-drawer [role="tab"]:has(.pi-verified)', '.verification-panel h3 button:has(.pi-plus)'], wait: '.p-dialog form' },
+    { name: 'link-criteria-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: ['.p-drawer [role="tab"]:has(.pi-verified)', '.verification-panel button:has(.pi-sliders-h)'], wait: '.p-dialog .map-row' },
+    { name: 'traceability-criteria', path: `${p}/traceability?view=matrix`, open: '#tcrit', wait: 'tr.crit-row' },
+    // waivers, residual risk and the Statement of Applicability (seed: an approved waiver, a deviation draft, SoA decisions)
+    { name: 'risks-residual', path: `${p}/risks`, open: '.heat-card .p-selectbutton .p-togglebutton:nth-child(2)', wait: '.heat' },
+    hasRisks && { name: 'risk-dialog-residual', path: `${p}/risks`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog fieldset.residual' },
+    hasRisks && { name: 'risk-accept-dialog', path: `${p}/risks`, open: ['.p-datatable-tbody tr:first-child .link-button', '.p-dialog fieldset.residual button:has(.pi-pen-to-square)'], wait: '.p-dialog .esign' },
+    { name: 'waivers', path: `${p}/waivers`, wait: '.p-datatable-tbody tr' },
+    { name: 'waiver-new-dialog', path: `${p}/waivers`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #wv-title' },
+    hasWaivers && { name: 'waiver-detail', path: `${p}/waivers`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog .wv-fields' },
+    { name: 'soa', path: `${p}/soa`, wait: '[role="grid"] [role="gridcell"]' },
+    { name: 'soa-control', path: `${p}/soa`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: ['Control+Enter'], wait: '.p-dialog' },
+    hasReleases && { name: 'release-waivers', path: `${p}/releases`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.rel-waivers' },
     { name: 'defects', path: `${p}/defects` },
     // with a selected row (bulk toolbar); only when the project has defects / risks
     hasDefects && { name: 'defects-bulk', path: `${p}/defects`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
@@ -305,6 +353,20 @@ async function discover(request) {
     { name: 'settings', path: `${p}/settings` },
     { name: 'configurations', path: `${p}/settings?tab=configurations`, wait: '#h-configs' },
     { name: 'web-tests-settings', path: `${p}/settings?tab=webtests`, wait: '#h-web-tests' },
+    // change and defect correlations: settings, the Impact tabs, the confirmation before saving, a baseline's impact, regression history
+    { name: 'correlation-settings', path: `${p}/settings?tab=correlations`, wait: '#h-corr' },
+    linkedReq && { name: 'requirement-impact', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
+    { name: 'test-impact', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
+    linkedReq && { name: 'impact-confirm-dialog', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer form input[required]', keys: ['End', 'X', 'Enter'], wait: '.impact-confirm-dialog' },
+    firstBaseline && { name: 'baseline-impact-dialog', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, open: '.filterbar button:has(.pi-share-alt)', wait: '.baseline-impact-dialog .row' },
+    regressedDefect && { name: 'defect-regressions', path: `${p}/defects?item=${regressedDefect.id}`, wait: '#defect-regressions-h' },
+    // custom fields and item templates: the settings tabs, their dialogs, the picker of a new item, the field sets
+    { name: 'custom-fields-settings', path: `${p}/settings?tab=customFields`, wait: '.cf-settings .cf-table' },
+    { name: 'custom-field-dialog', path: `${p}/settings?tab=customFields`, open: '.cf-settings > .row button:has(.pi-plus)', wait: '.p-dialog .cf-form' },
+    { name: 'templates-settings', path: `${p}/settings?tab=templates`, wait: '.tpl-settings .tpl-list' },
+    { name: 'template-dialog', path: `${p}/settings?tab=templates`, open: '.tpl-settings > .row button:has(.pi-plus)', wait: '.p-dialog .tpl-form' },
+    { name: 'new-requirement-template', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-plus)', wait: '.template-picker' },
+    { name: 'field-sets', path: '/admin/field-sets', wait: '.cf-settings' },
     webTest && { name: 'web-test-editor', path: `${p}/tests?item=${webTest.id}`, wait: '.p-drawer' },
     webRun && webEx && { name: 'execute-web', path: `${p}/runs/${webRun.id}/exec/${webEx.id}`, wait: '.web-evidence' },
     jobsRun && { name: 'run-jobs', path: `${p}/runs/${jobsRun.id}`, open: '.run-jobs button[aria-controls="run-jobs-list"]', wait: '#run-jobs-list' },
@@ -328,6 +390,16 @@ async function discover(request) {
     { name: 'folders-bulk-drawer', path: `${p}/requirements`, open: ['.page-header .actions button:has(.pi-folder)', '.p-drawer button.p-button:has(.pi-check-square)', '.p-drawer .p-tree .p-checkbox'], wait: '.p-drawer .folder-bulk', maxWidth: 1199 },
     { name: 'categories-bulk', path: `${p}/settings?tab=requirement`, open: '.category-grid .p-checkbox', wait: '.bulkbar' },
     { name: 'export', path: `${p}/export` },
+    // exchanging data: the Import menu, the ReqIF import with its preview (a DOORS-shaped fixture), the Excel round-trip import
+    { name: 'exchange-menu', path: `${p}/requirements`, open: 'button.exchange-menu', wait: '#exchange-menu' },
+    {
+      name: 'exchange-reqif-preview',
+      path: `${p}/requirements`,
+      open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(2) .p-menu-item-link'],
+      upload: ['.exchange-dialog input[type="file"]', 'internal/interop/testdata/doors.reqif'],
+      wait: '.exchange-dialog .ex-table',
+    },
+    { name: 'exchange-xlsx-dialog', path: `${p}/tests`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:last-child .p-menu-item-link'], wait: '.exchange-dialog' },
     // ReqIF selected: the aspects are disabled and a hint is shown
     { name: 'export-reqif', path: `${p}/export`, open: '.format-grid button:has(.pi-sitemap)', wait: 'fieldset.plain-fieldset[disabled]' },
     { name: 'documents', path: `${p}/documents` },
@@ -648,6 +720,11 @@ async function main() {
             for (const sel of r.open ? [].concat(r.open) : []) {
               await settle(page)
               await page.locator(sel).first().click()
+            }
+            // upload: [selector, file] — a file of the repository set in a file input (an import preview)
+            if (r.upload) {
+              await settle(page)
+              await page.locator(r.upload[0]).first().setInputFiles(join(REPO, r.upload[1]))
             }
             // press: [selector, key] — a key pressed in a field (opens an autocomplete list)
             if (r.press) {

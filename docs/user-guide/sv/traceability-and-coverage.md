@@ -80,6 +80,85 @@ Förinställningarna:
 
 Reglerna utvärderas också på en releases omfattning av utgångskriteriet [Spårbarhetsregler](releases-and-risks.md#utgångskriterier), och rapporten **Spårbarhet** listar varje påslagen regel med resultat och de objekt som bryter mot den.
 
+### Inbyggda konsistenskontroller
+
+Utöver de regler du skriver har Qtestframe **inbyggda kontroller** med fasta villkor. De hittar objekt vars tillstånd motsäger deras relationer, länkar eller release:
+
+| Kontroll | Ett objekt bryter mot den när |
+|---|---|
+| Motstridiga krav i en release | två krav med relationen *står i konflikt med* är båda godkända (eller implementerade eller verifierade) och i samma release |
+| Godkänt krav med ouppfyllt beroende | ett godkänt krav *beror på* ett krav som är avvisat, föråldrat eller borttaget (finns kvar i papperskorgen) |
+| Aktivt krav med föråldrad förälder | ett krav som *förfinar* eller är *härlett från* ett föråldrat krav är inte själv avvisat eller föråldrat |
+| Testfall verifierar ett inaktivt krav | ett testfall verifierar ett avvisat eller föråldrat krav |
+| Trasig testförutsättning | en förutsättning för ett testfall är borttagen, underkändes senast, eller förutsättningarna bildar en cykel |
+| SKA-krav i en release utan godkänt belägg | ett MUST- eller SHALL-krav i en planerad eller aktiv release har inget länkat testfall som inte är misstänkt och som godkändes senast |
+| Hög risk utan verifierad åtgärd | en hög eller kritisk risk (inte stängd eller accepterad) saknar länkat krav, eller inget av dess krav är verifierat |
+| Regelverkskrav avvisat utan motivering | ett krav som lagts till från ett regelverk i [katalogen](catalogue.md) (en lag eller ett direktiv) är avvisat och har ingen kommentar och ingen egen motivering |
+| Misstänkt dubblerade krav | två aktiva krav har nästan identisk titel och beskrivning (likhet minst 0,9 som standard) och ingen relation *dubblerar* |
+
+Ett projekt får dem med **Lägg till inbyggda kontroller** (bland reglerna eller under **Analys**): de läggs till som regler med allvarligheten *varning*, så de syns i utgångskriteriet [Spårbarhetsregler](releases-and-risks.md#utgångskriterier) först när det räknar varningar, eller när du höjer en kontroll till *fel*. En inbyggd kontroll är märkt **Inbyggd**; du kan byta namn, ändra allvarlighet, stänga av den, begränsa den med en fråga och, för dubblettkontrollen, ange **Likhetsgräns** (0,5 till 1) eller, för riskkontrollen, **Lägsta risknivå**.
+
+Varje överträdelse visar de andra berörda objekten (det motstridiga kravet och releasen, den föråldrade föräldern, förutsättningen som underkändes …), var och en som länk, och föreslår en åtgärd där det finns en självklar: **Ta bort relationen**, **Ta bort länken**, **Ta bort förutsättningen**, **Ta bort från** releasen, **Markera som föråldrat**, **Registrera en motivering**, **Länka en åtgärd**, och för en misstänkt dubblett **Markera som dubblett** (lägger till relationen *dubblerar*) eller **Inget problem** (paret rapporteras inte igen). **Inget problem** kvitterar också ett beroende på ett borttaget objekt.
+
+## Ändringspåverkan
+
+En ändring av ett krav stannar sällan hos det kravet. När **innehållet** i ett krav ändras (titel, beskrivning, kravnivå eller kriterier) markerar Qtestframe det som kanske inte längre stämmer:
+
+- testfallen som verifierar det: deras länkar blir [misstänkta](#spårbarhetsmatrisen);
+- kraven som är relaterade till det: som standard de som **förfinar**, är **härledda från** eller **beror på** det. Deras relation blir misstänkt, liksom länkarna till deras testfall;
+- dess ärende i ärendehanteraren: det markeras som **inaktuellt** tills du uppdaterar ärendet från kravet (**Uppdatera ärendet**) eller väljer **Ärendet stämmer fortfarande**;
+- de genererade dokumenten i arkivet som innehåller det: de visas som **Inaktuellt** i **Dokument**, med objekten som ändrats sedan;
+- de senaste utfallen för dess testfall: de blir [inaktuella](#inaktuella-utfall).
+
+En ändring av ett testfalls titel, beskrivning, förutsättningar, steg, förväntade resultat, skript eller körningstyp gör dess länkar misstänkta och dess senaste utfall inaktuellt.
+
+### Innan du sparar
+
+När du sparar en ändring av innehållet och något skulle markeras visar en dialog allt som blir misstänkt eller inaktuellt. Välj **Spara och markera** för att spara, eller **Avbryt** för att gå tillbaka till redigeringen. Objekt som redan är markerade visas som sådana och räknas inte igen.
+
+### Fliken Påverkan
+
+Fliken **Påverkan** för ett krav eller testfall visar samma lista när som helst, under **Om kravet ändras** (eller **Om testfallet ändras**). För ett krav visar den också:
+
+- **Blockerande defekter**: de öppna defekter som blockerar det eller varnar för det (se [Blockerande defekter](#blockerande-defekter));
+- **Misstänkt nu**: dess misstänkta relationer, med **Bekräfta** för var och en (och **Bekräfta alla**), och de länkade testfall vars utfall är inaktuellt.
+
+Märkena bredvid kravets nyckel (**Blockeras av 1 defekt**, **1 inaktuellt utfall**, **1 misstänkt relation**) öppnar fliken. För ett testfall visar fliken också dess **Regressionshistorik** (se [Defekter](defects.md#regressioner)).
+
+### Påverkan sedan en baslinje
+
+Under **Baslinjer**, jämför en baslinje med nuläget och välj **Påverkan**. Dialogen listar varje krav och testfall vars innehåll ändrats sedan baslinjen, med störst påverkan först, och summan av de objekt som påverkas. Öppna ett objekt för att se vad dess ändring gör misstänkt eller inaktuellt.
+
+### Genom vilka relationer
+
+**Kategorier & inställningar → Ändringspåverkan** avgör, per relationstyp, vilket krav som blir misstänkt när kravet i andra änden ändras:
+
+| Inställning | Betydelse |
+|---|---|
+| **Inkommande (kravet som pekar på det)** | A *förfinar* B: när B ändras blir A misstänkt (standard för förfinar, härlett från och beror på) |
+| **Utgående (kravet det pekar på)** | A *tillhandahåller* B: när A ändras blir B misstänkt |
+| **Båda riktningarna** | en ändring i endera änden gör den andra misstänkt |
+| **Av** | ändringar sprids inte genom typen (standard för övriga typer) |
+
+**Markera ärendena för ett ändrat krav som inaktuella** kan stängas av.
+
+## Inaktuella utfall
+
+Ett testutfall blir **inaktuellt** när
+
+- det är äldre än projektet tillåter (som standard 90 dagar; **Utfall blir inaktuella efter** kan ändras eller stängas av), eller
+- testfallet, eller ett krav som det verifierar, ändrades i innehållet efter att utfallet registrerades (**Utfall blir inaktuella när testfallet eller ett krav det verifierar ändras**).
+
+Ett inaktuellt utfall räknas inte som godkänt underlag. Ett krav blir inte **Verifierat** på grund av det (och ett verifierat krav går tillbaka till **Implementerat**), täckningen räknar det som ej kört, och releasens utgångskriterier **Klarade testfall** och **Obligatoriska krav klarade** listar kravet med *inaktuellt utfall*. Inaktuella utfall har märket **Inaktuellt** i testfallslistan, i täckningskolumnen i kravlistan, i spårbarhetsmatrisen och i rapporter. Kör testfallet igen för att få ett färskt utfall.
+
+I sökningen hittar `stale:true` testfall med ett inaktuellt senaste utfall och `stale>0` krav med ett sådant.
+
+## Blockerande defekter
+
+En öppen defekt som är länkad till ett krav, till ett testfall som verifierar det eller till en körning av ett sådant testfall **blockerar** kravet, eller **varnar** bara för det, beroende på allvarlighetsgraden. Som standard blockerar kritiska och större defekter, mindre varnar och triviala gör ingetdera; **Kategorier & inställningar → Ändringspåverkan → Defekter som blockerar krav** ändrar detta per projekt.
+
+Blockerade krav visar **Blockerat** i kravlistan och i spårbarhetsmatrisen, kravet visar **Blockeras av 1 defekt** bredvid nyckeln, och avsnittet **Kvalitet** i översikten räknar blockerade krav, krav med varningar, inaktuella utfall och misstänkta relationer. I sökningen hittar `blocked>0` blockerade krav. Releasens utgångskriterium **Inga blockerande defekter** är inte uppfyllt så länge ett krav i omfattningen är blockerat.
+
 ## Så beräknas täckningen
 
 Täckningen härleds från det **senaste utfallet** för varje länkat testfall. Den beräknas varje gång du tittar på den och sparas aldrig, så den är alltid aktuell.
@@ -116,11 +195,58 @@ Utan konfigurationer ändras ingenting: varje testfall har ett utfall, sitt sena
 
 Tänk på följande:
 
-- Täckningen beräknas per krav, inte per utvärderingskriterium. En länk kan ange vilket kriterium ett testfall verifierar, men alla länkar räknas lika.
+- Täckningen beräknas per krav, inte per utvärderingskriterium; alla länkar räknas lika. Vilka kriterier testfallen och andra belägg verifierar visas under [Verifiering](#verifiering).
 - Bara körningar i samma projekt räknas. Ett testfall som har flyttats från ett annat projekt behåller sina gamla exekveringar, men de räknas inte längre.
 - Ett nyare utfall *Godkänd* ersätter ett äldre *Underkänd*; du behöver inte ta bort gamla körningar.
 
 Täckningen visas som kolumn och snabbfilter i kravlistan, som frågefältet `coverage` (till exempel `coverage:failed` eller `coverage:none category:Security`), i matrisen, i exporter, i rapporter och på översikten.
+
+## Verifiering
+
+Täckningen visar om de länkade testfallen är godkända. **Verifiering** går ett steg längre: ett krav räknas som **verifierat** först när **varje utvärderingskriterium har godkända belägg**, och – i en hierarki – när varje krav som förfinar det också är verifierat. Belägg är ett godkänt testfall, ett godkänt teststeg eller en **verifieringspost** för en inspektion, analys, demonstration eller granskning. Därmed kan även krav på hårdvara, lokaler och styrning som inget testfall kan verifiera bli verifierade.
+
+Öppna ett krav och välj fliken **Verifiering**. Den visar läget med skälen när kravet inte är verifierat (till exempel *Kriterium 2 saknar belägg.*), beläggen för varje kriterium, kraven som förfinar det, verifieringsposterna, kriterierna för de länkade testfallen och systemelementen kravet är allokerat till. Märket bredvid täckningen i redigerarens sidhuvud öppnar fliken.
+
+| Läge | När |
+|---|---|
+| **Verifierat** | varje kriterium (och varje underkrav) har godkända belägg |
+| **Delvis verifierat** | en del är verifierat, inte allt |
+| **Underkänt** | något belägg underkändes: ett testfall underkändes eller blockerades, en post har utfallet *Underkänd* |
+| **Inte godkänt än** | det finns belägg, men inget är godkänt än (ej kört, en misstänkt länk, ett steg som inte körts) |
+| **Inga belägg** | inget testfall och ingen verifieringspost |
+
+### Testfall för kriterier och teststeg
+
+Ett testfall som är länkat till ett krav kan kopplas till de kriterier det verifierar. Välj **Koppla kriterier** bredvid testfallet på fliken **Verifiering**, kryssa i kriterierna och, om du vill, det **steg** i testfallet som visar det. Ett kriterium som är kopplat till ett steg är godkänt när det steget godkändes i testfallets senaste exekvering. När du länkar ett testfall kan du också välja ett kriterium direkt (väljaren bredvid **Länka testfall**).
+
+En länk **utan** kriterier räknas för hela kravet, som tidigare: för varje kriterium som saknar egna belägg. Ett projekt som vill att varje kriterium har egna belägg slår på **strikt kriterietäckning** under **Inställningar → Projekt → Verifiering**. Ett underkänt testfall underkänner alltid kravet, kopplat eller inte.
+
+### Verifieringsposter
+
+För ett kriterium som verifieras genom inspektion, analys, demonstration eller granskning väljer du **Registrera belägg för kriterium n** (eller **Registrera belägg** för hela kravet) och fyller i:
+
+- **Metod** och **Utfall**: *Godkänd*, *Underkänd* eller *Godkänd med villkor* (räknas som godkänd och visas med villkor);
+- **Utförd av** och **Datum**;
+- en **Anteckning** och **Dokument från arkivet** (till exempel inspektionsprotokollet som laddats upp under [Dokument](documents.md));
+- **Giltig till**: posten räknas inte efter den dagen; **Giltig tills kravet ändras**: när titel, beskrivning, kravnivå eller kriterier ändras ogiltigförklaras posten (som en misstänkt länk) och behöver registreras igen.
+
+För varje kriterium räknas bara den nyaste giltiga posten; äldre visas som ersatta. En andra person kan **kontrasignera** en post (den som har behörighet att granska eller exekvera, utom postens författare och den som utförde den). En ändring av metod, utfall, kriterium, datum eller utförare tar bort kontrasigneringen.
+
+### Kravhierarki och sammanräkning
+
+Hierarkin byggs av relationen **förfinar**: ett krav som förfinar ett annat är dess underkrav (se [Relationer](requirements.md)). Ett överordnat krav är verifierat först när dess egna kriterier är verifierade och alla underkrav (utom avvisade och inaktuella) är det. Ett överordnat krav utan egna kriterier och belägg är verifierat när alla dess underkrav är det.
+
+**Verifiering** i projektets navigering visar hierarkin som ett träd med märken: läget, verifierade kriterier (*2/3 kriterier*) och verifierade underkrav (*1/2 underkrav*). **Bara ej verifierade** behåller grenarna som fortfarande behöver arbete.
+
+Med standardinställningen följer statusen beläggen (**Administration → Testexekvering**, se [Inställningar för testexekvering](administration.md#inställningar-för-testexekvering)): ett implementerat krav blir verifierat när det är verifierat, och ett verifierat krav går tillbaka till implementerat när ett underkrav eller kriterium inte längre är det – så ett verifierat överordnat krav med ett underkrav som inte är verifierat kan inte bli kvar. När organisationen verifierar manuellt listas ett sådant krav under **Verifiering → Inkonsekvenser** och i [kravanalysen](#kravanalys) (*Verifierade krav med underkrav som inte är verifierade*).
+
+### Systemelement
+
+**Verifiering → Systemelement** innehåller projektets produktuppdelning: system, delsystem, komponenter, produkter och leverantörer, som ett träd. Krav och testfall allokeras till element på fliken **Verifiering** i ett krav (och via API:t). Varje element visar hur många av kraven som är allokerade till det **eller till ett element under det** som är verifierade (*42/50 verifierade*), hur många som har belägg eller är underkända, och hur många av dess testfall som är godkända. Siffrorna länkar till listorna filtrerade på elementet.
+
+I frågespråket hittar `element:"Kraftenhet"` kraven och testfallen som är allokerade till *Kraftenhet* eller till ett element under det, och `verification:verified`, `verification:none` … filtrerar på verifieringsläget.
+
+Rapporten **Verifiering** och kravspecifikationen visar samma sak: rapporten har beläggen per kriterium, kraven som inte är verifierade och varför, posterna, sammanräkningen, inkonsekvenserna och täckningen per element; specifikationen visar verifieringen av varje krav och kriterium.
 
 ## Översikten
 
@@ -163,6 +289,7 @@ Trenderna bygger på en ögonblicksbild av siffrorna som Qtestframe sparar en g�
 - **Åtgärder för öppna risker**: de öppna riskerna efter hur långt kraven som hanterar dem är testade: *Inga krav*, *Otestad*, *Delvis testad*, *Testad, inte alla godkända* och *Verifierad* (som i [riskrapporten](reports-and-export.md#standardrapporter)).
 - **Ålder på öppna defekter**: öppna och påbörjade defekter efter ålder (under 7 dagar, 7–30, 30–90, över 90 dagar), uppdelade per allvarlighetsgrad, med medelåldern och den äldsta.
 - **Spårbarhetsregler**: om alla aktiverade regler med allvarlighet *fel* är uppfyllda, hur många regler som är aktiverade, hur många som bryts (fel och varningar) och antalet överträdelser. **Spårbarhet →** öppnar matrisen med reglerna.
+- **Kvalitetsmått** och **Konsistenskontroller** (de som hittar problem): samma som under [Analys](#kvalitetsmått).
 
 De extra nyckeltalen och diagrammen räknas fram på servern i en enda begäran, som läses in samtidigt med resten av översikten.
 
@@ -208,6 +335,27 @@ Cykler (till exempel två krav som beror på varandra) ritas, men en av linjerna
 **Kravens språk** visar hur många krav som är skrivna på varje språk. Bara texter som är tillräckligt långa för att avgöra språket räknas; en titel på ett eller två ord räcker inte.
 
 **Språk** väljer analysens språk (identifieras per krav som standard). Anmärkningar om testfall visas när du får läsa testfall.
+
+### Konsistenskontroller
+
+**Konsistenskontroller** under **Analys** utvärderar varje [inbyggd konsistenskontroll](#inbyggda-konsistenskontroller) på projektet, även de som inte lagts till som regler än (märkta **Standard**; de räknas inte för releaser förrän de lagts till). **Visa överträdelser** listar objekten med de berörda objekten och åtgärderna.
+
+### Kvalitetsmått
+
+**Kvalitetsmått** under **Analys** (och på översiktens flik **Kvalitet**) mäter projektet ur dess historik. Välj period (30, 90, 180 eller 365 dagar) och efter hur många dagar ett senaste resultat räknas som inaktuellt. Trenderna är per vecka, eller per månad för perioder över 120 dagar.
+
+| Mått | Vad det mäter |
+|---|---|
+| **Kravens föränderlighet** | ändringarna av krav efter att de skapades (varje sparad version; flyttar räknas inte), per period, som ändringar per krav och period, och de mest ändrade kraven |
+| **Defekttäthet** | defekter per aktivt krav, per mapp och per kategori; en defekt räknas för ett krav när den är länkad till kravet, till ett testfall som verifierar det eller till en körning av ett sådant testfall |
+| **Läckta defekter** | defekter som hittats i produktion (defektens fält **Upptäckt i**, se [Defekter](defects.md)) eller rapporterats efter att en release de berör släppts; andelen av alla defekter, per upptäcktsfas och per release |
+| **Testeffektivitet** | defekter hittade av test (länkade till ett testfall eller en av dess körningar) per kört testfall och per körtimme; körningar utan tidsåtgång räknas inte i timmarna |
+| **Resultatens ålder** | hur gammalt varje testfalls senaste resultat är (0–7, 8–30, 31–90, 91–180 och fler dagar, aldrig körda) och hur många som är äldre än gränsen |
+| **Granskningstid** | tiden från en granskningsbegäran till beslutet (median, medel och 90:e percentilen), och de väntande begärandena |
+| **Tid till rättning av defekter** | tiden från att en defekt rapporteras tills den är löst, per allvarlighet (avvisade defekter räknas inte) |
+| **Kravkvalitet** | andelen aktiva krav vars text har varningar från språkanalysen; trenden spelar upp varje kravs text ur dess historik |
+
+Varje diagram har ett textalternativ och **Visa som tabell** visar siffrorna i en tabell. **Exportera som rapport** öppnar rapporterna: standardrapporten **Kvalitetsmått** innehåller samma siffror.
 
 ### Efterlevnad av lagar och standarder
 

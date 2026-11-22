@@ -4,6 +4,7 @@ package model
 
 import (
 	"encoding/json"
+	"slices"
 	"time"
 )
 
@@ -179,6 +180,10 @@ type FileInfo struct {
 	CreatedAt   time.Time  `json:"created_at"`
 	URL         string     `json:"url"` // download URL
 	Links       []FileLink `json:"links"`
+	// Outdated (generated documents): a requirement or test it contains
+	// changed after it was generated; OutdatedItems are their keys.
+	Outdated      bool     `json:"outdated,omitempty"`
+	OutdatedItems []string `json:"outdated_items,omitempty"`
 }
 
 // FileLink is an item a file is attached to.
@@ -458,10 +463,30 @@ type Requirement struct {
 	RiskLevel string `json:"risk_level,omitempty"`
 	// OpenDefects: open defects linked to it or to its tests.
 	OpenDefects int `json:"open_defects"`
+	// BlockingDefects / DefectWarnings: open defects that block it or warn
+	// about it under the project's severity rules (CorrelationSettings).
+	BlockingDefects int `json:"blocking_defects,omitempty"`
+	DefectWarnings  int `json:"defect_warnings,omitempty"`
+	// StaleResults: linked tests whose latest result is stale.
+	StaleResults int `json:"stale_results,omitempty"`
+	// SuspectRelations: its relations that are suspect because the
+	// requirement at the other end changed.
+	SuspectRelations int `json:"suspect_relations,omitempty"`
 	// RelationRefs lists the related items in both directions: requirement
 	// relations and the tests that verify it ("verifies", incoming).
 	RelationRefs  []ItemRef `json:"relations,omitempty"`
 	CriteriaCount int       `json:"criteria_count,omitempty"`
+	// Verification (derived, see RequirementVerification): the rolled-up
+	// verification state; CriteriaVerified: criteria with passing
+	// evidence; ElementIDs: the system elements it is allocated to.
+	Verification     string   `json:"verification,omitempty"`
+	CriteriaVerified int      `json:"criteria_verified,omitempty"`
+	ElementIDs       []string `json:"element_ids,omitempty"`
+	// Applicability: the variants it applies to (nil: all variants).
+	Applicability *Applicability `json:"applicability,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // ItemRef is a derived reference from a requirement or test to a related
@@ -557,6 +582,17 @@ type TestCase struct {
 	// reaches the threshold (see store.FlakyWindow, store.FlakyMinFlips).
 	Flakiness int  `json:"flakiness,omitempty"`
 	Flaky     bool `json:"flaky,omitempty"`
+	// Stale: the latest result is stale (StaleReason: age, test_changed or
+	// requirement_changed) and does not count as passing evidence.
+	Stale       bool   `json:"stale,omitempty"`
+	StaleReason string `json:"stale_reason,omitempty"`
+	// ElementIDs: the system elements it is allocated to (derived).
+	ElementIDs []string `json:"element_ids,omitempty"`
+	// Applicability: the variants it applies to (nil: all variants).
+	Applicability *Applicability `json:"applicability,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -574,6 +610,9 @@ type TraceLink struct {
 	// Derived.
 	RequirementKey string `json:"requirement_key,omitempty"`
 	TestCaseKey    string `json:"test_case_key,omitempty"`
+	// Criteria are the criteria the test verifies (CriterionID is the
+	// first of them), each optionally through one test step.
+	Criteria []LinkCriterion `json:"criteria"`
 }
 
 // DataRow is one row of a data-driven test: values by parameter name and an
@@ -629,9 +668,19 @@ type TestRun struct {
 	// Configurations the run targets (each test is executed once per
 	// configuration); empty for a run without configurations.
 	Configurations []ConfigurationRef `json:"configurations"`
+	// VariantID: the variant the run tests (nil: variant-neutral, its
+	// results count for every variant); BuildID: the CI build its results
+	// belong to.
+	VariantID *string `json:"variant_id"`
+	BuildID   *string `json:"build_id"`
 	// Derived.
 	Summary     map[string]int `json:"summary,omitempty"`
 	ReleaseName string         `json:"release_name,omitempty"`
+	VariantName string         `json:"variant_name,omitempty"`
+	BuildLabel  string         `json:"build_label,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // StepResult is the outcome of one manual step.
@@ -716,6 +765,13 @@ type Relation struct {
 	TargetTitle string    `json:"target_title"`
 	// Direction relative to the requirement queried: outgoing | incoming.
 	Direction string `json:"direction,omitempty"`
+	// SuspectSince is set when the requirement at the other end changed
+	// and the change travels along the relation (CorrelationSettings);
+	// SuspectReason says what changed.
+	SuspectSince  *time.Time `json:"suspect_since"`
+	SuspectReason string     `json:"suspect_reason,omitempty"`
+	// SuspectEnd: the requirement that is suspect, source | target.
+	SuspectEnd string `json:"suspect_end,omitempty"`
 }
 
 // KindDefect and KindRisk name defects and risks (keys PROJ-BUG-n, PROJ-RISK-n).
@@ -730,6 +786,15 @@ var (
 	DefectOpenStatuses = []string{"open", "in_progress"}
 	// DefectSeverities from most to least severe.
 	DefectSeverities = []string{"critical", "major", "minor", "trivial"}
+	// DefectPhases are the phases a defect can be found in (Defect.FoundIn;
+	// "" = unknown). Defects found in DefectEscapedPhase escaped testing.
+	DefectPhases = []string{"requirements", "design", "development", "test", "acceptance", "production"}
+)
+
+// DefectEscapedPhase is the phase of escaped defects.
+const DefectEscapedPhase = "production"
+
+var (
 	// DefectLinkTypes are the items a defect can be linked to.
 	DefectLinkTypes = []string{KindRequirement, KindTest, "execution", "run"}
 )
@@ -755,8 +820,13 @@ type Defect struct {
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 	ResolvedAt     *time.Time `json:"resolved_at"`
+	// FoundIn is the phase the defect was found in (DefectPhases, "" unknown).
+	FoundIn string `json:"found_in"`
 	// Links to requirements, tests, executions and runs.
 	Links []DefectLink `json:"links,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // DefectLink connects a defect to an item.
@@ -854,6 +924,53 @@ type Risk struct {
 	// Requirements with tests, and with all tests passed.
 	Covered  int `json:"covered"`
 	Verified int `json:"verified"`
+
+	// Residual risk after mitigation: likelihood and impact (0 = not
+	// assessed). They apply once the mitigation is verified (every
+	// requirement of the risk passed its tests), or at once when entered by
+	// hand (ResidualManual) with a justification.
+	ResidualLikelihood    int    `json:"residual_likelihood"`
+	ResidualImpact        int    `json:"residual_impact"`
+	ResidualManual        bool   `json:"residual_manual"`
+	ResidualJustification string `json:"residual_justification"`
+	// ReviewDate (YYYY-MM-DD, "" none) and ReviewOwner of the next review.
+	ReviewDate  string `json:"review_date"`
+	ReviewOwner string `json:"review_owner"`
+	// Acceptance: the "accept risk" electronic signature over the residual
+	// assessment (AcceptedBy "" = not accepted).
+	AcceptedBy        string     `json:"accepted_by"`
+	AcceptedName      string     `json:"accepted_name"`
+	AcceptedAt        *time.Time `json:"accepted_at"`
+	AcceptanceComment string     `json:"acceptance_comment"`
+	AcceptanceHash    string     `json:"-"`
+	// Derived: the residual score and level in effect, where they come
+	// from (ResidualInherent, ResidualVerified, ResidualManual), the
+	// project's acceptance threshold, whether the residual level is above
+	// it, whether the acceptance still matches the assessment, and whether
+	// the review date has passed.
+	ResidualScore   int    `json:"residual_score"`
+	ResidualLevel   string `json:"residual_level"`
+	ResidualSource  string `json:"residual_source"`
+	Threshold       string `json:"threshold"`
+	AboveThreshold  bool   `json:"above_threshold"`
+	AcceptanceValid bool   `json:"acceptance_valid"`
+	ReviewDue       bool   `json:"review_due"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
+}
+
+// ResidualOf returns the residual likelihood, impact and source in effect
+// for a risk whose mitigation is verified or not.
+func (k *Risk) ResidualOf(mitigationVerified bool) (int, int, string) {
+	assessed := k.ResidualLikelihood > 0 && k.ResidualImpact > 0
+	switch {
+	case assessed && k.ResidualManual:
+		return k.ResidualLikelihood, k.ResidualImpact, ResidualManual
+	case assessed && mitigationVerified:
+		return k.ResidualLikelihood, k.ResidualImpact, ResidualVerified
+	}
+	return k.Likelihood, k.Impact, ResidualInherent
 }
 
 // Notification is an in-app message to one user.
@@ -878,6 +995,8 @@ var WebhookEvents = []string{
 	"defect.created", "defect.updated", "defect.status", "defect.assigned",
 	"risk.created", "risk.updated", "release.created", "release.updated", "release.released",
 	"comment.created", "review.requested", "review.completed", "baseline.signed",
+	"defect.regression",
+	"waiver.requested", "waiver.approved", "waiver.rejected", "waiver.revoked",
 }
 
 // Webhook posts events of a project to a URL, signed with HMAC-SHA256.
@@ -964,16 +1083,18 @@ var ReleaseStatuses = []string{"planned", "active", "released", "cancelled"}
 
 // ExitCriterionTypes are the kinds of exit criteria of a release.
 var ExitCriterionTypes = []string{
-	"coverage",         // % of scope requirements with at least one test
-	"passed",           // % of scope requirements whose tests all passed in the release's runs
-	"mandatory_passed", // every MUST/SHALL requirement in scope passed
-	"executed",         // % of the executions of the release's runs that have a result
-	"no_failed",        // no failed or blocked test in the release's runs
-	"approved",         // % of scope requirements approved, implemented or verified
-	"no_suspect",       // no suspect links in scope
-	"no_open_defects",  // no open defects (of at least the given severity) on the scope
-	"risks_mitigated",  // every risk of at least the given level linked to scope requirements is mitigated or accepted
-	"trace_rules",      // the enabled traceability rules pass on the scope (level error: errors only, warning: also warnings)
+	"coverage",            // % of scope requirements with at least one test
+	"passed",              // % of scope requirements whose tests all passed in the release's runs
+	"mandatory_passed",    // every MUST/SHALL requirement in scope passed
+	"executed",            // % of the executions of the release's runs that have a result
+	"no_failed",           // no failed or blocked test in the release's runs
+	"approved",            // % of scope requirements approved, implemented or verified
+	"no_suspect",          // no suspect links in scope
+	"no_open_defects",     // no open defects (of at least the given severity) on the scope
+	"risks_mitigated",     // every risk of at least the given level linked to scope requirements is mitigated or accepted
+	"trace_rules",         // the enabled traceability rules pass on the scope (level error: errors only, warning: also warnings)
+	"residual_risk",       // no risk linked to scope requirements has a residual level above the threshold (the level; default the project's) unless the risk is accepted
+	"no_blocking_defects", // no scope requirement is blocked by an open defect (the project's severity rules)
 }
 
 // ExitCriterion is one condition a release must meet.
@@ -982,7 +1103,9 @@ type ExitCriterion struct {
 	// Threshold in percent for the percentage criteria (default 100).
 	Threshold float64 `json:"threshold,omitempty"`
 	// Severity / level for no_open_defects and risks_mitigated; for
-	// trace_rules the least rule severity that counts (error | warning).
+	// trace_rules the least rule severity that counts (error | warning);
+	// for residual_risk the risk acceptance threshold of the release (""
+	// = the project's).
 	Level string `json:"level,omitempty"`
 }
 
@@ -1015,6 +1138,7 @@ var DefaultExitCriteria = []ExitCriterion{
 	{Type: "passed", Threshold: 95},
 	{Type: "no_failed"},
 	{Type: "no_suspect"},
+	{Type: "no_blocking_defects"},
 }
 
 // ItemLinkSourceTypes are the items that can carry links.
@@ -1068,6 +1192,10 @@ type LinkedIssue struct {
 	SyncedAt *time.Time `json:"synced_at"`
 	// PassedAt: when the "all tests passed" comment was posted.
 	PassedAt *time.Time `json:"passed_at,omitempty"`
+	// OutdatedSince: the requirement changed after the issue was created or
+	// last updated from it; OutdatedReason says what changed.
+	OutdatedSince  *time.Time `json:"outdated_since,omitempty"`
+	OutdatedReason string     `json:"outdated_reason,omitempty"`
 }
 
 // TestDependency says that TestID may only be executed after DependsOnID
@@ -1193,9 +1321,58 @@ const (
 	TraceItemLink = "item_link"
 )
 
+// Built-in consistency checks: rule kinds whose condition is fixed (see
+// internal/tracerules builtin.go). They have no minimum; a selector still
+// narrows the items checked (not for risks).
+const (
+	// CheckConflictInRelease: requirements related by conflicts_with are
+	// both approved (or later) in the same release.
+	CheckConflictInRelease = "conflict_in_release"
+	// CheckUnmetDependency: an approved requirement depends_on one that is
+	// rejected, obsolete or deleted.
+	CheckUnmetDependency = "unmet_dependency"
+	// CheckObsoleteParent: an active requirement refines or is derived
+	// from an obsolete requirement.
+	CheckObsoleteParent = "obsolete_parent"
+	// CheckVerifiesInactive: a test verifies a rejected or obsolete requirement.
+	CheckVerifiesInactive = "verifies_inactive"
+	// CheckBrokenPrerequisite: a test prerequisite is deleted, failing or
+	// part of a cycle.
+	CheckBrokenPrerequisite = "broken_prerequisite"
+	// CheckUnevidencedMust: a MUST requirement of a release has no passing evidence.
+	CheckUnevidencedMust = "unevidenced_must"
+	// CheckUnmitigatedRisk: a high or critical risk has no mitigation
+	// requirement, or none of them is verified.
+	CheckUnmitigatedRisk = "unmitigated_risk"
+	// CheckUnjustifiedRejection: a requirement adopted from a regulation of
+	// the catalogue is rejected without a recorded justification.
+	CheckUnjustifiedRejection = "unjustified_rejection"
+	// CheckDuplicateSuspect: requirements with nearly identical text and no
+	// duplicates relation.
+	CheckDuplicateSuspect = "duplicate_suspect"
+)
+
+// TraceBuiltinKinds lists the built-in consistency checks in display order.
+var TraceBuiltinKinds = []string{CheckConflictInRelease, CheckUnmetDependency, CheckObsoleteParent, CheckVerifiesInactive,
+	CheckBrokenPrerequisite, CheckUnevidencedMust, CheckUnmitigatedRisk, CheckUnjustifiedRejection, CheckDuplicateSuspect}
+
+// IsBuiltinCheck reports whether kind is a built-in consistency check.
+func IsBuiltinCheck(kind string) bool { return slices.Contains(TraceBuiltinKinds, kind) }
+
+// BuiltinScope is the item kind a built-in check applies to.
+func BuiltinScope(kind string) string {
+	switch kind {
+	case CheckVerifiesInactive, CheckBrokenPrerequisite:
+		return KindTest
+	case CheckUnmitigatedRisk:
+		return KindRisk
+	}
+	return KindRequirement
+}
+
 // TraceRuleKinds lists the rule kinds; TraceRuleSeverities their severities.
 var (
-	TraceRuleKinds      = []string{TraceVerifiedBy, TraceVerifies, TraceRelation, TraceItemLink}
+	TraceRuleKinds      = append([]string{TraceVerifiedBy, TraceVerifies, TraceRelation, TraceItemLink}, TraceBuiltinKinds...)
 	TraceRuleSeverities = []string{"error", "warning"}
 	// TraceRuleDirections of relations and item links ("" = any).
 	TraceRuleDirections = []string{"", "incoming", "outgoing"}
@@ -1244,6 +1421,12 @@ type TraceRuleOptions struct {
 	// Every: every trace of the kind must meet the conditions (e.g. no
 	// suspect link at all), not only Min of them.
 	Every bool `json:"every,omitempty"`
+	// Threshold of duplicate_suspect: the least similarity (0.5–1) of two
+	// normalised texts that counts as a suspected duplicate (default 0.9).
+	Threshold float64 `json:"threshold,omitempty"`
+	// Level of unmitigated_risk: the least risk level checked (RiskLevels,
+	// default high).
+	Level string `json:"level,omitempty"`
 }
 
 // MFA policy modes.

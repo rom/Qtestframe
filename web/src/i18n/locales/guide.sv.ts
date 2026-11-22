@@ -5,6 +5,7 @@ import type { GuideMessages } from './guide.en'
 const guideSv: GuideMessages = {
   titles: {
     help: 'Hjälp',
+    adminGuide: 'Administratörshandbok',
   },
   guide: {
     queryGuide: 'Fullständig beskrivning och exempel i användarhandboken',
@@ -17,11 +18,13 @@ const guideSv: GuideMessages = {
     help: 'Hjälp',
     helpMenu: 'Hjälpmeny',
     userGuide: 'Användarhandbok',
+    adminGuide: 'Administratörshandbok',
     restartTour: 'Starta introduktionsturen igen',
     thisPage: 'Hjälp för den här sidan',
     contextHelp: 'Hjälp: {topic}',
     contents: 'Innehåll',
     contentsNav: 'Handbokens innehåll',
+    adminContentsNav: 'Innehåll i administratörshandboken',
     onThisPage: 'På den här sidan',
     openContents: 'Visa innehåll',
     search: 'Sök i handboken',

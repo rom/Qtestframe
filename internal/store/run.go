@@ -10,17 +10,24 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 )
 
-const runCols = `id, project_id, name, description, status, environment, build, created_by, created_at, started_at, completed_at, release_id`
+const runCols = `id, project_id, name, description, status, environment, build, created_by, created_at, started_at, completed_at, release_id,
+	variant_id, build_id, COALESCE((SELECT v.name FROM variants v WHERE v.id = test_runs.variant_id), ''),
+	COALESCE((SELECT CASE WHEN b.number <> '' THEN b.number ELSE b.external_id END FROM builds b WHERE b.id = test_runs.build_id), ''),
+	custom_fields`
 
 func scanRun(r interface{ Scan(...any) error }) (*model.TestRun, error) {
 	var run model.TestRun
 	var st, ct sql.NullTime
-	var rel sql.NullString
-	if err := r.Scan(&run.ID, &run.ProjectID, &run.Name, &run.Description, &run.Status, &run.Environment, &run.Build, &run.CreatedBy, &run.CreatedAt, &st, &ct, &rel); err != nil {
+	var rel, variant, build sql.NullString
+	var custom string
+	if err := r.Scan(&run.ID, &run.ProjectID, &run.Name, &run.Description, &run.Status, &run.Environment, &run.Build, &run.CreatedBy, &run.CreatedAt, &st, &ct, &rel,
+		&variant, &build, &run.VariantName, &run.BuildLabel, &custom); err != nil {
 		return nil, err
 	}
+	run.CustomFields = decodeCustom(custom)
 	run.StartedAt, run.CompletedAt = timePtr(st), timePtr(ct)
 	run.ReleaseID = strPtr(rel)
+	run.VariantID, run.BuildID = strPtr(variant), strPtr(build)
 	return &run, nil
 }
 
@@ -45,6 +52,9 @@ func (s *Store) CreateRun(ctx context.Context, tenantID string, run *model.TestR
 		if err := checkRelease(ctx, c, tenantID, run.ProjectID, run.ReleaseID); err != nil {
 			return err
 		}
+		if err := checkRunVariantBuild(ctx, c, tenantID, run.ProjectID, run.VariantID, run.BuildID); err != nil {
+			return err
+		}
 		cfgs := make([]string, 0, len(run.Configurations))
 		for _, r := range run.Configurations {
 			cfgs = append(cfgs, r.ID)
@@ -53,8 +63,15 @@ func (s *Store) CreateRun(ctx context.Context, tenantID string, run *model.TestR
 		if err := checkRunConfigurations(ctx, c, tenantID, run.ProjectID, cfgs); err != nil {
 			return err
 		}
-		if _, err := c.exec(ctx, `INSERT INTO test_runs (id, tenant_id, project_id, name, description, status, environment, build, created_by, created_at, release_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			run.ID, tenantID, run.ProjectID, run.Name, run.Description, run.Status, run.Environment, run.Build, run.CreatedBy, run.CreatedAt, nullStr(run.ReleaseID)); err != nil {
+		// a run created without custom_fields (a result import) gets the
+		// defaults; required fields are checked when values are given
+		custom, err := checkCustomOpt(ctx, c, tenantID, run.ProjectID, "run", run.CustomFields, nil, true, run.CustomFields == nil)
+		if err != nil {
+			return err
+		}
+		run.CustomFields = custom
+		if _, err := c.exec(ctx, `INSERT INTO test_runs (id, tenant_id, project_id, name, description, status, environment, build, created_by, created_at, release_id, variant_id, build_id, custom_fields) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			run.ID, tenantID, run.ProjectID, run.Name, run.Description, run.Status, run.Environment, run.Build, run.CreatedBy, run.CreatedAt, nullStr(run.ReleaseID), nullStr(run.VariantID), nullStr(run.BuildID), encodeCustom(run.CustomFields)); err != nil {
 			return err
 		}
 		for i, id := range cfgs {
@@ -62,7 +79,6 @@ func (s *Store) CreateRun(ctx context.Context, tenantID string, run *model.TestR
 				return err
 			}
 		}
-		var err error
 		if run.Configurations, err = runConfigurations(ctx, c, run.ID); err != nil {
 			return err
 		}
@@ -354,8 +370,16 @@ func (s *Store) UpdateRun(ctx context.Context, tenantID string, run *model.TestR
 	if err := checkRelease(ctx, s.c(ctx), tenantID, run.ProjectID, run.ReleaseID); err != nil {
 		return err
 	}
-	res, err := s.c(ctx).exec(ctx, `UPDATE test_runs SET name = ?, description = ?, status = ?, environment = ?, build = ?, started_at = ?, completed_at = ?, release_id = ? WHERE id = ? AND tenant_id = ?`,
-		run.Name, run.Description, run.Status, run.Environment, run.Build, nullTime(run.StartedAt), nullTime(run.CompletedAt), nullStr(run.ReleaseID), run.ID, tenantID)
+	if err := checkRunVariantBuild(ctx, s.c(ctx), tenantID, run.ProjectID, run.VariantID, run.BuildID); err != nil {
+		return err
+	}
+	custom, err := s.checkItemCustom(ctx, tenantID, "run", run.ID, run.CustomFields)
+	if err != nil {
+		return err
+	}
+	run.CustomFields = custom
+	res, err := s.c(ctx).exec(ctx, `UPDATE test_runs SET name = ?, description = ?, status = ?, environment = ?, build = ?, started_at = ?, completed_at = ?, release_id = ?, variant_id = ?, build_id = ?, custom_fields = ? WHERE id = ? AND tenant_id = ?`,
+		run.Name, run.Description, run.Status, run.Environment, run.Build, nullTime(run.StartedAt), nullTime(run.CompletedAt), nullStr(run.ReleaseID), nullStr(run.VariantID), nullStr(run.BuildID), encodeCustom(run.CustomFields), run.ID, tenantID)
 	if err != nil {
 		return err
 	}

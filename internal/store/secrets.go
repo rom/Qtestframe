@@ -349,10 +349,11 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 		st.count(field, v)
 		return v, nil
 	}
-	// user_mfa.totp_secret, webhooks.secret
+	// user_mfa.totp_secret, webhooks.secret, code_settings.webhook_secret
 	for _, t := range []struct{ table, id, col, field string }{
 		{"user_mfa", "user_id", "totp_secret", "user_mfa.totp_secret"},
 		{"webhooks", "id", "secret", "webhooks.secret"},
+		{"code_settings", "project_id", "webhook_secret", "code_settings.webhook_secret"},
 	} {
 		pairs, err := idValues(ctx, c, `SELECT `+t.id+`, `+t.col+` FROM `+t.table)
 		if err != nil {
@@ -360,8 +361,11 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 		}
 		for _, p := range pairs {
 			ad := adTOTP(p[0])
-			if t.table == "webhooks" {
+			switch t.table {
+			case "webhooks":
 				ad = adWebhook(p[0])
+			case "code_settings":
+				ad = adCodeSecret(p[0])
 			}
 			v, err := apply(t.field, p[1], ad)
 			if err != nil {

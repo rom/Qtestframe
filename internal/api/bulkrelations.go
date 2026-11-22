@@ -101,6 +101,7 @@ func (s *Server) handleBulkCreateRelations(w http.ResponseWriter, r *http.Reques
 		created = append(created, *rel)
 		s.audit(ctx, p, "relation.create", "relation", rel.ID, rel.SourceKey+" "+rel.Type+" "+rel.TargetKey)
 	}
+	s.syncEvidence(ctx, p, pr.ID, refinesEnds(created))
 	writeJSON(w, http.StatusOK, map[string]any{"created": created, "skipped": skipped})
 }
 
@@ -149,5 +150,18 @@ func (s *Server) handleBulkDeleteRelations(w http.ResponseWriter, r *http.Reques
 		deleted = append(deleted, rel)
 		s.audit(ctx, p, "relation.delete", "relation", id, rel.SourceKey+" "+rel.Type+" "+rel.TargetKey)
 	}
+	s.syncEvidence(ctx, p, pr.ID, refinesEnds(deleted))
 	writeJSON(w, http.StatusOK, map[string]any{"deleted": deleted, "skipped": skipped})
+}
+
+// refinesEnds returns both ends of the refines relations among rels: the
+// verification of the parents rolls up their children.
+func refinesEnds(rels []model.Relation) []string {
+	out := []string{}
+	for _, r := range rels {
+		if r.Type == "refines" {
+			out = append(out, r.SourceID, r.TargetID)
+		}
+	}
+	return out
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import StaleBadge from './StaleBadge.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import { useUndoStore } from '@/stores/undo'
 import { deletedEntry, entry, recordUndo } from '@/lib/undoActions'
@@ -26,7 +27,13 @@ import TagsInput from './TagsInput.vue'
 import RequirementEditor from './RequirementEditor.vue'
 import TestEditor from './TestEditor.vue'
 import RequirementImportDialog from './RequirementImportDialog.vue'
+import ExchangeImportDialog from './ExchangeImportDialog.vue'
+import Menu from 'primevue/menu'
+import type { ExchangeMode } from '@/lib/exchange'
 import BulkReviewDialog from './BulkReviewDialog.vue'
+import ApplicabilityDialog from './ApplicabilityDialog.vue'
+import VariantSelect from './VariantSelect.vue'
+import { useVariants } from '@/composables/variants'
 import BulkRelationsDialog from './BulkRelationsDialog.vue'
 import BulkItemLinksDialog from './BulkItemLinksDialog.vue'
 import BulkRequirementIssuesDialog from './BulkRequirementIssuesDialog.vue'
@@ -42,6 +49,8 @@ import { enumLabel, enumOptions } from '@/i18n/labels'
 import { P } from '@/lib/permissions'
 import type { ItemKind, Requirement, TestCase } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
+import { customColumns, listedFields, customCellText } from '@/lib/customColumns'
+import { isCfField } from '@/lib/customFields'
 import { useMetaStore } from '@/stores/meta'
 import { useAuthStore } from '@/stores/auth'
 import { readPref, writePref } from '@/stores/ui'
@@ -90,6 +99,8 @@ const pid = computed(() => proj.pid)
 const canWrite = computed(() => auth.can(isReq.value ? P.requirementWrite : P.testWrite))
 const canReview = computed(() => auth.can(isReq.value ? P.requirementReview : P.testReview))
 const bulkReviewOpen = ref(false)
+/** bulk "Applies to" (variants) of the selection */
+const bulkApplicabilityOpen = ref(false)
 const bulkRelationsOpen = ref(false)
 const bulkLinksOpen = ref(false)
 const bulkIssuesOpen = ref(false)
@@ -107,6 +118,10 @@ const categories = computed(() => proj.categoriesFor(props.kind))
 const selectedFolder = ref<string | null>((route.query.folder as string) || null)
 const recursive = ref(readPref('qtf.recursive') !== 'false')
 const q = ref((route.query.q as string) || '')
+// "show for variant": only the items that apply to it, with its coverage / results
+const variant = ref<string | null>((route.query.variant as string) || null)
+const variantList = useVariants(() => pid.value)
+watch(pid, () => void variantList.load(), { immediate: true })
 const quick = ref<QuickFilters>({})
 const composed = computed(() => composeQuery(q.value, quick.value))
 const queryError = ref<unknown>(null)
@@ -124,6 +139,7 @@ async function load() {
       q: composed.value,
       folder_id: selectedFolder.value,
       recursive: selectedFolder.value ? recursive.value : undefined,
+      variant: variant.value || undefined,
     })
     items.value = asItems(res)
     const ids = new Set(items.value.map((i) => i.id))
@@ -136,13 +152,13 @@ async function load() {
   }
 }
 
-watch([selectedFolder, recursive, () => quick.value], () => load(), { deep: true })
+watch([selectedFolder, recursive, () => quick.value, variant], () => load(), { deep: true })
 watch(selectedFolder, () => {
   foldersOpen.value = false
 })
 watch(recursive, (v) => writePref('qtf.recursive', String(v)))
-watch([selectedFolder, q], () => {
-  const query = { ...route.query, folder: selectedFolder.value || undefined, q: q.value || undefined }
+watch([selectedFolder, q, variant], () => {
+  const query = { ...route.query, folder: selectedFolder.value || undefined, q: q.value || undefined, variant: variant.value || undefined }
   router.replace({ query })
 })
 onMounted(() => {
@@ -213,7 +229,11 @@ interface Col {
   /** field to sort by when it differs from the displayed one */
   sortField?: string | ((item: any) => string)
 }
-const allColumns = computed<Col[]>(() =>
+/** the project's custom fields of the kind as columns (cf.<key>) */
+const customCols = computed<Col[]>(() => customColumns(proj.customFieldsFor(isReq.value ? 'requirement' : 'test')))
+const cellText = (row: Item, field: string) => customCellText(proj.customFieldsFor(isReq.value ? 'requirement' : 'test'), row, field, [t('common.yes'), t('common.no')])
+const allColumns = computed<Col[]>(() => [...baseColumns.value, ...customCols.value])
+const baseColumns = computed<Col[]>(() =>
   isReq.value
     ? [
         { field: 'obligation', header: t('workspace.colObligation'), width: '120px' },
@@ -235,6 +255,7 @@ const allColumns = computed<Col[]>(() =>
         { field: 'suspect_links', header: t('workspace.colSuspect'), width: '110px' },
         { field: 'risk_level', header: t('risksView.colRisk'), width: '105px', sortField: (r: Item) => String(levelRank((r as Requirement).risk_level)) },
         { field: 'open_defects', header: t('risksView.colOpenDefects'), width: '115px' },
+        { field: 'verification', header: t('verification.column'), width: '150px' },
         { field: 'created_by', header: t('workspace.colCreatedBy') },
         { field: 'created_at', header: t('workspace.colCreated'), width: '115px' },
         { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
@@ -263,8 +284,8 @@ const allColumns = computed<Col[]>(() =>
 )
 const defaultCols = computed(() =>
   isReq.value
-    ? ['obligation', 'status', 'priority', 'coverage', 'linked_tests', 'category_ids']
-    : ['execution_type', 'status', 'priority', 'last_result', 'linked_requirements', 'category_ids'],
+    ? ['obligation', 'status', 'priority', 'coverage', 'linked_tests', 'category_ids', ...listedFields(proj.customFieldsFor('requirement'))]
+    : ['execution_type', 'status', 'priority', 'last_result', 'linked_requirements', 'category_ids', ...listedFields(proj.customFieldsFor('test'))],
 )
 // visible optional columns in their order (Columns menu, or drag a header);
 // the old count-only "Relations" column became the list of relations
@@ -316,10 +337,37 @@ watch(
 
 // ---------- import (requirements only) ----------
 const importOpen = ref(false)
-async function onImported(res: ImportResult) {
+async function onImported(res: ImportResult | { folders_created: number }) {
   if (res.folders_created) await proj.loadFolders(props.kind)
   await load()
 }
+
+// ---------- exchange: ReqIF with updates, the Excel round-trip ----------
+const exchangeOpen = ref(false)
+const exchangeMode = ref<ExchangeMode>('xlsx')
+const exchangeMenu = ref<InstanceType<typeof Menu> | null>(null)
+function openExchange(mode: ExchangeMode) {
+  exchangeMode.value = mode
+  exchangeOpen.value = true
+}
+async function exportRoundTrip() {
+  try {
+    const name = await api.download(`/projects/${pid.value}/exchange/xlsx`, { kind: props.kind, q: composed.value || undefined, folder_id: selectedFolder.value || undefined, recursive: String(recursive.value) }, `${props.kind}s-roundtrip.xlsx`)
+    notify.ok(t('exchange.exported', { name }))
+  } catch (e) {
+    notify.fail(e, t('exchange.exportFailed'))
+  }
+}
+const exchangeItems = computed(() => [
+  ...(isReq.value && canWrite.value
+    ? [
+        { label: t('exchange.fromFile'), icon: 'pi pi-upload', command: () => (importOpen.value = true) },
+        { label: t('exchange.fromReqif'), icon: 'pi pi-sitemap', command: () => openExchange('reqif') },
+      ]
+    : []),
+  ...(canExport.value ? [{ label: t('exchange.exportXlsx'), icon: 'pi pi-file-excel', command: exportRoundTrip }] : []),
+  ...(canWrite.value ? [{ label: t('exchange.importXlsx'), icon: 'pi pi-file-import', command: () => openExchange('xlsx') }] : []),
+])
 
 async function onFoldersChanged() {
   await proj.loadFolders(props.kind)
@@ -530,15 +578,18 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             @click="router.push({ name: 'catalog', params: { projectId: pid }, query: isReq ? {} : { tab: 'tests' } })"
           />
           <Button
-            v-if="isReq && canWrite"
+            v-if="exchangeItems.length"
             :label="t('reqImport.button')"
             icon="pi pi-upload"
             severity="secondary"
             outlined
-            aria-haspopup="dialog"
-            v-tooltip.bottom="t('reqImport.buttonHint')"
-            @click="importOpen = true"
+            class="exchange-menu"
+            aria-haspopup="menu"
+            aria-controls="exchange-menu"
+            v-tooltip.bottom="t('exchange.menuHint')"
+            @click="exchangeMenu?.toggle($event)"
           />
+          <Menu id="exchange-menu" ref="exchangeMenu" :model="exchangeItems" popup />
           <Button
             v-if="canReview && !selection.length && items.length"
             :label="t('bulkReview.toolbar')"
@@ -603,6 +654,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <div style="min-width: 180px; max-width: 280px">
           <CategorySelect v-model="quick.categories" :categories="categories" value-key="path" :placeholder="t('workspace.filterCategory')" :aria-label="t('workspace.filterCategory')" />
         </div>
+        <VariantSelect v-if="variantList.variants.value.length" v-model="variant" :variants="variantList.variants.value" :aria-label="t('variants.showFor')" />
         <Button v-if="activeFilterCount(quick) || q" :label="t('workspace.clearFilters')" icon="pi pi-filter-slash" text severity="secondary" @click="clearFilters" />
       </div>
       <div v-if="composed && composed !== q" class="small muted mono" style="margin: -4px 0 10px">q = {{ composed }}</div>
@@ -629,6 +681,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <Button :label="t('workspace.tagsButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeTags')" v-tooltip.bottom="t('workspace.removeTags')" @click="openTagDialog('remove')" />
         <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
         <Button :label="t('links.title')" icon="pi pi-link" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkLinksOpen = true" />
+        <Button v-if="variantList.variants.value.length" :label="t('variants.appliesTo')" icon="pi pi-clone" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkApplicabilityOpen = true" />
         <Button v-if="isReq" :label="t('relations.bulk.button')" icon="pi pi-sitemap" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkRelationsOpen = true" />
         <Button v-if="isReq && canWrite" :label="t('reqIssue.bulk.button')" icon="pi pi-ticket" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkIssuesOpen = true" />
         <Button
@@ -709,9 +762,17 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <StatusTag v-if="c.field === 'obligation'" :value="data.obligation" kind="obligation" />
             <StatusTag v-else-if="c.field === 'status'" :value="data.status" />
             <StatusTag v-else-if="c.field === 'priority'" :value="data.priority" kind="priority" />
-            <StatusTag v-else-if="c.field === 'coverage'" :value="data.coverage" kind="coverage" />
+            <span v-else-if="c.field === 'coverage'" class="row nowrap" style="gap: 4px">
+              <StatusTag :value="data.coverage" kind="coverage" />
+              <StaleBadge :stale="!!data.stale_results" />
+              <span v-if="data.blocking_defects" class="blocked-badge small" :title="t('correlations.blockedCount', { n: data.blocking_defects }, data.blocking_defects)">
+                <i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blocked') }}<span class="sr-only">: {{ t('correlations.blockedCount', { n: data.blocking_defects }, data.blocking_defects) }}</span>
+              </span>
+            </span>
+            <StatusTag v-else-if="c.field === 'verification'" :value="(data as Requirement).verification" kind="verification" empty="" />
             <span v-else-if="c.field === 'last_result'" class="row nowrap" style="gap: 4px">
               <StatusTag :value="data.last_result" kind="result" />
+              <StaleBadge :stale="data.stale" :reason="data.stale_reason" />
               <span v-if="data.flaky" class="flaky-badge" :title="t('workspace.flakyHint', data.flakiness ?? 0)" :aria-label="t('workspace.flakyHint', data.flakiness ?? 0)">
                 <i class="pi pi-sync" aria-hidden="true" /> {{ t('workspace.flaky') }}
               </span>
@@ -743,6 +804,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <span v-else-if="c.field === 'comment_count' || c.field === 'relation_count'" class="small" :class="{ muted: !data[c.field] }">
               <i :class="c.field === 'comment_count' ? 'pi pi-comments' : 'pi pi-sitemap'" class="muted" style="font-size: 11px" /> {{ data[c.field] ?? 0 }}
             </span>
+            <span v-else-if="isCfField(c.field)" class="small">{{ cellText(data, c.field) }}</span>
             <span v-else>{{ data[c.field] }}</span>
           </template>
         </Column>
@@ -835,6 +897,25 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
   </Dialog>
   <FolderPickerDialog v-model:visible="moveDialog" :folders="folders" :header="t('workspace.moveSelection')" @pick="onPickFolder" />
   <RequirementImportDialog v-if="isReq && canWrite" v-model:visible="importOpen" :project-id="pid" :folders="folders" :folder-id="selectedFolder" @imported="onImported" />
+  <ExchangeImportDialog
+    v-if="canWrite"
+    v-model:visible="exchangeOpen"
+    :project-id="pid"
+    :kind="kind"
+    :mode="exchangeMode"
+    :folders="folders"
+    :folder-id="selectedFolder"
+    :can-export="canExport"
+    @imported="onImported"
+  />
+  <ApplicabilityDialog
+    v-model:visible="bulkApplicabilityOpen"
+    :project-id="pid"
+    :item-type="kind"
+    :item-ids="selectedIds"
+    :variants="variantList.variants.value"
+    @saved="() => { notify.ok(t('variants.applicabilitySaved')); load() }"
+  />
   <BulkReviewDialog
     v-model:visible="bulkReviewOpen"
     :kind="isReq ? 'requirement' : 'test'"

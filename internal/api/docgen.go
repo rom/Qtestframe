@@ -127,6 +127,20 @@ func (s *Server) handleGenerateDocument(w http.ResponseWriter, r *http.Request, 
 		s.fail(w, r, err)
 		return
 	}
+	// what the document contains: it is outdated once one of them changes (correlations.go)
+	var contents []store.DocumentItem
+	if kind == report.DocTestPlan {
+		for _, t := range d.Tests {
+			contents = append(contents, store.DocumentItem{EntityType: model.KindTest, EntityID: t.ID, Version: t.Version})
+		}
+	} else {
+		for _, q := range d.Requirements {
+			contents = append(contents, store.DocumentItem{EntityType: model.KindRequirement, EntityID: q.ID, Version: q.Version})
+		}
+	}
+	if err := s.Store.SetDocumentItems(r.Context(), fi.ID, contents); err != nil {
+		s.Log.Warn("document items", "err", err)
+	}
 	details := fmt.Sprintf("%s %s %s (%d requirements, %d tests, %s)", kind, f, fi.Name, len(d.Requirements), len(d.Tests), time.Since(start).Round(time.Millisecond))
 	if d.Baseline != nil {
 		details += " baseline " + d.Baseline.Name
@@ -173,6 +187,15 @@ func (s *Server) documentData(r *http.Request, p *Principal, pr *model.Project, 
 	}
 	d := &report.DocData{Project: *pr, Folders: pc.folders, Categories: pc.categories, LastResults: pc.last, Prerequisites: pc.prereqKeys,
 		AllTests: map[string]model.TestRef{}, Now: time.Now().UTC()}
+	if d.CustomFields, err = s.Store.CustomFieldsByKind(ctx, tid, pr.ID); err != nil {
+		return nil, err
+	}
+	if !plan {
+		// waivers and deviations are marked in the requirements and listed in an appendix
+		if d.Waivers, err = s.Store.ListWaivers(ctx, tid, pr.ID, store.WaiverFilter{}); err != nil {
+			return nil, err
+		}
+	}
 
 	var reqs []model.Requirement
 	var tests []model.TestCase
@@ -234,13 +257,50 @@ func (s *Server) documentData(r *http.Request, p *Principal, pr *model.Project, 
 		d.Links = append(d.Links, l)
 	}
 
+	if d.Baseline == nil {
+		// the verification of the current evidence (not for a baseline)
+		d.Verification = pc.verification()
+	}
 	pc.indexCalls(tests)
+	// a document for one variant: its requirements and tests, its coverage and results
+	var vc *store.VariantCoverage
+	variant := ""
+	if o.Variant != "" {
+		v := pc.variants.Find(o.Variant)
+		if v == nil {
+			return nil, badRequest("unknown variant %q", o.Variant)
+		}
+		if vc, err = s.variantCoverage(ctx, tid, pc); err != nil {
+			return nil, err
+		}
+		variant, d.Variant = v.ID, &model.VariantRef{ID: v.ID, Name: v.Name}
+		last := map[string]string{}
+		for id := range pc.last {
+			if st := vc.TestResult(id, variant); st != "" && st != model.ResultNotRun {
+				last[id] = st
+			}
+		}
+		d.LastResults = last
+		links := d.Links[:0:0]
+		for _, l := range d.Links {
+			if vc.AppliesTo(l.RequirementID, variant) && vc.AppliesTo(l.TestCaseID, variant) {
+				links = append(links, l)
+			}
+		}
+		d.Links = links
+	}
 	for i := range reqs {
 		rq := &reqs[i]
 		if !o.IncludeInactive && inactiveRequirement(rq.Status) {
 			continue
 		}
 		pc.decorateRequirement(rq)
+		if vc != nil {
+			if !vc.AppliesTo(rq.ID, variant) {
+				continue
+			}
+			rq.Coverage = vc.Requirement(rq.ID, variant)
+		}
 		if !plan && !q.Match(pc.requirementRecord(rq)) {
 			continue
 		}
@@ -253,6 +313,12 @@ func (s *Server) documentData(r *http.Request, p *Principal, pr *model.Project, 
 				continue
 			}
 			pc.decorateTest(t)
+			if vc != nil {
+				if !vc.AppliesTo(t.ID, variant) {
+					continue
+				}
+				t.LastResult = vc.TestResult(t.ID, variant)
+			}
 			if !q.Match(pc.testRecord(t)) {
 				continue
 			}

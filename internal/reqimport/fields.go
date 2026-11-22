@@ -189,11 +189,15 @@ func fuzzyField(header string) (string, bool) {
 	return "", false
 }
 
-// checkMapping validates the fields of an explicit mapping.
-func checkMapping(m map[string]string) error {
+// checkMapping validates the fields of an explicit mapping (cf.<key> for
+// a custom field of the project).
+func checkMapping(m map[string]string, custom []model.CustomField) error {
 	for h, f := range m {
 		f = strings.TrimSpace(strings.ToLower(f))
 		if f == "" || f == "ignore" {
+			continue
+		}
+		if k, ok := strings.CutPrefix(f, CustomPrefix); ok && hasCustom(custom, k) {
 			continue
 		}
 		if !model.Valid(Fields, f) {
@@ -201,6 +205,49 @@ func checkMapping(m map[string]string) error {
 		}
 	}
 	return nil
+}
+
+// CustomPrefix starts the field of a custom field column: cf.<key>.
+const CustomPrefix = "cf."
+
+func hasCustom(defs []model.CustomField, key string) bool {
+	for _, d := range defs {
+		if d.Key == key {
+			return true
+		}
+	}
+	return false
+}
+
+// withCustomMapping adds the headers of the custom fields (label, export
+// header, key, cf.<key>) to an explicit mapping; the caller's own entries
+// win.
+func withCustomMapping(m map[string]string, defs []model.CustomField) map[string]string {
+	if len(defs) == 0 {
+		return m
+	}
+	out := map[string]string{}
+	add := func(h, f string) {
+		for k := range out {
+			if strings.EqualFold(k, h) {
+				return
+			}
+		}
+		out[h] = f
+	}
+	for h, f := range m {
+		add(h, f)
+	}
+	for _, d := range defs {
+		f := CustomPrefix + d.Key
+		add(d.Label, f)
+		if d.Unit != "" {
+			add(d.Label+" ("+d.Unit+")", f)
+		}
+		add(d.Key, f)
+		add(f, f)
+	}
+	return out
 }
 
 // mappedField returns the field of header: the explicit mapping wins over
@@ -234,6 +281,9 @@ var obligationValues = map[string]string{
 	"should": model.ObligationShould, "should not": model.ObligationShouldNot, "shouldnot": model.ObligationShouldNot,
 	"recommended": model.ObligationShould, "not recommended": model.ObligationShouldNot,
 	"may": model.ObligationMay, "optional": model.ObligationOptional, "will": model.ObligationWill,
+	// MoSCoW, as in the Polarion "Severity" of requirements
+	"must have": model.ObligationMust, "should have": model.ObligationShould, "could have": model.ObligationMay,
+	"nice to have": model.ObligationMay, "won't have": model.ObligationOptional, "will not have": model.ObligationOptional,
 	"describe": model.ObligationDescribe, "describes": model.ObligationDescribe, "informative": model.ObligationDescribe,
 	"info": model.ObligationDescribe,
 	"ska":  model.ObligationShall, "skall": model.ObligationShall, "ska inte": model.ObligationShallNot,
@@ -258,7 +308,10 @@ var typeValues = map[string]string{
 	"interface": "interface", "gränssnitt": "interface", "integration": "interface",
 	"constraint": "constraint", "begränsning": "constraint", "restriktion": "constraint", "villkor": "constraint",
 	"business": "business", "affär": "business", "verksamhet": "business", "verksamhetskrav": "business",
-	"affärskrav": "business",
+	"affärskrav":             "business",
+	"functional requirement": "functional", "non functional requirement": "non_functional",
+	"performance requirement": "performance", "security requirement": "security", "interface requirement": "interface",
+	"business requirement": "business", "regulatory requirement": "regulatory", "safety requirement": "security",
 	"regulatory": "regulatory", "legal": "regulatory", "compliance": "regulatory", "regulatorisk": "regulatory",
 	"lagkrav": "regulatory", "juridisk": "regulatory", "författningskrav": "regulatory",
 }
@@ -269,13 +322,14 @@ var priorityValues = map[string]string{
 	"high": "high", "major": "high", "hög": "high", "högt": "high", "p2": "high", "2": "high",
 	"medium": "medium", "normal": "medium", "moderate": "medium", "medel": "medium", "mellan": "medium",
 	"p3": "medium", "3": "medium",
-	"low": "low", "minor": "low", "lowest": "low", "trivial": "low", "låg": "low", "lågt": "low", "p4": "low", "4": "low",
+	"highest priority": "critical",
+	"low":              "low", "minor": "low", "lowest": "low", "trivial": "low", "låg": "low", "lågt": "low", "p4": "low", "4": "low",
 }
 
 var statusValues = map[string]string{
 	"draft": "draft", "new": "draft", "proposed": "draft", "open": "draft", "utkast": "draft", "ny": "draft",
 	"föreslagen": "draft",
-	"review":     "review", "in review": "review", "under review": "review", "granskning": "review",
+	"review":     "review", "in review": "review", "reviewed": "review", "inreview": "review", "to review": "review", "under review": "review", "granskning": "review",
 	"under granskning": "review", "för granskning": "review",
 	"approved": "approved", "accepted": "approved", "agreed": "approved", "godkänd": "approved",
 	"godkänt": "approved", "fastställd": "approved", "beslutad": "approved",

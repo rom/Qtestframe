@@ -2,6 +2,9 @@
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
 import ItemRef from '../components/ItemRef.vue'
+import { customCellText, customColumns } from '@/lib/customColumns'
+import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
+import { defaultValues, type CustomValues } from '@/lib/customFields'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -20,9 +23,12 @@ import StatusTag from '@/components/StatusTag.vue'
 import HelpLink from '@/guide/HelpLink.vue'
 import { valuesBefore } from '@/lib/bulkRuns'
 import { entry, recordUndo } from '@/lib/undoActions'
-import { api, asItems, errorMessage } from '@/lib/api'
+import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
-import { filterRisks, heatGrid, levelCounts, levelRank, riskLevel, riskLevelSeverity, riskScore, riskStatusSeverity, RISK_LEVELS, RISK_SCALE, RISK_STATUSES, type HeatCell } from '@/lib/risks'
+import { atResidual, filterRisks, heatGrid, levelCounts, levelRank, riskLevel, riskLevelSeverity, riskScore, riskStatusSeverity, RISK_LEVELS, RISK_SCALE, RISK_STATUSES, type HeatCell } from '@/lib/risks'
+import ESignDialog from '@/components/ESignDialog.vue'
+import SelectButton from 'primevue/selectbutton'
+import { formatDate, formatDateTime } from '@/lib/format'
 import type { Requirement, Risk } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
@@ -39,7 +45,13 @@ const route = useRoute()
 const router = useRouter()
 const notify = useNotify()
 const { t } = useI18n()
+
+/** custom fields shown in lists (show_in_list) as columns */
+const listedCols = computed(() => customColumns(useProjectStore().customFieldsFor('risk').filter((f) => f.show_in_list)))
+const cellOf = (row: { custom_fields?: Record<string, unknown> }, field: string) => customCellText(useProjectStore().customFieldsFor('risk'), row, field, [t('common.yes'), t('common.no')])
 const canWrite = computed(() => auth.can(P.requirementWrite))
+const canApprove = computed(() => auth.can(P.waiverApprove))
+const canSetThreshold = computed(() => auth.can(P.projectUpdate))
 
 const levelLabel = (l: string) => (l ? t(`risksView.level.${l}`) : '')
 const statusLabel = (s: string) => t(`risksView.status.${s}`)
@@ -72,9 +84,38 @@ async function loadRequirements() {
   }
 }
 onMounted(async () => {
-  await Promise.all([load(), loadRequirements()])
+  await Promise.all([load(), loadRequirements(), loadThreshold()])
   openFromRoute()
 })
+
+// ---------- residual risk: acceptance threshold, before / after ----------
+const threshold = ref('')
+const effectiveThreshold = computed(() => threshold.value || 'medium')
+const thresholdOptions = computed(() => [{ label: t('residual.defaultThreshold'), value: '' }, ...RISK_LEVELS.map((v) => ({ label: levelLabel(v), value: v }))])
+async function loadThreshold() {
+  try {
+    threshold.value = (await api.get<{ threshold: string }>(`/projects/${proj.pid}/risk-settings`)).threshold ?? ''
+  } catch {
+    threshold.value = ''
+  }
+}
+async function setThreshold(v: string) {
+  try {
+    await api.put(`/projects/${proj.pid}/risk-settings`, { threshold: v })
+    threshold.value = v
+    notify.ok(t('residual.thresholdSaved'))
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+const view = ref<'before' | 'after'>('before')
+const viewOptions = computed(() => [
+  { label: t('residual.before'), value: 'before' },
+  { label: t('residual.after'), value: 'after' },
+])
+const sourceLabel = (s?: string) => t(`residual.source.${s || 'inherent'}`)
+const aboveCount = computed(() => risks.value.filter((r) => r.above_threshold && !r.acceptance_valid).length)
 
 // ---------- filters and heat map ----------
 const text = ref('')
@@ -82,11 +123,11 @@ const levels = ref<string[]>([])
 const statuses = ref<string[]>([])
 const includeClosed = ref(false)
 const cell = ref<{ likelihood: number; impact: number } | null>(null)
-const grid = computed(() => heatGrid(risks.value, includeClosed.value))
+const grid = computed(() => heatGrid(view.value === 'after' ? atResidual(risks.value) : risks.value, includeClosed.value))
 const filtered = computed(() =>
   filterRisks(
     risks.value.filter((r) => includeClosed.value || r.status !== 'closed' || statuses.value.includes('closed')),
-    { likelihood: cell.value?.likelihood, impact: cell.value?.impact, levels: levels.value, statuses: statuses.value, text: text.value },
+    { residual: view.value === 'after', likelihood: cell.value?.likelihood, impact: cell.value?.impact, levels: levels.value, statuses: statuses.value, text: text.value },
   ),
 )
 const counts = computed(() => levelCounts(risks.value.filter((r) => r.status !== 'closed')))
@@ -196,8 +237,72 @@ interface Form {
   owner: string
   mitigation: string
   requirement_ids: string[]
+  residual_likelihood: number
+  residual_impact: number
+  residual_manual: boolean
+  residual_justification: string
+  review_date: string
+  review_owner: string
+  custom_fields: CustomValues
 }
-const blank = (): Form => ({ title: '', description: '', category: '', likelihood: 3, impact: 3, status: 'identified', owner: '', mitigation: '', requirement_ids: [] })
+const blank = (): Form => ({
+  title: '',
+  description: '',
+  category: '',
+  likelihood: 3,
+  impact: 3,
+  status: 'identified',
+  owner: '',
+  mitigation: '',
+  requirement_ids: [],
+  residual_likelihood: 0,
+  residual_impact: 0,
+  residual_manual: false,
+  residual_justification: '',
+  review_date: '',
+  review_owner: '',
+  custom_fields: defaultValues(proj.customFieldsFor('risk')),
+})
+const residualScale = (label: (n: number) => string) => [{ label: t('residual.notAssessed'), value: 0 }, ...RISK_SCALE.map((n) => ({ label: `${n} – ${label(n)}`, value: n }))]
+const formResidualLevel = computed(() => (form.value.residual_likelihood && form.value.residual_impact ? riskLevel(form.value.residual_likelihood, form.value.residual_impact) : ''))
+const residualInvalid = computed(() => (form.value.residual_likelihood === 0) !== (form.value.residual_impact === 0) || (form.value.residual_manual && (!form.value.residual_likelihood || form.value.residual_justification.trim().length < 3)))
+
+// accept risk (electronic signature)
+const acceptOpen = ref(false)
+const acceptBusy = ref(false)
+const acceptError = ref('')
+async function acceptRisk(v: { comment: string; password: string }) {
+  if (!editing.value) return
+  acceptBusy.value = true
+  acceptError.value = ''
+  try {
+    const r = await api.post<Risk>(`/risks/${editing.value.id}/accept`, { comment: v.comment, password: v.password })
+    editing.value = r
+    form.value.status = r.status
+    acceptOpen.value = false
+    notify.ok(t('residual.accepted'), r.key)
+    await load()
+  } catch (e) {
+    if (e instanceof ApiError && (e.code === 'reauth_failed' || e.code === 'reauth_required')) acceptError.value = t(`esign.${e.code}`)
+    else acceptError.value = errorMessage(e)
+  } finally {
+    acceptBusy.value = false
+  }
+}
+async function withdrawAcceptance() {
+  if (!editing.value) return
+  try {
+    const r = await api.del<Risk>(`/risks/${editing.value.id}/accept`)
+    if (r) {
+      editing.value = r
+      form.value.status = r.status
+    }
+    notify.ok(t('residual.acceptanceWithdrawn'))
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
 const dialog = ref(false)
 const editing = ref<Risk | null>(null)
 const form = ref<Form>(blank())
@@ -226,6 +331,13 @@ function openEdit(r: Risk) {
     owner: r.owner,
     mitigation: r.mitigation,
     requirement_ids: [...(r.requirement_ids ?? [])],
+    residual_likelihood: r.residual_likelihood ?? 0,
+    residual_impact: r.residual_impact ?? 0,
+    residual_manual: !!r.residual_manual,
+    residual_justification: r.residual_justification ?? '',
+    review_date: r.review_date ?? '',
+    review_owner: r.review_owner ?? '',
+    custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues,
   }
   formError.value = ''
   dialog.value = true
@@ -252,7 +364,7 @@ async function save() {
   busy.value = true
   formError.value = ''
   const { requirement_ids, ...fields } = form.value
-  const body = { ...fields, title: fields.title.trim(), category: fields.category.trim(), owner: fields.owner.trim() }
+  const body = { ...fields, title: fields.title.trim(), category: fields.category.trim(), owner: fields.owner.trim(), review_owner: fields.review_owner.trim() }
   try {
     if (editing.value) {
       const id = editing.value.id
@@ -313,7 +425,10 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
   <template v-else>
     <div class="risk-top">
       <section class="card heat-card" aria-labelledby="heat-title">
-        <h2 id="heat-title">{{ t('risksView.heatMap') }}</h2>
+        <div class="row">
+          <h2 id="heat-title" class="grow">{{ view === 'after' ? t('residual.heatAfter') : t('risksView.heatMap') }}</h2>
+          <SelectButton v-model="view" :options="viewOptions" option-label="label" option-value="value" :allow-empty="false" :aria-label="t('residual.view')" size="small" />
+        </div>
         <div class="heat-wrap">
           <table class="heat">
             <caption class="sr-only">{{ t('risksView.heatCaption') }}</caption>
@@ -337,6 +452,11 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         </div>
         <div class="row small" style="margin-top: 8px">
           <label class="row nowrap" style="gap: 6px"><Checkbox v-model="includeClosed" binary input-id="risk-closed" /> {{ t('risksView.includeClosed') }}</label>
+        </div>
+        <div class="row small threshold-row">
+          <label for="risk-threshold"><b>{{ t('residual.threshold') }}</b></label>
+          <Select :model-value="threshold" input-id="risk-threshold" :aria-label="t('residual.threshold')" :options="thresholdOptions" option-label="label" option-value="value" size="small" :disabled="!canSetThreshold" @update:model-value="(v: string) => setThreshold(v)" />
+          <span class="muted">{{ t('residual.aboveCount', { count: aboveCount, level: levelLabel(effectiveThreshold) }, aboveCount) }}</span>
         </div>
       </section>
       <section class="card level-card" aria-labelledby="levels-title">
@@ -406,10 +526,25 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         <Column field="level" :header="t('risksView.colLevel')" sortable :sort-field="(r: Risk) => String(levelRank(r.level))" style="width: 110px">
           <template #body="{ data }"><Tag :value="levelLabel(data.level)" :severity="riskLevelSeverity(data.level)" /></template>
         </Column>
+        <Column field="residual_score" :header="t('residual.col')" sortable style="width: 150px">
+          <template #body="{ data }">
+            <span class="row nowrap" style="gap: 4px">
+              <b>{{ data.residual_score ?? data.score }}</b>
+              <Tag :value="levelLabel(data.residual_level || data.level)" :severity="riskLevelSeverity(data.residual_level || data.level)" />
+              <i v-if="data.residual_source === 'manual'" class="pi pi-user-edit muted" role="img" :aria-label="sourceLabel('manual')" v-tooltip="sourceLabel('manual')" />
+              <i v-else-if="data.residual_source === 'verified'" class="pi pi-check-circle muted" role="img" :aria-label="sourceLabel('verified')" v-tooltip="sourceLabel('verified')" />
+              <i v-if="data.above_threshold && !data.acceptance_valid" class="pi pi-exclamation-triangle above" role="img" :aria-label="t('residual.aboveTip')" v-tooltip="t('residual.aboveTip')" />
+              <i v-else-if="data.acceptance_valid" class="pi pi-pen-to-square muted" role="img" :aria-label="t('residual.acceptedTip')" v-tooltip="t('residual.acceptedTip')" />
+            </span>
+          </template>
+        </Column>
         <Column field="status" :header="t('common.status')" sortable style="width: 120px">
           <template #body="{ data }"><Tag :value="statusLabel(data.status)" :severity="riskStatusSeverity(data.status)" /></template>
         </Column>
         <Column field="owner" :header="t('common.owner')" sortable><template #body="{ data }"><span class="small">{{ data.owner }}</span></template></Column>
+        <Column v-for="c in listedCols" :key="c.field" :header="c.header" sortable :sort-field="c.sortField" :style="c.width ? { width: c.width } : {}">
+          <template #body="{ data }"><span class="small">{{ cellOf(data, c.field) }}</span></template>
+        </Column>
         <Column :header="t('risksView.requirements')" style="min-width: 160px">
           <template #body="{ data }">
             <span class="row small" style="gap: 4px">
@@ -462,6 +597,46 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         <div v-field class="field full"><label for="risk-desc">{{ t('common.description') }}</label><Textarea id="risk-desc" v-model="form.description" rows="2" auto-resize :disabled="!canWrite" /></div>
         <div v-field class="field full"><label for="risk-mitigation">{{ t('risksView.mitigation') }}</label><SuggestInput id="risk-mitigation" v-model="form.mitigation" field="risk.mitigation" :project-id="proj.pid" multiline rows="3" auto-resize :placeholder="t('risksView.mitigationPlaceholder')" :disabled="!canWrite" /></div>
       </div>
+      <fieldset class="residual">
+        <legend>{{ t('residual.title') }}</legend>
+        <p class="small muted" style="margin: 0 0 8px">{{ t('residual.intro') }}</p>
+        <div class="form-grid">
+          <div v-field class="field">
+            <label for="risk-rl">{{ t('residual.likelihood') }}</label>
+            <Select v-model="form.residual_likelihood" input-id="risk-rl" :options="residualScale(likelihoodLabel)" option-label="label" option-value="value" :disabled="!canWrite" />
+          </div>
+          <div v-field class="field">
+            <label for="risk-ri">{{ t('residual.impact') }}</label>
+            <Select v-model="form.residual_impact" input-id="risk-ri" :options="residualScale(impactLabel)" option-label="label" option-value="value" :disabled="!canWrite" />
+          </div>
+          <label class="row nowrap field full" style="gap: 6px"><Checkbox v-model="form.residual_manual" binary input-id="risk-rmanual" :disabled="!canWrite" /> {{ t('residual.manual') }}</label>
+          <div v-if="form.residual_manual" v-field class="field full">
+            <label for="risk-rjust">{{ t('residual.justification') }}</label>
+            <Textarea id="risk-rjust" v-model="form.residual_justification" rows="2" auto-resize :disabled="!canWrite" aria-required="true" />
+          </div>
+          <div class="field full" role="status">
+            <span v-if="formResidualLevel" class="small">{{ t('residual.planned', { score: form.residual_likelihood * form.residual_impact }) }} <Tag :value="levelLabel(formResidualLevel)" :severity="riskLevelSeverity(formResidualLevel)" /></span>
+            <span v-if="editing" class="small muted"> · {{ t('residual.inEffect', { score: editing.residual_score ?? editing.score, level: levelLabel(editing.residual_level || editing.level), source: sourceLabel(editing.residual_source) }) }}</span>
+            <Message v-if="editing?.above_threshold && !editing.acceptance_valid" severity="warn" :closable="false" style="margin-top: 6px">{{ t('residual.aboveMessage', { level: levelLabel(editing.threshold || 'medium') }) }}</Message>
+            <Message v-if="residualInvalid" severity="error" :closable="false" style="margin-top: 6px">{{ t('residual.invalid') }}</Message>
+          </div>
+          <div v-field class="field">
+            <label for="risk-review-date">{{ t('residual.reviewDate') }}</label>
+            <InputText id="risk-review-date" v-model="form.review_date" type="date" :disabled="!canWrite" />
+          </div>
+          <div v-field class="field"><label for="risk-review-owner">{{ t('residual.reviewOwner') }}</label><InputText id="risk-review-owner" v-model="form.review_owner" :disabled="!canWrite" /></div>
+        </div>
+        <div v-if="editing" class="row small" style="margin-top: 8px">
+          <template v-if="editing.accepted_by">
+            <Tag :value="editing.acceptance_valid ? t('residual.acceptedTag') : t('residual.acceptanceStale')" :severity="editing.acceptance_valid ? 'success' : 'danger'" :icon="editing.acceptance_valid ? 'pi pi-check' : 'pi pi-exclamation-triangle'" />
+            <span class="grow">{{ t('residual.acceptedBy', { name: editing.accepted_name || editing.accepted_by, date: editing.accepted_at ? formatDateTime(editing.accepted_at) : '' }) }}<span v-if="editing.acceptance_comment"> – {{ editing.acceptance_comment }}</span></span>
+            <Button v-if="canApprove" :label="t('residual.withdraw')" icon="pi pi-undo" size="small" text severity="secondary" @click="withdrawAcceptance" />
+          </template>
+          <span v-else class="grow muted">{{ t('residual.notAccepted') }}</span>
+          <span v-if="editing.review_due" class="small"><Tag :value="t('residual.reviewDue', { date: formatDate(editing.review_date) })" severity="warn" icon="pi pi-calendar" /></span>
+          <Button v-if="canApprove && editing.status !== 'closed'" :label="t('residual.accept')" icon="pi pi-pen-to-square" size="small" outlined @click="(acceptError = ''), (acceptOpen = true)" />
+        </div>
+      </fieldset>
       <div>
         <div class="section-title" style="margin-top: 4px">
           <i class="pi pi-list-check" aria-hidden="true" /> {{ t('risksView.linkedRequirements', { count: linked.length }, linked.length) }}
@@ -475,10 +650,11 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <Button v-if="canWrite" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: q.key })" v-tooltip="t('common.unlink')" @click="unlink(q.id)" />
         </div>
       </div>
+      <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('risk')" :disabled="!canWrite" :project-id="proj.pid" />
       <div class="row" style="justify-content: flex-end">
         <Button v-if="editing && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text style="margin-right: auto" @click="remove(editing)" />
         <Button :label="canWrite ? t('common.cancel') : t('common.close')" text severity="secondary" @click="dialog = false" />
-        <Button v-if="canWrite" type="submit" :label="editing ? t('common.save') : t('common.create')" icon="pi pi-check" :loading="busy" :disabled="!form.title.trim()" />
+        <Button v-if="canWrite" type="submit" :label="editing ? t('common.save') : t('common.create')" icon="pi pi-check" :loading="busy" :disabled="!form.title.trim() || residualInvalid" />
       </div>
     </form>
   </Dialog>
@@ -502,6 +678,15 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
     </template>
   </Dialog>
   <ItemPickerDialog v-model:visible="picker" kind="requirement" :project-id="proj.pid" :exclude="form.requirement_ids" :header="t('risksView.linkRequirements')" :confirm-label="t('common.link')" @pick="addLinked" />
+  <ESignDialog
+    v-model:visible="acceptOpen"
+    :header="t('residual.acceptHeader', { key: editing?.key ?? '' })"
+    :explain="t('residual.acceptExplain', { score: editing?.residual_score ?? 0, level: levelLabel(editing?.residual_level || 'low') })"
+    :confirm-label="t('residual.accept')"
+    :busy="acceptBusy"
+    :error="acceptError"
+    @sign="acceptRisk"
+  />
 </template>
 
 <style scoped>
@@ -533,6 +718,10 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
 .levels button { display: inline-flex; align-items: center; gap: 10px; padding: 2px 4px; }
 .lvl-count { font-size: 20px; font-weight: 700; }
 .cell-chip { display: inline-flex; gap: 6px; align-items: center; }
+.threshold-row { margin-top: 8px; gap: 8px; flex-wrap: wrap; }
+.above { color: var(--p-orange-600, #c2410c); }
+.residual { border: 1px solid var(--qtf-border); border-radius: 8px; padding: 8px 12px 12px; margin: 0; min-width: 0; }
+.residual legend { font-weight: 600; padding: 0 4px; }
 @media (max-width: 900px) {
   .risk-top { grid-template-columns: minmax(0, 1fr); }
 }

@@ -80,6 +80,85 @@ The presets:
 
 The rules are also evaluated on a release's scope by the exit criterion [Traceability rules](releases-and-risks.md#exit-criteria), and the **Traceability** report lists every enabled rule with its result and the items that break it.
 
+### Built-in consistency checks
+
+Besides the rules you write, Qtestframe has **built-in checks** with a fixed condition. They find items whose state contradicts their relations, links or release:
+
+| Check | An item breaks it when |
+|---|---|
+| Conflicting requirements in a release | two requirements related by *conflicts with* are both approved (or implemented or verified) and in the same release |
+| Approved requirement with an unmet dependency | an approved requirement *depends on* one that is rejected, obsolete or deleted (still in the trash) |
+| Active requirement with an obsolete parent | a requirement that *refines* or is *derived from* an obsolete requirement is not rejected or obsolete itself |
+| Test verifies an inactive requirement | a test verifies a rejected or obsolete requirement |
+| Broken test prerequisite | a prerequisite of a test is deleted, its latest result failed, or prerequisites form a cycle |
+| MUST requirement in a release without passing evidence | a MUST or SHALL requirement in a planned or active release has no linked test that is not suspect and passed its latest execution |
+| High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or none of its requirements is verified |
+| Regulatory requirement rejected without justification | a requirement added from a regulation of the [catalogue](catalogue.md) (a law or directive) is rejected, and it has no comment and no rationale of its own |
+| Suspected duplicate requirements | two active requirements have nearly identical title and description (similarity of at least 0.9 by default) and no *duplicates* relation |
+
+A project gets them with **Add built-in checks** (on the rules or in **Analytics**): they are added as rules with the severity *warning*, so they show up in the release exit criterion [Traceability rules](releases-and-risks.md#exit-criteria) only when it counts warnings, or after you raise a check to *error*. A built-in check is marked **Built-in**; you can rename it, change its severity, turn it off, narrow it with a query and, for the duplicate check, set the **Similarity threshold** (0.5 to 1) or, for the risk check, the **Least risk level**.
+
+Each violation names the other items involved (the conflicting requirement and the release, the obsolete parent, the failing prerequisite …), each a link, and offers a fix where one is obvious: **Remove relation**, **Unlink**, **Remove prerequisite**, **Remove from** the release, **Set obsolete**, **Record a justification**, **Link a mitigation**, and for a suspected duplicate **Mark as duplicate** (adds the *duplicates* relation) or **Not a problem** (the pair is not reported again). **Not a problem** also acknowledges a dependency on a deleted item.
+
+## Change impact
+
+A change of a requirement rarely stays with that requirement. When the **substance** of a requirement changes (its title, description, obligation or criteria), Qtestframe marks what may no longer be right:
+
+- the tests that verify it: their links become [suspect](#the-traceability-matrix);
+- the requirements related to it: by default those that **refine**, are **derived from** or **depend on** it. Their relation becomes suspect, and so do the links of their tests;
+- its issue in the tracker: it is marked **out of date** until you update the issue from the requirement (**Update issue**) or select **The issue is still right**;
+- the generated documents in the archive that contain it: they are shown as **Outdated** in **Documents**, with the items that changed since;
+- the latest results of its tests: they become [stale](#stale-results).
+
+A change of a test's title, description, preconditions, steps, expected result, script or execution type makes its links suspect and its latest result stale.
+
+### Before you save
+
+When you save a change of substance and something would be marked, a dialog lists everything that becomes suspect, out of date, outdated or stale. Select **Save and mark** to save, or **Cancel** to go back to the editor. Items that are already marked are shown as such and are not counted again.
+
+### The Impact tab
+
+The **Impact** tab of a requirement or test shows the same list at any time, under **If this requirement changes** (or **If this test changes**). For a requirement it also shows:
+
+- **Blocking defects**: the open defects that block it or warn about it (see [Blocking defects](#blocking-defects));
+- **Suspect now**: its suspect relations, with **Confirm** for each (and **Confirm all**), and the linked tests whose result is stale.
+
+The badges next to the requirement's key (**Blocked by 1 defect**, **1 stale result**, **1 suspect relation**) open the tab. For a test, the tab also shows its **Regression history** (see [Defects](defects.md#regressions)).
+
+### The impact of a baseline
+
+In **Baselines**, compare a baseline with the current state and select **Impact**. The dialog lists every requirement and test whose substance changed since the baseline, the largest impact first, with the totals of the items affected. Open an item to see what its change makes suspect, out of date, outdated or stale.
+
+### Along which relations
+
+**Categories & settings → Change impact** decides, per relation type, which requirement becomes suspect when the one at the other end changes:
+
+| Setting | Meaning |
+|---|---|
+| **Incoming (the requirement pointing at it)** | A *refines* B: when B changes, A becomes suspect (the default for refines, derived from and depends on) |
+| **Outgoing (the requirement it points at)** | A *provides* B: when A changes, B becomes suspect |
+| **Both directions** | either end changing makes the other suspect |
+| **Off** | changes do not travel along this type (the default for the other types) |
+
+**Mark the tracker issues of a changed requirement out of date** can be turned off.
+
+## Stale results
+
+A test result goes **stale** when
+
+- it is older than the project allows (by default 90 days; **Results go stale after** can be changed or turned off), or
+- the test, or a requirement it verifies, changed in substance after the result was recorded (**Results go stale when the test or a requirement it verifies changes**).
+
+A stale result does not count as passing evidence. A requirement does not become **Verified** on it (and a verified one goes back to **Implemented**), coverage counts it as not run, and the release exit criteria **Passed** and **Mandatory passed** list the requirement with *stale result*. Stale results have a **Stale** badge in the test list, in the coverage column of the requirement list, in the traceability matrix and in reports. Run the test again to get a fresh result.
+
+In the search, `stale:true` finds tests with a stale latest result and `stale>0` requirements with one.
+
+## Blocking defects
+
+An open defect linked to a requirement, to a test that verifies it or to an execution of such a test **blocks** the requirement, or only **warns** about it, depending on its severity. By default critical and major defects block, minor ones warn and trivial ones do neither; **Categories & settings → Change impact → Defects that block requirements** changes this per project.
+
+Blocked requirements show **Blocked** in the requirement list and in the traceability matrix, the requirement shows **Blocked by 1 defect** next to its key, and the **Quality** section of the dashboard counts blocked requirements, requirements with warnings, stale results and suspect relations. In the search, `blocked>0` finds blocked requirements. The release exit criterion **No blocking defects** fails while a requirement in scope is blocked.
+
 ## How coverage is calculated
 
 Coverage is derived from the **last result** of every linked test. It is computed every time you look at it and never stored, so it is always current.
@@ -116,11 +195,58 @@ Without configurations nothing changes: each test has one result, its last resul
 
 Things to keep in mind:
 
-- Coverage is calculated per requirement, not per evaluation criterion. A link can name the criterion a test verifies, but every link counts the same.
+- Coverage is calculated per requirement, not per evaluation criterion; every link counts the same. Which criteria the tests and other evidence verify is shown by [Verification](#verification).
 - Only runs of the same project count. A test that was moved from another project keeps its old executions, but they no longer count.
 - A newer *Passed* result replaces an older *Failed* one; there is no need to delete old runs.
 
 Coverage appears as a column and quick filter in the requirements list, as the query field `coverage` (for example `coverage:failed` or `coverage:none category:Security`), in the matrix, in exports, in reports and on the dashboard.
+
+## Verification
+
+Coverage says whether the linked tests passed. **Verification** goes one step further: a requirement counts as **verified** only when **every evaluation criterion has passing evidence**, and — in a hierarchy — when every requirement that refines it is verified too. Evidence is a passed test, a passed test step, or a **verification record** for an inspection, analysis, demonstration or review. So hardware, facility and governance requirements that no test can verify can be verified too.
+
+Open a requirement and choose the **Verification** tab. It shows the state with the reasons when the requirement is not verified (for example *Criterion 2 has no evidence.*), the evidence of every criterion, the requirements that refine it, the verification records, the criteria of the linked tests and the system elements the requirement is allocated to. The badge next to the coverage in the editor's header opens the tab.
+
+| State | When |
+|---|---|
+| **Verified** | every criterion (and every child) has passing evidence |
+| **Partly verified** | some of it is verified, not all |
+| **Failed** | some evidence failed: a test failed or was blocked, a record's result is *Fail* |
+| **Not yet passed** | there is evidence, but none of it has passed yet (not run, a suspect link, a step not executed) |
+| **No evidence** | no test and no verification record |
+
+### Tests for criteria and test steps
+
+A test linked to a requirement can be mapped to the criteria it verifies. In the **Verification** tab choose **Map criteria** next to the test, tick the criteria and, if you want, the **step** of the test that shows it. A criterion mapped to a step is passed when that step passed in the test's latest execution. When you link a test you can also choose a criterion right away (the selector next to **Link tests**).
+
+A link **without** criteria counts for the whole requirement, as before: for every criterion that has no evidence of its own. A project that wants every criterion to have its own evidence turns on **strict criterion coverage** under **Settings → Project → Verification**. A failing test always fails the requirement, mapped or not.
+
+### Verification records
+
+For a criterion that is verified by inspection, analysis, demonstration or review choose **Record evidence for criterion n** (or **Record evidence** for the whole requirement) and fill in:
+
+- **Method** and **Result**: *Pass*, *Fail* or *Conditional pass* (counts as passed and is shown as conditional);
+- **Performed by** and the **Date**;
+- a **Note** and **Documents from the archive** (for example the inspection protocol uploaded to [Documents](documents.md));
+- **Valid until**: the record stops counting after that day; **Valid until the requirement changes**: when the title, description, obligation or criteria change, the record is invalidated (like a suspect link) and has to be recorded again.
+
+For each criterion only the newest valid record counts; older ones are shown as superseded. A second person can **Sign off** a record (anyone with the review or execute permission except its author and its performer). Changing the method, result, criterion, dates or performer removes the sign-off.
+
+### Requirement hierarchy and roll-up
+
+The hierarchy is built from the relation **refines**: a requirement that refines another is its child (see [Relations](requirements.md)). A parent is verified only when its own criteria are verified and all its children (except rejected and obsolete ones) are. A parent without criteria or evidence of its own is verified when all its children are.
+
+**Verification** in the project navigation shows the hierarchy as a tree with badges: the state, the criteria verified (*2/3 criteria*) and the children verified (*1/2 children*). **Only not verified** keeps the branches that still need work.
+
+With the default setting the status follows the evidence (**Administration → Test execution**, see [Test execution settings](administration.md#test-execution-settings)): an implemented requirement becomes verified when it is verified, and a verified requirement falls back to implemented when a child or criterion no longer is — so a verified parent with an unverified child cannot remain. When the organisation verifies manually, such a requirement is listed under **Verification → Inconsistencies** and in the [analytics](#requirement-analytics) (*Verified requirements with unverified children*).
+
+### System elements
+
+**Verification → System elements** holds the product breakdown of the project: systems, subsystems, components, products and suppliers, as a tree. Requirements and tests are allocated to elements in the **Verification** tab of a requirement (and with the API). Every element shows how many of the requirements allocated to it **or to an element below it** are verified (*42/50 verified*), how many have evidence or failed, and how many of its tests passed. The counts link to the lists filtered by the element.
+
+In the query language `element:"Power unit"` finds the requirements and tests allocated to *Power unit* or to an element below it, and `verification:verified`, `verification:none` … filter by the verification state.
+
+The **Verification** report and the requirements specification show the same: the report has the evidence per criterion, the requirements that are not verified and why, the records, the roll-up, the inconsistencies and the coverage per element; the specification shows the verification of every requirement and criterion.
 
 ## The dashboard
 
@@ -163,6 +289,7 @@ The trends come from a snapshot of the figures that Qtestframe saves once a day 
 - **Mitigation of open risks**: the open risks by how far the requirements that address them are tested: *No requirements*, *Untested*, *Partly tested*, *Tested, not all passed* and *Verified* (as in the [risk report](reports-and-export.md#standard-reports)).
 - **Age of open defects**: open and in-progress defects by age (under 7 days, 7–30, 30–90, over 90 days), split by severity, with the average and the oldest age.
 - **Traceability rules**: whether all enabled rules of severity *error* are met, how many rules are enabled, how many are broken (errors and warnings) and the number of violations. **Traceability →** opens the matrix with the rules.
+- **Quality metrics** and **Consistency checks** (the failing ones): the same as in [Analytics](#quality-metrics).
 
 The further key figures and these charts are counted on the server in one request, loaded next to the rest of the dashboard.
 
@@ -208,6 +335,27 @@ Cycles (for example two requirements that depend on each other) are drawn, but o
 **Languages of the requirements** shows how many requirements are written in each language. Only texts long enough to tell the language are counted; a title of one or two words is not enough.
 
 **Language** chooses the language of the analysis (detected per requirement by default). Test findings are shown when you may read tests.
+
+### Consistency checks
+
+**Consistency checks** in **Analytics** evaluates every [built-in consistency check](#built-in-consistency-checks) on the project, also those it has not added as rules yet (marked **Default**; they do not count for releases until they are added). **Show violations** lists the items with the items involved and the fixes.
+
+### Quality metrics
+
+**Quality metrics** in **Analytics** (and on the dashboard's **Quality** tab) measures the project from its history. Choose the period (30, 90, 180 or 365 days) and after how many days a latest result counts as stale. Trends are per week, or per month for periods over 120 days.
+
+| Metric | What it measures |
+|---|---|
+| **Requirements volatility** | the changes to requirements after their creation (every saved version; moves do not count), per period, as changes per requirement and period, and the most changed requirements |
+| **Defect density** | defects per active requirement, per folder and per category; a defect counts for a requirement when it is linked to it, to a test that verifies it or to an execution of such a test |
+| **Escaped defects** | defects found in production (the defect's **Found in** field, see [Defects](defects.md)) or reported after a release they concern was released; the share of all defects, per phase found and per release |
+| **Test effectiveness** | defects found by tests (linked to a test or one of its executions) per test executed and per execution hour; executions without a duration are not counted in the hours |
+| **Result age** | how old the latest result of each test is (0–7, 8–30, 31–90, 91–180 and more days, never run) and how many are older than the limit |
+| **Review turnaround** | the time from a review request to its decision (median, mean and 90th percentile), and the pending requests |
+| **Time to fix defects** | the time from reporting a defect to resolving it, per severity (rejected defects do not count) |
+| **Requirement quality** | the share of active requirements whose text has warnings of the language analysis; the trend replays each requirement's text from its history |
+
+Every chart has a text alternative and **Show as table** shows its figures as a table. **Export as report** opens the reports: the standard report **Quality metrics** contains the same figures.
 
 ### Compliance with laws and standards
 

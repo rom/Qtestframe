@@ -23,6 +23,8 @@ var derivedFields = map[string]bool{
 	"created_at": true, "created_by": true, "position": true,
 	// evidence and quality state, not content
 	"suspect_links": true, "risk_level": true, "open_defects": true,
+	"blocking_defects": true, "defect_warnings": true, "stale_results": true, "suspect_relations": true,
+	"stale": true, "stale_reason": true,
 }
 
 // SnapshotRequirement returns the JSON snapshot stored for a requirement.
@@ -31,6 +33,8 @@ func SnapshotRequirement(r *model.Requirement) json.RawMessage {
 	c.FolderPath, c.LinkedTests, c.Coverage, c.CommentCount, c.Relations = "", 0, "", 0, 0
 	c.RelationRefs, c.CriteriaCount = nil, 0
 	c.SuspectLinks, c.RiskLevel, c.OpenDefects = 0, "", 0
+	c.BlockingDefects, c.DefectWarnings, c.StaleResults, c.SuspectRelations = 0, 0, 0, 0
+	c.Verification, c.CriteriaVerified, c.ElementIDs = "", 0, nil
 	if c.Criteria == nil {
 		c.Criteria = []model.EvaluationCriterion{}
 	}
@@ -44,6 +48,8 @@ func SnapshotTest(t *model.TestCase) json.RawMessage {
 	c.FolderPath, c.LinkedReqs, c.LastResult, c.CommentCount, c.CalledBy = "", 0, "", 0, nil
 	c.RelationRefs, c.StepCount, c.Defects = nil, 0, nil
 	c.SuspectLinks = 0
+	c.Stale, c.StaleReason = false, ""
+	c.ElementIDs = nil
 	steps := make([]model.TestStep, len(c.Steps))
 	for i, st := range c.Steps {
 		st.CallTestKey, st.CallTestTitle = "", ""
@@ -72,11 +78,35 @@ func ChangedFields(from, to json.RawMessage) []string {
 		if derivedFields[k] {
 			continue
 		}
+		if k == "custom_fields" {
+			// one entry per custom field: custom_fields.<key>
+			out = append(out, changedCustom(a[k], b[k])...)
+			continue
+		}
 		if !reflect.DeepEqual(normalize(k, a[k]), normalize(k, b[k])) {
 			out = append(out, k)
 		}
 	}
 	sort.Strings(out)
+	return out
+}
+
+// changedCustom lists the custom fields whose values differ between two
+// snapshots' custom_fields objects, as custom_fields.<key>.
+func changedCustom(from, to any) []string {
+	a, _ := from.(map[string]any)
+	b, _ := to.(map[string]any)
+	var out []string
+	for k, v := range a {
+		if !reflect.DeepEqual(v, b[k]) {
+			out = append(out, "custom_fields."+k)
+		}
+	}
+	for k := range b {
+		if _, ok := a[k]; !ok {
+			out = append(out, "custom_fields."+k)
+		}
+	}
 	return out
 }
 
@@ -171,14 +201,16 @@ func scanRevision(r interface{ Scan(...any) error }) (*model.Revision, error) {
 
 // ---------------------------------------------------------------- relations
 
-const relationSelect = `SELECT r.id, r.project_id, r.source_id, r.target_id, r.type, r.created_by, r.created_at, s.key, s.title, t.key, t.title
+const relationSelect = `SELECT r.id, r.project_id, r.source_id, r.target_id, r.type, r.created_by, r.created_at, s.key, s.title, t.key, t.title, r.suspect_since, r.suspect_reason, r.suspect_end
 	FROM requirement_relations r JOIN requirements s ON s.id = r.source_id JOIN requirements t ON t.id = r.target_id`
 
 func scanRelation(r interface{ Scan(...any) error }) (*model.Relation, error) {
 	var rel model.Relation
-	if err := r.Scan(&rel.ID, &rel.ProjectID, &rel.SourceID, &rel.TargetID, &rel.Type, &rel.CreatedBy, &rel.CreatedAt, &rel.SourceKey, &rel.SourceTitle, &rel.TargetKey, &rel.TargetTitle); err != nil {
+	var suspect sql.NullTime
+	if err := r.Scan(&rel.ID, &rel.ProjectID, &rel.SourceID, &rel.TargetID, &rel.Type, &rel.CreatedBy, &rel.CreatedAt, &rel.SourceKey, &rel.SourceTitle, &rel.TargetKey, &rel.TargetTitle, &suspect, &rel.SuspectReason, &rel.SuspectEnd); err != nil {
 		return nil, err
 	}
+	rel.SuspectSince = timePtr(suspect)
 	return &rel, nil
 }
 
@@ -640,6 +672,9 @@ func deleteEntityData(ctx context.Context, c conn, entityType string, ids []stri
 		return err
 	}
 	if err := deleteItemLinks(ctx, c, entityType, ids); err != nil {
+		return err
+	}
+	if err := deleteVariantCodeData(ctx, c, entityType, ids); err != nil {
 		return err
 	}
 	if err := deleteDefectLinks(ctx, c, entityType, ids); err != nil {

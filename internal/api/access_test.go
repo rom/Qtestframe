@@ -48,8 +48,13 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	a.m("POST", pp+"/releases", map[string]any{"name": "1.0"}, 201)
 	a.m("POST", pp+"/defects", map[string]any{"title": "Secret defect", "severity": "minor"}, 201)
 	a.m("POST", pp+"/risks", map[string]any{"title": "Secret risk", "likelihood": 2, "impact": 2}, 201)
+	a.m("POST", pp+"/waivers", map[string]any{"title": "Secret waiver", "requirement_ids": []string{r1}}, 201)
 	a.m("POST", pp+"/webhooks", map[string]any{"name": "h", "url": "https://hooks.example.org/x", "events": []string{"defect.updated"}, "enabled": false}, 201)
 	a.m("POST", pp+"/configurations", map[string]any{"name": "Chrome"}, 201)
+	a.m("POST", pp+"/variants", map[string]any{"name": "EU model"}, 201)
+	a.m("POST", pp+"/builds", map[string]any{"external_id": "ci-1"}, 201)
+	a.m("POST", pp+"/custom-fields", map[string]any{"entity_type": "requirement", "label": "Supplier", "type": "text"}, 201)
+	a.m("POST", pp+"/templates", map[string]any{"kind": "requirement", "name": "Secret template"}, 201)
 	def := a.m("POST", pp+"/reports/definitions", map[string]any{"name": "Status", "config": map[string]any{"entity": "test", "columns": []string{"key"}}}, 201)["id"].(string)
 	a.m("POST", pp+"/reports/subscriptions", map[string]any{"definition_id": def, "recipients": []string{e.admin.ID}}, 201)
 	a.m("POST", "/api/v1/reviews", map[string]any{"entity_type": "requirement", "entity_id": r1, "reviewers": []string{e.admin.ID}}, 201)
@@ -62,6 +67,8 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	if err := e.st.CreateRun(ctx, e.tenant.ID, run, []string{t1}); err != nil {
 		t.Fatal(err)
 	}
+	a.m("POST", "/api/v1/requirements/"+r1+"/verification-records", map[string]any{"method": "inspection", "result": "pass"}, 201)
+	a.m("POST", pp+"/elements", map[string]any{"name": "Secret unit"}, 201)
 	a.m("PUT", pp+"/access", map[string]any{"access": "restricted"}, 200)
 	// an id of each resource, read from the database
 	q := map[string]string{
@@ -73,11 +80,16 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"links": `SELECT id FROM trace_links WHERE project_id = ?`, "item-links": `SELECT id FROM item_links WHERE project_id = ?`,
 		"trash": `SELECT id FROM trash WHERE project_id = ?`, "releases": `SELECT id FROM releases WHERE project_id = ?`,
 		"defects": `SELECT id FROM defects WHERE project_id = ?`, "risks": `SELECT id FROM risks WHERE project_id = ?`,
+		"waivers":  `SELECT id FROM waivers WHERE project_id = ?`,
 		"webhooks": `SELECT id FROM webhooks WHERE project_id = ?`, "trace-rules": `SELECT id FROM trace_rules WHERE project_id = ?`,
 		"configurations": `SELECT id FROM configurations WHERE project_id = ?`, "test-dependencies": `SELECT id FROM test_dependencies WHERE project_id = ?`,
 		"reports/definitions": `SELECT id FROM report_definitions WHERE project_id = ?`, "reports/subscriptions": `SELECT id FROM report_subscriptions WHERE project_id = ?`,
 		"reviews": `SELECT id FROM review_requests WHERE project_id = ?`, "files": `SELECT id FROM files WHERE project_id = ?`,
-		"comments": `SELECT c.id FROM comments c JOIN requirements r ON r.id = c.entity_id WHERE r.project_id = ?`,
+		"comments":             `SELECT c.id FROM comments c JOIN requirements r ON r.id = c.entity_id WHERE r.project_id = ?`,
+		"verification-records": `SELECT id FROM verification_records WHERE project_id = ?`,
+		"elements":             `SELECT id FROM system_elements WHERE project_id = ?`,
+		"variants":             `SELECT id FROM variants WHERE project_id = ?`, "builds": `SELECT id FROM builds WHERE project_id = ?`,
+		"custom-fields": `SELECT id FROM custom_fields WHERE project_id = ?`, "templates": `SELECT id FROM item_templates WHERE project_id = ?`,
 	}
 	for res, sql := range q {
 		var id string
@@ -151,7 +163,7 @@ func TestProjectAccessRouteWalk(t *testing.T) {
 	}
 	// lists across projects leave the project out
 	for _, c := range []*client{m, bt} {
-		for _, p := range []string{"/api/v1/projects", "/api/v1/search?q=secret", "/api/v1/reviews?requested_by=me", "/api/v1/reviews/in-review", "/api/v1/notifications", "/api/v1/catalog/requirements?project_id=" + fx.pid} {
+		for _, p := range []string{"/api/v1/projects", "/api/v1/search?q=secret", "/api/v1/reviews?requested_by=me", "/api/v1/reviews/in-review", "/api/v1/notifications", "/api/v1/catalog/requirements?project_id=" + fx.pid, "/api/v1/oslc/catalog"} {
 			res := c.raw("GET", p, nil)
 			body, _ := io.ReadAll(res.Body)
 			res.Body.Close()

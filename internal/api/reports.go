@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/customfield"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
@@ -78,6 +79,17 @@ func (s *Server) handleReportFields(w http.ResponseWriter, r *http.Request, p *P
 		s.fail(w, r, badRequest("entity must be one of %s", strings.Join(report.Entities, ", ")))
 		return
 	}
+	if entity != report.EntityExecution {
+		// the project's custom fields of the entity: cf.<key>
+		defs, err := s.Store.ListCustomFields(r.Context(), p.TenantID(), r.PathValue("pid"), entity)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		for _, d := range defs {
+			fs = append(fs, report.Field{ID: report.CustomFieldPrefix + d.Key, Label: customfield.Column(&d)})
+		}
+	}
 	writeJSON(w, http.StatusOK, fs)
 }
 
@@ -129,7 +141,7 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 	d := &report.Data{Project: *pr, Links: pc.links, Categories: pc.categories, Executions: map[string][]model.Execution{}, Now: time.Now().UTC()}
 	reqQ, testQ := "", ""
 	switch id {
-	case report.RequirementsCoverage:
+	case report.RequirementsCoverage, report.Verification:
 		reqQ = expr
 	case report.Traceability:
 		reqQ, testQ = reqExpr(expr), testExpr(expr)
@@ -173,8 +185,29 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 			return nil, err
 		}
 	}
+	if id == report.QualityMetrics {
+		qp, err := parseQualityParams(mapGetter(params))
+		if err != nil {
+			return nil, err
+		}
+		qp.Lang = ""
+		if d.Quality, err = s.qualityReport(ctx, p.TenantID(), pr, qp); err != nil {
+			return nil, err
+		}
+	}
 	if id == report.Risks {
 		if d.Risks, err = s.Store.ListRisks(ctx, p.TenantID(), pr.ID); err != nil {
+			return nil, err
+		}
+		if d.RiskThreshold, err = s.Store.RiskThreshold(ctx, p.TenantID(), pr.ID); err != nil {
+			return nil, err
+		}
+	}
+	if err := s.waiverReportData(r, p, pr, id, params, d); err != nil {
+		return nil, err
+	}
+	if id == report.Verification {
+		if d.Verification, err = s.verificationData(ctx, p, pc, d.Requirements); err != nil {
 			return nil, err
 		}
 	}
@@ -187,6 +220,11 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 	}
 	return d, nil
 }
+
+// mapGetter reads report parameters like URL query values.
+type mapGetter map[string]string
+
+func (m mapGetter) Get(k string) string { return strings.TrimSpace(m[k]) }
 
 // customRecords returns the records of a custom report, filtered by its
 // query, with report-friendly values for multi-part fields (in lang).
@@ -343,6 +381,16 @@ func (s *Server) render(r *http.Request, p *Principal, pr *model.Project, job re
 		recs, err := s.customRecords(r, p, pr, job.custom, job.lang)
 		if err != nil {
 			return nil, err
+		}
+		if job.custom.Entity != report.EntityExecution {
+			defs, err := s.Store.ListCustomFields(r.Context(), p.TenantID(), pr.ID, job.custom.Entity)
+			if err != nil {
+				return nil, err
+			}
+			job.custom.CustomLabels = map[string]string{}
+			for _, d := range defs {
+				job.custom.CustomLabels[report.CustomFieldPrefix+d.Key] = customfield.Column(&d)
+			}
 		}
 		ds = report.BuildCustom(*job.custom, recs, pr.Key+" – "+pr.Name, time.Now().UTC(), job.lang)
 	} else {

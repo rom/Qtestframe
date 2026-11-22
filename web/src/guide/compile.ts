@@ -6,7 +6,7 @@
 import MarkdownIt from 'markdown-it'
 import type { Token } from 'markdown-it'
 import { createSlugger } from './slug'
-import { classifyHref, imageName, resolveImage } from './links'
+import { classifyHref, imageName, resolveImage, type GuideBook } from './links'
 import { inlineText, processTokens } from './render'
 
 export interface GuidePageSource {
@@ -21,6 +21,10 @@ export interface CompileOptions {
   images: Iterable<string>
   /** folder of the images, relative to the compiled file */
   imageDir?: string
+  /** the guide being compiled (default the user guide) */
+  book?: GuideBook
+  /** the URL of a page of the other guide, for links into it (null leaves the link as written) */
+  otherGuideUrl?: (book: GuideBook, page: string, hash: string) => string | null
 }
 
 export interface CompiledGuide {
@@ -109,6 +113,10 @@ export function compileGuide(pages: GuidePageSource[], opts: CompileOptions): Co
         }
         const target = classifyHref(href)
         let to: string | null = null
+        if (target.kind === 'page' && target.book && target.book !== (opts.book ?? 'user')) {
+          const url = opts.otherGuideUrl?.(target.book, target.page, target.hash)
+          return url ? `[${label}](${url}${title})` : all
+        }
         if (target.kind === 'page') to = anchorOf(target.page, target.hash)
         else if (target.kind === 'anchor') to = anchorOf(p.page, target.hash)
         return to ? `[${label}](#${to}${title})` : all

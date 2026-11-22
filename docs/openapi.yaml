@@ -58,10 +58,16 @@ tags:
   description: Test cases, dependencies and readiness
 - name: Traceability
   description: Requirement–test links and the traceability matrix
+- name: Verification
+  description: Criterion-level verification, verification records, hierarchy roll-up and system elements
+- name: Variants
+  description: Product variants, markets and customer configurations; applicability and coverage per variant
 - name: Item links
   description: Links between requirements, tests, runs, files and URLs
 - name: Runs and executions
   description: Test runs, executions and result imports
+- name: Code and builds
+  description: Commits, merge and pull requests, CI builds, webhooks and the regression selection
 - name: Baselines
   description: Baselines and electronic sign-offs
 - name: Releases
@@ -72,6 +78,8 @@ tags:
   description: Issues created from requirements in GitLab, GitHub or Jira
 - name: Risks
   description: Risks
+- name: Waivers
+  description: Waivers and deviations with their electronically signed approvals
 - name: Reviews
   description: Review requests
 - name: Notifications and webhooks
@@ -82,6 +90,8 @@ tags:
   description: Reports, export (CSV, XLSX, PDF, DOCX, Markdown, ReqIF) and search
 - name: Import
   description: Requirement import
+- name: OSLC
+  description: Read-only OSLC RM 2.0 / QM 2.0 provider (RDF/XML, Turtle, JSON-LD)
 - name: Catalogue
   description: Built-in catalogue of standard requirements and tests, and copying them into a project
 - name: Operations
@@ -165,6 +175,283 @@ paths:
             application/yaml:
               schema:
                 type: string
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/catalog:
+    get:
+      tags:
+      - OSLC
+      summary: OSLC service provider catalog
+      operationId: getOslcCatalog
+      description: |-
+        oslc:ServiceProviderCatalog with one oslc:ServiceProvider per project the caller may read (restricted projects only for their members).
+
+        **Permission:** authenticated.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - OSLC
+      summary: OSLC service provider
+      operationId: getOslcProjectsByPid
+      description: |-
+        oslc:ServiceProvider of a project: an RM service (query capability for oslc_rm:Requirement) and a QM service (oslc_qm:TestCase), each when the caller may read the kind.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/requirements:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - OSLC
+      summary: OSLC requirement query
+      operationId: getOslcProjectsByPidRequirements
+      description: |-
+        Query capability: the requirements as rdfs:member of the query base with their properties, and an oslc:ResponseInfo (oslc:totalCount, oslc:nextPage). oslc.select and oslc.orderBy are ignored.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: oslc.where
+        in: query
+        schema:
+          type: string
+        description: 'e.g. dcterms:identifier="SHOP-REQ-12" or dcterms:modified>"2026-01-01T00:00:00Z"^^xsd:dateTime; properties dcterms:identifier, dcterms:title, dcterms:modified, dcterms:created; operators = != < > <= >= in [..], joined by and'
+      - name: oslc.prefix
+        in: query
+        schema:
+          type: string
+      - name: oslc.pageSize
+        in: query
+        schema:
+          type: integer
+      - name: page
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/requirements/{item}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: item
+      in: path
+      required: true
+      schema:
+        type: string
+      description: id or key of the item
+    get:
+      tags:
+      - OSLC
+      summary: OSLC requirement
+      operationId: getOslcProjectsByPidRequirementsByItem
+      description: |-
+        oslc_rm:Requirement: dcterms identifier, title, description, created, modified, creator, subject (tags); oslc_rm:validatedBy (tests), relations as qtf:<type> and the nearest OSLC RM property; status, obligation, type, priority as qtf: properties. ETag is the version.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/tests:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - OSLC
+      summary: OSLC test case query
+      operationId: getOslcProjectsByPidTests
+      description: |-
+        Query capability for oslc_qm:TestCase (as for requirements).
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      parameters:
+      - name: oslc.where
+        in: query
+        schema:
+          type: string
+        description: 'e.g. dcterms:identifier="SHOP-REQ-12" or dcterms:modified>"2026-01-01T00:00:00Z"^^xsd:dateTime; properties dcterms:identifier, dcterms:title, dcterms:modified, dcterms:created; operators = != < > <= >= in [..], joined by and'
+      - name: oslc.prefix
+        in: query
+        schema:
+          type: string
+      - name: oslc.pageSize
+        in: query
+        schema:
+          type: integer
+      - name: page
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/tests/{item}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: item
+      in: path
+      required: true
+      schema:
+        type: string
+      description: id or key of the item
+    get:
+      tags:
+      - OSLC
+      summary: OSLC test case
+      operationId: getOslcProjectsByPidTestsByItem
+      description: |-
+        oslc_qm:TestCase with oslc_qm:validatesRequirement.
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/rootservices:
+    get:
+      tags:
+      - OSLC
+      summary: OSLC root services
+      operationId: getOslcRootservices
+      description: |-
+        Discovery document (Jazz rootservices): points RM and QM clients to the catalog. Holds no data.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
         default:
           $ref: '#/components/responses/Error'
   /api/v1/auth/providers:
@@ -1578,6 +1865,68 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/hooks/github/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Code and builds
+      summary: GitHub webhook
+      operationId: postHooksGithubByPid
+      description: |-
+        push, pull_request and ping events; `X-Hub-Signature-256` must be the HMAC-SHA256 of the body with the project's webhook secret. As for GitLab
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Invalid signature or token
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/gitlab/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Code and builds
+      summary: GitLab webhook
+      operationId: postHooksGitlabByPid
+      description: |-
+        push and merge request events of a GitLab project; `X-Gitlab-Token` must be the project's webhook secret. Commits and MRs are recorded and linked to the requirements and tests whose keys (DEMO-REQ-12, REQ-12, TC-3) their text names → `{event, changes, links}`; other events 202
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Invalid signature or token
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/categories:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -1675,6 +2024,93 @@ paths:
             schema:
               type: object
         description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/code-changes:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Code and builds
+      summary: List code changes
+      operationId: getProjectsByPidCodeChanges
+      description: |-
+        commits and merge / pull requests, newest first, with their items and (commits) builds; `?kind=commit|merge_request`, `?branch=`, `?since_build=<build id, CI id or number>`, `?limit=` (default 100, max 500)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/code-settings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Code and builds
+      summary: Get code integration
+      operationId: getProjectsByPidCodeSettings
+      description: |-
+        `{has_secret, gitlab_url, github_url, updated_by, updated_at}` — the webhook URLs to enter in GitLab and GitHub
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Code and builds
+      summary: Set code integration
+      operationId: putProjectsByPidCodeSettings
+      description: |-
+        `{secret?: "16 to 200 characters", clear_secret?: true}`; an empty secret keeps the stored one. The secret is write-only
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
       responses:
         '200':
           description: OK
@@ -1948,6 +2384,132 @@ paths:
       responses:
         '200':
           description: The compliance per source
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/applicability:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    put:
+      tags:
+      - Variants
+      summary: Set applicability of several items
+      operationId: putProjectsByPidApplicability
+      description: |-
+        `{item_type: requirement|test, item_ids: [...], variant_ids: [...], expression: ""}` → `{updated, applicability}`; needs `requirement.write` or `test.write` for the item type. Empty list and expression: all variants
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/analytics/consistency:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Requirements
+      summary: Built-in consistency checks
+      operationId: getProjectsByPidAnalyticsConsistency
+      description: |-
+        Evaluates every built-in consistency check (conflict_in_release, unmet_dependency, obsolete_parent, verifies_inactive, broken_prerequisite, unevidenced_must, unmitigated_risk, unjustified_rejection, duplicate_suspect) on the project: with the project's own rule where it has installed the check, else with the default (rule id `builtin:<kind>`, not counted by releases) → `{results:[TraceRuleResult], passed, summary, checks:[{kind, scope, name, description, severity, enabled, installed, rule?}], installed}`. Violations carry `check` (reason), `note`, `related:[{kind, id, key, title, status?, role, link?, check?, note?}]` and `fixes:[remove_relation|remove_link|remove_dependency|remove_from_release|set_obsolete|add_justification|link_mitigation|mark_duplicate|dismiss]`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: 'violations listed per check (default 500)'
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/analytics/quality:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Requirements
+      summary: Quality metrics
+      operationId: getProjectsByPidAnalyticsQuality
+      description: |-
+        Quality metrics computed from the project's history → `{from, to, period, periods, stale_days, volatility:{changes, requirements, changed, per_requirement, trend, most_changed}, defect_density:{defects, requirements, per_requirement, by_severity, by_requirement, by_folder, by_category}, escaped:{defects, escaped, percent, production, after_release, by_phase, by_release, trend, items}, effectiveness:{defects, tests, executions, hours, per_test, per_hour, top_tests, trend, untimed_percent}, result_age:{tests, with_result, never, buckets, stale_days, stale, stale_percent, median_days, oldest}, review_turnaround:{count, mean_hours, median_hours, p90_hours, pending, oldest_pending_days, trend}, fix_time:{count, mean_hours, median_hours, p90_hours, open, by_severity, trend}, requirement_quality:{requirements, with_warnings, percent, by_rule, trend, items}}`. Trends are `[{period, count, total, value}]` per week or month.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: range
+        in: query
+        required: false
+        description: 'days of history: 30, 90 (default), 180 or 365'
+        schema:
+          type: integer
+      - name: period
+        in: query
+        required: false
+        description: 'week or month (default: week up to 120 days, else month)'
+        schema:
+          type: string
+      - name: stale_days
+        in: query
+        required: false
+        description: 'a latest result older than this is stale (default 30)'
+        schema:
+          type: integer
+      - name: lang
+        in: query
+        required: false
+        description: 'analysis language (auto or a language code; default auto)'
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -2252,6 +2814,66 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/risk-settings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Risks
+      summary: Risk acceptance threshold
+      operationId: getProjectsByPidRiskSettings
+      description: |-
+        `{"threshold", "effective", "default", "levels"}`: the highest residual risk level that is acceptable without an "accept risk" sign-off (`""` = the default, medium).
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Risks
+      summary: Change the risk acceptance threshold
+      operationId: putProjectsByPidRiskSettings
+      description: |-
+        `{"threshold": "low"|"medium"|"high"|"critical"|""}`. A release can set its own with the level of its `residual_risk` exit criterion.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -2334,6 +2956,65 @@ paths:
       responses:
         '204':
           description: Deleted; header X-Trash-Id names the trash entry
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/applicability:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Variants
+      summary: Get requirement applicability
+      operationId: getRequirementsByIdApplicability
+      description: |-
+        `{variant_ids, variants, expression, all, applies_to: [{id, name}]}`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Variants
+      summary: Set requirement applicability
+      operationId: putRequirementsByIdApplicability
+      description: |-
+        `{variant_ids: [ids or names], expression: "region:EU"}`; both empty: all variants
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2457,6 +3138,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/impact:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Traceability
+      summary: Change impact of a requirement
+      operationId: getRequirementsByIdImpact
+      description: |-
+        what a change of the requirement's substance (title, description, obligation, criteria) makes suspect, out of date, outdated or stale: `{kind, id, key, title, requirements, tests, issues, documents, results, total}`. `requirements`: the requirements related to it along the relation types the project's `relation_impact` names (with `relation`, `direction`); `tests`: the tests verifying it and those requirements (`via`: the related requirement); `issues`: its tracker issues (when `flag_issues`); `documents`: the generated documents containing it; `results`: the latest results of its tests that go stale (when `stale_on_change`). `already` marks items that are suspect, out of date or stale already; `total` counts the others. Without `test.read` the tests and results are left out
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/restore:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -2561,6 +3270,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/relations/confirm:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Relations
+      summary: Confirm the suspect relations of a requirement
+      operationId: postRequirementsByIdRelationsConfirm
+      description: |-
+        confirms every suspect relation of the requirement (either end) → `{confirmed}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/relations/{id}:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -2574,6 +3311,34 @@ paths:
       responses:
         '204':
           description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/relations/{id}/confirm:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Relations
+      summary: Confirm a suspect relation
+      operationId: postRelationsByIdConfirm
+      description: |-
+        the related requirement still holds after the change at the other end: clears `suspect_since` → `{confirmed}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2946,6 +3711,65 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/builds:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Code and builds
+      summary: List builds
+      operationId: getProjectsByPidBuilds
+      description: |-
+        the project's CI builds, newest first, with `runs` and the result `summary`; `?limit=`
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Code and builds
+      summary: Register build
+      operationId: postProjectsByPidBuilds
+      description: |-
+        `{external_id, number?, commit_sha?, branch?, pipeline_url?}` — creates the build (201) or updates the given fields of the build with that CI id (200)
+
+        **Permission:** `run.execute`.
+      x-permission: run.execute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/baselines/{id}:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -3022,6 +3846,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BaselineDiff'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/baselines/{id}/impact:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Baselines
+      summary: Impact of the changes since a baseline
+      operationId: getBaselinesByIdImpact
+      description: |-
+        the project-wide impact of the changes between the baseline and the current state: `{baseline, changes: [{entity_type, entity_id, key, title, from_version, to_version, changed_fields, impact}], totals: {requirements, tests, issues, documents, results}}`; only items whose substance changed, the largest impact first; `totals` counts distinct items
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -3456,6 +4308,65 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/applicability:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Variants
+      summary: Get test applicability
+      operationId: getTestsByIdApplicability
+      description: |-
+        as for requirements
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Variants
+      summary: Set test applicability
+      operationId: putTestsByIdApplicability
+      description: |-
+        as for requirements
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/item-links:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -3713,6 +4624,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/item-links/{id}/issue/confirm:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Requirement issues
+      summary: Confirm an out-of-date issue
+      operationId: postItemLinksByIdIssueConfirm
+      description: |-
+        the tracker issue of a requirement is still right although the requirement changed: clears `issue.outdated_since` → the link (updating the issue with `PUT /requirements/{id}/issue` clears it too); 400 for a link that is not an issue
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/item-links:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -3841,6 +4780,307 @@ paths:
                       type: object
                   total:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/verification:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: Verification of the project
+      operationId: getProjectVerification
+      description: '**Permission:** `requirement.read`. Whether every requirement is verified, and why: criteria with their evidence (tests, steps, verification records), the roll-up of refining children, reasons and inconsistencies.'
+      x-permission: requirement.read
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+        description: query-language filter of the requirements
+      - name: folder_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectVerification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/verification-records:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: List verification records
+      operationId: listVerificationRecords
+      description: '**Permission:** `requirement.read`. Newest first; ?requirement_id= filters.'
+      x-permission: requirement.read
+      parameters:
+      - name: requirement_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/verification-settings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: Verification settings
+      operationId: getVerificationSettings
+      description: '**Permission:** `project.read`. '
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Verification
+      summary: Change verification settings
+      operationId: putVerificationSettings
+      description: '**Permission:** `project.update`. strict_criteria: every criterion needs its own evidence. Statuses that follow evidence are updated.'
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/waivers:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Waivers
+      summary: List waivers and deviations
+      operationId: getProjectsByPidWaivers
+      description: |-
+        The waivers and deviations of the project, newest first, with their requirements, approvals (`valid`: the signed content is unchanged), `active` (approved and not expired today), `release_name` and `risk_key`. Filters: `status` (draft, requested, approved, rejected, expired, revoked), `type` (waiver, deviation), `release_id` (a release id, or `project` for project-wide ones), `requirement_id`, `active=true`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: "draft | requested | approved | rejected | expired | revoked"
+        schema:
+          type: string
+      - name: type
+        in: query
+        required: false
+        description: "waiver | deviation"
+        schema:
+          type: string
+      - name: release_id
+        in: query
+        required: false
+        description: "a release id, or 'project' for project-wide waivers"
+        schema:
+          type: string
+      - name: requirement_id
+        in: query
+        required: false
+        description: "only waivers covering this requirement"
+        schema:
+          type: string
+      - name: active
+        in: query
+        required: false
+        description: "true: only approved waivers that have not expired"
+        schema:
+          type: string
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Waivers
+      summary: Create a waiver or deviation
+      operationId: postProjectsByPidWaivers
+      description: |-
+        `{"type": "waiver"|"deviation", "title", "release_id" (null: the whole project), "requirement_ids", "justification", "compensating", "conditions", "risk_id", "new_risk": {"title", "likelihood", "impact"} (creates a risk for the requirements and links it), "approvers": [e-mail], "expires_on": "YYYY-MM-DD", "submit": false}` → 201 the waiver (key PROJ-WVR-n), a draft or with `submit` requested (needs requirements, a justification and, for a deviation, compensating measures; the approvers are notified).
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/variants:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Variants
+      summary: List variants
+      operationId: getProjectsByPidVariants
+      description: |-
+        the project's variants in hierarchy order (parents first), each with `path`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Variants
+      summary: Create variant
+      operationId: postProjectsByPidVariants
+      description: |-
+        `{name, parent_id?, description?, kind?: product|market|customer|other, attributes?: {name: value}, configuration_ids?: [...]}` → Variant; names are unique per project
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/variants/matrix:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Variants
+      summary: Variant coverage matrix
+      operationId: getProjectsByPidVariantsMatrix
+      description: |-
+        the coverage of the requirements (`?q=`, `?folder_id=`) in every variant (`?variants=` ids or names, comma-separated), optionally in one configuration (`?configuration=<id>|none`): `{variants, requirements: [{id, key, title, obligation, coverage: {variant id: coverage}}], summary: {variant id: {coverage: n, applicable: n}}}`; `not_applicable` where a requirement does not apply
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -3987,6 +5227,34 @@ paths:
                       $ref: '#/components/schemas/Revision'
                   total:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/impact:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Traceability
+      summary: Change impact of a test
+      operationId: getTestsByIdImpact
+      description: |-
+        what a change of the test's substance makes suspect or stale: `requirements` (the requirements it verifies, whose links become suspect), `documents` (test plans containing it) and `results` (its latest result); same shape as `GET /requirements/{id}/impact`
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -4353,6 +5621,42 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/links/{id}/criteria:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    put:
+      tags:
+      - Verification
+      summary: Map a link to criteria
+      operationId: putLinkCriteria
+      description: '**Permission:** `test.write`. The criteria the test verifies, each optionally through one test step; an empty list makes it a plain link.'
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                criteria:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/LinkCriterion'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraceLink'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/links/confirm:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -4405,6 +5709,34 @@ paths:
       responses:
         2XX:
           description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/regressions:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Defects
+      summary: Regression history of a test
+      operationId: getTestsByIdRegressions
+      description: |-
+        the regressions the test found: its failures after it had verified the fix of a defect (same items as `GET /defects/{id}/regressions`)
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -4585,6 +5917,117 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/soa:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Catalogue
+      summary: Statement of Applicability
+      operationId: getProjectsByPidSoa
+      description: |-
+        The statement for `source` (default `iso-27001`): `{source, url, summary, rows}`; each row is a control `{id, title, group, group_title, applicable (true, false or null = not decided), justification, owner, updated_by, updated_at, status (implemented, partial, planned, not_implemented; "" when excluded), requirements [{id, key, title, state, catalog_ref, waiver}], evidence [{id, key, title, result}], catalogue, missing, suggested}`. The status is derived from the adopted requirements (catalogue imports and own requirements citing the control in their source) and the latest results of their tests; waived requirements count as partial. 400 for an unknown source. The document is the standard report `soa`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: source
+        in: query
+        required: false
+        description: "reference source id (default iso-27001)"
+        schema:
+          type: string
+      - name: lang
+        in: query
+        required: false
+        description: "language of the titles (en, sv)"
+        schema:
+          type: string
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/soa/decisions:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    put:
+      tags:
+      - Catalogue
+      summary: Save Statement of Applicability decisions
+      operationId: putProjectsBySoaDecisions
+      description: |-
+        `{"source", "decisions": [{"control_id", "applicable": true|false|null, "justification", "owner"}]}`: only the controls given change (an excluded control needs a justification; a control of another list → 400) → `{changed, statement}`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/soa/sources:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Catalogue
+      summary: Sources for a Statement of Applicability
+      operationId: getProjectsByPidSoaSources
+      description: |-
+        The reference sources of the registry an SoA can be made for: `{id, kind, short, name, title, shipped, controls}`. Sources with a shipped control list (ISO/IEC 27001:2022 Annex A, 93 controls) come first; the others derive their controls from the clause groups of the catalogue refs.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: lang
+        in: query
+        required: false
+        description: "language of the names (en, sv)"
+        schema:
+          type: string
+      responses:
+        2XX:
+          description: Success
           content:
             application/json:
               schema:
@@ -5147,6 +6590,191 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/reqif/apply:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Apply a ReqIF import
+      operationId: postProjectsByPidExchangeReqifApply
+      description: |-
+        Parses and compares the file again (same fields as the preview) and saves the confirmed rows in one transaction through the regular create and update handlers (history, audit, suspect links). Conflicts are skipped unless `overwrite_conflicts`; `exclude` (JSON array of row indexes) leaves rows out. Records the IDENTIFIERs of the objects and relations (`external_refs`) for the next re-import, adds the relations of the document and removes relations imported before that the document no longer has. → `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, references_saved, items:[{index, location, id, key, title, action, version}], skipped_rows:[{index, location, title, reason}]}`; audited as `requirement.import`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReqIFExchangeUpload'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/reqif/preview:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Preview a ReqIF import
+      operationId: postProjectsByPidExchangeReqifPreview
+      description: |-
+        Reads a ReqIF 1.x document (.reqif or .reqifz, e.g. from IBM DOORS, DOORS Next or Siemens Polarion) and compares it with the project; nothing is stored. Objects already imported (by IDENTIFIER) or exported from this project are updates. → the diff (as for the Excel preview) plus `{title, tool, qtestframe, attributes:[{name, type, values, objects, sample, object_types, field, guess}], targets:[{key, label, type}], relation_types:{name: type}, relations:{add, remove, keep, changes:[…]}, folders, skipped, errors, previous, target_folder}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReqIFExchangeUpload'
+      responses:
+        '200':
+          description: The diff; nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeDiff'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/xlsx:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: Export a round-trip workbook
+      operationId: getProjectsByPidExchangeXlsx
+      description: |-
+        Excel workbook for editing and importing back: sheet Requirements or Tests with ID, Key and Version columns and one column per field (relations and links as keys), a Steps sheet for tests, instructions and a hidden sheet with the column keys. Query: `kind` (requirement | test), `q`, `folder_id`, `recursive`. Audited as `project.export`.
+
+        **Permission:** `export` (and the read permission of the kind).
+      x-permission: export
+      parameters:
+      - name: kind
+        in: query
+        schema:
+          type: string
+          enum: [requirement, test]
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: folder_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The workbook
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/xlsx/apply:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Apply an edited workbook
+      operationId: postProjectsByPidExchangeXlsxApply
+      description: |-
+        Compares the workbook again and saves the confirmed rows in one transaction (all or nothing) through the regular create and update handlers: history, audit, suspect links, notifications. Rows with errors are skipped, conflicts too unless `overwrite_conflicts`; `create=false` skips new rows; `exclude` is a JSON array of row indexes. A save that races with the import answers 409 `stale`. → `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, links_added, links_removed, items:[…], skipped_rows:[…]}`; audited as `requirement.import` / `test.import`
+
+        **Permission:** `project.read` (and the write permission of the kind; the review permission to set a review status).
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExchangeUpload'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeResult'
+        '409':
+          description: An item was saved by someone else during the import (code `stale`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/xlsx/preview:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Preview an edited workbook
+      operationId: postProjectsByPidExchangeXlsxPreview
+      description: |-
+        Compares a round-trip workbook with the stored items; nothing is stored. Rows with an ID (or a known Key) are updates, rows without are new; a row whose Version differs from the stored one and whose values differ is a conflict. → `{kind, file, summary:{new, changed, unchanged, conflicts, errors}, rows:[{index, row, location, status, id, key, title, base_version, version, changes:[{field, label, cell, old, new}], errors:[{field, label, cell, message}], warnings}], columns:[Field], ignored:[header], warnings}`
+
+        **Permission:** `project.read` (and the write permission of the kind).
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExchangeUpload'
+      responses:
+        '200':
+          description: The diff; nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeDiff'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/export/view:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -5536,6 +7164,123 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/blocking-defects:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Defects
+      summary: Defects blocking a requirement
+      operationId: getRequirementsByIdBlockingDefects
+      description: |-
+        the open defects that block the requirement or warn about it under the project's severity rules (`blocking_severities`, `warning_severities`): defects linked to the requirement, to a test verifying it or to an execution of such a test → `{blocked, blocking, warnings, items: [{defect_id, key, title, severity, status, level: block | warn, via}]}` (`via`: `requirement` or the test key)
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/code:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Code and builds
+      summary: Requirement code panel
+      operationId: getRequirementsByIdCode
+      description: |-
+        `{changes, builds: [{build, coverage}], verified_build}` — linked commits and MRs / PRs; with `run.read` the builds a linked test ran in and the latest build in which every linked test passed
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Code and builds
+      summary: Link requirement to code
+      operationId: postRequirementsByIdCode
+      description: |-
+        `{change_id}` or a change to add: `{kind: commit|merge_request, ref, url?, title?, repository?, provider?, status?, branch?}` → CodeChange (201)
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/code/{cid}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: cid
+      in: path
+      required: true
+      schema:
+        type: string
+      description: code change id
+    delete:
+      tags:
+      - Code and builds
+      summary: Unlink requirement from code
+      operationId: deleteRequirementsByIdCodeByCid
+      description: |-
+        removes the link; a manual change linked to nothing else is removed
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/tests/{id}/attachments:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -5651,6 +7396,123 @@ paths:
       description: '**Permission:** any authenticated user; the handler checks: `requirement.write` / `test.write` / `run.execute` (runs, executions
         and step results).'
       x-permission: authenticated
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/builds:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Code and builds
+      summary: Test build history
+      operationId: getTestsByIdBuilds
+      description: |-
+        `{items: [{build, result, results: {configuration id: result}}]}`, newest first (at most 100); needs `run.read`
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/code:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Code and builds
+      summary: Test code panel
+      operationId: getTestsByIdCode
+      description: |-
+        `{changes, builds}` — linked commits and MRs / PRs and (with `run.read`) the build history
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Code and builds
+      summary: Link test to code
+      operationId: postTestsByIdCode
+      description: |-
+        as for requirements
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/code/{cid}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: cid
+      in: path
+      required: true
+      schema:
+        type: string
+      description: code change id
+    delete:
+      tags:
+      - Code and builds
+      summary: Unlink test from code
+      operationId: deleteTestsByIdCodeByCid
+      description: |-
+        as for requirements
+
+        **Permission:** `test.write`.
+      x-permission: test.write
       responses:
         '204':
           description: No content
@@ -7122,6 +8984,47 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/elements:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    put:
+      tags:
+      - Verification
+      summary: Allocate a test
+      operationId: putTestElements
+      description: '**Permission:** `test.write`. Replaces its elements.'
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                element_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  element_ids:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/test-dependencies/{id}:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -7196,6 +9099,74 @@ paths:
       x-permission: test.read
       responses:
         '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/regression:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Code and builds
+      summary: Regression selection
+      operationId: postProjectsByPidRegression
+      description: |-
+        `{requirement_ids?: [ids or keys], change_ids?: [...], since_build?: ref, variant?: ref, include_related?: false, include_prerequisites?: true}` → `{requirements, tests: [{id, key, title, last_result, reasons: [{kind, ref, type}]}], changes, variant, since_build}`
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/regression/run:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Code and builds
+      summary: Create regression run
+      operationId: postProjectsByPidRegressionRun
+      description: |-
+        the selection request plus `name`, `description`, `environment`, `build`, `release_id`, `configuration_ids` → `{run, selection}` (201); needs `test.read` too
+
+        **Permission:** `run.write`.
+      x-permission: run.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
           description: OK
           content:
             application/json:
@@ -7582,6 +9553,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/releases/{id}/waivers:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Waivers
+      summary: Waivers of a release
+      operationId: getReleasesByIdWaivers
+      description: |-
+        The waivers for the release and the project-wide waivers that cover requirements of its scope.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/defects:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -7915,6 +9914,47 @@ paths:
                       type: object
                   total:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/elements:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    put:
+      tags:
+      - Verification
+      summary: Allocate a requirement
+      operationId: putRequirementElements
+      description: '**Permission:** `requirement.write`. Replaces its elements.'
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                element_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  element_ids:
+                    type: array
+                    items:
+                      type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -8336,6 +10376,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/defects/{id}/regressions:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Defects
+      summary: Regression history of a defect
+      operationId: getDefectsByIdRegressions
+      description: |-
+        the regressions of the defect (as the original or as the regression defect), newest first → `{items: [{id, defect_id, defect_key, regression_defect_id, regression_defect_key, test_case_id, test_key, execution_id, run_id, run_name, action: reopened | created, previous_status, created_by, created_at}]}`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/defects/{id}/sync:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -8363,6 +10431,120 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/elements/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Verification
+      summary: Get system element
+      operationId: getElement
+      description: '**Permission:** `project.read`. '
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemElement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Verification
+      summary: Update system element
+      operationId: patchElement
+      description: '**Permission:** `requirement.write`. name, kind, description, parent_id (move), position.'
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemElementInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemElement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Verification
+      summary: Delete system element
+      operationId: deleteElement
+      description: '**Permission:** `requirement.write`. With the elements below it and their allocations.'
+      x-permission: requirement.write
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/elements/{id}/allocations:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Verification
+      summary: Allocate requirements or tests
+      operationId: allocateToElement
+      description: '**Permission:** `project.read`. Also needs `requirement.write` (kind requirement) or `test.write` (kind test).'
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum: [requirement, test]
+                add:
+                  type: array
+                  items:
+                    type: string
+                remove:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemElement'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -8641,6 +10823,66 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/risks/{id}/accept:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Risks
+      summary: Accept a residual risk (electronic signature)
+      operationId: postRisksByIdAccept
+      description: |-
+        `{"comment", "password"}`: signs the acceptance of the risk's residual assessment (as for waiver decisions) and sets its status to accepted. `acceptance_valid` turns false when the assessment changes.
+
+        **Permission:** `waiver.approve`.
+      x-permission: waiver.approve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Risks
+      summary: Withdraw a risk acceptance
+      operationId: deleteRisksByIdAccept
+      description: |-
+        Removes the sign-off; an accepted risk goes back to mitigating.
+
+        **Permission:** `waiver.approve`.
+      x-permission: waiver.approve
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/risks/{id}/requirements:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -8706,6 +10948,34 @@ paths:
                       type: object
                   total:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/stale-results:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Traceability
+      summary: Staleness of the results of a requirement
+      operationId: getRequirementsByIdStaleResults
+      description: |-
+        the latest results of the tests verifying the requirement with their staleness → `{items: [{test_id, key, title, result, stale, reason: age | test_changed | requirement_changed, key, recorded_at}], stale_after_days, stale_on_change}`; empty without `test.read`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -9361,6 +11631,55 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/builds/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Code and builds
+      summary: Get build
+      operationId: getBuildsById
+      description: |-
+        `{build, runs, changes}` — the build, its runs and the commit it was built from
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Code and builds
+      summary: Delete build
+      operationId: deleteBuildsById
+      description: |-
+        its runs stay, without build
+
+        **Permission:** `run.write`.
+      x-permission: run.write
+      responses:
+        '204':
+          description: No content
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -10063,7 +12382,7 @@ paths:
       summary: Create traceability rule
       operationId: postProjectsByPidTraceRules
       description: |-
-        `{name, description?, severity: error|warning, enabled?, scope: requirement|test, selector?, kind: verified_by|verifies|relation|item_link, min?, options?}` → TraceRule; at most 200 per project
+        `{name, description?, severity: error|warning, enabled?, scope: requirement|test|risk, selector?, kind: verified_by|verifies|relation|item_link or a built-in check (conflict_in_release, unmet_dependency, obsolete_parent, verifies_inactive, broken_prerequisite, unevidenced_must, unmitigated_risk, unjustified_rejection, duplicate_suspect), min?, options?, threshold? (duplicate_suspect, 0.5–1), level? (unmitigated_risk: low|medium|high|critical)}` → TraceRule; at most 200 per project
 
         **Permission:** `project.update`.
       x-permission: project.update
@@ -10080,6 +12399,63 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/trace-rules/builtins:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: List built-in consistency checks
+      operationId: getProjectsByPidTraceRulesBuiltins
+      description: |-
+        the built-in checks with their project defaults and whether the project has them → `{items:[{kind, scope, name, description, severity, enabled, installed, rule?}]}`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Traceability
+      summary: Install built-in consistency checks
+      operationId: postProjectsByPidTraceRulesBuiltins
+      description: |-
+        `{kinds?:[kind]}` (optional body) creates the built-in checks the project does not have yet, with their defaults (enabled, severity warning) → `{items:[TraceRule]}` (the rules created)
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -10234,6 +12610,145 @@ paths:
       operationId: getRequirementsByIdTraceRules
       description: |-
         the enabled rules the requirement breaks, with what is missing
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/verification:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Verification
+      summary: Is the requirement verified, and why
+      operationId: getRequirementVerification
+      description: '**Permission:** `requirement.read`. Criteria, evidence, children and reasons.'
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequirementVerification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/verification-records:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Verification
+      summary: Verification records of a requirement
+      operationId: listRequirementVerificationRecords
+      description: '**Permission:** `requirement.read`. '
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Verification
+      summary: Record verification evidence
+      operationId: createVerificationRecord
+      description: '**Permission:** `run.execute`. Inspection, analysis, demonstration, review or test evidence about a criterion (or the requirement as a whole). The status follows the evidence.'
+      x-permission: run.execute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRecordInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/waivers:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Waivers
+      summary: Waivers of a requirement
+      operationId: getRequirementsByIdWaivers
+      description: |-
+        Every waiver that covers the requirement.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/variants:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Variants
+      summary: Requirement coverage per variant
+      operationId: getRequirementsByIdVariants
+      description: |-
+        `{requirement_id, applicability, variants: [{variant, applies, coverage, tests: [keys], configurations: [{id, name, coverage}]}]}` — the coverage per variant × configuration
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -10756,6 +13271,158 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/correlation-settings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Get correlation settings
+      operationId: getProjectsByPidCorrelationSettings
+      description: |-
+        the project's change and defect correlation settings `{relation_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Projects
+      summary: Save correlation settings
+      operationId: putProjectsByPidCorrelationSettings
+      description: |-
+        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off` → the settings as GET returns them
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/consistency/dismissals:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: List dismissed consistency findings
+      operationId: getProjectsByPidConsistencyDismissals
+      description: |-
+        dismissed findings of the built-in checks → `{items:[{id, project_id, check, item_a, item_b, created_by, created_at}]}`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Traceability
+      summary: Dismiss a consistency finding
+      operationId: postProjectsByPidConsistencyDismissals
+      description: |-
+        `{check: duplicate_suspect|unmet_dependency|broken_prerequisite, item_id, other_id}`: not a duplicate, or a dependency on a deleted item dealt with. Needs requirement.write (test.write for broken_prerequisite) in the project.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Traceability
+      summary: Restore a dismissed consistency finding
+      operationId: deleteProjectsByPidConsistencyDismissals
+      description: |-
+        same body as the dismissal; removes it
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/configurations/{id}:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -10819,6 +13486,618 @@ paths:
 
         **Permission:** `project.update`.
       x-permission: project.update
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/custom-fields:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: List custom fields
+      operationId: getProjectsByPidCustomFields
+      description: |-
+        the project's field definitions `[CustomField]` in order (`?entity_type=requirement|test|defect|risk|run` for one item kind)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Projects
+      summary: Create custom field
+      operationId: postProjectsByPidCustomFields
+      description: |-
+        `{entity_type, label, key?, type: text|long_text|number|date|single_select|multi_select|checkbox|user|url, unit?, options?, required?, default?, help?, position?, show_in_list?}` → CustomField; the key is derived from the label when omitted and never changes; at most 100 per item kind
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/custom-fields/apply-set:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Apply a field set
+      operationId: postProjectsByPidCustomFieldsApplySet
+      description: |-
+        `{project_type?}` (default: the project's type) copies the organisation's field set of that type into the project; fields whose key the project already has are skipped → `{project_type, added, skipped}`
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/custom-fields/archive:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: List archived custom field values
+      operationId: getProjectsByPidCustomFieldsArchive
+      description: |-
+        the values of deleted field definitions `[CustomFieldArchive]`, newest first (`?values=true` includes the values per item)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/custom-fields/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Projects
+      summary: Get custom field
+      operationId: getCustomFieldsById
+      description: '**Permission:** `project.read`.'
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Projects
+      summary: Update custom field
+      operationId: patchCustomFieldsById
+      description: |-
+        partial update of label, type (only while no item has a value), unit, options, required, default, help, position and show_in_list; key and item kind never change
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Delete custom field
+      operationId: deleteCustomFieldsById
+      description: |-
+        without `?confirm=true` → 409 `{code: confirmation_required, usage}`; with it the definition is deleted and the items' values move to the field archive → CustomFieldArchive (without the values)
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/custom-fields/{id}/usage:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Projects
+      summary: Custom field usage
+      operationId: getCustomFieldsByIdUsage
+      description: |-
+        `{id, key, items}`: the number of items with a value
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/field-sets:
+    get:
+      tags:
+      - Projects
+      summary: List field sets
+      operationId: getFieldSets
+      description: |-
+        the organisation's field sets: `[CustomField]` with `project_type` (`?project_type=` for one type)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/field-sets/{type}/fields:
+    parameters:
+    - name: type
+      in: path
+      required: true
+      description: project type (general, software, hardware, system, business)
+      schema:
+        type: string
+    post:
+      tags:
+      - Projects
+      summary: Add a field to a field set
+      operationId: postFieldSetsByTypeFields
+      description: |-
+        same body as a project field; new projects of the type get a copy
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/field-sets/fields/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Projects
+      summary: Update a field set field
+      operationId: patchFieldSetsFieldsById
+      description: |-
+        partial update (projects keep the copies they have)
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Delete a field set field
+      operationId: deleteFieldSetsFieldsById
+      description: |-
+        projects keep the copies they have
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/templates:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: List item templates
+      operationId: getProjectsByPidTemplates
+      description: |-
+        `{items: [ItemTemplate], defaults: {requirement?, test?}}`: the project's templates, the organisation's for the project type and the built-in ones (`source`: project, organisation, builtin), `default` marks the project default; `?kind=requirement|test`, `?lang=en|sv` for the built-in texts
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Projects
+      summary: Create item template
+      operationId: postProjectsByPidTemplates
+      description: |-
+        `{kind: requirement|test, name, description?, content: {title?, description?, priority?, status?, tags?, obligation?, type?, source?, rationale?, criteria?, preconditions?, expected_result?, execution_type?, estimated_minutes?, steps?, custom_fields?}}` → ItemTemplate
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/templates/default:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    put:
+      tags:
+      - Projects
+      summary: Set the default template
+      operationId: putProjectsByPidTemplatesDefault
+      description: |-
+        `{kind, template_id}` (`""` clears) → `{defaults}`; the template must be the project's, the organisation's for its type or a built-in one of its type
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/templates/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Projects
+      summary: Update item template
+      operationId: patchTemplatesById
+      description: |-
+        partial update; `content` is replaced as a whole
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Delete item template
+      operationId: deleteTemplatesById
+      description: '**Permission:** `project.update`.'
+      x-permission: project.update
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/template-sets:
+    get:
+      tags:
+      - Projects
+      summary: List organisation templates
+      operationId: getTemplateSets
+      description: |-
+        the organisation's templates per project type and the built-in ones `[ItemTemplate]` (`?project_type=`, `?kind=`, `?lang=`)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/template-sets/{type}/templates:
+    parameters:
+    - name: type
+      in: path
+      required: true
+      description: project type (general, software, hardware, system, business)
+      schema:
+        type: string
+    post:
+      tags:
+      - Projects
+      summary: Create organisation template
+      operationId: postTemplateSetsByTypeTemplates
+      description: |-
+        same body as a project template; offered to every project of the type
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/template-sets/templates/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Projects
+      summary: Update organisation template
+      operationId: patchTemplateSetsTemplatesById
+      description: |-
+        partial update; `content` is replaced as a whole
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Delete organisation template
+      operationId: deleteTemplateSetsTemplatesById
+      description: '**Permission:** `settings.manage`.'
+      x-permission: settings.manage
       responses:
         '204':
           description: No content
@@ -11089,6 +14368,100 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/elements:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: List system elements
+      operationId: listElements
+      description: '**Permission:** `project.read`. In tree order, with paths and direct allocations.'
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SystemElement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Verification
+      summary: Create system element
+      operationId: createElement
+      description: '**Permission:** `requirement.write`. '
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemElementInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemElement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/elements/coverage:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Verification
+      summary: Coverage and verification per element
+      operationId: getElementCoverage
+      description: '**Permission:** `requirement.read`. Requirements allocated to the element or below it (of those matching ?q=), with evidence and verified; tests allocated and passed.'
+      x-permission: requirement.read
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
+        description: query-language filter of the requirements
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ElementCoverage'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -12169,6 +15542,424 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/verification-records/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Verification
+      summary: Get verification record
+      operationId: getVerificationRecord
+      description: '**Permission:** `requirement.read`. '
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Verification
+      summary: Update verification record
+      operationId: patchVerificationRecord
+      description: '**Permission:** `run.execute`. A change of the evidence removes the sign-off.'
+      x-permission: run.execute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRecordInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Verification
+      summary: Delete verification record
+      operationId: deleteVerificationRecord
+      description: '**Permission:** `run.execute`. '
+      x-permission: run.execute
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/verification-records/{id}/signoff:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Verification
+      summary: Sign a verification record off
+      operationId: signVerificationRecord
+      description: '**Permission:** `requirement.read`. Also needs `requirement.review` or `run.execute`; the signer must be a second person (not the author nor the performer: 409).'
+      x-permission: requirement.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Verification
+      summary: Remove the sign-off
+      operationId: unsignVerificationRecord
+      description: '**Permission:** `requirement.read`. Also needs `requirement.review` or `run.execute`.'
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Waivers
+      summary: Get a waiver
+      operationId: getWaiversById
+      description: |-
+        The waiver with its requirements and approvals.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Waivers
+      summary: Change a waiver
+      operationId: patchWaiversById
+      description: |-
+        The fields of the create request; only a draft or requested waiver can be changed (409 otherwise). Approvals of earlier content stop counting.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Waivers
+      summary: Delete a waiver
+      operationId: deleteWaiversById
+      description: |-
+        204; an approved waiver is revoked first (409).
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}/decision:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Waivers
+      summary: Approve or reject a waiver (electronic signature)
+      operationId: postWaiversByIdDecision
+      description: |-
+        `{"decision": "approve"|"reject", "comment", "password"}`: an electronic signature over the hash of the waiver's content, given in the browser (not with an API token) with the signer's password or a single sign-on less than 15 minutes old (403 `reauth_failed` / `reauth_required`). A rejection needs a comment. The requester cannot sign their own waiver; with designated approvers only they can. The waiver becomes approved when every designated approver (or, without any, one approver) approved it and rejected at the first rejection; the requester and approvers are notified.
+
+        **Permission:** `waiver.approve`.
+      x-permission: waiver.approve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}/revoke:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Waivers
+      summary: Revoke an approved waiver
+      operationId: postWaiversByIdRevoke
+      description: |-
+        `{"comment"}` (required): approved → revoked; its requirements are no longer accepted.
+
+        **Permission:** `waiver.approve`.
+      x-permission: waiver.approve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}/submit:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Waivers
+      summary: Request approval of a waiver
+      operationId: postWaiversByIdSubmit
+      description: |-
+        draft → requested (400 without requirements or justification); the designated approvers are notified (`waiver.requested`).
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}/withdraw:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Waivers
+      summary: Withdraw a waiver request
+      operationId: postWaiversByIdWithdraw
+      description: |-
+        requested or rejected → draft, to change it.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/variants/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Variants
+      summary: Get variant
+      operationId: getVariantsById
+      description: |-
+        one variant with its path
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Variants
+      summary: Update variant
+      operationId: patchVariantsById
+      description: |-
+        the fields to change (as for create; `parent_id: ""` makes it a root, `position` orders siblings)
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Variants
+      summary: Delete variant
+      operationId: deleteVariantsById
+      description: |-
+        its children move to its parent, its runs become variant-neutral and it is removed from applicability lists
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -13026,6 +16817,130 @@ components:
           type: array
           items:
             type: string
+    ExchangeUpload:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: A round-trip workbook (.xlsx), at most 20 MB
+        kind:
+          type: string
+          enum: [requirement, test]
+          description: Default from the workbook
+        overwrite_conflicts:
+          type: boolean
+        create:
+          type: boolean
+        exclude:
+          type: string
+          description: JSON array of row indexes
+    ReqIFExchangeUpload:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: .reqif or .reqifz, at most 20 MB
+        mapping:
+          type: string
+          description: JSON object attribute long name → field key, heading, external_id, version or "" (ignored)
+        folder_id:
+          type: string
+          description: The folder the hierarchy goes below
+        hierarchy:
+          type: boolean
+          description: Heading objects become folders (default true)
+        overwrite_conflicts:
+          type: boolean
+        exclude:
+          type: string
+          description: JSON array of row indexes
+    ExchangeDiff:
+      type: object
+      properties:
+        kind:
+          type: string
+        summary:
+          type: object
+          properties:
+            new:
+              type: integer
+            changed:
+              type: integer
+            unchanged:
+              type: integer
+            conflicts:
+              type: integer
+            errors:
+              type: integer
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              location:
+                type: string
+              status:
+                type: string
+                enum: [new, changed, unchanged, conflict, error]
+              id:
+                type: string
+              key:
+                type: string
+              title:
+                type: string
+              changes:
+                type: array
+                items:
+                  type: object
+              errors:
+                type: array
+                items:
+                  type: object
+        columns:
+          type: array
+          items:
+            type: object
+        warnings:
+          type: array
+          items:
+            type: string
+    ExchangeResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        unchanged:
+          type: integer
+        skipped:
+          type: integer
+        folders_created:
+          type: integer
+        relations_added:
+          type: integer
+        relations_removed:
+          type: integer
+        links_added:
+          type: integer
+        links_removed:
+          type: integer
+        items:
+          type: array
+          items:
+            type: object
+        skipped_rows:
+          type: array
+          items:
+            type: object
     ImportUpload:
       type: object
       required:
@@ -13752,6 +17667,11 @@ components:
           type: string
         test_case_key:
           type: string
+        criteria:
+          type: array
+          description: the criteria the test verifies (criterion_id is the first)
+          items:
+            $ref: '#/components/schemas/LinkCriterion'
     TestRun:
       type: object
       properties:
@@ -13968,6 +17888,9 @@ components:
           - string
           - 'null'
           format: date-time
+        found_in:
+          type: string
+          description: phase found in (requirements, design, development, test, acceptance, production; empty unknown)
         links:
           type: array
           items:
@@ -14364,6 +18287,360 @@ components:
           type: string
         other_last_result:
           type: string
+    LinkCriterion:
+      type: object
+      required:
+      - criterion_id
+      properties:
+        criterion_id:
+          type: string
+        step_id:
+          type: string
+          description: a step of the test ('' or absent = the whole test)
+    VerificationSettings:
+      type: object
+      properties:
+        strict_criteria:
+          type: boolean
+        updated_by:
+          type: string
+        updated_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    VerificationRecordInput:
+      type: object
+      properties:
+        criterion_id:
+          type:
+          - string
+          - 'null'
+        method:
+          type: string
+          enum: [test, inspection, analysis, demonstration, review]
+          description: default the criterion's method
+        result:
+          type: string
+          enum: [pass, fail, conditional]
+        performed_by:
+          type: string
+        performed_on:
+          type: string
+          format: date
+        note:
+          type: string
+        file_ids:
+          type: array
+          items:
+            type: string
+          description: documents of the project's archive
+        valid_until:
+          type: string
+          description: YYYY-MM-DD or ''
+        until_change:
+          type: boolean
+          description: stops counting when the requirement's content changes
+    VerificationRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        requirement_id:
+          type: string
+        requirement_key:
+          type: string
+        criterion_id:
+          type:
+          - string
+          - 'null'
+        criterion_text:
+          type: string
+        method:
+          type: string
+        result:
+          type: string
+        performed_by:
+          type: string
+        performed_on:
+          type: string
+        note:
+          type: string
+        file_ids:
+          type: array
+          items:
+            type: string
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              kind:
+                type: string
+        valid_until:
+          type: string
+        until_change:
+          type: boolean
+        invalidated_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        invalidated_reason:
+          type: string
+        validity:
+          type: string
+          enum: [valid, expired, invalidated]
+        signoff:
+          type:
+          - object
+          - 'null'
+          properties:
+            by:
+              type: string
+            name:
+              type: string
+            comment:
+              type: string
+            at:
+              type: string
+              format: date-time
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Evidence:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [test, record]
+        id:
+          type: string
+        link_id:
+          type: string
+        key:
+          type: string
+        title:
+          type: string
+        step_id:
+          type: string
+        step_position:
+          type: integer
+        result:
+          type: string
+        state:
+          type: string
+          enum: [passed, failed, pending, void]
+        plain:
+          type: boolean
+        note:
+          type: string
+        date:
+          type: string
+    VerificationReason:
+      type: object
+      properties:
+        code:
+          type: string
+        params:
+          type: object
+          additionalProperties:
+            type: string
+        text:
+          type: string
+    RequirementVerification:
+      type: object
+      properties:
+        requirement_id:
+          type: string
+        key:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        strict:
+          type: boolean
+        own:
+          type: string
+          enum: [verified, partial, failed, pending, none]
+        state:
+          type: string
+          enum: [verified, partial, failed, pending, none]
+        verified:
+          type: boolean
+        criteria:
+          type: array
+          items:
+            type: object
+            properties:
+              criterion_id:
+                type: string
+              position:
+                type: integer
+              description:
+                type: string
+              method:
+                type: string
+              state:
+                type: string
+              evidence:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Evidence'
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/Evidence'
+        criteria_verified:
+          type: integer
+        criteria_total:
+          type: integer
+        children:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              key:
+                type: string
+              title:
+                type: string
+              status:
+                type: string
+              state:
+                type: string
+        children_verified:
+          type: integer
+        parent_ids:
+          type: array
+          items:
+            type: string
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationReason'
+        inconsistencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationReason'
+    ProjectVerification:
+      type: object
+      properties:
+        strict:
+          type: boolean
+        counts:
+          type: object
+          additionalProperties:
+            type: integer
+        criteria_verified:
+          type: integer
+        criteria_total:
+          type: integer
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequirementVerification'
+        inconsistent:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequirementVerification'
+    SystemElementInput:
+      type: object
+      properties:
+        parent_id:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [system, subsystem, component, product, supplier, other]
+        description:
+          type: string
+        position:
+          type: integer
+    SystemElement:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        parent_id:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        kind:
+          type: string
+        description:
+          type: string
+        position:
+          type: integer
+        path:
+          type: string
+        requirement_ids:
+          type: array
+          items:
+            type: string
+        test_ids:
+          type: array
+          items:
+            type: string
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ElementCoverage:
+      type: object
+      properties:
+        element_id:
+          type: string
+        parent_id:
+          type:
+          - string
+          - 'null'
+        name:
+          type: string
+        kind:
+          type: string
+        path:
+          type: string
+        depth:
+          type: integer
+        requirements:
+          type: integer
+        covered:
+          type: integer
+        verified:
+          type: integer
+        failed:
+          type: integer
+        tests:
+          type: integer
+        tests_passed:
+          type: integer
+        percent:
+          type: number
     Revision:
       type: object
       properties:

@@ -20,10 +20,15 @@ import AvatarPicker from '@/components/AvatarPicker.vue'
 import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
 import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
 import DefectTrackerSettings from '@/components/DefectTrackerSettings.vue'
+import CodeSettings from '@/components/CodeSettings.vue'
 import WebhooksCard from '@/components/WebhooksCard.vue'
+import VerificationSettingsCard from '@/components/VerificationSettingsCard.vue'
 import ConfigurationsSettings from '@/components/ConfigurationsSettings.vue'
 import WebTestSettings from '@/components/WebTestSettings.vue'
+import CorrelationSettings from '@/components/CorrelationSettings.vue'
 import SharingPanel from '@/components/SharingPanel.vue'
+import CustomFieldsSettings from '@/components/CustomFieldsSettings.vue'
+import TemplatesSettings from '@/components/TemplatesSettings.vue'
 import ProjectLoadDialog from '@/components/ProjectLoadDialog.vue'
 import ProjectDuplicateDialog from '@/components/ProjectDuplicateDialog.vue'
 import { totalRows, type ProjectLoadResult } from '@/lib/projectArchive'
@@ -52,7 +57,7 @@ const router = useRouter()
 const notify = useNotify()
 const { t } = useI18n()
 const route = useRoute()
-const tab = ref<string>(['requirement', 'test', 'configurations', 'webtests', 'sharing', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
+const tab = ref<string>(['requirement', 'test', 'customFields', 'templates', 'configurations', 'webtests', 'correlations', 'sharing', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
 
 function canEdit(scope: ItemKind) {
   return auth.can(scope === 'requirement' ? P.requirementWrite : P.testWrite) || auth.can(P.projectUpdate)
@@ -303,8 +308,11 @@ function deleteProject() {
     <TabList>
       <Tab value="requirement"><i class="pi pi-list-check" /> {{ t('settings.requirementCategories') }}</Tab>
       <Tab value="test"><i class="pi pi-check-square" /> {{ t('settings.testCategories') }}</Tab>
+      <Tab value="customFields"><i class="pi pi-th-large" /> {{ t('customFields.tab') }}</Tab>
+      <Tab value="templates"><i class="pi pi-clone" /> {{ t('templates.tab') }}</Tab>
       <Tab value="configurations"><i class="pi pi-sliders-h" /> {{ t('configurations.tab') }}</Tab>
       <Tab value="webtests"><i class="pi pi-globe" /> {{ t('webTests.tab') }}</Tab>
+      <Tab value="correlations"><i class="pi pi-share-alt" /> {{ t('correlations.settingsTab') }}</Tab>
       <Tab value="sharing"><i class="pi pi-share-alt" /> {{ t('sharing.title') }}</Tab>
       <Tab value="project"><i class="pi pi-cog" /> {{ t('settings.project') }}</Tab>
     </TabList>
@@ -364,11 +372,20 @@ function deleteProject() {
           </section>
         </div>
       </TabPanel>
+      <TabPanel value="customFields">
+        <CustomFieldsSettings v-if="proj.pid && tab === 'customFields'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
+      </TabPanel>
+      <TabPanel value="templates">
+        <TemplatesSettings v-if="proj.pid && tab === 'templates'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
+      </TabPanel>
       <TabPanel value="configurations">
         <ConfigurationsSettings v-if="proj.pid && tab === 'configurations'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
       </TabPanel>
       <TabPanel value="webtests">
         <WebTestSettings v-if="proj.pid && tab === 'webtests'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
+      </TabPanel>
+      <TabPanel value="correlations">
+        <CorrelationSettings v-if="proj.pid && tab === 'correlations'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
       </TabPanel>
       <TabPanel value="sharing">
         <section v-if="proj.project && tab === 'sharing'" class="card" style="max-width: 860px" aria-labelledby="h-sharing">
@@ -428,7 +445,9 @@ function deleteProject() {
           <h2 id="h-icon" class="plain-heading" style="margin-bottom: 10px">{{ t('settings.projectIcon') }}</h2>
           <AvatarPicker kind="icon" :value="proj.project?.icon" :name="proj.project?.key ?? ''" :upload-path="`/projects/${proj.pid}/icon`" :save="saveIcon" :disabled="!auth.can(P.projectUpdate)" @uploaded="onIconUploaded" />
         </section>
+        <VerificationSettingsCard v-if="proj.pid" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
         <DefectTrackerSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
+        <CodeSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <WebhooksCard v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <section v-if="canSave || auth.can(P.projectCreate)" class="card project-archive" style="max-width: 640px; margin-top: 16px" aria-labelledby="h-archive">
           <div class="row nowrap" style="margin-bottom: 6px">

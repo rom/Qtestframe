@@ -46,6 +46,8 @@ export interface AnalyticsReport {
   coverage: AnalyticsCount[]
   /** languages of the requirement texts (only texts whose language is clear) */
   languages?: AnalyticsCount[]
+  /** rolled-up verification states (criteria, records, children) */
+  verification?: AnalyticsCount[]
   findings: AnalyticsFinding[]
 }
 

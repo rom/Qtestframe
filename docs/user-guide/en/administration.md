@@ -9,7 +9,8 @@
 | **API tokens** | Tester and up (your own tokens) |
 | **Provisioning (SCIM)** | Admins |
 | **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
-| **Audit log** | Manager and up |
+| **Audit log** | Test lead and up |
+| **Field sets** (custom fields and templates per project type) | Admins and Test leads |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
 | **Backup** | Super admins |
@@ -42,8 +43,10 @@ The default matrix of permissions:
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
 | `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
-| `requirement.write`, `project.create`, `project.update` | | | | | ✔ | ✔ |
+| `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
+
+**Waivers and risk acceptance.** Approving, rejecting and revoking [waivers and deviations](waivers-and-soa.md) and signing the acceptance of a residual risk need `waiver.approve` (a project permission, so a project role can grant it in one project). Every decision is an electronic signature (password, or a recent single sign-on) and is recorded in the audit log; the requester of a waiver cannot decide it. Grant `waiver.approve` only to people who may accept not meeting requirements.
 
 **Review decisions.** Setting a requirement to *Approved* or *Rejected* needs `requirement.review`; setting a test to *Ready* needs `test.review`. The same applies to bulk edits, to creating an item with that status and to restoring a version that has it. A reviewer without the write permission may change only the status; editing anything else still needs `requirement.write` or `test.write`. Each decision is recorded in the audit log as `requirement.review` or `test.review`. A copied requirement or test starts as *Draft*, so it is reviewed again.
 
@@ -156,6 +159,12 @@ What a rule forbids is refused by the server, also for API clients and CI import
 - in the execution runner, a red box lists the reasons, with links to the test, requirement or prerequisite, and **Pass**, **Fail** and **Run script** are disabled. You can still mark the test **Blocked** or **Skipped**, assign it and write notes;
 - when a rule is relaxed, the same reasons appear as an amber warning, and the test can be executed.
 
+**Requirement status follows test results** (on by default) lets an implemented requirement become **Verified** when it is [verified](traceability-and-coverage.md#verification) — every criterion has passing evidence and every child requirement is verified — and go back to **Implemented** when that no longer holds. Turned off, statuses change only by hand and disagreements are listed under **Verification → Inconsistencies**. Whether each criterion needs evidence of its own is a project setting (**Settings → Project → Verification**).
+
+## Field sets and templates
+
+*(Admin and Test lead, or any role with `settings.manage`)* **Administration → Field sets** keeps, per **project type**, the [custom fields](requirements.md#custom-fields) a new project of that type gets and the organisation's [templates](requirements.md#templates) for new requirements and tests. Changing a field set does not change existing projects: they keep their own copies and can apply the set again under **Categories & settings → Custom fields → Apply field set** (fields they already have are skipped). Organisation templates are offered in every project of the type, next to the built-in ones. Everyone in the organisation can read the field sets.
+
 ## Test configurations
 
 *(Manager and Admin, or any role with `project.update`)* **Categories & settings → Configurations** holds the test configurations of a project: named combinations of **dimension values** such as *Browser = Chrome* and *OS = Windows*, a hardware revision or a firmware version. A [run](runs.md#configurations-in-a-run) that targets configurations executes each of its tests once per configuration. Everyone who can read the project sees the configurations.
@@ -166,6 +175,14 @@ What a rule forbids is refused by the server, also for API clients and CI import
 - **Delete** (also for several ticked configurations) removes configurations that no run targets. A configuration that is in use cannot be deleted; remove it from the runs first, or delete those runs.
 
 The **Runs** column shows how many runs target each configuration. Creating configurations can be undone with the undo button.
+
+## Change impact, staleness and defects
+
+*(Manager and Admin, or any role with `project.update`)* **Categories & settings → Change impact** holds a project's rules for [change impact](traceability-and-coverage.md#change-impact), [stale results](traceability-and-coverage.md#stale-results), [blocking defects](traceability-and-coverage.md#blocking-defects) and [regressions](defects.md#regressions). Everyone who can read the project sees them. Changes apply from then on: what was already marked stays marked.
+
+## Variants and code integration
+
+*(Manager and Admin, or any role with `project.update`)* **Variants** holds the project's product variants, markets and customer configurations; **Settings → Project → Code integration** holds the shared secret of the project's GitLab and GitHub webhooks. The secret is stored encrypted with the other secrets, is write-only and is not part of project archives: set a new one after loading a project. Deliveries are checked with the secret token (GitLab) or the HMAC-SHA256 signature (GitHub), and every delivery is written to the audit log as `code.webhook`. CI tokens need `run.execute` to upload results for a build and `run.write` to create a regression run. See [Variants and code](variants-and-code.md).
 
 ## Web tests
 
@@ -199,6 +216,10 @@ Only members with the permission *script.execute* (by default **Test lead** and 
    ```
 
 3. Restart the server. **Run script** now works for web tests; the demo project of `qtestframe seed-demo` has one (*Login page shows the sign-in form*) that opens the server's own login page — set `server.base_url` to the address the server is reachable at.
+
+## Consistency checks
+
+Projects do not get the [built-in consistency checks](traceability-and-coverage.md#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*) are part of backups and project archives.
 
 ## API tokens
 
@@ -239,9 +260,20 @@ How it works:
 
 **Recent provisioning events** on the same page shows the latest changes; each is also in the [audit log](#audit-log), with the actor *SCIM: token name*. **Revoke** a token when you replace it or it may have leaked; the provider then stops provisioning until it gets a new one. Every change of a request is saved together or not at all, and a provider that sends too many requests is slowed down (HTTP 429).
 
+## OSLC
+
+Qtestframe serves a read-only OSLC provider (Requirements Management 2.0 and Quality Management 2.0) at `/api/v1/oslc/`, so that ALM tools such as IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion or Codebeamer can find requirements and test cases and link to them. It is always on; there is nothing to configure.
+
+- **Addresses:** the catalog `/api/v1/oslc/catalog` (one service provider per project), the discovery document `/api/v1/oslc/rootservices` (public, contains no data). Set **Base URL** under [System settings](#system-settings) (`server.base_url`) so that the resource addresses are the ones clients can reach.
+- **Accounts:** clients sign in with an [API token](#api-tokens) as `Authorization: Bearer …`; clients that only offer user name and password can send the token as the password (any user name). Create the token for a person or service account with the **Viewer** role or higher. Project sharing applies: restricted projects are only listed for their members.
+- **Supported:** RDF/XML, Turtle and JSON-LD; requirements and test cases with title, description, dates, creator, tags, status, priority, verification links and relations; queries with `oslc.where` on identifier, title, created and modified, and paging.
+- **Not supported:** writing through OSLC (creation factories, updates), delegated selection and creation dialogs, previews, resource shapes, OAuth 1.0a, tracked resource sets and configuration management. For moving requirements in and out, use [ReqIF and the Excel round-trip](reports-and-export.md#exchanging-data-with-other-tools).
+
+The API reference (`docs/api.md`, section *OSLC*) lists the properties and the query syntax.
+
 ## Audit log
 
-*(Manager)* **Administration → Audit log** records who did what and when in the organisation: creating, changing and deleting items, sign-ins and sign-outs, membership changes and more. Newest entries come first. Each entry shows the avatar of the person who did it.
+*(Test lead and up)* **Administration → Audit log** records who did what and when in the organisation: creating, changing and deleting items, sign-ins, membership changes and more. Newest entries come first. Each entry shows the avatar of the person who did it.
 
 ![The audit log with time, user, action, entity and details](../images/en-admin-audit.png)
 
@@ -269,7 +301,7 @@ How it works:
 - **Edit user**: change the display name, set a new password (**Reset password (optional)**), make the user a super administrator, or mark the account **Disabled**. Disabling an account or setting a password signs the user out everywhere. **Must change password** forces a new password at the next sign-in.
 - You cannot remove your own super admin flag or disable yourself.
 
-Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the operations guide).
+Users who sign in with OIDC or SAML single sign-on can be created automatically on their first sign-in, with their role taken from their identity provider groups; this is configured on the server (see the [administrator guide](../../admin-guide/en/authentication.md#provisioning-of-single-sign-on-users)).
 
 ## Backup and restore
 
@@ -345,11 +377,11 @@ The page shows:
 - The details of the provider, such as the key file or the TPM device, and the **key fingerprint**, which identifies the key without revealing it.
 - The **active data key** and how many **stored secrets** are encrypted. If some are not encrypted yet, a note says so; they are encrypted at the next start of the server.
 
-The key provider is chosen in the server's configuration file (section `secrets`) and cannot be changed here. Without its key, the stored secrets – and backups – cannot be read; ask the server administrator to keep it safe. The server administrator manages the keys on the command line, for example `qtestframe secrets status` and `qtestframe secrets rotate`; see the operations guide.
+The key provider is chosen in the server's configuration file (section `secrets`) and cannot be changed here. Without its key, the stored secrets – and backups – cannot be read; ask the server administrator to keep it safe. The server administrator manages the keys on the command line, for example `qtestframe secrets status` and `qtestframe secrets rotate`; see the [administrator guide](../../admin-guide/en/security.md#encryption-of-stored-secrets).
 
 ### Test runner
 
-Whether automated scripts and web tests may run on the server, their timeouts and limits, and what web tests record as evidence. These settings **apply after a restart** of the server, because the runner and its sandbox are prepared when the server starts. Turning the runner on lets members with the right permission run code on the server; read the security notes of the operations guide first.
+Whether automated scripts and web tests may run on the server, their timeouts and limits, and what web tests record as evidence. These settings **apply after a restart** of the server, because the runner and its sandbox are prepared when the server starts. Turning the runner on lets members with the right permission run code on the server; read the [security notes of the administrator guide](../../admin-guide/en/security.md#the-script-and-web-test-sandbox) first.
 
 Retention: deleted items stay in the [trash](requirements.md#history-and-restore) for 30 days; this is not configurable. For backups, see [Backup and restore](#backup-and-restore). Multi-factor authentication has its own page, linked from the system settings.
 

@@ -11,9 +11,11 @@ export const GUIDE_PAGES = [
   'catalogue',
   'runs',
   'releases-and-risks',
+  'waivers-and-soa',
   'defects',
   'reviews-and-notifications',
   'traceability-and-coverage',
+  'variants-and-code',
   'baselines',
   'search-and-filters',
   'reports-and-export',
@@ -22,6 +24,25 @@ export const GUIDE_PAGES = [
   'accessibility-and-languages',
   'faq',
   'references',
+] as const
+
+/** Pages of the administrator guide (docs/admin-guide/<lang>/<page>.md) in reading order. */
+export const ADMIN_GUIDE_PAGES = [
+  'index',
+  'overview',
+  'installation',
+  'configuration',
+  'first-start',
+  'authentication',
+  'authorisation',
+  'system-settings',
+  'security',
+  'integrations',
+  'logging-and-monitoring',
+  'backup-and-migration',
+  'runbook',
+  'cli-reference',
+  'features-added-later',
 ] as const
 
 /** A page id of the bundled guide. */
@@ -76,10 +97,10 @@ export function resolvePage(sources: GuideSources, lang: string, page: string, f
   return null
 }
 
-/** Page ids available in a language (including fallbacks), in reading order. */
-export function pageOrder(sources: GuideSources, lang: string, fallbackLang = GUIDE_FALLBACK_LANG): string[] {
+/** Page ids available in a language (including fallbacks), in reading order (`pages`, default the user guide's). */
+export function pageOrder(sources: GuideSources, lang: string, fallbackLang = GUIDE_FALLBACK_LANG, pages: readonly string[] = GUIDE_PAGES): string[] {
   const ids = new Set([...(sources.get(fallbackLang)?.keys() ?? []), ...(sources.get(lang)?.keys() ?? [])])
-  const known = GUIDE_PAGES.filter((p) => ids.has(p)) as string[]
+  const known = pages.filter((p) => ids.has(p))
   const extra = [...ids].filter((p) => !known.includes(p)).sort()
   return [...known, ...extra]
 }

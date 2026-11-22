@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
+import type { CustomValues } from '@/lib/customFields'
 import MentionText from '@/components/MentionText.vue'
 import ColumnsMenu from '@/components/ColumnsMenu.vue'
 import { useColumnLayout, type ColumnDef } from '@/composables/columns'
@@ -148,12 +150,12 @@ async function setStatus(status: string) {
 
 // ---------- edit ----------
 const editDialog = ref(false)
-const editForm = ref({ name: '', description: '', environment: '', build: '', release_id: '', configuration_ids: [] as string[] })
+const editForm = ref({ name: '', description: '', environment: '', build: '', release_id: '', configuration_ids: [] as string[], custom_fields: {} as CustomValues })
 const editError = ref('')
 function openEdit() {
   if (!run.value) return
   const r = run.value
-  editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build, release_id: r.release_id ?? '', configuration_ids: (r.configurations ?? []).map((c) => c.id) }
+  editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build, release_id: r.release_id ?? '', configuration_ids: (r.configurations ?? []).map((c) => c.id), custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues }
   editError.value = ''
   editDialog.value = true
 }
@@ -405,6 +407,7 @@ async function copySnippet(text: string = ciSnippet.value) {
             <Tag :value="runReleaseName(run, rel.names.value)" icon="pi pi-box" severity="secondary" :aria-label="t('releasesView.runRelease', { name: runReleaseName(run, rel.names.value) })" />
           </RouterLink>
           <span v-if="run.build" class="mono"><i class="pi pi-box" aria-hidden="true" /><span class="sr-only">{{ t('common.build') }}:</span> {{ run.build }}</span>
+          <span v-if="run.variant_name"><i class="pi pi-clone" aria-hidden="true" /><span class="sr-only">{{ t('variants.variant') }}:</span> {{ run.variant_name }}</span>
           <span>{{ t('run.createdAt', { date: formatDateTime(run.created_at) }) }}{{ run.created_by ? t('run.createdBy', { user: run.created_by }) : '' }}</span>
           <span v-if="run.started_at">{{ t('run.startedAt', { date: formatDateTime(run.started_at) }) }}</span>
           <span v-if="run.completed_at">{{ t('run.completedAt', { date: formatDateTime(run.completed_at) }) }}</span>
@@ -648,6 +651,7 @@ async function copySnippet(text: string = ciSnippet.value) {
         </div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="editForm.description" rows="3" auto-resize /></div>
       </div>
+      <CustomFieldsEditor v-model="editForm.custom_fields" :fields="proj.customFieldsFor('run')" :project-id="proj.pid" />
       <template #footer>
         <Button :label="t('common.cancel')" text severity="secondary" @click="editDialog = false" />
         <Button :label="t('common.save')" icon="pi pi-check" :disabled="!editForm.name.trim()" @click="saveEdit" />

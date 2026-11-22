@@ -49,6 +49,8 @@ Alla defekter kontrolleras innan någon ändras, så ett felaktigt värde ändra
 
 Allvarlighetsgraden säger hur illa problemet är; **prioriteten** (kritisk, hög, medel, låg) säger hur snart det ska åtgärdas.
 
+**Upptäckt i** anger i vilken fas defekten hittades: *Krav*, *Design*, *Utveckling*, *Test*, *Acceptans* eller *Produktion* (tomt när det är okänt). Defekter som hittats i produktion räknas som läckta i [kvalitetsmåtten](traceability-and-coverage.md#kvalitetsmått); filtrera med `found_in:production`.
+
 ## Koppla defekter till objekt
 
 En defekt kan kopplas till valfritt antal **krav**, **testfall** och **exekveringar** i projektet. I defektdialogen, under **Kopplade objekt**, väljer du **Koppla krav** eller **Koppla testfall** för att välja objekt, eller **Koppla exekvering** för att välja en körning och en av dess exekveringar. Ta bort en koppling med ×.
@@ -135,6 +137,14 @@ Synkronisering läser bara; den ändrar aldrig ärendet. Ändringar du gör i en
 Om ärendehanteraren inte kan nås eller avvisar en begäran, till exempel för att token har gått ut eller saknar en behörighet, visar en röd notis överst i listan ärendehanterarens eget svar. Kontrollera inställningarna med **Testa anslutningen**. Notisen förklarar de vanliga svaren: **401** token avvisades (fel, utgången eller återkallad), **403** token saknar en behörighet eller roll, **404** projektet, repot eller ärendet finns inte eller syns inte för token, **422** ärendehanteraren avvisade innehållet (till exempel en okänd etikett eller milstolpe). När ärendehanteraren begränsar antalet anrop väntar Qtestframe och försöker igen om den ber om en kort väntan, och säger annars hur länge du ska vänta.
 
 Qtestframe når ärendehanteraren från servern, via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) om en sådan är inställd, och litar på de certifikat som serverns system litar på. För en egen GitLab- eller Jira-installation med ett certifikat från er egen CA installerar du den CA:n på servern.
+
+## Regressioner
+
+När ett testfall som verifierade åtgärden av en defekt underkänns igen har defekten kommit tillbaka. Ett testfall verifierade åtgärden när defekten är **Åtgärdad** eller **Stängd**, den är länkad till testfallet eller till en av dess körningar, och testfallet godkändes efter att defekten lösts. När ett sådant testfall underkänns (för hand, flera på en gång, från ett skript eller från importerade resultat) **öppnar** Qtestframe som standard defekten igen och länkar den till den underkända körningen. **Kategorier & inställningar → Ändringspåverkan → Regressioner** kan i stället **skapa en länkad regressionsdefekt** (”Regression: …”, med samma allvarlighetsgrad, prioritet och tilldelade person) eller inte göra något.
+
+Den som defekten är tilldelad (eller, om ingen är det, den som skapade den) får en avisering, och webhooks får händelsen `defect.regression`. Varje underkänd körning räknas en gång per defekt.
+
+Defektdialogen visar en defekts **Regressionshistorik**, och fliken **Påverkan** för ett testfall visar testfallets: när testfallet underkändes igen, i vilken körning, och om defekten öppnades igen eller en regressionsdefekt skapades.
 
 ## Öppna defekter och releaser
 

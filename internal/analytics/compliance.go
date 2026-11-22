@@ -31,6 +31,9 @@ const (
 	StateFailing  = "failing"
 	StateBlocked  = "blocked"
 	StateUntested = "untested"
+	// StateWaived: not passed, but accepted by an approved waiver (shown
+	// separately; it does not count as fulfilled).
+	StateWaived = "waived"
 )
 
 // Obligation groups of the compliance split.
@@ -59,6 +62,8 @@ type ComplianceRequirement struct {
 	Source string
 	// Results: the latest result of each linked test ("" = not run).
 	Results []string
+	// Waived: an approved, unexpired project-wide waiver accepts it.
+	Waived bool
 }
 
 // ComplianceInput is what Compliance analyses.
@@ -78,6 +83,7 @@ type Fulfilment struct {
 	Failing  int `json:"failing"`
 	Blocked  int `json:"blocked"`
 	Untested int `json:"untested"`
+	Waived   int `json:"waived"`
 }
 
 func (f *Fulfilment) add(state string) {
@@ -88,6 +94,8 @@ func (f *Fulfilment) add(state string) {
 		f.Failing++
 	case StateBlocked:
 		f.Blocked++
+	case StateWaived:
+		f.Waived++
 	default:
 		f.Untested++
 	}
@@ -226,7 +234,17 @@ func StateOf(results []string) string {
 }
 
 // stateRank orders states from worst to best.
-var stateRank = map[string]int{StateFailing: 0, StateBlocked: 1, StateUntested: 2, StatePassed: 3}
+var stateRank = map[string]int{StateFailing: 0, StateBlocked: 1, StateUntested: 2, StateWaived: 3, StatePassed: 4}
+
+// stateOfRequirement is StateOf, or StateWaived for a waived requirement
+// that has not passed.
+func stateOfRequirement(r *ComplianceRequirement) string {
+	st := StateOf(r.Results)
+	if st != StatePassed && r.Waived {
+		return StateWaived
+	}
+	return st
+}
 
 func percent(a, b int) int {
 	if b == 0 {
@@ -365,7 +383,7 @@ func Compliance(in ComplianceInput) ComplianceReport {
 				// adopted: the worst state of its copies counts
 				state := StatePassed
 				for _, x := range copies {
-					st := StateOf(x.Results)
+					st := stateOfRequirement(x)
 					if stateRank[st] < stateRank[state] {
 						state = st
 					}
@@ -408,7 +426,7 @@ func Compliance(in ComplianceInput) ComplianceReport {
 					}
 				}
 			}
-			st := StateOf(r.Results)
+			st := stateOfRequirement(r)
 			g := obligationGroup(r.Obligation)
 			sc.Own++
 			obl[g].Own++

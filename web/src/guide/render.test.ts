@@ -55,6 +55,15 @@ describe('renderGuide', () => {
     const app = [...doc.querySelectorAll('a')].find((x) => x.textContent === 'projects')!
     expect(app.hasAttribute('data-guide-app')).toBe(true)
   })
+  it('keeps links in the guide they belong to, and follows links into the other guide', () => {
+    const html = renderGuide('[a](security.md#tls) [b](../../user-guide/en/faq.md#why) [c](../../admin-guide/en/runbook.md)', { lang: 'en', assets: {}, book: 'admin' }).html
+    const d = new DOMParser().parseFromString(html, 'text/html')
+    const [a, b, c] = [...d.querySelectorAll('a')]
+    expect([a.getAttribute('href'), a.getAttribute('data-guide-book')]).toEqual(['/admin-guide/security#tls', 'admin'])
+    expect([b.getAttribute('href'), b.getAttribute('data-guide-book')]).toEqual(['/help/faq#why', 'user'])
+    expect(c.getAttribute('href')).toBe('/admin-guide/runbook')
+    expect(doc.querySelector('a[data-guide-page]')!.getAttribute('data-guide-book')).toBe('user')
+  })
   it('marks external links and drops unsafe ones', () => {
     const ext = doc.querySelector('a.guide-external')!
     expect(ext.getAttribute('rel')).toBe('noopener noreferrer')

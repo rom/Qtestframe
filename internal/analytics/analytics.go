@@ -70,6 +70,13 @@ const (
 	CodeRFCCasing           = "rfc_casing"
 	CodeRFCNotNormative     = "rfc_not_normative"
 	CodeNonRFCKeyword       = "non_rfc_keyword"
+	// verification correlations (package verification)
+	CodeCriteriaNoEvidence       = "criteria_no_evidence"
+	CodeVerifiedParentUnverified = "verified_parent_unverified_child"
+	CodeStatusAheadOfEvidence    = "status_ahead_of_evidence"
+	// CodeWaived: requirements without tests or with failing or unrun
+	// tests that an approved waiver accepts (counted here, not as gaps).
+	CodeWaived = "waived"
 )
 
 // Thresholds (variables so tests and callers can tune them).
@@ -104,6 +111,17 @@ type Requirement struct {
 	Conflicts []string
 	// Suspect: number of its links to tests that are suspect.
 	Suspect int
+	// Verification: the rolled-up verification state ("" unknown);
+	// CriteriaNoEvidence: criteria without any evidence; UnverifiedChildren:
+	// keys of its children (refines) that are not verified while its
+	// status is verified; StatusAhead: the status is verified but the
+	// evidence is not.
+	Verification       string
+	CriteriaNoEvidence int
+	UnverifiedChildren []string
+	StatusAhead        bool
+	// Waived: an approved, unexpired project-wide waiver accepts it.
+	Waived bool
 }
 
 // Test is the analytics view of a test.
@@ -175,6 +193,9 @@ type Summary struct {
 	CoveragePercent int `json:"coverage_percent"`
 	// AverageScore of the language analysis (0–100).
 	AverageScore int `json:"average_score"`
+	// Waived: requirements whose missing or failing verification a waiver
+	// accepts (shown separately, not as coverage gaps).
+	Waived int `json:"waived"`
 }
 
 // Report is the result of Analyze.
@@ -184,6 +205,8 @@ type Report struct {
 	Families    []Family `json:"families"`
 	Statuses    []Count  `json:"statuses"`
 	Coverage    []Count  `json:"coverage"`
+	// Verification: rolled-up verification states (when known).
+	Verification []Count `json:"verification"`
 	// Languages of the requirement texts (only texts whose language is clear).
 	Languages []Count   `json:"languages"`
 	Findings  []Finding `json:"findings"`
@@ -394,8 +417,9 @@ func Analyze(in Input) Report {
 	}
 
 	// ---- per requirement checks
-	var missing, kwMissing, mismatch, multi, noTestsM, noTests, failing, notRun, noCrit, empty, low, noOwner, conflicts, notReady []Item
+	var missing, kwMissing, mismatch, multi, noTestsM, noTests, failing, notRun, noCrit, empty, low, noOwner, conflicts, notReady, waived []Item
 	var mixedText, englishKw, casing, notNormative, nonRFC, suspect []Item
+	var critNoEvidence, parentUnverified, statusAhead []Item
 	byRule := map[string][]Item{}
 	covered, active, drafts := 0, 0, 0
 	for i := range reqs {
@@ -487,7 +511,26 @@ func Analyze(in Input) Report {
 			continue
 		}
 		active++
-		if r.Tests > 0 {
+		if len(r.UnverifiedChildren) > 0 {
+			parentUnverified = append(parentUnverified, reqItem(r, strings.Join(r.UnverifiedChildren, ", ")))
+		}
+		if r.StatusAhead {
+			statusAhead = append(statusAhead, reqItem(r, r.Verification))
+		}
+		if r.CriteriaNoEvidence > 0 && (r.Tests > 0 || r.Verification != "none") {
+			critNoEvidence = append(critNoEvidence, reqItem(r, itoa(r.CriteriaNoEvidence)))
+		}
+		if r.Waived && (r.Tests == 0 || r.Coverage == "failed" || r.Coverage == "partial" || r.Coverage == "not_run") {
+			waived = append(waived, reqItem(r, ""))
+			if r.Tests > 0 {
+				covered++
+			}
+			if r.Criteria == 0 && r.Obligation != reqlang.LevelDescribe {
+				noCrit = append(noCrit, reqItem(r, ""))
+			}
+			continue
+		}
+		if r.Tests > 0 || (r.Verification != "" && r.Verification != "none") {
 			covered++
 		} else if family(r.Obligation) == "mandatory" || family(r.Obligation) == "prohibition" {
 			noTestsM = append(noTestsM, reqItem(r, defaultKeyword(r.Obligation)))
@@ -508,6 +551,7 @@ func Analyze(in Input) Report {
 		}
 	}
 	rep.Summary.Covered = covered
+	rep.Summary.Waived = len(waived)
 	if active > 0 {
 		rep.Summary.CoveragePercent = int(math.Round(float64(covered) * 100 / float64(active)))
 	}
@@ -597,6 +641,10 @@ func Analyze(in Input) Report {
 	b.add(CodeSuspectLinks, Warning, CatCoverage, map[string]string{"count": itoa(len(suspect))}, suspect)
 	b.add(CodeTestsNotRun, Info, CatCoverage, map[string]string{"count": itoa(len(notRun))}, notRun)
 	b.add(CodeNoCriteria, Warning, CatCoverage, map[string]string{"count": itoa(len(noCrit))}, noCrit)
+	b.add(CodeVerifiedParentUnverified, Problem, CatCoverage, map[string]string{"count": itoa(len(parentUnverified))}, parentUnverified)
+	b.add(CodeStatusAheadOfEvidence, Warning, CatCoverage, map[string]string{"count": itoa(len(statusAhead))}, statusAhead)
+	b.add(CodeCriteriaNoEvidence, Warning, CatCoverage, map[string]string{"count": itoa(len(critNoEvidence))}, critNoEvidence)
+	b.add(CodeWaived, Info, CatCoverage, map[string]string{"count": itoa(len(waived))}, waived)
 	if in.Tests != nil {
 		b.add(CodeTestsNotReady, Info, CatTests, map[string]string{"count": itoa(len(notReady))}, notReady)
 		var orphans []Item
@@ -686,6 +734,10 @@ func Analyze(in Input) Report {
 		}
 		return r.Coverage
 	})
+	rep.Verification = []Count{}
+	if n > 0 && reqs[0].Verification != "" {
+		rep.Verification = counts(reqs, func(r *Requirement) string { return r.Verification })
+	}
 	if rep.Obligations == nil {
 		rep.Obligations = []Count{}
 	}
