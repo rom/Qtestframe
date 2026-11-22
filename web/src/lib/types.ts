@@ -192,6 +192,9 @@ export interface FileInfo {
   created_at: string
   url: string
   links: FileLink[] | null
+  /** generated document: an item it contains changed since (keys in outdated_items) */
+  outdated?: boolean
+  outdated_items?: string[] | null
 }
 
 /** A saved custom report. */
@@ -374,6 +377,13 @@ export interface Requirement {
   risk_level?: string
   /** open defects linked to it or its tests */
   open_defects?: number
+  /** open defects that block it / warn about it (the project's severity rules) */
+  blocking_defects?: number
+  defect_warnings?: number
+  /** linked tests whose latest result is stale */
+  stale_results?: number
+  /** its relations that are suspect (the requirement at the other end changed) */
+  suspect_relations?: number
 }
 
 /** A reference from a list item to a related item (see lib/itemRefs.ts). */
@@ -441,6 +451,9 @@ export interface TestCase {
   /** pass/fail flips among the last results; flaky when at the threshold */
   flakiness?: number
   flaky?: boolean
+  /** the latest result is stale (age, test_changed, requirement_changed) */
+  stale?: boolean
+  stale_reason?: string
   /** Requirements it verifies, tests it calls and tests that call it. */
   relations?: ItemRef[] | null
   step_count?: number
@@ -601,6 +614,9 @@ export interface LinkedIssue {
   state: 'open' | 'closed' | string
   synced_at: string | null
   passed_at?: string
+  /** the requirement changed after the issue was created or updated from it */
+  outdated_since?: string | null
+  outdated_reason?: string
 }
 
 /** GET /requirements/{id}/issue */
@@ -674,6 +690,10 @@ export interface Relation {
   target_key: string
   target_title: string
   direction?: 'outgoing' | 'incoming' | string
+  /** suspect: the requirement at the other end changed (suspect_end: source | target) */
+  suspect_since?: string | null
+  suspect_reason?: string
+  suspect_end?: string
 }
 
 export interface Revision {
@@ -811,6 +831,8 @@ export interface Dashboard {
   coverage_by_category?: GroupCoverage[] | null
   defects_by_severity?: Record<string, number>
   flaky?: { total: number; items: FlakyTest[] | null; window: number; min_flips: number }
+  /** change and defect correlations */
+  correlations?: { blocked_requirements: number; warned_requirements: number; stale_results: number; suspect_relations: number }
 }
 
 export interface KeywordHit {
@@ -840,8 +862,8 @@ export interface Analysis {
 }
 
 export interface Traceability {
-  requirements: { id: string; key: string; title: string; obligation: string; coverage: string }[]
-  tests: { id: string; key: string; title: string; last_result: string }[]
+  requirements: { id: string; key: string; title: string; obligation: string; coverage: string; blocked?: boolean; stale_results?: number }[]
+  tests: { id: string; key: string; title: string; last_result: string; stale?: boolean }[]
   links: TraceLink[]
   /** the configuration coverage and results are filtered to ('none': without configuration) */
   configuration?: string
@@ -953,7 +975,7 @@ export interface TenantSettings {
 // ---------------------------------------------------------------- releases
 
 export interface ExitCriterion {
-  /** coverage, passed, mandatory_passed, executed, no_failed, approved, no_suspect, no_open_defects, risks_mitigated, trace_rules */
+  /** coverage, passed, mandatory_passed, executed, no_failed, approved, no_suspect, no_open_defects, risks_mitigated, trace_rules, no_blocking_defects */
   type: string
   /** percent for percentage criteria */
   threshold?: number

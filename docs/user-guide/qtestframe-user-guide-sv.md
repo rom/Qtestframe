@@ -1490,6 +1490,7 @@ Fliken **Utgångskriterier** listar de villkor som releasen måste uppfylla. Vä
 | Inga öppna defekter | ingen öppen defekt med minst den valda allvarlighetsgraden är länkad till ett krav i omfattningen eller dess testfall | lägsta allvarlighetsgrad |
 | Risker hanterade | varje risk på minst den valda nivån som ett krav i omfattningen hanterar är åtgärdad, accepterad eller stängd | lägsta risknivå |
 | Spårbarhetsregler | inget krav i omfattningen och inget testfall som är länkat till ett sådant bryter mot en påslagen [spårbarhetsregel](#spårbarhetsregler) med den valda allvarligheten; statusfliken listar objekten med reglerna de bryter mot | bara fel, eller fel och varningar |
+| Inga blockerande defekter | inget krav i omfattningen [blockeras av en öppen defekt](#blockerande-defekter) enligt projektets regler för allvarlighetsgrad; ett inaktuellt godkänt utfall räknas inte för **Klarade testfall** och **Obligatoriska krav klarade** | — |
 
 En release utan utgångskriterier är alltid go.
 
@@ -1718,6 +1719,14 @@ Om ärendehanteraren inte kan nås eller avvisar en begäran, till exempel för 
 
 Qtestframe når ärendehanteraren från servern, via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) om en sådan är inställd, och litar på de certifikat som serverns system litar på. För en egen GitLab- eller Jira-installation med ett certifikat från er egen CA installerar du den CA:n på servern.
 
+## Regressioner
+
+När ett testfall som verifierade åtgärden av en defekt underkänns igen har defekten kommit tillbaka. Ett testfall verifierade åtgärden när defekten är **Åtgärdad** eller **Stängd**, den är länkad till testfallet eller till en av dess körningar, och testfallet godkändes efter att defekten lösts. När ett sådant testfall underkänns (för hand, flera på en gång, från ett skript eller från importerade resultat) **öppnar** Qtestframe som standard defekten igen och länkar den till den underkända körningen. **Kategorier & inställningar → Ändringspåverkan → Regressioner** kan i stället **skapa en länkad regressionsdefekt** (”Regression: …”, med samma allvarlighetsgrad, prioritet och tilldelade person) eller inte göra något.
+
+Den som defekten är tilldelad (eller, om ingen är det, den som skapade den) får en avisering, och webhooks får händelsen `defect.regression`. Varje underkänd körning räknas en gång per defekt.
+
+Defektdialogen visar en defekts **Regressionshistorik**, och fliken **Påverkan** för ett testfall visar testfallets: när testfallet underkändes igen, i vilken körning, och om defekten öppnades igen eller en regressionsdefekt skapades.
+
 ## Öppna defekter och releaser
 
 Öppna defekter (status *Öppen* eller *Pågår*) som är kopplade till ett krav, till dess testfall eller till deras exekveringar räknas för kravet. De visas:
@@ -1906,6 +1915,65 @@ Förinställningarna:
 | Säkerhetskrav verifieras av två testfall | krav som matchar `type:security` behöver minst 2 länkade testfall (varning) |
 
 Reglerna utvärderas också på en releases omfattning av utgångskriteriet [Spårbarhetsregler](#utgångskriterier), och rapporten **Spårbarhet** listar varje påslagen regel med resultat och de objekt som bryter mot den.
+
+## Ändringspåverkan
+
+En ändring av ett krav stannar sällan hos det kravet. När **innehållet** i ett krav ändras (titel, beskrivning, kravnivå eller kriterier) markerar Qtestframe det som kanske inte längre stämmer:
+
+- testfallen som verifierar det: deras länkar blir [misstänkta](#spårbarhetsmatrisen);
+- kraven som är relaterade till det: som standard de som **förfinar**, är **härledda från** eller **beror på** det. Deras relation blir misstänkt, liksom länkarna till deras testfall;
+- dess ärende i ärendehanteraren: det markeras som **inaktuellt** tills du uppdaterar ärendet från kravet (**Uppdatera ärendet**) eller väljer **Ärendet stämmer fortfarande**;
+- de genererade dokumenten i arkivet som innehåller det: de visas som **Inaktuellt** i **Dokument**, med objekten som ändrats sedan;
+- de senaste utfallen för dess testfall: de blir [inaktuella](#inaktuella-utfall).
+
+En ändring av ett testfalls titel, beskrivning, förutsättningar, steg, förväntade resultat, skript eller körningstyp gör dess länkar misstänkta och dess senaste utfall inaktuellt.
+
+### Innan du sparar
+
+När du sparar en ändring av innehållet och något skulle markeras visar en dialog allt som blir misstänkt eller inaktuellt. Välj **Spara och markera** för att spara, eller **Avbryt** för att gå tillbaka till redigeringen. Objekt som redan är markerade visas som sådana och räknas inte igen.
+
+### Fliken Påverkan
+
+Fliken **Påverkan** för ett krav eller testfall visar samma lista när som helst, under **Om kravet ändras** (eller **Om testfallet ändras**). För ett krav visar den också:
+
+- **Blockerande defekter**: de öppna defekter som blockerar det eller varnar för det (se [Blockerande defekter](#blockerande-defekter));
+- **Misstänkt nu**: dess misstänkta relationer, med **Bekräfta** för var och en (och **Bekräfta alla**), och de länkade testfall vars utfall är inaktuellt.
+
+Märkena bredvid kravets nyckel (**Blockeras av 1 defekt**, **1 inaktuellt utfall**, **1 misstänkt relation**) öppnar fliken. För ett testfall visar fliken också dess **Regressionshistorik** (se [Defekter](#regressioner)).
+
+### Påverkan sedan en baslinje
+
+Under **Baslinjer**, jämför en baslinje med nuläget och välj **Påverkan**. Dialogen listar varje krav och testfall vars innehåll ändrats sedan baslinjen, med störst påverkan först, och summan av de objekt som påverkas. Öppna ett objekt för att se vad dess ändring gör misstänkt eller inaktuellt.
+
+### Genom vilka relationer
+
+**Kategorier & inställningar → Ändringspåverkan** avgör, per relationstyp, vilket krav som blir misstänkt när kravet i andra änden ändras:
+
+| Inställning | Betydelse |
+|---|---|
+| **Inkommande (kravet som pekar på det)** | A *förfinar* B: när B ändras blir A misstänkt (standard för förfinar, härlett från och beror på) |
+| **Utgående (kravet det pekar på)** | A *tillhandahåller* B: när A ändras blir B misstänkt |
+| **Båda riktningarna** | en ändring i endera änden gör den andra misstänkt |
+| **Av** | ändringar sprids inte genom typen (standard för övriga typer) |
+
+**Markera ärendena för ett ändrat krav som inaktuella** kan stängas av.
+
+## Inaktuella utfall
+
+Ett testutfall blir **inaktuellt** när
+
+- det är äldre än projektet tillåter (som standard 90 dagar; **Utfall blir inaktuella efter** kan ändras eller stängas av), eller
+- testfallet, eller ett krav som det verifierar, ändrades i innehållet efter att utfallet registrerades (**Utfall blir inaktuella när testfallet eller ett krav det verifierar ändras**).
+
+Ett inaktuellt utfall räknas inte som godkänt underlag. Ett krav blir inte **Verifierat** på grund av det (och ett verifierat krav går tillbaka till **Implementerat**), täckningen räknar det som ej kört, och releasens utgångskriterier **Klarade testfall** och **Obligatoriska krav klarade** listar kravet med *inaktuellt utfall*. Inaktuella utfall har märket **Inaktuellt** i testfallslistan, i täckningskolumnen i kravlistan, i spårbarhetsmatrisen och i rapporter. Kör testfallet igen för att få ett färskt utfall.
+
+I sökningen hittar `stale:true` testfall med ett inaktuellt senaste utfall och `stale>0` krav med ett sådant.
+
+## Blockerande defekter
+
+En öppen defekt som är länkad till ett krav, till ett testfall som verifierar det eller till en körning av ett sådant testfall **blockerar** kravet, eller **varnar** bara för det, beroende på allvarlighetsgraden. Som standard blockerar kritiska och större defekter, mindre varnar och triviala gör ingetdera; **Kategorier & inställningar → Ändringspåverkan → Defekter som blockerar krav** ändrar detta per projekt.
+
+Blockerade krav visar **Blockerat** i kravlistan och i spårbarhetsmatrisen, kravet visar **Blockeras av 1 defekt** bredvid nyckeln, och avsnittet **Kvalitet** i översikten räknar blockerade krav, krav med varningar, inaktuella utfall och misstänkta relationer. I sökningen hittar `blocked>0` blockerade krav. Releasens utgångskriterium **Inga blockerande defekter** är inte uppfyllt så länge ett krav i omfattningen är blockerat.
 
 ## Så beräknas täckningen
 
@@ -2716,6 +2784,10 @@ Det en regel förbjuder avvisas av servern, även för API-klienter och CI-impor
 - **Ta bort** (även för flera markerade konfigurationer) tar bort konfigurationer som ingen körning gäller. En konfiguration som används kan inte tas bort; ta först bort den från körningarna, eller ta bort de körningarna.
 
 Kolumnen **Körningar** visar hur många körningar som gäller varje konfiguration. Att skapa konfigurationer kan ångras med ångraknappen.
+
+## Ändringspåverkan, inaktualitet och defekter
+
+*(Ansvarig och Administratör, eller en roll med `project.update`)* **Kategorier & inställningar → Ändringspåverkan** innehåller projektets regler för [ändringspåverkan](#ändringspåverkan), [inaktuella utfall](#inaktuella-utfall), [blockerande defekter](#blockerande-defekter) och [regressioner](#regressioner). Alla som kan läsa projektet ser dem. Ändringar gäller från och med då: det som redan markerats förblir markerat.
 
 ## Webbtester
 

@@ -167,6 +167,10 @@ What a rule forbids is refused by the server, also for API clients and CI import
 
 The **Runs** column shows how many runs target each configuration. Creating configurations can be undone with the undo button.
 
+## Change impact, staleness and defects
+
+*(Manager and Admin, or any role with `project.update`)* **Categories & settings → Change impact** holds a project's rules for [change impact](traceability-and-coverage.md#change-impact), [stale results](traceability-and-coverage.md#stale-results), [blocking defects](traceability-and-coverage.md#blocking-defects) and [regressions](defects.md#regressions). Everyone who can read the project sees them. Changes apply from then on: what was already marked stays marked.
+
 ## Web tests
 
 [Web tests](tests.md#web-tests-playwright) run in a real browser on the server. They are switched on by the server administrator in the configuration file (`runner.web`, see below) and set up per project under **Settings → Web tests** *(Manager; permission project.update)*:

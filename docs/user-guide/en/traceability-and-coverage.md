@@ -80,6 +80,65 @@ The presets:
 
 The rules are also evaluated on a release's scope by the exit criterion [Traceability rules](releases-and-risks.md#exit-criteria), and the **Traceability** report lists every enabled rule with its result and the items that break it.
 
+## Change impact
+
+A change of a requirement rarely stays with that requirement. When the **substance** of a requirement changes (its title, description, obligation or criteria), Qtestframe marks what may no longer be right:
+
+- the tests that verify it: their links become [suspect](#the-traceability-matrix);
+- the requirements related to it: by default those that **refine**, are **derived from** or **depend on** it. Their relation becomes suspect, and so do the links of their tests;
+- its issue in the tracker: it is marked **out of date** until you update the issue from the requirement (**Update issue**) or select **The issue is still right**;
+- the generated documents in the archive that contain it: they are shown as **Outdated** in **Documents**, with the items that changed since;
+- the latest results of its tests: they become [stale](#stale-results).
+
+A change of a test's title, description, preconditions, steps, expected result, script or execution type makes its links suspect and its latest result stale.
+
+### Before you save
+
+When you save a change of substance and something would be marked, a dialog lists everything that becomes suspect, out of date, outdated or stale. Select **Save and mark** to save, or **Cancel** to go back to the editor. Items that are already marked are shown as such and are not counted again.
+
+### The Impact tab
+
+The **Impact** tab of a requirement or test shows the same list at any time, under **If this requirement changes** (or **If this test changes**). For a requirement it also shows:
+
+- **Blocking defects**: the open defects that block it or warn about it (see [Blocking defects](#blocking-defects));
+- **Suspect now**: its suspect relations, with **Confirm** for each (and **Confirm all**), and the linked tests whose result is stale.
+
+The badges next to the requirement's key (**Blocked by 1 defect**, **1 stale result**, **1 suspect relation**) open the tab. For a test, the tab also shows its **Regression history** (see [Defects](defects.md#regressions)).
+
+### The impact of a baseline
+
+In **Baselines**, compare a baseline with the current state and select **Impact**. The dialog lists every requirement and test whose substance changed since the baseline, the largest impact first, with the totals of the items affected. Open an item to see what its change makes suspect, out of date, outdated or stale.
+
+### Along which relations
+
+**Categories & settings → Change impact** decides, per relation type, which requirement becomes suspect when the one at the other end changes:
+
+| Setting | Meaning |
+|---|---|
+| **Incoming (the requirement pointing at it)** | A *refines* B: when B changes, A becomes suspect (the default for refines, derived from and depends on) |
+| **Outgoing (the requirement it points at)** | A *provides* B: when A changes, B becomes suspect |
+| **Both directions** | either end changing makes the other suspect |
+| **Off** | changes do not travel along this type (the default for the other types) |
+
+**Mark the tracker issues of a changed requirement out of date** can be turned off.
+
+## Stale results
+
+A test result goes **stale** when
+
+- it is older than the project allows (by default 90 days; **Results go stale after** can be changed or turned off), or
+- the test, or a requirement it verifies, changed in substance after the result was recorded (**Results go stale when the test or a requirement it verifies changes**).
+
+A stale result does not count as passing evidence. A requirement does not become **Verified** on it (and a verified one goes back to **Implemented**), coverage counts it as not run, and the release exit criteria **Passed** and **Mandatory passed** list the requirement with *stale result*. Stale results have a **Stale** badge in the test list, in the coverage column of the requirement list, in the traceability matrix and in reports. Run the test again to get a fresh result.
+
+In the search, `stale:true` finds tests with a stale latest result and `stale>0` requirements with one.
+
+## Blocking defects
+
+An open defect linked to a requirement, to a test that verifies it or to an execution of such a test **blocks** the requirement, or only **warns** about it, depending on its severity. By default critical and major defects block, minor ones warn and trivial ones do neither; **Categories & settings → Change impact → Defects that block requirements** changes this per project.
+
+Blocked requirements show **Blocked** in the requirement list and in the traceability matrix, the requirement shows **Blocked by 1 defect** next to its key, and the **Quality** section of the dashboard counts blocked requirements, requirements with warnings, stale results and suspect relations. In the search, `blocked>0` finds blocked requirements. The release exit criterion **No blocking defects** fails while a requirement in scope is blocked.
+
 ## How coverage is calculated
 
 Coverage is derived from the **last result** of every linked test. It is computed every time you look at it and never stored, so it is always current.

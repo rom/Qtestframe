@@ -6,6 +6,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
+import BaselineImpactDialog from '@/components/BaselineImpactDialog.vue'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
@@ -60,6 +61,8 @@ onMounted(load)
 
 // ---------- selected baseline ----------
 const compareTo = ref('current')
+/** the impact of the changes since the baseline (correlations) */
+const impactOpen = ref(false)
 const diff = ref<BaselineDiff | null>(null)
 const diffLoading = ref(false)
 const diffError = ref('')
@@ -413,7 +416,9 @@ function remove(b: Baseline) {
           <i18n-t keypath="baselines.compareWith" tag="span" class="small muted"><template #name><b>{{ detail.name }}</b></template></i18n-t>
           <Select v-model="compareTo" :options="compareOptions" option-label="label" option-value="value" class="compare-select" :aria-label="t('baselines.compareTarget')" />
           <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('baselines.compareAgain')" v-tooltip="t('baselines.compareAgain')" :loading="diffLoading" @click="compare" />
+          <Button v-if="compareTo === 'current'" :label="t('correlations.baselineButton')" icon="pi pi-share-alt" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="impactOpen = true" />
         </div>
+        <BaselineImpactDialog v-model:visible="impactOpen" :baseline-id="selectedId" :baseline-name="detail.name" :project-id="proj.pid" />
         <Message v-if="diffError" severity="error" :closable="false">{{ t('baselines.compareFailed', { error: diffError }) }}</Message>
         <div v-else-if="diffLoading && !diff" class="empty"><ProgressSpinner style="width: 30px; height: 30px" :aria-label="t('common.loading')" /></div>
         <template v-else-if="diff">

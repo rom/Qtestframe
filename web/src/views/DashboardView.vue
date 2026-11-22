@@ -647,6 +647,28 @@ const burnupChart = computed<ChartData>(() => {
 
   <!-- quality -->
   <div v-else-if="data && section === 'quality'" class="grid" v-bind="panel('quality')">
+    <section v-if="data.correlations" class="card" aria-labelledby="ch-corr">
+      <h2 id="ch-corr">{{ t('correlations.dashboardTitle') }}</h2>
+      <p class="small muted" style="margin-top: 0">{{ t('correlations.dashboardHint') }}</p>
+      <ul class="plain-list corr-counts">
+        <li>
+          <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { q: 'blocked>0' } }" class="blocked-badge">
+            <i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.dashBlocked', { n: data.correlations.blocked_requirements }, data.correlations.blocked_requirements) }}
+          </RouterLink>
+        </li>
+        <li class="warned-badge"><i class="pi pi-exclamation-triangle" aria-hidden="true" />{{ t('correlations.dashWarned', { n: data.correlations.warned_requirements }, data.correlations.warned_requirements) }}</li>
+        <li>
+          <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { q: 'stale:true' } }">
+            <i class="pi pi-clock" aria-hidden="true" /> {{ t('correlations.dashStale', { n: data.correlations.stale_results }, data.correlations.stale_results) }}
+          </RouterLink>
+        </li>
+        <li>
+          <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { q: 'suspect_relations>0' } }">
+            <i class="pi pi-exclamation-triangle" aria-hidden="true" /> {{ t('correlations.dashSuspect', { n: data.correlations.suspect_relations }, data.correlations.suspect_relations) }}
+          </RouterLink>
+        </li>
+      </ul>
+    </section>
     <section class="card" aria-labelledby="ch-flaky">
       <h2 id="ch-flaky">{{ t('dashboard.flakyTests') }}</h2>
       <p class="small muted" style="margin-top: 0">{{ t('dashboard.flakyHint', { min: data.flaky?.min_flips ?? 2, window: data.flaky?.window ?? 10 }) }}</p>
@@ -826,5 +848,10 @@ const burnupChart = computed<ChartData>(() => {
 @media (max-width: 640px) {
   .flaky-row { grid-template-columns: minmax(0, 1fr) auto; }
   .flaky-seq { grid-column: 1 / -1; }
+}
+.corr-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
 }
 </style>

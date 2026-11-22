@@ -2,6 +2,7 @@
 // Create or edit a defect with its links to requirements, tests and
 // executions. New defects can start from a draft (e.g. from a failed
 // execution); links of an existing defect are saved one by one.
+import RegressionHistory from './RegressionHistory.vue'
 import ItemRef from './ItemRef.vue'
 import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
@@ -173,6 +174,11 @@ async function save() {
             <Select :model-value="null" :options="executionOptions" option-label="label" option-value="value" filter :disabled="!runId" :placeholder="t('defectsView.pickExecution')" @update:model-value="addExecution" />
           </div>
         </div>
+      </section>
+
+      <section v-if="!isNew && defect" aria-labelledby="defect-regressions-h">
+        <h3 id="defect-regressions-h" class="section-title" style="margin: 0 0 6px">{{ t('correlations.regressionsTitle') }}</h3>
+        <RegressionHistory entity-type="defect" :entity-id="defect.id" :project-id="projectId" />
       </section>
 
       <details v-if="!isNew || form.external_key">
