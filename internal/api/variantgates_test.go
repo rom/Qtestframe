@@ -14,7 +14,9 @@ func TestApplicabilityHistoryAndBaselines(t *testing.T) {
 	a := e.login("admin@example.com")
 	f := newVariantFixture(t, a)
 	pp := "/api/v1/projects/" + f.pid
-	hist := func(id string) []map[string]any { return items(a.m("GET", "/api/v1/requirements/"+id+"/history", nil, 200)) }
+	hist := func(id string) []map[string]any {
+		return items(a.m("GET", "/api/v1/requirements/"+id+"/history", nil, 200))
+	}
 
 	// the change of R2 to EU is in its history, with the variants' names
 	h := hist(f.r2)
