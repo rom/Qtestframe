@@ -298,6 +298,10 @@ async function discover(request) {
     { name: 'catalog-hardware', path: `${p}/catalog?catalogue=hardware&lang=sv`, wait: '.cat-list li, .list-pane .empty' },
     { name: 'catalog-source-picker', path: `${p}/catalog`, open: 'button:has(.pi-verified)', wait: '.p-dialog .src-search' },
     { name: 'catalog-areas-drawer', path: `${p}/catalog`, open: '.tabs-row button:has(.pi-sitemap)', wait: '.catalog-areas-drawer .p-tree', maxWidth: 1199 },
+    // catalogue risks: the tab, a risk preview with its mitigating requirements, the import dialog with the risk options
+    { name: 'catalog-risks', path: `${p}/catalog?tab=risks&lang=sv`, wait: '.cat-list li, .list-pane .empty' },
+    { name: 'catalog-risk-preview', path: `${p}/catalog?tab=risks&item=AUTH-R01&lang=en`, wait: '#cp-title' },
+    { name: 'catalog-risk-import-dialog', path: `${p}/catalog?tab=risks`, open: ['.cat-list li .p-checkbox', '.catalog-bar button:has(.pi-plus)'], wait: '.p-dialog #ci-include-reqs' },
     hasTags && { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
     { name: 'flow-list', path: `${p}/flow?view=list&test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-list, .empty' },
@@ -317,6 +321,8 @@ async function discover(request) {
     { name: 'baselines', path: `${p}/baselines` },
     { name: 'releases', path: `${p}/releases` },
     { name: 'risks', path: `${p}/risks`, wait: '.heat' },
+    { name: 'risks-area', path: `${p}/risks?area=authentication`, wait: '.heat' },
+    { name: 'requirement-mitigates-risks', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.requirement-risks button:has(.pi-plus)', wait: '.requirement-risks .add-row' },
     // verification correlations: overview tabs, the requirement's verification tab and its dialogs, criterion rows of the matrix
     { name: 'verification', path: `${p}/verification`, wait: '.ver-counts' },
     { name: 'verification-elements', path: `${p}/verification?tab=elements`, wait: '.ver-counts' },

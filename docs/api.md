@@ -2266,7 +2266,7 @@ Reading needs `requirement.read`, changing `requirement.write`.
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/risks` | `[Risk]`, highest score first |
-| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...]}` (likelihood and impact default to 3) |
+| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...]}` (likelihood and impact default to 3); `catalog_ref` is kept only when it names a catalogue risk (an undone import created again) |
 | GET / PATCH / DELETE | `/risks/{id}` | |
 | POST | `/projects/{pid}/risks/bulk` | `{"ids":[...], "set": {"status"?, "owner"?, "category"?, "likelihood"?, "impact"?}, "add_requirement_ids"?, "remove_requirement_ids"?}` → `{"updated": n}`; every risk is validated before any is saved |
 | DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |

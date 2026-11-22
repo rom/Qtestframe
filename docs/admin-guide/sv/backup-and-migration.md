@@ -132,6 +132,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 34 | `0034_custom_fields.sql` |
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
+| 47 | `0047_risk_catalog.sql` |
 
 <!-- END GENERATED: migrations -->
 

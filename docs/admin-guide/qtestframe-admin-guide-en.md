@@ -1617,6 +1617,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 34 | `0034_custom_fields.sql` |
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
+| 47 | `0047_risk_catalog.sql` |
 
 <!-- END GENERATED: migrations -->
 
