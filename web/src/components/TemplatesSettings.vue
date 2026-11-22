@@ -202,20 +202,20 @@ function remove(x: ItemTemplate) {
       <div class="tpl-grid">
         <div class="field">
           <label :for="`${base}-prio`">{{ t('common.priority') }}</label>
-          <Select v-model="draft.content.priority" :input-id="`${base}-prio`" :options="priorityOptions" option-label="label" option-value="value" fluid />
+          <Select v-model="draft.content.priority" :input-id="`${base}-prio`" :aria-label="t('common.priority')" :options="priorityOptions" option-label="label" option-value="value" fluid />
         </div>
         <div class="field">
           <label :for="`${base}-status`">{{ t('common.status') }}</label>
-          <Select v-model="draft.content.status" :input-id="`${base}-status`" :options="statusOptions" option-label="label" option-value="value" fluid />
+          <Select v-model="draft.content.status" :input-id="`${base}-status`" :aria-label="t('common.status')" :options="statusOptions" option-label="label" option-value="value" fluid />
         </div>
         <template v-if="kind === 'requirement'">
           <div class="field">
             <label :for="`${base}-obl`">{{ t('templates.obligation') }}</label>
-            <Select v-model="draft.content.obligation" :input-id="`${base}-obl`" :options="obligationOptions" option-label="label" option-value="value" fluid />
+            <Select v-model="draft.content.obligation" :input-id="`${base}-obl`" :aria-label="t('templates.obligation')" :options="obligationOptions" option-label="label" option-value="value" fluid />
           </div>
           <div class="field">
             <label :for="`${base}-type`">{{ t('templates.reqType') }}</label>
-            <Select v-model="draft.content.type" :input-id="`${base}-type`" :options="typeOptions" option-label="label" option-value="value" fluid />
+            <Select v-model="draft.content.type" :input-id="`${base}-type`" :aria-label="t('templates.reqType')" :options="typeOptions" option-label="label" option-value="value" fluid />
           </div>
         </template>
         <div v-else class="field">
