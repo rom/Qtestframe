@@ -297,7 +297,7 @@ watch(pid, () => void load())
       <Column :header="t('cycles.owner')" style="width: 160px">
         <template #body="{ data }"><span class="small">{{ personName(data.owner_id) || '—' }}</span></template>
       </Column>
-      <Column field="start_date" :header="t('cycles.dates')" sortable style="width: 190px">
+      <Column field="start_date" :header="t('cycles.dates')" sortable style="width: 230px">
         <template #body="{ data }">
           <span class="small">{{ data.start_date ? formatDate(data.start_date) : '…' }} – {{ data.end_date ? formatDate(data.end_date) : '…' }}</span>
           <div v-if="data.scheduled_start_at" class="small muted"><i class="pi pi-clock" aria-hidden="true" /> {{ t('cycles.startsAt', { when: formatDateTime(data.scheduled_start_at) }) }}</div>
@@ -346,7 +346,7 @@ watch(pid, () => void load())
   <section v-else v-bind="panel('schedules')" style="margin-top: 12px" aria-labelledby="cyc-sched-h">
     <div class="row" style="justify-content: space-between">
       <h2 id="cyc-sched-h" style="margin: 0; font-size: 16px">{{ t('cycles.schedule.title') }}</h2>
-      <Button v-if="canPlan" :label="t('cycles.schedule.new')" icon="pi pi-plus" size="small" aria-haspopup="dialog" @click="openSchedule(null)" />
+      <Button v-if="canPlan" class="sched-new" :label="t('cycles.schedule.new')" icon="pi pi-plus" size="small" aria-haspopup="dialog" @click="openSchedule(null)" />
     </div>
     <p class="small muted">{{ t('cycles.schedule.intro') }}</p>
     <div v-if="schedLoaded && !schedules.length" class="card empty-state"><p>{{ t('cycles.schedule.empty') }}</p></div>

@@ -439,8 +439,8 @@ watch(() => props.cycleId, () => void load())
   <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
 
   <template v-if="cycle">
-    <ul class="kpis plain-list" :aria-label="t('cycles.kpis')">
-      <li v-for="k in kpis" :key="k.label" class="card kpi">
+    <ul class="cy-kpis plain-list" :aria-label="t('cycles.kpis')">
+      <li v-for="k in kpis" :key="k.label" class="card cy-kpi">
         <div class="kpi-label small muted">{{ k.label }}</div>
         <div class="kpi-value">{{ k.value }}</div>
         <div class="small muted">{{ k.sub }}</div>
@@ -490,7 +490,7 @@ watch(() => props.cycleId, () => void load())
         </Column>
         <Column field="status" :header="t('cycles.plan.result')" sortable style="width: 130px">
           <template #body="{ data }">
-            <RouterLink v-if="execRoute(data)" :to="execRoute(data)!" :aria-label="t('cycles.plan.openExecution', { key: data.test_key })"><StatusTag :value="data.status" kind="result" /></RouterLink>
+            <RouterLink v-if="execRoute(data)" :to="execRoute(data)!"><StatusTag :value="data.status" kind="result" /><span class="sr-only"> – {{ t('cycles.plan.openExecution', { key: data.test_key }) }}</span></RouterLink>
             <span v-else class="small muted">{{ t('cycles.plan.notInRun') }}</span>
           </template>
         </Column>
@@ -630,8 +630,8 @@ watch(() => props.cycleId, () => void load())
       </div>
       <div v-if="add.mode !== 'copy'" class="form-grid">
         <div class="field">
-          <label :for="`${id}-tester`">{{ t('cycles.plan.tester') }}</label>
-          <Select v-model="add.assignee" :input-id="`${id}-tester`" :options="testerOptions" option-label="label" option-value="value" filter />
+          <label :id="`${id}-tester-label`" :for="`${id}-tester`">{{ t('cycles.plan.tester') }}</label>
+          <Select v-model="add.assignee" :input-id="`${id}-tester`" :aria-labelledby="`${id}-tester-label`" :options="testerOptions" option-label="label" option-value="value" filter />
         </div>
         <div class="field">
           <label :for="`${id}-est`">{{ t('cycles.plan.estimateMin') }}</label>
@@ -711,13 +711,13 @@ watch(() => props.cycleId, () => void load())
 </template>
 
 <style scoped>
-.kpis {
+.cy-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 10px;
   margin-top: 8px;
 }
-.kpi {
+.cy-kpi {
   padding: 10px 14px;
 }
 .kpi-value {

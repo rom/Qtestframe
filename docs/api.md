@@ -1999,6 +1999,7 @@ Exit criterion types (`threshold` in percent, default 100):
 | `trace_rules` | no scope requirement and no test linked to one breaks an enabled [traceability rule](#traceability-rules) of severity `level` (`error`, the default: errors only; `warning`: errors and warnings). The items list each item once with the names of the rules it breaks as `note` |
 | `no_blocking_defects` | no scope requirement is blocked by an open defect under the project's severity rules (see [change and defect correlations](#change-and-defect-correlations)); a default of new releases |
 | `residual_risk` | no risk (not closed) linked to a scope requirement has a residual level above `level` (the release's risk acceptance threshold; default the project's, see [Risks](#risks)) unless its "accept risk" sign-off is valid; accepted risks are listed in `accepted` |
+| `cycle_executed` | at least `threshold` % of the planned tests of the [test cycle](#test-cycles) `cycle_id` (of the release's project) have a final result in the cycle's runs (default 100: "fully executed"); `items` lists the tests not yet executed |
 
 **Waivers.** An approved, unexpired [waiver](#waivers-and-deviations) for
 the release or for the whole project makes the criteria treat its
@@ -2010,6 +2011,77 @@ test whose scope requirements are all waived. They are listed in `waived`
 scope risks whose residual level is above `risk_threshold` (note: the
 level, with `, accepted` when signed off) and
 `summary.residual_above_threshold` counts those not accepted.
+
+## Test cycles
+
+A test cycle groups the executions planned for a goal ("Sprint 14
+regression"), optionally for a release, a variant and a build, with start
+and end dates, a status (`planned`, `active`, `closed`) and an owner (user
+id). Its **plan** has one row per test and configuration with a tester
+(`assignee_id`, a member who may see the project's runs) and an estimate in
+minutes. Starting the cycle creates its run; the progress is derived from
+the executions of the cycle's runs (`test_runs.cycle_id`, read-only on the
+run as `cycle_id` / `cycle_name`). Reading needs `run.read`, planning
+`cycle.plan` (test leads, managers, admins); creating runs needs
+`run.write` too.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/cycles` | `[TestCycle]` with `run_ids` and `progress`; `?q=` filters (fields `name`, `goal`, `description`, `status`, `owner`, `release`, `variant`, `build`, `environment`, `configuration`, `start`, `end`, `planned`, `executed`, `progress` (percent executed), `passed`, `failed`, `blocked`, `unassigned`, `test` (planned test keys), `assignee` (testers by e-mail or name), `created_by`, `created_at`) |
+| POST | `/projects/{pid}/cycles` | `{"name","goal","description","owner_id" (default: the caller),"release_id","variant_id" (id or name),"build_id","environment","configuration_ids","start_date","end_date","scheduled_start_at","copy_from"}` → 201. `copy_from` copies another cycle's plan, testers and estimates (and its release, variant, build and configurations). A new cycle is `planned`; names are unique per project (case-insensitive) |
+| GET | `/cycles/{id}` | TestCycle |
+| PATCH | `/cycles/{id}` | the fields above, `status` and `clear_scheduled_start`. `planned` → `active` creates the run of the planned tests (in their configurations, executions assigned to the testers' e-mails, with the cycle's release, variant, build and environment) and tells the testers |
+| DELETE | `/cycles/{id}` | the plan goes; the runs stay without cycle |
+| GET | `/cycles/{id}/tests` | the plan: `[{id, test_case_id, test_key, test_title, configuration_id, configuration_name, assignee_id, estimate_minutes, added_by, added_at, execution_id, run_id, status, executed_by, finished_at, duration_ms}]`; the result is the latest execution of the test and configuration in the cycle's runs (a final result wins over a newer execution without one). `?assignee=<user id>` or `none` |
+| POST | `/cycles/{id}/tests` | (atomic) `{"test_ids"?, "tests"?: [{test_id, configuration_id?, assignee_id?, estimate_minutes?}], "query"?, "folder_id"?, "recursive"? (default true), "regression"?: <body of POST /projects/{pid}/regression>, "copy_from"?, "assignee_id"?, "estimate_minutes"?, "configuration_ids"?}` → `{"added", "cycle"}`. Without a configuration a test is planned once per configuration of the cycle; pairs already planned are skipped (at most 5000 rows). The default estimate is the test's `estimated_minutes`, else the average duration of its executions with a final result (rounded up to minutes). Query, folder and regression need `test.read`. 409 for a closed cycle |
+| PATCH | `/cycles/{id}/tests` | (atomic) `{"ids": [row ids] \| "all": true, "assignee_id"?, "estimate_minutes"?}` → `{"updated"}`; a new tester is also set on the rows' executions that have no final result |
+| DELETE | `/cycles/{id}/tests` | (atomic) `{"ids": [row ids]}` → `{"removed"}`; their executions stay |
+| POST | `/cycles/{id}/runs` | creates a run (named after the cycle, "(2)", "(3)" … for later ones) of the planned tests that no run of the cycle contains yet → 201 TestRun; a planned cycle becomes active. 400 when there is nothing new, 409 for a closed cycle |
+| GET | `/cycles/{id}/progress` | `{"cycle", "testers": [{assignee_id, planned, executed, passed, failed, blocked, estimated_minutes, remaining_minutes, actual_ms}], "burndown": [{day, remaining, remaining_minutes, ideal, ideal_minutes}]}` |
+| GET | `/cycles/{id}/history` | revisions of the cycle: its fields and its plan (test key, configuration, tester, estimate) |
+| GET | `/projects/{pid}/cycle-schedules` | recurring cycles |
+| POST | `/projects/{pid}/cycle-schedules` | `{"name_pattern" ({date}: the start date, {n}: the number), "template_cycle_id"?, "query"?, "owner_id"?, "frequency" (daily, weekly, monthly), "weekday" (0 = Sunday … 6), "day_of_month" (1–28), "time" (HH:MM), "timezone", "duration_days" (1–366), "auto_start", "enabled"}` → 201 |
+| PATCH | `/cycle-schedules/{id}` | the fields above; the next run is computed again |
+| DELETE | `/cycle-schedules/{id}` | the cycles it created stay |
+| POST | `/cycle-schedules/{id}/run` | creates the next cycle now → 201 TestCycle |
+
+`progress` counts the plan: `planned`, `executed` (a final result:
+passed, failed, blocked or skipped), `passed`, `failed`, `blocked`,
+`skipped`, `in_progress`, `not_run`, `not_in_run` (rows no run of the
+cycle contains yet), `unassigned`, `estimated_minutes`,
+`remaining_minutes` (estimates of the rows not executed),
+`estimated_minutes_executed`, `actual_ms` (durations of the executed rows),
+`percent_executed`, `percent_passed`.
+
+The **burndown** has one point per day from `start_date` (else the day the
+cycle was created) to `end_date` (else today; at most 365 days):
+`remaining` / `remaining_minutes` are the rows planned by the end of the
+day that had no final result then (`null` for days after today); the
+ideal line falls linearly from the whole plan on the first day to 0 on the
+last.
+
+**Scheduling.** The background jobs (every minute, also without e-mail)
+start the planned cycles whose `scheduled_start_at` has come (as the owner,
+who must hold `cycle.plan`; otherwise the scheduled start is dropped and
+`cycle.start_failed` is audited) and run the schedules that are due: a new
+cycle named after the pattern (made unique), starting today in the
+schedule's time zone and lasting `duration_days`, with the template's
+fields and plan plus the tests matching `query`; with `auto_start` it
+starts. A schedule that missed runs creates one cycle; `last_error`,
+`last_cycle_id` and `runs` record the outcome. Schedules use the same
+daily / weekly / monthly times as [e-mailed reports](#e-mail).
+
+Audit actions: `cycle.create`, `cycle.update`, `cycle.plan`,
+`cycle.delete`, `cycle_schedule.create`, `cycle_schedule.update`,
+`cycle_schedule.delete`, and `run.create` for the cycle's runs. The
+report template `cycle` (parameter `cycle_id`; default the first active or
+planned cycle) renders a cycle's progress, workload, burndown and plan.
+Test query term `cycle:` matches the names of the cycles planning a test,
+run query term `cycle:` the name of a run's cycle.
+
+The store function `Store.AssignedCycleTests(ctx, tenantID, userID)` lists
+a user's planned tests without a final result in open cycles (for a
+personal work list; the caller filters the projects the user may see).
 
 ## Defects
 

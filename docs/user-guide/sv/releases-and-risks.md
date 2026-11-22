@@ -59,6 +59,7 @@ Fliken **Utgångskriterier** listar de villkor som releasen måste uppfylla. Vä
 | Spårbarhetsregler | inget krav i omfattningen och inget testfall som är länkat till ett sådant bryter mot en påslagen [spårbarhetsregel](traceability-and-coverage.md#spårbarhetsregler) med den valda allvarligheten; statusfliken listar objekten med reglerna de bryter mot | bara fel, eller fel och varningar |
 | Inga blockerande defekter | inget krav i omfattningen [blockeras av en öppen defekt](traceability-and-coverage.md#blockerande-defekter) enligt projektets regler för allvarlighetsgrad; ett inaktuellt godkänt utfall räknas inte för **Klarade testfall** och **Obligatoriska krav klarade** | — |
 | Restrisk | ingen risk kopplad till omfattningen som inte är stängd har en [restnivå](waivers-and-soa.md#restrisk) över gränsen, om inte accepteringen är signerad | projektets gräns för riskacceptans, eller en nivå |
+| Testcykel genomförd | minst tröskeln av de planerade testfallen i den valda [testcykeln](test-cycles.md) har ett utfall i cykelns körningar; 100 % betyder att cykeln är helt genomförd | tröskel i % och testcykeln |
 
 En release utan utgångskriterier är alltid go.
 

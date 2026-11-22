@@ -237,6 +237,8 @@ async function discover(request) {
     }
   }
   const linkedReq = reqs.find((r) => r.linked_tests > 0) ?? reqs[0]
+  // the active test cycle (seed-demo: "Sprint 14 regression")
+  const cycle = items(await api(request, 'GET', `/projects/${pid}/cycles`).catch(() => [])).find((c) => c.status === 'active')
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -275,6 +277,18 @@ async function discover(request) {
     ruleViolator && { name: 'requirement-trace-rules', path: `${p}/requirements?item=${ruleViolator.id}`, wait: '.p-drawer .trace-violations' },
     { name: 'traceability-selected', path: `${p}/traceability`, open: '.trace-bulk .p-checkbox', wait: '.trace-bulk' },
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
+    // test cycles (CyclesView, CycleDetailView and their dialogs)
+    { name: 'cycles', path: `${p}/cycles`, wait: '.p-datatable, .empty-state' },
+    { name: 'cycles-timeline', path: `${p}/cycles?tab=timeline`, wait: '.timeline, .empty-state' },
+    { name: 'cycles-schedules', path: `${p}/cycles?tab=schedules`, wait: '.sched-row, .empty-state' },
+    { name: 'cycle-new-dialog', path: `${p}/cycles`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
+    { name: 'cycle-schedule-dialog', path: `${p}/cycles?tab=schedules`, open: '.sched-new', wait: '.p-dialog' },
+    cycle && { name: 'cycle', path: `${p}/cycles/${cycle.id}`, wait: '.p-datatable' },
+    cycle && { name: 'cycle-board', path: `${p}/cycles/${cycle.id}?tab=board`, wait: '.board, .empty-state' },
+    cycle && { name: 'cycle-progress', path: `${p}/cycles/${cycle.id}?tab=progress`, wait: 'canvas' },
+    cycle && { name: 'cycle-history', path: `${p}/cycles/${cycle.id}?tab=history`, wait: '.card' },
+    cycle && { name: 'cycle-add-dialog', path: `${p}/cycles/${cycle.id}`, open: '.filterbar button:has(.pi-plus)', wait: '.p-dialog' },
+    cycle && { name: 'cycle-edit-dialog', path: `${p}/cycles/${cycle.id}`, open: '.page-header .actions button:has(.pi-pencil)', wait: '.p-dialog' },
     // variants and code (VariantsView, CodeView, the Code tab and the applicability dialog)
     { name: 'variants', path: `${p}/variants`, wait: '.matrix, .empty-state' },
     { name: 'variants-manage', path: `${p}/variants?tab=manage`, wait: '.variant-list, .empty-state' },
