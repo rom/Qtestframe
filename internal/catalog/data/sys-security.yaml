@@ -59,6 +59,7 @@ requirements:
     tags: [segmentation, zones-and-conduits]
     refs: ["IEC 62443-3-2:2020 ZCR 3", "IEC 62443-3-3 SR 5.1", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
     tests: [SYSEC-T02]
+    d3fend: [D3-NI]
     en:
       title: Subsystems of different criticality separated into zones
       description: Subsystems with different security criticality MUST be placed in separate network zones, and traffic between zones MUST pass through a controlled conduit that permits only the flows documented in the security view.
@@ -131,6 +132,7 @@ requirements:
     tags: [mutual-authentication, internal-communication]
     refs: ["IEC 62443-3-3 SR 1.2", "NIST SP 800-207 (zero trust architecture)", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     tests: [SYSEC-T04]
+    d3fend: [D3-CBAN]
     en:
       title: Mutual authentication between components
       description: Each connection between components that crosses a trust boundary MUST authenticate both ends, for example with mutual TLS using certificates issued by the system's own certificate authority.
@@ -153,6 +155,7 @@ requirements:
     tags: [encryption-in-transit, confidentiality]
     refs: ["IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1040 (network sniffing)"]
     tests: [SYSEC-T04]
+    d3fend: [D3-MENCR]
     en:
       title: Data encrypted across untrusted networks
       description: Data that crosses a network outside the system's own physically protected zones MUST be encrypted with TLS 1.2 or later, or an equivalent protocol listed in the system's cryptography policy.
@@ -267,6 +270,7 @@ requirements:
     tags: [remote-maintenance, remote-access, mfa]
     refs: ["IEC 62443-3-3 SR 1.13", "IEC 62443-2-4:2023", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK T1199 (trusted relationship)"]
     tests: [SYSEC-T09]
+    d3fend: [D3-NAM]
     en:
       title: Remote maintenance only through a controlled access point
       description: Remote maintenance access by suppliers MUST go through a single controlled access point that requires multi-factor authentication and an approved request per session, records the session and ends it after 8 hours.
@@ -291,6 +295,7 @@ requirements:
     tags: [sbom, supply-chain, vulnerability-monitoring]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "ISO/IEC 27001:2022 A.5.21", "CWE-1395 (dependency on vulnerable third-party component)"]
     tests: [SYSEC-T10]
+    d3fend: [D3-SWI, D3-AVE]
     en:
       title: Bill of materials for the whole system monitored for vulnerabilities
       description: The system owner MUST keep a machine-readable bill of materials that combines the software and firmware components of each subsystem, and MUST check it against vulnerability databases at least weekly with each match assigned to an owner.
@@ -315,6 +320,7 @@ requirements:
     tags: [recovery, backup, known-good-state]
     refs: ["IEC 62443-3-3 SR 7.4", "ISO/IEC 27001:2022 A.8.13", "MITRE ATT&CK T1486 (data encrypted for impact)", "MITRE ATT&CK M1053 (data backup)"]
     tests: [SYSEC-T11]
+    d3fend: [D3-RC]
     en:
       title: Recovery to a known good configuration within the target time
       description: The system MUST be restorable from offline backups to its last approved configuration, including controller logic, configurations and credentials, within the recovery time objective stated in the security requirements (24 hours by default).

@@ -13,8 +13,8 @@ export type DocGrouping = (typeof DOC_GROUPINGS)[number]
 
 /** Fields of each requirement / test (internal/report RequirementDocFields, TestDocFields). */
 export const DOC_FIELDS: Record<DocKind, readonly string[]> = {
-  requirements_spec: ['description', 'rationale', 'criteria', 'type', 'priority', 'obligation', 'status', 'source', 'owner', 'tags', 'categories', 'relations', 'tests', 'results', 'version', 'custom_fields'],
-  test_plan: ['description', 'preconditions', 'steps', 'expected', 'priority', 'execution_type', 'status', 'estimate', 'tags', 'categories', 'dependencies', 'requirements', 'data', 'results', 'version', 'custom_fields'],
+  requirements_spec: ['description', 'rationale', 'criteria', 'type', 'priority', 'obligation', 'status', 'source', 'owner', 'tags', 'frameworks', 'categories', 'relations', 'tests', 'results', 'version', 'custom_fields'],
+  test_plan: ['description', 'preconditions', 'steps', 'expected', 'priority', 'execution_type', 'status', 'estimate', 'tags', 'frameworks', 'categories', 'dependencies', 'requirements', 'data', 'results', 'version', 'custom_fields'],
 }
 
 /** Every field key of both kinds (for the message catalogue check). */

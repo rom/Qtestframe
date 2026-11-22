@@ -96,6 +96,8 @@ var docTexts = map[string]string{
 	"Catalogue":                            "Katalog",
 	"Owner":                                "Ägare",
 	"Tags":                                 "Taggar",
+	"MITRE D3FEND":                         "MITRE D3FEND",
+	"MITRE EMB3D":                          "MITRE EMB3D",
 	"Categories":                           "Kategorier",
 	"Related requirements":                 "Relaterade krav",
 	"Rationale":                            "Motivering",

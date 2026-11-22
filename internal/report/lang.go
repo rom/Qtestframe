@@ -427,5 +427,9 @@ var texts = map[string]map[string]string{
 		"Matrix":                                     "Matris",
 		"Open risks":                                 "Öppna risker",
 		"Risks with ATT&CK techniques":               "Risker med ATT&CK-tekniker",
+		"Risks with EMB3D threats":                   "Risker med EMB3D-hot",
+		"MITRE EMB3D threats of the risks":           "MITRE EMB3D-hot för riskerna",
+		"EMB3D threats":                              "EMB3D-hot",
+		"Threat":                                     "Hot",
 	},
 }

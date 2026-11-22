@@ -116,6 +116,10 @@ Om du inte vill se rutan kan du stänga av den i din profil: **Dölj den löpand
 | **Mapp** | Var kravet är placerat. |
 | **Kategorier** | Värden i projektets kravkategorier, till exempel *Area / Security*. |
 | **Taggar** | Fria nyckelord; skriv en tagg och tryck <kbd>Enter</kbd>, eller välj en av de **föreslagna taggarna** under fältet. Förslagen kommer från titeln och beskrivningen: taggar som projektet redan använder och som texten nämner kommer först (heldragen ram), sedan förkortningar som *GDPR* och ord i titeln eller ord som förekommer mer än en gång (streckad ram). Varje tagg får en egen färg, samma överallt (tabeller, taggmolnet, dokument), så att lika taggar är lätta att se. |
+| **MITRE D3FEND-tekniker** | De försvarstekniker som kravet genomför, valda ur listan i [MITRE D3FEND](catalogue.md#mitre-d3fend-och-emb3d) (skriv *D3-MFA* eller en del av ett namn). Krav från katalogen tar med sig dem. I frågor hittar `d3fend:D3-AA` kraven med tekniken eller någon av dess undertekniker (*D3-MFA*) och `d3fend:harden` de med en härdningsteknik. |
+| **MITRE EMB3D-åtgärder och hot** | För inbyggda enheter: de åtgärder (*MID-026*) i [MITRE EMB3D](catalogue.md#mitre-d3fend-och-emb3d) som kravet genomför och de hot (*TID-201*) det hanterar. `emb3d:TID-201` hittar även de krav som anger en åtgärd mot hotet. |
+
+Bara id:n i listorna kan sparas; ett id som ramverket inte längre har markeras och måste tas bort. Testfall har samma två fält för de tekniker, åtgärder och hot som de verifierar. Båda ingår i exporter (kolumnerna **D3FEND** och **EMB3D**), projektarkiv, säkerhetskopior och, med fältet **MITRE D3FEND och EMB3D**, genererade dokument.
 
 Redigerarens huvud visar id:t, **versionen** (till exempel *v3*), täckningen och vem som ändrade kravet senast. Versionen ökar vid varje ändring.
 

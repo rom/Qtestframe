@@ -1,0 +1,1659 @@
+area: embedded-security
+prefix: EMBS
+group: security
+catalogue: hardware
+name: {en: Embedded firmware and microcontroller security, sv: Säkerhet i inbyggd firmware och mikrokontroller}
+description:
+  en: Security inside the firmware of microcontrollers and constrained devices, covering the hardware root of trust, measured boot and attestation, bootloader and update hardening, readout and debug protection, key storage, side-channel and fault injection resistance, memory protection and RTOS hardening, secure communication on constrained networks, the firmware bill of materials and vulnerability handling. It complements Embedded device security (hw-device-security), with references to the Cyber Resilience Act, EN 18031, ETSI EN 303 645, IEC 62443-4-2 and NIST IR 8259.
+  sv: Säkerhet i firmware för mikrokontroller och resurssnåla enheter, med hårdvarubaserad förtroendekälla, mätt uppstart och attestering, härdning av startladdare och uppdateringar, skydd mot utläsning och felsökning, nyckellagring, motståndskraft mot sidokanals- och felinjiceringsattacker, minnesskydd och härdning av realtidsoperativsystem, säker kommunikation i resurssnåla nät, materialförteckning för firmware och sårbarhetshantering. Området kompletterar Säkerhet i inbyggda enheter (hw-device-security), med hänvisningar till cyberresiliensförordningen, EN 18031, ETSI EN 303 645, IEC 62443-4-2 och NIST IR 8259.
+
+requirements:
+  - id: EMBS-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [secure-boot, root-of-trust, write-protection, bootloader]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "NIST SP 800-193 (platform firmware resiliency)", "ETSI EN 303 645 provision 5.7-1", "CWE-1326 (missing immutable root of trust in hardware)", "MITRE ATT&CK T1542.001 (system firmware)"]
+    tests: [EMBS-T01]
+    d3fend: [D3-HBWP]
+    emb3d: [MID-002, MID-029]
+    en:
+      title: First boot stage held in write-protected memory
+      description: The first-stage bootloader and the public key that verifies the next stage MUST be held in boot ROM or in flash whose write protection is locked by a one-time programmable setting in production.
+      rationale: Secure boot (HWSEC-01) is only as strong as its first stage; code that firmware or an attacker can rewrite cannot anchor the chain of trust.
+      criteria:
+        - method: test
+          text: On a production unit, an attempt from running firmware and from the debug port to erase or write the boot region fails, and the region reads back unchanged.
+        - method: inspection
+          text: The production record shows that the write protection setting of the boot region was locked on each unit.
+    sv:
+      title: Första uppstartssteget ligger i skrivskyddat minne
+      description: Startladdarens första steg och den publika nyckel som verifierar nästa steg SKA ligga i start-ROM eller i flashminne vars skrivskydd låses med en engångsprogrammerbar inställning i produktionen.
+      rationale: Säker uppstart (HWSEC-01) är aldrig starkare än sitt första steg; kod som firmware eller en angripare kan skriva om kan inte vara grunden för förtroendekedjan.
+      criteria:
+        - method: test
+          text: På en produktionsenhet misslyckas försök från körande firmware och från felsökningsporten att radera eller skriva startområdet, och området läses tillbaka oförändrat.
+        - method: inspection
+          text: Produktionsprotokollet visar att skrivskyddet för startområdet låstes på varje enhet.
+
+  - id: EMBS-02
+    type: security
+    obligation: should
+    priority: high
+    tags: [measured-boot, attestation, tpm, root-of-trust]
+    refs: ["IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "NIST SP 800-193 (platform firmware resiliency)", "NIST IR 8259A (device identification)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "CWE-1326 (missing immutable root of trust in hardware)", "MITRE ATT&CK T1542.001 (system firmware)"]
+    tests: [EMBS-T01]
+    d3fend: [D3-TBI]
+    emb3d: [MID-003, MID-036]
+    en:
+      title: Measured boot with remote attestation
+      description: The device SHOULD record a hash of each boot stage in a TPM or secure element and return these measurements, signed by its attestation key over a verifier-supplied nonce, to the management service on request.
+      rationale: Attestation lets the operator detect a device that booted modified firmware, and the nonce stops an old report from being replayed.
+      criteria:
+        - method: test
+          text: After one byte of the application firmware is changed and the device is restarted, the management service reports a measurement mismatch for that device.
+        - method: test
+          text: An attestation report replayed with an earlier nonce is rejected by the verifier.
+    sv:
+      title: Mätt uppstart med fjärrattestering
+      description: Enheten BÖR registrera ett hashvärde för varje uppstartssteg i en TPM eller ett säkerhetselement och på begäran lämna mätvärdena till hanteringstjänsten, signerade med sin attesteringsnyckel över ett nonsvärde från verifieraren.
+      rationale: Attestering gör att operatören upptäcker en enhet som startat ändrad firmware, och nonsvärdet hindrar att en gammal rapport spelas upp igen.
+      criteria:
+        - method: test
+          text: När en byte i applikationsfirmwaren har ändrats och enheten startats om rapporterar hanteringstjänsten avvikande mätvärden för enheten.
+        - method: test
+          text: En attesteringsrapport som spelas upp igen med ett tidigare nonsvärde avvisas av verifieraren.
+
+  - id: EMBS-03
+    type: security
+    obligation: should
+    priority: medium
+    tags: [runtime-integrity, firmware]
+    refs: ["IEC 62443-4-2 CR 3.4 (software and information integrity)", "NIST SP 800-193 (platform firmware resiliency)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1601.001 (patch system image)"]
+    tests: [EMBS-T02]
+    d3fend: [D3-SFV]
+    emb3d: [MID-009]
+    en:
+      title: Firmware in flash checked for integrity at run time
+      description: The device SHOULD verify the hash of its code regions in flash against the signed image manifest at least every 24 hours while running and raise a security event at the first mismatch.
+      rationale: A modification made after boot, for example through a write primitive in a vulnerable task, otherwise stays in place until the next restart.
+      criteria:
+        - method: test
+          text: A code byte changed in flash through the debug port of an unlocked test unit raises a security event within 24 hours.
+          threshold: "≤ 24 h from the change to the event"
+    sv:
+      title: Firmware i flashminnet integritetskontrolleras under drift
+      description: Enheten BÖR under drift verifiera hashvärdet för sina kodområden i flashminnet mot det signerade avbildsmanifestet minst var 24:e timme och skapa en säkerhetshändelse vid den första avvikelsen.
+      rationale: En ändring som görs efter uppstart, till exempel via en skrivprimitiv i en sårbar uppgift, ligger annars kvar till nästa omstart.
+      criteria:
+        - method: test
+          text: En kodbyte som ändras i flashminnet via felsökningsporten på en olåst testenhet ger en säkerhetshändelse inom 24 timmar.
+          threshold: "≤ 24 h från ändringen till händelsen"
+
+  - id: EMBS-04
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [bootloader, recovery-mode, dfu]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "ETSI EN 303 645 provision 5.6-4", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 ACM)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1542.001 (system firmware)"]
+    tests: [EMBS-T03]
+    emb3d: [MID-018, TID-201]
+    en:
+      title: No unauthenticated recovery or download mode in the bootloader
+      description: The bootloader of a production unit MUST NOT accept a firmware download, a memory read or a memory write over UART, USB or a radio recovery mode before the host has authenticated with a credential the device verifies.
+      rationale: Recovery and download modes are entered with a pin strap or a key press, so an open mode gives anyone with brief physical access full control of the firmware.
+      criteria:
+        - method: test
+          text: Each recovery and download mode of a production unit is entered, and memory read, memory write and image download commands are refused until a valid authentication has been completed.
+    sv:
+      title: Inget oautentiserat återställnings- eller nedladdningsläge i startladdaren
+      description: Startladdaren i en produktionsenhet SKA INTE ta emot nedladdning av firmware, läsning av minne eller skrivning till minne via UART, USB eller ett återställningsläge över radio innan värden har autentiserat sig med en inloggningsuppgift som enheten verifierar.
+      rationale: Återställnings- och nedladdningslägen aktiveras med en stiftbygling eller en knapptryckning, så ett öppet läge ger den som har kort fysisk åtkomst full kontroll över firmwaren.
+      criteria:
+        - method: test
+          text: Varje återställnings- och nedladdningsläge i en produktionsenhet aktiveras, och kommandon för läsning och skrivning av minne och för nedladdning av avbild vägras tills en giltig autentisering har genomförts.
+
+  - id: EMBS-05
+    type: security
+    obligation: should
+    priority: high
+    tags: [fault-injection, secure-boot, glitching]
+    refs: ["IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "CWE-1319 (improper protection against electromagnetic fault injection)", "CWE-1332 (improper handling of faults that lead to instruction skips)", "MITRE ATT&CK T1542.001 (system firmware)"]
+    tests: [EMBS-T04]
+    emb3d: [MID-063, TID-105]
+    en:
+      title: Signature checks hardened against fault injection
+      description: The bootloader and the updater SHOULD perform each signature decision twice with complementary conditions, initialise the result to failure and check after the decision that the expected code path was taken.
+      rationale: A single voltage or clock glitch can skip one comparison; redundant checks and a failure default make a successful skip unlikely without a second precise glitch.
+      criteria:
+        - method: review
+          text: A code review of the bootloader and the updater confirms the duplicated decision, the failure default and the path check at each signature verification.
+        - method: test
+          text: A voltage glitch campaign of at least 10000 attempts at the signature check of a test unit does not boot an image signed with a foreign key.
+          threshold: "0 successful boots in ≥ 10000 attempts"
+    sv:
+      title: Signaturkontroller härdas mot felinjicering
+      description: Startladdaren och uppdateringsfunktionen BÖR fatta varje signaturbeslut två gånger med kompletterande villkor, initiera resultatet till misslyckat och efter beslutet kontrollera att den förväntade kodvägen följdes.
+      rationale: En enda spännings- eller klockstörning kan hoppa över en jämförelse; redundanta kontroller och ett felvärde som utgångsläge gör att en lyckad överhoppning kräver ytterligare en exakt störning.
+      criteria:
+        - method: review
+          text: En kodgranskning av startladdaren och uppdateringsfunktionen bekräftar det dubblerade beslutet, felvärdet som utgångsläge och kontrollen av kodvägen vid varje signaturverifiering.
+        - method: test
+          text: En kampanj med minst 10000 spänningsstörningar mot signaturkontrollen på en testenhet startar inte någon avbild som signerats med en främmande nyckel.
+          threshold: "0 lyckade starter på ≥ 10000 försök"
+
+  - id: EMBS-06
+    type: security
+    obligation: should
+    priority: medium
+    tags: [firmware-update, encryption]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "IEC 62443-4-2 CR 4.1", "CWE-311 (missing encryption of sensitive data)"]
+    tests: [EMBS-T05]
+    emb3d: [MID-026, TID-215]
+    en:
+      title: Firmware update packages encrypted
+      description: Each firmware update package SHOULD be encrypted with an authenticated cipher under a key held only by the vendor's build service and the devices, in addition to being signed.
+      rationale: An encrypted package keeps the firmware, including embedded parameters and code that reveals vulnerabilities, from anyone who intercepts or downloads the update.
+      criteria:
+        - method: inspection
+          text: An update package taken from the distribution server shows no readable strings or code of the firmware when inspected.
+        - method: test
+          text: A package with one changed byte in the encrypted payload is rejected by the device before installation.
+    sv:
+      title: Paket för firmwareuppdateringar är krypterade
+      description: Varje paket för firmwareuppdatering BÖR, utöver att vara signerat, vara krypterat med autentiserad kryptering under en nyckel som bara leverantörens byggtjänst och enheterna har.
+      rationale: Ett krypterat paket skyddar firmwaren, med inbäddade parametrar och kod som avslöjar sårbarheter, mot den som avlyssnar eller laddar ned uppdateringen.
+      criteria:
+        - method: inspection
+          text: Ett uppdateringspaket som hämtats från distributionsservern visar inga läsbara strängar eller kod från firmwaren vid granskning.
+        - method: test
+          text: Ett paket med en ändrad byte i den krypterade nyttolasten avvisas av enheten före installation.
+
+  - id: EMBS-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [firmware-update, signing-key, key-revocation]
+    refs: ["IEC 62443-4-2 EDR 3.12 (provisioning product supplier roots of trust)", "IEC 62443-4-1 SM-8", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "CWE-321 (use of hard-coded cryptographic key)", "MITRE ATT&CK T1553.002 (code signing)"]
+    tests: [EMBS-T05]
+    d3fend: [D3-CR]
+    emb3d: [MID-026, TID-212]
+    en:
+      title: Firmware signing keys can be revoked on deployed devices
+      description: The device MUST hold at least two firmware signing key slots and accept a signed revocation of a key slot, after which it refuses images signed with the revoked key.
+      rationale: When a signing key leaks, devices that cannot revoke it accept malicious images signed with that key for the rest of their life.
+      criteria:
+        - method: test
+          text: After the revocation of key slot 1 is installed, an image signed with key 1 is refused and an image signed with key 2 is accepted, also after a restart.
+    sv:
+      title: Signeringsnycklar för firmware kan återkallas i driftsatta enheter
+      description: Enheten SKA ha minst två platser för signeringsnycklar för firmware och godta en signerad återkallelse av en nyckelplats, varefter den vägrar avbilder som signerats med den återkallade nyckeln.
+      rationale: När en signeringsnyckel läcker godtar enheter som inte kan återkalla den skadliga avbilder som signerats med nyckeln under resten av sin livstid.
+      criteria:
+        - method: test
+          text: När återkallelsen av nyckelplats 1 har installerats vägras en avbild som signerats med nyckel 1 och en avbild som signerats med nyckel 2 godtas, även efter en omstart.
+
+  - id: EMBS-08
+    type: security
+    obligation: must
+    priority: medium
+    tags: [firmware-update, availability, safe-state]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)", "IEC 62443-4-2 CR 3.10 (support for updates)", "NIST IR 8259A (software update)", "CWE-400 (uncontrolled resource consumption)"]
+    tests: [EMBS-T06]
+    d3fend: [D3-SU]
+    emb3d: [TID-217]
+    en:
+      title: Updates installed only when the device is in a safe state
+      description: The device MUST postpone the installation and restart of a downloaded update until its application reports a state in which a restart interrupts no essential function, or until a time window set by the operator.
+      rationale: An update that restarts a device in the middle of a dosing cycle, a door operation or a measurement series causes the outage that an attacker could also trigger by pushing updates.
+      criteria:
+        - method: test
+          text: An update offered while the application reports a running cycle is downloaded but installed only after the cycle has ended.
+    sv:
+      title: Uppdateringar installeras bara när enheten är i ett säkert läge
+      description: Enheten SKA skjuta upp installationen och omstarten för en nedladdad uppdatering tills dess applikation rapporterar ett läge där en omstart inte avbryter någon väsentlig funktion, eller till ett tidsfönster som operatören har satt.
+      rationale: En uppdatering som startar om en enhet mitt i en doseringscykel, en dörrmanöver eller en mätserie orsakar det avbrott som en angripare också kunde utlösa genom att skicka uppdateringar.
+      criteria:
+        - method: test
+          text: En uppdatering som erbjuds medan applikationen rapporterar en pågående cykel laddas ned men installeras först när cykeln har avslutats.
+
+  - id: EMBS-09
+    type: security
+    obligation: must
+    priority: critical
+    tags: [readout-protection, debug-port, production]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "ETSI EN 303 645 provision 5.4-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "CWE-1191 (on-chip debug and test interface with improper access control)", "MITRE ATT&CK T1200 (hardware additions)"]
+    tests: [EMBS-T07]
+    emb3d: [MID-058, TID-115]
+    en:
+      title: Flash readout protection set to its permanent level in production
+      description: The production line MUST set the flash readout protection of the microcontroller to the level that cannot be lowered again and MUST record a read-back check of that level for each unit.
+      rationale: Readout protection at a reversible level is lowered with a mass erase or a glitch and then gives the attacker the firmware and the keys in it; the debug lock of HWSEC-03 depends on it.
+      criteria:
+        - method: test
+          text: On a production unit, a debug probe can neither read flash nor lower the protection level.
+        - method: inspection
+          text: The production record of each unit shows the read-back protection level.
+    sv:
+      title: Utläsningsskyddet för flashminnet sätts till permanent nivå i produktionen
+      description: Produktionslinjen SKA sätta mikrokontrollerns utläsningsskydd för flashminnet till den nivå som inte går att sänka igen och registrera en kontrolläsning av nivån för varje enhet.
+      rationale: Ett utläsningsskydd på en reversibel nivå sänks med en totalradering eller en störning och ger då angriparen firmwaren och nycklarna i den; felsökningslåset i HWSEC-03 bygger på det.
+      criteria:
+        - method: test
+          text: På en produktionsenhet kan en felsökningsprob varken läsa flashminnet eller sänka skyddsnivån.
+        - method: inspection
+          text: Produktionsprotokollet för varje enhet visar den kontrollästa skyddsnivån.
+
+  - id: EMBS-10
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [debug, diagnostics, production-build]
+    refs: ["ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "CWE-489 (active debug code)", "CWE-532 (insertion of sensitive information into log file)"]
+    tests: [EMBS-T08]
+    emb3d: [MID-039, MID-084, TID-224, TID-226]
+    en:
+      title: No test commands or debug output in production firmware
+      description: The production firmware MUST NOT contain factory test commands, memory inspection commands or debug output of keys, credentials and raw sensor data.
+      rationale: Test commands and verbose output left in the release build give an attacker a ready-made interface to read and change the device.
+      criteria:
+        - method: inspection
+          text: The release build configuration has the test and debug options turned off, and a string search of the release image finds none of the listed test command names.
+        - method: test
+          text: The test command names sent over every external interface of a production unit are rejected, and the console shows no key or credential during boot and update.
+    sv:
+      title: Inga testkommandon eller felsökningsutskrifter i produktionsfirmware
+      description: Produktionsfirmwaren SKA INTE innehålla fabrikstestkommandon, kommandon för minnesinspektion eller felsökningsutskrifter av nycklar, inloggningsuppgifter och råa sensordata.
+      rationale: Testkommandon och utförliga utskrifter som lämnas kvar i releasebygget ger en angripare ett färdigt gränssnitt för att läsa och ändra enheten.
+      criteria:
+        - method: inspection
+          text: Konfigurationen för releasebygget har test- och felsökningsalternativen avstängda, och en strängsökning i releaseavbilden hittar inget av de listade testkommandonamnen.
+        - method: test
+          text: Testkommandonamnen som skickas över varje externt gränssnitt i en produktionsenhet avvisas, och konsolen visar ingen nyckel eller inloggningsuppgift vid uppstart och uppdatering.
+
+  - id: EMBS-11
+    type: security
+    obligation: should
+    priority: medium
+    tags: [debug-port, physical-security, pcb]
+    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)", "IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "CWE-1191 (on-chip debug and test interface with improper access control)", "MITRE ATT&CK T1200 (hardware additions)"]
+    tests: [EMBS-T07]
+    d3fend: [D3-PEH]
+    emb3d: [MID-052, MID-057]
+    en:
+      title: Debug headers and test points not reachable on production boards
+      description: On production boards, the debug header SHOULD be left unpopulated and the debug and bus test points SHOULD be covered or routed on inner layers, so that they are reachable only after the enclosure and a coating are removed.
+      rationale: Exposed pads make probing of the debug port and of the buses to external memory a matter of minutes.
+      criteria:
+        - method: inspection
+          text: An inspection of a production board lists no populated debug header and no exposed pad of the debug interface or the external memory bus.
+    sv:
+      title: Felsökningskontakter och testpunkter nås inte på produktionskort
+      description: På produktionskort BÖR felsökningskontakten lämnas obestyckad och testpunkterna för felsökning och bussar täckas eller dras på inre lager, så att de nås först sedan kapslingen och en beläggning har tagits bort.
+      rationale: Frilagda kontaktytor gör att felsökningsporten och bussarna till externt minne kan avlyssnas på några minuter.
+      criteria:
+        - method: inspection
+          text: En granskning av ett produktionskort visar ingen bestyckad felsökningskontakt och ingen frilagd kontaktyta för felsökningsgränssnittet eller bussen till externt minne.
+
+  - id: EMBS-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [root-of-trust, secure-element, tpm, device-identity]
+    refs: ["IEC 62443-4-2 EDR 3.12 (provisioning product supplier roots of trust)", "IEC 62443-4-2 CR 1.9", "NIST IR 8259A (device identification)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CCK)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-1326 (missing immutable root of trust in hardware)", "MITRE ATT&CK T1552.004 (private keys)"]
+    tests: [EMBS-T09]
+    emb3d: [MID-029, MID-028]
+    en:
+      title: Device identity key generated and used inside a hardware root of trust
+      description: The device identity key MUST be generated inside a secure element, a TPM or the secure world of the microcontroller, and every signature with it MUST be computed there.
+      rationale: A key that the application processor handles in plain form is exposed to every memory disclosure flaw of the firmware; HWSEC-17 and HWSEC-18 cover the certificate and the export ban.
+      criteria:
+        - method: inspection
+          text: The provisioning design shows that the identity key pair is created by the secure element and that the firmware only receives the public key and signatures.
+        - method: test
+          text: A memory dump of the application processor taken during a TLS handshake contains no part of the identity private key.
+    sv:
+      title: Enhetens identitetsnyckel skapas och används i en hårdvarubaserad förtroendekälla
+      description: Enhetens identitetsnyckel SKA skapas i ett säkerhetselement, en TPM eller mikrokontrollerns säkra miljö, och varje signatur med den beräknas där.
+      rationale: En nyckel som applikationsprocessorn hanterar i klartext är utsatt för varje fel i firmwaren som läcker minnesinnehåll; HWSEC-17 och HWSEC-18 täcker certifikatet och förbudet mot export.
+      criteria:
+        - method: inspection
+          text: Konstruktionen för provisionering visar att identitetsnyckelparet skapas av säkerhetselementet och att firmwaren bara får den publika nyckeln och signaturer.
+        - method: test
+          text: En minnesdump av applikationsprocessorn under en TLS-handskakning innehåller ingen del av den privata identitetsnyckeln.
+
+  - id: EMBS-13
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [hardcoded-credentials, keys, firmware]
+    refs: ["ETSI EN 303 645 provision 5.4-3", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CCK)", "IEC 62443-4-2 CR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-798 (use of hard-coded credentials)", "CWE-321 (use of hard-coded cryptographic key)", "MITRE ATT&CK T1552.001 (credentials in files)"]
+    tests: [EMBS-T10]
+    d3fend: [D3-CS]
+    emb3d: [MID-033, TID-328]
+    en:
+      title: No credentials or shared keys in the firmware image
+      description: The firmware image MUST NOT contain passwords, private keys or symmetric keys that are the same on more than one device.
+      rationale: A key in the image is extracted once from one device or one downloaded update and then opens every device of the product.
+      criteria:
+        - method: inspection
+          text: A secret scan of the release image and of the source repository at the release tag finds no password, private key or symmetric key.
+        - method: test
+          text: The key material of two production units differs in every key slot that the provisioning design lists as device-unique.
+    sv:
+      title: Inga inloggningsuppgifter eller delade nycklar i firmwareavbilden
+      description: Firmwareavbilden SKA INTE innehålla lösenord, privata nycklar eller symmetriska nycklar som är desamma i mer än en enhet.
+      rationale: En nyckel i avbilden tas ut en gång från en enhet eller en nedladdad uppdatering och öppnar sedan alla enheter av produkten.
+      criteria:
+        - method: inspection
+          text: En sökning efter hemligheter i releaseavbilden och i källkodsförrådet vid releasetaggen hittar inget lösenord, ingen privat nyckel och ingen symmetrisk nyckel.
+        - method: test
+          text: Nyckelmaterialet i två produktionsenheter skiljer sig åt i varje nyckelplats som provisioneringskonstruktionen anger som unik för enheten.
+
+  - id: EMBS-14
+    type: security
+    obligation: must
+    priority: high
+    tags: [key-erasure, tamper, zeroisation]
+    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)", "CWE-226 (sensitive information in resource not removed before reuse)", "MITRE ATT&CK T1552.004 (private keys)"]
+    tests: [EMBS-T11]
+    d3fend: [D3-CE]
+    emb3d: [TID-214]
+    en:
+      title: Keys erased on tamper detection or debug unlock
+      description: The device MUST erase its secret keys and session keys within 100 ms after the tamper sensor triggers or after the debug interface is unlocked.
+      rationale: Erasing the keys turns a physical attack on the device into the loss of one unit instead of the loss of its identity and data.
+      criteria:
+        - method: test
+          text: After the tamper sensor of a test unit is triggered, its key store reads as empty and the device can no longer authenticate to the service.
+          threshold: "≤ 100 ms from the trigger to the erasure"
+    sv:
+      title: Nycklar raderas vid upptäckt manipulering eller upplåsning av felsökning
+      description: Enheten SKA radera sina hemliga nycklar och sessionsnycklar inom 100 ms efter att manipuleringssensorn har löst ut eller felsökningsgränssnittet har låsts upp.
+      rationale: När nycklarna raderas blir en fysisk attack mot enheten förlusten av en enhet i stället för förlusten av dess identitet och data.
+      criteria:
+        - method: test
+          text: När manipuleringssensorn på en testenhet har löst ut läses dess nyckellager som tomt och enheten kan inte längre autentisera sig mot tjänsten.
+          threshold: "≤ 100 ms från utlösningen till raderingen"
+
+  - id: EMBS-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [key-storage, device-unique-key, puf]
+    refs: ["ETSI EN 303 645 provision 5.4-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)", "IEC 62443-4-2 CR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1552.004 (private keys)"]
+    tests: [EMBS-T11]
+    emb3d: [MID-028, MID-054, TID-108]
+    en:
+      title: Stored keys wrapped with a device-unique hardware key
+      description: Keys that the firmware stores in flash MUST be encrypted and authenticated with a key derived from a device-unique hardware secret (fused key or physically unclonable function) that software cannot read.
+      rationale: A key blob copied from one device to another, or read from a desoldered flash chip, is then useless without the hardware of the original device.
+      criteria:
+        - method: test
+          text: A key blob copied from the flash of unit A to unit B is rejected by unit B, and unit A still uses its own blob.
+    sv:
+      title: Lagrade nycklar skyddas med en hårdvarunyckel som är unik för enheten
+      description: Nycklar som firmwaren lagrar i flashminnet SKA vara krypterade och autentiserade med en nyckel som härleds från en hårdvaruhemlighet som är unik för enheten (säkrad nyckel eller fysiskt okopierbar funktion) och som programvara inte kan läsa.
+      rationale: Ett nyckelpaket som kopieras från en enhet till en annan, eller läses från ett urlött flashchip, är då oanvändbart utan den ursprungliga enhetens hårdvara.
+      criteria:
+        - method: test
+          text: Ett nyckelpaket som kopieras från flashminnet i enhet A till enhet B avvisas av enhet B, och enhet A använder fortfarande sitt eget paket.
+
+  - id: EMBS-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [side-channel, constant-time, cryptography]
+    refs: ["IEC 62443-4-2 CR 4.3", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-208 (observable timing discrepancy)", "CWE-1300 (improper protection of physical side channels)"]
+    tests: [EMBS-T12]
+    emb3d: [MID-059, TID-330]
+    en:
+      title: Secrets compared and processed in constant time
+      description: The firmware MUST compare message authentication codes, passwords and PINs, and process private and secret keys, with code whose execution time does not depend on the secret value.
+      rationale: An early-exit comparison lets an attacker on the network recover a valid code byte by byte from the response times.
+      criteria:
+        - method: test
+          text: Timing measurements of 100000 verifications of wrong codes that differ in the first and in the last byte show no statistically significant difference (Welch t-test, |t| < 4.5).
+          threshold: "|t| < 4.5 over 100000 measurements"
+    sv:
+      title: Hemligheter jämförs och bearbetas i konstant tid
+      description: Firmwaren SKA jämföra meddelandeautentiseringskoder, lösenord och PIN-koder, och bearbeta privata och hemliga nycklar, med kod vars körtid inte beror på det hemliga värdet.
+      rationale: En jämförelse som avbryts vid första avvikelsen låter en angripare i nätet återskapa en giltig kod byte för byte utifrån svarstiderna.
+      criteria:
+        - method: test
+          text: Tidsmätningar av 100000 verifieringar av felaktiga koder som skiljer sig i första respektive sista byten visar ingen statistiskt signifikant skillnad (Welchs t-test, |t| < 4,5).
+          threshold: "|t| < 4,5 över 100000 mätningar"
+
+  - id: EMBS-17
+    type: security
+    obligation: should
+    priority: medium
+    tags: [side-channel, power-analysis, hardware-crypto]
+    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)", "IEC 62443-4-2 CR 4.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-1300 (improper protection of physical side channels)", "MITRE ATT&CK T1552.004 (private keys)"]
+    tests: [EMBS-T12]
+    emb3d: [MID-060, MID-059, TID-101, TID-102]
+    en:
+      title: Long-term keys used only in a side-channel protected crypto engine
+      description: Operations with the long-term keys of a device that is installed where an attacker has physical access SHOULD run in a hardware crypto engine or a library with masking against power and electromagnetic analysis.
+      rationale: Unprotected AES or elliptic curve code leaks its key through power consumption within a few thousand traces taken with low-cost equipment.
+      criteria:
+        - method: test
+          text: A correlation power analysis with 100000 traces of the device's key operation does not recover the key.
+          threshold: "key not recovered with 100000 traces"
+    sv:
+      title: Långlivade nycklar används bara i en kryptomotor med sidokanalsskydd
+      description: Operationer med de långlivade nycklarna i en enhet som installeras där en angripare har fysisk åtkomst BÖR köras i en kryptomotor i hårdvara eller i ett bibliotek med maskering mot effekt- och elektromagnetisk analys.
+      rationale: Oskyddad kod för AES eller elliptiska kurvor läcker sin nyckel via strömförbrukningen inom några tusen mätkurvor som tas med billig utrustning.
+      criteria:
+        - method: test
+          text: En korrelationsanalys av strömförbrukningen med 100000 mätkurvor från enhetens nyckeloperation återskapar inte nyckeln.
+          threshold: "nyckeln återskapas inte med 100000 mätkurvor"
+
+  - id: EMBS-18
+    type: security
+    obligation: must
+    priority: high
+    tags: [mpu, memory-protection, task-isolation, rtos]
+    refs: ["ETSI EN 303 645 provision 5.6-8", "IEC 62443-4-2 CR 7.7 (least functionality)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "CWE-1257 (improper access control applied to mirrored or aliased memory regions)", "CWE-269 (improper privilege management)", "MITRE ATT&CK T1068 (exploitation for privilege escalation)"]
+    tests: [EMBS-T13]
+    d3fend: [D3-HBPI]
+    emb3d: [MID-013, MID-086]
+    en:
+      title: Tasks isolated from each other with the memory protection unit
+      description: The RTOS MUST run application tasks in unprivileged mode with a memory protection unit configuration that gives each task access only to its own stack, its data and the peripherals it is assigned.
+      rationale: Without isolation, a flaw in one network-facing task gives the attacker the kernel, the keys and every other task.
+      criteria:
+        - method: test
+          text: A test task that writes to the kernel data, to another task's stack and to an unassigned peripheral raises a memory management fault each time and is stopped without affecting the other tasks.
+    sv:
+      title: Uppgifter isoleras från varandra med minnesskyddsenheten
+      description: Realtidsoperativsystemet SKA köra applikationsuppgifter i oprivilegierat läge med en konfiguration av minnesskyddsenheten som ger varje uppgift åtkomst endast till sin egen stack, sina data och de kringenheter den har tilldelats.
+      rationale: Utan isolering ger ett fel i en uppgift som är exponerad mot nätet angriparen kärnan, nycklarna och alla andra uppgifter.
+      criteria:
+        - method: test
+          text: En testuppgift som skriver till kärnans data, till en annan uppgifts stack och till en kringenhet som inte tilldelats den utlöser ett minneshanteringsfel varje gång och stoppas utan att de andra uppgifterna påverkas.
+
+  - id: EMBS-19
+    type: security
+    obligation: must
+    priority: high
+    tags: [stack-protection, memory-safety, rtos]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "IEC 62443-4-1 SI-2", "CWE-121 (stack-based buffer overflow)", "CWE-787 (out-of-bounds write)", "MITRE ATT&CK T1210 (exploitation of remote services)"]
+    tests: [EMBS-T13]
+    d3fend: [D3-SFCV]
+    emb3d: [MID-004]
+    en:
+      title: Stack overflows detected in every task
+      description: The firmware MUST be built with stack canaries for functions with local buffers, and the RTOS MUST place a guard region below each task stack that stops the task on overflow.
+      rationale: Stack overflows are the most common route from a parsing flaw to code execution on a microcontroller; a guard region also stops a deep call chain from silently overwriting another task.
+      criteria:
+        - method: inspection
+          text: The build log shows the stack protector option for every firmware module, and the MPU configuration has a guard region per task.
+        - method: test
+          text: A test function that overflows a local buffer and a test task that exceeds its stack are both stopped with a fault report.
+    sv:
+      title: Stacköverskridanden upptäcks i varje uppgift
+      description: Firmwaren SKA byggas med stackkanarier för funktioner med lokala buffertar, och realtidsoperativsystemet placerar ett skyddsområde under varje uppgifts stack som stoppar uppgiften vid överskridande.
+      rationale: Stacköverskridanden är den vanligaste vägen från ett tolkningsfel till kodkörning i en mikrokontroller; ett skyddsområde hindrar också en djup anropskedja från att i tysthet skriva över en annan uppgift.
+      criteria:
+        - method: inspection
+          text: Bygget loggar stackskyddsalternativet för varje firmwaremodul, och MPU-konfigurationen har ett skyddsområde per uppgift.
+        - method: test
+          text: En testfunktion som skriver över en lokal buffert och en testuppgift som överskrider sin stack stoppas båda med en felrapport.
+
+  - id: EMBS-20
+    type: security
+    obligation: should
+    priority: high
+    tags: [trusted-execution, secure-world, isolation]
+    refs: ["ETSI EN 303 645 provision 5.6-8", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "IEC 62443-4-2 CR 4.1", "CWE-1189 (improper isolation of shared resources on system-on-a-chip)", "MITRE ATT&CK T1068 (exploitation for privilege escalation)"]
+    tests: [EMBS-T13]
+    d3fend: [D3-HBPI]
+    emb3d: [MID-086, MID-061]
+    en:
+      title: Security services in an isolated execution environment
+      description: Key storage, cryptographic operations, attestation and update verification SHOULD run in a hardware-isolated execution environment (a secure world, a separate security core or a secure element) that the application firmware reaches only through a defined call interface.
+      rationale: Moving the security services out of reach of the application keeps the keys and the update decision intact when the application itself is compromised.
+      criteria:
+        - method: inspection
+          text: The architecture document lists the security services in the isolated environment and the call interface to them.
+        - method: test
+          text: A read of the secure memory region from application code raises a fault and returns no data.
+    sv:
+      title: Säkerhetstjänster i en isolerad körmiljö
+      description: Nyckellagring, kryptografiska operationer, attestering och verifiering av uppdateringar BÖR köras i en hårdvaruisolerad körmiljö (en säker värld, en separat säkerhetskärna eller ett säkerhetselement) som applikationsfirmwaren når bara via ett definierat anropsgränssnitt.
+      rationale: När säkerhetstjänsterna flyttas utom räckhåll för applikationen förblir nycklarna och uppdateringsbeslutet intakta även om applikationen komprometteras.
+      criteria:
+        - method: inspection
+          text: Arkitekturdokumentet listar säkerhetstjänsterna i den isolerade miljön och anropsgränssnittet till dem.
+        - method: test
+          text: En läsning av det säkra minnesområdet från applikationskod utlöser ett fel och returnerar inga data.
+
+  - id: EMBS-21
+    type: security
+    obligation: must
+    priority: medium
+    tags: [dma, memory-protection, peripherals]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "IEC 62443-4-2 CR 7.7 (least functionality)", "CWE-1190 (DMA device enabled too early in boot phase)", "CWE-1189 (improper isolation of shared resources on system-on-a-chip)"]
+    tests: [EMBS-T13]
+    emb3d: [MID-053, TID-107]
+    en:
+      title: DMA limited to the buffers each peripheral uses
+      description: The firmware MUST configure the DMA controller and the memory protection so that each DMA channel reaches only the buffers assigned to its peripheral, before the peripheral is enabled.
+      rationale: An unrestricted DMA channel lets a compromised peripheral, such as a radio co-processor, read the keys and rewrite the code of the main processor.
+      criteria:
+        - method: test
+          text: A DMA transfer programmed from a peripheral buffer to the key store region is blocked and reported as a bus fault.
+    sv:
+      title: DMA begränsas till de buffertar som varje kringenhet använder
+      description: Firmwaren SKA konfigurera DMA-styrenheten och minnesskyddet så att varje DMA-kanal når bara de buffertar som tilldelats dess kringenhet, innan kringenheten aktiveras.
+      rationale: En obegränsad DMA-kanal låter en komprometterad kringenhet, till exempel en radioprocessor, läsa nycklarna och skriva om koden i huvudprocessorn.
+      criteria:
+        - method: test
+          text: En DMA-överföring som programmeras från en kringenhets buffert till nyckellagrets område blockeras och rapporteras som ett bussfel.
+
+  - id: EMBS-22
+    type: security
+    obligation: must
+    priority: medium
+    tags: [rtos, hardening, least-functionality]
+    refs: ["ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 GEC)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "NIST IR 8259A (device configuration)", "CWE-1125 (excessive attack surface)"]
+    tests: [EMBS-T14]
+    d3fend: [D3-ACH]
+    emb3d: [MID-016]
+    en:
+      title: RTOS and libraries built with only the services the product uses
+      description: The production build MUST leave out the RTOS shell, the file transfer and remote debugging services and each network protocol and library module that the product specification does not list.
+      rationale: Each service compiled in adds code an attacker can reach, even when no configuration enables it.
+      criteria:
+        - method: inspection
+          text: A comparison of the RTOS configuration with the product specification finds no enabled component that the specification does not list.
+        - method: test
+          text: A port and protocol scan of a production unit finds only the listed services.
+    sv:
+      title: Realtidsoperativsystem och bibliotek byggs med bara de tjänster produkten använder
+      description: Produktionsbygget SKA utelämna realtidsoperativsystemets skal, tjänsterna för filöverföring och fjärrfelsökning samt varje nätverksprotokoll och biblioteksmodul som produktspecifikationen inte listar.
+      rationale: Varje tjänst som byggs in tillför kod som en angripare kan nå, även när ingen konfiguration aktiverar den.
+      criteria:
+        - method: inspection
+          text: En jämförelse av realtidsoperativsystemets konfiguration med produktspecifikationen hittar ingen aktiverad komponent som specifikationen inte listar.
+        - method: test
+          text: En skanning av portar och protokoll på en produktionsenhet hittar bara de listade tjänsterna.
+
+  - id: EMBS-23
+    type: security
+    obligation: must
+    priority: medium
+    tags: [watchdog, availability, rtos]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)", "IEC 62443-4-2 CR 7.1", "ETSI EN 303 645 provision 5.9-2", "CWE-400 (uncontrolled resource consumption)"]
+    tests: [EMBS-T14]
+    emb3d: [MID-032, TID-222]
+    en:
+      title: Watchdog restarts the device to a known state when a critical task stops
+      description: A hardware watchdog MUST restart the device within 5 seconds after a critical task stops reporting, and the firmware MUST record the cause of each watchdog restart.
+      rationale: A task stopped by an attack or a fault otherwise leaves the device unresponsive until someone power-cycles it on site.
+      criteria:
+        - method: test
+          text: When the communication task is blocked by a test command, the device restarts within 5 seconds and the restart cause is in the event log.
+          threshold: "≤ 5 s"
+    sv:
+      title: Vakthund startar om enheten till ett känt läge när en kritisk uppgift stannar
+      description: En vakthund i hårdvaran SKA starta om enheten inom 5 sekunder efter att en kritisk uppgift har slutat rapportera, och firmwaren registrerar orsaken till varje omstart via vakthunden.
+      rationale: En uppgift som stoppas av en attack eller ett fel lämnar annars enheten utan svar tills någon bryter strömmen på plats.
+      criteria:
+        - method: test
+          text: När kommunikationsuppgiften blockeras med ett testkommando startar enheten om inom 5 sekunder och orsaken finns i händelseloggen.
+          threshold: "≤ 5 s"
+
+  - id: EMBS-24
+    type: security
+    obligation: must
+    priority: high
+    tags: [secure-coding, static-analysis, misra, cert-c]
+    refs: ["IEC 62443-4-1 SI-1", "IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "ETSI EN 303 645 provision 5.6-9", "CWE-787 (out-of-bounds write)", "CWE-190 (integer overflow or wraparound)"]
+    tests: [EMBS-T15]
+    d3fend: [D3-SCH]
+    emb3d: [TID-327]
+    en:
+      title: Firmware in C follows a secure coding standard checked by static analysis
+      description: Firmware written in C or C++ MUST follow a stated secure coding standard (such as MISRA C or the SEI CERT C rules), and a release build MUST have no open static analysis finding of the standard's mandatory rules.
+      rationale: Out-of-bounds writes and integer overflows are the main source of exploitable firmware flaws, and a rule set checked on each build catches them before release.
+      criteria:
+        - method: inspection
+          text: The static analysis report of the release build lists the coding standard and no open finding of its mandatory rules; each deviation has a recorded approval.
+    sv:
+      title: Firmware i C följer en säker kodstandard som kontrolleras med statisk analys
+      description: Firmware skriven i C eller C++ SKA följa en angiven säker kodstandard (till exempel MISRA C eller SEI CERT C), och ett releasebygge har ingen öppen anmärkning från statisk analys mot standardens tvingande regler.
+      rationale: Skrivningar utanför gränser och heltalsspill är den främsta källan till sårbarheter i firmware, och en regeluppsättning som kontrolleras i varje bygge fångar dem före release.
+      criteria:
+        - method: inspection
+          text: Rapporten från statisk analys av releasebygget anger kodstandarden och ingen öppen anmärkning mot dess tvingande regler; varje avvikelse har ett registrerat godkännande.
+
+  - id: EMBS-25
+    type: security
+    obligation: should
+    priority: medium
+    tags: [memory-safety, rust, secure-coding]
+    refs: ["IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "CWE-119 (improper restriction of operations within the bounds of a memory buffer)", "CWE-416 (use after free)"]
+    tests: [EMBS-T15]
+    emb3d: [MID-005, TID-327]
+    en:
+      title: New network-facing firmware components written in a memory-safe language
+      description: New firmware components that parse data from a network or a radio interface SHOULD be written in a memory-safe language, with unsafe code limited to reviewed hardware access modules.
+      rationale: A memory-safe language removes the buffer overflow and use-after-free classes from the code that an attacker reaches first.
+      criteria:
+        - method: inspection
+          text: The component list shows the language of each new network-facing component, and each block of unsafe code has a review record.
+    sv:
+      title: Nya firmwarekomponenter som är exponerade mot nätet skrivs i ett minnessäkert språk
+      description: Nya firmwarekomponenter som tolkar data från ett nät eller ett radiogränssnitt BÖR skrivas i ett minnessäkert språk, med osäker kod begränsad till granskade moduler för hårdvaruåtkomst.
+      rationale: Ett minnessäkert språk tar bort klasserna buffertspill och användning efter frigörande från den kod som en angripare når först.
+      criteria:
+        - method: inspection
+          text: Komponentlistan visar språket för varje ny komponent som är exponerad mot nätet, och varje block med osäker kod har ett granskningsprotokoll.
+
+  - id: EMBS-26
+    type: security
+    obligation: must
+    priority: high
+    tags: [parser, fuzzing, input-validation]
+    refs: ["ETSI EN 303 645 provision 5.13-1", "IEC 62443-4-2 CR 3.5", "IEC 62443-4-1 SVV-3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "CWE-20 (improper input validation)", "CWE-125 (out-of-bounds read)", "MITRE ATT&CK T1210 (exploitation of remote services)"]
+    tests: [EMBS-T15]
+    emb3d: [MID-008, TID-327, TID-202]
+    en:
+      title: Parsers of external input checked against lengths and fuzz tested
+      description: Each parser of protocol frames, update manifests and configuration files MUST check every length and offset against the received buffer, and MUST pass 24 hours of coverage-guided fuzzing without a crash before each release.
+      rationale: Parsers of external input are the entry point of remote attacks on devices, and fuzzing finds the length errors that review misses.
+      criteria:
+        - method: test
+          text: The fuzzing report of the release shows at least 24 hours per parser with no open crash.
+          threshold: "≥ 24 h per parser, 0 open crashes"
+    sv:
+      title: Tolkar av extern indata kontrollerar längder och fuzztestas
+      description: Varje tolk av protokollramar, uppdateringsmanifest och konfigurationsfiler SKA kontrollera varje längd och förskjutning mot den mottagna bufferten och klara 24 timmars täckningsstyrd fuzzning utan krasch före varje release.
+      rationale: Tolkar av extern indata är ingången för fjärrattacker mot enheter, och fuzzning hittar de längdfel som granskning missar.
+      criteria:
+        - method: test
+          text: Fuzzningsrapporten för releasen visar minst 24 timmar per tolk utan öppen krasch.
+          threshold: "≥ 24 h per tolk, 0 öppna krascher"
+
+  - id: EMBS-27
+    type: security
+    obligation: must
+    priority: critical
+    tags: [constrained-devices, dtls, oscore, secure-communication]
+    refs: ["ETSI EN 303 645 provision 5.5-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)", "IEC 62443-4-2 CR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "RFC 9147 (DTLS 1.3)", "RFC 8613 (OSCORE)", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
+    tests: [EMBS-T16]
+    d3fend: [D3-MENCR, D3-MAN]
+    emb3d: [MID-034, MID-035]
+    en:
+      title: Messages of constrained devices protected with DTLS or OSCORE
+      description: Messages between a constrained device and its gateway or service MUST be protected with DTLS 1.2 or later or with OSCORE, using an authenticated encryption algorithm and keys unique to the device.
+      rationale: Radio and low-power networks are easy to listen to and to inject into; protection at the transport or object layer keeps commands and measurements authentic and confidential end to end.
+      criteria:
+        - method: test
+          text: A capture of the device traffic shows only DTLS records or OSCORE-protected messages, and a modified message is rejected by the receiver.
+    sv:
+      title: Meddelanden från resurssnåla enheter skyddas med DTLS eller OSCORE
+      description: Meddelanden mellan en resurssnål enhet och dess gateway eller tjänst SKA skyddas med DTLS 1.2 eller senare eller med OSCORE, med en autentiserad krypteringsalgoritm och nycklar som är unika för enheten.
+      rationale: Radionät och lågeffektnät är lätta att avlyssna och att skicka in meddelanden i; skydd i transport- eller objektlagret håller kommandon och mätvärden äkta och konfidentiella hela vägen.
+      criteria:
+        - method: test
+          text: En inspelning av enhetens trafik visar bara DTLS-poster eller OSCORE-skyddade meddelanden, och ett ändrat meddelande avvisas av mottagaren.
+
+  - id: EMBS-28
+    type: security
+    obligation: must
+    priority: high
+    tags: [replay-protection, constrained-devices]
+    refs: ["IEC 62443-4-2 CR 3.1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "CWE-294 (authentication bypass by capture-replay)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
+    tests: [EMBS-T16]
+    d3fend: [D3-MAN]
+    emb3d: [MID-036, TID-407, TID-221]
+    en:
+      title: Replayed commands rejected
+      description: The device MUST reject a command message whose sequence number or nonce it has already accepted, also after a restart.
+      rationale: A recorded "open" or "start" command that is accepted again lets an attacker repeat it without knowing any key.
+      criteria:
+        - method: test
+          text: A recorded valid command sent again, before and after a restart of the device, is rejected and logged.
+    sv:
+      title: Återuppspelade kommandon avvisas
+      description: Enheten SKA avvisa ett kommandomeddelande vars sekvensnummer eller nonsvärde den redan har godtagit, även efter en omstart.
+      rationale: Ett inspelat kommando för att öppna eller starta som godtas igen låter en angripare upprepa det utan att känna till någon nyckel.
+      criteria:
+        - method: test
+          text: Ett inspelat giltigt kommando som skickas igen, före och efter en omstart av enheten, avvisas och loggas.
+
+  - id: EMBS-29
+    type: security
+    obligation: must
+    priority: medium
+    tags: [network-stack, denial-of-service, constrained-devices]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)", "IEC 62443-4-2 CR 7.1", "ETSI EN 303 645 provision 5.9-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 RLM)", "CWE-400 (uncontrolled resource consumption)", "MITRE ATT&CK T1499 (endpoint denial of service)"]
+    tests: [EMBS-T16]
+    emb3d: [MID-080, TID-405, TID-404]
+    en:
+      title: Network stack with fixed resource limits
+      description: The network stack MUST allocate connections, reassembly buffers and pending requests from fixed pools with limits stated in the design, and MUST drop new requests when a pool is full while the device keeps its essential function.
+      rationale: A device whose stack allocates per request is stopped by a flood of half-open connections or fragments that any host on the network can send.
+      criteria:
+        - method: test
+          text: During a flood of 1000 connection attempts per second for 10 minutes, the device keeps its essential function and accepts a legitimate connection within 30 seconds after the flood ends.
+          threshold: "essential function kept; recovery ≤ 30 s"
+    sv:
+      title: Nätverksstack med fasta resursgränser
+      description: Nätverksstacken SKA tilldela anslutningar, buffertar för återsammansättning och väntande förfrågningar från fasta pooler med gränser som anges i konstruktionen och kasta nya förfrågningar när en pool är full medan enheten behåller sin väsentliga funktion.
+      rationale: En enhet vars stack tilldelar minne per förfrågan stoppas av en flod av halvöppna anslutningar eller fragment som vilken värd i nätet som helst kan skicka.
+      criteria:
+        - method: test
+          text: Under en flod av 1000 anslutningsförsök per sekund i 10 minuter behåller enheten sin väsentliga funktion och tar emot en legitim anslutning inom 30 sekunder efter att floden upphört.
+          threshold: "väsentlig funktion behålls; återhämtning ≤ 30 s"
+
+  - id: EMBS-30
+    type: security
+    obligation: must
+    priority: high
+    tags: [sbom, firmware, binary-components]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "IEC 62443-4-1 SM-9", "NIST IR 8259 (software and supply chain information)", "CWE-1104 (use of unmaintained third party components)"]
+    tests: [EMBS-T17]
+    d3fend: [D3-SWI]
+    en:
+      title: Firmware bill of materials covers binary and vendor components
+      description: The software bill of materials of each firmware release MUST list, with supplier and version, the bootloader, the RTOS, the board support package, the cryptographic library and each binary component from a chip or module vendor, including radio firmware.
+      rationale: Vendor blobs and radio firmware carry vulnerabilities as often as open source code but are missed by a bill of materials generated from the source tree alone (HWSEC-11).
+      criteria:
+        - method: inspection
+          text: The bill of materials of a release lists each binary file of the image build with supplier and version, and a sample of 5 binary files matches the listed versions.
+    sv:
+      title: Materialförteckningen för firmware omfattar binära komponenter och leverantörskomponenter
+      description: Materialförteckningen för programvara för varje firmwarerelease SKA lista, med leverantör och version, startladdaren, realtidsoperativsystemet, kortstödspaketet, kryptobiblioteket och varje binär komponent från en krets- eller modulleverantör, inklusive radiofirmware.
+      rationale: Binärer från leverantörer och radiofirmware har sårbarheter lika ofta som öppen källkod men missas av en materialförteckning som bara genereras från källkodsträdet (HWSEC-11).
+      criteria:
+        - method: inspection
+          text: Materialförteckningen för en release listar varje binärfil i avbildsbygget med leverantör och version, och ett urval om 5 binärfiler stämmer med de listade versionerna.
+
+  - id: EMBS-31
+    type: security
+    obligation: should
+    priority: medium
+    tags: [vex, vulnerability-management, sbom]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §4", "IEC 62443-4-1 DM-4", "NIST IR 8259 (software and supply chain information)"]
+    tests: [EMBS-T17]
+    d3fend: [D3-AVE]
+    en:
+      title: Exploitability statements for vulnerabilities in firmware components
+      description: For each published vulnerability in a component of the firmware bill of materials, the manufacturer SHOULD publish within 14 days a machine-readable statement (VEX) of whether the firmware is affected and what the user does.
+      rationale: Operators of device fleets otherwise cannot tell which of hundreds of scanner findings in the firmware are real and need action.
+      criteria:
+        - method: inspection
+          text: For the 5 most recent vulnerabilities in listed components, a statement with the status and the action was published within 14 days.
+          threshold: "≤ 14 days"
+    sv:
+      title: Utlåtanden om utnyttjandebarhet för sårbarheter i firmwarekomponenter
+      description: För varje publicerad sårbarhet i en komponent i firmwarens materialförteckning BÖR tillverkaren inom 14 dagar publicera ett maskinläsbart utlåtande (VEX) om firmwaren påverkas och vad användaren gör.
+      rationale: Den som driver en flotta av enheter kan annars inte avgöra vilka av hundratals fynd från en skanner i firmwaren som är verkliga och behöver åtgärdas.
+      criteria:
+        - method: inspection
+          text: För de 5 senaste sårbarheterna i listade komponenter publicerades ett utlåtande med status och åtgärd inom 14 dagar.
+          threshold: "≤ 14 dagar"
+
+  - id: EMBS-32
+    type: security
+    obligation: must
+    priority: high
+    tags: [vulnerability-disclosure, psirt]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §5", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §6", "ETSI EN 303 645 provision 5.2-1", "IEC 62443-4-1 DM-1", "NIST IR 8259 (vulnerability handling)"]
+    tests: [EMBS-T18]
+    en:
+      title: Published policy and contact for vulnerability reports
+      description: The manufacturer MUST publish a coordinated vulnerability disclosure policy with a contact address for security reports on the device and MUST acknowledge each report within 5 working days.
+      rationale: Researchers who find a flaw in the firmware report it only when they know where to send it and get a response.
+      criteria:
+        - method: inspection
+          text: The policy and the contact address are on the product web site and in the user documentation.
+        - method: test
+          text: A test report sent to the contact address is acknowledged within 5 working days.
+          threshold: "≤ 5 working days"
+    sv:
+      title: Publicerad policy och kontakt för sårbarhetsrapporter
+      description: Tillverkaren SKA publicera en policy för samordnat offentliggörande av sårbarheter med en kontaktadress för säkerhetsrapporter om enheten och bekräfta varje rapport inom 5 arbetsdagar.
+      rationale: Forskare som hittar ett fel i firmwaren rapporterar det bara när de vet vart de ska skicka det och får svar.
+      criteria:
+        - method: inspection
+          text: Policyn och kontaktadressen finns på produktens webbplats och i användardokumentationen.
+        - method: test
+          text: En testrapport som skickas till kontaktadressen bekräftas inom 5 arbetsdagar.
+          threshold: "≤ 5 arbetsdagar"
+
+  - id: EMBS-33
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [vulnerability-reporting, cra, incident-reporting]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 14", "IEC 62443-4-1 DM-5"]
+    tests: [EMBS-T18]
+    en:
+      title: Actively exploited vulnerabilities reported within 24 hours
+      description: The manufacturer MUST send an early warning of an actively exploited vulnerability in the device to the designated CSIRT through the single reporting platform within 24 hours of becoming aware of it.
+      rationale: The Cyber Resilience Act sets this deadline so that authorities and users can react while the exploitation is ongoing.
+      criteria:
+        - method: review
+          text: The vulnerability handling procedure names the reporting role, the platform and the 24-hour deadline, and a tabletop exercise sends a draft early warning within 24 hours.
+          threshold: "≤ 24 h"
+    sv:
+      title: Aktivt utnyttjade sårbarheter rapporteras inom 24 timmar
+      description: Tillverkaren SKA skicka en tidig varning om en aktivt utnyttjad sårbarhet i enheten till den utsedda CSIRT-enheten via den gemensamma rapporteringsplattformen inom 24 timmar efter att ha fått kännedom om den.
+      rationale: Cyberresiliensförordningen sätter denna tidsgräns så att myndigheter och användare kan agera medan utnyttjandet pågår.
+      criteria:
+        - method: review
+          text: Rutinen för sårbarhetshantering anger rapporterande roll, plattform och tidsgränsen 24 timmar, och en skrivbordsövning skickar ett utkast till tidig varning inom 24 timmar.
+          threshold: "≤ 24 h"
+
+  - id: EMBS-34
+    type: security
+    obligation: must
+    priority: high
+    tags: [firmware-update, automatic-update, secure-by-default]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §7", "ETSI EN 303 645 provision 5.3-2", "NIST IR 8259A (software update)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "CWE-1277 (firmware not updateable)"]
+    tests: [EMBS-T06]
+    d3fend: [D3-SU]
+    emb3d: [MID-026, TID-210]
+    en:
+      title: Security updates installed automatically by default
+      description: In its delivered state the device MUST check for security updates at least once per day and install them automatically, with a setting that lets the user turn automatic installation off.
+      rationale: Devices that wait for a user to update stay vulnerable for years; the Cyber Resilience Act asks for automatic security updates as the default.
+      criteria:
+        - method: test
+          text: A factory-reset unit connected to the test update server installs a published security update within 24 hours without user action.
+          threshold: "≤ 24 h"
+    sv:
+      title: Säkerhetsuppdateringar installeras automatiskt som standard
+      description: I leveransläget SKA enheten söka efter säkerhetsuppdateringar minst en gång per dygn och installera dem automatiskt, med en inställning där användaren stänger av den automatiska installationen.
+      rationale: Enheter som väntar på att en användare uppdaterar förblir sårbara i åratal; cyberresiliensförordningen kräver automatiska säkerhetsuppdateringar som standard.
+      criteria:
+        - method: test
+          text: En fabriksåterställd enhet som ansluts till testservern för uppdateringar installerar en publicerad säkerhetsuppdatering inom 24 timmar utan åtgärd från användaren.
+          threshold: "≤ 24 h"
+
+  - id: EMBS-35
+    type: security
+    obligation: must
+    priority: medium
+    tags: [security-logging, monitoring, telemetry]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(l)", "IEC 62443-4-2 CR 2.8", "NIST IR 8259A (cybersecurity state awareness)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 GEC)", "CWE-778 (insufficient logging)", "CWE-532 (insertion of sensitive information into log file)"]
+    tests: [EMBS-T19]
+    emb3d: [MID-017, MID-085, MID-084, TID-225]
+    en:
+      title: Security events recorded on the device and sent off it
+      description: The device MUST record failed authentications, rejected images, integrity mismatches, tamper alarms and watchdog restarts without keys or credentials in the record, and MUST send these events to the management service within 15 minutes when connected.
+      rationale: Events kept only on the device are lost or erased by an attacker before anyone looks; sent events let the operator see an attack on the fleet.
+      criteria:
+        - method: test
+          text: Each listed event triggered on a connected test unit appears in the management service within 15 minutes, and no record contains a key or a credential.
+          threshold: "≤ 15 min"
+    sv:
+      title: Säkerhetshändelser registreras i enheten och skickas från den
+      description: Enheten SKA registrera misslyckade autentiseringar, vägrade avbilder, integritetsavvikelser, manipuleringslarm och omstarter via vakthunden utan nycklar eller inloggningsuppgifter i posten och skicka händelserna till hanteringstjänsten inom 15 minuter när den är ansluten.
+      rationale: Händelser som bara finns kvar i enheten går förlorade eller raderas av en angripare innan någon tittar; skickade händelser låter operatören se en attack mot flottan.
+      criteria:
+        - method: test
+          text: Varje listad händelse som utlöses på en ansluten testenhet syns i hanteringstjänsten inom 15 minuter, och ingen post innehåller en nyckel eller en inloggningsuppgift.
+          threshold: "≤ 15 min"
+
+tests:
+  - id: EMBS-T01
+    priority: critical
+    execution: manual
+    tags: [secure-boot, measured-boot, attestation]
+    refs: ["IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "NIST SP 800-193 (platform firmware resiliency)", "CWE-1326 (missing immutable root of trust in hardware)", "MITRE ATT&CK T1542.001 (system firmware)"]
+    d3fend: [D3-HBWP, D3-TBI]
+    emb3d: [MID-002, MID-003]
+    en:
+      title: Boot region write protection and attestation of a modified image
+      description: Checks that the first boot stage cannot be rewritten and that a modified application image shows up in the attestation report.
+      preconditions: A production unit enrolled with the management service, a debug probe and a test build with one changed byte in the application image.
+      expected: The boot region stays unchanged and the modified image is reported.
+      steps:
+        - action: From a test command in running firmware, try to erase the first sector of the boot region, then try the same with the debug probe.
+          expected: Both attempts fail and a read-back of the boot region matches the release image.
+        - action: Request an attestation report for the unit from the management service.
+          expected: The measurements match the reference values of the release.
+        - action: Install the test build through the service port of an unlocked test unit, restart it and request a new attestation report.
+          expected: The management service reports a measurement mismatch for the application stage.
+        - action: Send the first attestation report again with its original nonce.
+          expected: The verifier rejects it as stale.
+    sv:
+      title: Skrivskydd för startområdet och attestering av en ändrad avbild
+      description: Kontrollerar att det första uppstartssteget inte kan skrivas om och att en ändrad applikationsavbild syns i attesteringsrapporten.
+      preconditions: En produktionsenhet som är registrerad i hanteringstjänsten, en felsökningsprob och ett testbygge med en ändrad byte i applikationsavbilden.
+      expected: Startområdet förblir oförändrat och den ändrade avbilden rapporteras.
+      steps:
+        - action: Försök radera den första sektorn i startområdet med ett testkommando i körande firmware, och försök sedan samma sak med felsökningsproben.
+          expected: Båda försöken misslyckas och en tillbakaläsning av startområdet stämmer med releaseavbilden.
+        - action: Begär en attesteringsrapport för enheten från hanteringstjänsten.
+          expected: Mätvärdena stämmer med releasens referensvärden.
+        - action: Installera testbygget via serviceporten på en olåst testenhet, starta om den och begär en ny attesteringsrapport.
+          expected: Hanteringstjänsten rapporterar avvikande mätvärden för applikationssteget.
+        - action: Skicka den första attesteringsrapporten igen med sitt ursprungliga nonsvärde.
+          expected: Verifieraren avvisar den som inaktuell.
+
+  - id: EMBS-T02
+    priority: medium
+    execution: manual
+    tags: [runtime-integrity]
+    refs: ["IEC 62443-4-2 CR 3.4 (software and information integrity)", "MITRE ATT&CK T1601.001 (patch system image)"]
+    d3fend: [D3-SFV]
+    emb3d: [MID-009]
+    en:
+      title: Code changed in flash while the device runs is detected
+      description: Changes one code byte in flash on a running test unit and waits for the runtime integrity check.
+      preconditions: An unlocked test unit with release firmware, connected to the management service, and a debug probe.
+      expected: A security event about the integrity mismatch reaches the management service within 24 hours.
+      steps:
+        - action: With the debug probe, change one byte in a code region that the image manifest covers, without restarting the unit.
+          expected: The unit keeps running.
+        - action: Wait for the next runtime integrity check, at most 24 hours.
+          expected: The unit records an integrity mismatch naming the region and sends the event to the management service.
+    sv:
+      title: Kod som ändras i flashminnet under drift upptäcks
+      description: Ändrar en kodbyte i flashminnet på en körande testenhet och väntar på integritetskontrollen under drift.
+      preconditions: En olåst testenhet med releasefirmware, ansluten till hanteringstjänsten, och en felsökningsprob.
+      expected: En säkerhetshändelse om integritetsavvikelsen når hanteringstjänsten inom 24 timmar.
+      steps:
+        - action: Ändra med felsökningsproben en byte i ett kodområde som avbildsmanifestet omfattar, utan att starta om enheten.
+          expected: Enheten fortsätter att köra.
+        - action: Vänta på nästa integritetskontroll under drift, högst 24 timmar.
+          expected: Enheten registrerar en integritetsavvikelse som anger området och skickar händelsen till hanteringstjänsten.
+
+  - id: EMBS-T03
+    priority: critical
+    execution: manual
+    tags: [bootloader, recovery-mode]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "CWE-306 (missing authentication for critical function)"]
+    emb3d: [MID-018]
+    en:
+      title: Bootloader recovery and download modes without authentication
+      description: Enters each recovery and download mode of a production unit and tries memory and download commands without authenticating.
+      preconditions: A production unit, the documented pin straps and key combinations for each mode, and the vendor's download tool.
+      expected: Each mode refuses memory and download commands until the host has authenticated.
+      steps:
+        - action: Enter the UART recovery mode and send a memory read, a memory write and an image download command.
+          expected: Each command is refused and no memory content is returned.
+        - action: Enter the USB download mode and repeat the commands with the vendor's download tool.
+          expected: Each command is refused.
+        - action: Authenticate with the valid service credential and repeat the image download.
+          expected: The download is accepted and the image is verified before it is written.
+    sv:
+      title: Startladdarens återställnings- och nedladdningslägen utan autentisering
+      description: Aktiverar varje återställnings- och nedladdningsläge i en produktionsenhet och provar minnes- och nedladdningskommandon utan att autentisera.
+      preconditions: En produktionsenhet, de dokumenterade stiftbyglingarna och tangentkombinationerna för varje läge och leverantörens nedladdningsverktyg.
+      expected: Varje läge vägrar minnes- och nedladdningskommandon tills värden har autentiserat sig.
+      steps:
+        - action: Aktivera återställningsläget via UART och skicka ett kommando för läsning av minne, skrivning till minne och nedladdning av avbild.
+          expected: Varje kommando vägras och inget minnesinnehåll returneras.
+        - action: Aktivera nedladdningsläget via USB och upprepa kommandona med leverantörens nedladdningsverktyg.
+          expected: Varje kommando vägras.
+        - action: Autentisera med den giltiga serviceinloggningen och upprepa nedladdningen av avbilden.
+          expected: Nedladdningen godtas och avbilden verifieras innan den skrivs.
+
+  - id: EMBS-T04
+    priority: high
+    execution: manual
+    tags: [fault-injection, glitching]
+    refs: ["CWE-1319 (improper protection against electromagnetic fault injection)", "CWE-1332 (improper handling of faults that lead to instruction skips)"]
+    emb3d: [MID-063]
+    en:
+      title: Voltage glitch campaign against the signature check
+      description: Runs a voltage glitch campaign at the signature check of the bootloader with an image signed by a foreign key.
+      preconditions: A test unit prepared for glitching (decoupling removed on the core supply), a glitch generator, a trigger on the boot start and an image signed with a foreign key.
+      expected: No glitch makes the unit boot the foreign image.
+      steps:
+        - action: Characterise the timing of the signature check with a correctly signed image and record the trigger offset window.
+          expected: The window of the check is known.
+        - action: Write the foreign-signed image and run at least 10000 glitch attempts across the window with varying width and depth.
+          expected: The unit never boots the foreign image; faulted attempts end in the recovery state or a reset.
+          data: "≥ 10000 attempts"
+    sv:
+      title: Kampanj med spänningsstörningar mot signaturkontrollen
+      description: Genomför en kampanj med spänningsstörningar mot startladdarens signaturkontroll med en avbild signerad med en främmande nyckel.
+      preconditions: En testenhet förberedd för störningar (avkoppling borttagen på kärnmatningen), en störningsgenerator, en trigger vid uppstartens början och en avbild signerad med en främmande nyckel.
+      expected: Ingen störning får enheten att starta den främmande avbilden.
+      steps:
+        - action: Karakterisera tidpunkten för signaturkontrollen med en korrekt signerad avbild och registrera fönstret för triggerförskjutningen.
+          expected: Kontrollens fönster är känt.
+        - action: Skriv den främmande signerade avbilden och kör minst 10000 störningsförsök över fönstret med varierande bredd och djup.
+          expected: Enheten startar aldrig den främmande avbilden; störda försök slutar i återställningsläget eller med en omstart.
+          data: "≥ 10000 försök"
+
+  - id: EMBS-T05
+    priority: high
+    execution: manual
+    tags: [firmware-update, key-revocation, encryption]
+    refs: ["IEC 62443-4-2 EDR 3.12 (provisioning product supplier roots of trust)", "CWE-311 (missing encryption of sensitive data)", "MITRE ATT&CK T1553.002 (code signing)"]
+    d3fend: [D3-CR]
+    emb3d: [MID-026]
+    en:
+      title: Encrypted update packages and revocation of a signing key
+      description: Inspects an update package and checks that a revoked signing key is refused after revocation.
+      preconditions: A test unit with key slots 1 and 2, update packages signed with each key, a signed revocation of key slot 1 and a package with one changed byte in the payload.
+      expected: The package reveals no firmware content, a changed package is refused, and key 1 is refused after revocation.
+      steps:
+        - action: Download an update package from the distribution server and search it for strings of the firmware.
+          expected: No readable firmware string is found.
+        - action: Offer the package with one changed payload byte to the unit.
+          expected: The unit rejects it before installation.
+        - action: Install the revocation of key slot 1, restart the unit and offer the package signed with key 1, then the one signed with key 2.
+          expected: The key 1 package is refused and the key 2 package is installed.
+    sv:
+      title: Krypterade uppdateringspaket och återkallelse av en signeringsnyckel
+      description: Granskar ett uppdateringspaket och kontrollerar att en återkallad signeringsnyckel vägras efter återkallelsen.
+      preconditions: En testenhet med nyckelplats 1 och 2, uppdateringspaket signerade med vardera nyckeln, en signerad återkallelse av nyckelplats 1 och ett paket med en ändrad byte i nyttolasten.
+      expected: Paketet avslöjar inget innehåll i firmwaren, ett ändrat paket vägras, och nyckel 1 vägras efter återkallelsen.
+      steps:
+        - action: Ladda ned ett uppdateringspaket från distributionsservern och sök i det efter strängar från firmwaren.
+          expected: Ingen läsbar sträng från firmwaren hittas.
+        - action: Erbjud paketet med en ändrad byte i nyttolasten till enheten.
+          expected: Enheten avvisar det före installation.
+        - action: Installera återkallelsen av nyckelplats 1, starta om enheten och erbjud paketet som signerats med nyckel 1 och sedan det som signerats med nyckel 2.
+          expected: Paketet med nyckel 1 vägras och paketet med nyckel 2 installeras.
+
+  - id: EMBS-T06
+    priority: high
+    execution: manual
+    tags: [firmware-update, automatic-update, safe-state]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)", "IEC 62443-4-2 CR 3.10 (support for updates)"]
+    d3fend: [D3-SU]
+    emb3d: [MID-026, TID-217]
+    en:
+      title: Automatic security update postponed until a safe state
+      description: Checks that a factory-reset unit installs a security update automatically, and that installation waits for the end of a running cycle.
+      preconditions: A factory-reset unit connected to the test update server and a published security update.
+      expected: The update is installed within 24 hours without user action, and never during a running cycle.
+      steps:
+        - action: Connect the factory-reset unit and wait without user action.
+          expected: The unit downloads and installs the published security update within 24 hours.
+          data: "≤ 24 h"
+        - action: Publish a second update while the application reports a running cycle.
+          expected: The update is downloaded but installation waits until the cycle has ended.
+        - action: Turn automatic installation off in the settings and publish a third update.
+          expected: The unit reports that an update is available and does not install it.
+    sv:
+      title: Automatisk säkerhetsuppdatering skjuts upp till ett säkert läge
+      description: Kontrollerar att en fabriksåterställd enhet installerar en säkerhetsuppdatering automatiskt och att installationen väntar till slutet av en pågående cykel.
+      preconditions: En fabriksåterställd enhet ansluten till testservern för uppdateringar och en publicerad säkerhetsuppdatering.
+      expected: Uppdateringen installeras inom 24 timmar utan åtgärd från användaren, och aldrig under en pågående cykel.
+      steps:
+        - action: Anslut den fabriksåterställda enheten och vänta utan att göra något.
+          expected: Enheten laddar ned och installerar den publicerade säkerhetsuppdateringen inom 24 timmar.
+          data: "≤ 24 h"
+        - action: Publicera en andra uppdatering medan applikationen rapporterar en pågående cykel.
+          expected: Uppdateringen laddas ned men installationen väntar tills cykeln har avslutats.
+        - action: Stäng av den automatiska installationen i inställningarna och publicera en tredje uppdatering.
+          expected: Enheten rapporterar att en uppdatering finns och installerar den inte.
+
+  - id: EMBS-T07
+    priority: critical
+    execution: manual
+    tags: [readout-protection, debug-port, pcb]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "CWE-1191 (on-chip debug and test interface with improper access control)", "MITRE ATT&CK T1200 (hardware additions)"]
+    d3fend: [D3-PEH]
+    emb3d: [MID-058, MID-052]
+    en:
+      title: Readout protection level and exposed debug pads on a production unit
+      description: Checks the readout protection of the microcontroller and the board for reachable debug and bus contacts.
+      preconditions: A production unit, its production record, a debug probe and a microscope.
+      expected: Flash cannot be read, the protection cannot be lowered and no debug or bus pad is exposed.
+      steps:
+        - action: Open the enclosure and inspect the board for a debug header and exposed debug or memory bus pads.
+          expected: No header is populated and no such pad is exposed.
+        - action: Connect the debug probe to the debug pins and try to read flash and to lower the protection level.
+          expected: Both are refused.
+        - action: Compare the protection level read from the unit with the production record.
+          expected: The record shows the same permanent level.
+    sv:
+      title: Utläsningsskyddets nivå och frilagda felsökningsytor på en produktionsenhet
+      description: Kontrollerar mikrokontrollerns utläsningsskydd och kortet med avseende på åtkomliga kontakter för felsökning och bussar.
+      preconditions: En produktionsenhet, dess produktionsprotokoll, en felsökningsprob och ett mikroskop.
+      expected: Flashminnet kan inte läsas, skyddet kan inte sänkas och ingen kontaktyta för felsökning eller buss är frilagd.
+      steps:
+        - action: Öppna kapslingen och granska kortet efter en felsökningskontakt och frilagda kontaktytor för felsökning eller minnesbussar.
+          expected: Ingen kontakt är bestyckad och ingen sådan kontaktyta är frilagd.
+        - action: Anslut felsökningsproben till felsökningsstiften och försök läsa flashminnet och sänka skyddsnivån.
+          expected: Båda vägras.
+        - action: Jämför skyddsnivån som läses från enheten med produktionsprotokollet.
+          expected: Protokollet visar samma permanenta nivå.
+
+  - id: EMBS-T08
+    priority: high
+    execution: manual
+    tags: [debug, diagnostics, production-build]
+    refs: ["CWE-489 (active debug code)", "CWE-532 (insertion of sensitive information into log file)"]
+    emb3d: [MID-039, MID-084]
+    en:
+      title: Release image without test commands or secret output
+      description: Searches the release image for test commands and checks the console output of a production unit.
+      preconditions: The release image, the list of factory test command names and a production unit with a serial console adapter.
+      expected: No test command is present or accepted and no secret is printed.
+      steps:
+        - action: Search the release image for each name of the list.
+          expected: None is found.
+        - action: Send each test command name over the console, the service port and the network interface of the unit.
+          expected: Each command is rejected as unknown.
+        - action: Record the console output during boot and during an update.
+          expected: The output contains no key, credential or raw sensor dump.
+    sv:
+      title: Releaseavbild utan testkommandon eller utskrift av hemligheter
+      description: Söker i releaseavbilden efter testkommandon och kontrollerar konsolutskrifterna från en produktionsenhet.
+      preconditions: Releaseavbilden, listan med namn på fabrikstestkommandon och en produktionsenhet med en adapter för seriekonsolen.
+      expected: Inget testkommando finns eller godtas och ingen hemlighet skrivs ut.
+      steps:
+        - action: Sök i releaseavbilden efter varje namn i listan.
+          expected: Inget hittas.
+        - action: Skicka varje namn på testkommando över konsolen, serviceporten och nätverksgränssnittet på enheten.
+          expected: Varje kommando avvisas som okänt.
+        - action: Spela in konsolutskriften under uppstart och under en uppdatering.
+          expected: Utskriften innehåller ingen nyckel, ingen inloggningsuppgift och ingen dump av råa sensordata.
+
+  - id: EMBS-T09
+    priority: high
+    execution: manual
+    tags: [root-of-trust, secure-element, device-identity]
+    refs: ["IEC 62443-4-2 EDR 3.12 (provisioning product supplier roots of trust)", "CWE-1326 (missing immutable root of trust in hardware)", "MITRE ATT&CK T1552.004 (private keys)"]
+    emb3d: [MID-029, MID-028]
+    en:
+      title: Identity key created and used inside the secure element
+      description: Reviews the provisioning flow and dumps the application processor memory during a handshake.
+      preconditions: The provisioning design, an unlocked test unit with production firmware and a debug probe.
+      expected: The private identity key exists only inside the secure element.
+      steps:
+        - action: Follow the provisioning flow in the design and in the station log of one unit.
+          expected: The key pair is generated by the secure element and only the public key leaves it.
+        - action: Halt the unit with the debug probe during a TLS handshake and dump its RAM.
+          expected: The dump contains no part of the identity private key.
+    sv:
+      title: Identitetsnyckeln skapas och används i säkerhetselementet
+      description: Granskar provisioneringsflödet och dumpar applikationsprocessorns minne under en handskakning.
+      preconditions: Konstruktionen för provisionering, en olåst testenhet med produktionsfirmware och en felsökningsprob.
+      expected: Den privata identitetsnyckeln finns bara i säkerhetselementet.
+      steps:
+        - action: Följ provisioneringsflödet i konstruktionen och i stationsloggen för en enhet.
+          expected: Nyckelparet skapas av säkerhetselementet och bara den publika nyckeln lämnar det.
+        - action: Stoppa enheten med felsökningsproben under en TLS-handskakning och dumpa dess RAM.
+          expected: Dumpen innehåller ingen del av den privata identitetsnyckeln.
+
+  - id: EMBS-T10
+    priority: critical
+    execution: automated
+    tags: [hardcoded-credentials, secret-scan]
+    refs: ["CWE-798 (use of hard-coded credentials)", "CWE-321 (use of hard-coded cryptographic key)", "MITRE ATT&CK T1552.001 (credentials in files)"]
+    d3fend: [D3-CS]
+    emb3d: [MID-033]
+    en:
+      title: Firmware image and source scanned for embedded secrets
+      description: The release pipeline scans the image and the source for credentials and keys and compares key slots of two units.
+      preconditions: The release image, the source repository at the release tag, a secret scanner and two provisioned production units.
+      expected: No embedded secret is found and device-unique keys differ between the units.
+      steps:
+        - action: Run the secret scanner over the extracted release image.
+          expected: No password, private key or symmetric key is reported.
+        - action: Run the secret scanner over the source repository at the release tag.
+          expected: No password, private key or symmetric key is reported.
+        - action: Read the fingerprints of the device-unique key slots of both units through the provisioning interface.
+          expected: Each fingerprint differs between the two units.
+    sv:
+      title: Firmwareavbild och källkod genomsöks efter inbäddade hemligheter
+      description: Releaseflödet söker igenom avbilden och källkoden efter inloggningsuppgifter och nycklar och jämför nyckelplatser i två enheter.
+      preconditions: Releaseavbilden, källkodsförrådet vid releasetaggen, en sökare efter hemligheter och två provisionerade produktionsenheter.
+      expected: Ingen inbäddad hemlighet hittas och nycklar som är unika för enheten skiljer sig mellan enheterna.
+      steps:
+        - action: Kör sökaren efter hemligheter över den uppackade releaseavbilden.
+          expected: Inget lösenord, ingen privat nyckel och ingen symmetrisk nyckel rapporteras.
+        - action: Kör sökaren efter hemligheter över källkodsförrådet vid releasetaggen.
+          expected: Inget lösenord, ingen privat nyckel och ingen symmetrisk nyckel rapporteras.
+        - action: Läs fingeravtrycken för de enhetsunika nyckelplatserna i båda enheterna via provisioneringsgränssnittet.
+          expected: Varje fingeravtryck skiljer sig mellan de två enheterna.
+
+  - id: EMBS-T11
+    priority: high
+    execution: manual
+    tags: [key-erasure, key-storage, tamper]
+    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1552.004 (private keys)"]
+    d3fend: [D3-CE]
+    emb3d: [MID-028, MID-054]
+    en:
+      title: Key erasure on tamper and device binding of stored keys
+      description: Triggers the tamper sensor and moves a key blob between two units.
+      preconditions: Two test units A and B with provisioned keys, a flash programmer and an oscilloscope on the tamper line and a key store status signal.
+      expected: Keys are erased within 100 ms of a tamper trigger and a copied key blob is useless on another unit.
+      steps:
+        - action: Copy the key blob from the flash of unit A to the same address on unit B and restart unit B.
+          expected: Unit B rejects the blob and does not authenticate with A's identity.
+        - action: Trigger the tamper sensor of unit A and measure the time to the key store erase signal.
+          expected: The keys are erased within 100 ms and unit A no longer authenticates to the service.
+          data: "≤ 100 ms"
+    sv:
+      title: Radering av nycklar vid manipulering och bindning av lagrade nycklar till enheten
+      description: Löser ut manipuleringssensorn och flyttar ett nyckelpaket mellan två enheter.
+      preconditions: Två testenheter A och B med provisionerade nycklar, en programmerare för flashminne och ett oscilloskop på manipuleringslinjen och en statussignal från nyckellagret.
+      expected: Nycklarna raderas inom 100 ms efter en utlösning och ett kopierat nyckelpaket är oanvändbart i en annan enhet.
+      steps:
+        - action: Kopiera nyckelpaketet från flashminnet i enhet A till samma adress i enhet B och starta om enhet B.
+          expected: Enhet B avvisar paketet och autentiserar sig inte med A:s identitet.
+        - action: Lös ut manipuleringssensorn i enhet A och mät tiden till signalen för radering av nyckellagret.
+          expected: Nycklarna raderas inom 100 ms och enhet A kan inte längre autentisera sig mot tjänsten.
+          data: "≤ 100 ms"
+
+  - id: EMBS-T12
+    priority: high
+    execution: manual
+    tags: [side-channel, timing, power-analysis]
+    refs: ["CWE-208 (observable timing discrepancy)", "CWE-1300 (improper protection of physical side channels)", "MITRE ATT&CK T1552.004 (private keys)"]
+    emb3d: [MID-059, MID-060]
+    en:
+      title: Timing and power analysis of secret operations
+      description: Measures the timing of code verification and runs a correlation power analysis on the key operation.
+      preconditions: A test unit with a known test key, a measurement shunt, an oscilloscope with a trigger and analysis software.
+      expected: Timing does not depend on the secret and the key is not recovered from 100000 traces.
+      steps:
+        - action: Measure 100000 verifications each of wrong codes that differ in the first byte and in the last byte, and run a Welch t-test on the two sets.
+          expected: The t value stays within ±4.5.
+          data: "100000 measurements per set"
+        - action: Record 100000 power traces of the key operation with random inputs and run a correlation power analysis against the test key.
+          expected: The key is not recovered.
+          data: "100000 traces"
+    sv:
+      title: Tids- och effektanalys av hemliga operationer
+      description: Mäter tiden för verifiering av koder och genomför en korrelationsanalys av strömförbrukningen för nyckeloperationen.
+      preconditions: En testenhet med en känd testnyckel, ett mätmotstånd, ett oscilloskop med trigger och analysprogramvara.
+      expected: Tidsåtgången beror inte på hemligheten och nyckeln återskapas inte ur 100000 mätkurvor.
+      steps:
+        - action: Mät 100000 verifieringar vardera av felaktiga koder som skiljer sig i första respektive sista byten och gör ett Welchs t-test på de två mängderna.
+          expected: t-värdet håller sig inom ±4,5.
+          data: "100000 mätningar per mängd"
+        - action: Spela in 100000 effektkurvor av nyckeloperationen med slumpmässiga indata och gör en korrelationsanalys mot testnyckeln.
+          expected: Nyckeln återskapas inte.
+          data: "100000 mätkurvor"
+
+  - id: EMBS-T13
+    priority: high
+    execution: automated
+    tags: [mpu, task-isolation, stack-protection, dma]
+    refs: ["CWE-121 (stack-based buffer overflow)", "CWE-269 (improper privilege management)", "CWE-1190 (DMA device enabled too early in boot phase)", "MITRE ATT&CK T1068 (exploitation for privilege escalation)"]
+    d3fend: [D3-HBPI, D3-SFCV]
+    emb3d: [MID-013, MID-004, MID-053, MID-086]
+    en:
+      title: Memory protection, stack guards and DMA limits on target
+      description: A test firmware build runs fault probes on the target that cross each protection boundary.
+      preconditions: A test unit with a test build that contains the probe tasks, and a serial port for the fault reports.
+      expected: Each probe is stopped with a fault report and the other tasks continue.
+      steps:
+        - action: Run the probe task that writes to kernel data, to another task's stack and to an unassigned peripheral.
+          expected: Each write raises a memory management fault, the probe task is stopped and the other tasks keep running.
+        - action: Run the probe function that overflows a local buffer and the probe task that exceeds its stack.
+          expected: The canary check and the guard region each stop the probe with a fault report.
+        - action: Program a DMA transfer from a peripheral buffer to the key store region, and read the secure memory region from application code.
+          expected: Both are blocked with a bus fault and no data is returned.
+    sv:
+      title: Minnesskydd, stackskydd och DMA-gränser på målhårdvaran
+      description: Ett testbygge av firmwaren kör felprober på målhårdvaran som korsar varje skyddsgräns.
+      preconditions: En testenhet med ett testbygge som innehåller probuppgifterna och en seriell port för felrapporterna.
+      expected: Varje prob stoppas med en felrapport och de andra uppgifterna fortsätter.
+      steps:
+        - action: Kör probuppgiften som skriver till kärnans data, till en annan uppgifts stack och till en kringenhet som inte tilldelats den.
+          expected: Varje skrivning utlöser ett minneshanteringsfel, probuppgiften stoppas och de andra uppgifterna fortsätter att köra.
+        - action: Kör probfunktionen som skriver över en lokal buffert och probuppgiften som överskrider sin stack.
+          expected: Kanariekontrollen och skyddsområdet stoppar var för sig proben med en felrapport.
+        - action: Programmera en DMA-överföring från en kringenhets buffert till nyckellagrets område och läs det säkra minnesområdet från applikationskod.
+          expected: Båda blockeras med ett bussfel och inga data returneras.
+
+  - id: EMBS-T14
+    priority: medium
+    execution: manual
+    tags: [rtos, watchdog, least-functionality]
+    refs: ["IEC 62443-4-2 CR 7.7 (least functionality)", "IEC 62443-4-2 CR 7.1", "CWE-1125 (excessive attack surface)"]
+    d3fend: [D3-ACH]
+    emb3d: [MID-016, MID-032]
+    en:
+      title: RTOS configuration review and watchdog recovery
+      description: Compares the RTOS configuration with the product specification, scans the unit and blocks a critical task.
+      preconditions: The RTOS configuration of the release, the product specification, a production unit on a test network and a test build with a command that blocks the communication task.
+      expected: Only listed components and services exist, and the watchdog restarts the unit within 5 seconds.
+      steps:
+        - action: List the enabled RTOS and library components and compare them with the specification.
+          expected: Every enabled component is listed in the specification.
+        - action: Scan all TCP and UDP ports and the link-layer protocols of the production unit.
+          expected: Only the listed services answer.
+        - action: On the test build, block the communication task with the test command.
+          expected: The unit restarts within 5 seconds and the event log names the watchdog as the cause.
+          data: "≤ 5 s"
+    sv:
+      title: Granskning av realtidsoperativsystemets konfiguration och återhämtning via vakthunden
+      description: Jämför realtidsoperativsystemets konfiguration med produktspecifikationen, skannar enheten och blockerar en kritisk uppgift.
+      preconditions: Realtidsoperativsystemets konfiguration för releasen, produktspecifikationen, en produktionsenhet i ett testnät och ett testbygge med ett kommando som blockerar kommunikationsuppgiften.
+      expected: Bara listade komponenter och tjänster finns, och vakthunden startar om enheten inom 5 sekunder.
+      steps:
+        - action: Lista de aktiverade komponenterna i realtidsoperativsystemet och biblioteken och jämför dem med specifikationen.
+          expected: Varje aktiverad komponent finns i specifikationen.
+        - action: Skanna alla TCP- och UDP-portar och länkskiktsprotokollen på produktionsenheten.
+          expected: Bara de listade tjänsterna svarar.
+        - action: Blockera kommunikationsuppgiften med testkommandot i testbygget.
+          expected: Enheten startar om inom 5 sekunder och händelseloggen anger vakthunden som orsak.
+          data: "≤ 5 s"
+
+  - id: EMBS-T15
+    priority: high
+    execution: automated
+    tags: [secure-coding, static-analysis, fuzzing]
+    refs: ["IEC 62443-4-1 SI-1", "IEC 62443-4-1 SVV-3", "CWE-787 (out-of-bounds write)", "CWE-20 (improper input validation)"]
+    d3fend: [D3-SCH]
+    emb3d: [MID-008, MID-005]
+    en:
+      title: Static analysis, memory-safe components and parser fuzzing in the release pipeline
+      description: The release pipeline checks the static analysis result, the language of new network-facing components and the fuzzing time of each parser.
+      preconditions: The release pipeline with static analysis, the component list and a fuzzing harness per parser.
+      expected: The release is blocked when a mandatory rule finding is open, an unsafe block lacks review or a parser has a crash or less fuzzing time than stated.
+      steps:
+        - action: Add a test commit with an out-of-bounds write to a firmware module and run the pipeline.
+          expected: Static analysis reports a mandatory rule finding and the release is blocked.
+        - action: Check the component list for new network-facing components and their review records for unsafe code.
+          expected: Each new component is in a memory-safe language and each unsafe block has a review record.
+        - action: Run the fuzzing stage for every parser of external input.
+          expected: Each parser runs at least 24 hours with no open crash.
+          data: "≥ 24 h per parser"
+    sv:
+      title: Statisk analys, minnessäkra komponenter och fuzzning av tolkar i releaseflödet
+      description: Releaseflödet kontrollerar resultatet av statisk analys, språket för nya komponenter som är exponerade mot nätet och fuzzningstiden för varje tolk.
+      preconditions: Releaseflödet med statisk analys, komponentlistan och en fuzzningsmiljö per tolk.
+      expected: Releasen stoppas när en anmärkning mot en tvingande regel är öppen, ett osäkert block saknar granskning eller en tolk har en krasch eller kortare fuzzningstid än angivet.
+      steps:
+        - action: Lägg till en testincheckning med en skrivning utanför gränser i en firmwaremodul och kör flödet.
+          expected: Den statiska analysen rapporterar en anmärkning mot en tvingande regel och releasen stoppas.
+        - action: Kontrollera komponentlistan för nya komponenter som är exponerade mot nätet och deras granskningsprotokoll för osäker kod.
+          expected: Varje ny komponent är skriven i ett minnessäkert språk och varje osäkert block har ett granskningsprotokoll.
+        - action: Kör fuzzningssteget för varje tolk av extern indata.
+          expected: Varje tolk körs minst 24 timmar utan öppen krasch.
+          data: "≥ 24 h per tolk"
+
+  - id: EMBS-T16
+    priority: critical
+    execution: manual
+    tags: [constrained-devices, dtls, replay-protection, denial-of-service]
+    refs: ["IEC 62443-4-2 CR 3.1", "RFC 9147 (DTLS 1.3)", "RFC 8613 (OSCORE)", "CWE-294 (authentication bypass by capture-replay)", "CWE-400 (uncontrolled resource consumption)", "MITRE ATT&CK T1557 (adversary-in-the-middle)", "MITRE ATT&CK T1499 (endpoint denial of service)"]
+    d3fend: [D3-MENCR, D3-MAN]
+    emb3d: [MID-034, MID-035, MID-036, MID-080]
+    en:
+      title: Protected messages, replay and flooding on the constrained network
+      description: Captures and manipulates the traffic of a constrained device on a test network and floods its network stack.
+      preconditions: A test unit, its gateway on an isolated test network, a sniffer and a host for replay and flooding.
+      expected: Messages are protected, replays are rejected and the device survives the flood.
+      steps:
+        - action: Capture the traffic between unit and gateway during a measurement and a command.
+          expected: Only DTLS records or OSCORE-protected messages are seen.
+        - action: Change one byte of a captured command and send it to the unit.
+          expected: The unit rejects the message.
+        - action: Send a captured valid command again, then restart the unit and send it once more.
+          expected: Both replays are rejected and logged.
+        - action: Send 1000 connection attempts per second for 10 minutes, then open a legitimate connection.
+          expected: The essential function continues during the flood and the legitimate connection succeeds within 30 seconds after it.
+          data: "1000 attempts/s for 10 min"
+    sv:
+      title: Skyddade meddelanden, återuppspelning och överbelastning i det resurssnåla nätet
+      description: Spelar in och manipulerar trafiken från en resurssnål enhet i ett testnät och överbelastar dess nätverksstack.
+      preconditions: En testenhet, dess gateway i ett isolerat testnät, en avlyssnare och en värd för återuppspelning och överbelastning.
+      expected: Meddelandena är skyddade, återuppspelningar avvisas och enheten klarar överbelastningen.
+      steps:
+        - action: Spela in trafiken mellan enhet och gateway under en mätning och ett kommando.
+          expected: Bara DTLS-poster eller OSCORE-skyddade meddelanden syns.
+        - action: Ändra en byte i ett inspelat kommando och skicka det till enheten.
+          expected: Enheten avvisar meddelandet.
+        - action: Skicka ett inspelat giltigt kommando igen, starta sedan om enheten och skicka det en gång till.
+          expected: Båda återuppspelningarna avvisas och loggas.
+        - action: Skicka 1000 anslutningsförsök per sekund i 10 minuter och öppna sedan en legitim anslutning.
+          expected: Den väsentliga funktionen fortsätter under överbelastningen och den legitima anslutningen lyckas inom 30 sekunder efteråt.
+          data: "1000 försök/s i 10 min"
+
+  - id: EMBS-T17
+    priority: medium
+    execution: manual
+    tags: [sbom, vex, binary-components]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "NIST IR 8259 (software and supply chain information)"]
+    d3fend: [D3-SWI, D3-AVE]
+    en:
+      title: Binary components in the firmware bill of materials and published statements
+      description: Compares the binary files of an image build with the bill of materials and checks the exploitability statements.
+      preconditions: The build output of a firmware release, its bill of materials and the list of vulnerabilities published for its components in the last 6 months.
+      expected: Every binary component is listed with the right version and each vulnerability has a timely statement.
+      steps:
+        - action: List the binary files of the image build and look each up in the bill of materials.
+          expected: Each file is listed with supplier and version.
+        - action: For 5 binary files, compare the version strings in the file with the listed versions.
+          expected: The versions match.
+        - action: For the 5 most recent vulnerabilities, find the published statement.
+          expected: Each has a status and an action, published within 14 days.
+          data: "≤ 14 days"
+    sv:
+      title: Binära komponenter i firmwarens materialförteckning och publicerade utlåtanden
+      description: Jämför binärfilerna i ett avbildsbygge med materialförteckningen och kontrollerar utlåtandena om utnyttjandebarhet.
+      preconditions: Byggresultatet för en firmwarerelease, dess materialförteckning och listan över sårbarheter som publicerats för dess komponenter de senaste 6 månaderna.
+      expected: Varje binär komponent finns med rätt version och varje sårbarhet har ett utlåtande i tid.
+      steps:
+        - action: Lista binärfilerna i avbildsbygget och slå upp var och en i materialförteckningen.
+          expected: Varje fil finns med leverantör och version.
+        - action: Jämför för 5 binärfiler versionssträngarna i filen med de listade versionerna.
+          expected: Versionerna stämmer.
+        - action: Leta upp det publicerade utlåtandet för de 5 senaste sårbarheterna.
+          expected: Var och en har status och åtgärd och publicerades inom 14 dagar.
+          data: "≤ 14 dagar"
+
+  - id: EMBS-T18
+    priority: high
+    execution: manual
+    tags: [vulnerability-disclosure, vulnerability-reporting]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 14", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §5", "ETSI EN 303 645 provision 5.2-1"]
+    en:
+      title: Vulnerability report intake and 24-hour early warning exercise
+      description: Sends a test report to the published contact and runs a tabletop exercise for an actively exploited vulnerability.
+      preconditions: The published disclosure policy, the vulnerability handling procedure and the participants of the product security team.
+      expected: The report is acknowledged in time and a draft early warning is ready within 24 hours.
+      steps:
+        - action: Find the disclosure policy and the contact address on the product web site and in the user documentation.
+          expected: Both are present and match.
+        - action: Send a test vulnerability report to the contact address.
+          expected: It is acknowledged within 5 working days.
+          data: "≤ 5 working days"
+        - action: Start the tabletop exercise with a scenario of an exploited vulnerability reported by a customer.
+          expected: The team completes a draft early warning for the reporting platform within 24 hours of the start.
+          data: "≤ 24 h"
+    sv:
+      title: Mottagning av sårbarhetsrapporter och övning med tidig varning inom 24 timmar
+      description: Skickar en testrapport till den publicerade kontakten och genomför en skrivbordsövning för en aktivt utnyttjad sårbarhet.
+      preconditions: Den publicerade policyn för offentliggörande, rutinen för sårbarhetshantering och deltagarna i produktens säkerhetsteam.
+      expected: Rapporten bekräftas i tid och ett utkast till tidig varning är klart inom 24 timmar.
+      steps:
+        - action: Leta upp policyn för offentliggörande och kontaktadressen på produktens webbplats och i användardokumentationen.
+          expected: Båda finns och stämmer överens.
+        - action: Skicka en testrapport om en sårbarhet till kontaktadressen.
+          expected: Den bekräftas inom 5 arbetsdagar.
+          data: "≤ 5 arbetsdagar"
+        - action: Starta skrivbordsövningen med ett scenario där en kund rapporterar en utnyttjad sårbarhet.
+          expected: Teamet tar fram ett utkast till tidig varning för rapporteringsplattformen inom 24 timmar från starten.
+          data: "≤ 24 h"
+
+  - id: EMBS-T19
+    priority: medium
+    execution: manual
+    tags: [security-logging, monitoring]
+    refs: ["IEC 62443-4-2 CR 2.8", "CWE-778 (insufficient logging)", "CWE-532 (insertion of sensitive information into log file)"]
+    emb3d: [MID-017, MID-085, MID-084]
+    en:
+      title: Security events reach the management service without secrets
+      description: Triggers each listed security event on a connected unit and checks the records in the management service.
+      preconditions: A connected test unit, the list of security events and access to the event view of the management service.
+      expected: Every event arrives within 15 minutes and no record contains a secret.
+      steps:
+        - action: Trigger a failed authentication, a rejected image, an integrity mismatch, a tamper alarm and a watchdog restart.
+          expected: The unit records each event.
+        - action: Look up the events in the management service.
+          expected: Each appears within 15 minutes with time, type and unit.
+          data: "≤ 15 min"
+        - action: Search the received records for keys and credentials used in the test.
+          expected: None is found.
+    sv:
+      title: Säkerhetshändelser når hanteringstjänsten utan hemligheter
+      description: Utlöser varje listad säkerhetshändelse på en ansluten enhet och kontrollerar posterna i hanteringstjänsten.
+      preconditions: En ansluten testenhet, listan över säkerhetshändelser och åtkomst till händelsevyn i hanteringstjänsten.
+      expected: Varje händelse kommer fram inom 15 minuter och ingen post innehåller en hemlighet.
+      steps:
+        - action: Utlös en misslyckad autentisering, en vägrad avbild, en integritetsavvikelse, ett manipuleringslarm och en omstart via vakthunden.
+          expected: Enheten registrerar varje händelse.
+        - action: Slå upp händelserna i hanteringstjänsten.
+          expected: Var och en syns inom 15 minuter med tid, typ och enhet.
+          data: "≤ 15 min"
+        - action: Sök i de mottagna posterna efter nycklar och inloggningsuppgifter som använts i testet.
+          expected: Inget hittas.
+
+risks:
+  - id: EMBS-R01
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [side-channel, fault-injection, key-extraction]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1300 (improper protection of physical side channels)", "CWE-1332 (improper handling of faults that lead to instruction skips)"]
+    mitigated_by: [EMBS-16, EMBS-17, EMBS-05, EMBS-14, HWSEC-08]
+    attack: [T1552.004]
+    emb3d: [TID-101, TID-102, TID-105, TID-110, TID-330]
+    en:
+      title: Device keys extracted by side-channel analysis or fault injection
+      description: An attacker with one device on the bench measures its power consumption or glitches its supply during key operations and recovers a key that is shared across devices or that signs the device's identity.
+      mitigation: Process secrets in constant time, use long-term keys only in a side-channel protected crypto engine, harden security decisions against glitches and erase keys on tamper detection.
+    sv:
+      title: Enhetens nycklar tas ut genom sidokanalsanalys eller felinjicering
+      description: En angripare med en enhet på labbänken mäter dess strömförbrukning eller stör dess matning under nyckeloperationer och återskapar en nyckel som delas mellan enheter eller som signerar enhetens identitet.
+      mitigation: Bearbeta hemligheter i konstant tid, använd långlivade nycklar bara i en kryptomotor med sidokanalsskydd, härda säkerhetsbeslut mot störningar och radera nycklar vid upptäckt manipulering.
+
+  - id: EMBS-R02
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [secure-boot, bootloader, fault-injection]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1326 (missing immutable root of trust in hardware)", "CWE-306 (missing authentication for critical function)"]
+    mitigated_by: [EMBS-01, EMBS-02, EMBS-04, EMBS-05, HWSEC-01]
+    attack: [T1542.001, T1601.001]
+    emb3d: [TID-201, TID-105, TID-211]
+    en:
+      title: Secure boot bypassed through the bootloader
+      description: An attacker rewrites the first boot stage, uses an unauthenticated recovery mode or skips the signature check with a glitch, and runs modified firmware that the device and its operator take for genuine.
+      mitigation: Keep the first boot stage in locked memory, authenticate every recovery and download mode, harden the signature checks against glitches and attest the measured boot chain.
+    sv:
+      title: Säker uppstart kringgås via startladdaren
+      description: En angripare skriver om det första uppstartssteget, använder ett oautentiserat återställningsläge eller hoppar över signaturkontrollen med en störning och kör ändrad firmware som enheten och dess operatör tror är äkta.
+      mitigation: Håll det första uppstartssteget i låst minne, autentisera varje återställnings- och nedladdningsläge, härda signaturkontrollerna mot störningar och attestera den mätta uppstartskedjan.
+
+  - id: EMBS-R03
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [memory-corruption, parser, remote-code-execution]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-787 (out-of-bounds write)", "CWE-121 (stack-based buffer overflow)", "CWE-20 (improper input validation)"]
+    mitigated_by: [EMBS-26, EMBS-24, EMBS-25, EMBS-19, EMBS-18]
+    attack: [T1210]
+    emb3d: [TID-327, TID-202]
+    en:
+      title: Malformed network frame gives code execution on the device
+      description: A length error in the parser of a protocol frame or an update manifest lets an attacker on the network overwrite memory and run code on the device, often across a whole product line with the same firmware.
+      mitigation: Check every length in parsers and fuzz them before release, follow a secure coding standard checked by static analysis, write new network-facing code in a memory-safe language and limit the damage with stack guards and task isolation.
+    sv:
+      title: Felformad nätverksram ger kodkörning i enheten
+      description: Ett längdfel i tolken av en protokollram eller ett uppdateringsmanifest låter en angripare i nätet skriva över minne och köra kod i enheten, ofta i en hel produktlinje med samma firmware.
+      mitigation: Kontrollera varje längd i tolkar och fuzztesta dem före release, följ en säker kodstandard som kontrolleras med statisk analys, skriv ny kod som exponeras mot nätet i ett minnessäkert språk och begränsa skadan med stackskydd och isolering av uppgifter.
+
+  - id: EMBS-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [privilege-escalation, isolation, rtos]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-269 (improper privilege management)", "CWE-1189 (improper isolation of shared resources on system-on-a-chip)"]
+    mitigated_by: [EMBS-18, EMBS-20, EMBS-21, EMBS-22]
+    attack: [T1068]
+    emb3d: [TID-219, TID-206, TID-107]
+    en:
+      title: Compromise of one task takes over the whole device
+      description: A flaw in one network-facing task or a compromised radio co-processor reaches kernel memory, the keys and the other tasks, because the firmware runs everything with full privileges in one address space.
+      mitigation: Isolate tasks with the memory protection unit, run security services in an isolated execution environment, limit DMA to assigned buffers and leave out unused RTOS services.
+    sv:
+      title: Intrång i en uppgift tar över hela enheten
+      description: Ett fel i en uppgift som är exponerad mot nätet eller en komprometterad radioprocessor når kärnans minne, nycklarna och de andra uppgifterna, eftersom firmwaren kör allt med fulla privilegier i ett adressrum.
+      mitigation: Isolera uppgifter med minnesskyddsenheten, kör säkerhetstjänster i en isolerad körmiljö, begränsa DMA till tilldelade buffertar och utelämna oanvända tjänster i realtidsoperativsystemet.
+
+  - id: EMBS-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [replay, constrained-devices, radio]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-294 (authentication bypass by capture-replay)", "CWE-319 (cleartext transmission of sensitive information)"]
+    mitigated_by: [EMBS-27, EMBS-28, EMBS-13]
+    attack: [T1557]
+    emb3d: [TID-407, TID-221, TID-406, TID-408]
+    en:
+      title: Commands forged or replayed on a constrained radio network
+      description: An attacker within radio range records commands and measurements, replays an "open" or "start" command, or injects forged messages because the link lacks end-to-end protection or uses a key shared by the fleet.
+      mitigation: Protect messages with DTLS or OSCORE using device-unique keys, reject replayed sequence numbers and keep shared keys out of the firmware image.
+    sv:
+      title: Kommandon förfalskas eller spelas upp igen i ett resurssnålt radionät
+      description: En angripare inom radioräckvidd spelar in kommandon och mätvärden, spelar upp ett kommando för att öppna eller starta igen eller skickar in förfalskade meddelanden, eftersom länken saknar skydd hela vägen eller använder en nyckel som delas av flottan.
+      mitigation: Skydda meddelanden med DTLS eller OSCORE med nycklar som är unika för enheten, avvisa återanvända sekvensnummer och håll delade nycklar borta från firmwareavbilden.
+
+  - id: EMBS-R06
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [unpatched-vulnerability, third-party-components, sbom]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "CWE-1104 (use of unmaintained third party components)"]
+    mitigated_by: [EMBS-30, EMBS-31, EMBS-32, EMBS-34, HWSEC-20]
+    attack: [T1190]
+    emb3d: [TID-210, TID-202]
+    en:
+      title: Known vulnerability in a vendor component stays unpatched in the field
+      description: A vulnerability is published for the radio firmware, the RTOS or the cryptographic library, but the manufacturer does not know the component is in the firmware or has no route to deliver a fix, and devices stay exploitable for years.
+      mitigation: List binary and vendor components in the bill of materials, publish exploitability statements, receive vulnerability reports through a published channel and deliver security updates automatically.
+    sv:
+      title: Känd sårbarhet i en leverantörskomponent förblir opatchad i fält
+      description: En sårbarhet publiceras för radiofirmwaren, realtidsoperativsystemet eller kryptobiblioteket, men tillverkaren vet inte att komponenten finns i firmwaren eller saknar en väg att leverera en rättning, och enheterna förblir sårbara i åratal.
+      mitigation: Lista binära komponenter och leverantörskomponenter i materialförteckningen, publicera utlåtanden om utnyttjandebarhet, ta emot sårbarhetsrapporter via en publicerad kanal och leverera säkerhetsuppdateringar automatiskt.
+
+  - id: EMBS-R07
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [signing-key, firmware-update, supply-chain]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-321 (use of hard-coded cryptographic key)", "CWE-494 (download of code without integrity check)"]
+    mitigated_by: [EMBS-07, EMBS-06, HWSEC-05]
+    attack: [T1553.002]
+    emb3d: [TID-212, TID-211]
+    en:
+      title: Leaked firmware signing key used to sign malicious updates
+      description: The firmware signing key leaks from a build server or is extracted from a device that verifies updates with a shared secret, and the attacker signs an update that every device of the product accepts.
+      mitigation: Keep the signing key in a hardware security module, give devices revocable key slots, encrypt update packages and verify every update before installation.
+    sv:
+      title: Läckt signeringsnyckel för firmware används för att signera skadliga uppdateringar
+      description: Signeringsnyckeln för firmware läcker från en byggserver eller tas ut ur en enhet som verifierar uppdateringar med en delad hemlighet, och angriparen signerar en uppdatering som alla enheter av produkten godtar.
+      mitigation: Förvara signeringsnyckeln i en hårdvarusäkerhetsmodul, ge enheterna nyckelplatser som går att återkalla, kryptera uppdateringspaket och verifiera varje uppdatering före installation.
+
+  - id: EMBS-R08
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [denial-of-service, network-stack, watchdog]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-400 (uncontrolled resource consumption)"]
+    mitigated_by: [EMBS-29, EMBS-23, EMBS-08]
+    attack: [T1499]
+    emb3d: [TID-405, TID-404, TID-222]
+    en:
+      title: Device stopped by a flood of network traffic
+      description: A flood of connection attempts, fragments or malformed requests exhausts the memory of the network stack or blocks a critical task, and the device stops its essential function until it is power-cycled on site.
+      mitigation: Allocate network resources from fixed pools and drop excess requests, restart to a known state with a watchdog and install updates only in a safe state.
+    sv:
+      title: Enheten stoppas av en flod av nätverkstrafik
+      description: En flod av anslutningsförsök, fragment eller felformade förfrågningar tömmer nätverksstackens minne eller blockerar en kritisk uppgift, och enheten stoppar sin väsentliga funktion tills strömmen bryts på plats.
+      mitigation: Tilldela nätverksresurser från fasta pooler och kasta överskjutande förfrågningar, starta om till ett känt läge med en vakthund och installera uppdateringar bara i ett säkert läge.

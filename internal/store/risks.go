@@ -14,22 +14,23 @@ import (
 
 const riskCols = `id, project_id, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at,
 	residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner,
-	accepted_by, accepted_name, accepted_at, acceptance_comment, acceptance_hash, custom_fields, catalog_ref, attack`
+	accepted_by, accepted_name, accepted_at, acceptance_comment, acceptance_hash, custom_fields, catalog_ref, attack, emb3d`
 
 func scanRisk(r interface{ Scan(...any) error }) (*model.Risk, error) {
 	var k model.Risk
 	var manual int
 	var acc sql.NullTime
-	var custom, attack string
+	var custom, attack, emb string
 	if err := r.Scan(&k.ID, &k.ProjectID, &k.Key, &k.Title, &k.Description, &k.Category, &k.Likelihood, &k.Impact, &k.Status, &k.Mitigation, &k.Owner, &k.CreatedBy, &k.CreatedAt, &k.UpdatedAt,
 		&k.ResidualLikelihood, &k.ResidualImpact, &manual, &k.ResidualJustification, &k.ReviewDate, &k.ReviewOwner,
-		&k.AcceptedBy, &k.AcceptedName, &acc, &k.AcceptanceComment, &k.AcceptanceHash, &custom, &k.CatalogRef, &attack); err != nil {
+		&k.AcceptedBy, &k.AcceptedName, &acc, &k.AcceptanceComment, &k.AcceptanceHash, &custom, &k.CatalogRef, &attack, &emb); err != nil {
 		return nil, err
 	}
 	k.ResidualManual = manual != 0
 	k.AcceptedAt = timePtr(acc)
 	k.CustomFields = decodeCustom(custom)
 	k.Attack = decodeTags(attack)
+	k.Emb3d = decodeTags(emb)
 	k.Score = k.Likelihood * k.Impact
 	k.Level = model.RiskLevel(k.Likelihood, k.Impact)
 	// until decorated: the inherent score
@@ -69,6 +70,10 @@ func validateRisk(k *model.Risk) error {
 	k.Attack = cleanTechniques(k.Attack)
 	if len(k.Attack) > MaxRiskTechniques {
 		return Invalidf("a risk lists at most %d ATT&CK techniques", MaxRiskTechniques)
+	}
+	k.Emb3d = cleanTechniques(k.Emb3d)
+	if len(k.Emb3d) > MaxFrameworkIDs {
+		return Invalidf("a risk lists at most %d EMB3D threats", MaxFrameworkIDs)
 	}
 	return validateResidual(k)
 }
@@ -112,9 +117,9 @@ func (s *Store) CreateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 		}
 		k.Key = key
 		if _, err := c.exec(ctx, `INSERT INTO risks (id, tenant_id, project_id, seq, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at,
-			residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner, custom_fields, catalog_ref, attack) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner, custom_fields, catalog_ref, attack, emb3d) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			k.ID, tenantID, k.ProjectID, seq, k.Key, k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.CreatedBy, k.CreatedAt, k.UpdatedAt,
-			k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields), k.CatalogRef, encodeTags(k.Attack)); err != nil {
+			k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields), k.CatalogRef, encodeTags(k.Attack), encodeTags(k.Emb3d)); err != nil {
 			return mapErr(err, "risk")
 		}
 		return setRiskRequirements(ctx, c, tenantID, k.ProjectID, k.ID, k.RequirementIDs, nil)
@@ -133,9 +138,9 @@ func (s *Store) UpdateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 	}
 	k.CustomFields = custom
 	res, err := s.c(ctx).exec(ctx, `UPDATE risks SET title = ?, description = ?, category = ?, likelihood = ?, impact = ?, status = ?, mitigation = ?, owner = ?, updated_at = ?,
-		residual_likelihood = ?, residual_impact = ?, residual_manual = ?, residual_justification = ?, review_date = ?, review_owner = ?, custom_fields = ?, attack = ? WHERE id = ? AND tenant_id = ?`,
+		residual_likelihood = ?, residual_impact = ?, residual_manual = ?, residual_justification = ?, review_date = ?, review_owner = ?, custom_fields = ?, attack = ?, emb3d = ? WHERE id = ? AND tenant_id = ?`,
 		k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.UpdatedAt,
-		k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields), encodeTags(k.Attack), k.ID, tenantID)
+		k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields), encodeTags(k.Attack), encodeTags(k.Emb3d), k.ID, tenantID)
 	if err != nil {
 		return err
 	}
@@ -341,3 +346,17 @@ func (s *Store) RequirementRiskLevels(ctx context.Context, tenantID, projectID s
 
 // ValidateRisk checks and normalises a risk's fields without saving it.
 func ValidateRisk(k *model.Risk) error { return validateRisk(k) }
+
+// MaxFrameworkIDs bounds the D3FEND techniques and the EMB3D ids of a
+// requirement, test or risk.
+const MaxFrameworkIDs = 20
+
+// cleanFrameworks normalises the D3FEND and EMB3D ids of a requirement or
+// test (the API checks them against the catalogue's lists).
+func cleanFrameworks(d3, emb *[]string) error {
+	*d3, *emb = cleanTechniques(*d3), cleanTechniques(*emb)
+	if len(*d3) > MaxFrameworkIDs || len(*emb) > MaxFrameworkIDs {
+		return Invalidf("at most %d D3FEND techniques and %d EMB3D ids", MaxFrameworkIDs, MaxFrameworkIDs)
+	}
+	return nil
+}

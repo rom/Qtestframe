@@ -148,6 +148,13 @@ func normalize(key string, v any) any {
 		sort.Strings(list)
 		return [2]any{list, expr}
 	}
+	if key == "d3fend" || key == "emb3d" {
+		// a snapshot from before the field was recorded has none
+		if l, ok := v.([]any); !ok || len(l) == 0 {
+			return nil
+		}
+		return v
+	}
 	if key != "steps" {
 		return v
 	}

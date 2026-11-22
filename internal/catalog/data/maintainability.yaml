@@ -268,6 +268,7 @@ requirements:
     tags: [dependencies, vulnerabilities]
     refs: ["ISO/IEC 27001:2022 A.8.8 (management of technical vulnerabilities)", "OWASP Top 10 2021 A06 (vulnerable and outdated components)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "ISO/IEC 27019:2024 (patch management)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 GEC)"]
     tests: [MNT-T09]
+    d3fend: [D3-SU]
     en:
       title: Patching of critical vulnerabilities in dependencies
       description: The team MUST update a dependency with a known critical vulnerability within 7 days after a fixed version is available.

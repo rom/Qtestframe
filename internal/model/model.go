@@ -453,7 +453,13 @@ type Requirement struct {
 	Tags  []string `json:"tags"`
 	// CatalogRef is the catalogue id the requirement was copied from
 	// (internal/catalog), "" otherwise.
-	CatalogRef  string                `json:"catalog_ref"`
+	CatalogRef string `json:"catalog_ref"`
+	// D3fend are the MITRE D3FEND defensive techniques the requirement
+	// implements (D3-MFA), Emb3d the MITRE EMB3D mitigations and threats
+	// it addresses (MID-026, TID-201); both checked against the catalogue's
+	// lists and copied from a catalogue requirement.
+	D3fend      []string              `json:"d3fend"`
+	Emb3d       []string              `json:"emb3d"`
 	Version     int                   `json:"version"`
 	Position    int                   `json:"position"`
 	CategoryIDs []string              `json:"category_ids"`
@@ -568,7 +574,11 @@ type TestCase struct {
 	Owner string   `json:"owner"`
 	Tags  []string `json:"tags"`
 	// CatalogRef is the catalogue id the test was copied from, "" otherwise.
-	CatalogRef  string     `json:"catalog_ref"`
+	CatalogRef string `json:"catalog_ref"`
+	// D3fend are the D3FEND techniques whose implementation the test
+	// verifies, Emb3d the EMB3D mitigations and threats it checks.
+	D3fend      []string   `json:"d3fend"`
+	Emb3d       []string   `json:"emb3d"`
 	Position    int        `json:"position"`
 	CategoryIDs []string   `json:"category_ids"`
 	Steps       []TestStep `json:"steps"`
@@ -1028,6 +1038,8 @@ type Risk struct {
 	// Attack are the MITRE ATT&CK and ATLAS technique ids of the risk
 	// (T1110.004, T0886, AML.T0051), checked against the catalogue's list.
 	Attack []string `json:"attack"`
+	// Emb3d are the MITRE EMB3D threats that realise the risk (TID-201).
+	Emb3d []string `json:"emb3d"`
 }
 
 // ResidualOf returns the residual likelihood, impact and source in effect

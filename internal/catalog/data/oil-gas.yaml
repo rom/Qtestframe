@@ -310,6 +310,7 @@ requirements:
     tags: [ot-security, remote-operations, conduit]
     refs: ["IEC 62443-3-3:2013 SR 3.1", "IEC 62443-3-3:2013 SR 5.2", "DNV-RP-G108", "IOGP Report 621"]
     tests: [OILG-T12]
+    d3fend: [D3-MAN, D3-MENCR]
     en:
       title: Control link to remote installations authenticated and encrypted
       description: The conduit between the onshore control room and each remote installation MUST authenticate both ends with certificates and encrypt and integrity-protect the traffic, and the installation's control zone MUST accept connections only from the documented conduits, not from the internet or from the enterprise network.

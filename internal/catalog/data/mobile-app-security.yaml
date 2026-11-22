@@ -59,6 +59,7 @@ requirements:
     tags: [tls, cleartext, network]
     refs: ["OWASP MASVS-NETWORK-1", "ISO/IEC 27001:2022 A.8.24", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-1428 (reliance on HTTP instead of HTTPS)", "CWE-295 (improper certificate validation)", "MITRE ATT&CK T1638 (adversary-in-the-middle)"]
     tests: [MOBSEC-T03]
+    d3fend: [D3-MENCR]
     en:
       title: Cleartext traffic disabled and certificates validated
       description: The app MUST turn off cleartext HTTP in its platform network configuration and connect to servers only over TLS 1.2 or later with the platform's full certificate validation.
@@ -81,6 +82,7 @@ requirements:
     tags: [certificate-pinning, network]
     refs: ["OWASP MASVS-NETWORK-2", "OWASP Pinning Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "CWE-295 (improper certificate validation)", "MITRE ATT&CK T1638 (adversary-in-the-middle)"]
     tests: [MOBSEC-T04]
+    d3fend: [D3-CP]
     en:
       title: Pinned public keys for the system's own API
       description: The app SHOULD pin the public keys of the system's own API endpoints, with at least one backup key that is not yet in use, and refuse a connection whose chain contains none of the pinned keys.
@@ -103,6 +105,7 @@ requirements:
     tags: [biometrics, keystore, local-authentication]
     refs: ["OWASP MASVS-AUTH-2", "ISO/IEC 27001:2022 A.8.5", "NIST SP 800-63B-4 §3.2.3 (use of biometrics)", "MITRE ATT&CK T1617 (hooking)"]
     tests: [MOBSEC-T05]
+    d3fend: [D3-BAN]
     en:
       title: Biometric unlock bound to a key in the key store
       description: When the app offers biometric unlock it MUST release the stored credential only through a key store key that requires biometric user authentication, and not on the result of a biometric check alone.
@@ -199,6 +202,7 @@ requirements:
     tags: [embedded-secrets, binary-analysis]
     refs: ["OWASP MASVS-CRYPTO-2", "CWE-798 (use of hard-coded credentials)", "OWASP Mobile Application Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24"]
     tests: [MOBSEC-T09]
+    d3fend: [D3-CS]
     en:
       title: No secret keys in the app package
       description: The app package MUST NOT contain private keys, client secrets or API keys that give access beyond what any anonymous user of the public API already has.
@@ -221,6 +225,7 @@ requirements:
     tags: [forced-update, minimum-version]
     refs: ["OWASP MASVS-CODE-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §7", "ISO/IEC 27001:2022 A.8.8"]
     tests: [MOBSEC-T10]
+    d3fend: [D3-SU]
     en:
       title: Vulnerable app versions are made to update
       description: The system MUST refuse API requests from app versions below a server-side minimum version with a status that makes the app show an update prompt in place of the sign-in screen.
@@ -265,6 +270,7 @@ requirements:
     tags: [release-build, debuggable, hardening]
     refs: ["OWASP MASVS-RESILIENCE-4", "OWASP MASVS-CODE-4", "ISO/IEC 27001:2022 A.8.31", "CWE-489 (active debug code)"]
     tests: [MOBSEC-T12]
+    d3fend: [D3-ACH]
     en:
       title: Release builds are not debuggable
       description: The release build MUST have debugging turned off, contain no debug or test endpoints and ship without unstripped native debug symbols.
@@ -309,6 +315,7 @@ requirements:
     tags: [third-party-sdk, privacy-labels, data-collection]
     refs: ["OWASP MASVS-PRIVACY-3", "GDPR Art. 13", "GDPR Art. 28(1)", "ePrivacy Directive 2002/58/EC Art. 5(3)", "CWE-1357 (reliance on insufficiently trustworthy component)", "MITRE ATT&CK T1474 (supply chain compromise)"]
     tests: [MOBSEC-T14]
+    d3fend: [D3-SWI]
     en:
       title: Inventory of SDKs and the data they collect
       description: The supplier MUST keep a list of each third-party SDK in the app with the data it collects and where it sends it, and keep the app store privacy declarations consistent with that list.

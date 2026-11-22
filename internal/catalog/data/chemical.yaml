@@ -390,6 +390,7 @@ requirements:
     tags: [ot-security, iec-62443, zones, remote-access]
     refs: ["IEC 62443-3-2", "IEC 62443-3-3 SR 1.13", "IEC 62443-3-3 SR 5.1"]
     tests: [CHEM-T15]
+    d3fend: [D3-NI]
     en:
       title: Process control network in zones with controlled remote access
       description: The process control systems MUST be placed in security zones with conduits that allow only the listed traffic, and remote access to them MUST pass through a jump host in a demilitarised zone with multi-factor authentication and session recording.

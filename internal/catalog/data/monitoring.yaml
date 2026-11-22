@@ -58,6 +58,7 @@ requirements:
     tags: [logging, secrets, personal-data]
     refs: ["OWASP ASVS 5.0 V16.2.5 (sensitive data in logs)", "OWASP Logging Cheat Sheet", "GDPR Art. 5(1)(c) (data minimisation)", "ISO/IEC 27001:2022 A.8.15"]
     tests: [OBS-T03]
+    d3fend: [D3-CS]
     en:
       title: No secrets or identity numbers in logs
       description: The logs MUST NOT contain passwords, session tokens, API keys or complete personal identity numbers.

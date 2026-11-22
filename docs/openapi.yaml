@@ -13523,6 +13523,18 @@ paths:
           type: string
       - $ref: '#/components/parameters/catalogPriority'
       - $ref: '#/components/parameters/catalogTag'
+      - name: d3fend
+        in: query
+        required: false
+        description: D3FEND technique ids or tactic names (a technique also matches its sub-techniques; risks with an ATT&CK technique one of them counters), comma-separated
+        schema:
+          type: string
+      - name: emb3d
+        in: query
+        required: false
+        description: EMB3D threat or mitigation ids or threat categories (a threat also matches items with one of its mitigations), comma-separated
+        schema:
+          type: string
       - $ref: '#/components/parameters/catalogCatalogue'
       - $ref: '#/components/parameters/catalogSource'
       - $ref: '#/components/parameters/catalogProject'
@@ -13644,6 +13656,18 @@ paths:
         description: execution types (manual, automated), comma-separated
         schema:
           type: string
+      - name: d3fend
+        in: query
+        required: false
+        description: D3FEND technique ids or tactic names (a technique also matches its sub-techniques; risks with an ATT&CK technique one of them counters), comma-separated
+        schema:
+          type: string
+      - name: emb3d
+        in: query
+        required: false
+        description: EMB3D threat or mitigation ids or threat categories (a threat also matches items with one of its mitigations), comma-separated
+        schema:
+          type: string
       - $ref: '#/components/parameters/catalogCatalogue'
       - $ref: '#/components/parameters/catalogSource'
       - $ref: '#/components/parameters/catalogProject'
@@ -13684,7 +13708,7 @@ paths:
       summary: Get a catalogue test
       operationId: getCatalogTestsById
       description: |-
-        A test with its full text in `lang`: `CatalogTest` plus `{area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}], in_project?}`
+        A test with its full text in `lang`: `CatalogTest` plus `{area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}], d3fend_techniques:[D3fendTechnique], emb3d_items:[Emb3dItem], in_project?}`
 
         **Permission:** `test.read`.
       x-permission: test.read
@@ -13794,6 +13818,152 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/catalog/d3fend:
+    get:
+      tags:
+      - Catalogue
+      summary: List MITRE D3FEND defensive techniques
+      operationId: getCatalogD3fend
+      description: |-
+        `{version, release, url, tactics:[{id, name, url}], items:[D3fendTechnique]}`: the MITRE D3FEND defensive techniques of `data/d3fend.yaml` (generated from the D3FEND ontology), the valid values of the `d3fend` list of a requirement or test. `q` matches the id or the name, `tactic` (Model, Harden, Detect, Isolate, Deceive, Evict, Restore) narrows the list
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: part of the id or the name
+        schema:
+          type: string
+      - name: tactic
+        in: query
+        required: false
+        description: D3FEND tactics, comma-separated
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The techniques
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/d3fend/coverage:
+    get:
+      tags:
+      - Catalogue
+      summary: MITRE D3FEND coverage of the catalogue
+      operationId: getCatalogD3fendCoverage
+      description: |-
+        `{version, url, risks, covered, gaps, tactics:[{id, name, url, requirements, tests, used, total, techniques:[{id, name, parent?, url, requirements, tests}]}]}`: per D3FEND tactic the techniques that catalogue requirements and tests list (a technique counts its sub-techniques); `risks` counts the catalogue risks with ATT&CK techniques, `covered` those whose every technique a mitigating requirement counters (through the D3FEND relations to ATT&CK), `gaps` the techniques none counters; in the catalogue types of `catalogue`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: catalogue
+        in: query
+        required: false
+        description: catalogue types, comma-separated (default all)
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The coverage per tactic
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/emb3d:
+    get:
+      tags:
+      - Catalogue
+      summary: List MITRE EMB3D threats and mitigations
+      operationId: getCatalogEmb3d
+      description: |-
+        `{version, url, categories, properties:[{id, name, category, parent?}], items:[Emb3dItem]}`: the MITRE EMB3D threats (TID-nnn) and mitigations (MID-nnn) and the device properties of `data/emb3d.yaml` (generated from the EMB3D STIX bundle), the valid values of an `emb3d` list (a risk takes threats only)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: part of the id or the name
+        schema:
+          type: string
+      - name: kind
+        in: query
+        required: false
+        description: threat or mitigation, comma-separated
+        schema:
+          type: string
+      - name: category
+        in: query
+        required: false
+        description: threat categories (hardware, system software, application software, networking), comma-separated
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The threats and mitigations
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/emb3d/coverage:
+    get:
+      tags:
+      - Catalogue
+      summary: MITRE EMB3D coverage of the catalogue
+      operationId: getCatalogEmb3dCoverage
+      description: |-
+        `{version, url, mitigations, categories:[{id, risks, requirements, tests, addressed, total, threats:[{id, name, url, risks, requirements, tests}]}]}`: per EMB3D threat category every threat with the catalogue risks that list it and the requirements and tests that list it or one of its mitigations; `addressed` counts the threats a requirement addresses, in the catalogue types of `catalogue`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: catalogue
+        in: query
+        required: false
+        description: catalogue types, comma-separated (default all)
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The coverage per threat category
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/catalog/risks:
     get:
       tags:
@@ -13833,6 +14003,18 @@ paths:
         in: query
         required: false
         description: tactic ids (TA0006, AML.TA0005), comma-separated
+        schema:
+          type: string
+      - name: d3fend
+        in: query
+        required: false
+        description: D3FEND technique ids or tactic names (a technique also matches its sub-techniques; risks with an ATT&CK technique one of them counters), comma-separated
+        schema:
+          type: string
+      - name: emb3d
+        in: query
+        required: false
+        description: EMB3D threat or mitigation ids or threat categories (a threat also matches items with one of its mitigations), comma-separated
         schema:
           type: string
       - $ref: '#/components/parameters/catalogCatalogue'
@@ -13875,7 +14057,7 @@ paths:
       summary: Get a catalogue risk
       operationId: getCatalogRisksById
       description: |-
-        A risk in `lang`: `CatalogRisk` plus `{area_name, ref_targets:[{ref, source?, name?, url?}], techniques:[AttackTechnique], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[{id, area, title, in_project?}], in_project?}`
+        A risk in `lang`: `CatalogRisk` plus `{area_name, ref_targets:[{ref, source?, name?, url?}], techniques:[AttackTechnique], emb3d_items:[Emb3dItem], defenses:[{technique:AttackTechnique, d3fend:[D3fendTechnique], requirements:[{id, title, d3fend, mitigates}], covered}], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[{id, area, title, in_project?}], in_project?}`; `defenses` gives per ATT&CK technique the D3FEND techniques that counter it and the catalogue requirements that list one (the risk's mitigating requirements first, `covered` when one of them counters it)
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -19488,6 +19670,16 @@ components:
           description: catalogue tests that verify it
           items:
             type: string
+        d3fend:
+          type: array
+          description: MITRE D3FEND defensive techniques it implements
+          items:
+            type: string
+        emb3d:
+          type: array
+          description: MITRE EMB3D mitigations and threats it addresses
+          items:
+            type: string
         title:
           type: string
         description:
@@ -19518,6 +19710,16 @@ components:
           description: the catalogue type of its area
         refs:
           type: array
+          items:
+            type: string
+        d3fend:
+          type: array
+          description: MITRE D3FEND techniques whose implementation it verifies
+          items:
+            type: string
+        emb3d:
+          type: array
+          description: MITRE EMB3D mitigations and threats it checks
           items:
             type: string
         sources:
@@ -19610,6 +19812,11 @@ components:
         tactics:
           type: array
           description: the tactic ids of its techniques
+          items:
+            type: string
+        emb3d:
+          type: array
+          description: MITRE EMB3D threats that realise it
           items:
             type: string
         title:
@@ -20804,6 +21011,16 @@ components:
         catalog_ref:
           type: string
           description: the catalogue id the item was copied from (see the catalogue routes); empty otherwise. Kept on edits, copies, moves and restores; ignored in updates
+        d3fend:
+          type: array
+          description: MITRE D3FEND defensive technique ids (D3-MFA; validated against GET /catalog/d3fend; copied from the catalogue requirement on import)
+          items:
+            type: string
+        emb3d:
+          type: array
+          description: MITRE EMB3D mitigation and threat ids (MID-026, TID-201; validated against GET /catalog/emb3d)
+          items:
+            type: string
         version:
           type: integer
         position:
@@ -20970,6 +21187,16 @@ components:
         catalog_ref:
           type: string
           description: the catalogue id the item was copied from (see the catalogue routes); empty otherwise. Kept on edits, copies, moves and restores; ignored in updates
+        d3fend:
+          type: array
+          description: MITRE D3FEND technique ids whose implementation the test verifies (validated)
+          items:
+            type: string
+        emb3d:
+          type: array
+          description: MITRE EMB3D mitigation and threat ids the test checks (validated)
+          items:
+            type: string
         position:
           type: integer
         category_ids:
@@ -21330,6 +21557,48 @@ components:
           writeOnly: true
         has_token:
           type: boolean
+    D3fendTechnique:
+      type: object
+      description: A MITRE D3FEND defensive technique (catalog/data/d3fend.yaml)
+      properties:
+        id:
+          type: string
+          example: D3-MFA
+        name:
+          type: string
+        tactic:
+          type: string
+          description: Model, Harden, Detect, Isolate, Deceive, Evict or Restore
+        parent:
+          type: string
+        parent_name:
+          type: string
+        url:
+          type: string
+          description: its page on d3fend.mitre.org
+        attack:
+          type: integer
+          description: the number of ATT&CK techniques it counters
+    Emb3dItem:
+      type: object
+      description: A MITRE EMB3D threat or mitigation (catalog/data/emb3d.yaml)
+      properties:
+        id:
+          type: string
+          example: TID-201
+        kind:
+          type: string
+          enum: [threat, mitigation, '']
+        name:
+          type: string
+        category:
+          type: string
+          description: threat category (hardware, system software, application software, networking)
+        maturity:
+          type: string
+        url:
+          type: string
+          description: its page on emb3d.mitre.org
     AttackTechnique:
       type: object
       properties:
@@ -21366,6 +21635,11 @@ components:
         attack:
           type: array
           description: MITRE ATT&CK and ATLAS technique ids (validated against GET /catalog/attack/techniques; copied from the catalogue risk on import)
+          items:
+            type: string
+        emb3d:
+          type: array
+          description: MITRE EMB3D threat ids (TID-201; validated against GET /catalog/emb3d?kind=threat; copied from the catalogue risk on import)
           items:
             type: string
         catalog_ref:

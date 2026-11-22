@@ -14,6 +14,7 @@ requirements:
     tags: [authorisation, deny-by-default]
     refs: ["OWASP ASVS 5.0 V8.2.1 (function-level access)", "OWASP Top 10 2021 A01", "NIST SP 800-53 AC-3", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-862 (missing authorization)", "CWE-276 (incorrect default permissions)"]
     tests: [ACC-T01]
+    d3fend: [D3-AMED]
     en:
       title: Access is denied by default
       description: The system MUST deny a request on the server when no explicit permission grants the signed-in user access to the requested function.
@@ -40,6 +41,7 @@ requirements:
     tags: [authorisation, idor, object-level]
     refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "OWASP Top 10 2021 A01", "OWASP API Security Top 10 2023 API1", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-639 (authorization bypass through user-controlled key)", "CWE-863 (incorrect authorization)"]
     tests: [ACC-T02]
+    d3fend: [D3-AMED]
     en:
       title: Object-level authorisation on every request
       description: The system MUST check on the server, for each request, that the signed-in user has access to the specific record identified in the request.
@@ -84,6 +86,7 @@ requirements:
     tags: [rbac, roles]
     refs: ["NIST SP 800-53 AC-2", "NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.5.15", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)", "CWE-266 (incorrect privilege assignment)", "MITRE ATT&CK M1018 (user account management)"]
     tests: [ACC-T04]
+    d3fend: [D3-UGPH]
     en:
       title: Permissions are granted through roles
       description: The system SHOULD grant permissions to users only through named roles and not directly to individual user accounts.
@@ -106,6 +109,7 @@ requirements:
     tags: [least-privilege, provisioning]
     refs: ["NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.8.2", "OWASP ASVS 5.0 V8.2.1 (function-level access)", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)", "CWE-276 (incorrect default permissions)", "CWE-266 (incorrect privilege assignment)", "MITRE ATT&CK M1018 (user account management)"]
     tests: [ACC-T05]
+    d3fend: [D3-UAP]
     en:
       title: New accounts start with the least privileged role
       description: The system MUST give a newly created account the role with the fewest permissions until an administrator assigns another role.
@@ -128,6 +132,7 @@ requirements:
     tags: [administrator, privileged-functions]
     refs: ["OWASP ASVS 5.0 V8.4.2 (administrative interfaces)", "NIST SP 800-53 AC-6(9)", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "CWE-862 (missing authorization)", "CWE-269 (improper privilege management)", "MITRE ATT&CK T1098 (account manipulation)"]
     tests: [ACC-T06]
+    d3fend: [D3-UAP]
     en:
       title: Administration functions need the administrator role
       description: The system MUST refuse user, role and configuration management requests from any account without the administrator role.
@@ -194,6 +199,7 @@ requirements:
     tags: [access-review, reporting]
     refs: ["ISO/IEC 27001:2022 A.5.18", "NIST SP 800-53 AC-2(3)", "PCI DSS v4.0.1 Req. 7.2.4", "IEC 62443-3-3 SR 1.3", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1018 (user account management)"]
     tests: [ACC-T09]
+    d3fend: [D3-AM]
     en:
       title: Report for periodic access reviews
       description: The system SHOULD let an administrator export a list of every account with its roles and last sign-in date for review every 90 days.
@@ -216,6 +222,7 @@ requirements:
     tags: [revocation, roles]
     refs: ["NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.3", "CWE-1464 (improper session invalidation)", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [ACC-T10]
+    d3fend: [D3-APA]
     en:
       title: Revoked permissions take effect within one minute
       description: The system MUST enforce a removed role or disabled account within 1 minute, including in sessions that are already active.
@@ -260,6 +267,7 @@ requirements:
     tags: [identity-lifecycle, provisioning, scim, leaver]
     refs: ["RFC 7644", "NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.3", "CWE-1464 (improper session invalidation)", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [ACC-T12]
+    d3fend: [D3-AL]
     en:
       title: Deprovisioning from the identity provider takes effect within 5 minutes
       description: The system MUST disable a user account and end its sessions within 5 minutes after the organisation's identity provider deactivates the user through the provisioning interface.
@@ -308,6 +316,7 @@ requirements:
     tags: [dormant-accounts, identity-lifecycle]
     refs: ["NIST SP 800-53 AC-2(3)", "PCI DSS v4.0.1 Req. 8.2.6", "ISO/IEC 27001:2022 A.5.18", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1018 (user account management)"]
     tests: [ACC-T14]
+    d3fend: [D3-AL]
     en:
       title: Accounts unused for 90 days are disabled
       description: The system MUST disable a user account that has not signed in for 90 days and tell the organisation's administrators on the day it is disabled.
@@ -332,6 +341,7 @@ requirements:
     tags: [break-glass, emergency-access, administration]
     refs: ["NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 1.1", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1026 (privileged account management)"]
     tests: [ACC-T15]
+    d3fend: [D3-LAM]
     en:
       title: Emergency access account with an alert on use
       description: The system SHOULD offer an emergency administrator account that does not depend on the external identity provider and that alerts every other administrator within 5 minutes of each sign-in.
@@ -356,6 +366,7 @@ requirements:
     tags: [network-restriction, conditional-access]
     refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "NIST SP 800-53 AC-17", "ISO/IEC 27001:2022 A.8.20", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1035 (limit access to resource over network)"]
     tests: [ACC-T16]
+    d3fend: [D3-NAM]
     en:
       title: Sign-in restricted to the organisation's network ranges
       description: The system MAY let an administrator restrict sign-in for the organisation to a list of up to 50 IP address ranges in CIDR notation.

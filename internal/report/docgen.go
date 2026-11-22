@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/catalog"
 	"github.com/rom/qtestframe/internal/customfield"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
@@ -42,9 +43,9 @@ var DocGroupings = []string{GroupByFolder, GroupByCategory, GroupByType}
 // Document fields: what is shown of each requirement and test.
 var (
 	RequirementDocFields = []string{"description", "rationale", "criteria", "type", "priority", "obligation", "status", "source",
-		"owner", "tags", "categories", "relations", "tests", "results", "version", "custom_fields"}
+		"owner", "tags", "frameworks", "categories", "relations", "tests", "results", "version", "custom_fields"}
 	TestDocFields = []string{"description", "preconditions", "steps", "expected", "priority", "execution_type", "status",
-		"estimate", "tags", "categories", "dependencies", "requirements", "data", "results", "version", "custom_fields"}
+		"estimate", "tags", "frameworks", "categories", "dependencies", "requirements", "data", "results", "version", "custom_fields"}
 )
 
 // DefaultDocFields are the fields shown when none are chosen: all but the
@@ -1012,6 +1013,12 @@ func (g *docGen) requirement(rq *model.Requirement, level int) {
 	add("source", "Source", src)
 	add("owner", "Owner", rq.Owner)
 	add("tags", "Tags", strings.Join(rq.Tags, ", "))
+	if len(rq.D3fend) > 0 {
+		add("frameworks", "MITRE D3FEND", frameworkText(rq.D3fend))
+	}
+	if len(rq.Emb3d) > 0 {
+		add("frameworks", "MITRE EMB3D", frameworkText(rq.Emb3d))
+	}
 	fs = append(fs, g.customItems(model.KindRequirement, rq.CustomFields)...)
 	if o.has("categories") {
 		fs = append(fs, export.Item{Label: l.t("Categories"), Value: g.categoryNames(rq.CategoryIDs)})
@@ -1540,6 +1547,12 @@ func (g *docGen) test(t *model.TestCase, level int) {
 		add("estimate", "Estimated time", g.f("{n} min", "n", strconv.Itoa(t.EstimatedMin)))
 	}
 	add("tags", "Tags", strings.Join(t.Tags, ", "))
+	if len(t.D3fend) > 0 {
+		add("frameworks", "MITRE D3FEND", frameworkText(t.D3fend))
+	}
+	if len(t.Emb3d) > 0 {
+		add("frameworks", "MITRE EMB3D", frameworkText(t.Emb3d))
+	}
 	fs = append(fs, g.customItems(model.KindTest, t.CustomFields)...)
 	if o.has("categories") {
 		fs = append(fs, export.Item{Label: l.t("Categories"), Value: g.categoryNames(t.CategoryIDs)})
@@ -1661,4 +1674,23 @@ func (g *docGen) customItems(kind string, values model.CustomValues) []export.It
 		}
 	}
 	return out
+}
+
+// frameworkText is a D3FEND or EMB3D list with names ("D3-MFA
+// Multi-factor Authentication; MID-026 Secure Firmware Update").
+func frameworkText(ids []string) string {
+	c, _ := catalog.Default()
+	out := make([]string, 0, len(ids))
+	for _, id := range ids {
+		name := ""
+		if c != nil {
+			if t := c.D3fendTechnique(id); t != nil {
+				name = t.Name
+			} else {
+				name = c.SummarizeEmb3d(id).Name
+			}
+		}
+		out = append(out, strings.TrimSpace(id+" "+name))
+	}
+	return strings.Join(out, "; ")
 }

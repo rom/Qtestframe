@@ -40,6 +40,7 @@ import MentionInput from '@/components/MentionInput.vue'
 import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
 import { loadTechniques, techniqueUrl, type TechniqueList } from '@/lib/attack'
+import FrameworkPicker from '@/components/FrameworkPicker.vue'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -275,6 +276,7 @@ interface Form {
   review_owner: string
   custom_fields: CustomValues
   attack: string[]
+  emb3d: string[]
 }
 const blank = (): Form => ({
   title: '',
@@ -294,6 +296,7 @@ const blank = (): Form => ({
   review_owner: '',
   custom_fields: defaultValues(proj.customFieldsFor('risk')),
   attack: [],
+  emb3d: [],
 })
 const residualScale = (label: (n: number) => string) => [{ label: t('residual.notAssessed'), value: 0 }, ...RISK_SCALE.map((n) => ({ label: `${n} – ${label(n)}`, value: n }))]
 const formResidualLevel = computed(() => (form.value.residual_likelihood && form.value.residual_impact ? riskLevel(form.value.residual_likelihood, form.value.residual_impact) : ''))
@@ -386,6 +389,7 @@ function openEdit(r: Risk) {
     review_owner: r.review_owner ?? '',
     custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues,
     attack: [...(r.attack ?? [])],
+    emb3d: [...(r.emb3d ?? [])],
   }
   formError.value = ''
   dialog.value = true
@@ -675,6 +679,10 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
             </template>
           </small>
           <Message v-if="unknownAttack.length" severity="warn" :closable="false" class="small">{{ t('attack.unknown', { ids: unknownAttack.join(', ') }) }}</Message>
+        </div>
+        <div v-field class="field full">
+          <label for="risk-emb3d">{{ t('frameworks.threats.label') }}</label>
+          <FrameworkPicker v-if="dialog" v-model="form.emb3d" kind="threats" input-id="risk-emb3d" :disabled="!canWrite" />
         </div>
         <div v-field class="field full"><label for="risk-desc">{{ t('common.description') }}</label><Textarea id="risk-desc" v-model="form.description" rows="2" auto-resize :disabled="!canWrite" /></div>
         <div v-field class="field full"><label for="risk-mitigation">{{ t('risksView.mitigation') }}</label><SuggestInput id="risk-mitigation" v-model="form.mitigation" field="risk.mitigation" :project-id="proj.pid" multiline rows="3" auto-resize :placeholder="t('risksView.mitigationPlaceholder')" :disabled="!canWrite" /></div>

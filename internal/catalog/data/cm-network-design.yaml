@@ -229,6 +229,7 @@ requirements:
     tags: [management-plane, ssh, snmpv3]
     refs: ["RFC 3414", "RFC 6241", "ISO/IEC 27001:2022 A.8.20", "IEC 62443-3-3 SR 4.1"]
     tests: [CMNET-T09]
+    d3fend: [D3-MENCR]
     en:
       title: Network elements managed only over encrypted protocols
       description: Each network element MUST accept management access only over encrypted and authenticated protocols (SSH, SNMPv3 with authentication and privacy, NETCONF over SSH or TLS) and refuse Telnet, SNMPv1 and SNMPv2c.
@@ -279,6 +280,7 @@ requirements:
     tags: [configuration-baseline, compliance, drift]
     refs: ["ISO/IEC 27001:2022 A.8.9"]
     tests: [CMNET-T11]
+    d3fend: [D3-CI]
     en:
       title: Daily comparison with the approved configuration baseline
       description: The network management system SHOULD compare the running configuration of each element with its approved baseline once a day and report each deviation to the network operations team within 24 hours.

@@ -108,6 +108,8 @@ requirements:
     tags: [iec-60870-5-104, dnp3, secure-authentication, iec-62351]
     refs: ["IEC 62351-5", "IEC 62351-3", "IEEE 1815-2012 (DNP3 Secure Authentication v5)", "IEC 62443-3-3:2013 SR 3.1"]
     tests: [ENRG-T05]
+    d3fend: [D3-MAN]
+    emb3d: [MID-034]
     en:
       title: Telecontrol commands authenticated
       description: The SCADA front end MUST send control commands to RTUs over IEC 60870-5-104 or DNP3 only with IEC 62351-5 or DNP3 Secure Authentication, over TLS according to IEC 62351-3 where the link is IP-based, and the RTU MUST reject a command whose authentication fails.
@@ -152,6 +154,8 @@ requirements:
     tags: [goose, iec-62351, replay]
     refs: ["IEC 62351-6:2020", "IEC 61850-8-1:2011", "IEC 62443-3-3:2013 SR 3.1"]
     tests: [ENRG-T05]
+    d3fend: [D3-MAN]
+    emb3d: [MID-034]
     en:
       title: GOOSE messages authenticated and replay checked
       description: IEDs that support it SHOULD authenticate GOOSE messages according to IEC 62351-6, and each subscribing IED SHOULD discard a GOOSE message whose state and sequence numbers show that it is a replay.
@@ -220,6 +224,8 @@ requirements:
     tags: [smart-metering, firmware-update, code-signing]
     refs: ["IEC 62443-4-2:2019 CR 3.4", "IEC 62056-5-3 (DLMS/COSEM image transfer)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I"]
     tests: [ENRG-T09]
+    d3fend: [D3-SU]
+    emb3d: [MID-026]
     en:
       title: Signed meter firmware rolled out in stages
       description: A meter MUST activate new firmware only after it has verified the vendor's signature on the image, and the head-end system MUST roll out a firmware version to at most 1 % of the meters first and continue only after an operator has approved the pilot results.
@@ -388,6 +394,7 @@ requirements:
     tags: [remote-access, mfa, substation]
     refs: ["IEC 62443-3-3:2013 SR 1.13", "ISO/IEC 27019:2024", "Commission Delegated Regulation (EU) 2024/1366 (Network Code on Cybersecurity)", "NERC CIP-005-7 R2"]
     tests: [ENRG-T16]
+    d3fend: [D3-NAM]
     en:
       title: Remote engineering access to substations through a controlled gateway
       description: Remote engineering access to IEDs and RTUs in substations MUST go through an access gateway that requires multi-factor authentication, limits each session to the substations of an approved work order and records the session.

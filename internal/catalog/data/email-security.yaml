@@ -14,6 +14,7 @@ requirements:
     tags: [spf, dns, spoofing]
     refs: ["RFC 7208 (SPF)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
     tests: [MAILS-T01]
+    d3fend: [D3-TAAN]
     en:
       title: SPF record for each sending domain
       description: Each domain that the system sends email from MUST publish an SPF record that lists only the services sending its mail and ends with "-all".
@@ -36,6 +37,7 @@ requirements:
     tags: [dkim, signing]
     refs: ["RFC 6376 (DKIM)", "RFC 8301 (cryptographic algorithm and key usage update to DKIM)", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)"]
     tests: [MAILS-T01]
+    d3fend: [D3-TAAN]
     en:
       title: DKIM signature with a key of at least 2048 bits
       description: The system MUST sign each outgoing email with DKIM using an RSA key of at least 2048 bits or an Ed25519 key, aligned with the From domain.
@@ -60,6 +62,7 @@ requirements:
     tags: [dmarc, reporting]
     refs: ["RFC 9989 (DMARC)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
     tests: [MAILS-T01, MAILS-T09]
+    d3fend: [D3-TAAN]
     en:
       title: DMARC policy that rejects or quarantines
       description: Each sending domain SHOULD publish a DMARC record with the policy reject or quarantine and an address for aggregate reports.
@@ -82,6 +85,7 @@ requirements:
     tags: [tls, smtp, mta-sts]
     refs: ["RFC 3207 (SMTP STARTTLS)", "RFC 8461 (MTA-STS)", "RFC 8460 (SMTP TLS reporting)", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.8.24", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     tests: [MAILS-T02]
+    d3fend: [D3-MENCR]
     en:
       title: Encrypted transport of email
       description: The system MUST deliver outgoing email over TLS 1.2 or later to each receiving server that offers STARTTLS, and send no credentials over unencrypted SMTP.
@@ -270,6 +274,7 @@ requirements:
     tags: [inbound-email, dmarc, reply-by-email]
     refs: ["RFC 9989 §5.3 (mail receiver actions)", "RFC 6376", "ISO/IEC 27001:2022 A.5.14", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1684.002 (email spoofing)"]
     tests: [MAILS-T10]
+    d3fend: [D3-TAAN]
     en:
       title: Inbound email is authenticated before it changes data
       description: The system MUST act on an inbound email, such as a reply that adds a comment, only when the message passes DMARC alignment for the sender's domain and the sender address belongs to a user with the right to do the action.

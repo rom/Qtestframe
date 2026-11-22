@@ -367,6 +367,9 @@ export interface Requirement {
   tags: string[] | null
   /** catalogue id the item was copied from ("" otherwise) */
   catalog_ref?: string
+  /** MITRE D3FEND defensive techniques it implements (D3-MFA) and MITRE EMB3D mitigations and threats it addresses (MID-026, TID-201) */
+  d3fend?: string[]
+  emb3d?: string[]
   version: number
   position: number
   category_ids: string[] | null
@@ -459,6 +462,9 @@ export interface TestCase {
   tags: string[] | null
   /** catalogue id the item was copied from ("" otherwise) */
   catalog_ref?: string
+  /** MITRE D3FEND techniques whose implementation it verifies and MITRE EMB3D mitigations and threats it checks */
+  d3fend?: string[]
+  emb3d?: string[]
   position: number
   category_ids: string[] | null
   steps: TestStep[] | null
@@ -1310,6 +1316,8 @@ export interface Risk {
   catalog_area?: string
   /** MITRE ATT&CK and ATLAS technique ids (T1110.004, T0886, AML.T0051) */
   attack?: string[]
+  /** MITRE EMB3D threats that realise it (TID-201) */
+  emb3d?: string[]
   acceptance_valid?: boolean
   review_due?: boolean
 }
