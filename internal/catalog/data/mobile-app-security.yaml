@@ -774,3 +774,35 @@ risks:
       title: Skadlig länk eller webbsida styr appen
       description: En annan app eller en webbsida öppnar en djuplänk, en exporterad komponent eller en webbvy med en inbyggd brygga. Appen utför åtgärder eller röjer uppgifter utan att användaren avsett det.
       mitigation: Validera inmatningen till djuplänkar och exporterade komponenter, låt webbvyer bara ladda eget innehåll utan brygga mot andra ursprung och stäng av okrypterad trafik.
+  - id: MOBSEC-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [webview, native-bridge]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS-PLATFORM-2", "OWASP MASVS-PLATFORM-1"]
+    mitigated_by: [MOBSEC-08, MOBSEC-07]
+    attack: [T1635.001, T1658]
+    en:
+      title: Web content inside the app calls native functions
+      description: A web view loads external pages and exposes a native bridge, or exported components accept any input. A malicious page or app reads tokens, files or the camera through the app.
+      mitigation: Load only own content in web views, expose no native bridge to other origins and validate input to deep links and exported components.
+    sv:
+      title: Webbinnehåll i appen anropar inbyggda funktioner
+      description: En webbvy laddar externa sidor och exponerar en inbyggd brygga, eller exporterade komponenter tar emot vilken indata som helst. En skadlig sida eller app läser token, filer eller kameran via appen.
+      mitigation: Ladda bara eget innehåll i webbvyer, exponera ingen inbyggd brygga mot andra ursprung och validera indata till djuplänkar och exporterade komponenter.
+  - id: MOBSEC-R05
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [sdks, permissions]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS-PRIVACY-3", "OWASP MASVS-PRIVACY-1"]
+    mitigated_by: [MOBSEC-14, MOBSEC-13]
+    attack: [T1430]
+    en:
+      title: Third-party SDKs in the app collect more data than disclosed
+      description: Analytics and advertising SDKs read location, contacts or device identifiers through permissions the app asked for. The privacy label and notice are wrong and the store can remove the app.
+      mitigation: Keep an inventory of SDKs and the data they collect and request no device permission without a documented need.
+    sv:
+      title: "SDK:er från tredje part i appen samlar in mer data än som redovisats"
+      description: "SDK:er för analys och annonsering läser position, kontakter eller enhetsidentiteter genom behörigheter som appen har begärt. Integritetsetiketten och informationen blir fel och butiken kan ta bort appen."
+      mitigation: "För en förteckning över SDK:er och de data de samlar in och begär ingen behörighet på enheten utan ett dokumenterat behov."

@@ -871,3 +871,34 @@ risks:
       title: Samma incident inträffar igen
       description: Bevis förstörs vid uppstädningen, ingen tidslinje förs och ingen uppföljning görs. Grundorsaken förblir okänd och incidenten upprepas.
       mitigation: Säkra bevis innan systemen rensas, för en tidslinje, följ upp varje incident inom 5 arbetsdagar, stäng åtgärderna inom 30 dagar och kommunicera oberoende av de drabbade systemen.
+  - id: INC-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [evidence, forensics]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.28 (collection of evidence)", "NIST SP 800-61 Rev. 2 §3.2.5 (incident documentation)"]
+    mitigated_by: [INC-08, INC-09]
+    attack: [T1070]
+    en:
+      title: Evidence destroyed while cleaning up after an attack
+      description: "Compromised servers are reinstalled at once to restore the service. The attacker's way in and the extent of the breach can no longer be determined, and the attack is repeated."
+      mitigation: Preserve evidence before systems are cleaned and keep a timeline during the incident.
+    sv:
+      title: Spår förstörs när ett angrepp städas upp
+      description: Komprometterade servrar installeras om direkt för att återställa tjänsten. Angriparens väg in och intrångets omfattning går inte längre att fastställa, och angreppet upprepas.
+      mitigation: Säkra spår innan system rensas och för en tidslinje under incidenten.
+  - id: INC-R05
+    category: operational
+    likelihood: 3
+    impact: 4
+    tags: [communication, out-of-band]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.5.24 (information security incident management planning and preparation)", "ISO/IEC 27001:2022 A.5.24"]
+    mitigated_by: [INC-14, INC-15, INC-12]
+    en:
+      title: Incident team cannot communicate because the normal tools are down
+      description: E-mail, chat and the contact list are on the systems that ransomware just encrypted. The team cannot reach each other or the suppliers it needs, and the first hours are lost.
+      mitigation: Keep incident communication independent of the affected systems, keep escalation contacts of critical suppliers and exercise incidents twice a year.
+    sv:
+      title: Incidentteamet kan inte kommunicera eftersom de vanliga verktygen ligger nere
+      description: E-post, chatt och kontaktlistan finns i de system som utpressningsprogrammet just har krypterat. Teamet når inte varandra eller de leverantörer det behöver, och de första timmarna går förlorade.
+      mitigation: Håll incidentkommunikationen oberoende av de drabbade systemen, ha eskaleringskontakter till kritiska leverantörer och öva incidenter två gånger om året.

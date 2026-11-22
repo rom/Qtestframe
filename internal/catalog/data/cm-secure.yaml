@@ -886,3 +886,35 @@ risks:
       title: Utomstående avlyssnar eller nätfiskar via samarbetsverktyg
       description: Chatten federerar med alla domäner, möten släpper in vem som helst och videosystem i mötesrum svarar automatiskt. Utomstående deltar i konfidentiella möten eller skickar nätfiskemeddelanden som ser interna ut.
       mitigation: Federera chatten bara med listade domäner, låt externa deltagare vänta i en lobby, stäng av automatiskt svar i videosystem i mötesrum och terminera SIP-trunkar i en sessionsgränskontroll.
+  - id: CMSEC-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [dns, command-and-control]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CISA Protective Domain Name System Resolver Service", "RFC 4035"]
+    mitigated_by: [CMSEC-18, CMSEC-10, CMSEC-17]
+    attack: [T1071.004, T1568]
+    en:
+      title: Malware talks to its controllers through DNS
+      description: Outbound name lookups are not filtered or monitored. Infected computers resolve attacker domains, receive commands and send data out through DNS without being stopped.
+      mitigation: Filter outbound name lookups with protective DNS, validate DNSSEC on internal resolvers and run intrusion detection at the zone boundaries.
+    sv:
+      title: Skadlig kod kommunicerar med sina styrservrar via DNS
+      description: Utgående namnuppslag filtreras eller övervakas inte. Infekterade datorer slår upp angriparens domäner, tar emot kommandon och skickar ut data via DNS utan att stoppas.
+      mitigation: Filtrera utgående namnuppslag med skyddande DNS, validera DNSSEC i interna namnservrar och kör intrångsdetektering vid zongränserna.
+  - id: CMSEC-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [rogue-devices, management-plane]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "IEEE 802.1X-2020", "ISO/IEC 27033-2:2012 (network security design)"]
+    mitigated_by: [CMSEC-06, CMSEC-07, CMSEC-03]
+    attack: [T1200]
+    en:
+      title: Device plugged into a network port gets inside
+      description: "Any device connected to a wired port gets full network access, and switches and firewalls can be managed from the office network. A visitor's or intruder's device becomes a foothold, and network elements are reconfigured."
+      mitigation: Quarantine unknown devices on wired ports, manage network elements from a separate management zone and review firewall rules regularly.
+    sv:
+      title: Enhet som kopplas in i ett nätuttag kommer in i nätet
+      description: Varje enhet som ansluts till ett trådbundet uttag får full nätåtkomst och switchar och brandväggar kan hanteras från kontorsnätet. En besökares eller inkräktares enhet blir ett fotfäste och nätutrustning konfigureras om.
+      mitigation: Sätt okända enheter i karantän på trådbundna uttag, hantera nätutrustning från en separat förvaltningszon och granska brandväggsregler regelbundet.

@@ -818,3 +818,34 @@ risks:
       title: Leverantörens personal når organisationens data utan godkännande
       description: Leverantörens support- eller driftpersonal öppnar en organisations data utan att organisationen vet om det. Missbruk eller ett komprometterat supportkonto röjer kunddata.
       mitigation: Kräv organisationens godkännande för supportåtkomst, låt organisationens administratörer läsa sin egen granskningslogg och registrera båda identiteterna vid agerande som annan användare.
+  - id: TEN-R04
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [custom-domains, subdomain-takeover]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Web Security Testing Guide WSTG-CONF-10"]
+    mitigated_by: [TEN-15]
+    attack: [T1584.001]
+    en:
+      title: Removed custom domain taken over to serve phishing pages
+      description: "A customer stops using a custom domain but the DNS still points at the service, or a domain is added without verifying ownership. Another party claims it and serves content under the customer's name."
+      mitigation: Verify custom domains before use and release them when removed.
+    sv:
+      title: Borttagen egen domän tas över för att visa nätfiskesidor
+      description: En kund slutar använda en egen domän men DNS pekar fortfarande på tjänsten, eller en domän läggs till utan att ägandet kontrolleras. Någon annan gör anspråk på den och visar innehåll i kundens namn.
+      mitigation: Verifiera egna domäner före användning och släpp dem när de tas bort.
+  - id: TEN-R05
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [caches, background-jobs]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Multi-Tenant Security Cheat Sheet (shared resources)", "OWASP Multi-Tenant Security Cheat Sheet"]
+    mitigated_by: [TEN-03, TEN-05, TEN-10]
+    en:
+      title: Tenant data mixed up through shared caches or background jobs
+      description: "A cache key lacks the tenant, or a background job runs with another tenant's context. Reports, exports or notifications with one customer's data are delivered to another."
+      mitigation: Separate cache entries per tenant, run background jobs in the tenant that queued them and test every endpoint across tenants.
+    sv:
+      title: Kunddata blandas ihop via delade cachar eller bakgrundsjobb
+      description: En cachenyckel saknar kunden, eller ett bakgrundsjobb körs med en annan kunds sammanhang. Rapporter, exporter eller aviseringar med en kunds data levereras till en annan.
+      mitigation: Separera cacheposter per kund, kör bakgrundsjobb hos den kund som köade dem och testa varje ändpunkt mellan kunder.

@@ -845,3 +845,35 @@ risks:
       title: Konfidentiellt innehåll röjs i e-post
       description: Lösenord, personuppgifter eller långlivade inbjudningslänkar skickas med e-post. Meddelanden vidarebefordras, lagras i många brevlådor eller läses under överföring och innehållet når personer det inte var avsett för.
       mitigation: Skicka inga lösenord eller konfidentiellt innehåll med e-post, kryptera e-posten under transport och låt inbjudningslänkar fungera en gång och löpa ut.
+  - id: MAILS-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [inbound-email, spoofing]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "RFC 9989 §5.3 (mail receiver actions)"]
+    mitigated_by: [MAILS-12, MAILS-03]
+    attack: [T1684.002]
+    en:
+      title: Spoofed e-mail changes data in the system
+      description: The system accepts replies by e-mail to update tickets or approve requests without checking the sender. An attacker forges a sender address and approves or changes items.
+      mitigation: Authenticate inbound e-mail before it changes data and publish a DMARC policy that rejects or quarantines.
+    sv:
+      title: Förfalskad e-post ändrar data i systemet
+      description: Systemet tar emot svar via e-post för att uppdatera ärenden eller godkänna förfrågningar utan att kontrollera avsändaren. En angripare förfalskar en avsändaradress och godkänner eller ändrar objekt.
+      mitigation: Autentisera inkommande e-post innan den ändrar data och publicera en DMARC-policy som avvisar eller sätter i karantän.
+  - id: MAILS-R05
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [dkim, parked-domains]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "M3AAWG Protecting Parked Domains Best Common Practices", "M3AAWG DKIM Key Rotation Best Common Practices"]
+    mitigated_by: [MAILS-13, MAILS-15, MAILS-14]
+    attack: [T1584.001, T1684.002]
+    en:
+      title: Unused domain or old DKIM key used to send convincing fakes
+      description: Domains that send no e-mail have no policy saying so, and DKIM keys are never rotated. Attackers send mail that passes checks from domains recipients trust.
+      mitigation: State that non-sending domains send no e-mail, rotate DKIM keys every year and review DMARC aggregate reports weekly.
+    sv:
+      title: Oanvänd domän eller gammal DKIM-nyckel används för trovärdiga förfalskningar
+      description: Domäner som inte skickar e-post saknar en policy som säger det, och DKIM-nycklar roteras aldrig. Angripare skickar e-post som klarar kontrollerna från domäner som mottagarna litar på.
+      mitigation: Ange att domäner som inte skickar e-post inte gör det, rotera DKIM-nycklar varje år och granska DMARC-rapporterna varje vecka.

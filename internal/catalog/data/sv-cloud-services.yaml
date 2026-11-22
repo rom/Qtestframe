@@ -676,3 +676,35 @@ risks:
       title: Tjänsten för bevakning missar eller felhanterar en attack
       description: Leverantören av säkerhetsövervakning analyserar larm långsamt, täcker få angreppstekniker eller agerar utan överenskommen arbetsgång. Ett intrång upptäcks inte eller en åtgärd orsakar ett avbrott.
       mitigation: Analysera kritiska larm inom 30 minuter dygnet runt, kartlägg detekteringstäckningen mot angreppstekniker varje kvartal, larma när en loggkälla tystnar, agera bara enligt godkända arbetsgångar och rapportera varje månad.
+  - id: SVCLD-R04
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [shared-responsibility, misconfiguration]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27017:2026 (shared roles and responsibilities within a cloud computing environment)", "CSA Cloud Controls Matrix v4.0 CEK-08 (CSC key management capability)"]
+    mitigated_by: [SVCLD-07, SVCLD-08, SDL-14]
+    attack: [T1530, T1580]
+    en:
+      title: Cloud storage left open because each side thought the other secured it
+      description: Nobody wrote down who configures access, encryption and logging in the cloud service. A storage bucket or database stays publicly readable and is found by scanners within hours.
+      mitigation: Agree a shared responsibility matrix per service model, use customer-managed encryption keys and scan infrastructure code for misconfigurations.
+    sv:
+      title: Molnlagring lämnas öppen eftersom båda parter trodde att den andra skyddade den
+      description: Ingen har skrivit ned vem som konfigurerar åtkomst, kryptering och loggning i molntjänsten. En lagringsbehållare eller databas förblir publikt läsbar och hittas av skannrar inom några timmar.
+      mitigation: Kom överens om en ansvarsmatris per tjänstemodell, använd krypteringsnycklar som kunden förvaltar och skanna infrastrukturkod efter felkonfigurationer.
+  - id: SVCLD-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [detection-coverage, mdr]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK", "ISO/IEC 27001:2022 A.8.16"]
+    mitigated_by: [SVCLD-11, SVCLD-12, SVCLD-10]
+    attack: [T1685.002, T1078.004]
+    en:
+      title: Detection service blind to the techniques attackers actually use
+      description: Detection rules cover only a few attack techniques and a disabled cloud log goes unnoticed. An attacker with valid cloud credentials works for weeks without an alert.
+      mitigation: Map detection coverage to attack techniques each quarter, alert when an agreed log source stops sending and analyse critical alerts around the clock.
+    sv:
+      title: Detektionstjänsten är blind för de tekniker som angripare faktiskt använder
+      description: Detektionsreglerna täcker bara några få angreppstekniker och en avstängd molnlogg upptäcks inte. En angripare med giltiga molnuppgifter arbetar i veckor utan larm.
+      mitigation: Kartlägg detektionstäckningen mot angreppstekniker varje kvartal, larma när en överenskommen loggkälla slutar skicka och analysera kritiska larm dygnet runt.
