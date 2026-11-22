@@ -346,6 +346,7 @@ func (s *Server) routes() {
 	s.routesTraceRules(h)
 	s.routesEmail(h)
 	s.routesConfigurations(h)
+	s.routesVerification(h)
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)

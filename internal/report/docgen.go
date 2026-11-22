@@ -183,6 +183,9 @@ type DocData struct {
 	Signoffs  []model.Signoff
 	Revisions []Revision
 	Now       time.Time
+	// Verification: requirement id → its verification (current data only;
+	// nil leaves the verification out of the document).
+	Verification map[string]*model.RequirementVerification
 }
 
 // DocTitle is the default title of a document of kind in lang.
@@ -942,16 +945,40 @@ func (g *docGen) requirement(rq *model.Requirement, level int) {
 	if o.has("version") && rq.Version > 0 {
 		fs = append(fs, export.Item{Label: l.t("Version"), Value: strconv.Itoa(rq.Version)})
 	}
+	v := g.d.Verification[rq.ID]
+	if v != nil && (o.has("tests") || o.has("criteria")) {
+		val := g.enum(EnumVerification, v.State)
+		if v.CriteriaTotal > 0 {
+			val += " · " + g.f("{n} of {total} criteria verified", "n", strconv.Itoa(v.CriteriaVerified), "total", strconv.Itoa(v.CriteriaTotal))
+		}
+		fs = append(fs, export.Item{Label: l.t("Verification"), Value: val})
+	}
 	if len(fs) > 0 {
 		g.add(export.Fields(fs...))
 	}
 	if o.has("criteria") && len(rq.Criteria) > 0 {
 		g.add(g.label("Acceptance criteria"))
 		rows := make([][]string, len(rq.Criteria))
-		for i, c := range rq.Criteria {
-			rows[i] = []string{strconv.Itoa(i + 1), c.Description, g.enum(EnumEvalMethod, c.Method), c.Threshold}
+		if v != nil {
+			states := map[string]model.CriterionVerification{}
+			for _, c := range v.Criteria {
+				states[c.CriterionID] = c
+			}
+			for i, c := range rq.Criteria {
+				cv := states[c.ID]
+				state := g.enum(EnumVerification, cv.State)
+				if ev := g.l.evidenceList(cv.Evidence); ev != "" {
+					state += "\n" + ev
+				}
+				rows[i] = []string{strconv.Itoa(i + 1), c.Description, g.enum(EnumEvalMethod, c.Method), c.Threshold, state}
+			}
+			g.add(export.Table([]string{"#", l.t("Criterion"), l.t("Method"), l.t("Threshold"), l.t("Verification")}, rows, 0.4, 3.6, 1.2, 1.2, 2.4))
+		} else {
+			for i, c := range rq.Criteria {
+				rows[i] = []string{strconv.Itoa(i + 1), c.Description, g.enum(EnumEvalMethod, c.Method), c.Threshold}
+			}
+			g.add(export.Table([]string{"#", l.t("Criterion"), l.t("Method"), l.t("Threshold")}, rows, 0.4, 5, 1.4, 1.6))
 		}
-		g.add(export.Table([]string{"#", l.t("Criterion"), l.t("Method"), l.t("Threshold")}, rows, 0.4, 5, 1.4, 1.6))
 	}
 }
 
@@ -988,9 +1015,24 @@ func (g *docGen) traceabilityMatrix() {
 		if obl == "" {
 			obl = obligationUnset
 		}
-		rows = append(rows, []string{rq.Key, rq.Title, g.enum(EnumObligation, obl), strings.Join(tests, ", ")})
+		row := []string{rq.Key, rq.Title, g.enum(EnumObligation, obl), strings.Join(tests, ", ")}
+		if g.d.Verification != nil {
+			state := ""
+			if v := g.d.Verification[rq.ID]; v != nil {
+				state = g.enum(EnumVerification, v.State)
+				if v.CriteriaTotal > 0 {
+					state += " (" + strconv.Itoa(v.CriteriaVerified) + "/" + strconv.Itoa(v.CriteriaTotal) + ")"
+				}
+			}
+			row = append(row, state)
+		}
+		rows = append(rows, row)
 	}
-	g.add(export.Table(cols, rows, 1.3, 3, 1.3, 2.4))
+	if g.d.Verification != nil {
+		g.add(export.Table(append(cols, l.t("Verification")), rows, 1.2, 2.6, 1.2, 2, 1.6))
+	} else {
+		g.add(export.Table(cols, rows, 1.3, 3, 1.3, 2.4))
+	}
 	g.add(export.Paragraph(l.n("{n} requirement has no test.", "{n} requirements have no test.", without)))
 }
 

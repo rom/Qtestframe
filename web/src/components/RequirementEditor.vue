@@ -8,6 +8,7 @@ import MentionText from './MentionText.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
+import VerificationPanel from './VerificationPanel.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
@@ -52,7 +53,7 @@ import { displayLevel } from '@/lib/obligationKeywords'
 import { formatDateTime } from '@/lib/format'
 import { useI18n } from 'vue-i18n'
 import { uid } from '@/lib/a11y'
-import { enumOptions, obligationHint, obligationKeyword } from '@/i18n/labels'
+import { enumLabel, enumOptions, obligationHint, obligationKeyword } from '@/i18n/labels'
 import { issueMessage } from '@/i18n/analysis'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Analysis, Category, EvaluationCriterion, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
@@ -273,6 +274,23 @@ async function load() {
     error.value = errorMessage(e)
   } finally {
     loading.value = false
+  }
+}
+
+/** evidence changed in the verification tab: the status may follow it */
+async function onVerificationChanged() {
+  if (!props.itemId) return
+  try {
+    const r = await api.get<Requirement>(`/requirements/${props.itemId}`)
+    const clean = JSON.stringify(bodyOf(form.value)) === JSON.stringify(loaded.value)
+    item.value = r
+    if (clean) {
+      form.value.status = r.status
+      loaded.value = clone(bodyOf(form.value))
+    }
+    emit('saved', r)
+  } catch {
+    /* the panel shows its own state */
   }
 }
 
@@ -597,6 +615,7 @@ function criterionLabel(id: string | null) {
     <TabList>
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="relations"><i class="pi pi-sitemap" aria-hidden="true" /> {{ t('common.relations') }} <span class="count">{{ relationCount }}</span></Tab>
+      <Tab value="verification"><i class="pi pi-verified" aria-hidden="true" /> {{ t('verification.tab') }}</Tab>
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
       <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
@@ -608,6 +627,9 @@ function criterionLabel(id: string | null) {
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'impact'" v-bind="panel('impact')"><ImpactPanel kind="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @changed="load" /></div>
   <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
+  <div v-if="item && tab === 'verification'" v-bind="panel('verification')">
+    <VerificationPanel :project-id="projectId" :requirement-id="item.id" :criteria="item.criteria ?? []" :can-write="canWrite" :stamp="`${item.version}/${links.length}`" @changed="onVerificationChanged" />
+  </div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')">
     <RequirementIssuePanel :requirement-id="item.id" :can-write="canWrite" @changed="linksVersion++" />
     <ItemLinksPanel :key="linksVersion" item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" />
@@ -640,6 +662,9 @@ function criterionLabel(id: string | null) {
       </button>
       <button v-if="item?.suspect_relations" type="button" class="suspect link-button" @click="tab = 'impact'">
         <i class="pi pi-exclamation-triangle" aria-hidden="true" />{{ t('correlations.suspectRelations', { n: item.suspect_relations }, item.suspect_relations) }}
+      </button>
+      <button v-if="item?.verification" type="button" class="verification-badge" :aria-label="t('verification.openTab', { state: enumLabel('verification', item.verification) })" @click="tab = 'verification'">
+        <StatusTag :value="item.verification" kind="verification" />
       </button>
       <button v-if="item && openDefects" type="button" class="open-defects-badge" @click="tab = 'defects'">
         <i class="pi pi-exclamation-circle" aria-hidden="true" />{{ t('defectsView.openCount', { n: openDefects }, openDefects) }}

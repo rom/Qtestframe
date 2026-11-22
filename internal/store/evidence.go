@@ -2,9 +2,10 @@ package store
 
 import (
 	"context"
-	"strings"
+	"sort"
 
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/verification"
 )
 
 // Suspect links and "status follows evidence".
@@ -133,40 +134,32 @@ type StatusChange struct {
 	Reason string `json:"reason"`
 }
 
-// SyncEvidenceStatus applies EvidenceStatus to requirements of a project
-// (reqIDs, or all when nil) unless the tenant turned it off. Each change
-// bumps the version and is recorded as a revision by user.
+// SyncEvidenceStatus lets the status of requirements of a project (reqIDs
+// and the requirements they refine, or all when nil) follow their
+// verification (package verification: criteria, tests, verification
+// records and the roll-up of children) unless the tenant turned it off:
+// implemented becomes verified when the requirement is verified, verified
+// goes back to implemented when it no longer is. Requirements without any
+// evidence or children are never changed. Each change bumps the version
+// and is recorded as a revision by user.
 func (s *Store) SyncEvidenceStatus(ctx context.Context, tenantID, projectID string, reqIDs []string, user string) ([]StatusChange, error) {
 	st, err := s.TenantSettings(ctx, tenantID)
 	if err != nil || st.ManualVerification {
 		return nil, err
 	}
-	links, err := s.ListLinks(ctx, tenantID, projectID, "", "")
+	res, err := s.ProjectVerification(ctx, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
-	tests := map[string][]string{}
-	suspect := map[string]bool{}
-	for _, l := range links {
-		tests[l.RequirementID] = append(tests[l.RequirementID], l.TestCaseID)
-		if l.SuspectSince != nil {
-			suspect[l.RequirementID] = true
-		}
-	}
-	last, err := s.LastResults(ctx, tenantID, projectID)
-	if err != nil {
-		return nil, err
-	}
-	// stale results are no passing evidence (staleness.go)
-	stale, err := s.LoadStaleIndex(ctx, tenantID, projectID)
-	if err != nil {
-		return nil, err
-	}
-	last = stale.FilterLast(last)
+	// stale results are already dropped by VerificationInput (staleness.go)
 	if reqIDs == nil {
-		for id := range tests {
+		for id := range res {
 			reqIDs = append(reqIDs, id)
 		}
+		sort.Strings(reqIDs)
+	} else {
+		// a parent's verification depends on its children
+		reqIDs = append(append([]string{}, reqIDs...), verification.Ancestors(res, reqIDs)...)
 	}
 	var out []StatusChange
 	seen := map[string]bool{}
@@ -175,20 +168,30 @@ func (s *Store) SyncEvidenceStatus(ctx context.Context, tenantID, projectID stri
 			continue
 		}
 		seen[id] = true
+		v := res[id]
+		if v == nil || (v.Own == model.VerNone && len(v.Children) == 0) {
+			continue
+		}
+		next := ""
+		switch {
+		case v.Status == "implemented" && v.Verified:
+			next = "verified"
+		case v.Status == "verified" && !v.Verified:
+			next = "implemented"
+		}
+		if next == "" {
+			continue
+		}
 		r, err := s.GetRequirement(ctx, tenantID, id)
 		if err != nil || r.ProjectID != projectID {
 			continue
 		}
-		next := EvidenceStatus(r.Status, tests[id], last, suspect[id])
-		if next == "" {
-			continue
-		}
 		reason := "all linked tests passed"
+		if v.CriteriaTotal > 0 || len(v.Children) > 0 || hasRecord(v) {
+			reason = "verified: every criterion and child has passing evidence"
+		}
 		if next == "implemented" {
-			reason = evidenceReason(tests[id], last, suspect[id])
-			if stale.StaleCount(tests[id]) > 0 {
-				reason += "; a linked test result is stale"
-			}
+			reason = verification.Why(v)
 		}
 		r.Version++
 		r.UpdatedAt = s.now()
@@ -205,26 +208,11 @@ func (s *Store) SyncEvidenceStatus(ctx context.Context, tenantID, projectID stri
 	return out, nil
 }
 
-func evidenceReason(tests []string, last map[string]string, suspect bool) string {
-	var parts []string
-	if suspect {
-		parts = append(parts, "a link is suspect")
-	}
-	failed, notRun := 0, 0
-	for _, t := range tests {
-		switch last[t] {
-		case model.ResultPassed:
-		case model.ResultFailed, model.ResultBlocked:
-			failed++
-		default:
-			notRun++
+func hasRecord(v *model.RequirementVerification) bool {
+	for _, e := range v.Evidence {
+		if e.Kind == "record" {
+			return true
 		}
 	}
-	if failed > 0 {
-		parts = append(parts, "a linked test failed")
-	}
-	if notRun > 0 {
-		parts = append(parts, "a linked test has not passed yet")
-	}
-	return strings.Join(parts, "; ")
+	return false
 }

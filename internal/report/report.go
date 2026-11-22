@@ -123,6 +123,9 @@ type Data struct {
 	TraceRules []tracerules.Result
 	// Risks of the project with their requirement IDs (risk report).
 	Risks []model.Risk
+	// Verification of the requirements, records and element coverage
+	// (verification report).
+	Verification *VerificationData
 	// Query is the filter applied by the caller (shown in the subtitle).
 	Query string
 	Now   time.Time

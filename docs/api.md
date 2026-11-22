@@ -1183,6 +1183,83 @@ report lists the enabled rules and their violations (sections
 `trace_rules` and `trace_rule_violations`, evaluated on the report's
 requirements and tests).
 
+### Verification (criteria, records, roll-up, system elements)
+
+A requirement counts as **verified** only when every one of its evaluation
+criteria has passing evidence, and — along the `refines` hierarchy — every
+active child requirement is verified too. Evidence is
+
+* a **test**: a trace link, optionally mapped to one or more criteria, each
+  optionally through one **step** of the test (`criteria` of a TraceLink:
+  `[{"criterion_id","step_id"?}]`; `criterion_id` stays the first of them
+  for older clients). The test counts as passed when its last result passed
+  (with a step: that step's result in the same execution), failed when it
+  failed or was blocked, else pending; a suspect link is pending;
+* a **verification record**: an inspection, analysis, demonstration or
+  review (or a test done outside the tool) of a criterion, or of the
+  requirement as a whole (`criterion_id` null). Its result `pass` or
+  `conditional` passes, `fail` fails, while it is valid: not after
+  `valid_until`, and not after it was invalidated (`until_change`: the
+  requirement's content changed; or its criterion was removed). Per
+  criterion only the newest valid record counts (the others are
+  `superseded`).
+
+**Backwards compatibility.** A test link without criterion mapping (and a
+record without criterion) is *plain* evidence: it counts for every
+criterion that has no evidence of its own, so existing projects verify as
+before. With the project setting **strict criterion coverage** each
+criterion needs its own evidence. A failing plain test fails the
+requirement in both modes.
+
+**Roll-up.** `refines` (source refines target: the source is a child of
+the target) is the decomposition. A parent is verified only when its own
+state is verified (or it has no criteria and no evidence of its own) and
+all its children that are not rejected or obsolete are. "Status follows
+evidence" applies this to the status (implemented ↔ verified) of the
+requirement and of every requirement above it, so with the default
+settings an unverified child under a verified parent cannot persist; with
+manual verification it is reported as an inconsistency (`inconsistencies`,
+the analytics finding `verified_parent_unverified_child`).
+
+States (`verification` of a requirement, `state` of a criterion):
+`verified`, `partial` (some verified), `failed`, `pending` (evidence, none
+passed yet), `none` (no evidence).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/requirements/{id}/verification` | RequirementVerification: is it verified, and why (`requirement.read`) |
+| GET | `/projects/{pid}/verification?q=&folder_id=` | `{"strict","counts":{state: n},"criteria_verified","criteria_total","requirements":[RequirementVerification],"inconsistent":[…]}` over the requirements matching `q` (counts leave out rejected and obsolete ones) |
+| GET / PUT | `/projects/{pid}/verification-settings` | `{"strict_criteria", "updated_by", "updated_at"}`; PUT needs `project.update` and lets the statuses follow the evidence again |
+| PUT | `/links/{id}/criteria` | `{"criteria":[{"criterion_id","step_id"?}]}` → TraceLink (`test.write`); `[]` makes it a plain link; 400 for a criterion of another requirement or a step of another test |
+| GET | `/projects/{pid}/verification-records?requirement_id=` | `[VerificationRecord]`, newest first |
+| GET / POST | `/requirements/{id}/verification-records` | POST (`run.execute`): `{"criterion_id"?, "method"? (default the criterion's), "result", "performed_by"? (default the author's name), "performed_on"? (YYYY-MM-DD, default today), "note"?, "file_ids"? (documents of the project's archive), "valid_until"?, "until_change"?}` → 201 |
+| GET / PATCH / DELETE | `/verification-records/{id}` | PATCH and DELETE need `run.execute`; a change of method, result, criterion, dates or performer removes the sign-off |
+| POST / DELETE | `/verification-records/{id}/signoff` | `{"comment"?}`: sign-off by a second person (`requirement.review` or `run.execute`; 409 for the author or the performer); DELETE removes it |
+| GET / POST | `/projects/{pid}/elements` | system elements in tree order with `path`, `requirement_ids`, `test_ids` (direct allocations); POST (`requirement.write`) `{"name","kind"?,"parent_id"?,"description"?}`; names are unique among siblings (409), `kind` one of `system, subsystem, component, product, supplier, other` |
+| GET / PATCH / DELETE | `/elements/{id}` | PATCH (`requirement.write`): `name, kind, description, parent_id` (move; not below itself), `position`; DELETE removes the elements below it and their allocations |
+| POST | `/elements/{id}/allocations` | `{"kind":"requirement|test","add":[ids],"remove":[ids]}` (`requirement.write` or `test.write` for the kind) → SystemElement |
+| PUT | `/requirements/{id}/elements`, `/tests/{id}/elements` | `{"element_ids":[…]}` replaces the item's allocation → `{"element_ids"}` |
+| GET | `/projects/{pid}/elements/coverage?q=` | `[ElementCoverage]` per element: requirements allocated to it or below it (of those matching `q`; not rejected or obsolete), `covered` (any evidence), `verified`, `failed`, `percent`, and `tests` / `tests_passed` |
+
+RequirementVerification: `{"requirement_id","key","title","status","strict","own","state","verified","criteria":[{criterion_id, position, description, method, state, evidence:[Evidence]}],"evidence":[Evidence],"criteria_verified","criteria_total","children":[{id,key,title,status,state}],"children_verified","parent_ids","reasons":[Reason],"inconsistencies":[Reason]}`;
+`own` is the state from its own criteria and evidence, `state` includes the children.
+Evidence: `{"kind":"test|record","id","link_id"?,"key","title","step_id"?,"step_position"?,"result","state":"passed|failed|pending|void","plain"?,"note"?,"date"?}`
+(`note`: `suspect`, `not_run`, `step_not_run`, `expired`, `invalidated`, `superseded`, `conditional`).
+Reason: `{"code","params","text"}` with the codes `no_evidence`, `criterion_missing`, `criterion_failed`, `criterion_pending`, `evidence_failed`, `evidence_pending`, `child_not_verified` and, for inconsistencies, `status_inconsistent`, `child_status_unverified`.
+VerificationRecord: `{"id","project_id","requirement_id","requirement_key","criterion_id","criterion_text","method","result","performed_by","performed_on","note","file_ids","files":[{id,name,kind}],"valid_until","until_change","invalidated_at","invalidated_reason","validity":"valid|expired|invalidated","signoff":{by,name,comment,at}|null,"created_by","created_at","updated_at"}`.
+
+Requirements carry `verification` (rolled-up state), `criteria_verified`
+and `element_ids`; tests `element_ids`. The traceability matrix
+(`/projects/{pid}/traceability`) adds `verification`, `criteria`
+(`[{id, position, description, method, state, records}]`), `records` and
+`parent_ids` per requirement, and its links carry `criteria`. The
+**Verification** report (`template: "verification"`, `query` filters the
+requirements) and the requirements specification (a Verification field,
+a column in the criteria table and in the traceability matrix; not for a
+baseline) show the same. Analytics adds `verification` counts and the
+findings `criteria_no_evidence`, `verified_parent_unverified_child` and
+`status_ahead_of_evidence`.
+
 ## Operations (runs and executions)
 
 Permissions: reading `run.read`; creating, updating, deleting runs and
@@ -2634,13 +2711,16 @@ status, source, rationale, owner, tag, version, folder, category, dimension
 (matches "Dimension/Name"), coverage, linked, created_by, created_at,
 updated_at, criteria, catalog` (the [catalogue](#catalogue) id it was copied from),
 `blocked`, `stale` and `suspect_relations` (counts, see
-[change and defect correlations](#change-and-defect-correlations)).
+[change and defect correlations](#change-and-defect-correlations)),
+and `verification` (alias `verified`: `verified`, `partial`, `failed`, `pending`,
+`none`) and `element` (alias `elements`: the name or path of a system element
+the requirement is allocated to, or of one above it, e.g. `element:"Power unit"`).
 
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of
 steps), priority, status, estimate, tag, folder, category, dimension, linked,
 last_result, created_by, created_at, updated_at, flaky (true/false),
-flakiness (alias flips), catalog, stale` (true/false).
+flakiness (alias flips), catalog, stale` (true/false) and `element` (as for requirements).
 
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Execution fields: `id, key, title, status, assignee,

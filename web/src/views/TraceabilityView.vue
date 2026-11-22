@@ -46,6 +46,16 @@ const reqFilter = ref('')
 const testFilter = ref('')
 const coverage = ref<string[]>([])
 const onlyLinkedTests = ref(false)
+// criterion rows under each requirement (which test verifies which criterion)
+const showCriteria = ref(readPref('qtf.trace.criteria') === '1')
+watch(showCriteria, (v) => writePref('qtf.trace.criteria', v ? '1' : ''))
+/** the mapping of a link to a criterion: '' none, 'test' the whole test, else the step number */
+function criterionMark(reqId: string, testId: string, critId: string): string {
+  const l = linkMap.value.get(linkKey(reqId, testId))
+  const m = l?.criteria?.find((c) => c.criterion_id === critId)
+  if (!m) return ''
+  return m.step_id ? 'step' : 'test'
+}
 const busy = ref<string | null>(null)
 // links are created and removed with the test write permission (as the server checks)
 const canEdit = computed(() => auth.can(P.testWrite))
@@ -313,6 +323,7 @@ async function toggle(reqId: string, testId: string) {
     </IconField>
     <MultiSelect v-model="coverage" :options="coverageOptions" option-label="label" option-value="value" :placeholder="t('traceability.coverage')" :aria-label="t('traceability.coverage')" style="min-width: 150px" show-clear />
     <Select v-if="cfg.configurations.value.length" v-model="configuration" :options="configOptions" option-label="label" option-value="value" :aria-label="t('configurations.coverageIn')" style="min-width: 170px" />
+    <span v-if="view === 'matrix'" class="row small nowrap"><ToggleSwitch v-model="showCriteria" input-id="tcrit" /><label for="tcrit">{{ t('verification.showCriteria') }}</label></span>
     <span class="row small nowrap"><ToggleSwitch v-model="onlyLinkedTests" input-id="olt" /><label for="olt">{{ t('traceability.onlyLinked') }}</label><HelpTip id="trace.onlyLinked" :label="t('traceability.onlyLinked')" /></span>
     <HelpTip id="trace.coverage" :label="t('traceability.coverage')" />
     <div class="trace-legends">
@@ -365,6 +376,7 @@ async function toggle(reqId: string, testId: string) {
         <StatusTag :value="r.coverage || 'none'" kind="coverage" />
         <StaleBadge :stale="!!r.stale_results" />
         <span v-if="r.blocked" class="blocked-badge small"><i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blocked') }}</span>
+        <StatusTag v-if="r.verification" :value="r.verification" kind="verification" />
       </div>
       <div class="small muted" style="margin: 6px 0 4px">{{ t('traceability.linkedTests', linkedCols(r.id).length) }}</div>
       <div class="row" style="gap: 6px">
@@ -413,6 +425,7 @@ async function toggle(reqId: string, testId: string) {
             <span class="small muted">{{ t('traceability.size', { rows: rows.length, cols: cols.length }) }}</span>
           </th>
           <th scope="col" style="vertical-align: bottom; padding: 4px 8px" class="small">{{ t('traceability.coverage') }}</th>
+          <th scope="col" style="vertical-align: bottom; padding: 4px 8px" class="small">{{ t('verification.column') }}</th>
           <th v-for="tc in cols" :key="tc.id" scope="col" class="vert" :title="`${tc.key} — ${tc.title}${tc.last_result ? ' (' + enumLabel('result', tc.last_result) + (tc.stale ? ', ' + t('correlations.stale') : '') + ')' : ''}`">
             <div>
               <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: tc.id } }" style="color: inherit">{{ tc.key }}</RouterLink>
@@ -421,7 +434,8 @@ async function toggle(reqId: string, testId: string) {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="r in rows" :key="r.id">
+        <template v-for="r in rows" :key="r.id">
+        <tr>
           <th scope="row" class="sticky-col req-cell" :style="{ borderLeft: '4px solid ' + (COVERAGE_COLORS[r.coverage || 'none'] ?? '#94a3b8') }">
             <div class="row nowrap">
               <Checkbox v-if="canBulk" v-model="selReqs" :value="r.id" :input-id="'trm-' + r.id" :aria-label="t('traceability.bulk.selectOne', { key: r.key })" />
@@ -433,6 +447,10 @@ async function toggle(reqId: string, testId: string) {
             <StatusTag :value="r.coverage || 'none'" kind="coverage" />
             <StaleBadge :stale="!!r.stale_results" />
             <span v-if="r.blocked" class="blocked-badge small"><i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blocked') }}</span>
+          </td>
+          <td style="padding: 2px 8px; text-align: center" class="nowrap">
+            <StatusTag :value="r.verification" kind="verification" empty="" />
+            <span v-if="r.criteria?.length" class="small muted" style="margin-left: 4px">{{ r.criteria.filter((c) => c.state === 'verified').length }}/{{ r.criteria.length }}</span>
           </td>
           <td
             v-for="tc in cols"
@@ -459,6 +477,23 @@ async function toggle(reqId: string, testId: string) {
             </template>
           </td>
         </tr>
+        <template v-if="showCriteria">
+          <tr v-for="c in r.criteria ?? []" :key="r.id + c.id" class="crit-row">
+            <th scope="row" class="sticky-col req-cell small">
+              <span class="crit-label"><span class="sr-only">{{ r.key }} </span>{{ t('verification.criterionShort', { n: c.position }) }} · {{ c.description }}</span>
+              <span class="muted"> ({{ enumLabel('evaluationMethod', c.method) }}<template v-if="c.records">, {{ t('verification.recordsShort', { n: c.records }, c.records) }}</template>)</span>
+            </th>
+            <td />
+            <td style="padding: 2px 8px; text-align: center"><StatusTag :value="c.state" kind="verification" /></td>
+            <td v-for="tc in cols" :key="tc.id" class="cell crit-cell" :class="{ linked: !!criterionMark(r.id, tc.id, c.id) }">
+              <template v-if="criterionMark(r.id, tc.id, c.id)">
+                <i :class="criterionMark(r.id, tc.id, c.id) === 'step' ? 'pi pi-list-check' : 'pi pi-check'" aria-hidden="true" />
+                <span class="sr-only">{{ t('verification.mappedCell', { test: tc.key, n: c.position }) }}</span>
+              </template>
+          </td>
+          </tr>
+        </template>
+        </template>
       </tbody>
     </table>
   </div>

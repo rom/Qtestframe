@@ -12,6 +12,7 @@ export type EnumGroup =
   | 'status'
   | 'result'
   | 'coverage'
+  | 'verification'
   | 'obligation'
   | 'priority'
   | 'requirementType'

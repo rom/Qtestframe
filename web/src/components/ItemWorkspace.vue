@@ -239,6 +239,7 @@ const allColumns = computed<Col[]>(() =>
         { field: 'suspect_links', header: t('workspace.colSuspect'), width: '110px' },
         { field: 'risk_level', header: t('risksView.colRisk'), width: '105px', sortField: (r: Item) => String(levelRank((r as Requirement).risk_level)) },
         { field: 'open_defects', header: t('risksView.colOpenDefects'), width: '115px' },
+        { field: 'verification', header: t('verification.column'), width: '150px' },
         { field: 'created_by', header: t('workspace.colCreatedBy') },
         { field: 'created_at', header: t('workspace.colCreated'), width: '115px' },
         { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
@@ -750,6 +751,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
                 <i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blocked') }}<span class="sr-only">: {{ t('correlations.blockedCount', { n: data.blocking_defects }, data.blocking_defects) }}</span>
               </span>
             </span>
+            <StatusTag v-else-if="c.field === 'verification'" :value="(data as Requirement).verification" kind="verification" empty="" />
             <span v-else-if="c.field === 'last_result'" class="row nowrap" style="gap: 4px">
               <StatusTag :value="data.last_result" kind="result" />
               <StaleBadge :stale="data.stale" :reason="data.stale_reason" />

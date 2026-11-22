@@ -384,6 +384,12 @@ export interface Requirement {
   stale_results?: number
   /** its relations that are suspect (the requirement at the other end changed) */
   suspect_relations?: number
+  /** rolled-up verification state (see lib/verification.ts) */
+  verification?: VerificationState
+  /** criteria with passing evidence */
+  criteria_verified?: number
+  /** system elements it is allocated to */
+  element_ids?: string[]
 }
 
 /** A reference from a list item to a related item (see lib/itemRefs.ts). */
@@ -454,6 +460,8 @@ export interface TestCase {
   /** the latest result is stale (age, test_changed, requirement_changed) */
   stale?: boolean
   stale_reason?: string
+  /** system elements it is allocated to */
+  element_ids?: string[]
   /** Requirements it verifies, tests it calls and tests that call it. */
   relations?: ItemRef[] | null
   step_count?: number
@@ -517,6 +525,8 @@ export interface TraceLink {
   suspect_reason?: string
   requirement_key?: string
   test_case_key?: string
+  /** the criteria the test verifies, each optionally through one step */
+  criteria?: LinkCriterion[]
 }
 
 export interface TestRun {
@@ -862,7 +872,19 @@ export interface Analysis {
 }
 
 export interface Traceability {
-  requirements: { id: string; key: string; title: string; obligation: string; coverage: string; blocked?: boolean; stale_results?: number }[]
+  requirements: {
+    id: string
+    key: string
+    title: string
+    obligation: string
+    coverage: string
+    verification?: VerificationState
+    criteria?: TraceCriterion[]
+    records?: number
+    parent_ids?: string[]
+    blocked?: boolean
+    stale_results?: number
+  }[]
   tests: { id: string; key: string; title: string; last_result: string; stale?: boolean }[]
   links: TraceLink[]
   /** the configuration coverage and results are filtered to ('none': without configuration) */
@@ -1192,4 +1214,157 @@ export interface Signoff {
   content_hash: string
   signed_at: string
   valid: boolean
+}
+
+// ---------- verification correlations (internal/model/verification.go) ----------
+
+/** verified | partial | failed | pending | none */
+export type VerificationState = 'verified' | 'partial' | 'failed' | 'pending' | 'none'
+
+/** A criterion a trace link verifies (step_id: one step of the test). */
+export interface LinkCriterion {
+  criterion_id: string
+  step_id?: string
+}
+
+/** A criterion row of the traceability matrix. */
+export interface TraceCriterion {
+  id: string
+  position: number
+  description: string
+  method: string
+  state: VerificationState
+  records: number
+}
+
+/** One piece of evidence about a criterion or requirement. */
+export interface Evidence {
+  kind: 'test' | 'record'
+  id: string
+  link_id?: string
+  /** test key, or the method of a record */
+  key: string
+  /** test title, or who performed a record */
+  title: string
+  step_id?: string
+  step_position?: number
+  result: string
+  /** passed | failed | pending | void */
+  state: 'passed' | 'failed' | 'pending' | 'void'
+  plain?: boolean
+  note?: string
+  date?: string
+}
+
+export interface CriterionVerification {
+  criterion_id: string
+  position: number
+  description: string
+  method: string
+  state: VerificationState
+  evidence: Evidence[]
+}
+
+export interface VerificationReason {
+  code: string
+  params?: Record<string, string>
+  text: string
+}
+
+/** GET /requirements/{id}/verification: is it verified, and why. */
+export interface RequirementVerification {
+  requirement_id: string
+  key: string
+  title: string
+  status: string
+  strict: boolean
+  own: VerificationState
+  state: VerificationState
+  verified: boolean
+  criteria: CriterionVerification[]
+  evidence: Evidence[]
+  criteria_verified: number
+  criteria_total: number
+  children: { id: string; key: string; title: string; status: string; state: VerificationState }[]
+  children_verified: number
+  parent_ids: string[]
+  reasons: VerificationReason[]
+  inconsistencies: VerificationReason[]
+}
+
+/** GET /projects/{pid}/verification */
+export interface ProjectVerification {
+  strict: boolean
+  counts: Record<string, number>
+  criteria_verified: number
+  criteria_total: number
+  requirements: RequirementVerification[]
+  inconsistent: RequirementVerification[]
+}
+
+export interface VerificationRecord {
+  id: string
+  project_id: string
+  requirement_id: string
+  requirement_key?: string
+  criterion_id: string | null
+  criterion_text?: string
+  method: string
+  /** pass | fail | conditional */
+  result: string
+  performed_by: string
+  performed_on: string
+  note: string
+  file_ids: string[]
+  files: { id: string; name: string; kind: string }[]
+  valid_until: string
+  until_change: boolean
+  invalidated_at: string | null
+  invalidated_reason: string
+  /** valid | expired | invalidated */
+  validity: string
+  signoff: { by: string; name: string; comment: string; at: string } | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface VerificationSettings {
+  strict_criteria: boolean
+  updated_by?: string
+  updated_at?: string | null
+}
+
+/** A node of the project's product breakdown. */
+export interface SystemElement {
+  id: string
+  project_id: string
+  parent_id: string | null
+  name: string
+  kind: string
+  description: string
+  position: number
+  path?: string
+  requirement_ids: string[]
+  test_ids: string[]
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+/** Coverage and verification of the requirements allocated to an element or below it. */
+export interface ElementCoverage {
+  element_id: string
+  parent_id: string | null
+  name: string
+  kind: string
+  path: string
+  depth: number
+  requirements: number
+  covered: number
+  verified: number
+  failed: number
+  tests: number
+  tests_passed: number
+  percent: number
 }

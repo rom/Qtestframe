@@ -10,6 +10,7 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/store"
+	"github.com/rom/qtestframe/internal/verification"
 )
 
 // Query schemas per entity (see docs/api.md "Query language").
@@ -18,18 +19,20 @@ var (
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
 			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk", "catalog",
-			"blocked", "stale", "suspect_relations"},
+			"blocked", "stale", "suspect_relations", "verification", "element"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
-			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention"},
+			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention",
+			"verified": "verification", "elements": "element"},
 	}
 	testSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
-			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale"},
+			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
-			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness"},
+			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness",
+			"elements": "element"},
 	}
 	runSchema = &query.Schema{
 		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration"},
@@ -85,6 +88,43 @@ type projectContext struct {
 	cfgRaw      store.ConfigResults
 	// evidenceLast: last without the stale passes (see evidence)
 	evidenceLast map[string]string
+	// verification correlations: the verification of every requirement
+	// (computed on first use, see verification()), the system elements,
+	// item id → allocated element ids, element id → the names and paths
+	// of the element and the elements above it (query field element)
+	verif               verification.Result
+	loadVerif           func() (verification.Result, error)
+	elements            []model.SystemElement
+	reqElems, testElems map[string][]string
+	elemTerms           map[string][]string
+}
+
+// verification returns the verification of the project's requirements
+// (nil when it cannot be computed).
+func (pc *projectContext) verification() verification.Result {
+	if pc.verif == nil && pc.loadVerif != nil {
+		res, err := pc.loadVerif()
+		pc.loadVerif = nil
+		if err == nil {
+			pc.verif = res
+		}
+	}
+	return pc.verif
+}
+
+// elementTerms returns the query values of element allocations.
+func (pc *projectContext) elementTerms(ids []string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, id := range ids {
+		for _, t := range pc.elemTerms[id] {
+			if !seen[t] {
+				seen[t] = true
+				out = append(out, t)
+			}
+		}
+	}
+	return out
 }
 
 func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Project) (*projectContext, error) {
@@ -169,6 +209,16 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 	if pc.deps, err = s.Store.ListTestDependencies(ctx, tenantID, p.ID, ""); err != nil {
 		return nil, err
 	}
+	if err := s.loadElements(ctx, tenantID, pc); err != nil {
+		return nil, err
+	}
+	pc.loadVerif = func() (verification.Result, error) {
+		in, err := s.Store.VerificationInput(ctx, tenantID, p.ID, pc.last)
+		if err != nil {
+			return nil, err
+		}
+		return verification.Compute(*in), nil
+	}
 	pc.prereqKeys = map[string][]string{}
 	for _, d := range pc.deps {
 		pc.refs[d.TestID] = append(pc.refs[d.TestID], model.ItemRef{Type: "depends_on", Direction: "outgoing", Kind: model.KindTest, ID: d.DependsOnID, Key: d.DependsOnKey, Title: d.DependsOnTitle})
@@ -225,6 +275,10 @@ func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.BlockingDefects, r.DefectWarnings = store.BlockCounts(pc.blocks[r.ID])
 	r.StaleResults = pc.stale.StaleCount(pc.r2t[r.ID])
 	r.SuspectRelations = pc.suspectRels[r.ID]
+	if v := pc.verification()[r.ID]; v != nil {
+		r.Verification, r.CriteriaVerified = v.State, v.CriteriaVerified
+	}
+	r.ElementIDs = pc.reqElems[r.ID]
 }
 
 func (pc *projectContext) decorateTest(t *model.TestCase) {
@@ -243,6 +297,7 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 	if st := pc.stale.Test(t.ID); st.Stale {
 		t.Stale, t.StaleReason = true, st.Reason
 	}
+	t.ElementIDs = pc.testElems[t.ID]
 	refs := append([]model.ItemRef{}, pc.refs[t.ID]...)
 	seen := map[string]bool{}
 	for _, st := range t.Steps {
@@ -286,6 +341,8 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"blocked":           {strconv.Itoa(r.BlockingDefects)},
 		"stale":             {strconv.Itoa(r.StaleResults)},
 		"suspect_relations": {strconv.Itoa(r.SuspectRelations)},
+		"verification":      {r.Verification},
+		"element":           pc.elementTerms(r.ElementIDs),
 	}
 }
 
@@ -324,6 +381,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"flakiness":  {strconv.Itoa(t.Flakiness)},
 		"catalog":    {t.CatalogRef},
 		"stale":      {strconv.FormatBool(t.Stale)},
+		"element":    pc.elementTerms(t.ElementIDs),
 	}
 }
 

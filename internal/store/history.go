@@ -34,6 +34,7 @@ func SnapshotRequirement(r *model.Requirement) json.RawMessage {
 	c.RelationRefs, c.CriteriaCount = nil, 0
 	c.SuspectLinks, c.RiskLevel, c.OpenDefects = 0, "", 0
 	c.BlockingDefects, c.DefectWarnings, c.StaleResults, c.SuspectRelations = 0, 0, 0, 0
+	c.Verification, c.CriteriaVerified, c.ElementIDs = "", 0, nil
 	if c.Criteria == nil {
 		c.Criteria = []model.EvaluationCriterion{}
 	}
@@ -48,6 +49,7 @@ func SnapshotTest(t *model.TestCase) json.RawMessage {
 	c.RelationRefs, c.StepCount, c.Defects = nil, 0, nil
 	c.SuspectLinks = 0
 	c.Stale, c.StaleReason = false, ""
+	c.ElementIDs = nil
 	steps := make([]model.TestStep, len(c.Steps))
 	for i, st := range c.Steps {
 		st.CallTestKey, st.CallTestTitle = "", ""

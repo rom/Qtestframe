@@ -52,9 +52,15 @@ func (s *Server) afterContentChange(ctx context.Context, p *Principal, kind, id,
 		s.audit(ctx, p, "link.suspect", kind, id, reason)
 	}
 	if kind == model.KindRequirement {
+		// verification records valid "until a change" stop counting
+		if n, err := s.Store.InvalidateRecords(ctx, p.TenantID(), id, "", reason); err != nil {
+			s.Log.Warn("invalidate verification records", "err", err)
+		} else if n > 0 {
+			s.audit(ctx, p, "verification.invalidate", kind, id, reason)
+		}
 		// along the requirement relations, to tracker issues (correlations.go)
 		reqs = append(reqs, s.applyChangeImpact(ctx, p, id, key, reason)...)
-		// stale results of its tests may change its status even without links
+		// stale results and invalidated records may change its status even without links
 		reqs = append(reqs, id)
 	} else {
 		reqs = append(reqs, s.requirementsOfTests(ctx, p, projectID, []string{id})...)

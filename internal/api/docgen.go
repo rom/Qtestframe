@@ -248,6 +248,10 @@ func (s *Server) documentData(r *http.Request, p *Principal, pr *model.Project, 
 		d.Links = append(d.Links, l)
 	}
 
+	if d.Baseline == nil {
+		// the verification of the current evidence (not for a baseline)
+		d.Verification = pc.verification()
+	}
 	pc.indexCalls(tests)
 	for i := range reqs {
 		rq := &reqs[i]

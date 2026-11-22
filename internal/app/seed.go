@@ -251,6 +251,9 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedCorrelations(ctx, st, tenantID, run, changed); err != nil {
 		return nil, err
 	}
+	if err := seedVerification(ctx, st, tenantID, p, reqs, testIDs); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

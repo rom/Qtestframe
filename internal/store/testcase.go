@@ -395,26 +395,29 @@ func (s *Store) CreateLink(ctx context.Context, tenantID string, l *model.TraceL
 	if r.ProjectID != t.ProjectID {
 		return Invalidf("requirement and test belong to different projects")
 	}
-	if l.CriterionID != nil && *l.CriterionID != "" {
-		ok := false
-		for _, c := range r.Criteria {
-			if c.ID == *l.CriterionID {
-				ok = true
-			}
-		}
-		if !ok {
-			return Invalidf("criterion does not belong to requirement")
-		}
-	} else {
-		l.CriterionID = nil
+	// the criteria it verifies: Criteria, or the single CriterionID
+	crits := l.Criteria
+	if len(crits) == 0 && l.CriterionID != nil && *l.CriterionID != "" {
+		crits = []model.LinkCriterion{{CriterionID: *l.CriterionID}}
+	}
+	if crits, err = validLinkCriteria(r, t, crits); err != nil {
+		return err
+	}
+	l.Criteria, l.CriterionID = crits, nil
+	if len(crits) > 0 {
+		l.CriterionID = &crits[0].CriterionID
 	}
 	l.ID = newID()
 	l.ProjectID = r.ProjectID
 	l.CreatedAt = s.now()
 	l.RequirementKey, l.TestCaseKey = r.Key, t.Key
-	_, err = s.c(ctx).exec(ctx, `INSERT INTO trace_links (id, tenant_id, project_id, requirement_id, test_case_id, criterion_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		l.ID, tenantID, l.ProjectID, l.RequirementID, l.TestCaseID, nullStr(l.CriterionID), l.CreatedAt)
-	return mapErr(err, "link")
+	return s.tx(ctx, func(c conn) error {
+		if _, err := c.exec(ctx, `INSERT INTO trace_links (id, tenant_id, project_id, requirement_id, test_case_id, criterion_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			l.ID, tenantID, l.ProjectID, l.RequirementID, l.TestCaseID, nullStr(l.CriterionID), l.CreatedAt); err != nil {
+			return mapErr(err, "link")
+		}
+		return writeLinkCriteria(ctx, c, l.ID, crits)
+	})
 }
 
 // ListLinks returns links of a project, optionally restricted to one
@@ -456,7 +459,41 @@ func (s *Store) ListLinks(ctx context.Context, tenantID, projectID, requirementI
 		}
 		out = append(out, l)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	if err := s.fillLinkCriteria(ctx, tenantID, projectID, out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// fillLinkCriteria sets the criterion mappings of links (of a project, or
+// of any project when projectID is "").
+func (s *Store) fillLinkCriteria(ctx context.Context, tenantID, projectID string, links []model.TraceLink) error {
+	if len(links) == 0 {
+		return nil
+	}
+	where, args := `l.tenant_id = ?`, []any{tenantID}
+	if projectID != "" {
+		where += ` AND l.project_id = ?`
+		args = append(args, projectID)
+	} else if len(links) == 1 {
+		where += ` AND l.id = ?`
+		args = append(args, links[0].ID)
+	}
+	m, err := s.linkCriteria(ctx, where, args...)
+	if err != nil {
+		return err
+	}
+	for i := range links {
+		links[i].Criteria = m[links[i].ID]
+		if links[i].Criteria == nil {
+			links[i].Criteria = []model.LinkCriterion{}
+		}
+	}
+	return nil
 }
 
 // GetLink returns one link.
@@ -474,7 +511,11 @@ func (s *Store) GetLink(ctx context.Context, tenantID, id string) (*model.TraceL
 		t := since.Time
 		l.SuspectSince = &t
 	}
-	return &l, nil
+	list := []model.TraceLink{l}
+	if err := s.fillLinkCriteria(ctx, tenantID, "", list); err != nil {
+		return nil, err
+	}
+	return &list[0], nil
 }
 
 // DeleteLink removes a link.

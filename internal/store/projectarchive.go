@@ -131,6 +131,14 @@ var projectArchiveTables = []archiveTable{
 	// the ReqIF identifiers of the items, so a loaded project can be
 	// updated from the same documents
 	{"external_refs", ofProject},
+	// verification correlations
+	{"link_criteria", `link_id IN (SELECT id FROM trace_links WHERE project_id = ?)`},
+	{"system_elements", ofProject},
+	{"requirement_elements", inReqs},
+	{"test_elements", inTests},
+	{"verification_settings", ofProject},
+	{"verification_records", ofProject},
+	{"verification_record_files", `record_id IN (SELECT id FROM verification_records WHERE project_id = ?)`},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},
