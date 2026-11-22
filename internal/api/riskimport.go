@@ -30,7 +30,7 @@ var riskColumns = map[string]string{
 	"owner": "owner", "ägare": "owner", "riskägare": "owner",
 	"likelihood": "likelihood", "sannolikhet": "likelihood", "probability": "likelihood",
 	"impact": "impact", "konsekvens": "impact", "severity": "impact",
-	"status": "status",
+	"status":     "status",
 	"mitigation": "mitigation", "åtgärd": "mitigation", "åtgärder": "mitigation",
 	"review date": "review_date", "granskningsdatum": "review_date", "nästa granskning": "review_date",
 	"review owner": "review_owner", "granskningsansvarig": "review_owner",
