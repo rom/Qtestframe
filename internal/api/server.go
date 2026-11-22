@@ -335,6 +335,7 @@ func (s *Server) routes() {
 	s.routesRequirementIssues(h)
 	s.routesRisks(h)
 	s.routesWaivers(h)
+	s.routesChangeRequests(h)
 	s.routesSoA(h)
 	s.routesNotifications(h)
 	s.routesWorkList(h)
@@ -565,7 +566,10 @@ func writeError(w http.ResponseWriter, status int, code, msg string) {
 func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error) {
 	var qe *query.Error
 	var ae *apiErr
+	var cb *changeBlocked
 	switch {
+	case errors.As(err, &cb):
+		writeChangeBlocked(w, cb)
 	case errors.As(err, &ae):
 		writeError(w, ae.status, ae.code, ae.msg)
 	case errors.As(err, &qe):

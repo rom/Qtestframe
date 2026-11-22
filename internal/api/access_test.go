@@ -49,6 +49,7 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	a.m("POST", pp+"/defects", map[string]any{"title": "Secret defect", "severity": "minor"}, 201)
 	a.m("POST", pp+"/risks", map[string]any{"title": "Secret risk", "likelihood": 2, "impact": 2}, 201)
 	a.m("POST", pp+"/waivers", map[string]any{"title": "Secret waiver", "requirement_ids": []string{r1}}, 201)
+	a.m("POST", pp+"/change-requests", map[string]any{"title": "Secret change"}, 201)
 	a.m("POST", pp+"/webhooks", map[string]any{"name": "h", "url": "https://hooks.example.org/x", "events": []string{"defect.updated"}, "enabled": false}, 201)
 	a.m("POST", pp+"/chat-channels", map[string]any{"name": "c", "provider": "slack", "url": "https://hooks.example.org/c", "events": []string{"defect.updated"}, "enabled": false}, 201)
 	a.m("POST", pp+"/configurations", map[string]any{"name": "Chrome"}, 201)
@@ -84,8 +85,9 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"links": `SELECT id FROM trace_links WHERE project_id = ?`, "item-links": `SELECT id FROM item_links WHERE project_id = ?`,
 		"trash": `SELECT id FROM trash WHERE project_id = ?`, "releases": `SELECT id FROM releases WHERE project_id = ?`,
 		"defects": `SELECT id FROM defects WHERE project_id = ?`, "risks": `SELECT id FROM risks WHERE project_id = ?`,
-		"waivers":  `SELECT id FROM waivers WHERE project_id = ?`,
-		"webhooks": `SELECT id FROM webhooks WHERE project_id = ?`, "trace-rules": `SELECT id FROM trace_rules WHERE project_id = ?`,
+		"waivers":         `SELECT id FROM waivers WHERE project_id = ?`,
+		"change-requests": `SELECT id FROM change_requests WHERE project_id = ?`,
+		"webhooks":        `SELECT id FROM webhooks WHERE project_id = ?`, "trace-rules": `SELECT id FROM trace_rules WHERE project_id = ?`,
 		"chat-channels":  `SELECT id FROM chat_channels WHERE project_id = ?`,
 		"configurations": `SELECT id FROM configurations WHERE project_id = ?`, "test-dependencies": `SELECT id FROM test_dependencies WHERE project_id = ?`,
 		"reports/definitions": `SELECT id FROM report_definitions WHERE project_id = ?`, "reports/subscriptions": `SELECT id FROM report_subscriptions WHERE project_id = ?`,

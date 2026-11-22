@@ -18,6 +18,10 @@ const props = defineProps<{
   explain: string
   /** offer approve / reject */
   decisions?: boolean
+  /** the decisions offered (default approve, reject; e.g. also defer) */
+  choices?: string[]
+  /** what the signature means (shown above the comment and recorded) */
+  meaning?: string
   /** a comment is required for a rejection (decisions) or always */
   commentRequired?: 'reject' | 'always'
   confirmLabel?: string
@@ -32,10 +36,7 @@ const needsPassword = computed(() => (auth.user?.auth_provider ?? 'local') === '
 const decision = ref('approve')
 const comment = ref('')
 const password = ref('')
-const decisionOptions = computed(() => [
-  { label: t('esign.approve'), value: 'approve' },
-  { label: t('esign.reject'), value: 'reject' },
-])
+const decisionOptions = computed(() => (props.choices ?? ['approve', 'reject']).map((v) => ({ label: t(`esign.${v}`), value: v })))
 watch(visible, (v) => {
   if (v) {
     decision.value = 'approve'
@@ -49,7 +50,8 @@ watch(
     if (!b) password.value = ''
   },
 )
-const needComment = computed(() => props.commentRequired === 'always' || (props.commentRequired === 'reject' && decision.value === 'reject'))
+// a rejection (and any other decision than approve) needs a comment
+const needComment = computed(() => props.commentRequired === 'always' || (props.commentRequired === 'reject' && decision.value !== 'approve'))
 const canSign = computed(() => (!needsPassword.value || !!password.value) && (!needComment.value || comment.value.trim().length >= 3))
 function sign() {
   if (!canSign.value || props.busy) return
@@ -61,6 +63,7 @@ function sign() {
   <Dialog v-model:visible="visible" modal :header="header" :style="{ width: 'min(500px, 96vw)' }">
     <form class="esign" @submit.prevent="sign">
       <p class="small" style="margin-top: 0">{{ explain }}</p>
+      <p v-if="meaning" class="small esign-meaning"><b>{{ t('esign.meaning') }}</b> {{ meaning }}</p>
       <template v-if="decisions">
         <span id="esign-decision" class="field-label">{{ t('esign.decision') }}</span>
         <SelectButton v-model="decision" :options="decisionOptions" option-label="label" option-value="value" :allow-empty="false" aria-labelledby="esign-decision" />
@@ -85,5 +88,10 @@ function sign() {
 .esign {
   display: grid;
   gap: 8px;
+}
+.esign-meaning {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--qtf-border);
 }
 </style>

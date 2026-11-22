@@ -15,6 +15,8 @@ import RequirementWaivers from './RequirementWaivers.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
+import ChangeControlBar from './ChangeControlBar.vue'
+import { changeBlocked, proposalOf } from '@/lib/changeRequests'
 import StaleBadge from './StaleBadge.vue'
 import { contentChanges, needsImpactConfirm, type ChangeImpact, type ImpactChoice } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
@@ -458,6 +460,27 @@ function bodyOf(f: typeof form.value) {
 }
 /** the body as loaded, for undoing an edit */
 const loaded = ref<Record<string, unknown> | null>(null)
+// ---------- change control: propose the edits in a change request ----------
+const ccBar = ref<InstanceType<typeof ChangeControlBar> | null>(null)
+function proposal() {
+  const proposed = loaded.value ? proposalOf('requirement', loaded.value, bodyOf(form.value) as Record<string, unknown>) : {}
+  const cur = (item.value ?? {}) as unknown as Record<string, unknown>
+  const current: Record<string, unknown> = {}
+  for (const k of Object.keys(proposed)) current[k] = cur[k] ?? null
+  return { proposed, current }
+}
+async function onProposed() {
+  error.value = ''
+  await load()
+}
+/** a save refused by change control: say why and offer to propose the change */
+function blockedSave(e: unknown): boolean {
+  const b = changeBlocked(e)
+  if (!b) return false
+  error.value = t('changeRequests.blockedSave', { reasons: b.reasons.join('; ') })
+  ccBar.value?.propose()
+  return true
+}
 const undoStore = useUndoStore()
 watch(
   () => undoStore.version,
@@ -521,6 +544,8 @@ const impactOpen = ref(false)
 const impactPreview = ref<ChangeImpact | null>(null)
 const impactFields = ref<string[]>([])
 async function save() {
+  // under enforced change control the edit becomes a proposal
+  if (ccBar.value?.blocked()) return ccBar.value.propose()
   if (isNew.value || !loaded.value || !props.itemId) return doSave()
   const changed = contentChanges('requirement', loaded.value, bodyOf(form.value) as Record<string, unknown>)
   if (!changed.length) return doSave()
@@ -564,7 +589,7 @@ async function doSave(choice?: ImpactChoice) {
   } catch (e) {
     const st = staleOf<Requirement>(e)
     if (st) showConflict(st)
-    else error.value = errorMessage(e)
+    else if (!blockedSave(e)) error.value = errorMessage(e)
   } finally {
     saving.value = false
   }
@@ -911,6 +936,18 @@ function criterionLabel(id: string | null) {
     <RequirementWaivers v-if="item" :requirement-id="item.id" :project-id="projectId" />
     <ApplicabilityPanel v-if="item" item-type="requirement" :item-id="item.id" :item-key="item.key" :project-id="projectId" :can-write="canWrite" :refresh="links.length" />
 
+    <ChangeControlBar
+      v-if="item"
+      ref="ccBar"
+      kind="requirement"
+      :item-id="item.id"
+      :project-id="projectId"
+      :item-key="item.key"
+      :item-title="item.title"
+      :version="item.version"
+      :proposal="proposal"
+      @proposed="onProposed"
+    />
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
       <SplitButton

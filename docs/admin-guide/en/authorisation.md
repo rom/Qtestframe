@@ -24,6 +24,8 @@ These are the permissions of the built-in roles until an organisation changes th
 | `requirement.write` |  |  | ✔ |  |  | ✔ | ✔ |
 | `requirement.review` |  | ✔ | ✔ |  |  | ✔ | ✔ |
 | `waiver.approve` |  |  |  |  |  | ✔ | ✔ |
+| `change.create` |  |  | ✔ |  | ✔ | ✔ | ✔ |
+| `change.approve` |  |  |  |  | ✔ | ✔ | ✔ |
 | `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `test.review` |  | ✔ |  |  | ✔ | ✔ | ✔ |
@@ -100,7 +102,7 @@ A project is either **organisation-wide** (the default: every member sees it wit
 | any other member, organisation-wide project | the organisation roles |
 | any other member, restricted project | none: the project answers `404` |
 
-Only **project-scoped** permissions come from the project roles (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation roles, and an API token is capped by its own roles inside a project as well.
+Only **project-scoped** permissions come from the project roles (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation roles, and an API token is capped by its own roles inside a project as well.
 
 What restriction does **not** hide, so plan accordingly:
 

@@ -25,6 +25,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Testkörningar och exekvering](#testkörningar-och-exekvering) | Körningar, exekveringsvyn och dess kortkommandon, defekter, CI-import med API-nycklar, bilagor |
 | [Utforskande test](#utforskande-test) | Sessionsbaserad utforskande testning: uppdrag, sessionens tidtagning, typade anteckningar med kortkommandon, defekter från anteckningar, utvärderingar, mått och sessionsrapporten |
 | [Undantag, restrisk och SoA](#undantag-restrisk-och-uttalande-om-tillämplighet) | Undantag och avvikelser med signerade godkännanden, restrisk och dess acceptans, uttalandet om tillämplighet (ISO/IEC 27001 bilaga A) |
+| [Ändringsbegäranden och ändringshantering](#ändringsbegäranden-och-ändringshantering) | Att föreslå ändringar av godkända krav och tester, bedömningen av påverkan, ändringsnämndens signerade beslut, att genomföra, verifiera och stänga; tvingande ändringshantering och nödåtgärden |
 | [Spårbarhet och täckning](#spårbarhet-och-täckning) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
 | [Testcykler](#testcykler) | Planera testcykler: testfall, testare och uppskattningar, körningarna en cykel skapar, framsteg, nedbränning, arbetsbelastning, återkommande cykler |
 | [Dubbletter och konflikter](#dubbletter-och-konflikter) | Liknande krav medan du skriver, misstänkt dubblerade krav och testfall, möjligen motstridiga krav, sammanslagning, gränsvärden |
@@ -1990,6 +1991,71 @@ Ett krav hänvisar till en åtgärd när det har lagts till från ett katalogkra
 Tabellen fungerar som [kalkylbladsvyn](#krav): skriv i cellerna **Tillämplig**, **Motivering** och **Ägare**, klistra in ett block från ett kalkylblad eller fyll nedåt med <kbd>Ctrl</kbd>+<kbd>D</kbd>. Varje ändring sparas direkt. Tryck <kbd>Ctrl</kbd>+<kbd>Enter</kbd> på en åtgärd (eller dubbelklicka på den i första kolumnen) för att se dess krav och belägg. Filtrera på text, tillämplighet, införande och grupp; siffrorna ovanför tabellen räknar åtgärderna.
 
 **Ladda ned** skapar uttalandet som PDF, Word, Excel eller Markdown; **Spara i arkivet** lägger det i [dokumentarkivet](#dokument-1). Det finns också som standardrapporten **Uttalande om tillämplighet** på sidan **Rapporter**.
+
+# Ändringsbegäranden och ändringshantering
+
+När ett krav är godkänt, eller fryst i en signerad baslinje, bör en ändring vara ett beslut och inte en redigering. **Ändringshantering** gör den till det: en **ändringsbegäran** föreslår nya värden för ett eller flera krav och tester, säger varför, visar vad mer ändringen påverkar, beslutas av projektets **ändringsnämnd** med elektroniska signaturer och genomförs sedan i ett steg, med vanliga versioner och historik.
+
+| Åtgärd | Roll som krävs |
+|---|---|
+| Se ändringsbegäranden | Läsare |
+| Föreslå ändringar; redigera, skicka in, bedöma, skicka till nämnden, genomföra, verifiera och stänga ändringsbegäranden | Ämnesexpert, Testledare, Förvaltare (`change.create`) |
+| Besluta om ändringsbegäranden som nämndmedlem; nödåtgärd | Testledare, Förvaltare (`change.approve`) |
+| Ändra projektets inställningar för ändringshantering | Förvaltare (`project.update`) |
+
+För att genomföra en ändringsbegäran krävs också behörighet att redigera posterna den ändrar (`requirement.write`, `test.write`, och granskningsbehörigheten för en granskningsstatus).
+
+## Ändringshantering i ett projekt
+
+Under **Inställningar → Projekt → Ändringshantering** väljer du hur strikt projektet hanterar ändringar:
+
+- **Av** (standard): poster ändras direkt, som utan ändringshantering. Ändringsbegäranden kan ändå användas.
+- **Varna**: skyddade poster kan fortfarande ändras direkt, men redigeraren säger att de omfattas av ändringshantering och ändringen flaggas.
+- **Tvinga**: skyddade poster kan inte ändras direkt. Att spara dem, en massändring, kalkylbladsvyn, en Excel- eller ReqIF-import, att återställa en äldre version eller en baslinje och att ta bort avvisas med *Inte sparat: posten omfattas av ändringshantering*, och redigeraren erbjuder att **föreslå ändringen** i stället.
+
+En post är **skyddad** när dess status är en av de **skyddade statusarna** (standard *Godkänt*, *Implementerat*, *Verifierat* och, för tester, *Klar*) eller, med **Signerade baslinjer låser sina poster**, när den finns i en baslinje som har en [signatur](#baslinjer). Granskningsbeslut och statusen som följer bevisen påverkas inte.
+
+**Ändringsnämnden** är en lista med medlemmar (e-postadresser) och roller. Bara de beslutar om ändringsbegäranden, och bara om de också har `change.approve`; om ingen anges beslutar alla med `change.approve`. **Beslutsförheten** anger hur många godkännanden som behövs: *all* (varje angiven medlem och en innehavare av varje angiven roll), *any* (en medlem) eller ett antal. **Signaturens betydelse** är meningen en nämndmedlem signerar, till exempel *Godkänd för release av ändringsnämnden*. **Att stänga en ändringsbegäran skapar en baslinje som standard** förväljer det valet när en ändringsbegäran stängs.
+
+### Nödåtgärd
+
+När en rättning inte kan vänta på nämnden kan den som har `change.approve` spara en skyddad post direkt med en **nödåtgärd** och en motivering på minst tio tecken (i API:t `?change_override=<motivering>`). Ändringen sparas som vanligt, och granskningsloggen registrerar `change_control.override` med posten, varför den var skyddad och motiveringen.
+
+## Föreslå en ändring
+
+Det finns tre sätt att lägga en ändring i en ändringsbegäran:
+
+- **I redigeraren**: öppna ett krav eller test, ändra fälten som vanligt och välj **Föreslå ändring** under formuläret i stället för **Spara**. Fälten du ändrade (titel, beskrivning, förpliktelse, typ, prioritet, status, källa, motivering, ägare, taggar och egna fält; för tester också förutsättningar, förväntat resultat, utförande och uppskattning) blir förslaget. Ingenting sparas på posten.
+- **För flera**: markera poster i listan och välj **Föreslå ändring** i markeringsraden, sedan ny status, prioritet, förpliktelse eller utförande och ägare för alla.
+- **Efter ett avvisat sparande**: med *tvinga* öppnar ett sparande av en skyddad post samma dialog med dina ändringar.
+
+I dialogen väljer du **En ny ändringsbegäran** (titel, motivering, kategori och prioritet) eller **Ett av mina utkast** för att lägga ändringen i ett utkast du fortfarande skriver. Dialogen visar varje ändring som en skillnad: borttagen text överstruken, tillagd text markerad.
+
+Poster med öppna ändringsbegäranden har en **ÄB**-märkning i listorna, och redigeraren visar deras öppna ändringsbegäranden. I [frågespråket](#sökning-och-filter) hittar `cr:open` (eller `has:cr`) poster med en öppen ändringsbegäran och `cr:DEMO-CR-3` posterna i en.
+
+## Arbetsflödet
+
+**Ändringsbegäranden** i projektets sidomeny listar dem med nyckel (*PROJ-CR-n*), status, kategori, prioritet, poster och den som begärde. Öppna en för att se de föreslagna ändringarna post för post och fält för fält, påverkan, signaturerna och tidslinjen.
+
+1. **Utkast**: den som begär skriver ändringsbegäran. **Kategori** är en av *Rättelse*, *Förbättring*, *Regelkrav*, *Defektdriven*, *Riskdriven* och *Övrigt*. Koppla defekterna, riskerna och ärendena ändringen kommer från, välj vad genomförandet gör med [ändringspåverkan](#spårbarhet-och-täckning) (*Markera misstänkta*, *Meddela ägare* eller *Ingetdera*) och om stängning skapar en baslinje.
+2. **Skicka in**: kräver minst en post och en motivering. Den transitiva ändringspåverkan av de föreslagna ändringarna beräknas och **sparas på ändringsbegäran** som en ögonblicksbild, med vägen till varje påverkad post, så att nämnden beslutar om det som bedömdes.
+3. **Bedöm påverkan**: en bedömare lägger till anteckningar och en uppskattad insats; påverkan beräknas igen. *Skicka sedan till ändringsnämnden* för den vidare direkt.
+4. **Under beslut**: nämndens medlemmar meddelas, och den visas i deras [Mitt arbete](#granskningar-och-notiser) som *Ändringsbeslut*.
+5. **Besluta**: en nämndmedlem väljer **Besluta…**, väljer *Godkänn*, *Avslå* eller *Skjut upp*, skriver en kommentar (krävs för avslag och uppskjutande) och bekräftar med sitt lösenord. Det är en **elektronisk signatur** över ändringsbegärans exakta innehåll med projektets signaturbetydelse. Ett avslag eller uppskjutande beslutar direkt; godkännanden beslutar när beslutsförheten nås. Den som begärde ändringen kan inte besluta om den och meddelas om beslutet.
+6. **Genomför**: en godkänd ändringsbegäran genomförs i ett steg. Varje post får de föreslagna värdena genom det vanliga sparandet, så validering, behörigheter, versioner, historik och granskningsloggen är desamma som vid en redigering; sedan hanteras påverkan en gång, med det valda alternativet. Om en post inte kan sparas sparas ingenting. Om en post har ändrats sedan ändringen föreslogs är ändringsbegäran *inaktuell* och kan varken beslutas eller genomföras: återta den och föreslå ändringen igen.
+7. **Verifiera** och **Stäng**: någon bekräftar att ändringen fungerar som avsett och stänger den sedan, om man vill med en ny baslinje av projektet.
+
+En avslagen eller uppskjuten ändringsbegäran kan **återtas** till utkast och skickas in igen, eller stängas. Utkast och avslagna ändringsbegäranden kan tas bort. Varje steg finns på **tidslinjen** med vem, när och varför.
+
+## Rapporter, aviseringar och integrationer
+
+- Rapportmallen **Ändringsbegäranden** (under **Rapporter**) ger en ändringsbegäran (de föreslagna ändringarna fält för fält, påverkan, signaturerna och tidslinjen) eller registret över alla; **PDF-rapport** i ändringsbegäran gör detsamma för den.
+- Webhooks och chattkanaler kan prenumerera på `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented` och `change_request.closed`.
+- Ändringsbegäranden ingår i projektarkiv och säkerhetskopior.
+
+## I demot
+
+Demoprojektet har ändringshanteringen *varna*, med administratören och förvaltarna som nämnd. Saras ändringsbegäran *Lock accounts for 30 minutes instead of 15* väntar på administratörens beslut i Mitt arbete; det finns också en stängd ändringsbegäran vars ändring har genomförts, en uppskjuten och ett utkast.
 
 # Defekter
 
@@ -3978,12 +4044,16 @@ Standardmatrisen med behörigheter:
 | `requirement.review` | | ✔ | ✔ | | | ✔ | ✔ |
 | `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `requirement.write` | | | ✔ | | | ✔ | ✔ |
+| `change.create` | | | ✔ | | ✔ | ✔ | ✔ |
+| `change.approve` | | | | | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | | ✔ | ✔ | ✔ | ✔ |
 | `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
 | `waiver.approve`, `project.create`, `project.update` | | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | | ✔ |
 
 **Undantag och riskacceptans.** Att godkänna, avslå och återkalla [undantag och avvikelser](#undantag-restrisk-och-uttalande-om-tillämplighet) och att signera acceptansen av en restrisk kräver `waiver.approve` (en projektbehörighet, så en projektroll kan ge den i ett enskilt projekt). Varje beslut är en elektronisk signatur (lösenord, eller en nyligen gjord enkel inloggning) och registreras i händelseloggen; den som begärt ett undantag kan inte besluta om det. Ge `waiver.approve` bara till personer som får acceptera att krav inte uppfylls.
+
+**Ändringsbegäranden.** Att föreslå ändringar i [ändringsbegäranden](#ändringsbegäranden-och-ändringshantering) (och bedöma, genomföra, verifiera och stänga dem) kräver `change.create`; att besluta om dem som medlem i projektets ändringsnämnd, och nödåtgärden förbi tvingande ändringshantering, kräver `change.approve`. Båda är projektbehörigheter. Varje beslut är en elektronisk signatur, och den som begärt en ändring kan inte besluta om den.
 
 **Granskningsbeslut.** Att sätta ett krav till *Godkänt* eller *Avvisat* kräver `requirement.review`; att sätta ett testfall till *Klart* kräver `test.review`. Detsamma gäller massändringar, att skapa ett objekt med den statusen och att återställa en version som har den. En granskare utan skrivbehörighet får bara ändra statusen; att redigera något annat kräver fortfarande `requirement.write` eller `test.write`. Varje beslut registreras i händelseloggen som `requirement.review` eller `test.review`. Ett kopierat krav eller testfall börjar som *Utkast* och granskas alltså på nytt.
 

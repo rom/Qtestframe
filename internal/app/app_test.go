@@ -342,6 +342,23 @@ func TestSeedDemo(t *testing.T) {
 		t.Errorf("sara grant %+v %v", g, err)
 	}
 	ps = slices.DeleteFunc(ps, func(p model.Project) bool { return p.Key == "VAULT" })
+	// change requests in several states, change control warns
+	for _, pr := range ps {
+		crs, err := st.ListChangeRequests(context.Background(), tn.ID, pr.ID, store.CRFilter{})
+		if err != nil || len(crs) != 4 {
+			t.Fatalf("change requests of %s: %d %v", pr.Key, len(crs), err)
+		}
+		states := map[string]bool{}
+		for _, c := range crs {
+			states[c.Status] = true
+		}
+		if !states["in_review"] || !states["closed"] || !states["deferred"] || !states["draft"] {
+			t.Errorf("states %v", states)
+		}
+		if cc, err := st.ChangeControl(context.Background(), tn.ID, pr.ID); err != nil || cc.Mode != "warn" {
+			t.Errorf("change control %+v %v", cc, err)
+		}
+	}
 	// test cycles: closed, active (half executed, with a burndown), planned
 	for _, pr := range ps {
 		cycles, err := st.ListCycles(context.Background(), tn.ID, pr.ID)

@@ -519,6 +519,9 @@ type Requirement struct {
 	// CustomFields are the values of the project's custom fields (field key
 	// → value); a PATCH merges them, null removes a value.
 	CustomFields CustomValues `json:"custom_fields,omitempty"`
+	// OpenChangeRequests: the keys of the open change requests that
+	// propose changes to it (derived).
+	OpenChangeRequests []string `json:"open_change_requests,omitempty"`
 }
 
 // ItemRef is a derived reference from a requirement or test to a related
@@ -634,6 +637,9 @@ type TestCase struct {
 	// CustomFields are the values of the project's custom fields (field key
 	// → value); a PATCH merges them, null removes a value.
 	CustomFields CustomValues `json:"custom_fields,omitempty"`
+	// OpenChangeRequests: the keys of the open change requests that
+	// propose changes to it (derived).
+	OpenChangeRequests []string `json:"open_change_requests,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -1093,6 +1099,8 @@ var WebhookEvents = []string{
 	"comment.created", "comment.mentioned", "comment.resolved", "review.requested", "review.completed", "baseline.signed",
 	"defect.regression",
 	"waiver.requested", "waiver.approved", "waiver.rejected", "waiver.revoked",
+	"change_request.submitted", "change_request.review", "change_request.approved", "change_request.rejected", "change_request.deferred",
+	"change_request.implemented", "change_request.closed",
 }
 
 // Webhook posts events of a project to a URL, signed with HMAC-SHA256.

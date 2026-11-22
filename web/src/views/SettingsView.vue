@@ -28,6 +28,7 @@ import CISetupPanel from '@/components/CISetupPanel.vue'
 import WebhooksCard from '@/components/WebhooksCard.vue'
 import ChatChannelsCard from '@/components/ChatChannelsCard.vue'
 import VerificationSettingsCard from '@/components/VerificationSettingsCard.vue'
+import ChangeControlSettings from '@/components/ChangeControlSettings.vue'
 import ConfigurationsSettings from '@/components/ConfigurationsSettings.vue'
 import WebTestSettings from '@/components/WebTestSettings.vue'
 import CorrelationSettings from '@/components/CorrelationSettings.vue'
@@ -452,6 +453,7 @@ function deleteProject() {
           <AvatarPicker kind="icon" :value="proj.project?.icon" :name="proj.project?.key ?? ''" :upload-path="`/projects/${proj.pid}/icon`" :save="saveIcon" :disabled="!auth.can(P.projectUpdate)" @uploaded="onIconUploaded" />
         </section>
         <VerificationSettingsCard v-if="proj.pid" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
+        <ChangeControlSettings v-if="proj.pid" id="change-control" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
         <DefectTrackerSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <ImportSourcesSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <CodeSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />

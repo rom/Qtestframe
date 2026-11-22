@@ -5,6 +5,8 @@ import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
+import ChangeControlBar from './ChangeControlBar.vue'
+import { changeBlocked, proposalOf } from '@/lib/changeRequests'
 import StaleBadge from './StaleBadge.vue'
 import { contentChanges, needsImpactConfirm, type ChangeImpact, type ImpactChoice } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
@@ -313,6 +315,27 @@ function onReorder(e: { value: StepRow[] }) {
 
 // ---------- save ----------
 const loaded = ref<Record<string, unknown> | null>(null)
+// ---------- change control: propose the edits in a change request ----------
+const ccBar = ref<InstanceType<typeof ChangeControlBar> | null>(null)
+function proposal() {
+  const proposed = loaded.value ? proposalOf('test', loaded.value, bodyOf(form.value) as Record<string, unknown>) : {}
+  const cur = (item.value ?? {}) as unknown as Record<string, unknown>
+  const current: Record<string, unknown> = {}
+  for (const k of Object.keys(proposed)) current[k] = cur[k] ?? null
+  return { proposed, current }
+}
+async function onProposed() {
+  error.value = ''
+  await load()
+}
+/** a save refused by change control: say why and offer to propose the change */
+function blockedSave(e: unknown): boolean {
+  const b = changeBlocked(e)
+  if (!b) return false
+  error.value = t('changeRequests.blockedSave', { reasons: b.reasons.join('; ') })
+  ccBar.value?.propose()
+  return true
+}
 const undoStore = useUndoStore()
 watch(
   () => undoStore.version,
@@ -397,6 +420,8 @@ const impactOpen = ref(false)
 const impactPreview = ref<ChangeImpact | null>(null)
 const impactFields = ref<string[]>([])
 async function save() {
+  // under enforced change control the edit becomes a proposal
+  if (ccBar.value?.blocked()) return ccBar.value.propose()
   if (isNew.value || !loaded.value || !props.itemId) return doSave()
   const changed = contentChanges('test', loaded.value, bodyOf(form.value) as Record<string, unknown>)
   if (!changed.length) return doSave()
@@ -436,7 +461,7 @@ async function doSave(choice?: ImpactChoice) {
   } catch (e) {
     const st = staleOf<TestCase>(e)
     if (st) showConflict(st)
-    else error.value = errorMessage(e)
+    else if (!blockedSave(e)) error.value = errorMessage(e)
   } finally {
     saving.value = false
   }
@@ -740,6 +765,18 @@ const scriptPlaceholder = computed(() => {
     <TestDependenciesPanel v-if="item" :project-id="projectId" :test-id="item.id" :can-write="canWrite" @changed="emit('saved', item)" />
     <ApplicabilityPanel v-if="item" item-type="test" :item-id="item.id" :item-key="item.key" :project-id="projectId" :can-write="canWrite" />
 
+    <ChangeControlBar
+      v-if="item"
+      ref="ccBar"
+      kind="test"
+      :item-id="item.id"
+      :project-id="projectId"
+      :item-key="item.key"
+      :item-title="item.title"
+      :version="item.version ?? 0"
+      :proposal="proposal"
+      @proposed="onProposed"
+    />
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
       <Button v-if="item && canWrite" :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text style="margin-right: auto" @click="copy" />

@@ -383,6 +383,8 @@ OIDC/SAML login neither creates nor changes that membership, so
 | requirement.review | | ✔ | ✔ | | | ✔ | ✔ |
 | comment.create | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | requirement.write | | | ✔ | | | ✔ | ✔ |
+| change.create | | | ✔ | | ✔ | ✔ | ✔ |
+| change.approve | | | | | ✔ | ✔ | ✔ |
 | test.write, run.write, run.execute, token.manage | | | | ✔ | ✔ | ✔ | ✔ |
 | cycle.plan, script.execute, audit.read, settings.manage | | | | | ✔ | ✔ | ✔ |
 | waiver.approve, project.create, project.update | | | | | | ✔ | ✔ |
@@ -396,7 +398,9 @@ OIDC/SAML login neither creates nor changes that membership, so
   (`comment.create`), and reads tests, runs, defects and risks for
   context. It deliberately has no `test.*` write or review rights, no run
   or cycle rights (`run.write`, `run.execute`, `cycle.plan`), no
-  `waiver.approve` (accepting deviations is a management decision), no
+  `waiver.approve` (accepting deviations is a management decision) and no
+  `change.approve` (it proposes changes in change requests with
+  `change.create`, the change control board decides them), no
   project, settings, member or role administration, and no API tokens
   (`token.manage`; give the tester role as well to someone who also
   automates). Evidence on executions is recorded by testers
@@ -450,7 +454,7 @@ OIDC/SAML login neither creates nor changes that membership, so
   organisation administrators (and super admins) keep theirs; a project
   member gets the *project-scoped* permissions of the union of their
   project roles in place of the organisation roles' (`project.read/update/delete`,
-  `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`,
+  `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`,
   `script.execute`, `export`, `comment.create`), in both modes – a direct
   membership wins over group memberships, several groups give the union
   of their roles; others get their organisation roles in an

@@ -112,7 +112,7 @@ func (s *Server) impactAware(fn handlerFunc, batch bool) handlerFunc {
 			return
 		}
 		col := &impactCollector{dry: dry, choice: choice, batch: batch, roots: map[string][]store.ImpactRoot{}, reasons: map[string]string{}}
-		r = r.WithContext(context.WithValue(r.Context(), impactKey{}, col))
+		r = withOverride(r.WithContext(context.WithValue(r.Context(), impactKey{}, col)))
 		if !dry && !batch {
 			fn(w, r, p)
 			return

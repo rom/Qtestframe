@@ -166,6 +166,9 @@ func (s *Server) handleRestoreTest(w http.ResponseWriter, r *http.Request, p *Pr
 // (from a revision or a baseline, snap its snapshot: the applicability it
 // records is restored too); what names the source for the audit.
 func (s *Server) restoreRequirementTo(ctx context.Context, p *Principal, cur, old *model.Requirement, snap json.RawMessage, what string) error {
+	if err := s.guardRestore(ctx, p, cur.ProjectID, model.KindRequirement, cur.ID, cur.Key, cur.Status); err != nil {
+		return err
+	}
 	s.ensureInitialRevision(ctx, p, model.KindRequirement, cur.ID)
 	before := store.SnapshotRequirement(cur)
 	cur.Title, cur.Description, cur.Obligation, cur.Type = old.Title, old.Description, old.Obligation, old.Type
@@ -190,6 +193,9 @@ func (s *Server) restoreRequirementTo(ctx context.Context, p *Principal, cur, ol
 
 // restoreTestTo gives a test the content of an older version.
 func (s *Server) restoreTestTo(ctx context.Context, p *Principal, cur, old *model.TestCase, snap json.RawMessage, what string) error {
+	if err := s.guardRestore(ctx, p, cur.ProjectID, model.KindTest, cur.ID, cur.Key, cur.Status); err != nil {
+		return err
+	}
 	s.ensureInitialRevision(ctx, p, model.KindTest, cur.ID)
 	before := store.SnapshotTest(cur)
 	cur.Title, cur.Description, cur.Preconditions, cur.ExecutionType = old.Title, old.Description, old.Preconditions, old.ExecutionType

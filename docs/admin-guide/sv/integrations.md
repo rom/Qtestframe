@@ -49,6 +49,7 @@ Projekt kan skicka signerade händelser till andra system. Användare med `proje
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
+| change_request | `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented`, `change_request.closed` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -83,6 +84,7 @@ Projekt kan skicka sina händelser till chattkanaler: Slack, Microsoft Teams, Ma
 | Granskningar | `review.requested` (Granskning begärd), `review.completed` (Granskning klar) |
 | Releaser | `release.created` (Release skapad), `release.updated` (Release ändrad), `release.released` (Release släppt) |
 | Undantag | `waiver.requested` (Undantag begärt), `waiver.approved` (Undantag godkänt), `waiver.rejected` (Undantag avslaget), `waiver.revoked` (Undantag återkallat) |
+| Ändringsbegäranden | `change_request.submitted` (Ändringsbegäran inskickad), `change_request.review` (Ändringsbegäran att besluta), `change_request.approved` (Ändringsbegäran godkänd), `change_request.rejected` (Ändringsbegäran avslagen), `change_request.deferred` (Ändringsbegäran uppskjuten), `change_request.implemented` (Ändringsbegäran genomförd), `change_request.closed` (Ändringsbegäran stängd) |
 | Risker | `risk.created` (Risk identifierad), `risk.updated` (Risk ändrad) |
 
 <!-- END GENERATED: chat-events -->

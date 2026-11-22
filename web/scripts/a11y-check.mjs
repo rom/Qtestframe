@@ -204,6 +204,9 @@ async function discover(request) {
   const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
   const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
   const hasWaivers = items(await api(request, 'GET', `/projects/${pid}/waivers`)).length > 0
+  // change requests (seed-demo: one in review by Sara for the administrator, closed, deferred and draft ones)
+  const crs = items(await api(request, 'GET', `/projects/${pid}/change-requests`).catch(() => []))
+  const crReview = crs.find((c) => c.status === 'in_review')
   // a release gated per variant (seed: 1.5 for both products) and a requirement whose applicability changed
   const gatedRelease = items(await api(request, 'GET', `/projects/${pid}/releases`)).find((r) => (r.variant_ids ?? []).length > 0)
   const applicReq = items(await api(request, 'GET', `/projects/${pid}/requirements?q=applicability:selected`).catch(() => []))[0]
@@ -394,6 +397,14 @@ async function discover(request) {
     { name: 'waivers', path: `${p}/waivers`, wait: '.p-datatable-tbody tr' },
     { name: 'waiver-new-dialog', path: `${p}/waivers`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #wv-title' },
     hasWaivers && { name: 'waiver-detail', path: `${p}/waivers`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog .wv-fields' },
+    // change requests: the list, a new one, the detail (diff, impact tree, signatures, timeline), the board's signature, the editor's change control bar, the bulk proposal and the settings
+    { name: 'change-requests', path: `${p}/change-requests`, wait: '.p-datatable-tbody tr' },
+    { name: 'change-request-new-dialog', path: `${p}/change-requests`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #cr-title' },
+    crReview && { name: 'change-request-detail', path: `${p}/change-requests?cr=${crReview.id}`, wait: '.p-dialog .cr-fields' },
+    crReview && { name: 'change-request-sign-dialog', path: `${p}/change-requests?cr=${crReview.id}`, open: '.p-dialog-footer button:has(.pi-pen-to-square)', wait: '.p-dialog .esign' },
+    crReview && { name: 'requirement-change-control', path: `${p}/requirements?item=${crReview.items[0]?.entity_id ?? ''}`, wait: '.p-drawer .cc-bar' },
+    { name: 'requirements-bulk-propose', path: `${p}/requirements`, open: ['.p-datatable-tbody tr:first-child .p-checkbox input', '.bulkbar button:has(.pi-file-edit)'], wait: '.p-dialog #crb-status' },
+    { name: 'settings-change-control', path: `${p}/settings?tab=project`, wait: '#change-control' },
     // exploratory testing: the session list with its metrics, the new-session dialog, the session runner (notes, shortcuts, debrief, defect from a note)
     { name: 'exploratory', path: `${p}/exploratory`, wait: '.p-datatable-tbody tr' },
     { name: 'exploratory-new-dialog', path: `${p}/exploratory`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #xs-title' },

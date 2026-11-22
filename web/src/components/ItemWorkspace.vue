@@ -41,6 +41,7 @@ import BulkRelationsDialog from './BulkRelationsDialog.vue'
 import BulkItemLinksDialog from './BulkItemLinksDialog.vue'
 import BulkRequirementIssuesDialog from './BulkRequirementIssuesDialog.vue'
 import TestStubsDialog from './TestStubsDialog.vue'
+import BulkProposeDialog from './BulkProposeDialog.vue'
 import type { ImportResult } from '@/lib/reqImport'
 import { api, ApiError, asItems } from '@/lib/api'
 import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
@@ -113,6 +114,9 @@ const bulkIssuesOpen = ref(false)
 const stubsOpen = ref(false)
 const shownIds = computed(() => items.value.map((i) => i.id))
 const canLink = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
+/** the bulk "Propose change" (change requests) */
+const canPropose = computed(() => auth.can(P.changeCreate))
+const bulkProposeOpen = ref(false)
 const folders = computed(() => proj.folders[props.kind])
 // rows take the colour of their folder (or of its nearest coloured parent)
 const colorOfFolder = computed(() => folderColors(folders.value))
@@ -694,7 +698,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
       </div>
       <div v-if="composed && composed !== q" class="small muted mono" style="margin: -4px 0 10px">q = {{ composed }}</div>
 
-      <div v-if="selection.length && (canWrite || canReview)" class="bulkbar" role="toolbar" :aria-label="t('workspace.bulkActions')">
+      <div v-if="selection.length && (canWrite || canReview || canPropose)" class="bulkbar" role="toolbar" :aria-label="t('workspace.bulkActions')">
         <b>{{ t('common.selected', { count: selection.length }) }}</b>
         <Button
           v-if="canReview"
@@ -732,6 +736,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         />
         <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
         </template>
+        <Button v-if="canPropose" :label="t('changeRequests.propose.button')" icon="pi pi-file-edit" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkProposeOpen = true" />
         <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
       </div>
 
@@ -787,7 +792,12 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           </template>
         </Column>
         <Column field="key" :header="t('workspace.colKey')" :reorderable-column="false" sortable style="width: 130px">
-          <template #body="{ data }"><button type="button" class="link-button key-link" tabindex="-1" @click.stop="openEditor((data as Item).id)"><span class="key">{{ data.key }}</span></button></template>
+          <template #body="{ data }">
+            <button type="button" class="link-button key-link" tabindex="-1" @click.stop="openEditor((data as Item).id)"><span class="key">{{ data.key }}</span></button>
+            <span v-if="data.open_change_requests?.length" class="cr-badge small" :title="t('changeRequests.badge', { keys: data.open_change_requests.join(', ') })">
+              <i class="pi pi-file-edit" aria-hidden="true" />{{ t('changeRequests.badgeShort') }}<span class="sr-only">: {{ t('changeRequests.badge', { keys: data.open_change_requests.join(', ') }) }}</span>
+            </span>
+          </template>
         </Column>
         <Column field="title" :header="t('workspace.colTitle')" :reorderable-column="false" sortable style="min-width: 240px" body-class="stack-main">
           <template #body="{ data }">
@@ -976,4 +986,5 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
   <BulkRelationsDialog v-if="isReq && canWrite" v-model:visible="bulkRelationsOpen" :project-id="pid" :selected="selectedIds" @done="load" />
   <BulkRequirementIssuesDialog v-if="isReq && canWrite" v-model:visible="bulkIssuesOpen" :project-id="pid" :selected="selectedIds" />
   <TestStubsDialog v-if="!isReq" v-model:visible="stubsOpen" :project-id="pid" :ids="selectedIds" :query="composed" :shown="items.length" :can-write="canWrite" @marked="load" />
+  <BulkProposeDialog v-if="canPropose" v-model:visible="bulkProposeOpen" :project-id="pid" :kind="isReq ? 'requirement' : 'test'" :rows="selection" @proposed="load" />
 </template>

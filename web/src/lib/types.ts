@@ -402,6 +402,8 @@ export interface Requirement {
   criteria_count?: number
   /** links to tests that are suspect (changed since the link was confirmed) */
   suspect_links?: number
+  /** keys of the open change requests that propose changes to it */
+  open_change_requests?: string[]
   /** highest level of the open risks it addresses */
   risk_level?: string
   /** open defects linked to it or its tests */
@@ -494,6 +496,8 @@ export interface TestCase {
   called_by?: TestRef[] | null
   /** links to requirements that are suspect */
   suspect_links?: number
+  /** keys of the open change requests that propose changes to it */
+  open_change_requests?: string[]
   /** pass/fail flips among the last results; flaky when at the threshold */
   flakiness?: number
   flaky?: boolean
