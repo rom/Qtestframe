@@ -28,6 +28,7 @@ describe('notificationTarget', () => {
     expect(notificationTarget(n('waiver'))).toEqual({ name: 'waivers', params: { projectId: 'p1' }, query: { waiver: 'x' } })
     expect(notificationTarget(n('risk'))?.query).toEqual({ risk: 'x' })
     expect(notificationTarget(n('execution'))).toEqual({ name: 'runs', params: { projectId: 'p1' } })
+    expect(notificationTarget(n('chat_channel'))).toEqual({ name: 'settings', params: { projectId: 'p1' } })
     expect(notificationTarget(n('other'))?.name).toBe('dashboard')
   })
   it('needs a project', () => {

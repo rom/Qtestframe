@@ -24,6 +24,8 @@ export function notificationTarget(n: Pick<AppNotification, 'project_id' | 'enti
       return { name: 'waivers', params, query: { waiver: n.entity_id } }
     case 'execution':
       return { name: 'runs', params }
+    case 'chat_channel':
+      return { name: 'settings', params }
   }
   return { name: 'dashboard', params }
 }
@@ -36,6 +38,7 @@ export function notificationIcon(event: string): string {
   if (group === 'review') return action === 'completed' ? 'pi pi-verified' : 'pi pi-eye'
   if (event.startsWith('defect.')) return 'pi pi-exclamation-circle'
   if (event === 'project.shared') return 'pi pi-share-alt'
+  if (event.startsWith('chat.')) return 'pi pi-comments'
   if (group === 'waiver') return action === 'requested' ? 'pi pi-pen-to-square' : action === 'approved' ? 'pi pi-verified' : 'pi pi-ban'
   return 'pi pi-bell'
 }
