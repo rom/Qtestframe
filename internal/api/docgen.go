@@ -259,12 +259,45 @@ func (s *Server) documentData(r *http.Request, p *Principal, pr *model.Project, 
 		d.Verification = pc.verification()
 	}
 	pc.indexCalls(tests)
+	// a document for one variant: its requirements and tests, its coverage and results
+	var vc *store.VariantCoverage
+	variant := ""
+	if o.Variant != "" {
+		v := pc.variants.Find(o.Variant)
+		if v == nil {
+			return nil, badRequest("unknown variant %q", o.Variant)
+		}
+		if vc, err = s.variantCoverage(ctx, tid, pc); err != nil {
+			return nil, err
+		}
+		variant, d.Variant = v.ID, &model.VariantRef{ID: v.ID, Name: v.Name}
+		last := map[string]string{}
+		for id := range pc.last {
+			if st := vc.TestResult(id, variant); st != "" && st != model.ResultNotRun {
+				last[id] = st
+			}
+		}
+		d.LastResults = last
+		links := d.Links[:0:0]
+		for _, l := range d.Links {
+			if vc.AppliesTo(l.RequirementID, variant) && vc.AppliesTo(l.TestCaseID, variant) {
+				links = append(links, l)
+			}
+		}
+		d.Links = links
+	}
 	for i := range reqs {
 		rq := &reqs[i]
 		if !o.IncludeInactive && inactiveRequirement(rq.Status) {
 			continue
 		}
 		pc.decorateRequirement(rq)
+		if vc != nil {
+			if !vc.AppliesTo(rq.ID, variant) {
+				continue
+			}
+			rq.Coverage = vc.Requirement(rq.ID, variant)
+		}
 		if !plan && !q.Match(pc.requirementRecord(rq)) {
 			continue
 		}
@@ -277,6 +310,12 @@ func (s *Server) documentData(r *http.Request, p *Principal, pr *model.Project, 
 				continue
 			}
 			pc.decorateTest(t)
+			if vc != nil {
+				if !vc.AppliesTo(t.ID, variant) {
+					continue
+				}
+				t.LastResult = vc.TestResult(t.ID, variant)
+			}
 			if !q.Match(pc.testRecord(t)) {
 				continue
 			}

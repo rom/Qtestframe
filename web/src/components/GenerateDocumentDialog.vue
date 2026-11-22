@@ -23,6 +23,8 @@ import { currentLang } from '@/i18n'
 import { LANGUAGES } from '@/i18n/select'
 import { uid } from '@/lib/a11y'
 import { formatDateTime } from '@/lib/format'
+import VariantSelect from '@/components/VariantSelect.vue'
+import { useVariants } from '@/composables/variants'
 
 const props = defineProps<{ kind?: DocKind }>()
 const visible = defineModel<boolean>('visible', { required: true })
@@ -34,6 +36,9 @@ const id = uid('gd')
 
 const form = ref<DocForm>(blankDocForm(props.kind ?? 'requirements_spec', currentLang()))
 const baselines = ref<Baseline[]>([])
+// a document for one variant (empty: all variants)
+const variants = useVariants(() => proj.pid)
+const variant = ref<string | null>(null)
 const busy = ref(false)
 const elapsed = ref(0)
 const error = ref<unknown>(null)
@@ -77,7 +82,9 @@ watch(
     form.value = blankDocForm(props.kind ?? form.value.kind, currentLang())
     error.value = null
     showProblems.value = false
+    variant.value = null
     void loadBaselines()
+    void variants.load()
   },
   { immediate: true },
 )
@@ -90,7 +97,9 @@ async function generate() {
   elapsed.value = 0
   timer = setInterval(() => elapsed.value++, 1000)
   try {
-    const file = await api.post<FileInfo>(`/projects/${proj.pid}/documents/generate`, generateDocBody(form.value))
+    const body = generateDocBody(form.value)
+    if (variant.value) body.options = { ...body.options, variant: variant.value }
+    const file = await api.post<FileInfo>(`/projects/${proj.pid}/documents/generate`, body)
     visible.value = false
     emit('generated', file)
   } catch (e) {
@@ -141,6 +150,12 @@ async function generate() {
         <label :for="`${id}-baseline`">{{ t('documents.generate.source') }}</label>
         <Select v-model="form.baselineId" :input-id="`${id}-baseline`" :options="baselineOptions" option-label="label" option-value="value" :disabled="busy" :placeholder="t('documents.generate.currentData')" :aria-describedby="`${id}-baseline-help`" />
         <small :id="`${id}-baseline-help`" class="muted">{{ t('documents.generate.sourceHelp') }}</small>
+      </div>
+
+      <div v-if="variants.variants.value.length" class="field">
+        <label :id="`${id}-variant-label`" :for="`${id}-variant`">{{ t('variants.documentFor') }}</label>
+        <VariantSelect v-model="variant" :input-id="`${id}-variant`" :labelledby="`${id}-variant-label`" :variants="variants.variants.value" :disabled="busy" :aria-describedby="`${id}-variant-help`" />
+        <small :id="`${id}-variant-help`" class="muted">{{ t('variants.documentHelp') }}</small>
       </div>
 
       <div class="field">

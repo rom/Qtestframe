@@ -52,6 +52,10 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		ReleaseID   *string  `json:"release_id"`
 		// ConfigurationIDs: the configurations the run targets.
 		ConfigurationIDs []string `json:"configuration_ids"`
+		// VariantID: the variant the run tests (id or name).
+		VariantID string `json:"variant_id"`
+		// BuildID: the build (id) its results belong to.
+		BuildID *string `json:"build_id"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -86,7 +90,15 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		}
 	}
 	run := &model.TestRun{ProjectID: pr.ID, Name: req.Name, Description: req.Description,
-		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email, ReleaseID: req.ReleaseID}
+		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email, ReleaseID: req.ReleaseID, BuildID: req.BuildID}
+	if req.VariantID != "" {
+		v, err := s.Store.FindVariant(r.Context(), p.TenantID(), pr.ID, req.VariantID)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		run.VariantID = &v.ID
+	}
 	for _, id := range req.ConfigurationIDs {
 		run.Configurations = append(run.Configurations, model.ConfigurationRef{ID: id})
 	}
@@ -130,6 +142,10 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		// ConfigurationIDs replaces the configurations the run targets
 		// (see PUT /runs/{id}/configurations).
 		ConfigurationIDs *[]string `json:"configuration_ids"`
+		// VariantID: the variant the run tests ("" variant-neutral);
+		// BuildID: its build ("" none).
+		VariantID *string `json:"variant_id"`
+		BuildID   *string `json:"build_id"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -148,6 +164,23 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		run.ReleaseID = req.ReleaseID
 		if *req.ReleaseID == "" {
 			run.ReleaseID = nil
+		}
+	}
+	if req.VariantID != nil {
+		run.VariantID = nil
+		if *req.VariantID != "" {
+			v, err := s.Store.FindVariant(r.Context(), p.TenantID(), run.ProjectID, *req.VariantID)
+			if err != nil {
+				s.fail(w, r, err)
+				return
+			}
+			run.VariantID = &v.ID
+		}
+	}
+	if req.BuildID != nil {
+		run.BuildID = req.BuildID
+		if *req.BuildID == "" {
+			run.BuildID = nil
 		}
 	}
 	if err := s.Store.UpdateRun(r.Context(), p.TenantID(), run); err != nil {
@@ -292,6 +325,19 @@ type rejectedResult struct {
 // accepted ones and writes {"updated","unknown","rejected"} merged with
 // extra.
 func (s *Server) recordResults(w http.ResponseWriter, r *http.Request, p *Principal, run *model.TestRun, results []store.ImportResult, action string, extra map[string]any) {
+	// ?build_id=, ?build_number=, ?commit=, ?branch=, ?pipeline_url= and
+	// ?variant= associate the results with a CI build and a variant
+	build, err := s.applyRunBuild(r, p, run)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if build != nil {
+		if extra == nil {
+			extra = map[string]any{}
+		}
+		extra["build"] = build
+	}
 	// ?configuration= names the configuration of results without their own
 	if err := s.Store.ResolveImportConfigurations(r.Context(), p.TenantID(), run.ID, r.URL.Query().Get("configuration"), results); err != nil {
 		s.fail(w, r, err)

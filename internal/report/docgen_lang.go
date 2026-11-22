@@ -13,6 +13,8 @@ var docTexts = map[string]string{
 	"Date":                        "Datum",
 	"Author":                      "Författare",
 	"Baseline":                    "Baslinje",
+	"Variant":                     "Variant",
+	"All variants":                "Alla varianter",
 	"Document control":            "Dokumentinformation",
 	"Based on":                    "Underlag",
 	"Baseline {name} of {date}":   "Baslinjen {name} från {date}",

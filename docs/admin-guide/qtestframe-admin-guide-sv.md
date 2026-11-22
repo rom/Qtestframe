@@ -1503,7 +1503,7 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**I en säkerhetskopia** (74 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `secret_keys`.
+**I en säkerhetskopia** (80 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `secret_keys`.
 
 **Inte i en säkerhetskopia:** `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `suggest_history`.
 
@@ -1614,6 +1614,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 31 | `0031_change_defect_correlations.sql` |
 | 32 | `0032_waivers_residual_soa.sql` |
 | 35 | `0035_external_refs.sql` |
+| 36 | `0036_variants_code.sql` |
 
 <!-- END GENERATED: migrations -->
 

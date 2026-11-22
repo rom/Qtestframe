@@ -175,6 +175,10 @@ Kolumnen **Körningar** visar hur många körningar som gäller varje konfigurat
 
 *(Ansvarig och Administratör, eller en roll med `project.update`)* **Kategorier & inställningar → Ändringspåverkan** innehåller projektets regler för [ändringspåverkan](traceability-and-coverage.md#ändringspåverkan), [inaktuella utfall](traceability-and-coverage.md#inaktuella-utfall), [blockerande defekter](traceability-and-coverage.md#blockerande-defekter) och [regressioner](defects.md#regressioner). Alla som kan läsa projektet ser dem. Ändringar gäller från och med då: det som redan markerats förblir markerat.
 
+## Varianter och kodintegration
+
+*(Förvaltare och Administratör, eller en roll med `project.update`)* **Varianter** innehåller projektets produktvarianter, marknader och kundkonfigurationer; **Inställningar → Projekt → Kodintegration** innehåller den gemensamma hemligheten för projektets webhookar från GitLab och GitHub. Hemligheten lagras krypterad med de andra hemligheterna, kan bara skrivas och ingår inte i projektarkiv: ange en ny efter att ett projekt lästs in. Leveranser kontrolleras med hemligheten (GitLab) eller signaturen HMAC-SHA256 (GitHub), och varje leverans skrivs i granskningsloggen som `code.webhook`. CI-token behöver `run.execute` för att ladda upp resultat för ett bygge och `run.write` för att skapa en regressionskörning. Se [Varianter och kod](variants-and-code.md).
+
 ## Webbtester
 
 [Webbtester](tests.md#webbtester-playwright) körs i en riktig webbläsare på servern. Serveradministratören slår på dem i konfigurationsfilen (`runner.web`, se nedan), och de ställs in per projekt under **Inställningar → Webbtester** *(Ansvarig; behörigheten project.update)*:

@@ -31,6 +31,9 @@ import ExchangeImportDialog from './ExchangeImportDialog.vue'
 import Menu from 'primevue/menu'
 import type { ExchangeMode } from '@/lib/exchange'
 import BulkReviewDialog from './BulkReviewDialog.vue'
+import ApplicabilityDialog from './ApplicabilityDialog.vue'
+import VariantSelect from './VariantSelect.vue'
+import { useVariants } from '@/composables/variants'
 import BulkRelationsDialog from './BulkRelationsDialog.vue'
 import BulkItemLinksDialog from './BulkItemLinksDialog.vue'
 import BulkRequirementIssuesDialog from './BulkRequirementIssuesDialog.vue'
@@ -94,6 +97,8 @@ const pid = computed(() => proj.pid)
 const canWrite = computed(() => auth.can(isReq.value ? P.requirementWrite : P.testWrite))
 const canReview = computed(() => auth.can(isReq.value ? P.requirementReview : P.testReview))
 const bulkReviewOpen = ref(false)
+/** bulk "Applies to" (variants) of the selection */
+const bulkApplicabilityOpen = ref(false)
 const bulkRelationsOpen = ref(false)
 const bulkLinksOpen = ref(false)
 const bulkIssuesOpen = ref(false)
@@ -111,6 +116,10 @@ const categories = computed(() => proj.categoriesFor(props.kind))
 const selectedFolder = ref<string | null>((route.query.folder as string) || null)
 const recursive = ref(readPref('qtf.recursive') !== 'false')
 const q = ref((route.query.q as string) || '')
+// "show for variant": only the items that apply to it, with its coverage / results
+const variant = ref<string | null>((route.query.variant as string) || null)
+const variantList = useVariants(() => pid.value)
+watch(pid, () => void variantList.load(), { immediate: true })
 const quick = ref<QuickFilters>({})
 const composed = computed(() => composeQuery(q.value, quick.value))
 const queryError = ref<unknown>(null)
@@ -128,6 +137,7 @@ async function load() {
       q: composed.value,
       folder_id: selectedFolder.value,
       recursive: selectedFolder.value ? recursive.value : undefined,
+      variant: variant.value || undefined,
     })
     items.value = asItems(res)
     const ids = new Set(items.value.map((i) => i.id))
@@ -140,13 +150,13 @@ async function load() {
   }
 }
 
-watch([selectedFolder, recursive, () => quick.value], () => load(), { deep: true })
+watch([selectedFolder, recursive, () => quick.value, variant], () => load(), { deep: true })
 watch(selectedFolder, () => {
   foldersOpen.value = false
 })
 watch(recursive, (v) => writePref('qtf.recursive', String(v)))
-watch([selectedFolder, q], () => {
-  const query = { ...route.query, folder: selectedFolder.value || undefined, q: q.value || undefined }
+watch([selectedFolder, q, variant], () => {
+  const query = { ...route.query, folder: selectedFolder.value || undefined, q: q.value || undefined, variant: variant.value || undefined }
   router.replace({ query })
 })
 onMounted(() => {
@@ -638,6 +648,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <div style="min-width: 180px; max-width: 280px">
           <CategorySelect v-model="quick.categories" :categories="categories" value-key="path" :placeholder="t('workspace.filterCategory')" :aria-label="t('workspace.filterCategory')" />
         </div>
+        <VariantSelect v-if="variantList.variants.value.length" v-model="variant" :variants="variantList.variants.value" :aria-label="t('variants.showFor')" />
         <Button v-if="activeFilterCount(quick) || q" :label="t('workspace.clearFilters')" icon="pi pi-filter-slash" text severity="secondary" @click="clearFilters" />
       </div>
       <div v-if="composed && composed !== q" class="small muted mono" style="margin: -4px 0 10px">q = {{ composed }}</div>
@@ -664,6 +675,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <Button :label="t('workspace.tagsButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeTags')" v-tooltip.bottom="t('workspace.removeTags')" @click="openTagDialog('remove')" />
         <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
         <Button :label="t('links.title')" icon="pi pi-link" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkLinksOpen = true" />
+        <Button v-if="variantList.variants.value.length" :label="t('variants.appliesTo')" icon="pi pi-clone" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkApplicabilityOpen = true" />
         <Button v-if="isReq" :label="t('relations.bulk.button')" icon="pi pi-sitemap" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkRelationsOpen = true" />
         <Button v-if="isReq && canWrite" :label="t('reqIssue.bulk.button')" icon="pi pi-ticket" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkIssuesOpen = true" />
         <Button
@@ -888,6 +900,14 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     :folder-id="selectedFolder"
     :can-export="canExport"
     @imported="onImported"
+  />
+  <ApplicabilityDialog
+    v-model:visible="bulkApplicabilityOpen"
+    :project-id="pid"
+    :item-type="kind"
+    :item-ids="selectedIds"
+    :variants="variantList.variants.value"
+    @saved="() => { notify.ok(t('variants.applicabilitySaved')); load() }"
   />
   <BulkReviewDialog
     v-model:visible="bulkReviewOpen"

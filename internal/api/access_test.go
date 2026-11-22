@@ -51,6 +51,8 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	a.m("POST", pp+"/waivers", map[string]any{"title": "Secret waiver", "requirement_ids": []string{r1}}, 201)
 	a.m("POST", pp+"/webhooks", map[string]any{"name": "h", "url": "https://hooks.example.org/x", "events": []string{"defect.updated"}, "enabled": false}, 201)
 	a.m("POST", pp+"/configurations", map[string]any{"name": "Chrome"}, 201)
+	a.m("POST", pp+"/variants", map[string]any{"name": "EU model"}, 201)
+	a.m("POST", pp+"/builds", map[string]any{"external_id": "ci-1"}, 201)
 	def := a.m("POST", pp+"/reports/definitions", map[string]any{"name": "Status", "config": map[string]any{"entity": "test", "columns": []string{"key"}}}, 201)["id"].(string)
 	a.m("POST", pp+"/reports/subscriptions", map[string]any{"definition_id": def, "recipients": []string{e.admin.ID}}, 201)
 	a.m("POST", "/api/v1/reviews", map[string]any{"entity_type": "requirement", "entity_id": r1, "reviewers": []string{e.admin.ID}}, 201)
@@ -84,6 +86,7 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"comments":             `SELECT c.id FROM comments c JOIN requirements r ON r.id = c.entity_id WHERE r.project_id = ?`,
 		"verification-records": `SELECT id FROM verification_records WHERE project_id = ?`,
 		"elements":             `SELECT id FROM system_elements WHERE project_id = ?`,
+		"variants":             `SELECT id FROM variants WHERE project_id = ?`, "builds": `SELECT id FROM builds WHERE project_id = ?`,
 	}
 	for res, sql := range q {
 		var id string

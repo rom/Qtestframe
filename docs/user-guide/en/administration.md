@@ -175,6 +175,10 @@ The **Runs** column shows how many runs target each configuration. Creating conf
 
 *(Manager and Admin, or any role with `project.update`)* **Categories & settings → Change impact** holds a project's rules for [change impact](traceability-and-coverage.md#change-impact), [stale results](traceability-and-coverage.md#stale-results), [blocking defects](traceability-and-coverage.md#blocking-defects) and [regressions](defects.md#regressions). Everyone who can read the project sees them. Changes apply from then on: what was already marked stays marked.
 
+## Variants and code integration
+
+*(Manager and Admin, or any role with `project.update`)* **Variants** holds the project's product variants, markets and customer configurations; **Settings → Project → Code integration** holds the shared secret of the project's GitLab and GitHub webhooks. The secret is stored encrypted with the other secrets, is write-only and is not part of project archives: set a new one after loading a project. Deliveries are checked with the secret token (GitLab) or the HMAC-SHA256 signature (GitHub), and every delivery is written to the audit log as `code.webhook`. CI tokens need `run.execute` to upload results for a build and `run.write` to create a regression run. See [Variants and code](variants-and-code.md).
+
 ## Web tests
 
 [Web tests](tests.md#web-tests-playwright) run in a real browser on the server. They are switched on by the server administrator in the configuration file (`runner.web`, see below) and set up per project under **Settings → Web tests** *(Manager; permission project.update)*:

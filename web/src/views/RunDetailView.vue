@@ -405,6 +405,7 @@ async function copySnippet(text: string = ciSnippet.value) {
             <Tag :value="runReleaseName(run, rel.names.value)" icon="pi pi-box" severity="secondary" :aria-label="t('releasesView.runRelease', { name: runReleaseName(run, rel.names.value) })" />
           </RouterLink>
           <span v-if="run.build" class="mono"><i class="pi pi-box" aria-hidden="true" /><span class="sr-only">{{ t('common.build') }}:</span> {{ run.build }}</span>
+          <span v-if="run.variant_name"><i class="pi pi-clone" aria-hidden="true" /><span class="sr-only">{{ t('variants.variant') }}:</span> {{ run.variant_name }}</span>
           <span>{{ t('run.createdAt', { date: formatDateTime(run.created_at) }) }}{{ run.created_by ? t('run.createdBy', { user: run.created_by }) : '' }}</span>
           <span v-if="run.started_at">{{ t('run.startedAt', { date: formatDateTime(run.started_at) }) }}</span>
           <span v-if="run.completed_at">{{ t('run.completedAt', { date: formatDateTime(run.completed_at) }) }}</span>

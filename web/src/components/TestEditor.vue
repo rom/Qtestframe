@@ -37,6 +37,8 @@ import TagsInput from './TagsInput.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
 import TestDependenciesPanel from './TestDependenciesPanel.vue'
+import ApplicabilityPanel from './ApplicabilityPanel.vue'
+import CodePanel from './CodePanel.vue'
 import CommentsPanel from './CommentsPanel.vue'
 import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
@@ -77,6 +79,8 @@ const notify = useNotify()
 const { t } = useI18n()
 const tabsId = newId('test-tabs')
 const linkCount = ref<number | null>(null)
+/** commits and merge / pull requests of the Code tab */
+const codeCount = ref<number | null>(null)
 watch(
   () => props.itemId,
   () => {
@@ -501,6 +505,7 @@ const scriptPlaceholder = computed(() => {
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="executions"><i class="pi pi-play-circle" aria-hidden="true" /> {{ t('common.executions') }} <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
+      <Tab value="code"><i class="pi pi-code" aria-hidden="true" /> {{ t('code.tab') }} <span v-if="codeCount" class="count">{{ codeCount }}</span></Tab>
       <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
@@ -508,6 +513,7 @@ const scriptPlaceholder = computed(() => {
       <Tab value="impact"><i class="pi pi-share-alt" aria-hidden="true" /> {{ t('correlations.tab') }}</Tab>
     </TabList>
   </Tabs>
+  <div v-if="item && tab === 'code'" v-bind="panel('code')"><CodePanel item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (codeCount = n)" /></div>
   <div v-if="item && tab === 'executions'" v-bind="panel('executions')"><TestExecutionsPanel :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" /></div>
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'impact'" v-bind="panel('impact')"><ImpactPanel kind="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @changed="load" /></div>
@@ -683,6 +689,7 @@ const scriptPlaceholder = computed(() => {
     </div>
 
     <TestDependenciesPanel v-if="item" :project-id="projectId" :test-id="item.id" :can-write="canWrite" @changed="emit('saved', item)" />
+    <ApplicabilityPanel v-if="item" item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />

@@ -369,6 +369,8 @@ type ReleaseStatusReport struct {
 	// ", accepted" when signed off).
 	RiskThreshold string        `json:"risk_threshold"`
 	ResidualRisks []ReleaseItem `json:"residual_risks"`
+	// Variant the release was evaluated for (nil: all variants).
+	Variant *model.VariantRef `json:"variant,omitempty"`
 }
 
 func mandatory(ob string) bool {
@@ -590,6 +592,14 @@ func limitItems(items []ReleaseItem) []ReleaseItem {
 // requirements and the tests linked to them) that break traceability rules
 // (each nil when not available).
 func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
+	return s.ReleaseStatusForVariant(ctx, tenantID, id, "", defects, risks, rules...)
+}
+
+// ReleaseStatusForVariant evaluates a release for one variant (id or name;
+// "" for all): the scope is the release's requirements that apply to the
+// variant, each verified by its linked tests that apply to it, and only
+// results that count for the variant are used (see VariantCoverage).
+func (s *Store) ReleaseStatusForVariant(ctx context.Context, tenantID, id, variant string, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
 	rel, err := s.GetRelease(ctx, tenantID, id)
 	if err != nil {
 		return nil, err
@@ -598,6 +608,26 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	if err != nil {
 		return nil, err
 	}
+	var vc *VariantCoverage
+	var variantRef *model.VariantRef
+	variantID := ""
+	if strings.TrimSpace(variant) != "" {
+		v, err := s.FindVariant(ctx, tenantID, rel.ProjectID, variant)
+		if err != nil {
+			return nil, err
+		}
+		if vc, err = s.LoadVariantCoverage(ctx, tenantID, rel.ProjectID, nil); err != nil {
+			return nil, err
+		}
+		variantID, variantRef = v.ID, &model.VariantRef{ID: v.ID, Name: v.Name}
+		in := []string{}
+		for _, rid := range rel.RequirementIDs {
+			if vc.AppliesTo(rid, variantID) {
+				in = append(in, rid)
+			}
+		}
+		rel.RequirementIDs = in
+	}
 	scope := map[string]bool{}
 	for _, rid := range rel.RequirementIDs {
 		scope[rid] = true
@@ -605,7 +635,7 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	tests := map[string][]string{}
 	suspect := map[string]bool{}
 	for _, l := range links {
-		if scope[l.RequirementID] {
+		if scope[l.RequirementID] && (vc == nil || vc.AppliesTo(l.TestCaseID, variantID)) {
 			tests[l.RequirementID] = append(tests[l.RequirementID], l.TestCaseID)
 			if l.SuspectSince != nil {
 				suspect[l.RequirementID] = true
@@ -622,7 +652,7 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 		return nil, err
 	}
 	// latest result per test and configuration in the release's runs
-	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, t.key, t.title, e.configuration_id, e.status, e.finished_at, e.started_at, r.created_at FROM test_executions e
+	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, t.key, t.title, e.configuration_id, e.status, e.finished_at, e.started_at, r.created_at, r.variant_id FROM test_executions e
 		JOIN test_runs r ON r.id = e.run_id JOIN test_cases t ON t.id = e.test_case_id WHERE r.release_id = ? AND r.tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return nil, err
@@ -635,12 +665,15 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	names := map[string][2]string{}
 	for rows.Next() {
 		var tid, key, title, st string
-		var cfg sql.NullString
+		var cfg, runVariant sql.NullString
 		var fin, sta sql.NullTime
 		var at time.Time
-		if err := rows.Scan(&tid, &key, &title, &cfg, &st, &fin, &sta, &at); err != nil {
+		if err := rows.Scan(&tid, &key, &title, &cfg, &st, &fin, &sta, &at, &runVariant); err != nil {
 			rows.Close()
 			return nil, err
+		}
+		if vc != nil && (!vc.AppliesTo(tid, variantID) || !vc.Counts(runVariant.String, cfg.String, variantID)) {
+			continue
 		}
 		if fin.Valid {
 			at = fin.Time
@@ -772,7 +805,7 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 		}
 	}
 	rep := &ReleaseStatusReport{Release: rel, Criteria: EvaluateExitCriteria(rel.ExitCriteria, d), Summary: sum, Waivers: inForce,
-		RiskThreshold: EffectiveThreshold(releaseThreshold, projectThreshold), ResidualRisks: []ReleaseItem{}}
+		RiskThreshold: EffectiveThreshold(releaseThreshold, projectThreshold), ResidualRisks: []ReleaseItem{}, Variant: variantRef}
 	open, accepted := residualAbove(projectRisks, scope, rep.RiskThreshold)
 	rep.ResidualRisks = append(append(rep.ResidualRisks, open...), accepted...)
 	sum["residual_above_threshold"] = len(open)

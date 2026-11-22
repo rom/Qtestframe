@@ -257,6 +257,9 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedWaivers(ctx, st, tenantID, p, reqs); err != nil {
 		return nil, err
 	}
+	if err := seedVariantsAndCode(ctx, st, tenantID, p, reqs, testIDs, run); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

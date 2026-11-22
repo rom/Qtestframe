@@ -161,6 +161,8 @@ func (s *Server) routes() {
 	pub("GET /api/v1/auth/oidc/{name}/login", s.handleOIDCLogin)
 	pub("GET /api/v1/auth/oidc/{name}/callback", s.handleOIDCCallback)
 	pub("GET /api/v1/auth/saml/{name}/metadata", s.handleSAMLMetadata)
+	// GitLab and GitHub webhooks (code.go): the signature or secret token is the credential
+	s.routesCodeHooks(pub)
 	pub("GET /api/v1/auth/saml/{name}/login", s.handleSAMLLogin)
 	pub("POST /api/v1/auth/saml/{name}/acs", s.handleSAMLACS)
 	h("GET /api/v1/auth/me", s.handleMe)
@@ -349,6 +351,9 @@ func (s *Server) routes() {
 	s.routesEmail(h)
 	s.routesConfigurations(h)
 	s.routesVerification(h)
+	// variants and applicability (variants.go), code and builds (code.go)
+	s.routesVariants(h)
+	s.routesCode(h)
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)

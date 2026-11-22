@@ -1478,6 +1478,136 @@ value}], position, created_by, created_at, updated_at, run_count}`. Each
 dimension at most once per configuration (ignoring case), at most 20 values,
 dimensions and values up to 100 characters, names up to 200.
 
+## Variants and applicability
+
+Variants are product variants, markets or customer configurations of a
+project, optionally in a hierarchy. Requirements and tests apply to all
+variants unless their applicability says otherwise. Reading variants needs
+`project.read`, changing them `project.update`.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/variants` | project.read | `[Variant]` in hierarchy order (parents first), each with `path` (`EU / EU model DE`) |
+| POST | `/projects/{pid}/variants` | project.update | `{"name", "parent_id"?, "description"?, "kind"?: "product\|market\|customer\|other", "attributes"?: {"region": "EU"}, "configuration_ids"?: [...]}` → 201 Variant; names unique per project ignoring case (409); at most 500 variants, 50 attributes |
+| GET | `/variants/{id}` | project.read | Variant |
+| PATCH | `/variants/{id}` | project.update | the fields to change; `parent_id: ""` makes it a root (a variant cannot be below itself, 400); `position` orders siblings |
+| DELETE | `/variants/{id}` | project.update | 204; children move to its parent, its runs become variant-neutral, it is removed from applicability lists |
+| GET | `/requirements/{id}/applicability` | requirement.read | `{"variant_ids", "variants":[{id,name}], "expression", "all", "applies_to":[{id,name}]}` |
+| PUT | `/requirements/{id}/applicability` | requirement.write | `{"variant_ids": [ids or names], "expression": ""}`; both empty: all variants |
+| GET / PUT | `/tests/{id}/applicability` | test.read / test.write | the same for tests |
+| PUT | `/projects/{pid}/applicability` | requirement.write or test.write | `{"item_type": "requirement\|test", "item_ids": [...] (1–1000), "variant_ids", "expression"}` → `{"updated", "applicability"}` (all or nothing) |
+| GET | `/requirements/{id}/variants` | requirement.read | `{"requirement_id", "applicability", "variants": [{variant, applies, coverage, tests: [keys], configurations: [{id, name, coverage}]}]}` — coverage per variant × configuration (`id ""`: results without configuration) |
+| GET | `/projects/{pid}/variants/matrix` | requirement.read | `?q=`, `?folder_id=`, `?variants=` (ids or names, comma-separated), `?configuration=<id>\|none` → `{"variants", "requirements": [{id, key, title, obligation, coverage: {variant id: coverage}}], "summary": {variant id: {"passed": n, …, "applicable": n}}}` |
+
+`Variant`: `{id, project_id, parent_id, name, description, kind, attributes,
+configuration_ids, position, created_by, created_at, updated_at, path}`.
+Attributes are inherited by the variants below (their own values win);
+attribute names may not be `name`, `variant`, `kind` or `id`.
+`configuration_ids` are the test configurations the variant is tested in
+(empty: all).
+
+**Applicability.** A listed variant includes the variants below it. The
+expression is in the [query language](#query-language), evaluated against
+each variant with the fields `name` and `variant` (the variant and its
+ancestors), `kind` and the attributes (unqualified terms match the names),
+e.g. `region:EU AND NOT voltage:110V`. The list and the expression are
+combined with OR. Requirements and tests carry `applicability` (absent: all
+variants); the query fields `variant` (names of the variants an item applies
+to) and `applicability` (`all` | `selected`) filter on it, e.g.
+`variant:"EU model"`.
+
+**Coverage per variant** (store `VariantCoverage`): in variant V a
+requirement is `not_applicable` unless it applies to V; otherwise its
+coverage is computed over its linked tests that apply to V, with the
+results of runs for V or one of its ancestors and of variant-neutral runs
+(`variant_id` null), in the configurations V is tested in (results without
+a configuration always count). Runs carry `variant_id` / `variant_name`
+(set on `POST /projects/{pid}/runs` and `PATCH /runs/{id}` with
+`variant_id`: id or name, `""` clears it).
+
+**`?variant=<id or name>`** restricts a list to the items that apply to the
+variant and reports their coverage (`coverage`, `linked_tests`) or result
+(`last_result`) there: requirement and test lists, `GET
+/projects/{pid}/traceability` (also with `?configuration=`), exports, ReqIF
+and reports that filter requirements or tests. `GET
+/releases/{id}/status?variant=` evaluates a release for one variant (its
+scope requirements that apply, their tests that apply and the results that
+count; the report has `variant`); releasing still evaluates all variants.
+Generated documents take `options.variant`.
+
+## Code and builds
+
+Commits and merge / pull requests are linked to requirements and tests
+automatically, from GitLab and GitHub webhooks, or by hand. CI builds
+are recorded when results are uploaded for them.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/code-settings` | project.read | `{"has_secret", "gitlab_url", "github_url", "updated_by", "updated_at"}` |
+| PUT | `/projects/{pid}/code-settings` | project.update | `{"secret"?: "16–200 characters", "clear_secret"?: true}`; an empty secret keeps the stored one. The secret is write-only and stored encrypted |
+| POST | `/hooks/gitlab/{pid}` | none (public) | GitLab push and merge request events; `X-Gitlab-Token` must equal the secret |
+| POST | `/hooks/github/{pid}` | none (public) | GitHub `push`, `pull_request` and `ping` events (`X-GitHub-Event`); `X-Hub-Signature-256` must be `sha256=` + the hex HMAC-SHA256 of the body with the secret |
+| GET | `/projects/{pid}/code-changes` | project.read | `[CodeChange]` newest first; `?kind=commit\|merge_request`, `?branch=`, `?since_build=<build id, CI id or number>`, `?limit=` (default 100, max 500) |
+| GET | `/requirements/{id}/code` | requirement.read | `{"changes": [CodeChange], "builds": [{build, coverage}], "verified_build"}`; the builds (with run.read) are those a linked test ran in, newest first; `verified_build` is the latest in which every linked test passed |
+| POST | `/requirements/{id}/code` | requirement.write | `{"change_id"}`, or a change to add: `{"kind": "commit\|merge_request", "ref", "url"?, "title"?, "repository"?, "provider"?, "status"?, "branch"?}` → 201 CodeChange (provider `manual` by default) |
+| DELETE | `/requirements/{id}/code/{cid}` | requirement.write | 204; a manual change linked to nothing else is removed |
+| GET / POST / DELETE | `/tests/{id}/code`, `/tests/{id}/code/{cid}` | test.read / test.write | the same for tests; `builds` is the test's build history `[{build, result, results: {configuration id: result}}]` |
+| GET | `/tests/{id}/builds` | test.read and run.read | the build history alone (`{items, total}`, at most 100) |
+| GET | `/projects/{pid}/builds` | run.read | `[Build]` newest first with `runs` and the result `summary`; `?limit=` |
+| POST | `/projects/{pid}/builds` | run.execute | `{"external_id", "number"?, "commit_sha"?, "branch"?, "pipeline_url"?}` → 201 new Build, or 200 with the given fields updated |
+| GET | `/builds/{id}` | run.read | `{"build", "runs", "changes"}` (`changes`: the commit it was built from) |
+| DELETE | `/builds/{id}` | run.write | 204; its runs stay, without build |
+| POST | `/projects/{pid}/regression` | test.read | regression selection, see below |
+| POST | `/projects/{pid}/regression/run` | run.write and test.read | the selection's request plus `name`, `description`, `environment`, `build`, `release_id`, `configuration_ids` → 201 `{"run", "selection"}`; 400 when no test is selected |
+
+**Webhooks.** An unknown project, a project without secret and a wrong
+signature all answer 401 `invalid_signature`; other events answer 202
+`{"ignored": true}`; handled events answer `{"event", "changes", "links"}`.
+Commits (push) and merge / pull requests are stored per provider,
+repository, kind and ref (SHA or number; a repeated delivery updates title,
+status and branches). Their text — the commit message; the MR title,
+description and source branch — is scanned for item keys: full keys of
+the project (`DEMO-REQ-12`, `DEMO-TC-3`) and short keys (`REQ-12`, `TC-3`);
+keys with another project's upper-case prefix are ignored. Every delivery
+is audited as `code.webhook`. Bodies are limited to 5 MiB, pushes to
+1000 commits.
+
+`CodeChange`: `{id, project_id, kind, provider: gitlab|github|manual,
+repository, ref, title, url, author, branch, target_branch, status:
+open|merged|closed (merge requests), occurred_at, created_at, updated_at,
+items: [{item_type, item_id, key, title, source: auto|manual, created_by,
+created_at}], builds}`.
+
+**Builds of uploaded results.** `POST /runs/{id}/junit` and `POST
+/runs/{id}/results` take `?build_id=` (the CI's build id, unique per
+project), `?build_number=`, `?commit=` (hex SHA), `?branch=` and
+`?pipeline_url=`: the build is created or updated and the run is
+associated with it (`build_id`, `build_label`; the run's `build` text is
+set when empty); the answer has `build`. `?variant=` makes the run a run
+for that variant. `Build`: `{id, project_id, external_id, number,
+commit_sha, branch, pipeline_url, created_by, created_at, updated_at, runs,
+summary}`.
+
+**Regression selection.** Body: `{"requirement_ids"?: [ids or keys],
+"change_ids"?: [...], "since_build"?: "<build>", "variant"?: "<variant>",
+"include_related"?: false, "include_prerequisites"?: true}`. The changed
+requirements are the given ones and those the code changes name — the
+given changes and the commits after the build's own commit (or after the
+build was recorded when its commit is unknown), on the build's branch.
+`include_related` adds the requirements that `depends_on`, `refines` or are
+`derived_from` a changed one (one step). The tests are those verifying the
+requirements, those the changes name and (by default) their prerequisites,
+transitively; deprecated tests and, with a variant, items that do not apply
+to it are left out. Answer: `{"requirements": [Item], "tests": [Item],
+"changes": [CodeChange], "variant", "since_build"}` with `Item = {id, key,
+title, last_result, reasons: [{kind: requirement|change|related|verifies|prerequisite,
+ref, type}]}`.
+
+**Combining coverage rules.** The verdict per requirement is a pluggable
+`store.CoverageFunc(requirementID, tests, results)` (default
+`store.CoverageOf`); `VariantCoverage` and `BuildIndex` hand it only the
+tests and results that count for the variant or build.
+
 ## Dependency graph and tags
 
 | Method | Path | Permission | Notes |
@@ -2861,6 +2991,10 @@ type), script_language, script, expected, step (actions/expected/data of
 steps), priority, status, estimate, tag, folder, category, dimension, linked,
 last_result, created_by, created_at, updated_at, flaky (true/false),
 flakiness (alias flips), catalog, stale` (true/false) and `element` (as for requirements).
+
+Requirements and tests also have `variant` (alias variants: the names of the
+variants the item applies to) and `applicability` (`all` | `selected`), see
+[Variants and applicability](#variants-and-applicability).
 
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Execution fields: `id, key, title, status, assignee,
