@@ -114,6 +114,10 @@ type TenantSettings struct {
 	// pass and no link is suspect, and a verified one goes back to
 	// implemented when that no longer holds.
 	ManualVerification bool `json:"manual_verification"`
+	// AIEnabled turns the optional AI assistance on for the organisation
+	// (it also needs a service configured in the system settings; projects
+	// can opt out). Off by default.
+	AIEnabled bool `json:"ai_enabled"`
 }
 
 // DefaultReadyRequirementStatuses are the requirement statuses ready for

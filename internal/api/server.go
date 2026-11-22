@@ -78,6 +78,9 @@ type Server struct {
 	mailLimiter *rateLimiter
 	// suggestLimiter bounds the autocomplete queries of one user (suggest.go).
 	suggestLimiter *rateLimiter
+	// aiLimit bounds the AI requests of one user per hour (ai.go).
+	aiOnce  sync.Once
+	aiLimit *rateLimiter
 
 	// jobs runs automated tests in the background (scriptjobs.go);
 	// JobHeartbeat is its heartbeat interval (tests; 0 = 15s).
@@ -376,6 +379,8 @@ func (s *Server) routes() {
 	s.routesExploratory(h)
 	// similar requirements and tests, duplicates and conflicts (similarity.go)
 	s.routesSimilarity(h)
+	// optional AI assistance (ai.go)
+	s.routesAI(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -487,6 +492,10 @@ func (w *statusWriter) WriteHeader(code int) {
 	}
 	w.ResponseWriter.WriteHeader(code)
 }
+
+// Unwrap lets http.ResponseController reach the connection (flushing
+// server-sent events, a longer write deadline).
+func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 func (w *statusWriter) Write(b []byte) (int, error) {
 	if w.status == 0 {

@@ -98,6 +98,22 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Likhet (dubbletter) | `similarity.embeddings.model` | text | direkt |
 | Likhet (dubbletter) | `similarity.embeddings.api_key` | hemlighet (skrivskyddad läsning) | direkt |
 | Likhet (dubbletter) | `similarity.embeddings.timeout` | 1s–5m | direkt |
+| AI-assistans | `ai.enabled` | på/av | direkt |
+| AI-assistans | `ai.provider` | `anthropic`, `openai` | direkt |
+| AI-assistans | `ai.url` | text | direkt |
+| AI-assistans | `ai.model` | text | direkt |
+| AI-assistans | `ai.api_key` | hemlighet (skrivskyddad läsning) | direkt |
+| AI-assistans | `ai.timeout` | 5s–10m | direkt |
+| AI-assistans | `ai.max_tokens` | 256–128000 | direkt |
+| AI-assistans | `ai.temperature` | text | direkt |
+| AI-assistans | `ai.rate_limit` | 1–10000 | direkt |
+| AI-assistans | `ai.features.draft_tests` | på/av | direkt |
+| AI-assistans | `ai.features.improve_requirement` | på/av | direkt |
+| AI-assistans | `ai.features.summarize_run` | på/av | direkt |
+| AI-assistans | `ai.features.suggest_mappings` | på/av | direkt |
+| AI-assistans | `ai.features.suggest_criteria` | på/av | direkt |
+| AI-assistans | `ai.price_input` | text | direkt |
+| AI-assistans | `ai.price_output` | text | direkt |
 
 <!-- END GENERATED: system-settings -->
 
@@ -128,6 +144,42 @@ Om man vill kan en **OpenAI-kompatibel embeddings-slutpunkt** beräkna likheten 
 **Integritet.** När den är på **skickas titel, beskrivning och acceptanskriterier för krav och titel, beskrivning, förutsättningar och steg för testfall till tjänsten**, för alla projekt i alla organisationer på servern, när likhetskontrollerna körs eller någon skriver i en redigerare (texten som skrivs skickas också). Använd en tjänst som drivs av er organisation eller som ni har avtal med; låt den annars vara av.
 
 Vektorerna lagras i tabellen `similarity_embeddings` per objekt, modell och text (ett ändrat objekt skickas igen, ett oförändrat inte). Den är en cache: den ingår inte i säkerhetskopior eller projektarkiv och fylls på nytt efter en återställning. Byts modellen beräknas alla vektorer om. **Testa tjänsten** på sidan skickar en kort exempelmening och visar vektorns storlek. När tjänsten misslyckas eller inte svarar loggar servern en varning och använder den lokala likheten, så kontrollerna slutar aldrig fungera. Konfliktsökningen (motsatta förpliktelser, gränsvärden, uteslutande värden) körs alltid på servern. Kontrollernas gränsvärden gäller även tjänstens cosinuslikhet; tjänster skiljer sig, så granska de misstänkta dubbletterna när den har slagits på och justera gränsen för dubblettkontrollerna vid behov.
+
+## AI-assistans
+
+Qtestframe kan be en språkmodelltjänst om **förslag** som användarna granskar innan något sparas: utkast till tester för ett krav, en förbättrad formulering av ett krav, en sammanfattning av en underkänd körning med utkast till fel, ramverksmappningar (ATT&CK, D3FEND, EMB3D, CWE) och acceptanskriterier (se användarhandboken, *AI-assistans*). Den är **av som standard** och kräver tre brytare:
+
+1. **Administration → Systeminställningar → AI-assistans** (eller `ai` i [konfigurationsfilen](configuration.md#referens)): tjänsten och `ai.enabled`.
+2. **Administration → AI-assistans**: organisationens brytare (`settings.manage`).
+3. Varje projekt kan välja bort den: **Inställningar → Allmänt → AI-assistans** (`project.update`).
+
+| Inställning | Betydelse |
+|---|---|
+| `ai.provider` | `anthropic`: Anthropics Messages API (`POST {url}/v1/messages`, nyckeln som `x-api-key`). `openai`: en OpenAI-kompatibel chat completions-slutpunkt (`POST {url}/chat/completions`, nyckeln som `Authorization: Bearer`; en Azure OpenAI-deployment-URL med `?api-version=…` skickar den som `api-key`): OpenAI, Azure OpenAI eller en lokal server som Ollama eller vLLM |
+| `ai.url` | bas-URL; tom med `anthropic` betyder `https://api.anthropic.com`; krävs med `openai`, t.ex. `https://llm.example.com/v1` |
+| `ai.model` | modell-id; standard är en aktuell Claude-modell (ange din egen modell eller deployment för `openai`) |
+| `ai.api_key` | kan bara skrivas, lagras [krypterad](security.md#kryptering-av-lagrade-hemligheter); i filen bara som `api_key_file`; kan vara tom för en lokal server |
+| `ai.timeout`, `ai.max_tokens`, `ai.temperature` | längsta väntan på ett svar (standard 2 min), högsta antal token i ett svar (standard 8192), temperaturen (tom: skickas inte) |
+| `ai.rate_limit` | AI-förfrågningar per användare och timme (standard 30) |
+| `ai.features.*` | stäng av enskilda funktioner |
+| `ai.price_input`, `ai.price_output` | valfria priser per miljon token: varje svar visar då en uppskattad kostnad |
+
+**Testa tjänsten** på sidan skickar en fast kort mening (inga objektdata) och visar modellen och antalet token.
+
+**Dataflöde och integritet.** Ingenting skickas förrän en användare klickar på en *Assistera*-åtgärd. Servern skickar då **bara objekten för den åtgärden** till tjänsten, från serverns nätverk:
+
+| Åtgärd | Skickas till tjänsten |
+|---|---|
+| Utkast till tester, Föreslå acceptanskriterier | kravets nyckel, titel, beskrivning, typ, förpliktelse, motivering och acceptanskriterier (redigerarens aktuella text) |
+| Förbättra krav | detsamma, och fynden från kravkontrollerna |
+| Sammanfatta fel | körningens namn, status, miljö och bygge; nyckel, titel, anteckningar, felutskrift (de sista 3000 tecknen) och underkända steg för upp till 40 underkända eller blockerade utföranden; nyckel, titel, status och allvarlighetsgrad för felen som är länkade till körningen |
+| Föreslå mappningar | nyckel, titel, beskrivning (risker: kategori och åtgärd) och de id som redan är mappade |
+
+Användarna ser en upplysning om att texten skickas innan de börjar. Använd en tjänst som drivs av er organisation eller som ni har ett avtal med som täcker dessa data (lagring, träning, plats). En lokal server (Ollama, vLLM) håller allt i ert nätverk.
+
+**Säkerhet.** Tjänsten får inga verktyg och ingenting som den svarar körs. Objekttexten skickas som JSON mellan `<item_data>`-taggar och instruktionerna säger åt modellen att behandla den som data (JSON skyddar `<` och `>`, så ett objekt kan inte stänga taggen). Svaren måste vara ett JSON-objekt med ett fast schema; servern kontrollerar det strikt, frågar en gång till när det inte stämmer och tar bort det som inte kan verifieras (ramverks-id som inte finns i de inbyggda listorna, kriterier som redan finns, tester utanför körningen). Omskrivningen av ett krav kontrolleras igen med kravkontrollerna på servern, som visar vilka fynd den verkligen åtgärdar. Inga anrop till tjänsten görs inuti en databastransaktion, och användaren kan avbryta en begäran när som helst.
+
+**Granskning.** Varje begäran skrivs i händelseloggen som `ai.request` med funktion, användare, objekt-id, leverantör och modell, promptversion, antal token, tid och utfall (`ok`, `cancelled`, `ai_refused`, `ai_invalid_answer`, `ai_service`, `ai_timeout`) — aldrig innehållet. Promptarna är inbyggda i programmet och versionerade (`prompt_version` i varje svar och händelse). Ändringar av organisationens brytare granskas som `settings.update`, projektets val som `project.ai_settings`, testknappen som `settings.test_ai`.
 
 ## Granskning och export
 

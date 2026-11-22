@@ -1,0 +1,62 @@
+{{define "draft_tests.system"}}{{template "rules" .}}
+
+Task: design test cases that verify one requirement. Cover every acceptance criterion with at least one test; add negative and boundary tests where the requirement implies them. Each test is manual, has concrete steps, and each step has an observable expected result. Use test data only where it helps (example values, accounts, files). At most {{.Max}} tests.
+
+Schema:
+{"tests": [{"title": "short name of the test", "description": "what the test checks and why", "preconditions": "state before the test (may be empty)", "test_data": "data the test needs (may be empty)", "expected_result": "overall expected result", "steps": [{"action": "what the tester does", "data": "input for this step (may be empty)", "expected": "what the tester observes"}], "criteria": [1]}]}
+"criteria" lists the numbers (1-based, as in the data) of the acceptance criteria the test covers; [] when the requirement has none.{{end}}
+{{define "draft_tests.user"}}Design the tests for this requirement.
+
+{{template "data" .}}{{end}}
+
+{{define "improve_requirement.system"}}{{template "rules" .}}
+
+Task: rewrite one requirement so that it passes the quality checks of the tool, without changing what is required. Good requirements here:
+- state one obligation with one uppercase keyword (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY, after RFC 2119 / RFC 8174) — keep the obligation level of the original unless a finding is about it;
+- are written in an EARS pattern where it fits: ubiquitous ("The <system> MUST <response>"), event-driven ("When <trigger>, the <system> MUST <response>"), state-driven ("While <state>, ..."), unwanted behaviour ("If <condition>, then the <system> MUST <response>"), optional feature ("Where <feature>, ...");
+- follow INCOSE rules: singular, unambiguous, verifiable, no vague terms (fast, user-friendly, etc.), no TBDs, no open-ended lists (etc., and/or), no escape clauses (if possible, as appropriate), active voice, a measurable value with unit where the original implies a quality, short sentences.
+Do not add requirements, numbers or features that the original does not imply; where a value is needed but unknown, write a clearly marked placeholder such as [value] and say so in the explanation.
+The data lists the findings of the tool's checks ("findings": rule id and message).
+
+Schema:
+{"title": "the improved title (may equal the original)", "description": "the improved requirement text", "explanation": "what you changed and why, in two to five sentences", "addresses": ["rule ids of the findings you resolved"]}{{end}}
+{{define "improve_requirement.user"}}Improve this requirement.
+
+{{template "data" .}}{{end}}
+
+{{define "summarize_run.system"}}{{template "rules" .}}
+
+Task: summarise the failed and blocked executions of one test run for the team: what failed, the likely common causes (as hypotheses, based only on the notes, error output and step results), and drafts of new defects for failures that no linked defect covers yet. Do not draft a defect for a failure that an existing defect in the data already covers. At most {{.Max}} defect drafts.
+
+Schema:
+{"summary": "a short summary of the run, three to six sentences", "causes": [{"title": "a likely cause", "explanation": "why the data suggests it", "tests": ["test keys"]}], "defects": [{"title": "defect title", "description": "observed behaviour, expected behaviour, steps or test to reproduce, relevant output", "severity": "critical|major|minor|trivial", "tests": ["test keys"]}]}{{end}}
+{{define "summarize_run.user"}}Summarise this test run.
+
+{{template "data" .}}{{end}}
+
+{{define "suggest_mappings.system"}}{{template "rules" .}}
+
+Task: suggest security framework mappings for one {{.Kind}}. Allowed frameworks and what their ids mean here:
+{{- range .Frameworks}}
+- {{.}}{{end}}
+Use only real, existing ids of these frameworks, written exactly as the framework writes them. Suggest only mappings that clearly apply, each with a one-sentence reason. Leave out ids that the data lists as already mapped. At most {{.Max}} mappings; fewer is better than doubtful ones.
+
+Schema:
+{"mappings": [{"framework": "{{.FrameworkIDs}}", "id": "the id", "reason": "why it applies"}]}{{end}}
+{{define "suggest_mappings.user"}}Suggest mappings for this {{.Kind}}.
+
+{{template "data" .}}{{end}}
+
+{{define "suggest_criteria.system"}}{{template "rules" .}}
+
+Task: suggest acceptance criteria (evaluation criteria) for one requirement. Each criterion is a single, verifiable condition that shows the requirement is met, with the method that verifies it and, where the requirement implies a quality, a measurable threshold with unit. Do not repeat criteria that the data already lists. Do not add obligations that the requirement does not state. At most {{.Max}} criteria.
+
+Methods: test, inspection, analysis, demonstration, review.
+
+Schema:
+{"criteria": [{"description": "the condition", "method": "test|inspection|analysis|demonstration|review", "threshold": "measurable value with unit, or empty"}]}{{end}}
+{{define "suggest_criteria.user"}}Suggest acceptance criteria for this requirement.
+
+{{template "data" .}}{{end}}
+
+{{define "retry"}}Your answer could not be used: {{.Error}}. Answer again with only the JSON object of the schema.{{end}}

@@ -106,6 +106,8 @@ tags:
   description: Health, readiness and this description
 - name: Exploratory testing
   description: Session-based exploratory testing (charters, timer, notes, debriefs, metrics)
+- name: AI assistance
+  description: Optional suggestions from a language model service (drafts of tests, improved requirements, run summaries, framework mappings, acceptance criteria); nothing is saved without the user
 paths:
   /healthz:
     get:
@@ -19551,6 +19553,354 @@ paths:
                 type: string
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/v1/ai:
+    get:
+      tags:
+      - AI assistance
+      summary: AI assistance in the organisation
+      operationId: getAI
+      description: |-
+        The availability of the optional AI assistance in the caller's organisation, without a project's opt-out: `{available, reason (off | not_configured | organisation), provider, model, features: {draft_tests, improve_requirement, summarize_run, suggest_mappings, suggest_criteria}, system_enabled, organisation_enabled, rate_limit, remaining, price_input, price_output, prompt_version}`. The organisation switch is `ai_enabled` of `PUT /api/v1/settings`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIStatus'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - AI assistance
+      summary: AI assistance in a project
+      operationId: getProjectsByPidAI
+      description: |-
+        Whether the AI assistance can be used in the project, and why not (`reason`: `off` — not enabled in the system settings, `not_configured` — no usable service, `organisation` — the organisation has not turned it on, `project` — the project opted out). Also the features that are on, the rate limit per user and hour and the caller's remaining requests, and the configured prices.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - AI assistance
+      summary: Opt a project out of the AI assistance
+      operationId: putProjectsByPidAI
+      description: |-
+        `{"disabled": true|false}`: the project's opt-out (audited as `project.ai_settings`). Answers the status like `GET`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [disabled]
+              properties:
+                disabled:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIStatus'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/draft-tests:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Draft tests for a requirement
+      operationId: postProjectsByPidAIDraftTests
+      description: |-
+        `{requirement_id, lang: en|sv}` → `{meta, result: {requirement_id, requirement_key, tests: [{title, description, preconditions, test_data, expected_result, steps: [{action, data, expected}], criteria: [numbers], criterion_ids: [ids]}]}}`. Sends the requirement (title, description, acceptance criteria) to the configured service and returns drafts; **nothing is saved** — the client creates the tests the user accepts (`POST /projects/{pid}/tests`, status `draft`) and links them (`POST /projects/{pid}/links`). See *AI requests* below for streaming, errors and the audit entry.
+
+        **AI requests** (all feature endpoints): with `Accept: text/event-stream` the answer is streamed as server-sent events `start` `{feature, provider, model}`, `progress` `{chars}` while the service writes, then `result` (the JSON body) or `error` `{status, code, error, meta}`; closing the connection cancels the request. Otherwise the JSON body. `meta` is `{feature, prompt_version, provider, model, usage: {input_tokens, output_tokens}, retried, duration_ms, cost}`. Errors: `409 ai_unavailable` (not available here; see `GET /projects/{pid}/ai`), `429 rate_limited`, `422 ai_refused`, `502 ai_service`, `502 ai_invalid_answer` (the answer did not match the schema, also after one retry), `504 ai_timeout`. Each request is audited as `ai.request` with feature, item ids, model and tokens, never the content.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The suggestions (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/improve-requirement:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Improve the wording of a requirement
+      operationId: postProjectsByPidAIImproveRequirement
+      description: |-
+        `{requirement_id (optional for a requirement not saved yet), title, description (the editor's text; default the stored one), analysis_language: auto|en|sv, lang}` → `{meta, result: {original: {title, description}, title, description, explanation, before, after, fixed: [rule ids], new: [rule ids], claimed: [rule ids]}}`. The findings of the requirement checks (`POST /reqlang/analyze`) are sent with the text; the rewrite is checked again on the server: `fixed` are the findings it resolves, `new` the ones it adds, `claimed` what the service says it resolved. Nothing is saved. Streaming, errors and audit as for `draft-tests`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The suggestion (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/summarize-run:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Summarise the failures of a run
+      operationId: postProjectsByPidAISummarizeRun
+      description: |-
+        `{run_id, lang}` → `{meta, result: {run_id, summary, causes: [{title, explanation, tests: [keys]}], defects: [{title, description, severity, tests: [{key, title, test_case_id, execution_id}]}], failed, linked_defects}}`. Sends the failed and blocked executions (notes, the end of the error output, failed steps; at most 40) and the defects linked to the run. Defect drafts only name tests of the run; the client creates the drafts the user accepts (`POST /projects/{pid}/defects` with links to the executions). `400` when nothing failed. Streaming, errors and audit as for `draft-tests`.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The summary (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/suggest-mappings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Suggest framework mappings for a requirement or risk
+      operationId: postProjectsByPidAISuggestMappings
+      description: |-
+        `{requirement_id | risk_id, title, description, lang}` → `{meta, result: {kind, mappings: [{framework, id, name, reason}], dropped: [{framework, id}]}}`. Requirements: `d3fend` (D3FEND techniques), `emb3d` (EMB3D mitigations and threats), `cwe` (CWE weaknesses the catalogue refers to; accepted as tags `CWE-n`). Risks: `attack` (ATT&CK and ATLAS techniques) and `emb3d` (threats). Every id is checked against the embedded lists: unknown ids are returned in `dropped`, ids already mapped are left out. Streaming, errors and audit as for `draft-tests`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The suggestions (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/suggest-criteria:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Suggest acceptance criteria for a requirement
+      operationId: postProjectsByPidAISuggestCriteria
+      description: |-
+        `{requirement_id (optional), title, description, criteria: [{description, method, threshold}] (the editor's), lang}` → `{meta, result: {criteria: [{description, method, threshold}]}}`. Criteria equal to existing ones are left out; `method` is one of the evaluation methods. Streaming, errors and audit as for `draft-tests`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The suggestions (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/ai:
+    post:
+      tags:
+      - Administration
+      summary: Test the AI service with the settings
+      operationId: postAdminSettingsTestAI
+      description: |-
+        `{"values": {"ai.url": "…"}}` (optional unsaved values of the ai section; the stored key is used unless one is given): asks the service for a one-word answer (a fixed text, no item data) and reports `{ok, message, error, details: {model, input_tokens, output_tokens}}`. Audited as `settings.test_ai`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -19736,6 +20086,100 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    AIStatus:
+      type: object
+      description: Availability of the optional AI assistance.
+      properties:
+        available:
+          type: boolean
+        reason:
+          type: string
+          enum: [off, not_configured, organisation, project]
+        provider:
+          type: string
+          enum: [anthropic, openai]
+        model:
+          type: string
+        features:
+          type: object
+          additionalProperties:
+            type: boolean
+        system_enabled:
+          type: boolean
+        organisation_enabled:
+          type: boolean
+        project_disabled:
+          type: boolean
+        rate_limit:
+          type: integer
+        remaining:
+          type: integer
+        price_input:
+          type: number
+        price_output:
+          type: number
+        prompt_version:
+          type: string
+    AIRequest:
+      type: object
+      description: The item an AI request is about, and the language of the suggestions.
+      properties:
+        lang:
+          type: string
+          enum: [en, sv]
+        requirement_id:
+          type: string
+        risk_id:
+          type: string
+        run_id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        criteria:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              method:
+                type: string
+              threshold:
+                type: string
+        analysis_language:
+          type: string
+    AIAnswer:
+      type: object
+      description: Suggestions of an AI request and how they were made.
+      properties:
+        meta:
+          type: object
+          properties:
+            feature:
+              type: string
+            prompt_version:
+              type: string
+            provider:
+              type: string
+            model:
+              type: string
+            usage:
+              type: object
+              properties:
+                input_tokens:
+                  type: integer
+                output_tokens:
+                  type: integer
+            retried:
+              type: boolean
+            duration_ms:
+              type: integer
+            cost:
+              type: number
+        result:
+          type: object
     ExploratorySessionInput:
       type: "object"
       properties:

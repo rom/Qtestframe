@@ -106,6 +106,7 @@ var boolColumns = map[string]bool{
 	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
 	"chat_channels.enabled": true, "chat_channels.restricted_content": true,
 	"test_cycle_schedules.auto_start": true, "test_cycle_schedules.enabled": true,
+	"projects.ai_disabled": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

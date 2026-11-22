@@ -146,6 +146,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 51 | `0051_frameworks.sql` |
 | 52 | `0052_multiple_roles.sql` |
 | 53 | `0053_ci_integration.sql` |
+| 61 | `0061_ai_assistance.sql` |
 
 <!-- END GENERATED: migrations -->
 

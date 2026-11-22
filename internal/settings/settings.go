@@ -69,7 +69,7 @@ const (
 )
 
 // Sections of the administration view, in order.
-var Sections = []string{"general", "security", "oidc", "logging", "email", "runner", "similarity", "retention"}
+var Sections = []string{"general", "security", "oidc", "logging", "email", "runner", "similarity", "ai", "retention"}
 
 // Def describes one setting.
 type Def struct {
@@ -228,6 +228,49 @@ var Registry = []*Def{
 	{Key: "similarity.embeddings.api_key", Section: "similarity", Kind: Secret, Apply: Runtime, Optional: true,
 		get: func(c *config.Config) any { return c.Similarity.Embeddings.APIKey }, set: func(c *config.Config, v any) { c.Similarity.Embeddings.APIKey = v.(string) }},
 	dur("similarity.embeddings.timeout", "similarity", Runtime, time.Second, 5*time.Minute, func(c *config.Config) *time.Duration { return &c.Similarity.Embeddings.Timeout }),
+
+	// ai: the optional AI assistance (off by default; sends the text of the
+	// items a user asks about to the service)
+	flag("ai.enabled", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Enabled }),
+	enum("ai.provider", "ai", Runtime, []string{config.AIAnthropic, config.AIOpenAI}, func(c *config.Config) *string { return &c.AI.Provider }),
+	checked(optional(str("ai.url", "ai", Runtime, func(c *config.Config) *string { return &c.AI.URL })), checkBase),
+	checked(optional(str("ai.model", "ai", Runtime, func(c *config.Config) *string { return &c.AI.Model })), oneLine),
+	{Key: "ai.api_key", Section: "ai", Kind: Secret, Apply: Runtime, Optional: true,
+		get: func(c *config.Config) any { return c.AI.APIKey }, set: func(c *config.Config, v any) { c.AI.APIKey = v.(string) }},
+	dur("ai.timeout", "ai", Runtime, 5*time.Second, 10*time.Minute, func(c *config.Config) *time.Duration { return &c.AI.Timeout }),
+	num("ai.max_tokens", "ai", Runtime, 256, 128000, func(c *config.Config) *int { return &c.AI.MaxTokens }),
+	checked(optional(str("ai.temperature", "ai", Runtime, func(c *config.Config) *string { return &c.AI.Temperature })), checkTemperature),
+	num("ai.rate_limit", "ai", Runtime, 1, 10000, func(c *config.Config) *int { return &c.AI.RateLimit }),
+	flag("ai.features.draft_tests", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Features.DraftTests }),
+	flag("ai.features.improve_requirement", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Features.ImproveRequirement }),
+	flag("ai.features.summarize_run", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Features.SummarizeRun }),
+	flag("ai.features.suggest_mappings", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Features.SuggestMappings }),
+	flag("ai.features.suggest_criteria", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Features.SuggestCriteria }),
+	checked(optional(str("ai.price_input", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceInput })), checkPrice),
+	checked(optional(str("ai.price_output", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceOutput })), checkPrice),
+}
+
+// checkBase: an absolute http(s) base URL without fragment (or empty).
+func checkBase(v any) error {
+	s := v.(string)
+	if s == "" {
+		return nil
+	}
+	u, err := url.Parse(s)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.Fragment != "" || strings.ContainsAny(s, " \r\n") {
+		return errors.New("must be an absolute http(s) URL, e.g. https://llm.example.com/v1")
+	}
+	return nil
+}
+
+func checkTemperature(v any) error {
+	_, err := config.ParseTemperature(v.(string))
+	return err
+}
+
+func checkPrice(v any) error {
+	_, err := config.ParsePrice(v.(string))
+	return err
 }
 
 // checkEndpoint: an absolute http(s) URL (or empty).
