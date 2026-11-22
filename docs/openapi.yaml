@@ -2391,6 +2391,68 @@ paths:
           description: Invalid signature or token
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/hooks/req-sync/jira/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Jira webhook of the requirement sync
+      operationId: postHooksReqSyncJiraByPid
+      description: |-
+        Jira webhook events (jira:issue_created, jira:issue_updated, comment_created, …). The shared secret of the project's Jira sync: the HMAC-SHA256 signature of the body in `X-Hub-Signature: sha256=…` (Jira Cloud), the query parameter `secret` (Jira Server and Data Center) or the header `X-Qtestframe-Secret`. → 202 `{event, items}` and the sync of the named items runs in the background (`{ignored: true}` when the sync is off or the event names no item); 401 for a wrong secret or an unknown project; 429 beyond 600 calls per project and minute.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Invalid secret or signature
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/req-sync/azure-devops/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Azure DevOps webhook of the requirement sync
+      operationId: postHooksReqSyncAzureDevopsByPid
+      description: |-
+        Azure DevOps service hook events (workitem.created, workitem.updated, workitem.commented). The shared secret of the project's Azure DevOps sync as the password of basic authentication (any user name) or in the header `X-Qtestframe-Secret`. → 202 `{event, items}` and the sync of the named items runs in the background (`{ignored: true}` when the sync is off or the event names no item); 401 for a wrong secret or an unknown project; 429 beyond 600 calls per project and minute.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Invalid secret or signature
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/categories:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -13337,6 +13399,249 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ImportPreview'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: Get the two-way sync configurations
+      operationId: getProjectsByPidReqSync
+      description: |-
+        The sync of both sources (`jira`, `azure-devops`) as `{items: [config]}`, a default (not enabled, `id` "") where none is saved. A config: `{id, system, enabled, interval_minutes, settings, has_webhook_secret, webhook_url, run_as, next_run_at, last_run_at, last_status, last_error, failures, open_conflicts, linked, version, connected}`; `settings`: `{fields: [{field, remote, direction, values, push_values}], query, import_new, folder_id, push: {create, folder_id, tag, query, item_type, project_key}, conflict_policy, impact, comments, links, max_writes_per_minute, comments_since}`. The webhook secret is never returned.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/{source}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    put:
+      tags:
+      - Import
+      summary: Save a two-way sync configuration
+      operationId: putProjectsByPidReqSyncBySource
+      description: |-
+        `{enabled, interval_minutes (0 or 5–10080), settings, webhook_secret (write-only, 16–200 characters; empty keeps the saved one), clear_webhook_secret, version}`. `field` is one of title, description, status, priority, tags, criteria, rationale; `direction` both, pull (tracker → Qtestframe), push or none; `conflict_policy` manual, tracker or qtestframe; `impact` suspect, notify or skip. A stale `version` answers 409. Enabling needs `requirement.write` too: scheduled and webhook syncs run as the caller. Audited as `req_sync.update`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/{source}/run:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    post:
+      tags:
+      - Import
+      summary: Sync now or preview
+      operationId: postProjectsByPidReqSyncBySourceRun
+      description: |-
+        `{dry_run}`: runs the sync now and answers the run `{id, system, trigger, dry_run, status (ok, partial, error), summary: {pulled, pushed, created_local, created_remote, conflicts, comments, links, unchanged, errors}, entries: [{requirement_id, requirement_key, external_id, title, action, fields, changes, message}], error, started_at, finished_at}`. A dry run saves nothing and is not logged. 409 while another sync of the source runs; 502 `tracker_error` when the tracker cannot be read. Audited as `req_sync.run`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/runs:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: The sync log
+      operationId: getProjectsByPidReqSyncRuns
+      description: |-
+        The newest runs (at most 100 per source): `?source=`, `?limit=`, `?entries=true` to include the entries.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/runs/{run}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: run
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      tags:
+      - Import
+      summary: A sync run with its entries
+      operationId: getProjectsByPidReqSyncRunsByRun
+      description: |-
+        One run of the log with what it did per item.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/conflicts:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: Sync conflicts
+      operationId: getProjectsByPidReqSyncConflicts
+      description: |-
+        Requirements and tracker items changed on both sides (policy manual): `{items: [{id, system, requirement_id, requirement_key, title, external_id, external_url, fields: [{field, base, local, remote}], status, resolution, resolved_by, resolved_at, created_at, updated_at}]}`. `?status=open` (default), resolved, dismissed or all; `?source=`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/conflicts/{cid}/resolve:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: cid
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Import
+      summary: Decide a sync conflict
+      operationId: postProjectsByPidReqSyncConflictsByCidResolve
+      description: |-
+        `{resolution: tracker | qtestframe | dismiss}` for every field, or `{fields: {field: tracker | qtestframe | dismiss}}`. The decision is carried out by a sync of the one item (the tracker's value saved here through the regular update, or Qtestframe's written to the tracker) → `{conflict, run}`; 409 when the conflict is not open or the decision could not be carried out. Audited as `req_sync.conflict.resolve`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

@@ -1284,6 +1284,55 @@ accepts; they are left out of `no_tests*`, `tests_failing` and
 `language_rule` (with `params.rule`, a language analysis rule). At most 200
 items per finding (`total` gives the full count).
 
+
+### Two-way sync with Jira and Azure DevOps
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/req-sync` | project.read | `{items: [config]}` for `jira` and `azure-devops` (a default, `id` "", where none is saved) |
+| PUT | `/projects/{pid}/req-sync/{source}` | project.update | `{enabled, interval_minutes, settings, webhook_secret, clear_webhook_secret, version}`; enabling needs `requirement.write` (the sync runs as the saver) |
+| POST | `/projects/{pid}/req-sync/{source}/run` | requirement.write | `{dry_run}` → the run; 409 while one runs, 502 `tracker_error` |
+| GET | `/projects/{pid}/req-sync/runs` | project.read | the log: `?source=`, `?limit=`, `?entries=true` |
+| GET | `/projects/{pid}/req-sync/runs/{run}` | project.read | one run with its entries |
+| GET | `/projects/{pid}/req-sync/conflicts` | requirement.read | `?status=open` (default), `resolved`, `dismissed`, `all`; `?source=` |
+| POST | `/projects/{pid}/req-sync/conflicts/{cid}/resolve` | requirement.write | `{resolution}` or `{fields: {field: decision}}` → `{conflict, run}` |
+| POST | `/hooks/req-sync/jira/{pid}` | none (public) | Jira webhooks: `X-Hub-Signature: sha256=<HMAC of the body>`, `?secret=` or `X-Qtestframe-Secret` → 202 |
+| POST | `/hooks/req-sync/azure-devops/{pid}` | none (public) | Azure DevOps service hooks: basic authentication with the secret as password, or `X-Qtestframe-Secret` → 202 |
+
+A configuration (`model.ReqSyncConfig`): `{id, system, enabled,
+interval_minutes, settings, has_webhook_secret, webhook_url, run_as,
+next_run_at, last_run_at, last_status, last_error, failures,
+open_conflicts, linked, version, connected}`. `settings`:
+
+- `fields`: `[{field, remote, direction, values, push_values}]`: the
+  requirement field (`title`, `description`, `status`, `priority`, `tags`,
+  `criteria`, `rationale`), the tracker's field ID (`summary`,
+  `customfield_10050`, `System.Title`, …), the direction (`both`, `pull`:
+  tracker → Qtestframe, `push`, `none`) and, for status and priority, the
+  value maps tracker value → requirement value (`values`) and requirement
+  value → tracker value (`push_values`).
+- `query` (JQL or WIQL; "" the import source's default), `import_new` and
+  `folder_id` (requirements for items not linked yet).
+- `push`: `{create, folder_id, tag, query, item_type, project_key}`: new
+  tracker items for the requirements in the scope (one of folder, tag or
+  query is required).
+- `conflict_policy` (`manual`, `tracker`, `qtestframe`), `impact`
+  (`suspect`, `notify`, `skip`: the impact choice of the pulled changes),
+  `comments`, `links`, `max_writes_per_minute` (1–600, default 60).
+
+A run compares, per linked requirement and field, the values of both sides
+with the values both had after the last sync (kept with the external
+reference): a field changed on one side goes to the other as its direction
+allows, one changed on both is decided by the policy (`manual` records a
+conflict). Pulled changes go through `PATCH /requirements/{id}` with
+`If-Match` (and `POST /projects/{pid}/requirements` for new items) inside
+one transaction, so permissions, review rules, history and the audit log
+apply; pushed changes are written with the tracker's API (Jira: fields and
+a workflow transition for the status; Azure DevOps: a JSON patch that
+tests the revision read). Run entries have the `action` `pull`, `push`,
+`create_local`, `create_remote`, `conflict`, `comment_pull`,
+`comment_push`, `link_pull`, `link_push`, `skip` or `error`.
+
 ### Compliance
 
 `GET /projects/{pid}/analytics/compliance?source=&lang=` (requirement.read)

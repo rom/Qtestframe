@@ -3673,7 +3673,7 @@ Det här händer:
 - **Värden**: prioriteter som *Highest*, *High* … eller Azure DevOps-prioriteterna 1 till 4 blir *kritisk* … *låg*. Statusar matchas på namn (*To Do* och *New* → utkast, *In Progress*, *Active* och *Approved* → godkänd, *Done*, *Resolved* och *Closed* → implementerad, *Removed* → föråldrad) och i Jira annars på statuskategorin. Ett värde utan motsvarighet utelämnas med en anteckning på raden; kravet behåller sitt värde.
 - **Ny import**: nyckeln för varje ärende (`SHOP-12`) eller id:t för varje arbetsobjekt sparas med kravet det blev. En ny import **uppdaterar** det kravet i stället för att skapa ett till, och visar en konflikt när kravet också har ändrats i Qtestframe. Nya krav får *Jira SHOP-12* eller *Azure DevOps 1234* som källa. En import tar aldrig bort krav, och befintliga krav stannar i sin mapp.
 - **Relationer**: länkar mellan importerade objekt blir kravrelationer: i Jira *blocks* (det blockerade ärendet *beror på* det andra), *duplicates*, *clones* (*härledd från*), *relates to* och föräldern till en deluppgift eller ett barnärende (*förfinar*); i Azure DevOps *Parent* (*förfinar*), *Predecessor* (*beror på*), *Duplicate of* och *Related*. En länk som tas bort i ärendehanteraren tar bort relationen vid nästa import med relationer. Länkar till objekt utanför frågan utelämnas.
-- Det räcker med läsrätt: importen ändrar aldrig något i Jira eller Azure DevOps.
+- Det räcker med läsrätt: importen ändrar aldrig något i Jira eller Azure DevOps. För att hålla båda sidor i takt finns [tvåvägssynken](#tvåvägssynk-med-jira-och-azure-devops).
 
 #### Importkällor
 
@@ -3683,6 +3683,33 @@ Det här händer:
 - **Azure DevOps**: **Organisationens adress** (`https://dev.azure.com/organisation`, eller samlingens adress i Azure DevOps Server), **Projekt**, en **Personlig åtkomsttoken** med behörigheten *Work Items (Read)* och eventuellt standardvärden för **Områdessökväg** och **Typer av arbetsobjekt**.
 
 Token kan bara skrivas, som för ärendehanteraren. **Testa anslutningen** provar den sparade anslutningen.
+
+### Tvåvägssynk med Jira och Azure DevOps
+
+Importen hämtar ändringar från ärendesystemet när du kör den. **Tvåvägssynken** håller kraven och deras Jira-ärenden eller Azure DevOps-arbetsobjekt i takt av sig själv, åt båda hållen: **Ärendesynk** i projektets navigering. Den använder anslutningarna och tokens från [importkällorna](#importkällor); token behöver då skrivbehörighet (se nedan). Krav som importerats tidigare är redan länkade och är med direkt.
+
+**Inställningar** *(Manager)*, per källa:
+
+- **Synka med Jira / Azure DevOps** slår på den; **Var (minuter)** schemalägger den (0: bara för hand och via webhooken). En synk som misslyckas väntar dubbelt så länge för varje gång, högst ett dygn; ett ärendesystem som begränsar takten får vara i fred så länge det ber om.
+- **Objekt från ärendesystemet**: **JQL-** eller **WIQL-frågan** för de objekt som är med (tom: importkällans standardfråga). Med **Skapa krav för objekt som frågan hittar och som inte är länkade ännu** blir nya ärenden krav i den valda mappen. Länkade objekt fortsätter att synkas när frågan inte längre hittar dem.
+- **Krav till ärendesystemet**: **Skapa objekt för krav som skapats här** ger kraven i en **mapp**, med en **tagg** eller som matchar en **fråga** (minst en av dem) ett nytt ärende eller arbetsobjekt av **ärendetypen** / **typen av arbetsobjekt** (Jira behöver också **projektnyckeln**, som standard ärendesystemets). Det nya objektet länkas direkt.
+- **Fältmappning**: vilket kravfält (titel, beskrivning, status, prioritet, taggar, acceptanskriterier, motivering) som går till vilket fält i ärendesystemet, angivet med sitt id (`summary`, `customfield_10050`, `System.Title`, `Microsoft.VSTS.Common.AcceptanceCriteria`), och **riktningen**: *Åt båda hållen*, *Ärendesystem → Qtestframe*, *Qtestframe → ärendesystem* eller *Synkas inte*. Status och prioritet har en **värdemappning** för varje riktning, en `värde = värde` per rad, t.ex. `In Progress = approved` och `approved = In Progress`. En Jira-status sätts genom arbetsflödet: ärendet måste ha en övergång till den.
+- **När båda sidor ändrat ett fält**: *Fråga* (en konflikt, se nedan), *Ärendesystemet vinner* eller *Qtestframe vinner*.
+- **Påverkan av ändringar från ärendesystemet**: som för alla redigeringar *Markera länkar som misstänkta*, *Avisera bara ägarna* eller *Gör ingenting* ([påverkan](#spårbarhet-och-täckning)).
+- **Synka kommentarer** kopierar nya kommentarer i ärendet till kravets diskussion och nya diskussionskommentarer till ärendet, var och en med sin författare. Bara kommentarer som skrivits efter att detta slogs på synkas.
+- **Synka länkar** gör ärendesystemets länkar mellan synkade objekt till relationer och tvärtom (*relaterar till*, *beror på*, *duplicerar*; i Jira också *härlett från*, i Azure DevOps också *förfinar*). Länkar och relationer läggs bara till, de tas aldrig bort.
+- **Skrivningar per minut** sprider ut ändringarna som skickas till ärendesystemet.
+- **Webhook**: ärendesystemet kan tala om för Qtestframe direkt att ett objekt ändrats (se administratörshandboken). Kopiera **webhook-adressen**, **Generera** en delad hemlighet, ange båda i ärendesystemet och **Spara**; hemligheten visas inte igen.
+
+Schemalagda synkar och webhooks körs med behörigheterna för den som senast sparade inställningarna.
+
+**Så avgör synken.** Efter varje synk kommer Qtestframe ihåg de mappade värdena på båda sidor. Vid nästa synk har en sida vars värde skiljer sig från det ändrats: ett fält som ändrats på en sida går till den andra (så långt riktningen tillåter); ett fält som ändrats på båda avgörs av inställningen ovan. En ändring från ärendesystemet sparas som en redigering här, med historik, granskningslogg, granskningsreglerna och *If-Match*: ett krav som någon redigerat medan synken pågick lämnas till nästa synk. En ändring till ärendesystemet kontrolleras på samma sätt: Azure DevOps vägrar den när arbetsobjektet ändrats efter att det lästes, och synken försöker igen nästa gång. Synken tar aldrig bort krav eller objekt i ärendesystemet.
+
+**Översikt.** **Synka nu** synkar direkt; **Förhandsgranska** visar vad en synk skulle göra (hämta, skicka, nya krav och objekt, konflikter, kommentarer, länkar) utan att spara något. Kortet visar de länkade kraven, senaste och nästa synk, öppna konflikter och det senaste felet.
+
+**Konflikter.** Med *Fråga* väntar ett fält som ändrats på båda sidor under **Konflikter**: per fält värdet **vid senaste synken**, **Qtestframe nu** och **ärendesystemet nu**. Välj per fält *Behåll Qtestframe*, *Ta Jira* (*Ta Azure DevOps*) eller *Lämna båda* och **Verkställ besluten**, eller bestäm för alla fält på en gång. Beslutet verkställs direkt (skrivs till ärendesystemet eller sparas här). Objektets övriga fält fortsätter att synkas under tiden; en konflikt stängs av sig själv när båda sidor är överens igen.
+
+**Synklogg.** Varje synk (för hand, schemalagd, webhook, ett konfliktbeslut) med vad den gjorde per objekt och felen; de 100 senaste per källa sparas. Synkar finns också i granskningsloggen (`req_sync.run`).
 
 ### CSV och Excel från DOORS och Polarion
 

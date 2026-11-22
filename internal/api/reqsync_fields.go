@@ -49,6 +49,10 @@ func defaultSyncFields(system string) []model.ReqSyncField {
 	}
 }
 
+// DefaultSyncSettings are the settings of a source without a
+// configuration (seed-demo starts from them).
+func DefaultSyncSettings(system string) model.ReqSyncSettings { return defaultSyncSettings(system) }
+
 // defaultSyncSettings are the settings of a source without a configuration.
 func defaultSyncSettings(system string) model.ReqSyncSettings {
 	return model.ReqSyncSettings{Fields: defaultSyncFields(system), ConflictPolicy: model.SyncManual, Impact: model.ImpactApplySuspect, MaxWritesPerMinute: 60}

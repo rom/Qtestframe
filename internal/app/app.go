@@ -416,6 +416,10 @@ func cmdSeedDemo(args []string, env Env) error {
 	if err := SeedDemoWorkList(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {
 		return err
 	}
+	// the two-way sync with Jira and Azure DevOps, run as the administrator (seedimport.go)
+	if err := SeedDemoReqSync(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {
+		return err
+	}
 	// discussions by the demo users (seeddiscussions.go)
 	if err := SeedDemoDiscussions(env.Ctx, st, t.ID, p); err != nil {
 		return err

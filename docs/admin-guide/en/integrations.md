@@ -137,6 +137,31 @@ Users with `requirement.write` import requirements from a Jira JQL query or an A
 
 Jira is searched with `POST /rest/api/2/search/jql` (Jira Cloud) and, when that does not exist, `POST /rest/api/2/search` (Server and Data Center); Azure DevOps with the WIQL, fields and work items endpoints of REST API 7.1. At most 1,000 items are read per import. The import only reads; it is audited as `requirement.import`, the connection changes as `import_sources.update`. Tokens are encrypted with the server's secret keys (they are re-encrypted by key rotation), never returned, and left out of project archives. The import is reached through the server's outbound proxy (`HTTPS_PROXY`, `NO_PROXY`) like the trackers; allow the hosts above in a firewall.
 
+### Two-way sync
+
+The two-way sync (migration 0060, [user guide](../../user-guide/en/reports-and-export.md#two-way-sync-with-jira-and-azure-devops)) uses the same connections and writes to the tracker, so its token needs more than reading:
+
+| Source | Needed for the sync |
+|---|---|
+| Jira Cloud, Server, Data Center | *Browse projects*, *Edit issues*, *Transition issues*; *Create issues* to push new requirements, *Add comments* for comments, *Link issues* for links |
+| Azure DevOps | personal access token with the scope *Work Items (Read & write)* |
+
+Users with `project.update` change the settings (**Tracker sync → Settings**), users with `requirement.write` run a sync, preview it and decide conflicts; everyone who can read the project sees the overview and the log. Scheduled and webhook syncs run as the account that saved the settings last (`req_sync_configs.run_as`), with its current roles and project access: an account that loses `requirement.write` or the project stops the sync (logged as failed). Changes pulled from the tracker go through the regular requirement update (permissions, review rules, history, audit log, optimistic locking) with the impact choice of the configuration.
+
+**Background job and limits.** The minute job runs the syncs that are due (`interval_minutes`, 0 = no schedule). A run holds a lease in the database (`lease_until`, 15 minutes), so with several servers only one runs a configuration at a time. A failing run doubles the wait per consecutive failure (at most a day); a tracker answering 429 is retried by the client after a short `Retry-After`, otherwise the run stops and the next one waits at least as long as asked. Writes are spaced by *Writes per minute* (default 60) and limited to 500 per run. At most 1,000 items are read per query, plus the linked items the query no longer finds (Jira: one request per item; Azure DevOps: in batches of 200).
+
+**Webhooks.** The receivers are public endpoints; the shared secret (16–200 characters, encrypted in `req_sync_configs.webhook_secret`, write-only, re-encrypted by key rotation) is the credential. Each call is answered with 202 and the sync of the named items runs in the background; calls for one configuration are coalesced. At most 600 calls per project and minute are accepted.
+
+| Tracker | URL | Configure |
+|---|---|---|
+| Jira Cloud | `<base_url>/api/v1/hooks/req-sync/jira/<project id>` | **System → WebHooks**: events *Issue created*, *Issue updated*, *Comment created*; the secret in the webhook's *Secret* field (the body is signed, header `X-Hub-Signature: sha256=…`). |
+| Jira Server / Data Center | the same URL with `?secret=<secret>` | **System → WebHooks** (no secret field there, so the secret goes in the URL: use HTTPS). |
+| Azure DevOps | `<base_url>/api/v1/hooks/req-sync/azure-devops/<project id>` | **Project settings → Service hooks → Web Hooks**: *Work item created*, *Work item updated*, *Work item commented on*; *Basic authentication* with any user name and the secret as the password. |
+
+The header `X-Qtestframe-Secret: <secret>` is accepted from both. The tracker must reach `server.base_url`; open the firewall for it, or rely on the schedule.
+
+**Data.** The sync state of each linked requirement is kept with its external reference (`external_refs`: the tracker's version, hashes and values of both sides after the last sync). `req_sync_configs` and `req_sync_conflicts` are part of the backup; `req_sync_runs` (the log, the newest 100 runs per project and source) is not. Project archives leave out all three (the secret and the account); a loaded project has to be set up again. Audit actions: `req_sync.update` (settings), `req_sync.run` (each run with its counts), `requirement.sync.push` and `requirement.sync.create` (changes to the tracker), `req_sync.conflict.resolve` and `req_sync.conflict.closed`, besides the usual `requirement.update`, `requirement.create` and `relation.create` of the changes made here.
+
 ## CI/CD pipelines (GitLab, GitHub Actions)
 
 Pipelines talk to the server with the `qtestframe` command (`report`, `gate`, `select`; [command line reference](cli-reference.md)) and an API token. Nothing needs to be configured on the server; what each part needs:
