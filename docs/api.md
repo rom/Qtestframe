@@ -1023,8 +1023,10 @@ with the binary.
 
 Items are organised in **groups** (e.g. Security) of **areas** (e.g.
 Authentication). Requirement ids are `<PREFIX>-NN` (`AUTH-01`), test ids
-`<PREFIX>-TNN` (`AUTH-T01`); a requirement lists the catalogue tests that
-verify it (`tests`), a test the requirements it verifies (`requirements`).
+`<PREFIX>-TNN` (`AUTH-T01`) and risk ids `<PREFIX>-RNN` (`AUTH-R01`); a
+requirement lists the catalogue tests that verify it (`tests`) and the risks
+it mitigates (`risks`), a test the requirements it verifies (`requirements`),
+a risk the requirements that mitigate it (`mitigated_by`).
 `lang` is `en` (default) or `sv`; a text missing in Swedish falls back to
 English. List filters take comma-separated values. Every area belongs to a
 **catalogue type** (`catalogue`: software, hardware, equipment, system,
@@ -1039,17 +1041,20 @@ selects the items that comply with them.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[…], catalogues:[{id, name, description, areas, requirements, tests}]}` – groups in display order with item counts; `catalogues` are the catalogue types that have areas |
-| GET | `/catalog/sources?lang=&catalogue=&all=` | project.read | `{lang, kinds:[{id, name}], sources:[{id, kind, jurisdiction?, short?, name, url?, requirements, tests, catalogues:[id]}]}` – the reference sources grouped by kind (law, directive, standard, practice, guideline). `requirements` cite the source, `tests` cite it or verify such a requirement (what adding them brings), counted in the catalogue types of `catalogue`; sources nothing cites are left out unless `all=true` |
-| GET | `/catalog/requirements?lang=&area=&group=&catalogue=&source=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, type, obligation, priority, tags, refs, sources, tests, title, description, in_project?}]}`. `source`: requirements whose refs cite one of the sources. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
-| GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}]` |
+| GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, risks, areas:[{id, prefix, group, name, description, requirements, tests, risks}]}], requirements, tests, risks, requirement_tags:[{tag, count}], test_tags:[…], risk_tags:[…], risk_categories:[{id, name}], catalogues:[{id, name, description, areas, requirements, tests, risks}]}` – groups in display order with item counts; `catalogues` are the catalogue types that have areas |
+| GET | `/catalog/sources?lang=&catalogue=&all=` | project.read | `{lang, kinds:[{id, name}], sources:[{id, kind, jurisdiction?, short?, name, url?, requirements, tests, risks, catalogues:[id]}]}` – the reference sources grouped by kind (law, directive, standard, practice, guideline). `requirements` cite the source, `tests` cite it or verify such a requirement (what adding them brings), `risks` cite it, counted in the catalogue types of `catalogue`; sources nothing cites are left out unless `all=true` |
+| GET | `/catalog/requirements?lang=&area=&group=&catalogue=&source=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, type, obligation, priority, tags, refs, sources, tests, risks, title, description, in_project?}]}`. `source`: requirements whose refs cite one of the sources. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
+| GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], mitigates_risks:[{id, area, title, in_project?}]` |
 | GET | `/catalog/tests?lang=&area=&group=&catalogue=&source=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, catalogue, priority, execution, tags, refs, sources, requirements, steps (count), title, description, in_project?}]}`; `source` matches tests that cite a source or verify a requirement citing it; `q` also searches the steps and the ids of the verified requirements |
 | GET | `/catalog/tests/{id}?lang=&project_id=` | test.read | the summary plus `area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}]` |
-| GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
+| GET | `/catalog/risks?lang=&area=&group=&catalogue=&source=&q=&category=&level=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, category, category_name, likelihood, impact, score, level, tags, refs, sources, mitigated_by, tests, title, description, mitigation, in_project?}]}` – the typical risks of the areas: the threat or hazard and its consequence (`description`), a typical likelihood and impact on the project scale 1–5 with their level, and a suggested `mitigation`. `category`: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental; `level`: low, medium, high, critical; `source` matches risks that cite a source or are mitigated by a requirement citing it; `q` also searches the mitigation and the mitigating requirement ids |
+| GET | `/catalog/risks/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, ref_targets, mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[…]` |
+| GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}, "risks": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
 | POST | `/projects/{pid}/catalog/import` | project.read + see below | copies catalogue items into the project, see below |
 
-**Origin.** Requirements and tests have `catalog_ref`: the catalogue id they
-were copied from, `""` otherwise. It is set only by the import, ignored in
+**Origin.** Requirements, tests and risks have `catalog_ref`: the catalogue id they
+were copied from, `""` otherwise (a risk also has the derived `catalog_area`;
+query fields `catalog` and `catalog_area`, alias `area`, in the risk list). It is set only by the import, ignored in
 create and update requests, and kept when an item is edited, restored from a
 revision or baseline, copied, moved (also to another project), trashed and
 restored, and in backups. The query field `catalog` filters by it:
@@ -1067,12 +1072,16 @@ restored, and in backups. The query field `catalog` filters by it:
   "status": "draft", "test_status": "draft",
   "include_tests": true,
   "add_copies": false,
-  "source": "Standard"
+  "source": "Standard",
+  "risk_ids": ["AUTH-R01"],
+  "include_requirements": true,
+  "include_risks": false,
+  "risk_status": "identified"
 }
 ```
 
-- At most 500 items per request (chosen requirements and tests plus the
-  included tests), else 400. The request is atomic: on an error nothing is
+- At most 500 items per request (chosen requirements, tests and risks plus
+  the included ones), else 400. The request is atomic: on an error nothing is
   stored.
 - `include_tests` (default `true` when the caller has `test.write`) also adds
   the catalogue tests that verify the chosen requirements.
@@ -1090,6 +1099,17 @@ restored, and in backups. The query field `catalog` filters by it:
   (`""` = top level). `folders: "area"` adds a folder per area below them,
   `"group"` a group folder with area folders, named in `lang`; folders of
   the same name are reused.
+- **Risks:** `risk_ids` adds catalogue risks as project risks (title,
+  description, mitigation, category in `lang`, the typical likelihood and
+  impact, `risk_status` `identified` (default) or `mitigating`,
+  `catalog_ref`). `include_requirements` (default `true`) adds the catalogue
+  requirements that mitigate them, and with `include_tests` their tests and
+  the tests listed on the risk; `include_risks` (default `false`) adds the
+  risks the chosen requirements mitigate. Each new risk is linked
+  (`risk_requirements`) to the project requirements of its mitigating
+  catalogue requirements and each new requirement to the project risks it
+  mitigates, new or added earlier (`risk_links` in the response). Risks need
+  `requirement.write`.
 - Items the project already has (same `catalog_ref`) are skipped with reason
   `exists` (and the `existing` items) unless `add_copies` is true; unknown
   ids are skipped with `not_found`.
@@ -1110,14 +1130,16 @@ restored, and in backups. The query field `catalog` filters by it:
 {
   "requirements": [{"id": "…", "key": "WEB-REQ-12", "title": "…", "catalog_ref": "AUTH-01", "folder_id": "…"}],
   "tests": [{"id": "…", "key": "WEB-TC-30", "title": "…", "catalog_ref": "AUTH-T01", "folder_id": "…"}],
+  "risks": [{"id": "…", "key": "WEB-RISK-4", "title": "…", "catalog_ref": "AUTH-R01", "folder_id": null}],
   "links": [{"id": "…", "requirement_id": "…", "requirement_key": "WEB-REQ-12", "test_case_id": "…", "test_case_key": "WEB-TC-30"}],
+  "risk_links": [{"risk_id": "…", "risk_key": "WEB-RISK-4", "requirement_id": "…", "requirement_key": "WEB-REQ-12"}],
   "skipped": [{"kind": "requirement", "catalog_ref": "AUTH-02", "reason": "exists", "existing": [{"id": "…", "key": "WEB-REQ-3", "title": "…"}]}],
   "folders_created": 2
 }
 ```
 
 To undo an import, delete the created items with the bulk delete routes
-(requirements first, then tests); restoring the trash entries in the
+(risks, then requirements, then tests); restoring the trash entries in the
 reverse order brings them back with their links.
 
 ## Requirement analytics
@@ -1361,7 +1383,7 @@ and no options except `threshold` and `level`; the scope is fixed.
 | `verifies_inactive` | tests | it verifies a rejected or obsolete requirement |
 | `broken_prerequisite` | tests | a prerequisite is deleted, its latest result is failed, or prerequisites form a cycle |
 | `unevidenced_must` | requirements | it is MUST / MUST NOT / SHALL / SHALL NOT, in a planned or active release and has no passing evidence (a linked test that is not suspect passed its latest execution) |
-| `unmitigated_risk` | risks | a risk of at least `level` (default `high`) that is not closed or accepted has no mitigation requirement, or none of them is verified; in a release scope the risks of its requirements count |
+| `unmitigated_risk` | risks | a risk of at least `level` (default `high`) that is not closed or accepted has no mitigation requirement, or not every one of them is verified (a risk whose mitigations are all verified counts as mitigated); in a release scope the risks of its requirements count |
 | `unjustified_rejection` | requirements | it was adopted from a regulation of the catalogue (its catalogue item cites a law or directive) and is rejected without a justification: no comment and no rationale of its own |
 | `duplicate_suspect` | requirements | its normalised title and description are at least `threshold` (0.5–1, default 0.9) similar to an older active requirement's (Dice coefficient of character trigrams) and neither a `duplicates` relation nor a dismissal links them |
 
@@ -2250,6 +2272,7 @@ Reading needs `requirement.read`, changing `requirement.write`.
 | DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
 | GET | `/requirements/{id}/risks` | the risks a requirement addresses |
+| POST | `/requirements/{id}/risks` | `{add:[risk ids], remove:[risk ids]}` – the risks a requirement mitigates, changed from its side (requirement.write); → the risks as for GET |
 | GET | `/projects/{pid}/risk-settings` | (requirement.read) `{"threshold", "effective", "default", "levels"}` |
 | PUT | `/projects/{pid}/risk-settings` | (project.update) `{"threshold": "low"\|"medium"\|"high"\|"critical"\|""}`: the project's risk acceptance threshold (`""` = medium) |
 | POST | `/risks/{id}/accept` | (waiver.approve) `{"comment", "password"}`: the "accept risk" electronic signature (as for [waiver decisions](#waivers-and-deviations)); the risk becomes `accepted` |

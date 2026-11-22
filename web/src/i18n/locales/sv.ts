@@ -5649,7 +5649,7 @@ const sv: Messages = {
       verifies_inactive: { name: 'Testfall verifierar ett inaktivt krav', description: 'Ett testfall verifierar ett krav som är avvisat eller föråldrat.' },
       broken_prerequisite: { name: 'Trasig testförutsättning', description: 'En testförutsättning är borttagen eller underkändes senast, eller förutsättningarna bildar en cykel.' },
       unevidenced_must: { name: 'SKA-krav i en release utan godkänt belägg', description: 'Ett MUST- eller SHALL-krav i en planerad eller aktiv release saknar godkänt belägg.' },
-      unmitigated_risk: { name: 'Hög risk utan verifierad åtgärd', description: 'En hög eller kritisk risk saknar länkat åtgärdskrav, eller inget av dess åtgärdskrav är verifierat.' },
+      unmitigated_risk: { name: 'Hög risk utan verifierad åtgärd', description: 'En hög eller kritisk risk saknar länkat åtgärdskrav, eller har åtgärdskrav som inte är verifierade.' },
       unjustified_rejection: { name: 'Regelverkskrav avvisat utan motivering', description: 'Ett krav som hämtats från ett regelverk i katalogen är avvisat utan registrerad motivering (en kommentar eller en egen motivering).' },
       duplicate_suspect: { name: 'Misstänkt dubblerade krav', description: 'Krav med nästan identisk text och utan relationen ”dubblerar”.' },
     },

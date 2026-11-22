@@ -5650,7 +5650,7 @@ const en = {
       verifies_inactive: { name: 'Test verifies an inactive requirement', description: 'A test verifies a requirement that is rejected or obsolete.' },
       broken_prerequisite: { name: 'Broken test prerequisite', description: 'A test prerequisite is deleted or its latest result failed, or prerequisites form a cycle.' },
       unevidenced_must: { name: 'MUST requirement in a release without passing evidence', description: 'A MUST or SHALL requirement in a planned or active release has no passing evidence.' },
-      unmitigated_risk: { name: 'High risk without verified mitigation', description: 'A high or critical risk has no linked mitigation requirement, or none of its mitigations is verified.' },
+      unmitigated_risk: { name: 'High risk without verified mitigation', description: 'A high or critical risk has no linked mitigation requirement, or not all of its mitigations are verified.' },
       unjustified_rejection: { name: 'Regulatory requirement rejected without justification', description: 'A requirement adopted from a regulation of the catalogue is rejected without a recorded justification (a comment or a rationale of its own).' },
       duplicate_suspect: { name: 'Suspected duplicate requirements', description: 'Requirements with nearly identical text and no “duplicates” relation.' },
     },

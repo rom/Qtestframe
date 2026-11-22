@@ -23,6 +23,42 @@ func (s *Server) routesRisks(h routeFunc) {
 	h("DELETE /api/v1/risks/{id}", s.handleDeleteRisk, "requirement.write")
 	h("POST /api/v1/risks/{id}/requirements", s.handleRiskRequirements, "requirement.write")
 	h("GET /api/v1/requirements/{id}/risks", s.handleRisksOfRequirement, "requirement.read")
+	h("POST /api/v1/requirements/{id}/risks", s.handleRequirementRisks, "requirement.write")
+}
+
+// catalogAreas sets the catalogue area of risks copied from the catalogue.
+func (s *Server) catalogAreas(list []model.Risk) {
+	c, err := s.catalogue()
+	if err != nil {
+		return
+	}
+	for i := range list {
+		if k := c.Risks[list[i].CatalogRef]; k != nil {
+			list[i].CatalogArea = k.Area
+		}
+	}
+}
+
+// handleRequirementRisks: {"add": [risk ids], "remove": [risk ids]} – the
+// risks a requirement mitigates, changed from the requirement's side.
+func (s *Server) handleRequirementRisks(w http.ResponseWriter, r *http.Request, p *Principal) {
+	var req struct {
+		Add    []string `json:"add"`
+		Remove []string `json:"remove"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	id := r.PathValue("id")
+	if err := s.Store.SetRequirementRisks(r.Context(), p.TenantID(), id, req.Add, req.Remove); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	for _, rid := range uniqStrings(append(append([]string{}, req.Add...), req.Remove...)) {
+		s.audit(r.Context(), p, "risk.requirements", "risk", rid, "requirement "+id)
+	}
+	s.handleRisksOfRequirement(w, r, p)
 }
 
 func (s *Server) handleListRisks(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -40,6 +76,7 @@ func (s *Server) handleListRisks(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, err)
 		return
 	}
+	s.catalogAreas(list)
 	out := []model.Risk{}
 	var recs []query.MapRecord
 	for i := range list {
@@ -81,7 +118,9 @@ func (s *Server) writeRisk(w http.ResponseWriter, r *http.Request, p *Principal,
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, code, k)
+	list := []model.Risk{*k}
+	s.catalogAreas(list)
+	writeJSON(w, code, list[0])
 }
 
 func (s *Server) handleGetRisk(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -178,6 +217,7 @@ func (s *Server) handleRisksOfRequirement(w http.ResponseWriter, r *http.Request
 			out = append(out, k)
 		}
 	}
+	s.catalogAreas(out)
 	writeJSON(w, http.StatusOK, listOf(out))
 }
 

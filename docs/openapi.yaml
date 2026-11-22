@@ -10956,6 +10956,53 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Risks
+      summary: Change the risks a requirement mitigates
+      operationId: postRequirementsByIdRisks
+      description: |-
+        `{"add": [risk ids], "remove": [risk ids]}` – links the requirement to risks of its project or removes the links (the same links as `POST /risks/{id}/requirements`, from the requirement's side) → the risks the requirement now mitigates, as `GET`. A risk of another project is refused with 400. Audited as `risk.requirements` on each risk
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                add:
+                  type: array
+                  items:
+                    type: string
+                remove:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: The risks the requirement mitigates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Risk'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/stale-results:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -11798,7 +11845,7 @@ paths:
       summary: Catalogue overview
       operationId: getCatalog
       description: |-
-        The groups of the catalogue in display order, each with its areas and item counts, in `lang` → `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[{tag, count}], catalogues:[{id, name, description, areas, requirements, tests}]}`. Every area has `catalogue`, the catalogue type it belongs to.
+        The groups of the catalogue in display order, each with its areas and item counts, in `lang` → `{languages, lang, groups:[{id, name, requirements, tests, risks, areas:[{id, prefix, group, name, description, requirements, tests, risks}]}], requirements, tests, risks, requirement_tags:[{tag, count}], test_tags:[{tag, count}], risk_tags:[{tag, count}], risk_categories:[{id, name}], catalogues:[{id, name, description, areas, requirements, tests, risks}]}`. Every area has `catalogue`, the catalogue type it belongs to.
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -11889,7 +11936,7 @@ paths:
       summary: Get a catalogue requirement
       operationId: getCatalogRequirementsById
       description: |-
-        A requirement with its full text in `lang`: `CatalogRequirement` plus `{area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], in_project?}` (`in_project` with `project_id`)
+        A requirement with its full text in `lang`: `CatalogRequirement` plus `{area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], mitigates_risks:[{id, area, title, in_project?}], in_project?}` (`in_project` with `project_id`)
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -12032,6 +12079,97 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/catalog/risks:
+    get:
+      tags:
+      - Catalogue
+      summary: List catalogue risks
+      operationId: getCatalogRisks
+      description: |-
+        `{"items":[CatalogRisk]}` in `lang`: the typical risks of the areas with category, typical likelihood and impact (1–5), level, suggested mitigation and the catalogue requirements that mitigate them (`mitigated_by`). Filters as for the requirements, plus `category` and `level` (low, medium, high, critical), comma-separated; `source` matches risks that cite a source or are mitigated by a requirement that cites it. `q` also searches the mitigation and the ids of the mitigating requirements
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogArea'
+      - $ref: '#/components/parameters/catalogGroup'
+      - $ref: '#/components/parameters/catalogQ'
+      - $ref: '#/components/parameters/catalogTag'
+      - name: category
+        in: query
+        required: false
+        description: risk categories (security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental), comma-separated
+        schema:
+          type: string
+      - name: level
+        in: query
+        required: false
+        description: risk levels of the typical likelihood × impact (low, medium, high, critical), comma-separated
+        schema:
+          type: string
+      - $ref: '#/components/parameters/catalogCatalogue'
+      - $ref: '#/components/parameters/catalogSource'
+      - $ref: '#/components/parameters/catalogProject'
+      - $ref: '#/components/parameters/catalogNotInProject'
+      responses:
+        '200':
+          description: The matching risks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CatalogRisk'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/risks/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: catalogue id, e.g. AUTH-R01
+      schema:
+        type: string
+    get:
+      tags:
+      - Catalogue
+      summary: Get a catalogue risk
+      operationId: getCatalogRisksById
+      description: |-
+        A risk in `lang`: `CatalogRisk` plus `{area_name, ref_targets:[{ref, source?, name?, url?}], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[{id, area, title, in_project?}], in_project?}`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogProject'
+      responses:
+        '200':
+          description: The risk
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogRisk'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/catalog:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -12041,7 +12179,7 @@ paths:
       summary: Catalogue items in a project
       operationId: getProjectsByPidCatalog
       description: |-
-        Which catalogue items the project already has, by `catalog_ref` → `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {"AUTH-T01": [...]}}`; a kind the caller may not read stays empty
+        Which catalogue items the project already has, by `catalog_ref` → `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {"AUTH-T01": [...]}, "risks": {"AUTH-R01": [...]}}`; a kind the caller may not read stays empty
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -12074,9 +12212,9 @@ paths:
       summary: Add catalogue items to a project
       operationId: postProjectsByPidCatalogImport
       description: |-
-        Copies catalogue requirements and tests into the project in `lang` (at most 500 items, all or nothing) → 201 `{requirements:[{id, key, title, catalog_ref, folder_id}], tests:[...], links:[{id, requirement_id, requirement_key, test_case_id, test_case_key}], skipped:[{kind, catalog_ref, reason, existing?}], folders_created}`. With `include_tests` (default true when the caller has test.write) the catalogue tests that verify the chosen requirements are added too. Trace links connect each new requirement to the project tests of its catalogue tests and each new test to the project requirements it verifies, new or already there. Items the project already has (same `catalog_ref`) are skipped with reason `exists` unless `add_copies`; unknown ids are skipped with `not_found`. `folders`: `none`, `area` (a folder per area) or `group` (group / area) below the target folders, reusing folders of the same name. The automatic linked test of new requirements is not created. Audited as `catalog.import`
+        Copies catalogue requirements, tests and risks into the project in `lang` (at most 500 items, all or nothing) → 201 `{requirements:[{id, key, title, catalog_ref, folder_id}], tests:[...], risks:[{id, key, title, catalog_ref}], links:[{id, requirement_id, requirement_key, test_case_id, test_case_key}], risk_links:[{risk_id, risk_key, requirement_id, requirement_key}], skipped:[{kind, catalog_ref, reason, existing?}], folders_created}`. A risk brings the requirements that mitigate it (`include_requirements`, default true) and, with `include_tests`, their tests and the tests listed on the risk; `include_risks` adds the risks the chosen requirements mitigate. Each new risk is linked to the project requirements of its mitigating catalogue requirements and each new requirement to the project risks it mitigates, new or already there. With `include_tests` (default true when the caller has test.write) the catalogue tests that verify the chosen requirements are added too. Trace links connect each new requirement to the project tests of its catalogue tests and each new test to the project requirements it verifies, new or already there. Items the project already has (same `catalog_ref`) are skipped with reason `exists` unless `add_copies`; unknown ids are skipped with `not_found`. `folders`: `none`, `area` (a folder per area) or `group` (group / area) below the target folders, reusing folders of the same name. The automatic linked test of new requirements is not created. Audited as `catalog.import`
 
-        **Permission:** `project.read`, plus `requirement.write` for requirements and `test.write` for tests and links (`requirement.review` / `test.review` for a review decision status).
+        **Permission:** `project.read`, plus `requirement.write` for requirements and risks and `test.write` for tests and links (`requirement.review` / `test.review` for a review decision status).
       x-permission: project.read
       requestBody:
         required: true
@@ -16293,6 +16431,75 @@ components:
           type: array
           items:
             type: object
+    CatalogRisk:
+      type: object
+      properties:
+        id:
+          type: string
+        area:
+          type: string
+        group:
+          type: string
+        catalogue:
+          type: string
+          description: the catalogue type of its area
+        category:
+          type: string
+          description: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project or environmental
+        category_name:
+          type: string
+          description: the category in `lang`
+        likelihood:
+          type: integer
+          description: typical likelihood 1–5
+        impact:
+          type: integer
+          description: typical impact 1–5
+        score:
+          type: integer
+        level:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+          - critical
+        tags:
+          type: array
+          items:
+            type: string
+        refs:
+          type: array
+          description: the risk sources and standards it cites
+          items:
+            type: string
+        sources:
+          type: array
+          description: ids of the reference sources its refs cite
+          items:
+            type: string
+        mitigated_by:
+          type: array
+          description: catalogue requirements that mitigate it
+          items:
+            type: string
+        tests:
+          type: array
+          description: catalogue tests that check the risk directly
+          items:
+            type: string
+        title:
+          type: string
+        description:
+          type: string
+          description: the threat or hazard and its consequence
+        mitigation:
+          type: string
+          description: the suggested mitigation
+        in_project:
+          type: array
+          items:
+            type: object
     CatalogImport:
       type: object
       properties:
@@ -16329,6 +16536,20 @@ components:
           description: status of the tests (default draft)
         include_tests:
           type: boolean
+        risk_ids:
+          type: array
+          description: catalogue risks to add as project risks
+          items:
+            type: string
+        include_requirements:
+          type: boolean
+          description: add the catalogue requirements that mitigate the chosen risks (default true)
+        include_risks:
+          type: boolean
+          description: add the catalogue risks that the chosen requirements mitigate (default false)
+        risk_status:
+          type: string
+          description: status of the new risks, identified (default) or mitigating
         add_copies:
           type: boolean
         source:
@@ -17945,6 +18166,12 @@ components:
     Risk:
       type: object
       properties:
+        catalog_ref:
+          type: string
+          description: the catalogue risk it was copied from ('' = none)
+        catalog_area:
+          type: string
+          description: the catalogue area of that risk (derived)
         id:
           type: string
         project_id:

@@ -192,6 +192,16 @@ func TestBuiltinHooksAndScope(t *testing.T) {
 	if got := ids(one(t, g, rule(model.CheckUnevidencedMust))); len(got) != 0 {
 		t.Fatal(got)
 	}
+	// a risk counts as mitigated only when every mitigation is verified
+	g.Risks[1].RequirementIDs = []string{"a", "b"}
+	res = one(t, g, rule(model.CheckUnmitigatedRisk))
+	if got := ids(res); !slices.Equal(got, []string{"k1", "k2"}) || len(res.Violations[1].Related) != 1 || res.Violations[1].Related[0].ID != "b" {
+		t.Fatalf("partly verified: %+v", res.Violations)
+	}
+	g.Risks[1].RequirementIDs = []string{"a", "j"}
+	if got := ids(one(t, g, rule(model.CheckUnmitigatedRisk))); !slices.Equal(got, []string{"k1"}) {
+		t.Fatalf("all verified: %v", got)
+	}
 	g.Hooks.TestFailing = func(*Graph, string) bool { return false }
 	if got := ids(one(t, g, rule(model.CheckBrokenPrerequisite))); slices.Contains(got, "t4") {
 		t.Fatal(got)

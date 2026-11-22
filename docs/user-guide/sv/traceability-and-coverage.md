@@ -92,7 +92,7 @@ Utöver de regler du skriver har Qtestframe **inbyggda kontroller** med fasta vi
 | Testfall verifierar ett inaktivt krav | ett testfall verifierar ett avvisat eller föråldrat krav |
 | Trasig testförutsättning | en förutsättning för ett testfall är borttagen, underkändes senast, eller förutsättningarna bildar en cykel |
 | SKA-krav i en release utan godkänt belägg | ett MUST- eller SHALL-krav i en planerad eller aktiv release har inget länkat testfall som inte är misstänkt och som godkändes senast |
-| Hög risk utan verifierad åtgärd | en hög eller kritisk risk (inte stängd eller accepterad) saknar länkat krav, eller inget av dess krav är verifierat |
+| Hög risk utan verifierad åtgärd | en hög eller kritisk risk (inte stängd eller accepterad) saknar länkat krav, eller har krav som inte är verifierade (en risk vars krav alla är verifierade räknas som åtgärdad) |
 | Regelverkskrav avvisat utan motivering | ett krav som lagts till från ett regelverk i [katalogen](catalogue.md) (en lag eller ett direktiv) är avvisat och har ingen kommentar och ingen egen motivering |
 | Misstänkt dubblerade krav | två aktiva krav har nästan identisk titel och beskrivning (likhet minst 0,9 som standard) och ingen relation *dubblerar* |
 
