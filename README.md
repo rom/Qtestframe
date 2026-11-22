@@ -53,6 +53,7 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Attachments and documents:** attach files to requirements, tests, runs and executions; every project has a document archive with previews, tags and filters.
 - **Reports:** six standard reports (project status, coverage, traceability, run summary, defects, test inventory) and a custom report builder; PDF, Word, Excel or CSV, downloaded or saved in the archive.
 - **Personal touches:** twenty-two colour themes (including three camouflage patterns, green and amber terminals, midnight, rose and dark and light high contrast), avatars for users, icons and colours for projects (presets or uploaded images), a "last signed in" notice with failed attempts, and a first-login intro tour.
+- **Administrator guide** for installing, configuring and running the server, in English and Swedish, with a configuration and command line reference generated from the code: [docs/admin-guide](docs/admin-guide/en/index.md), also as [PDF](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-admin-guide-en.pdf) ([svenska](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-admin-guide-sv.pdf)) and under Help in the tool for administrators.
 - **Built-in user guide** in English and Swedish with a tutorial, FAQ and a [references](docs/user-guide/en/references.md) page (RFC 2119, RFC 8174, NIST, ISO/IEC/IEEE 29148 and 29119 and more), available under Help in the tool ([docs/user-guide](docs/user-guide/en/index.md)), also as [PDF](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-user-guide-en.pdf) ([svenska](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-user-guide-sv.pdf)) and as one [Markdown file](docs/user-guide/qtestframe-user-guide-en.md) ([svenska](docs/user-guide/qtestframe-user-guide-sv.md)), see [User guide](#user-guide).
 - **Context-sensitive help:** an *i* next to form fields explains the field on mouse-over or keyboard focus and links to the matching section of the guide; <kbd>?</kbd> opens the guide page for the current view.
 - **Classification:** each project defines its own category dimensions. The defaults are Polarity (positive/negative), Interface (external/internal), Medium (file/network based), Execution (manual/automated), Level (unit to acceptance) and Area.
@@ -119,7 +120,7 @@ Settings are applied in this order, later ones winning:
 
 1. built-in defaults: `:8080`, SQLite file `./qtestframe.db`
 2. the YAML file
-3. `QTF_*` environment variables, e.g. `QTF_DATABASE_DSN`, `QTF_SERVER_PORT` (full list in the production template)
+3. `QTF_*` environment variables, e.g. `QTF_DATABASE_DSN`, `QTF_SERVER_PORT` (full list in the [administrator guide](docs/admin-guide/en/configuration.md#environment-variables))
 4. command line flags: `--port N` / `-p N` (port only), `--listen HOST:PORT`
 
 The file is checked strictly: misspelled or unknown keys stop the server with an error naming the line. Check a file without starting the server:
@@ -128,7 +129,7 @@ The file is checked strictly: misspelled or unknown keys stop the server with an
 ./bin/qtestframe check-config --config examples/qtestframe.yaml
 ```
 
-The most important settings:
+The most important settings (every key, with type, default and environment variable, is in the [configuration reference](docs/admin-guide/en/configuration.md#reference) of the administrator guide):
 
 | Key | Meaning |
 |---|---|
@@ -407,11 +408,13 @@ Tests are matched by a test key such as `SHOP-TC-7` in the test name (`test_logi
 | `qtestframe tenant create --slug S --name N` | create a tenant |
 | `qtestframe user create --email E [--name N] [--password-stdin] [--super-admin]` | create a local user |
 | `qtestframe member add --tenant S --email E --role R` | grant a role in a tenant |
+| `qtestframe backup --out FILE.zip` / `restore --in FILE.zip --yes` | logical backup of all data / replace all data with one (SQLite ↔ PostgreSQL) |
+| `qtestframe secrets status\|migrate\|rotate [--prune]\|rewrap [--from-config OLD]\|decrypt --yes\|generate-key` | encryption of the stored secrets: status, key rotation, re-wrapping to another key provider |
 | `qtestframe healthcheck [--config F] [-p PORT] [--url U]` | probe `/healthz` (exit code 0 = healthy) |
 | `qtestframe report --url U --token T (--project KEY --run NAME [--create-run] \| --run-id ID) --junit F… \| --json F…` | upload automated test results (`QTF_URL`, `QTF_TOKEN`); see [Reporting automated test results](#reporting-automated-test-results) |
 | `qtestframe version` | print the version |
 
-Health endpoints for load balancers: `/healthz` (process alive) and `/readyz` (database reachable).
+Health endpoints for load balancers: `/healthz` (process alive) and `/readyz` (database reachable). Every command and flag is in the [command line reference](docs/admin-guide/en/cli-reference.md) of the administrator guide.
 
 ## Development
 
@@ -423,7 +426,7 @@ This builds and starts the backend on :8080 (SQLite in `./data`) and the Vite de
 
 ## Production deployment
 
-See [docs/operations.md](docs/operations.md) for the full guide. In short:
+See the [administrator guide](docs/admin-guide/en/index.md) ([svenska](docs/admin-guide/sv/index.md)) for the full guide, and [docs/operations.md](docs/operations.md) for provider-specific recipes. In short:
 
 ```bash
 make build && sudo scripts/install.sh
@@ -476,6 +479,19 @@ make guide
 
 writes `dist/user-guide/qtestframe-user-guide-<lang>.pdf` and `.md` with an `images/` folder (the PDF needs Chrome or Chromium: Playwright's, a system Chrome, or the executable in `QTF_CHROME`); `make guide-md` writes only the Markdown, `GUIDE_LANGS=sv` limits the languages. After editing the guide, run `make guide-docs` to refresh the single-file Markdown in `docs/user-guide/` (CI checks it is up to date). Details: [docs/user-guide/README.md](docs/user-guide/README.md#pdf-and-single-file-markdown).
 
+### Administrator guide
+
+The administrator guide is for the people who install, configure and run Qtestframe: architecture, installation (binary, container, systemd, the HSM build), the configuration reference of every key and environment variable, first start, authentication (passwords, MFA, OIDC, SAML, SCIM, API tokens), authorisation, runtime system settings, security (TLS, Landlock and seccomp, the key providers, key rotation, disaster recovery for TPM-sealed keys, the audit log), e-mail, webhooks and trackers, logging and monitoring, backup, restore and migration, an operations runbook and the command line reference. The reference parts are generated from the code (`make admin-guide-ref`).
+
+| Form | English | Swedish | Notes |
+|---|---|---|---|
+| **In the tool** | Help → Administrator guide | Hjälp → Administratörshandbok | For super administrators and organisation admins. |
+| **PDF** | [qtestframe-admin-guide-en.pdf](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-admin-guide-en.pdf) | [qtestframe-admin-guide-sv.pdf](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-admin-guide-sv.pdf) | On the same release as the user guide. |
+| **Single-file Markdown** | [qtestframe-admin-guide-en.md](docs/admin-guide/qtestframe-admin-guide-en.md) | [qtestframe-admin-guide-sv.md](docs/admin-guide/qtestframe-admin-guide-sv.md) | |
+| **Markdown pages** | [docs/admin-guide/en](docs/admin-guide/en/index.md) | [docs/admin-guide/sv](docs/admin-guide/sv/index.md) | The sources, one file per chapter. |
+
+`make admin-guide` writes `dist/admin-guide/qtestframe-admin-guide-<lang>.pdf` and `.md` (`make admin-guide-md` only the Markdown); after editing the guide, `make admin-guide-ref` refreshes the generated reference parts and `make admin-guide-docs` the single-file Markdown in `docs/admin-guide/` (CI checks both).
+
 ### Technical documentation
 
 | Document | Content |
@@ -487,6 +503,7 @@ writes `dist/user-guide/qtestframe-user-guide-<lang>.pdf` and `.md` with an `ima
 | [docs/testing.md](docs/testing.md) | test strategy and coverage |
 | [docs/api.md](docs/api.md) | REST API and query language reference |
 | [docs/openapi.yaml](docs/openapi.yaml) | OpenAPI 3.1 description of the REST API (served at `/api/v1/openapi.json`) |
+| [docs/admin-guide](docs/admin-guide/en/index.md) | administrator guide (also [in Swedish](docs/admin-guide/sv/index.md) and in the tool under Help) |
 | [docs/operations.md](docs/operations.md) | installation, TLS, OIDC/SAML, syslog, backup |
 | [docs/user-guide](docs/user-guide/en/index.md) | user guide with tutorial and FAQ (also [in Swedish](docs/user-guide/sv/index.md) and in the tool under Help) |
 | [docs/user-guide/en/references.md](docs/user-guide/en/references.md) | references: RFC 2119, RFC 8174 and other RFCs, NIST publications, requirement and testing standards |

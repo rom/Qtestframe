@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { ASSETS, SOURCES, getOrder, getPage, getSections, getTitles } from './content'
+import { ADMIN_GUIDE, ASSETS, SOURCES, getOrder, getPage, getSections, getTitles } from './content'
 import { GUIDE_PAGES } from './pages'
 import { classifyHref, imageName } from './links'
 import { processTokens, renderGuide } from './render'
@@ -21,12 +21,12 @@ function inline(md: string): Token[] {
 }
 // rendered once per page: the link check asks for the same page many times
 const anchorCache = new Map<string, Set<string>>()
-function anchors(lang: string, page: string): Set<string> {
-  const key = `${lang}/${page}`
+function anchors(lang: string, page: string, book: 'user' | 'admin' = 'user'): Set<string> {
+  const key = `${book}/${lang}/${page}`
   let set = anchorCache.get(key)
   if (!set) {
-    const p = getPage(lang, page)!
-    const r = renderGuide(p.markdown, { lang, assets: {} })
+    const p = (book === 'admin' ? ADMIN_GUIDE.getPage : getPage)(lang, page)!
+    const r = renderGuide(p.markdown, { lang, assets: {}, book })
     set = new Set([...r.html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]))
     anchorCache.set(key, set)
   }
@@ -74,6 +74,13 @@ describe('the bundled user guide', () => {
             continue
           }
           const dest = target.kind === 'page' ? target.page : page
+          if (target.kind === 'page' && target.book === 'admin') {
+            // a link into the administrator guide, in the same language
+            const p = ADMIN_GUIDE.getPage(lang, dest)
+            if (!p || p.lang !== lang || !String(link.attrGet('href')).includes(`/${lang}/`)) broken.push(`${lang}/${page}: admin page ${dest}`)
+            else if (target.hash && !anchors(lang, dest, 'admin').has(target.hash)) broken.push(`${lang}/${page}: admin ${dest}#${target.hash}`)
+            continue
+          }
           if (!getPage(lang, dest) || getPage(lang, dest)!.lang !== lang) broken.push(`${lang}/${page}: page ${dest}`)
           else if (target.hash && !anchors(lang, dest).has(target.hash)) broken.push(`${lang}/${page}: ${dest}#${target.hash}`)
         }

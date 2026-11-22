@@ -441,7 +441,7 @@ LB / proxy ─┤                   ├──▶ PostgreSQL (primary + replicas)
     affinity for `/api/v1/auth/` (or run SSO through one node). A restart
     during a login invalidates in-flight logins.
   * The login rate limiter is in memory per process, so the effective limit
-    is 10 attempts per window per node.
+    is `auth.login_max_attempts` (default 10) per window per node.
   * Each node runs its own hourly session purge (harmless) and its own
     script runner.
 * `max_open_conns` (default 20) is the pool size per node.
