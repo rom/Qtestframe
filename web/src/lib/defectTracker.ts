@@ -129,14 +129,16 @@ export function linkRoute(l: DefectLink, projectId: string, runId?: string): Rec
       return { name: 'run', params: { projectId, runId: l.entity_id } }
     case 'execution':
       return runId ? { name: 'execute', params: { projectId, runId, executionId: l.entity_id } } : null
+    case 'exploratory_session':
+      return { name: 'exploratorySession', params: { projectId, sessionId: l.entity_id } }
     default:
       return null
   }
 }
 
-/** Group links by type in a fixed order (requirement, test, execution, run). */
+/** Group links by type in a fixed order (requirement, test, execution, run, exploratory session). */
 export function groupLinks(links: readonly DefectLink[] | null | undefined): { type: string; links: DefectLink[] }[] {
-  const order = ['requirement', 'test', 'execution', 'run']
+  const order = ['requirement', 'test', 'execution', 'run', 'exploratory_session']
   const out: { type: string; links: DefectLink[] }[] = []
   for (const type of order) {
     const ls = (links ?? []).filter((l) => l.entity_type === type)

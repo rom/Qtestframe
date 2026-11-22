@@ -219,7 +219,7 @@ Täckningen visar om de länkade testfallen är godkända. **Verifiering** går 
 
 Ett testfall som är länkat till ett krav kan kopplas till de kriterier det verifierar. Välj **Koppla kriterier** bredvid testfallet på fliken **Verifiering**, kryssa i kriterierna och, om du vill, det **steg** i testfallet som visar det. Ett kriterium som är kopplat till ett steg är godkänt när det steget godkändes i testfallets senaste exekvering. När du länkar ett testfall kan du också välja ett kriterium direkt (väljaren bredvid **Länka testfall**).
 
-En länk **utan** kriterier räknas för hela kravet, som tidigare: för varje kriterium som saknar egna belägg. Ett projekt som vill att varje kriterium har egna belägg slår på **strikt kriterietäckning** under **Inställningar → Projekt → Verifiering**. Ett underkänt testfall underkänner alltid kravet, kopplat eller inte.
+En länk **utan** kriterier räknas för hela kravet, som tidigare: för varje kriterium som saknar egna belägg. Ett projekt som vill att varje kriterium har egna belägg slår på **strikt kriterietäckning** under **Inställningar → Projekt → Verifiering**. Ett underkänt testfall underkänner alltid kravet, kopplat eller inte. Där kan ett projekt också låta utvärderade [utforskande sessioner](exploratory-testing.md#sessioner-som-verifieringsbevis) räknas som belägg för kraven i deras omfattning (avstängt som standard).
 
 ### Verifieringsposter
 

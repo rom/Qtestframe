@@ -54,6 +54,7 @@ const tabs = computed(() => [
   { to: 'requirements', icon: 'pi pi-list-check', label: t('nav.requirements') },
   { to: 'tests', icon: 'pi pi-check-square', label: t('nav.tests') },
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
+  { to: 'exploratory', icon: 'pi pi-compass', label: t('nav.exploratory') },
   { to: 'releases', icon: 'pi pi-box', label: t('nav.releases') },
   { to: 'defects', icon: 'pi pi-exclamation-circle', label: t('nav.defects') },
   { to: 'risks', icon: 'pi pi-shield', label: t('nav.risks') },
@@ -77,6 +78,8 @@ const tabs = computed(() => [
 ])
 const ready = computed(() => proj.project?.id === props.projectId)
 const isRunsChild = computed(() => route.name === 'run' || route.name === 'execute')
+const isExploratoryChild = computed(() => route.name === 'exploratorySession')
+const childActive = (to: string) => (to === 'runs' && isRunsChild.value) || (to === 'exploratory' && isExploratoryChild.value)
 </script>
 
 <template>
@@ -99,8 +102,8 @@ const isRunsChild = computed(() => route.name === 'run' || route.name === 'execu
         v-for="tab in tabs"
         :key="tab.to"
         :to="{ name: tab.to, params: { projectId } }"
-        :class="{ 'router-link-active': tab.to === 'runs' && isRunsChild }"
-        :aria-current="tab.to === 'runs' && isRunsChild ? 'page' : undefined"
+        :class="{ 'router-link-active': childActive(tab.to) }"
+        :aria-current="childActive(tab.to) ? 'page' : undefined"
       >
         <i :class="tab.icon" aria-hidden="true" />{{ tab.label }}
       </RouterLink>

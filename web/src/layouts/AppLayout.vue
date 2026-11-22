@@ -149,6 +149,7 @@ const projectNav = computed(() => [
   { to: 'requirements', icon: 'pi pi-list-check', label: t('nav.requirements') },
   { to: 'tests', icon: 'pi pi-check-square', label: t('nav.tests') },
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
+  { to: 'exploratory', icon: 'pi pi-compass', label: t('nav.exploratory') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
   { to: 'verification', icon: 'pi pi-verified', label: t('nav.verification') },
   { to: 'analytics', icon: 'pi pi-chart-bar', label: t('nav.analytics') },

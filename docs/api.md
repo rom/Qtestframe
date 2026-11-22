@@ -2276,6 +2276,47 @@ effect; `threshold` is the project's risk acceptance threshold and
 `accepted_by`, `accepted_name`, `accepted_at` and `acceptance_comment`;
 `acceptance_valid` is false when the residual assessment changed since.
 
+## Exploratory testing
+
+Session-based exploratory testing (SBTM). A session has a charter (`title`,
+`mission`, `scope` of areas = folders, requirements and tests), a `tester`
+(e-mail), a time box and a timer kept by the server. Reading needs
+`run.read`; planning, changing and deleting `run.write`; running a session
+(timer, notes, defects from notes, debrief) `run.execute`, and only the
+session's tester does that unless the caller also holds `run.write`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/exploratory-sessions?status=&tester=&outcome=&mine=&requirement_id=&test_id=&folder_id=&q=` | `[ExploratorySession]`, newest first; `q` over key, title, mission (alias charter), status, tester (assignee, owner), outcome (result), area (folder), requirement, test, notes, bugs, timebox |
+| POST | `/projects/{pid}/exploratory-sessions` | `{"title", "mission", "tester", "timebox_minutes": 5–480, "scope": [{"type": "folder"\|"requirement"\|"test", "id"}]}` → 201, planned, key `PROJ-EXP-n` |
+| GET / PATCH / DELETE | `/exploratory-sessions/{id}` | PATCH not after the debrief (409); DELETE removes notes, attachments and defect links |
+| POST | `/exploratory-sessions/{id}/timer` | `{"action": "start"\|"pause"\|"stop"}`; planned/paused → in_progress → paused → completed |
+| PUT / DELETE | `/exploratory-sessions/{id}/debrief` | `{"summary", "coverage_pct", "setup_pct", "testing_pct", "bug_pct", "outcome": "passed"\|"failed"\|"inconclusive", "comment"}` (split sums to 100) → debriefed; DELETE (run.write) reopens |
+| GET / POST | `/exploratory-sessions/{id}/notes` | `{"type": "observation"\|"question"\|"issue"\|"idea"\|"bug", "body", "file_ids"}`; stamped with the session time |
+| PATCH / DELETE | `/exploratory-sessions/{id}/notes/{note}` | the note's author, or run.write |
+| POST | `/exploratory-sessions/{id}/notes/{note}/defect` | creates a prefilled defect linked to the session and its scoped requirements (optional `title`, `description`, `severity`, `priority`, `assignee`) |
+| GET | `/exploratory-sessions/{id}/history` | revisions (create, update, stop, debrief, reopen) |
+| GET | `/exploratory-sessions/{id}/report?format=md\|pdf\|docx&lang=&archive=` | the `exploratory_session` report (also needs `export`) |
+| GET / POST / DELETE | `/exploratory-sessions/{id}/attachments…` | screenshots and files, as for other attachments |
+| GET | `/projects/{pid}/exploratory-metrics` | counts by status and outcome, hours, bugs, bugs per session hour, average split and coverage, by area and by tester |
+
+`ExploratorySession` = `{id, project_id, key, title, mission, tester,
+timebox_minutes, status, started_at, running_since, elapsed_seconds,
+ended_at, scope: [{type, id, key, title}], debrief: {summary, coverage_pct,
+setup_pct, testing_pct, bug_pct, outcome, by, name, comment, at, reviewed} |
+null, version, note_count, note_types, bug_count, defects, created_by,
+created_at, updated_at}`. `elapsed_seconds` includes the running part at
+the time of the answer.
+
+With `exploratory_evidence` in `PUT /projects/{pid}/verification-settings`
+(default false), a debriefed session counts as verification evidence of kind
+`exploratory` for its scoped requirements, about the requirement as a whole
+(never for a criterion on its own): passed passes, failed fails,
+inconclusive does not count, and only the newest session per requirement
+counts. Defects link to sessions with `entity_type` `exploratory_session`.
+The report templates `exploratory_session` (param `session_id`) and
+`exploratory_sessions` are part of `/reports/templates`.
+
 ## Waivers and deviations
 
 A waiver accepts requirements that are failed, untested or not fulfilled
