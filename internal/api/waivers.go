@@ -46,6 +46,7 @@ type waiverBody struct {
 	Title          *string   `json:"title"`
 	ReleaseID      *string   `json:"release_id"`
 	RequirementIDs *[]string `json:"requirement_ids"`
+	VariantIDs     *[]string `json:"variant_ids"`
 	Justification  *string   `json:"justification"`
 	Compensating   *string   `json:"compensating"`
 	Conditions     *string   `json:"conditions"`
@@ -76,6 +77,9 @@ func (b *waiverBody) apply(w *model.Waiver) {
 	}
 	if b.RequirementIDs != nil {
 		w.RequirementIDs = *b.RequirementIDs
+	}
+	if b.VariantIDs != nil {
+		w.VariantIDs = *b.VariantIDs
 	}
 	if b.Approvers != nil {
 		w.Approvers = *b.Approvers
@@ -614,6 +618,13 @@ func (s *Server) releaseReport(r *http.Request, p *Principal, pr *model.Project,
 	for _, c := range st.Criteria {
 		rr.Criteria = append(rr.Criteria, report.ReleaseCriterion{Type: c.Type, Threshold: c.Threshold, Level: c.Level, Met: c.Met, Available: c.Available,
 			Actual: c.Actual, Total: c.Total, Items: refs(c.Items), Waived: refs(c.Waived), Accepted: refs(c.Accepted)})
+	}
+	for _, g := range st.Variants {
+		vg := report.ReleaseVariantGate{Name: g.Variant.Name, Go: g.Go}
+		for _, c := range g.Criteria {
+			vg.States = append(vg.States, c.State)
+		}
+		rr.Variants = append(rr.Variants, vg)
 	}
 	return rr, nil
 }

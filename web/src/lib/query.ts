@@ -166,7 +166,7 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' |
     'element',
     'variant', 'applicability',
   ],
-  run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at'],
+  run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at', 'configuration', 'variant'],
   execution: ['key', 'title', 'status', 'assignee', 'executed_by', 'notes', 'output', 'defect', 'mention'],
   document: ['name', 'description', 'tag', 'kind', 'type', 'uploaded_by', 'created_at', 'size', 'linked'],
   audit: ['action', 'entity', 'entity_id', 'user', 'details', 'created_at'],

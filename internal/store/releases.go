@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"math"
 	"regexp"
 	"slices"
@@ -17,17 +18,18 @@ import (
 // Releases: a version of the product with the requirements it contains,
 // the runs that test it and exit criteria that decide go / no-go.
 
-const releaseCols = `id, project_id, name, version, description, status, target_date, exit_criteria, released_at, released_by, release_note, created_by, created_at, updated_at`
+const releaseCols = `id, project_id, name, version, description, status, target_date, exit_criteria, released_at, released_by, release_note, variant_ids, created_by, created_at, updated_at`
 
 var dateRe = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 
 func scanRelease(r interface{ Scan(...any) error }) (*model.Release, error) {
 	var rel model.Release
-	var crit string
+	var crit, variants string
 	var at sql.NullTime
-	if err := r.Scan(&rel.ID, &rel.ProjectID, &rel.Name, &rel.Version, &rel.Description, &rel.Status, &rel.TargetDate, &crit, &at, &rel.ReleasedBy, &rel.ReleaseNote, &rel.CreatedBy, &rel.CreatedAt, &rel.UpdatedAt); err != nil {
+	if err := r.Scan(&rel.ID, &rel.ProjectID, &rel.Name, &rel.Version, &rel.Description, &rel.Status, &rel.TargetDate, &crit, &at, &rel.ReleasedBy, &rel.ReleaseNote, &variants, &rel.CreatedBy, &rel.CreatedAt, &rel.UpdatedAt); err != nil {
 		return nil, err
 	}
+	rel.VariantIDs = decodeTags(variants)
 	_ = json.Unmarshal([]byte(crit), &rel.ExitCriteria)
 	if rel.ExitCriteria == nil {
 		rel.ExitCriteria = []model.ExitCriterion{}
@@ -115,12 +117,16 @@ func (s *Store) CreateRelease(ctx context.Context, tenantID string, r *model.Rel
 	if _, err := s.GetProject(ctx, tenantID, r.ProjectID); err != nil {
 		return err
 	}
+	var err error
+	if r.VariantIDs, err = s.ResolveVariants(ctx, tenantID, r.ProjectID, r.VariantIDs); err != nil {
+		return err
+	}
 	r.ID = newID()
 	r.CreatedAt = s.now()
 	r.UpdatedAt = r.CreatedAt
 	crit, _ := json.Marshal(r.ExitCriteria)
-	_, err := s.c(ctx).exec(ctx, `INSERT INTO releases (id, tenant_id, project_id, name, version, description, status, target_date, exit_criteria, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		r.ID, tenantID, r.ProjectID, r.Name, r.Version, r.Description, r.Status, r.TargetDate, string(crit), r.CreatedBy, r.CreatedAt, r.UpdatedAt)
+	_, err = s.c(ctx).exec(ctx, `INSERT INTO releases (id, tenant_id, project_id, name, version, description, status, target_date, exit_criteria, variant_ids, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		r.ID, tenantID, r.ProjectID, r.Name, r.Version, r.Description, r.Status, r.TargetDate, string(crit), encodeTags(r.VariantIDs), r.CreatedBy, r.CreatedAt, r.UpdatedAt)
 	return mapErr(err, "release name")
 }
 
@@ -128,6 +134,10 @@ func (s *Store) CreateRelease(ctx context.Context, tenantID string, r *model.Rel
 // when and by whom.
 func (s *Store) UpdateRelease(ctx context.Context, tenantID string, r *model.Release, user string) error {
 	if err := validateRelease(r); err != nil {
+		return err
+	}
+	var err error
+	if r.VariantIDs, err = s.ResolveVariants(ctx, tenantID, r.ProjectID, r.VariantIDs); err != nil {
 		return err
 	}
 	r.UpdatedAt = s.now()
@@ -139,8 +149,8 @@ func (s *Store) UpdateRelease(ctx context.Context, tenantID string, r *model.Rel
 		r.ReleasedAt, r.ReleasedBy = nil, ""
 	}
 	crit, _ := json.Marshal(r.ExitCriteria)
-	res, err := s.c(ctx).exec(ctx, `UPDATE releases SET name = ?, version = ?, description = ?, status = ?, target_date = ?, exit_criteria = ?, released_at = ?, released_by = ?, release_note = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
-		r.Name, r.Version, r.Description, r.Status, r.TargetDate, string(crit), nullTime(r.ReleasedAt), r.ReleasedBy, r.ReleaseNote, r.UpdatedAt, r.ID, tenantID)
+	res, err := s.c(ctx).exec(ctx, `UPDATE releases SET name = ?, version = ?, description = ?, status = ?, target_date = ?, exit_criteria = ?, released_at = ?, released_by = ?, release_note = ?, variant_ids = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+		r.Name, r.Version, r.Description, r.Status, r.TargetDate, string(crit), nullTime(r.ReleasedAt), r.ReleasedBy, r.ReleaseNote, encodeTags(r.VariantIDs), r.UpdatedAt, r.ID, tenantID)
 	if err != nil {
 		return mapErr(err, "release name")
 	}
@@ -168,6 +178,9 @@ func (s *Store) GetRelease(ctx context.Context, tenantID, id string) (*model.Rel
 	}
 	r.Requirements = len(r.RequirementIDs)
 	if err := s.c(ctx).row(ctx, `SELECT COUNT(*) FROM test_runs WHERE release_id = ?`, id).Scan(&r.Runs); err != nil {
+		return nil, err
+	}
+	if err := s.releaseVariantRefs(ctx, tenantID, r.ProjectID, []*model.Release{r}); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -216,10 +229,30 @@ func (s *Store) ListReleases(ctx context.Context, tenantID, projectID string) ([
 	if err != nil {
 		return nil, err
 	}
+	ptrs := make([]*model.Release, len(out))
 	for i := range out {
 		out[i].Requirements, out[i].Runs = reqs[out[i].ID], runs[out[i].ID]
+		ptrs[i] = &out[i]
 	}
-	return out, nil
+	return out, s.releaseVariantRefs(ctx, tenantID, projectID, ptrs)
+}
+
+// releaseVariantRefs fills the names of the variants releases target.
+func (s *Store) releaseVariantRefs(ctx context.Context, tenantID, projectID string, rels []*model.Release) error {
+	if !slices.ContainsFunc(rels, func(r *model.Release) bool { return len(r.VariantIDs) > 0 }) {
+		return nil
+	}
+	list, err := s.ListVariants(ctx, tenantID, projectID)
+	if err != nil {
+		return err
+	}
+	vs := NewVariantSet(list)
+	for _, r := range rels {
+		if len(r.VariantIDs) > 0 {
+			r.Variants = vs.RefsOf(r.VariantIDs)
+		}
+	}
+	return nil
 }
 
 // DeleteRelease removes a release (its runs stay, without a release).
@@ -333,6 +366,9 @@ type ReleaseItem struct {
 	Key   string `json:"key"`
 	Title string `json:"title"`
 	Note  string `json:"note,omitempty"`
+	// Variants: in a release evaluated per variant, the targeted variants
+	// in which the item keeps the criterion from being met (or is waived).
+	Variants []string `json:"variants,omitempty"`
 }
 
 // CriterionResult is the evaluation of one exit criterion.
@@ -353,6 +389,33 @@ type CriterionResult struct {
 	// Accepted: risks above the threshold with a valid "accept risk"
 	// sign-off (residual_risk).
 	Accepted []ReleaseItem `json:"accepted,omitempty"`
+	// State: pass | waived (met thanks to waivers or accepted risks) | fail.
+	State string `json:"state"`
+}
+
+// Criterion states.
+const (
+	CriterionPass   = "pass"
+	CriterionWaived = "waived"
+	CriterionFail   = "fail"
+)
+
+func criterionState(c *CriterionResult) string {
+	switch {
+	case !c.Met:
+		return CriterionFail
+	case len(c.Waived) > 0 || len(c.Accepted) > 0:
+		return CriterionWaived
+	}
+	return CriterionPass
+}
+
+// VariantGate is the evaluation of a release for one targeted variant.
+type VariantGate struct {
+	Variant  model.VariantRef  `json:"variant"`
+	Go       bool              `json:"go"`
+	Criteria []CriterionResult `json:"criteria"`
+	Summary  map[string]int    `json:"summary"`
 }
 
 // ReleaseStatusReport is the go / no-go of a release.
@@ -371,6 +434,10 @@ type ReleaseStatusReport struct {
 	ResidualRisks []ReleaseItem `json:"residual_risks"`
 	// Variant the release was evaluated for (nil: all variants).
 	Variant *model.VariantRef `json:"variant,omitempty"`
+	// Variants: for a release that targets variants (evaluated without
+	// ?variant=), the gate of each targeted variant; Go is then true only
+	// when every variant's is and Criteria combine them.
+	Variants []VariantGate `json:"variants,omitempty"`
 }
 
 func mandatory(ob string) bool {
@@ -570,6 +637,7 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 		if out[i].Waived == nil {
 			out[i].Waived = []ReleaseItem{}
 		}
+		out[i].State = criterionState(&out[i])
 	}
 	if out == nil {
 		out = []CriterionResult{}
@@ -595,11 +663,35 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	return s.ReleaseStatusForVariant(ctx, tenantID, id, "", defects, risks, rules...)
 }
 
-// ReleaseStatusForVariant evaluates a release for one variant (id or name;
-// "" for all): the scope is the release's requirements that apply to the
-// variant, each verified by its linked tests that apply to it, and only
-// results that count for the variant are used (see VariantCoverage).
+// ReleaseStatusForVariant evaluates a release for one variant (id or name):
+// the scope is the release's requirements that apply to the variant, each
+// verified by its linked tests that apply to it, and only results that
+// count for the variant are used (see VariantCoverage): those of runs for
+// the variant or one of its ancestors and of variant-neutral runs, in the
+// configurations the variant is tested in. Only waivers for every variant
+// or limited to the variant (or one of its ancestors) accept requirements.
+//
+// Variant "": a release that targets variants is evaluated for each of them
+// (Variants) and is a go only when every targeted variant is; the criteria
+// then combine the variants (met when met in every variant). A release
+// that targets none is evaluated without a variant, as without variants
+// (only waivers for every variant count).
 func (s *Store) ReleaseStatusForVariant(ctx context.Context, tenantID, id, variant string, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
+	if strings.TrimSpace(variant) != "" {
+		return s.releaseStatusOne(ctx, tenantID, id, variant, defects, risks, rules...)
+	}
+	rel, err := s.GetRelease(ctx, tenantID, id)
+	if err != nil {
+		return nil, err
+	}
+	if len(rel.VariantIDs) == 0 {
+		return s.releaseStatusOne(ctx, tenantID, id, "", defects, risks, rules...)
+	}
+	return s.releaseGates(ctx, tenantID, rel, defects, risks, rules...)
+}
+
+// releaseStatusOne evaluates a release for one variant ("" none).
+func (s *Store) releaseStatusOne(ctx context.Context, tenantID, id, variant string, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
 	rel, err := s.GetRelease(ctx, tenantID, id)
 	if err != nil {
 		return nil, err
@@ -739,6 +831,10 @@ func (s *Store) ReleaseStatusForVariant(ctx context.Context, tenantID, id, varia
 		}
 		var keys []string
 		for _, w := range waivers[r.ID] {
+			// a waiver limited to variants accepts only in them
+			if len(w.VariantIDs) > 0 && (vc == nil || !vc.Variants.Covers(w.VariantIDs, variantID)) {
+				continue
+			}
 			keys = append(keys, w.Key)
 			if !seenWaiver[w.ID] {
 				seenWaiver[w.ID] = true
@@ -860,4 +956,103 @@ func residualAbove(risks []model.Risk, scope map[string]bool, threshold string) 
 		}
 	}
 	return open, accepted
+}
+
+// releaseGates evaluates a release that targets variants: for each of them
+// (a gate) and combined (see ReleaseStatusForVariant).
+func (s *Store) releaseGates(ctx context.Context, tenantID string, rel *model.Release, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
+	rep, err := s.releaseStatusOne(ctx, tenantID, rel.ID, "", defects, risks, rules...)
+	if err != nil {
+		return nil, err
+	}
+	rep.Variants = []VariantGate{}
+	seenWaiver := map[string]bool{}
+	for _, w := range rep.Waivers {
+		seenWaiver[w.ID] = true
+	}
+	for _, vid := range rel.VariantIDs {
+		one, err := s.releaseStatusOne(ctx, tenantID, rel.ID, vid, defects, risks, rules...)
+		if err != nil {
+			if errors.Is(err, ErrInvalid) {
+				continue // a variant deleted meanwhile
+			}
+			return nil, err
+		}
+		rep.Variants = append(rep.Variants, VariantGate{Variant: *one.Variant, Go: one.Go, Criteria: one.Criteria, Summary: one.Summary})
+		for _, w := range one.Waivers {
+			if !seenWaiver[w.ID] {
+				seenWaiver[w.ID] = true
+				rep.Waivers = append(rep.Waivers, w)
+			}
+		}
+	}
+	if len(rep.Variants) == 0 {
+		return rep, nil
+	}
+	rep.Criteria = CombineGates(rep.Variants)
+	rep.Go = true
+	goCount := 0
+	for _, g := range rep.Variants {
+		if g.Go {
+			goCount++
+		} else {
+			rep.Go = false
+		}
+	}
+	rep.Summary["variants"], rep.Summary["variants_go"] = len(rep.Variants), goCount
+	return rep, nil
+}
+
+// CombineGates combines the criteria of the gates of the targeted variants
+// (all evaluated on the same exit criteria): a criterion is met when it is
+// met in every variant; Actual is the worst variant's (the lowest percentage,
+// the highest count); Items, Waived and Accepted are those of every variant,
+// each with the variants it appears in.
+func CombineGates(gates []VariantGate) []CriterionResult {
+	out := []CriterionResult{}
+	if len(gates) == 0 {
+		return out
+	}
+	merge := func(dst []ReleaseItem, src []ReleaseItem, variant string) []ReleaseItem {
+		for _, it := range src {
+			i := slices.IndexFunc(dst, func(x ReleaseItem) bool { return x.Kind == it.Kind && x.ID == it.ID })
+			if i < 0 {
+				it.Variants = []string{variant}
+				dst = append(dst, it)
+			} else if !slices.Contains(dst[i].Variants, variant) {
+				dst[i].Variants = append(dst[i].Variants, variant)
+			}
+		}
+		return dst
+	}
+	for i := range gates[0].Criteria {
+		c := CriterionResult{ExitCriterion: gates[0].Criteria[i].ExitCriterion, Met: true, Items: []ReleaseItem{}, Waived: []ReleaseItem{}}
+		first := true
+		var accepted []ReleaseItem
+		for _, g := range gates {
+			if i >= len(g.Criteria) {
+				continue
+			}
+			v := g.Criteria[i]
+			c.Met = c.Met && v.Met
+			c.Available = c.Available || v.Available
+			worse := v.Actual > c.Actual
+			if percentCriterion(c.Type) {
+				worse = v.Actual < c.Actual
+			}
+			if v.Available && (first || worse) {
+				c.Actual, c.Total, first = v.Actual, v.Total, false
+			}
+			c.Items = merge(c.Items, v.Items, g.Variant.Name)
+			c.Waived = merge(c.Waived, v.Waived, g.Variant.Name)
+			accepted = merge(accepted, v.Accepted, g.Variant.Name)
+		}
+		c.Items, c.Waived = limitItems(c.Items), limitItems(c.Waived)
+		if len(accepted) > 0 {
+			c.Accepted = accepted
+		}
+		c.State = criterionState(&c)
+		out = append(out, c)
+	}
+	return out
 }

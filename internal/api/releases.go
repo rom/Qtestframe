@@ -47,7 +47,7 @@ func (s *Server) handleCreateRelease(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 	rel := &model.Release{ProjectID: pr.ID, Name: req.Name, Version: req.Version, Description: req.Description, Status: req.Status,
-		TargetDate: req.TargetDate, ExitCriteria: req.ExitCriteria, CreatedBy: p.User.Email}
+		TargetDate: req.TargetDate, ExitCriteria: req.ExitCriteria, VariantIDs: req.VariantIDs, CreatedBy: p.User.Email}
 	if rel.Status == "released" {
 		s.fail(w, r, badRequest("create the release first, then mark it released"))
 		return
@@ -93,6 +93,7 @@ func (s *Server) handleUpdateRelease(w http.ResponseWriter, r *http.Request, p *
 		TargetDate   *string                `json:"target_date"`
 		ExitCriteria *[]model.ExitCriterion `json:"exit_criteria"`
 		ReleaseNote  *string                `json:"release_note"`
+		VariantIDs   *[]string              `json:"variant_ids"`
 		Override     bool                   `json:"override"`
 	}
 	if err := decode(r, &req); err != nil {
@@ -108,6 +109,13 @@ func (s *Server) handleUpdateRelease(w http.ResponseWriter, r *http.Request, p *
 	}
 	if req.ExitCriteria != nil {
 		rel.ExitCriteria = *req.ExitCriteria
+	}
+	if req.VariantIDs != nil {
+		// the targeted variants (see store.ReleaseStatusForVariant)
+		if rel.VariantIDs, err = s.Store.ResolveVariants(ctx, p.TenantID(), rel.ProjectID, *req.VariantIDs); err != nil {
+			s.fail(w, r, err)
+			return
+		}
 	}
 	releasing := rel.Status == "released" && !wasReleased
 	var report *store.ReleaseStatusReport

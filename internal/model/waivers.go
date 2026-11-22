@@ -33,7 +33,10 @@ type Waiver struct {
 	// ReleaseID: the release it applies to; nil = the whole project.
 	ReleaseID      *string  `json:"release_id"`
 	RequirementIDs []string `json:"requirement_ids"`
-	Justification  string   `json:"justification"`
+	// VariantIDs limit the waiver to variants (each with the variants
+	// below it); empty: every variant (migration 0046).
+	VariantIDs    []string `json:"variant_ids"`
+	Justification string   `json:"justification"`
 	// Compensating measures that reduce the effect of not meeting the
 	// requirements.
 	Compensating string `json:"compensating"`
@@ -57,6 +60,7 @@ type Waiver struct {
 	UpdatedAt       time.Time  `json:"updated_at"`
 	// Derived.
 	ReleaseName  string           `json:"release_name,omitempty"`
+	Variants     []VariantRef     `json:"variants,omitempty"`
 	RiskKey      string           `json:"risk_key,omitempty"`
 	Requirements []ItemRefLite    `json:"requirements"`
 	Approvals    []WaiverApproval `json:"approvals"`

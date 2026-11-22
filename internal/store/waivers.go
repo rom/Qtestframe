@@ -19,17 +19,18 @@ import (
 // electronically over a hash of the waiver's content.
 
 const waiverCols = `id, project_id, key, type, title, release_id, justification, compensating, conditions, risk_id, requested_by, approvers,
-	status, expires_on, decided_at, decided_by, decision_comment, created_by, created_at, updated_at`
+	status, expires_on, decided_at, decided_by, decision_comment, variant_ids, created_by, created_at, updated_at`
 
 func scanWaiver(r interface{ Scan(...any) error }) (*model.Waiver, error) {
 	var w model.Waiver
 	var rel, risk sql.NullString
-	var approvers string
+	var approvers, variants string
 	var dec sql.NullTime
 	if err := r.Scan(&w.ID, &w.ProjectID, &w.Key, &w.Type, &w.Title, &rel, &w.Justification, &w.Compensating, &w.Conditions, &risk, &w.RequestedBy, &approvers,
-		&w.Status, &w.ExpiresOn, &dec, &w.DecidedBy, &w.DecisionComment, &w.CreatedBy, &w.CreatedAt, &w.UpdatedAt); err != nil {
+		&w.Status, &w.ExpiresOn, &dec, &w.DecidedBy, &w.DecisionComment, &variants, &w.CreatedBy, &w.CreatedAt, &w.UpdatedAt); err != nil {
 		return nil, err
 	}
+	w.VariantIDs = decodeTags(variants)
 	if rel.Valid {
 		w.ReleaseID = &rel.String
 	}
@@ -63,7 +64,15 @@ func WaiverHash(w *model.Waiver) string {
 	if w.RiskID != nil {
 		risk = *w.RiskID
 	}
-	b, _ := json.Marshal([]any{w.ID, w.Type, w.Title, rel, reqs, w.Justification, w.Compensating, w.Conditions, risk, w.ExpiresOn, w.Approvers})
+	content := []any{w.ID, w.Type, w.Title, rel, reqs, w.Justification, w.Compensating, w.Conditions, risk, w.ExpiresOn, w.Approvers}
+	if len(w.VariantIDs) > 0 {
+		// only a waiver limited to variants signs them (earlier approvals
+		// of waivers for every variant stay valid)
+		variants := append([]string{}, w.VariantIDs...)
+		sort.Strings(variants)
+		content = append(content, variants)
+	}
+	b, _ := json.Marshal(content)
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }
@@ -123,6 +132,10 @@ func validateWaiver(w *model.Waiver) error {
 		}
 	}
 	w.RequirementIDs = ids
+	w.VariantIDs = cleanTags(w.VariantIDs)
+	if len(w.VariantIDs) > MaxApplicabilityIDs {
+		return Invalidf("at most %d variants can be listed", MaxApplicabilityIDs)
+	}
 	return nil
 }
 
@@ -147,6 +160,12 @@ func ValidateWaiverForRequest(w *model.Waiver) error {
 func checkWaiverRefs(ctx context.Context, c conn, tenantID string, w *model.Waiver) error {
 	if err := checkRelease(ctx, c, tenantID, w.ProjectID, w.ReleaseID); err != nil {
 		return err
+	}
+	for _, id := range w.VariantIDs {
+		var pid string
+		if err := c.row(ctx, `SELECT project_id FROM variants WHERE id = ? AND tenant_id = ?`, id, tenantID).Scan(&pid); err != nil || pid != w.ProjectID {
+			return Invalidf("variant %q not found in project", id)
+		}
 	}
 	if w.RiskID != nil {
 		var pid string
@@ -186,6 +205,10 @@ func (s *Store) CreateWaiver(ctx context.Context, tenantID string, w *model.Waiv
 	if err := validateWaiver(w); err != nil {
 		return err
 	}
+	var err error
+	if w.VariantIDs, err = s.ResolveVariants(ctx, tenantID, w.ProjectID, w.VariantIDs); err != nil {
+		return err
+	}
 	if w.Status == "" {
 		w.Status = "draft"
 	}
@@ -214,9 +237,9 @@ func (s *Store) CreateWaiver(ctx context.Context, tenantID string, w *model.Waiv
 		}
 		w.Key = key
 		if _, err := c.exec(ctx, `INSERT INTO waivers (id, tenant_id, project_id, seq, key, type, title, release_id, justification, compensating, conditions, risk_id, requested_by, approvers,
-			status, expires_on, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			status, expires_on, variant_ids, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			w.ID, tenantID, w.ProjectID, seq, w.Key, w.Type, w.Title, w.ReleaseID, w.Justification, w.Compensating, w.Conditions, w.RiskID, w.RequestedBy, string(approvers),
-			w.Status, w.ExpiresOn, w.CreatedBy, w.CreatedAt, w.UpdatedAt); err != nil {
+			w.Status, w.ExpiresOn, encodeTags(w.VariantIDs), w.CreatedBy, w.CreatedAt, w.UpdatedAt); err != nil {
 			return mapErr(err, "waiver")
 		}
 		return setWaiverRequirements(ctx, c, w)
@@ -228,6 +251,10 @@ func (s *Store) CreateWaiver(ctx context.Context, tenantID string, w *model.Waiv
 // matches).
 func (s *Store) UpdateWaiver(ctx context.Context, tenantID string, w *model.Waiver) error {
 	if err := validateWaiver(w); err != nil {
+		return err
+	}
+	var err error
+	if w.VariantIDs, err = s.ResolveVariants(ctx, tenantID, w.ProjectID, w.VariantIDs); err != nil {
 		return err
 	}
 	if !WaiverEditable(w.Status) {
@@ -245,8 +272,8 @@ func (s *Store) UpdateWaiver(ctx context.Context, tenantID string, w *model.Waiv
 			return err
 		}
 		res, err := c.exec(ctx, `UPDATE waivers SET type = ?, title = ?, release_id = ?, justification = ?, compensating = ?, conditions = ?, risk_id = ?, approvers = ?,
-			expires_on = ?, updated_at = ? WHERE id = ? AND tenant_id = ? AND status IN ('draft', 'requested')`,
-			w.Type, w.Title, w.ReleaseID, w.Justification, w.Compensating, w.Conditions, w.RiskID, string(approvers), w.ExpiresOn, w.UpdatedAt, w.ID, tenantID)
+			expires_on = ?, variant_ids = ?, updated_at = ? WHERE id = ? AND tenant_id = ? AND status IN ('draft', 'requested')`,
+			w.Type, w.Title, w.ReleaseID, w.Justification, w.Compensating, w.Conditions, w.RiskID, string(approvers), w.ExpiresOn, encodeTags(w.VariantIDs), w.UpdatedAt, w.ID, tenantID)
 		if err != nil {
 			return err
 		}
@@ -443,6 +470,11 @@ func (s *Store) decorateWaivers(ctx context.Context, tenantID, projectID string,
 	if err := rows.Err(); err != nil {
 		return err
 	}
+	variants, err := s.ListVariants(ctx, tenantID, projectID)
+	if err != nil {
+		return err
+	}
+	vs := NewVariantSet(variants)
 	today := s.today()
 	for i := range list {
 		w := &list[i]
@@ -467,6 +499,9 @@ func (s *Store) decorateWaivers(ctx context.Context, tenantID, projectID string,
 		}
 		if w.RiskID != nil {
 			w.RiskKey = riskKeys[*w.RiskID]
+		}
+		if len(w.VariantIDs) > 0 {
+			w.Variants = vs.RefsOf(w.VariantIDs)
 		}
 		w.Active = WaiverActive(w, today)
 	}

@@ -1122,13 +1122,19 @@ type Release struct {
 	ReleasedAt   *time.Time      `json:"released_at"`
 	ReleasedBy   string          `json:"released_by"`
 	ReleaseNote  string          `json:"release_note"`
-	CreatedBy    string          `json:"created_by"`
-	CreatedAt    time.Time       `json:"created_at"`
-	UpdatedAt    time.Time       `json:"updated_at"`
+	// VariantIDs are the variants the release targets (migration 0046):
+	// the exit criteria are evaluated for each of them and the release is
+	// a go only when every targeted variant is. Empty: evaluated without a
+	// variant (all requirements, all results).
+	VariantIDs []string  `json:"variant_ids"`
+	CreatedBy  string    `json:"created_by"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 	// Derived.
-	RequirementIDs []string `json:"requirement_ids,omitempty"`
-	Requirements   int      `json:"requirement_count"`
-	Runs           int      `json:"run_count"`
+	Variants       []VariantRef `json:"variants,omitempty"`
+	RequirementIDs []string     `json:"requirement_ids,omitempty"`
+	Requirements   int          `json:"requirement_count"`
+	Runs           int          `json:"run_count"`
 }
 
 // DefaultExitCriteria are given to new releases.

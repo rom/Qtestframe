@@ -112,7 +112,13 @@ var waiverTexts = map[string]string{
 	"Risks above the threshold after mitigation, accepted":                                                                            "Risker över gränsen efter åtgärder, accepterade",
 	"No risk linked to the scope has a residual level above {level} unless its acceptance is signed.":                                 "Ingen risk kopplad till omfattningen har en restnivå över {level} utan att accepteringen är signerad.",
 	"No risk linked to the scope has a residual level above the project's risk acceptance threshold unless its acceptance is signed.": "Ingen risk kopplad till omfattningen har en restnivå över projektets gräns för riskacceptans utan att accepteringen är signerad.",
-	"Risks due for review": "Risker som ska granskas",
+	"Risks due for review":        "Risker som ska granskas",
+	"Exit criteria per variant":   "Slutkriterier per variant",
+	"Pass":                        "Uppfyllt",
+	"Fail":                        "Ej uppfyllt",
+	"Targeted variants with a go": "Målvarianter med go",
+	"{go} of {total}":             "{go} av {total}",
+	"variants {names}":            "varianter {names}",
 }
 
 // WaiverInForce reports whether a waiver is approved and not expired on
@@ -161,13 +167,22 @@ func waiverReqKeys(w *model.Waiver) string {
 }
 
 func (l loc) waiverScope(w *model.Waiver) string {
-	if w.ReleaseID == nil {
-		return l.t("Whole project")
+	scope := l.t("Release")
+	switch {
+	case w.ReleaseID == nil:
+		scope = l.t("Whole project")
+	case w.ReleaseName != "":
+		scope = w.ReleaseName
 	}
-	if w.ReleaseName != "" {
-		return w.ReleaseName
+	// a waiver limited to variants accepts only in them
+	if len(w.Variants) > 0 {
+		names := make([]string, len(w.Variants))
+		for i, v := range w.Variants {
+			names[i] = v.Name
+		}
+		scope += " · " + l.f("variants {names}", "names", strings.Join(names, ", "))
 	}
-	return l.t("Release")
+	return scope
 }
 
 // waiverSection tabulates waivers.
@@ -224,6 +239,18 @@ type ReleaseReport struct {
 	Waivers       []model.Waiver
 	RiskThreshold string
 	ResidualRisks []ReleaseRef
+	// Variants: the gates of the variants the release targets (none: the
+	// release is evaluated without a variant).
+	Variants []ReleaseVariantGate
+}
+
+// ReleaseVariantGate is the evaluation of a release for one variant:
+// its verdict and the state of each criterion (pass | waived | fail, in
+// the order of Criteria).
+type ReleaseVariantGate struct {
+	Name   string
+	Go     bool
+	States []string
 }
 
 func refKeys(rs []ReleaseRef) string {
@@ -273,6 +300,15 @@ func buildReleaseReadiness(d *Data, _ map[string]string) (*export.Dataset, error
 		kv{"Residual risks above the threshold", itoa(len(rr.ResidualRisks) - accepted)},
 		kv{"Residual risks above the threshold, accepted", itoa(accepted)},
 	)
+	if len(rr.Variants) > 0 {
+		goCount := 0
+		for _, g := range rr.Variants {
+			if g.Go {
+				goCount++
+			}
+		}
+		summary.Rows = append(summary.Rows, []string{l.t("Targeted variants with a go"), l.f("{go} of {total}", "go", itoa(goCount), "total", itoa(len(rr.Variants)))})
+	}
 	crit := export.Section{Name: "exit_criteria", Title: l.t("Exit criteria"),
 		Columns: l.cols("Criterion", "Threshold or level", "Actual", "Met", "Not met because of", "Accepted by waiver or sign-off")}
 	for _, c := range rr.Criteria {
@@ -300,9 +336,53 @@ func buildReleaseReadiness(d *Data, _ map[string]string) (*export.Dataset, error
 		level, acc := strings.CutSuffix(r.Note, ", accepted")
 		risks.Rows = append(risks.Rows, []string{r.Key, r.Title, l.enum(EnumRiskLevel, level), l.yesNo(acc)})
 	}
-	ds := &export.Dataset{Sections: []export.Section{summary, crit, l.waiverSection("waivers", "Waivers in force", rr.Waivers), risks}}
+	sections := []export.Section{summary, crit}
+	if len(rr.Variants) > 0 {
+		sections = append(sections, l.variantGateSection(rr))
+	}
+	ds := &export.Dataset{Sections: append(sections, l.waiverSection("waivers", "Waivers in force", rr.Waivers), risks)}
 	ds.Subtitle = d.subtitle() + " · " + rel.Name
 	return ds, nil
+}
+
+// variantGateSection is the matrix of the exit criteria × the targeted
+// variants (pass, waived or fail) with each variant's verdict.
+func (l loc) variantGateSection(rr *ReleaseReport) export.Section {
+	cols := []string{l.t("Criterion")}
+	for _, g := range rr.Variants {
+		cols = append(cols, g.Name)
+	}
+	sec := export.Section{Name: "variant_gates", Title: l.t("Exit criteria per variant"), Columns: cols}
+	state := func(st string) string {
+		switch st {
+		case "pass":
+			return l.t("Pass")
+		case "waived":
+			return l.tc("state", "Waived")
+		}
+		return l.t("Fail")
+	}
+	for i, c := range rr.Criteria {
+		row := []string{l.enum(EnumCriterion, c.Type)}
+		for _, g := range rr.Variants {
+			st := ""
+			if i < len(g.States) {
+				st = state(g.States[i])
+			}
+			row = append(row, st)
+		}
+		sec.Rows = append(sec.Rows, row)
+	}
+	verdict := []string{l.t("Verdict")}
+	for _, g := range rr.Variants {
+		if g.Go {
+			verdict = append(verdict, l.t("Go"))
+		} else {
+			verdict = append(verdict, l.t("No-go"))
+		}
+	}
+	sec.Rows = append(sec.Rows, verdict)
+	return sec
 }
 
 // ---------------------------------------------------------------- specification

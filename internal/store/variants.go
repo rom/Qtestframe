@@ -302,9 +302,91 @@ func (s *Store) DeleteVariant(ctx context.Context, tenantID, id string) error {
 				return err
 			}
 		}
+		// releases stop targeting it (waivers limited to it keep the id and
+		// so cover no variant: deleting a variant never widens a waiver)
+		rows, err = c.query(ctx, `SELECT id, variant_ids FROM releases WHERE project_id = ? AND variant_ids LIKE ?`, v.ProjectID, "%"+id+"%")
+		if err != nil {
+			return err
+		}
+		type rel struct{ id, ids string }
+		var rels []rel
+		for rows.Next() {
+			var r rel
+			if err := rows.Scan(&r.id, &r.ids); err != nil {
+				rows.Close()
+				return err
+			}
+			rels = append(rels, r)
+		}
+		rows.Close()
+		for _, r := range rels {
+			ids := slices.DeleteFunc(decodeTags(r.ids), func(x string) bool { return x == id })
+			if _, err := c.exec(ctx, `UPDATE releases SET variant_ids = ? WHERE id = ?`, encodeTags(ids), r.id); err != nil {
+				return err
+			}
+		}
 		_, err = c.exec(ctx, `DELETE FROM variants WHERE id = ? AND tenant_id = ?`, id, tenantID)
 		return err
 	})
+}
+
+// ResolveVariants resolves references to variants of a project (ids or
+// names) to their ids, without duplicates; an unknown reference is invalid.
+func (s *Store) ResolveVariants(ctx context.Context, tenantID, projectID string, refs []string) ([]string, error) {
+	refs = cleanTags(refs)
+	if len(refs) == 0 {
+		return []string{}, nil
+	}
+	if len(refs) > MaxApplicabilityIDs {
+		return nil, Invalidf("at most %d variants can be listed", MaxApplicabilityIDs)
+	}
+	list, err := s.ListVariants(ctx, tenantID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	vs := NewVariantSet(list)
+	out := []string{}
+	for _, ref := range refs {
+		v := vs.Find(ref)
+		if v == nil {
+			return nil, Invalidf("variant %q not found in project", ref)
+		}
+		if !slices.Contains(out, v.ID) {
+			out = append(out, v.ID)
+		}
+	}
+	return out, nil
+}
+
+// RefsOf returns references to the listed variants (in the list's order);
+// ids of variants that no longer exist are left out.
+func (vs *VariantSet) RefsOf(ids []string) []model.VariantRef {
+	out := []model.VariantRef{}
+	for _, id := range ids {
+		if v := vs.Get(id); v != nil {
+			out = append(out, model.VariantRef{ID: v.ID, Name: v.Name})
+		}
+	}
+	return out
+}
+
+// Covers reports whether a variant list (each entry with its descendants;
+// empty: every variant) covers a variant ("" no variant: only an empty
+// list does).
+func (vs *VariantSet) Covers(ids []string, variantID string) bool {
+	if len(ids) == 0 {
+		return true
+	}
+	if variantID == "" {
+		return false
+	}
+	line := vs.Lineage(variantID)
+	for _, id := range ids {
+		if slices.Contains(line, id) {
+			return true
+		}
+	}
+	return false
 }
 
 // checkRunVariantBuild checks that a run's variant and build belong to its project.
