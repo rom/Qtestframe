@@ -215,7 +215,7 @@ requirements:
     obligation: must
     priority: high
     tags: [test-management, test-plan]
-    refs: ["ISO/IEC/IEEE 29119-3:2021 (test plan)", "ISTQB CTFL 4.0 §5.1.1 (test plan)"]
+    refs: ["ISO/IEC/IEEE 29119-3:2021 §7.2 (test plan)", "ISTQB CTFL 4.0 §5.1.1 (test plan)"]
     tests: [PJAGL-T06]
     en:
       title: Test plan per release
@@ -283,7 +283,7 @@ requirements:
     obligation: must
     priority: high
     tags: [test-management, defect-report]
-    refs: ["ISTQB CTFL 4.0 §5.5 (defect management)", "ISO/IEC/IEEE 29119-3:2021 (incident report)"]
+    refs: ["ISTQB CTFL 4.0 §5.5 (defect management)", "ISO/IEC/IEEE 29119-3:2021 §8.11 (test incident report)"]
     tests: [PJAGL-T08]
     en:
       title: Defect reports with steps to reproduce, severity and version
@@ -329,7 +329,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [test-management, test-environment, configuration]
-    refs: ["ISO/IEC/IEEE 29119-3:2021 (test environment requirements)"]
+    refs: ["ISO/IEC/IEEE 29119-3:2021 §8.6 (test environment requirements)"]
     tests: [PJAGL-T10]
     en:
       title: Test environment differences from production recorded
@@ -351,7 +351,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [test-management, test-completion, reporting]
-    refs: ["ISTQB CTFL 4.0 §5.3.2 (test reports)", "ISO/IEC/IEEE 29119-3:2021 (test completion report)"]
+    refs: ["ISTQB CTFL 4.0 §5.3.2 (test reports)", "ISO/IEC/IEEE 29119-3:2021 §7.4 (test completion report)"]
     tests: [PJAGL-T10]
     en:
       title: Test completion report before the release decision
@@ -519,7 +519,7 @@ tests:
     priority: high
     execution: manual
     tags: [test-plan, risk-based-testing]
-    refs: ["ISO/IEC/IEEE 29119-3:2021 (test plan)", "ISTQB CTFL 4.0 §5.2 (risk management)"]
+    refs: ["ISO/IEC/IEEE 29119-3:2021 §7.2 (test plan)", "ISTQB CTFL 4.0 §5.2 (risk management)"]
     en:
       title: Review of the release test plan and its risk analysis
       description: Reviews the contents of the test plan and how the product risks steer the test cases.
@@ -645,7 +645,7 @@ tests:
     priority: medium
     execution: manual
     tags: [test-environment, test-completion]
-    refs: ["ISO/IEC/IEEE 29119-3:2021 (test environment requirements)", "ISO/IEC/IEEE 29119-3:2021 (test completion report)"]
+    refs: ["ISO/IEC/IEEE 29119-3:2021 §8.6 (test environment requirements)", "ISO/IEC/IEEE 29119-3:2021 §7.4 (test completion report)"]
     en:
       title: Environment comparison and test completion report
       description: Compares the acceptance test environment with production and reviews the test completion report.

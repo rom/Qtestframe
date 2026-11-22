@@ -57,7 +57,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [segmentation, zones-and-conduits]
-    refs: ["IEC 62443-3-2:2020 ZCR 3", "IEC 62443-3-3 SR 5.1"]
+    refs: ["IEC 62443-3-2:2020 ZCR 3", "IEC 62443-3-3 SR 5.1", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
     tests: [SYSEC-T02]
     en:
       title: Subsystems of different criticality separated into zones
@@ -105,7 +105,7 @@ requirements:
     obligation: must
     priority: high
     tags: [least-privilege, service-accounts]
-    refs: ["NIST SP 800-53 AC-6", "IEC 62443-3-3 SR 2.1"]
+    refs: ["NIST SP 800-53 AC-6", "IEC 62443-3-3 SR 2.1", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [SYSEC-T03]
     en:
       title: Least privilege between system components
@@ -129,7 +129,7 @@ requirements:
     obligation: must
     priority: high
     tags: [mutual-authentication, internal-communication]
-    refs: ["IEC 62443-3-3 SR 1.2", "NIST SP 800-207 (zero trust architecture)"]
+    refs: ["IEC 62443-3-3 SR 1.2", "NIST SP 800-207 (zero trust architecture)", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     tests: [SYSEC-T04]
     en:
       title: Mutual authentication between components
@@ -151,7 +151,7 @@ requirements:
     obligation: must
     priority: high
     tags: [encryption-in-transit, confidentiality]
-    refs: ["IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    refs: ["IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1040 (network sniffing)"]
     tests: [SYSEC-T04]
     en:
       title: Data encrypted across untrusted networks
@@ -173,7 +173,7 @@ requirements:
     obligation: must
     priority: high
     tags: [security-logging, time-synchronisation, monitoring]
-    refs: ["IEC 62443-3-3 SR 6.1", "IEC 62443-3-3 SR 2.11", "ISO/IEC 27001:2022 A.8.15"]
+    refs: ["IEC 62443-3-3 SR 6.1", "IEC 62443-3-3 SR 2.11", "ISO/IEC 27001:2022 A.8.15", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1070 (indicator removal)"]
     tests: [SYSEC-T05]
     en:
       title: Central security log with synchronised time
@@ -265,7 +265,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [remote-maintenance, remote-access, mfa]
-    refs: ["IEC 62443-3-3 SR 1.13", "IEC 62443-2-4:2023"]
+    refs: ["IEC 62443-3-3 SR 1.13", "IEC 62443-2-4:2023", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK T1199 (trusted relationship)"]
     tests: [SYSEC-T09]
     en:
       title: Remote maintenance only through a controlled access point
@@ -289,7 +289,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sbom, supply-chain, vulnerability-monitoring]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "ISO/IEC 27001:2022 A.5.21"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "ISO/IEC 27001:2022 A.5.21", "CWE-1395 (dependency on vulnerable third-party component)"]
     tests: [SYSEC-T10]
     en:
       title: Bill of materials for the whole system monitored for vulnerabilities
@@ -313,7 +313,7 @@ requirements:
     obligation: must
     priority: high
     tags: [recovery, backup, known-good-state]
-    refs: ["IEC 62443-3-3 SR 7.4", "ISO/IEC 27001:2022 A.8.13"]
+    refs: ["IEC 62443-3-3 SR 7.4", "ISO/IEC 27001:2022 A.8.13", "MITRE ATT&CK T1486 (data encrypted for impact)", "MITRE ATT&CK M1053 (data backup)"]
     tests: [SYSEC-T11]
     en:
       title: Recovery to a known good configuration within the target time
@@ -361,7 +361,7 @@ requirements:
     obligation: must
     priority: high
     tags: [hardening, baseline, compliance-scan]
-    refs: ["ISO/IEC 27001:2022 A.8.9"]
+    refs: ["ISO/IEC 27001:2022 A.8.9", "MITRE ATT&CK M1054 (software configuration)"]
     tests: [SYSEC-T13]
     en:
       title: Hardening baseline for each component type checked every month
@@ -385,7 +385,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [cryptography, inventory, deprecated-algorithms]
-    refs: ["NIST SP 800-131A Rev. 2 (transitioning the use of cryptographic algorithms and key lengths)", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["NIST SP 800-131A Rev. 2 (transitioning the use of cryptographic algorithms and key lengths)", "ISO/IEC 27001:2022 A.8.24", "CWE-327 (broken or risky cryptographic algorithm)"]
     tests: [SYSEC-T13]
     en:
       title: No deprecated algorithm in the cryptographic inventory
@@ -431,7 +431,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [environment-separation, test-data]
-    refs: ["ISO/IEC 27001:2022 A.8.31", "ISO/IEC 27001:2022 A.8.33"]
+    refs: ["ISO/IEC 27001:2022 A.8.31", "ISO/IEC 27001:2022 A.8.33", "CWE-359 (exposure of private personal information)"]
     tests: [SYSEC-T14]
     en:
       title: No production personal data in development and test environments
@@ -453,7 +453,7 @@ requirements:
     obligation: must
     priority: high
     tags: [decommissioning, key-revocation, sanitisation]
-    refs: ["ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)", "NIST SP 800-88 Rev. 2"]
+    refs: ["ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)", "NIST SP 800-88 Rev. 2", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [SYSEC-T12]
     en:
       title: Credentials revoked and data sanitised at decommissioning
@@ -507,7 +507,7 @@ tests:
     priority: critical
     execution: automated
     tags: [segmentation, defence-in-depth]
-    refs: ["IEC 62443-3-3 SR 5.1"]
+    refs: ["IEC 62443-3-3 SR 5.1", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
     en:
       title: Zone boundaries block undocumented flows
       description: A script attempts connections between all zone pairs and compares the results with the documented flows, and the paths to critical assets are reviewed.
@@ -533,7 +533,7 @@ tests:
     priority: high
     execution: manual
     tags: [least-privilege]
-    refs: ["NIST SP 800-53 AC-6"]
+    refs: ["NIST SP 800-53 AC-6", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Service identity permissions against the access matrix
       description: Exports the permissions of each service identity and compares them with the access matrix.
@@ -559,7 +559,7 @@ tests:
     priority: high
     execution: automated
     tags: [mutual-authentication, encryption-in-transit]
-    refs: ["IEC 62443-3-3 SR 1.2", "IEC 62443-3-3 SR 4.1"]
+    refs: ["IEC 62443-3-3 SR 1.2", "IEC 62443-3-3 SR 4.1", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1557 (adversary-in-the-middle)", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1040 (network sniffing)"]
     en:
       title: Mutual TLS and encryption on boundary connections
       description: A script tries connections with missing and foreign certificates and inspects captures on untrusted segments.
@@ -589,7 +589,7 @@ tests:
     priority: high
     execution: manual
     tags: [security-logging]
-    refs: ["IEC 62443-3-3 SR 6.1", "IEC 62443-3-3 SR 2.11"]
+    refs: ["IEC 62443-3-3 SR 6.1", "IEC 62443-3-3 SR 2.11", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1070 (indicator removal)"]
     en:
       title: Security events reach the central log with aligned time
       description: Causes a failed login on each subsystem and a simultaneous event on three subsystems.
@@ -699,7 +699,7 @@ tests:
     priority: critical
     execution: manual
     tags: [remote-maintenance]
-    refs: ["IEC 62443-3-3 SR 1.13"]
+    refs: ["IEC 62443-3-3 SR 1.13", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK T1199 (trusted relationship)"]
     en:
       title: Supplier remote access through the controlled point only
       description: Tries remote access without approval and with a password only, runs an approved session and scans for other remote paths.
@@ -729,7 +729,7 @@ tests:
     priority: high
     execution: manual
     tags: [sbom, vulnerability-monitoring]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)"]
     en:
       title: Combined bill of materials and weekly vulnerability checks
       description: Checks the coverage of the combined bill of materials and the vulnerability check log.
@@ -755,7 +755,7 @@ tests:
     priority: high
     execution: manual
     tags: [recovery]
-    refs: ["IEC 62443-3-3 SR 7.4"]
+    refs: ["IEC 62443-3-3 SR 7.4", "MITRE ATT&CK T1486 (data encrypted for impact)", "MITRE ATT&CK M1053 (data backup)"]
     en:
       title: Recovery exercise from offline backups
       description: Restores each subsystem of a test system from offline backups and compares the result with the approved configuration.
@@ -787,7 +787,7 @@ tests:
     priority: high
     execution: manual
     tags: [risk-acceptance, decommissioning]
-    refs: ["ISO/IEC 27005:2022 (risk acceptance)", "ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)", "NIST SP 800-88 Rev. 2"]
+    refs: ["ISO/IEC 27005:2022 (risk acceptance)", "ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)", "NIST SP 800-88 Rev. 2", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Risk acceptances before go-live and decommissioning records
       description: Checks the acceptance of residual risks before go-live and the revocation and sanitisation records of a retired component.
@@ -821,7 +821,7 @@ tests:
     priority: high
     execution: automated
     tags: [hardening, cryptography]
-    refs: ["ISO/IEC 27001:2022 A.8.9", "NIST SP 800-131A Rev. 2 (transitioning the use of cryptographic algorithms and key lengths)", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["ISO/IEC 27001:2022 A.8.9", "NIST SP 800-131A Rev. 2 (transitioning the use of cryptographic algorithms and key lengths)", "ISO/IEC 27001:2022 A.8.24", "MITRE ATT&CK M1054 (software configuration)", "CWE-327 (broken or risky cryptographic algorithm)"]
     en:
       title: Hardening compliance scan and cryptographic scan
       description: A script runs the compliance scan against the hardening baselines and a scan of the interfaces for disallowed cryptography.
@@ -853,7 +853,7 @@ tests:
     priority: medium
     execution: manual
     tags: [detection, test-data]
-    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27001:2022 A.8.31", "ISO/IEC 27001:2022 A.8.33"]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27001:2022 A.8.31", "ISO/IEC 27001:2022 A.8.33", "CWE-359 (exposure of private personal information)"]
     en:
       title: Detection rule test events and scan of test databases
       description: Triggers a sample detection rule, checks the yearly test log and scans the test databases for personal data.

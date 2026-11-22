@@ -133,7 +133,7 @@ requirements:
     obligation: must
     priority: high
     tags: [tara, threats, cybersecurity-goals]
-    refs: ["ISO/SAE 21434:2021 §15 (threat analysis and risk assessment methods)", "UN Regulation No. 155 §7.3 (vehicle type requirements: risk assessment)"]
+    refs: ["ISO/SAE 21434:2021 §15 (threat analysis and risk assessment methods)", "UN Regulation No. 155 §7.3.3 (vehicle type requirements: risk assessment)"]
     tests: [AUTOSW-T06]
     en:
       title: Threat analysis before development
@@ -157,7 +157,7 @@ requirements:
     obligation: must
     priority: high
     tags: [monitoring, vulnerabilities, fleet]
-    refs: ["ISO/SAE 21434:2021 §8 (continual cybersecurity activities)", "UN Regulation No. 155 §7.2 (cyber security management system: monitoring and response)"]
+    refs: ["ISO/SAE 21434:2021 §8 (continual cybersecurity activities)", "UN Regulation No. 155 §7.2.2.2(g) (cyber security management system: monitoring and response)"]
     tests: [AUTOSW-T07]
     en:
       title: Monitoring of vehicles in the field
@@ -181,7 +181,7 @@ requirements:
     obligation: must
     priority: high
     tags: [software-update, authenticity, integrity]
-    refs: ["UN Regulation No. 156 §7.2 (vehicle type requirements)", "ISO 24089:2023 (software update engineering)"]
+    refs: ["UN Regulation No. 156 §7.2.1.1 (authenticity and integrity of software updates)", "ISO 24089:2023 (software update engineering)"]
     tests: [AUTOSW-T08]
     en:
       title: Authenticated software updates
@@ -205,7 +205,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [rxswin, software-identification, diagnostics]
-    refs: ["UN Regulation No. 156 §7.2 (software identification number)", "ISO 24089:2023 (software update engineering)"]
+    refs: ["UN Regulation No. 156 §7.2.1.2.2 (software identification number readable)", "ISO 24089:2023 (software update engineering)"]
     tests: [AUTOSW-T09]
     en:
       title: Software identification readable
@@ -229,7 +229,7 @@ requirements:
     obligation: must
     priority: high
     tags: [update-preconditions, vehicle-state, safety]
-    refs: ["UN Regulation No. 156 §7.2 (safe execution of updates)", "ISO 24089:2023 (software update engineering)"]
+    refs: ["UN Regulation No. 156 §7.2.2.1.3 (safe execution of updates)", "UN Regulation No. 156 §7.2.2.2 (user information before an update)", "ISO 24089:2023 (software update engineering)"]
     tests: [AUTOSW-T10]
     en:
       title: Update only in a safe vehicle state
@@ -253,7 +253,7 @@ requirements:
     obligation: must
     priority: high
     tags: [rollback, failed-update, recovery]
-    refs: ["ISO 24089:2023 (software update engineering)", "UN Regulation No. 156 §7.2 (failed updates)"]
+    refs: ["ISO 24089:2023 (software update engineering)", "UN Regulation No. 156 §7.2.2.1.1 (recovery after a failed update)", "UN Regulation No. 156 §7.2.2.4 (user informed of the outcome)"]
     tests: [AUTOSW-T11]
     en:
       title: Return to the previous version after a failed update
@@ -485,7 +485,7 @@ tests:
     priority: high
     execution: manual
     tags: [monitoring, vulnerabilities]
-    refs: ["UN Regulation No. 155 §7.2 (cyber security management system: monitoring and response)"]
+    refs: ["UN Regulation No. 155 §7.2.2.2(g) (cyber security management system: monitoring and response)"]
     en:
       title: Field monitoring log
       description: Reviews the cybersecurity monitoring log of the last 6 months.
@@ -513,7 +513,7 @@ tests:
     priority: high
     execution: manual
     tags: [software-update, authenticity]
-    refs: ["UN Regulation No. 156 §7.2 (vehicle type requirements)"]
+    refs: ["UN Regulation No. 156 §7.2.1.1 (authenticity and integrity of software updates)"]
     en:
       title: Forged and damaged update packages
       description: Offers a test vehicle a package with a broken signature, a damaged package and the genuine one.
@@ -545,7 +545,7 @@ tests:
     priority: medium
     execution: manual
     tags: [rxswin, diagnostics]
-    refs: ["UN Regulation No. 156 §7.2 (software identification number)"]
+    refs: ["UN Regulation No. 156 §7.2.1.2.2 (software identification number readable)"]
     en:
       title: Software identification by diagnostics
       description: Reads the software identification before and after an update.
@@ -573,7 +573,7 @@ tests:
     priority: high
     execution: manual
     tags: [update-preconditions, vehicle-state]
-    refs: ["UN Regulation No. 156 §7.2 (safe execution of updates)"]
+    refs: ["UN Regulation No. 156 §7.2.2.1.3 (safe execution of updates)", "UN Regulation No. 156 §7.2.2.5 (preconditions before an update)"]
     en:
       title: Update refused outside the preconditions
       description: Tries to start an update while moving, with low battery and with the preconditions met.

@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [portfolio, inventory]
-    refs: ["ISO 21504:2022 (portfolio components)"]
+    refs: ["ISO 21504:2022 §5.4 (types of portfolio components)"]
     tests: [PJPFB-T01]
     en:
       title: Portfolio inventory with sponsor, budget and objective
@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: high
     tags: [portfolio, prioritisation, criteria]
-    refs: ["ISO 21504:2022 (prioritisation of portfolio components)"]
+    refs: ["ISO 21504:2022 §5.5 (criteria for selecting and prioritizing portfolio components)"]
     tests: [PJPFB-T02]
     en:
       title: Approved prioritisation criteria with weights
@@ -57,7 +57,7 @@ requirements:
     obligation: must
     priority: high
     tags: [portfolio, prioritisation, proposal]
-    refs: ["ISO 21504:2022 (prioritisation of portfolio components)"]
+    refs: ["ISO 21504:2022 §5.5 (criteria for selecting and prioritizing portfolio components)"]
     tests: [PJPFB-T02]
     en:
       title: Each proposal scored before it is approved
@@ -79,7 +79,7 @@ requirements:
     obligation: must
     priority: high
     tags: [portfolio, review, decision]
-    refs: ["ISO 21504:2022 (portfolio review)"]
+    refs: ["ISO 21504:2022 §6.8 (balancing and optimizing the portfolio)"]
     tests: [PJPFB-T03]
     en:
       title: Quarterly portfolio review with a decision per component
@@ -103,7 +103,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [portfolio, termination, business-case]
-    refs: ["ISO 21504:2022 (portfolio review)", "PRINCE2 Continued business justification"]
+    refs: ["ISO 21504:2022 §6.8 (balancing and optimizing the portfolio)", "PRINCE2 Continued business justification"]
     tests: [PJPFB-T03]
     en:
       title: Stop criteria for portfolio components
@@ -125,7 +125,7 @@ requirements:
     obligation: must
     priority: high
     tags: [portfolio, capacity, resources]
-    refs: ["ISO 21504:2022 (portfolio capacity)", "ISO 21502:2020 §7.5 (resources management)"]
+    refs: ["ISO 21504:2022 §6.8.4 (optimizing resources)", "ISO 21502:2020 §7.5 (resources management)"]
     tests: [PJPFB-T04]
     en:
       title: Demand on key roles within capacity for the next 6 months
@@ -149,7 +149,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [portfolio, balance, investment-category]
-    refs: ["ISO 21504:2022 (portfolio balancing)"]
+    refs: ["ISO 21504:2022 §6.8 (balancing and optimizing the portfolio)"]
     tests: [PJPFB-T04]
     en:
       title: Portfolio balance against target ranges
@@ -171,7 +171,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [portfolio, reporting]
-    refs: ["ISO 21504:2022 (portfolio reporting)"]
+    refs: ["ISO 21504:2022 §6.7.4 (reporting the performance of the portfolio)"]
     tests: [PJPFB-T05]
     en:
       title: Quarterly portfolio report to top management
@@ -307,7 +307,7 @@ requirements:
     obligation: must
     priority: high
     tags: [benefits, shortfall, corrective-action]
-    refs: ["ISO 21502:2020 §7.3 (benefit management)", "ISO 21504:2022 (portfolio review)"]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)", "ISO 21504:2022 §6.7.3 (managing portfolio performance)"]
     tests: [PJPFB-T08]
     en:
       title: Corrective action on a benefit shortfall of more than 20 %
@@ -331,7 +331,7 @@ tests:
     priority: high
     execution: manual
     tags: [portfolio, inventory]
-    refs: ["ISO 21504:2022 (portfolio components)"]
+    refs: ["ISO 21504:2022 §5.4 (types of portfolio components)"]
     en:
       title: Portfolio inventory compared with the finance system
       description: Compares the projects that have costs in the finance system with the portfolio inventory.
@@ -359,7 +359,7 @@ tests:
     priority: high
     execution: manual
     tags: [prioritisation, proposal]
-    refs: ["ISO 21504:2022 (prioritisation of portfolio components)"]
+    refs: ["ISO 21504:2022 §5.5 (criteria for selecting and prioritizing portfolio components)"]
     en:
       title: Prioritisation criteria and score sheets of approved proposals
       description: Reviews the prioritisation criteria and checks that approved proposals were scored before the decision.
@@ -389,7 +389,7 @@ tests:
     priority: high
     execution: manual
     tags: [portfolio-review, termination]
-    refs: ["ISO 21504:2022 (portfolio review)"]
+    refs: ["ISO 21504:2022 §6.8 (balancing and optimizing the portfolio)"]
     en:
       title: Quarterly portfolio review minutes and stop decisions
       description: Checks that each quarterly review decided on each component, and how components below their remaining cost were handled.
@@ -419,7 +419,7 @@ tests:
     priority: medium
     execution: manual
     tags: [capacity, balance]
-    refs: ["ISO 21504:2022 (portfolio capacity)", "ISO 21504:2022 (portfolio balancing)"]
+    refs: ["ISO 21504:2022 §6.8.4 (optimizing resources)", "ISO 21504:2022 §6.8 (balancing and optimizing the portfolio)"]
     en:
       title: Capacity check at approval and portfolio balance
       description: Checks the capacity view attached to recent approvals and the balance shown in the latest quarterly report.
@@ -449,7 +449,7 @@ tests:
     priority: medium
     execution: manual
     tags: [portfolio, reporting]
-    refs: ["ISO 21504:2022 (portfolio reporting)"]
+    refs: ["ISO 21504:2022 §6.7.4 (reporting the performance of the portfolio)"]
     en:
       title: Quarterly portfolio reports to top management
       description: Checks the timing and contents of the quarterly portfolio reports.

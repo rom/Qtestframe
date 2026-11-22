@@ -284,7 +284,7 @@ requirements:
     obligation: must
     priority: high
     tags: [access-control, billing-role]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.5.15", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP ASVS 5.0 V8.2.1 (function-level access)", "ISO/IEC 27001:2022 A.5.15", "ISO/IEC 27001:2022 A.8.3"]
     tests: [BILL-T10]
     en:
       title: Billing data limited to the billing role
@@ -354,7 +354,7 @@ requirements:
     obligation: must
     priority: high
     tags: [vat, consumers, place-of-supply]
-    refs: ["Directive 2006/112/EC Art. 58 (electronically supplied services)", "Directive 2006/112/EC Art. 369b (one-stop shop)"]
+    refs: ["Directive 2006/112/EC Art. 58 (electronically supplied services)", "Directive 2006/112/EC Art. 369b(c) (one-stop shop, Union scheme)"]
     tests: [BILL-T13]
     en:
       title: VAT rate of the consumer's member state
@@ -670,7 +670,7 @@ tests:
     priority: high
     execution: automated
     tags: [access-control, billing-role]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP ASVS 5.0 V8.2.1 (function-level access)", "ISO/IEC 27001:2022 A.8.3"]
     en:
       title: Access to billing pages by role
       description: An API and browser test opens the billing pages and endpoints as users with different roles.

@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [password]
-    refs: ["NIST SP 800-63B §5.1.1.2", "OWASP ASVS 4.0 V2.1", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "OWASP ASVS 5.0 V6.2.1 (password length)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-521 (weak password requirements)", "MITRE ATT&CK T1110 (brute force)"]
     tests: [AUTH-T01]
     en:
       title: Minimum password length
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [password, breached-passwords]
-    refs: ["NIST SP 800-63B §5.1.1.2", "OWASP ASVS 4.0 V2.1.7", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "OWASP ASVS 5.0 V6.2.12 (breached passwords)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7", "CWE-521 (weak password requirements)", "MITRE ATT&CK T1110.003 (password spraying)", "MITRE ATT&CK T1110.004 (credential stuffing)"]
     tests: [AUTH-T02]
     en:
       title: Breached and common passwords are refused
@@ -60,7 +60,7 @@ requirements:
     obligation: must_not
     priority: medium
     tags: [password, password-policy]
-    refs: ["NIST SP 800-63B §5.1.1.2", "ISO/IEC 27001:2022 A.5.17"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "ISO/IEC 27001:2022 A.5.17", "MITRE ATT&CK M1027 (password policies)"]
     tests: [AUTH-T03]
     en:
       title: No forced periodic password change
@@ -82,7 +82,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [password, passphrase]
-    refs: ["NIST SP 800-63B §5.1.1.2", "OWASP ASVS 4.0 V2.1.2", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "OWASP ASVS 5.0 V6.2.9 (64-character passwords)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "CWE-521 (weak password requirements)"]
     tests: [AUTH-T04]
     en:
       title: Long passphrases are accepted
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [password, credential-storage, hashing]
-    refs: ["OWASP ASVS 4.0 V2.4", "NIST SP 800-63B §5.1.1.2", "OWASP Top 10 2021 A02", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    refs: ["OWASP ASVS 5.0 V11.4.2 (password hashing)", "NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "OWASP Top 10 2021 A02", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-916 (password hash with insufficient computational effort)", "CWE-257 (storing passwords in a recoverable format)"]
     tests: [AUTH-T05, CRY-T04]
     en:
       title: Passwords are stored as salted one-way hashes
@@ -126,7 +126,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [mfa, administrator]
-    refs: ["OWASP ASVS 4.0 V2.7", "NIST SP 800-63B §4.2", "ISO/IEC 27001:2022 A.8.5", "PCI DSS 4.0 Req. 8.4", "IEC 62443-3-3 SR 1.1", "IEC 62443-4-2 CR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
+    refs: ["OWASP ASVS 5.0 V6.3.3 (multi-factor authentication)", "NIST SP 800-63B-4 §2.2 (authentication assurance level 2)", "ISO/IEC 27001:2022 A.8.5", "PCI DSS v4.0.1 Req. 8.4", "IEC 62443-3-3 SR 1.1", "IEC 62443-4-2 CR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     tests: [AUTH-T06]
     en:
       title: Multi-factor authentication for administrators
@@ -152,7 +152,7 @@ requirements:
     obligation: should
     priority: high
     tags: [mfa, totp, webauthn]
-    refs: ["NIST SP 800-63B §5.1.4", "NIST SP 800-63B §5.1.8", "OWASP ASVS 4.0 V2.8", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)"]
+    refs: ["NIST SP 800-63B-4 §3.1.4 (single-factor OTP)", "NIST SP 800-63B-4 §3.1.7 (multi-factor cryptographic authentication)", "OWASP ASVS 5.0 V6.5 (multi-factor authentication)", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1110 (brute force)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     tests: [AUTH-T07]
     en:
       title: Multi-factor authentication offered to every user
@@ -174,7 +174,7 @@ requirements:
     obligation: may
     priority: low
     tags: [passkey, webauthn, passwordless]
-    refs: ["NIST SP 800-63B §5.1.8", "W3C Web Authentication Level 2", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9"]
+    refs: ["NIST SP 800-63B-4 §3.1.7 (multi-factor cryptographic authentication)", "W3C Web Authentication Level 2", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9", "CWE-1390 (weak authentication)", "MITRE ATT&CK T1598 (phishing for information)"]
     tests: [AUTH-T08]
     en:
       title: Passwordless sign-in with passkeys
@@ -196,7 +196,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [brute-force, lockout, rate-limiting]
-    refs: ["NIST SP 800-63B §5.2.2", "OWASP ASVS 4.0 V2.2.1", "OWASP Top 10 2021 A07", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.11", "IEC 62443-4-2 CR 1.11", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    refs: ["NIST SP 800-63B-4 §3.2.2 (rate limiting)", "OWASP ASVS 5.0 V6.3.1 (credential stuffing and brute force)", "OWASP Top 10 2021 A07", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.11", "IEC 62443-4-2 CR 1.11", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-307 (improper restriction of excessive authentication attempts)", "MITRE ATT&CK T1110.001 (password guessing)"]
     tests: [AUTH-T09]
     en:
       title: Limit on failed sign-in attempts
@@ -218,7 +218,7 @@ requirements:
     obligation: must_not
     priority: medium
     tags: [login, user-enumeration]
-    refs: ["OWASP ASVS 4.0 V2.2", "OWASP Web Security Testing Guide WSTG-IDNT-04", "ISO/IEC 27001:2022 A.8.5", "ISO/IEC 27002:2022 §8.5", "IEC 62443-3-3 SR 1.10", "IEC 62443-4-2 CR 1.10"]
+    refs: ["OWASP ASVS 5.0 V6.3.8 (no user enumeration)", "OWASP Web Security Testing Guide WSTG-IDNT-04", "ISO/IEC 27001:2022 A.8.5", "ISO/IEC 27002:2022 §8.5", "IEC 62443-3-3 SR 1.10", "IEC 62443-4-2 CR 1.10", "CWE-204 (observable response discrepancy)", "MITRE ATT&CK T1589 (gather victim identity information)"]
     tests: [AUTH-T10]
     en:
       title: Sign-in errors do not reveal accounts
@@ -240,7 +240,7 @@ requirements:
     obligation: must
     priority: high
     tags: [account-recovery, password-reset]
-    refs: ["OWASP ASVS 4.0 V2.5", "OWASP Forgot Password Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5"]
+    refs: ["OWASP ASVS 5.0 V6.4.3 (password reset)", "OWASP Forgot Password Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "CWE-640 (weak password recovery mechanism)", "CWE-1472 (generation of credential with long expiration)"]
     tests: [AUTH-T11]
     en:
       title: Password reset links expire
@@ -262,7 +262,7 @@ requirements:
     obligation: must
     priority: high
     tags: [account-recovery, password-reset]
-    refs: ["OWASP ASVS 4.0 V2.5", "OWASP Forgot Password Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5"]
+    refs: ["OWASP ASVS 5.0 V6.4.3 (password reset)", "OWASP Forgot Password Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "CWE-640 (weak password recovery mechanism)"]
     tests: [AUTH-T11]
     en:
       title: Password reset links work only once
@@ -284,7 +284,7 @@ requirements:
     obligation: must_not
     priority: medium
     tags: [account-recovery, security-questions]
-    refs: ["NIST SP 800-63B §5.1.1.2", "OWASP ASVS 4.0 V2.5.6", "ISO/IEC 27001:2022 A.5.17"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "OWASP ASVS 5.0 V6.4.2 (no secret questions)", "ISO/IEC 27001:2022 A.5.17", "CWE-640 (weak password recovery mechanism)"]
     tests: [AUTH-T12]
     en:
       title: No security questions for account recovery
@@ -306,7 +306,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [sso, saml, oidc]
-    refs: ["OWASP ASVS 4.0 V3.5", "OpenID Connect Core 1.0 §3.1.3.7", "OWASP SAML Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
+    refs: ["OWASP ASVS 5.0 V6.8.2 (signatures on authentication assertions)", "OpenID Connect Core 1.0 §3.1.3.7", "OWASP SAML Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1606.002 (SAML tokens)"]
     tests: [AUTH-T13]
     en:
       title: Single sign-on assertions are fully validated
@@ -328,7 +328,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [default-credentials, installation]
-    refs: ["OWASP ASVS 4.0 V2.5.4", "OWASP Top 10 2021 A05", "PCI DSS 4.0 Req. 2.2.2", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(b)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    refs: ["OWASP ASVS 5.0 V6.3.2 (default accounts)", "OWASP Top 10 2021 A05", "PCI DSS v4.0.1 Req. 2.2.2", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(b)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1392 (use of default credentials)", "CWE-1393 (use of default password)", "MITRE ATT&CK T1078.001 (default accounts)"]
     tests: [AUTH-T14]
     en:
       title: No default credentials
@@ -354,7 +354,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [notification, account-change]
-    refs: ["OWASP ASVS 4.0 V2.2.3", "ISO/IEC 27001:2022 A.5.17"]
+    refs: ["OWASP ASVS 5.0 V6.3.7 (notification of authentication changes)", "ISO/IEC 27001:2022 A.5.17", "MITRE ATT&CK T1098 (account manipulation)"]
     tests: [AUTH-T15]
     en:
       title: Users are notified of credential changes
@@ -376,7 +376,7 @@ requirements:
     obligation: must
     priority: high
     tags: [re-authentication, account-change]
-    refs: ["OWASP ASVS 4.0 V3.7.1", "NIST SP 800-63B §7.2", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5"]
+    refs: ["OWASP ASVS 5.0 V7.5.1 (re-authentication before account changes)", "NIST SP 800-63B-4 §5.2 (reauthentication)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "CWE-620 (unverified password change)", "MITRE ATT&CK T1098 (account manipulation)"]
     tests: [AUTH-T16]
     en:
       title: Re-authentication before changing credentials
@@ -398,7 +398,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [mfa, phishing-resistant, administrators]
-    refs: ["NIST SP 800-63B-4 (phishing resistance)", "CISA Implementing Phishing-Resistant MFA", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.1"]
+    refs: ["NIST SP 800-63B-4 §3.2.5 (phishing resistance)", "CISA Implementing Phishing-Resistant MFA", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.1", "CWE-1390 (weak authentication)", "MITRE ATT&CK T1111 (multi-factor authentication interception)"]
     tests: [AUTH-T17]
     en:
       title: No SMS or voice codes for administrator accounts
@@ -420,7 +420,7 @@ requirements:
     obligation: must
     priority: high
     tags: [mfa, otp, replay]
-    refs: ["RFC 6238", "NIST SP 800-63B-4 (single-factor OTP)", "OWASP ASVS 5.0 V6 authentication", "ISO/IEC 27001:2022 A.8.5"]
+    refs: ["RFC 6238", "NIST SP 800-63B-4 §3.1.4 (single-factor OTP)", "OWASP ASVS 5.0 V6.5.1 (one-time use of codes)", "ISO/IEC 27001:2022 A.8.5", "CWE-294 (authentication bypass by capture-replay)", "MITRE ATT&CK T1111 (multi-factor authentication interception)"]
     tests: [AUTH-T18]
     en:
       title: One-time codes are used once and expire
@@ -444,7 +444,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [mfa, recovery-codes, account-recovery]
-    refs: ["NIST SP 800-63B-4 (account recovery)", "OWASP Multifactor Authentication Cheat Sheet", "ISO/IEC 27001:2022 A.5.17"]
+    refs: ["NIST SP 800-63B-4 §4.2 (account recovery)", "OWASP Multifactor Authentication Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "CWE-640 (weak password recovery mechanism)", "CWE-256 (plaintext storage of a password)"]
     tests: [AUTH-T19]
     en:
       title: Single-use recovery codes for a lost second factor
@@ -466,7 +466,7 @@ requirements:
     obligation: must
     priority: high
     tags: [federation, single-sign-on, account-linking]
-    refs: ["OpenID Connect Core 1.0 §5.7", "NIST SP 800-63C-4 (subscriber accounts)", "OWASP SAML Security Cheat Sheet", "ISO/IEC 27001:2022 A.5.16"]
+    refs: ["OpenID Connect Core 1.0 §5.7", "NIST SP 800-63C-4 §3.8.1 (account linking)", "OWASP SAML Security Cheat Sheet", "ISO/IEC 27001:2022 A.5.16", "CWE-1470 (improper external identity verification)"]
     tests: [AUTH-T20]
     en:
       title: Federated accounts are linked by issuer and subject
@@ -488,7 +488,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [notification, new-device, login]
-    refs: ["OWASP Authentication Cheat Sheet", "NIST SP 800-63B-4 (authentication event notification)", "ISO/IEC 27001:2022 A.8.16"]
+    refs: ["OWASP Authentication Cheat Sheet", "NIST SP 800-63B-4 §4.6 (account notifications)", "ISO/IEC 27001:2022 A.8.16", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [AUTH-T21]
     en:
       title: Notice of sign-in from a new device
@@ -512,7 +512,7 @@ tests:
     priority: high
     execution: manual
     tags: [password]
-    refs: ["NIST SP 800-63B §5.1.1.2", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-521 (weak password requirements)", "MITRE ATT&CK T1110 (brute force)"]
     en:
       title: Password shorter than the minimum length is rejected
       description: Checks the minimum password length when a user sets a new password.
@@ -542,7 +542,7 @@ tests:
     priority: high
     execution: automated
     tags: [password, breached-passwords]
-    refs: ["NIST SP 800-63B §5.1.1.2", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7", "CWE-521 (weak password requirements)", "MITRE ATT&CK T1110.003 (password spraying)", "MITRE ATT&CK T1110.004 (credential stuffing)"]
     en:
       title: Breached passwords are rejected by the password API
       description: A script sets passwords taken from the breached-password list and random passwords through the API.
@@ -574,7 +574,7 @@ tests:
     priority: medium
     execution: manual
     tags: [password, password-policy]
-    refs: ["NIST SP 800-63B §5.1.1.2", "ISO/IEC 27001:2022 A.5.17"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "ISO/IEC 27001:2022 A.5.17", "MITRE ATT&CK M1027 (password policies)"]
     en:
       title: An old password does not force a change
       description: Checks that the password policy has no expiry period.
@@ -600,7 +600,7 @@ tests:
     priority: medium
     execution: manual
     tags: [password, passphrase]
-    refs: ["NIST SP 800-63B §5.1.1.2", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "CWE-521 (weak password requirements)"]
     en:
       title: A long passphrase with spaces and Unicode works in full
       description: Checks that long passphrases are accepted and not truncated.
@@ -632,7 +632,7 @@ tests:
     priority: critical
     execution: manual
     tags: [credential-storage, hashing]
-    refs: ["OWASP ASVS 4.0 V2.4", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    refs: ["OWASP ASVS 5.0 V11.4.2 (password hashing)", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-916 (password hash with insufficient computational effort)", "CWE-257 (storing passwords in a recoverable format)"]
     en:
       title: Stored credentials contain no readable passwords
       description: Inspects the database, logs and a backup for passwords in readable form.
@@ -660,7 +660,7 @@ tests:
     priority: critical
     execution: manual
     tags: [mfa, administrator]
-    refs: ["OWASP ASVS 4.0 V2.7", "IEC 62443-3-3 SR 1.1", "IEC 62443-4-2 CR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
+    refs: ["OWASP ASVS 5.0 V6.3.3 (multi-factor authentication)", "IEC 62443-3-3 SR 1.1", "IEC 62443-4-2 CR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     en:
       title: Administrators cannot sign in without a second factor
       description: Checks that multi-factor authentication is enforced for administrator accounts.
@@ -690,7 +690,7 @@ tests:
     priority: high
     execution: manual
     tags: [mfa, totp, webauthn]
-    refs: ["NIST SP 800-63B §5.1.4", "NIST SP 800-63B §5.1.8", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)"]
+    refs: ["NIST SP 800-63B-4 §3.1.4 (single-factor OTP)", "NIST SP 800-63B-4 §3.1.7 (multi-factor cryptographic authentication)", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1110 (brute force)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     en:
       title: An ordinary user enrols TOTP and a security key
       description: Checks that users without administrator rights can enrol both kinds of second factor.
@@ -720,7 +720,7 @@ tests:
     priority: low
     execution: manual
     tags: [passkey, webauthn]
-    refs: ["NIST SP 800-63B §5.1.8", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9"]
+    refs: ["NIST SP 800-63B-4 §3.1.7 (multi-factor cryptographic authentication)", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9", "CWE-1390 (weak authentication)", "MITRE ATT&CK T1598 (phishing for information)"]
     en:
       title: Sign in with a passkey instead of a password
       description: Checks passwordless sign-in where the feature is offered.
@@ -746,7 +746,7 @@ tests:
     priority: critical
     execution: automated
     tags: [brute-force, lockout]
-    refs: ["NIST SP 800-63B §5.2.2", "OWASP ASVS 4.0 V2.2.1", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.11", "IEC 62443-4-2 CR 1.11", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    refs: ["NIST SP 800-63B-4 §3.2.2 (rate limiting)", "OWASP ASVS 5.0 V6.3.1 (credential stuffing and brute force)", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.11", "IEC 62443-4-2 CR 1.11", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-307 (improper restriction of excessive authentication attempts)", "MITRE ATT&CK T1110.001 (password guessing)"]
     en:
       title: Repeated failed sign-ins are throttled
       description: A script sends failed sign-ins to one account and checks that further attempts are refused within the window.
@@ -776,7 +776,7 @@ tests:
     priority: medium
     execution: automated
     tags: [login, user-enumeration]
-    refs: ["OWASP Web Security Testing Guide WSTG-IDNT-04", "ISO/IEC 27001:2022 A.8.5", "ISO/IEC 27002:2022 §8.5", "IEC 62443-3-3 SR 1.10", "IEC 62443-4-2 CR 1.10"]
+    refs: ["OWASP Web Security Testing Guide WSTG-IDNT-04", "ISO/IEC 27001:2022 A.8.5", "ISO/IEC 27002:2022 §8.5", "IEC 62443-3-3 SR 1.10", "IEC 62443-4-2 CR 1.10", "CWE-204 (observable response discrepancy)", "MITRE ATT&CK T1589 (gather victim identity information)"]
     en:
       title: Failed sign-ins look the same for unknown and known accounts
       description: A script compares the responses to a sign-in with an unknown user name and with a wrong password.
@@ -804,7 +804,7 @@ tests:
     priority: high
     execution: manual
     tags: [account-recovery, password-reset]
-    refs: ["OWASP Forgot Password Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5"]
+    refs: ["OWASP Forgot Password Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "CWE-640 (weak password recovery mechanism)", "CWE-1472 (generation of credential with long expiration)"]
     en:
       title: Reset links expire and cannot be reused
       description: Checks the lifetime and single use of password reset links.
@@ -834,7 +834,7 @@ tests:
     priority: medium
     execution: manual
     tags: [account-recovery, security-questions]
-    refs: ["NIST SP 800-63B §5.1.1.2", "ISO/IEC 27001:2022 A.5.17"]
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "ISO/IEC 27001:2022 A.5.17", "CWE-640 (weak password recovery mechanism)"]
     en:
       title: Account recovery uses no security questions
       description: Reviews the recovery flow for knowledge-based questions.
@@ -860,7 +860,7 @@ tests:
     priority: critical
     execution: automated
     tags: [sso, saml, oidc]
-    refs: ["OpenID Connect Core 1.0 §3.1.3.7", "OWASP SAML Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
+    refs: ["OpenID Connect Core 1.0 §3.1.3.7", "OWASP SAML Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1606.002 (SAML tokens)"]
     en:
       title: Manipulated single sign-on tokens are rejected
       description: A script posts altered ID tokens or SAML assertions to the sign-in callback.
@@ -894,7 +894,7 @@ tests:
     priority: critical
     execution: manual
     tags: [default-credentials, installation]
-    refs: ["OWASP Top 10 2021 A05", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(b)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    refs: ["OWASP Top 10 2021 A05", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(b)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1392 (use of default credentials)", "CWE-1393 (use of default password)", "MITRE ATT&CK T1078.001 (default accounts)"]
     en:
       title: A fresh installation has no default account
       description: Checks that a new installation cannot be entered with known default credentials.
@@ -926,7 +926,7 @@ tests:
     priority: medium
     execution: manual
     tags: [notification, account-change]
-    refs: ["OWASP ASVS 4.0 V2.2.3", "ISO/IEC 27001:2022 A.5.17"]
+    refs: ["OWASP ASVS 5.0 V6.3.7 (notification of authentication changes)", "ISO/IEC 27001:2022 A.5.17", "MITRE ATT&CK T1098 (account manipulation)"]
     en:
       title: E-mail is sent when credentials change
       description: Checks the security notifications for a changed password and a removed second factor.
@@ -952,7 +952,7 @@ tests:
     priority: high
     execution: manual
     tags: [re-authentication, account-change]
-    refs: ["OWASP ASVS 4.0 V3.7.1", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5"]
+    refs: ["OWASP ASVS 5.0 V7.5.1 (re-authentication before account changes)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "CWE-620 (unverified password change)", "MITRE ATT&CK T1098 (account manipulation)"]
     en:
       title: Credential changes ask for the current password
       description: Checks re-authentication before sensitive account changes.
@@ -982,7 +982,7 @@ tests:
     priority: high
     execution: manual
     tags: [mfa, phishing-resistant]
-    refs: ["NIST SP 800-63B-4 (phishing resistance)", "ISO/IEC 27001:2022 A.8.5"]
+    refs: ["NIST SP 800-63B-4 §3.2.5 (phishing resistance)", "ISO/IEC 27001:2022 A.8.5", "CWE-1390 (weak authentication)", "MITRE ATT&CK T1111 (multi-factor authentication interception)"]
     en:
       title: Administrators cannot use SMS or voice codes
       description: Tries to register and use phone-based second factors for an administrator account.
@@ -1012,7 +1012,7 @@ tests:
     priority: high
     execution: automated
     tags: [otp, replay]
-    refs: ["RFC 6238"]
+    refs: ["RFC 6238", "CWE-294 (authentication bypass by capture-replay)", "MITRE ATT&CK T1111 (multi-factor authentication interception)"]
     en:
       title: Replayed and old one-time codes are refused
       description: A script generates time-based codes from a known test seed and submits them at sign-in.
@@ -1044,7 +1044,7 @@ tests:
     priority: medium
     execution: manual
     tags: [recovery-codes]
-    refs: ["NIST SP 800-63B-4 (account recovery)"]
+    refs: ["NIST SP 800-63B-4 §4.2 (account recovery)", "CWE-640 (weak password recovery mechanism)", "CWE-256 (plaintext storage of a password)"]
     en:
       title: Recovery codes are single-use and stored hashed
       description: Turns on multi-factor authentication, uses a recovery code and inspects how the codes are stored.
@@ -1074,7 +1074,7 @@ tests:
     priority: high
     execution: manual
     tags: [federation, account-linking]
-    refs: ["OpenID Connect Core 1.0 §5.7"]
+    refs: ["OpenID Connect Core 1.0 §5.7", "CWE-1470 (improper external identity verification)"]
     en:
       title: Federated sign-in is not linked by email address
       description: Signs in through a test identity provider with a new subject that carries the email address of an existing account.
@@ -1104,7 +1104,7 @@ tests:
     priority: medium
     execution: manual
     tags: [notification, new-device]
-    refs: ["OWASP Authentication Cheat Sheet"]
+    refs: ["OWASP Authentication Cheat Sheet", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Sign-in from a new device sends a notice
       description: Signs in from a new browser profile and from a known one and checks the mailbox.

@@ -14,6 +14,8 @@ import (
 // separated by blank lines.
 type MarkdownWriter struct {
 	b strings.Builder
+	// flushed: blocks were already written out by Flush
+	flushed bool
 }
 
 // String returns the document written so far (ending in one newline).
@@ -27,8 +29,21 @@ func (m *MarkdownWriter) WriteTo(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
+// Flush writes the blocks written so far to w and empties the buffer, so
+// that long documents can be streamed; the separation of the following
+// blocks is kept.
+func (m *MarkdownWriter) Flush(w io.Writer) error {
+	if m.b.Len() == 0 {
+		return nil
+	}
+	_, err := io.WriteString(w, m.b.String())
+	m.b.Reset()
+	m.flushed = true
+	return err
+}
+
 func (m *MarkdownWriter) block(s string) {
-	if m.b.Len() > 0 {
+	if m.b.Len() > 0 || m.flushed {
 		m.b.WriteString("\n")
 	}
 	m.b.WriteString(s)
@@ -39,7 +54,8 @@ func (m *MarkdownWriter) block(s string) {
 // clamped). Line breaks in text become spaces.
 func (m *MarkdownWriter) Heading(level int, text string) {
 	level = min(max(level, 1), 6)
-	t := MarkdownText(oneLine(text))
+	// inside an ATX heading nothing starts a block: "## 1. Scope" is a heading
+	t := escapeInline(oneLine(text))
 	if t == "" {
 		t = "\u00a0" // an empty heading would not be a heading
 	}
@@ -180,7 +196,12 @@ func MarkdownCell(s string) string {
 // MarkdownText escapes s so that it shows literally as inline Markdown at
 // the start of a block (no heading, list, quote or rule is started).
 func MarkdownText(s string) string {
-	s = escapeInline(s)
+	return blockStart(escapeInline(s))
+}
+
+// blockStart escapes the character of an (already inline-escaped) line
+// that would start a heading, list, quote or rule.
+func blockStart(s string) string {
 	// block starters: # > - + = and "1." / "1)" at the start of a line
 	if s != "" && strings.ContainsRune("#>-+=", rune(s[0])) {
 		s = `\` + s

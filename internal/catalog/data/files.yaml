@@ -58,7 +58,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [file-type, content-inspection]
-    refs: ["OWASP ASVS 5.0 V5 file handling", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
+    refs: ["OWASP ASVS 5.0 V5.2.2 (file extension and content)", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [FILE-T03]
     en:
       title: File type checked from the content
@@ -80,7 +80,7 @@ requirements:
     obligation: must
     priority: high
     tags: [malware, quarantine]
-    refs: ["OWASP ASVS 5.0 V5 file handling", "ISO/IEC 27001:2022 A.8.7", "IEC 62443-3-3 SR 3.2"]
+    refs: ["OWASP ASVS 5.0 V5.4.3 (malware scan)", "ISO/IEC 27001:2022 A.8.7", "IEC 62443-3-3 SR 3.2"]
     tests: [FILE-T04]
     en:
       title: Malware scan before a file is available
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [download, access-control, signed-url]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     tests: [FILE-T05]
     en:
       title: Downloads checked against permissions
@@ -128,7 +128,7 @@ requirements:
     obligation: must
     priority: high
     tags: [download, content-disposition, headers]
-    refs: ["OWASP ASVS 5.0 V3 web frontend security", "RFC 6266"]
+    refs: ["OWASP ASVS 5.0 V3.2.1 (content rendered in the intended context)", "RFC 6266"]
     tests: [FILE-T05]
     en:
       title: Attachments served as downloads
@@ -150,7 +150,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [file-name, unicode, path-traversal]
-    refs: ["OWASP ASVS 5.0 V5 file handling", "Unicode UAX #15"]
+    refs: ["OWASP ASVS 5.0 V5.4.2 (file names encoded)", "Unicode UAX #15"]
     tests: [FILE-T06]
     en:
       title: Original file names kept and made safe
@@ -538,7 +538,7 @@ tests:
     priority: critical
     execution: automated
     tags: [download, headers, access-control]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "RFC 6266", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "RFC 6266", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     en:
       title: Download permission, address expiry and response headers
       description: An API test downloads attachments as a member and a non-member and inspects the responses.

@@ -180,7 +180,7 @@ requirements:
     obligation: must
     priority: high
     tags: [encryption, backup, key-management]
-    refs: ["ISO/IEC 27001:2022 A.8.24 (use of cryptography)", "OWASP ASVS 4.0 V6.2 (algorithms)", "ISO/IEC 27040:2024", "GDPR Art. 32(1)(a)"]
+    refs: ["ISO/IEC 27001:2022 A.8.24 (use of cryptography)", "OWASP ASVS 5.0 V11.3.2 (approved ciphers and modes)", "ISO/IEC 27040:2024", "GDPR Art. 32(1)(a)"]
     tests: [BCK-T06]
     en:
       title: Encrypted backups

@@ -487,7 +487,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [drawings, cad, native-format]
-    refs: ["ISO 128-1:2020 (general principles of technical drawings)", "ISO/IEC/IEEE 15289:2019 (information items)"]
+    refs: ["ISO 128-1:2020 (introduction and fundamental requirements)", "ISO/IEC/IEEE 15289:2019 (information items)"]
     tests: [DCTD-T13]
     en:
       title: Drawings in native CAD format and as PDF of the same revision
@@ -509,7 +509,7 @@ requirements:
     obligation: must
     priority: high
     tags: [safety-data-sheet, reach, hazardous-substances]
-    refs: ["Regulation (EC) No 1907/2006 Art. 31"]
+    refs: ["Regulation (EC) No 1907/2006 (REACH) Art. 31(5) (language)", "Regulation (EC) No 1907/2006 (REACH) Art. 31(8) (supplied no later than the first delivery)"]
     tests: [DCTD-T14]
     en:
       title: Safety data sheet in Swedish at or before the first delivery
@@ -877,7 +877,7 @@ tests:
     priority: medium
     execution: manual
     tags: [drawings, cad]
-    refs: ["ISO 7200:2004 (title blocks)", "ISO 128-1:2020 (general principles of technical drawings)"]
+    refs: ["ISO 7200:2004 (title blocks)", "ISO 128-1:2020 (introduction and fundamental requirements)"]
     en:
       title: Title blocks and file formats of delivered drawings
       description: Samples delivered drawings and checks their title blocks and both file formats.
@@ -907,7 +907,7 @@ tests:
     priority: high
     execution: manual
     tags: [safety-data-sheet]
-    refs: ["Regulation (EC) No 1907/2006 Art. 31"]
+    refs: ["Regulation (EC) No 1907/2006 (REACH) Art. 31(5) (language)", "Regulation (EC) No 1907/2006 (REACH) Art. 31(8) (supplied no later than the first delivery)"]
     en:
       title: Safety data sheets for the hazardous products of a delivery
       description: Compares the hazardous products on the delivery notes with the safety data sheets received.

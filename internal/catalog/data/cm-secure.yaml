@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [segmentation, zones, conduits]
-    refs: ["ISO/IEC 27033-1:2015", "ISO/IEC 27001:2022 A.8.22", "IEC 62443-3-3 SR 5.1"]
+    refs: ["ISO/IEC 27033-1:2015", "ISO/IEC 27001:2022 A.8.22", "IEC 62443-3-3 SR 5.1", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
     tests: [CMSEC-T01]
     en:
       title: Network divided into documented security zones
@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [firewall, deny-by-default, zones]
-    refs: ["IEC 62443-3-3 SR 5.2", "ISO/IEC 27033-4:2014", "ISO/IEC 27001:2022 A.8.20"]
+    refs: ["IEC 62443-3-3 SR 5.2", "ISO/IEC 27033-4:2014", "ISO/IEC 27001:2022 A.8.20", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1037 (filter network traffic)"]
     tests: [CMSEC-T01]
     en:
       title: Traffic between zones denied by default
@@ -57,7 +57,7 @@ requirements:
     obligation: must
     priority: high
     tags: [firewall, rule-review]
-    refs: ["ISO/IEC 27033-4:2014", "ISO/IEC 27001:2022 A.8.20"]
+    refs: ["ISO/IEC 27033-4:2014", "ISO/IEC 27001:2022 A.8.20", "MITRE ATT&CK M1037 (filter network traffic)"]
     tests: [CMSEC-T02]
     en:
       title: Firewall rules reviewed every 6 months
@@ -81,7 +81,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [encryption, site-to-site, ipsec]
-    refs: ["ISO/IEC 27033-5:2013", "IEC 62443-3-3 SR 4.1", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["ISO/IEC 27033-5:2013", "IEC 62443-3-3 SR 4.1", "ISO/IEC 27001:2022 A.8.24", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1040 (network sniffing)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     tests: [CMSEC-T03]
     en:
       title: Traffic between sites encrypted over shared networks
@@ -107,7 +107,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [remote-access, vpn, mfa]
-    refs: ["ISO/IEC 27033-5:2013", "IEC 62443-3-3 SR 1.13", "ISO/IEC 27001:2022 A.6.7"]
+    refs: ["ISO/IEC 27033-5:2013", "IEC 62443-3-3 SR 1.13", "ISO/IEC 27001:2022 A.6.7", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     tests: [CMSEC-T04]
     en:
       title: Remote access only through VPN with multi-factor authentication
@@ -129,7 +129,7 @@ requirements:
     obligation: must
     priority: high
     tags: [network-access-control, 802-1x, quarantine]
-    refs: ["IEEE 802.1X-2020", "IEC 62443-3-3 SR 1.2"]
+    refs: ["IEEE 802.1X-2020", "IEC 62443-3-3 SR 1.2", "MITRE ATT&CK T1200 (hardware additions)"]
     tests: [CMSEC-T05]
     en:
       title: Unknown devices on wired ports placed in quarantine
@@ -151,7 +151,7 @@ requirements:
     obligation: must
     priority: high
     tags: [management-network, out-of-band, segmentation]
-    refs: ["ISO/IEC 27033-2:2012 (network security design)", "ISO/IEC 27001:2022 A.8.22"]
+    refs: ["ISO/IEC 27033-2:2012 (network security design)", "ISO/IEC 27001:2022 A.8.22", "MITRE ATT&CK T1021 (remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
     tests: [CMSEC-T06]
     en:
       title: Network elements managed from a separate management zone
@@ -173,7 +173,7 @@ requirements:
     obligation: should
     priority: high
     tags: [ddos, availability, scrubbing]
-    refs: ["IEC 62443-3-3 SR 7.1", "ISO/IEC 27033-4:2014"]
+    refs: ["IEC 62443-3-3 SR 7.1", "ISO/IEC 27033-4:2014", "MITRE ATT&CK T1498 (network denial of service)"]
     tests: [CMSEC-T07]
     en:
       title: Denial-of-service attacks mitigated within 10 minutes
@@ -197,7 +197,7 @@ requirements:
     obligation: must
     priority: high
     tags: [flow-logs, monitoring, siem]
-    refs: ["IEC 62443-3-3 SR 6.2", "ISO/IEC 27001:2022 A.8.15", "ISO/IEC 27001:2022 A.8.16"]
+    refs: ["IEC 62443-3-3 SR 6.2", "ISO/IEC 27001:2022 A.8.15", "ISO/IEC 27001:2022 A.8.16", "MITRE ATT&CK T1048 (exfiltration over alternative protocol)"]
     tests: [CMSEC-T08]
     en:
       title: Flow logs of zone boundaries kept for 90 days
@@ -221,7 +221,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [dns, dnssec, resolver]
-    refs: ["RFC 4035", "ISO/IEC 27001:2022 A.8.20"]
+    refs: ["RFC 4035", "ISO/IEC 27001:2022 A.8.20", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     tests: [CMSEC-T09]
     en:
       title: Internal DNS resolvers validate DNSSEC
@@ -267,7 +267,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [industrial-control, dmz, segmentation]
-    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 5.2"]
+    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 5.2", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
     tests: [CMSEC-T11]
     en:
       title: No direct connection from office networks to control networks
@@ -311,7 +311,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [federation, unified-communications, external-domains]
-    refs: ["ISO/IEC 27001:2022 A.8.20"]
+    refs: ["ISO/IEC 27001:2022 A.8.20", "MITRE ATT&CK T1566.003 (spearphishing via service)"]
     tests: [CMSEC-T12]
     en:
       title: Federation of chat and presence only with listed external domains
@@ -355,7 +355,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [video-endpoints, auto-answer, eavesdropping]
-    refs: ["ISO/IEC 27001:2022 A.8.9"]
+    refs: ["ISO/IEC 27001:2022 A.8.9", "MITRE ATT&CK T1125 (video capture)", "MITRE ATT&CK T1123 (audio capture)"]
     tests: [CMSEC-T13]
     en:
       title: No automatic answer on room video endpoints
@@ -377,7 +377,7 @@ requirements:
     obligation: must
     priority: high
     tags: [intrusion-detection, zone-boundaries, alerting]
-    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27033-1:2015"]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27033-1:2015", "MITRE ATT&CK T1046 (network service discovery)", "MITRE ATT&CK T1210 (exploitation of remote services)"]
     tests: [CMSEC-T14]
     en:
       title: Intrusion detection at the zone boundaries with alerts within 5 minutes
@@ -401,7 +401,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [protective-dns, malware, outbound]
-    refs: ["CISA Protective Domain Name System Resolver Service"]
+    refs: ["CISA Protective Domain Name System Resolver Service", "MITRE ATT&CK T1071.004 (DNS)", "MITRE ATT&CK M1021 (restrict web-based content)"]
     tests: [CMSEC-T14]
     en:
       title: Protective DNS filtering of outbound name lookups
@@ -425,7 +425,7 @@ tests:
     priority: critical
     execution: manual
     tags: [segmentation, firewall]
-    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 5.2"]
+    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 5.2", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)", "MITRE ATT&CK M1037 (filter network traffic)"]
     en:
       title: Zone register compared with the network and blocked connections
       description: Compares the zone and conduit register with the configuration and tries connections that are not in the register.
@@ -457,7 +457,7 @@ tests:
     priority: high
     execution: manual
     tags: [firewall, rule-review]
-    refs: []
+    refs: ["MITRE ATT&CK M1037 (filter network traffic)"]
     en:
       title: Review of the latest firewall rule review
       description: Checks the latest rule review against the live rule set and the hit counters.
@@ -487,7 +487,7 @@ tests:
     priority: critical
     execution: manual
     tags: [encryption, site-to-site]
-    refs: ["ISO/IEC 27033-5:2013"]
+    refs: ["ISO/IEC 27033-5:2013", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1040 (network sniffing)", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     en:
       title: Encryption of site-to-site connections
       description: Inspects the configuration of each connection between sites over third-party networks and captures traffic on one of them.
@@ -515,7 +515,7 @@ tests:
     priority: critical
     execution: manual
     tags: [remote-access, vpn, mfa]
-    refs: ["IEC 62443-3-3 SR 1.13"]
+    refs: ["IEC 62443-3-3 SR 1.13", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     en:
       title: VPN login with and without the second factor
       description: Logs in to the VPN with and without the second factor and scans the external addresses for other remote access services.
@@ -545,7 +545,7 @@ tests:
     priority: high
     execution: manual
     tags: [network-access-control, quarantine]
-    refs: ["IEEE 802.1X-2020"]
+    refs: ["IEEE 802.1X-2020", "MITRE ATT&CK T1200 (hardware additions)"]
     en:
       title: Registered and unregistered laptops on a user port
       description: Connects a registered and an unregistered laptop to the same wired user port.
@@ -575,7 +575,7 @@ tests:
     priority: high
     execution: automated
     tags: [management-network]
-    refs: ["ISO/IEC 27001:2022 A.8.22"]
+    refs: ["ISO/IEC 27001:2022 A.8.22", "MITRE ATT&CK T1021 (remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
     en:
       title: Management interfaces reached from different zones
       description: A script tries to connect to the management addresses of 10 elements from 4 zones.
@@ -603,7 +603,7 @@ tests:
     priority: high
     execution: manual
     tags: [ddos, scrubbing]
-    refs: ["IEC 62443-3-3 SR 7.1"]
+    refs: ["IEC 62443-3-3 SR 7.1", "MITRE ATT&CK T1498 (network denial of service)"]
     en:
       title: Denial-of-service simulation with the mitigation provider
       description: Runs an agreed attack simulation against a test address and measures when filtering starts.
@@ -635,7 +635,7 @@ tests:
     priority: high
     execution: manual
     tags: [flow-logs, siem]
-    refs: ["ISO/IEC 27001:2022 A.8.15"]
+    refs: ["ISO/IEC 27001:2022 A.8.15", "MITRE ATT&CK T1048 (exfiltration over alternative protocol)"]
     en:
       title: Flow record of a test connection in the central log system
       description: Makes a test connection across a zone boundary and searches for it in the central log system, then searches for old records.
@@ -665,7 +665,7 @@ tests:
     priority: medium
     execution: automated
     tags: [dns, dnssec]
-    refs: ["RFC 4035"]
+    refs: ["RFC 4035", "MITRE ATT&CK T1557 (adversary-in-the-middle)"]
     en:
       title: DNSSEC validation by the internal resolvers
       description: A script queries each internal resolver for a correctly signed and a deliberately broken test domain.
@@ -719,7 +719,7 @@ tests:
     priority: critical
     execution: manual
     tags: [industrial-control, dmz]
-    refs: ["IEC 62443-3-3 SR 5.1"]
+    refs: ["IEC 62443-3-3 SR 5.1", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
     en:
       title: Office computer tries to reach the control network
       description: Tries connections from an office computer to the control zone and reviews the routing between the zones.
@@ -747,7 +747,7 @@ tests:
     priority: high
     execution: manual
     tags: [session-border-controller, federation]
-    refs: ["RFC 5853", "RFC 3261", "ISO/IEC 27001:2022 A.8.20"]
+    refs: ["RFC 5853", "RFC 3261", "ISO/IEC 27001:2022 A.8.20", "MITRE ATT&CK T1566.003 (spearphishing via service)"]
     en:
       title: Session border controller exposure and federation allow list
       description: Captures trunk signalling at the carrier side, sends SIP from an unlisted address and tests federation with listed and unlisted domains.
@@ -781,7 +781,7 @@ tests:
     priority: medium
     execution: manual
     tags: [meetings, video-endpoints]
-    refs: ["ISO/IEC 27001:2022 A.5.14 (information transfer)", "ISO/IEC 27001:2022 A.8.9"]
+    refs: ["ISO/IEC 27001:2022 A.5.14 (information transfer)", "ISO/IEC 27001:2022 A.8.9", "MITRE ATT&CK T1125 (video capture)", "MITRE ATT&CK T1123 (audio capture)"]
     en:
       title: Meeting lobby and room endpoint answering
       description: Joins a meeting anonymously and calls each room endpoint model.
@@ -811,7 +811,7 @@ tests:
     priority: high
     execution: manual
     tags: [intrusion-detection, protective-dns]
-    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27033-1:2015", "CISA Protective Domain Name System Resolver Service"]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27033-1:2015", "CISA Protective Domain Name System Resolver Service", "MITRE ATT&CK T1046 (network service discovery)", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK T1071.004 (DNS)", "MITRE ATT&CK M1021 (restrict web-based content)"]
     en:
       title: Intrusion detection test signatures and protective DNS block
       description: Sends a harmless test signature across each zone boundary and looks up a blocked test domain.

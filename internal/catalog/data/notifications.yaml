@@ -234,7 +234,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [e-mail, confidentiality]
-    refs: ["OWASP ASVS 4.0.3 V8.3", "ISO/IEC 27001:2022 A.5.14"]
+    refs: ["OWASP ASVS 5.0 V14.2.6 (minimum sensitive data)", "ISO/IEC 27001:2022 A.5.14"]
     tests: [NOTIF-T07]
     en:
       title: No confidential content in e-mail
@@ -256,7 +256,7 @@ requirements:
     obligation: must
     priority: high
     tags: [security-notice, account]
-    refs: ["OWASP ASVS 4.0.3 V2.2.3", "NIST SP 800-63B §6.1.2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
+    refs: ["OWASP ASVS 5.0 V6.3.7 (notification of authentication changes)", "NIST SP 800-63B-4 §4.6 (account notifications)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
     tests: [NOTIF-T08]
     en:
       title: Security notices regardless of preferences
@@ -592,7 +592,7 @@ tests:
     priority: high
     execution: automated
     tags: [security-notice]
-    refs: ["OWASP ASVS 4.0.3 V2.2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
+    refs: ["OWASP ASVS 5.0 V6.3.7 (notification of authentication changes)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
     en:
       title: Security notices sent with notifications switched off
       description: An integration test switches off all notifications for a user and performs the three security-relevant account changes.

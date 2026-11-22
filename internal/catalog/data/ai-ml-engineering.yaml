@@ -293,7 +293,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [llm, output-handling, injection]
-    refs: ["OWASP Top 10 for LLM Applications 2025 LLM05 (improper output handling)", "OWASP ASVS 4.0 V5.3.1 (output encoding)"]
+    refs: ["OWASP Top 10 for LLM Applications 2025 LLM05 (improper output handling)", "OWASP ASVS 5.0 V1.2.1 (output encoding)"]
     tests: [AIENG-T09]
     en:
       title: Model output treated as untrusted input

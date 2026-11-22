@@ -94,6 +94,10 @@ The **mitigation state** of a risk comes from the requirements that address it: 
 
 Reports are produced in the language you currently use in Qtestframe (**User menu → Language**, see [Languages](accessibility-and-languages.md#languages)). With the Swedish interface, the report's title, section names, column headers, key figures and values such as statuses, results, coverage and obligation (for example *Godkänt*, *Underkänd*, *MUST (SKA)*) are in Swedish, with the same words as in the app. Your own content, such as titles, names, descriptions, tags and notes, is never translated. This applies to downloads, reports saved to the archive, custom reports, several reports at once and reports sent by e-mail.
 
+### Documents
+
+Below the standard reports, **Documents** offers two complete documents: a **requirements specification** and a **test plan** with its test specification. **Create…** opens the generator in the [document archive](documents.md#create-a-requirements-specification-or-a-test-plan), where the document is saved.
+
 ## Custom reports
 
 Under **Custom report** you design a report yourself:
@@ -175,7 +179,8 @@ The file contains the project data in plain form. Store it as carefully as the p
 | Work with the data in Excel or another tool | **Export**, XLSX or CSV |
 | Put the data or a report into a wiki, a pull request or a Git repository | **Export** or **Reports**, Markdown |
 | Hand requirements over to a requirements tool (DOORS, Polarion …) or another Qtestframe | **Export**, ReqIF |
-| A specification document to review or sign | **Export**, DOCX, aspects requirements and criteria |
+| A specification document to review or sign | **Documents → Create document → Requirements specification** (PDF or Word, from a baseline if it is to be signed); for a plain table **Export**, DOCX |
+| A test plan with the test specification | **Documents → Create document → Test plan** |
 | A status report for a steering meeting | **Reports → Project status**, PDF |
 | Evidence for an audit or a release | **Reports → Requirements coverage** or **Run summary**, saved to the archive, together with a [baseline](baselines.md) |
 | A recurring list with your own columns | A saved **custom report** |

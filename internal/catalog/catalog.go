@@ -351,6 +351,27 @@ func checkTags(id string, tags []string, bad func(string, ...any)) {
 	}
 }
 
+// MaxRefs is the most refs an item may list (FORMAT.md, "Writing rules"):
+// the standards it is based on plus, for security items, the CWE
+// weaknesses and MITRE ATT&CK techniques it addresses.
+const MaxRefs = 10
+
+func checkRefs(id string, refs []string, bad func(string, ...any)) {
+	if len(refs) > MaxRefs {
+		bad("%s: %d refs, at most %d", id, len(refs), MaxRefs)
+	}
+	seen := map[string]bool{}
+	for _, r := range refs {
+		switch {
+		case strings.TrimSpace(r) == "" || r != strings.TrimSpace(r):
+			bad("%s: empty ref or ref with surrounding spaces %q", id, r)
+		case seen[r]:
+			bad("%s: duplicate ref %q", id, r)
+		}
+		seen[r] = true
+	}
+}
+
 func checkRequirement(r *Requirement, bad func(string, ...any)) {
 	if !slices.Contains(model.RequirementTypes, r.Type) {
 		bad("%s: unknown type %q", r.ID, r.Type)
@@ -362,6 +383,7 @@ func checkRequirement(r *Requirement, bad func(string, ...any)) {
 		bad("%s: unknown priority %q", r.ID, r.Priority)
 	}
 	checkTags(r.ID, r.Tags, bad)
+	checkRefs(r.ID, r.Refs, bad)
 	for _, l := range Languages {
 		x, ok := r.Text[l]
 		if !ok || strings.TrimSpace(x.Title) == "" || strings.TrimSpace(x.Description) == "" || strings.TrimSpace(x.Rationale) == "" {
@@ -437,6 +459,7 @@ func checkTest(t *Test, bad func(string, ...any)) {
 		bad("%s: execution must be manual or automated", t.ID)
 	}
 	checkTags(t.ID, t.Tags, bad)
+	checkRefs(t.ID, t.Refs, bad)
 	for _, l := range Languages {
 		x, ok := t.Text[l]
 		if !ok || strings.TrimSpace(x.Title) == "" || strings.TrimSpace(x.Description) == "" || strings.TrimSpace(x.Preconditions) == "" || strings.TrimSpace(x.Expected) == "" {

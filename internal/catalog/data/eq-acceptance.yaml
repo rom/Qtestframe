@@ -287,7 +287,7 @@ requirements:
     obligation: must
     priority: high
     tags: [initial-inspection, work-equipment]
-    refs: ["Directive 2009/104/EC Art. 5(1) (inspection of work equipment)"]
+    refs: ["Directive 2009/104/EC Art. 5(1) (inspection of work equipment)", "Directive 2009/104/EC Art. 5(3) (inspection records)"]
     tests: [EQACC-T07]
     en:
       title: Initial inspection by a competent person
@@ -467,7 +467,7 @@ requirements:
     obligation: must
     priority: high
     tags: [noise, occupational-health, site-acceptance]
-    refs: ["Directive 2003/10/EC Art. 3 (exposure limit values and exposure action values)"]
+    refs: ["Directive 2003/10/EC Art. 3(1)(c) (lower exposure action value)"]
     tests: [EQACC-T12]
     en:
       title: Noise at the operator positions below the lower action value
@@ -853,7 +853,7 @@ tests:
     priority: medium
     execution: manual
     tags: [energy, noise, site-acceptance]
-    refs: ["ISO 50001:2018", "Directive 2003/10/EC Art. 3 (exposure limit values and exposure action values)"]
+    refs: ["ISO 50001:2018", "Directive 2003/10/EC Art. 3(1)(c) (lower exposure action value)"]
     en:
       title: Energy and noise measurements during the performance run
       description: Measures the specific energy consumption and the noise exposure at the operator positions during the performance run.

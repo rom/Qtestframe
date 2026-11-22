@@ -47,6 +47,7 @@ import {
   type ReportTemplate,
 } from '@/lib/reports'
 import type { FileInfo, ReportDefinition, TestRun } from '@/lib/types'
+import { DOC_KINDS } from '@/lib/documents'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
@@ -66,6 +67,8 @@ const { t, te } = useI18n()
 const route = useRoute()
 const canExport = computed(() => auth.can(P.export))
 const canSave = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
+// document generators (saved in the archive): docs/api.md "Generated documents"
+const docKinds = computed(() => (canSave.value && auth.can(P.requirementRead) ? DOC_KINDS.filter((k) => k !== 'test_plan' || auth.can(P.testRead)) : []))
 const meta = useMetaStore()
 const emailOn = computed(() => !!meta.meta.email_enabled)
 
@@ -427,6 +430,20 @@ onMounted(() => {
             <Button :label="t('reports.download')" icon="pi pi-download" size="small" :loading="cards[tpl.id].busy === 'download'" :disabled="!!cards[tpl.id].busy" :aria-describedby="`tpl-${tpl.id}`" @click="generateTemplate(tpl, false)" />
             <Button :label="t('reports.saveToArchive')" icon="pi pi-folder-plus" size="small" severity="secondary" outlined :loading="cards[tpl.id].busy === 'archive'" :disabled="!!cards[tpl.id].busy" :aria-describedby="`tpl-${tpl.id}`" @click="generateTemplate(tpl, true)" />
             <Button v-if="emailOn" icon="pi pi-envelope" size="small" severity="secondary" text :aria-label="t('email.send.buttonOf', { name: tplName(tpl) })" v-tooltip="t('email.send.button')" @click="mailTemplate(tpl)" />
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <section v-if="docKinds.length" style="margin-top: 20px" aria-labelledby="h-docs">
+      <h2 id="h-docs" class="plain-heading" style="margin-bottom: 4px">{{ t('reports.documents.title') }}</h2>
+      <p class="small muted" style="margin: 0 0 10px">{{ t('reports.documents.intro') }}</p>
+      <ul class="plain-list report-cards">
+        <li v-for="k in docKinds" :key="k" class="card report-card">
+          <h3 :id="`doc-${k}`" class="plain-heading">{{ t(`documents.generate.kind.${k}`) }}</h3>
+          <p class="small muted" style="margin: 0">{{ t(`documents.generate.kindHelp.${k}`) }}</p>
+          <div class="row card-actions">
+            <RouterLink :to="{ name: 'documents', params: { projectId: proj.pid }, query: { create: k } }" class="p-button p-button-sm p-button-outlined p-button-secondary" :aria-describedby="`doc-${k}`"><i class="pi pi-file-plus" aria-hidden="true" />&nbsp;{{ t('reports.documents.create') }}</RouterLink>
           </div>
         </li>
       </ul>

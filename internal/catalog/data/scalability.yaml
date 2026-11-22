@@ -230,7 +230,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [limits, upload]
-    refs: ["OWASP ASVS 4.0 V12.1 (file upload)"]
+    refs: ["OWASP ASVS 5.0 V5.2.1 (file size)"]
     tests: [SCAL-T08]
     en:
       title: Maximum upload size

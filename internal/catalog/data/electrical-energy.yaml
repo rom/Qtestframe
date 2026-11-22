@@ -172,7 +172,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [smart-metering, privacy, gdpr]
-    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25", "Directive (EU) 2019/944 Art. 20", "Directive (EU) 2019/944 Art. 23"]
+    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25", "Directive (EU) 2019/944 Art. 20(c) (privacy of final customers)", "Directive (EU) 2019/944 Art. 23"]
     tests: [ENRG-T07]
     en:
       title: Detailed meter data only to the customer and authorised parties
@@ -194,7 +194,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [smart-metering, remote-disconnect, four-eyes]
-    refs: ["ISO/IEC 27019:2024", "IEC 62443-3-3:2013 SR 2.1", "Directive (EU) 2019/944 Art. 20"]
+    refs: ["ISO/IEC 27019:2024", "IEC 62443-3-3:2013 SR 2.1", "Directive (EU) 2019/944 Art. 20(b) (security of smart metering systems)"]
     tests: [ENRG-T08]
     en:
       title: Remote disconnection needs two persons and a protected-customer check
@@ -266,7 +266,7 @@ requirements:
     obligation: should
     priority: high
     tags: [outage-management, smart-metering, dms]
-    refs: ["IEC 61968-3:2004", "Directive (EU) 2019/944 Art. 20"]
+    refs: ["IEC 61968-3:2004"]
     tests: [ENRG-T11]
     en:
       title: Outage location predicted from meter events
@@ -290,7 +290,7 @@ requirements:
     obligation: must
     priority: high
     tags: [market, balancing, data-exchange]
-    refs: ["Commission Regulation (EU) 2017/2195 (EB GL)", "Regulation (EU) No 1227/2011 (REMIT) Art. 8", "IEC 62325-451 (ENTSO-E market documents)"]
+    refs: ["Commission Regulation (EU) 2017/2195 (EB GL)", "IEC 62325-451 (ENTSO-E market documents)"]
     tests: [ENRG-T12]
     en:
       title: Schedules and bids delivered and acknowledged before gate closure
@@ -408,7 +408,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [consumption-data, customer-access, smart-metering]
-    refs: ["Directive (EU) 2019/944 Art. 20 (functionalities of smart metering systems)", "Directive (EU) 2019/944 Art. 23"]
+    refs: ["Directive (EU) 2019/944 Art. 20(a) (validated historical consumption data)", "Directive (EU) 2019/944 Art. 20(e) (data in a standardised format)", "Directive (EU) 2019/944 Art. 23"]
     tests: [ENRG-T17]
     en:
       title: Consumption history downloadable by the customer
@@ -432,7 +432,7 @@ requirements:
     obligation: must
     priority: high
     tags: [supplier-switching, market, timing]
-    refs: ["Directive (EU) 2019/944 Art. 12 (right to switch)"]
+    refs: ["Directive (EU) 2019/944 Art. 12(1) (switching within 24 hours by 2026)"]
     tests: [ENRG-T18]
     en:
       title: Supplier switch processed within 24 hours
@@ -480,7 +480,7 @@ requirements:
     obligation: must
     priority: high
     tags: [remit, inside-information, unavailability]
-    refs: ["Regulation (EU) No 1227/2011 (REMIT) Art. 4 (obligation to publish inside information)"]
+    refs: ["Regulation (EU) No 1227/2011 (REMIT) Art. 4(1) (obligation to publish inside information)"]
     tests: [ENRG-T20]
     en:
       title: Unplanned unavailability published within one hour
@@ -994,7 +994,7 @@ tests:
     priority: medium
     execution: manual
     tags: [consumption-data, customer-access]
-    refs: ["Directive (EU) 2019/944 Art. 20 (functionalities of smart metering systems)"]
+    refs: ["Directive (EU) 2019/944 Art. 20(a) (validated historical consumption data)"]
     en:
       title: Customer download of 36 months of data
       description: Downloads the consumption history as a customer and compares it with billing.
@@ -1022,7 +1022,7 @@ tests:
     priority: high
     execution: manual
     tags: [supplier-switching, timing]
-    refs: ["Directive (EU) 2019/944 Art. 12 (right to switch)"]
+    refs: ["Directive (EU) 2019/944 Art. 12(1) (switching within 24 hours by 2026)"]
     en:
       title: Switch request completed in 24 hours
       description: Sends a valid switch request on a working day and checks the completion time.
@@ -1082,7 +1082,7 @@ tests:
     priority: high
     execution: manual
     tags: [remit, inside-information]
-    refs: ["Regulation (EU) No 1227/2011 (REMIT) Art. 4 (obligation to publish inside information)"]
+    refs: ["Regulation (EU) No 1227/2011 (REMIT) Art. 4(1) (obligation to publish inside information)"]
     en:
       title: Publication of an unplanned outage
       description: Registers an unplanned outage and checks the publication on the test platform.

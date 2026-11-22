@@ -243,7 +243,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [protective-security, security-analysis, physical-security]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "PMFS 2022:1", "Säkerhetsskyddslag (2018:585) 2 kap. 3 § (fysisk säkerhet)"]
     tests: [FCSEC-T09]
     en:
       title: Physical protection of security-sensitive activity based on the security analysis
@@ -265,7 +265,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [building-automation, segmentation, remote-access]
-    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 1.13"]
+    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 1.13", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
     tests: [FCSEC-T10]
     en:
       title: Building automation network separated from office network and internet
@@ -287,7 +287,7 @@ requirements:
     obligation: must
     priority: high
     tags: [building-automation, default-passwords, accounts]
-    refs: ["IEC 62443-3-3 SR 1.1", "IEC 62443-3-3 SR 1.5"]
+    refs: ["IEC 62443-3-3 SR 1.1", "IEC 62443-3-3 SR 1.5", "CWE-1392 (use of default credentials)", "MITRE ATT&CK T1694.001 (default credentials)"]
     tests: [FCSEC-T10]
     en:
       title: Personal accounts and no default passwords in building automation
@@ -309,7 +309,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [building-automation, patching, firmware]
-    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)"]
+    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)", "MITRE ATT&CK M0951 (update software)"]
     tests: [FCSEC-T10]
     en:
       title: Building automation software updates assessed every quarter
@@ -333,7 +333,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [critical-entity, risk-assessment, physical-security]
-    refs: ["Directive (EU) 2022/2557 (CER) Art. 12"]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 12(1)"]
     tests: [FCSEC-T11]
     en:
       title: Risk assessment of physical threats to a critical entity every 4 years
@@ -381,18 +381,18 @@ requirements:
     obligation: must
     priority: high
     tags: [critical-entity, background-check, personnel]
-    refs: ["Directive (EU) 2022/2557 (CER) Art. 14", "ISO/IEC 27001:2022 A.6.1"]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 13(1)(e)", "Directive (EU) 2022/2557 (CER) Art. 14(1)", "ISO/IEC 27001:2022 A.6.1"]
     tests: [FCSEC-T12]
     en:
       title: Background checks for staff in sensitive roles at a critical entity
-      description: A critical entity MUST list the roles with unescorted access to critical infrastructure or its control systems, and complete a background check of each person before that person takes up such a role.
+      description: A critical entity MUST list the roles with unescorted access to critical infrastructure or its control systems, and, to the extent national law allows it to request background checks, complete a check of each person before that person takes up such a role.
       rationale: Insiders with unescorted access can do the most damage, and the check reduces the risk that someone is placed there with hostile intent.
       criteria:
         - method: review
           text: The list of sensitive roles exists, and for 10 sampled holders the background check is dated before the start in the role.
     sv:
       title: Bakgrundskontroller av personal i känsliga roller hos en kritisk entitet
-      description: En kritisk entitet SKA förteckna de roller som har tillträde utan följe till kritisk infrastruktur eller dess styrsystem, och genomföra en bakgrundskontroll av varje person innan personen tillträder en sådan roll.
+      description: En kritisk entitet SKA förteckna de roller som har tillträde utan följe till kritisk infrastruktur eller dess styrsystem och, i den utsträckning nationell rätt ger den möjlighet att begära bakgrundskontroller, genomföra en kontroll av varje person innan personen tillträder en sådan roll.
       rationale: Insiders med tillträde utan följe kan göra mest skada, och kontrollen minskar risken att någon med fientliga avsikter placeras där.
       criteria:
         - method: review
@@ -679,7 +679,7 @@ tests:
     priority: critical
     execution: manual
     tags: [protective-security]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "Säkerhetsskyddslag (2018:585) 2 kap. 3 § (fysisk säkerhet)"]
     en:
       title: Physical measures in the protective security plan found on site
       description: Compares the physical measures decided in the protective security plan with the premises.
@@ -709,7 +709,7 @@ tests:
     priority: critical
     execution: manual
     tags: [building-automation]
-    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 1.1"]
+    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 1.1", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)", "CWE-1392 (use of default credentials)", "MITRE ATT&CK T1694.001 (default credentials)", "MITRE ATT&CK M0951 (update software)"]
     en:
       title: Network, accounts and updates of the building automation system
       description: Scans and probes the building automation network, tries default credentials and reviews the update log.
@@ -749,7 +749,7 @@ tests:
     priority: critical
     execution: manual
     tags: [critical-entity, risk-assessment, perimeter]
-    refs: ["Directive (EU) 2022/2557 (CER) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(b)"]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 12(1)", "Directive (EU) 2022/2557 (CER) Art. 13(1)(b)"]
     en:
       title: Physical risk assessment and perimeter walk test
       description: Reviews the risk assessment of the critical entity and walk-tests zones of the perimeter detection.
@@ -779,7 +779,7 @@ tests:
     priority: high
     execution: manual
     tags: [critical-entity, background-check, notification]
-    refs: ["Directive (EU) 2022/2557 (CER) Art. 14", "Directive (EU) 2022/2557 (CER) Art. 15(1)"]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 13(1)(e)", "Directive (EU) 2022/2557 (CER) Art. 15(1)"]
     en:
       title: Background checks of sensitive roles and incident notification times
       description: Samples holders of sensitive roles for background checks and checks the notification times of significant incidents.

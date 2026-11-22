@@ -38,6 +38,7 @@ requirements:
     obligation: must
     priority: urgent
     tags: [Bad Tag]
+    refs: ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R10"]
     tests: [X-T99]
     en:
       title: Fast.
@@ -50,6 +51,7 @@ tests:
   - id: X-T01
     priority: high
     execution: sometimes
+    refs: [" R1"]
     en:
       title: t
       description: d
@@ -65,7 +67,7 @@ tests:
 	if !strings.Contains(err.Error(), "X-T01: verifies no requirement") {
 		t.Errorf("unreferenced test accepted:\n%s", err)
 	}
-	for _, want := range []string{"unknown group", "prefix", "needed in sv", "id must be X-NN", "unknown type", "unknown priority", "tag", "full stop", "criterion", "keyword means", "unknown field or language \"de\"", "execution must be", "step 1", "unknown test X-T99"} {
+	for _, want := range []string{"unknown group", "prefix", "needed in sv", "id must be X-NN", "unknown type", "unknown priority", "tag", "full stop", "criterion", "keyword means", "unknown field or language \"de\"", "execution must be", "step 1", "unknown test X-T99", "11 refs, at most 10", "duplicate ref \"R10\"", "surrounding spaces"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("missing %q in:\n%s", want, err)
 		}

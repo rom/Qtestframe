@@ -23,6 +23,8 @@ type pdfWriter struct {
 	tr     func(string) string
 	pageH  float64
 	usable float64
+	// margin is the page margin (left, right, top and bottom)
+	margin float64
 }
 
 // pdfText prepares s for the core fonts: control characters are replaced and
@@ -51,7 +53,7 @@ func WritePDF(w io.Writer, ds Dataset) error {
 	pdf.SetMargins(pdfMargin, pdfMargin, pdfMargin)
 	pdf.SetAutoPageBreak(false, pdfMargin)
 	pdf.AliasNbPages("{nb}")
-	p := &pdfWriter{pdf: pdf, tr: pdf.UnicodeTranslatorFromDescriptor("")}
+	p := &pdfWriter{pdf: pdf, tr: pdf.UnicodeTranslatorFromDescriptor(""), margin: pdfMargin}
 	pageW, pageH := pdf.GetPageSize()
 	p.pageH = pageH
 	p.usable = pageW - 2*pdfMargin
@@ -88,7 +90,7 @@ func WritePDF(w io.Writer, ds Dataset) error {
 	return pdf.Output(w)
 }
 
-func (p *pdfWriter) bottom() float64 { return p.pageH - pdfMargin - pdfFooterH }
+func (p *pdfWriter) bottom() float64 { return p.pageH - p.margin - pdfFooterH }
 
 func (p *pdfWriter) section(ds Dataset, s Section, idx int) {
 	pdf := p.pdf
@@ -178,6 +180,12 @@ func (p *pdfWriter) columnWidths(s Section, n int) []float64 {
 // draws nothing) when the row does not fit on the current page but would fit
 // on a fresh one; rows taller than a page are truncated.
 func (p *pdfWriter) row(cells []string, widths []float64, header bool) bool {
+	return p.styledRow(cells, widths, header, false)
+}
+
+// styledRow is row with an optional label column: the first cell of a
+// non-header row is bold on a light background (key/value tables).
+func (p *pdfWriter) styledRow(cells []string, widths []float64, header, label bool) bool {
 	pdf := p.pdf
 	if header {
 		pdf.SetFont("Helvetica", "B", pdfFontSize)
@@ -193,6 +201,13 @@ func (p *pdfWriter) row(cells []string, widths []float64, header bool) bool {
 	lines := make([][]string, len(widths))
 	maxN := 1
 	for i, w := range widths {
+		if label && !header {
+			if i == 0 {
+				pdf.SetFont("Helvetica", "B", pdfFontSize)
+			} else {
+				pdf.SetFont("Helvetica", "", pdfFontSize)
+			}
+		}
 		var ls []string
 		for _, b := range pdf.SplitLines([]byte(p.text(cell(cells, i))), w) {
 			ls = append(ls, string(b))
@@ -210,19 +225,26 @@ func (p *pdfWriter) row(cells []string, widths []float64, header bool) bool {
 	if y+h > p.bottom() && y > top+pdfLineH*3 {
 		return false
 	}
-	x := pdfMargin
-	style := "D"
-	if header {
-		style = "FD"
-	}
+	x := p.margin
 	pdf.SetDrawColor(170, 170, 170)
 	for i, w := range widths {
+		style := "D"
+		switch {
+		case header:
+			style = "FD"
+		case label && i == 0:
+			style = "FD"
+			pdf.SetFillColor(242, 242, 242)
+			pdf.SetFont("Helvetica", "B", pdfFontSize)
+		case label:
+			pdf.SetFont("Helvetica", "", pdfFontSize)
+		}
 		pdf.Rect(x, y, w, h, style)
 		pdf.SetXY(x, y+0.5)
 		pdf.MultiCell(w, pdfLineH, strings.Join(lines[i], "\n"), "", "L", false)
 		x += w
 	}
-	pdf.SetXY(pdfMargin, y+h)
+	pdf.SetXY(p.margin, y+h)
 	pdf.SetTextColor(0, 0, 0)
 	return true
 }

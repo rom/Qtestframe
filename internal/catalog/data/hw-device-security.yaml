@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [secure-boot, chain-of-trust, firmware]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "NIST SP 800-193 (platform firmware resiliency)"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "NIST SP 800-193 (platform firmware resiliency)", "CWE-1326 (missing immutable root of trust in hardware)", "MITRE ATT&CK T1542.001 (system firmware)", "MITRE ATT&CK T1542.003 (bootkit)"]
     tests: [HWSEC-T01]
     en:
       title: Secure boot verifies each stage of the boot chain
@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: high
     tags: [anti-rollback, firmware, version]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "CWE-1328 (security version number mutable to older versions)", "MITRE ATT&CK T1601.002 (downgrade system image)"]
     tests: [HWSEC-T01]
     en:
       title: Rollback to firmware with a known vulnerability is refused
@@ -57,7 +57,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [debug-port, jtag, swd, production]
-    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "ETSI EN 303 645 provision 5.6-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)"]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "ETSI EN 303 645 provision 5.6-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "CWE-1191 (on-chip debug and test interface with improper access control)", "CWE-1244 (internal asset exposed to unsafe debug access level or state)"]
     tests: [HWSEC-T02]
     en:
       title: Debug ports locked on production units
@@ -81,7 +81,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [serial-console, uart, shell]
-    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 ACM)"]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 ACM)", "CWE-306 (missing authentication for critical function)"]
     tests: [HWSEC-T02]
     en:
       title: No unauthenticated shell on the serial console
@@ -103,7 +103,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [firmware-update, signature, integrity]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "IEC 62443-4-2 CR 3.10 (support for updates)"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "IEC 62443-4-2 CR 3.10 (support for updates)", "CWE-494 (download of code without integrity check)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1542.001 (system firmware)"]
     tests: [HWSEC-T03]
     en:
       title: Firmware updates verified before installation
@@ -149,7 +149,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [default-password, credentials, provisioning]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(b)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "ETSI EN 303 645 provision 5.1-1"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(b)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "ETSI EN 303 645 provision 5.1-1", "CWE-1392 (use of default credentials)", "CWE-798 (use of hard-coded credentials)", "MITRE ATT&CK T1078.001 (default accounts)"]
     tests: [HWSEC-T04]
     en:
       title: No universal default password
@@ -173,7 +173,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [key-storage, secure-element, confidentiality]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)", "CWE-922 (insecure storage of sensitive information)", "MITRE ATT&CK T1552.004 (private keys)"]
     tests: [HWSEC-T05]
     en:
       title: Private keys in hardware-protected storage
@@ -195,7 +195,7 @@ requirements:
     obligation: may
     priority: low
     tags: [tamper-detection, enclosure, physical-security]
-    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)"]
+    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)", "CWE-1263 (improper physical access control)"]
     tests: [HWSEC-T06]
     en:
       title: Detection of enclosure opening
@@ -217,7 +217,7 @@ requirements:
     obligation: must
     priority: high
     tags: [attack-surface, network-services, secure-by-default]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)", "CWE-912 (hidden functionality)", "MITRE ATT&CK M1042 (disable or remove feature or program)"]
     tests: [HWSEC-T07]
     en:
       title: Only documented network services open in the delivered state
@@ -241,7 +241,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sbom, firmware, components]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CycloneDX 1.6"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CycloneDX 1.6", "CWE-1395 (dependency on vulnerable third-party component)"]
     tests: [HWSEC-T08]
     en:
       title: Software bill of materials for each firmware release
@@ -263,7 +263,7 @@ requirements:
     obligation: must
     priority: high
     tags: [support-period, security-updates, labelling]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(8) (support period)", "Regulation (EU) 2024/2847 (CRA) Annex II (information and instructions to the user)"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(8) (support period)", "Regulation (EU) 2024/2847 (CRA) Art. 13(19) (end date of the support period at the time of purchase)", "Regulation (EU) 2024/2847 (CRA) Annex II point 7 (type of support and end date of the support period)"]
     tests: [HWSEC-T08]
     en:
       title: Support period stated at the time of purchase
@@ -287,7 +287,7 @@ requirements:
     obligation: must
     priority: high
     tags: [factory-reset, data-deletion, decommissioning]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)", "Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)", "Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)", "CWE-226 (sensitive information in resource not removed before reuse)"]
     tests: [HWSEC-T09]
     en:
       title: Factory reset erases user data and credentials
@@ -309,7 +309,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [random-numbers, trng, cryptography]
-    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)", "NIST SP 800-90B (entropy sources)"]
+    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)", "NIST SP 800-90B (entropy sources)", "CWE-331 (insufficient entropy)"]
     tests: [HWSEC-T10]
     en:
       title: Health-tested hardware entropy source
@@ -355,7 +355,7 @@ requirements:
     obligation: must
     priority: high
     tags: [firmware, memory-protection, exploit-mitigation]
-    refs: ["IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)"]
+    refs: ["IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "CWE-121 (stack-based buffer overflow)", "MITRE ATT&CK M1050 (exploit protection)"]
     tests: [HWSEC-T12]
     en:
       title: Stack and data memory not executable
@@ -377,7 +377,7 @@ requirements:
     obligation: must
     priority: high
     tags: [device-identity, certificate, provisioning]
-    refs: ["IEC 62443-4-2 CR 1.2", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    refs: ["IEC 62443-4-2 CR 1.2", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1394 (use of default cryptographic key)"]
     tests: [HWSEC-T13]
     en:
       title: Unique device identity certificate from production
@@ -399,7 +399,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [provisioning, private-keys, production]
-    refs: ["IEC 62443-4-1 SM-8"]
+    refs: ["IEC 62443-4-1 SM-8", "CWE-532 (insertion of sensitive information into log file)", "MITRE ATT&CK T1552.004 (private keys)"]
     tests: [HWSEC-T13]
     en:
       title: No device private key leaves the device in production
@@ -421,7 +421,7 @@ requirements:
     obligation: must
     priority: high
     tags: [external-flash, encryption, confidentiality]
-    refs: ["IEC 62443-4-2 CR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    refs: ["IEC 62443-4-2 CR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-311 (missing encryption of sensitive data)", "CWE-1394 (use of default cryptographic key)"]
     tests: [HWSEC-T14]
     en:
       title: Data in external flash encrypted with a device-unique key
@@ -443,7 +443,7 @@ requirements:
     obligation: must
     priority: high
     tags: [security-updates, support, free-of-charge]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §8"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §8", "MITRE ATT&CK M1051 (update software)"]
     tests: [HWSEC-T15]
     en:
       title: Security updates published within 30 days and free of charge
@@ -467,7 +467,7 @@ tests:
     priority: critical
     execution: manual
     tags: [secure-boot, anti-rollback]
-    refs: ["IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)"]
+    refs: ["IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "CWE-1326 (missing immutable root of trust in hardware)", "MITRE ATT&CK T1542.001 (system firmware)", "MITRE ATT&CK T1542.003 (bootkit)", "CWE-1328 (security version number mutable to older versions)", "MITRE ATT&CK T1601.002 (downgrade system image)"]
     en:
       title: Tampered, foreign-signed and older images are refused
       description: Tries to boot and install modified, foreign-signed and older firmware images on a production unit.
@@ -497,7 +497,7 @@ tests:
     priority: critical
     execution: manual
     tags: [debug-port, serial-console]
-    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)"]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "CWE-1191 (on-chip debug and test interface with improper access control)", "CWE-1244 (internal asset exposed to unsafe debug access level or state)", "CWE-306 (missing authentication for critical function)"]
     en:
       title: Debug port and serial console on a production unit
       description: Connects a debug probe and a serial adapter to a production unit and checks the lock records of a lot.
@@ -529,7 +529,7 @@ tests:
     priority: critical
     execution: automated
     tags: [firmware-update, fail-safe]
-    refs: ["IEC 62443-4-2 CR 3.10 (support for updates)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)"]
+    refs: ["IEC 62443-4-2 CR 3.10 (support for updates)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)", "CWE-494 (download of code without integrity check)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1542.001 (system firmware)"]
     en:
       title: Update verification and power loss during update
       description: A test rig offers bad update packages and cuts power at 10 points of a good update.
@@ -559,7 +559,7 @@ tests:
     priority: critical
     execution: manual
     tags: [default-password]
-    refs: ["ETSI EN 303 645 provision 5.1-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    refs: ["ETSI EN 303 645 provision 5.1-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1392 (use of default credentials)", "CWE-798 (use of hard-coded credentials)", "MITRE ATT&CK T1078.001 (default accounts)"]
     en:
       title: Initial credentials are unique and not derivable
       description: Collects the initial credentials of 20 units from 2 lots and tries the listed derivation methods.
@@ -587,7 +587,7 @@ tests:
     priority: critical
     execution: manual
     tags: [key-storage]
-    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)"]
+    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)", "CWE-922 (insecure storage of sensitive information)", "MITRE ATT&CK T1552.004 (private keys)"]
     en:
       title: No private key material in flash or memory dumps
       description: Dumps the external flash and the memory of a unit provisioned with a known test key and searches for it.
@@ -617,7 +617,7 @@ tests:
     priority: low
     execution: manual
     tags: [tamper-detection]
-    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)"]
+    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)", "CWE-1263 (improper physical access control)"]
     en:
       title: Enclosure opening is logged and reported
       description: Opens the enclosure of a powered unit with tamper detection and checks the log and the management system.
@@ -643,7 +643,7 @@ tests:
     priority: high
     execution: automated
     tags: [attack-surface, port-scan]
-    refs: ["ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)"]
+    refs: ["ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)", "CWE-912 (hidden functionality)", "MITRE ATT&CK M1042 (disable or remove feature or program)"]
     en:
       title: Port scan of a factory-reset unit
       description: A script scans all TCP and UDP ports of a factory-reset unit and compares the result with the documentation.
@@ -669,7 +669,7 @@ tests:
     priority: high
     execution: manual
     tags: [sbom, support-period]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Art. 13(8) (support period)"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Art. 13(8) (support period)", "CWE-1395 (dependency on vulnerable third-party component)"]
     en:
       title: Firmware bill of materials and stated support period
       description: Validates the bill of materials of the latest firmware and checks the support period in the product information.
@@ -699,7 +699,7 @@ tests:
     priority: high
     execution: manual
     tags: [factory-reset]
-    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)"]
+    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)", "CWE-226 (sensitive information in resource not removed before reuse)"]
     en:
       title: Factory reset leaves no recoverable user data
       description: Loads a unit with known test data, resets it and searches a raw dump of its storage.
@@ -731,7 +731,7 @@ tests:
     priority: medium
     execution: manual
     tags: [random-numbers]
-    refs: ["NIST SP 800-90B (entropy sources)"]
+    refs: ["NIST SP 800-90B (entropy sources)", "CWE-331 (insufficient entropy)"]
     en:
       title: Entropy assessment and health test failure
       description: Collects raw samples from the entropy source, estimates their min-entropy and forces a health test failure.
@@ -787,7 +787,7 @@ tests:
     priority: high
     execution: automated
     tags: [memory-protection]
-    refs: ["IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)"]
+    refs: ["IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "CWE-121 (stack-based buffer overflow)", "MITRE ATT&CK M1050 (exploit protection)"]
     en:
       title: Execution from the stack and writes to code memory
       description: A test build tries to execute code from the stack and to write to a code region, and the script checks that both cause a fault.
@@ -817,7 +817,7 @@ tests:
     priority: high
     execution: manual
     tags: [provisioning, device-identity]
-    refs: ["IEC 62443-4-2 CR 1.2", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "IEC 62443-4-1 SM-8"]
+    refs: ["IEC 62443-4-2 CR 1.2", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "IEC 62443-4-1 SM-8", "CWE-1394 (use of default cryptographic key)", "CWE-532 (insertion of sensitive information into log file)", "MITRE ATT&CK T1552.004 (private keys)"]
     en:
       title: Device certificates and key handling at the production station
       description: Checks the identity certificates of produced devices and the key handling of the production test station.
@@ -847,7 +847,7 @@ tests:
     priority: high
     execution: manual
     tags: [external-flash, encryption]
-    refs: ["IEC 62443-4-2 CR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    refs: ["IEC 62443-4-2 CR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-311 (missing encryption of sensitive data)", "CWE-1394 (use of default cryptographic key)"]
     en:
       title: Raw dump of the external flash
       description: Reads the external flash of a configured device and checks that secrets and user data are encrypted with a device-unique key.
@@ -879,7 +879,7 @@ tests:
     priority: high
     execution: manual
     tags: [security-updates]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §8"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §8", "MITRE ATT&CK M1051 (update software)"]
     en:
       title: Time from confirmed vulnerability to free update
       description: Compares the confirmation date of each critical or exploited vulnerability with the publication date of its fix.

@@ -319,7 +319,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sprinkler, testing, maintenance]
-    refs: ["EN 12845:2015+A1:2019 (inspection and maintenance)"]
+    refs: ["EN 12845:2015+A2:2026 (inspection and maintenance)"]
     tests: [FCFIRE-T10]
     en:
       title: Sprinkler system tested each week and serviced each year
@@ -693,7 +693,7 @@ tests:
     priority: high
     execution: manual
     tags: [sprinkler, alarm-transmission]
-    refs: ["EN 12845:2015+A1:2019 (inspection and maintenance)", "EN 50518:2019 (monitoring and alarm receiving centre)"]
+    refs: ["EN 12845:2015+A2:2026 (inspection and maintenance)", "EN 50518:2019 (monitoring and alarm receiving centre)"]
     en:
       title: Sprinkler log and an end-to-end alarm transmission test
       description: Reviews the sprinkler log and service reports, and tests the transmission of a fire alarm to the alarm receiving centre.

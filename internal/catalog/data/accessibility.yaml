@@ -652,7 +652,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [european-accessibility-act, terms, information]
-    refs: ["Directive (EU) 2019/882 (EAA) Art. 13(2)", "Directive (EU) 2019/882 (EAA) Annex V"]
+    refs: ["Directive (EU) 2019/882 (EAA) Art. 13(2) (information on how services meet the accessibility requirements)", "Directive (EU) 2019/882 (EAA) Annex V"]
     tests: [A11Y-T23]
     en:
       title: Accessibility information for consumer services

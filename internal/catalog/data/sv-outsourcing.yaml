@@ -151,7 +151,7 @@ requirements:
     obligation: must
     priority: high
     tags: [supplier-access, privileged-access, mfa]
-    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-2-4:2023 SP.07 (remote access)"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-2-4:2023 SP.07 (remote access)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1199 (trusted relationship)", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [SVOUT-T05]
     en:
       title: Provider staff access customer systems with personal accounts and logging
@@ -315,7 +315,7 @@ requirements:
     obligation: must
     priority: high
     tags: [outsourcing, concentration-risk, risk-assessment]
-    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 29"]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 29(1)"]
     tests: [SVOUT-T09]
     en:
       title: Concentration risk assessed before outsourcing a critical function
@@ -362,15 +362,15 @@ requirements:
     refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(7)"]
     tests: [SVOUT-T11]
     en:
-      title: Termination rights for breach and supervisory instruction
-      description: The contract for a critical function MUST give the customer the right to terminate it for a material breach of law or contract, for a weakness found in the provider's risk management, and when a supervisory authority instructs it.
+      title: Termination rights for breach and loss of effective supervision
+      description: The contract for a critical function MUST give the customer the right to terminate it for a material breach of law or contract, for a weakness found in the provider's risk management, and when the supervisory authority can no longer effectively supervise the customer because of the contract.
       rationale: Without these rights the customer can be bound to a provider that puts it in breach of its own obligations.
       criteria:
         - method: review
           text: The termination clause of each contract for a critical function covers the 3 listed grounds.
     sv:
-      title: Rätt att säga upp avtalet vid avtalsbrott och föreläggande från tillsynsmyndighet
-      description: Avtalet för en kritisk funktion SKA ge kunden rätt att säga upp det vid ett väsentligt brott mot lag eller avtal, vid en brist som upptäcks i leverantörens riskhantering och när en tillsynsmyndighet förelägger kunden att göra det.
+      title: Rätt att säga upp avtalet vid avtalsbrott och försvårad tillsyn
+      description: Avtalet för en kritisk funktion SKA ge kunden rätt att säga upp det vid ett väsentligt brott mot lag eller avtal, vid en brist som upptäcks i leverantörens riskhantering och när tillsynsmyndigheten på grund av avtalet inte längre kan utöva tillsyn över kunden.
       rationale: Utan dessa rättigheter kan kunden vara bunden till en leverantör som gör att kunden själv bryter mot sina skyldigheter.
       criteria:
         - method: review
@@ -381,7 +381,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [outsourcing, subcontractors, supply-chain]
-    refs: ["ISO/IEC 27001:2022 A.5.21", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(d)"]
+    refs: ["ISO/IEC 27001:2022 A.5.21", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(d)", "MITRE ATT&CK T1199 (trusted relationship)"]
     tests: [SVOUT-T11]
     en:
       title: Security requirements passed on to subcontractors
@@ -543,7 +543,7 @@ tests:
     priority: high
     execution: manual
     tags: [supplier-access]
-    refs: ["ISO/IEC 27001:2022 A.5.18"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1199 (trusted relationship)", "MITRE ATT&CK T1078 (valid accounts)"]
     en:
       title: Provider accounts and a logged test session
       description: Lists the provider accounts in the customer's systems and asks the provider for a test session.
@@ -665,7 +665,7 @@ tests:
     priority: high
     execution: manual
     tags: [register, concentration-risk]
-    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(3)", "Regulation (EU) 2022/2554 (DORA) Art. 29"]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(3)", "Regulation (EU) 2022/2554 (DORA) Art. 29(1)"]
     en:
       title: Register of outsourced services and concentration assessments
       description: Compares the register with the contract system and checks the concentration risk assessments of critical contracts.
@@ -725,7 +725,7 @@ tests:
     priority: medium
     execution: manual
     tags: [termination, subcontractors]
-    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(7)", "ISO/IEC 27001:2022 A.5.21"]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(7)", "ISO/IEC 27001:2022 A.5.21", "MITRE ATT&CK T1199 (trusted relationship)"]
     en:
       title: Termination grounds and flow-down to subcontractors
       description: Reviews the termination clause and asks the provider to show the security clauses of its subcontracts.
@@ -733,7 +733,7 @@ tests:
       expected: The contract has the 3 termination grounds, and the provider shows the flow-down within 10 working days.
       steps:
         - action: Read the termination clause of the contract.
-          expected: It covers material breach, a weakness in risk management and a supervisory instruction.
+          expected: It covers material breach, a weakness in risk management and loss of effective supervision.
         - action: Ask the provider in writing for the security clauses of 2 named subcontracts.
           expected: The provider delivers them within 10 working days.
         - action: Compare the delivered clauses with the security requirements of the main contract.
@@ -745,7 +745,7 @@ tests:
       expected: Avtalet har de 3 uppsägningsgrunderna, och leverantören visar vidareföringen inom 10 arbetsdagar.
       steps:
         - action: Läs avtalets uppsägningsklausul.
-          expected: Den omfattar väsentligt avtalsbrott, brist i riskhanteringen och föreläggande från tillsynsmyndighet.
+          expected: Den omfattar väsentligt avtalsbrott, brist i riskhanteringen och att tillsyn inte längre är möjlig.
         - action: Begär skriftligt säkerhetsklausulerna i 2 namngivna underleverantörsavtal från leverantören.
           expected: Leverantören lämnar dem inom 10 arbetsdagar.
         - action: Jämför de mottagna klausulerna med säkerhetskraven i huvudavtalet.

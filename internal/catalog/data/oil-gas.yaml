@@ -356,7 +356,7 @@ requirements:
     obligation: must
     priority: high
     tags: [methane, emissions, reporting]
-    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector)", "OGMP 2.0 reporting framework", "ISO 14064-1:2018"]
+    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector) Art. 12 (monitoring and reporting)", "OGMP 2.0 reporting framework", "ISO 14064-1:2018"]
     tests: [OILG-T14]
     en:
       title: Source-level methane emission report per installation
@@ -378,24 +378,24 @@ requirements:
     obligation: must
     priority: high
     tags: [venting, flaring, emissions]
-    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector)", "Commission Implementing Regulation (EU) 2018/2066"]
+    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector) Art. 16(1) (reporting of venting events and flaring events)", "Commission Implementing Regulation (EU) 2018/2066"]
     tests: [OILG-T15]
     en:
       title: Venting and flaring events recorded
-      description: The system MUST record each venting and flaring event with start and end time, estimated gas volume, cause and responsible person, and MUST flag an event that lasts longer than the configured limit of 8 hours for review by the environmental officer.
-      rationale: Venting and flaring are restricted and reported to authorities, and each event has to be justified afterwards.
+      description: The system MUST record each venting and flaring event with start and end time, estimated gas volume, cause and responsible person, and MUST flag an event that lasts at least the configured limit of 8 hours for review by the environmental officer.
+      rationale: Venting and flaring are restricted, and an event of 8 hours or more within 24 hours is notified to the competent authority within 48 hours.
       criteria:
         - method: test
           text: A simulated flaring event of 9 hours is stored with all fields and appears in the environmental officer's review list; an event of 2 hours is stored without a flag.
-          threshold: flag > 8 h
+          threshold: flag ≥ 8 h
     sv:
       title: Händelser med avblåsning och fackling registreras
-      description: Systemet SKA registrera varje händelse med avblåsning eller fackling med start- och sluttid, uppskattad gasvolym, orsak och ansvarig person, och flagga en händelse som varar längre än den inställda gränsen på 8 timmar för granskning av miljöansvarig.
-      rationale: Avblåsning och fackling är begränsade och rapporteras till myndigheter, och varje händelse måste kunna motiveras i efterhand.
+      description: Systemet SKA registrera varje händelse med avblåsning eller fackling med start- och sluttid, uppskattad gasvolym, orsak och ansvarig person, och flagga en händelse som varar minst den inställda gränsen på 8 timmar för granskning av miljöansvarig.
+      rationale: Avblåsning och fackling är begränsade, och en händelse som varar 8 timmar eller mer inom 24 timmar anmäls till den behöriga myndigheten inom 48 timmar.
       criteria:
         - method: test
           text: En simulerad facklingshändelse på 9 timmar sparas med varje fält och visas i miljöansvarigs granskningslista; en händelse på 2 timmar sparas utan flagga.
-          threshold: flagga > 8 h
+          threshold: flagga ≥ 8 h
 
   - id: OILG-17
     type: non_functional
@@ -910,7 +910,7 @@ tests:
     priority: high
     execution: manual
     tags: [methane, emissions, reporting]
-    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector)"]
+    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector) Art. 12 (monitoring and reporting)"]
     en:
       title: Annual methane report traced to source data
       description: Produces the annual methane report for a test installation and follows values back to their data.
@@ -940,7 +940,7 @@ tests:
     priority: medium
     execution: manual
     tags: [venting, flaring]
-    refs: []
+    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector) Art. 16(1) (reporting of venting events and flaring events)"]
     en:
       title: Venting and flaring events with duration flag
       description: Records simulated flaring events of different durations and checks the review list.

@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"slices"
 	"testing"
 	"time"
 )
@@ -93,6 +94,23 @@ func TestFindRequirements(t *testing.T) {
 	}
 	if r := c.FindRequirements(Filter{Q: "25010"}, "en"); len(r) != 24 {
 		t.Fatalf("refs: %d", len(r))
+	}
+}
+
+// A search for a CWE or ATT&CK id finds the items that cite it in refs.
+func TestFindByWeaknessAndTechnique(t *testing.T) {
+	c, err := Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for q, want := range map[string]string{"CWE-79": "INP-05", "cwe-639": "ACC-02", "T1110": "AUTH-09", "T1110.001": "AUTH-09", "M0930": "ICS-01"} {
+		r := c.FindRequirements(Filter{Q: q}, "sv")
+		if !slices.ContainsFunc(r, func(s ReqSummary) bool { return s.ID == want }) {
+			t.Errorf("%s: %s not found", q, want)
+		}
+	}
+	if r := c.FindTests(Filter{Q: "T1110.001"}, "en"); !slices.ContainsFunc(r, func(s TestSummary) bool { return s.ID == "AUTH-T09" }) {
+		t.Errorf("T1110.001: AUTH-T09 not found in %v", r)
 	}
 }
 
