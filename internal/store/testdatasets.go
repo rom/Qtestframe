@@ -61,16 +61,15 @@ func DataSetExpiry(expiresOn, today string) (expired, expiring bool) {
 	if expiresOn == "" || today == "" {
 		return false, false
 	}
-	if expiresOn < today {
-		return true, false
-	}
 	t, err := time.Parse("2006-01-02", today)
 	if err != nil {
 		return false, false
 	}
+	if expiresOn < today {
+		return true, false
+	}
 	return false, expiresOn <= t.AddDate(0, 0, model.DataSetExpiryDays).Format("2006-01-02")
 }
-
 
 // validateDataSet checks and normalises a data set.
 func validateDataSet(d *model.DataSet) error {

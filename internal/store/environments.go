@@ -23,7 +23,7 @@ import (
 // Limits of environments and bookings.
 const (
 	MaxEnvironmentComponents = 100
-	MaxEnvURLs       = 20
+	MaxEnvURLs               = 20
 	MaxEnvironmentCapacity   = 1000
 	// MaxBookingDays bounds the length of one booking.
 	MaxBookingDays = 366
