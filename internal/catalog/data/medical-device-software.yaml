@@ -692,3 +692,65 @@ tests:
           data: "till exempel verktyget för krav- och testhantering"
         - action: Leta upp valideringsposten för varje verktygs aktuella version.
           expected: Varje post anger avsedd användning, det riskbaserade angreppssättet och resultatet.
+
+risks:
+  - id: MDSW-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [patient-safety, hazard]
+    refs: ["ISO 14971:2019 §5.4 (identification of hazards and hazardous situations)", "ISO 14971:2019 §7.2 (implementation of risk control measures)", "IEC 62304:2006+A1:2015 §4.3 (software safety classification)"]
+    mitigated_by: [MDSW-01, MDSW-03, MDSW-04, MDSW-06]
+    en:
+      title: Software anomaly leads to patient harm
+      description: A software defect gives a wrong dose, a missed alarm or a wrong measurement, and the clinician acts on it. A patient is injured or treatment is delayed.
+      mitigation: Assign a software safety class, trace each hazard to its verification, evaluate residual anomalies before release and analyse risk and run regression tests for each change.
+    sv:
+      title: Programvarufel leder till skada på patient
+      description: Ett programvarufel ger fel dos, ett missat larm eller ett felaktigt mätvärde, och vårdpersonalen agerar på det. En patient skadas eller behandlingen försenas.
+      mitigation: Tilldela en säkerhetsklass för programvaran, spåra varje fara till dess verifiering, utvärdera kvarvarande avvikelser före lansering och gör riskanalys och regressionstest för varje ändring.
+  - id: MDSW-R02
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [use-error, usability]
+    refs: ["ISO 14971:2019 §5.4 (identification of hazards and hazardous situations)", "IEC 62366-1:2015+A1:2020 (summative evaluation)", "Regulation (EU) 2017/745 (MDR) Annex I §5 (use error)"]
+    mitigated_by: [MDSW-07, MDSW-09, MDSW-10]
+    en:
+      title: Use error with the software harms a patient
+      description: Users misread the screen, enter a value in the wrong unit or run the software on unsuitable equipment. The result is a wrong clinical decision.
+      mitigation: Carry out a summative usability evaluation, state the minimum IT requirements and show the UDI and version in the software.
+    sv:
+      title: Användningsfel med programvaran skadar en patient
+      description: Användare läser skärmen fel, anger ett värde i fel enhet eller kör programvaran på olämplig utrustning. Resultatet blir ett felaktigt kliniskt beslut.
+      mitigation: Genomför en summativ användbarhetsutvärdering, ange minimikrav på IT-miljön och visa UDI och version i programvaran.
+  - id: MDSW-R03
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [soup, third-party-software]
+    refs: ["ISO 14971:2019 §5.4 (identification of hazards and hazardous situations)", "IEC 62304:2006+A1:2015 §8.1.2 (identify SOUP)", "CWE-1395 (dependency on vulnerable third-party component)"]
+    mitigated_by: [MDSW-02, MDSW-08, SUP-02]
+    en:
+      title: Third-party software in the device fails or is vulnerable
+      description: A library or operating system component of unknown provenance has an anomaly or a vulnerability that affects the device. The manufacturer does not know it is affected.
+      mitigation: Keep a list of SOUP items with their known anomalies, model threats and test security before release and scan dependencies for vulnerabilities.
+    sv:
+      title: Programvara från tredje part i produkten fallerar eller är sårbar
+      description: Ett bibliotek eller en komponent i operativsystemet av okänt ursprung har en avvikelse eller en sårbarhet som påverkar produkten. Tillverkaren vet inte att den berörs.
+      mitigation: För en lista över SOUP-komponenter med deras kända avvikelser, hotmodellera och säkerhetstesta före lansering och skanna beroenden efter sårbarheter.
+  - id: MDSW-R04
+    category: compliance
+    likelihood: 2
+    impact: 4
+    tags: [post-market, vigilance]
+    refs: ["ISO 14971:2019 §10 (production and post-production activities)", "Regulation (EU) 2017/745 (MDR) Art. 87(3)–(5) (reporting of serious incidents)", "Regulation (EU) 2017/745 (MDR) Art. 83 (post-market surveillance system)"]
+    mitigated_by: [MDSW-11, MDSW-12, MDSW-05]
+    en:
+      title: Field problems not fed back or reported
+      description: Complaints and problem reports are handled one by one without a safety assessment. Serious incidents are reported late and the risk file never learns from the field.
+      mitigation: Assess problem reports for safety, report serious incidents on time and feed field data back into the risk file.
+    sv:
+      title: Problem i fält återförs eller rapporteras inte
+      description: Klagomål och problemrapporter hanteras ett och ett utan säkerhetsbedömning. Allvarliga tillbud rapporteras sent och riskhanteringsfilen lär sig aldrig av erfarenheterna i fält.
+      mitigation: Bedöm problemrapporter ur säkerhetssynpunkt, rapportera allvarliga tillbud i tid och återför fältdata till riskhanteringsfilen.

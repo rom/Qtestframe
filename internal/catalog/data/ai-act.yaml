@@ -1221,3 +1221,65 @@ tests:
           expected: Det anger AI-systemets roll, de viktigaste faktorerna bakom utdata och hur en person deltog i beslutet.
         - action: Jämför svarsdatumet med den angivna svarstiden.
           expected: Svaret gavs inom angiven tid.
+
+risks:
+  - id: AIACT-R01
+    category: compliance
+    likelihood: 2
+    impact: 5
+    tags: [prohibited-practice, classification]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)", "EU AI Act (Regulation (EU) 2024/1689) Art. 5(1) (prohibited AI practices)", "EU AI Act (Regulation (EU) 2024/1689) Art. 6(3) (derogation for Annex III systems)"]
+    mitigated_by: [AIACT-01, AIACT-02, AIACT-03, AIMS-22]
+    en:
+      title: AI system placed on the market in the wrong risk category
+      description: An AI system is treated as minimal risk although it is a high-risk system, or contains a prohibited practice. It is released without the required controls and must be withdrawn, with fines and reputational damage.
+      mitigation: Record the risk category of each AI system, screen for prohibited practices before release, document why an Annex III system is not high-risk and stop use outside the intended purpose.
+    sv:
+      title: AI-system släpps ut på marknaden i fel riskkategori
+      description: Ett AI-system behandlas som ett system med minimal risk trots att det är ett system med hög risk, eller innehåller en förbjuden praxis. Det släpps utan de kontroller som krävs och måste dras tillbaka, med sanktionsavgifter och skadat anseende som följd.
+      mitigation: Registrera riskkategorin för varje AI-system, granska förbjudna metoder före lansering, dokumentera varför ett system i bilaga III inte har hög risk och stoppa användning utanför det avsedda ändamålet.
+  - id: AIACT-R02
+    category: ai
+    likelihood: 3
+    impact: 4
+    tags: [bias, training-data]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)", "EU AI Act (Regulation (EU) 2024/1689) Art. 10(2)(f) (examination for possible biases)", "ISO/IEC 23894:2023 §6.4 (risk assessment)"]
+    mitigated_by: [AIACT-06, AIACT-07, AIENG-04, AIACT-26]
+    en:
+      title: High-risk AI system discriminates against a group
+      description: Training data under-represents or mislabels a group, and the system gives that group worse outcomes in hiring, credit or access to services. People's fundamental rights are harmed and decisions must be reviewed.
+      mitigation: Document the origin and preparation of training data, examine data sets for bias before training, evaluate fairness across protected groups and assess the impact on fundamental rights before first use.
+    sv:
+      title: AI-system med hög risk diskriminerar en grupp
+      description: Träningsdata underrepresenterar eller felmärker en grupp, och systemet ger gruppen sämre utfall vid rekrytering, kredit eller tillgång till tjänster. Personers grundläggande rättigheter skadas och besluten måste omprövas.
+      mitigation: Dokumentera träningsdatas ursprung och beredning, undersök datamängder efter snedvridning före träning, utvärdera rättvisa mellan skyddade grupper och bedöm påverkan på grundläggande rättigheter före första användning.
+  - id: AIACT-R03
+    category: ai
+    likelihood: 3
+    impact: 4
+    tags: [human-oversight, automation-bias]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)", "EU AI Act (Regulation (EU) 2024/1689) Art. 14(4) (human oversight measures)", "EU AI Act (Regulation (EU) 2024/1689) Art. 13(3) (content of the instructions)"]
+    mitigated_by: [AIACT-12, AIACT-13, AIACT-11, AIACT-24]
+    en:
+      title: Operators cannot override or understand the AI output
+      description: The people who oversee a high-risk AI system cannot stop it, do not see its confidence or limitations, or simply accept every output. Errors pass unchecked into decisions about people.
+      mitigation: Let the overseer override the output and stop the system, show confidence and limitations next to each output, give deployers instructions for use and train staff in AI literacy.
+    sv:
+      title: Operatörer kan varken åsidosätta eller förstå AI-svaret
+      description: De som övervakar ett AI-system med hög risk kan inte stoppa det, ser inte dess säkerhet eller begränsningar eller godtar helt enkelt varje svar. Fel passerar okontrollerade in i beslut om människor.
+      mitigation: Låt den som övervakar åsidosätta svaret och stoppa systemet, visa säkerhet och begränsningar bredvid varje svar, ge tillhandahållarna bruksanvisning och utbilda personalen i AI-kunnighet.
+  - id: AIACT-R04
+    category: ai
+    likelihood: 3
+    impact: 4
+    tags: [robustness, adversarial]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)", "EU AI Act (Regulation (EU) 2024/1689) Art. 15(5) (resilience against attempts to exploit vulnerabilities)", "MITRE ATLAS (adversarial threat landscape for AI systems)"]
+    mitigated_by: [AIACT-15, AIACT-14, AIACT-16, AIACT-17, AIACT-09]
+    en:
+      title: AI system manipulated or degrading in the field
+      description: Poisoned data or adversarial input changes the system's behaviour, or its accuracy drops after release without anyone noticing. Wrong outputs harm people until a serious incident reveals the problem.
+      mitigation: Protect against poisoning and adversarial input, define a fallback for invalid input and faults, log each use, monitor performance after release and report serious incidents within the legal deadlines.
+    sv:
+      title: AI-system manipuleras eller försämras i drift
+      description: Förgiftad data eller fientlig inmatning ändrar systemets beteende, eller dess noggrannhet sjunker efter lansering utan att någon märker det. Felaktiga svar skadar människor tills en allvarlig incident avslöjar problemet.
+      mitigation: Skydda mot förgiftning och fientlig inmatning, definiera ett reservbeteende vid ogiltig inmatning och fel, logga varje användning, övervaka prestandan efter lansering och rapportera allvarliga incidenter inom de lagstadgade tidsfristerna.

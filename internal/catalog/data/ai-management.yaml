@@ -966,3 +966,50 @@ tests:
           expected: Den anger hur användningen övervakas, vem som stoppar den och vem som godkänner en ny bedömning.
         - action: Öppna det senast loggade fallet.
           expected: Fallet stoppades och en ny risk- och konsekvensbedömning godkändes innan användningen återupptogs.
+
+risks:
+  - id: AIMS-R01
+    category: ai
+    likelihood: 3
+    impact: 4
+    tags: [governance, ownership]
+    refs: ["ISO/IEC 42001:2023 §8.2 (AI risk assessment)", "ISO/IEC 23894:2023 §6.3 (scope, context and criteria)", "EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)"]
+    mitigated_by: [AIMS-03, AIMS-04, AIMS-05, AIMS-06, AIMS-10]
+    en:
+      title: AI system deployed without assessed risks
+      description: Teams put AI systems into use without an owner, risk criteria or a decision to deploy. Nobody knows which risks were accepted and nobody acts when something goes wrong.
+      mitigation: Name an owner for each AI system, define AI risk criteria, assess risks before deployment, keep a risk treatment plan and record a go or no-go decision.
+    sv:
+      title: AI-system tas i drift utan bedömda risker
+      description: Team tar AI-system i bruk utan ägare, riskkriterier eller beslut om driftsättning. Ingen vet vilka risker som har godtagits och ingen agerar när något går fel.
+      mitigation: Utse en ägare för varje AI-system, definiera riskkriterier för AI, bedöm riskerna före driftsättning, för en riskbehandlingsplan och registrera ett beslut om att gå vidare eller inte.
+  - id: AIMS-R02
+    category: supply-chain
+    likelihood: 3
+    impact: 3
+    tags: [third-party-model]
+    refs: ["ISO/IEC 42001:2023 §8.2 (AI risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM03 (supply chain)"]
+    mitigated_by: [AIMS-11, AIENG-15, AIMS-21]
+    en:
+      title: Third-party AI model behaves outside what was assumed
+      description: An external model or AI service changes, is retired or was never assessed for the intended use. The product's behaviour, cost or data handling changes without the organisation's control.
+      mitigation: Assess third-party AI models and services, use pre-trained models and data sets only from verified sources and document the resources of each AI system.
+    sv:
+      title: AI-modell från tredje part beter sig utanför det som antogs
+      description: En extern modell eller AI-tjänst ändras, avvecklas eller har aldrig bedömts för den avsedda användningen. Produktens beteende, kostnad eller hantering av data ändras utan att organisationen har kontroll över det.
+      mitigation: Bedöm AI-modeller och AI-tjänster från tredje part, använd förtränade modeller och datamängder bara från verifierade källor och dokumentera resurserna för varje AI-system.
+  - id: AIMS-R03
+    category: ai
+    likelihood: 3
+    impact: 3
+    tags: [societal-impact, concerns]
+    refs: ["ISO/IEC 42001:2023 §6.1.4 (AI system impact assessment)", "ISO/IEC 23894:2023 §6.4 (risk assessment)"]
+    mitigated_by: [AIMS-07, AIMS-12, AIMS-18, AIMS-17]
+    en:
+      title: Harm to people or society goes unreported
+      description: An AI system affects individuals or groups in ways that were not assessed, and those affected have no way to raise concerns. The harm continues and is discovered from the outside.
+      mitigation: Assess the impact on individuals, groups and society, provide a channel for reporting concerns, tell affected parties about incidents and take corrective action for each nonconformity.
+    sv:
+      title: Skada för människor eller samhälle rapporteras inte
+      description: Ett AI-system påverkar individer eller grupper på sätt som inte har bedömts, och de berörda har inget sätt att framföra synpunkter. Skadan fortsätter och upptäcks utifrån.
+      mitigation: Bedöm påverkan på individer, grupper och samhälle, erbjud en kanal för att rapportera farhågor, informera berörda om incidenter och vidta korrigerande åtgärder för varje avvikelse.

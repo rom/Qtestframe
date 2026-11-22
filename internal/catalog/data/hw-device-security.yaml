@@ -904,3 +904,65 @@ tests:
           expected: Varje rättning publicerades inom 30 dagar från bekräftelsen.
         - action: Läs villkoren för uppdateringar för användare inom supportperioden.
           expected: Säkerhetsuppdateringarna erbjuds utan avgift eller betald prenumeration.
+
+risks:
+  - id: HWSEC-R01
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [firmware, secure-boot]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 5.7-1", "CWE-1326 (missing immutable root of trust in hardware)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1542.001 (system firmware)", "MITRE ATT&CK T1601.002 (downgrade system image)"]
+    mitigated_by: [HWSEC-01, HWSEC-02, HWSEC-05, HWSEC-06, HWSEC-15]
+    en:
+      title: Malicious firmware installed on the device
+      description: The device boots unsigned code or accepts an old vulnerable firmware image. An attacker installs persistent malware that survives resets and cannot be detected from outside.
+      mitigation: Verify each stage of the boot chain, refuse rollback to vulnerable firmware, verify updates before installation and keep the device bootable after a power loss or a failed start.
+    sv:
+      title: Skadlig firmware installeras på enheten
+      description: Enheten startar osignerad kod eller godtar en gammal sårbar firmwareavbild. En angripare installerar beständig skadlig kod som överlever återställningar och inte kan upptäckas utifrån.
+      mitigation: Verifiera varje steg i startkedjan, vägra återgång till sårbar firmware, verifiera uppdateringar före installation och håll enheten startbar efter strömavbrott eller en misslyckad start.
+  - id: HWSEC-R02
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [default-password, botnet]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 5.1-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1392 (use of default credentials)", "MITRE ATT&CK T1078.001 (default accounts)"]
+    mitigated_by: [HWSEC-07, HWSEC-10, HWSEC-04, HWSEC-20]
+    en:
+      title: Devices taken over in bulk over the network
+      description: Devices ship with the same default password or with undocumented services open. They are found by scanners and recruited into botnets within hours of being connected.
+      mitigation: Ship no universal default password, open only documented network services, require authentication on the serial console and publish security updates within 30 days.
+    sv:
+      title: Enheter tas över i stor skala via nätet
+      description: Enheter levereras med samma standardlösenord eller med odokumenterade tjänster öppna. De hittas av skannrar och värvas in i botnät inom några timmar efter anslutning.
+      mitigation: Leverera inget gemensamt standardlösenord, öppna bara dokumenterade nättjänster, kräv autentisering på seriekonsolen och publicera säkerhetsuppdateringar inom 30 dagar.
+  - id: HWSEC-R03
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [physical-attack, key-extraction]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1191 (on-chip debug and test interface with improper access control)", "CWE-922 (insecure storage of sensitive information)", "MITRE ATT&CK T1552.004 (private keys)"]
+    mitigated_by: [HWSEC-03, HWSEC-08, HWSEC-09, HWSEC-19, HWSEC-17]
+    en:
+      title: Keys and data extracted from a device in hand
+      description: An attacker with physical access opens the enclosure, uses a debug port or reads the external flash. Keys and data are extracted and may let the attacker impersonate or attack other devices.
+      mitigation: Lock debug ports on production units, keep private keys in hardware-protected storage, detect enclosure opening, encrypt external flash with a device-unique key and give each device its own identity certificate.
+    sv:
+      title: Nycklar och data extraheras ur en enhet som angriparen har i handen
+      description: En angripare med fysisk åtkomst öppnar höljet, använder en felsökningsport eller läser det externa flashminnet. Nycklar och data extraheras och kan låta angriparen utge sig för eller angripa andra enheter.
+      mitigation: Lås felsökningsportar på produktionsenheter, förvara privata nycklar i hårdvaruskyddad lagring, upptäck öppning av höljet, kryptera externt flashminne med en enhetsunik nyckel och ge varje enhet ett eget identitetscertifikat.
+  - id: HWSEC-R04
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [resale, decommissioning]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 6-1", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)"]
+    mitigated_by: [HWSEC-13, HWSEC-12, HWSEC-11]
+    en:
+      title: User data left on a sold or discarded device
+      description: A device is resold, returned or discarded with the previous owner's data and credentials still on it. The next owner reads them or uses them to access the owner's services.
+      mitigation: Erase user data and credentials on factory reset, state the support period at purchase and publish a software bill of materials for each firmware release.
+    sv:
+      title: Användardata finns kvar på en såld eller kasserad enhet
+      description: En enhet säljs vidare, returneras eller kasseras med föregående ägares data och inloggningsuppgifter kvar. Nästa ägare läser dem eller använder dem för att nå ägarens tjänster.
+      mitigation: Radera användardata och inloggningsuppgifter vid fabriksåterställning, ange supportperioden vid köp och publicera en programvaruförteckning för varje firmwareversion.

@@ -946,3 +946,50 @@ tests:
           expected: Beslutet är tidigare.
         - action: Läs checklistan i varje underlag.
           expected: Testresultat, reträttplan, överlämning till drift och information till användarna är var och en markerade.
+
+risks:
+  - id: GVOP-R01
+    category: operational
+    likelihood: 4
+    impact: 3
+    tags: [runbook, shift-handover]
+    refs: ["ITIL 4 Service level management", "ISO/IEC 27001:2022 A.5.37"]
+    mitigated_by: [GVOP-02, GVOP-03, GVOP-04, GVOP-05, GVOP-06]
+    en:
+      title: Operator error from missing or outdated procedures
+      description: Recurring tasks are done from memory, runbooks are outdated and shift handovers are verbal. An operator new to the task makes a mistake that interrupts the service.
+      mitigation: Keep a runbook for each recurring task, review it every 12 months and make it usable by an operator new to the task, and write shift handovers that the incoming operator acknowledges.
+    sv:
+      title: Operatörsfel på grund av saknade eller inaktuella rutiner
+      description: Återkommande uppgifter görs ur minnet, driftinstruktionerna är inaktuella och skiftöverlämningar sker muntligt. En operatör som är ny på uppgiften gör ett misstag som avbryter tjänsten.
+      mitigation: Ha en driftinstruktion för varje återkommande uppgift, gå igenom den var 12:e månad och gör den användbar för en operatör som är ny på uppgiften, och skriv skiftöverlämningar som den tillträdande operatören bekräftar.
+  - id: GVOP-R02
+    category: operational
+    likelihood: 4
+    impact: 3
+    tags: [change-failure, change-board]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC 27001:2022 A.8.32"]
+    mitigated_by: [GVOP-12, GVOP-14, GVOP-18, GVOP-19, GVOP-20, GVOP-22]
+    en:
+      title: Changes cause a high share of incidents
+      description: Changes are made outside windows, approved by their own implementers and emergency changes are never followed up. Many incidents start with a change.
+      mitigation: Make normal changes only in agreed windows, approve high-risk changes in a change board with security present, let the approver differ from the implementer, follow up emergency changes, review each failed change and decide go or no-go against a release checklist.
+    sv:
+      title: Ändringar orsakar en stor andel av incidenterna
+      description: Ändringar görs utanför servicefönster, godkänns av dem som genomför dem och akuta ändringar följs aldrig upp. Många incidenter börjar med en ändring.
+      mitigation: Gör normala ändringar bara i överenskomna fönster, godkänn ändringar med hög risk i en ändringsnämnd där säkerhetsfunktionen deltar, låt den som godkänner vara en annan än den som genomför, följ upp akuta ändringar, gå igenom varje misslyckad ändring och fatta beslut om att gå vidare eller inte mot en checklista.
+  - id: GVOP-R03
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [alarm-management, staffing]
+    refs: ["IEC 62682:2022"]
+    mitigated_by: [GVOP-08, GVOP-09, GVOP-10, GVOP-11, GVOP-17]
+    en:
+      title: Operators overloaded by alarms or understaffed
+      description: The alarm rate is too high, standing alarms are ignored and the service hours are not fully staffed. A critical alarm is missed or answered too late.
+      mitigation: Set a response procedure and time per alarm priority, keep the alarm rate per operator within limits, review standing alarms weekly, give shelved alarms a reason and expiry and staff the service hours.
+    sv:
+      title: Operatörerna överbelastas av larm eller är för få
+      description: Larmfrekvensen är för hög, stående larm ignoreras och servicetiderna är inte fullt bemannade. Ett kritiskt larm missas eller besvaras för sent.
+      mitigation: Fastställ arbetsgång och svarstid per larmprioritet, håll larmfrekvensen per operatör inom gränserna, gå igenom stående larm varje vecka, ge avställda larm ett skäl och ett slutdatum och bemanna servicetiderna.

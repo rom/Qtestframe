@@ -842,3 +842,50 @@ tests:
         - action: Kör en terminal längs testrutten och registrera positionerna i ledningssystemet.
           expected: Uppdateringarna har högst 30 sekunders mellanrum och ligger inom 50 meter från referensspåret.
           data: rutt på 10 km, 50 km/h
+
+risks:
+  - id: CMMC-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [emergency-services, outage]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 22301:2019 §8.4", "3GPP TS 22.280 (priority and pre-emption)"]
+    mitigated_by: [CMMC-05, CMMC-06, CMMC-07, CMMC-08, CMMC-15]
+    en:
+      title: First responders lose communication during an operation
+      description: A network failure, power cut or dispatch centre outage stops group calls in the middle of an emergency. Responders cannot coordinate and lives are put at risk.
+      mitigation: Make group communication available 99.999 % of the year, allow direct mode without the network, keep base stations running 8 hours on battery, let a fallback dispatch centre take over within 15 minutes and give each command centre a satellite backup link.
+    sv:
+      title: Räddningspersonal förlorar kommunikationen under en insats
+      description: Ett nätfel, ett strömavbrott eller ett avbrott i ledningscentralen stoppar gruppsamtalen mitt under en insats. Personalen kan inte samordna sig och liv sätts på spel.
+      mitigation: Gör gruppkommunikationen tillgänglig 99,999 % av året, tillåt direktläge utan nätet, håll basstationer i drift 8 timmar på batteri, låt en reservledningscentral ta över inom 15 minuter och ge varje ledningscentral en reservförbindelse via satellit.
+  - id: CMMC-R02
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [emergency-call, congestion]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "3GPP TS 22.280 (priority and pre-emption)"]
+    mitigated_by: [CMMC-03, CMMC-04, CMMC-16, CMMC-01, CMMC-17]
+    en:
+      title: Emergency call does not get through in a congested network
+      description: During a large incident the network is overloaded, and an officer's emergency alert waits behind ordinary traffic. Help arrives too late.
+      mitigation: Let emergency group calls pre-empt lower-priority calls, deliver emergency alerts to the dispatcher within 2 seconds, prioritise mission-critical users in a congested public network and report terminal locations every 30 seconds.
+    sv:
+      title: Nödsamtal kommer inte fram i ett överbelastat nät
+      description: Vid en stor händelse är nätet överbelastat och en polis nödlarm väntar bakom vanlig trafik. Hjälpen kommer för sent.
+      mitigation: Låt nödgruppsamtal gå före samtal med lägre prioritet, leverera nödlarm till ledningscentralen inom 2 sekunder, prioritera användare med uppdragskritisk kommunikation i ett överbelastat publikt nät och rapportera terminalernas position var 30:e sekund.
+  - id: CMMC-R03
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [public-warning]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ETSI TS 102 900 (European public warning system)", "Directive (EU) 2018/1972 Art. 110"]
+    mitigated_by: [CMMC-13, CMMC-14, CMMC-18]
+    en:
+      title: Public warning does not reach the people at risk
+      description: A warning about a chemical release or flood reaches handsets late, in a language people do not understand, or not at all because the chain has not been tested. People do not take shelter in time.
+      mitigation: Deliver warnings to handsets in the target area within 3 minutes, write them in the national and a second language and test the public warning chain every month.
+    sv:
+      title: Varningen till allmänheten når inte de som är i fara
+      description: En varning om ett kemikalieutsläpp eller en översvämning når mobiltelefonerna sent, på ett språk som människor inte förstår eller inte alls eftersom kedjan inte har testats. Människor söker inte skydd i tid.
+      mitigation: Leverera varningar till mobiltelefoner i målområdet inom 3 minuter, skriv dem på nationalspråket och ett andra språk och testa varningskedjan varje månad.

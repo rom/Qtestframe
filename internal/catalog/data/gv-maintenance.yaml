@@ -944,3 +944,50 @@ tests:
           expected: En lista med arbeten och starttider.
         - action: Slå upp tillståndet för varje arbete.
           expected: Det listar frånkopplingar och skyddsåtgärder, är undertecknat av tillståndsutfärdaren och är utfärdat före starttiden.
+
+risks:
+  - id: GVMT-R01
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [preventive-maintenance, critical-assets]
+    refs: ["EN 15341:2019+A1:2022", "ISO 55001:2024 §8.1 (operational planning and control)"]
+    mitigated_by: [GVMT-01, GVMT-02, GVMT-07, GVMT-09, GVMT-10, GVMT-20]
+    en:
+      title: Critical asset breaks down for lack of maintenance
+      description: Assets are not classified by criticality and preventive maintenance slips. A critical asset fails at a bad time and the downtime and repair cost far exceed what maintenance would have cost.
+      mitigation: Keep an asset register with owner and criticality, let criticality steer the maintenance strategy, do preventive maintenance on schedule, create work orders from condition thresholds and analyse critical assets with reliability-centred maintenance.
+    sv:
+      title: Kritisk tillgång havererar i brist på underhåll
+      description: Tillgångarna klassas inte efter kritikalitet och det förebyggande underhållet släpar. En kritisk tillgång går sönder vid en olämplig tidpunkt och stillestånd och reparation kostar långt mer än underhållet skulle ha gjort.
+      mitigation: För ett tillgångsregister med ägare och kritikalitet, låt kritikaliteten styra underhållsstrategin, gör förebyggande underhåll enligt plan, skapa arbetsordrar från tillståndsgränser och analysera kritiska tillgångar med tillförlitlighetsbaserat underhåll.
+  - id: GVMT-R02
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [spare-parts, repair]
+    refs: ["EN 13460:2009 (spare parts list)", "EN 15341:2019+A1:2022"]
+    mitigated_by: [GVMT-13, GVMT-15, GVMT-16, GVMT-17, GVMT-12]
+    en:
+      title: Repairs take long because parts or information are missing
+      description: Spare parts are out of stock, long lead times are unknown and fault work is not started at once. A failed asset stays down for weeks and comes back without a functional check.
+      mitigation: Create a work order for a fault on a critical asset within 4 hours, keep a spare parts list with minimum stock, reorder within one working day, record lead times of long-lead parts and close no work order without a functional check.
+    sv:
+      title: Reparationer tar lång tid eftersom delar eller information saknas
+      description: Reservdelar är slut i lager, långa ledtider är okända och felavhjälpning påbörjas inte direkt. En felande tillgång står stilla i flera veckor och tas i drift igen utan funktionskontroll.
+      mitigation: Skapa en arbetsorder för fel på en kritisk tillgång inom 4 timmar, för en reservdelslista med minsta lager, beställ inom en arbetsdag, registrera ledtider för delar med lång leveranstid och stäng ingen arbetsorder utan funktionskontroll.
+  - id: GVMT-R03
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [contractor, permit-to-work]
+    refs: ["ISO 45001:2018 §8.1.4.2 (contractors)"]
+    mitigated_by: [GVMT-23, GVMT-11, GVMT-04]
+    en:
+      title: Contractor injured during hazardous maintenance
+      description: A contractor works on a live, pressurised or confined installation without a permit and without knowing its current configuration. The work leads to a serious injury.
+      mitigation: Require a permit to work for hazardous maintenance by contractors, state the hazards and precautions in each work order and keep a configuration baseline for each delivered system.
+    sv:
+      title: Entreprenör skadas vid farligt underhållsarbete
+      description: En entreprenör arbetar med en spänningssatt, trycksatt eller trång installation utan arbetstillstånd och utan att känna till dess aktuella konfiguration. Arbetet leder till en allvarlig skada.
+      mitigation: Kräv arbetstillstånd för farligt underhållsarbete som entreprenörer utför, ange risker och försiktighetsåtgärder i varje arbetsorder och ha en konfigurationsbaslinje för varje levererat system.

@@ -769,3 +769,50 @@ tests:
           expected: Domänen aktiveras och visar kundens sidor.
         - action: Ta bort domänen från kunden, anteckna tiden och anropa den efter 1 timme.
           expected: Svaret visar inget kundinnehåll och domänen kan bara läggas till igen med en ny verifiering.
+
+risks:
+  - id: TEN-R01
+    category: privacy
+    likelihood: 3
+    impact: 5
+    tags: [tenant-isolation, data-leak]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A01", "CWE-639 (authorization bypass through user-controlled key)", "CWE-653 (improper isolation or compartmentalization)"]
+    mitigated_by: [TEN-01, TEN-02, TEN-03, TEN-04, TEN-10]
+    en:
+      title: One customer sees another customer's data
+      description: A missing tenant filter in a query, cache, search index or background job returns data of another tenant. Customers lose trust and the operator must report a personal data breach.
+      mitigation: Take the tenant from the authenticated session, enforce the tenant filter in the data layer, separate caches and search per tenant and test each endpoint across tenants.
+    sv:
+      title: En kund ser en annan kunds data
+      description: Ett saknat organisationsfilter i en fråga, en cache, ett sökindex eller ett bakgrundsjobb returnerar data från en annan organisation. Kunderna förlorar förtroendet och den som driver tjänsten måste anmäla en personuppgiftsincident.
+      mitigation: Hämta organisationen från den autentiserade sessionen, tillämpa organisationsfiltret i datalagret, håll cache och sökning åtskilda per organisation och testa varje gränssnitt mellan organisationer.
+  - id: TEN-R02
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [noisy-neighbour, quota]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "CWE-770 (allocation of resources without limits or throttling)", "MITRE ATT&CK T1499 (endpoint denial of service)"]
+    mitigated_by: [TEN-07, APIS-03]
+    en:
+      title: One tenant's load degrades the service for all
+      description: A single tenant runs heavy imports, reports or integrations that use the shared capacity. Every other tenant sees slow responses or time-outs.
+      mitigation: Set a resource quota per tenant and limit the request rate per client.
+    sv:
+      title: En organisations belastning försämrar tjänsten för alla
+      description: En enda organisation kör tunga importer, rapporter eller integrationer som använder den gemensamma kapaciteten. Alla andra organisationer får långsamma svar eller tidsgränsfel.
+      mitigation: Sätt en resurskvot per organisation och begränsa anropsfrekvensen per klient.
+  - id: TEN-R03
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [support-access, insider]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK T1199 (trusted relationship)", "MITRE ATT&CK T1078 (valid accounts)"]
+    mitigated_by: [TEN-11, TEN-13, AUD-15]
+    en:
+      title: Provider staff access tenant data without approval
+      description: Support or operations staff of the provider open a tenant's data without the tenant knowing. Misuse or a compromised support account exposes customer data.
+      mitigation: Require the tenant's approval for support access, let tenant administrators read their own audit log and record both identities during impersonation.
+    sv:
+      title: Leverantörens personal når organisationens data utan godkännande
+      description: Leverantörens support- eller driftpersonal öppnar en organisations data utan att organisationen vet om det. Missbruk eller ett komprometterat supportkonto röjer kunddata.
+      mitigation: Kräv organisationens godkännande för supportåtkomst, låt organisationens administratörer läsa sin egen granskningslogg och registrera båda identiteterna vid agerande som annan användare.

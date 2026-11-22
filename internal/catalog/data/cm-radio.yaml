@@ -802,3 +802,50 @@ tests:
         - action: Belasta cellen till 100 % med trafik utan garantier och mät det kritiska testflödet.
           expected: 99 % av paketen har en fördröjning i en riktning under 20 ms.
           data: kritiskt flöde på 10 Mbit/s, test i 1 timme
+
+risks:
+  - id: CMRAD-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [wireless, rogue-access-point]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27033-6:2016", "IEEE 802.1X-2020"]
+    mitigated_by: [CMRAD-08, CMRAD-09, CMRAD-10, CMRAD-13]
+    en:
+      title: Intruder joins or imitates the wireless network
+      description: A weak or shared wireless key is cracked, or a rogue access point imitates the staff network. The attacker reaches internal systems or captures credentials.
+      mitigation: Protect the staff network with WPA3-Enterprise and 802.1X and protected management frames, let the guest network reach only the internet and alarm for a rogue access point within 15 minutes.
+    sv:
+      title: Inkräktare ansluter till eller härmar det trådlösa nätet
+      description: En svag eller delad nyckel till det trådlösa nätet knäcks, eller en falsk åtkomstpunkt härmar personalnätet. Angriparen når interna system eller fångar inloggningsuppgifter.
+      mitigation: Skydda personalnätet med WPA3-Enterprise, 802.1X och skyddade hanteringsramar, låt gästnätet bara nå internet och larma om en falsk åtkomstpunkt inom 15 minuter.
+  - id: CMRAD-R02
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [coverage, interference]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ETSI EN 301 893"]
+    mitigated_by: [CMRAD-01, CMRAD-02, CMRAD-03, CMRAD-04, CMRAD-14]
+    en:
+      title: Poor coverage or interference makes wireless unusable
+      description: Dead spots, interference from other systems or slow roaming make wireless calls drop and devices disconnect. Work that depends on mobile devices stops in parts of the site.
+      mitigation: Survey the spectrum before installation, design for a minimum signal and signal-to-noise ratio over 95 % of the area, cover voice areas by two access points and keep roaming within 50 ms.
+    sv:
+      title: Dålig täckning eller störningar gör det trådlösa nätet oanvändbart
+      description: Döda zoner, störningar från andra system eller långsam roaming gör att trådlösa samtal bryts och enheter kopplas ned. Arbete som är beroende av mobila enheter stannar i delar av anläggningen.
+      mitigation: Gör en spektrumanalys före installation, dimensionera för en lägsta signalnivå och ett lägsta signal-brusförhållande över 95 % av ytan, täck röstområden med två åtkomstpunkter och håll roamingen inom 50 ms.
+  - id: CMRAD-R03
+    category: compliance
+    likelihood: 2
+    impact: 3
+    tags: [spectrum, radar]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ETSI EN 301 893"]
+    mitigated_by: [CMRAD-05, CMRAD-06, CMRAD-07, CMRAD-16]
+    en:
+      title: Radio equipment interferes with other spectrum users
+      description: Equipment without a declaration of conformity, excessive transmit power or missing radar detection disturbs radar or other licensed users. The regulator orders it switched off.
+      mitigation: Buy radio equipment with an EU declaration of conformity, keep channels and power within the national limits, enable radar detection on shared 5 GHz channels and run private mobile networks only on licensed local spectrum.
+    sv:
+      title: Radioutrustning stör andra användare av radiospektrum
+      description: Utrustning utan försäkran om överensstämmelse, för hög sändareffekt eller saknad radardetektering stör radar eller andra tillståndshavare. Tillsynsmyndigheten beordrar att den stängs av.
+      mitigation: Köp radioutrustning med EU-försäkran om överensstämmelse, håll kanaler och effekt inom de nationella gränserna, aktivera radardetektering på delade 5 GHz-kanaler och kör privata mobilnät bara på licensierat lokalt spektrum.

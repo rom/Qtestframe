@@ -776,3 +776,50 @@ tests:
           expected: Personal från leverantören är namngiven.
         - action: Jämför datumet för leverantörens iakttagelser med övningsdatumet.
           expected: Iakttagelserna kom inom 15 arbetsdagar.
+
+risks:
+  - id: SVOUT-R01
+    category: supply-chain
+    likelihood: 3
+    impact: 5
+    tags: [provider-breach, trusted-relationship]
+    refs: ["ISO/IEC 27036-2:2022", "ISO/IEC 27001:2022 A.5.20", "MITRE ATT&CK T1199 (trusted relationship)"]
+    mitigated_by: [SVOUT-01, SVOUT-02, SVOUT-07, SVOUT-08, SVOUT-17]
+    en:
+      title: Breach at the provider reaches the customer's systems
+      description: An outsourcing provider or its subcontractor is compromised, and its access is used against the customer. The customer has no audit right and learns late what happened.
+      mitigation: Put security requirements and an audit right in the contract, obtain yearly independent assurance, give provider staff personal logged accounts, follow up critical providers every year and pass requirements on to subcontractors.
+    sv:
+      title: Intrång hos leverantören når kundens system
+      description: En leverantör eller dess underleverantör komprometteras och dess åtkomst används mot kunden. Kunden saknar granskningsrätt och får sent veta vad som hänt.
+      mitigation: Skriv in säkerhetskrav och granskningsrätt i avtalet, skaffa årlig oberoende granskning, ge leverantörens personal personliga loggade konton, följ upp kritiska leverantörer varje år och för kraven vidare till underleverantörer.
+  - id: SVOUT-R02
+    category: operational
+    likelihood: 3
+    impact: 4
+    tags: [exit, continuity]
+    refs: ["ISO/IEC 27036-2:2022", "Regulation (EU) 2022/2554 (DORA) Art. 28(8)"]
+    mitigated_by: [SVOUT-09, SVOUT-10, SVOUT-12, SVOUT-14, SVOUT-18]
+    en:
+      title: Critical function cannot be moved when the provider fails
+      description: The provider goes bankrupt, ends the contract or degrades, and there is no exit plan, open data return or transition help. The function stops or stays with a failing provider.
+      mitigation: Get an exit plan within 3 months and update it yearly, receive data in an open format within 30 days of exit, agree transition assistance for 6 months, assess concentration risk and include the provider in continuity exercises.
+    sv:
+      title: Kritisk funktion kan inte flyttas när leverantören fallerar
+      description: Leverantören går i konkurs, säger upp avtalet eller försämras, och det finns ingen exitplan, öppen återlämning av data eller hjälp med övergången. Funktionen stannar eller blir kvar hos en leverantör som inte fungerar.
+      mitigation: Få en exitplan inom 3 månader och uppdatera den varje år, få tillbaka data i öppet format inom 30 dagar efter avslut, avtala om övergångshjälp i 6 månader, bedöm koncentrationsrisken och låt leverantören delta i kontinuitetsövningar.
+  - id: SVOUT-R03
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [sub-processor, data-location]
+    refs: ["GDPR Art. 28(2)", "GDPR Art. 28(3)(g) (deletion at the end of processing)"]
+    mitigated_by: [SVOUT-03, SVOUT-04, SVOUT-05, SVOUT-11, SVOUT-06]
+    en:
+      title: Provider processes personal data outside the agreement
+      description: Personal data is processed without an agreement, moved to new subcontractors or countries without notice, or kept after the contract ends. The customer remains responsible for the breach.
+      mitigation: Sign a data processing agreement first, have new subcontractors announced 30 days ahead with a right to object, keep data in the agreed countries, delete it with a certificate after return and have incidents reported within 24 hours.
+    sv:
+      title: Leverantören behandlar personuppgifter utanför avtalet
+      description: Personuppgifter behandlas utan biträdesavtal, flyttas till nya underleverantörer eller länder utan besked eller sparas efter att avtalet upphört. Kunden är fortfarande ansvarig för överträdelsen.
+      mitigation: Teckna personuppgiftsbiträdesavtal först, kräv att nya underleverantörer meddelas 30 dagar i förväg med rätt att invända, håll data i de avtalade länderna, radera dem med intyg efter återlämning och kräv att incidenter rapporteras inom 24 timmar.

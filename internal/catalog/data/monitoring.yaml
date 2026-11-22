@@ -915,3 +915,50 @@ tests:
           data: "10 testmeddelanden"
         - action: Vänta och notera när larmet utlöses.
           expected: Larmet utlöses mellan 15 och 20 minuter efter det första meddelandet och anger kön.
+
+risks:
+  - id: OBS-R01
+    category: operational
+    likelihood: 4
+    impact: 3
+    tags: [alerting, mean-time-to-detect]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.8.16"]
+    mitigated_by: [OBS-07, OBS-08, OBS-15, OBS-19, OBS-04]
+    en:
+      title: Failures detected late because nothing alerts
+      description: Error rates rise, responses slow down or queues back up, but no alert fires or telemetry has silently stopped. The operations team learns of the problem from users.
+      mitigation: Measure requests per endpoint, alert on high error rates, slow responses and old queue messages, and alert when telemetry stops.
+    sv:
+      title: Fel upptäcks sent eftersom inget larmar
+      description: Felfrekvensen stiger, svaren blir långsamma eller köerna växer, men inget larm går eller telemetrin har tyst slutat fungera. Driften får veta om problemet från användarna.
+      mitigation: Mät anrop per ändpunkt, larma vid hög felfrekvens, långa svarstider och gamla meddelanden i köer och larma när telemetrin upphör.
+  - id: OBS-R02
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [troubleshooting, observability]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 (analysability)"]
+    mitigated_by: [OBS-01, OBS-02, OBS-06, OBS-09, OBS-10]
+    en:
+      title: Incidents take long to diagnose
+      description: Logs are unstructured, requests cannot be followed across services and alerts say nothing about what to do. Every incident lasts longer than necessary.
+      mitigation: Write structured logs with a correlation id, trace requests across services, link a runbook in every alert and keep a dashboard per service.
+    sv:
+      title: Incidenter tar lång tid att felsöka
+      description: Loggarna är ostrukturerade, anrop kan inte följas mellan tjänster och larmen säger inget om vad som ska göras. Varje incident varar längre än nödvändigt.
+      mitigation: Skriv strukturerade loggar med korrelations-id, spåra anrop mellan tjänster, länka en driftinstruktion i varje larm och ha en översiktspanel per tjänst.
+  - id: OBS-R03
+    category: operational
+    likelihood: 4
+    impact: 2
+    tags: [alert-fatigue]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)"]
+    mitigated_by: [OBS-17, OBS-16, OBS-09]
+    en:
+      title: Real alerts drowned by noise
+      description: Many alerts fire without needing action, so on-call staff start to ignore them. The one alert that matters is acknowledged and forgotten.
+      mitigation: Review noisy alerts every month, keep unbounded values out of metric labels and link a runbook in every alert.
+    sv:
+      title: Verkliga larm dränks i brus
+      description: Många larm går utan att någon åtgärd behövs, så jourpersonalen börjar ignorera dem. Det enda larm som är viktigt kvitteras och glöms.
+      mitigation: Granska larm som ger mycket brus varje månad, håll obegränsade värden borta från etiketter på mätvärden och länka en driftinstruktion i varje larm.

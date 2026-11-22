@@ -410,12 +410,20 @@ func (c *Catalog) resolveRefs() {
 				c.refSource[ref] = c.RefSource(ref)
 			}
 		}
+		for _, k := range a.Risks {
+			for _, ref := range k.Refs {
+				c.refSource[ref] = c.RefSource(ref)
+			}
+		}
 	}
 	for _, r := range c.Requirements {
 		r.Sources = c.SourcesOfRefs(r.Refs)
 	}
 	for _, t := range c.Tests {
 		t.Sources = c.SourcesOfRefs(t.Refs)
+	}
+	for _, k := range c.Risks {
+		k.Sources = c.SourcesOfRefs(k.Refs)
 	}
 }
 
@@ -446,6 +454,9 @@ func (c *Catalog) RefProblems() []string {
 		}
 		for _, t := range a.Tests {
 			check(t.ID, t.Refs)
+		}
+		for _, k := range a.Risks {
+			check(k.ID, k.Refs)
 		}
 	}
 	sort.Strings(out)
@@ -480,6 +491,8 @@ type SourceSummary struct {
 	// requirement (what an import of the requirements brings).
 	Requirements int `json:"requirements"`
 	Tests        int `json:"tests"`
+	// Risks cite the source themselves.
+	Risks int `json:"risks"`
 	// Catalogues are the catalogue types with items that cite it.
 	Catalogues []string `json:"catalogues"`
 }
@@ -507,10 +520,19 @@ func (c *Catalog) SourceKindsOverview(lang string) []SourceKindSummary {
 func (c *Catalog) SourcesOverview(lang, catalogue string, all bool) []SourceSummary {
 	lang = Lang(lang)
 	kinds := set(catalogue)
-	reqs, tests, cats := map[string]int{}, map[string]int{}, map[string]map[string]bool{}
+	reqs, tests, risks, cats := map[string]int{}, map[string]int{}, map[string]int{}, map[string]map[string]bool{}
 	for _, a := range c.Areas {
 		if !accepts(kinds, a.Catalogue) {
 			continue
+		}
+		for _, k := range a.Risks {
+			for _, s := range k.Sources {
+				risks[s]++
+				if cats[s] == nil {
+					cats[s] = map[string]bool{}
+				}
+				cats[s][a.Catalogue] = true
+			}
 		}
 		for _, r := range a.Requirements {
 			for _, s := range r.Sources {
@@ -537,11 +559,11 @@ func (c *Catalog) SourcesOverview(lang, catalogue string, all bool) []SourceSumm
 	}
 	out := []SourceSummary{}
 	for _, s := range c.Sources {
-		if !all && reqs[s.ID]+tests[s.ID] == 0 {
+		if !all && reqs[s.ID]+tests[s.ID]+risks[s.ID] == 0 {
 			continue
 		}
 		ss := SourceSummary{ID: s.ID, Kind: s.Kind, Jurisdiction: s.Jurisdiction, Short: s.Short, Name: s.Name.Get(lang), URL: s.URL,
-			Requirements: reqs[s.ID], Tests: tests[s.ID], Catalogues: []string{}}
+			Requirements: reqs[s.ID], Tests: tests[s.ID], Risks: risks[s.ID], Catalogues: []string{}}
 		for _, k := range c.Kinds {
 			if cats[s.ID][k.ID] {
 				ss.Catalogues = append(ss.Catalogues, k.ID)

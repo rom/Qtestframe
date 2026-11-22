@@ -56,7 +56,48 @@ tests:
         - action: Enter a new password of 12 characters and save.
           expected: The password is accepted.
     sv: { … the same fields in Swedish … }
+
+risks:                          # optional: typical risks of the area
+  - id: AUTH-R01                # <prefix>-RNN, unique in the catalogue
+    category: security          # security | privacy | safety | availability | data | compliance | supply-chain | ai | operational | quality | project | environmental
+    likelihood: 5               # typical likelihood 1–5 (the project risk scale)
+    impact: 4                   # typical impact 1–5; likelihood × impact gives the level as for project risks
+    tags: [credential-stuffing]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK T1110.004 (credential stuffing)"]
+    mitigated_by: [AUTH-02, AUTH-07, SLOG-06]   # at least one catalogue requirement (any area) that mitigates it
+    tests: []                   # optional: catalogue tests that check the risk directly
+    en:
+      title: Accounts taken over with leaked passwords   # short, no final full stop
+      description: Attackers try passwords leaked from other services … # the threat or hazard and its consequence
+      mitigation: Refuse breached passwords, offer multi-factor authentication …  # the suggested treatment
+    sv: { … the same fields in Swedish … }
 ```
+
+## Risks
+
+A risk describes something that typically goes wrong in the area: the
+threat or hazard, what it leads to, a typical likelihood and impact on the
+project scale (1–5 each; the product gives the level low, medium, high or
+critical as in the risk register) and a suggested mitigation. Every risk
+names the catalogue requirements that mitigate it in `mitigated_by`
+(checked: at least one, each must exist, no duplicates); a requirement can
+mitigate risks of any area. When a team adds a risk to a project, the
+mitigating requirements and their tests can come along, linked to the
+project risk.
+
+- **Write the risk, not the control.** The description says what happens
+  and to whom ("an attacker who is signed in changes the record identifier
+  … confidential data leaks"); the mitigation summarises what the
+  requirements in `mitigated_by` do. Keep the typical values honest: they
+  are a starting point for the team's own assessment.
+- **Cite the risk sources** in `refs` like for requirements: the risk
+  management standard of the domain (ISO 31000, ISO/IEC 27005, ISO/IEC
+  23894, ISO 14971, ISO 26262-3, ISO 12100, IEC 62443-3-2, EU AI Act
+  Art. 9, GDPR Art. 35), threat catalogues (OWASP Top 10, ENISA Threat
+  Landscape) and the CWE weaknesses and ATT&CK techniques of the
+  mitigating requirements. Every ref must match a source of the registry.
+- **Both languages complete** (checked): title, description and mitigation
+  in English and Swedish; no full stop at the end of the title.
 
 ## Writing rules
 

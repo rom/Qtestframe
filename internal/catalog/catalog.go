@@ -115,7 +115,62 @@ type Test struct {
 	Sources []string `yaml:"-" json:"sources"`
 }
 
-// Area is a topic with its requirements and tests.
+// RiskText is the language-specific part of a risk.
+type RiskText struct {
+	Title string `yaml:"title" json:"title"`
+	// Description: the threat or hazard and its consequence.
+	Description string `yaml:"description" json:"description"`
+	// Mitigation is the suggested way to reduce the risk.
+	Mitigation string `yaml:"mitigation" json:"mitigation"`
+}
+
+// Risk is a typical risk of an area, with the catalogue requirements
+// that mitigate it.
+type Risk struct {
+	ID       string `yaml:"id" json:"id"`
+	Area     string `yaml:"-" json:"area"`
+	Category string `yaml:"category" json:"category"`
+	// Likelihood and Impact are typical values on the project scale 1–5.
+	Likelihood int      `yaml:"likelihood" json:"likelihood"`
+	Impact     int      `yaml:"impact" json:"impact"`
+	Tags       []string `yaml:"tags" json:"tags"`
+	Refs       []string `yaml:"refs" json:"refs"`
+	// MitigatedBy are the catalogue requirements (any area) that mitigate it.
+	MitigatedBy []string `yaml:"mitigated_by" json:"mitigated_by"`
+	// Tests are catalogue tests that check the risk directly (optional).
+	Tests []string            `yaml:"tests" json:"tests"`
+	Text  map[string]RiskText `yaml:",inline" json:"text"`
+	// Sources are the ids of the sources its refs cite (derived).
+	Sources []string `yaml:"-" json:"sources"`
+}
+
+// RiskCategories are the categories of catalogue risks, with their names.
+var RiskCategories = []Group{
+	{ID: "security", Name: Names{"en": "Security", "sv": "Informationssäkerhet"}},
+	{ID: "privacy", Name: Names{"en": "Privacy", "sv": "Integritet"}},
+	{ID: "safety", Name: Names{"en": "Safety", "sv": "Personsäkerhet"}},
+	{ID: "availability", Name: Names{"en": "Availability", "sv": "Tillgänglighet"}},
+	{ID: "data", Name: Names{"en": "Data", "sv": "Data"}},
+	{ID: "compliance", Name: Names{"en": "Compliance", "sv": "Regelefterlevnad"}},
+	{ID: "supply-chain", Name: Names{"en": "Supply chain", "sv": "Leverantörskedja"}},
+	{ID: "ai", Name: Names{"en": "AI", "sv": "AI"}},
+	{ID: "operational", Name: Names{"en": "Operational", "sv": "Drift"}},
+	{ID: "quality", Name: Names{"en": "Quality", "sv": "Kvalitet"}},
+	{ID: "project", Name: Names{"en": "Project", "sv": "Projekt"}},
+	{ID: "environmental", Name: Names{"en": "Environmental", "sv": "Miljö"}},
+}
+
+// RiskCategory returns the category with id, or nil.
+func RiskCategory(id string) *Group {
+	for i := range RiskCategories {
+		if RiskCategories[i].ID == id {
+			return &RiskCategories[i]
+		}
+	}
+	return nil
+}
+
+// Area is a topic with its requirements, tests and risks.
 type Area struct {
 	ID           string        `yaml:"area" json:"id"`
 	Prefix       string        `yaml:"prefix" json:"prefix"`
@@ -125,6 +180,7 @@ type Area struct {
 	Description  Names         `yaml:"description" json:"description"`
 	Requirements []Requirement `yaml:"requirements" json:"-"`
 	Tests        []Test        `yaml:"tests" json:"-"`
+	Risks        []Risk        `yaml:"risks" json:"-"`
 }
 
 // Catalog is the loaded library.
@@ -134,6 +190,10 @@ type Catalog struct {
 	Areas        []Area
 	Requirements map[string]*Requirement
 	Tests        map[string]*Test
+	Risks        map[string]*Risk
+	// RisksOf maps a requirement id to the catalogue risks it mitigates
+	// (derived from the risks' mitigated_by lists, in catalogue order).
+	RisksOf map[string][]string
 	// SourceKinds and Sources are the reference source registry
 	// (sources.yaml).
 	SourceKinds []SourceKind
@@ -163,7 +223,7 @@ var (
 
 // Load reads and checks the catalogue in dir of fsys.
 func Load(fsys fs.FS, dir string) (*Catalog, error) {
-	c := &Catalog{Requirements: map[string]*Requirement{}, Tests: map[string]*Test{}}
+	c := &Catalog{Requirements: map[string]*Requirement{}, Tests: map[string]*Test{}, Risks: map[string]*Risk{}, RisksOf: map[string][]string{}}
 	names, err := fs.Glob(fsys, dir+"/*.yaml")
 	if err != nil {
 		return nil, err
@@ -292,6 +352,45 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 			}
 			c.Tests[t.ID] = t
 			checkTest(t, bad)
+		}
+		riskRe := regexp.MustCompile(`^` + a.Prefix + `-R\d{2,3}$`)
+		for j := range a.Risks {
+			k := &a.Risks[j]
+			k.Area = a.ID
+			if !riskRe.MatchString(k.ID) {
+				bad("%s: id must be %s-RNN", k.ID, a.Prefix)
+			}
+			if c.Risks[k.ID] != nil {
+				bad("%s: duplicate id", k.ID)
+			}
+			c.Risks[k.ID] = k
+			checkRisk(k, bad)
+		}
+	}
+	// risk → mitigating requirements; the reverse is derived
+	for _, a := range c.Areas {
+		for _, k := range a.Risks {
+			if len(k.MitigatedBy) == 0 {
+				bad("%s: lists no requirement that mitigates it (mitigated_by)", k.ID)
+			}
+			seen := map[string]bool{}
+			for _, rid := range k.MitigatedBy {
+				if seen[rid] {
+					bad("%s: requirement %s listed twice in mitigated_by", k.ID, rid)
+					continue
+				}
+				seen[rid] = true
+				if c.Requirements[rid] == nil {
+					bad("%s: unknown requirement %s in mitigated_by", k.ID, rid)
+					continue
+				}
+				c.RisksOf[rid] = append(c.RisksOf[rid], k.ID)
+			}
+			for _, tid := range k.Tests {
+				if c.Tests[tid] == nil {
+					bad("%s: unknown test %s", k.ID, tid)
+				}
+			}
 		}
 	}
 	// requirement → tests; the reverse is derived
@@ -447,6 +546,43 @@ func checkReqTranslations(r *Requirement, bad func(string, ...any)) {
 			if missing(cr.Threshold, x.Criteria[i].Threshold) {
 				bad("%s (%s): criterion %d needs the threshold that en has", r.ID, l, i+1)
 			}
+		}
+	}
+}
+
+// MaxRiskTitle bounds the length of a risk's title (characters), as for a
+// project risk.
+const MaxRiskTitle = 300
+
+func checkRisk(k *Risk, bad func(string, ...any)) {
+	if RiskCategory(k.Category) == nil {
+		ids := make([]string, len(RiskCategories))
+		for i, g := range RiskCategories {
+			ids[i] = g.ID
+		}
+		bad("%s: category must be one of %s", k.ID, strings.Join(ids, ", "))
+	}
+	if k.Likelihood < 1 || k.Likelihood > 5 || k.Impact < 1 || k.Impact > 5 {
+		bad("%s: likelihood and impact must be between 1 and 5", k.ID)
+	}
+	checkTags(k.ID, k.Tags, bad)
+	checkRefs(k.ID, k.Refs, bad)
+	for _, l := range Languages {
+		x, ok := k.Text[l]
+		if !ok || strings.TrimSpace(x.Title) == "" || strings.TrimSpace(x.Description) == "" || strings.TrimSpace(x.Mitigation) == "" {
+			bad("%s: title, description and mitigation are needed in %s", k.ID, l)
+			continue
+		}
+		if strings.HasSuffix(x.Title, ".") {
+			bad("%s (%s): no full stop at the end of the title", k.ID, l)
+		}
+		if len([]rune(x.Title)) > MaxRiskTitle {
+			bad("%s (%s): title longer than %d characters", k.ID, l, MaxRiskTitle)
+		}
+	}
+	for l := range k.Text {
+		if !slices.Contains(Languages, l) {
+			bad("%s: unknown field or language %q", k.ID, l)
 		}
 	}
 }

@@ -836,3 +836,50 @@ tests:
           expected: Resolvern ger ett blockeringssvar.
         - action: Läs resolverloggen och tiden för den senaste uppdateringen av blockeringslistan.
           expected: Uppslaget är loggat med klientens adress och listan uppdaterades för mindre än 24 timmar sedan.
+
+risks:
+  - id: CMSEC-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [segmentation, lateral-movement]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.22", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
+    mitigated_by: [CMSEC-01, CMSEC-02, CMSEC-03, CMSEC-07, CMSEC-12]
+    en:
+      title: Flat network lets an attack spread everywhere
+      description: All devices share one network or firewall rules allow everything that was once needed. Malware on one device reaches management interfaces and control networks.
+      mitigation: Divide the network into documented zones, deny traffic between zones by default, review firewall rules every 6 months, manage elements from a separate zone and keep office networks away from control networks.
+    sv:
+      title: Platt nät låter en attack spridas överallt
+      description: Alla enheter delar samma nät eller brandväggsreglerna tillåter allt som en gång behövdes. Skadlig kod på en enhet når förvaltningsgränssnitt och styrnät.
+      mitigation: Dela in nätet i dokumenterade zoner, neka trafik mellan zoner som standard, granska brandväggsreglerna var 6:e månad, förvalta nätelement från en separat zon och håll kontorsnät åtskilda från styrnät.
+  - id: CMSEC-R02
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [ddos]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "MITRE ATT&CK T1498 (network denial of service)"]
+    mitigated_by: [CMSEC-08, CMSEC-17, CMSEC-09]
+    en:
+      title: Denial-of-service attack floods the connection
+      description: A volumetric attack fills the internet connection and every service behind it becomes unreachable. Without detection and mitigation the outage lasts hours.
+      mitigation: Mitigate denial-of-service attacks within 10 minutes, detect intrusions at zone boundaries and keep flow logs for 90 days.
+    sv:
+      title: Överbelastningsattack dränker förbindelsen
+      description: En volymetrisk attack fyller internetförbindelsen och alla tjänster bakom den blir onåbara. Utan detektering och motåtgärder varar avbrottet i flera timmar.
+      mitigation: Motverka överbelastningsattacker inom 10 minuter, upptäck intrång vid zongränserna och spara flödesloggar i 90 dagar.
+  - id: CMSEC-R03
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [collaboration, eavesdropping]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK T1566.003 (spearphishing via service)", "MITRE ATT&CK T1125 (video capture)"]
+    mitigated_by: [CMSEC-14, CMSEC-15, CMSEC-16, CMSEC-13]
+    en:
+      title: Outsiders listen in or phish through collaboration tools
+      description: Chat federates with any domain, meetings admit anyone and room video systems answer calls automatically. Outsiders join confidential meetings or send phishing messages that look internal.
+      mitigation: Federate chat only with listed domains, hold external participants in a lobby, turn off automatic answer on room video endpoints and terminate SIP trunks on a session border controller.
+    sv:
+      title: Utomstående avlyssnar eller nätfiskar via samarbetsverktyg
+      description: Chatten federerar med alla domäner, möten släpper in vem som helst och videosystem i mötesrum svarar automatiskt. Utomstående deltar i konfidentiella möten eller skickar nätfiskemeddelanden som ser interna ut.
+      mitigation: Federera chatten bara med listade domäner, låt externa deltagare vänta i en lobby, stäng av automatiskt svar i videosystem i mötesrum och terminera SIP-trunkar i en sessionsgränskontroll.

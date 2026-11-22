@@ -724,3 +724,50 @@ tests:
           expected: Varje värd tillhör appen eller en SDK i listan.
         - action: Lista de datatyper som skickas till varje SDK-värd och jämför med butiksdeklarationen.
           expected: Varje datatyp är deklarerad.
+
+risks:
+  - id: MOBSEC-R01
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [device-loss, local-storage]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1409 (stored application data)"]
+    mitigated_by: [MOBSEC-01, MOBSEC-02, MOBSEC-06, MOBSEC-05]
+    en:
+      title: Sensitive data read from a lost or shared phone
+      description: The app keeps sensitive data in device backups, in the system log or visible in the app switcher. Whoever gets hold of the phone or its backup reads the data.
+      mitigation: Exclude sensitive data from backups and the system log, hide sensitive screens in screenshots and bind biometric unlock to a key in the key store.
+    sv:
+      title: Känsliga uppgifter läses från en förlorad eller delad telefon
+      description: Appen lagrar känsliga uppgifter i enhetens säkerhetskopior, i systemloggen eller synligt i appväxlaren. Den som får tag på telefonen eller dess säkerhetskopia läser uppgifterna.
+      mitigation: Undanta känsliga uppgifter från säkerhetskopior och systemloggen, dölj känsliga vyer i skärmbilder och bind biometrisk upplåsning till en nyckel i nyckelförrådet.
+  - id: MOBSEC-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [reverse-engineering, secrets]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-798 (use of hard-coded credentials)", "CWE-489 (active debug code)", "MITRE ATT&CK T1577 (compromise application executable)"]
+    mitigated_by: [MOBSEC-09, MOBSEC-12, MOBSEC-11]
+    en:
+      title: App package reverse engineered to extract secrets
+      description: An attacker unpacks the published app, finds embedded keys or debug features and builds a modified client. The keys are misused against the back end and the modified app bypasses client checks.
+      mitigation: Put no secret keys in the app package, publish only non-debuggable builds and require platform attestation for high-risk operations.
+    sv:
+      title: Apppaketet bakåtkompileras för att få ut hemligheter
+      description: En angripare packar upp den publicerade appen, hittar inbäddade nycklar eller felsökningsfunktioner och bygger en ändrad klient. Nycklarna missbrukas mot servern och den ändrade appen kringgår klientens kontroller.
+      mitigation: Lägg inga hemliga nycklar i apppaketet, publicera bara byggen som inte kan felsökas och kräv plattformsintyg för operationer med hög risk.
+  - id: MOBSEC-R03
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [deep-link, web-view]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-939 (improper authorization in handler for custom URL scheme)", "CWE-749 (exposed dangerous method or function)", "MITRE ATT&CK T1635.001 (URI hijacking)"]
+    mitigated_by: [MOBSEC-07, MOBSEC-08, MOBSEC-03]
+    en:
+      title: Malicious link or web page drives the app
+      description: Another app or a web page opens a deep link, an exported component or a web view with a native bridge. The app performs actions or reveals data without the user's intent.
+      mitigation: Validate the input of deep links and exported components, let web views load only own content with no bridge to other origins and disable cleartext traffic.
+    sv:
+      title: Skadlig länk eller webbsida styr appen
+      description: En annan app eller en webbsida öppnar en djuplänk, en exporterad komponent eller en webbvy med en inbyggd brygga. Appen utför åtgärder eller röjer uppgifter utan att användaren avsett det.
+      mitigation: Validera inmatningen till djuplänkar och exporterade komponenter, låt webbvyer bara ladda eget innehåll utan brygga mot andra ursprung och stäng av okrypterad trafik.

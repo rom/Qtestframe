@@ -863,3 +863,65 @@ tests:
           expected: Den visar AI-utdatan, dess viktigaste faktorer, granskarens namn och skälen.
         - action: Ta fram förklaringsbrevet till sökanden.
           expected: Brevet anger beslutet, de viktigaste faktorerna och hur man invänder mot det.
+
+risks:
+  - id: AIML-R01
+    category: ai
+    likelihood: 4
+    impact: 4
+    tags: [prompt-injection, agents]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM01 (prompt injection)", "OWASP Top 10 for LLM Applications 2025 LLM06 (excessive agency)", "CWE-1427 (prompt injection)", "MITRE ATT&CK T1698 (indirect prompt injection)"]
+    mitigated_by: [AIML-06, AIML-09, AIML-12]
+    en:
+      title: Prompt injection makes the AI act against the user
+      description: Instructions hidden in a document, email or web page are followed by the model, which then reveals data or triggers actions with the user's rights. The user never asked for what happens.
+      mitigation: Let no model output trigger privileged actions on its own, refuse requests against the content policy and let administrators turn off AI features.
+    sv:
+      title: Promptinjektion får AI:n att agera mot användaren
+      description: Instruktioner som döljs i ett dokument, ett mejl eller en webbsida följs av modellen, som sedan röjer uppgifter eller utlöser åtgärder med användarens behörighet. Användaren har aldrig bett om det som händer.
+      mitigation: Låt inga modellsvar utlösa privilegierade åtgärder på egen hand, avvisa förfrågningar som strider mot innehållspolicyn och låt administratörer stänga av AI-funktioner.
+  - id: AIML-R02
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [data-leak, model-provider]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM02 (sensitive information disclosure)", "GDPR Art. 28(1)", "CWE-359 (exposure of private personal information)"]
+    mitigated_by: [AIML-04, AIML-14, AIML-07, AIML-16, AIML-13]
+    en:
+      title: Personal or confidential data leaks through an AI feature
+      description: Text sent to an external model contains personal data or secrets, is used to train the provider's models or is returned in answers to other users. The organisation loses control of the data.
+      mitigation: Keep customer data out of external model training, remove direct identifiers before text is sent, filter answers for identity numbers and secrets, show providers and regions and let users keep their content out.
+    sv:
+      title: Personuppgifter eller konfidentiella uppgifter läcker via en AI-funktion
+      description: Text som skickas till en extern modell innehåller personuppgifter eller hemligheter, används för att träna leverantörens modeller eller returneras i svar till andra användare. Organisationen förlorar kontrollen över uppgifterna.
+      mitigation: Håll kunddata borta från träning av externa modeller, ta bort direkta identifierare innan text skickas, filtrera svar från identitetsnummer och hemligheter, visa leverantörer och regioner och låt användare hålla sitt innehåll utanför.
+  - id: AIML-R03
+    category: ai
+    likelihood: 4
+    impact: 3
+    tags: [hallucination, overreliance]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM09 (misinformation)", "EU AI Act (Regulation (EU) 2024/1689) Art. 50(2) (marking of synthetic content)"]
+    mitigated_by: [AIML-02, AIML-03, AIML-08, AIML-11]
+    en:
+      title: Wrong AI answer trusted as fact
+      description: The model produces plausible but false content and users act on it without checking. Decisions about people or business are made on false grounds.
+      mitigation: Label AI-generated content, take no decision about a person based only on AI output, pass an evaluation set before a model or prompt change and let users report wrong answers.
+    sv:
+      title: Felaktigt AI-svar betraktas som fakta
+      description: Modellen ger trovärdigt men felaktigt innehåll och användarna agerar på det utan att kontrollera. Beslut om personer eller verksamhet fattas på felaktiga grunder.
+      mitigation: Märk AI-genererat innehåll, fatta inga beslut om en person enbart på AI-svar, kräv godkänd utvärdering före ändrad modell eller prompt och låt användare rapportera felaktiga svar.
+  - id: AIML-R04
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [transparency, ai-act]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "EU AI Act (Regulation (EU) 2024/1689) Art. 50(1) (transparency for AI systems interacting with persons)", "EU AI Act (Regulation (EU) 2024/1689) Art. 86(1) (right to explanation of individual decision-making)"]
+    mitigated_by: [AIML-01, AIML-10, AIML-17, AIML-05]
+    en:
+      title: People unaware that they deal with AI
+      description: Users are not told that they talk to an AI system or that AI helped decide about them, and nobody can explain the decision afterwards. Transparency duties are broken and trust is lost.
+      mitigation: Tell users when they interact with an AI system, document each AI feature, explain AI-assisted decisions about a person and keep prompt and response logs for 30 days.
+    sv:
+      title: Personer vet inte att de har att göra med AI
+      description: Användare får inte veta att de talar med ett AI-system eller att AI bidrog till ett beslut om dem, och ingen kan förklara beslutet i efterhand. Kraven på öppenhet bryts och förtroendet går förlorat.
+      mitigation: Informera användare när de interagerar med ett AI-system, dokumentera varje AI-funktion, förklara AI-stödda beslut om en person och spara loggar över prompter och svar i 30 dagar.

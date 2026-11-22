@@ -782,3 +782,50 @@ tests:
           expected: Varje antal är högst 10.
         - action: Leta efter svaret till varje person som klagat.
           expected: Varje klagomål har ett dokumenterat svar med resultatet.
+
+risks:
+  - id: FCOPS-R01
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [accessibility, premises]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "BFS 2024:12 (byggnaders tillgänglighet och användbarhet)", "EN 17210:2021"]
+    mitigated_by: [FCOPS-01, FCOPS-02, FCOPS-03, FCOPS-04, FCOPS-05]
+    en:
+      title: Premises exclude people with disabilities
+      description: Entrances, toilets, lifts and meeting rooms cannot be used by people with reduced mobility, vision or hearing. Staff and visitors are excluded and the owner breaks accessibility rules.
+      mitigation: Provide a step-free entrance, an accessible toilet on each floor, contrast marking, hearing loops in larger meeting rooms and a lift to each floor of sufficient size.
+    sv:
+      title: Lokalerna utestänger personer med funktionsnedsättning
+      description: Entréer, toaletter, hissar och mötesrum kan inte användas av personer med nedsatt rörelse-, syn- eller hörselförmåga. Personal och besökare utestängs och ägaren bryter mot tillgänglighetsreglerna.
+      mitigation: Ordna en entré utan nivåskillnader, en tillgänglig toalett på varje våning, kontrastmarkeringar, hörslinga i större mötesrum och hiss av tillräcklig storlek till varje våning.
+  - id: FCOPS-R02
+    category: environmental
+    likelihood: 4
+    impact: 2
+    tags: [energy, waste]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 50001:2018"]
+    mitigated_by: [FCOPS-06, FCOPS-07, FCOPS-08, FCOPS-09]
+    en:
+      title: Energy waste goes unnoticed
+      description: Ventilation and heating run outside working hours or a fault doubles the consumption, and nobody follows up the meter readings. Costs and emissions rise for months.
+      mitigation: Keep a valid energy performance certificate, meter energy hourly with monthly follow-up against a baseline, alert when daily use exceeds the baseline by 15 % and sort waste with yearly quantities.
+    sv:
+      title: Energislöseri går obemärkt förbi
+      description: Ventilation och värme går utanför arbetstid eller ett fel fördubblar förbrukningen, och ingen följer upp mätarvärdena. Kostnader och utsläpp ökar i flera månader.
+      mitigation: Ha en giltig energideklaration, mät energin per timme med månatlig uppföljning mot ett referensvärde, larma när dygnsförbrukningen överskrider referensen med 15 % och sortera avfallet med årliga mängder.
+  - id: FCOPS-R03
+    category: safety
+    likelihood: 3
+    impact: 3
+    tags: [work-environment, maintenance]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "AFS 2023:1 11 § (investigation and risk assessment)"]
+    mitigated_by: [FCOPS-10, FCOPS-11, FCOPS-13, FCOPS-14, FCOPS-18]
+    en:
+      title: Neglected building causes ill health and complaints
+      description: Installations are not maintained, ventilation is never inspected and fault reports go unanswered. Staff suffer from a poor work environment and the problems become expensive to fix.
+      mitigation: Keep a preventive maintenance plan for each installation, inspect ventilation within the required interval, acknowledge fault reports within one working day, assess the work environment yearly and investigate indoor environment complaints within 10 working days.
+    sv:
+      title: Eftersatt byggnad orsakar ohälsa och klagomål
+      description: Installationerna underhålls inte, ventilationen kontrolleras aldrig och felanmälningar besvaras inte. Personalen lider av en dålig arbetsmiljö och problemen blir dyra att åtgärda.
+      mitigation: Ha en plan för förebyggande underhåll för varje installation, kontrollera ventilationen inom föreskrivet intervall, bekräfta felanmälningar inom en arbetsdag, bedöm arbetsmiljön varje år och utred klagomål på inomhusmiljön inom 10 arbetsdagar.

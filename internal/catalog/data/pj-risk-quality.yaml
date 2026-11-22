@@ -800,3 +800,50 @@ tests:
           expected: Antalet är högst 10.
         - action: Jämför kontrolldatumet med första användningen och attesten av fakturan.
           expected: Kontrollen är tidigare än båda.
+
+risks:
+  - id: PJRQ-R01
+    category: project
+    likelihood: 4
+    impact: 4
+    tags: [risk-management, project]
+    refs: ["ISO 31000:2018 §6.6", "ISO 31000:2018 §6.5"]
+    mitigated_by: [PJRQ-01, PJRQ-02, PJRQ-03, PJRQ-04, PJRQ-14]
+    en:
+      title: Project risks identified but not managed
+      description: The risk register is filled in at the start and then forgotten, and high risks get no treatment plan. Known risks turn into issues that stop the project.
+      mitigation: Approve risk criteria at initiation, keep a risk register with cause, effect, owner and response, review each open risk within 30 days, plan treatment of high risks within 10 working days and report the top 10 risks with trend.
+    sv:
+      title: Projektrisker identifieras men hanteras inte
+      description: Riskregistret fylls i vid starten och glöms sedan bort, och höga risker får ingen åtgärdsplan. Kända risker blir problem som stoppar projektet.
+      mitigation: Godkänn riskkriterier vid starten, för ett riskregister med orsak, konsekvens, ägare och åtgärd, gå igenom varje öppen risk inom 30 dagar, planera åtgärder för höga risker inom 10 arbetsdagar och rapportera de 10 största riskerna med trend.
+  - id: PJRQ-R02
+    category: project
+    likelihood: 3
+    impact: 4
+    tags: [schedule-risk, contingency]
+    refs: ["ISO 31000:2018 §6.4 (risk assessment)"]
+    mitigated_by: [PJRQ-05, PJRQ-06, PJRQ-13]
+    en:
+      title: Deadline set on an optimistic plan
+      description: The end date assumes that nothing goes wrong and there is no contingency. Ordinary uncertainty makes the deadline impossible from the start.
+      mitigation: Run a quantitative schedule risk analysis with a P80 end date, base the contingency reserve on the risk analysis and record opportunities together with threats.
+    sv:
+      title: Slutdatum sätts utifrån en optimistisk plan
+      description: Slutdatumet förutsätter att inget går fel och det finns ingen reserv. Vanlig osäkerhet gör slutdatumet omöjligt redan från början.
+      mitigation: Gör en kvantitativ riskanalys av tidplanen med ett slutdatum för P80, grunda reserven på riskanalysen och registrera möjligheter tillsammans med hot.
+  - id: PJRQ-R03
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [deliverable-quality, review]
+    refs: ["ISO 9001:2026 §8.6"]
+    mitigated_by: [PJRQ-08, PJRQ-09, PJRQ-10, PJRQ-16, PJRQ-17]
+    en:
+      title: Deliverables of poor quality reach the customer
+      description: Deliverables have no quality criteria and are released without review, and supplier deliveries are accepted unchecked. The customer finds the defects and rejects the delivery.
+      mitigation: Write a quality plan with criteria for each deliverable, release deliverables only after a recorded review, record and correct nonconformities, review quality before each stage gate and check supplier deliverables on receipt.
+    sv:
+      title: Leveranser av dålig kvalitet når kunden
+      description: Leveranserna saknar kvalitetskriterier och släpps utan granskning, och leverantörers leveranser godtas utan kontroll. Kunden hittar felen och underkänner leveransen.
+      mitigation: Skriv en kvalitetsplan med kriterier för varje leverans, släpp leveranser bara efter en dokumenterad granskning, registrera och åtgärda avvikelser, granska kvaliteten före varje beslutspunkt och kontrollera leverantörers leveranser vid mottagandet.

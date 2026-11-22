@@ -1121,3 +1121,50 @@ tests:
           expected: Rapporteringen avvisas tills godkännandet finns.
         - action: Registrera godkännandet som kontrollant och rapportera sedan fler detaljer.
           expected: Godkännandet registreras och fler detaljer godtas.
+
+risks:
+  - id: MFG-R01
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [traceability, recall]
+    refs: ["ISO 9001:2026 §8.5.2", "ISO 9001:2026 §8.7"]
+    mitigated_by: [MFG-04, MFG-05, MFG-08, MFG-14, MFG-21]
+    en:
+      title: Defective lot cannot be traced and recalled
+      description: Genealogy of serial numbers and lots is incomplete, so a defective component cannot be followed to the products that contain it. The recall becomes much larger and slower than needed.
+      mitigation: Record the genealogy of each serial number and lot, trace a lot for recall within 15 minutes, hold non-conforming material, check consumed material against the bill of materials and approve the first article before the series.
+    sv:
+      title: Felaktig sats kan inte spåras och återkallas
+      description: Härkomsten för serienummer och satser är ofullständig, så en felaktig komponent kan inte följas till de produkter som innehåller den. Återkallelsen blir mycket större och långsammare än nödvändigt.
+      mitigation: Registrera härkomsten för varje serienummer och sats, spåra en sats för återkallelse inom 15 minuter, spärra avvikande material, kontrollera förbrukat material mot materialförteckningen och godkänn den första artikeln före serien.
+  - id: MFG-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [shop-floor, ot-network]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 5.1"]
+    mitigated_by: [MFG-09, MFG-10, MFG-15, MFG-16, MFG-17]
+    en:
+      title: Production stopped by an attack on the shop-floor network
+      description: Machine connections are unauthenticated and the shop-floor network is flat. Malware or an attacker stops production or alters machine parameters.
+      mitigation: Sign and encrypt OPC UA connections, use MQTT only over TLS with per-device identity, never let production software override machine safety functions, segment the shop-floor network into zones and handle vulnerabilities in products with digital elements.
+    sv:
+      title: Produktionen stoppas av en attack mot verkstadsnätet
+      description: Maskinanslutningarna är oautentiserade och verkstadsnätet är platt. Skadlig kod eller en angripare stoppar produktionen eller ändrar maskinparametrar.
+      mitigation: Signera och kryptera OPC UA-anslutningar, använd MQTT bara över TLS med identitet per enhet, låt aldrig produktionsprogramvara åsidosätta maskinernas säkerhetsfunktioner, dela in verkstadsnätet i zoner och hantera sårbarheter i produkter med digitala element.
+  - id: MFG-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [process-control, work-instructions]
+    refs: ["ISO 9001:2026 §8.5.1", "ISO 22400-2:2014"]
+    mitigated_by: [MFG-07, MFG-12, MFG-19, MFG-20, MFG-13]
+    en:
+      title: Products made outside specification
+      description: The process drifts without an alarm, operators work from an old instruction revision or are not qualified, or measurements come from uncalibrated equipment. Scrap and complaints rise.
+      mitigation: Raise SPC alarms on out-of-control measurements, match the work instruction revision to the order, check operator qualification at start, block measurements with equipment past calibration and verify labels by scanning.
+    sv:
+      title: Produkter tillverkas utanför specifikationen
+      description: Processen driver utan larm, operatörer arbetar efter en gammal revision av instruktionen eller saknar behörighet, eller mätningar görs med okalibrerad utrustning. Kassationer och reklamationer ökar.
+      mitigation: Larma med statistisk processtyrning vid mätvärden utanför styrgränserna, matcha arbetsinstruktionens revision mot ordern, kontrollera operatörens behörighet vid start, spärra mätningar med utrustning vars kalibrering gått ut och verifiera etiketter genom skanning.

@@ -845,3 +845,50 @@ tests:
           expected: Det finns inga träffar.
         - action: Sök i loggarna efter varje testanvändares interna id.
           expected: Varje id hittas i händelserna för inloggning och redigering.
+
+risks:
+  - id: SLOG-R01
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [detection, monitoring]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A09", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK T1098 (account manipulation)"]
+    mitigated_by: [SLOG-01, SLOG-02, SLOG-06, SLOG-07, SLOG-12, SLOG-16]
+    en:
+      title: Intrusion goes unnoticed for months
+      description: Security events are not logged or no alert fires when accounts are misused or new administrators appear. The attacker works undisturbed and the damage grows until someone outside notices.
+      mitigation: Log security events with enough detail, alert on mass sign-in failures, new administrator rights and administrator sign-in from a new country, and test each alert rule every month.
+    sv:
+      title: Intrång upptäcks inte på flera månader
+      description: Säkerhetshändelser loggas inte eller inget larm går när konton missbrukas eller nya administratörer dyker upp. Angriparen arbetar ostört och skadan växer tills någon utanför märker det.
+      mitigation: Logga säkerhetshändelser med tillräcklig detaljnivå, larma vid många misslyckade inloggningar, nya administratörsbehörigheter och administratörsinloggning från ett nytt land, och testa varje larmregel varje månad.
+  - id: SLOG-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [log-tampering, forensics]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-117 (improper output neutralization for logs)", "MITRE ATT&CK T1070 (indicator removal)", "MITRE ATT&CK T1685 (disable or modify tools)"]
+    mitigated_by: [SLOG-05, SLOG-04, SLOG-11, SLOG-08, SLOG-09]
+    en:
+      title: Logs erased or forged to hide an attack
+      description: An attacker deletes or alters log records, injects false lines or stops a log source. The investigation cannot tell what happened and evidence is lost.
+      mitigation: Protect logs from change, neutralise log injection, alert when a log source stops sending, synchronise clocks and keep security logs for the set period.
+    sv:
+      title: Loggar raderas eller förfalskas för att dölja en attack
+      description: En angripare raderar eller ändrar loggposter, skjuter in falska rader eller stoppar en loggkälla. Utredningen kan inte avgöra vad som hände och bevis går förlorade.
+      mitigation: Skydda loggarna mot ändring, oskadliggör injektion i loggar, larma när en loggkälla slutar skicka, synkronisera klockorna och spara säkerhetsloggarna under fastställd tid.
+  - id: SLOG-R03
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [logs, personal-data]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GDPR Art. 32(1)(a)", "CWE-532 (insertion of sensitive information into log file)", "CWE-359 (exposure of private personal information)"]
+    mitigated_by: [SLOG-03, SLOG-17, RET-12]
+    en:
+      title: Secrets and personal data collected in logs
+      description: Passwords, tokens and personal data are written to logs that many people and tools can read and that are kept for a long time. A leak of the logs exposes them.
+      mitigation: Keep secrets out of logs, identify users by id instead of by name and delete application and debug logs after 30 days.
+    sv:
+      title: Hemligheter och personuppgifter samlas i loggar
+      description: Lösenord, token och personuppgifter skrivs till loggar som många personer och verktyg kan läsa och som sparas länge. En läcka av loggarna röjer dem.
+      mitigation: Håll hemligheter borta från loggarna, identifiera användare med id i stället för namn och radera applikations- och felsökningsloggar efter 30 dagar.

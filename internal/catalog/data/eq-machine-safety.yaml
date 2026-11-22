@@ -978,3 +978,65 @@ tests:
           expected: Bruksanvisningen för maskinens modell och serienummerintervall kan laddas ned.
         - action: Läs beställningsvillkoren.
           expected: En kostnadsfri papperskopia erbjuds vid köpet.
+
+risks:
+  - id: EQSAF-R01
+    category: safety
+    likelihood: 3
+    impact: 5
+    tags: [crushing, guards]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "ISO 14119:2024 (interlocking devices associated with guards)", "Regulation (EU) 2023/1230 Annex III §1.4 (guards and protective devices)"]
+    mitigated_by: [EQSAF-01, EQSAF-02, EQSAF-06, EQSAF-07, EQSAF-20]
+    en:
+      title: Operator injured by moving parts
+      description: An operator reaches into the danger zone through an open or defeated guard, or the machine does not stop before the hand arrives. Crushing, cutting or entanglement injuries follow.
+      mitigation: Assess risks over the whole life of the machine, reduce them by the three-step method, require tools for fixed guards and interlock movable guards, base safety distances on measured stopping time and prevent restart when a guard closes.
+    sv:
+      title: Operatör skadas av rörliga delar
+      description: En operatör sträcker sig in i riskområdet genom ett öppet eller förbikopplat skydd, eller maskinen stannar inte innan handen når fram. Kläm-, skär- eller indragningsskador blir följden.
+      mitigation: Bedöm riskerna under maskinens hela livslängd, minska dem enligt trestegsmetoden, kräv verktyg för fasta skydd och förregla öppningsbara skydd, grunda säkerhetsavstånd på uppmätt stopptid och förhindra återstart när ett skydd stängs.
+  - id: EQSAF-R02
+    category: safety
+    likelihood: 3
+    impact: 5
+    tags: [maintenance, energy-isolation]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "Regulation (EU) 2023/1230 Annex III §1.6.3 (isolation of energy sources)"]
+    mitigated_by: [EQSAF-08, EQSAF-05, EQSAF-09, EQMNT-13]
+    en:
+      title: Unexpected start-up during maintenance or setting
+      description: The machine starts while someone works inside it because energy was not isolated, power returned or setting is done at full speed. Serious injury or death can follow.
+      mitigation: Provide lockable isolation of each energy source, prevent restart when power returns, offer a setting mode with reduced speed and an enabling device and place maintenance points outside the danger zones.
+    sv:
+      title: Oväntad start under underhåll eller ställ
+      description: Maskinen startar medan någon arbetar i den eftersom energin inte frånskildes, strömmen kom tillbaka eller ställ görs med full hastighet. Allvarlig skada eller dödsfall kan bli följden.
+      mitigation: Ordna låsbar frånskiljning av varje energikälla, förhindra återstart när strömmen kommer tillbaka, erbjud ett inställningsläge med reducerad hastighet och förstärkningsdon och placera underhållspunkter utanför riskområdena.
+  - id: EQSAF-R03
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [safety-function, control-system]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "ISO 13849-1:2023", "Regulation (EU) 2023/1230 Annex III §1.2.1 (safety and reliability of control systems)"]
+    mitigated_by: [EQSAF-03, EQSAF-04, EQSAF-18, EQSAF-23, EQSAF-12]
+    en:
+      title: Safety function fails when it is needed
+      description: A safety function does not reach its required performance level, its program is changed or it is reached through a network connection. The machine does not stop when the emergency stop or a sensor demands it.
+      mitigation: Verify the performance level of each safety function, place an emergency stop at each operator position, protect safety functions against corruption through connections, verify the safety program checksum after changes and assess safety before each modification.
+    sv:
+      title: Säkerhetsfunktion fungerar inte när den behövs
+      description: En säkerhetsfunktion når inte sin krävda prestandanivå, dess program ändras eller den nås via en nätanslutning. Maskinen stannar inte när nödstoppet eller en givare kräver det.
+      mitigation: Verifiera prestandanivån för varje säkerhetsfunktion, placera ett nödstopp vid varje manöverplats, skydda säkerhetsfunktionerna mot korruption via anslutningar, verifiera säkerhetsprogrammets kontrollsumma efter ändringar och gör en säkerhetsbedömning före varje ombyggnad.
+  - id: EQSAF-R04
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [human-machine-interface, residual-risk]
+    refs: ["ISO 12100:2010 §6.1 (three-step method)", "Regulation (EU) 2023/1230 Annex III §1.7.4 (instructions)"]
+    mitigated_by: [EQSAF-11, EQSAF-13, EQSAF-14, EQSAF-15, EQSAF-16]
+    en:
+      title: Operator error because controls and warnings are unclear
+      description: Controls are confusing, alarms do not say what to do and residual risks are not marked. The operator starts motion by mistake or reacts wrongly to a fault.
+      mitigation: Mark residual risks with warning signs, code controls by colour and direction, state cause and action in alarm messages, confirm commands that start motion on touch panels and display text in the operators' language.
+    sv:
+      title: Operatörsfel eftersom manöverdon och varningar är otydliga
+      description: Manöverdonen är förvirrande, larmen säger inte vad som ska göras och kvarstående risker är inte märkta. Operatören startar en rörelse av misstag eller reagerar fel på ett fel.
+      mitigation: Märk kvarstående risker med varningsskyltar, koda manöverdon med färg och riktning, ange orsak och åtgärd i larmmeddelanden, bekräfta kommandon som startar rörelse på pekskärmar och visa text på operatörernas språk.

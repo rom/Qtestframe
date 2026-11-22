@@ -950,3 +950,65 @@ tests:
           expected: Var och en har en orsak och en åtgärd eller en motivering.
         - action: Räkna uppgifterna i demonstrationsprotokollet och beräkna den genomsnittliga aktiva reparationstiden.
           expected: Minst 30 uppgifter och ett medelvärde på högst 30 minuter.
+
+risks:
+  - id: SYRAMS-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [hazard, safety-integrity]
+    refs: ["IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "EN 50126-1:2017 (safety case)"]
+    mitigated_by: [SYRAMS-05, SYRAMS-06, SYRAMS-07, SYRAMS-08, SYRAMS-16]
+    en:
+      title: Hazard not identified or not controlled
+      description: A hazard is missed in the concept phase or a safety function gets too low an integrity level. The system can cause an accident that nobody analysed.
+      mitigation: Analyse hazards and risks in the concept phase, maintain a hazard log over the life cycle, agree risk acceptance criteria first, specify safety functions with a safety integrity level and build a fault tree for each top-level hazard.
+    sv:
+      title: En fara identifieras inte eller hanteras inte
+      description: En fara missas i konceptfasen eller en säkerhetsfunktion får en för låg integritetsnivå. Systemet kan orsaka en olycka som ingen har analyserat.
+      mitigation: Analysera faror och risker i konceptfasen, för en farologg under hela livscykeln, kom överens om kriterier för riskacceptans först, specificera säkerhetsfunktioner med säkerhetsintegritetsnivå och ta fram ett felträd för varje fara på toppnivå.
+  - id: SYRAMS-R02
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [common-cause, redundancy]
+    refs: ["IEC 61508-6:2010 Annex D (common cause failures)", "IEC 61508-2:2010 §7.4.5 (requirements for quantifying the effect of random hardware failures)"]
+    mitigated_by: [SYRAMS-09, SYRAMS-17, SYRAMS-15, SYRAMS-10]
+    en:
+      title: Redundant channels fail together
+      description: Two channels of a safety function share a cause of failure such as power, software or environment, or proof tests are not done at the assumed interval. The safety function fails on demand despite redundancy.
+      mitigation: Meet the hardware failure measures for the target SIL, assess common cause failures of redundant channels, run proof tests at the interval assumed in the calculation and develop safety software with the techniques for its SIL.
+    sv:
+      title: Redundanta kanaler fallerar samtidigt
+      description: Två kanaler i en säkerhetsfunktion delar en felorsak som kraft, programvara eller miljö, eller provningar görs inte med det intervall som antagits. Säkerhetsfunktionen fallerar vid behov trots redundansen.
+      mitigation: Uppfyll hårdvarukraven för den eftersträvade SIL-nivån, bedöm fel med gemensam orsak i redundanta kanaler, gör provningar med det intervall som antagits i beräkningen och utveckla säkerhetsprogramvaran med de metoder som krävs för dess SIL-nivå.
+  - id: SYRAMS-R03
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [safety-case, approval]
+    refs: ["EN 50129:2018 (safety case for safety-related electronic systems)", "IEC 61508-1:2010 §8 (functional safety assessment)"]
+    mitigated_by: [SYRAMS-13, SYRAMS-12, SYRAMS-18, SYRAMS-20, SYRAMS-21]
+    en:
+      title: Entry into service delayed by an incomplete safety case
+      description: Safety evidence is scattered, not tied to versions or not independently assessed. The assessor or authority does not accept the safety case and the system cannot go into service.
+      mitigation: Structure the safety argument with claims, arguments and evidence tied to baselined versions, assess functional safety with the required independence and get the safety case and independent assessment report accepted before entry into service.
+    sv:
+      title: Driftsättningen försenas av en ofullständig säkerhetsbevisning
+      description: Säkerhetsbevis är utspridda, inte knutna till versioner eller inte oberoende bedömda. Bedömaren eller myndigheten godtar inte säkerhetsbevisningen och systemet kan inte tas i drift.
+      mitigation: Strukturera säkerhetsargumentet med påståenden, argument och bevis som knyts till baslinjerade versioner, bedöm den funktionella säkerheten med krävd oberoende ställning och få säkerhetsbevisningen och den oberoende bedömningsrapporten godkända före driftsättning.
+  - id: SYRAMS-R04
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [reliability, maintainability]
+    refs: ["IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)", "EN 50126-1:2017 (RAMS process)"]
+    mitigated_by: [SYRAMS-02, SYRAMS-03, SYRAMS-04, SYRAMS-22, SYRAMS-23]
+    en:
+      title: System misses its reliability and availability targets
+      description: RAM targets are not quantified or apportioned, field failures are not analysed and repair takes longer than assumed. The operator gets lower availability than paid for.
+      mitigation: Quantify RAM targets and apportion them to subsystems, demonstrate availability over the first year, run a failure reporting and corrective action system and demonstrate the mean time to repair before acceptance.
+    sv:
+      title: Systemet missar sina mål för tillförlitlighet och tillgänglighet
+      description: RAM-målen kvantifieras inte eller fördelas inte, fel i fält analyseras inte och reparationer tar längre tid än antaget. Operatören får lägre tillgänglighet än den betalat för.
+      mitigation: Kvantifiera RAM-målen och fördela dem på delsystem, visa tillgängligheten under första driftåret, ha ett system för felrapportering, analys och korrigerande åtgärder och visa medeltiden för reparation före godkännandet.

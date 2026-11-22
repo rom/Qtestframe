@@ -920,3 +920,50 @@ tests:
           expected: Varje utgångskriterium är bedömt och varje åtgärd har en ansvarig.
         - action: Jämför bekräftelserna i baslinjeprotokollet med intressentregistret.
           expected: Varje grupp har en daterad bekräftelse före baslinjedatumet.
+
+risks:
+  - id: SYENG-R01
+    category: project
+    likelihood: 4
+    impact: 4
+    tags: [requirements, scope]
+    refs: ["ISO/IEC/IEEE 29148:2018 §5.2 (characteristics of good requirements)", "ISO/IEC/IEEE 15288:2023 §6.4.2 (stakeholder needs and requirements definition process)"]
+    mitigated_by: [SYENG-02, SYENG-05, SYENG-06, SYENG-21, SYENG-08]
+    en:
+      title: System built to the wrong requirements
+      description: Stakeholder needs are not collected, requirements are ambiguous and they change without control. The delivered system does not solve the problem and rework is expensive.
+      mitigation: Keep a stakeholder register with documented needs, write each requirement singular, unambiguous and verifiable, trace needs to requirements, validate the set with stakeholder representatives and change baselined requirements only through the board.
+    sv:
+      title: Systemet byggs efter fel krav
+      description: Intressenternas behov samlas inte in, kraven är tvetydiga och de ändras utan kontroll. Det levererade systemet löser inte problemet och omarbetning blir dyr.
+      mitigation: För ett intressentregister med dokumenterade behov, skriv varje krav entydigt, odelat och verifierbart, spåra behoven till kraven, validera kravmängden med företrädare för intressenterna och ändra baslinjerade krav bara via ändringsnämnden.
+  - id: SYENG-R02
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [configuration-management, change-impact]
+    refs: ["SAE EIA-649C (configuration management standard)", "ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)"]
+    mitigated_by: [SYENG-12, SYENG-13, SYENG-14, SYENG-16, SYENG-07]
+    en:
+      title: Delivered configuration differs from what was verified
+      description: Items and versions are not identified and changes are approved without impact analysis. What is delivered is not what was tested, and faults cannot be traced to a version.
+      mitigation: Identify configuration items with versions, keep functional, allocated and product baselines, analyse impact before each change, audit the configuration before delivery and trace requirements to architecture and verification.
+    sv:
+      title: Levererad konfiguration skiljer sig från den som verifierades
+      description: Objekt och versioner identifieras inte och ändringar godkänns utan konsekvensanalys. Det som levereras är inte det som testades, och fel kan inte spåras till en version.
+      mitigation: Identifiera konfigurationsobjekt med versioner, ha funktionella, allokerade och produktbaslinjer, analysera konsekvenser före varje ändring, revidera konfigurationen före leverans och spåra kraven till arkitektur och verifiering.
+  - id: SYENG-R03
+    category: project
+    likelihood: 3
+    impact: 3
+    tags: [technical-risk, architecture]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.4 (risk management process)", "ISO/IEC/IEEE 42010:2022 (architecture description)"]
+    mitigated_by: [SYENG-10, SYENG-11, SYENG-17, SYENG-20, SYENG-09]
+    en:
+      title: Architecture choice turns out to be wrong late
+      description: Design trade-offs are made informally and technical risks are not followed up. Performance or feasibility problems appear at integration, when changing course is most expensive.
+      mitigation: Record trade-off decisions with alternatives and criteria, review the technical risk register every month, track technical performance measures, hold technical reviews with entry and exit criteria and describe the architecture with stated viewpoints.
+    sv:
+      title: Ett arkitekturval visar sig vara fel sent i projektet
+      description: Avvägningar i konstruktionen görs informellt och tekniska risker följs inte upp. Prestanda- eller genomförbarhetsproblem visar sig vid integrationen, när det är dyrast att byta riktning.
+      mitigation: Registrera avvägningsbeslut med alternativ och kriterier, gå igenom det tekniska riskregistret varje månad, följ tekniska prestandamått, håll tekniska granskningar med in- och utgångskriterier och beskriv arkitekturen med angivna synsätt.

@@ -566,3 +566,35 @@ tests:
         - action: Hitta mätningarna som ligger mer än 20 % under målet och slå upp rapporterna till rådet.
           expected: Varje mätning har en rapport med orsak och åtgärder inom 30 dagar.
           data: "Mål 1 000 sparade timmar, uppmätt 750 timmar: 25 % under målet"
+
+risks:
+  - id: PJPFB-R01
+    category: project
+    likelihood: 4
+    impact: 3
+    tags: [benefits, value]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
+    mitigated_by: [PJPFB-09, PJPFB-10, PJPFB-11, PJPFB-13, PJPFB-14]
+    en:
+      title: Benefits promised in the business case never materialise
+      description: Benefits have no owner, no baseline and are not tracked after the project closes. The investment is made but nobody can show that it paid off.
+      mitigation: Keep a benefits register with measure, baseline, target and date, name a benefit owner in the receiving unit, measure the baseline before go-live, hand tracking to the line at closure and act on shortfalls above 20 %.
+    sv:
+      title: Nyttan som utlovades i affärsfallet uppstår aldrig
+      description: Nyttan saknar ägare och utgångsvärde och följs inte upp efter att projektet avslutats. Investeringen görs men ingen kan visa att den lönade sig.
+      mitigation: För ett nyttoregister med mått, utgångsvärde, målvärde och datum, utse en nyttoägare i den mottagande enheten, mät utgångsvärdet före driftsättning, lämna över uppföljningen till linjen vid avslut och agera vid underskott på mer än 20 %.
+  - id: PJPFB-R02
+    category: project
+    likelihood: 3
+    impact: 3
+    tags: [prioritisation, capacity]
+    refs: ["ISO 21504:2022 §5.5 (criteria for selecting and prioritizing portfolio components)", "ISO 21504:2022 §6.8 (balancing and optimizing the portfolio)"]
+    mitigated_by: [PJPFB-02, PJPFB-03, PJPFB-04, PJPFB-05, PJPFB-06]
+    en:
+      title: Too many projects compete for the same people
+      description: Proposals are approved without scoring, nothing is ever stopped and demand on key roles exceeds capacity. Every project moves slowly and the most important ones are late.
+      mitigation: Approve weighted prioritisation criteria, score each proposal, review the portfolio quarterly with a decision per component, set stop criteria and keep demand on key roles within capacity.
+    sv:
+      title: För många projekt konkurrerar om samma personer
+      description: Förslag godkänns utan poängsättning, inget stoppas någonsin och efterfrågan på nyckelroller överstiger kapaciteten. Alla projekt går långsamt och de viktigaste blir försenade.
+      mitigation: Godkänn viktade prioriteringskriterier, poängsätt varje förslag, gå igenom portföljen varje kvartal med ett beslut per komponent, fastställ stoppkriterier och håll efterfrågan på nyckelroller inom kapaciteten.

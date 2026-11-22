@@ -708,3 +708,50 @@ tests:
           expected: Det finns en rapport per kluster och månad.
         - action: Leta upp varje underkänd kontroll i nästa rapport och i registret över undantag.
           expected: Var och en är antingen godkänd i nästa rapport eller har ett undantag med ägare och skäl daterat inom 30 dagar.
+
+risks:
+  - id: CNSEC-R01
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [container-escape, kubernetes]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-190", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)", "MITRE ATT&CK T1068 (exploitation for privilege escalation)"]
+    mitigated_by: [CNSEC-01, CNSEC-02, CNSEC-04, CNSEC-13]
+    en:
+      title: Attacker escapes from a container to the host
+      description: A compromised workload runs as root with broad capabilities on an unpatched node and breaks out to the host. From there the attacker reaches every other workload on the node and the cluster credentials.
+      mitigation: Run containers as non-root with all capabilities dropped and a seccomp profile, enforce restricted pod security at admission and keep the cluster and nodes patched.
+    sv:
+      title: Angripare tar sig ut ur en container till värden
+      description: En komprometterad arbetslast körs som root med breda rättigheter på en opatchad nod och bryter sig ut till värden. Därifrån når angriparen alla andra arbetslaster på noden och klustrets inloggningsuppgifter.
+      mitigation: Kör containrar som annan användare än root med alla rättigheter borttagna och en seccomp-profil, tillämpa begränsad poddsäkerhet vid driftsättning och håll kluster och noder patchade.
+  - id: CNSEC-R02
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [image, registry]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-190", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1525 (implant internal image)", "MITRE ATT&CK T1610 (deploy container)"]
+    mitigated_by: [CNSEC-06, CNSEC-07, SUP-10]
+    en:
+      title: Tampered or outdated container image deployed
+      description: A workload is started from an image pulled by a mutable tag from an untrusted registry, or from an image that has not been rebuilt for months. Malicious code or known vulnerabilities reach production.
+      mitigation: Pull images only from the approved registry and by digest, ship production images without shell or package manager and rebuild images regularly.
+    sv:
+      title: Manipulerad eller föråldrad containeravbild driftsätts
+      description: En arbetslast startas från en avbild som hämtats via en föränderlig tagg från ett register som inte är betrott, eller från en avbild som inte har byggts om på flera månader. Skadlig kod eller kända sårbarheter når produktion.
+      mitigation: Hämta avbilder endast från det godkända registret och via sammanfattningsvärde, leverera produktionsavbilder utan skal eller pakethanterare och bygg om avbilderna regelbundet.
+  - id: CNSEC-R03
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [cluster-api, credentials]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1609 (container administration command)", "MITRE ATT&CK T1552.007 (container API)"]
+    mitigated_by: [CNSEC-08, CNSEC-09, CNSEC-10, CNSEC-12]
+    en:
+      title: Cluster taken over through its management API
+      description: The cluster API is reachable from the internet or a workload holds a powerful service account token. An attacker runs commands in every container and reads all cluster secrets.
+      mitigation: Make the cluster API reachable only through single sign-on from listed networks, give workloads no cluster-admin and no automatic tokens, encrypt cluster secrets and audit every API call.
+    sv:
+      title: Klustret tas över via sitt administrationsgränssnitt
+      description: Klustrets API kan nås från internet eller en arbetslast har en kraftfull token för tjänstekonto. En angripare kör kommandon i alla containrar och läser alla hemligheter i klustret.
+      mitigation: Gör klustrets API nåbart endast via gemensam inloggning från listade nät, ge arbetslaster varken klusteradministratörsroll eller automatiska token, kryptera klustrets hemligheter och logga varje API-anrop.

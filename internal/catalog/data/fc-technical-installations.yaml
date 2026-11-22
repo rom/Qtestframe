@@ -588,3 +588,50 @@ tests:
           expected: Varje anordning är av typ B, eller typ A med detektering av 6 mA likström.
         - action: Jämför förteckningen med de anordningar som är installerade i centralen.
           expected: De installerade anordningarna stämmer med förteckningen.
+
+risks:
+  - id: FCTI-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [electrical-safety]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Elsäkerhetslag (2016:732) (elinstallationsföretag och egenkontrollprogram)", "IEC 60364-4-41:2005+AMD1:2017 §411.3.3 (additional protection by RCD)"]
+    mitigated_by: [FCTI-01, FCTI-02, FCTI-03, FCTI-05, FCTI-14]
+    en:
+      title: Electric shock or fire from the electrical installation
+      description: Installation work done by unregistered contractors, missing residual current devices or an installation never verified again leads to a fault. A person gets an electric shock or a fire starts.
+      mitigation: Let registered contractors do installation work with initial verification, name a person responsible for operation, verify the installation every 5 years and fit residual current devices and DC fault protection at charging points.
+    sv:
+      title: Elektrisk stöt eller brand från elinstallationen
+      description: Installationsarbete av företag som inte är registrerade, saknade jordfelsbrytare eller en installation som aldrig besiktigas igen leder till ett fel. En person får en elektrisk stöt eller en brand uppstår.
+      mitigation: Låt registrerade elinstallationsföretag utföra arbetet med verifiering före idrifttagning, utse en person som ansvarar för driften, verifiera installationen vart femte år och montera jordfelsbrytare och skydd mot likströmsfel vid laddpunkter.
+  - id: FCTI-R02
+    category: safety
+    likelihood: 3
+    impact: 3
+    tags: [indoor-climate, legionella]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "EN 16798-1:2019 (category II)"]
+    mitigated_by: [FCTI-06, FCTI-07, FCTI-09, FCTI-10]
+    en:
+      title: Poor indoor air or contaminated water harms occupants
+      description: Too little outdoor air raises carbon dioxide, or hot water is kept below the temperature that controls legionella. Occupants get headaches and reduced performance, or a serious infection.
+      mitigation: Supply enough outdoor air, keep carbon dioxide below 1 000 ppm in meeting rooms, keep hot water at least 60 °C in storage and 50 °C in circulation and test backflow preventers every 12 months.
+    sv:
+      title: Dålig inomhusluft eller förorenat vatten skadar de som vistas i byggnaden
+      description: För lite uteluft höjer koldioxidhalten, eller varmvattnet hålls under den temperatur som motverkar legionella. De som vistas i byggnaden får huvudvärk och sämre prestation, eller en allvarlig infektion.
+      mitigation: Tillför tillräckligt med uteluft, håll koldioxidhalten under 1 000 ppm i mötesrum, håll varmvattnet minst 60 °C i beredaren och 50 °C i cirkulationen och prova återströmningsskydd var 12:e månad.
+  - id: FCTI-R03
+    category: safety
+    likelihood: 2
+    impact: 4
+    tags: [lift, escalator]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "EN 81-28:2022 (remote alarm on passenger and goods passenger lifts)"]
+    mitigated_by: [FCTI-11, FCTI-12, FCOPS-12]
+    en:
+      title: Person trapped or injured in a lift or on an escalator
+      description: A lift stops between floors and the alarm reaches nobody, or an escalator safety device does not work. A person is trapped for hours or injured.
+      mitigation: Connect the lift alarm with two-way speech to a centre staffed around the clock, check escalator stop switches and safety devices every month and have lifts inspected periodically by an accredited body.
+    sv:
+      title: Person blir instängd eller skadas i en hiss eller rulltrappa
+      description: En hiss stannar mellan våningarna och larmet når ingen, eller en säkerhetsanordning i en rulltrappa fungerar inte. En person blir instängd i flera timmar eller skadas.
+      mitigation: Anslut hisslarmet med talförbindelse till en central som är bemannad dygnet runt, kontrollera rulltrappornas stoppbrytare och säkerhetsanordningar varje månad och låt ett ackrediterat organ besiktiga hissarna återkommande.

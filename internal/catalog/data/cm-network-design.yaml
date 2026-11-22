@@ -956,3 +956,50 @@ tests:
           expected: Varje konsol svarar och godtar en inloggning.
         - action: Jämför programversionen för varje element i inventeringen med leverantörernas supportlistor.
           expected: Varje version stöds, och enheter med slut på support inom 12 månader har en planerad ändring.
+
+risks:
+  - id: CMNET-R01
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [fibre-cut, redundancy]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ITIL 4 Capacity and performance management"]
+    mitigated_by: [CMNET-01, CMNET-02, CMNET-03, CMNET-04, CMNET-19]
+    en:
+      title: Site cut off by a single link failure or congestion
+      description: A digger cuts the only fibre to a site, or a link runs full during peaks. The site loses its services and the network cannot even be reached for repair.
+      mitigation: Give each site two physically separate paths with failover within one second, keep peak utilisation at most 70 %, forecast capacity every 6 months and provide out-of-band management access to core sites.
+    sv:
+      title: Plats isoleras av ett enda förbindelsefel eller överbelastning
+      description: En grävmaskin kapar den enda fibern till en plats, eller en förbindelse blir full vid toppar. Platsen förlorar sina tjänster och nätet kan inte ens nås för reparation.
+      mitigation: Ge varje plats två fysiskt åtskilda vägar med omkoppling inom en sekund, håll toppbelastningen på högst 70 %, gör en kapacitetsprognos var 6:e månad och ordna separat förvaltningsåtkomst till kärnplatserna.
+  - id: CMNET-R02
+    category: operational
+    likelihood: 4
+    impact: 3
+    tags: [change-error, configuration]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ITIL 4 Change enablement", "ISO/IEC 27001:2022 A.8.9"]
+    mitigated_by: [CMNET-12, CMNET-14, CMNET-15, CMNET-16, CMNET-13]
+    en:
+      title: Configuration change causes a network outage
+      description: A manual change in a router is wrong or made during business hours, and nobody notices the drift from the approved configuration. Large parts of the network go down.
+      mitigation: Generate configurations from a version-controlled source of truth, validate each change automatically with rollback, make traffic-affecting changes only in announced windows and compare daily with the approved baseline.
+    sv:
+      title: Konfigurationsändring orsakar ett nätavbrott
+      description: En manuell ändring i en router är felaktig eller görs under kontorstid, och ingen märker avvikelsen från den godkända konfigurationen. Stora delar av nätet går ner.
+      mitigation: Generera konfigurationer från en versionshanterad sanningskälla, validera varje ändring automatiskt med återgång, gör trafikpåverkande ändringar bara i aviserade servicefönster och jämför dagligen med den godkända baslinjen.
+  - id: CMNET-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [voice-quality, qos]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "RFC 4594", "ITU-T Y.1541"]
+    mitigated_by: [CMNET-05, CMNET-06, CMNET-07, CMNET-08]
+    en:
+      title: Voice and video break up under load
+      description: Bulk data competes with real-time traffic in the same queue. Calls become choppy or drop exactly when the network is busy.
+      mitigation: Mark and queue four traffic classes separately, keep one-way delay, jitter and packet loss for voice within limits and drop default-class traffic before voice under congestion.
+    sv:
+      title: Röst och video bryts upp under belastning
+      description: Stora dataöverföringar konkurrerar med realtidstrafik i samma kö. Samtalen hackar eller bryts just när nätet är belastat.
+      mitigation: Märk och köa fyra trafikklasser separat, håll fördröjning, fördröjningsvariation och paketförlust för röst inom gränserna och kasta trafik i standardklassen före röst vid överbelastning.

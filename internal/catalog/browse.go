@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+
+	"github.com/rom/qtestframe/internal/model"
 )
 
 // Browsing: localized summaries, filters and a ranked free-text search over
@@ -68,6 +70,26 @@ func (t *Test) Localized(lang string) TestText {
 	return x
 }
 
+// Localized returns the risk text in lang, falling back to English per
+// field.
+func (k *Risk) Localized(lang string) RiskText {
+	x, en := k.Text[lang], k.Text["en"]
+	if x.Title == "" {
+		x.Title = en.Title
+	}
+	if x.Description == "" {
+		x.Description = en.Description
+	}
+	if x.Mitigation == "" {
+		x.Mitigation = en.Mitigation
+	}
+	return x
+}
+
+// Level is the risk level of the typical likelihood and impact, as for a
+// project risk (low, medium, high, critical).
+func (k *Risk) Level() string { return model.RiskLevel(k.Likelihood, k.Impact) }
+
 // Area returns the area with id, or nil.
 func (c *Catalog) Area(id string) *Area {
 	for i := range c.Areas {
@@ -108,29 +130,55 @@ func (c *Catalog) OrderedAreas() []*Area {
 //
 // Source selects items by the reference sources they cite (sources.yaml):
 // a requirement whose refs cite one of them, a test that cites one or
-// verifies such a requirement.
+// verifies such a requirement, a risk that cites one or is mitigated by
+// such a requirement. Category and Level apply to risks only.
 type Filter struct {
 	Area, Group, Type, Obligation, Priority, Tag, Execution string
 	Catalogue                                               string
 	Source                                                  string
+	Category, Level                                         string
 	Q                                                       string
 }
 
 // ReqSummary is a requirement in one language without the long texts.
 type ReqSummary struct {
-	ID          string   `json:"id"`
-	Area        string   `json:"area"`
-	Group       string   `json:"group"`
-	Catalogue   string   `json:"catalogue"`
-	Type        string   `json:"type"`
-	Obligation  string   `json:"obligation"`
-	Priority    string   `json:"priority"`
-	Tags        []string `json:"tags"`
-	Refs        []string `json:"refs"`
-	Sources     []string `json:"sources"`
-	Tests       []string `json:"tests"`
+	ID         string   `json:"id"`
+	Area       string   `json:"area"`
+	Group      string   `json:"group"`
+	Catalogue  string   `json:"catalogue"`
+	Type       string   `json:"type"`
+	Obligation string   `json:"obligation"`
+	Priority   string   `json:"priority"`
+	Tags       []string `json:"tags"`
+	Refs       []string `json:"refs"`
+	Sources    []string `json:"sources"`
+	Tests      []string `json:"tests"`
+	// Risks are the catalogue risks it mitigates.
+	Risks       []string `json:"risks"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
+}
+
+// RiskSummary is a risk in one language.
+type RiskSummary struct {
+	ID           string   `json:"id"`
+	Area         string   `json:"area"`
+	Group        string   `json:"group"`
+	Catalogue    string   `json:"catalogue"`
+	Category     string   `json:"category"`
+	CategoryName string   `json:"category_name"`
+	Likelihood   int      `json:"likelihood"`
+	Impact       int      `json:"impact"`
+	Score        int      `json:"score"`
+	Level        string   `json:"level"`
+	Tags         []string `json:"tags"`
+	Refs         []string `json:"refs"`
+	Sources      []string `json:"sources"`
+	MitigatedBy  []string `json:"mitigated_by"`
+	Tests        []string `json:"tests"`
+	Title        string   `json:"title"`
+	Description  string   `json:"description"`
+	Mitigation   string   `json:"mitigation"`
 }
 
 // TestSummary is a test in one language without the steps.
@@ -165,7 +213,80 @@ func (c *Catalog) SummarizeRequirement(r *Requirement, lang string) ReqSummary {
 		g, k = a.Group, a.Catalogue
 	}
 	return ReqSummary{ID: r.ID, Area: r.Area, Group: g, Catalogue: k, Type: r.Type, Obligation: r.Obligation, Priority: r.Priority,
-		Tags: nonNil(r.Tags), Refs: nonNil(r.Refs), Sources: nonNil(r.Sources), Tests: nonNil(r.Tests), Title: x.Title, Description: x.Description}
+		Tags: nonNil(r.Tags), Refs: nonNil(r.Refs), Sources: nonNil(r.Sources), Tests: nonNil(r.Tests), Risks: nonNil(c.RisksOf[r.ID]), Title: x.Title, Description: x.Description}
+}
+
+// SummarizeRisk returns k in lang.
+func (c *Catalog) SummarizeRisk(k *Risk, lang string) RiskSummary {
+	x := k.Localized(lang)
+	g, kind := "", ""
+	if a := c.Area(k.Area); a != nil {
+		g, kind = a.Group, a.Catalogue
+	}
+	cat := k.Category
+	if rc := RiskCategory(k.Category); rc != nil {
+		cat = rc.Name.Get(lang)
+	}
+	return RiskSummary{ID: k.ID, Area: k.Area, Group: g, Catalogue: kind, Category: k.Category, CategoryName: cat,
+		Likelihood: k.Likelihood, Impact: k.Impact, Score: k.Likelihood * k.Impact, Level: k.Level(),
+		Tags: nonNil(k.Tags), Refs: nonNil(k.Refs), Sources: nonNil(k.Sources), MitigatedBy: nonNil(k.MitigatedBy), Tests: nonNil(k.Tests),
+		Title: x.Title, Description: x.Description, Mitigation: x.Mitigation}
+}
+
+// riskSources returns the sources a risk brings in: those it cites and
+// those of the requirements that mitigate it.
+func (c *Catalog) riskSources(k *Risk) []string {
+	out := append([]string{}, k.Sources...)
+	for _, rid := range k.MitigatedBy {
+		if r := c.Requirements[rid]; r != nil {
+			for _, s := range r.Sources {
+				if !slices.Contains(out, s) {
+					out = append(out, s)
+				}
+			}
+		}
+	}
+	return out
+}
+
+// FindRisks returns the risks matching f in lang (see FindRequirements):
+// Area, Group, Catalogue, Category, Level, Tag, Source and Q apply.
+func (c *Catalog) FindRisks(f Filter, lang string) []RiskSummary {
+	lang = Lang(lang)
+	areas, groups, kinds, cats, levels, tags, sources := set(f.Area), set(f.Group), set(f.Catalogue), set(f.Category), set(f.Level), set(f.Tag), set(f.Source)
+	terms := Terms(f.Q)
+	type hit struct {
+		s     RiskSummary
+		score int
+	}
+	var hits []hit
+	for _, a := range c.OrderedAreas() {
+		if !accepts(areas, a.ID) || !accepts(groups, a.Group) || !accepts(kinds, a.Catalogue) {
+			continue
+		}
+		for i := range a.Risks {
+			k := &a.Risks[i]
+			if !accepts(cats, k.Category) || !accepts(levels, k.Level()) || !acceptsAny(tags, k.Tags) || (sources != nil && !acceptsAny(sources, c.riskSources(k))) {
+				continue
+			}
+			x := k.Localized(lang)
+			sc := score(k.ID, terms, []field{
+				{lower(x.Title), 10}, {lower(k.ID), 8}, {lower(k.Tags...), 6}, {lower(k.Refs...), 4},
+				{lower(x.Description), 3}, {lower(k.MitigatedBy...), 2}, {lower(x.Mitigation), 1},
+			})
+			if sc > 0 {
+				hits = append(hits, hit{c.SummarizeRisk(k, lang), sc})
+			}
+		}
+	}
+	if len(terms) > 0 {
+		sort.SliceStable(hits, func(i, j int) bool { return hits[i].score > hits[j].score })
+	}
+	out := make([]RiskSummary, len(hits))
+	for i, h := range hits {
+		out[i] = h.s
+	}
+	return out
 }
 
 // SummarizeTest returns t in lang.
@@ -360,6 +481,7 @@ type AreaSummary struct {
 	Description  string `json:"description"`
 	Requirements int    `json:"requirements"`
 	Tests        int    `json:"tests"`
+	Risks        int    `json:"risks"`
 }
 
 // GroupSummary is a group with its areas and counts.
@@ -368,6 +490,7 @@ type GroupSummary struct {
 	Name         string        `json:"name"`
 	Requirements int           `json:"requirements"`
 	Tests        int           `json:"tests"`
+	Risks        int           `json:"risks"`
 	Areas        []AreaSummary `json:"areas"`
 }
 
@@ -383,10 +506,11 @@ func (c *Catalog) Overview(lang string) []GroupSummary {
 				continue
 			}
 			as := AreaSummary{ID: a.ID, Prefix: a.Prefix, Group: a.Group, Catalogue: a.Catalogue, Name: a.Name.Get(lang), Description: a.Description.Get(lang),
-				Requirements: len(a.Requirements), Tests: len(a.Tests)}
+				Requirements: len(a.Requirements), Tests: len(a.Tests), Risks: len(a.Risks)}
 			gs.Areas = append(gs.Areas, as)
 			gs.Requirements += as.Requirements
 			gs.Tests += as.Tests
+			gs.Risks += as.Risks
 		}
 		if len(gs.Areas) > 0 {
 			out = append(out, gs)
@@ -403,6 +527,7 @@ type KindSummary struct {
 	Areas        int    `json:"areas"`
 	Requirements int    `json:"requirements"`
 	Tests        int    `json:"tests"`
+	Risks        int    `json:"risks"`
 }
 
 // KindsOverview returns the catalogue types (in order) in lang; types
@@ -417,6 +542,7 @@ func (c *Catalog) KindsOverview(lang string) []KindSummary {
 				ks.Areas++
 				ks.Requirements += len(a.Requirements)
 				ks.Tests += len(a.Tests)
+				ks.Risks += len(a.Risks)
 			}
 		}
 		if ks.Areas > 0 {
@@ -432,11 +558,19 @@ type TagCount struct {
 	Count int    `json:"count"`
 }
 
-// Tags returns the tags of the requirements (kind "requirement") or tests,
-// most used first.
+// Tags returns the tags of the requirements (kind "requirement"), risks
+// (kind "risk") or tests, most used first.
 func (c *Catalog) Tags(kind string) []TagCount {
 	n := map[string]int{}
 	for _, a := range c.Areas {
+		if kind == model.KindRisk {
+			for _, k := range a.Risks {
+				for _, t := range k.Tags {
+					n[t]++
+				}
+			}
+			continue
+		}
 		if kind == "requirement" {
 			for _, r := range a.Requirements {
 				for _, t := range r.Tags {

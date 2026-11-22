@@ -783,3 +783,50 @@ tests:
           expected: Var och en har de tillämpliga testkategorierna, till exempel WSTG-ATHN och WSTG-INPV, och ett resultat.
         - action: Öppna de länkade fynden.
           expected: Varje fynd finns som ett ärende med allvarlighet och beslut.
+
+risks:
+  - id: SDL-R01
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [design-flaw, threat-model]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A04", "NIST SP 800-218 PW.1"]
+    mitigated_by: [SDL-01, SDL-02, SDL-03, SDL-09]
+    en:
+      title: Security flaw designed into a new feature
+      description: A feature is built without thinking about who could misuse it, so a trust boundary is crossed without checks. The flaw is found only after release, when changing the design is expensive.
+      mitigation: Make a threat model before a new component is built and when trust boundaries change, write security acceptance criteria into user stories and review sensitive changes.
+    sv:
+      title: Säkerhetsbrist konstrueras in i en ny funktion
+      description: En funktion byggs utan att man tänker på vem som kan missbruka den, så att en förtroendegräns passeras utan kontroller. Bristen upptäcks först efter leverans, när det är dyrt att ändra konstruktionen.
+      mitigation: Gör en hotmodell innan en ny komponent byggs och när förtroendegränser ändras, skriv säkerhetskriterier i användarberättelserna och granska känsliga ändringar.
+  - id: SDL-R02
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [coding-error, testing]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-218 PW.7", "CWE Top 25 Most Dangerous Software Weaknesses", "MITRE ATT&CK M1016 (vulnerability scanning)"]
+    mitigated_by: [SDL-04, SDL-05, SDL-06, SDL-13, SDL-16]
+    en:
+      title: Common coding weakness reaches production
+      description: Injection, broken access control or unsafe parsing slips through review and testing. It is found by an attacker before it is found by the team.
+      mitigation: Run security static analysis on every pull request, scan staging dynamically every week, fuzz parsers, plan security tests for each major release and order an independent penetration test every year.
+    sv:
+      title: Vanlig kodsvaghet når produktion
+      description: Injektion, bristande åtkomstkontroll eller osäker tolkning slinker igenom granskning och test. Den hittas av en angripare innan teamet hittar den.
+      mitigation: Kör statisk säkerhetsanalys för varje ändringsbegäran, skanna testmiljön dynamiskt varje vecka, fuzztesta tolkar, planera säkerhetstester för varje större leverans och beställ ett oberoende penetrationstest varje år.
+  - id: SDL-R03
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [vulnerability-backlog, regression]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-218 RV.2"]
+    mitigated_by: [SDL-07, SDL-11, SDL-08, SDL-15]
+    en:
+      title: Known security findings stay open or come back
+      description: Findings from scans and tests pile up without deadlines, and fixed vulnerabilities reappear in later versions. The product carries known weaknesses that attackers can find in the same way.
+      mitigation: Fix security findings within set deadlines, add a regression test for each fixed vulnerability, train developers every year and name a security champion in each team.
+    sv:
+      title: Kända säkerhetsfynd blir liggande eller kommer tillbaka
+      description: Fynd från skanningar och tester hopar sig utan tidsgränser, och rättade sårbarheter dyker upp igen i senare versioner. Produkten bär på kända svagheter som angripare kan hitta på samma sätt.
+      mitigation: Rätta säkerhetsfynd inom fastställda tidsgränser, lägg till ett regressionstest för varje rättad sårbarhet, utbilda utvecklarna varje år och utse en säkerhetsansvarig i varje team.
