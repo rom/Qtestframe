@@ -30,6 +30,7 @@ import RequirementImportDialog from './RequirementImportDialog.vue'
 import ExchangeImportDialog from './ExchangeImportDialog.vue'
 import Menu from 'primevue/menu'
 import type { ExchangeMode } from '@/lib/exchange'
+import type { ImportSourceId } from '@/lib/importSources'
 import BulkReviewDialog from './BulkReviewDialog.vue'
 import ApplicabilityDialog from './ApplicabilityDialog.vue'
 import VariantSelect from './VariantSelect.vue'
@@ -344,9 +345,9 @@ async function onImported(res: ImportResult | { folders_created: number }) {
 
 // ---------- exchange: ReqIF with updates, the Excel round-trip ----------
 const exchangeOpen = ref(false)
-const exchangeMode = ref<ExchangeMode>('xlsx')
+const exchangeMode = ref<ExchangeMode | ImportSourceId>('xlsx')
 const exchangeMenu = ref<InstanceType<typeof Menu> | null>(null)
-function openExchange(mode: ExchangeMode) {
+function openExchange(mode: ExchangeMode | ImportSourceId) {
   exchangeMode.value = mode
   exchangeOpen.value = true
 }
@@ -363,6 +364,8 @@ const exchangeItems = computed(() => [
     ? [
         { label: t('exchange.fromFile'), icon: 'pi pi-upload', command: () => (importOpen.value = true) },
         { label: t('exchange.fromReqif'), icon: 'pi pi-sitemap', command: () => openExchange('reqif') },
+        { label: t('exchange.fromJira'), icon: 'pi pi-cloud-download', command: () => openExchange('jira') },
+        { label: t('exchange.fromAzure'), icon: 'pi pi-microsoft', command: () => openExchange('azure-devops') },
       ]
     : []),
   ...(canExport.value ? [{ label: t('exchange.exportXlsx'), icon: 'pi pi-file-excel', command: exportRoundTrip }] : []),

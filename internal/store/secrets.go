@@ -30,6 +30,9 @@ func adWebhook(id string) string  { return "webhooks.secret|" + id }
 func adTracker(projectID string) string {
 	return "projects.defect_tracker.token|" + projectID
 }
+func adImportSource(projectID, source string) string {
+	return "projects.import_sources." + source + ".token|" + projectID
+}
 func adWebVar(projectID, name string) string {
 	return "projects.web_tests.variables." + strings.ToUpper(name) + ".value|" + projectID
 }
@@ -382,8 +385,8 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 			}
 		}
 	}
-	// projects.defect_tracker, projects.web_tests
-	for _, col := range []string{"defect_tracker", "web_tests"} {
+	// projects.defect_tracker, projects.web_tests, projects.import_sources
+	for _, col := range []string{"defect_tracker", "web_tests", "import_sources"} {
 		pairs, err := idValues(ctx, c, `SELECT id, `+col+` FROM projects`)
 		if err != nil {
 			return nil, err
@@ -450,8 +453,8 @@ func idValues(ctx context.Context, c conn, q string) ([][2]string, error) {
 }
 
 // recodeProjectJSON applies fn to the secrets in a project's
-// defect_tracker (token) or web_tests (values of secret variables) JSON,
-// keeping every other field as it is.
+// defect_tracker (token), import_sources (tokens) or web_tests (values of
+// secret variables) JSON, keeping every other field as it is.
 func recodeProjectJSON(col, projectID, raw string, fn func(field, old, ad string) (string, error)) (string, bool, error) {
 	var m map[string]any
 	if raw == "" || json.Unmarshal([]byte(raw), &m) != nil || m == nil {
@@ -470,6 +473,21 @@ func recodeProjectJSON(col, projectID, raw string, fn func(field, old, ad string
 		}
 		if v != tok {
 			m["token"], changed = v, true
+		}
+	case "import_sources":
+		for _, src := range []string{"jira", "azure_devops"} {
+			sm, _ := m[src].(map[string]any)
+			tok, _ := sm["token"].(string)
+			if tok == "" {
+				continue
+			}
+			v, err := fn("projects.import_sources.token", tok, adImportSource(projectID, src))
+			if err != nil {
+				return "", false, err
+			}
+			if v != tok {
+				sm["token"], changed = v, true
+			}
 		}
 	case "web_tests":
 		vars, _ := m["variables"].([]any)

@@ -841,12 +841,18 @@ type DefectLink struct {
 // DefectTracker is a project's connection to an external issue tracker. It
 // is used for defects and for issues created from requirements.
 type DefectTracker struct {
-	// Type: "" (none), "jira", "github" or "gitlab".
+	// Type: "" (none), "jira", "github", "gitlab" or "rt" (Request Tracker).
 	Type string `json:"type"`
 	// URL: Jira base URL (https://example.atlassian.net), the GitHub API
-	// URL (default https://api.github.com) or the GitLab instance URL
-	// (default https://gitlab.com; https only).
+	// URL (default https://api.github.com), the GitLab instance URL
+	// (default https://gitlab.com; https only) or the base URL of the RT
+	// instance (https://rt.example.com, without /REST/2.0).
 	URL string `json:"url"`
+	// Queue: the RT queue new tickets go to (name or numeric ID).
+	Queue string `json:"queue"`
+	// LabelsField: the RT custom field (name) that receives the labels of
+	// new tickets; empty sends no labels to RT.
+	LabelsField string `json:"labels_field"`
 	// ProjectKey: Jira project key; Repo: GitHub owner/repo; Project:
 	// GitLab project ID or path (group/subgroup/project).
 	ProjectKey string `json:"project_key"`
@@ -877,6 +883,43 @@ type DefectTracker struct {
 	// Token is write-only: the API reports only HasToken.
 	Token    string `json:"token,omitempty"`
 	HasToken bool   `json:"has_token"`
+}
+
+// ImportSources are a project's connections for importing requirements
+// from Jira and Azure DevOps (internal/tracker source.go). Tokens are
+// write-only: the API reports only HasToken.
+type ImportSources struct {
+	Jira  JiraImportSource  `json:"jira"`
+	Azure AzureDevOpsSource `json:"azure_devops"`
+}
+
+// JiraImportSource is the Jira instance requirements are imported from.
+// An empty URL uses the project's defect tracker when it is Jira.
+type JiraImportSource struct {
+	URL string `json:"url"`
+	// User: the account e-mail for an API token (Jira Cloud); empty for a
+	// personal access token sent as a bearer token.
+	User     string `json:"user"`
+	Token    string `json:"token,omitempty"`
+	HasToken bool   `json:"has_token"`
+	// JQL is the query the import dialog starts with.
+	JQL string `json:"jql"`
+}
+
+// AzureDevOpsSource is the Azure DevOps (Services or Server) project work
+// items are imported from.
+type AzureDevOpsSource struct {
+	// URL is the organization (https://dev.azure.com/org) or collection URL
+	// (https://tfs.example.com/tfs/DefaultCollection).
+	URL     string `json:"url"`
+	Project string `json:"project"`
+	// Token is a personal access token with the Work Items (Read) scope.
+	Token    string `json:"token,omitempty"`
+	HasToken bool   `json:"has_token"`
+	// AreaPath and WorkItemTypes (comma-separated) are the defaults of the
+	// import dialog's simple query.
+	AreaPath      string `json:"area_path"`
+	WorkItemTypes string `json:"work_item_types"`
 }
 
 // RiskStatuses are the states of a risk; RiskOpenStatuses still need action.

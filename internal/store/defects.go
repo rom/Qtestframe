@@ -481,11 +481,26 @@ func (s *Store) SaveDefectTracker(ctx context.Context, tenantID, projectID strin
 		if !gitlabProjectRe.MatchString(t.Project) || slices.ContainsFunc(strings.Split(t.Project, "/"), func(s string) bool { return strings.Trim(s, ".") == "" }) {
 			return Invalidf("project must be a GitLab project ID or path, e.g. 42 or group/subgroup/project")
 		}
+	case "rt":
+		t.URL = strings.TrimRight(strings.TrimSuffix(t.URL, "/REST/2.0"), "/")
+		if u, err := url.Parse(t.URL); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.RawQuery != "" || u.User != nil {
+			return Invalidf("the RT URL must be an http(s) URL, e.g. https://rt.example.com")
+		}
+		t.Queue = strings.TrimSpace(t.Queue)
+		if t.Queue == "" || utf8.RuneCountInString(t.Queue) > 200 || strings.ContainsAny(t.Queue, "/\\?#") {
+			return Invalidf("queue must be the name or number of an RT queue, e.g. General")
+		}
+		t.LabelsField = strings.TrimSpace(t.LabelsField)
+		// RT tickets get no milestone or assignee from here
+		t.Milestone, t.Assignee = "", ""
 	default:
-		return Invalidf("type must be jira, github, gitlab or empty")
+		return Invalidf("type must be jira, github, gitlab, rt or empty")
 	}
 	if t.Type != "gitlab" {
 		t.Project = ""
+	}
+	if t.Type != "rt" {
+		t.Queue, t.LabelsField = "", ""
 	}
 	if t.Type == "jira" {
 		// Jira issues get no milestone or assignee from here
@@ -500,7 +515,7 @@ func (s *Store) SaveDefectTracker(ctx context.Context, tenantID, projectID strin
 	t.Milestone = strings.TrimSpace(t.Milestone)
 	t.Assignee = strings.TrimSpace(t.Assignee)
 	t.RequirementLabels = strings.TrimSpace(t.RequirementLabels)
-	for name, v := range map[string]string{"labels": t.Labels, "milestone": t.Milestone, "assignee": t.Assignee, "requirement_labels": t.RequirementLabels, "requirement_issue_type": t.RequirementIssueType, "issue_type": t.IssueType} {
+	for name, v := range map[string]string{"labels": t.Labels, "milestone": t.Milestone, "assignee": t.Assignee, "requirement_labels": t.RequirementLabels, "requirement_issue_type": t.RequirementIssueType, "issue_type": t.IssueType, "labels_field": t.LabelsField} {
 		if utf8.RuneCountInString(v) > 500 {
 			return Invalidf("%s may have at most 500 characters", name)
 		}

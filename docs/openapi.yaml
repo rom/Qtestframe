@@ -10048,7 +10048,7 @@ paths:
       summary: Get tracker
       operationId: getProjectsByPidDefectTracker
       description: |-
-        `{type: ""|jira|github|gitlab, url, project_key, repo, project, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned
+        `{type: ""|jira|github|gitlab|rt, url, project_key, repo, project, queue, labels_field, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -10545,6 +10545,109 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SystemElement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/import-sources:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: Get the requirement import sources
+      operationId: getProjectsByPidImportSources
+      description: |-
+        The connections requirements are imported from: `{jira: {url, user, jql, has_token}, azure_devops: {url, project, area_path, work_item_types, has_token}, jira_from_tracker, tracker_jira_url, tracker_jira_key}`. Without a Jira URL of its own the Jira import uses the defect tracker when it is Jira (`jira_from_tracker`). Tokens are never returned.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Import
+      summary: Save the requirement import sources
+      operationId: putProjectsByPidImportSources
+      description: |-
+        Same fields plus `jira.token` and `azure_devops.token` (write-only; empty keeps the saved one) and `clear_tokens: {jira, azure_devops}`. An Azure DevOps `url` (organization or collection) needs a `project`. Audited as `import_sources.update`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/import-sources/{source}/check:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    post:
+      tags:
+      - Import
+      summary: Check an import source
+      operationId: postProjectsByPidImportSourcesBySourceCheck
+      description: |-
+        Tries the connection (Jira: a search of one issue; Azure DevOps: reads the project). 200 or 502 `tracker_error` with the tracker's message.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -11749,6 +11852,92 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ImportPreview'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/requirements/import/{source}/preview:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    post:
+      tags:
+      - Import
+      summary: Preview an import from Jira or Azure DevOps
+      operationId: postProjectsByPidRequirementsImportBySourcePreview
+      description: |-
+        Runs a query in the tracker and compares the issues or work items with the project; nothing is stored. Body: `{query, area_path, work_item_types, mapping: {field name: requirement field or cf.<key>, "" to ignore}, folder_id, relations (default true), limit (at most 1000)}`. `query` is JQL (Jira) or WIQL (Azure DevOps); for Azure DevOps without a query `area_path` and `work_item_types` build one (both missing: the saved defaults). Items imported before (by key or work item ID) are updates; links between the items become relations. → the diff as for the ReqIF preview (`attributes` are the tracker's fields) plus `{source, query, truncated}`. A tracker error is 502 `tracker_error`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: The diff; nothing is stored
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/requirements/import/{source}/apply:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    post:
+      tags:
+      - Import
+      summary: Import requirements from Jira or Azure DevOps
+      operationId: postProjectsByPidRequirementsImportBySourceApply
+      description: |-
+        Runs the query again and saves the diff in one transaction: the body of the preview plus `overwrite_conflicts`, `create` (default true) and `exclude_refs` (keys or IDs of items to leave out). The key of every imported item is kept as an external reference (system `jira` or `azure-devops`), so the next import updates the requirement; relations removed in the tracker are removed. → `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, references_saved, items, skipped_rows}`. Audited as `requirement.import`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -17911,6 +18100,12 @@ components:
       properties:
         type:
           type: string
+          enum:
+          - ''
+          - jira
+          - github
+          - gitlab
+          - rt
         url:
           type: string
         project_key:
@@ -17922,6 +18117,12 @@ components:
         project:
           type: string
           description: GitLab project ID or path (group/subgroup/project)
+        queue:
+          type: string
+          description: Request Tracker queue (name or ID) of new tickets
+        labels_field:
+          type: string
+          description: Request Tracker custom field that receives the labels (empty sends none)
         labels:
           type: string
         milestone:

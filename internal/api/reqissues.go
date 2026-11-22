@@ -48,7 +48,7 @@ func (s *Server) routesRequirementIssues(h routeFunc) {
 const maxBulkIssues = 100
 
 // trackerNames name the trackers in link labels and comments.
-var trackerNames = map[string]string{"gitlab": "GitLab", "github": "GitHub", "jira": "Jira"}
+var trackerNames = map[string]string{"gitlab": "GitLab", "github": "GitHub", "jira": "Jira", "rt": "RT"}
 
 // issueLinkOf returns the requirement's link to an issue of the configured
 // tracker (same type, and same repository or project).

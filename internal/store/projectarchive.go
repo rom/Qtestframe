@@ -237,6 +237,20 @@ func sanitizeArchiveRow(table string, row map[string]any) {
 				row["defect_tracker"] = "{}"
 			}
 		}
+		// requirement import sources: the tokens stay behind
+		if s, ok := row["import_sources"].(string); ok && s != "" {
+			var m map[string]map[string]any
+			if json.Unmarshal([]byte(s), &m) == nil && m != nil {
+				for _, src := range m {
+					delete(src, "token")
+					delete(src, "has_token")
+				}
+				b, _ := json.Marshal(m)
+				row["import_sources"] = string(b)
+			} else {
+				row["import_sources"] = "{}"
+			}
+		}
 		// web test variables: secret values are write-only and stay behind
 		if s, ok := row["web_tests"].(string); ok && s != "" {
 			var w model.WebTestSettings
