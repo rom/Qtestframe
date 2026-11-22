@@ -405,7 +405,7 @@ kbd { font-family: var(--qtf-mono); font-size: 11px; padding: 1px 6px; border-ra
 .diff ins { background: rgba(34,197,94,.22); text-decoration: none; border-radius: 3px; }
 .diff del { background: rgba(239,68,68,.2); text-decoration: line-through; border-radius: 3px; }
 .diff-before { color: var(--p-red-600); text-decoration: line-through; }
-.diff-after { color: var(--p-green-600); }
+.diff-after { color: var(--p-green-700); }
 .app-dark .diff-before { color: #fca5a5; } .app-dark .diff-after { color: #86efac; }
 .rev-list { display: flex; flex-direction: column; gap: 2px; max-height: 60vh; overflow: auto; }
 .rev-list button { all: unset; display: block; padding: 8px 10px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }

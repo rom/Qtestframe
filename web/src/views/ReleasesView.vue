@@ -633,7 +633,7 @@ function itemNote(c: CriterionResult, note?: string) {
           <section v-if="gates.length && report.criteria.length" class="gates" aria-labelledby="rel-gates-title">
             <h3 id="rel-gates-title" class="plain-heading small"><i class="pi pi-clone" aria-hidden="true" /> {{ t('releasesView.gatesTitle') }} <HelpLink page="variants-and-code" :anchor="{ en: 'release-gates-per-variant', sv: 'releasegrindar-per-variant' }" /></h3>
             <p class="small muted" style="margin: 0 0 6px">{{ t('releasesView.gatesHint', { go: report.summary.variants_go ?? 0, total: gates.length }) }}</p>
-            <div class="table-scroll">
+            <div class="table-scroll" tabindex="0" role="region" :aria-label="t('releasesView.gatesCaption')">
               <table class="gate-table">
                 <caption class="sr-only">{{ t('releasesView.gatesCaption') }}</caption>
                 <thead>
