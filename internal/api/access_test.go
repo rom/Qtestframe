@@ -50,6 +50,8 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	a.m("POST", pp+"/risks", map[string]any{"title": "Secret risk", "likelihood": 2, "impact": 2}, 201)
 	a.m("POST", pp+"/webhooks", map[string]any{"name": "h", "url": "https://hooks.example.org/x", "events": []string{"defect.updated"}, "enabled": false}, 201)
 	a.m("POST", pp+"/configurations", map[string]any{"name": "Chrome"}, 201)
+	a.m("POST", pp+"/custom-fields", map[string]any{"entity_type": "requirement", "label": "Supplier", "type": "text"}, 201)
+	a.m("POST", pp+"/templates", map[string]any{"kind": "requirement", "name": "Secret template"}, 201)
 	def := a.m("POST", pp+"/reports/definitions", map[string]any{"name": "Status", "config": map[string]any{"entity": "test", "columns": []string{"key"}}}, 201)["id"].(string)
 	a.m("POST", pp+"/reports/subscriptions", map[string]any{"definition_id": def, "recipients": []string{e.admin.ID}}, 201)
 	a.m("POST", "/api/v1/reviews", map[string]any{"entity_type": "requirement", "entity_id": r1, "reviewers": []string{e.admin.ID}}, 201)
@@ -77,7 +79,8 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"configurations": `SELECT id FROM configurations WHERE project_id = ?`, "test-dependencies": `SELECT id FROM test_dependencies WHERE project_id = ?`,
 		"reports/definitions": `SELECT id FROM report_definitions WHERE project_id = ?`, "reports/subscriptions": `SELECT id FROM report_subscriptions WHERE project_id = ?`,
 		"reviews": `SELECT id FROM review_requests WHERE project_id = ?`, "files": `SELECT id FROM files WHERE project_id = ?`,
-		"comments": `SELECT c.id FROM comments c JOIN requirements r ON r.id = c.entity_id WHERE r.project_id = ?`,
+		"comments":      `SELECT c.id FROM comments c JOIN requirements r ON r.id = c.entity_id WHERE r.project_id = ?`,
+		"custom-fields": `SELECT id FROM custom_fields WHERE project_id = ?`, "templates": `SELECT id FROM item_templates WHERE project_id = ?`,
 	}
 	for res, sql := range q {
 		var id string

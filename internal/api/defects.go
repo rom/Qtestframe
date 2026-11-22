@@ -18,8 +18,9 @@ import (
 // (testers report defects), deleting and the tracker settings project.update.
 
 var defectSchema = &query.Schema{
-	Fields:  []string{"key", "title", "description", "status", "severity", "priority", "assignee", "external", "created_by", "id", "open", "linked"},
-	Aliases: map[string]string{"external_key": "external"},
+	Fields:   []string{"key", "title", "description", "status", "severity", "priority", "assignee", "external", "created_by", "id", "open", "linked"},
+	Aliases:  map[string]string{"external_key": "external"},
+	Prefixes: customFieldPrefix,
 }
 
 func (s *Server) routesDefects(h routeFunc) {
@@ -54,9 +55,9 @@ func defectRecord(d *model.Defect) query.MapRecord {
 	for _, l := range d.Links {
 		linked = append(linked, l.Key)
 	}
-	return query.MapRecord{"key": {d.Key}, "title": {d.Title}, "description": {d.Description}, "status": {d.Status}, "severity": {d.Severity},
+	return withCustom(d.CustomFields, query.MapRecord{"key": {d.Key}, "title": {d.Title}, "description": {d.Description}, "status": {d.Status}, "severity": {d.Severity},
 		"priority": {d.Priority}, "assignee": {d.Assignee}, "external": {d.ExternalKey}, "created_by": {d.CreatedBy}, "id": {d.ID},
-		"open": {open}, "linked": linked}
+		"open": {open}, "linked": linked})
 }
 
 func (s *Server) handleListDefects(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -75,11 +76,14 @@ func (s *Server) handleListDefects(w http.ResponseWriter, r *http.Request, p *Pr
 		return
 	}
 	out := []model.Defect{}
+	var recs []query.MapRecord
 	for i := range list {
-		if q.Match(defectRecord(&list[i])) {
+		if rec := defectRecord(&list[i]); q.Match(rec) {
 			out = append(out, list[i])
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	writeJSON(w, http.StatusOK, listOf(out))
 }
 

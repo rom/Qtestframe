@@ -60,13 +60,16 @@ func (s *Server) filterRequirements(r *http.Request, p *Principal, pr *model.Pro
 	}
 	inFolder := pc.folderFilter(folder, recursive)
 	out := make([]model.Requirement, 0, len(reqs))
+	var recs []query.MapRecord
 	for i := range reqs {
 		rq := &reqs[i]
 		pc.decorateRequirement(rq)
-		if inFolder(rq.FolderID) && q.Match(pc.requirementRecord(rq)) {
+		if rec := pc.requirementRecord(rq); inFolder(rq.FolderID) && q.Match(rec) {
 			out = append(out, *rq)
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	return out, nil
 }
 
@@ -500,13 +503,16 @@ func (s *Server) filterTests(r *http.Request, p *Principal, pr *model.Project, p
 	pc.indexCalls(tests)
 	inFolder := pc.folderFilter(folder, recursive)
 	out := make([]model.TestCase, 0, len(tests))
+	var recs []query.MapRecord
 	for i := range tests {
 		t := &tests[i]
 		pc.decorateTest(t)
-		if inFolder(t.FolderID) && q.Match(pc.testRecord(t)) {
+		if rec := pc.testRecord(t); inFolder(t.FolderID) && q.Match(rec) {
 			out = append(out, *t)
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	return out, nil
 }
 

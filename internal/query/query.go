@@ -11,6 +11,7 @@
 //	term    = field op value | value
 //	op      = ":" | "=" | "!=" | "~" | "!~" | ">" | ">=" | "<" | "<="
 //	value   = bare word | "quoted \"string\"" | /regex/flags
+//	sort    = "sort:" ["-"] field [":asc" | ":desc"]   // ordering, not a condition
 //
 // Precedence is NOT > AND > OR. Keywords are case-insensitive.
 package query
@@ -86,6 +87,10 @@ func (m MapRecord) AllValues() []string {
 type Schema struct {
 	Fields  []string
 	Aliases map[string]string
+	// Prefixes accept every field starting with one of them, e.g. "cf."
+	// for the custom fields of a project (a field the record does not have
+	// matches nothing).
+	Prefixes []string
 }
 
 // resolve lowercases and alias-resolves name; ok=false if unknown.
@@ -102,6 +107,11 @@ func (s *Schema) resolve(name string) (string, bool) {
 	}
 	for _, f := range s.Fields {
 		if strings.ToLower(f) == name {
+			return name, true
+		}
+	}
+	for _, p := range s.Prefixes {
+		if strings.HasPrefix(name, p) && len(name) > len(p) {
 			return name, true
 		}
 	}
@@ -141,6 +151,7 @@ const (
 	cRe                       // "~"
 	cNotRe                    // "!~"
 	cCmp                      // > >= < <=
+	cSort                     // sort:field (always true; orders the result)
 )
 
 type node struct {
@@ -160,12 +171,14 @@ type node struct {
 	lower   string
 	num     float64
 	isNum   bool
+	desc    bool // sort: descending
 }
 
 // Query is a parsed expression.
 type Query struct {
-	root *node
-	src  string
+	root  *node
+	src   string
+	sorts []SortKey
 }
 
 // ---------------------------------------------------------------------------
@@ -338,6 +351,9 @@ func (l *lexer) fieldTerm(rawField, op string, start int) (token, error) {
 	}
 
 	field, known := l.schema.resolve(rawField)
+	if strings.EqualFold(rawField, "sort") && op == ":" && !known && !isRe {
+		return l.sortTerm(val, vpos, start)
+	}
 	if strings.EqualFold(rawField, "has") && op == ":" && (l.schema == nil || !known) {
 		f, ok := l.schema.resolve(val)
 		if !ok {
@@ -353,6 +369,29 @@ func (l *lexer) fieldTerm(rawField, op string, start int) (token, error) {
 		return token{}, err
 	}
 	return token{kind: tTerm, pos: start, cond: n}, nil
+}
+
+// sortTerm parses the value of sort:[-]field[:asc|:desc].
+func (l *lexer) sortTerm(val string, vpos, start int) (token, error) {
+	desc := false
+	if strings.HasPrefix(val, "-") {
+		desc, val = true, val[1:]
+	}
+	if f, dir, ok := strings.Cut(val, ":"); ok {
+		switch strings.ToLower(dir) {
+		case "desc":
+			desc = true
+		case "asc":
+		default:
+			return token{}, &Error{Pos: vpos, Msg: fmt.Sprintf("sort direction must be asc or desc, not %q", dir)}
+		}
+		val = f
+	}
+	f, ok := l.schema.resolve(val)
+	if !ok || val == "" {
+		return token{}, &Error{Pos: vpos, Msg: fmt.Sprintf("unknown sort field %q", val)}
+	}
+	return token{kind: tTerm, pos: start, cond: &node{kind: nCond, field: f, op: ":", ck: cSort, desc: desc}}, nil
 }
 
 // quoted reads a double-quoted string starting at l.i.
@@ -673,7 +712,96 @@ func Parse(expr string, schema *Schema) (*Query, error) {
 		return nil, &Error{Pos: p.tok.pos, Msg: "unexpected " + p.tokName()}
 	}
 	q.root = root
+	if err := q.collectSorts(); err != nil {
+		return nil, err
+	}
 	return q, nil
+}
+
+// SortKey is one ordering of a query (sort:field, sort:-field).
+type SortKey struct {
+	Field string
+	Desc  bool
+}
+
+// collectSorts gathers the sort terms; they may only be combined with AND
+// at the top level.
+func (q *Query) collectSorts() error {
+	var walk func(n *node, top bool) error
+	walk = func(n *node, top bool) error {
+		switch n.kind {
+		case nAnd:
+			for _, c := range n.children {
+				if err := walk(c, top); err != nil {
+					return err
+				}
+			}
+		case nOr:
+			for _, c := range n.children {
+				if err := walk(c, false); err != nil {
+					return err
+				}
+			}
+		case nNot:
+			return walk(n.child, false)
+		case nCond:
+			if n.ck == cSort {
+				if !top {
+					return &Error{Pos: 0, Msg: "sort: cannot be negated or combined with OR"}
+				}
+				q.sorts = append(q.sorts, SortKey{Field: n.field, Desc: n.desc})
+			}
+		}
+		return nil
+	}
+	return walk(q.root, true)
+}
+
+// Sort returns the sort keys of the query in order (nil for none).
+func (q *Query) Sort() []SortKey {
+	if q == nil {
+		return nil
+	}
+	return q.sorts
+}
+
+// Compare orders two records by the query's sort keys: numerically when
+// both values are numbers, otherwise case-insensitively; records without a
+// value come last whatever the direction. 0 when there are no sort keys.
+func (q *Query) Compare(a, b Record) int {
+	for _, k := range q.Sort() {
+		av, _ := a.Values(k.Field)
+		bv, _ := b.Values(k.Field)
+		as, bs := strings.Join(av, ", "), strings.Join(bv, ", ")
+		switch {
+		case as == "" && bs == "":
+			continue
+		case as == "":
+			return 1
+		case bs == "":
+			return -1
+		}
+		c := 0
+		af, aerr := strconv.ParseFloat(strings.TrimSpace(as), 64)
+		bf, berr := strconv.ParseFloat(strings.TrimSpace(bs), 64)
+		if aerr == nil && berr == nil {
+			switch {
+			case af < bf:
+				c = -1
+			case af > bf:
+				c = 1
+			}
+		} else {
+			c = strings.Compare(strings.ToLower(as), strings.ToLower(bs))
+		}
+		if k.Desc {
+			c = -c
+		}
+		if c != 0 {
+			return c
+		}
+	}
+	return 0
 }
 
 // ---------------------------------------------------------------------------
@@ -720,6 +848,8 @@ func eval(n *node, r Record) bool {
 
 func (n *node) matchValues(vals []string) bool {
 	switch n.ck {
+	case cSort:
+		return true
 	case cHas:
 		for _, v := range vals {
 			if strings.TrimSpace(v) != "" {
@@ -803,7 +933,7 @@ func (n *node) compare(v string) bool {
 
 // positive reports whether a condition is a "positive" match condition, i.e.
 // one whose success implies the presence of matching content.
-func (n *node) positive() bool { return n.ck != cNe && n.ck != cNotRe }
+func (n *node) positive() bool { return n.ck != cNe && n.ck != cNotRe && n.ck != cSort }
 
 // MatchedFields returns which fields produced positive matches of the
 // (non-negated) terms of the query, sorted and de-duplicated. Unqualified
@@ -917,6 +1047,11 @@ func format(n *node, nested bool) string {
 	switch n.ck {
 	case cHas:
 		return n.field + ":*"
+	case cSort:
+		if n.desc {
+			return "sort:-" + n.field
+		}
+		return "sort:" + n.field
 	case cRe, cNotRe:
 		re := "/" + strings.ReplaceAll(n.reSrc, "/", `\/`) + "/" + n.reFlags
 		if n.field == "" {

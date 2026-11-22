@@ -352,6 +352,8 @@ func (s *Server) routes() {
 	s.routesSuggest(h)
 	// Administration → System settings (systemsettings.go)
 	s.routesSystemSettings(h)
+	// custom fields, field sets and item templates (customfields.go)
+	s.routesCustomFields(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

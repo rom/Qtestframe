@@ -329,6 +329,8 @@ var resourceProjects = map[string]string{
 	"risks":                 `SELECT project_id FROM risks WHERE id = ? AND tenant_id = ?`,
 	"webhooks":              `SELECT project_id FROM webhooks WHERE id = ? AND tenant_id = ?`,
 	"trace-rules":           `SELECT project_id FROM trace_rules WHERE id = ? AND tenant_id = ?`,
+	"custom-fields":         `SELECT project_id FROM custom_fields WHERE id = ? AND tenant_id = ?`,
+	"templates":             `SELECT project_id FROM item_templates WHERE id = ? AND tenant_id = ?`,
 	"configurations":        `SELECT project_id FROM configurations WHERE id = ? AND tenant_id = ?`,
 	"test-dependencies":     `SELECT project_id FROM test_dependencies WHERE id = ? AND tenant_id = ?`,
 	"reports/definitions":   `SELECT project_id FROM report_definitions WHERE id = ? AND tenant_id = ?`,
@@ -346,6 +348,8 @@ var nonProjectResources = map[string]bool{
 	"auth/sessions": true, "tenants": true, "users": true, "tokens": true,
 	"scim/tokens": true, "scim/groups": true, "avatars": true,
 	"catalog/requirements": true, "catalog/tests": true,
+	// the organisation's field sets and templates per project type
+	"field-sets/fields": true, "template-sets/templates": true,
 }
 
 // resourceOf returns the resource of a route pattern with {id} ("" for

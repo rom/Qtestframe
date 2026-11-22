@@ -74,6 +74,7 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 	s.audit(r.Context(), p, "project.create", "project", pr.ID, pr.Key)
+	s.applyFieldSetOnCreate(r, p, pr)
 	if acc, err := s.projectAccess(r.Context(), p, pr.ID); err == nil {
 		pr.MyAccess = acc
 	}

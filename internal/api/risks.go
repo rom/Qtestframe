@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/store"
 )
 
@@ -29,12 +30,26 @@ func (s *Server) handleListRisks(w http.ResponseWriter, r *http.Request, p *Prin
 	if !ok {
 		return
 	}
+	q, err := query.Parse(r.URL.Query().Get("q"), riskSchema)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	list, err := s.Store.ListRisks(r.Context(), p.TenantID(), pr.ID)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, listOf(list))
+	out := []model.Risk{}
+	var recs []query.MapRecord
+	for i := range list {
+		if rec := riskRecord(&list[i]); q.Match(rec) {
+			out = append(out, list[i])
+			recs = append(recs, rec)
+		}
+	}
+	sortByQuery(q, out, recs)
+	writeJSON(w, http.StatusOK, listOf(out))
 }
 
 func (s *Server) handleCreateRisk(w http.ResponseWriter, r *http.Request, p *Principal) {

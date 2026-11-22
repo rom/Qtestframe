@@ -28,11 +28,14 @@ func (s *Server) handleListRuns(w http.ResponseWriter, r *http.Request, p *Princ
 		return
 	}
 	out := []model.TestRun{}
+	var recs []query.MapRecord
 	for i := range runs {
-		if q.Match(runRecord(&runs[i])) {
+		if rec := runRecord(&runs[i]); q.Match(rec) {
 			out = append(out, runs[i])
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	writeJSON(w, http.StatusOK, listOf(out))
 }
 
