@@ -79,6 +79,7 @@ func newArchiveFixture(t *testing.T, st *store.Store) archiveFixture {
 	f := archiveFixture{st: st, ten: ten, ten2: ten2, project: p, reviewer: sd.super, secret: "whsec-very-secret-value", token: "tracker-token-xyz"}
 	must(t, st.CreateWebhook(ctx, ten.ID, &model.Webhook{ProjectID: p.ID, Name: "hook", URL: "https://example.com/hook", Secret: f.secret, Events: []string{"requirement.created"}, Enabled: true}))
 	must(t, st.SaveDefectTracker(ctx, ten.ID, p.ID, &model.DefectTracker{Type: "github", Repo: "acme/app", Token: f.token}, false))
+	must(t, st.SaveImportSources(ctx, ten.ID, p.ID, &model.ImportSources{Azure: model.AzureDevOpsSource{URL: "https://dev.azure.com/acme", Project: "Shop", Token: f.token}}, store.ClearTokens{}))
 	_, err = st.CreateReviewRequests(ctx, ten.ID, model.ReviewRequest{EntityType: model.KindRequirement, EntityID: reqs[0].ID, RequestedBy: "x"}, []string{sd.super.ID})
 	must(t, err)
 	tid := tests[0].ID
@@ -228,6 +229,11 @@ func TestProjectArchiveRoundTrip(t *testing.T) {
 	}
 	tr, err := st.DefectTracker(ctx, fx.ten.ID, np.ID)
 	must(t, err)
+	is, err := st.ImportSources(ctx, fx.ten.ID, np.ID)
+	must(t, err)
+	if is.Azure.Token != "" || is.Azure.Project != "Shop" {
+		t.Fatalf("%+v", is)
+	}
 	if tr.Token != "" || tr.Repo != "acme/app" {
 		t.Fatalf("%+v", tr)
 	}

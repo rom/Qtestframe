@@ -1370,7 +1370,7 @@ Använd **Skicka testmeddelande** för att kontrollera en kanal; leveransloggen 
 
 ## Defekt- och ärendesystem
 
-Projekt kan skicka defekter och krav till **Jira**, **GitHub** eller **GitLab**, synkronisera deras status tillbaka och importera ärenden. Användare med `project.update` ansluter ett projekt i dess inställningar ([användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/defects.md#anslut-jira-github-eller-gitlab)); att skicka och synkronisera kräver `run.execute`, ärenden från krav `requirement.write`.
+Projekt kan skicka defekter och krav till **Jira**, **GitHub**, **GitLab** eller **Request Tracker (RT)**, synkronisera deras status tillbaka och importera ärenden. Användare med `project.update` ansluter ett projekt i dess inställningar ([användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/defects.md#anslut-jira-github-eller-gitlab)); att skicka och synkronisera kräver `run.execute`, ärenden från krav `requirement.write`.
 
 | System | Adress | Inloggning | Minsta användbara omfattning |
 |---|---|---|---|
@@ -1378,8 +1378,26 @@ Projekt kan skicka defekter och krav till **Jira**, **GitHub** eller **GitLab**,
 | Jira Server / Data Center | er Jira-adress | personlig åtkomsttoken (Bearer) | som ovan |
 | GitHub | standard `https://api.github.com` (GitHub Enterprise: dess API-adress) | token (Bearer) | finkornig token med *Issues: read and write* för det enda repot |
 | GitLab | standard `https://gitlab.com`, eller en egen instans (HTTPS) | token i `PRIVATE-TOKEN` | projektåtkomsttoken med omfattningen `api` och rollen Reporter |
+| Request Tracker 5 | RT:s basadress, t.ex. `https://rt.example.com` (REST2 under `/REST/2.0`) | autentiseringstoken i `Authorization: token …` | en RT-användare med *CreateTicket*, *ShowTicket*, *ModifyTicket* och *CommentOnTicket* i kön |
 
 Token anges en gång, lagras krypterad och returneras aldrig av API:t (bara *har token*); den ingår inte i ett projektarkiv. Begäranden följer `HTTPS_PROXY`/`NO_PROXY` och systemets CA-certifikat, har en tidsgräns, och väntar på systemets `Retry-After` när den är kort. Utskick och synkroniseringar granskas (`defect.push`, `defect.sync`, `requirement.issue.*`).
+
+### Request Tracker
+
+RT behöver REST2-API:et, som ingår i RT 5 (för RT 4.4 tillägget *RT::Extension::REST2*). Skapa en egen RT-användare för Qtestframe, ge den rättigheterna ovan i kön (en grupprättighet på kön är enklast), logga in som den användaren och skapa en token under **Logged in as → Settings → Auth Tokens**. Projektinställningarna tar RT:s basadress, **kön** (namn eller id) och eventuellt namnet på ett anpassat fält som tar emot etiketter (RT har inga egna etiketter). Kontrollera att en omvänd proxy framför RT skickar vidare huvudet `Authorization` till `/REST/2.0`. Statussynkroniseringen översätter standardlivscykeln (*new*, *open*, *stalled*, *resolved*, *rejected*, *deleted*); statusar i egna livscykler visas men ändrar inte defekten. Synkronisering sker på begäran (**Synkronisera** / **Synkronisera alla**, eller `POST /api/v1/projects/{pid}/defects/sync` från en schemaläggare), som för de andra systemen: ingen inkommande webhook behövs.
+
+## Kravimport från Jira och Azure DevOps
+
+Användare med `requirement.write` importerar krav från en JQL-fråga i Jira eller en WIQL-fråga i Azure DevOps ([användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/reports-and-export.md#jira-och-azure-devops)); anslutningarna ställs in av användare med `project.update` under **Projekt → Importkällor** och lagras i `projects.import_sources` (migrering 0037).
+
+| Källa | Adress | Inloggning | Minsta användbara omfattning |
+|---|---|---|---|
+| Jira Cloud | `https://<webbplats>.atlassian.net` (eller ingen: projektets Jira-ärendehanterare används) | användarens e-post + API-token (HTTP Basic) | *Browse projects* i de projekt som frågas |
+| Jira Server / Data Center | er Jira-adress | personlig åtkomsttoken (Bearer) | som ovan |
+| Azure DevOps Services | `https://dev.azure.com/<organisation>` och projektets namn | personlig åtkomsttoken (HTTP Basic med tomt användarnamn) | omfattningen *Work Items (Read)*, begränsad till den enda organisationen |
+| Azure DevOps Server | samlingens adress, t.ex. `https://tfs.example.com/tfs/DefaultCollection` | personlig åtkomsttoken | som ovan |
+
+Jira söks med `POST /rest/api/2/search/jql` (Jira Cloud) och, när den inte finns, `POST /rest/api/2/search` (Server och Data Center); Azure DevOps med slutpunkterna för WIQL, fält och arbetsobjekt i REST API 7.1. Högst 1 000 objekt läses per import. Importen läser bara; den granskas som `requirement.import`, ändringar av anslutningen som `import_sources.update`. Token krypteras med serverns hemliga nycklar (de krypteras om vid nyckelrotation), returneras aldrig och utelämnas ur projektarkiv. Importen når källorna via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) som ärendehanterarna; tillåt adresserna ovan i en brandvägg.
 
 ## Körning av skript och webbtester
 
@@ -1661,6 +1679,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 34 | `0034_custom_fields.sql` |
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
+| 37 | `0037_import_sources.sql` |
 | 38 | `0038_owners_worklist.sql` |
 | 39 | `0039_discussions.sql` |
 | 45 | `0045_chat_channels.sql` |

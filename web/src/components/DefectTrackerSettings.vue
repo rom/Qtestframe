@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// The project's connection to Jira, GitHub Issues or GitLab (GET/PUT
+// The project's connection to Jira, GitHub Issues, GitLab or Request Tracker (GET/PUT
 // /projects/{pid}/defect-tracker). The token is write-only: the server only
 // says whether one is saved.
 import { computed, onMounted, ref } from 'vue'
@@ -45,8 +45,10 @@ const typeOptions = computed(() => [
   { value: 'jira', label: 'Jira' },
   { value: 'github', label: 'GitHub Issues' },
   { value: 'gitlab', label: 'GitLab' },
+  { value: 'rt', label: 'Request Tracker (RT)' },
 ])
-const tokenHint = computed(() => t(form.value.type === 'jira' ? 'tracker.tokenHintJira' : form.value.type === 'gitlab' ? 'tracker.tokenHintGitlab' : 'tracker.tokenHintGithub'))
+const TOKEN_HINTS: Record<string, string> = { jira: 'tracker.tokenHintJira', gitlab: 'tracker.tokenHintGitlab', rt: 'tracker.tokenHintRt' }
+const tokenHint = computed(() => t(TOKEN_HINTS[form.value.type] ?? 'tracker.tokenHintGithub'))
 const reqLabelsExample = computed(() => previewLabels(form.value.requirement_labels, { type: 'functional', priority: 'high', obligation: 'must', status: 'approved', tags: ['login'] }, DEFAULT_REQUIREMENT_LABELS).join(', ') || t('reqIssue.noLabels'))
 const reqLabelsHint = computed(() => t('tracker.reqLabelsHint', { fields: '{type}, {priority}, {obligation}, {status}, {tags}', default: DEFAULT_REQUIREMENT_LABELS }))
 const problems = computed(() => validateTracker(form.value))
@@ -157,6 +159,30 @@ async function checkConnection() {
             <InputText v-model="form.project" class="mono" placeholder="group/subgroup/project" :invalid="!!problem('project')" aria-describedby="tr-glproj-hint" />
             <span id="tr-glproj-hint" class="small" :class="problem('project') ? 'warn-text' : 'muted'">{{ problem('project') || t('tracker.gitlabProjectHint') }}</span>
           </div>
+        </div>
+      </template>
+      <template v-else-if="form.type === 'rt'">
+        <div v-field class="field">
+          <label>{{ t('tracker.rtUrl') }}</label>
+          <InputText v-model="form.url" type="url" class="mono" placeholder="https://rt.example.com" :invalid="!!problem('url')" aria-describedby="tr-rturl-hint" />
+          <span id="tr-rturl-hint" class="small" :class="problem('url') ? 'warn-text' : 'muted'">{{ problem('url') || t('tracker.rtUrlHint') }}</span>
+        </div>
+        <div class="form-grid">
+          <div v-field class="field">
+            <label>{{ t('tracker.rtQueue') }}</label>
+            <InputText v-model="form.queue" placeholder="General" :invalid="!!problem('queue')" aria-describedby="tr-rtq-hint" />
+            <span id="tr-rtq-hint" class="small" :class="problem('queue') ? 'warn-text' : 'muted'">{{ problem('queue') || t('tracker.rtQueueHint') }}</span>
+          </div>
+          <div v-field class="field">
+            <label>{{ t('tracker.rtLabelsField') }} {{ t('prompts.optional') }}</label>
+            <InputText v-model="form.labels_field" placeholder="Tags" aria-describedby="tr-rtlf-hint" />
+            <span id="tr-rtlf-hint" class="small muted">{{ t('tracker.rtLabelsFieldHint') }}</span>
+          </div>
+        </div>
+        <div v-if="form.labels_field.trim()" v-field class="field">
+          <label>{{ t('tracker.labels') }}</label>
+          <InputText v-model="form.labels" placeholder="qtestframe" aria-describedby="tr-rtlabels-hint" />
+          <span id="tr-rtlabels-hint" class="small muted">{{ t('tracker.labelsHint') }}</span>
         </div>
       </template>
       <template v-if="form.type === 'github' || form.type === 'gitlab'">

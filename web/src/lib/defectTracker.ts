@@ -1,5 +1,5 @@
-// Defects (PROJ-BUG-n) and the project's connection to Jira, GitHub Issues or
-// GitLab: status and severity order, links, tracker form checks and the
+// Defects (PROJ-BUG-n) and the project's connection to Jira, GitHub Issues,
+// GitLab or Request Tracker: status and severity order, links, tracker form checks and the
 // errors the tracker reports. Mirrors internal/model and internal/store.
 import { ApiError } from './api'
 import type { Defect, DefectLink, DefectTracker, Execution } from './types'
@@ -12,7 +12,7 @@ export const DEFECT_PRIORITIES = ['critical', 'high', 'medium', 'low'] as const
 /** the items a defect can be linked to from the UI */
 export const DEFECT_LINK_TYPES = ['requirement', 'test', 'execution'] as const
 export type DefectLinkType = (typeof DEFECT_LINK_TYPES)[number]
-export const TRACKER_TYPES = ['', 'jira', 'github', 'gitlab'] as const
+export const TRACKER_TYPES = ['', 'jira', 'github', 'gitlab', 'rt'] as const
 export type TrackerType = (typeof TRACKER_TYPES)[number]
 
 export const GITHUB_API_URL = 'https://api.github.com'
@@ -209,6 +209,10 @@ export interface TrackerForm {
   assignee: string
   requirement_labels: string
   requirement_issue_type: string
+  /** RT queue (name or ID) */
+  queue: string
+  /** RT custom field that receives the labels */
+  labels_field: string
   comment_on_pass: boolean
   user: string
   /** a new token; empty keeps the saved one */
@@ -228,6 +232,8 @@ export function trackerForm(t: Partial<DefectTracker> | null | undefined): Track
     assignee: t?.assignee ?? '',
     requirement_labels: t?.requirement_labels ?? '',
     requirement_issue_type: t?.requirement_issue_type ?? '',
+    queue: t?.queue ?? '',
+    labels_field: t?.labels_field ?? '',
     comment_on_pass: !!t?.comment_on_pass,
     user: t?.user ?? '',
     token: '',
@@ -242,7 +248,7 @@ export function validGitLabProject(p: string): boolean {
   return segs.length >= 2 && segs.every((s) => /^[A-Za-z0-9_.][A-Za-z0-9_.-]*$/.test(s) && s.replace(/\./g, '') !== '')
 }
 
-export type TrackerField = 'type' | 'url' | 'project_key' | 'repo' | 'project'
+export type TrackerField = 'type' | 'url' | 'project_key' | 'repo' | 'project' | 'queue'
 /** Problems of a tracker form as field → message id (tracker.invalid.<id>), as the server checks them. */
 export function validateTracker(f: TrackerForm): Partial<Record<TrackerField, string>> {
   const out: Partial<Record<TrackerField, string>> = {}
@@ -267,6 +273,10 @@ export function validateTracker(f: TrackerForm): Partial<Record<TrackerField, st
       if (!validGitLabProject(p)) out.project = 'gitlabProject'
       break
     }
+    case 'rt':
+      if (!httpUrl) out.url = 'rtUrl'
+      if (!f.queue.trim() || /[/\\?#]/.test(f.queue)) out.queue = 'queue'
+      break
     default:
       out.type = 'type'
   }
@@ -277,7 +287,9 @@ export function validateTracker(f: TrackerForm): Partial<Record<TrackerField, st
 export function trackerPayload(f: TrackerForm, clearToken = false): Record<string, unknown> {
   if (!f.type) return { type: '' }
   const body: Record<string, unknown> = { type: f.type, url: f.url.trim().replace(/\/+$/, '') }
-  if (f.type === 'jira') {
+  if (f.type === 'rt') {
+    Object.assign(body, { url: rtBase(f.url), queue: f.queue.trim(), labels_field: f.labels_field.trim(), labels: f.labels.trim() })
+  } else if (f.type === 'jira') {
     Object.assign(body, { project_key: f.project_key.trim().toUpperCase(), issue_type: f.issue_type.trim(), user: f.user.trim(), requirement_issue_type: f.requirement_issue_type.trim() })
   } else {
     if (f.type === 'gitlab') body.project = f.project.trim()
@@ -290,6 +302,11 @@ export function trackerPayload(f: TrackerForm, clearToken = false): Record<strin
   return body
 }
 
+/** An RT address without /REST/2.0 and trailing slashes (as the server stores it). */
+export function rtBase(url: string): string {
+  return url.trim().replace(/\/+$/, '').replace(/\/REST\/2\.0$/, '').replace(/\/+$/, '')
+}
+
 /** Whether the form differs from the saved settings (a typed token counts). */
 export function trackerDirty(f: TrackerForm, saved: Partial<DefectTracker> | null | undefined): boolean {
   return JSON.stringify(trackerPayload(f)) !== JSON.stringify(trackerPayload(trackerForm(saved))) || !!f.token.trim()
@@ -299,13 +316,14 @@ export function trackerDirty(f: TrackerForm, saved: Partial<DefectTracker> | nul
 export function trackerName(type: string | null | undefined): string {
   return TRACKER_NAMES[type ?? ''] ?? ''
 }
-const TRACKER_NAMES: Record<string, string> = { jira: 'Jira', github: 'GitHub', gitlab: 'GitLab' }
+const TRACKER_NAMES: Record<string, string> = { jira: 'Jira', github: 'GitHub', gitlab: 'GitLab', rt: 'RT' }
 
 /** Example of an issue key for the import dialog. */
 export function issueKeyExample(t: Partial<DefectTracker> | null | undefined): string {
   if (t?.type === 'jira') return `${t.project_key || 'SHOP'}-123`
   if (t?.type === 'github') return `${t.repo || 'owner/repo'}#123`
   if (t?.type === 'gitlab') return `${t.project && !/^\d+$/.test(t.project) ? t.project : 'group/project'}#123`
+  if (t?.type === 'rt') return '#123'
   return ''
 }
 
@@ -315,12 +333,17 @@ export function validIssueKey(t: Partial<DefectTracker> | null | undefined, key:
   if (t?.type === 'jira') return /^[A-Z][A-Z0-9_]*-\d+$/i.test(k)
   if (t?.type === 'github') return /^(?:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)?#?\d+$/.test(k)
   if (t?.type === 'gitlab') return /^(?:[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+)?#?\d+$/.test(k)
+  if (t?.type === 'rt') return /^(?:rt\s*)?#?\d+$/i.test(k) && !/^(?:rt\s*)?#?0+$/i.test(k)
   return false
 }
 
 /** The issue key as the server stores it (SHOP-12, owner/repo#12, group/project#12), for comparing. */
 export function normalizeIssueKey(t: Partial<DefectTracker> | null | undefined, key: string): string {
   const k = key.trim()
+  if (t?.type === 'rt') {
+    const m = /^(?:rt\s*)?#?(\d+)$/i.exec(k)
+    return m ? `#${Number(m[1])}` : k.toLowerCase()
+  }
   if (t?.type === 'github' || t?.type === 'gitlab') {
     const own = t.type === 'github' ? t.repo : t.project
     const m = /^(?:([A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+))?#?(\d+)$/.exec(k)

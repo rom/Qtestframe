@@ -426,6 +426,10 @@ async function discover(request) {
       wait: '.exchange-dialog .ex-table',
     },
     { name: 'exchange-xlsx-dialog', path: `${p}/tests`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:last-child .p-menu-item-link'], wait: '.exchange-dialog' },
+    // importing from Jira and Azure DevOps: the query forms (the demo has both sources, without tokens) and the settings card
+    { name: 'exchange-jira-dialog', path: `${p}/requirements`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(3) .p-menu-item-link'], wait: '.exchange-dialog form textarea' },
+    { name: 'exchange-azure-dialog', path: `${p}/requirements`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(4) .p-menu-item-link'], wait: '.exchange-dialog form textarea' },
+    { name: 'import-sources-settings', path: `${p}/settings?tab=project`, wait: '#h-import-sources + p + form' },
     // ReqIF selected: the aspects are disabled and a hint is shown
     { name: 'export-reqif', path: `${p}/export`, open: '.format-grid button:has(.pi-sitemap)', wait: 'fieldset.plain-fieldset[disabled]' },
     { name: 'documents', path: `${p}/documents` },

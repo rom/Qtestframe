@@ -20,6 +20,7 @@ import AvatarPicker from '@/components/AvatarPicker.vue'
 import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
 import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
 import DefectTrackerSettings from '@/components/DefectTrackerSettings.vue'
+import ImportSourcesSettings from '@/components/ImportSourcesSettings.vue'
 import CodeSettings from '@/components/CodeSettings.vue'
 import WebhooksCard from '@/components/WebhooksCard.vue'
 import ChatChannelsCard from '@/components/ChatChannelsCard.vue'
@@ -448,6 +449,7 @@ function deleteProject() {
         </section>
         <VerificationSettingsCard v-if="proj.pid" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
         <DefectTrackerSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
+        <ImportSourcesSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <CodeSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <WebhooksCard v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <ChatChannelsCard v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />

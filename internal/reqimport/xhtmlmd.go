@@ -163,3 +163,13 @@ func xhtmlMarkdown(inner string) string {
 }
 
 func isSpace(b byte) bool { return b == ' ' || b == '\n' || b == '\t' || b == '\r' }
+
+// HTMLMarkdown turns the rich text of another tool (the HTML of Azure
+// DevOps work item fields) into Markdown as xhtmlMarkdown does; elements it
+// does not know keep only their text.
+func HTMLMarkdown(html string) string {
+	if strings.TrimSpace(html) == "" {
+		return ""
+	}
+	return xhtmlMarkdown(strings.NewReplacer("&nbsp;", " ", "<br>", "<br/>", "<BR>", "<br/>").Replace(html))
+}

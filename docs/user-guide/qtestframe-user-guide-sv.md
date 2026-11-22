@@ -762,7 +762,7 @@ Dialogen visar hur många länkar som läggs till eller tas bort innan du bekrä
 
 ## Ärenden i GitLab, GitHub eller Jira
 
-När projektet är anslutet till en ärendehanterare (se [Anslut Jira, GitHub eller GitLab](#anslut-jira-github-eller-gitlab)) kan ett krav lämnas över till utvecklarna som ett ärende. Kravets flik **Länkar** börjar då med **Ärende i GitLab** (eller GitHub, Jira):
+När projektet är anslutet till en ärendehanterare (se [Anslut Jira, GitHub eller GitLab](#anslut-jira-github-eller-gitlab)) kan ett krav lämnas över till utvecklarna som ett ärende (i Request Tracker en ticket). Kravets flik **Länkar** börjar då med **Ärende i GitLab** (eller GitHub, Jira):
 
 - **Skapa GitLab-ärende** visar en förhandsvisning av ärendet och skapar det. Ärendet får:
   - titeln `[SHOP-REQ-12] <titel>`;
@@ -800,7 +800,7 @@ Att ladda upp och ta bort bilagor kräver rollen **Ansvarig** (samma som att red
 
 ## Importera krav
 
-Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt kravverktyg eller ett Word-dokument. **Importera → Från en fil** i sidhuvudet på kravsidan läser en sådan fil och skapar alla krav på en gång. För att uppdatera krav från ett DOORS- eller Polarion-dokument gång på gång, eller redigera krav i Excel och hämta tillbaka ändringarna, se [Utbyta data med andra verktyg](#utbyta-data-med-andra-verktyg). Import kräver behörighet att redigera krav (**Manager** som standard).
+Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt kravverktyg eller ett Word-dokument. **Importera → Från en fil** i sidhuvudet på kravsidan läser en sådan fil och skapar alla krav på en gång. För att uppdatera krav från ett DOORS- eller Polarion-dokument gång på gång, importera dem från Jira eller Azure DevOps, eller redigera krav i Excel och hämta tillbaka ändringarna, se [Utbyta data med andra verktyg](#utbyta-data-med-andra-verktyg). Import kräver behörighet att redigera krav (**Manager** som standard).
 
 1. Dra filen till dialogrutan eller välj den. Filformat som stöds är **CSV** (separerad med komma, semikolon eller tabb; UTF-8 med eller utan BOM, UTF-16 och Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` och den zippade `.reqifz`) och **Word** (`.docx`), högst 20 MB och 5 000 krav per fil.
 2. Granska **förhandsvisningen**: det upptäckta formatet, hur varje kolumn läses och de första 50 kraven med anmärkningar (härledd rubrik, okänt värde, dubblett). Inget har sparats än.
@@ -1710,7 +1710,7 @@ Tabellen fungerar som [kalkylbladsvyn](#krav): skriv i cellerna **Tillämplig**,
 
 En **defekt** (bugg) är ett problem som hittats vid testning. Varje defekt har en nyckel som `SHOP-BUG-3`, en titel, en beskrivning, en status, en allvarlighetsgrad, en prioritet och en tilldelad person, och den kopplas till de krav, testfall och exekveringar den gäller. Defekterna finns under **Defekter** i projektets sidomeny.
 
-Defekter kan speglas i **Jira**, **GitHub Issues** eller **GitLab**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
+Defekter kan speglas i **Jira**, **GitHub Issues**, **GitLab** eller **Request Tracker (RT)**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
 
 | Åtgärd | Roll som krävs |
 |---|---|
@@ -1820,6 +1820,17 @@ Kontot behöver behörighet att bläddra i projektet och skapa ärenden i det.
 
 Ett GitLab-ärendes status är *opened* eller *closed*; se tabellen under [Skicka, synkronisera och importera](#skicka-synkronisera-och-importera).
 
+### Request Tracker (RT)
+
+Qtestframe arbetar med RT 5 via dess REST2-API.
+
+- **RT-adress**: adressen till RT-instansen, t.ex. `https://rt.example.com` (utan `/REST/2.0`).
+- **Kö**: kön som nya ärenden hamnar i, med namn (t.ex. `General`) eller nummer.
+- **Anpassat fält för etiketter** (valfritt): RT har inga etiketter. Om kön har ett anpassat fält för dem, till exempel ett flervärdesfält *Tags*, anger du dess namn: etiketterna för nya ärenden (fältet **Etiketter** och etiketterna för [ärenden från krav](#ärenden-i-gitlab-github-eller-jira)) skrivs till det. Tomt skickar inga etiketter.
+- **Token**: en autentiseringstoken för den RT-användare som Qtestframe agerar som. Logga in i RT som den användaren, öppna **Logged in as → Settings → Auth Tokens**, skapa en token och klistra in den. Användaren behöver rättigheterna *CreateTicket*, *ShowTicket*, *ModifyTicket* och *CommentOnTicket* i kön. Qtestframe skickar den som `Authorization: token …`.
+
+Ett ärende anges med sitt nummer: `#123` (även `123` eller `RT#123`). Ett RT-ärendes beskrivning är dess första meddelande, som RT inte låter någon ersätta: **Uppdatera ärende** på ett krav ändrar därför ämnet och lägger till den nya texten som en kommentar. Ärenden skapas och kommenteras som vanlig text.
+
 ### Token
 
 Token kan **bara skrivas, aldrig läsas**: när den väl är sparad visas den aldrig och skickas aldrig tillbaka till webbläsaren, kortet säger bara **Token sparad**. Lämna fältet tomt när du ändrar andra inställningar för att behålla den. Skriv en ny och spara för att byta. **Ta bort token** raderar den. Om du sätter ärendehanteraren till **Ingen** tas hela anslutningen bort.
@@ -1831,14 +1842,16 @@ När en ärendehanterare är ansluten har listan över defekter tre åtgärder t
 - **Skicka till ärendehanteraren** (uppladdningsknappen för en defekt) skapar ett ärende från defekten: titeln med defektens nyckel, beskrivningen, allvarlighetsgraden och prioriteten samt nycklarna för de kopplade objekten. Defekten visar sedan ärendets nyckel, en länk till det och dess status i ärendehanteraren. En defekt som redan har ett ärende kan inte skickas igen.
 - **Synkronisera** (synkknappen för en defekt) läser ärendets status och uppdaterar defektens status; **Synkronisera alla** gör det för varje defekt med ett ärende i den anslutna ärendehanteraren och visar hur många som ändrades. Statusarna översätts så här:
 
-  | Jira | GitHub | GitLab | Defektens status |
-  |---|---|---|---|
-  | statuskategori *To Do* | open | opened | Öppen |
-  | statuskategori *In Progress* | | | Pågår |
-  | *Done* | closed (completed) | closed | Stängd |
-  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | | Avvisad |
+  | Jira | GitHub | GitLab | RT | Defektens status |
+  |---|---|---|---|---|
+  | statuskategori *To Do* | open | opened | new | Öppen |
+  | statuskategori *In Progress* | | | open, stalled | Pågår |
+  | *Done* | closed (completed) | closed | resolved | Stängd |
+  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | | rejected, deleted | Avvisad |
 
-- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub, `#123` eller `grupp/projekt#123` i GitLab) och allvarlighetsgraden. Titel och status hämtas från ärendet.
+  Statusar i en egen RT-livscykel som inte finns i tabellen lämnar defektens status som den är; RT-statusen visas ändå.
+
+- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub, `#123` eller `grupp/projekt#123` i GitLab, `#123` i RT) och allvarlighetsgraden. Titel och status hämtas från ärendet.
 
 Synkronisering läser bara; den ändrar aldrig ärendet. Ändringar du gör i en defekt i Qtestframe skrivs inte till ärendehanteraren.
 
@@ -3031,12 +3044,13 @@ Filen innehåller projektets data i klartext. Förvara den lika omsorgsfullt som
 
 ## Utbyta data med andra verktyg
 
-Krav finns ofta på mer än ett ställe: en kund håller dem i IBM DOORS eller Siemens Polarion, en kollega vill granska dem i Excel och ett ALM-verktyg vill länka till dem. Qtestframe utbyter data på fyra sätt, alla under **Importera** på krav- och testsidorna och via API:et:
+Krav finns ofta på mer än ett ställe: en kund håller dem i IBM DOORS eller Siemens Polarion, en kollega vill granska dem i Excel och ett ALM-verktyg vill länka till dem. Qtestframe utbyter data på fem sätt, alla under **Importera** på krav- och testsidorna och via API:et:
 
 | Sätt | Riktning | Passar för |
 |---|---|---|
 | [Excel fram och tillbaka](#redigera-i-excel-och-importera-tillbaka) | ut och in igen | redigera många poster på en gång i Excel, även offline |
 | [ReqIF-import med uppdateringar](#reqif-från-doors-och-polarion) | in, gång på gång | en specifikation som förvaltas i DOORS, DOORS Next eller Polarion |
+| [Jira och Azure DevOps](#jira-och-azure-devops) | in, gång på gång | krav som förvaltas som Jira-ärenden eller arbetsobjekt i Azure DevOps |
 | [CSV- och Excel-exporter från DOORS och Polarion](#csv-och-excel-från-doors-och-polarion) | in, en gång | en första import när ReqIF inte finns |
 | [OSLC](#oslc-länkar-från-alm-verktyg) | läses av andra verktyg | länkar från IBM ELM, Polarion, Codebeamer och andra OSLC-klienter |
 
@@ -3087,6 +3101,34 @@ Det här händer:
 - **En ny import** uppdaterar kraven som skapades av tidigare importer av samma dokument och lägger till nya. Ett krav som har ändrats i Qtestframe sedan förra importen visas som en konflikt när dokumentet har andra värden. Relationer som har tagits bort i det andra verktyget tas bort här också; relationer som du har skapat i Qtestframe finns kvar. En import tar aldrig bort krav.
 - Ett krav utan titel i dokumentet får de första orden i sin text när det skapas; senare importer behåller titeln du har gett det.
 - En ReqIF-fil som har **exporterats från samma projekt** (se [ovan](#reqif-för-kravverktyg)) matchas mot sina krav, så att du kan skicka en specifikation till en leverantör och importera deras redigerade version tillbaka med samma förhandsgranskning.
+
+### Jira och Azure DevOps
+
+När kraven förvaltas som ärenden i **Jira** eller som arbetsobjekt i **Azure DevOps** (user stories, krav, features) hämtar **Importera → Från Jira** eller **Från Azure DevOps** in dem, och hämtar in dem igen när de ändras där *(Manager)*. En projektansvarig ställer in anslutningen en gång under **Kategorier & inställningar → Projekt → Importkällor** (se nedan).
+
+1. Ange **vad som ska importeras**:
+   - **Jira**: en **JQL-fråga**, till exempel `project = SHOP AND issuetype = Story ORDER BY key`. Dialogen börjar med importkällans standardfråga eller med ärendehanterarens projekt.
+   - **Azure DevOps**: en **Områdessökväg** (till exempel `Shop\Web`; arbetsobjekt under den ingår) och **Typer av arbetsobjekt** (till exempel `User Story, Requirement`), eller en egen **WIQL-fråga** som ersätter båda, t.ex. `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.State] <> 'Removed'`.
+2. Välj **Målmapp** för nya krav och om **länkar mellan objekten ska importeras som relationer**, och välj sedan **Förhandsvisa**. Högst 1 000 objekt läses åt gången; avgränsa frågan om förhandsvisningen säger att det finns fler.
+3. Kontrollera **fälten**: varje fält i ärendehanteraren som har ett värde visas med ett exempel och det kravfält det hamnar i. De vanliga är förinställda: *Summary* / *Title* → titel, *Description* → beskrivning, *Priority* → prioritet, *Labels* / *Tags* → taggar, *Status* / *State* → status och ett fält som heter *Acceptance Criteria* → acceptanskriterier (ett kriterium per rad eller listpunkt). Välj ett fält för vilket annat fält som helst, även ett [eget fält](#egna-fält) i projektet, eller *ignorera*. Förhandsvisningen uppdateras direkt.
+4. Kontrollera raderna (nya, ändrade, oförändrade, konflikter) och relationerna, avmarkera rader du inte vill ha och välj **Spara**.
+
+Det här händer:
+
+- **Text**: beskrivningar i Jira (wiki-markup) och HTML-fälten i Azure DevOps blir Markdown: rubriker, listor, fetstil, länkar, tabeller och kod behålls.
+- **Värden**: prioriteter som *Highest*, *High* … eller Azure DevOps-prioriteterna 1 till 4 blir *kritisk* … *låg*. Statusar matchas på namn (*To Do* och *New* → utkast, *In Progress*, *Active* och *Approved* → godkänd, *Done*, *Resolved* och *Closed* → implementerad, *Removed* → föråldrad) och i Jira annars på statuskategorin. Ett värde utan motsvarighet utelämnas med en anteckning på raden; kravet behåller sitt värde.
+- **Ny import**: nyckeln för varje ärende (`SHOP-12`) eller id:t för varje arbetsobjekt sparas med kravet det blev. En ny import **uppdaterar** det kravet i stället för att skapa ett till, och visar en konflikt när kravet också har ändrats i Qtestframe. Nya krav får *Jira SHOP-12* eller *Azure DevOps 1234* som källa. En import tar aldrig bort krav, och befintliga krav stannar i sin mapp.
+- **Relationer**: länkar mellan importerade objekt blir kravrelationer: i Jira *blocks* (det blockerade ärendet *beror på* det andra), *duplicates*, *clones* (*härledd från*), *relates to* och föräldern till en deluppgift eller ett barnärende (*förfinar*); i Azure DevOps *Parent* (*förfinar*), *Predecessor* (*beror på*), *Duplicate of* och *Related*. En länk som tas bort i ärendehanteraren tar bort relationen vid nästa import med relationer. Länkar till objekt utanför frågan utelämnas.
+- Det räcker med läsrätt: importen ändrar aldrig något i Jira eller Azure DevOps.
+
+#### Importkällor
+
+**Kategorier & inställningar → Projekt → Importkällor** *(Manager)* innehåller anslutningarna:
+
+- **Jira**: utan en egen adress använder importen [ärendehanteraren](#anslut-jira-github-eller-gitlab) när den är Jira. Ange **Jira-webbplatsens adress**, **e-post för Jira-kontot** och **Token** när kraven finns i en annan Jira. **Standardfråga** är JQL-frågan som dialogen börjar med.
+- **Azure DevOps**: **Organisationens adress** (`https://dev.azure.com/organisation`, eller samlingens adress i Azure DevOps Server), **Projekt**, en **Personlig åtkomsttoken** med behörigheten *Work Items (Read)* och eventuellt standardvärden för **Områdessökväg** och **Typer av arbetsobjekt**.
+
+Token kan bara skrivas, som för ärendehanteraren. **Testa anslutningen** provar den sparade anslutningen.
 
 ### CSV och Excel från DOORS och Polarion
 

@@ -286,6 +286,9 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedChat(ctx, st, tenantID, p); err != nil {
 		return nil, err
 	}
+	if err := seedImportSources(ctx, st, tenantID, p, reqs); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

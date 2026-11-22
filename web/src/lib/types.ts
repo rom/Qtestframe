@@ -1215,7 +1215,7 @@ export interface LinkedDefect extends Defect {
 }
 
 export interface DefectTracker {
-  /** "", jira, github or gitlab */
+  /** "", jira, github, gitlab or rt (Request Tracker) */
   type: string
   url: string
   project_key: string
@@ -1230,11 +1230,25 @@ export interface DefectTracker {
   requirement_labels?: string
   /** Jira issue type of issues from requirements */
   requirement_issue_type?: string
+  /** RT queue (name or ID) */
+  queue?: string
+  /** RT custom field that receives the labels */
+  labels_field?: string
   comment_on_pass?: boolean
   user: string
   /** write-only */
   token?: string
   has_token: boolean
+}
+
+/** The connections requirements are imported from (GET /projects/{pid}/import-sources). */
+export interface ImportSources {
+  jira: { url: string; user: string; jql: string; token?: string; has_token: boolean }
+  azure_devops: { url: string; project: string; area_path: string; work_item_types: string; token?: string; has_token: boolean }
+  /** the Jira import uses the defect tracker's connection */
+  jira_from_tracker: boolean
+  tracker_jira_url?: string
+  tracker_jira_key?: string
 }
 
 // ---------------------------------------------------------------- risks

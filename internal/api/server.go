@@ -342,6 +342,7 @@ func (s *Server) routes() {
 	s.routesReqImport(h)
 	// Excel round-trip and ReqIF import (exchange.go), OSLC (oslc.go)
 	s.routesExchange(h)
+	s.routesRequirementSources(h)
 	s.routesOSLC(pub, h)
 	// SCIM provisioning: its own token authentication (scim.go)
 	s.routesSCIM(m)

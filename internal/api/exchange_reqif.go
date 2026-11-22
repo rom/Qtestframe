@@ -74,6 +74,25 @@ type reqifUpload struct {
 	data    *exchangeData
 	preview *reqifPreview
 	refs    []store.ExternalRef
+	opts    reqifPlanOpts
+}
+
+// reqifPlanOpts control planReqIF: the ReqIF import, or an import from
+// another tool whose items are put into a ReqIF model (reqsources.go).
+type reqifPlanOpts struct {
+	// system of the external references (refSystemReqIF, "jira" …),
+	// format (for the audit log) and origin ("the ReqIF document", for
+	// the audit of removed relations).
+	system, format, origin string
+	mapping                map[string]string
+	folderID               string
+	hierarchy              bool
+	// noRelations leaves the relations alone (neither added nor removed).
+	noRelations bool
+	// moreFields adds fields the mapping may target (custom fields).
+	moreFields []interop.Field
+	// adjust changes the planned rows before they are compared.
+	adjust func(d *exchangeData, plan *interop.ReqIFPlan)
 }
 
 func reqifTargets(fields []interop.Field) []reqifTarget {
@@ -108,21 +127,31 @@ func (s *Server) readReqIF(w http.ResponseWriter, r *http.Request, p *Principal,
 			return nil, badRequest("mapping must be a JSON object of attribute name → field: %v", err)
 		}
 	}
+	return s.planReqIF(r, p, pr, up.name, m, reqifPlanOpts{system: refSystemReqIF, format: "reqif", origin: "the ReqIF document", mapping: mapping,
+		folderID: strings.TrimSpace(r.FormValue("folder_id")), hierarchy: formBool(r, "hierarchy", true)})
+}
+
+// planReqIF maps a ReqIF model to requirements and compares them with the
+// stored ones (the requirements and relations imported from it before
+// are found by their external references).
+func (s *Server) planReqIF(r *http.Request, p *Principal, pr *model.Project, name string, m *reqimport.ReqIFModel, o reqifPlanOpts) (*reqifUpload, error) {
+	mapping := o.mapping
 	d, err := s.loadExchange(r, p, pr, model.KindRequirement, false)
 	if err != nil {
 		return nil, err
 	}
+	d.fields = append(d.fields, o.moreFields...)
 	if err := interop.CheckMapping(d.fields, mapping); err != nil {
 		return nil, badRequest("%v", err)
 	}
 	root := ""
-	if id := strings.TrimSpace(r.FormValue("folder_id")); id != "" {
+	if id := o.folderID; id != "" {
 		var ok bool
 		if root, ok = d.paths[id]; !ok {
 			return nil, badRequest("folder_id: requirement folder not found in project")
 		}
 	}
-	refs, err := s.Store.ListExternalRefs(r.Context(), p.TenantID(), pr.ID, refSystemReqIF)
+	refs, err := s.Store.ListExternalRefs(r.Context(), p.TenantID(), pr.ID, o.system)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +173,13 @@ func (s *Server) readReqIF(w http.ResponseWriter, r *http.Request, p *Principal,
 		}
 		return "", 0
 	}
-	plan := interop.PlanReqIF(m, d.fields, interop.ReqIFOptions{Mapping: mapping, Hierarchy: formBool(r, "hierarchy", true), Root: root}, match)
+	plan := interop.PlanReqIF(m, d.fields, interop.ReqIFOptions{Mapping: mapping, Hierarchy: o.hierarchy, Root: root}, match)
+	if o.noRelations {
+		plan.Relations = nil
+	}
+	if o.adjust != nil {
+		o.adjust(d, plan)
+	}
 	diff := interop.Compare(model.KindRequirement, d.fields, plan.Rows, d.byID, d.lookup)
 	s.checkReviewPerms(p, d, diff)
 	cols := map[string]bool{}
@@ -160,10 +195,14 @@ func (s *Server) readReqIF(w http.ResponseWriter, r *http.Request, p *Principal,
 		}
 	}
 	diff.Warnings = append(diff.Warnings, m.Warnings...)
-	pv := &reqifPreview{Diff: diff, File: up.name, Title: m.Title, Tool: firstNonBlank(m.SourceTool, m.ToolID), Qtestframe: m.Qtestframe,
+	pv := &reqifPreview{Diff: diff, File: name, Title: m.Title, Tool: firstNonBlank(m.SourceTool, m.ToolID), Qtestframe: m.Qtestframe,
 		Attributes: plan.Attributes, Targets: reqifTargets(d.fields), RelationTypes: plan.RelTypes, Folders: plan.Folders,
 		Skipped: plan.Skipped, Errors: m.Errors, Previous: previous, TargetFolder: root}
-	u := &reqifUpload{name: up.name, model: m, plan: plan, data: d, preview: pv, refs: refs}
+	u := &reqifUpload{name: name, model: m, plan: plan, data: d, preview: pv, refs: refs, opts: o}
+	if o.noRelations {
+		pv.Relations = relSummary{Changes: []relChange{}}
+		return u, nil
+	}
 	ids := map[string]string{}
 	for i, row := range diff.Rows {
 		if row.ID != "" && row.Status != interop.StatusError {
@@ -293,6 +332,12 @@ func (s *Server) handleReqIFApply(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
+	s.applyReqIF(w, r, p, pr, u, opt)
+}
+
+// applyReqIF saves a planned import: the requirements, their external
+// references and the relations between them.
+func (s *Server) applyReqIF(w http.ResponseWriter, r *http.Request, p *Principal, pr *model.Project, u *reqifUpload, opt applyOptions) {
 	ctx := r.Context()
 	res, err := s.applyDiff(r, p, pr, u.data, u.preview.Diff, opt)
 	if err != nil {
@@ -308,13 +353,18 @@ func (s *Server) handleReqIFApply(w http.ResponseWriter, r *http.Request, p *Pri
 			continue
 		}
 		ids[row.Ref] = id
-		ref := &store.ExternalRef{ProjectID: pr.ID, System: refSystemReqIF, EntityType: model.KindRequirement, EntityID: id,
+		ref := &store.ExternalRef{ProjectID: pr.ID, System: u.opts.system, EntityType: model.KindRequirement, EntityID: id,
 			ExternalID: row.Ref, Source: source, Version: res.versions[i]}
 		if err := s.Store.SaveExternalRef(ctx, p.TenantID(), ref); err != nil {
 			s.fail(w, r, err)
 			return
 		}
 		out.ReferencesSaved++
+	}
+	if u.opts.noRelations {
+		s.audit(ctx, p, "requirement.import", "project", pr.ID, fmt.Sprintf("%s (%s%s): %s", u.name, u.opts.format, toolNote(source), res.summary()))
+		writeJSON(w, http.StatusOK, out)
+		return
 	}
 	// relations between objects of the document, imported now or before
 	for i, row := range u.preview.Rows {
@@ -337,27 +387,27 @@ func (s *Server) handleReqIFApply(w http.ResponseWriter, r *http.Request, p *Pri
 				s.fail(w, r, err)
 				return
 			}
-			s.audit(ctx, p, "relation.delete", "relation", c.relationID, c.Source+" "+c.Type+" "+c.Target+" (removed in the ReqIF document)")
+			s.audit(ctx, p, "relation.delete", "relation", c.relationID, c.Source+" "+c.Type+" "+c.Target+" (removed in "+u.opts.origin+")")
 			_ = s.Store.DeleteExternalRef(ctx, p.TenantID(), c.refID)
 			res.RelationsRemoved++
 			continue
 		case "add":
 			rel := &model.Relation{SourceID: c.sourceID, TargetID: c.targetID, Type: c.Type, CreatedBy: p.User.Email}
 			if err := s.Store.CreateRelation(ctx, p.TenantID(), rel); err != nil {
-				s.fail(w, r, badRequest("SPEC-RELATION %s: %v", c.Ref, err))
+				s.fail(w, r, badRequest("%s %s: %v", map[bool]string{true: "SPEC-RELATION", false: "link"}[u.opts.format == "reqif"], c.Ref, err))
 				return
 			}
 			s.audit(ctx, p, "relation.create", "relation", rel.ID, rel.SourceKey+" "+rel.Type+" "+rel.TargetKey)
 			c.relationID = rel.ID
 			res.RelationsAdded++
 		}
-		if err := s.Store.SaveExternalRef(ctx, p.TenantID(), &store.ExternalRef{ProjectID: pr.ID, System: refSystemReqIF, EntityType: "relation",
+		if err := s.Store.SaveExternalRef(ctx, p.TenantID(), &store.ExternalRef{ProjectID: pr.ID, System: u.opts.system, EntityType: "relation",
 			EntityID: c.relationID, ExternalID: c.Ref, Source: source}); err != nil {
 			s.fail(w, r, err)
 			return
 		}
 	}
-	s.audit(ctx, p, "requirement.import", "project", pr.ID, fmt.Sprintf("%s (reqif%s): %s", u.name, toolNote(source), res.summary()))
+	s.audit(ctx, p, "requirement.import", "project", pr.ID, fmt.Sprintf("%s (%s%s): %s", u.name, u.opts.format, toolNote(source), res.summary()))
 	writeJSON(w, http.StatusOK, out)
 }
 

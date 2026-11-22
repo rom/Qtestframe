@@ -1,13 +1,17 @@
 <script setup lang="ts">
-// Import an edited Excel round-trip workbook (requirements or tests) or a
-// ReqIF document (DOORS, DOORS Next, Polarion, Qtestframe), with a diff
-// preview: new, changed, unchanged, conflicting and erroneous rows, cell
-// by cell. Nothing is saved before Save; the save is one transaction.
+// Import an edited Excel round-trip workbook (requirements or tests), a
+// ReqIF document (DOORS, DOORS Next, Polarion, Qtestframe) or the issues
+// and work items of a Jira (JQL) or Azure DevOps (WIQL, or area path and
+// work item types) query, with a diff preview: new, changed, unchanged,
+// conflicting and erroneous rows, cell by cell. Nothing is saved before
+// Save; the save is one transaction.
 import { computed, nextTick, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Checkbox from 'primevue/checkbox'
+import InputText from 'primevue/inputtext'
+import Textarea from 'primevue/textarea'
 import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import DataTable from 'primevue/datatable'
@@ -22,7 +26,8 @@ import type { ImpactDryRun } from '@/lib/correlations'
 import { api, errorMessage } from '@/lib/api'
 import { folderPath } from '@/lib/tree'
 import { uid } from '@/lib/a11y'
-import type { Folder } from '@/lib/types'
+import type { Folder, ImportSources } from '@/lib/types'
+import { externalImportBody, IMPORT_SOURCES, sourceConfigured, type ImportSourceId } from '@/lib/importSources'
 import {
   acceptsFile,
   changedAttrMapping,
@@ -45,7 +50,7 @@ import {
 } from '@/lib/exchange'
 
 const visible = defineModel<boolean>('visible', { default: false })
-const props = defineProps<{ projectId: string; kind: ExchangeKind; mode: ExchangeMode; folders: Folder[]; folderId?: string | null; canExport?: boolean }>()
+const props = defineProps<{ projectId: string; kind: ExchangeKind; mode: ExchangeMode | ImportSourceId; folders: Folder[]; folderId?: string | null; canExport?: boolean }>()
 const emit = defineEmits<{ imported: [result: ExchangeResult] }>()
 const { t } = useI18n()
 
@@ -66,10 +71,22 @@ const create = ref(true)
 const excluded = ref(new Set<number>())
 const filter = ref<RowStatus[]>([])
 const pickFolder = ref(false)
-const ids = { mapping: uid('ex-map'), preview: uid('ex-prev'), status: uid('ex-status'), rels: uid('ex-rels'), filter: uid('ex-filter') }
+const ids = { mapping: uid('ex-map'), preview: uid('ex-prev'), status: uid('ex-status'), rels: uid('ex-rels'), filter: uid('ex-filter'), query: uid('ex-query') }
 
+/** an import from Jira or Azure DevOps (no file: a query) */
+const source = computed<ImportSourceId | null>(() => ((IMPORT_SOURCES as readonly string[]).includes(props.mode) ? (props.mode as ImportSourceId) : null))
 const isReqIF = computed(() => props.mode === 'reqif')
-const reqif = computed(() => (isReqIF.value ? (preview.value as ReqIFPreview | null) : null))
+const fileMode = computed<ExchangeMode>(() => (isReqIF.value ? 'reqif' : 'xlsx'))
+/** a preview with attributes and relations: ReqIF or a source */
+const reqif = computed(() => (isReqIF.value || source.value ? (preview.value as (ReqIFPreview & { truncated?: boolean; query?: string }) | null) : null))
+const sourceName = computed(() => (source.value === 'jira' ? 'Jira' : 'Azure DevOps'))
+const sources = ref<ImportSources | null>(null)
+const sourcesError = ref('')
+const query = ref('')
+const areaPath = ref('')
+const types = ref('')
+const relations = ref(true)
+const ready = computed(() => !!source.value && sourceConfigured(sources.value, source.value))
 
 watch(visible, (v) => {
   if (!v) return
@@ -84,9 +101,26 @@ watch(visible, (v) => {
   create.value = true
   excluded.value = new Set()
   filter.value = []
+  relations.value = true
+  if (source.value) void loadSources()
 })
 
+async function loadSources() {
+  sources.value = null
+  sourcesError.value = ''
+  try {
+    const s = await api.get<ImportSources>(`/projects/${props.projectId}/import-sources`)
+    sources.value = s
+    query.value = source.value === 'jira' ? s.jira.jql || (s.jira_from_tracker && s.tracker_jira_key ? `project = ${s.tracker_jira_key} ORDER BY key` : '') : ''
+    areaPath.value = s.azure_devops.area_path
+    types.value = s.azure_devops.work_item_types
+  } catch (e) {
+    sourcesError.value = errorMessage(e)
+  }
+}
+
 const title = computed(() => {
+  if (source.value) return t('exchange.sourceTitle', { source: sourceName.value })
   if (isReqIF.value) return t('exchange.reqifTitle')
   return props.kind === 'test' ? t('exchange.xlsxTitleTests') : t('exchange.xlsxTitleRequirements')
 })
@@ -101,25 +135,40 @@ const filtered = computed(() => (preview.value ? visibleRows(preview.value.rows,
 const toSave = computed(() => (preview.value ? saveCount(preview.value.rows, opts.value, excluded.value) : 0))
 const relationChanges = computed(() => (reqif.value ? reqif.value.relations.changes.filter((c) => c.action !== 'keep') : []))
 
+function sourceBody(apply = false) {
+  const mapping = reqif.value ? changedAttrMapping(reqif.value.attributes, choices.value) : undefined
+  const refs = (preview.value?.rows ?? []).filter((r) => excluded.value.has(r.index) && r.ref).map((r) => r.ref as string)
+  return externalImportBody(
+    source.value as ImportSourceId,
+    { query: query.value, areaPath: areaPath.value, types: types.value, relations: relations.value },
+    { mapping, folderId: folderId.value },
+    apply ? { overwrite: overwrite.value, create: create.value, excludedRefs: refs } : undefined,
+  )
+}
+
 function fields(apply = false) {
   const mapping = reqif.value ? changedAttrMapping(reqif.value.attributes, choices.value) : undefined
   return exchangeFields(
-    props.mode,
+    fileMode.value,
     { mapping, folderId: folderId.value, hierarchy: hierarchy.value, kind: props.kind },
     apply ? { overwrite: overwrite.value, create: create.value, excluded: excluded.value } : undefined,
   )
 }
 
 async function runPreview() {
-  if (!file.value) return
+  if (!file.value && !source.value) return
   busy.value = true
   error.value = ''
+  result.value = null
   try {
-    const res = await upload<ExchangeDiff | ReqIFPreview>(`/projects/${props.projectId}/exchange/${props.mode}/preview`, file.value, { fields: fields() })
+    const res: ExchangeDiff | ReqIFPreview = source.value
+      ? await api.post<ReqIFPreview>(`/projects/${props.projectId}/requirements/import/${source.value}/preview`, sourceBody())
+      : await upload<ExchangeDiff | ReqIFPreview>(`/projects/${props.projectId}/exchange/${props.mode}/preview`, file.value as File, { fields: fields() })
     preview.value = res
-    if ('attributes' in res) {
+    const attrs = (res as Partial<ReqIFPreview>).attributes
+    if (attrs) {
       const next: Record<string, string> = {}
-      for (const a of res.attributes) next[a.name] = a.field || ''
+      for (const a of attrs) next[a.name] = a.field || ''
       choices.value = next
     }
     excluded.value = new Set()
@@ -135,7 +184,7 @@ function onFiles(files: File[]) {
   const f = files[0]
   if (!f) return
   result.value = null
-  if (!acceptsFile(props.mode, f.name)) {
+  if (!acceptsFile(fileMode.value, f.name)) {
     error.value = t(isReqIF.value ? 'exchange.unsupportedReqif' : 'exchange.unsupportedXlsx', { name: f.name })
     return
   }
@@ -152,7 +201,7 @@ function onMapping(name: string, field: string) {
 
 function onFolder(id: string | null) {
   folderId.value = id
-  void runPreview()
+  if (!source.value || preview.value) void runPreview()
 }
 
 function toggleRow(index: number, on: boolean) {
@@ -179,16 +228,25 @@ async function exportWorkbook() {
 }
 
 async function save() {
-  if (!file.value || !preview.value || !toSave.value) return
+  if ((!file.value && !source.value) || !preview.value || !toSave.value) return
   busy.value = true
   error.value = ''
   try {
-    const path = `/projects/${props.projectId}/exchange/${props.mode}/apply`
     // the impact of the updates first (impact gate)
-    const f = file.value
-    const gate = await impactGateFor(props.projectId, (q) => upload<ImpactDryRun>(`${path}?dry_run=${q.dry_run}`, f, { fields: fields(true) }))
-    if (!gate) return
-    const res = await upload<ExchangeResult>(`${path}?impact=${gate.impact}`, f, { fields: fields(true) })
+    let res: ExchangeResult
+    if (source.value) {
+      const path = `/projects/${props.projectId}/requirements/import/${source.value}/apply`
+      const body = sourceBody(true)
+      const gate = await impactGateFor(props.projectId, (q) => api.post<ImpactDryRun>(`${path}?dry_run=${q.dry_run}`, body))
+      if (!gate) return
+      res = await api.post<ExchangeResult>(`${path}?impact=${gate.impact}`, body)
+    } else {
+      const path = `/projects/${props.projectId}/exchange/${props.mode}/apply`
+      const f = file.value as File
+      const gate = await impactGateFor(props.projectId, (q) => upload<ImpactDryRun>(`${path}?dry_run=${q.dry_run}`, f, { fields: fields(true) }))
+      if (!gate) return
+      res = await upload<ExchangeResult>(`${path}?impact=${gate.impact}`, f, { fields: fields(true) })
+    }
     result.value = res
     emit('imported', res)
     await nextTick()
@@ -222,17 +280,69 @@ function rowLabel(r: ExchangeRow) {
   >
     <div class="grid" style="gap: 14px" :aria-busy="busy">
       <div class="row small muted" style="align-items: flex-start">
-        <p class="grow" style="margin: 0">{{ isReqIF ? t('exchange.reqifIntro') : t('exchange.xlsxIntro') }}</p>
-        <HelpLink page="reports-and-export" :anchor="{ en: 'exchanging-data-with-other-tools', sv: 'utbyta-data-med-andra-verktyg' }" />
+        <p class="grow" style="margin: 0">{{ source ? t('exchange.sourceIntro', { source: sourceName }) : isReqIF ? t('exchange.reqifIntro') : t('exchange.xlsxIntro') }}</p>
+        <HelpLink
+          page="reports-and-export"
+          :anchor="source ? { en: 'jira-and-azure-devops', sv: 'jira-och-azure-devops' } : { en: 'exchanging-data-with-other-tools', sv: 'utbyta-data-med-andra-verktyg' }"
+        />
       </div>
-      <div v-if="!isReqIF && canExport && !preview && !result" class="row">
+      <div v-if="!isReqIF && !source && canExport && !preview && !result" class="row">
         <Button :label="t('exchange.downloadWorkbook')" icon="pi pi-download" severity="secondary" outlined :loading="downloading" @click="exportWorkbook" />
       </div>
 
+      <template v-if="source">
+        <Message v-if="sourcesError" severity="error" :closable="false" role="alert">{{ sourcesError }}</Message>
+        <Message v-else-if="sources && !ready" severity="warn" :closable="false">{{ t('exchange.sourceMissing', { source: sourceName }) }}</Message>
+        <form v-else-if="sources" class="grid" style="gap: 10px" :aria-labelledby="ids.query" @submit.prevent="runPreview">
+          <h3 :id="ids.query" class="section-title" style="margin: 0">{{ t('exchange.sourceQuery') }}</h3>
+          <template v-if="source === 'azure-devops'">
+            <div class="form-grid">
+              <div v-field class="field">
+                <label>{{ t('importSources.areaPath') }}</label>
+                <InputText v-model="areaPath" class="mono" :disabled="busy || !!query.trim()" placeholder="Shop\Web" />
+              </div>
+              <div v-field class="field">
+                <label>{{ t('importSources.workItemTypes') }}</label>
+                <InputText v-model="types" :disabled="busy || !!query.trim()" placeholder="User Story, Requirement" />
+              </div>
+            </div>
+          </template>
+          <div v-field class="field">
+            <label>{{ source === 'jira' ? t('exchange.jql') : t('exchange.wiql') }}</label>
+            <Textarea v-model="query" rows="2" auto-resize class="mono" :disabled="busy" :aria-describedby="ids.query + '-hint'" />
+            <span :id="ids.query + '-hint'" class="small muted">{{ source === 'jira' ? t('exchange.jqlHint') : t('exchange.wiqlHint') }}</span>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <span :id="ids.query + '-target'" class="label">{{ t('exchange.target') }}</span>
+              <Button
+                :label="rootPath || t('common.topLevel')"
+                icon="pi pi-folder"
+                severity="secondary"
+                outlined
+                class="ellipsis"
+                :aria-describedby="ids.query + '-target'"
+                aria-haspopup="dialog"
+                :disabled="busy"
+                @click="pickFolder = true"
+              />
+            </div>
+            <div class="field">
+              <span class="row nowrap"><Checkbox v-model="relations" binary input-id="ex-rels-on" :disabled="busy" /><label for="ex-rels-on">{{ t('exchange.importLinks') }}</label></span>
+            </div>
+          </div>
+          <div class="row">
+            <Button type="submit" :label="preview ? t('exchange.previewAgain') : t('exchange.previewButton')" icon="pi pi-search" :loading="busy" :disabled="busy || (source === 'jira' && !query.trim())" />
+            <span v-if="reqif?.tool" class="small muted ellipsis">{{ reqif.tool }}</span>
+          </div>
+        </form>
+        <span v-else class="small muted"><i class="pi pi-spin pi-spinner" aria-hidden="true" /> {{ t('exchange.reading') }}</span>
+      </template>
       <FileDropZone
+        v-else
         :multiple="false"
         :max-mb="EXCHANGE_MAX_MB"
-        :accept="EXCHANGE_ACCEPT[mode]"
+        :accept="EXCHANGE_ACCEPT[fileMode]"
         :label="file ? t('exchange.otherFile') : t('exchange.chooseFile')"
         :disabled="busy"
         @files="onFiles"
@@ -271,7 +381,7 @@ function rowLabel(r: ExchangeRow) {
       <template v-else-if="preview">
         <Message v-for="(w, i) in preview.warnings" :key="'w' + i" severity="warn" :closable="false">{{ w }}</Message>
         <p v-if="preview.ignored.length" class="small muted" style="margin: 0">{{ t('exchange.ignoredColumns', { columns: preview.ignored.join(', ') }) }}</p>
-        <p v-if="reqif && reqif.previous" class="small" style="margin: 0"><i class="pi pi-replay" aria-hidden="true" /> {{ t('exchange.reimport', { count: reqif.previous }) }}</p>
+        <p v-if="reqif && reqif.previous" class="small" style="margin: 0"><i class="pi pi-replay" aria-hidden="true" /> {{ t(source ? 'exchange.reimportSource' : 'exchange.reimport', { count: reqif.previous, source: sourceName }) }}</p>
         <details v-if="reqif && (reqif.errors.length || reqif.skipped.length)" class="small">
           <summary>{{ t('exchange.problems', { count: reqif.errors.length + reqif.skipped.length }) }}</summary>
           <ul class="ex-list">
@@ -280,8 +390,8 @@ function rowLabel(r: ExchangeRow) {
         </details>
 
         <section v-if="reqif" :aria-labelledby="ids.mapping">
-          <h3 :id="ids.mapping" class="section-title">{{ t('exchange.attributes') }}</h3>
-          <p class="small muted" style="margin: 0 0 8px">{{ t('exchange.attributesHint') }}</p>
+          <h3 :id="ids.mapping" class="section-title">{{ source ? t('exchange.sourceFields') : t('exchange.attributes') }}</h3>
+          <p class="small muted" style="margin: 0 0 8px">{{ source ? t('exchange.sourceFieldsHint') : t('exchange.attributesHint') }}</p>
           <div class="ex-attrs">
             <div v-for="a in reqif.attributes" :key="a.name" v-field class="field">
               <label class="ellipsis" :title="a.name">{{ a.name }} <span class="muted small">({{ a.type }})</span></label>
@@ -296,7 +406,7 @@ function rowLabel(r: ExchangeRow) {
               <span class="small muted ellipsis" :title="a.sample">{{ a.sample ? clip(a.sample, 60) : t('exchange.noValues') }}</span>
             </div>
           </div>
-          <div class="form-grid" style="margin-top: 10px">
+          <div v-if="!source" class="form-grid" style="margin-top: 10px">
             <div class="field">
               <span :id="ids.mapping + '-target'" class="label">{{ t('exchange.target') }}</span>
               <Button
@@ -392,7 +502,7 @@ function rowLabel(r: ExchangeRow) {
           </DataTable>
         </section>
 
-        <section v-if="reqif" :aria-labelledby="ids.rels">
+        <section v-if="reqif && (!source || relations)" :aria-labelledby="ids.rels">
           <h3 :id="ids.rels" class="section-title">{{ t('exchange.relations') }}</h3>
           <p class="small" style="margin: 0">{{ t('exchange.relationsSummary', { add: reqif.relations.add, remove: reqif.relations.remove, keep: reqif.relations.keep }) }}</p>
           <ul v-if="relationChanges.length" class="ex-list small">
