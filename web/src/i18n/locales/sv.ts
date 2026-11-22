@@ -4141,7 +4141,7 @@ const sv: Messages = {
       glossary: 'Ordlista och referenser',
       discussions: 'Diskussioner om objekten',
       dependencyGraph: 'Beroendegraf över kraven',
-      dependencyGraphHelp: 'Relationerna mellan kraven som figurer och som tabell',
+      dependencyGraphHelp: 'Relationerna mellan kraven som figurer och som tabell.',
       problem: {
         fields: 'Välj minst ett fält.',
         title: 'Titeln är för lång.',

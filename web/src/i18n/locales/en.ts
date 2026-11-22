@@ -4139,7 +4139,7 @@ const en = {
       glossary: 'Glossary and references',
       discussions: 'Discussions of the items',
       dependencyGraph: 'Dependency graph of the requirements',
-      dependencyGraphHelp: 'The relations between the requirements as figures and as a table',
+      dependencyGraphHelp: 'The relations between the requirements as figures and as a table.',
       problem: {
         fields: 'Choose at least one field.',
         title: 'The title is too long.',
