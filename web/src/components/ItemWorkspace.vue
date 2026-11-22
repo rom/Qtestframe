@@ -42,6 +42,8 @@ import { enumLabel, enumOptions } from '@/i18n/labels'
 import { P } from '@/lib/permissions'
 import type { ItemKind, Requirement, TestCase } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
+import { customColumns, listedFields, customCellText } from '@/lib/customColumns'
+import { isCfField } from '@/lib/customFields'
 import { useMetaStore } from '@/stores/meta'
 import { useAuthStore } from '@/stores/auth'
 import { readPref, writePref } from '@/stores/ui'
@@ -213,7 +215,11 @@ interface Col {
   /** field to sort by when it differs from the displayed one */
   sortField?: string | ((item: any) => string)
 }
-const allColumns = computed<Col[]>(() =>
+/** the project's custom fields of the kind as columns (cf.<key>) */
+const customCols = computed<Col[]>(() => customColumns(proj.customFieldsFor(isReq.value ? 'requirement' : 'test')))
+const cellText = (row: Item, field: string) => customCellText(proj.customFieldsFor(isReq.value ? 'requirement' : 'test'), row, field, [t('common.yes'), t('common.no')])
+const allColumns = computed<Col[]>(() => [...baseColumns.value, ...customCols.value])
+const baseColumns = computed<Col[]>(() =>
   isReq.value
     ? [
         { field: 'obligation', header: t('workspace.colObligation'), width: '120px' },
@@ -263,8 +269,8 @@ const allColumns = computed<Col[]>(() =>
 )
 const defaultCols = computed(() =>
   isReq.value
-    ? ['obligation', 'status', 'priority', 'coverage', 'linked_tests', 'category_ids']
-    : ['execution_type', 'status', 'priority', 'last_result', 'linked_requirements', 'category_ids'],
+    ? ['obligation', 'status', 'priority', 'coverage', 'linked_tests', 'category_ids', ...listedFields(proj.customFieldsFor('requirement'))]
+    : ['execution_type', 'status', 'priority', 'last_result', 'linked_requirements', 'category_ids', ...listedFields(proj.customFieldsFor('test'))],
 )
 // visible optional columns in their order (Columns menu, or drag a header);
 // the old count-only "Relations" column became the list of relations
@@ -743,6 +749,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <span v-else-if="c.field === 'comment_count' || c.field === 'relation_count'" class="small" :class="{ muted: !data[c.field] }">
               <i :class="c.field === 'comment_count' ? 'pi pi-comments' : 'pi pi-sitemap'" class="muted" style="font-size: 11px" /> {{ data[c.field] ?? 0 }}
             </span>
+            <span v-else-if="isCfField(c.field)" class="small">{{ cellText(data, c.field) }}</span>
             <span v-else>{{ data[c.field] }}</span>
           </template>
         </Column>

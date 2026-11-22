@@ -2,6 +2,8 @@
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
 import ItemRef from '../components/ItemRef.vue'
+import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
+import { defaultValues, type CustomValues } from '@/lib/customFields'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -196,8 +198,9 @@ interface Form {
   owner: string
   mitigation: string
   requirement_ids: string[]
+  custom_fields: CustomValues
 }
-const blank = (): Form => ({ title: '', description: '', category: '', likelihood: 3, impact: 3, status: 'identified', owner: '', mitigation: '', requirement_ids: [] })
+const blank = (): Form => ({ title: '', description: '', category: '', likelihood: 3, impact: 3, status: 'identified', owner: '', mitigation: '', requirement_ids: [], custom_fields: defaultValues(proj.customFieldsFor('risk')) })
 const dialog = ref(false)
 const editing = ref<Risk | null>(null)
 const form = ref<Form>(blank())
@@ -226,6 +229,7 @@ function openEdit(r: Risk) {
     owner: r.owner,
     mitigation: r.mitigation,
     requirement_ids: [...(r.requirement_ids ?? [])],
+    custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues,
   }
   formError.value = ''
   dialog.value = true
@@ -475,6 +479,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <Button v-if="canWrite" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: q.key })" v-tooltip="t('common.unlink')" @click="unlink(q.id)" />
         </div>
       </div>
+      <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('risk')" :disabled="!canWrite" :project-id="proj.pid" />
       <div class="row" style="justify-content: flex-end">
         <Button v-if="editing && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text style="margin-right: auto" @click="remove(editing)" />
         <Button :label="canWrite ? t('common.cancel') : t('common.close')" text severity="secondary" @click="dialog = false" />

@@ -61,6 +61,9 @@ import ConflictDialog from './ConflictDialog.vue'
 import SuggestInput from './SuggestInput.vue'
 import { autocompleteEnabled, fetchSuggestions, rememberValues, savedEntries } from '@/lib/suggest'
 import CatalogOrigin from './CatalogOrigin.vue'
+import CustomFieldsEditor from './CustomFieldsEditor.vue'
+import TemplatePicker from './TemplatePicker.vue'
+import { applyTemplate, defaultValues, type CustomValues, type TemplateContent } from '@/lib/customFields'
 import { fieldConflicts, REQUIREMENT_FIELDS, staleOf, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 
@@ -127,7 +130,12 @@ function blank() {
     category_ids: [] as string[],
     folder_id: (props.folderId ?? null) as string | null,
     criteria: [] as CriterionRow[],
+    custom_fields: defaultValues(useProjectStore().customFieldsFor('requirement')) as CustomValues,
   }
+}
+/** "New requirement" with a template: fill in what it defines */
+function onTemplate(c: TemplateContent) {
+  form.value = applyTemplate(form.value, c, useProjectStore().customFieldsFor('requirement'))
 }
 
 const form = ref(blank())
@@ -259,6 +267,7 @@ async function load() {
       tags: [...(r.tags ?? [])],
       category_ids: [...(r.category_ids ?? [])],
       folder_id: r.folder_id,
+      custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues,
       criteria: [...(r.criteria ?? [])]
         .sort((a, b) => a.position - b.position)
         .map((c) => ({ id: c.id, description: c.description, method: c.method, threshold: c.threshold })),
@@ -609,6 +618,7 @@ function criterionLabel(id: string | null) {
     </div>
     <CatalogOrigin v-if="item?.catalog_ref" kind="requirement" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+    <TemplatePicker v-if="isNew && canWrite" kind="requirement" :project-id="projectId" @apply="onTemplate" />
     <ReviewBar v-if="item" kind="requirement" :item="item" @changed="onReviewed" />
     <TraceRuleViolations v-if="item" kind="requirement" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${relationCount}/${linkCount}`" />
 
@@ -750,6 +760,7 @@ function criterionLabel(id: string | null) {
         <TagSuggestions v-model="form.tags" :project-id="projectId" :title="form.title" :description="form.description" :disabled="!canWrite" />
       </div>
     </div>
+    <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('requirement')" :disabled="!canWrite" :project-id="projectId" />
 
     <div>
       <div class="section-title">

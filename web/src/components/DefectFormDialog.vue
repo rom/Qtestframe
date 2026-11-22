@@ -3,6 +3,9 @@
 // executions. New defects can start from a draft (e.g. from a failed
 // execution); links of an existing defect are saved one by one.
 import ItemRef from './ItemRef.vue'
+import CustomFieldsEditor from './CustomFieldsEditor.vue'
+import { defaultValues, type CustomValues } from '@/lib/customFields'
+import { useProjectStore } from '@/stores/project'
 import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
@@ -29,7 +32,7 @@ const auth = useAuthStore()
 const canEdit = computed(() => auth.can(P.runExecute))
 const isNew = computed(() => !props.defect?.id)
 
-const empty = () => ({ title: '', description: '', status: 'open', severity: 'major', priority: 'medium', assignee: '', external_key: '', external_url: '' })
+const empty = () => ({ title: '', description: '', status: 'open', severity: 'major', priority: 'medium', assignee: '', external_key: '', external_url: '', custom_fields: defaultValues(useProjectStore().customFieldsFor('defect')) as CustomValues })
 const form = ref(empty())
 const links = ref<DefectLink[]>([])
 const error = ref('')
@@ -41,7 +44,7 @@ watch(visible, (v) => {
   addingExecution.value = false
   const d = props.defect
   if (d?.id) {
-    form.value = { title: d.title, description: d.description, status: d.status, severity: d.severity, priority: d.priority, assignee: d.assignee, external_key: d.external_key, external_url: d.external_url }
+    form.value = { title: d.title, description: d.description, status: d.status, severity: d.severity, priority: d.priority, assignee: d.assignee, external_key: d.external_key, external_url: d.external_url, custom_fields: { ...(d.custom_fields ?? {}) } as CustomValues }
     links.value = [...(d.links ?? [])]
   } else {
     const x = props.draft ?? {}
@@ -175,6 +178,7 @@ async function save() {
         </div>
       </section>
 
+      <CustomFieldsEditor v-model="form.custom_fields" :fields="useProjectStore().customFieldsFor('defect')" :disabled="!canEdit" :project-id="projectId" />
       <details v-if="!isNew || form.external_key">
         <summary class="small">{{ t('defectsView.externalManual') }}</summary>
         <div class="form-grid" style="margin-top: 8px">

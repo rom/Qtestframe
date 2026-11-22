@@ -7,6 +7,7 @@
 import type { Category, Folder, ItemKind } from './types'
 import { buildTree, flatten, folderPath } from './tree'
 import { matchOption, splitList, type Parsed, type SheetField, type SheetOption } from './sheet'
+import { cfField, fieldLabel, isEmpty, parseValue, sortKey as cfSortKey, valueText, type CustomField } from './customFields'
 
 /** A requirement or test as the list endpoints return it. */
 export type SheetRow = Record<string, unknown> & { id: string; key: string; version?: number }
@@ -23,6 +24,8 @@ export interface FieldContext {
   folders: readonly Folder[]
   canWrite: boolean
   canReview: boolean
+  /** the project's custom fields of the kind (columns cf.<key>) */
+  customFields?: readonly CustomField[]
 }
 
 /** Statuses that are review decisions (internal/api/review.go). */
@@ -207,6 +210,35 @@ export function sheetFields(ctx: FieldContext): SheetField<SheetRow>[] {
   })
   const count = (id: string) => (r: SheetRow) => Number(r[id] ?? 0)
 
+  const yesNo: [string, string] = [t('common.yes'), t('common.no')]
+  const custom = (f: CustomField): SheetField<SheetRow> => {
+    const header = fieldLabel(f)
+    const cur = (r: SheetRow) => (r.custom_fields as Record<string, unknown> | undefined)?.[f.key]
+    const editor = f.type === 'long_text' ? 'textarea' : f.type === 'single_select' || f.type === 'checkbox' ? 'select' : 'text'
+    return {
+      id: cfField(f.key),
+      header,
+      width: f.type === 'long_text' ? 260 : 160,
+      editor,
+      clearable: !f.required,
+      text: (r) => valueText(f, cur(r), yesNo),
+      sortKey: (r) => cfSortKey(f, cur(r)),
+      value: (r) => cur(r) ?? null,
+      editable: write,
+      options:
+        editor === 'select'
+          ? () => (f.type === 'checkbox' ? [{ value: 'true', label: yesNo[0] }, { value: 'false', label: yesNo[1] }] : f.options.map((o) => ({ value: o, label: o })))
+          : undefined,
+      parse: (raw) => {
+        const p = parseValue(f, raw, yesNo)
+        if (!p.ok) return fail(t(`customFields.err.${p.error}`, { field: header, value: p.detail ?? '', options: f.options.join(', ') }))
+        if (f.required && isEmpty(p.value)) return fail(t('sheet.err.required', { field: header }))
+        return ok(p.value)
+      },
+    }
+  }
+  const customs = (ctx.customFields ?? []).map(custom)
+
   if (isReq) {
     return [
       key,
@@ -224,6 +256,7 @@ export function sheetFields(ctx: FieldContext): SheetField<SheetRow>[] {
       readonly('coverage', t('sheet.col.coverage'), 120, (r) => enumLabel('coverage', str(r.coverage))),
       readonly('linked_tests', t('sheet.col.linkedTests'), 100, (r) => str(r.linked_tests ?? 0), count('linked_tests')),
       readonly('version', t('sheet.col.version'), 80, (r) => str(r.version ?? ''), count('version')),
+      ...customs,
     ]
   }
   return [
@@ -259,11 +292,13 @@ export function sheetFields(ctx: FieldContext): SheetField<SheetRow>[] {
     readonly('linked_requirements', t('sheet.col.linkedRequirements'), 120, (r) => str(r.linked_requirements ?? 0), count('linked_requirements')),
     readonly('created_by', t('sheet.col.createdBy'), 180, (r) => str(r.created_by)),
     readonly('version', t('sheet.col.version'), 80, (r) => str(r.version ?? ''), count('version')),
+    ...customs,
   ]
 }
 
 /** The empty value a cleared cell gets. */
 export function emptyValue(f: SheetField<SheetRow>): unknown {
+  if (f.id.startsWith('cf.')) return null
   if (f.editor === 'tags' || f.editor === 'categories') return []
   if (f.id === 'folder') return null
   if (f.id === 'estimated_minutes') return 0
@@ -273,6 +308,15 @@ export function emptyValue(f: SheetField<SheetRow>): unknown {
 /** Apply saved values to a row locally (the folder also updates its path). */
 export function applyValues(row: SheetRow, set: Record<string, unknown>, folders: readonly Folder[]): SheetRow {
   const out = { ...row, ...set }
+  if (set.custom_fields && typeof set.custom_fields === 'object') {
+    // merged like the server does: null removes a value
+    const cf: Record<string, unknown> = { ...((row.custom_fields as Record<string, unknown> | undefined) ?? {}) }
+    for (const [k, v] of Object.entries(set.custom_fields as Record<string, unknown>)) {
+      if (isEmpty(v)) delete cf[k]
+      else cf[k] = v
+    }
+    out.custom_fields = cf
+  }
   if ('folder_id' in set) out.folder_path = folderPath(folders as Folder[], (set.folder_id as string | null) ?? null)
   if ('steps' in set && Array.isArray(set.steps)) out.step_count = set.steps.length
   return out

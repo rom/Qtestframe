@@ -1,12 +1,15 @@
 import { defineStore } from 'pinia'
 import { api, asItems } from '@/lib/api'
 import type { Category, Folder, ItemKind, ListResponse, Project } from '@/lib/types'
+import { fieldsOf, type CustomField, type CustomFieldEntity } from '@/lib/customFields'
 
 export const useProjectStore = defineStore('project', {
   state: () => ({
     project: null as Project | null,
     folders: { requirement: [] as Folder[], test: [] as Folder[] } as Record<ItemKind, Folder[]>,
     categories: [] as Category[],
+    /** the project's custom field definitions (all item kinds) */
+    customFields: [] as CustomField[],
     loading: false,
     /** set while a project page is shown: permission checks then use the project's (see auth.can) */
     scoped: false,
@@ -22,7 +25,8 @@ export const useProjectStore = defineStore('project', {
         this.project = await api.get<Project>(`/projects/${id}`)
         this.folders = { requirement: [], test: [] }
         this.categories = []
-        await Promise.all([this.loadFolders('requirement'), this.loadFolders('test'), this.loadCategories()])
+        this.customFields = []
+        await Promise.all([this.loadFolders('requirement'), this.loadFolders('test'), this.loadCategories(), this.loadCustomFields()])
       } finally {
         this.loading = false
       }
@@ -44,6 +48,17 @@ export const useProjectStore = defineStore('project', {
       if (!this.project) return
       const res = await api.get<ListResponse<Category> | Category[]>(`/projects/${this.project.id}/categories`)
       this.categories = asItems(res)
+    },
+    async loadCustomFields() {
+      if (!this.project) return
+      try {
+        this.customFields = asItems(await api.get<ListResponse<CustomField>>(`/projects/${this.project.id}/custom-fields`))
+      } catch {
+        this.customFields = [] // the editors work without them
+      }
+    },
+    customFieldsFor(entity: CustomFieldEntity): CustomField[] {
+      return fieldsOf(this.customFields, entity)
     },
     categoriesFor(scope: ItemKind): Category[] {
       return this.categories.filter((c) => c.scope === scope)

@@ -338,6 +338,8 @@ export interface EvaluationCriterion {
 
 export interface Requirement {
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   folder_id: string | null
   key: string
@@ -408,6 +410,8 @@ export interface TestRef {
 
 export interface TestCase {
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   folder_id: string | null
   key: string
@@ -508,6 +512,8 @@ export interface TraceLink {
 
 export interface TestRun {
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   name: string
   description: string
@@ -1016,6 +1022,8 @@ export interface DefectLink {
 
 export interface Defect {
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   key: string
   title: string
@@ -1070,6 +1078,8 @@ export interface DefectTracker {
 
 export interface Risk {
   id: string
+  /** custom field values by key (see lib/customFields) */
+  custom_fields?: Record<string, string | number | boolean | string[] | null>
   project_id: string
   key: string
   title: string

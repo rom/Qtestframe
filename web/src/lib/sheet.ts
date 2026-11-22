@@ -493,6 +493,13 @@ export function toBatch<R extends { id: string; version?: number }>(rows: readon
       if (withVersions && row.version) e.item.version = row.version
       by.set(row.id, e)
     }
+    if (ch.field.startsWith('cf.')) {
+      // custom fields: one custom_fields object per item (the server merges it)
+      const k = ch.field.slice(3)
+      ;((e.item.set.custom_fields ??= {}) as Record<string, unknown>)[k] = ch.value
+      ;((e.before.set.custom_fields ??= {}) as Record<string, unknown>)[k] = ch.before ?? null
+      continue
+    }
     e.item.set[ch.field] = ch.value
     e.before.set[ch.field] = ch.before
   }
