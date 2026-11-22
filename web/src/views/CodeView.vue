@@ -36,6 +36,9 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const id = uid('codev')
+const tabsId = uid('code-tabs')
+/** tab panel attributes for the content of a tab */
+const panel = (value: string) => ({ role: 'tabpanel', id: `${tabsId}_tabpanel_${value}`, 'aria-labelledby': `${tabsId}_tab_${value}` })
 const pid = computed(() => proj.pid)
 const vs = useVariants(() => pid.value)
 const canRunWrite = computed(() => auth.can(P.runWrite))
@@ -144,7 +147,7 @@ watch(pid, () => void Promise.all([vs.load(), loadBuilds(), loadChanges()]))
     <div class="actions"><HelpLink page="variants-and-code" :anchor="{ en: 'code-links', sv: 'kodlänkar' }" /></div>
   </div>
 
-  <Tabs v-model:value="tab" class="editor-tabs">
+  <Tabs :id="tabsId" v-model:value="tab" class="editor-tabs">
     <TabList>
       <Tab value="regression"><i class="pi pi-replay" aria-hidden="true" /> {{ t('code.regression') }}</Tab>
       <Tab v-if="canRead" value="builds"><i class="pi pi-box" aria-hidden="true" /> {{ t('code.builds') }} <span class="count">{{ builds.length }}</span></Tab>
@@ -152,7 +155,7 @@ watch(pid, () => void Promise.all([vs.load(), loadBuilds(), loadChanges()]))
     </TabList>
   </Tabs>
 
-  <section v-if="tab === 'regression'" aria-labelledby="h-regression" style="margin-top: 12px">
+  <section v-if="tab === 'regression'" v-bind="panel('regression')" style="margin-top: 12px">
     <h2 id="h-regression" class="sr-only">{{ t('code.regression') }}</h2>
     <form class="card grid" style="gap: 12px; max-width: 860px" @submit.prevent="propose">
       <p class="small muted" style="margin: 0">{{ t('code.regressionIntro') }}</p>
@@ -163,12 +166,12 @@ watch(pid, () => void Promise.all([vs.load(), loadBuilds(), loadChanges()]))
       </div>
       <div class="form-grid">
         <div v-if="canRead" class="field">
-          <label :for="`${id}-since`">{{ t('code.sinceBuild') }}</label>
-          <Select v-model="sinceBuild" :input-id="`${id}-since`" :options="buildOptions" option-label="label" option-value="value" :placeholder="t('code.noBuild')" show-clear filter />
+          <label :id="`${id}-since-label`" :for="`${id}-since`">{{ t('code.sinceBuild') }}</label>
+          <Select v-model="sinceBuild" :input-id="`${id}-since`" :aria-labelledby="`${id}-since-label`" :options="buildOptions" option-label="label" option-value="value" :placeholder="t('code.noBuild')" show-clear filter />
         </div>
         <div class="field">
-          <label :for="`${id}-variant`">{{ t('variants.variant') }}</label>
-          <VariantSelect v-model="variant" :input-id="`${id}-variant`" :variants="vs.variants.value" />
+          <label :id="`${id}-variant-label`" :for="`${id}-variant`">{{ t('variants.variant') }}</label>
+          <VariantSelect v-model="variant" :input-id="`${id}-variant`" :labelledby="`${id}-variant-label`" :variants="vs.variants.value" />
         </div>
       </div>
       <div class="row">
@@ -225,7 +228,7 @@ watch(pid, () => void Promise.all([vs.load(), loadBuilds(), loadChanges()]))
     </div>
   </section>
 
-  <section v-else-if="tab === 'builds'" aria-labelledby="h-builds" style="margin-top: 12px">
+  <section v-else-if="tab === 'builds'" v-bind="panel('builds')" style="margin-top: 12px">
     <h2 id="h-builds" class="sr-only">{{ t('code.builds') }}</h2>
     <p v-if="!builds.length" class="card small muted">{{ t('code.noBuildsYet') }}</p>
     <div v-else class="table-scroll card" style="padding: 0">
@@ -265,11 +268,11 @@ watch(pid, () => void Promise.all([vs.load(), loadBuilds(), loadChanges()]))
     </div>
   </section>
 
-  <section v-else aria-labelledby="h-changes" style="margin-top: 12px">
+  <section v-else v-bind="panel('changes')" style="margin-top: 12px">
     <h2 id="h-changes" class="sr-only">{{ t('code.changes') }}</h2>
     <div class="filterbar">
-      <label :for="`${id}-kind`" class="small">{{ t('code.kindLabel') }}</label>
-      <Select v-model="kind" :input-id="`${id}-kind`" :options="kindOptions" option-label="label" option-value="value" :placeholder="t('code.allKinds')" show-clear style="min-width: 180px" />
+      <label :id="`${id}-kind-label`" :for="`${id}-kind`" class="small">{{ t('code.kindLabel') }}</label>
+      <Select v-model="kind" :input-id="`${id}-kind`" :aria-labelledby="`${id}-kind-label`" :options="kindOptions" option-label="label" option-value="value" :placeholder="t('code.allKinds')" show-clear style="min-width: 180px" />
     </div>
     <p v-if="!changes.length" class="card small muted">{{ t('code.noChangesYet') }}</p>
     <ul v-else class="plain-list card" style="padding: 0 12px">

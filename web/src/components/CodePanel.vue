@@ -231,8 +231,8 @@ const sourceOf = (c: CodeChange) => c.items.find((i) => i.item_id === props.item
           <InputText :id="`${id}-repo`" v-model="form.repository" maxlength="250" placeholder="group/project" />
         </div>
         <div v-if="form.kind === 'merge_request'" class="field">
-          <label :for="`${id}-status`">{{ t('common.status') }}</label>
-          <Select v-model="form.status" :input-id="`${id}-status`" :options="statusOptions" option-label="label" option-value="value" />
+          <label :id="`${id}-status-label`" :for="`${id}-status`">{{ t('common.status') }}</label>
+          <Select v-model="form.status" :input-id="`${id}-status`" :aria-labelledby="`${id}-status-label`" :options="statusOptions" option-label="label" option-value="value" />
         </div>
         <div class="row" style="justify-content: flex-end">
           <Button type="button" :label="t('common.cancel')" severity="secondary" text @click="dialog = false" />

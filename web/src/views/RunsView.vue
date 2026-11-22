@@ -388,8 +388,8 @@ const runLayout = useColumnLayout(
           <small id="run-configs-help" class="muted">{{ t('configurations.runHelp') }}</small>
         </div>
         <div v-if="variants.variants.value.length" class="field full">
-          <label for="run-variant">{{ t('variants.runField') }}</label>
-          <VariantSelect v-model="runVariant" input-id="run-variant" :variants="variants.variants.value" :placeholder="t('variants.runNone')" aria-describedby="run-variant-help" />
+          <label id="run-variant-label" for="run-variant">{{ t('variants.runField') }}</label>
+          <VariantSelect v-model="runVariant" input-id="run-variant" labelledby="run-variant-label" :variants="variants.variants.value" :placeholder="t('variants.runNone')" aria-describedby="run-variant-help" />
           <small id="run-variant-help" class="muted">{{ t('variants.runHelp') }}</small>
         </div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="form.description" rows="2" auto-resize /></div>

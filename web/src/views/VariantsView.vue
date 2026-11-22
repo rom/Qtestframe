@@ -38,6 +38,9 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const id = uid('var')
+const tabsId = uid('var-tabs')
+/** tab panel attributes for the content of a tab */
+const panel = (value: string) => ({ role: 'tabpanel', id: `${tabsId}_tabpanel_${value}`, 'aria-labelledby': `${tabsId}_tab_${value}` })
 const pid = computed(() => proj.pid)
 const vs = useVariants(() => pid.value)
 const cfg = useConfigurations(() => pid.value)
@@ -160,26 +163,26 @@ watch(pid, () => void reload())
     </div>
   </div>
 
-  <Tabs v-model:value="tab" class="editor-tabs">
+  <Tabs :id="tabsId" v-model:value="tab" class="editor-tabs">
     <TabList>
       <Tab value="matrix"><i class="pi pi-th-large" aria-hidden="true" /> {{ t('variants.matrix') }}</Tab>
       <Tab value="manage"><i class="pi pi-clone" aria-hidden="true" /> {{ t('variants.manage') }}</Tab>
     </TabList>
   </Tabs>
 
-  <div v-if="vs.loaded.value && !vs.variants.value.length" class="card empty-state" style="margin-top: 12px">
+  <div v-if="vs.loaded.value && !vs.variants.value.length" v-bind="panel(tab)" class="card empty-state" style="margin-top: 12px">
     <p>{{ t('variants.empty') }}</p>
     <Button v-if="canEdit" :label="t('variants.new')" icon="pi pi-plus" @click="openCreate()" />
   </div>
 
-  <section v-else-if="tab === 'matrix'" aria-labelledby="h-matrix" style="margin-top: 12px">
+  <section v-else-if="tab === 'matrix'" v-bind="panel('matrix')" style="margin-top: 12px">
     <h2 id="h-matrix" class="sr-only">{{ t('variants.matrix') }}</h2>
     <div class="filterbar">
       <QueryInput v-model="q" scope="requirement" :error="queryError" @submit="loadMatrix" />
     </div>
     <div class="filterbar">
-      <label :for="`${id}-cfg`" class="small">{{ t('variants.inConfiguration') }}</label>
-      <Select v-model="configuration" :input-id="`${id}-cfg`" :options="configOptions" option-label="label" option-value="value" :placeholder="t('variants.allConfigurations')" show-clear style="min-width: 200px" />
+      <label :id="`${id}-cfg-label`" :for="`${id}-cfg`" class="small">{{ t('variants.inConfiguration') }}</label>
+      <Select v-model="configuration" :input-id="`${id}-cfg`" :aria-labelledby="`${id}-cfg-label`" :options="configOptions" option-label="label" option-value="value" :placeholder="t('variants.allConfigurations')" show-clear style="min-width: 200px" />
     </div>
     <div v-if="loading && !matrix" class="empty" aria-busy="true"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
     <div v-else-if="matrix" class="table-scroll card" style="padding: 0">
@@ -220,7 +223,7 @@ watch(pid, () => void reload())
     </div>
   </section>
 
-  <section v-else aria-labelledby="h-manage" style="margin-top: 12px">
+  <section v-else v-bind="panel('manage')" style="margin-top: 12px">
     <h2 id="h-manage" class="sr-only">{{ t('variants.manage') }}</h2>
     <ul class="plain-list variant-list card" style="padding: 0">
       <li v-for="v in vs.variants.value" :key="v.id" class="variant-row" :style="{ paddingInlineStart: `${12 + variantDepth(v, vs.variants.value) * 20}px` }">
@@ -254,12 +257,12 @@ watch(pid, () => void reload())
       </div>
       <div class="form-grid">
         <div class="field">
-          <label :for="`${id}-parent`">{{ t('variants.parent') }}</label>
-          <VariantSelect v-model="form.parent_id" :input-id="`${id}-parent`" :variants="parentChoices" :placeholder="t('variants.noParent')" />
+          <label :id="`${id}-parent-label`" :for="`${id}-parent`">{{ t('variants.parent') }}</label>
+          <VariantSelect v-model="form.parent_id" :input-id="`${id}-parent`" :labelledby="`${id}-parent-label`" :variants="parentChoices" :placeholder="t('variants.noParent')" />
         </div>
         <div class="field">
-          <label :for="`${id}-kind`">{{ t('variants.kindLabel') }}</label>
-          <Select v-model="form.kind" :input-id="`${id}-kind`" :options="kindOptions" option-label="label" option-value="value" />
+          <label :id="`${id}-kind-label`" :for="`${id}-kind`">{{ t('variants.kindLabel') }}</label>
+          <Select v-model="form.kind" :input-id="`${id}-kind`" :aria-labelledby="`${id}-kind-label`" :options="kindOptions" option-label="label" option-value="value" />
         </div>
       </div>
       <div class="field">

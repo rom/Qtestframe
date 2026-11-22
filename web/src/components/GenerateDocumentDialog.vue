@@ -153,8 +153,8 @@ async function generate() {
       </div>
 
       <div v-if="variants.variants.value.length" class="field">
-        <label :for="`${id}-variant`">{{ t('variants.documentFor') }}</label>
-        <VariantSelect v-model="variant" :input-id="`${id}-variant`" :variants="variants.variants.value" :disabled="busy" :aria-describedby="`${id}-variant-help`" />
+        <label :id="`${id}-variant-label`" :for="`${id}-variant`">{{ t('variants.documentFor') }}</label>
+        <VariantSelect v-model="variant" :input-id="`${id}-variant`" :labelledby="`${id}-variant-label`" :variants="variants.variants.value" :disabled="busy" :aria-describedby="`${id}-variant-help`" />
         <small :id="`${id}-variant-help`" class="muted">{{ t('variants.documentHelp') }}</small>
       </div>
 

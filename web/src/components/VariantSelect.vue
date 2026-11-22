@@ -7,7 +7,7 @@ import Select from 'primevue/select'
 import { useI18n } from 'vue-i18n'
 import { variantOptions, type Variant } from '@/lib/variants'
 
-const props = defineProps<{ variants: Variant[]; inputId?: string; ariaLabel?: string; placeholder?: string; disabled?: boolean; size?: 'small' | 'large' }>()
+const props = defineProps<{ variants: Variant[]; inputId?: string; ariaLabel?: string; labelledby?: string; placeholder?: string; disabled?: boolean; size?: 'small' | 'large' }>()
 const model = defineModel<string | null>({ default: null })
 const { t } = useI18n()
 const options = computed(() => variantOptions(props.variants))
@@ -21,7 +21,8 @@ const options = computed(() => variantOptions(props.variants))
     option-label="label"
     option-value="value"
     :placeholder="placeholder ?? t('variants.allVariants')"
-    :aria-label="inputId ? undefined : ariaLabel ?? t('variants.showFor')"
+    :aria-label="labelledby ? undefined : ariaLabel ?? t('variants.showFor')"
+    :aria-labelledby="labelledby"
     :disabled="disabled"
     :size="size"
     filter
