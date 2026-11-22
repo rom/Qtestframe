@@ -999,6 +999,40 @@ Gaps come MUST first, then by priority; items not fulfilled first; at most
 200 of each (`gaps_total`, `items_total`). The standard report `compliance`
 presents the same.
 
+### Consistency checks
+
+`GET /projects/{pid}/analytics/consistency?limit=` (project.read)
+evaluates every [built-in consistency check](#built-in-consistency-checks)
+on the project: with the project's own rule where the check is installed,
+else with its default (rule id `builtin:<kind>`; such a default is shown
+but does not count for releases or the dashboard). → TraceRulesReport plus
+`"checks":[{kind, scope, name, description, severity, enabled, installed, rule?}]`
+and `"installed": n`.
+
+### Quality metrics
+
+`GET /projects/{pid}/analytics/quality?range=&period=&stale_days=&lang=`
+(project.read) computes quality metrics from the project's history.
+`range` is 30, 90 (default), 180 or 365 days; `period` week or month
+(default week up to 120 days, else month); `stale_days` (default 30) the
+age from which a latest result is stale; `lang` the requirement analysis
+language (`auto` by default).
+
+| Section | What it measures |
+|---|---|
+| `volatility` | revisions that changed a requirement after its creation (moves not counted), in the range: `changes`, `changed` (requirements), `per_requirement` (changes per requirement per period), `trend`, `most_changed` |
+| `defect_density` | defects per active requirement; a defect counts for a requirement when linked to it, to a test that verifies it or to an execution of such a test: `per_requirement`, `by_severity`, `by_requirement`, `by_folder`, `by_category` (`[{name, requirements, defects, density}]`) |
+| `escaped` | defects found in production (`found_in`) or created after a released release whose scope they concern (its requirements, their tests, its runs): `escaped`, `percent`, `production`, `after_release`, `by_phase`, `by_release`, `trend` (share per period), `items` |
+| `effectiveness` | defects linked to a test or its executions, created in the range: `per_test` (per test executed in the range), `per_hour` (per execution hour; `untimed_percent` executions without a duration), `top_tests`, `trend` |
+| `result_age` | age of the latest result of each test (deprecated tests excluded): `buckets` (0-7, 8-30, 31-90, 91-180, 181+ days), `never`, `stale`, `stale_percent` (of the tests with a result), `median_days`, `oldest` |
+| `review_turnaround` | hours from a review request to its decision (decided in the range, cancelled not counted): `mean_hours`, `median_hours`, `p90_hours`, `pending`, `oldest_pending_days`, `trend` (median per period) |
+| `fix_time` | hours from a defect's creation to its resolution (resolved in the range, rejected not counted): `mean_hours`, `median_hours`, `p90_hours`, `open`, `by_severity`, `trend` (mean per period) |
+| `requirement_quality` | active requirements whose text has warnings or errors of the requirement analysis: `percent`, `by_rule`, `items`, `trend` (replayed from the revisions: the text each requirement had at the end of the period) |
+
+Trends are `[{period, count, total, value}]`, one per period (`periods`
+lists their first days; weeks start on Monday, UTC). The standard report
+`quality_metrics` (params `range`, `stale_days`) presents the same.
+
 ## Traceability
 
 Reading needs `project.read`; creating and deleting links needs
@@ -1043,6 +1077,10 @@ deleting rules needs `project.update`.
 | GET | `/projects/{pid}/trace-rules/evaluate?all=&rule_id=&limit=` | evaluates the enabled rules (`all=1`: also the disabled ones; `rule_id`: one rule) → `{"results":[TraceRuleResult], "passed", "summary":{rules, passed, failed, errors, warnings, violations}}`; `passed` is false when an enabled rule of severity `error` fails. `limit` bounds the violations listed per rule (default 500), `violation_count` is always the full number |
 | POST | `/projects/{pid}/trace-rules/preview?limit=` | evaluates an unsaved rule (the body of a POST) → TraceRuleResult |
 | GET | `/requirements/{id}/trace-rules`, `/tests/{id}/trace-rules` | the enabled rules the item breaks → `{"items":[{rule, kind, id, key, title, found, required, total}]}` |
+| GET | `/projects/{pid}/trace-rules/builtins` | the built-in checks with their defaults → `{"items":[{kind, scope, name, description, severity, enabled, installed, rule?}]}` |
+| POST | `/projects/{pid}/trace-rules/builtins` | `{"kinds"?:[kind]}` (body optional) creates the built-in checks the project lacks with their defaults (enabled, severity `warning`) → 201 `{"items":[TraceRule]}`; a name taken by another rule gets a number |
+| GET | `/projects/{pid}/consistency/dismissals` | `{"items":[{id, check, item_a, item_b, created_by, created_at}]}` |
+| POST / DELETE | `/projects/{pid}/consistency/dismissals` | `{"check","item_id","other_id"}` dismisses (201) or restores (204) a finding: `duplicate_suspect` (not a duplicate; both requirements of the project), `unmet_dependency` / `broken_prerequisite` (a dependency on a deleted item that has been dealt with). Needs `requirement.write` (`test.write` for `broken_prerequisite`) |
 
 TraceRule: `{"id","project_id","name","description","severity":"error|warning","enabled","scope":"requirement|test","selector":"<query>","kind","min","not_suspect"?,"passed"?,"relation_type"?,"direction"?,"target_type"?,"target_query"?,"every"?,"position","created_by","created_at","updated_at"}`.
 `selector` is a [query](#query-language) on the items of `scope` (empty: all).
@@ -1062,12 +1100,41 @@ link": `{"kind":"verified_by","not_suspect":true,"every":true,"min":0}`.
 An invalid selector or target query is a 400 `invalid_query` whose message
 starts with `selector:` or `target_query:`.
 
-TraceRuleResult: `{"rule":TraceRule, "matched": n, "violations":[{kind, id, key, title, found, required, total}], "violation_count": n, "passed", "error"?}`;
+TraceRuleResult: `{"rule":TraceRule, "matched": n, "violations":[{kind, id, key, title, status?, found, required, total, check?, note?, related?, fixes?}], "violation_count": n, "passed", "error"?, "waived"?}`;
 `found` counts the qualifying traces, `total` the traces before the
 conditions (`not_suspect`, `passed`, `target_query`). The **Traceability**
 report lists the enabled rules and their violations (sections
 `trace_rules` and `trace_rule_violations`, evaluated on the report's
 requirements and tests).
+
+#### Built-in consistency checks
+
+Besides the kinds above, a rule's `kind` can be a built-in check with a
+fixed condition. They take a `selector` (not `unmitigated_risk`), no `min`
+and no options except `threshold` and `level`; the scope is fixed.
+
+| `kind` | Applies to | Violation when |
+|---|---|---|
+| `conflict_in_release` | requirements | it and a requirement it `conflicts_with` are both approved, implemented or verified and in the same release (not cancelled) |
+| `unmet_dependency` | requirements | it is approved (or later) and `depends_on` a requirement that is rejected, obsolete or deleted (in the trash) |
+| `obsolete_parent` | requirements | it is not rejected or obsolete and `refines` or is `derived_from` an obsolete requirement |
+| `verifies_inactive` | tests | it verifies a rejected or obsolete requirement |
+| `broken_prerequisite` | tests | a prerequisite is deleted, its latest result is failed, or prerequisites form a cycle |
+| `unevidenced_must` | requirements | it is MUST / MUST NOT / SHALL / SHALL NOT, in a planned or active release and has no passing evidence (a linked test that is not suspect passed its latest execution) |
+| `unmitigated_risk` | risks | a risk of at least `level` (default `high`) that is not closed or accepted has no mitigation requirement, or none of them is verified; in a release scope the risks of its requirements count |
+| `unjustified_rejection` | requirements | it was adopted from a regulation of the catalogue (its catalogue item cites a law or directive) and is rejected without a justification: no comment and no rationale of its own |
+| `duplicate_suspect` | requirements | its normalised title and description are at least `threshold` (0.5–1, default 0.9) similar to an older active requirement's (Dice coefficient of character trigrams) and neither a `duplicates` relation nor a dismissal links them |
+
+Violations of built-in checks add `check` (the reason: `conflict`,
+`rejected`, `obsolete`, `deleted`, `failing`, `cycle`, `no_evidence`,
+`no_mitigation`, `not_verified`, `unjustified`, `similar`), `note`,
+`related` (the other items: `{kind, id, key, title, status, role, link?, check?, note?}`,
+where `kind` may be `release` or `risk` and `link` is the id of the
+relation, trace link or prerequisite) and `fixes`, the actions that resolve
+them with the ordinary endpoints: `remove_relation`, `remove_link`,
+`remove_dependency`, `remove_from_release`, `set_obsolete`,
+`add_justification`, `link_mitigation`, `mark_duplicate` (a `duplicates`
+relation from the item to the related one) and `dismiss`.
 
 ## Operations (runs and executions)
 
@@ -1490,8 +1557,8 @@ changing and linking `run.execute`; deleting `project.update`.
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/projects/{pid}/defects?q=` | `[Defect]`; query fields `key, title, description, status, severity, priority, assignee, external, created_by, open, linked` |
-| POST | `/projects/{pid}/defects` | `{"title","description","status","severity","priority","assignee","external_key","external_url","links":[{"entity_type":"requirement\|test\|execution","entity_id"}]}` |
+| GET | `/projects/{pid}/defects?q=` | `[Defect]`; query fields `key, title, description, status, severity, priority, assignee, external, created_by, open, linked, found_in` (alias `phase`) |
+| POST | `/projects/{pid}/defects` | `{"title","description","status","severity","priority","assignee","external_key","external_url","found_in","links":[{"entity_type":"requirement\|test\|execution","entity_id"}]}`; `found_in` is the phase the defect was found in: `requirements`, `design`, `development`, `test`, `acceptance`, `production` or `""` (unknown); defects found in production count as escaped in the quality metrics |
 | GET | `/defects/{id}` | Defect with `links` (key and title of each item) |
 | PATCH | `/defects/{id}` | any field above |
 | DELETE | `/defects/{id}` | |
