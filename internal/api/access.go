@@ -330,6 +330,7 @@ var resourceProjects = map[string]string{
 	"verification-records":  `SELECT project_id FROM verification_records WHERE id = ? AND tenant_id = ?`,
 	"elements":              `SELECT project_id FROM system_elements WHERE id = ? AND tenant_id = ?`,
 	"waivers":               `SELECT project_id FROM waivers WHERE id = ? AND tenant_id = ?`,
+	"exploratory-sessions":  `SELECT project_id FROM exploratory_sessions WHERE id = ? AND tenant_id = ?`,
 	"webhooks":              `SELECT project_id FROM webhooks WHERE id = ? AND tenant_id = ?`,
 	"trace-rules":           `SELECT project_id FROM trace_rules WHERE id = ? AND tenant_id = ?`,
 	"custom-fields":         `SELECT project_id FROM custom_fields WHERE id = ? AND tenant_id = ?`,

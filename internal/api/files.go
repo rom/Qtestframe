@@ -28,7 +28,7 @@ func (s *Server) routesFiles(h routeFunc) {
 	h("GET /api/v1/files/{id}/content", s.handleFileContent)
 	h("PATCH /api/v1/files/{id}", s.handleUpdateFile)
 	h("DELETE /api/v1/files/{id}", s.handleDeleteFile)
-	for _, t := range []string{"requirements", "tests", "runs", "executions", "step-results"} {
+	for _, t := range []string{"requirements", "tests", "runs", "executions", "step-results", "exploratory-sessions"} {
 		h("GET /api/v1/"+t+"/{id}/attachments", s.handleListAttachments(t))
 		h("POST /api/v1/"+t+"/{id}/attachments", s.handleUploadAttachment(t))
 		h("POST /api/v1/"+t+"/{id}/attachments/link", s.handleLinkAttachment(t))
@@ -248,7 +248,8 @@ type attachTarget struct {
 	read, write       rbac.Permission
 }
 
-var pathEntity = map[string]string{"requirements": model.KindRequirement, "tests": model.KindTest, "runs": "run", "executions": "execution", "step-results": "step"}
+var pathEntity = map[string]string{"requirements": model.KindRequirement, "tests": model.KindTest, "runs": "run", "executions": "execution", "step-results": "step",
+	"exploratory-sessions": model.KindExploratory}
 
 func (s *Server) target(ctx context.Context, p *Principal, kind, id string) (*attachTarget, error) {
 	t := &attachTarget{entity: pathEntity[kind]}
@@ -271,6 +272,12 @@ func (s *Server) target(ctx context.Context, p *Principal, kind, id string) (*at
 			return nil, err
 		}
 		t.projectID, t.read, t.write = run.ProjectID, rbac.RunRead, rbac.RunExecute
+	case "exploratory-sessions":
+		x, err := s.Store.GetExploratorySession(ctx, p.TenantID(), id)
+		if err != nil {
+			return nil, err
+		}
+		t.projectID, t.read, t.write = x.ProjectID, rbac.RunRead, rbac.RunExecute
 	case "step-results":
 		eid, err := s.Store.StepResultExecution(ctx, p.TenantID(), id)
 		if err != nil {

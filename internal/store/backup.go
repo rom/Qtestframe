@@ -59,6 +59,8 @@ var BackupTables = []string{
 	"item_applicability", "code_changes", "code_change_items", "code_settings",
 	// custom fields, their archived values and item templates
 	"custom_fields", "field_set_fields", "custom_field_archive", "item_templates", "org_item_templates", "project_template_defaults",
+	// exploratory testing sessions, their scope and notes (0040)
+	"exploratory_sessions", "exploratory_scope", "exploratory_notes",
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available
 	"secret_keys",
@@ -89,7 +91,7 @@ var boolColumns = map[string]bool{
 	"login_events.success": true, "scim_users.active": true, "trace_rules.enabled": true,
 	"invitations.sso": true, "report_subscriptions.enabled": true, "secret_keys.active": true,
 	"verification_records.until_change": true, "verification_settings.strict_criteria": true,
-	"custom_fields.required": true, "custom_fields.show_in_list": true,
+	"verification_settings.exploratory_evidence": true, "custom_fields.required": true, "custom_fields.show_in_list": true,
 	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
 }
 

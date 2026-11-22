@@ -139,6 +139,8 @@ type Data struct {
 	SoADecisions map[string]model.SoADecision
 	// Quality: the computed quality metrics (quality metrics report).
 	Quality *analytics.QualityReport
+	// Exploratory: the session or the sessions of the exploratory reports.
+	Exploratory *ExploratoryData
 	// Query is the filter applied by the caller (shown in the subtitle).
 	Query string
 	Now   time.Time

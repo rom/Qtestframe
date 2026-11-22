@@ -24,6 +24,12 @@
 //   - A requirement's own state: with criteria, verified when every
 //     criterion is verified and all plain evidence passed; without
 //     criteria, from its plain evidence. A plain failure always fails it.
+//   - A debriefed exploratory session (only when the project counts them,
+//     Input.Sessions) is evidence about the requirements in its scope as a
+//     whole: passed passes, failed fails, inconclusive does not count; for
+//     each requirement only the newest counting session does. It is never
+//     spread to criteria, so on its own it verifies only a requirement
+//     without evaluation criteria.
 //   - Roll-up along "refines" (the source refines, is a child of, the
 //     target): a parent is verified only when its own state is verified
 //     (or it has neither criteria nor evidence of its own) and every
@@ -67,6 +73,46 @@ type Input struct {
 	Strict bool
 	// Today (YYYY-MM-DD) for the validity of records.
 	Today string
+	// Sessions are the debriefed exploratory sessions that count as
+	// evidence (nil when the project does not count them).
+	Sessions []Session
+}
+
+// Session is a debriefed exploratory session as evidence.
+type Session struct {
+	ID, Key, Title string
+	// Outcome: passed | failed | inconclusive.
+	Outcome string
+	// At: when it was debriefed.
+	At             time.Time
+	RequirementIDs []string
+}
+
+// sessions returns the evidence of the sessions about one requirement,
+// newest first, with all but the newest counting one void (superseded).
+func sessions(list []*Session) []model.Evidence {
+	sort.SliceStable(list, func(i, j int) bool { return list[i].At.After(list[j].At) })
+	out := []model.Evidence{}
+	counted := false
+	for _, s := range list {
+		e := model.Evidence{Kind: "exploratory", ID: s.ID, Key: s.Key, Title: s.Title, Result: s.Outcome, Date: s.At.UTC().Format("2006-01-02")}
+		switch s.Outcome {
+		case "passed":
+			e.State = model.EvidencePassed
+		case "failed":
+			e.State = model.EvidenceFailed
+		default:
+			e.State, e.Note = model.EvidenceVoid, "inconclusive"
+		}
+		if e.State != model.EvidenceVoid {
+			if counted {
+				e.State, e.Note = model.EvidenceVoid, "superseded"
+			}
+			counted = true
+		}
+		out = append(out, e)
+	}
+	return out
 }
 
 // Result maps requirement id → its verification.
@@ -276,6 +322,19 @@ func Compute(in Input) Result {
 	for id, list := range recByCrit {
 		perCrit[id] = append(perCrit[id], records(list, in.Today)...)
 	}
+	sessByReq := map[string][]*Session{}
+	for i := range in.Sessions {
+		ss := &in.Sessions[i]
+		for _, rid := range ss.RequirementIDs {
+			if byID[rid] != nil {
+				sessByReq[rid] = append(sessByReq[rid], ss)
+			}
+		}
+	}
+	explored := map[string][]model.Evidence{}
+	for id, list := range sessByReq {
+		explored[id] = sessions(list)
+	}
 
 	// children / parents (refines: source is the child of target)
 	children, parents := map[string][]string{}, map[string][]string{}
@@ -299,6 +358,11 @@ func Compute(in Input) Result {
 		if v.ParentIDs == nil {
 			v.ParentIDs = []string{}
 		}
+		// plain evidence spread to criteria without their own: not the
+		// exploratory sessions
+		spread := v.Evidence
+		spreadState := evidenceStates(spread)
+		v.Evidence = append(append([]model.Evidence{}, v.Evidence...), explored[r.ID]...)
 		plainState := evidenceStates(v.Evidence)
 		states := []string{}
 		for ci, c := range r.Criteria {
@@ -307,8 +371,8 @@ func Compute(in Input) Result {
 				cv.Evidence = []model.Evidence{}
 			}
 			cv.State = evidenceStates(cv.Evidence)
-			if cv.State == model.VerNone && !in.Strict && plainState != model.VerNone {
-				for _, e := range v.Evidence {
+			if cv.State == model.VerNone && !in.Strict && spreadState != model.VerNone {
+				for _, e := range spread {
 					e.Plain = true
 					cv.Evidence = append(cv.Evidence, e)
 				}
