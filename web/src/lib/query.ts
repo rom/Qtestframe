@@ -152,7 +152,7 @@ export const QUERY_OPERATORS: QueryHelpEntry[] = [
   { example: '>  >=  <  <=', meaning: 'numeric or date comparison', id: 'opCompare' },
 ]
 
-export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit' | 'defect' | 'cycle', string[]> = {
+export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit' | 'defect' | 'cycle' | 'environment' | 'dataset', string[]> = {
   requirement: [
     'key', 'title', 'description', 'obligation', 'type', 'priority', 'status', 'source', 'rationale', 'owner',
     'tag', 'version', 'folder', 'category', 'dimension', 'coverage', 'linked', 'created_by', 'created_at',
@@ -177,5 +177,10 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' |
   cycle: [
     'name', 'goal', 'description', 'status', 'owner', 'release', 'variant', 'build', 'environment', 'configuration', 'start', 'end',
     'planned', 'executed', 'progress', 'passed', 'failed', 'blocked', 'unassigned', 'test', 'assignee', 'created_by', 'created_at',
+  ],
+  environment: ['name', 'type', 'status', 'description', 'owner', 'tag', 'component', 'url', 'shared', 'capacity', 'approval', 'health', 'booked', 'created_by', 'created_at', 'updated_at'],
+  dataset: [
+    'name', 'description', 'kind', 'classification', 'owner', 'status', 'tag', 'expires', 'expired', 'expiring', 'parameter', 'linked', 'version', 'usage', 'refresh',
+    'created_by', 'created_at', 'updated_at',
   ],
 }

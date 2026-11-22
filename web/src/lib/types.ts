@@ -596,6 +596,8 @@ export interface TestRun {
   /** the test cycle that created the run */
   cycle_id?: string | null
   cycle_name?: string
+  /** the environment item the run is executed in (environment holds its name) */
+  environment_id?: string | null
 }
 
 export interface StepResult {
@@ -703,6 +705,10 @@ export interface TestDependency {
 }
 
 export interface Execution {
+  /** the environment and its component versions when the result was recorded */
+  environment_id?: string | null
+  environment_name?: string
+  environment_components?: { name: string; version: string }[] | null
   id: string
   run_id: string
   test_case_id: string
@@ -1662,6 +1668,8 @@ export interface TestCycle {
   variant_id: string | null
   build_id: string | null
   environment: string
+  /** the environment item (its runs get it too) */
+  environment_id?: string | null
   configuration_ids: string[]
   start_date: string
   end_date: string
