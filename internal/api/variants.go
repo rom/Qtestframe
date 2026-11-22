@@ -307,11 +307,10 @@ func (s *Server) handlePutApplicability(kind string) handlerFunc {
 			return
 		}
 		a := &model.Applicability{VariantIDs: in.VariantIDs, Expression: in.Expression}
-		if _, err := s.Store.SetApplicability(r.Context(), p.TenantID(), pid, kind, []string{id}, a, p.User.Email); err != nil {
+		if _, err := s.setApplicability(r.Context(), p, pid, kind, []string{id}, map[string]string{id: key}, a); err != nil {
 			s.fail(w, r, err)
 			return
 		}
-		s.audit(r.Context(), p, kind+".applicability", kind, id, applicabilityDetails(key, a))
 		out, err := s.applicabilityView(r, p, pid, a)
 		if err != nil {
 			s.fail(w, r, err)
@@ -350,18 +349,155 @@ func (s *Server) handleBulkApplicability(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	a := &model.Applicability{VariantIDs: in.VariantIDs, Expression: in.Expression}
-	n, err := s.Store.SetApplicability(r.Context(), p.TenantID(), pr.ID, in.ItemType, in.ItemIDs, a, p.User.Email)
+	keys, err := s.itemKeys(r.Context(), p, pr.ID, in.ItemType)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(r.Context(), p, in.ItemType+".applicability", "project", pr.ID, applicabilityDetails(fmt.Sprintf("%d %s(s)", n, in.ItemType), a))
+	prev, err := s.setApplicability(r.Context(), p, pr.ID, in.ItemType, in.ItemIDs, keys, a)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	s.audit(r.Context(), p, in.ItemType+".applicability", "project", pr.ID, applicabilityDetails(fmt.Sprintf("%d %s(s)", len(prev), in.ItemType), a))
 	out, err := s.applicabilityView(r, p, pr.ID, a)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"updated": n, "applicability": out})
+	// previous: what each item had before (to undo the change)
+	writeJSON(w, http.StatusOK, map[string]any{"updated": len(prev), "applicability": out, "previous": prev})
+}
+
+// previousApplicability is what an item applied to before a change.
+type previousApplicability struct {
+	ItemID     string   `json:"item_id"`
+	VariantIDs []string `json:"variant_ids"`
+	Expression string   `json:"expression"`
+}
+
+// itemKeys returns item id → key of the requirements or tests of a project.
+func (s *Server) itemKeys(ctx context.Context, p *Principal, projectID, itemType string) (map[string]string, error) {
+	out := map[string]string{}
+	switch itemType {
+	case model.KindRequirement:
+		list, err := s.Store.ListRequirements(ctx, p.TenantID(), projectID)
+		if err != nil {
+			return nil, err
+		}
+		for _, x := range list {
+			out[x.ID] = x.Key
+		}
+	case model.KindTest:
+		list, err := s.Store.ListTests(ctx, p.TenantID(), projectID)
+		if err != nil {
+			return nil, err
+		}
+		for _, x := range list {
+			out[x.ID] = x.Key
+		}
+	}
+	return out, nil
+}
+
+// setApplicability gives items an applicability and, for each item whose
+// applicability changes, records a revision (action applicability: the
+// history shows the change) and an audit entry "KEY: before → after". It
+// returns what every item had before.
+func (s *Server) setApplicability(ctx context.Context, p *Principal, projectID, itemType string, ids []string, keys map[string]string, a *model.Applicability) ([]previousApplicability, error) {
+	prev := map[string]*model.Applicability{}
+	for _, id := range ids {
+		b, err := s.Store.ApplicabilityOf(ctx, p.TenantID(), itemType, id)
+		if err != nil {
+			return nil, err
+		}
+		prev[id] = b
+		// items that predate revision tracking get their state before the change
+		if _, ok := keys[id]; ok {
+			s.ensureInitialRevision(ctx, p, itemType, id)
+		}
+	}
+	if _, err := s.Store.SetApplicability(ctx, p.TenantID(), projectID, itemType, ids, a, p.User.Email); err != nil {
+		return nil, err
+	}
+	names, err := s.variantNameMap(ctx, p, projectID)
+	if err != nil {
+		return nil, err
+	}
+	out := []previousApplicability{}
+	seen := map[string]bool{}
+	for _, id := range ids {
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		b := prev[id]
+		pa := previousApplicability{ItemID: id, VariantIDs: []string{}}
+		if b != nil {
+			pa.VariantIDs, pa.Expression = b.VariantIDs, b.Expression
+		}
+		out = append(out, pa)
+		changed := !sameApplicability(b, a)
+		if changed {
+			s.record(ctx, p, itemType, id, "applicability")
+		}
+		if len(ids) == 1 {
+			d := keys[id] + ": " + applicabilityText(b, names) + " → " + applicabilityText(a, names)
+			if !changed {
+				d = keys[id] + ": " + applicabilityText(a, names) + " (unchanged)"
+			}
+			s.audit(ctx, p, itemType+".applicability", itemType, id, d)
+		}
+	}
+	return out, nil
+}
+
+// sameApplicability reports whether two applicabilities cover the same
+// variants by the same rules.
+func sameApplicability(a, b *model.Applicability) bool {
+	if a.All() || b.All() {
+		return a.All() == b.All()
+	}
+	x, y := append([]string{}, a.VariantIDs...), append([]string{}, b.VariantIDs...)
+	sort.Strings(x)
+	sort.Strings(y)
+	return a.Expression == b.Expression && strings.Join(x, ",") == strings.Join(y, ",")
+}
+
+// variantNameMap returns variant id → name of a project.
+func (s *Server) variantNameMap(ctx context.Context, p *Principal, projectID string) (map[string]string, error) {
+	list, err := s.Store.ListVariants(ctx, p.TenantID(), projectID)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]string{}
+	for _, v := range list {
+		out[v.ID] = v.Name
+	}
+	return out, nil
+}
+
+// applicabilityText describes an applicability for the audit log.
+func applicabilityText(a *model.Applicability, names map[string]string) string {
+	if a.All() {
+		return "all variants"
+	}
+	var parts []string
+	if len(a.VariantIDs) > 0 {
+		var list []string
+		for _, id := range a.VariantIDs {
+			if n := names[id]; n != "" {
+				list = append(list, n)
+			} else {
+				list = append(list, id)
+			}
+		}
+		parts = append(parts, strings.Join(list, ", "))
+	}
+	if a.Expression != "" {
+		parts = append(parts, "expression "+a.Expression)
+	}
+	return strings.Join(parts, " or ")
 }
 
 // ---------------------------------------------------------------- coverage per variant

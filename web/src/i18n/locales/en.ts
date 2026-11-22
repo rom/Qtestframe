@@ -385,6 +385,7 @@ const en = {
       bulk_update: 'Bulk update',
       copy: 'Copied',
       import: 'Imported',
+      applicability: 'Applicability',
     },
     searchType: {
       requirement: 'Requirements',
@@ -1130,6 +1131,7 @@ const en = {
     test_linked: 'Linked requirements',
   },
   fields: {
+    applicability: 'Applies to (variants)',
     key: 'Key',
     title: 'Title',
     description: 'Description',
@@ -2149,6 +2151,8 @@ const en = {
       undependency: '{from} no longer depends on {to}',
       result: 'Result of {key}',
       review: 'Set {key} to {status}',
+      applicability: 'Change the variants of {key}',
+      applicabilityMany: 'Change the variants of {n} items',
       restoreVersion: 'Restore version {version} of {key}',
       folderCreate: 'Create folder {name}',
       folderRename: 'Edit folder {name}',
@@ -2191,6 +2195,16 @@ const en = {
     flipHint: 'The result differs from the previous passed or failed result of this test.',
   },
   releasesView: {
+    targetVariants: 'Target variants',
+    noTargetVariants: 'None: evaluated without a variant',
+    targetVariantsHelp: 'The exit criteria are evaluated for each targeted variant; the release is a go only when every variant is.',
+    forVariants: 'For {names}',
+    gatesTitle: 'Exit criteria per variant',
+    gatesHint: '{go} of {total} targeted variants are a go. Each variant counts its applicable requirements and tests and the results of runs for it or without a variant.',
+    gatesCaption: 'Exit criteria (rows) for each targeted variant (columns)',
+    criterionCol: 'Criterion',
+    inVariants: 'in {names}',
+    gate: { pass: 'Met', waived: 'Waived', fail: 'Not met' },
     bulk: {
       toolbar: 'Actions for the selected releases',
       setStatus: 'Set status',
@@ -5476,6 +5490,10 @@ const en = {
     reauth_required: 'Sign in again (less than 15 minutes ago) to sign.',
   },
   waivers: {
+    variantsLabel: 'Only for variants',
+    variantsAll: 'Every variant',
+    variantsHelp: 'Limits the waiver to these variants (and the variants below them). In a release gated per variant it accepts the requirements only there.',
+    onlyVariants: 'only {names}',
     title: 'Waivers and deviations',
     subtitle: 'Formal acceptance of requirements that are not met, or met differently, for a release or the whole project',
     new: 'New waiver',

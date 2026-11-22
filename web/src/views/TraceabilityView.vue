@@ -12,6 +12,8 @@ import InputIcon from 'primevue/inputicon'
 import MultiSelect from 'primevue/multiselect'
 import Select from 'primevue/select'
 import { useConfigurations } from '@/composables/configurations'
+import VariantSelect from '@/components/VariantSelect.vue'
+import { useVariants } from '@/composables/variants'
 import Button from 'primevue/button'
 import ToggleSwitch from 'primevue/toggleswitch'
 import ProgressSpinner from 'primevue/progressspinner'
@@ -112,18 +114,25 @@ const configOptions = computed(() => [
 async function load() {
   loading.value = true
   try {
-    data.value = await api.get<Traceability>(`/projects/${proj.pid}/traceability`, configuration.value ? { configuration: configuration.value } : undefined)
+    data.value = await api.get<Traceability>(`/projects/${proj.pid}/traceability`, { configuration: configuration.value || undefined, variant: variant.value || undefined })
   } catch (e) {
     notify.fail(e, t('traceability.loadFailed'))
   } finally {
     loading.value = false
   }
 }
+// only the requirements and tests of one variant, with its coverage and results (?variant=)
+const variants = useVariants(() => proj.pid)
+const variant = ref<string | null>((route.query.variant as string) || null)
+watch(variant, (v) => {
+  if ((route.query.variant ?? null) !== v) void router.replace({ query: { ...route.query, variant: v || undefined } })
+})
 onMounted(() => {
   load()
   cfg.load()
+  void variants.load()
 })
-watch(configuration, () => void load())
+watch([configuration, variant], () => void load())
 
 const linkMap = computed(() => {
   const m = new Map<string, TraceLink>()
@@ -323,6 +332,7 @@ async function toggle(reqId: string, testId: string) {
     </IconField>
     <MultiSelect v-model="coverage" :options="coverageOptions" option-label="label" option-value="value" :placeholder="t('traceability.coverage')" :aria-label="t('traceability.coverage')" style="min-width: 150px" show-clear />
     <Select v-if="cfg.configurations.value.length" v-model="configuration" :options="configOptions" option-label="label" option-value="value" :aria-label="t('configurations.coverageIn')" style="min-width: 170px" />
+    <VariantSelect v-if="variants.variants.value.length" v-model="variant" :variants="variants.variants.value" :aria-label="t('variants.showFor')" />
     <span v-if="view === 'matrix'" class="row small nowrap"><ToggleSwitch v-model="showCriteria" input-id="tcrit" /><label for="tcrit">{{ t('verification.showCriteria') }}</label></span>
     <span class="row small nowrap"><ToggleSwitch v-model="onlyLinkedTests" input-id="olt" /><label for="olt">{{ t('traceability.onlyLinked') }}</label><HelpTip id="trace.onlyLinked" :label="t('traceability.onlyLinked')" /></span>
     <HelpTip id="trace.coverage" :label="t('traceability.coverage')" />

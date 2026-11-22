@@ -45,6 +45,8 @@ Så länge ett undantag är godkänt och slutdatumet inte har passerats **gälle
 
 Ett krav visar sina undantag under sina risker i kravredigeraren.
 
+I ett projekt med [varianter](variants-and-code.md) kan ett undantag begränsas till varianter med **Endast för varianter**. I en release som riktar sig mot varianter accepterar det då sina krav bara i de varianterna och varianterna under dem; en release som utvärderas utan varianter räknar bara undantag för alla varianter (se [releasegrindar per variant](variants-and-code.md#releasegrindar-per-variant)).
+
 ### Utgång och återkallelse
 
 Dagen efter slutdatumet blir ett godkänt undantag **utgånget**: dess krav accepteras inte längre, och den som begärde det och godkännarna får ett meddelande. En godkännare kan också när som helst **Återkalla** ett godkänt undantag, med en motivering. Ett godkänt undantag kan inte redigeras eller tas bort; återkalla det och begär ett nytt i stället. Varje steg loggas i granskningsloggen.

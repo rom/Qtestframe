@@ -33,7 +33,7 @@ import { useI18n } from 'vue-i18n'
 
 const proj = useProjectStore()
 /** a changed field of the comparison; custom_fields.<key> shows the field's label */
-const changedLabel = (f: string) => (f.startsWith('custom_fields.') ? (proj.customFields.find((x) => x.key === f.slice(14))?.label ?? f.slice(14)) : f)
+const changedLabel = (f: string) => (f.startsWith('custom_fields.') ? (proj.customFields.find((x) => x.key === f.slice(14))?.label ?? f.slice(14)) : f === 'applicability' ? t('fields.applicability') : f)
 const auth = useAuthStore()
 const prefs = usePrefsStore()
 const route = useRoute()

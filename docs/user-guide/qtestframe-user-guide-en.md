@@ -1516,6 +1516,8 @@ Each criterion shows whether it is met, the actual value next to the target (for
 
 The badge in the release list is the same evaluation, so you can see at a glance which releases are ready.
 
+In a project with [variants](#variants-and-code), a release can target variants: the exit criteria are then evaluated for each of them, the **Status** tab shows a matrix of criteria × variants, and the release is a go only when every targeted variant is (see [release gates per variant](#release-gates-per-variant)).
+
 A percentage criterion with nothing to measure is **not met**: a release without requirements in its scope, or without executions for *executed*, shows *Nothing to measure yet* and is a no-go. A release without any exit criteria is always a go.
 
 ## Mark a release released
@@ -1641,6 +1643,8 @@ While a waiver is approved and its expiry date has not passed, it is **in force*
 - **Reports and documents**: the compliance report and the release readiness report have a section on waivers, and the [requirements specification](#documents-1) marks waived requirements (**Waived by**) and lists the waivers in an appendix.
 
 A requirement shows its waivers below its risks in the requirement editor.
+
+In a project with [variants](#variants-and-code), a waiver can be limited to variants with **Only for variants**. In a release that targets variants it then accepts its requirements only in those variants and the variants below them; a release evaluated without variants counts only waivers for every variant (see [release gates per variant](#release-gates-per-variant)).
 
 ### Expiry and revocation
 
@@ -2357,15 +2361,22 @@ A requirement or test **applies** to all variants until you say otherwise. Open 
 
 To set the applicability of many items at once, select them in the list and choose **Applies to** in the toolbar.
 
+### History, undo and baselines
+
+A change of the applicability is part of the item's **History** (shown as *Applicability*, with the variants before and after) and of the audit log. **Undo** (Ctrl+Z) takes it back, also for a change of many items at once: each item gets what it had. Restoring an older version from the history restores the applicability of that version too.
+
+[Baselines](#baselines) record the applicability of every item. **Compare** lists *Applies to (variants)* among the changed fields when it differs, and **Restore** from a baseline gives the items the applicability they had, even when nothing else changed. Variants deleted since are left out. A deleted item keeps its applicability in the trash, and project archives and backups contain it.
+
 ### Show for a variant
 
-In the requirement and test lists, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
+In the requirement and test lists and on the **Traceability** page, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
 
 | Query | Finds |
 |---|---|
 | `variant:"EU model"` | items that apply to the variant *EU model* |
 | `applicability:selected` | items that apply only to some variants |
 | `applicability:all` | items that apply to all variants |
+| `variant:US` (runs) | runs for the variant *US* |
 
 ## Coverage per variant
 
@@ -2381,7 +2392,18 @@ The **Coverage matrix** tab shows every requirement against every variant, with 
 
 ### Releases and documents for a variant
 
-On the **Releases** page, choose a variant in **Readiness for variant** to evaluate the exit criteria for it: only the release's requirements that apply to the variant, the tests that apply and the results that count. Releasing a release still checks all variants.
+On the **Releases** page, choose a variant in **Readiness for variant** to evaluate the exit criteria for it: only the release's requirements that apply to the variant, the tests that apply and the results that count.
+
+### Release gates per variant
+
+A release can **target** one or more variants: edit the release and choose them in **Target variants**. The exit criteria are then evaluated for every targeted variant, with the rules of [coverage per variant](#coverage-per-variant):
+
+- only the release's requirements that apply to the variant, and only their linked tests that apply to it, count;
+- only results of the release's runs for the variant or a variant above it, and of **variant-neutral** runs, count, in the configurations the variant is tested in. A variant-neutral run counts for every targeted variant.
+
+The **Status** tab shows the matrix **Exit criteria per variant**: one row per criterion, one column per variant, each cell *Met*, *Waived* (met because waivers or signed risk acceptances accept what is missing) or *Not met*, and the go / no-go of each variant at the bottom. The release is a **go only when every targeted variant is a go**; marking it released needs that go or a release note for the override. In the list of criteria below the matrix, a criterion is met when it is met in every variant, and each blocking item names the variants it blocks in. The [release readiness report](#reports-and-export) contains the same matrix.
+
+A [waiver](#waivers-residual-risk-and-the-statement-of-applicability) can be limited to variants (**Only for variants**): it then accepts its requirements only in those variants and the variants below them. A release without target variants counts only waivers for every variant. A release that targets no variant, and a project without variants, are evaluated as before.
 
 When you [create a document](#documents-1), choose **For variant**: the requirements specification or test plan then contains only what applies to the variant, with its coverage and results, and names the variant on the title page.
 

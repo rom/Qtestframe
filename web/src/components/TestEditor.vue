@@ -708,7 +708,7 @@ const scriptPlaceholder = computed(() => {
     </div>
 
     <TestDependenciesPanel v-if="item" :project-id="projectId" :test-id="item.id" :can-write="canWrite" @changed="emit('saved', item)" />
-    <ApplicabilityPanel v-if="item" item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" />
+    <ApplicabilityPanel v-if="item" item-type="test" :item-id="item.id" :item-key="item.key" :project-id="projectId" :can-write="canWrite" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />

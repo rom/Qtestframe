@@ -387,6 +387,7 @@ const sv: Messages = {
       bulk_update: 'Massändring',
       copy: 'Kopierad',
       import: 'Importerad',
+      applicability: 'Tillämplighet',
     },
     searchType: {
       requirement: 'Krav',
@@ -1132,6 +1133,7 @@ const sv: Messages = {
     test_linked: 'Länkade krav',
   },
   fields: {
+    applicability: 'Gäller för (varianter)',
     key: 'Nyckel',
     title: 'Titel',
     description: 'Beskrivning',
@@ -2151,6 +2153,8 @@ const sv: Messages = {
       undependency: '{from} beror inte längre på {to}',
       result: 'Resultat för {key}',
       review: 'Sätt {key} till {status}',
+      applicability: 'Ändra varianterna för {key}',
+      applicabilityMany: 'Ändra varianterna för {n} objekt',
       restoreVersion: 'Återställ version {version} av {key}',
       folderCreate: 'Skapa mappen {name}',
       folderRename: 'Redigera mappen {name}',
@@ -2193,6 +2197,16 @@ const sv: Messages = {
     flipHint: 'Utfallet skiljer sig från testfallets föregående godkända eller underkända utfall.',
   },
   releasesView: {
+    targetVariants: 'Målvarianter',
+    noTargetVariants: 'Inga: utvärderas utan variant',
+    targetVariantsHelp: 'Utgångskriterierna utvärderas för varje målvariant; releasen är go först när alla varianter är det.',
+    forVariants: 'För {names}',
+    gatesTitle: 'Utgångskriterier per variant',
+    gatesHint: '{go} av {total} målvarianter är go. Varje variant räknar sina tillämpliga krav och testfall och resultaten från körningar för den eller utan variant.',
+    gatesCaption: 'Utgångskriterier (rader) för varje målvariant (kolumner)',
+    criterionCol: 'Kriterium',
+    inVariants: 'i {names}',
+    gate: { pass: 'Uppfyllt', waived: 'Undantaget', fail: 'Ej uppfyllt' },
     bulk: {
       toolbar: 'Åtgärder för de markerade releaserna',
       setStatus: 'Ange status',
@@ -5475,6 +5489,10 @@ const sv: Messages = {
     reauth_required: 'Logga in igen (för mindre än 15 minuter sedan) för att signera.',
   },
   waivers: {
+    variantsLabel: 'Endast för varianter',
+    variantsAll: 'Alla varianter',
+    variantsHelp: 'Begränsar undantaget till dessa varianter (och varianterna under dem). I en release med grindar per variant accepterar det kraven bara där.',
+    onlyVariants: 'endast {names}',
     title: 'Undantag och avvikelser',
     subtitle: 'Formellt godkännande av krav som inte uppfylls, eller uppfylls på annat sätt, för en release eller hela projektet',
     new: 'Nytt undantag',

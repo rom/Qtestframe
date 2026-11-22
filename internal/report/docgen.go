@@ -335,13 +335,7 @@ func (g *docGen) docID() string {
 
 // f translates en and replaces its {name} placeholders (pairs of name,
 // value).
-func (g *docGen) f(en string, kv ...string) string {
-	s := g.l.t(en)
-	for i := 0; i+1 < len(kv); i += 2 {
-		s = strings.ReplaceAll(s, "{"+kv[i]+"}", kv[i+1])
-	}
-	return s
-}
+func (g *docGen) f(en string, kv ...string) string { return g.l.f(en, kv...) }
 
 func (g *docGen) add(bs ...export.Block) { g.doc.Blocks = append(g.doc.Blocks, bs...) }
 

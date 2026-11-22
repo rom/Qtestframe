@@ -1080,6 +1080,9 @@ export interface Release {
   released_at: string | null
   released_by: string
   release_note: string
+  /** the variants the release targets (exit criteria evaluated per variant) */
+  variant_ids?: string[]
+  variants?: { id: string; name: string }[]
   created_by: string
   created_at: string
   updated_at: string
@@ -1094,10 +1097,15 @@ export interface ReleaseItem {
   key: string
   title: string
   note?: string
+  /** combined criteria of a release gated per variant: the variants the item appears in */
+  variants?: string[]
 }
 
 export interface CriterionResult extends ExitCriterion {
   met: boolean
+  /** pass | waived | fail */
+  state?: 'pass' | 'waived' | 'fail'
+
   actual: number
   total: number
   items: ReleaseItem[] | null
@@ -1118,6 +1126,17 @@ export interface ReleaseStatusReport {
   risk_threshold?: string
   /** risks of the scope whose residual level is above the threshold (note: level, ", accepted") */
   residual_risks?: ReleaseItem[]
+  /** the variant evaluated for (?variant=) */
+  variant?: { id: string; name: string }
+  /** a release that targets variants: the gate of each */
+  variants?: VariantGate[]
+}
+
+export interface VariantGate {
+  variant: { id: string; name: string }
+  go: boolean
+  criteria: CriterionResult[]
+  summary: Record<string, number>
 }
 
 // ---------------------------------------------------------------- defects

@@ -117,10 +117,10 @@ func TestSeedDemoHistory(t *testing.T) {
 		t.Errorf("requirements grow: %+v", first)
 	}
 	rels, err := st.ListReleases(ctx, ten.ID, p.ID)
-	if err != nil || len(rels) != 1 {
+	if err != nil || len(rels) != 2 || rels[1].Name != "1.4" || len(rels[0].VariantIDs) != 2 {
 		t.Fatal(rels, err)
 	}
-	b, err := st.ReleaseBurnup(ctx, ten.ID, rels[0].ID)
+	b, err := st.ReleaseBurnup(ctx, ten.ID, rels[1].ID)
 	if err != nil || len(b.Points) < 30 || b.Points[len(b.Points)-1].Passed == 0 {
 		t.Errorf("burnup %+v %v", b, err)
 	}

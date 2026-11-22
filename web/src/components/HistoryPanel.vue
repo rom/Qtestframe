@@ -11,7 +11,7 @@ import UserAvatar from './UserAvatar.vue'
 import { usePeopleStore } from '@/stores/people'
 import { useConfirm } from 'primevue/useconfirm'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { diffSnapshots, parseSnapshot } from '@/lib/diff'
+import { applicabilityText, diffSnapshots, parseSnapshot } from '@/lib/diff'
 import { formatDateTime, formatFullDateTime } from '@/lib/format'
 import type { Revision } from '@/lib/types'
 import { useNotify } from '@/composables/notify'
@@ -78,10 +78,10 @@ const changes = computed(() => {
   const before = previous.value ? parseSnapshot(previous.value.snapshot) : null
   // the first revision has nothing to compare with: list its fields as added
   // server-computed changed_fields are authoritative when present
-  return diffSnapshots(before, after, before && Array.isArray(cur.changed_fields) ? cur.changed_fields : null, { resolve: props.resolve })
+  return diffSnapshots(before, after, before && Array.isArray(cur.changed_fields) ? cur.changed_fields : null, { resolve: props.resolve, applicability: (a) => applicabilityText(a, t('variants.allVariants')) })
 })
 
-const ACTION_SEVERITY: Record<string, string> = { create: 'success', update: 'info', restore: 'warn', move: 'secondary', bulk_update: 'secondary', import: 'secondary' }
+const ACTION_SEVERITY: Record<string, string> = { create: 'success', update: 'info', restore: 'warn', move: 'secondary', bulk_update: 'secondary', import: 'secondary', applicability: 'contrast' }
 
 function restore() {
   const r = selected.value

@@ -1618,6 +1618,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
 | 38 | `0038_owners_worklist.sql` |
+| 46 | `0046_variant_gates.sql` |
 
 <!-- END GENERATED: migrations -->
 

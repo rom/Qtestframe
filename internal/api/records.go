@@ -37,8 +37,8 @@ var (
 		Prefixes: customFieldPrefix,
 	}
 	runSchema = &query.Schema{
-		Fields:   []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration"},
-		Aliases:  map[string]string{"env": "environment", "config": "configuration", "configurations": "configuration"},
+		Fields:   []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration", "variant"},
+		Aliases:  map[string]string{"env": "environment", "config": "configuration", "configurations": "configuration", "variants": "variant"},
 		Prefixes: customFieldPrefix,
 	}
 	executionSchema = &query.Schema{
@@ -421,7 +421,17 @@ func runRecord(r *model.TestRun) query.MapRecord {
 		cfgs = append(cfgs, c.Name)
 	}
 	return withCustom(r.CustomFields, query.MapRecord{"id": {r.ID}, "name": {r.Name}, "description": {r.Description}, "status": {r.Status},
-		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}, "configuration": cfgs})
+		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}, "configuration": cfgs,
+		// the variant the run tests (none: variant-neutral)
+		"variant": nonEmpty(r.VariantName)})
+}
+
+// nonEmpty is a one-value list, empty for "".
+func nonEmpty(v string) []string {
+	if v == "" {
+		return nil
+	}
+	return []string{v}
 }
 
 func executionRecord(e *model.Execution) query.MapRecord {
