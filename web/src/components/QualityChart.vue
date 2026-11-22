@@ -72,7 +72,7 @@ const options = computed(() => {
     <button v-if="any" type="button" class="link-button small table-toggle" :aria-expanded="showTable" :aria-controls="tableId" @click="showTable = !showTable">
       <i :class="showTable ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" aria-hidden="true" /> {{ showTable ? t('quality.hideTable') : t('quality.showTable') }}
     </button>
-    <div v-if="any && showTable" :id="tableId" class="table-wrap">
+    <div v-if="any && showTable" :id="tableId" class="table-wrap" tabindex="0" role="region" :aria-label="title">
       <table class="data-table small">
         <caption class="sr-only">{{ title }}</caption>
         <thead>
