@@ -351,8 +351,25 @@ func TestSeedDemo(t *testing.T) {
 	if r := run(t, "", "seed-demo", "--config", bcfg); r.code != 0 {
 		t.Fatalf("seed with bootstrap: %+v", r)
 	}
-	if u, err := openTestStore(t, bcfg).GetUserByEmail(context.Background(), "boss@example.com"); err != nil || !u.SuperAdmin {
+	bst := openTestStore(t, bcfg)
+	if u, err := bst.GetUserByEmail(context.Background(), "boss@example.com"); err != nil || !u.SuperAdmin {
 		t.Errorf("bootstrap admin %+v %v", u, err)
+	}
+	// owners and assignments for "My work"
+	btn, err := bst.GetTenantBySlug(context.Background(), "default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	owned, err := bst.OwnedItems(context.Background(), btn.ID, []string{"boss@example.com"})
+	kinds := map[string]int{}
+	for _, o := range owned {
+		kinds[o.Kind]++
+	}
+	if err != nil || kinds["requirement"] == 0 || kinds["test"] == 0 || kinds["risk"] == 0 {
+		t.Errorf("owned %v %v", kinds, err)
+	}
+	if ex, err := bst.AssignedExecutions(context.Background(), btn.ID, []string{"boss@example.com"}); err != nil || len(ex) == 0 {
+		t.Errorf("executions %v %v", ex, err)
 	}
 	if itoa(0) != "0" || itoa(123) != "123" {
 		t.Errorf("itoa: %q %q", itoa(0), itoa(123))

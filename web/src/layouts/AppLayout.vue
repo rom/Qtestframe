@@ -31,6 +31,8 @@ import { chooseLocal, currentLang, LANGUAGES, LANGUAGE_NAMES, type Lang } from '
 import { enumLabel } from '@/i18n/labels'
 import type { Tenant } from '@/lib/types'
 import { useRolesStore } from '@/stores/roles'
+import { useWorkListStore } from '@/stores/worklist'
+import { badgeText } from '@/lib/notifications'
 
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -54,6 +56,15 @@ const sidebarEl = ref<HTMLElement>()
 const menuButton = ref<{ $el: HTMLElement }>()
 const allTenants = ref<Tenant[]>([])
 
+const work = useWorkListStore()
+onMounted(() => work.start())
+onBeforeUnmount(() => work.stop())
+// the badge follows the organisation and the page (work done elsewhere)
+watch(
+  () => [auth.tenant?.id, route.name],
+  () => void work.load(),
+)
+const workLabel = computed(() => (work.count ? t('nav.myWorkCount', { n: work.count }, work.count) : t('nav.myWork')))
 onMounted(async () => {
   meta.load()
   if (auth.isSuperAdmin) {
@@ -264,6 +275,10 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
         <RouterLink class="nav-item" :to="{ name: 'search' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.search') : ''">
           <i class="pi pi-search" aria-hidden="true" /><span class="label">{{ t('nav.search') }}</span>
         </RouterLink>
+        <RouterLink class="nav-item" :to="{ name: 'myWork' }" :aria-label="workLabel" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? workLabel : ''">
+          <i class="pi pi-inbox" aria-hidden="true" /><span class="label">{{ t('nav.myWork') }}</span>
+          <span v-if="work.count" class="nav-badge" :class="{ overdue: work.summary.overdue }" aria-hidden="true">{{ badgeText(work.count) }}</span>
+        </RouterLink>
         <RouterLink class="nav-item" :to="{ name: 'reviews' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.reviews') : ''">
           <i class="pi pi-eye" aria-hidden="true" /><span class="label">{{ t('nav.reviews') }}</span>
         </RouterLink>
@@ -436,6 +451,36 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.nav-item {
+  position: relative;
+}
+.nav-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--qtf-sidebar-badge, #3b4a5f);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  flex: none;
+}
+.nav-badge.overdue {
+  background: #b71c1c;
+}
+.sidebar.collapsed .nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  line-height: 16px;
+  font-size: 10px;
 }
 .tenant-select {
   min-width: 160px;

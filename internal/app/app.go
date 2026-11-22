@@ -370,7 +370,8 @@ func cmdSeedDemo(args []string, env Env) error {
 		fmt.Fprintf(env.Stdout, "seeded restricted project %s: shared with %s (viewer); %s is not a member (password of both: %s)\n",
 			sp.Key, DemoMemberEmail, DemoOutsiderEmail, DemoUserPassword)
 	}
-	return nil
+	// owners and assignments for "My work" (the users exist now)
+	return SeedDemoWorkList(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail)
 }
 
 // cmdBackup writes a logical, database-agnostic backup (see

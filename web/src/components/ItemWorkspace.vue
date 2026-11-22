@@ -59,6 +59,7 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { rememberFocus } from '@/lib/a11y'
 import RelationsCell from './RelationsCell.vue'
+import MentionInput from './MentionInput.vue'
 import ColumnsMenu from './ColumnsMenu.vue'
 import { useColumnLayout } from '@/composables/columns'
 import MentionText from './MentionText.vue'
@@ -269,6 +270,7 @@ const baseColumns = computed<Col[]>(() =>
         { field: 'category_ids', header: t('workspace.colCategories'), sortable: false },
         { field: 'folder_path', header: t('workspace.colFolder') },
         { field: 'estimated_minutes', header: t('workspace.colEstimate'), width: '100px' },
+        { field: 'owner', header: t('workspace.colOwner') },
         { field: 'script_language', header: t('workspace.colScriptLanguage'), width: '110px' },
         { field: 'step_count', header: t('workspace.colSteps'), width: '80px' },
         { field: 'tags', header: t('workspace.colTags'), sortable: false },
@@ -451,6 +453,16 @@ function openCatDialog(mode: 'add' | 'remove') {
 async function applyCats() {
   catDialog.value = false
   await bulkSet(catMode.value === 'add' ? { add_category_ids: catIds.value } : { remove_category_ids: catIds.value })
+}
+const ownerDialog = ref(false)
+const ownerValue = ref('')
+function openOwnerDialog() {
+  ownerValue.value = ''
+  ownerDialog.value = true
+}
+async function applyOwner() {
+  ownerDialog.value = false
+  await bulkSet({ owner: ownerValue.value.trim() })
 }
 const moveDialog = ref(false)
 function onPickFolder(id: string | null) {
@@ -679,6 +691,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <Button :label="t('workspace.categoriesButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeCategories')" v-tooltip.bottom="t('workspace.removeCategories')" @click="openCatDialog('remove')" />
         <Button :label="t('workspace.tagsButton')" icon="pi pi-plus" size="small" severity="secondary" outlined :aria-label="t('workspace.addTags')" v-tooltip.bottom="t('workspace.addTags')" @click="openTagDialog('add')" />
         <Button :label="t('workspace.tagsButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeTags')" v-tooltip.bottom="t('workspace.removeTags')" @click="openTagDialog('remove')" />
+        <Button :label="t('workspace.setOwner')" icon="pi pi-user" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openOwnerDialog" />
         <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
         <Button :label="t('links.title')" icon="pi pi-link" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkLinksOpen = true" />
         <Button v-if="variantList.variants.value.length" :label="t('variants.appliesTo')" icon="pi pi-clone" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkApplicabilityOpen = true" />
@@ -893,6 +906,17 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     <template #footer>
       <Button :label="t('common.cancel')" text severity="secondary" @click="catDialog = false" />
       <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!catIds.length" @click="applyCats" />
+    </template>
+  </Dialog>
+  <Dialog v-model:visible="ownerDialog" :header="t('workspace.setOwner')" modal style="width: min(480px, 95vw)">
+    <div class="grid" style="gap: 10px">
+      <label for="bulk-owner" class="block-label">{{ t('common.owner') }}</label>
+      <MentionInput id="bulk-owner" v-model="ownerValue" :project-id="pid" :placeholder="t('workspace.ownerPlaceholder', { at: '@' })" aria-describedby="bulk-owner-hint" />
+      <div id="bulk-owner-hint" class="small muted">{{ t(isReq ? 'workspace.appliesToRequirements' : 'workspace.appliesToTests', selection.length) }} · {{ t('workspace.ownerEmptyClears') }}</div>
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="ownerDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" @click="applyOwner" />
     </template>
   </Dialog>
   <FolderPickerDialog v-model:visible="moveDialog" :folders="folders" :header="t('workspace.moveSelection')" @pick="onPickFolder" />

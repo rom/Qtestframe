@@ -430,6 +430,12 @@ async function discover(request) {
     { name: 'bulk-review', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-verified)', wait: '.p-dialog .preview' },
     { name: 'notifications', path: '/notifications' },
     { name: 'reviews', path: '/reviews' },
+    // the personal work list (My work) across projects, filtered by project and reason; the dashboard widget
+    { name: 'my-work', path: '/my-work', wait: '.p-datatable-tbody tr' },
+    { name: 'my-work-filtered', path: `/my-work?project=${pid}&reason=overdue`, wait: '.p-datatable' },
+    { name: 'dashboard-my-work', path: `${p}/dashboard`, wait: 'section.my-work .count' },
+    // bulk "Set owner" of the selected tests
+    { name: 'owner-bulk', path: `${p}/tests`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-user)'], wait: '.p-dialog #bulk-owner' },
     { name: 'members', path: '/admin/members' },
     { name: 'members-add', path: '/admin/members', open: '.filterbar button:has(.pi-user-plus)', wait: '.p-dialog' },
     // public invitation page (an unknown token shows the explanation)

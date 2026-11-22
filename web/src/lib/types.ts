@@ -446,6 +446,8 @@ export interface TestCase {
   priority: string
   status: string
   estimated_minutes: number
+  /** the member responsible (e-mail address), or a name; "" none */
+  owner?: string
   tags: string[] | null
   /** catalogue id the item was copied from ("" otherwise) */
   catalog_ref?: string

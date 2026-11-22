@@ -13,6 +13,7 @@ import SummaryBar from '@/components/SummaryBar.vue'
 import QualityMetrics from '@/components/QualityMetrics.vue'
 import ConsistencySection from '@/components/ConsistencySection.vue'
 import StatusTag from '@/components/StatusTag.vue'
+import MyWorkWidget from '@/components/MyWorkWidget.vue'
 import { api, asItems } from '@/lib/api'
 import { COVERAGE_COLORS, RESULT_COLORS, colorFor } from '@/lib/colors'
 import { seriesColor } from '@/themes/chart'
@@ -483,6 +484,8 @@ const burnupChart = computed<ChartData>(() => {
         </div>
       </li>
     </ul>
+
+    <MyWorkWidget :project-id="proj.pid" />
 
     <div class="charts">
       <section class="card" aria-labelledby="ch-coverage">

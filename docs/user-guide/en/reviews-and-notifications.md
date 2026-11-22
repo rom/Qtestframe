@@ -2,13 +2,32 @@
 
 Qtestframe tells you when something needs your attention, lets you ask colleagues to review a requirement or a test, and records electronic sign-offs of baselines. Webhooks send the same events to other systems.
 
+## My work
+
+**My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see. The badge next to it shows how many items are waiting; it turns red when some of them are overdue. Each row links to the item and says why it is there:
+
+| Reason | The item is listed because |
+|---|---|
+| **Owner** | you own a requirement in draft, review, approved or implemented, a test in draft or review, or an open risk (identified or mitigating) |
+| **Assigned** | an open defect or a test execution that has not been run yet (in a planned or running run) is assigned to you |
+| **Review requested** | someone asked you to review a requirement or a test |
+| **Approval** | a requested waiver or deviation waits for your signature: you are one of its approvers, or it names none and you may approve waivers. Your own requests are not listed. |
+| **Risk acceptance** | a mitigated or accepted risk is above the project's acceptance threshold and has no valid acceptance signature, and you may sign it |
+| **Risk review** | you own the next review of a risk and it is due within a week |
+| **Overdue** | its due date has passed: a review request's due date or a risk's review date |
+| **Suspect**, **Stale results**, **Blocked** | a requirement or test you own became suspect (something linked or related changed), has stale test results, or is blocked by an open defect — also when it is otherwise finished |
+
+Overdue items come first, then by due date, then the most recently changed. Choose a project to see only its items, or a reason to see only those rows. The project dashboard shows the same list for the project in the **My work** widget, with the number of items per reason; select a reason to open the filtered list.
+
+The work list is computed when you open it; finishing the work (approving the review, closing the defect, running the test, changing the status) removes the row.
+
 ## Notifications
 
 The bell in the top bar shows how many notifications you have not read. Open it to see the latest ones; choose one to go to the item it is about. **All notifications** lists everything, with a filter for unread ones.
 
 You get a notification when someone else:
 
-- assigns a requirement (owner), an execution or a defect to you,
+- makes you the owner of a requirement, a test or a risk (also in a bulk change), or assigns an execution or a defect to you,
 - mentions you with `@handle` in a description, a comment or execution notes,
 - asks you to review something, or finishes a review you asked for,
 - changes the status of a defect assigned to you.

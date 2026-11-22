@@ -141,6 +141,7 @@ export const QUERY_HELP: QueryHelpEntry[] = [
   { example: '(a OR b) AND c', meaning: 'Grouping', id: 'group' },
   { example: 'cf.supplier:"Acme"  cf.mass>2', meaning: 'Custom field (by its key)', id: 'custom' },
   { example: 'sort:-cf.mass  sort:title', meaning: 'Sort the result (- for descending)', id: 'sort' },
+  { example: 'owner:me  assignee:me', meaning: 'Items you own / that are assigned to you; owner:anna@example.com for one member', id: 'me' },
 ]
 
 export const QUERY_OPERATORS: QueryHelpEntry[] = [
@@ -161,7 +162,7 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' |
   ],
   test: [
     'key', 'title', 'description', 'preconditions', 'execution_type', 'type', 'script_language', 'script',
-    'expected', 'step', 'priority', 'status', 'estimate', 'tag', 'folder', 'category', 'dimension', 'linked',
+    'expected', 'step', 'priority', 'status', 'estimate', 'owner', 'tag', 'folder', 'category', 'dimension', 'linked',
     'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'version', 'mention', 'depends_on', 'suspect', 'flaky', 'flakiness', 'catalog', 'stale',
     'element',
     'variant', 'applicability',

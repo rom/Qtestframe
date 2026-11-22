@@ -23,6 +23,7 @@ const BY_ROUTE: Record<string, string> = {
   soa: 'waivers-and-soa',
   documents: 'documents',
   search: 'search-and-filters',
+  myWork: 'reviews-and-notifications',
   profile: 'getting-started',
   admin: 'administration',
   members: 'administration',

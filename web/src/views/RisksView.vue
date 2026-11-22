@@ -35,6 +35,7 @@ import { useAuthStore } from '@/stores/auth'
 import { usePrefsStore } from '@/stores/prefs'
 import { useNotify } from '@/composables/notify'
 import SuggestInput from '@/components/SuggestInput.vue'
+import MentionInput from '@/components/MentionInput.vue'
 import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
 
@@ -592,7 +593,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <label for="risk-status">{{ t('common.status') }}</label>
           <Select v-model="form.status" input-id="risk-status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
         </div>
-        <div v-field class="field"><label for="risk-owner">{{ t('common.owner') }}</label><SuggestInput id="risk-owner" v-model="form.owner" field="risk.owner" :project-id="proj.pid" :disabled="!canWrite" /></div>
+        <div v-field class="field"><label for="risk-owner">{{ t('common.owner') }}</label><MentionInput id="risk-owner" v-model="form.owner" suggest="risk.owner" :project-id="proj.pid" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" /></div>
         <div v-field class="field"><label for="risk-category">{{ t('common.category') }}</label><InputText id="risk-category" v-model="form.category" :placeholder="t('risksView.categoryPlaceholder')" :disabled="!canWrite" /></div>
         <div v-field class="field full"><label for="risk-desc">{{ t('common.description') }}</label><Textarea id="risk-desc" v-model="form.description" rows="2" auto-resize :disabled="!canWrite" /></div>
         <div v-field class="field full"><label for="risk-mitigation">{{ t('risksView.mitigation') }}</label><SuggestInput id="risk-mitigation" v-model="form.mitigation" field="risk.mitigation" :project-id="proj.pid" multiline rows="3" auto-resize :placeholder="t('risksView.mitigationPlaceholder')" :disabled="!canWrite" /></div>
@@ -624,7 +625,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
             <label for="risk-review-date">{{ t('residual.reviewDate') }}</label>
             <InputText id="risk-review-date" v-model="form.review_date" type="date" :disabled="!canWrite" />
           </div>
-          <div v-field class="field"><label for="risk-review-owner">{{ t('residual.reviewOwner') }}</label><InputText id="risk-review-owner" v-model="form.review_owner" :disabled="!canWrite" /></div>
+          <div v-field class="field"><label for="risk-review-owner">{{ t('residual.reviewOwner') }}</label><MentionInput id="risk-review-owner" v-model="form.review_owner" :project-id="proj.pid" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" /></div>
         </div>
         <div v-if="editing" class="row small" style="margin-top: 8px">
           <template v-if="editing.accepted_by">
@@ -665,7 +666,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         <Checkbox v-model="bulkOwnerOn" binary input-id="bk-risk-owner-on" />
         <label for="bk-risk-owner-on">{{ t('risksView.bulk.setOwner') }}</label>
       </div>
-      <InputText v-model="bulkOwner" :disabled="!bulkOwnerOn" :aria-label="t('risksView.bulk.setOwner')" :placeholder="t('risksView.bulk.emptyClears')" />
+      <MentionInput v-model="bulkOwner" :project-id="proj.pid" :disabled="!bulkOwnerOn" :aria-label="t('risksView.bulk.setOwner')" :placeholder="t('risksView.bulk.emptyClears')" />
       <div class="row">
         <Checkbox v-model="bulkCategoryOn" binary input-id="bk-risk-cat-on" />
         <label for="bk-risk-cat-on">{{ t('risksView.bulk.setCategory') }}</label>

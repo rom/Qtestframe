@@ -19,6 +19,7 @@ Sidan fungerar som [kravsidan](requirements.md#kravsidan): mappträd, filterfäl
 | **Status** | Utkast, Klart, Granskning eller Utfasat. |
 | **Prioritet** | Kritisk, Hög, Medel eller Låg. |
 | **Uppskattning (minuter)** | Förväntad tidsåtgång. |
+| **Ägare** | Den projektmedlem som ansvarar för testfallet. Skriv `@` för att välja en person; testfallet visas då i personens [arbetslista](reviews-and-notifications.md#mitt-arbete) medan det är utkast eller under granskning, eller när det blir misstänkt eller får inaktuella resultat. |
 | **Mapp**, **Kategorier**, **Taggar** | Placering och klassificering. **Föreslagna taggar** under taggfältet kommer från titeln, beskrivningen, förutsättningarna och stegen, som för [krav](requirements.md#fält). |
 | **Förväntat slutresultat** | Det förväntade utfallet av testfallet som helhet. |
 

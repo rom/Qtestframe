@@ -351,7 +351,7 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"defects":           {strconv.Itoa(r.OpenDefects)},
 		"risk":              {r.RiskLevel},
 		"catalog":           {r.CatalogRef},
-		"mention":           mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
+		"mention":           append(mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source), ownerMentions(r.Owner)...),
 		"blocked":           {strconv.Itoa(r.BlockingDefects)},
 		"stale":             {strconv.Itoa(r.StaleResults)},
 		"suspect_relations": {strconv.Itoa(r.SuspectRelations)},
@@ -370,6 +370,18 @@ func mentions(texts ...string) []string {
 		out = append(out, h, "@"+h)
 	}
 	return out
+}
+
+// ownerMentions: an owner stored as a member's e-mail address mentions the
+// member's handle (mention:anna finds the items anna@… owns).
+func ownerMentions(owner string) []string {
+	owner = strings.TrimSpace(owner)
+	if i := strings.IndexByte(owner, '@'); i > 0 && !strings.ContainsAny(owner, " \t") {
+		if h := mention.EmailHandle(owner); h != "" {
+			return []string{h, "@" + h}
+		}
+	}
+	return nil
 }
 
 func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
@@ -391,7 +403,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"last_result": {t.LastResult}, "created_by": {t.CreatedBy}, "created_at": {ts(t.CreatedAt)},
 		"updated_at": {ts(t.UpdatedAt)}, "defect": pc.defects[t.ID], "calls": calls,
 		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)}, "suspect": {strconv.Itoa(t.SuspectLinks)},
-		"mention":       mentions(append([]string{t.Owner, t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
+		"mention":       append(mentions(append([]string{t.Owner, t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...), ownerMentions(t.Owner)...),
 		"depends_on":    pc.prereqKeys[t.ID],
 		"flaky":         {strconv.FormatBool(t.Flaky)},
 		"flakiness":     {strconv.Itoa(t.Flakiness)},

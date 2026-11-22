@@ -286,6 +286,7 @@ export function sheetFields(ctx: FieldContext): SheetField<SheetRow>[] {
     },
     categories,
     tags,
+    text('owner', t('sheet.col.owner'), 150),
     { ...folder, sortKey: folder.text },
     readonly('step_count', t('sheet.col.steps'), 90, (r) => str(r.step_count ?? (Array.isArray(r.steps) ? (r.steps as unknown[]).length : 0)), count('step_count')),
     readonly('last_result', t('sheet.col.lastResult'), 120, (r) => enumLabel('result', str(r.last_result))),

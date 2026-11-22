@@ -133,6 +133,7 @@ function blank() {
     priority: 'medium',
     status: 'draft',
     estimated_minutes: 0 as number | null,
+    owner: '',
     tags: [] as string[],
     category_ids: [] as string[],
     folder_id: (props.folderId ?? null) as string | null,
@@ -194,6 +195,7 @@ async function load() {
       priority: t.priority,
       status: t.status,
       estimated_minutes: t.estimated_minutes,
+      owner: t.owner ?? '',
       tags: [...(t.tags ?? [])],
       category_ids: [...(t.category_ids ?? [])],
       folder_id: t.folder_id,
@@ -587,6 +589,10 @@ const scriptPlaceholder = computed(() => {
         <label>{{ t('tests.estimate') }}</label>
         <HelpTip id="test.estimate" :label="t('tests.estimate')" />
         <InputNumber v-model="form.estimated_minutes" :min="0" show-buttons :disabled="!canWrite" fluid />
+      </div>
+      <div v-field class="field">
+        <label>{{ t('common.owner') }}</label>
+        <MentionInput v-model="form.owner" :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.folder') }}</label>

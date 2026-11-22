@@ -19,6 +19,7 @@ The page works like the [requirements page](requirements.md#the-requirements-pag
 | **Status** | Draft, Ready, Review or Deprecated. |
 | **Priority** | Critical, High, Medium or Low. |
 | **Estimate (minutes)** | Expected duration. |
+| **Owner** | The project member responsible for the test. Type `@` to pick a person; the test then appears in their [work list](reviews-and-notifications.md#my-work) while it is in draft or review, or when it becomes suspect or its results stale. |
 | **Folder**, **Categories**, **Tags** | Filing and classification. **Suggested tags** under the tags field come from the title, description, preconditions and steps, as for [requirements](requirements.md#fields). |
 | **Overall expected result** | The expected outcome of the test as a whole. |
 

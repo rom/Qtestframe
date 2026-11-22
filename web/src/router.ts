@@ -65,6 +65,7 @@ const routes: RouteRecordRaw[] = [
       },
       { path: 'notifications', name: 'notifications', component: () => import('./views/NotificationsView.vue') },
       { path: 'reviews', name: 'reviews', component: () => import('./views/ReviewsView.vue') },
+      { path: 'my-work', name: 'myWork', component: () => import('./views/MyWorkView.vue') },
       { path: 'search', name: 'search', component: () => import('./views/SearchView.vue') },
       { path: 'go/:key', name: 'go', component: () => import('./views/GoView.vue') },
       {
