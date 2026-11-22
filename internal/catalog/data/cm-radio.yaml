@@ -850,3 +850,19 @@ risks:
       title: Radioutrustning stör andra användare av radiospektrum
       description: Utrustning utan försäkran om överensstämmelse, för hög sändareffekt eller saknad radardetektering stör radar eller andra tillståndshavare. Tillsynsmyndigheten beordrar att den stängs av.
       mitigation: Köp radioutrustning med EU-försäkran om överensstämmelse, håll kanaler och effekt inom de nationella gränserna, aktivera radardetektering på delade 5 GHz-kanaler och kör privata mobilnät bara på licensierat lokalt spektrum.
+  - id: CMRAD-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [rogue-access-point, guest-network]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27033-6:2016", "ISO/IEC 27001:2022 A.8.22"]
+    mitigated_by: [CMRAD-10, CMRAD-09, CMRAD-13]
+    attack: [T1557.004, T1669]
+    en:
+      title: Rogue access point or guest network gives a way into the internal network
+      description: "Someone sets up an access point with the staff network's name, or the guest network reaches internal systems. Devices connect to the attacker and credentials are captured."
+      mitigation: Alarm on rogue access points within minutes, let the guest network reach only the internet and use protected management frames on the staff network.
+    sv:
+      title: Obehörig accesspunkt eller gästnätet ger en väg in i det interna nätet
+      description: Någon sätter upp en accesspunkt med personalnätets namn, eller gästnätet når interna system. Enheter ansluter till angriparen och inloggningsuppgifter fångas upp.
+      mitigation: Larma om obehöriga accesspunkter inom några minuter, låt gästnätet nå bara internet och använd skyddade hanteringsramar i personalnätet.

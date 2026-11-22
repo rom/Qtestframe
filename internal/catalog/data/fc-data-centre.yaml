@@ -913,3 +913,34 @@ risks:
       title: Brand i datahallen
       description: Ett elfel startar en brand i ett rack eller i elrummet, kanske under ett underhållsarbete. Utrustning och data förstörs och personalen är i fara.
       mitigation: Installera mycket tidig rökdetektering med larm till en bemannad central, använd ett gassläckningsrum som håller koncentrationen i 10 minuter och godkänn en arbetsbeskrivning före arbete med kraft eller kyla.
+  - id: FCDC-R04
+    category: availability
+    likelihood: 2
+    impact: 5
+    tags: [maintenance-work, human-error]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "EN 50600-3-1 (management and operational information)", "EN 50600-2-2 (power distribution)"]
+    mitigated_by: [FCDC-19, FCDC-02, FCDC-12]
+    en:
+      title: Maintenance work on power or cooling takes down the data hall
+      description: A technician switches off the wrong feed during maintenance, or both power paths turn out to run through the same panel. Racks lose power and services stop.
+      mitigation: Require an approved method statement before work on power or cooling, provide two independent power paths to each rack and label and record cables at both ends.
+    sv:
+      title: Underhållsarbete på el eller kyla slår ut datahallen
+      description: En tekniker bryter fel matning vid underhåll, eller båda elvägarna visar sig gå genom samma central. Racken blir strömlösa och tjänster stannar.
+      mitigation: Kräv en godkänd arbetsbeskrivning före arbete på el eller kyla, ha två oberoende elvägar till varje rack och märk och dokumentera kablar i båda ändar.
+  - id: FCDC-R05
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [physical-access, data-hall]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "EN 50600-2-5 (security systems)"]
+    mitigated_by: [FCDC-11, FCSEC-09]
+    attack: [T1200]
+    en:
+      title: Unauthorised person reaches servers in the data hall
+      description: Entry to the data hall needs only a card that is easy to borrow, and visitors are not escorted. Someone connects a device to a server or removes disks.
+      mitigation: Require two factors for data hall entry with logging and register, badge and escort visitors.
+    sv:
+      title: Obehörig person når servrar i datahallen
+      description: Tillträde till datahallen kräver bara ett kort som är lätt att låna, och besökare eskorteras inte. Någon ansluter en enhet till en server eller tar ut diskar.
+      mitigation: Kräv två faktorer för tillträde till datahallen med loggning och registrera, märk och eskortera besökare.

@@ -801,3 +801,18 @@ risks:
       title: Brand upptäcks sent eller räddningstjänsten larmas inte
       description: Brandlarmet täcker inte området, är felaktigt eller dess larmöverföring till räddningstjänsten har slutat fungera. Branden växer innan någon reagerar.
       mitigation: Installera automatiskt brandlarm där dokumentationen anger, prova det varje månad och serva det varje år, prova larmöverföringen varje kvartal och håll brandskyddsdokumentationen och dess årliga uppföljning aktuell.
+  - id: FCFIRE-R04
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [fire-compartments, penetrations]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "BFS 2024:7 (säkerhet i händelse av brand)", "EN 1155"]
+    mitigated_by: [FCFIRE-10, FCFIRE-11, FCFIRE-01]
+    en:
+      title: Fire spreads through openings left by installers
+      description: Cables and pipes are pulled through fire compartment walls and the holes are never sealed, or fire doors are wedged open. A fire spreads to the whole building in minutes.
+      mitigation: Seal penetrations in fire compartment walls after each installation, check that fire doors close by themselves and keep the fire safety documentation current.
+    sv:
+      title: Brand sprids genom öppningar som installatörer lämnat
+      description: Kablar och rör dras genom brandcellsväggar och hålen tätas aldrig, eller branddörrar kilas upp. En brand sprids till hela byggnaden på några minuter.
+      mitigation: Täta genomföringar i brandcellsväggar efter varje installation, kontrollera att branddörrar stänger av sig själva och håll brandskyddsdokumentationen aktuell.

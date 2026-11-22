@@ -162,7 +162,7 @@ func TestAttackLibrary(t *testing.T) {
 			exempt++
 		}
 	}
-	if mapped < len(c.Risks)/3 || exempt > 10 {
+	if mapped < 200 || exempt > 10 {
 		t.Errorf("%d of %d risks mapped, %d exempt", mapped, len(c.Risks), exempt)
 	}
 	cov := c.AttackCoverage("")

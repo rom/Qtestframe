@@ -237,7 +237,7 @@ func TestRiskLibrary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(c.Risks) < 250 {
+	if len(c.Risks) < 500 {
 		t.Errorf("only %d catalogue risks", len(c.Risks))
 	}
 	cats := map[string]int{}
@@ -253,6 +253,11 @@ func TestRiskLibrary(t *testing.T) {
 	for _, want := range []string{"security", "privacy", "safety", "availability", "ai", "supply-chain", "compliance"} {
 		if cats[want] < 5 {
 			t.Errorf("only %d %s risks", cats[want], want)
+		}
+	}
+	for _, a := range c.Areas {
+		if n := len(a.Risks); n < 3 || n > 8 {
+			t.Errorf("area %s has %d risks: give every area 3 to 8", a.ID, n)
 		}
 	}
 	for _, g := range c.Overview("en") {
