@@ -120,6 +120,20 @@ describe('dynamic keys', () => {
     expect(THEME_IDS.filter((id) => !(`theme.${id}` in EN))).toEqual([])
     expect(['theme.picker', 'theme.unset'].filter((k) => !(k in EN))).toEqual([])
   })
+  it('cover the consistency checks and quality metrics', async () => {
+    const { BUILTIN_KINDS, REASONS, ROLES, FIX_ACTIONS } = await import('@/lib/consistency')
+    const { DEFECT_PHASES, QUALITY_KPIS } = await import('@/lib/quality')
+    const keys = [
+      ...BUILTIN_KINDS.flatMap((k) => [`consistency.check.${k}.name`, `consistency.check.${k}.description`]),
+      ...REASONS.map((k) => `consistency.reason.${k}`),
+      ...ROLES.map((k) => `consistency.role.${k}`),
+      ...FIX_ACTIONS.map((k) => `consistency.fix.${k}`),
+      ...['requirement', 'test', 'risk', 'release', 'defect'].map((k) => `consistency.kind.${k}`),
+      ...[...DEFECT_PHASES, 'unknown'].map((k) => `quality.phase.${k}`),
+      ...QUALITY_KPIS.flatMap((k) => [`quality.kpi.${k}.label`, `quality.kpi.${k}.sub`]),
+    ]
+    expect(keys.filter((k) => !(k in EN))).toEqual([])
+  })
   it('cover the dashboard insights', async () => {
     const { ACTIVITY_SERIES, AGE_BUCKETS, MITIGATION_ORDER, REVIEW_ORDER, SEVERITY_ORDER, LEVELS_DESC } = await import('@/lib/insights')
     const RELEASE_STATUSES = ['planned', 'active', 'released', 'cancelled'] // internal/model ReleaseStatuses

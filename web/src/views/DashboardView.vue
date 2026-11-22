@@ -10,6 +10,8 @@ import Tab from 'primevue/tab'
 import SelectButton from 'primevue/selectbutton'
 import Select from 'primevue/select'
 import SummaryBar from '@/components/SummaryBar.vue'
+import QualityMetrics from '@/components/QualityMetrics.vue'
+import ConsistencySection from '@/components/ConsistencySection.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { api, asItems } from '@/lib/api'
 import { COVERAGE_COLORS, RESULT_COLORS, colorFor } from '@/lib/colors'
@@ -647,6 +649,8 @@ const burnupChart = computed<ChartData>(() => {
 
   <!-- quality -->
   <div v-else-if="data && section === 'quality'" class="grid" v-bind="panel('quality')">
+    <div class="card"><QualityMetrics :project-id="proj.pid" id-prefix="dq" /></div>
+    <ConsistencySection :project-id="proj.pid" compact />
     <section class="card" aria-labelledby="ch-flaky">
       <h2 id="ch-flaky">{{ t('dashboard.flakyTests') }}</h2>
       <p class="small muted" style="margin-top: 0">{{ t('dashboard.flakyHint', { min: data.flaky?.min_flips ?? 2, window: data.flaky?.window ?? 10 }) }}</p>

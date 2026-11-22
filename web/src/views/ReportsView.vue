@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Reports: standard templates, a custom report builder, saved definitions;
 // download or save to the document archive.
+import { QUALITY_RANGES } from '@/lib/quality'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -414,6 +415,14 @@ onMounted(() => {
                   :placeholder="t('analytics.compliance.usedSources')"
                   @update:model-value="(v: string[]) => (cards[tpl.id].params.sources = v.join(','))"
                 />
+              </template>
+              <template v-else-if="p.name === 'range'">
+                <label :for="`tpl-range-${tpl.id}`">{{ t('quality.reportRange') }}</label>
+                <Select v-model="cards[tpl.id].params.range" :input-id="`tpl-range-${tpl.id}`" :options="QUALITY_RANGES.map((n) => ({ value: String(n), label: t('quality.rangeDays', { n }) }))" option-label="label" option-value="value" :placeholder="t('quality.rangeDays', { n: 90 })" show-clear />
+              </template>
+              <template v-else-if="p.name === 'stale_days'">
+                <label :for="`tpl-stale-${tpl.id}`">{{ t('quality.reportStaleDays') }}</label>
+                <InputText :id="`tpl-stale-${tpl.id}`" v-model="cards[tpl.id].params.stale_days" inputmode="numeric" placeholder="30" />
               </template>
               <template v-else>
                 <label>{{ p.name }}</label>

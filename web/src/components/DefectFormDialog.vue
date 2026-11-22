@@ -2,6 +2,7 @@
 // Create or edit a defect with its links to requirements, tests and
 // executions. New defects can start from a draft (e.g. from a failed
 // execution); links of an existing defect are saved one by one.
+import { DEFECT_PHASES } from '@/lib/quality'
 import ItemRef from './ItemRef.vue'
 import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
@@ -29,7 +30,7 @@ const auth = useAuthStore()
 const canEdit = computed(() => auth.can(P.runExecute))
 const isNew = computed(() => !props.defect?.id)
 
-const empty = () => ({ title: '', description: '', status: 'open', severity: 'major', priority: 'medium', assignee: '', external_key: '', external_url: '' })
+const empty = () => ({ title: '', description: '', status: 'open', severity: 'major', priority: 'medium', assignee: '', external_key: '', external_url: '', found_in: '' })
 const form = ref(empty())
 const links = ref<DefectLink[]>([])
 const error = ref('')
@@ -41,7 +42,7 @@ watch(visible, (v) => {
   addingExecution.value = false
   const d = props.defect
   if (d?.id) {
-    form.value = { title: d.title, description: d.description, status: d.status, severity: d.severity, priority: d.priority, assignee: d.assignee, external_key: d.external_key, external_url: d.external_url }
+    form.value = { title: d.title, description: d.description, status: d.status, severity: d.severity, priority: d.priority, assignee: d.assignee, external_key: d.external_key, external_url: d.external_url, found_in: d.found_in ?? '' }
     links.value = [...(d.links ?? [])]
   } else {
     const x = props.draft ?? {}
@@ -55,6 +56,7 @@ const statusOptions = computed(() => opts('status', DEFECT_STATUSES))
 const severityOptions = computed(() => opts('severity', DEFECT_SEVERITIES))
 const priorityOptions = computed(() => DEFECT_PRIORITIES.map((v) => ({ value: v, label: enumLabel('priority', v) })))
 const groups = computed(() => groupLinks(links.value))
+const phaseOptions = computed(() => [{ value: '', label: t('quality.foundInUnknown') }, ...DEFECT_PHASES.map((v) => ({ value: v, label: t(`quality.phase.${v}`) }))])
 
 // ---------- links ----------
 const picker = ref<'requirement' | 'test' | null>(null)
@@ -143,6 +145,7 @@ async function save() {
         <div v-field class="field"><label>{{ t('common.status') }}</label><Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('defectsView.severityLabel') }}</label><Select v-model="form.severity" :options="severityOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('common.priority') }}</label><Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
+        <div v-field class="field"><label>{{ t('quality.foundIn') }}</label><Select v-model="form.found_in" :options="phaseOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('defectsView.assignee') }}</label><InputText v-model="form.assignee" :disabled="!canEdit" :placeholder="t('defectsView.assigneePlaceholder')" /></div>
       </div>
       <div v-field class="field"><label>{{ t('common.description') }}</label><SuggestInput v-model="form.description" field="defect.description" :project-id="projectId" multiline rows="5" auto-resize :disabled="!canEdit" :placeholder="t('defectsView.descriptionPlaceholder')" /></div>

@@ -5,6 +5,8 @@
 // and the language findings summed up per rule.
 import ItemRef from '../components/ItemRef.vue'
 import ComplianceSection from '@/components/ComplianceSection.vue'
+import ConsistencySection from '@/components/ConsistencySection.vue'
+import QualityMetrics from '@/components/QualityMetrics.vue'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -224,6 +226,8 @@ const healthClass = computed(() => {
         </ul>
       </section>
     </template>
+    <ConsistencySection :project-id="proj.pid" />
+    <div class="card" style="margin-top: 16px"><QualityMetrics :project-id="proj.pid" id-prefix="aq" /></div>
     <ComplianceSection :project-id="proj.pid" />
   </template>
 </template>
