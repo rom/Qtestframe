@@ -268,9 +268,9 @@ const toggleOpen = (id: string) => {
 .cmp-figure.good .value { color: var(--p-green-700, #15803d); }
 .cmp-figure.fair .value { color: var(--p-amber-700, #b45309); }
 .cmp-figure.poor .value { color: var(--p-red-700, #b91c1c); }
-:global(.app-dark) .cmp-figure.good .value { color: var(--p-green-300); }
-:global(.app-dark) .cmp-figure.fair .value { color: var(--p-amber-300); }
-:global(.app-dark) .cmp-figure.poor .value { color: var(--p-red-300); }
+.app-dark .cmp-figure.good .value { color: var(--p-green-300); }
+.app-dark .cmp-figure.fair .value { color: var(--p-amber-300); }
+.app-dark .cmp-figure.poor .value { color: var(--p-red-300); }
 .cmp-stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--qtf-hover); }
 .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .st-passed { background: var(--p-green-500, #22c55e); }

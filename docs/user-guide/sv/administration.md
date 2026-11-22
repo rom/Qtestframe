@@ -169,6 +169,8 @@ Det en regel förbjuder avvisas av servern, även för API-klienter och CI-impor
 
 *(Admin och Testledare, eller en roll med `settings.manage`)* **Administration → Dokument** anger organisationens logotyp. Den visas överst på första sidan i varje [rapport](reports-and-export.md#logotyp-på-första-sidan) och [genererat dokument](documents.md#skapa-en-kravspecifikation-eller-en-testplan) — kravspecifikationer, testplaner, release-, verifierings-, SoA-, kvalitets-, cykel- och utforskningsrapporter, egna rapporter och exporten av ändringspåverkan — i PDF, Word och Markdown.
 
+![Administration → Dokument: den uppladdade logotypen, dess placering och största storlek, och förhandsvisningen av första sidan](../images/sv-admin-documents.png)
+
 - **Ladda upp logotyp** tar en PNG-, JPEG- eller SVG-bild på högst 2 MB. En SVG konverteras till en bild på servern av Qtestframes egen renderare: skript, länkar, inbäddade bilder och texter i den används aldrig (konvertera texter till konturer innan du laddar upp den).
 - **Placering** lägger logotypen till vänster (standard), i mitten eller till höger på sidan.
 - **Största bredd** och **Största höjd** (i millimeter; standard 50 × 20 mm) begränsar storleken. Logotypen behåller sina proportioner och visas aldrig större än sin egen storlek vid 96 dpi.

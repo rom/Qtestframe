@@ -6,6 +6,8 @@ Qtestframe tells you when something needs your attention, lets you ask colleague
 
 **My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see, including your reviews. The badge next to it shows how many items need you; it turns red when some of them are overdue. Each row links to the item and says why it is there. An item is listed once, with all its reasons: a requirement you own that someone asked you to review is one row with **Owner** and **Review requested**.
 
+![My work: the items that need you, each with the reasons it is listed (Owner, In review), its project, status and due date](../images/en-my-work.png)
+
 | Reason | The item is listed because |
 |---|---|
 | **Owner** | you own a requirement in draft, review, approved or implemented, a test in draft or review, or an open risk (identified or mitigating) |

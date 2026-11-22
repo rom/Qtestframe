@@ -6,6 +6,8 @@ Qtestframe säger till när något behöver din uppmärksamhet, låter dig be ko
 
 **Mitt arbete** i huvudnavigeringen (under **Projekt** och **Sök**) är din personliga arbetslista: allt som väntar på dig, i alla projekt som du ser, även dina granskningar. Siffran bredvid visar hur många poster som behöver dig; den blir röd när några av dem är försenade. Varje rad länkar till posten och visar varför den finns med. En post visas en gång, med alla sina orsaker: ett krav som du äger och som någon har bett dig granska är en rad med **Ägare** och **Granskning begärd**.
 
+![Mitt arbete: de objekt som behöver dig, med skälen till att de listas (Ägare, Granskas), projekt, status och förfallodatum](../images/sv-my-work.png)
+
 | Orsak | Posten finns med eftersom |
 |---|---|
 | **Ägare** | du äger ett krav med status utkast, granskning, godkänt eller implementerat, ett testfall med status utkast eller granskning, eller en öppen risk (identifierad eller under åtgärd) |

@@ -1141,6 +1141,8 @@ Varje krav anger minst ett testfall i katalogen som verifierar det, och varje te
 
 Öppna **Katalog** i projektets sidomeny eller välj **Lägg till från katalogen** överst i listan med krav eller testfall.
 
+![Katalogen: områdena och listan över katalogkrav med sökning och filter, och förhandsvisningen av det valda objektet](images/sv-catalogue.png)
+
 - Växla mellan **Krav**, **Testfall** och **Risker** överst.
 - Välj **English** eller **Svenska** som språk för texterna. Posterna läggs till på det språket.
 - **Katalogtyp** begränsar katalogen till ett slags arbete: *Programvara*, *Hårdvara*, *Utrustning*, *System*, *Kommunikationslösningar*, *Projekt*, *Tjänster*, *Byggnader och anläggningar*, *Styrning*, *Dokumentation* eller *Utbildning* (bara typer med innehåll visas). Den börjar med typen som passar projektet: programvaruprojekt visar *Programvara*, hårdvaruprojekt *Hårdvara*, systemprojekt *System* och verksamhetsprojekt *Styrning*; allmänna projekt visar **Alla typer**. Trädet, listorna och lagarna och standarderna följer valet.
@@ -2175,6 +2177,8 @@ Qtestframe säger till när något behöver din uppmärksamhet, låter dig be ko
 ## Mitt arbete
 
 **Mitt arbete** i huvudnavigeringen (under **Projekt** och **Sök**) är din personliga arbetslista: allt som väntar på dig, i alla projekt som du ser, även dina granskningar. Siffran bredvid visar hur många poster som behöver dig; den blir röd när några av dem är försenade. Varje rad länkar till posten och visar varför den finns med. En post visas en gång, med alla sina orsaker: ett krav som du äger och som någon har bett dig granska är en rad med **Ägare** och **Granskning begärd**.
+
+![Mitt arbete: de objekt som behöver dig, med skälen till att de listas (Ägare, Granskas), projekt, status och förfallodatum](images/sv-my-work.png)
 
 | Orsak | Posten finns med eftersom |
 |---|---|
@@ -4076,6 +4080,8 @@ Det en regel förbjuder avvisas av servern, även för API-klienter och CI-impor
 ## Logotyp i rapporter och dokument
 
 *(Admin och Testledare, eller en roll med `settings.manage`)* **Administration → Dokument** anger organisationens logotyp. Den visas överst på första sidan i varje [rapport](#logotyp-på-första-sidan) och [genererat dokument](#skapa-en-kravspecifikation-eller-en-testplan) — kravspecifikationer, testplaner, release-, verifierings-, SoA-, kvalitets-, cykel- och utforskningsrapporter, egna rapporter och exporten av ändringspåverkan — i PDF, Word och Markdown.
+
+![Administration → Dokument: den uppladdade logotypen, dess placering och största storlek, och förhandsvisningen av första sidan](images/sv-admin-documents.png)
 
 - **Ladda upp logotyp** tar en PNG-, JPEG- eller SVG-bild på högst 2 MB. En SVG konverteras till en bild på servern av Qtestframes egen renderare: skript, länkar, inbäddade bilder och texter i den används aldrig (konvertera texter till konturer innan du laddar upp den).
 - **Placering** lägger logotypen till vänster (standard), i mitten eller till höger på sidan.

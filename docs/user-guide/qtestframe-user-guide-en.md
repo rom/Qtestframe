@@ -1122,6 +1122,8 @@ Every requirement lists at least one catalogue test that verifies it, and every 
 
 Open **Catalogue** in the project sidebar, or select **Add from catalogue** at the top of the requirement or test list.
 
+![The catalogue: the areas and the list of catalogue requirements with search and filters, and the preview of the selected item](images/en-catalogue.png)
+
 - Switch between **Requirements**, **Tests** and **Risks** at the top.
 - Choose **English** or **Svenska** for the language of the texts. The items are added in this language.
 - **Catalogue type** limits the catalogue to one kind of work: *Software*, *Hardware*, *Equipment*, *Systems*, *Communications solutions*, *Projects*, *Services*, *Buildings and facilities*, *Governance*, *Documentation* or *Education* (only the types that have content are listed). It starts with the type that fits the project: software projects show *Software*, hardware projects *Hardware*, system projects *Systems* and business projects *Governance*; general projects show **All types**. The tree, the lists and the laws and standards follow the choice.
@@ -2154,6 +2156,8 @@ Qtestframe tells you when something needs your attention, lets you ask colleague
 ## My work
 
 **My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see, including your reviews. The badge next to it shows how many items need you; it turns red when some of them are overdue. Each row links to the item and says why it is there. An item is listed once, with all its reasons: a requirement you own that someone asked you to review is one row with **Owner** and **Review requested**.
+
+![My work: the items that need you, each with the reasons it is listed (Owner, In review), its project, status and due date](images/en-my-work.png)
 
 | Reason | The item is listed because |
 |---|---|
@@ -4049,6 +4053,8 @@ What a rule forbids is refused by the server, also for API clients and CI import
 ## Logo on reports and documents
 
 *(Admin and Test lead, or any role with `settings.manage`)* **Administration → Documents** sets the organisation's logo. It is shown at the top of the first page of every [report](#logo-on-the-first-page) and [generated document](#create-a-requirements-specification-or-a-test-plan) — requirements specifications, test plans, release, verification, SoA, quality, cycle and exploratory reports, custom reports and the change impact export — in PDF, Word and Markdown.
+
+![Administration → Documents: the uploaded logo, its placement and maximum size, and the preview of the first page](images/en-admin-documents.png)
 
 - **Upload logo** takes a PNG, JPEG or SVG image of at most 2 MB. An SVG is converted into an image on the server by Qtestframe's own renderer: scripts, links, embedded images and texts in it are never used (convert texts to outlines before you upload it).
 - **Placement** puts the logo at the left (default), in the centre or at the right of the page.

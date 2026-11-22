@@ -170,6 +170,8 @@ What a rule forbids is refused by the server, also for API clients and CI import
 
 *(Admin and Test lead, or any role with `settings.manage`)* **Administration → Documents** sets the organisation's logo. It is shown at the top of the first page of every [report](reports-and-export.md#logo-on-the-first-page) and [generated document](documents.md#create-a-requirements-specification-or-a-test-plan) — requirements specifications, test plans, release, verification, SoA, quality, cycle and exploratory reports, custom reports and the change impact export — in PDF, Word and Markdown.
 
+![Administration → Documents: the uploaded logo, its placement and maximum size, and the preview of the first page](../images/en-admin-documents.png)
+
 - **Upload logo** takes a PNG, JPEG or SVG image of at most 2 MB. An SVG is converted into an image on the server by Qtestframe's own renderer: scripts, links, embedded images and texts in it are never used (convert texts to outlines before you upload it).
 - **Placement** puts the logo at the left (default), in the centre or at the right of the page.
 - **Maximum width** and **Maximum height** (in millimetres; default 50 × 20 mm) bound its size. The logo keeps its proportions and is never shown larger than its own size at 96 dpi.
