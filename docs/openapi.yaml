@@ -13367,7 +13367,7 @@ paths:
       summary: Dismiss a consistency finding
       operationId: postProjectsByPidConsistencyDismissals
       description: |-
-        `{check: duplicate_suspect|unmet_dependency|broken_prerequisite, item_id, other_id}`: not a duplicate, or a dependency on a deleted item dealt with. Needs requirement.write (test.write for broken_prerequisite) in the project.
+        `{check: duplicate_suspect|potential_conflict|test_duplicate_suspect|unmet_dependency|broken_prerequisite, item_id, other_id}`: not a duplicate, not a conflict, or a dependency on a deleted item dealt with. Needs requirement.write (test.write for broken_prerequisite and test_duplicate_suspect) in the project.
 
         **Permission:** `project.read`.
       x-permission: project.read
