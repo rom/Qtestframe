@@ -1119,8 +1119,10 @@ selects the items that comply with them.
 | GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], mitigates_risks:[{id, area, title, in_project?}]` |
 | GET | `/catalog/tests?lang=&area=&group=&catalogue=&source=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, catalogue, priority, execution, tags, refs, sources, requirements, steps (count), title, description, in_project?}]}`; `source` matches tests that cite a source or verify a requirement citing it; `q` also searches the steps and the ids of the verified requirements |
 | GET | `/catalog/tests/{id}?lang=&project_id=` | test.read | the summary plus `area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}]` |
-| GET | `/catalog/risks?lang=&area=&group=&catalogue=&source=&q=&category=&level=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, category, category_name, likelihood, impact, score, level, tags, refs, sources, mitigated_by, tests, title, description, mitigation, in_project?}]}` – the typical risks of the areas: the threat or hazard and its consequence (`description`), a typical likelihood and impact on the project scale 1–5 with their level, and a suggested `mitigation`. `category`: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental; `level`: low, medium, high, critical; `source` matches risks that cite a source or are mitigated by a requirement citing it; `q` also searches the mitigation and the mitigating requirement ids |
-| GET | `/catalog/risks/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, ref_targets, mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[…]` |
+| GET | `/catalog/risks?lang=&area=&group=&catalogue=&source=&q=&category=&level=&tag=&attack=&tactic=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, category, category_name, likelihood, impact, score, level, tags, refs, sources, mitigated_by, tests, attack, atlas, tactics, title, description, mitigation, in_project?}]}` – the typical risks of the areas: the threat or hazard and its consequence (`description`), a typical likelihood and impact on the project scale 1–5 with their level, and a suggested `mitigation`. `category`: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental; `level`: low, medium, high, critical; `source` matches risks that cite a source or are mitigated by a requirement citing it; `attack` (MITRE ATT&CK or ATLAS technique ids, comma-separated) matches risks that list one of them or one of its sub-techniques (`T1110` matches `T1110.004`), `tactic` (tactic ids such as `TA0006`, `AML.TA0005`) risks with a technique of one of the tactics; `attack`, `atlas` and `tactics` are the risk's ATT&CK techniques, ATLAS techniques and the tactics they serve; `q` also searches the mitigation, the mitigating requirement ids and the technique ids and names |
+| GET | `/catalog/risks/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, ref_targets, techniques:[{id, name, matrix, tactics:[{id, name, url}], url}], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[…]`; `techniques` are those of `attack` and `atlas` with names (a sub-technique with its parent's: `Brute Force: Credential Stuffing`) and links to attack.mitre.org or atlas.mitre.org |
+| GET | `/catalog/attack/techniques?q=&matrix=&tactic=` | project.read | `{matrices:[{id, name, version, url}], tactics:[{id, name, matrix, url}], items:[{id, name, matrix, tactics:[{id, name, url}], url}]}` – the MITRE ATT&CK techniques and sub-techniques of the Enterprise, ICS and Mobile matrices (no revoked or deprecated ids) and the MITRE ATLAS techniques: the valid values of a risk's `attack`. `q` matches the id or the name, `matrix` (`enterprise`, `ics`, `mobile`, `atlas`) and `tactic` narrow the list |
+| GET | `/catalog/attack?catalogue=` | requirement.read | `{matrices:[{id, name, version, url, risks, tactics:[{id, name, url, risks, requirements, techniques:[{id, name, url, risks, requirements}]}]}]}` – the ATT&CK coverage of the catalogue: per matrix and tactic (in matrix order) the catalogue risks that list one of its techniques, the requirements that cite one in their refs or mitigate such a risk, and the techniques used (a technique counts its sub-techniques); `risks` of a matrix counts each risk once |
 | GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}, "risks": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
 | POST | `/projects/{pid}/catalog/import` | project.read + see below | copies catalogue items into the project, see below |
 
@@ -2487,8 +2489,16 @@ Reading needs `requirement.read`, changing `requirement.write`.
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/risks` | `[Risk]`, highest score first |
-| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...]}` (likelihood and impact default to 3); `catalog_ref` is kept only when it names a catalogue risk (an undone import created again) |
-| GET / PATCH / DELETE | `/risks/{id}` | |
+| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...],"attack":[...]}` (likelihood and impact default to 3); `catalog_ref` is kept only when it names a catalogue risk (an undone import created again) |
+| GET / PATCH / DELETE | `/risks/{id}` | PATCH takes the fields of POST except `requirement_ids` |
+
+`attack` lists the MITRE ATT&CK and ATLAS technique ids of a risk
+(`["T1110.004", "T0886", "AML.T0051"]`, at most 30): ids are trimmed and
+upper-cased, duplicates dropped, and each must be in the technique list of
+`GET /catalog/attack/techniques` (400 otherwise, e.g. for a revoked or
+deprecated id). A catalogue import copies the catalogue risk's `attack` and
+`atlas` into it. The field is in exports, project archives and backups
+(column `risks.attack`, a JSON list).
 | POST | `/projects/{pid}/risks/bulk` | `{"ids":[...], "set": {"status"?, "owner"?, "category"?, "likelihood"?, "impact"?}, "add_requirement_ids"?, "remove_requirement_ids"?}` → `{"updated": n}`; every risk is validated before any is saved |
 | DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
@@ -3493,7 +3503,11 @@ variants the item applies to) and `applicability` (`all` | `selected`), see
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Risk fields (`GET /projects/{pid}/risks?q=`): `id,
 key, title, description, category, likelihood, impact, score, level, status,
-mitigation, owner, review_owner, review_date, created_by`.
+mitigation, owner, review_owner, review_date, created_by, catalog, catalog_area`
+(alias `area`), `attack` (aliases `technique`, `atlas`: the technique ids
+and names, so `attack:T1110` also finds `T1110.004` and
+`attack:"credential stuffing"` works) and `tactic` (the ids and names of
+the tactics of the techniques: `tactic:TA0006`, `tactic:"initial access"`).
 
 Owners and assignees: `owner:me` (also `owner=me`, `owner!=me`) and
 `assignee:me` (defects, executions) match the items of the caller, however

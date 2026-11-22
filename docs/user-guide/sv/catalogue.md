@@ -70,9 +70,10 @@ Fliken **Risker** listar typiska risker inom områdena: vad som kan gå fel, til
 - en **typisk sannolikhet och konsekvens** på samma skala 1–5 som i [riskregistret](releases-and-risks.md#riskregistret), och den nivå de ger (låg, medel, hög, kritisk);
 - en **föreslagen åtgärd**;
 - de krav i katalogen som **åtgärdar** den (minst ett, från vilket område som helst), och ibland testfall i katalogen som kontrollerar den direkt;
-- källorna den bygger på under **Baserad på**: standarder för riskhantering (ISO 31000, ISO/IEC 27005, ISO/IEC 23894 för AI, ISO 14971 för medicintekniska produkter, ISO 26262 för fordon, ISO 12100 för maskiner, IEC 62443-3-2 för industriella system), AI-förordningens riskhantering (art. 9), dataskyddsförordningens konsekvensbedömning (art. 35), hotkataloger (OWASP Top 10, ENISA Threat Landscape) och CWE-svagheterna och MITRE ATT&CK-teknikerna i de åtgärdande kraven.
+- källorna den bygger på under **Baserad på**: standarder för riskhantering (ISO 31000, ISO/IEC 27005, ISO/IEC 23894 för AI, ISO 14971 för medicintekniska produkter, ISO 26262 för fordon, ISO 12100 för maskiner, IEC 62443-3-2 för industriella system), AI-förordningens riskhantering (art. 9), dataskyddsförordningens konsekvensbedömning (art. 35), hotkataloger (OWASP Top 10, ENISA Threat Landscape) och CWE-svagheterna i de åtgärdande kraven;
+- för risker som orsakas av en angripare, de **MITRE ATT&CK-tekniker** som förverkligar dem (se [MITRE ATT&CK](#mitre-attck)).
 
-Filtrera riskerna på **Kategori** och **Risknivå**, på område i trädet, på tagg eller på de lagar och standarder som ska uppfyllas (en risk räknas för en källa när den själv eller något av dess åtgärdande krav hänvisar till källan). Förhandsvisningen visar beskrivningen, den föreslagna åtgärden och de åtgärdande kraven; välj ett för att öppna det.
+Filtrera riskerna på **Kategori**, **Risknivå**, **ATT&CK-taktik** och **ATT&CK-teknik**, på område i trädet, på tagg eller på de lagar och standarder som ska uppfyllas (en risk räknas för en källa när den själv eller något av dess åtgärdande krav hänvisar till källan). Förhandsvisningen visar beskrivningen, den föreslagna åtgärden och de åtgärdande kraven; välj ett för att öppna det.
 
 **Lägg till en risk med dess åtgärder.** Markera risker och välj **Lägg till N risker (+ krav, testfall)**. Dialogen lägger till:
 
@@ -83,6 +84,17 @@ Filtrera riskerna på **Kategori** och **Risknivå**, på område i trädet, på
 **Lägg till krav med deras risker.** När du lägger till krav som åtgärdar risker i katalogen erbjuder dialogen **Lägg även till de N risker som kraven åtgärdar**. Krav som du lägger till senare kopplas till de risker från katalogen som projektet redan har, så ordningen spelar ingen roll.
 
 Risker som projektet redan har från katalogen hoppas över, precis som krav och testfall, om du inte väljer **Lägg till kopior av poster som redan finns i projektet**.
+
+## MITRE ATT&CK
+
+[MITRE ATT&CK](https://attack.mitre.org/) beskriver hur angripare arbetar: **taktiker** är deras mål (initial åtkomst, åtkomst till inloggningsuppgifter, påverkan …) och **tekniker** sätten att nå dem, till exempel *T1110.004 Brute Force: Credential Stuffing*. Katalogen känner till teknikerna i matriserna Enterprise, ICS (industriella styrsystem) och Mobile, utan återkallade eller utfasade, och [MITRE ATLAS](https://atlas.mitre.org/)-teknikerna för angrepp mot AI-system (*AML.T0051 LLM Prompt Injection*). Namnen på taktiker och tekniker visas på engelska, som hos MITRE.
+
+- Varje risk i katalogen som orsakas av en angripare anger de tekniker som förverkligar den: alla informationssäkerhetsrisker, och risker för integritet, AI, tillgänglighet, data och leverantörskedjan när en angripare orsakar dem. Faror, fel och skyldigheter (risker för personsäkerhet, kvalitet, projekt, miljö och regelefterlevnad) har inga.
+- **Förhandsvisningen** av en risk visar varje teknik med namn, matris och taktiker, med en länk till dess sida på attack.mitre.org eller atlas.mitre.org. **visa risker med tekniken** filtrerar listan på den.
+- **ATT&CK-taktik** och **ATT&CK-teknik** filtrerar riskerna; en teknik hittar även sina undertekniker (*T1110* hittar *T1110.004*). Sökningen hittar också tekniknummer.
+- **ATT&CK-täckning** högst upp på sidan visar för varje matris taktikerna med antalet risker i katalogen som anger någon av deras tekniker och antalet krav som hänvisar till en eller åtgärdar en sådan risk, och en matris över de tekniker som används, mörkare med fler risker. Välj ett antal eller en teknik för att öppna de risker det gäller.
+
+En risk som du lägger till i projektet behåller sina tekniker: riskdialogen visar dem under **MITRE ATT&CK-tekniker**, där du kan ändra dem (se [Riskregistret](releases-and-risks.md#riskregistret)).
 
 ## Efteråt
 
