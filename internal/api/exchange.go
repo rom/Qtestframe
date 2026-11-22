@@ -105,7 +105,7 @@ func folderPaths(folders []model.Folder) map[string]string {
 // loadExchange loads the items of kind (filtered by q and folder_id of
 // the request when filter is set) with their relations and links.
 func (s *Server) loadExchange(r *http.Request, p *Principal, pr *model.Project, kind string, filter bool) (*exchangeData, error) {
-	ctx := r.Context()
+	ctx := withExchangeStore(r.Context(), s.Store)
 	fields, err := interop.FieldsFor(ctx, p.TenantID(), pr.ID, kind)
 	if err != nil {
 		return nil, err

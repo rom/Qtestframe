@@ -29,6 +29,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Diskussioner](discussions.md) | Kommentarstrådar på objekt med Markdown, @omnämnanden, reaktioner och lösta trådar, och projektets sida Diskussioner |
 | [Sökning och filter](search-and-filters.md) | Frågespråket med många exempel |
 | [Rapporter och export](reports-and-export.md) | Standardrapporter, den egna rapportbyggaren, exportformat och dokumentarkivet |
+| [Samverkan](interoperability.md) | ReqIF-export och -import med testfall, relationer och bilagor; OSLC-länkar, urval och skapande från DOORS Next, Polarion, Codebeamer |
 | [Dokument](documents.md) | Projektets dokumentarkiv: uppladdning, förhandsvisning och länkar |
 | [Administration](administration.md) | Organisationer, användare, medlemmar och roller, delning av projekt, återställning av lösenord, API-nycklar, händelseloggen, säkerhetskopiering och återställning |
 | [Tillgänglighet och språk](accessibility-and-languages.md) | Tangentbord, skärmläsare, teman, engelska och svenska, mobiler och surfplattor |

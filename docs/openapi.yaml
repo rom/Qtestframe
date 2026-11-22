@@ -256,7 +256,7 @@ paths:
       summary: OSLC requirement query
       operationId: getOslcProjectsByPidRequirements
       description: |-
-        Query capability: the requirements as rdfs:member of the query base with their properties, and an oslc:ResponseInfo (oslc:totalCount, oslc:nextPage). oslc.select and oslc.orderBy are ignored.
+        Query capability: the requirements as rdfs:member of the query base with their properties, and an oslc:ResponseInfo (oslc:totalCount, oslc:nextPage). oslc.where works on every property of the resources (several values: one must match; != none may); oslc.select limits the properties shown, oslc.orderBy (+/- prefixed names) sorts, oslc.searchTerms searches identifier, title and description.
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -299,6 +299,53 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - OSLC
+      summary: OSLC creation factory (requirements)
+      operationId: postOslcProjectsByPidRequirements
+      description: |-
+        Creates a oslc_rm:Requirement from Turtle, RDF/XML or JSON-LD (dcterms:title required; dcterms:description may be an rdf:XMLLiteral, read as Markdown; qtf: properties; link properties become trace links, relations and item links to other tools' URLs). → 201 with Location, ETag and the resource.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          text/turtle:
+            schema:
+              type: string
+          application/rdf+xml:
+            schema:
+              type: string
+          application/ld+json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: the created resource
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '400':
+          description: the body is not valid RDF, or a value is invalid (oslc:Error)
+        '415':
+          description: the Content-Type is not Turtle, RDF/XML or JSON-LD
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/oslc/projects/{pid}/requirements/{item}:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -331,6 +378,111 @@ paths:
             application/ld+json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - OSLC
+      summary: OSLC update (requirements)
+      operationId: putOslcProjectsByPidRequirementsByItem
+      description: |-
+        Updates the properties the body carries (oslc.properties: a selective update that also clears the listed properties the body leaves out). Link properties replace the links of their kind. With If-Match the ETag must be the current version (412 otherwise). → the resource with its new ETag.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      parameters:
+      - name: If-Match
+        in: header
+        required: false
+        schema:
+          type: string
+        description: the ETag (version) the change is based on; a different version answers 412
+      - name: oslc.properties
+        in: query
+        schema:
+          type: string
+        description: selective update; the listed properties (prefixed names) that the body leaves out are cleared
+      - name: oslc.prefix
+        in: query
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          text/turtle:
+            schema:
+              type: string
+          application/rdf+xml:
+            schema:
+              type: string
+          application/ld+json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '400':
+          description: the body is not valid RDF, or a value is invalid (oslc:Error)
+        '415':
+          description: the Content-Type is not Turtle, RDF/XML or JSON-LD
+        '412':
+          description: the If-Match version is not the current one (oslc:Error)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - OSLC
+      summary: OSLC delete (requirements)
+      operationId: deleteOslcProjectsByPidRequirementsByItem
+      description: |-
+        Deletes the item (to the project's trash, as in the web client). With If-Match the ETag must be the current version.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      parameters:
+      - name: If-Match
+        in: header
+        required: false
+        schema:
+          type: string
+        description: the ETag (version) the change is based on; a different version answers 412
+      responses:
+        '204':
+          description: deleted
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '412':
+          description: the If-Match version is not the current one (oslc:Error)
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -391,6 +543,53 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - OSLC
+      summary: OSLC creation factory (tests)
+      operationId: postOslcProjectsByPidTests
+      description: |-
+        Creates a oslc_qm:TestCase from Turtle, RDF/XML or JSON-LD (dcterms:title required; dcterms:description may be an rdf:XMLLiteral, read as Markdown; qtf: properties; link properties become trace links, relations and item links to other tools' URLs). → 201 with Location, ETag and the resource.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          text/turtle:
+            schema:
+              type: string
+          application/rdf+xml:
+            schema:
+              type: string
+          application/ld+json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: the created resource
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '400':
+          description: the body is not valid RDF, or a value is invalid (oslc:Error)
+        '415':
+          description: the Content-Type is not Turtle, RDF/XML or JSON-LD
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/oslc/projects/{pid}/tests/{item}:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -429,6 +628,257 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - OSLC
+      summary: OSLC update (tests)
+      operationId: putOslcProjectsByPidTestsByItem
+      description: |-
+        Updates the properties the body carries (oslc.properties: a selective update that also clears the listed properties the body leaves out). Link properties replace the links of their kind. With If-Match the ETag must be the current version (412 otherwise). → the resource with its new ETag.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      parameters:
+      - name: If-Match
+        in: header
+        required: false
+        schema:
+          type: string
+        description: the ETag (version) the change is based on; a different version answers 412
+      - name: oslc.properties
+        in: query
+        schema:
+          type: string
+        description: selective update; the listed properties (prefixed names) that the body leaves out are cleared
+      - name: oslc.prefix
+        in: query
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          text/turtle:
+            schema:
+              type: string
+          application/rdf+xml:
+            schema:
+              type: string
+          application/ld+json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '400':
+          description: the body is not valid RDF, or a value is invalid (oslc:Error)
+        '415':
+          description: the Content-Type is not Turtle, RDF/XML or JSON-LD
+        '412':
+          description: the If-Match version is not the current one (oslc:Error)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - OSLC
+      summary: OSLC delete (tests)
+      operationId: deleteOslcProjectsByPidTestsByItem
+      description: |-
+        Deletes the item (to the project's trash, as in the web client). With If-Match the ETag must be the current version.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      parameters:
+      - name: If-Match
+        in: header
+        required: false
+        schema:
+          type: string
+        description: the ETag (version) the change is based on; a different version answers 412
+      responses:
+        '204':
+          description: deleted
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '412':
+          description: the If-Match version is not the current one (oslc:Error)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/catalog:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - OSLC
+      summary: OSLC catalog of one project
+      operationId: getOslcProjectsByPidCatalog
+      description: |-
+        oslc:ServiceProviderCatalog holding the service provider of this project only, for tools that connect one of their projects to one project here.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/shapes/{kind}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: kind
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - requirement
+        - test
+    get:
+      tags:
+      - OSLC
+      summary: OSLC resource shape
+      operationId: getOslcProjectsByPidShapesByKind
+      description: |-
+        oslc:ResourceShape of requirements or test cases: the properties with oslc:occurs, oslc:valueType, oslc:readOnly and the allowed values of the enumerations.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/dialogs/{kind}/{mode}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: kind
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - requirement
+        - test
+    - name: mode
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - select
+        - create
+    get:
+      tags:
+      - OSLC
+      summary: OSLC delegated dialog
+      operationId: getOslcProjectsByPidDialogsByKindByMode
+      description: |-
+        An HTML page another tool shows in a frame or window so that its user selects or creates requirements or test cases. It uses the browser's Qtestframe session and answers with `{"oslc:results": [{"oslc:label", "rdf:resource"}]}` by postMessage (`oslc-response:` prefix) or the windowName protocol (`#oslc-core-windowName-1.0`). Framing is allowed for `server.frame_ancestors`. `lang` (en, sv) or Accept-Language choose the language.
+
+        **Permission:** none (public page; the data needs a session).
+      x-permission: none
+      security: []
+      parameters:
+      - name: lang
+        in: query
+        schema:
+          type: string
+          enum:
+          - en
+          - sv
+      responses:
+        '200':
+          description: the dialog page
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/dialog.js:
+    get:
+      tags:
+      - OSLC
+      summary: Script of the OSLC dialogs
+      operationId: getOslcDialogJs
+      description: |-
+        The script of the delegated dialogs.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: JavaScript
+          content:
+            text/javascript:
+              schema:
+                type: string
         default:
           $ref: '#/components/responses/Error'
   /api/v1/oslc/rootservices:
@@ -7218,7 +7668,7 @@ paths:
       summary: Apply a ReqIF import
       operationId: postProjectsByPidExchangeReqifApply
       description: |-
-        Parses and compares the file again (same fields as the preview) and saves the confirmed rows in one transaction through the regular create and update handlers (history, audit, suspect links). Conflicts are skipped unless `overwrite_conflicts`; `exclude` (JSON array of row indexes) leaves rows out. Records the IDENTIFIERs of the objects and relations (`external_refs`) for the next re-import, adds the relations of the document and removes relations imported before that the document no longer has. → `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, references_saved, items:[{index, location, id, key, title, action, version}], skipped_rows:[{index, location, title, reason}]}`; audited as `requirement.import`
+        Parses and compares the file again (same fields as the preview) and saves the confirmed rows in one transaction through the regular create and update handlers (history, audit, suspect links). Conflicts are skipped unless `overwrite_conflicts`; `exclude` (JSON array of row indexes) leaves rows out. Records the IDENTIFIERs of the objects and relations (`external_refs`) for the next re-import, adds the relations and trace links of the document and removes those imported before that the document no longer has, attaches the embedded files. → totals of requirements and tests `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, links_added, links_removed, references_saved, files_attached, tests (the tests' share), items:[{index, location, id, key, title, action, version}], skipped_rows:[{index, location, title, reason}]}`; audited as `requirement.import`
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
@@ -7255,7 +7705,7 @@ paths:
       summary: Preview a ReqIF import
       operationId: postProjectsByPidExchangeReqifPreview
       description: |-
-        Reads a ReqIF 1.x document (.reqif or .reqifz, e.g. from IBM DOORS, DOORS Next or Siemens Polarion) and compares it with the project; nothing is stored. Objects already imported (by IDENTIFIER) or exported from this project are updates. → the diff (as for the Excel preview) plus `{title, tool, qtestframe, attributes:[{name, type, values, objects, sample, object_types, field, guess}], targets:[{key, label, type}], relation_types:{name: type}, relations:{add, remove, keep, changes:[…]}, folders, skipped, errors, previous, target_folder}`
+        Reads a ReqIF 1.x document (.reqif or .reqifz, e.g. from IBM DOORS, DOORS Next or Siemens Polarion) and compares it with the project; nothing is stored. Objects already imported (by IDENTIFIER) or exported from this project are updates. Test objects (by object type) are compared with the tests, SPEC-RELATIONs between a test and a requirement are trace links, files embedded in the XHTML of a .reqifz become attachments. → the requirements' diff (as for the Excel preview) plus `{tests (the tests' diff or null), title, tool, qtestframe, attributes, test_attributes:[{name, type, values, objects, sample, object_types, field, guess}], targets, test_targets:[{key, label, type}], object_types:[{name, objects, kind, guess}], relation_types:{name: type}, relation_type_mapping:[{name, relations, type, guess}], relation_targets, relations:{add, remove, keep, links, changes:[{ref, type, file_type, source, target, action, kind}]}, folders, test_folders, files:[{object, ref, name, size, existing}], skipped, errors, previous, target_folder, test_target_folder, can_import_tests}`
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
@@ -7489,7 +7939,7 @@ paths:
       summary: Export
       operationId: getProjectsByPidExport
       description: |-
-        Downloads project data. `format` `xlsx`, `csv`, `pdf`, `docx`, `md` (aliases `excel`, `word`, `markdown`) export the chosen `aspects` (`md`: one GitHub-flavoured Markdown document, `text/markdown`); `reqif` and `reqifz` export the requirements as ReqIF 1.2 (aspects do not apply): `.reqif` is the XML document, `.reqifz` a ZIP with the document and the requirements' attachments below `files/<key>/`. `q` is applied to requirements if it is a valid requirement query and to tests if it is a valid test query. The response has `Content-Disposition: attachment; filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`.
+        Downloads project data. `format` `xlsx`, `csv`, `pdf`, `docx`, `md` (aliases `excel`, `word`, `markdown`) export the chosen `aspects` (`md`: one GitHub-flavoured Markdown document, `text/markdown`); `reqif` and `reqifz` export the requirements as ReqIF 1.2 with their folders, custom fields, criteria and relations (aspects do not apply); `include=tests` adds the test cases (type "Test case", with steps, custom fields and folders) and their "Verifies" links, `include=records` the verification records; `baseline=<id>` exports the frozen versions of a baseline's items (not with `q`). `.reqif` is the XML document, `.reqifz` a ZIP with the document and the items' attachments below `files/<key>/`. `q` is applied to requirements if it is a valid requirement query and to tests if it is a valid test query. The response has `Content-Disposition: attachment; filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`.
 
         **Permission:** `export`.
       x-permission: export
@@ -7515,6 +7965,18 @@ paths:
         in: query
         required: false
         description: comma-separated subset of requirements, criteria, tests, traceability, runs (default all; not for ReqIF)
+        schema:
+          type: string
+      - name: include
+        in: query
+        required: false
+        description: 'ReqIF only: comma-separated tests, records'
+        schema:
+          type: string
+      - name: baseline
+        in: query
+        required: false
+        description: 'ReqIF only: the id of a baseline of the project to export'
         schema:
           type: string
       - $ref: '#/components/parameters/q'
@@ -18020,18 +18482,36 @@ components:
           description: .reqif or .reqifz, at most 20 MB
         mapping:
           type: string
-          description: JSON object attribute long name → field key, heading, external_id, version or "" (ignored)
+          description: JSON object requirement attribute long name → field key (custom fields as cf:<key>), heading, external_id, version or "" (ignored)
+        test_mapping:
+          type: string
+          description: JSON object test attribute long name → field key, steps, heading, external_id or "" (ignored)
+        object_types:
+          type: string
+          description: JSON object SPEC-OBJECT-TYPE long name → requirement, test, heading or ignore (default guessed; "Test case" and types named like it are tests)
+        relation_types:
+          type: string
+          description: JSON object SPEC-RELATION-TYPE long name → a relation type, verifies (a trace link) or ignore
         folder_id:
           type: string
-          description: The folder the hierarchy goes below
+          description: The requirement folder the hierarchy goes below
+        test_folder_id:
+          type: string
+          description: The test folder the tests' hierarchy goes below
         hierarchy:
           type: boolean
           description: Heading objects become folders (default true)
+        refines:
+          type: boolean
+          description: A requirement nested below another requirement refines it (default false)
         overwrite_conflicts:
           type: boolean
         exclude:
           type: string
-          description: JSON array of row indexes
+          description: JSON array of requirement row indexes
+        exclude_tests:
+          type: string
+          description: JSON array of test row indexes
     ExchangeDiff:
       type: object
       properties:

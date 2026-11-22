@@ -96,6 +96,7 @@ type Server struct {
 // configuration of the file and the environment; the system settings
 // stored in the database are applied over it (see systemsettings.go).
 func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner, ui fs.FS) (*Server, error) {
+	registerCustomFieldExchange()
 	s := &Server{
 		Store: st, Cfg: cfg, Log: log, Runner: r, UI: ui,
 		OIDC:    map[string]*auth.OIDCProvider{},

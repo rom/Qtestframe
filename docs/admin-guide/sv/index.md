@@ -15,11 +15,12 @@ De som *använder* Qtestframe – även organisationsadministratörer som hanter
 7. [Systeminställningar under drift](system-settings.md) – vad superadministratörer kan ändra i webbklienten, och vad som kräver omstart.
 8. [Säkerhet](security.md) – TLS, härdning med Landlock och seccomp, kryptering av lagrade hemligheter och nyckelleverantörerna, nyckelbyte, katastrofåterställning, granskningsloggen, säkerhetshuvuden.
 9. [E-post, webhooks och integrationer](integrations.md) – SMTP, aviseringar, webhooks, Jira, GitHub och GitLab, körning av skript och webbtester.
-10. [Loggning och övervakning](logging-and-monitoring.md) – loggformat, syslog, hälsokontroller.
-11. [Säkerhetskopiering, återställning och migrering](backup-and-migration.md) – vad en säkerhetskopia innehåller, återställning, uppgradering och nedgradering, flytt mellan SQLite och PostgreSQL.
-12. [Driftrutiner](runbook.md) – återkommande uppgifter, kapacitet, felsökning, loggmeddelanden.
-13. [Kommandoradsreferens](cli-reference.md) – alla `qtestframe`-kommandon och flaggor.
-14. [Funktioner som lagts till senare](features-added-later.md) – administrationsanteckningar för nyare funktioner.
+10. [Koppla ihop med andra verktyg](connecting-tools.md) – OSLC-kopplingar till IBM DOORS Next och ETM, Polarion och Codebeamer, dialoger i ramar, ReqIF.
+11. [Loggning och övervakning](logging-and-monitoring.md) – loggformat, syslog, hälsokontroller.
+12. [Säkerhetskopiering, återställning och migrering](backup-and-migration.md) – vad en säkerhetskopia innehåller, återställning, uppgradering och nedgradering, flytt mellan SQLite och PostgreSQL.
+13. [Driftrutiner](runbook.md) – återkommande uppgifter, kapacitet, felsökning, loggmeddelanden.
+14. [Kommandoradsreferens](cli-reference.md) – alla `qtestframe`-kommandon och flaggor.
+15. [Funktioner som lagts till senare](features-added-later.md) – administrationsanteckningar för nyare funktioner.
 
 ## Konventioner
 
