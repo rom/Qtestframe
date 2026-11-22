@@ -358,6 +358,7 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 		{"user_mfa", "user_id", "totp_secret", "user_mfa.totp_secret"},
 		{"webhooks", "id", "secret", "webhooks.secret"},
 		{"code_settings", "project_id", "webhook_secret", "code_settings.webhook_secret"},
+		{"code_settings", "project_id", "ci_token", "code_settings.ci_token"},
 		{"chat_channels", "id", "secret", "chat_channels.secret"},
 	} {
 		pairs, err := idValues(ctx, c, `SELECT `+t.id+`, `+t.col+` FROM `+t.table)
@@ -371,6 +372,9 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 				ad = adWebhook(p[0])
 			case "code_settings":
 				ad = adCodeSecret(p[0])
+				if t.col == "ci_token" {
+					ad = adCIToken(p[0])
+				}
 			case "chat_channels":
 				ad = adChat(p[0])
 			}

@@ -44,13 +44,13 @@ func init() {
 	enums[Swedish][EnumCriterion] = map[string]string{"coverage": "Täckning", "passed": "Godkända krav", "mandatory_passed": "MUST-krav godkända",
 		"executed": "Utförda exekveringar", "no_failed": "Inga underkända testfall", "approved": "Godkända krav (status)", "no_suspect": "Inga misstänkta länkar",
 		"no_open_defects": "Inga öppna defekter", "risks_mitigated": "Risker åtgärdade", "trace_rules": "Spårbarhetsregler", "residual_risk": "Restrisk inom gränsen",
-		"no_blocking_defects": "Inga blockerande defekter", "cycle_executed": "Testcykel genomförd"}
+		"no_blocking_defects": "Inga blockerande defekter", "cycle_executed": "Testcykel genomförd", "no_stale": "Inga inaktuella resultat"}
 }
 
 var criterionNames = map[string]string{"coverage": "Coverage", "passed": "Requirements passed", "mandatory_passed": "MUST requirements passed",
 	"executed": "Executions done", "no_failed": "No failed tests", "approved": "Requirements approved", "no_suspect": "No suspect links",
 	"no_open_defects": "No open defects", "risks_mitigated": "Risks mitigated", "trace_rules": "Traceability rules", "residual_risk": "Residual risk within threshold",
-	"no_blocking_defects": "No blocking defects", "cycle_executed": "Test cycle executed"}
+	"no_blocking_defects": "No blocking defects", "cycle_executed": "Test cycle executed", "no_stale": "No stale results"}
 
 // waiverTexts are the Swedish texts of waivers, residual risk and the SoA.
 var waiverTexts = map[string]string{

@@ -315,6 +315,10 @@ func (s *Server) RunJobs(ctx context.Context) {
 	if _, err := s.RunChatJobs(ctx); err != nil {
 		s.Log.Warn("chat job", "err", err)
 	}
+	// CI status posts to the code host that wait for a retry
+	if _, err := s.RunCIJobs(ctx); err != nil {
+		s.Log.Warn("ci job", "err", err)
+	}
 	// scheduled cycle starts and recurring cycles (also without e-mail)
 	if _, err := s.RunCycleJobs(ctx); err != nil {
 		s.Log.Warn("test cycle job", "err", err)

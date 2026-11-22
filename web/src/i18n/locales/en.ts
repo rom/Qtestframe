@@ -2581,6 +2581,7 @@ const en = {
       trace_rules: { name: 'Traceability rules', errorsOnly: 'No item in scope breaks a traceability rule of severity error', withWarnings: 'No item in scope breaks a traceability rule (errors and warnings)' },
       no_blocking_defects: { name: 'No blocking defects', label: 'No requirement in scope is blocked by an open defect' },
       cycle_executed: { name: 'Test cycle executed', withThreshold: 'At least {threshold} of the planned tests of the test cycle {cycle} have a result' },
+      no_stale: { name: 'No stale results', label: 'No test in the runs has only a stale pass' },
       residual_risk: { name: 'Residual risk', withLevel: 'No risk in scope has a residual level above {level} unless its acceptance is signed', any: 'No risk in scope has a residual level above the project’s acceptance threshold unless its acceptance is signed' },
     },
     markReleased: 'Mark released',

@@ -2583,6 +2583,7 @@ const sv: Messages = {
       trace_rules: { name: 'Spårbarhetsregler', errorsOnly: 'Inget objekt i omfattningen bryter mot en spårbarhetsregel med allvarligheten fel', withWarnings: 'Inget objekt i omfattningen bryter mot en spårbarhetsregel (fel och varningar)' },
       no_blocking_defects: { name: 'Inga blockerande defekter', label: 'Inget krav i omfattningen blockeras av en öppen defekt' },
       cycle_executed: { name: 'Testcykel genomförd', withThreshold: 'Minst {threshold} av de planerade testfallen i testcykeln {cycle} har ett utfall' },
+      no_stale: { name: 'Inga inaktuella resultat', label: 'Inget testfall i körningarna har bara ett inaktuellt godkänt utfall' },
       residual_risk: { name: 'Restrisk', withLevel: 'Ingen risk i omfattningen har en restnivå över {level} utan signerad acceptans', any: 'Ingen risk i omfattningen har en restnivå över projektets acceptansgräns utan signerad acceptans' },
     },
     markReleased: 'Markera som släppt',

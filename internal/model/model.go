@@ -1178,6 +1178,7 @@ var ExitCriterionTypes = []string{
 	"residual_risk",       // no risk linked to scope requirements has a residual level above the threshold (the level; default the project's) unless the risk is accepted
 	"no_blocking_defects", // no scope requirement is blocked by an open defect (the project's severity rules)
 	"cycle_executed",      // % of the planned tests of a test cycle (CycleID) with a final result (default 100: fully executed)
+	"no_stale",            // no test of the scope or the runs has only a stale pass (see staleness)
 }
 
 // ExitCriterion is one condition a release must meet.

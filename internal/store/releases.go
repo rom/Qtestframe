@@ -371,6 +371,8 @@ type ReleaseData struct {
 	Executions, Executed int
 	// FailedTests: keys of tests whose latest result in the release failed or is blocked.
 	FailedTests []ReleaseItem
+	// StaleTests: the tests of Stale.
+	StaleTests []ReleaseItem
 	// OpenDefects returns the open defects at or above a severity (nil when unknown).
 	OpenDefects func(level string) []ReleaseItem
 	// OpenRisks returns the unmitigated risks at or above a level (nil when unknown).
@@ -595,6 +597,28 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 				}
 			}
 			out = append(out, CriterionResult{ExitCriterion: c, Met: len(failed) == 0, Actual: float64(len(failed)), Items: limitItems(failed), Available: true, Waived: limitItems(waived)})
+		case "no_stale":
+			// a stale pass of a test of only waived requirements is accepted with them
+			var stale, waived []ReleaseItem
+			for _, t := range d.StaleTests {
+				if d.Results[t.ID] == model.ResultFailed || d.Results[t.ID] == model.ResultBlocked {
+					continue // counted by no_failed
+				}
+				reqs := d.TestRequirements[t.ID]
+				all := len(reqs) > 0
+				for _, id := range reqs {
+					if waivedReq[id] == "" {
+						all = false
+						break
+					}
+				}
+				if all {
+					waived = append(waived, t)
+				} else {
+					stale = append(stale, t)
+				}
+			}
+			out = append(out, CriterionResult{ExitCriterion: c, Met: len(stale) == 0, Actual: float64(len(stale)), Items: limitItems(stale), Available: true, Waived: limitItems(waived)})
 		case "residual_risk":
 			if d.ResidualRisks == nil {
 				out = append(out, CriterionResult{ExitCriterion: c, Met: true})
@@ -741,7 +765,7 @@ func (s *Store) ReleaseStatusForVariant(ctx context.Context, tenantID, id, varia
 	if len(rel.VariantIDs) == 0 {
 		return s.releaseStatusOne(ctx, tenantID, id, "", defects, risks, rules...)
 	}
-	return s.releaseGates(ctx, tenantID, rel, defects, risks, rules...)
+	return s.releaseGates(ctx, tenantID, rel, runScope{releaseID: rel.ID}, defects, risks, rules...)
 }
 
 // releaseStatusOne evaluates a release for one variant ("" none).
@@ -750,6 +774,16 @@ func (s *Store) releaseStatusOne(ctx context.Context, tenantID, id, variant stri
 	if err != nil {
 		return nil, err
 	}
+	return s.evaluateRelease(ctx, tenantID, rel, runScope{releaseID: rel.ID}, variant, defects, risks, rules...)
+}
+
+// evaluateRelease evaluates the exit criteria of rel (a release, or the
+// ad-hoc release of a quality gate) for one variant ("" none) on the
+// results of the runs in scope. rel is not changed.
+func (s *Store) evaluateRelease(ctx context.Context, tenantID string, orig *model.Release, rs runScope, variant string, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
+	cp := *orig
+	cp.RequirementIDs = slices.Clone(orig.RequirementIDs)
+	rel := &cp
 	links, err := s.ListLinks(ctx, tenantID, rel.ProjectID, "", "")
 	if err != nil {
 		return nil, err
@@ -798,8 +832,9 @@ func (s *Store) releaseStatusOne(ctx context.Context, tenantID, id, variant stri
 		return nil, err
 	}
 	// latest result per test and configuration in the release's runs
+	where, args := rs.where()
 	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, t.key, t.title, e.configuration_id, e.status, e.finished_at, e.started_at, r.created_at, r.variant_id FROM test_executions e
-		JOIN test_runs r ON r.id = e.run_id JOIN test_cases t ON t.id = e.test_case_id WHERE r.release_id = ? AND r.tenant_id = ?`, id, tenantID)
+		JOIN test_runs r ON r.id = e.run_id JOIN test_cases t ON t.id = e.test_case_id WHERE r.tenant_id = ? AND `+where, append([]any{tenantID}, args...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -853,6 +888,9 @@ func (s *Store) releaseStatusOne(ctx context.Context, tenantID, id, variant stri
 			// a stale pass is no evidence (staleness.go)
 			if r.status == model.ResultPassed && stale.Check(r.at, tid).Stale {
 				units[tid][cfg] = ""
+				if !d.Stale[tid] {
+					d.StaleTests = append(d.StaleTests, ReleaseItem{Kind: model.KindTest, ID: tid, Key: names[tid][0], Title: names[tid][1], Note: "stale"})
+				}
 				d.Stale[tid] = true
 			}
 		}
@@ -864,6 +902,7 @@ func (s *Store) releaseStatusOne(ctx context.Context, tenantID, id, variant stri
 		}
 	}
 	sort.Slice(d.FailedTests, func(i, j int) bool { return naturalLess(d.FailedTests[i].Key, d.FailedTests[j].Key) })
+	sort.Slice(d.StaleTests, func(i, j int) bool { return naturalLess(d.StaleTests[i].Key, d.StaleTests[j].Key) })
 	sum := map[string]int{"requirements": len(rel.RequirementIDs), "runs": rel.Runs, "executions": 0, "executed": 0, "covered": 0, "passed": 0, "failed": 0, "not_run": 0,
 		"waived": 0, "blocked": 0, "stale": len(d.Stale)}
 	waivers, err := s.ActiveWaivers(ctx, tenantID, rel.ProjectID, rel.ID)
@@ -1022,8 +1061,8 @@ func residualAbove(risks []model.Risk, scope map[string]bool, threshold string) 
 
 // releaseGates evaluates a release that targets variants: for each of them
 // (a gate) and combined (see ReleaseStatusForVariant).
-func (s *Store) releaseGates(ctx context.Context, tenantID string, rel *model.Release, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
-	rep, err := s.releaseStatusOne(ctx, tenantID, rel.ID, "", defects, risks, rules...)
+func (s *Store) releaseGates(ctx context.Context, tenantID string, rel *model.Release, rs runScope, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
+	rep, err := s.evaluateRelease(ctx, tenantID, rel, rs, "", defects, risks, rules...)
 	if err != nil {
 		return nil, err
 	}
@@ -1033,7 +1072,7 @@ func (s *Store) releaseGates(ctx context.Context, tenantID string, rel *model.Re
 		seenWaiver[w.ID] = true
 	}
 	for _, vid := range rel.VariantIDs {
-		one, err := s.releaseStatusOne(ctx, tenantID, rel.ID, vid, defects, risks, rules...)
+		one, err := s.evaluateRelease(ctx, tenantID, rel, rs, vid, defects, risks, rules...)
 		if err != nil {
 			if errors.Is(err, ErrInvalid) {
 				continue // a variant deleted meanwhile

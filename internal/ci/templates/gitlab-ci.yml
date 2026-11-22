@@ -1,0 +1,58 @@
+# Qtestframe in GitLab CI/CD: upload the test results of the pipeline,
+# post a commit status and a merge request note, and fail the pipeline
+# when the quality gate fails.
+#
+# Use it as your .gitlab-ci.yml (and add your test jobs), or include it:
+#   include:
+#     - remote: '__QTF_URL__/api/v1/ci/templates/gitlab-ci.yml'
+#
+# CI/CD variables (Settings > CI/CD > Variables; mask the tokens):
+#   QTF_TOKEN         Qtestframe API token with the role "tester" (masked)
+#   QTF_GITLAB_TOKEN  optional: GitLab project access token, role Developer,
+#                     scope "api", for commit statuses and merge request
+#                     notes (masked). Without it the job token is tried,
+#                     which GitLab does not accept for these endpoints today.
+#   QTF_CLI_IMAGE     an image that contains the qtestframe binary
+#   QTF_RELEASE       optional: the release whose exit criteria are the gate
+#
+# Your test jobs write JUnit XML to qtf-results/ and keep it as an artifact.
+# Test names carry the Qtestframe test key (SHOP-TC-12 or SHOP_TC_12).
+
+variables:
+  QTF_URL: "__QTF_URL__"
+  QTF_PROJECT: "__QTF_PROJECT__"
+  QTF_RUN: "Pipeline $CI_PIPELINE_IID ($CI_COMMIT_REF_NAME)"
+  QTF_POST_STATUS: "true"
+  QTF_POST_COMMENT: "true"
+
+stages: [test, qtestframe]
+
+# Example test job: replace it with yours.
+unit-tests:
+  stage: test
+  script:
+    - mkdir -p qtf-results
+    - echo "run your tests here, writing JUnit XML to qtf-results/"
+  artifacts:
+    when: always
+    paths: [qtf-results/]
+    reports:
+      junit: qtf-results/*.xml
+
+qtestframe:
+  stage: qtestframe
+  image: $QTF_CLI_IMAGE
+  when: always
+  script:
+    # the results go into the pipeline's run; build, commit and merge
+    # request come from the CI variables
+    - qtestframe report --run "$QTF_RUN" --create-run --junit 'qtf-results/*.xml'
+    # the gate: the release's exit criteria, or the default conditions
+    - qtestframe gate --run "$QTF_RUN" ${QTF_RELEASE:+--release "$QTF_RELEASE"} --format junit --output qtf-gate.xml
+  artifacts:
+    when: always
+    reports:
+      junit: qtf-gate.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH

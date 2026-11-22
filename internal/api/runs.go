@@ -396,6 +396,8 @@ func (s *Server) recordResults(w http.ResponseWriter, r *http.Request, p *Princi
 		}
 	}
 	s.syncEvidence(r.Context(), p, run.ProjectID, nil)
+	// results with a commit: the commit status and merge request note (ci.go)
+	s.queueCIDelivery(r, p, run, build)
 	if after, err := s.Store.GetRun(r.Context(), p.TenantID(), run.ID); err == nil && after.Status == "completed" && run.Status != "completed" {
 		s.notifyEvent(r, p, run.ProjectID, "run.completed", map[string]any{"run": after})
 	}
