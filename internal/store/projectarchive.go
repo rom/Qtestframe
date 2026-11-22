@@ -231,7 +231,6 @@ func sanitizeArchiveRow(table string, row map[string]any) {
 		// the webhook URL or access token is write-only, as above
 		row["secret"] = ""
 		row["enabled"] = false
-		row["failures"] = 0
 		row["next_digest_at"] = nil
 	case "projects":
 		if s, ok := row["defect_tracker"].(string); ok && s != "" {

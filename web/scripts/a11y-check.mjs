@@ -342,6 +342,11 @@ async function discover(request) {
     hasNotifications && { name: 'notifications-bulk', path: '/notifications', open: '.list li .p-checkbox', wait: '.bulkbar' },
     hasRequested && { name: 'reviews-bulk', path: '/reviews', open: ['.page-header .actions .p-selectbutton:first-child .p-togglebutton:nth-child(2)', '.p-datatable-tbody .p-checkbox'], wait: '.bulkbar' },
     hasWebhooks && { name: 'webhooks-bulk', path: `${p}/settings?tab=project`, open: 'section.webhooks .p-datatable-tbody .p-checkbox', wait: 'section.webhooks .bulkbar' },
+    // chat notifications: the channel list (seeded), the new-channel dialog, editing a seeded channel, its delivery log
+    { name: 'chat-channels', path: `${p}/settings?tab=project`, wait: 'section.chats .p-datatable-tbody tr' },
+    { name: 'chat-channel-dialog', path: `${p}/settings?tab=project`, open: 'section.chats .head button:has(.pi-plus)', wait: '.p-dialog #ch-name' },
+    { name: 'chat-channel-edit-dialog', path: `${p}/settings?tab=project`, open: 'section.chats .p-datatable-tbody tr:first-child button:has(.pi-pencil)', wait: '.p-dialog #ch-name' },
+    { name: 'chat-delivery-log', path: `${p}/settings?tab=project`, open: 'section.chats .p-datatable-tbody tr:first-child button:has(.pi-list)', wait: '.p-dialog .p-datatable' },
     hasDocuments && { name: 'documents-bulk', path: `${p}/documents`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     // the comparison with restore checkboxes (needs items changed since the baseline)
     firstBaseline && { name: 'baseline-compare', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, wait: '.bl-section, [role="status"]' },

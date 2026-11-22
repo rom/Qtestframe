@@ -288,10 +288,10 @@ function filtersText(c: ChatChannel): string {
             <Checkbox v-model="editing!.filters!.failed_only" input-id="ch-failed" binary />
             <label for="ch-failed">{{ t('chat.failedOnly') }}</label>
           </div>
-          <label for="ch-prio">{{ t('chat.minPriority') }}</label>
-          <Select v-model="editing!.filters!.min_priority" input-id="ch-prio" :options="priorityOptions" option-label="label" option-value="value" fluid />
-          <label for="ch-release">{{ t('chat.release') }}</label>
-          <Select v-model="editing!.filters!.release_id" input-id="ch-release" :options="releaseOptions" option-label="label" option-value="value" fluid aria-describedby="ch-filter-help" />
+          <label id="ch-prio-label" for="ch-prio">{{ t('chat.minPriority') }}</label>
+          <Select v-model="editing!.filters!.min_priority" input-id="ch-prio" :options="priorityOptions" option-label="label" option-value="value" fluid :placeholder="t('chat.anyPriority')" aria-labelledby="ch-prio-label" />
+          <label id="ch-release-label" for="ch-release">{{ t('chat.release') }}</label>
+          <Select v-model="editing!.filters!.release_id" input-id="ch-release" :options="releaseOptions" option-label="label" option-value="value" fluid :placeholder="t('chat.anyRelease')" aria-labelledby="ch-release-label" aria-describedby="ch-filter-help" />
           <small id="ch-filter-help" class="muted">{{ t('chat.filtersHelp') }}</small>
         </fieldset>
 
