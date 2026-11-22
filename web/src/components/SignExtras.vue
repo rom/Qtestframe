@@ -26,7 +26,7 @@ const zone = browserTimeZone()
   <template v-if="er.enabled">
     <template v-if="withMeaning">
       <label :for="`${idPrefix}-meaning`">{{ t('erecords.sign.meaning') }}</label>
-      <Select v-model="meaning" :input-id="`${idPrefix}-meaning`" :options="options" option-label="label" option-value="value" :placeholder="t('erecords.sign.meaningPlaceholder')" fluid aria-required="true" />
+      <Select v-model="meaning" :input-id="`${idPrefix}-meaning`" :options="options" option-label="label" option-value="value" :placeholder="t('erecords.sign.meaningPlaceholder')" fluid />
     </template>
     <MfaCodeInput v-if="needsMfa" :id="`${idPrefix}-mfa`" v-model="mfaCode" :label="t('erecords.sign.mfa')" />
     <p class="small muted" style="margin: 0">{{ t('erecords.sign.recorded', { zone }) }}</p>

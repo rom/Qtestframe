@@ -52,7 +52,7 @@ describe('challenges of electronic-records mode', () => {
       .mockResolvedValueOnce(res(428, { code: 'signature_required', error: 'sign', action: 'requirement.approve', meanings: ['approved'] }))
       .mockResolvedValueOnce(res(200, { ok: true }))
     const seen: string[] = []
-    setChallengeHandler(async (e) => {
+    setChallengeHandler(async (e): Promise<Record<string, string>> => {
       seen.push(e.code)
       return e.code === 'reason_required' ? { 'X-Change-Reason': encodeReason('CAPA 7') } : { 'X-Signature-Ticket': 't1' }
     })

@@ -18,9 +18,9 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**In a backup** (94 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
+**In a backup** (100 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`.
 
-**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -76,6 +76,15 @@ A restore is refused, and nothing is changed, when:
 The system settings of the backup apply at once. After a restore, check `qtestframe secrets status` and sign in.
 
 To recover a single item, use its history in the web client; to move one project, see below.
+
+## The audit trail in backups
+
+The hash chain of the audit trail (see [Tamper-evident audit trail](security.md#tamper-evident-audit-trail)) survives backups and restores, also between SQLite and PostgreSQL:
+
+- A **backup** is a consistent snapshot of the entries, the recorded ends of the chains (`audit_heads`), the signed checkpoints and their key (`audit_keys`, encrypted with the backed-up data keys), so the restored chain verifies like the original. Times are kept to the microsecond, which both databases store.
+- A **restore** replaces the chain with the backup's: entries written after the backup are gone, together with the checkpoints written after it, so the restored chain is intact; the restore itself (`admin.restore`) is the next entry. Keep the audit-trail exports of the time between the backup and the restore if you must prove what happened then. Verify after a restore: `qtestframe audit verify`.
+- Restoring into an installation with another key fails as for every encrypted secret; the checkpoint key cannot be read without the backup's key.
+- **Project archives** (below) never contain the audit trail or the electronic signatures: they belong to the organisation. Saving, loading, duplicating or deleting a project only adds entries to the chain; nothing is removed from it. Electronic signatures are kept when their project is deleted.
 
 ## Upgrading
 
@@ -146,6 +155,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 51 | `0051_frameworks.sql` |
 | 52 | `0052_multiple_roles.sql` |
 | 53 | `0053_ci_integration.sql` |
+| 55 | `0055_audit_chain_erecords.sql` |
 
 <!-- END GENERATED: migrations -->
 

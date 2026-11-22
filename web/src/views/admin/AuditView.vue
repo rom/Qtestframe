@@ -206,6 +206,10 @@ const details = computed(() => prettyDetails(detail.value?.details))
 .chain-result {
   margin-top: 8px;
 }
+/* the theme's message colours are too light for running text */
+.chain-result :deep(.p-message-text) {
+  color: var(--qtf-text);
+}
 .audit-filters {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));

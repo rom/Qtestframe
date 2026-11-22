@@ -375,6 +375,16 @@ func hashJSON(kind string, v any) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// RecordHash returns the hash, project and key of a record as a signature
+// links them (seed data).
+func RecordHash(ctx context.Context, st *store.Store, tenantID, kind, id string) (hash, projectID, key string, err error) {
+	h, err := (&Server{Store: st}).recordHash(ctx, tenantID, kind, id)
+	if err != nil {
+		return "", "", "", err
+	}
+	return h.hash, h.projectID, h.key, nil
+}
+
 // recordHash returns the hash of the signed content of a record: its
 // substance, not derived values or its status (a requirement that becomes
 // verified keeps its approval signature; one whose text changes does not).

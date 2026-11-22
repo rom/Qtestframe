@@ -788,6 +788,28 @@ undecryptable secrets behind.
   request log shows them).
   Readable per tenant with `audit.read` (`GET /api/v1/audit?limit=&q=`,
   newest first, default 500, maximum 5000).
+* **Tamper evidence** (migration 0055, `internal/store/auditchain.go`):
+  the entries of each tenant form a hash chain (`seq`, `prev_hash`,
+  `hash` = SHA-256 over a length-prefixed canonical encoding). Entries are
+  chained after their transaction commits, under a per-tenant row lock in
+  `audit_heads` (no lock during the request). HMAC-SHA256 checkpoints with
+  a key encrypted by the secrets keyring (`audit_keys`) are written every
+  1000 entries, hourly while entries are written, and at each verification
+  or export. Threat covered: an attacker who can write the database but
+  cannot read the key provider can neither rewrite nor truncate the chain
+  before the newest checkpoint without detection (`POST /audit/verify`,
+  `qtestframe audit verify`). Not covered: removal of entries after the
+  newest checkpoint (mitigated by syslog and exported archives), and an
+  attacker with both the database and the key. The chain does not prevent
+  changes; it makes them evident.
+* **Electronic-records mode** (`internal/api/erecords.go`): per-tenant
+  re-authentication (password plus TOTP when enrolled, or a recent single
+  sign-on) at signing time, meanings, signature records linked to a content
+  hash of the record version (`esignatures`), server-side signature
+  requirements for chosen actions via single-use, session-bound signing
+  tickets (SHA-256 stored, 5 minutes), mandatory reasons for change, and an
+  inactivity timeout. Procedural controls of Part 11 / Annex 11 remain with
+  the operator (see the administrator guide, "Electronic-records mode").
 * Logs are structured (`logging.format: json`) to standard error → journald.
 * **Central syslog** (`logging.syslog`, `internal/logging`): every log
   record (including the `audit` records) is also sent as JSON in a syslog
