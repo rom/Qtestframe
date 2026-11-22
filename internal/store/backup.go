@@ -40,6 +40,7 @@ var BackupTables = []string{
 	"scim_tokens", "scim_settings", "scim_users", "scim_groups", "scim_group_members",
 	"metric_snapshots",
 	"trace_rules",
+	"consistency_dismissals",
 	"invitations", "report_subscriptions",
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",

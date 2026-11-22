@@ -4,6 +4,7 @@ package model
 
 import (
 	"encoding/json"
+	"slices"
 	"time"
 )
 
@@ -730,6 +731,15 @@ var (
 	DefectOpenStatuses = []string{"open", "in_progress"}
 	// DefectSeverities from most to least severe.
 	DefectSeverities = []string{"critical", "major", "minor", "trivial"}
+	// DefectPhases are the phases a defect can be found in (Defect.FoundIn;
+	// "" = unknown). Defects found in DefectEscapedPhase escaped testing.
+	DefectPhases = []string{"requirements", "design", "development", "test", "acceptance", "production"}
+)
+
+// DefectEscapedPhase is the phase of escaped defects.
+const DefectEscapedPhase = "production"
+
+var (
 	// DefectLinkTypes are the items a defect can be linked to.
 	DefectLinkTypes = []string{KindRequirement, KindTest, "execution", "run"}
 )
@@ -755,6 +765,8 @@ type Defect struct {
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 	ResolvedAt     *time.Time `json:"resolved_at"`
+	// FoundIn is the phase the defect was found in (DefectPhases, "" unknown).
+	FoundIn string `json:"found_in"`
 	// Links to requirements, tests, executions and runs.
 	Links []DefectLink `json:"links,omitempty"`
 }
@@ -1193,9 +1205,58 @@ const (
 	TraceItemLink = "item_link"
 )
 
+// Built-in consistency checks: rule kinds whose condition is fixed (see
+// internal/tracerules builtin.go). They have no minimum; a selector still
+// narrows the items checked (not for risks).
+const (
+	// CheckConflictInRelease: requirements related by conflicts_with are
+	// both approved (or later) in the same release.
+	CheckConflictInRelease = "conflict_in_release"
+	// CheckUnmetDependency: an approved requirement depends_on one that is
+	// rejected, obsolete or deleted.
+	CheckUnmetDependency = "unmet_dependency"
+	// CheckObsoleteParent: an active requirement refines or is derived
+	// from an obsolete requirement.
+	CheckObsoleteParent = "obsolete_parent"
+	// CheckVerifiesInactive: a test verifies a rejected or obsolete requirement.
+	CheckVerifiesInactive = "verifies_inactive"
+	// CheckBrokenPrerequisite: a test prerequisite is deleted, failing or
+	// part of a cycle.
+	CheckBrokenPrerequisite = "broken_prerequisite"
+	// CheckUnevidencedMust: a MUST requirement of a release has no passing evidence.
+	CheckUnevidencedMust = "unevidenced_must"
+	// CheckUnmitigatedRisk: a high or critical risk has no mitigation
+	// requirement, or none of them is verified.
+	CheckUnmitigatedRisk = "unmitigated_risk"
+	// CheckUnjustifiedRejection: a requirement adopted from a regulation of
+	// the catalogue is rejected without a recorded justification.
+	CheckUnjustifiedRejection = "unjustified_rejection"
+	// CheckDuplicateSuspect: requirements with nearly identical text and no
+	// duplicates relation.
+	CheckDuplicateSuspect = "duplicate_suspect"
+)
+
+// TraceBuiltinKinds lists the built-in consistency checks in display order.
+var TraceBuiltinKinds = []string{CheckConflictInRelease, CheckUnmetDependency, CheckObsoleteParent, CheckVerifiesInactive,
+	CheckBrokenPrerequisite, CheckUnevidencedMust, CheckUnmitigatedRisk, CheckUnjustifiedRejection, CheckDuplicateSuspect}
+
+// IsBuiltinCheck reports whether kind is a built-in consistency check.
+func IsBuiltinCheck(kind string) bool { return slices.Contains(TraceBuiltinKinds, kind) }
+
+// BuiltinScope is the item kind a built-in check applies to.
+func BuiltinScope(kind string) string {
+	switch kind {
+	case CheckVerifiesInactive, CheckBrokenPrerequisite:
+		return KindTest
+	case CheckUnmitigatedRisk:
+		return KindRisk
+	}
+	return KindRequirement
+}
+
 // TraceRuleKinds lists the rule kinds; TraceRuleSeverities their severities.
 var (
-	TraceRuleKinds      = []string{TraceVerifiedBy, TraceVerifies, TraceRelation, TraceItemLink}
+	TraceRuleKinds      = append([]string{TraceVerifiedBy, TraceVerifies, TraceRelation, TraceItemLink}, TraceBuiltinKinds...)
 	TraceRuleSeverities = []string{"error", "warning"}
 	// TraceRuleDirections of relations and item links ("" = any).
 	TraceRuleDirections = []string{"", "incoming", "outgoing"}
@@ -1244,6 +1305,12 @@ type TraceRuleOptions struct {
 	// Every: every trace of the kind must meet the conditions (e.g. no
 	// suspect link at all), not only Min of them.
 	Every bool `json:"every,omitempty"`
+	// Threshold of duplicate_suspect: the least similarity (0.5–1) of two
+	// normalised texts that counts as a suspected duplicate (default 0.9).
+	Threshold float64 `json:"threshold,omitempty"`
+	// Level of unmitigated_risk: the least risk level checked (RiskLevels,
+	// default high).
+	Level string `json:"level,omitempty"`
 }
 
 // MFA policy modes.

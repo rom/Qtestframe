@@ -48,6 +48,10 @@ func ValidateTraceRule(r *model.TraceRule) error {
 	if !slices.Contains(model.TraceRuleKinds, r.Kind) {
 		return Invalidf("kind must be one of %s", strings.Join(model.TraceRuleKinds, ", "))
 	}
+	if model.IsBuiltinCheck(r.Kind) {
+		return validateBuiltinRule(r)
+	}
+	r.Threshold, r.Level = 0, ""
 	switch r.Kind {
 	case model.TraceVerifiedBy, model.TraceRelation:
 		if r.Scope == "" {
@@ -104,6 +108,49 @@ func ValidateTraceRule(r *model.TraceRule) error {
 	}
 	return nil
 }
+
+// validateBuiltinRule normalises a built-in consistency check: its scope
+// is fixed, it has no minimum and only its own option.
+func validateBuiltinRule(r *model.TraceRule) error {
+	scope := model.BuiltinScope(r.Kind)
+	if r.Scope != "" && r.Scope != scope {
+		return Invalidf("rules of kind %s apply to %s items", r.Kind, scope)
+	}
+	r.Scope = scope
+	r.Selector = strings.TrimSpace(r.Selector)
+	if len(r.Selector) > 4096 {
+		return Invalidf("queries are limited to 4096 characters")
+	}
+	if scope == model.KindRisk && r.Selector != "" {
+		return Invalidf("rules of kind %s take no selector", r.Kind)
+	}
+	r.Min = 1
+	o := model.TraceRuleOptions{}
+	switch r.Kind {
+	case model.CheckDuplicateSuspect:
+		o.Threshold = r.Threshold
+		if o.Threshold == 0 {
+			o.Threshold = DefaultDuplicateThreshold
+		}
+		if o.Threshold < 0.5 || o.Threshold > 1 {
+			return Invalidf("threshold must be between 0.5 and 1")
+		}
+	case model.CheckUnmitigatedRisk:
+		o.Level = r.Level
+		if o.Level == "" {
+			o.Level = "high"
+		}
+		if !slices.Contains(model.RiskLevels, o.Level) {
+			return Invalidf("level must be one of %s", strings.Join(model.RiskLevels, ", "))
+		}
+	}
+	r.TraceRuleOptions = o
+	return nil
+}
+
+// DefaultDuplicateThreshold is the similarity from which duplicate_suspect
+// reports two requirements.
+const DefaultDuplicateThreshold = 0.9
 
 // CreateTraceRule adds a rule at the end of the project's rules.
 func (s *Store) CreateTraceRule(ctx context.Context, tenantID string, r *model.TraceRule) error {

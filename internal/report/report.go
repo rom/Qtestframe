@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/analytics"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/tracerules"
@@ -123,6 +124,8 @@ type Data struct {
 	TraceRules []tracerules.Result
 	// Risks of the project with their requirement IDs (risk report).
 	Risks []model.Risk
+	// Quality: the computed quality metrics (quality metrics report).
+	Quality *analytics.QualityReport
 	// Query is the filter applied by the caller (shown in the subtitle).
 	Query string
 	Now   time.Time

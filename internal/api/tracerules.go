@@ -24,6 +24,12 @@ func (s *Server) routesTraceRules(h routeFunc) {
 	h("GET /api/v1/trace-rules/{id}", s.handleGetTraceRule, "project.read")
 	h("PATCH /api/v1/trace-rules/{id}", s.handleUpdateTraceRule, "project.update")
 	h("DELETE /api/v1/trace-rules/{id}", s.handleDeleteTraceRule, "project.update")
+	h("GET /api/v1/projects/{pid}/trace-rules/builtins", s.handleListBuiltinRules, "project.read")
+	h("POST /api/v1/projects/{pid}/trace-rules/builtins", s.atomic(s.handleInstallBuiltinRules), "project.update")
+	h("GET /api/v1/projects/{pid}/consistency/dismissals", s.handleListDismissals, "project.read")
+	h("POST /api/v1/projects/{pid}/consistency/dismissals", s.handleDismiss(true), "project.read") // write of the item: see consistency.go
+	h("DELETE /api/v1/projects/{pid}/consistency/dismissals", s.handleDismiss(false), "project.read")
+	h("GET /api/v1/projects/{pid}/analytics/consistency", s.handleConsistency, "project.read")
 	h("GET /api/v1/requirements/{id}/trace-rules", s.handleItemTraceRules(model.KindRequirement), "requirement.read")
 	h("GET /api/v1/tests/{id}/trace-rules", s.handleItemTraceRules(model.KindTest), "test.read")
 }
@@ -69,27 +75,29 @@ func (s *Server) handleListTraceRules(w http.ResponseWriter, r *http.Request, p 
 // traceRuleBody is the editable part of a rule (pointers: PATCH changes
 // what is given; a new rule is enabled unless enabled is false).
 type traceRuleBody struct {
-	Name         *string `json:"name"`
-	Description  *string `json:"description"`
-	Severity     *string `json:"severity"`
-	Enabled      *bool   `json:"enabled"`
-	Scope        *string `json:"scope"`
-	Selector     *string `json:"selector"`
-	Kind         *string `json:"kind"`
-	Min          *int    `json:"min"`
-	NotSuspect   *bool   `json:"not_suspect"`
-	Passed       *bool   `json:"passed"`
-	RelationType *string `json:"relation_type"`
-	Direction    *string `json:"direction"`
-	TargetType   *string `json:"target_type"`
-	TargetQuery  *string `json:"target_query"`
-	Every        *bool   `json:"every"`
+	Name         *string  `json:"name"`
+	Description  *string  `json:"description"`
+	Severity     *string  `json:"severity"`
+	Enabled      *bool    `json:"enabled"`
+	Scope        *string  `json:"scope"`
+	Selector     *string  `json:"selector"`
+	Kind         *string  `json:"kind"`
+	Min          *int     `json:"min"`
+	NotSuspect   *bool    `json:"not_suspect"`
+	Passed       *bool    `json:"passed"`
+	RelationType *string  `json:"relation_type"`
+	Direction    *string  `json:"direction"`
+	TargetType   *string  `json:"target_type"`
+	TargetQuery  *string  `json:"target_query"`
+	Every        *bool    `json:"every"`
+	Threshold    *float64 `json:"threshold"`
+	Level        *string  `json:"level"`
 }
 
 func (b *traceRuleBody) apply(r *model.TraceRule) {
 	for _, f := range []struct{ src, dst *string }{{b.Name, &r.Name}, {b.Description, &r.Description}, {b.Severity, &r.Severity},
 		{b.Scope, &r.Scope}, {b.Selector, &r.Selector}, {b.Kind, &r.Kind}, {b.RelationType, &r.RelationType},
-		{b.Direction, &r.Direction}, {b.TargetType, &r.TargetType}, {b.TargetQuery, &r.TargetQuery}} {
+		{b.Direction, &r.Direction}, {b.TargetType, &r.TargetType}, {b.TargetQuery, &r.TargetQuery}, {b.Level, &r.Level}} {
 		if f.src != nil {
 			*f.dst = *f.src
 		}
@@ -101,6 +109,9 @@ func (b *traceRuleBody) apply(r *model.TraceRule) {
 	}
 	if b.Min != nil {
 		r.Min = *b.Min
+	}
+	if b.Threshold != nil {
+		r.Threshold = *b.Threshold
 	}
 }
 
@@ -183,8 +194,9 @@ func (s *Server) handleDeleteTraceRule(w http.ResponseWriter, r *http.Request, p
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// traceGraph loads the project once for rule evaluation.
-func (s *Server) traceGraph(ctx context.Context, tenantID string, pr *model.Project) (*tracerules.Graph, error) {
+// traceGraph loads the project once for rule evaluation; with facts also
+// what the built-in consistency checks need (see traceFacts).
+func (s *Server) traceGraph(ctx context.Context, tenantID string, pr *model.Project, facts bool) (*tracerules.Graph, error) {
 	pc, err := s.loadContext(ctx, tenantID, pr)
 	if err != nil {
 		return nil, err
@@ -234,6 +246,11 @@ func (s *Server) traceGraph(ctx context.Context, tenantID string, pr *model.Proj
 		}
 		return nil
 	}
+	if facts {
+		if err := s.traceFacts(ctx, tenantID, pr, pc, g, reqs, tests); err != nil {
+			return nil, err
+		}
+	}
 	return g, nil
 }
 
@@ -252,7 +269,7 @@ func (s *Server) evaluateTraceRules(ctx context.Context, tenantID string, pr *mo
 	if len(use) == 0 {
 		return []tracerules.Result{}, nil
 	}
-	g, err := s.traceGraph(ctx, tenantID, pr)
+	g, err := s.traceGraph(ctx, tenantID, pr, hasBuiltin(use))
 	if err != nil {
 		return nil, err
 	}
@@ -348,7 +365,7 @@ func (s *Server) handlePreviewTraceRule(w http.ResponseWriter, r *http.Request, 
 		s.fail(w, r, err)
 		return
 	}
-	g, err := s.traceGraph(r.Context(), p.TenantID(), pr)
+	g, err := s.traceGraph(r.Context(), p.TenantID(), pr, model.IsBuiltinCheck(rule.Kind))
 	if err != nil {
 		s.fail(w, r, err)
 		return

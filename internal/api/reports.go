@@ -173,6 +173,16 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 			return nil, err
 		}
 	}
+	if id == report.QualityMetrics {
+		qp, err := parseQualityParams(mapGetter(params))
+		if err != nil {
+			return nil, err
+		}
+		qp.Lang = ""
+		if d.Quality, err = s.qualityReport(ctx, p.TenantID(), pr, qp); err != nil {
+			return nil, err
+		}
+	}
 	if id == report.Risks {
 		if d.Risks, err = s.Store.ListRisks(ctx, p.TenantID(), pr.ID); err != nil {
 			return nil, err
@@ -187,6 +197,11 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 	}
 	return d, nil
 }
+
+// mapGetter reads report parameters like URL query values.
+type mapGetter map[string]string
+
+func (m mapGetter) Get(k string) string { return strings.TrimSpace(m[k]) }
 
 // customRecords returns the records of a custom report, filtered by its
 // query, with report-friendly values for multi-part fields (in lang).
