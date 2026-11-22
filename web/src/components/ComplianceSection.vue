@@ -20,7 +20,7 @@ import { enumLabel } from '@/i18n/labels'
 import { useUndoStore } from '@/stores/undo'
 import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{ projectId: string }>()
+const props = defineProps<{ projectId: string; variant?: string | null }>()
 const { t, te, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -42,6 +42,7 @@ async function load() {
     report.value = await api.get<ComplianceReport>(`/projects/${props.projectId}/analytics/compliance`, {
       lang: lang.value,
       ...(chosen.value.length ? { source: chosen.value.join(',') } : {}),
+      variant: props.variant || undefined,
     })
   } catch (e) {
     error.value = errorMessage(e)
@@ -49,7 +50,7 @@ async function load() {
     loading.value = false
   }
 }
-watch([() => props.projectId, chosen, lang], load, { immediate: true })
+watch([() => props.projectId, chosen, lang, () => props.variant], load, { immediate: true })
 watch(() => undoStore.version, load)
 watch(chosen, (v) => void router.replace({ query: { ...route.query, compliance: v.length ? v.join(',') : undefined } }))
 

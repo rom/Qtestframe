@@ -5099,6 +5099,7 @@ const sv: Messages = {
     variant: 'Variant',
     allVariants: 'Alla varianter',
     showFor: 'Visa för variant',
+    onlyVariant: 'Variant {name}',
     readinessFor: 'Status för variant',
     readinessAll: 'Status för alla varianter',
     documentFor: 'För variant',

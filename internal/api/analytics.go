@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/rom/qtestframe/internal/analytics"
@@ -40,6 +41,28 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, err)
 		return
 	}
+	// ?variant=: the requirements and tests of one variant, with its
+	// coverage, results and verification (VariantCoverage rules)
+	vc, variant, err := s.variantScope(r, p, pc)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	verif := pc.verification()
+	if variant != "" {
+		reqs = slices.DeleteFunc(reqs, func(rq model.Requirement) bool { return !vc.AppliesTo(rq.ID, variant) })
+		tests = slices.DeleteFunc(tests, func(t model.TestCase) bool { return !vc.AppliesTo(t.ID, variant) })
+		if verif, err = s.variantVerification(ctx, p, pc, vc, variant); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
+	linked := func(rid string) []string {
+		if vc != nil {
+			return vc.Tests(rid, variant)
+		}
+		return pc.r2t[rid]
+	}
 	readyTest := map[string]bool{}
 	for _, t := range tests {
 		readyTest[t.ID] = t.Status == model.ReadyTestStatus
@@ -68,8 +91,11 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request, p *Prin
 	for i := range reqs {
 		rq := &reqs[i]
 		pc.decorateRequirement(rq)
+		if vc != nil {
+			rq.Coverage, rq.LinkedTests = vc.Requirement(rq.ID, variant), len(linked(rq.ID))
+		}
 		ready := 0
-		for _, tid := range pc.r2t[rq.ID] {
+		for _, tid := range linked(rq.ID) {
 			if readyTest[tid] {
 				ready++
 			}
@@ -79,7 +105,7 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request, p *Prin
 			Criteria: len(rq.Criteria), Tests: rq.LinkedTests, Coverage: rq.Coverage, TestsReady: ready, Conflicts: conflicts[rq.ID], Suspect: rq.SuspectLinks,
 			Waived: waived[rq.ID] != "",
 		})
-		if v := pc.verification()[rq.ID]; v != nil {
+		if v := verif[rq.ID]; v != nil {
 			ar := &in.Requirements[len(in.Requirements)-1]
 			ar.Verification = v.State
 			for _, c := range v.Criteria {
@@ -100,7 +126,16 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request, p *Prin
 	if p.Can(rbac.TestRead) {
 		in.Tests = []analytics.Test{}
 		for _, t := range tests {
-			in.Tests = append(in.Tests, analytics.Test{ID: t.ID, Key: t.Key, Title: t.Title, Status: t.Status, LastResult: pc.last[t.ID], Requirements: len(pc.t2r[t.ID])})
+			last, nreq := pc.last[t.ID], len(pc.t2r[t.ID])
+			if vc != nil {
+				last, nreq = vc.TestResult(t.ID, variant), 0
+				for _, rid := range pc.t2r[t.ID] {
+					if vc.AppliesTo(rid, variant) {
+						nreq++
+					}
+				}
+			}
+			in.Tests = append(in.Tests, analytics.Test{ID: t.ID, Key: t.Key, Title: t.Title, Status: t.Status, LastResult: last, Requirements: nreq})
 		}
 	}
 	writeJSON(w, http.StatusOK, analytics.Analyze(in))
@@ -148,11 +183,30 @@ func (s *Server) complianceInput(r *http.Request, p *Principal, pr *model.Projec
 	if err != nil {
 		return in, err
 	}
+	// ?variant=: its requirements, with the results that count for it
+	vc, variant, err := s.variantScope(r, p, pc)
+	if err != nil {
+		return in, err
+	}
 	for _, rq := range reqs {
+		if vc != nil && !vc.AppliesTo(rq.ID, variant) {
+			continue
+		}
 		x := analytics.ComplianceRequirement{ID: rq.ID, Key: rq.Key, Title: rq.Title, Status: rq.Status, Obligation: rq.Obligation,
 			CatalogRef: rq.CatalogRef, Source: rq.Source, Waived: waived[rq.ID] != ""}
-		for _, tid := range pc.r2t[rq.ID] {
-			x.Results = append(x.Results, pc.evidence()[tid])
+		if vc != nil {
+			res := map[string]string{}
+			for _, tid := range vc.Tests(rq.ID, variant) {
+				res[tid] = vc.TestResult(tid, variant)
+			}
+			res = pc.stale.FilterLast(res)
+			for _, tid := range vc.Tests(rq.ID, variant) {
+				x.Results = append(x.Results, res[tid])
+			}
+		} else {
+			for _, tid := range pc.r2t[rq.ID] {
+				x.Results = append(x.Results, pc.evidence()[tid])
+			}
 		}
 		in.Requirements = append(in.Requirements, x)
 	}

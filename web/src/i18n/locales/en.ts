@@ -5097,6 +5097,7 @@ const en = {
     variant: 'Variant',
     allVariants: 'All variants',
     showFor: 'Show for variant',
+    onlyVariant: 'Variant {name}',
     readinessFor: 'Readiness for variant',
     readinessAll: 'Readiness for all variants',
     documentFor: 'For variant',

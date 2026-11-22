@@ -11,6 +11,7 @@ import (
 	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/rbac"
 	"github.com/rom/qtestframe/internal/store"
+	"github.com/rom/qtestframe/internal/verification"
 )
 
 // Variants of a project, the applicability of requirements and tests and
@@ -103,6 +104,30 @@ func (pc *projectContext) listVariant(r *http.Request) (string, error) {
 		return "", badRequest("unknown variant %q", ref)
 	}
 	return v.ID, nil
+}
+
+// variantScope returns the variant of ?variant= with the coverage per
+// variant (nil and "" without one).
+func (s *Server) variantScope(r *http.Request, p *Principal, pc *projectContext) (*store.VariantCoverage, string, error) {
+	variant, err := pc.listVariant(r)
+	if err != nil || variant == "" {
+		return nil, "", err
+	}
+	vc, err := s.variantCoverage(r.Context(), p.TenantID(), pc)
+	if err != nil {
+		return nil, "", err
+	}
+	return vc, variant, nil
+}
+
+// variantVerification is the verification of the project's requirements
+// in one variant (store.VariantVerificationInput).
+func (s *Server) variantVerification(ctx context.Context, p *Principal, pc *projectContext, vc *store.VariantCoverage, variant string) (verification.Result, error) {
+	in, err := s.Store.VariantVerificationInput(ctx, p.TenantID(), pc.project.ID, pc.last, vc, variant)
+	if err != nil {
+		return nil, err
+	}
+	return verification.Compute(*in), nil
 }
 
 // ---------------------------------------------------------------- variants
