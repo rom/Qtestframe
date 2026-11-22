@@ -49,11 +49,15 @@ const (
 	CommentCreate Permission = "comment.create"
 	// CyclePlan creates and plans test cycles: their tests, testers,
 	// estimates, runs and recurring schedules.
-	CyclePlan     Permission = "cycle.plan"
-	ScriptExecute Permission = "script.execute"
-	Export        Permission = "export"
-	AuditRead     Permission = "audit.read"
-	TokenManage   Permission = "token.manage"
+	CyclePlan Permission = "cycle.plan"
+	// EnvironmentManage creates and changes test environments (their
+	// components, status, health check and secret), approves their
+	// bookings and reveals their secret.
+	EnvironmentManage Permission = "environment.manage"
+	ScriptExecute     Permission = "script.execute"
+	Export            Permission = "export"
+	AuditRead         Permission = "audit.read"
+	TokenManage       Permission = "token.manage"
 )
 
 // AllPermissionList lists every permission in display order (grouped by
@@ -62,7 +66,7 @@ var AllPermissionList = []Permission{
 	ProjectRead, ProjectCreate, ProjectUpdate, ProjectDelete,
 	RequirementRd, RequirementWr, RequirementRev, WaiverApprove,
 	TestRead, TestWrite, TestReview,
-	RunRead, RunWrite, RunExecute, CyclePlan, ScriptExecute,
+	RunRead, RunWrite, RunExecute, CyclePlan, EnvironmentManage, ScriptExecute,
 	CommentCreate, Export, AuditRead, TokenManage,
 	MemberRead, MemberManage, RoleManage, SettingsManage, TenantManage,
 }
@@ -102,8 +106,8 @@ var defaults = map[string][]Permission{
 	// project settings or members, or create API tokens.
 	RoleSME:      with(RequirementWr, RequirementRev, CommentCreate),
 	RoleTester:   with(RunExecute, RunWrite, TestWrite, TokenManage, CommentCreate),
-	RoleTestLead: with(RunExecute, RunWrite, CyclePlan, TestWrite, TestReview, ScriptExecute, AuditRead, TokenManage, SettingsManage, CommentCreate),
-	RoleManager: with(RunExecute, RunWrite, CyclePlan, TestWrite, TestReview, RequirementWr, RequirementRev, WaiverApprove, ProjectCreate, CommentCreate,
+	RoleTestLead: with(RunExecute, RunWrite, CyclePlan, EnvironmentManage, TestWrite, TestReview, ScriptExecute, AuditRead, TokenManage, SettingsManage, CommentCreate),
+	RoleManager: with(RunExecute, RunWrite, CyclePlan, EnvironmentManage, TestWrite, TestReview, RequirementWr, RequirementRev, WaiverApprove, ProjectCreate, CommentCreate,
 		ProjectUpdate, ScriptExecute, AuditRead, TokenManage, SettingsManage),
 	RoleAdmin: append([]Permission{}, AllPermissionList...),
 }

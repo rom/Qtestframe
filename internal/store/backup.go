@@ -31,7 +31,7 @@ const BackupFormatVersion = 1
 // BackupTables lists the backed up tables in foreign-key-safe order
 // (parents first). sessions and schema_migrations are not backed up.
 var BackupTables = []string{
-	"tenants", "users", "memberships", "api_tokens", "projects", "configurations", "releases", "folders", "categories",
+	"tenants", "users", "memberships", "api_tokens", "projects", "configurations", "environments", "releases", "folders", "categories",
 	"requirements", "requirement_categories", "evaluation_criteria", "test_cases", "test_steps",
 	"test_case_categories", "trace_links", "variants", "builds", "test_cycles", "test_cycle_tests", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
 	"audit_log", "revisions", "requirement_relations", "baselines", "baseline_items", "comments",
@@ -69,6 +69,9 @@ var BackupTables = []string{
 	"secret_keys",
 	// chat notification channels (0045)
 	"chat_channels",
+	// environment bookings and test data sets (0057; environments come
+	// before test_runs above)
+	"environment_bookings", "test_data_sets", "test_data_links", "test_data_usage", "test_data_refresh_requests",
 }
 
 // tables that exist but are deliberately not part of a backup.
@@ -106,6 +109,7 @@ var boolColumns = map[string]bool{
 	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
 	"chat_channels.enabled": true, "chat_channels.restricted_content": true,
 	"test_cycle_schedules.auto_start": true, "test_cycle_schedules.enabled": true,
+	"environments.status_by_health": true, "environments.requires_approval": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

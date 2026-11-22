@@ -189,24 +189,31 @@ func (s *Server) mailNotifications(ctx context.Context, p *Principal, list []mod
 func eventLabel(lang, event string) string {
 	sv := mailLang(lang) == "sv"
 	labels := map[string][2]string{
-		"mention":          {"You were mentioned", "Du har nämnts"},
-		"comment.created":  {"New comment", "Ny kommentar"},
-		"comment.resolved": {"Discussion resolved", "Diskussionen är löst"},
-		"assigned":         {"Assigned to you", "Tilldelad dig"},
-		"defect.created":   {"New defect", "Ny defekt"},
-		"defect.assigned":  {"Defect assigned to you", "Defekt tilldelad dig"},
-		"defect.status":    {"Defect status changed", "Defektens status ändrad"},
-		"review.requested": {"Review requested", "Granskning begärd"},
-		"review.completed": {"Review completed", "Granskning klar"},
-		"review.reminder":  {"Review reminder", "Påminnelse om granskning"},
-		"waiver.requested": {"Waiver to approve", "Undantag att godkänna"},
-		"waiver.approved":  {"Waiver approved", "Undantag godkänt"},
-		"waiver.rejected":  {"Waiver rejected", "Undantag avslaget"},
-		"waiver.revoked":   {"Waiver revoked", "Undantag återkallat"},
-		"waiver.expired":   {"Waiver expired", "Undantag har gått ut"},
-		"project.shared":   {"A project was shared with you", "Ett projekt har delats med dig"},
-		"impact.review":    {"A change affects your items: review recommended", "En ändring påverkar dina poster: granskning rekommenderas"},
-		"chat.disabled":    {"A chat channel was turned off", "En chattkanal har stängts av"},
+		"mention":                       {"You were mentioned", "Du har nämnts"},
+		"comment.created":               {"New comment", "Ny kommentar"},
+		"comment.resolved":              {"Discussion resolved", "Diskussionen är löst"},
+		"assigned":                      {"Assigned to you", "Tilldelad dig"},
+		"defect.created":                {"New defect", "Ny defekt"},
+		"defect.assigned":               {"Defect assigned to you", "Defekt tilldelad dig"},
+		"defect.status":                 {"Defect status changed", "Defektens status ändrad"},
+		"review.requested":              {"Review requested", "Granskning begärd"},
+		"review.completed":              {"Review completed", "Granskning klar"},
+		"review.reminder":               {"Review reminder", "Påminnelse om granskning"},
+		"waiver.requested":              {"Waiver to approve", "Undantag att godkänna"},
+		"waiver.approved":               {"Waiver approved", "Undantag godkänt"},
+		"waiver.rejected":               {"Waiver rejected", "Undantag avslaget"},
+		"waiver.revoked":                {"Waiver revoked", "Undantag återkallat"},
+		"waiver.expired":                {"Waiver expired", "Undantag har gått ut"},
+		"environment.status_changed":    {"Environment status changed", "Miljöns status ändrad"},
+		"environment.booking_requested": {"Environment booking to approve", "Miljöbokning att godkänna"},
+		"environment.booking_approved":  {"Environment booking approved", "Miljöbokning godkänd"},
+		"environment.booking_rejected":  {"Environment booking rejected", "Miljöbokning avslagen"},
+		"testdata.refresh_requested":    {"Test data refresh requested", "Uppdatering av testdata begärd"},
+		"testdata.refresh_resolved":     {"Test data refresh request closed", "Begäran om uppdatering av testdata stängd"},
+		"testdata.expiring":             {"Test data expires soon", "Testdata går snart ut"},
+		"project.shared":                {"A project was shared with you", "Ett projekt har delats med dig"},
+		"impact.review":                 {"A change affects your items: review recommended", "En ändring påverkar dina poster: granskning rekommenderas"},
+		"chat.disabled":                 {"A chat channel was turned off", "En chattkanal har stängts av"},
 	}
 	l, ok := labels[event]
 	if !ok {
@@ -318,6 +325,10 @@ func (s *Server) RunJobs(ctx context.Context) {
 	// CI status posts to the code host that wait for a retry
 	if _, err := s.RunCIJobs(ctx); err != nil {
 		s.Log.Warn("ci job", "err", err)
+	}
+	// environment health checks (also without e-mail)
+	if _, err := s.RunEnvironmentHealthChecks(ctx); err != nil {
+		s.Log.Warn("environment health check job", "err", err)
 	}
 	// scheduled cycle starts and recurring cycles (also without e-mail)
 	if _, err := s.RunCycleJobs(ctx); err != nil {

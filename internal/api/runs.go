@@ -62,6 +62,9 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		BuildID *string `json:"build_id"`
 		// CustomFields: values of the project's run custom fields.
 		CustomFields model.CustomValues `json:"custom_fields"`
+		// EnvironmentID (id or name) selects an environment item; Booking
+		// books it for the run.
+		itemEnvReq
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -108,8 +111,25 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 	for _, id := range req.ConfigurationIDs {
 		run.Configurations = append(run.Configurations, model.ConfigurationRef{ID: id})
 	}
-	if err := s.Store.CreateRun(r.Context(), p.TenantID(), run, ids); err != nil {
+	envID, err := s.resolveEnvironmentRef(r.Context(), p.TenantID(), pr.ID, req.EnvironmentID)
+	if err != nil {
 		s.fail(w, r, err)
+		return
+	}
+	run.EnvironmentID = envID
+	err = s.Store.InTx(r.Context(), func(ctx context.Context) error {
+		if err := s.Store.CreateRun(ctx, p.TenantID(), run, ids); err != nil {
+			return err
+		}
+		if req.Booking == nil {
+			return nil
+		}
+		return s.applyItemEnvironment(r.WithContext(ctx), p, "run", run.ID, pr.ID, req.itemEnvReq)
+	})
+	if err != nil {
+		if !s.writeBookingConflict(w, r, p, err) {
+			s.fail(w, r, err)
+		}
 		return
 	}
 	s.audit(r.Context(), p, "run.create", "run", run.ID, run.Name)
@@ -154,6 +174,8 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		BuildID   *string `json:"build_id"`
 		// CustomFields are merged into the run's values (null removes one).
 		CustomFields json.RawMessage `json:"custom_fields"`
+		// EnvironmentID: the environment item (id or name; "" none).
+		EnvironmentID *string `json:"environment_id"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -194,6 +216,19 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		if *req.BuildID == "" {
 			run.BuildID = nil
 		}
+	}
+	switch {
+	case req.EnvironmentID != nil:
+		if run.EnvironmentID, err = s.resolveEnvironmentRef(r.Context(), p.TenantID(), run.ProjectID, req.EnvironmentID); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if run.EnvironmentID == nil && req.Environment == nil {
+			run.Environment = ""
+		}
+	case req.Environment != nil:
+		// a new free-text environment: linked again by name
+		run.EnvironmentID = nil
 	}
 	if err := s.Store.UpdateRun(r.Context(), p.TenantID(), run); err != nil {
 		s.fail(w, r, err)

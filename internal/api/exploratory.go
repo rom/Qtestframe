@@ -113,6 +113,9 @@ type exploratoryBody struct {
 	Tester         *string                       `json:"tester"`
 	TimeboxMinutes *int                          `json:"timebox_minutes"`
 	Scope          *[]model.ExploratoryScopeItem `json:"scope"`
+	// EnvironmentID (id or name, "" none) and Booking: the environment
+	// explored and a booking of it.
+	itemEnvReq
 }
 
 func (b *exploratoryBody) apply(x *model.ExploratorySession) {
@@ -171,8 +174,16 @@ func (s *Server) handleCreateExploratory(w http.ResponseWriter, r *http.Request,
 		s.fail(w, r, err)
 		return
 	}
-	if err := s.Store.CreateExploratorySession(ctx, p.TenantID(), x); err != nil {
-		s.fail(w, r, err)
+	err := s.Store.InTx(ctx, func(ctx context.Context) error {
+		if err := s.Store.CreateExploratorySession(ctx, p.TenantID(), x); err != nil {
+			return err
+		}
+		return s.applyItemEnvironment(r.WithContext(ctx), p, model.KindExploratory, x.ID, pr.ID, b.itemEnvReq)
+	})
+	if err != nil {
+		if !s.writeBookingConflict(w, r, p, err) {
+			s.fail(w, r, err)
+		}
 		return
 	}
 	s.audit(ctx, p, "exploratory.create", model.KindExploratory, x.ID, x.Key+" "+x.Title)
@@ -217,6 +228,14 @@ func (s *Server) handleUpdateExploratory(w http.ResponseWriter, r *http.Request,
 	if err := s.Store.UpdateExploratorySession(ctx, p.TenantID(), x); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	if b.EnvironmentID != nil || b.Booking != nil {
+		if err := s.applyItemEnvironment(r, p, model.KindExploratory, x.ID, x.ProjectID, b.itemEnvReq); err != nil {
+			if !s.writeBookingConflict(w, r, p, err) {
+				s.fail(w, r, err)
+			}
+			return
+		}
 	}
 	s.audit(ctx, p, "exploratory.update", model.KindExploratory, x.ID, x.Key+" "+x.Title)
 	s.writeExploratory(w, r, p, x.ID, "update")

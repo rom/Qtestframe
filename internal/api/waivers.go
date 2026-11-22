@@ -619,6 +619,9 @@ func (s *Server) releaseReport(r *http.Request, p *Principal, pr *model.Project,
 		rr.Criteria = append(rr.Criteria, report.ReleaseCriterion{Type: c.Type, Threshold: c.Threshold, Level: c.Level, Met: c.Met, Available: c.Available,
 			Actual: c.Actual, Total: c.Total, Items: refs(c.Items), Waived: refs(c.Waived), Accepted: refs(c.Accepted)})
 	}
+	if rr.Environments, err = s.Store.ReleaseEnvironments(ctx, p.TenantID(), rel.ID); err != nil {
+		return nil, err
+	}
 	for _, g := range st.Variants {
 		vg := report.ReleaseVariantGate{Name: g.Variant.Name, Go: g.Go}
 		for _, c := range g.Criteria {

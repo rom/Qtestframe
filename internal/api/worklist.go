@@ -87,7 +87,7 @@ type WorkItem struct {
 // review the caller asked for, an item of theirs in review): they are
 // listed but not counted as work in the badge unless the row has another
 // reason too.
-var waitingReasons = []string{"awaiting_review", "in_review"}
+var waitingReasons = []string{"awaiting_review", "in_review", "awaiting_approval"}
 
 // waitingOnly reports whether every reason of a row is a waiting reason.
 func waitingOnly(it *WorkItem) bool {
