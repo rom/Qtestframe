@@ -204,7 +204,9 @@ func TestChangeImpactAcrossRelations(t *testing.T) {
 	run2 := a.m("POST", "/api/v1/projects/"+f.pid+"/runs", map[string]any{"name": "R2", "test_ids": []string{f.ta}}, 201)
 	ex := items(a.m("GET", "/api/v1/runs/"+run2["id"].(string)+"/executions", nil, 200))[0]
 	a.m("PATCH", "/api/v1/executions/"+ex["id"].(string), map[string]any{"status": "passed"}, 200)
-	if ra := f.req(f.ra); ra["status"] != "verified" || ra["stale_results"] != nil {
+	// its own evidence counts again; it stays "partial" because the child
+	// requirement that refines it is not verified (roll-up, verification.go)
+	if ra := f.req(f.ra); ra["coverage"] != "passed" || ra["stale_results"] != nil || ra["verification"] != "partial" {
 		t.Fatal(ra)
 	}
 	// the stale results of a requirement
