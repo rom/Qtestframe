@@ -37,6 +37,7 @@ requirements:
     tags: [access-control, card, pin]
     refs: ["EN 60839-11-1", "ISO/IEC 27001:2022 A.7.2"]
     tests: [FCSEC-T02]
+    d3fend: [D3-PAM]
     en:
       title: Card at restricted zones, card and PIN at high-security zones
       description: The electronic access control system MUST require a personal card at each entrance to a restricted zone and a personal card together with a PIN code at each entrance to a high-security zone.
@@ -59,6 +60,7 @@ requirements:
     tags: [access-rights, offboarding, lost-card]
     refs: ["ISO/IEC 27001:2022 A.7.2", "ISO/IEC 27001:2022 A.5.18"]
     tests: [FCSEC-T03]
+    d3fend: [D3-CR]
     en:
       title: Access card blocked within 1 hour
       description: The access control system MUST block a card within 1 hour after its holder's employment or contract ends or after the card is reported lost.
@@ -107,6 +109,7 @@ requirements:
     tags: [door-alarm, forced-door, held-open]
     refs: ["EN 60839-11-1", "ISO/IEC 27001:2022 A.7.4"]
     tests: [FCSEC-T04]
+    d3fend: [D3-PHAM]
     en:
       title: Alarm for a forced door or a door held open for 30 seconds
       description: The access control system MUST raise an alarm at the security centre within 5 seconds when a controlled door is forced open or held open for more than 30 seconds.
@@ -131,6 +134,7 @@ requirements:
     tags: [intrusion-alarm, grade-3]
     refs: ["EN 50131-1", "ISO/IEC 27001:2022 A.7.4"]
     tests: [FCSEC-T05]
+    d3fend: [D3-PHAM]
     en:
       title: Intrusion alarm of grade 3 in restricted zones
       description: The intrusion alarm system that protects restricted and high-security zones MUST meet grade 3 of EN 50131-1 and transmit alarms to a staffed alarm receiving centre.
@@ -153,6 +157,7 @@ requirements:
     tags: [burglar-resistance, doors, windows]
     refs: ["EN 1627", "ISO/IEC 27001:2022 A.7.1"]
     tests: [FCSEC-T01]
+    d3fend: [D3-EPL]
     en:
       title: Burglar-resistant doors and windows at the high-security perimeter
       description: Doors, windows and other openings in the perimeter of a high-security zone SHOULD be of resistance class RC3 or higher according to EN 1627.
@@ -199,6 +204,7 @@ requirements:
     tags: [visitors, escort, badge]
     refs: ["ISO/IEC 27001:2022 A.7.2"]
     tests: [FCSEC-T07]
+    d3fend: [D3-PAM]
     en:
       title: Visitors registered, badged and escorted in restricted zones
       description: The reception MUST register each visitor with name, organisation, host and time, issue a visible visitor badge and ensure that the host escorts the visitor in each restricted zone.
@@ -267,6 +273,7 @@ requirements:
     tags: [building-automation, segmentation, remote-access]
     refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 1.13", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
     tests: [FCSEC-T10]
+    d3fend: [D3-NI]
     en:
       title: Building automation network separated from office network and internet
       description: The building automation network MUST be separated from the office network and the internet, with remote access for service only through a VPN with multi-factor authentication.
@@ -289,6 +296,7 @@ requirements:
     tags: [building-automation, default-passwords, accounts]
     refs: ["IEC 62443-3-3 SR 1.1", "IEC 62443-3-3 SR 1.5", "CWE-1392 (use of default credentials)", "MITRE ATT&CK T1694.001 (default credentials)"]
     tests: [FCSEC-T10]
+    d3fend: [D3-CDP]
     en:
       title: Personal accounts and no default passwords in building automation
       description: Each building automation controller and workstation MUST be accessed with personal accounts, with each default password from the manufacturer replaced before the system is taken into use.
@@ -359,6 +367,7 @@ requirements:
     tags: [critical-entity, perimeter, detection]
     refs: ["Directive (EU) 2022/2557 (CER) Art. 13(1)(b)", "EN 50131-1:2006+A3:2020"]
     tests: [FCSEC-T11]
+    d3fend: [D3-PHAM]
     en:
       title: Perimeter protection with detection at critical infrastructure sites
       description: Each site of a critical entity that hosts critical infrastructure MUST have a perimeter barrier with intrusion detection that raises an alarm at a staffed centre within 60 seconds of a breach.

@@ -124,6 +124,7 @@ requirements:
     tags: [alerting, credential-stuffing]
     refs: ["OWASP ASVS 5.0 V16.3.1 (authentication events)", "NIST SP 800-53 SI-4", "ISO/IEC 27001:2022 A.8.16", "OWASP Top 10 2021 A09", "IEC 62443-3-3 SR 6.2", "Regulation (EU) 2022/2554 (DORA) Art. 10", "MITRE ATT&CK T1110.003 (password spraying)", "MITRE ATT&CK T1110.004 (credential stuffing)"]
     tests: [SLOG-T05]
+    d3fend: [D3-ANET]
     en:
       title: Alert on mass sign-in failures
       description: The system MUST alert the security on-call within 15 minutes when more than 50 sign-ins fail within 5 minutes across all accounts.
@@ -146,6 +147,7 @@ requirements:
     tags: [alerting, privileged-access]
     refs: ["NIST SP 800-53 AC-2(4)", "ISO/IEC 27001:2022 A.8.16", "IEC 62443-3-3 SR 6.2", "Regulation (EU) 2022/2554 (DORA) Art. 10", "MITRE ATT&CK T1098 (account manipulation)"]
     tests: [SLOG-T06]
+    d3fend: [D3-LAM]
     en:
       title: Alert on new administrator rights
       description: The system SHOULD alert the security on-call within 15 minutes when an account is given the administrator role.
@@ -258,6 +260,7 @@ requirements:
     tags: [anomaly, administrator, alert]
     refs: ["MITRE ATT&CK T1078 (valid accounts)", "NIST SP 800-53 Rev. 5 SI-4 (system monitoring)", "ISO/IEC 27001:2022 A.8.16", "IEC 62443-3-3 SR 6.2", "Regulation (EU) 2022/2554 (DORA) Art. 10"]
     tests: [SLOG-T11]
+    d3fend: [D3-UGLPA]
     en:
       title: Alert on administrator sign-in from a new country
       description: The system SHOULD alert the security team within 10 minutes when an administrator account signs in from a country it has not signed in from during the last 90 days.
@@ -282,6 +285,7 @@ requirements:
     tags: [alerting, data-exfiltration, export]
     refs: ["NIST SP 800-53 SI-4", "MITRE ATT&CK TA0010 (exfiltration)", "ISO/IEC 27001:2022 A.8.16", "MITRE ATT&CK T1213 (data from information repositories)"]
     tests: [SLOG-T12]
+    d3fend: [D3-UDTA]
     en:
       title: Alert on bulk export by one user
       description: The system SHOULD alert the security on-call within 15 minutes when one user exports or downloads more than 1 000 records within 1 hour.
@@ -306,6 +310,7 @@ requirements:
     tags: [alerting, authorisation, enumeration]
     refs: ["OWASP Logging Cheat Sheet", "OWASP Top 10 2021 A09", "NIST SP 800-53 AU-6", "ISO/IEC 27001:2022 A.8.16"]
     tests: [SLOG-T13]
+    d3fend: [D3-AZET]
     en:
       title: Alert on repeated denied access by one user
       description: The system SHOULD alert the security on-call within 15 minutes when one signed-in user gets more than 20 responses of 403 or 404 on record identifiers within 5 minutes.

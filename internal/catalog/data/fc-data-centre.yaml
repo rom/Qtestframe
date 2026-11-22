@@ -253,6 +253,7 @@ requirements:
     tags: [physical-access, two-factor, logging]
     refs: ["EN 50600-2-5 (security systems)", "ISO/IEC 27001:2022 A.7.2", "ISO/IEC 27001:2022 A.7.6"]
     tests: [FCDC-T09]
+    d3fend: [D3-PAM]
     en:
       title: Data hall entry with two factors and logging
       description: Entry to each data hall MUST require 2 factors, such as a card and a PIN or a card and a biometric check, with each entry and exit logged with person and time.

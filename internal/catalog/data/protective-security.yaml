@@ -82,6 +82,7 @@ requirements:
     tags: [security-clearance, access-control]
     refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)", "Säkerhetsskyddsförordning (2021:955)", "CWE-863 (incorrect authorization)"]
     tests: [SAKS-T04]
+    d3fend: [D3-AMED]
     en:
       title: Access to classified records only with a matching security clearance
       description: The system MUST grant access to a classified record only to a user whose account is marked by an administrator as having a completed security vetting (Swedish term säkerhetsprövning) with a clearance level at least as high as the record's classification level.
@@ -276,6 +277,7 @@ requirements:
     tags: [removable-media, data-loss-prevention]
     refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "MITRE ATT&CK T1052.001 (exfiltration over USB)", "MITRE ATT&CK T1091 (replication through removable media)"]
     tests: [SAKS-T09]
+    d3fend: [D3-IOPR]
     en:
       title: Only registered removable media can be written
       description: Clients of a classified system MUST NOT allow data to be written to a removable medium that is not registered as approved for classified information, and each blocked attempt is logged with the user, the device and the time.
@@ -388,6 +390,7 @@ requirements:
     tags: [destruction, sanitisation, classified-data]
     refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "Försvarsmaktens föreskrifter om säkerhetsskydd (FFS)", "NIST SP 800-88 Rev. 2"]
     tests: [SAKS-T14]
+    d3fend: [D3-DKE]
     en:
       title: Destruction of classified data is approved and recorded
       description: The system MUST let classified records be destroyed only after approval by a second authorised person, and record the record id, classification, method, both persons and the time in the register.

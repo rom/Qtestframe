@@ -294,6 +294,7 @@ requirements:
     tags: [mfa, remote-access, administrators]
     refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)", "Implementing Regulation (EU) 2024/2690 Annex §11 (access control)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1133 (external remote services)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     tests: [CSL-T10]
+    d3fend: [D3-MFA]
     en:
       title: Multi-factor authentication for administrators and remote access
       description: The organisation MUST require multi-factor authentication for each sign-in to an administrative account and for each remote access to the internal network of its regulated services.

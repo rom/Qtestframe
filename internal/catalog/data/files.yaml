@@ -60,6 +60,7 @@ requirements:
     tags: [file-type, content-inspection]
     refs: ["OWASP ASVS 5.0 V5.2.2 (file extension and content)", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [FILE-T03]
+    d3fend: [D3-FMBV]
     en:
       title: File type checked from the content
       description: The system MUST accept only file types on a configured allow list and MUST determine the type from the file's content, not from its name or the declared media type.
@@ -82,6 +83,7 @@ requirements:
     tags: [malware, quarantine]
     refs: ["OWASP ASVS 5.0 V5.4.3 (malware scan)", "ISO/IEC 27001:2022 A.8.7", "IEC 62443-3-3 SR 3.2"]
     tests: [FILE-T04]
+    d3fend: [D3-FA]
     en:
       title: Malware scan before a file is available
       description: The system MUST scan each uploaded file for malware before other users can download it, and MUST quarantine a detected file and inform the uploader within 5 minutes.

@@ -211,6 +211,7 @@ requirements:
     tags: [end-to-end-encryption, group-call, keys]
     refs: ["3GPP TS 33.180", "ISO/IEC 27001:2022 A.8.24"]
     tests: [CMMC-T08]
+    d3fend: [D3-MENCR]
     en:
       title: Group calls encrypted end to end
       description: The system MUST encrypt group call speech and data end to end between the terminals with keys that are managed by the user organisation and not by the network operator.

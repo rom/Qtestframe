@@ -83,6 +83,7 @@ requirements:
     tags: [lorawan, root-keys, key-management]
     refs: ["LoRaWAN L2 1.0.4 Specification (security)", "ETSI EN 303 645 provision 5.1-1"]
     tests: [CMIOT-T02]
+    emb3d: [MID-033]
     en:
       title: No root key shared between LoRaWAN devices
       description: Two LoRaWAN devices MUST NOT share the same root key, and the root keys are stored only in the join server and the device.
@@ -201,6 +202,7 @@ requirements:
     tags: [private-apn, cellular-iot, network-isolation]
     refs: ["ETSI EN 303 645 provision 5.6-1", "GSMA IoT Security Guidelines"]
     tests: [CMIOT-T06]
+    d3fend: [D3-NI]
     en:
       title: Cellular IoT devices on a private APN without internet access
       description: Cellular IoT devices MUST connect through a private APN or data network that reaches only the organisation's IoT platform, with no route to or from the public internet.
@@ -245,6 +247,8 @@ requirements:
     tags: [mqtt, tls, device-certificates]
     refs: ["OASIS MQTT Version 5.0", "ETSI EN 303 645 provision 5.5-1"]
     tests: [CMIOT-T07]
+    d3fend: [D3-CBAN]
+    emb3d: [MID-034, MID-035]
     en:
       title: Device messages over TLS with a certificate per device
       description: Devices that send data over IP MUST connect to the platform over TLS 1.2 or later with a client certificate unique to each device, and be refused without one.
@@ -394,6 +398,7 @@ tests:
     execution: manual
     tags: [lorawan, key-management]
     refs: ["LoRaWAN L2 1.0.4 Specification (over-the-air activation)", "LoRaWAN L2 1.0.4 Specification (security)", "ETSI EN 303 645 provision 5.1-1"]
+    emb3d: [MID-033]
     en:
       title: LoRaWAN activation mode and root key uniqueness
       description: Checks the activation mode of the devices, rejoins a test device and looks for shared root keys.
@@ -554,6 +559,7 @@ tests:
     execution: manual
     tags: [mqtt, timestamps]
     refs: ["OASIS MQTT Version 5.0", "ETSI EN 303 645 provision 5.5-1", "ISO 8601-1:2019"]
+    emb3d: [MID-034]
     en:
       title: Device certificates on the platform connection and buffered time stamps
       description: Connects with valid, missing and revoked client certificates, and checks the time stamps of buffered measurements.
@@ -654,6 +660,7 @@ risks:
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GSMA IoT Security Guidelines", "LoRaWAN L2 1.0.4 Specification (security)"]
     mitigated_by: [CMIOT-03, CMIOT-04, CMIOT-09, CMIOT-11]
     attack: [T1078.001, T1210]
+    emb3d: [TID-406, TID-311]
     en:
       title: IoT devices impersonated or used as a way in
       description: Devices share a root key, are personalised by hand or reach the internet directly. One extracted key lets an attacker fake measurements from all devices or use them to reach the network.
@@ -685,6 +692,7 @@ risks:
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "LoRaWAN L2 1.0.4 Specification (security)", "ETSI EN 303 645 provision 5.5-1"]
     mitigated_by: [CMIOT-04, CMIOT-03, CMIOT-11]
     attack: [T1552.004, T1557]
+    emb3d: [TID-115]
     en:
       title: One extracted key exposes the whole device fleet
       description: All devices share a root key or use fixed activation keys. A key read from one device in the field lets an attacker decrypt and forge messages from every device.

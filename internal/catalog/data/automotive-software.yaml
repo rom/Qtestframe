@@ -183,6 +183,8 @@ requirements:
     tags: [software-update, authenticity, integrity]
     refs: ["UN Regulation No. 156 §7.2.1.1 (authenticity and integrity of software updates)", "ISO 24089:2023 (software update engineering)"]
     tests: [AUTOSW-T08]
+    d3fend: [D3-SU]
+    emb3d: [MID-026]
     en:
       title: Authenticated software updates
       description: The vehicle MUST verify the authenticity and integrity of each software update package before it installs any part of it and reject a package that fails the check.

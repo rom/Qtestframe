@@ -179,6 +179,7 @@ requirements:
     tags: [wlan, 802-1x, wpa3, authentication]
     refs: ["IEEE 802.1X-2020", "ISO/IEC 27033-6:2016", "ISO/IEC 27001:2022 A.8.20"]
     tests: [CMRAD-T06]
+    d3fend: [D3-LAMED]
     en:
       title: Staff wireless network with WPA3-Enterprise and 802.1X
       description: The wireless network for staff MUST authenticate each device and user with IEEE 802.1X under WPA3-Enterprise and refuse open access, WEP, WPA and shared keys.
@@ -201,6 +202,7 @@ requirements:
     tags: [guest-network, segmentation, wlan]
     refs: ["ISO/IEC 27001:2022 A.8.22", "ISO/IEC 27033-6:2016"]
     tests: [CMRAD-T07]
+    d3fend: [D3-NI]
     en:
       title: Guest wireless network reaches only the internet
       description: The guest wireless network MUST be separated from internal networks so that a guest device reaches the internet and the guest portal but no internal address.
@@ -295,6 +297,7 @@ requirements:
     tags: [wi-fi, protected-management-frames, wpa3]
     refs: ["IEEE 802.11-2024 (protected management frames)"]
     tests: [CMRAD-T11]
+    d3fend: [D3-MAN]
     en:
       title: Protected management frames on the staff wireless network
       description: The staff wireless network MUST require protected management frames, so that clients without them cannot associate.

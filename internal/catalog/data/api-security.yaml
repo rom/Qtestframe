@@ -14,6 +14,7 @@ requirements:
     tags: [api, authentication]
     refs: ["OWASP API Security Top 10 2023 API2", "OWASP ASVS 5.0 V6 (authentication)", "RFC 6749", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.2", "IEC 62443-4-2 CR 1.2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     tests: [APIS-T01]
+    d3fend: [D3-AA]
     en:
       title: Every API client is authenticated
       description: The system MUST reject with 401 a request to an endpoint that is not marked as public in the API description when the request carries no valid access token or API key.
@@ -80,6 +81,7 @@ requirements:
     tags: [access-token, expiry, oauth]
     refs: ["RFC 9700 §4.14 (refresh token protection)", "OWASP ASVS 5.0 V9.2.1 (token validity time span)", "RFC 7519 §4.1.4", "ISO/IEC 27001:2022 A.8.5", "ISO/IEC 27001:2022 A.5.17", "CWE-1472 (generation of credential with long expiration)", "CWE-1469 (improper check for credential expiration)", "MITRE ATT&CK T1550.001 (application access token)"]
     tests: [APIS-T04]
+    d3fend: [D3-TBA]
     en:
       title: Short-lived access tokens
       description: The system MUST issue API access tokens that expire at most 60 minutes after they were issued and reject them after that time.
@@ -238,6 +240,7 @@ requirements:
     tags: [api-key, revocation]
     refs: ["OWASP ASVS 5.0 V10.4.9 (token revocation)", "NIST SP 800-53 IA-5", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5", "MITRE ATT&CK T1550.001 (application access token)"]
     tests: [APIS-T11]
+    d3fend: [D3-CR]
     en:
       title: API keys can be revoked at once
       description: The system SHOULD let an administrator revoke an API key so that requests using it are rejected within 1 minute.
@@ -260,6 +263,7 @@ requirements:
     tags: [oauth, refresh-token, token-rotation]
     refs: ["RFC 9700 §4.14 (refresh token protection)", "OWASP ASVS 5.0 V10.4.5 (refresh token replay)", "ISO/IEC 27001:2022 A.8.5", "CWE-294 (authentication bypass by capture-replay)", "MITRE ATT&CK T1528 (steal application access token)"]
     tests: [APIS-T12]
+    d3fend: [D3-CRO]
     en:
       title: Refresh tokens rotate and reuse revokes the grant
       description: The system MUST issue a new refresh token on each use and revoke every token of the grant when a refresh token that has already been used is presented again.
@@ -282,6 +286,7 @@ requirements:
     tags: [oauth, sender-constrained, dpop, mtls]
     refs: ["RFC 9449", "RFC 8705", "RFC 9700 §2.2.1 (sender-constrained access tokens)", "ISO/IEC 27001:2022 A.8.5", "CWE-294 (authentication bypass by capture-replay)", "MITRE ATT&CK T1528 (steal application access token)", "MITRE ATT&CK T1550.001 (application access token)"]
     tests: [APIS-T13]
+    d3fend: [D3-TB]
     en:
       title: Sender-constrained tokens for write access
       description: The system SHOULD bind access tokens with write scopes to the client's key by DPoP or mutual TLS and refuse such a token presented without proof of that key.
@@ -304,6 +309,7 @@ requirements:
     tags: [jwt, token-validation]
     refs: ["RFC 8725 §3.1", "RFC 9068 §4", "OWASP ASVS 5.0 V9.1.2 (token algorithm allowlist)", "OWASP API Security Top 10 2023 API2", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1606 (forge web credentials)"]
     tests: [APIS-T14]
+    d3fend: [D3-TBA]
     en:
       title: JWT access tokens are checked against a fixed algorithm list
       description: The system MUST accept a JWT access token only when it is signed with an algorithm from a configured allow-list and its issuer, audience and expiry time match the API.
@@ -326,6 +332,7 @@ requirements:
     tags: [api-inventory, versioning, attack-surface]
     refs: ["OWASP API Security Top 10 2023 API9", "ISO/IEC 27001:2022 A.5.9", "NIST SP 800-53 CM-8", "CWE-912 (hidden functionality)", "MITRE ATT&CK M1042 (disable or remove feature or program)"]
     tests: [APIS-T15]
+    d3fend: [D3-AI]
     en:
       title: Inventory of exposed API endpoints
       description: The system MUST respond only on API endpoints that are listed in the published API description, and answer 404 for every other path under the API base address.

@@ -61,6 +61,7 @@ requirements:
     tags: [maintenance, security-updates, patch]
     refs: ["IEC 62443-2-4:2023 SP.11 (patch management)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2"]
     tests: [SVSUP-T02]
+    d3fend: [D3-SU]
     en:
       title: Security updates for high-severity vulnerabilities within 30 days
       description: The maintenance contract MUST oblige the supplier to deliver a tested security update or a documented mitigation within 30 days of a vulnerability with a CVSS base score of 7.0 or higher becoming known in a delivered component.

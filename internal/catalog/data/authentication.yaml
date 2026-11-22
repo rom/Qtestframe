@@ -14,6 +14,7 @@ requirements:
     tags: [password]
     refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "OWASP ASVS 5.0 V6.2.1 (password length)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-521 (weak password requirements)", "MITRE ATT&CK T1110 (brute force)"]
     tests: [AUTH-T01]
+    d3fend: [D3-SPP]
     en:
       title: Minimum password length
       description: The system MUST reject a new password shorter than 12 characters.
@@ -36,6 +37,7 @@ requirements:
     tags: [password, breached-passwords]
     refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "OWASP ASVS 5.0 V6.2.12 (breached passwords)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "IEC 62443-4-2 CR 1.7", "CWE-521 (weak password requirements)", "MITRE ATT&CK T1110.003 (password spraying)", "MITRE ATT&CK T1110.004 (credential stuffing)"]
     tests: [AUTH-T02]
+    d3fend: [D3-SPP]
     en:
       title: Breached and common passwords are refused
       description: The system MUST reject a new password that appears in a list of at least 100 000 breached or commonly used passwords.
@@ -84,6 +86,7 @@ requirements:
     tags: [password, passphrase]
     refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "OWASP ASVS 5.0 V6.2.9 (64-character passwords)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.7", "CWE-521 (weak password requirements)"]
     tests: [AUTH-T04]
+    d3fend: [D3-SPP]
     en:
       title: Long passphrases are accepted
       description: The system MUST accept passwords of up to 64 characters, including spaces and Unicode characters, without truncating them.
@@ -106,6 +109,7 @@ requirements:
     tags: [password, credential-storage, hashing]
     refs: ["OWASP ASVS 5.0 V11.4.2 (password hashing)", "NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "OWASP Top 10 2021 A02", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-916 (password hash with insufficient computational effort)", "CWE-257 (storing passwords in a recoverable format)"]
     tests: [AUTH-T05, CRY-T04]
+    d3fend: [D3-CH]
     en:
       title: Passwords are stored as salted one-way hashes
       description: The system MUST store passwords only as salted one-way hashes and never in plain text or with reversible encryption.
@@ -128,6 +132,7 @@ requirements:
     tags: [mfa, administrator]
     refs: ["OWASP ASVS 5.0 V6.3.3 (multi-factor authentication)", "NIST SP 800-63B-4 §2.2 (authentication assurance level 2)", "ISO/IEC 27001:2022 A.8.5", "PCI DSS v4.0.1 Req. 8.4", "IEC 62443-3-3 SR 1.1", "IEC 62443-4-2 CR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     tests: [AUTH-T06]
+    d3fend: [D3-MFA]
     en:
       title: Multi-factor authentication for administrators
       description: The system MUST require a second authentication factor at every sign-in to an account with administrator rights.
@@ -154,6 +159,7 @@ requirements:
     tags: [mfa, totp, webauthn]
     refs: ["NIST SP 800-63B-4 §3.1.4 (single-factor OTP)", "NIST SP 800-63B-4 §3.1.7 (multi-factor cryptographic authentication)", "OWASP ASVS 5.0 V6.5 (multi-factor authentication)", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1110 (brute force)", "MITRE ATT&CK M1032 (multi-factor authentication)"]
     tests: [AUTH-T07]
+    d3fend: [D3-MFA]
     en:
       title: Multi-factor authentication offered to every user
       description: The system SHOULD let every user enrol a second factor based on TOTP authenticator apps or FIDO2/WebAuthn security keys.
@@ -198,6 +204,7 @@ requirements:
     tags: [brute-force, lockout, rate-limiting]
     refs: ["NIST SP 800-63B-4 §3.2.2 (rate limiting)", "OWASP ASVS 5.0 V6.3.1 (credential stuffing and brute force)", "OWASP Top 10 2021 A07", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.11", "IEC 62443-4-2 CR 1.11", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-307 (improper restriction of excessive authentication attempts)", "MITRE ATT&CK T1110.001 (password guessing)"]
     tests: [AUTH-T09]
+    d3fend: [D3-ANET, D3-AL]
     en:
       title: Limit on failed sign-in attempts
       description: The system MUST allow at most 10 failed sign-in attempts per account within 15 minutes and refuse further attempts on that account for the rest of the period.
@@ -308,6 +315,7 @@ requirements:
     tags: [sso, saml, oidc]
     refs: ["OWASP ASVS 5.0 V6.8.2 (signatures on authentication assertions)", "OpenID Connect Core 1.0 §3.1.3.7", "OWASP SAML Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1606.002 (SAML tokens)"]
     tests: [AUTH-T13]
+    d3fend: [D3-TBA]
     en:
       title: Single sign-on assertions are fully validated
       description: The system MUST reject a SAML assertion or OpenID Connect ID token whose signature, issuer, audience or expiry time is not valid.
@@ -330,6 +338,7 @@ requirements:
     tags: [default-credentials, installation]
     refs: ["OWASP ASVS 5.0 V6.3.2 (default accounts)", "OWASP Top 10 2021 A05", "PCI DSS v4.0.1 Req. 2.2.2", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-3-3 SR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(b)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1392 (use of default credentials)", "CWE-1393 (use of default password)", "MITRE ATT&CK T1078.001 (default accounts)"]
     tests: [AUTH-T14]
+    d3fend: [D3-CDP]
     en:
       title: No default credentials
       description: The system MUST NOT ship with a built-in account that has a known default password.
@@ -400,6 +409,7 @@ requirements:
     tags: [mfa, phishing-resistant, administrators]
     refs: ["NIST SP 800-63B-4 §3.2.5 (phishing resistance)", "CISA Implementing Phishing-Resistant MFA", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.1", "CWE-1390 (weak authentication)", "MITRE ATT&CK T1111 (multi-factor authentication interception)"]
     tests: [AUTH-T17]
+    d3fend: [D3-MFA]
     en:
       title: No SMS or voice codes for administrator accounts
       description: The system MUST NOT accept a one-time code sent by SMS or voice call as the second factor for an account with the administrator role.
@@ -422,6 +432,7 @@ requirements:
     tags: [mfa, otp, replay]
     refs: ["RFC 6238", "NIST SP 800-63B-4 §3.1.4 (single-factor OTP)", "OWASP ASVS 5.0 V6.5.1 (one-time use of codes)", "ISO/IEC 27001:2022 A.8.5", "CWE-294 (authentication bypass by capture-replay)", "MITRE ATT&CK T1111 (multi-factor authentication interception)"]
     tests: [AUTH-T18]
+    d3fend: [D3-OTP]
     en:
       title: One-time codes are used once and expire
       description: The system MUST accept each one-time code only once and refuse a time-based code more than 30 seconds outside its time step.

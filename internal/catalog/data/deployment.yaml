@@ -198,6 +198,7 @@ requirements:
     tags: [secrets, repository]
     refs: ["OWASP ASVS 5.0 V13.3.1 (secrets management solution)", "ISO/IEC 27001:2022 A.8.4 (access to source code)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-4-1 SM-7"]
     tests: [DEP-T08]
+    d3fend: [D3-CS]
     en:
       title: No secrets in the source repository
       description: The source repository MUST NOT contain passwords, API keys, private keys or access tokens, also in its history.
