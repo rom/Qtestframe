@@ -519,6 +519,10 @@ async function discover(request) {
     // the autocomplete list of a text field (recent searches, seeded below): ArrowDown in the empty field
     { name: 'search-suggestions', path: '/search', press: ['.query-input input', 'ArrowDown'], wait: '.suggest-list' },
     { name: 'help', path: '/help' },
+    // the concept pages of the guide: the glossary (long, anchored entries), how the tool works (with the item diagram) and the FAQ
+    { name: 'help-glossary', path: '/help/glossary' },
+    { name: 'help-how-it-works', path: '/help/how-it-works' },
+    { name: 'help-faq', path: '/help/faq' },
     { name: 'profile', path: '/profile' },
     { name: 'relations-bulk', path: `${p}/requirements`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-sitemap)'], wait: '.p-dialog [role="status"]' },
     relReq && { name: 'requirement-relations', path: `${p}/requirements?item=${relReq.id}`, open: ['.p-drawer [role="tab"]:has(.pi-sitemap)', '.p-drawer [role="tabpanel"] .p-checkbox'], wait: '.p-drawer [role="tabpanel"] .p-button-danger' },

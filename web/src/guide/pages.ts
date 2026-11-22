@@ -27,7 +27,9 @@ export const GUIDE_PAGES = [
   'documents',
   'administration',
   'accessibility-and-languages',
+  'how-it-works',
   'faq',
+  'glossary',
   'references',
 ] as const
 

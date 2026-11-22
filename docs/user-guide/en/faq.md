@@ -1,6 +1,6 @@
 # FAQ
 
-Answers to the questions users ask most often. Use the search field at the top of the guide to find a word on all pages.
+Answers to the questions users ask most often: first about using the tool, then, from [Testing concepts](#testing-concepts) on, about the concepts of testing and requirements engineering, the standards behind Qtestframe and how it works. Use the search field at the top of the guide to find a word on all pages; the [Glossary](glossary.md) explains the terms one by one.
 
 ## Getting access
 
@@ -193,3 +193,155 @@ Select **Save project** (the download button on the project list) and, on the ot
 ### Can I get my data out of Qtestframe?
 
 Yes: **Export** downloads requirements, criteria, tests, traceability and runs as XLSX, CSV, PDF or DOCX, and every function is also available through the REST API with an API token.
+
+## Testing concepts
+
+### What is the difference between a test case, a test run and an execution?
+
+A **test case** (in Qtestframe: a *test*) describes how to check something: preconditions, steps and expected results, or a script. A **test run** is one round of testing, such as *Sprint 12 regression*, in an environment and build. An **execution** is one test inside one run, with its result: the same test has a new execution in every run it is part of, and its history shows them all. A **test step** is one action of a manual test with its expected result. See [Test case](glossary.md#test-case), [Test run](glossary.md#test-run) and [Test execution](glossary.md#test-execution).
+
+### What is the difference between a test cycle, a test plan and a test suite?
+
+A **test plan** is the document that says what will be tested, how, by whom and with which entry and exit criteria; Qtestframe can [generate one](documents.md#create-a-requirements-specification-or-a-test-plan) from the project. A **test cycle** is the operational plan of one testing period: which tests, which testers, which estimates; when it starts, it creates its run. A **test suite** is a group of tests for a purpose; Qtestframe has no separate suite object, so group tests with folders, categories or tags and create runs from a query. See [Test cycle](glossary.md#test-cycle), [Test plan](glossary.md#test-plan) and [Test suite](glossary.md#test-suite).
+
+### Which test levels and test types does Qtestframe support?
+
+All of them: Qtestframe does not prescribe levels (unit, integration, system, acceptance, end-to-end) or types (functional, performance, security, usability, accessibility, regression …). Record them where you need them: as a category dimension such as *Level / System* or *Type / Security*, as tags, as folders, or as separate runs and cycles. Unit and integration results usually come from CI, system and acceptance results from manual runs. See [Test level](glossary.md#test-level) and [Test type](glossary.md#test-type).
+
+### How do I apply test design techniques such as boundary values in Qtestframe?
+
+Design the cases with the technique, then make them **test data**: one row per equivalence partition, boundary value, decision table rule or pairwise combination, with the parameters used as `{{name}}` in the steps. Each row becomes an iteration with its own result. Record the technique as a category if you want to report on it. See [Data-driven tests](tests.md#data-driven-tests) and [Test design technique](glossary.md#test-design-technique).
+
+### What is the difference between severity and priority?
+
+**Severity** says how bad a defect's effect is (from *Critical* to *Trivial*); **priority** says how soon it should be fixed (from *Critical* to *Low*). A typo in the company name on the start page is trivial but urgent; a crash in a rarely used export can be critical but wait. Release exit criteria and blocking rules use severity. See [Statuses and severities](defects.md#statuses-and-severities).
+
+### What is the difference between verification and validation?
+
+**Verification** checks that the product meets its specified requirements ("built right"); **validation** checks that it meets its intended use ("the right product"). In Qtestframe, a requirement is *verified* when every evaluation criterion has passing evidence; validation is usually shown by acceptance tests, demonstrations and exploratory sessions with users against stakeholder requirements. See [Verification](glossary.md#verification) and [Validation](glossary.md#validation).
+
+### What is a flaky test, and how does Qtestframe find them?
+
+A test that passes and fails by turns without any change. Qtestframe counts the flips between passed and failed in the last 10 results of every test, manual and automated; two or more flips make it **Flaky**. Find them with `flaky:true`. See [Flaky tests](tests.md#flaky-tests).
+
+### Does Qtestframe measure code coverage?
+
+No. Code coverage is measured by your build and test tools. Qtestframe measures **requirement coverage**: which requirements have tests and what their latest results are. It also links commits and builds to requirements and tests, so you can see which changes were tested. See [Code coverage](glossary.md#code-coverage) and [How coverage is calculated](traceability-and-coverage.md#how-coverage-is-calculated).
+
+### What are entry and exit criteria in Qtestframe?
+
+**Entry criteria** decide when testing may start: per test, the [execution rules](runs.md#when-can-a-test-be-executed) require it to be *Ready*, its requirements approved and its prerequisites passed. **Exit criteria** decide when testing is done and a release may go: coverage, pass rate, mandatory requirements passed, no open defects, risks mitigated and more, on the release's [Exit criteria](releases-and-risks.md#exit-criteria) tab.
+
+### Can I do exploratory testing in Qtestframe?
+
+Yes, with **session-based test management**: plan a session with a charter and scope, test with a timer and typed notes, raise defects from notes, and close it with a debrief. Debriefed sessions can count as verification evidence. See [Exploratory testing](exploratory-testing.md).
+
+### How does Qtestframe fit into CI/CD, TDD or BDD?
+
+Your pipeline runs the automated tests and uploads the results with `qtestframe report`, as JUnit XML or with the Playwright reporter; they land in a run, count for coverage and release criteria, and record the build. Tests written in TDD or BDD style are linked to Qtestframe tests by their test key. See [Import results from CI](runs.md#import-results-from-ci), [Test-driven development](glossary.md#test-driven-development) and [Behaviour-driven development](glossary.md#behaviour-driven-development).
+
+## Requirements concepts
+
+### What is the difference between a requirement and a specification?
+
+A **requirement** is one verifiable statement of what is needed. A **specification** is the organised whole: introduction, scope, definitions and the requirements, often for one system or delivery. In Qtestframe the project is the living specification, and **Create document → Requirements specification** turns it into a document. See [Specification](glossary.md#specification).
+
+### Should I write MUST or SHALL? And what about SKA and BÖR?
+
+Both MUST and SHALL mark an absolute requirement under RFC 2119; choose one and use it consistently (many organisations use SHALL for contracts, MUST for technical specifications). Write the keywords in capitals: only upper-case keywords carry the normative meaning (RFC 8174). In Swedish, use **SKA** (shall), **BÖR** (should) and **FÅR** (may), and **FÅR INTE** for a prohibition; avoid *måste inte*, which means "need not". See [Obligation levels](requirements.md#obligation-levels) and [SKA, BÖR and FÅR](glossary.md#ska-bör-and-får).
+
+### What is the difference between functional and non-functional requirements?
+
+A **functional** requirement says what the system does ("sends an order confirmation"); a **non-functional** requirement says how well or under which conditions ("within 5 seconds for 99 % of orders"). Non-functional requirements need measurable thresholds; put them in an evaluation criterion. ISO/IEC 25010 is a good checklist of qualities. See [Non-functional requirement](glossary.md#non-functional-requirement).
+
+### What is the difference between acceptance criteria and evaluation criteria?
+
+Acceptance criteria are the conditions for accepting a requirement or a story. Qtestframe calls them **evaluation criteria** and adds to each a method (test, inspection, analysis, demonstration, review) and a threshold, so that it is clear how each criterion will be shown. See [Evaluation criteria](requirements.md#evaluation-criteria).
+
+### Which verification method should I choose?
+
+**Test** when the behaviour can be executed with defined inputs and expected results; **inspection** for documents, code, labels or configuration; **analysis** for calculations, simulations or measurements evaluated afterwards; **demonstration** to show a function to a reviewer without detailed measurement; **review** for a formal assessment by qualified people. Methods other than test are recorded as [verification records](traceability-and-coverage.md#verification-records). See [Verification method](glossary.md#verification-method).
+
+### What does bidirectional traceability mean in Qtestframe?
+
+Every trace link can be followed both ways: from a requirement to its tests (forward) and from a test to its requirements (backward), in the editors and in the traceability matrix. Relations do the same between requirements (*refines* / *refined by*). Traceability rules check both directions, for example "every approved requirement has a test" and "every test verifies a requirement". See [Traceability](glossary.md#traceability).
+
+### What is a suspect link, and how do I clear it?
+
+A link becomes **suspect** when the requirement or test at one end changes in substance after the link was confirmed, because the other end may no longer fit. Review the other item, update it if needed, then confirm the link: with **Confirm suspect** in the traceability matrix, or **Confirm** on the requirement's **Impact** tab. See [Change impact](traceability-and-coverage.md#change-impact).
+
+### What is the difference between refines and derived from?
+
+**Refines** is decomposition: the child requirement is a more detailed part of its parent, and the parent is verified only when its children are. **Derived from** says a requirement follows from another one or from a design decision without being part of it, such as a time budget for a component derived from a system response time. Both make the dependent requirement suspect when the other changes. See [Relations](requirements.md#relations).
+
+### When do I need a waiver and when a deviation?
+
+A **waiver** accepts that a requirement is not met (failed, untested or not fulfilled) for a release or a period; a **deviation** accepts that it is met by a different solution than specified. Both need a signed approval and can expire. See [Waivers and deviations](waivers-and-soa.md#waivers-and-deviations).
+
+### How do I write good requirements?
+
+One requirement per statement, with a clear subject, an obligation keyword, measurable terms and no escape clauses; say what, not how; give the rationale and the source. The [language analysis](requirements.md#the-language-analysis) checks many of these rules as you type, following the INCOSE guide; ISO/IEC/IEEE 29148 lists the characteristics of good requirements, and EARS gives sentence patterns. See [Requirement quality](glossary.md#requirement-quality).
+
+### How do I work risk-based?
+
+Record the risks in the risk register, link the requirements that address them, and let the risk level drive what you specify and test first: build release scopes with `risk:high`, and add the exit criteria *Risks mitigated* and *Residual risk*. See [Risk-based testing](glossary.md#risk-based-testing) and [How risks affect a release](releases-and-risks.md#how-risks-affect-a-release).
+
+## Standards and formats
+
+### Which standards does Qtestframe follow?
+
+For requirement wording RFC 2119 and RFC 8174 (and SIS usage in Swedish); for documents ISO/IEC/IEEE 29148 (requirements specification) and 29119-3 (test plan); for exchange ReqIF and OSLC; for results JUnit XML; for sign-in OpenID Connect, OAuth 2.0 with PKCE, SAML 2.0, SCIM 2.0 and TOTP; for the API HTTP semantics with ETag/If-Match and OpenAPI; for logs syslog; for the web client WCAG 2.1 AA. The [References](references.md) page lists them with links; the [Glossary](glossary.md#entries-by-topic) explains each.
+
+### ReqIF or OSLC: which one should I use?
+
+**ReqIF** moves whole specifications as files between tools, for hand-overs, supplier exchange and round trips. **OSLC** connects tools live: another tool links its items to Qtestframe's requirements and tests and can create and change them without a file. Many teams use both. See [Which one to use?](interoperability.md#which-one-to-use)
+
+### Which test result formats can Qtestframe import?
+
+**JUnit XML**, which almost every test framework writes, through the API or `qtestframe report`, and the results of the **Playwright reporter**. Manual results are recorded in the runner or many at once on the run page. See [Import results from CI](runs.md#import-results-from-ci).
+
+### Which single sign-on standards are supported?
+
+**OpenID Connect** (on OAuth 2.0, with PKCE) and **SAML 2.0**, with user provisioning through **SCIM 2.0**. Your administrator sets them up; see [Single sign-on (OIDC)](administration.md#single-sign-on-oidc) and [Provisioning with SCIM](administration.md#provisioning-with-scim).
+
+### Does Qtestframe support passkeys or security keys?
+
+Not for signing in to Qtestframe: it uses passwords or single sign-on, with TOTP as the second factor. With single sign-on, your identity provider can require passkeys or security keys. The catalogue has requirements and tests that cite WebAuthn for your own products. See [WebAuthn and FIDO2](glossary.md#webauthn-and-fido2).
+
+### Where does the MITRE ATT&CK data come from?
+
+From MITRE's published data: the ATT&CK (Enterprise, ICS, Mobile), ATLAS and EMB3D lists in the catalogue are generated from their **STIX 2.1** bundles, and D3FEND from its published data, without revoked or deprecated entries. Names are shown in English, as at MITRE. See [MITRE ATT&CK](catalogue.md#mitre-attck).
+
+### Can Qtestframe help with ISO/IEC 27001, the CRA or the AI Act?
+
+Yes. The catalogue lets you choose the laws and standards a project must comply with and adds the requirements that cite them, with tests; the compliance analytics show how far each source is verified, and the **SoA** page covers the ISO/IEC 27001 Annex A controls. Qtestframe does not certify anything: it organises your evidence. See [Comply with laws, standards and best practices](catalogue.md#comply-with-laws-standards-and-best-practices).
+
+### Is Qtestframe itself accessible?
+
+The web client aims at WCAG 2.1 level AA: full keyboard use, screen reader support, high-contrast and other colour themes, browser zoom with a layout that reflows, and phone layouts, checked with automated accessibility tests. See [Accessibility and languages](accessibility-and-languages.md).
+
+## How Qtestframe works
+
+### Where is my data stored?
+
+In one database on your organisation's server, SQLite or PostgreSQL, including uploaded files. Secrets are encrypted with a key kept outside the database. See [Where your data lives](how-it-works.md#where-your-data-lives).
+
+### What happens in the background?
+
+Automated tests run as jobs, notifications, webhooks and chat messages are delivered after a change is saved, e-mail digests and scheduled reports go out on time, dashboard trends are recorded daily, and old sessions and trash are purged. See [Background work](how-it-works.md#background-work).
+
+### How is my data protected?
+
+Organisations are isolated from each other, every request is checked against your role's permissions, sessions are protected against cross-site request forgery, multi-factor authentication and single sign-on are available, secrets are encrypted and write-only, and the audit log records important actions. See [Security](how-it-works.md#security).
+
+### Can scripts on the server harm it?
+
+Only people with the `script.execute` permission can run scripts, and only when the administrator has enabled the runner. Each script runs in a sandbox with resource limits, no new privileges, file access limited by Landlock and system calls limited by seccomp. Web tests need a browser and the network, so their sandbox is weaker; administrators should limit the server's outgoing connections. See [The script sandbox](how-it-works.md#the-script-sandbox).
+
+### What is the difference between a backup, a project archive and an export?
+
+A **backup** holds the whole installation and is restored by a super admin. A **project archive** holds one project, without secrets, and is loaded as a new project. An **export** takes data out in a format for people or other tools (PDF, Word, Excel, CSV, Markdown, ReqIF). See [Backups and project archives](how-it-works.md#backups-and-project-archives).
+
+### How do I find a word I don't understand?
+
+Look it up in the [Glossary](glossary.md), or type it in the search field at the top of the guide: the search covers every page, the glossary included.

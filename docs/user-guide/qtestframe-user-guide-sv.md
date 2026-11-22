@@ -9,7 +9,8 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 ## Var börjar jag?
 
 - **Ny i Qtestframe?** Läs [Kom igång](#kom-igång) och gå sedan igenom handledningen [Din första testkampanj](#handledning-din-första-testkampanj). Den tar ungefär 30 minuter och berör alla viktiga funktioner.
-- **Letar du efter ett svar?** Titta i [Vanliga frågor](#vanliga-frågor) eller använd sökfältet högst upp i handboken.
+- **Letar du efter ett svar?** Titta i [Vanliga frågor](#vanliga-frågor) eller använd sökfältet högst upp i handboken. Okända ord förklaras i [Ordlistan](#ordlista).
+- **Vill du se helheten?** [Så fungerar Qtestframe](#så-fungerar-qtestframe) förklarar hur verktyget är uppbyggt och hur objekten hänger ihop.
 - **Administratör?** Gå direkt till [Administration](#administration).
 
 ## Innehåll
@@ -36,8 +37,10 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Dokument](#dokument-1) | Projektets dokumentarkiv: uppladdning, förhandsvisning och länkar |
 | [Administration](#administration) | Organisationer, användare, medlemmar och roller, delning av projekt, återställning av lösenord, API-nycklar, händelseloggen, säkerhetskopiering och återställning |
 | [Tillgänglighet och språk](#tillgänglighet-och-språk) | Tangentbord, skärmläsare, teman, engelska och svenska, mobiler och surfplattor |
-| [Vanliga frågor](#vanliga-frågor) | Svar på vanliga frågor |
-| [Referenser](#referenser) | RFC 2119, RFC 8174 och andra RFC:er, NIST-publikationer samt standarder för krav och test |
+| [Så fungerar Qtestframe](#så-fungerar-qtestframe) | Programmet, var data finns, organisationer, projekt och roller, objekten och hur de hänger ihop (med ett diagram), frågespråket, arbete i bakgrunden, notiser, integrationer, säkerhet, säkerhetskopior och hänvisningar för administratörer |
+| [Vanliga frågor](#vanliga-frågor) | Svar på vanliga frågor om hur verktyget används, begrepp inom test och kravhantering, standarder och format, och hur Qtestframe fungerar |
+| [Ordlista](#ordlista) | Begrepp inom test, kravhantering, standarder och Qtestframe i bokstavsordning, vart och ett med vad det betyder i Qtestframe |
+| [Referenser](#referenser) | RFC 2119, RFC 8174 och andra RFC:er, NIST-publikationer, standarder för krav och test samt de format, protokoll och ramverk som Qtestframe använder |
 
 ## Viktiga begrepp
 
@@ -4224,9 +4227,149 @@ Qtestframe anpassar sig efter skärmstorleken; inget behöver installeras.
 
 När du zoomar i webbläsaren anpassas layouten i stället för att rulla i sidled; vid kraftig förstoring får du layouten för surfplattor eller mobiler som beskrivs ovan. Inställningar för textstorlek i webbläsaren eller operativsystemet respekteras. **Kompakta tabeller** i dina inställningar visar fler rader om du föredrar täthet framför storlek.
 
+# Så fungerar Qtestframe
+
+Den här sidan förklarar hur Qtestframe är uppbyggt och hur delarna fungerar tillsammans, utan att gå in i källkoden. Läs den när du vill förstå varför verktyget beter sig som det gör, eller när du ska förklara det för kollegor. Begreppen i fetstil förklaras i [Ordlistan](#ordlista); administratörer hittar detaljerna i [administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/index.md).
+
+## Ett program i webbläsaren
+
+Qtestframe är **ett enda program** på en server. Samma program innehåller webbapplikationen som du använder i webbläsaren, REST-API:et som webbapplikationen, CI-pipelines och andra verktyg anropar, och administratörens kommandoradsverktyg. Du behöver inte installera något på din dator: en aktuell webbläsare räcker, på dator, surfplatta eller mobil.
+
+- Webbapplikationen är en så kallad single-page application: efter första inläsningen utbyter den bara data med servern, så sidbyten går snabbt och det du har skrivit men inte sparat ligger kvar medan du rör dig i appen.
+- Allt du kan göra i webbläsaren kan också göras via API:et, som beskrivs med **[OpenAPI](#openapi)** på `/api/v1/openapi.json`. Det är så [`qtestframe report`](runs.md#kommandot-qtestframe-report), JUnit-uppladdningen, Playwright-rapportören och andra verktyg fungerar.
+- Användargränssnittet och handboken finns på svenska och engelska; [språkanalysen](#språkanalysen) förstår kravtexter på båda språken.
+
+## Var dina data finns
+
+Allt sparas i **en databas**: organisationer, användare, projekt, krav, testfall, körningar och deras utfall, versionshistorik, kommentarer, händelseloggen och även uppladdade filer (bilagor, dokument, framtagna rapporter). Det finns ingen separat filserver.
+
+- Databasen är **SQLite** (en enda fil på servern, ingen databasserver behövs) eller **PostgreSQL** (för större installationer eller flera servrar bakom en lastbalanserare). Du märker ingen skillnad; administratören väljer.
+- Hemligheter som servern måste kunna läsa, till exempel token för ärendesystem eller webhookhemligheter, krypteras med en nyckel som förvaras utanför databasen (se [Säkerhet](#säkerhet-2)).
+- Borttagna objekt hamnar i papperskorgen i 30 dagar innan de tas bort för gott.
+
+## Organisationer, projekt och roller
+
+En installation kan rymma flera **organisationer** som aldrig ser varandras data. Du kan vara medlem i flera och byta mellan dem i det övre fältet.
+
+| Nivå | Vad som hör dit | Vem som hanterar det |
+|---|---|---|
+| Installation | användare, organisationer, systeminställningar, säkerhetskopior | superadministratörer |
+| Organisation | medlemmar och deras roller, projekt, API-nycklar, testkonfigurationer, inställningar för testexekvering, händelseloggen | organisationens administratörer |
+| Projekt | krav, testfall, körningar, testcykler, utforskande sessioner, defekter, risker, releaser, undantag, baslinjer, dokument, projektinställningar | ansvariga (och projektroller) |
+
+Vad du får göra avgörs av din **roll** i organisationen: *Läsare*, *Granskare*, *Testare*, *Testledare*, *Ansvarig* eller *Administratör*, eller en roll som organisationen har skapat. En roll är en uppsättning behörigheter som `requirement.write` eller `run.execute`. Ett projekt kan begränsas till vissa medlemmar och ge någon en annan roll just i det projektet. Servern kontrollerar varje begäran mot behörigheterna; knappar som du inte får använda döljs eller är avstängda, och orsaken visas. Se [Roller och behörigheter](#roller-och-behörigheter).
+
+## Objekten och hur de hänger ihop
+
+![Diagram över objekten i ett projekt: krav med utvärderingskriterier och verifieringsposter, risker som kraven hanterar, testfall som verifierar dem, releaser, baslinjer, testcykler som skapar körningar, körningar som innehåller exekveringar av testfall, defekter som hittats i exekveringar och utforskande sessioner vars anteckningar blir defekter](images/sv-item-model.png)
+
+Varje objekt har en **nyckel** som består av projektnyckeln och ett nummer, till exempel `SHOP-REQ-12` eller `SHOP-TC-7`, en status, en ägare och en **versionshistorik**. De viktigaste sambanden:
+
+| Objekt | Vad det är | Hänger ihop med |
+|---|---|---|
+| [Krav](#krav) | vad produkten ska, bör eller får göra | sina **utvärderingskriterier**; andra krav (*förfinar*, *härlett från*, *beror på* …); de **risker** det hanterar; de testfall som verifierar det |
+| [Testfall](#testfall) | ett manuellt testfall med steg eller ett automatiserat med ett skript | de krav (och kriterier) det **verifierar** via spårlänkar; testfall som det anropar som delade steg eller beror på |
+| [Körning](#testkörningar-och-exekvering) | en testomgång i en miljö och ett bygge | sina **exekveringar**: en per testfall (och konfiguration), var och en med utfall, utfall per steg, bevis och defekter |
+| [Testcykel](#testcykler) | planen för en testperiod | de testfall, testare och uppskattningar den planerar; körningen den skapar |
+| [Utforskande session](#utforskande-test) | tidsbegränsad utforskande testning med ett uppdrag | kraven i dess omfattning; defekterna som skapats från dess anteckningar |
+| [Defekt](#defekter-1) | ett funnet problem | de exekveringar, testfall och krav den är kopplad till; ett ärende i Jira, GitHub eller GitLab |
+| [Risk](#riskregistret) | något som kan gå fel, efter sannolikhet och konsekvens | de krav som hanterar den; MITRE-tekniker |
+| [Release](#releaser-och-risker) | en version som ska levereras | dess **omfattning** (krav), dess körningar, dess **utgångskriterier**, undantag |
+| [Undantag](#undantag-restrisk-och-uttalande-om-tillämplighet) | ett signerat godkännande av krav som inte är uppfyllda | kraven och releasen det gäller, en risk |
+| [Baslinje](#baslinjer) | en fryst mängd versioner | versionen av varje krav och testfall vid ett visst tillfälle |
+| [Dokument](#dokument-1) | en fil i projektets arkiv | objekten det är länkat till |
+
+Täckning, verifiering, inaktualitet och om en release är redo **sparas aldrig**: de räknas fram ur objekten varje gång du tittar, så de är alltid aktuella.
+
+## Från krav till release
+
+Ett typiskt flöde genom ett projekt, och vad Qtestframe gör i varje steg:
+
+1. **Skriv kraven.** Språkanalysen granskar texten medan du skriver och känner igen [kravnivån](#kravnivåer) från SKA, BÖR, FÅR (eller MUST, SHOULD, MAY). Lägg till [utvärderingskriterier](#utvärderingskriterier) som säger hur uppfyllandet bedöms. En [granskning](#begär-granskning) godkänner dem.
+2. **Ta fram testfall** och länka dem till kraven. Ett nytt krav kan få ett länkat testfall automatiskt. [Spårbarhetsmatrisen](#spårbarhetsmatrisen) och [spårbarhetsreglerna](#spårbarhetsregler) visar vad som saknas.
+3. **Planera och kör.** En [testcykel](#testcykler) eller en [körning](#testkörningar-och-exekvering) väljer ut testfallen; innan ett testfall exekveras kontrollerar [exekveringsreglerna](#när-kan-ett-testfall-exekveras) att det är klart. Testarna registrerar utfallen i exekveringsvyn; CI laddar upp de automatiserade utfallen.
+4. **Följ upp.** Fel blir [defekter](#defekter-1); [täckning](#så-beräknas-täckningen) och [verifiering](#verifiering) härleds från de senaste utfallen; [översikten](#översikten) visar läget.
+5. **Ändra.** När ett krav eller testfall ändras i sak blir dess länkar **misstänkta**, dess utfall **inaktuella**, och [ändringspåverkan](#ändringspåverkan) sprids vidare till relaterade objekt, dokument och ärenden.
+6. **Släpp.** En [release](#releaser-och-risker) kontrollerar sina utgångskriterier och visar go eller no-go; [undantag](#undantag-restrisk-och-uttalande-om-tillämplighet) godtar det som medvetet inte är uppfyllt; en [baslinje](#baslinjer) fryser resultatet, och [rapporter](#rapporter-och-export) dokumenterar det.
+
+## Versioner, historik och baslinjer
+
+Varje ändring av ett krav, ett testfall och de flesta andra objekt skapar en ny **version**: fliken **Versionshistorik** visar vem som ändrade vad och när, jämför versioner och återställer en gammal. **Ångra** i det övre fältet tar tillbaka dina senaste åtgärder. Två personer som redigerar samma objekt skriver inte över varandra: den andra sparningen avvisas tillsammans med den version den bygger på (en [ETag](#etag-och-if-match)), och du väljer hur ändringarna ska slås ihop (se [När någon annan har sparat först](#när-någon-annan-har-sparat-först)).
+
+En **baslinje** registrerar versionen av varje objekt vid ett visst tillfälle, inför en release eller en revision. **Händelseloggen** registrerar åtgärder i hela organisationen: inloggningar, granskningsbeslut, signaturer, importer, exporter och inställningar.
+
+## Frågespråket
+
+Alla listor, spårbarhetsmatrisen, releasers omfattning, urvalet av testfall till körningar, rapporter, spårbarhetsregler och API:et använder samma [frågespråk](#sökning-och-filter): `status:approved priority=high`, `-has:tests`, `linked:SHOP-TC-7`, `updated_at>=2026-01-01`, `title~/login/i`. Det du lär dig i en lista fungerar överallt. Den globala sökningen omfattar alla projekt i den aktuella organisationen som du kan läsa.
+
+## Arbete i bakgrunden
+
+En del arbete sker på servern utan att du behöver vänta på det:
+
+- **Automatiserade testfall** som du startar med **Kör automatiserade tester** körs som jobb, några i taget; utfallen dyker upp i körningen allteftersom de blir klara.
+- **Notiser** och **webhooks** skickas när ändringen som orsakade dem har sparats.
+- **Sammanfattningar med e-post** och **schemalagda rapporter** skickas vid de tider du har valt.
+- En daglig **ögonblicksbild** av varje projekts mått ger trenderna i översikten.
+- Utgångna sessioner och poster som legat mer än 30 dagar i papperskorgen rensas varje timme.
+
+## Notiser, webhooks och chatt
+
+Du får veta det som berör dig: granskningsförfrågningar, omnämnanden, objekt som tilldelats dig, svar i dina diskussioner, statusändringar på dina defekter. [Notiserna](#notiser) visas i appen och, om du vill, med e-post direkt eller som en daglig sammanfattning. [Mitt arbete](#mitt-arbete) listar allt som väntar på dig i alla projekt.
+
+Projekt kan också skicka sina händelser till andra system: **[webhooks](#webhooks)** levererar signerade JSON-begäranden till valfri mottagare, och **[chattkanaler](#chattaviseringar)** postar läsbara meddelanden i Slack, Microsoft Teams, Mattermost, Rocket.Chat, Google Chat, Matrix eller Discord, filtrerade på händelse, prioritet och release.
+
+## Integrationer
+
+| Med | Hur | Läs mer |
+|---|---|---|
+| Defekt- och ärendesystem (Jira, GitHub Issues, GitLab, Request Tracker) | skicka defekter och krav som ärenden, synkronisera status, importera ärenden | [Defekter](#anslut-jira-github-eller-gitlab) |
+| Jira och Azure DevOps | importera krav och uppdatera dem senare | [Rapporter och export](#jira-och-azure-devops) |
+| Kodvärdar (GitHub, GitLab) | webhooks länkar incheckningar och merge requests som nämner en objektnyckel; byggen registrerar vilka incheckningar som testades | [Varianter och kod](#kodlänkar) |
+| CI-pipelines | `qtestframe report`, uppladdning av JUnit XML, Playwright-rapportören, med en API-nyckel | [Importera utfall från CI](#importera-utfall-från-ci) |
+| Krav- och ALM-verktyg (DOORS, DOORS Next, Polarion, Codebeamer, Jama, ProR) | ReqIF-filer åt båda hållen; levande OSLC-länkar, urval och skapande | [Samverkan](#samverkan-reqif-och-oslc) |
+| Kontorsprogram | export till PDF, Word, Excel, CSV och Markdown; redigera i Excel och importera tillbaka | [Rapporter och export](#rapporter-och-export) |
+| Identitetsleverantörer | enkel inloggning med OpenID Connect eller SAML 2.0, provisionering av användare med SCIM | [Administration](#provisionering-med-scim) |
+
+Standarderna och formaten bakom integrationerna finns i [Ordlistan](#uppslagsord-efter-ämne) och på sidan [Referenser](#format-protokoll-och-ramverk).
+
+## Säkerhet
+
+### Sessioner och CSRF-skydd
+
+När du loggar in skapar servern en **session**, och webbläsaren får en slumpmässig kaka som skript på sidan inte kan läsa. Sessionen upphör efter en högsta ålder (12 timmar som standard), när du loggar ut eller när en administratör återställer ditt lösenord eller stänger av ditt konto; **Profil → Aktiva sessioner** visar dina. Varje ändring du gör skickar en **CSRF-token** för sessionen och kontrolleras mot sitt ursprung, så att en annan webbplats inte kan agera i ditt namn. Skript och CI använder i stället **API-nycklar**, som visas en gång och bara sparas som hashvärde.
+
+### Enkel inloggning och tvåstegsverifiering
+
+Din organisation kan låta dig logga in med sin identitetsleverantör via **OpenID Connect** eller **SAML 2.0**; användare och grupper kan provisioneras automatiskt med **SCIM**. Lokala konton kan, eller måste, lägga till en andra faktor: en **TOTP**-kod från en autentiseringsapp, med engångskoder för återställning. Se [Tvåstegsverifiering](#tvåstegsverifiering).
+
+### Hemligheter
+
+Lösenord och nycklar som bara behöver kontrolleras sparas som hashvärden. Hemligheter som servern själv måste använda, till exempel hemligheter för autentiseringsappar, webhookhemligheter, token för ärendesystem och hemliga testvariabler, krypteras i databasen med en nyckel som förvaras utanför den (en nyckelfil, en miljövariabel, ett TPM eller en HSM). Hemligheter går **bara att skriva**: när de väl är sparade visar ingen sida eller något API dem igen, och projektarkiv innehåller dem aldrig.
+
+### Sandlådan för skript
+
+När administratören har aktiverat det körs skript i automatiserade testfall och webbtester i Playwright på servern. Varje skript körs i en egen, begränsad process: begränsad processortid, filstorlek och antal öppna filer, inga nya privilegier, filåtkomst begränsad till den egna jobbkatalogen med **Landlock**, farliga systemanrop spärrade med **seccomp** och om så önskas inget nätverk. Servern begränsar sig själv på samma sätt efter starten. Bara personer med behörigheten `script.execute` kan köra skript.
+
+## Säkerhetskopior och projektarkiv
+
+- En **säkerhetskopia** innehåller hela installationen: alla organisationer med deras data och filer. Superadministratörer tar den i webbklienten eller på servern; en återställning ersätter allt och loggar ut alla. Se [Säkerhetskopiering och återställning](#säkerhetskopiering-och-återställning).
+- Ett **projektarkiv** innehåller ett projekt, med historik, utfall och bilagor men utan hemligheter, som en ZIP-fil. Läs in det som ett nytt projekt på samma eller en annan server. Se [Spara och läs in projekt](#spara-och-läs-in-projekt).
+- **Exporter** (PDF, Word, Excel, CSV, Markdown, ReqIF) tar ut data till andra personer och verktyg.
+
+## För administratörer
+
+[Administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/index.md) beskriver hur man driver Qtestframe:
+
+- [översikt och arkitektur](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/overview.md): komponenter, datalager, portar, utgående anslutningar och bakgrundsuppgifter;
+- [installation](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/installation.md) och [konfiguration](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/configuration.md), även valet mellan SQLite och PostgreSQL;
+- [autentisering](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authentication.md) (lösenord, policyer för tvåstegsverifiering, OIDC, SAML, SCIM, API-nycklar, sessioner) och [behörigheter](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authorisation.md);
+- [säkerhet](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/security.md): TLS, härdning med Landlock och seccomp, sandlådan för skript, kryptering av lagrade hemligheter och nyckelbyte;
+- [integrationer](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/integrations.md), [att koppla ihop med andra verktyg](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/connecting-tools.md) via OSLC och ReqIF, [loggning och övervakning](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/logging-and-monitoring.md) med syslog;
+- [säkerhetskopiering, återställning och migrering](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/backup-and-migration.md), [driftrutinerna](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/runbook.md) och [kommandoradsreferensen](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/cli-reference.md).
+
 # Vanliga frågor
 
-Svar på de frågor som användare oftast ställer. Använd sökfältet högst upp i handboken för att hitta ett ord på alla sidor.
+Svar på de frågor som användare oftast ställer: först om hur verktyget används, sedan, från [Testbegrepp](#testbegrepp) och framåt, om begreppen inom test och kravhantering, standarderna bakom Qtestframe och hur det fungerar. Använd sökfältet högst upp i handboken för att hitta ett ord på alla sidor; [Ordlistan](#ordlista) förklarar begreppen ett i taget.
 
 ## Åtkomst
 
@@ -4420,6 +4563,1582 @@ Välj **Spara projekt** (nedladdningsknappen i projektlistan) och, på den andra
 
 Ja: **Export** laddar ned krav, kriterier, testfall, spårbarhet och körningar som XLSX, CSV, PDF eller DOCX, och alla funktioner finns också i REST-API:et med en API-nyckel.
 
+## Testbegrepp
+
+### Vad är skillnaden mellan ett testfall, en testkörning och en exekvering?
+
+Ett **testfall** beskriver hur något ska kontrolleras: förutsättningar, steg och förväntade resultat, eller ett skript. En **testkörning** är en testomgång, till exempel *Regressionstest sprint 12*, i en viss miljö och ett visst bygge. En **exekvering** är ett testfall i en körning, med sitt utfall: samma testfall får en ny exekvering i varje körning det ingår i, och dess historik visar alla. Ett **teststeg** är en åtgärd i ett manuellt testfall med sitt förväntade resultat. Se [Testfall](#testfall-2), [Testkörning](#testkörning-1) och [Exekvering](#exekvering).
+
+### Vad är skillnaden mellan en testcykel, en testplan och en testsvit?
+
+En **testplan** är dokumentet som anger vad som ska testas, hur, av vem och med vilka ingångs- och utgångskriterier; Qtestframe kan [ta fram en](#skapa-en-kravspecifikation-eller-en-testplan) ur projektet. En **testcykel** är den operativa planen för en testperiod: vilka testfall, vilka testare, vilka uppskattningar; när den startar skapar den sin körning. En **testsvit** är en grupp testfall för ett visst syfte; Qtestframe har inget separat svitobjekt, så gruppera testfallen med mappar, kategorier eller taggar och skapa körningar från en fråga. Se [Testcykel](#testcykel), [Testplan](#testplan) och [Testsvit](#testsvit).
+
+### Vilka testnivåer och testtyper stöder Qtestframe?
+
+Alla: Qtestframe föreskriver inga nivåer (enhets-, integrations-, system-, acceptans- och end-to-end-test) eller typer (funktionell testning, prestanda, säkerhet, användbarhet, tillgänglighet, regression …). Ange dem där du behöver dem: som en kategoridimension som *Nivå / System* eller *Typ / Säkerhet*, som taggar, som mappar eller som separata körningar och cykler. Utfall från enhets- och integrationstest kommer oftast från CI, utfall från system- och acceptanstest från manuella körningar. Se [Testnivå](#testnivå) och [Testtyp](#testtyp).
+
+### Hur använder jag testdesigntekniker som gränsvärdesanalys i Qtestframe?
+
+Ta fram fallen med tekniken och gör dem sedan till **testdata**: en rad per ekvivalensklass, gränsvärde, regel i beslutstabellen eller parvis kombination, med parametrarna som `{{namn}}` i stegen. Varje rad blir en iteration med eget utfall. Ange tekniken som en kategori om du vill rapportera på den. Se [Datadrivna testfall](#datadrivna-testfall) och [Testdesignteknik](#testdesignteknik).
+
+### Vad är skillnaden mellan allvarlighetsgrad och prioritet?
+
+**Allvarlighetsgraden** anger hur illa en defekts effekt är (från *Kritisk* till *Obetydlig*); **prioriteten** anger hur snart den ska åtgärdas (från *Kritisk* till *Låg*). Ett stavfel i företagsnamnet på startsidan är obetydligt men brådskande; en krasch i en sällan använd export kan vara kritisk men får vänta. Releasens utgångskriterier och reglerna för blockerande defekter använder allvarlighetsgraden. Se [Statusar och allvarlighetsgrader](#statusar-och-allvarlighetsgrader).
+
+### Vad är skillnaden mellan verifiering och validering?
+
+**Verifiering** kontrollerar att produkten uppfyller sina specificerade krav (”bygger vi produkten rätt?”); **validering** kontrollerar att den uppfyller sin avsedda användning (”bygger vi rätt produkt?”). I Qtestframe är ett krav *verifierat* när varje utvärderingskriterium har godkända bevis; validering visas oftast med acceptanstest, demonstrationer och utforskande sessioner med användare mot intressentkraven. Se [Verifiering](#verifiering-1) och [Validering](#validering).
+
+### Vad är ett instabilt testfall, och hur hittar Qtestframe dem?
+
+Ett testfall som växelvis godkänns och underkänns utan att något har ändrats. Qtestframe räknar växlingarna mellan godkänt och underkänt bland de tio senaste utfallen för varje testfall, manuella som automatiserade; två eller fler växlingar ger märket **Instabilt**. Hitta dem med `flaky:true`. Se [Instabila testfall](#instabila-testfall).
+
+### Mäter Qtestframe kodtäckning?
+
+Nej. Kodtäckning mäts av dina bygg- och testverktyg. Qtestframe mäter **kravtäckning**: vilka krav som har testfall och vilka deras senaste utfall är. Verktyget kopplar också incheckningar och byggen till krav och testfall, så att du ser vilka ändringar som har testats. Se [Kodtäckning](#kodtäckning) och [Så beräknas täckningen](#så-beräknas-täckningen).
+
+### Vad är ingångs- och utgångskriterier i Qtestframe?
+
+**Ingångskriterier** avgör när testningen får börja: per testfall kräver [exekveringsreglerna](#när-kan-ett-testfall-exekveras) att det är *Klart*, att dess krav är godkända och att dess förutsättningar är godkända. **Utgångskriterier** avgör när testningen är klar och en release får släppas: täckning, andel godkända, obligatoriska krav klarade, inga öppna defekter, risker hanterade med mera, på releasens flik [Utgångskriterier](#utgångskriterier).
+
+### Kan jag göra utforskande testning i Qtestframe?
+
+Ja, med **sessionsbaserad testledning**: planera en session med uppdrag och omfattning, testa med tidtagning och typade anteckningar, skapa defekter från anteckningarna och avsluta med en utvärdering. Utvärderade sessioner kan räknas som verifieringsbevis. Se [Utforskande test](#utforskande-test).
+
+### Hur passar Qtestframe ihop med CI/CD, TDD eller BDD?
+
+Din pipeline kör de automatiserade testerna och laddar upp utfallen med `qtestframe report`, som JUnit XML eller med Playwright-rapportören; de hamnar i en körning, räknas in i täckningen och releasekriterierna och registrerar bygget. Tester som skrivs enligt TDD eller BDD kopplas till testfall i Qtestframe via testnyckeln. Se [Importera utfall från CI](#importera-utfall-från-ci), [Testdriven utveckling](#testdriven-utveckling) och [Beteendedriven utveckling](#beteendedriven-utveckling).
+
+## Kravbegrepp
+
+### Vad är skillnaden mellan ett krav och en specifikation?
+
+Ett **krav** är ett enskilt verifierbart påstående om vad som behövs. En **specifikation** är den ordnade helheten: inledning, omfattning, definitioner och kraven, ofta för ett system eller en leverans. I Qtestframe är projektet den levande specifikationen, och **Skapa dokument → Kravspecifikation** gör ett dokument av det. Se [Specifikation](#specifikation).
+
+### Ska jag skriva SKA eller MÅSTE? Och hur förhåller de sig till MUST och SHALL?
+
+På svenska skriver du **SKA** för krav, **BÖR** för rekommendationer och **FÅR** för det som är tillåtet, som i standarder från SIS; ett förbud skrivs **FÅR INTE**. Undvik *måste inte*, som betyder ”behöver inte” men ofta läses som ett förbud. Qtestframe förstår också **MÅSTE** och **SKALL** som absoluta krav. I engelska texter markerar både MUST och SHALL ett absolut krav enligt RFC 2119; välj ett och använd det konsekvent, med versaler, eftersom bara versalformerna har den normativa betydelsen (RFC 8174). Se [Kravnivåer](#kravnivåer) och [SKA, BÖR och FÅR](#ska-bör-och-får).
+
+### Vad är skillnaden mellan funktionella och icke-funktionella krav?
+
+Ett **funktionellt** krav säger vad systemet gör (”skickar en orderbekräftelse”); ett **icke-funktionellt** krav säger hur väl eller under vilka förhållanden (”inom 5 sekunder för 99 % av ordrarna”). Icke-funktionella krav behöver mätbara gränser; lägg dem i ett utvärderingskriterium. ISO/IEC 25010 är en bra checklista över kvalitetsegenskaper. Se [Icke-funktionellt krav](#icke-funktionellt-krav).
+
+### Vad är skillnaden mellan acceptanskriterier och utvärderingskriterier?
+
+Acceptanskriterier är villkoren för att godta ett krav eller en användarberättelse. Qtestframe kallar dem **utvärderingskriterier** och ger varje kriterium en metod (test, inspektion, analys, demonstration, granskning) och ett tröskelvärde, så att det är tydligt hur varje kriterium ska visas. Se [Utvärderingskriterier](#utvärderingskriterier).
+
+### Vilken verifieringsmetod ska jag välja?
+
+**Test** när beteendet kan exekveras med bestämda indata och förväntade resultat; **inspektion** för dokument, kod, märkning eller konfiguration; **analys** för beräkningar, simuleringar eller mätningar som utvärderas i efterhand; **demonstration** för att visa en funktion för en granskare utan detaljerade mätningar; **granskning** för en formell bedömning av kvalificerade personer. Andra metoder än test registreras som [verifieringsposter](#verifieringsposter). Se [Verifieringsmetod](#verifieringsmetod).
+
+### Vad betyder dubbelriktad spårbarhet i Qtestframe?
+
+Varje spårlänk kan följas åt båda hållen: från ett krav till dess testfall (framåt) och från ett testfall till dess krav (bakåt), i redigerarna och i spårbarhetsmatrisen. Relationer gör detsamma mellan krav (*förfinar* / *förfinas av*). Spårbarhetsregler kontrollerar båda riktningarna, till exempel ”varje godkänt krav har ett testfall” och ”varje testfall verifierar ett krav”. Se [Spårbarhet](#spårbarhet).
+
+### Vad är en misstänkt länk, och hur blir jag av med den?
+
+En länk blir **misstänkt** när kravet eller testfallet i ena änden ändras i sak efter att länken bekräftades, eftersom den andra änden kanske inte längre passar. Granska det andra objektet, uppdatera det vid behov och bekräfta sedan länken: med **Bekräfta misstänkta** i spårbarhetsmatrisen eller **Bekräfta** på kravets flik **Påverkan**. Se [Ändringspåverkan](#ändringspåverkan).
+
+### Vad är skillnaden mellan förfinar och härlett från?
+
+**Förfinar** är nedbrytning: barnkravet är en mer detaljerad del av sin förälder, och föräldern är verifierad först när barnen är det. **Härlett från** säger att ett krav följer av ett annat eller av ett designbeslut utan att vara en del av det, till exempel en tidsbudget för en komponent som härletts ur systemets svarstid. Båda gör det beroende kravet misstänkt när det andra ändras. Se [Relationer](#relationer).
+
+### När behöver jag ett undantag och när en avvikelse?
+
+Ett **undantag** godtar att ett krav inte är uppfyllt (underkänt, otestat eller ej genomfört) för en release eller en period; en **avvikelse** godtar att det uppfylls med en annan lösning än den specificerade. Båda kräver ett signerat godkännande och kan ha ett slutdatum. Se [Undantag och avvikelser](#undantag-och-avvikelser).
+
+### Hur skriver jag bra krav?
+
+Ett krav per påstående, med tydligt subjekt, ett kravord, mätbara begrepp och inga reservationer; säg vad, inte hur; ange motivering och källa. [Språkanalysen](#språkanalysen) kontrollerar många av reglerna medan du skriver, enligt INCOSE:s vägledning; ISO/IEC/IEEE 29148 räknar upp egenskaperna hos bra krav, och EARS ger meningsmönster. Se [Kravkvalitet](#kravkvalitet).
+
+### Hur arbetar jag riskbaserat?
+
+Registrera riskerna i riskregistret, koppla de krav som hanterar dem och låt risknivån styra vad du specificerar och testar först: bygg releasens omfattning med `risk:high` och lägg till utgångskriterierna *Risker hanterade* och *Restrisk*. Se [Riskbaserad testning](#riskbaserad-testning) och [Hur risker påverkar en release](#hur-risker-påverkar-en-release).
+
+## Standarder och format
+
+### Vilka standarder följer Qtestframe?
+
+För kravformuleringar RFC 2119 och RFC 8174 (och SIS praxis på svenska); för dokument ISO/IEC/IEEE 29148 (kravspecifikation) och 29119-3 (testplan); för utbyte ReqIF och OSLC; för utfall JUnit XML; för inloggning OpenID Connect, OAuth 2.0 med PKCE, SAML 2.0, SCIM 2.0 och TOTP; för API:et HTTP-semantik med ETag/If-Match och OpenAPI; för loggar syslog; för webbklienten WCAG 2.1 AA. Sidan [Referenser](#referenser) listar dem med länkar; [Ordlistan](#uppslagsord-efter-ämne) förklarar var och en.
+
+### ReqIF eller OSLC: vilket ska jag använda?
+
+**ReqIF** flyttar hela specifikationer som filer mellan verktyg, för överlämningar, utbyte med leverantörer och fram och tillbaka. **OSLC** kopplar ihop verktygen direkt: ett annat verktyg länkar sina objekt till Qtestframes krav och testfall och kan skapa och ändra dem utan fil. Många team använder båda. Se [Vilket ska jag välja?](#vilket-ska-jag-välja-1)
+
+### Vilka format för testutfall kan Qtestframe importera?
+
+**JUnit XML**, som nästan alla testramverk skriver, via API:et eller `qtestframe report`, och utfallen från **Playwright-rapportören**. Manuella utfall registreras i exekveringsvyn eller många på en gång på körningens sida. Se [Importera utfall från CI](#importera-utfall-från-ci).
+
+### Vilka standarder för enkel inloggning stöds?
+
+**OpenID Connect** (ovanpå OAuth 2.0, med PKCE) och **SAML 2.0**, med provisionering av användare via **SCIM 2.0**. Administratören sätter upp dem; se [Enkel inloggning (OIDC)](#enkel-inloggning-oidc) och [Provisionering med SCIM](#provisionering-med-scim).
+
+### Stöder Qtestframe passkeys eller säkerhetsnycklar?
+
+Inte för inloggning i Qtestframe: där används lösenord eller enkel inloggning, med TOTP som andra faktor. Med enkel inloggning kan din identitetsleverantör kräva passkeys eller säkerhetsnycklar. Katalogen har krav och testfall som hänvisar till WebAuthn för dina egna produkter. Se [WebAuthn och FIDO2](#webauthn-och-fido2).
+
+### Var kommer uppgifterna om MITRE ATT&CK ifrån?
+
+Från MITRE:s publicerade data: katalogens listor för ATT&CK (Enterprise, ICS, Mobile), ATLAS och EMB3D genereras från deras **STIX 2.1**-paket, och D3FEND från dess publicerade data, utan återkallade eller utfasade poster. Namnen visas på engelska, som hos MITRE. Se [MITRE ATT&CK](#mitre-attck).
+
+### Kan Qtestframe hjälpa till med ISO/IEC 27001, CRA eller AI-förordningen?
+
+Ja. I katalogen väljer du de lagar och standarder som ett projekt ska uppfylla och lägger till de krav som hänvisar till dem, med testfall; efterlevnadsanalysen visar hur långt varje källa är verifierad, och sidan **SoA** täcker åtgärderna i ISO/IEC 27001 bilaga A. Qtestframe certifierar ingenting: det ordnar dina bevis. Se [Uppfyll lagar, standarder och bästa praxis](#uppfyll-lagar-standarder-och-bästa-praxis).
+
+### Är Qtestframe självt tillgängligt?
+
+Webbklienten siktar på WCAG 2.1 nivå AA: full användning med tangentbord, stöd för skärmläsare, högkontrast och andra färgteman, webbläsarzoom med en layout som anpassar sig, och mobillayouter, kontrollerat med automatiska tillgänglighetstester. Se [Tillgänglighet och språk](#tillgänglighet-och-språk).
+
+## Så fungerar Qtestframe
+
+### Var lagras mina data?
+
+I en databas på organisationens server, SQLite eller PostgreSQL, även uppladdade filer. Hemligheter krypteras med en nyckel som förvaras utanför databasen. Se [Var dina data finns](#var-dina-data-finns).
+
+### Vad händer i bakgrunden?
+
+Automatiserade testfall körs som jobb, notiser, webhooks och chattmeddelanden levereras när en ändring har sparats, sammanfattningar med e-post och schemalagda rapporter skickas i tid, trenderna i översikten registreras dagligen, och gamla sessioner och papperskorgen rensas. Se [Arbete i bakgrunden](#arbete-i-bakgrunden).
+
+### Hur skyddas mina data?
+
+Organisationerna är isolerade från varandra, varje begäran kontrolleras mot din rolls behörigheter, sessionerna är skyddade mot förfalskade begäranden från andra webbplatser, tvåstegsverifiering och enkel inloggning finns, hemligheter är krypterade och går bara att skriva, och händelseloggen registrerar viktiga åtgärder. Se [Säkerhet](#säkerhet-2).
+
+### Kan skript på servern skada den?
+
+Bara personer med behörigheten `script.execute` kan köra skript, och bara när administratören har aktiverat skriptkörningen. Varje skript körs i en sandlåda med resursgränser, utan nya privilegier, med filåtkomst begränsad av Landlock och systemanrop begränsade av seccomp. Webbtester behöver en webbläsare och nätverket, så deras sandlåda är svagare; administratören bör begränsa serverns utgående anslutningar. Se [Sandlådan för skript](#sandlådan-för-skript).
+
+### Vad är skillnaden mellan en säkerhetskopia, ett projektarkiv och en export?
+
+En **säkerhetskopia** innehåller hela installationen och återställs av en superadministratör. Ett **projektarkiv** innehåller ett projekt, utan hemligheter, och läses in som ett nytt projekt. En **export** tar ut data i ett format för människor eller andra verktyg (PDF, Word, Excel, CSV, Markdown, ReqIF). Se [Säkerhetskopior och projektarkiv](#säkerhetskopior-och-projektarkiv).
+
+### Hur hittar jag ett ord som jag inte förstår?
+
+Slå upp det i [Ordlistan](#ordlista), eller skriv det i sökfältet högst upp i handboken: sökningen omfattar alla sidor, också ordlistan.
+
+# Ordlista
+
+Begreppen inom test, kravhantering och de standarder och format som Qtestframe bygger på, förklarade med några meningar vardera, med vad de betyder i Qtestframe och var du kan läsa mer. Förklaringarna är skrivna för den här handboken; när ett begrepp kommer från en standard eller en etablerad terminologi som ISTQB:s ordlista eller ISO/IEC/IEEE 29119 anges källan, och den finns på sidan [Referenser](#referenser). Helheten beskrivs i [Så fungerar Qtestframe](#så-fungerar-qtestframe).
+
+**Hoppa till:** [A](#a) · [B](#b) · [C](#c) · [D](#d) · [E](#e) · [F](#f) · [G](#g) · [H](#h) · [I](#i) · [J](#j) · [K](#k) · [L](#l) · [M](#m) · [N](#n) · [O](#o) · [P](#p) · [Q](#q) · [R](#r) · [S](#s) · [T](#t) · [U](#u) · [V](#v) · [W](#w) · [Ä](#ä)
+
+## Uppslagsord efter ämne
+
+**Test:** [Acceptanstest](#acceptanstest) · [Allvarlighetsgrad](#allvarlighetsgrad) · [Användbarhetstest](#användbarhetstest) · [Beslutstabelltest](#beslutstabelltest) · [Beteendedriven utveckling](#beteendedriven-utveckling) · [Datadriven testning](#datadriven-testning) · [Defekt](#defekt) · [Defektens livscykel](#defektens-livscykel) · [Ekvivalensklassindelning](#ekvivalensklassindelning) · [End-to-end-test](#end-to-end-test) · [Enhetstest](#enhetstest) · [Exekvering](#exekvering) · [Felgissning](#felgissning) · [Funktionell testning](#funktionell-testning) · [Grålådetest](#grålådetest) · [Gränsvärdesanalys](#gränsvärdesanalys) · [Icke-funktionell testning](#icke-funktionell-testning) · [Ingångskriterier](#ingångskriterier) · [Instabilt testfall](#instabilt-testfall) · [Integrationstest](#integrationstest) · [Kodtäckning](#kodtäckning) · [Kontinuerlig integration](#kontinuerlig-integration) · [Kravtäckning](#kravtäckning) · [Lasttest](#lasttest) · [Parvis testning](#parvis-testning) · [Prestandatest](#prestandatest) · [Prioritet](#prioritet) · [Regressionstest](#regressionstest) · [Röktest och sanitetstest](#röktest-och-sanitetstest) · [Sessionsbaserad testledning](#sessionsbaserad-testledning) · [Shift-left](#shift-left) · [Stresstest](#stresstest) · [Svartlådetest](#svartlådetest) · [Systemtest](#systemtest) · [Säkerhetstest](#säkerhetstest) · [Testcykel](#testcykel) · [Testdata](#testdata) · [Testdesignteknik](#testdesignteknik) · [Testdriven utveckling](#testdriven-utveckling) · [Testfall](#testfall-2) · [Testkonfiguration](#testkonfiguration) · [Testkörning](#testkörning-1) · [Testmiljö](#testmiljö) · [Testnivå](#testnivå) · [Testorakel](#testorakel) · [Testplan](#testplan) · [Teststeg](#teststeg) · [Testsvit](#testsvit) · [Testtyp](#testtyp) · [Testutfall](#testutfall) · [Tillgänglighetstest](#tillgänglighetstest) · [Tillståndsövergångstest](#tillståndsövergångstest) · [Täckning](#täckning) · [Utforskande testning](#utforskande-testning) · [Utgångskriterier](#utgångskriterier-1) · [V-modellen](#v-modellen) · [Validering](#validering) · [Verifiering](#verifiering-1) · [Vitlådetest](#vitlådetest)
+
+**Krav:** [Acceptanskriterier](#acceptanskriterier) · [Användarkrav](#användarkrav) · [Avvikelse](#avvikelse) · [Bakåtspårbarhet](#bakåtspårbarhet) · [Baslinje](#baslinje) · [Begränsning](#begränsning) · [Dubbelriktad spårbarhet](#dubbelriktad-spårbarhet) · [EARS](#ears) · [Framåtspårbarhet](#framåtspårbarhet) · [Funktionellt krav](#funktionellt-krav) · [Förfining](#förfining) · [Härlett krav](#härlett-krav) · [Icke-funktionellt krav](#icke-funktionellt-krav) · [INCOSE-regler](#incose-regler) · [Intressent](#intressent) · [Intressentkrav](#intressentkrav) · [Krav](#krav-2) · [Kravkvalitet](#kravkvalitet) · [Kravnivå](#kravnivå) · [Kravord](#kravord) · [Kvalitetsegenskap](#kvalitetsegenskap) · [Misstänkt länk](#misstänkt-länk) · [Programvarukrav](#programvarukrav) · [Restrisk](#restrisk-1) · [Risk](#risk) · [Riskbaserad testning](#riskbaserad-testning) · [SKA, BÖR och FÅR](#ska-bör-och-får) · [Specifikation](#specifikation) · [Spårbarhet](#spårbarhet) · [Spårbarhetsmatris](#spårbarhetsmatris) · [Spårlänk](#spårlänk) · [Systemkrav](#systemkrav) · [Undantag](#undantag) · [Uttalande om tillämplighet](#uttalande-om-tillämplighet-1) · [Utvärderingskriterium](#utvärderingskriterium) · [Verifieringsmetod](#verifieringsmetod) · [Verifieringspost](#verifieringspost) · [Verksamhetskrav](#verksamhetskrav) · [Ändringspåverkan](#ändringspåverkan-1)
+
+**Standarder, format och ramverk:** [AI-förordningen](#ai-förordningen) · [Bearer-token](#bearer-token) · [CSV](#csv) · [CWE](#cwe) · [Cyberresiliensförordningen](#cyberresiliensförordningen) · [ETag och If-Match](#etag-och-if-match) · [HOTP](#hotp) · [HTTP-semantik](#http-semantik) · [ISO/IEC 25010](#isoiec-25010) · [ISO/IEC 27001 bilaga A](#isoiec-27001-bilaga-a) · [ISO/IEC/IEEE 29119](#isoiecieee-29119) · [ISO/IEC/IEEE 29148](#isoiecieee-29148) · [ISTQB](#istqb) · [JSON Web Token](#json-web-token) · [JUnit XML](#junit-xml-1) · [Landlock](#landlock) · [Markdown](#markdown) · [MITRE ATLAS](#mitre-atlas) · [MITRE ATT&CK](#mitre-attck-1) · [MITRE D3FEND](#mitre-d3fend) · [MITRE EMB3D](#mitre-emb3d) · [OAuth 2.0](#oauth-20) · [OpenAPI](#openapi) · [OpenID Connect](#openid-connect) · [OSLC](#oslc-2) · [PKCE](#pkce) · [Problem Details](#problem-details) · [ReqIF](#reqif) · [SAML 2.0](#saml-20) · [SCIM](#scim) · [seccomp](#seccomp) · [STIX](#stix) · [Syslog](#syslog) · [TOTP](#totp) · [WCAG](#wcag) · [WebAuthn och FIDO2](#webauthn-och-fido2)
+
+**Qtestframe:** [API-nyckel](#api-nyckel) · [Bakgrundsjobb](#bakgrundsjobb) · [CSRF-skydd](#csrf-skydd) · [Databas](#databas) · [Delat steg](#delat-steg) · [Diskussion](#diskussion-1) · [Frågespråk](#frågespråk) · [Granskning](#granskning) · [Händelselogg](#händelselogg-1) · [Inaktuellt utfall](#inaktuellt-utfall) · [Iteration](#iteration) · [Katalog](#katalog-1) · [Kodlänk](#kodlänk) · [Konsistenskontroll](#konsistenskontroll) · [Kryptering av hemligheter](#kryptering-av-hemligheter) · [Notis](#notis) · [Nyckel](#nyckel) · [Organisation](#organisation) · [Papperskorg](#papperskorg) · [Projekt](#projekt) · [Projektarkiv](#projektarkiv) · [qtestframe report](#qtestframe-report) · [Release](#release) · [Roll](#roll) · [Session](#session) · [Skriptkörning](#skriptkörning) · [Spårbarhetsregel](#spårbarhetsregel) · [Språkanalys](#språkanalys) · [Systemelement](#systemelement-1) · [Säkerhetskopia](#säkerhetskopia) · [Tvåstegsverifiering](#tvåstegsverifiering-2) · [Variant](#variant) · [Version](#version) · [Webbtest](#webbtest) · [Webhook](#webhook) · [Ärendesystem](#ärendesystem)
+
+## A
+
+### Acceptanskriterier
+
+De villkor som en produkt eller ett krav ska uppfylla för att godtas av kunden, en användare eller någon annan med befogenhet. Bra acceptanskriterier är konkreta och kontrollerbara, så att alla i förväg är överens om vad ”klart” betyder. I agilt arbete skrivs de ofta under en användarberättelse; i klassiska specifikationer är de verifieringsdelen av varje krav.
+
+**I Qtestframe:** acceptanskriterier skrivs som [utvärderingskriterier](#utvärderingskriterium) för ett krav: en beskrivning, en metod och ett valfritt tröskelvärde. Ett krav räknas som verifierat först när varje kriterium har godkända bevis.
+
+**Se även:** [Utvärderingskriterium](#utvärderingskriterium), [Acceptanstest](#acceptanstest), [Utvärderingskriterier](#utvärderingskriterier)
+
+### Acceptanstest
+
+Den testnivå som avgör om ett system är redo att tas emot: av användarna (användaracceptanstest), av driften (driftacceptanstest) eller mot ett avtal eller en föreskrift. Den svarar på ”är det här vad vi behöver?” snarare än ”fungerar koden?” och är därför till stor del [validering](#validering). Acceptanstest härleds oftast från [acceptanskriterier](#acceptanskriterier) och verksamhetens processer (ISTQB:s ordlista).
+
+**I Qtestframe:** planera acceptanstestningen som en egen [testcykel](#testcykel) eller [körning](#testkörning-1), till exempel *Acceptanstest release 2.1*, och tagga eller kategorisera testfallen (`tag:acceptance`). Mallen för krav av typen *Verksamhet* föreslår ett acceptanstest.
+
+**Se även:** [Testnivå](#testnivå), [Systemtest](#systemtest), [Release](#release)
+
+### AI-förordningen
+
+Förordning (EU) 2024/1689 om artificiell intelligens. Den delar in AI-system efter risk och ställer krav på system med hög risk, till exempel riskhantering, datastyrning, teknisk dokumentation, loggning, mänsklig tillsyn, noggrannhet och robusthet, och krav på transparens för vissa andra.
+
+**I Qtestframe:** katalogen har krav, testfall och risker för AI-förordningen (riskerna hänvisar också till tekniker i MITRE ATLAS); välj förordningen under **Uppfyll lagar, standarder och bästa praxis**.
+
+**Se även:** [MITRE ATLAS](#mitre-atlas), [Cyberresiliensförordningen](#cyberresiliensförordningen), [Katalog](#katalog-1)
+
+### Allvarlighetsgrad
+
+Hur allvarlig effekten av en defekt är för systemet eller användarna, från krasch eller dataförlust till ett stavfel. Allvarlighetsgraden är en teknisk bedömning; [prioriteten](#prioritet) är beslutet om hur snart felet ska åtgärdas.
+
+**I Qtestframe:** defekter har allvarlighetsgraderna *Kritisk*, *Allvarlig*, *Mindre* och *Obetydlig*; utgångskriteriet *Inga öppna defekter* och reglerna för blockerande defekter använder en lägsta allvarlighetsgrad.
+
+**Se även:** [Prioritet](#prioritet), [Blockerande defekter](#blockerande-defekter), [Defekt](#defekt)
+
+### Användarkrav
+
+Ett krav som beskriver vad en användare ska kunna göra med systemet, ofta skrivet som ett användningsfall eller en användarberättelse (”Som kund vill jag …”). Det är en sorts intressentkrav med fokus på användarnas uppgifter.
+
+**I Qtestframe:** skriv användarberättelser som krav och deras acceptanskriterier som utvärderingskriterier; förfina dem till system- eller programvarukrav där det behövs.
+
+**Se även:** [Intressentkrav](#intressentkrav), [Acceptanskriterier](#acceptanskriterier), [Beteendedriven utveckling](#beteendedriven-utveckling)
+
+### Användbarhetstest
+
+Test av hur lätt, effektivt och tillfredsställande verkliga användare når sina mål med produkten, oftast genom att representativa användare får utföra uppgifter medan man observerar och mäter hur många som lyckas, tidsåtgång och fel.
+
+**I Qtestframe:** formulera användbarhetsmål som krav av typen *Användbarhet* med mätbara kriterier, och registrera iakttagelser från testtillfällena som utforskande sessioner eller som verifieringsposter med metoden *Demonstration*.
+
+**Se även:** [Tillgänglighetstest](#tillgänglighetstest), [Icke-funktionell testning](#icke-funktionell-testning), [Utforskande testning](#utforskande-testning)
+
+### API-nyckel
+
+En hemlig teckensträng som ett skript eller en CI-pipeline skickar i stället för ett lösenord när den anropar API:et. Den hör till en användare och en organisation, har en roll som kan vara lägre än användarens och kan löpa ut eller återkallas.
+
+**I Qtestframe:** nycklarna börjar med `qtf_`, skickas som [bearer-token](#bearer-token) och visas bara en gång, när du skapar dem; servern sparar bara ett hashvärde. Du behöver en nyckel för [`qtestframe report`](#qtestframe-report), JUnit-uppladdningen och Playwright-rapportören.
+
+**Se även:** [API-nycklar](#api-nycklar), [Bearer-token](#bearer-token), [Importera utfall från CI](#importera-utfall-från-ci)
+
+### Avvikelse
+
+Ett godkänt avsteg från ett krav där kravet uppfylls på ett annat sätt än det specificerade, oftast med kompenserande åtgärder. Till skillnad från ett [undantag](#undantag) uppnås ändå kravets syfte.
+
+**I Qtestframe:** en avvikelse är ett undantag av typen *Avvikelse*, med den valda lösningen, ett signerat godkännande och ett valfritt slutdatum.
+
+**Se även:** [Undantag](#undantag), [Undantag och avvikelser](#undantag-och-avvikelser), [Restrisk](#restrisk-1)
+
+## B
+
+### Bakgrundsjobb
+
+Arbete som servern gör på egen hand, utanför ett enskilt klick: rensar utgångna sessioner, sparar dagliga mätvärden, skickar sammanfattningar och schemalagda rapporter med e-post, levererar webhooks och kör automatiserade testfall. Jobben körs i serverprocessen; det finns ingen separat jobbserver.
+
+**I Qtestframe:** du ser resultatet, inte jobben: trender i översikten, sammanfattningar i inkorgen, utfall som fylls i medan **Kör automatiserade tester** arbetar sig igenom en körning.
+
+**Se även:** [Arbete i bakgrunden](#arbete-i-bakgrunden), [Webhook](#webhook), [Skriptkörning](#skriptkörning)
+
+### Bakåtspårbarhet
+
+Spårning från en senare eller mer detaljerad artefakt tillbaka till dess ursprung: från ett testfall till kravet det verifierar, från ett programvarukrav till system- eller intressentkravet det härleddes från. Den visar varför något finns och hittar ”föräldralösa” objekt utan anledning.
+
+**I Qtestframe:** ett testfalls **Länkade krav**, kravens relationer *förfinar* och *härlett från* samt [spårbarhetsregler](#spårbarhetsregel) som ”varje testfall verifierar ett krav” kontrollerar bakåtspårbarheten.
+
+**Se även:** [Framåtspårbarhet](#framåtspårbarhet), [Dubbelriktad spårbarhet](#dubbelriktad-spårbarhet), [Spårbarhetsregler](#spårbarhetsregler)
+
+### Baslinje
+
+Ett överenskommet, fryst läge för en mängd objekt som är utgångspunkt för det fortsatta arbetet och för ändringar. Typiska baslinjer är den godkända specifikationen för en release eller testunderlaget som lämnas till en leverantör. Ändringar efter baslinjen görs under ändringsstyrning och jämförs mot den.
+
+**I Qtestframe:** en baslinje registrerar vilken version av varje krav och testfall som hörde till den; den kopierar inget som går att redigera, så att ta bort den ändrar aldrig objekten. Du kan jämföra två baslinjer, se [ändringspåverkan](#ändringspåverkan-1) sedan en baslinje, signera den och exportera den som ReqIF.
+
+**Se även:** [Version](#version), [Baslinjer](#baslinjer), [Release](#release)
+
+### Bearer-token
+
+En åtkomsttoken som gäller för den som har den, skickad i HTTP-huvudet `Authorization: Bearer <token>`. RFC 6750 beskriver detta sätt att skicka åtkomsttoken i OAuth 2.0; eftersom vem som helst som har token kan använda den måste den skickas över TLS och hållas hemlig.
+
+**I Qtestframe:** [API-nycklar](#api-nyckel) och SCIM-nycklar skickas i just det huvudet. Webbklienten använder inga token utan en kaka för [sessionen](#session).
+
+**Se även:** [API-nyckel](#api-nyckel), [OAuth 2.0](#oauth-20), [Andra RFC:er](#andra-rfcer-som-qtestframe-följer)
+
+### Begränsning
+
+Ett krav som begränsar hur en lösning får byggas i stället för att säga vad den gör: en föreskriven plattform, ett programspråk, ett standardgränssnitt, en lag, en budget. Begränsningar smalnar av lösningsutrymmet och går ofta inte att förhandla bort.
+
+**I Qtestframe:** välj typen **Begränsning**. Verifiera med **Inspektion** eller **Analys** när det inte finns något att exekvera.
+
+**Se även:** [Icke-funktionellt krav](#icke-funktionellt-krav), [Verifieringsmetod](#verifieringsmetod), [Krav](#krav-2)
+
+### Beslutstabelltest
+
+En testdesignteknik för regler som kombinerar flera villkor. Varje kolumn i tabellen är en kombination av villkor med de förväntade åtgärderna, och varje kolumn blir minst ett testfall. Tekniken synliggör regler som saknas eller motsäger varandra (ISO/IEC/IEEE 29119-4).
+
+**I Qtestframe:** klistra in beslutstabellen som [testdata](#testdata): en rad per regel och en parameter per villkor och förväntat utfall.
+
+**Se även:** [Testdesignteknik](#testdesignteknik), [Parvis testning](#parvis-testning), [Datadriven testning](#datadriven-testning)
+
+### Beteendedriven utveckling
+
+BDD: ett arbetssätt där teamet beskriver det önskade beteendet som konkreta exempel i ett strukturerat språk (*Givet … När … Så …*) innan det byggs. Exemplen fungerar som krav, som acceptanskriterier och, när de automatiseras, som testfall.
+
+**I Qtestframe:** skriv ett scenario som steg i ett testfall (Givet som förutsättning, När som åtgärd, Så som förväntat resultat) och länka det till kravet. Automatiserade scenarier rapporterar sina utfall med JUnit XML som andra testfall.
+
+**Se även:** [Testdriven utveckling](#testdriven-utveckling), [Acceptanskriterier](#acceptanskriterier), [JUnit XML](#junit-xml-1)
+
+## C
+
+### CSRF-skydd
+
+Förfalskning av begäranden mellan webbplatser (cross-site request forgery) är en attack där en annan webbplats får din webbläsare att skicka en begäran till ett program som du är inloggad i. Skyddet är en hemlig token per session som sidan måste skicka med varje ändring och som en främmande webbplats inte kan känna till, och en kontroll av var begäran kommer ifrån.
+
+**I Qtestframe:** varje ändring från webbklienten skickar sessionens CSRF-token i ett huvud och kontrolleras mot ursprunget; sessionskakan är dessutom `SameSite=Lax`. Anrop med [bearer-token](#bearer-token) behöver ingen CSRF-token.
+
+**Se även:** [Session](#session), [Säkerhet](#säkerhet-2), [Sessioner](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authentication.md#sessioner)
+
+### CSV
+
+Kommaseparerade värden: en tabell i ren text med en post per rad. RFC 4180 beskriver det vanliga formatet, bland annat hur fält som innehåller kommatecken, citattecken eller radbrytningar citeras.
+
+**I Qtestframe:** CSV-exporten skriver filer enligt RFC 4180 i UTF-8, en fil per aspekt eller en ZIP-fil med flera. CSV-filer från DOORS eller Polarion kan importeras med en kolumnmappning.
+
+**Se även:** [Export](#export), [Utbyta data med andra verktyg](#utbyta-data-med-andra-verktyg), [Andra RFC:er](#andra-rfcer-som-qtestframe-följer)
+
+### CWE
+
+Common Weakness Enumeration från MITRE: en numrerad förteckning över typer av svagheter i program- och maskinvara, till exempel *CWE-79 Cross-site scripting* eller *CWE-521 Weak password requirements*. Den ger säkerhetskrav och fynd ett gemensamt språk.
+
+**I Qtestframe:** krav, testfall och risker i katalogen hänvisar till CWE-poster, och sökningen hittar dem på id (`CWE-79`).
+
+**Se även:** [MITRE ATT&CK](#mitre-attck-1), [Katalog](#katalog-1), [Källor som katalogen hänvisar till](#källor-som-katalogen-hänvisar-till)
+
+### Cyberresiliensförordningen
+
+Förordning (EU) 2024/2847 (Cyber Resilience Act, CRA) om cybersäkerhetskrav för produkter med digitala element: inbyggd säkerhet, inga kända utnyttjbara sårbarheter, säkerhetsuppdateringar och sårbarhetshantering under supportperioden. De flesta skyldigheterna gäller från december 2027.
+
+**I Qtestframe:** välj *Cyberresiliensförordningen* under **Uppfyll lagar, standarder och bästa praxis** i katalogen för att lägga till dess väsentliga krav med testfall; efterlevnadsanalysen visar sedan hur långt de är verifierade.
+
+**Se även:** [AI-förordningen](#ai-förordningen), [Efterlevnad av lagar och standarder](#efterlevnad-av-lagar-och-standarder), [Katalog](#katalog-1)
+
+## D
+
+### Databas
+
+Där ett program sparar sina data. Qtestframe sparar allt, även uppladdade filer, i en relationsdatabas.
+
+**I Qtestframe:** SQLite (en enda fil, ingen databasserver, standardvalet) eller PostgreSQL (för större installationer och flera serverinstanser). Användarna märker ingen skillnad; administratören väljer vid installationen.
+
+**Se även:** [Var dina data finns](#var-dina-data-finns), [Säkerhetskopia](#säkerhetskopia), [SQLite eller PostgreSQL](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/installation.md#sqlite-eller-postgresql)
+
+### Datadriven testning
+
+Att skriva ett testfall en gång och köra det med flera uppsättningar indata och förväntade värden ur en tabell. Testlogiken skiljs från testdatan, så att ett nytt fall bara är en ny rad.
+
+**I Qtestframe:** ge testfallet parametrar och rader under **Testdata** och använd dem som `{{namn}}` i stegen. Varje rad blir en **iteration** av exekveringen med egna utfall per steg.
+
+**Se även:** [Datadrivna testfall](#datadrivna-testfall), [Iteration](#iteration), [Testdata](#testdata)
+
+### Defekt
+
+En brist i en arbetsprodukt som kan göra att den inte uppfyller ett krav: i kod, i ett dokument, i en konfiguration. Ett felbeteende (failure) är det du ser när en defekt exekveras; ett misstag (error) är den mänskliga handling som orsakade den (ISTQB:s ordlista). I dagligt tal används defekt, bugg och fel om samma sak.
+
+**I Qtestframe:** defekter har status, [allvarlighetsgrad](#allvarlighetsgrad), [prioritet](#prioritet) och den fas de hittades i, och kopplas till krav, testfall och exekveringar. Öppna defekter kan blockera krav och releaser, och de kan skickas till Jira, GitHub eller GitLab.
+
+**Se även:** [Defekter](#defekter-1), [Defektens livscykel](#defektens-livscykel), [Ärendesystem](#ärendesystem)
+
+### Defektens livscykel
+
+De tillstånd en defekt går igenom från rapport till avslut, och vem som flyttar den mellan dem. En typisk cykel är rapporterad → pågår → åtgärdad → verifierad och stängd, med avvisning för dubbletter och sådant som inte är fel, och återöppning när rättningen inte håller.
+
+**I Qtestframe:** statusarna är *Öppen*, *Pågår*, *Åtgärdad*, *Stängd* och *Avvisad*; *Öppen* och *Pågår* räknas som öppna. En defekt som dyker upp igen efter att ha åtgärdats rapporteras som en regression.
+
+**Se även:** [Statusar och allvarlighetsgrader](#statusar-och-allvarlighetsgrader), [Regressioner](#regressioner), [Defekt](#defekt)
+
+### Delat steg
+
+En följd av steg som många testfall använder, till exempel inloggning, skriven en gång och anropad från andra testfall.
+
+**I Qtestframe:** ett teststeg kan anropa ett annat testfall i projektet; när en körning skapas ersätts anropet av det anropade testfallets steg, ifyllda med det anropande testfallets parametrar. En ändring i det anropade testfallet når alla som anropar det i nästa körning.
+
+**Se även:** [Delade steg](#delade-steg), [Teststeg](#teststeg), [Datadriven testning](#datadriven-testning)
+
+### Diskussion
+
+En tråd med kommentarer på ett objekt, där man ställer frågor, föreslår ändringar och fattar beslut.
+
+**I Qtestframe:** krav, testfall, körningar, defekter, risker och granskningsförfrågningar har diskussioner med Markdown, @omnämnanden, reaktioner och lösta trådar; projektets sida **Diskussioner** samlar trådarna.
+
+**Se även:** [Diskussioner](#diskussioner), [Markdown](#markdown), [Notis](#notis)
+
+### Dubbelriktad spårbarhet
+
+Spårbarhet åt båda hållen samtidigt: från varje krav till de testfall och den design som förverkligar det, och från varje testfall eller designelement tillbaka till dess krav. Många säkerhets- och kvalitetsstandarder kräver det, eftersom det visar både att inget saknas och att inget är överflödigt.
+
+**I Qtestframe:** en [spårlänk](#spårlänk) sparas en gång och visas från båda håll: på kravet som **Länkade testfall**, på testfallet som **Länkade krav** och i [spårbarhetsmatrisen](#spårbarhetsmatris).
+
+**Se även:** [Framåtspårbarhet](#framåtspårbarhet), [Bakåtspårbarhet](#bakåtspårbarhet), [Spårbarhet](#spårbarhet)
+
+## E
+
+### EARS
+
+Easy Approach to Requirements Syntax: ett litet antal meningsmönster som gör krav mindre tvetydiga. Mönstren är *allmängiltiga* (Systemet ska …), *händelsestyrda* (När …, ska systemet …), *tillståndsstyrda* (Medan …, ska systemet …), *oönskat beteende* (Om …, så ska systemet …) och *valfri funktion* (Där …, ska systemet …), och kombinationer av dem (Mavin m.fl., 2009).
+
+**I Qtestframe:** skriv kravtexten enligt ett EARS-mönster med ett kravord; [språkanalysen](#språkanalys) kontrollerar ändå vaga ord och reservationer.
+
+**Se även:** [INCOSE-regler](#incose-regler), [Kravkvalitet](#kravkvalitet), [Standarder för kravhantering](#standarder-och-vägledningar-för-kravhantering)
+
+### Ekvivalensklassindelning
+
+En testdesignteknik som delar in de möjliga värdena för en indata eller utdata i grupper (klasser) som systemet ska behandla lika, och sedan testar ett värde ur varje grupp. Klasser med ogiltiga värden testas en i taget, så att ett fel inte döljer ett annat (ISO/IEC/IEEE 29119-4).
+
+**I Qtestframe:** en rad [testdata](#testdata) per klass håller ihop fallen i ett testfall; döp varje rad efter sin klass.
+
+**Se även:** [Gränsvärdesanalys](#gränsvärdesanalys), [Testdesignteknik](#testdesignteknik), [Svartlådetest](#svartlådetest)
+
+### End-to-end-test
+
+Test av ett helt flöde genom systemet och dess grannsystem, så som en användare går igenom det: från inloggning via beställning till bekräftelsemejlet. End-to-end-test hittar integrationsproblem som smalare test missar men är långsammare och ömtåligare, så de hålls få.
+
+**I Qtestframe:** end-to-end-test är oftast [webbtester](#webbtest) (Playwright) eller manuella testfall med många steg; använd [beroenden](#beroenden) för flöden som bygger på varandra.
+
+**Se även:** [Systemtest](#systemtest), [Webbtest](#webbtest), [Instabilt testfall](#instabilt-testfall)
+
+### Enhetstest
+
+Testnivån för de minsta testbara delarna av programvaran, till exempel funktioner, klasser eller moduler, isolerade från resten. Enhetstest skrivs av utvecklarna, körs på sekunder och utgör basen i testpyramiden (kallas också komponenttest).
+
+**I Qtestframe:** utfall från enhetstest kommer från CI som JUnit XML; ett testfall med en testnyckel kopplar dem till testfall och krav i Qtestframe.
+
+**Se även:** [Testnivå](#testnivå), [Testdriven utveckling](#testdriven-utveckling), [Koppla automatiserade tester till testnycklar](#koppla-automatiserade-tester-till-testnycklar)
+
+### ETag och If-Match
+
+HTTP-huvuden för optimistisk samtidighetskontroll (RFC 9110). Servern skickar en versionsmärkning (`ETag`) med en resurs; en klient som ändrar resursen skickar tillbaka märkningen i `If-Match`, och servern avvisar ändringen med *412 Precondition Failed* om någon har sparat en nyare version under tiden. Ingens arbete skrivs över i tysthet, och inget låses.
+
+**I Qtestframe:** ett objekts ETag är dess version. Webbklienten skickar den när du sparar, och därför får du se **Någon annan har ändrat det här** i stället för att en kollegas ändringar försvinner; OSLC- och API-klienter använder samma mekanism.
+
+**Se även:** [När någon annan har sparat först](#när-någon-annan-har-sparat-först), [HTTP-semantik](#http-semantik), [Koppla ihop med andra verktyg](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/connecting-tools.md)
+
+### Exekvering
+
+Att köra ett testfall och registrera vad som hände: utfallet, utfallen per steg, iakttagelser, bevis och eventuella defekter.
+
+**I Qtestframe:** en exekvering är ett testfall i en [körning](#testkörning-1) (per konfiguration), med utfall, utfall per steg, iterationer, anteckningar, bilagor, defekter och tidsåtgång. Stegen kopieras när testfallet läggs till, så senare ändringar i testfallet påverkar inte registrerade utfall.
+
+**Se även:** [Exekveringsvyn](#exekveringsvyn), [Testkörning](#testkörning-1), [Testutfall](#testutfall)
+
+## F
+
+### Felgissning
+
+En testdesignteknik där testaren utgår från erfarenhet av vanliga misstag när testfallen väljs: tom indata, mycket lång indata, specialtecken, tidszoner, dubbelklick, avbrutna anslutningar. Den fungerar bäst som komplement till systematiska tekniker, gärna styrd av en lista över tidigare defekter.
+
+**I Qtestframe:** tidigare defekter (filtret `found_in:production`) och [utforskande sessioner](#utforskande-testning) är bra källor; samla de testfall det leder till i en egen kategori.
+
+**Se även:** [Utforskande testning](#utforskande-testning), [Testdesignteknik](#testdesignteknik), [Defekt](#defekt)
+
+### Framåtspårbarhet
+
+Spårning från ett krav till allt som förverkligar och verifierar det: mer detaljerade krav, design, kod, testfall och utfall. Den svarar på ”är varje krav genomfört och testat?” och ”vad påverkas om det här ändras?”.
+
+**I Qtestframe:** kravets **Länkade testfall**, dess barn (*förfinas av*), kodlänkar och täckningskolumnen visar framåtspårbarheten; `-has:tests` hittar krav som saknar testfall.
+
+**Se även:** [Bakåtspårbarhet](#bakåtspårbarhet), [Ändringspåverkan](#ändringspåverkan-1), [Spårbarhetsmatris](#spårbarhetsmatris)
+
+### Frågespråk
+
+Ett litet textspråk för att filtrera listor.
+
+**I Qtestframe:** samma språk filtrerar alla listor, spårbarhetsmatrisen, releasers omfattning, rapporter och API:et: `status:approved priority=high`, `-has:tests`, `updated_at>=2026-01-01`, `title~/login/i`. En ogiltig fråga visar var felet finns.
+
+**Se även:** [Sökning och filter](#sökning-och-filter), [Frågespråket](#frågespråket)
+
+### Funktionell testning
+
+Test av vad systemet gör mot de funktionella kraven, oavsett hur det är byggt. Den kan göras på alla [testnivåer](#testnivå) och är oftast [svartlådetest](#svartlådetest).
+
+**I Qtestframe:** funktionella testfall är de manuella och automatiserade testfall som är länkade till funktionella krav; filtrera fram dem med `linked:` och kravtypen eller med en kategori.
+
+**Se även:** [Icke-funktionell testning](#icke-funktionell-testning), [Testtyp](#testtyp), [Funktionellt krav](#funktionellt-krav)
+
+### Funktionellt krav
+
+Ett krav som säger vad systemet gör: en funktion, ett beteende, en reaktion på en indata, en beräkning. ”Systemet ska skicka en orderbekräftelse med e-post” är funktionellt; hur snabbt det sker är [icke-funktionellt](#icke-funktionellt-krav).
+
+**I Qtestframe:** välj typen **Funktionellt** (standardvalet). Funktionella krav verifieras oftast med testfall.
+
+**Se även:** [Icke-funktionellt krav](#icke-funktionellt-krav), [Funktionell testning](#funktionell-testning), [Fält](#fält)
+
+### Förfining
+
+Att bryta ned ett krav i mer detaljerade krav som tillsammans uppfyller det: ett intressentbehov i systemkrav, ett systemkrav i programvarukrav. De detaljerade kraven förfinar det övergripande.
+
+**I Qtestframe:** relationen **förfinar (förälder)** / **förfinas av (barn)** bygger kravhierarkin; förfiningar får inte bilda en cykel, och en förälder är verifierad först när dess barn är det.
+
+**Se även:** [Kravhierarki och sammanräkning](#kravhierarki-och-sammanräkning), [Härlett krav](#härlett-krav), [Relationer](#relationer)
+
+## G
+
+### Granskning
+
+En kontroll av en arbetsprodukt som görs av andra än författaren, från en informell genomläsning till en formell inspektion med roller och protokoll. I Qtestframe betyder granskning också beslutet att godkänna ett objekt.
+
+**I Qtestframe:** begär granskning av krav eller testfall; granskare godkänner eller avvisar krav (`requirement.review`) och markerar testfall som klara (`test.review`), och varje beslut hamnar i händelseloggen. *Granskning* är också en av [verifieringsmetoderna](#verifieringsmetod).
+
+**Se även:** [Begär granskning](#begär-granskning), [Roll](#roll), [Verifieringsmetod](#verifieringsmetod)
+
+### Grålådetest
+
+Test med delvis kännedom om det inre: testaren tar fram svartlådetest men använder kunskap om arkitekturen, databasen eller gränssnitten för att välja dem bättre, till exempel för att kontrollera att en order sparas rätt efter att den lagts i användargränssnittet.
+
+**I Qtestframe:** grålådetest kombinerar ofta manuella steg med en kontroll av loggar eller data; registrera vad som kontrollerades som anteckningar och bevis i exekveringen.
+
+**Se även:** [Svartlådetest](#svartlådetest), [Vitlådetest](#vitlådetest), [Bevis](#bevis)
+
+### Gränsvärdesanalys
+
+En testdesignteknik som lägger testvärden vid kanterna av [ekvivalensklasserna](#ekvivalensklassindelning), eftersom fel samlas där: ”mindre än” i stället för ”mindre än eller lika med”, slingor som går ett varv för mycket. För ett fält som tar emot 1 till 100 testar du 0, 1, 100 och 101 (och med tre värden per gräns även 2 och 99).
+
+**I Qtestframe:** lägg gränsvärdena i [testdatan](#testdata) för ett datadrivet testfall, en rad per värde, så att varje värde blir en egen iteration med eget utfall.
+
+**Se även:** [Ekvivalensklassindelning](#ekvivalensklassindelning), [Datadriven testning](#datadriven-testning), [Datadrivna testfall](#datadrivna-testfall)
+
+## H
+
+### HOTP
+
+HMAC-based One-Time Password (RFC 4226): en kod som beräknas från en delad hemlighet och en räknare. [TOTP](#totp) är HOTP med det aktuella tidssteget som räknare.
+
+**I Qtestframe:** används bara inuti TOTP; längden på den sparade hemligheten följer rekommendationen i RFC 4226.
+
+**Se även:** [TOTP](#totp), [Tvåstegsverifiering](#tvåstegsverifiering-2), [Andra RFC:er](#andra-rfcer-som-qtestframe-följer)
+
+### HTTP-semantik
+
+RFC 9110 definierar vad HTTP-metoder, statuskoder och huvuden betyder, oberoende av HTTP-version: att GET bara läser, att PUT ersätter, vad 404 eller 412 betyder, och villkorade begäranden med [ETag och If-Match](#etag-och-if-match).
+
+**I Qtestframe:** REST-API:et, OSLC och SCIM följer den; felsvar har en statuskod och en maskinläsbar felkod.
+
+**Se även:** [ETag och If-Match](#etag-och-if-match), [OpenAPI](#openapi), [Andra RFC:er](#andra-rfcer-som-qtestframe-följer)
+
+### Händelselogg
+
+En spårbar logg över vem som gjorde vad och när, som sparas för säkerhetsgenomgångar och revisioner. Till skillnad från ett objekts versionshistorik registrerar den också inloggningar, ändrade behörigheter, exporter och administrativa åtgärder.
+
+**I Qtestframe:** organisationens händelselogg finns under **Administration → Händelselogg** (kräver `audit.read`); varje granskningsbeslut, signerat undantag, import och ändrad inställning registreras där. Administratörer kan också skicka den till en central [syslog](#syslog)server.
+
+**Se även:** [Händelselogg](#händelselogg), [Version](#version), [Syslog](#syslog)
+
+### Härlett krav
+
+Ett krav som ingen intressent har ställt men som följer av ett annat krav eller av ett designbeslut. En svarstid för hela systemet leder till exempel till härledda tidsbudgetar för varje komponent.
+
+**I Qtestframe:** använd relationen **härlett från** / **källa till**. En ändring av källan gör det härledda kravet misstänkt, så att det granskas.
+
+**Se även:** [Förfining](#förfining), [Relationer](#relationer), [Ändringspåverkan](#ändringspåverkan-1)
+
+## I
+
+### Icke-funktionell testning
+
+Test av kvalitetsegenskaper snarare än funktioner: prestanda, last, säkerhet, användbarhet, tillgänglighet, tillförlitlighet, kompatibilitet. Den kräver ofta särskilda verktyg, miljöer och mätningar.
+
+**I Qtestframe:** icke-funktionella testfall länkas till icke-funktionella krav som alla andra testfall; analyser och mätningar som inte är exekveringar registreras som [verifieringsposter](#verifieringspost).
+
+**Se även:** [Funktionell testning](#funktionell-testning), [ISO/IEC 25010](#isoiec-25010), [Testtyp](#testtyp)
+
+### Icke-funktionellt krav
+
+Ett krav på hur väl systemet gör det det gör, eller under vilka förhållanden: prestanda, säkerhet, användbarhet, tillförlitlighet, underhållbarhet, flyttbarhet. Icke-funktionella krav behöver mätbara gränser, annars går de inte att verifiera (”snabbt” är inget krav; ”p95 under 2 s” är det).
+
+**I Qtestframe:** välj typen **Icke-funktionellt** eller den mer specifika **Säkerhet**, **Prestanda** eller **Användbarhet**, och lägg den mätbara gränsen i ett [utvärderingskriterium](#utvärderingskriterium).
+
+**Se även:** [Kvalitetsegenskap](#kvalitetsegenskap), [Funktionellt krav](#funktionellt-krav), [Icke-funktionell testning](#icke-funktionell-testning)
+
+### Inaktuellt utfall
+
+Ett testutfall som kanske inte längre duger som bevis: det är för gammalt, eller testfallet eller ett krav som det verifierar har ändrats efter att utfallet registrerades.
+
+**I Qtestframe:** inaktuella utfall har märket **Inaktuellt**, räknas som ej körda i täckningen och verifierar inte ett krav; kör testfallet igen. Åldersgränsen och regeln för ändringar är projektinställningar.
+
+**Se även:** [Inaktuella utfall](#inaktuella-utfall), [Ändringspåverkan](#ändringspåverkan-1), [Misstänkt länk](#misstänkt-länk)
+
+### INCOSE-regler
+
+*Guide to Writing Requirements* från International Council on Systems Engineering: regler för välformade krav, som aktiv form med tydligt subjekt, en tanke per krav, inga vaga ord, inga reservationer, inga öppna uppräkningar och angivna enheter och toleranser.
+
+**I Qtestframe:** [språkanalysen](#språkanalys) kontrollerar flera av reglerna (tvetydiga ord, reservationer, flera kravord i en mening, passiv förmåga, platshållare) och sätter ett poängtal på texten.
+
+**Se även:** [Kravkvalitet](#kravkvalitet), [EARS](#ears), [Språkanalysen](#språkanalysen)
+
+### Ingångskriterier
+
+De villkor som ska vara uppfyllda innan en testaktivitet får börja: testunderlaget är godkänt, miljön och datan är klara, bygget har klarat sitt röktest. De hindrar att man lägger tid på att testa något som ännu inte kan bli godkänt (ISO/IEC/IEEE 29119-3).
+
+**I Qtestframe:** organisationens exekveringsregler är ingångskriterier per testfall: testfallet ska vara *Klart*, dess krav godkända och dess förutsättningar godkända. De står som ingångskriterier i en framtagen testplan.
+
+**Se även:** [När kan ett testfall exekveras?](#när-kan-ett-testfall-exekveras), [Utgångskriterier](#utgångskriterier-1), [Testplan](#testplan)
+
+### Instabilt testfall
+
+Ett testfall vars utfall växlar mellan godkänt och underkänt utan att testfallet eller produkten har ändrats, på grund av tidsberoenden, delad testdata, ordningsberoenden eller en ostabil miljö (på engelska *flaky*). Instabila testfall döljer verkliga fel och undergräver förtroendet för hela testsviten.
+
+**I Qtestframe:** ett testfall med två eller fler växlingar bland sina tio senaste godkända eller underkända utfall får märket **Instabilt**; `flaky:true` och `flakiness>=3` hittar dem, och översikten listar de mest instabila.
+
+**Se även:** [Instabila testfall](#instabila-testfall), [Kontinuerlig integration](#kontinuerlig-integration), [Testutfall](#testutfall)
+
+### Integrationstest
+
+Testnivån som kontrollerar samspelet mellan komponenter eller system: gränssnitt, data som skickas mellan dem, protokoll och tidsförhållanden. Komponentintegrationstest tittar inom ett system, systemintegrationstest på kopplingarna till andra system.
+
+**I Qtestframe:** länka integrationstest till krav av typen *Gränssnitt* och allokera båda till [systemelement](#systemelement-1) för att se täckningen per komponent.
+
+**Se även:** [Testnivå](#testnivå), [Enhetstest](#enhetstest), [Systemtest](#systemtest)
+
+### Intressent
+
+En person eller organisation som har ett intresse i systemet eller påverkas av det: kunder, användare, driftpersonal, tillsynsmyndigheter, utvecklingsteamet.
+
+**I Qtestframe:** ange vem som ställde ett krav i **Källa** (till exempel *Intressent* eller *Kundspec. §4.2*) och vem som ansvarar för det i **Ägare**.
+
+**Se även:** [Intressentkrav](#intressentkrav), [Fält](#fält), [Krav](#krav-2)
+
+### Intressentkrav
+
+Ett krav så som en intressent uttrycker det, på intressentens språk: vad hen behöver av systemet och under vilka förhållanden. Intressentkrav valideras med intressenterna och omvandlas till [systemkrav](#systemkrav) (ISO/IEC/IEEE 29148).
+
+**I Qtestframe:** håll intressentkraven i en egen mapp eller kategori och förfina dem till systemkrav; deras verifiering räknas samman från barnen.
+
+**Se även:** [Användarkrav](#användarkrav), [Verksamhetskrav](#verksamhetskrav), [Validering](#validering)
+
+### ISO/IEC 25010
+
+Produktkvalitetsmodellen i SQuaRE-serien. Den delar in programvarukvalitet i egenskaper som funktionell lämplighet, prestandaeffektivitet, kompatibilitet, interaktionsförmåga (användbarhet), tillförlitlighet, säkerhet, underhållbarhet, flexibilitet (flyttbarhet) och skydd mot skada (safety), var och en med underegenskaper.
+
+**I Qtestframe:** använd egenskaperna som checklista för [icke-funktionella krav](#icke-funktionellt-krav) och som kategoridimension (till exempel *Kvalitet / Säkerhet*); kravtyperna täcker de vanligaste.
+
+**Se även:** [Kvalitetsegenskap](#kvalitetsegenskap), [Icke-funktionell testning](#icke-funktionell-testning), [Standarder för kravhantering](#standarder-och-vägledningar-för-kravhantering)
+
+### ISO/IEC 27001 bilaga A
+
+ISO/IEC 27001 specificerar ett ledningssystem för informationssäkerhet. Bilaga A förtecknar 93 säkerhetsåtgärder i fyra teman (organisatoriska, personrelaterade, fysiska och tekniska; utgåvan 2022). Organisationen avgör vilka åtgärder som är tillämpliga och dokumenterar det i ett [uttalande om tillämplighet](#uttalande-om-tillämplighet-1).
+
+**I Qtestframe:** sidan **SoA** listar åtgärderna i bilaga A med tillämplighet, motivering, ägare, de krav som hänvisar till varje åtgärd och deras bevis; katalogen har krav för ISO/IEC 27001 att lägga till.
+
+**Se även:** [Uttalande om tillämplighet](#uttalande-om-tillämplighet), [Katalog](#katalog-1), [Källor som katalogen hänvisar till](#källor-som-katalogen-hänvisar-till)
+
+### ISO/IEC/IEEE 29119
+
+Den internationella standardserien för programvarutest: begrepp och terminologi (del 1), testprocesser (del 2), testdokumentation som testplaner, testfallsspecifikationer och testrapporter (del 3) och testdesigntekniker (del 4).
+
+**I Qtestframe:** den framtagna testplanen följer strukturen i del 3, och den här ordlistan använder begreppen i del 1 och 4.
+
+**Se även:** [ISTQB](#istqb), [Testplan](#testplan), [Standarder och vägledningar för test](#standarder-och-vägledningar-för-test)
+
+### ISO/IEC/IEEE 29148
+
+Den internationella standarden för kravhantering: processer, informationsobjekt (specifikationer av intressent-, system- och programvarukrav) och egenskaperna hos bra enskilda krav och kravmängder.
+
+**I Qtestframe:** den framtagna kravspecifikationen bygger på den, och uppslagsordet [Kravkvalitet](#kravkvalitet) sammanfattar dess egenskaper.
+
+**Se även:** [Kravkvalitet](#kravkvalitet), [Specifikation](#specifikation), [Standarder för kravhantering](#standarder-och-vägledningar-för-kravhantering)
+
+### ISTQB
+
+International Software Testing Qualifications Board ger ut kursplanerna för certifierade testare och ISTQB:s ordlista, den mest använda terminologin inom test.
+
+**I Qtestframe:** handboken använder ISTQB:s begrepp (testfall, testkörning, defekt, täckning …) där användargränssnittet gör det.
+
+**Se även:** [ISO/IEC/IEEE 29119](#isoiecieee-29119), [Standarder och vägledningar för test](#standarder-och-vägledningar-för-test)
+
+### Iteration
+
+Ett genomlopp av ett datadrivet testfall med en rad testdata.
+
+**I Qtestframe:** varje rad i testfallets testdata blir en iteration av exekveringen, med egna utfall per steg; exekveringens utfall härleds från iterationerna.
+
+**Se även:** [Datadrivna testfall: iterationer](#datadrivna-testfall-iterationer), [Datadriven testning](#datadriven-testning), [Exekvering](#exekvering)
+
+## J
+
+### JSON Web Token
+
+JWT (RFC 7519): en kompakt, signerad samling påståenden, till exempel vem en användare är, vem som utfärdade token och när den går ut, som mottagaren kan kontrollera utan att fråga utfärdaren.
+
+**I Qtestframe:** id-token vid enkel inloggning med [OpenID Connect](#openid-connect) är en JWT; Qtestframe kontrollerar signatur, utfärdare, mottagare, giltighetstid och nonce. API-nycklar är inte JWT utan slumpmässiga strängar.
+
+**Se även:** [OpenID Connect](#openid-connect), [OAuth 2.0](#oauth-20), [API-nyckel](#api-nyckel)
+
+### JUnit XML
+
+Ett XML-format för testutfall, uppkallat efter Java-ramverket JUnit, med testsviter, testfall, tidsåtgång, fel och överhoppade testfall. Det finns ingen formell standard, men nästan alla testverktyg kan skriva formatet, vilket gör det till det gemensamma språket mellan CI och testhantering.
+
+**I Qtestframe:** ladda upp JUnit XML till en körning (`POST /api/v1/runs/{id}/junit`) eller med [`qtestframe report`](#qtestframe-report); testfallen matchas mot testfall i Qtestframe på testnyckeln.
+
+**Se även:** [JUnit XML](#junit-xml), [Kontinuerlig integration](#kontinuerlig-integration), [Format, protokoll och ramverk](#format-protokoll-och-ramverk)
+
+## K
+
+### Katalog
+
+Ett bibliotek med färdiga krav, testfall och risker för vanliga behov, som autentisering, loggning, dataskydd eller tillgänglighet, med hänvisningar till de lagar, standarder och den bästa praxis de bygger på.
+
+**I Qtestframe:** i [katalogen](#katalog) väljer du de lagar och standarder som ett projekt ska uppfylla och lägger till de krav som hör till, med testfall och spårlänkar. Den kopplar också risker till MITRE ATT&CK, ATLAS, D3FEND och EMB3D.
+
+**Se även:** [Katalog](#katalog), [MITRE ATT&CK](#mitre-attck-1), [Uttalande om tillämplighet](#uttalande-om-tillämplighet-1)
+
+### Kodlänk
+
+En länk mellan ett objekt och en ändring i ett versionshanteringssystem: en incheckning (commit) eller en merge request eller pull request.
+
+**I Qtestframe:** incheckningar och merge requests som nämner en objektnyckel (`SHOP-REQ-12`) länkas automatiskt via webhooks från GitHub och GitLab, eller för hand under fliken **Kod**. Byggen som CI laddar upp visar vilka incheckningar som testades, och regressionsurvalet använder länkarna.
+
+**Se även:** [Kodlänkar](#kodlänkar), [Kontinuerlig integration](#kontinuerlig-integration), [Regressionstest](#regressionstest)
+
+### Kodtäckning
+
+Andelen av koden som testerna exekverar, mätt som satser, grenar, villkor eller vägar. Den visar otestad kod, men hög kodtäckning säger i sig inget om huruvida kraven är uppfyllda: kod som gör fel sak kan vara helt täckt.
+
+**I Qtestframe:** kodtäckning mäts av dina byggverktyg, inte av Qtestframe. Qtestframe mäter [kravtäckning](#kravtäckning) och kopplar kodändringar och byggen till krav och testfall med [kodlänkar](#kodlänk).
+
+**Se även:** [Kravtäckning](#kravtäckning), [Vitlådetest](#vitlådetest), [Täckning](#täckning)
+
+### Konsistenskontroll
+
+En automatisk kontroll av problem som berör många objekt: krav utan testfall, godkända krav med ej godkända föräldrar, misstänkta dubbletter, möjligen motstridiga krav.
+
+**I Qtestframe:** inbyggda kontroller och dina egna [spårbarhetsregler](#spårbarhetsregel) körs vid behov och i kravanalysen; varje avvikelse pekar ut objektet och föreslår åtgärder som **Markera som dubblett** eller **Inget problem**.
+
+**Se även:** [Inbyggda konsistenskontroller](#inbyggda-konsistenskontroller), [Dubbletter och konflikter](#dubbletter-och-konflikter), [Spårbarhetsregel](#spårbarhetsregel)
+
+### Kontinuerlig integration
+
+CI: varje ändring slås ofta ihop med en gemensam gren och byggs och testas automatiskt, så att problem syns inom några minuter. Kontinuerlig leverans och driftsättning (CD) förlänger kedjan ända fram till en produkt som kan släppas eller är släppt. Testning i CI/CD bygger på snabba, pålitliga automatiserade tester på flera [testnivåer](#testnivå).
+
+**I Qtestframe:** CI-pipelines laddar upp sina utfall med [`qtestframe report`](#qtestframe-report), som [JUnit XML](#junit-xml-1) eller med Playwright-rapportören. Utfallen hamnar i en körning, räknas in i täckningen och releasens utgångskriterier och registrerar bygget.
+
+**Se även:** [Importera utfall från CI](#importera-utfall-från-ci), [Shift-left](#shift-left), [Byggen](#byggen)
+
+### Krav
+
+Ett påstående om ett behov, en förmåga eller ett villkor som ett system ska uppfylla, formulerat så att man kan enas om det och verifiera det. Ett krav säger vad som behövs, inte hur det ska byggas, och har egenskaper som prioritet, källa och motivering.
+
+**I Qtestframe:** ett krav har nyckel, titel, beskrivning, [kravnivå](#kravnivå), typ, status, prioritet, ägare, källa, motivering, [utvärderingskriterier](#utvärderingskriterium), relationer och versionshistorik; täckningen kommer från de länkade testfallen.
+
+**Se även:** [Krav](#krav), [Specifikation](#specifikation), [Kravkvalitet](#kravkvalitet)
+
+### Kravkvalitet
+
+De egenskaper som gör ett krav bra. ISO/IEC/IEEE 29148 kräver att varje krav är nödvändigt, lämpligt (på rätt nivå), entydigt, fullständigt, odelat, genomförbart, verifierbart, korrekt och följer gällande form, och att en kravmängd är fullständig, konsistent, genomförbar, begriplig och möjlig att validera.
+
+**I Qtestframe:** [språkanalysen](#språkanalys) sätter poäng på varje text, konsistenskontrollerna hittar dubbletter, konflikter och luckor, och kravanalysen visar kvalitetsmått för hela projektet.
+
+**Se även:** [INCOSE-regler](#incose-regler), [Kravanalys](#kravanalys), [ISO/IEC/IEEE 29148](#isoiecieee-29148)
+
+### Kravnivå
+
+Hur bindande ett krav är: obligatoriskt, rekommenderat, valfritt eller enbart beskrivande. Nivån uttrycks med kravord som SKA, BÖR och FÅR (MUST, SHOULD, MAY) och avgör hur kravet vägs in i beslut om en release.
+
+**I Qtestframe:** nivåerna är MUST och SHALL (SKA), MUST NOT och SHALL NOT (SKA INTE), SHOULD (BÖR), SHOULD NOT (BÖR INTE), MAY (FÅR), OPTIONAL (VALFRITT), WILL (KOMMER ATT) och *Beskrivande*. De känns igen i texten när du skapar ett krav, markeras i beskrivningar, och utgångskriteriet *Obligatoriska krav klarade* kontrollerar alla krav på nivån SKA.
+
+**Se även:** [Kravnivåer](#kravnivåer), [Kravord](#kravord), [SKA, BÖR och FÅR](#ska-bör-och-får)
+
+### Kravord
+
+Orden som anger hur bindande en mening är. RFC 2119 definierar de engelska MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, NOT RECOMMENDED, MAY och OPTIONAL; RFC 8174 tillägger att bara versalformerna har den betydelsen. Tillsammans utgör de BCP 14. Svenska motsvarigheter beskrivs under [SKA, BÖR och FÅR](#ska-bör-och-får).
+
+**I Qtestframe:** kravorden bestämmer [kravnivån](#kravnivå) och markeras i texten; språkanalysen varnar för engelska kravord med gemener och för flera kravord i samma mening.
+
+**Se även:** [Kravord (RFC)](#kravord-rfc), [SKA, BÖR och FÅR](#ska-bör-och-får), [Kravnivå](#kravnivå)
+
+### Kravtäckning
+
+Den andel av kraven som testerna når, och hur långt utfallen visar att kraven är uppfyllda. Det är testhanteringens viktigaste täckningsmått, eftersom det knyter testningen till vad produkten ska göra.
+
+**I Qtestframe:** varje krav har ett täckningsläge (*Ingen täckning*, *Ej körd*, *Godkänd*, *Underkänd*, *Delvis*) från de senaste utfallen för dess testfall, per konfiguration; översikten och releasekriterierna *Täckning* och *Klarade testfall* räknar samman dem.
+
+**Se även:** [Så beräknas täckningen](#så-beräknas-täckningen), [Täckning](#täckning), [Kodtäckning](#kodtäckning)
+
+### Kryptering av hemligheter
+
+Skydd av sparade lösenord, token och nycklar som servern själv måste kunna läsa.
+
+**I Qtestframe:** TOTP-hemligheter, webhookhemligheter, token för ärendesystem, hemliga testvariabler och liknande krypteras i databasen med en nyckel som aldrig sparas där: en nyckelfil, en miljövariabel, ett TPM 2.0 eller en HSM. Hemligheter går bara att skriva: API:et returnerar dem aldrig.
+
+**Se även:** [Kryptering av lagrade hemligheter](#kryptering-av-lagrade-hemligheter), [Säkerhetskopia](#säkerhetskopia), [Säkerhet](#säkerhet-2)
+
+### Kvalitetsegenskap
+
+En mätbar egenskap hos ett system utöver dess funktioner, till exempel svarstid, tillgänglighet (drifttid), lärbarhet eller motståndskraft mot angrepp. [ISO/IEC 25010](#isoiec-25010) ordnar dem i en kvalitetsmodell.
+
+**I Qtestframe:** kvalitetsegenskaper anges som icke-funktionella krav med utvärderingskriterium och tröskelvärde; en kategoridimension som *Kvalitet* grupperar dem.
+
+**Se även:** [Icke-funktionellt krav](#icke-funktionellt-krav), [ISO/IEC 25010](#isoiec-25010), [Utvärderingskriterium](#utvärderingskriterium)
+
+## L
+
+### Landlock
+
+En säkerhetsmodul i Linux med vilken ett program begränsar sin egen åtkomst till filer: när det har öppnat det det behöver anger det vilka kataloger det fortfarande får läsa och skriva, och kärnan vägrar allt annat, även om någon senare tar över programmet.
+
+**I Qtestframe:** på Linux begränsar servern sig själv med Landlock efter starten, och varje skript i sandlådan körs med en Landlock-regeluppsättning som bara tillåter skrivning i dess jobbkatalog.
+
+**Se även:** [seccomp](#seccomp), [Skriptkörning](#skriptkörning), [Härdning](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/security.md#h%C3%A4rdning)
+
+### Lasttest
+
+En sorts [prestandatest](#prestandatest) som kontrollerar beteendet under den förväntade belastningen, till exempel antalet användare eller transaktioner vid högsta trafik, för att bekräfta att svarstider och genomströmning uppfyller kraven.
+
+**I Qtestframe:** ange belastningen och gränserna i utvärderingskriteriet (metod *Analys* eller *Test*, tröskelvärde *p95 < 2 s vid 500 användare*) och bifoga lasttestrapporten som bevis.
+
+**Se även:** [Prestandatest](#prestandatest), [Stresstest](#stresstest), [Utvärderingskriterium](#utvärderingskriterium)
+
+## M
+
+### Markdown
+
+Ett enkelt textformat där `**fetstil**`, listor, länkar och tabeller skrivs med vanliga tecken. CommonMark är en exakt specifikation av Markdown; GitHub Flavored Markdown lägger till tabeller med mera.
+
+**I Qtestframe:** kommentarer i diskussioner skrivs i Markdown, den här handboken är skriven i Markdown, och exporten kan ta fram ett Markdown-dokument; beroendegrafen kan sparas som Markdown med ett Mermaid-diagram.
+
+**Se även:** [Diskussion](#diskussion-1), [Export](#export), [Format, protokoll och ramverk](#format-protokoll-och-ramverk)
+
+### Misstänkt länk
+
+En spårlänk eller relation där den ena änden har ändrats i sak efter att länken skapades eller senast bekräftades, så att den andra änden kanske inte längre passar. En misstänkt länk ska granskas och sedan bekräftas, eller så uppdateras objektet.
+
+**I Qtestframe:** länkar och relationer blir misstänkta automatiskt när ett kravs titel, beskrivning, kravnivå eller kriterier, eller ett testfalls innehåll, ändras; de har en gul ram i matrisen, syns i arbetslistorna, och utgångskriteriet *Inga misstänkta länkar* kontrollerar dem.
+
+**Se även:** [Ändringspåverkan](#ändringspåverkan-1), [Spårbarhetsmatrisen](#spårbarhetsmatrisen), [Inaktuellt utfall](#inaktuellt-utfall)
+
+### MITRE ATLAS
+
+Adversarial Threat Landscape for Artificial-Intelligence Systems: en kunskapsbas över taktiker och tekniker för angrepp mot AI- och maskininlärningssystem, till exempel promptinjektion eller förgiftning av träningsdata, uppbyggd som ATT&CK.
+
+**I Qtestframe:** AI-risker i katalogen anger de ATLAS-tekniker som förverkligar dem (`AML.T0051`), bredvid ATT&CK-teknikerna.
+
+**Se även:** [MITRE ATT&CK](#mitre-attck-1), [AI-förordningen](#ai-förordningen), [MITRE ATT&CK i katalogen](#mitre-attck)
+
+### MITRE ATT&CK
+
+En kunskapsbas över hur verkliga angripare arbetar: taktiker (deras mål, som initial åtkomst eller åtkomst till inloggningsuppgifter) och tekniker (hur de når dem, som *T1110 Brute Force*), i matriser för företags-IT, industriella styrsystem och mobila enheter.
+
+**I Qtestframe:** risker i katalogen som orsakas av en angripare anger sina ATT&CK-tekniker; filtrera på taktik eller teknik, se ramverkstäckningen och behåll teknikerna på risker som du lägger till i ett projekt.
+
+**Se även:** [MITRE D3FEND](#mitre-d3fend), [STIX](#stix), [MITRE ATT&CK i katalogen](#mitre-attck)
+
+### MITRE D3FEND
+
+En kunskapsgraf över defensiva tekniker inom cybersäkerhet, grupperade efter taktiker som *Harden*, *Detect* och *Isolate* och kopplade till de ATT&CK-tekniker de motverkar.
+
+**I Qtestframe:** krav och testfall anger de D3FEND-tekniker de genomför eller verifierar (fältet **MITRE D3FEND-tekniker**, frågan `d3fend:`); för en risk visar katalogen de försvar som motverkar dess tekniker och markerar luckor.
+
+**Se även:** [MITRE ATT&CK](#mitre-attck-1), [MITRE EMB3D](#mitre-emb3d), [MITRE D3FEND och EMB3D](#mitre-d3fend-och-emb3d)
+
+### MITRE EMB3D
+
+En hotmodell för inbyggda enheter: hot (*TID-…*) som otillräckligt skydd av startladdaren och motåtgärder (*MID-…*) som säker uppdatering av fast programvara.
+
+**I Qtestframe:** krav och testfall för enheter och IoT anger de EMB3D-motåtgärder och hot de hanterar (frågan `emb3d:`), och katalogen visar vilka hot inget krav hanterar.
+
+**Se även:** [MITRE D3FEND](#mitre-d3fend), [STIX](#stix), [MITRE D3FEND och EMB3D](#mitre-d3fend-och-emb3d)
+
+## N
+
+### Notis
+
+Ett meddelande om att något har hänt som berör dig: en granskningsförfrågan, ett omnämnande, en tilldelning, ett utfall.
+
+**I Qtestframe:** notiserna visas i appen och, om du vill, med e-post direkt eller som en daglig sammanfattning. Projekt kan också skicka händelser till chattkanaler (Slack, Microsoft Teams, Mattermost, Rocket.Chat, Google Chat, Matrix, Discord) och till [webhooks](#webhook).
+
+**Se även:** [Notiser](#notiser), [Chattaviseringar](#chattaviseringar), [Webhook](#webhook)
+
+### Nyckel
+
+En kort, läsbar och unik identifierare.
+
+**I Qtestframe:** varje projekt har en nyckel som `SHOP`, och varje objekt en nyckel som bygger på den: `SHOP-REQ-12`, `SHOP-TC-7`, `SHOP-RISK-3`. Nycklar återanvänds aldrig inom ett projekt. Nämn en nyckel i ett incheckningsmeddelande, en beskrivning eller ett testnamn i CI för att länka till objektet.
+
+**Se även:** [Projekt](#projekt), [Kodlänk](#kodlänk), [Viktiga begrepp](#viktiga-begrepp)
+
+## O
+
+### OAuth 2.0
+
+Ramverket för auktorisering i RFC 6749: ett program får en åtkomsttoken från en auktoriseringsserver för en användares räkning, utan att se användarens lösenord. Det är grunden för [OpenID Connect](#openid-connect).
+
+**I Qtestframe:** används för enkel inloggning med OpenID Connect, med auktoriseringskodflödet och [PKCE](#pkce). Qtestframe är själv ingen OAuth-auktoriseringsserver; API:et använder [API-nycklar](#api-nyckel).
+
+**Se även:** [OpenID Connect](#openid-connect), [PKCE](#pkce), [Bearer-token](#bearer-token)
+
+### OpenAPI
+
+Ett maskinläsbart beskrivningsformat för HTTP-API:er: slutpunkter, parametrar, kroppar i begäranden och svar, autentisering. Verktyg tar fram dokumentation, klienter och tester ur beskrivningen.
+
+**I Qtestframe:** servern publicerar REST-API:et som OpenAPI 3.1 på `/api/v1/openapi.json`, utan inloggning, så att du kan generera en klient för dina skript.
+
+**Se även:** [HTTP-semantik](#http-semantik), [API-nyckel](#api-nyckel), [Översikt](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/overview.md)
+
+### OpenID Connect
+
+OIDC: ett identitetslager ovanpå [OAuth 2.0](#oauth-20). När användaren har loggat in hos identitetsleverantören (till exempel Microsoft Entra ID, Okta eller Keycloak) får programmet en id-token ([JWT](#json-web-token)) som talar om vem användaren är.
+
+**I Qtestframe:** enkel inloggning med en eller flera OIDC-leverantörer, med PKCE och nonce; användare kan skapas vid första inloggningen och få roller utifrån grupper.
+
+**Se även:** [Enkel inloggning (OIDC)](#enkel-inloggning-oidc), [SAML 2.0](#saml-20), [OpenID Connect](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authentication.md#openid-connect)
+
+### Organisation
+
+En isolerad arbetsyta i en delad installation (på engelska *tenant*). Organisationer ser inte varandras data.
+
+**I Qtestframe:** projekt, medlemmar, roller, API-nycklar, inställningar och händelseloggen hör till en organisation. Du kan vara medlem i flera och byta mellan dem; din roll kan skilja sig mellan dem.
+
+**Se även:** [Organisationer, projekt och roller](#organisationer-projekt-och-roller), [Roll](#roll), [Projekt](#projekt)
+
+### OSLC
+
+Open Services for Lifecycle Collaboration: en öppen OASIS-standard för att länka objekt mellan livscykelverktyg över HTTP, med domäner för kravhantering (RM) och kvalitetshantering (QM). Verktygen upptäcker varandras tjänster, väljer eller skapar objekt i små dialogrutor och sparar länkar i stället för kopior.
+
+**I Qtestframe:** Qtestframe är OSLC-leverantör för RM 2.1 (krav) och QM 2.1 (testfall): DOORS Next, Polarion, Codebeamer och andra verktyg kan välja, skapa, läsa och ändra objekt och länka till dem.
+
+**Se även:** [OSLC](#oslc), [ReqIF](#reqif), [Koppla ihop med andra verktyg](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/connecting-tools.md)
+
+## P
+
+### Papperskorg
+
+Där borttagna objekt väntar innan de tas bort för gott.
+
+**I Qtestframe:** borttagna objekt kan återställas från papperskorgen i 30 dagar; sedan rensar servern bort dem.
+
+**Se även:** [Hur ångrar jag en ändring?](#hur-ångrar-jag-en-ändring), [Version](#version), [Bakgrundsjobb](#bakgrundsjobb)
+
+### Parvis testning
+
+En kombinatorisk testdesignteknik: i stället för att testa varje kombination av parametervärden väljer man en mycket mindre mängd testfall där varje par av värden förekommer minst en gång. De flesta samspelsfel beror på två parametrar, så få testfall hittar de flesta (NIST SP 800-142).
+
+**I Qtestframe:** ta fram de parvisa kombinationerna med ett verktyg och klistra in dem som [testdata](#testdata), eller använd dem för att välja [testkonfigurationerna](#testkonfiguration) i en körning.
+
+**Se även:** [Testkonfiguration](#testkonfiguration), [Beslutstabelltest](#beslutstabelltest), [NIST-publikationer](#nist-publikationer)
+
+### PKCE
+
+Proof Key for Code Exchange (RFC 7636): ett tillägg till auktoriseringskodflödet i OAuth. Klienten skickar ett hashat slumpvärde med inloggningsbegäran och själva värdet när koden växlas in, så att en uppsnappad kod är värdelös för någon annan.
+
+**I Qtestframe:** inloggning med OIDC använder alltid PKCE med metoden S256, och dessutom en nonce i id-token.
+
+**Se även:** [OAuth 2.0](#oauth-20), [OpenID Connect](#openid-connect), [Andra RFC:er](#andra-rfcer-som-qtestframe-följer)
+
+### Prestandatest
+
+Test av svarstider, genomströmning och resursanvändning under en viss belastning. [Lasttest](#lasttest) kontrollerar den förväntade belastningen, [stresstest](#stresstest) går förbi den, och uthållighetstest håller belastningen länge för att hitta läckor.
+
+**I Qtestframe:** länka prestandatest till krav av typen *Prestanda* med tröskelvärden; registrera mätrapporter som bevis eller som verifieringsposter med metoden analys.
+
+**Se även:** [Lasttest](#lasttest), [Stresstest](#stresstest), [Icke-funktionell testning](#icke-funktionell-testning)
+
+### Prioritet
+
+Hur snart något ska tas om hand, som ett verksamhetsbeslut. Ett kosmetiskt fel på startsidan kan ha hög prioritet; en krasch i en sällan använd administratörsfunktion kan ha låg. Prioritet är något annat än [allvarlighetsgrad](#allvarlighetsgrad).
+
+**I Qtestframe:** krav, testfall och defekter har en prioritet (*Kritisk*, *Hög*, *Medel*, *Låg*). Den ordnar arbetslistor och filter, och chattkanaler kan begränsas till objekt med en lägsta prioritet.
+
+**Se även:** [Allvarlighetsgrad](#allvarlighetsgrad), [Defekt](#defekt), [Statusar och allvarlighetsgrader](#statusar-och-allvarlighetsgrader)
+
+### Problem Details
+
+RFC 9457 definierar ett standardformat i JSON för felsvar från HTTP-API:er (`application/problem+json`) med medlemmarna type, title, status och detail.
+
+**I Qtestframe:** katalogen har API-krav och testfall som hänvisar till RFC 9457 för system som du bygger. Qtestframes eget API svarar med ett eget JSON-felobjekt med felkod.
+
+**Se även:** [HTTP-semantik](#http-semantik), [OpenAPI](#openapi), [Katalog](#katalog-1)
+
+### Programvarukrav
+
+Ett krav på en programvaruenhet, härlett från systemkraven och arkitekturen: dess funktioner, gränssnitt, data och kvalitet. Programvarukraven är det som utvecklarna genomför och som enhets- och integrationstest verifierar.
+
+**I Qtestframe:** relatera programvarukraven till sina systemkrav med **förfinar** eller **härlett från**, och allokera dem till programvarukomponenterna under [systemelement](#systemelement-1).
+
+**Se även:** [Systemkrav](#systemkrav), [Förfining](#förfining), [Enhetstest](#enhetstest)
+
+### Projekt
+
+En behållare för en produkt, ett system eller en leverans.
+
+**I Qtestframe:** ett projekt innehåller krav, testfall, körningar, cykler, sessioner, defekter, risker, releaser, baslinjer, dokument och sina inställningar. Projektnyckeln inleder alla objektnycklar. Projekt kan begränsas till de medlemmar som arbetar i dem, med en egen projektroll, och sparas som ett [projektarkiv](#projektarkiv) som kan läsas in någon annanstans.
+
+**Se även:** [Objekten och hur de hänger ihop](#objekten-och-hur-de-hänger-ihop), [Organisation](#organisation), [Nyckel](#nyckel)
+
+### Projektarkiv
+
+En enda fil som innehåller ett helt projekt, för att lämna över det, behålla en kopia eller starta ett nytt projekt från det.
+
+**I Qtestframe:** **Spara projekt** skriver en ZIP-fil med allt i projektet, även historik, utfall och bilagor, men aldrig hemligheter; **Läs in projekt** skapar ett nytt projekt från den, på samma eller en annan server, med nya id:n och nycklar.
+
+**Se även:** [Spara och läs in projekt](#spara-och-läs-in-projekt), [Säkerhetskopia](#säkerhetskopia), [Projekt](#projekt)
+
+## Q
+
+### qtestframe report
+
+Kommandot i programmet `qtestframe` som laddar upp testutfall från en CI-pipeline.
+
+**I Qtestframe:** `qtestframe report --project SHOP --run "Nattlig 412" --create-run --junit 'results/*.xml'` hittar eller skapar körningen, laddar upp JUnit XML och registrerar bygge och miljö; det autentiserar sig med en [API-nyckel](#api-nyckel) i `QTF_TOKEN`.
+
+**Se även:** [Kommandot qtestframe report](#kommandot-qtestframe-report), [JUnit XML](#junit-xml-1), [Kontinuerlig integration](#kontinuerlig-integration)
+
+## R
+
+### Regressionstest
+
+Att testa det som fungerade tidigare igen efter en ändring, för att se om ändringen förstörde något. Regressionstestsviter växer med tiden och automatiseras därför oftast och väljs ut efter risk och efter vad som ändrats.
+
+**I Qtestframe:** **Regressionsurval** föreslår testfall utifrån ändrade krav och incheckningar sedan ett bygge; en defekt som dyker upp igen efter att ha åtgärdats flaggas som en regression.
+
+**Se även:** [Regressionsurval](#regressionsurval), [Röktest och sanitetstest](#röktest-och-sanitetstest), [Kontinuerlig integration](#kontinuerlig-integration)
+
+### Release
+
+En version av produkten som planeras, testas och levereras som en helhet.
+
+**I Qtestframe:** en release har en omfattning (de krav den ska leverera), de körningar som testar den, [utgångskriterier](#utgångskriterier-1) och ett go/no-go-läge; undantag kan godta krav för en release, och en baslinje fryser den oftast.
+
+**Se även:** [Releaser och risker](#releaser-och-risker), [Utgångskriterier](#utgångskriterier-1), [Baslinje](#baslinje)
+
+### ReqIF
+
+Requirements Interchange Format från Object Management Group (OMG): ett XML-format för att utbyta kravspecifikationer mellan verktyg, med attribut, hierarki och relationer. En `.reqifz`-fil är en ZIP-fil med ReqIF-filen och de bifogade filerna.
+
+**I Qtestframe:** exportera krav (om du vill med testfall, spårlänkar, verifieringsposter eller en baslinje) som ReqIF 1.2 och importera ReqIF från DOORS, Polarion, Codebeamer, Jama eller ProR, även fram och tillbaka.
+
+**Se även:** [ReqIF-export](#reqif-export), [ReqIF-import](#reqif-import), [OSLC](#oslc-2)
+
+### Restrisk
+
+Den risk som återstår när motåtgärderna är på plats. Den ska ligga på eller under det organisationen är beredd att acceptera, annars måste någon med befogenhet uttryckligen acceptera den.
+
+**I Qtestframe:** en risk har en kvarstående sannolikhet och konsekvens; över projektets gräns för riskacceptans måste acceptansen signeras (`waiver.approve`), och utgångskriteriet *Restrisk* kontrollerar det.
+
+**Se även:** [Restrisk](#restrisk), [Risk](#risk), [Undantag](#undantag)
+
+### Risk
+
+Något osäkert som, om det inträffar, skadar produkten, projektet eller användarna, bedömt efter sannolikhet och konsekvens. Produktrisker gäller kvalitet och säkerhet; projektrisker gäller tidplan, budget och bemanning.
+
+**I Qtestframe:** riskregistret bedömer varje risk 1–5 för sannolikhet och konsekvens (poäng 1–25, nivå *Låg* till *Kritisk*), visar de krav som hanterar risken och hur långt de är täckta och verifierade; öppna risker påverkar releasens utgångskriterier.
+
+**Se även:** [Riskregistret](#riskregistret), [Riskbaserad testning](#riskbaserad-testning), [Restrisk](#restrisk-1)
+
+### Riskbaserad testning
+
+Att välja ut, ordna och dosera krav och testfall efter risk: ju större sannolikhet och konsekvens ett fel har, desto tidigare och grundligare specificeras och testas det. Det gör mest av begränsad testtid och förklarar för intressenterna vad som lämnades utanför och varför.
+
+**I Qtestframe:** koppla kraven till de risker de hanterar, bygg releasens omfattning med `risk:high` och använd utgångskriterierna *Risker hanterade* och *Restrisk*. Riskrapporten och värmekartan visar var täckningen saknas.
+
+**Se även:** [Risk](#risk), [Hur risker påverkar en release](#hur-risker-påverkar-en-release), [Utgångskriterier](#utgångskriterier-1)
+
+### Roll
+
+En namngiven uppsättning behörigheter som ges till en person.
+
+**I Qtestframe:** varje organisation har rollerna *Läsare*, *Granskare*, *Testare*, *Testledare*, *Ansvarig* och *Administratör* och kan ändra dem eller skapa egna; ett projekt kan ge en medlem en annan roll. *Superadministratörer* hanterar hela installationen.
+
+**Se även:** [Roller och behörigheter](#roller-och-behörigheter), [Organisation](#organisation), [Behörigheter](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authorisation.md)
+
+### Röktest och sanitetstest
+
+Ett röktest (smoke test) är en liten, snabb uppsättning testfall som kontrollerar att ett nytt bygge alls fungerar (det startar, huvudsidorna öppnas, inloggningen fungerar) innan mer testtid läggs på det. Ett sanitetstest (sanity test) är en snabb, smal kontroll av att en viss rättning eller ändring fungerar som avsett.
+
+**I Qtestframe:** tagga testfallen `smoke` och skapa en körning från `tag:smoke`, eller låt CI köra dem först; en underkänd röktestkörning säger åt alla att vänta på nästa bygge.
+
+**Se även:** [Regressionstest](#regressionstest), [Ingångskriterier](#ingångskriterier), [Testkörning](#testkörning-1)
+
+## S
+
+### SAML 2.0
+
+Security Assertion Markup Language, en OASIS-standard för enkel inloggning: identitetsleverantören skickar programmet ett signerat XML-intyg om användaren.
+
+**I Qtestframe:** enkel inloggning med en SAML-identitetsleverantör som Active Directory Federation Services (AD FS), som alternativ till OpenID Connect.
+
+**Se även:** [OpenID Connect](#openid-connect), [SCIM](#scim), [SAML 2.0](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authentication.md#saml-20)
+
+### SCIM
+
+System for Cross-domain Identity Management (RFC 7643 för datamodellen, RFC 7644 för protokollet): ett REST-gränssnitt genom vilket en identitetsleverantör automatiskt skapar, ändrar och tar bort användarkonton och grupper i ett program.
+
+**I Qtestframe:** `/scim/v2` låter er identitetsleverantör provisionera användare och gruppmedlemskap i en organisation, med en egen nyckel; när en användare inaktiveras tas medlemskapet bort och användarens sessioner och API-nycklar i organisationen upphör direkt.
+
+**Se även:** [Provisionering med SCIM](#provisionering-med-scim), [SAML 2.0](#saml-20), [Andra RFC:er](#andra-rfcer-som-qtestframe-följer)
+
+### seccomp
+
+Secure computing mode: en funktion i Linuxkärnan med vilken en process talar om för kärnan vilka systemanrop den aldrig kommer att göra, så att de misslyckas även om en angripare tar över processen.
+
+**I Qtestframe:** servern och varje skript i sandlådan installerar en spärrlista med systemanrop som en server aldrig behöver; med `runner.deny_network` förlorar skripten också anropen för nätverksuttag.
+
+**Se även:** [Landlock](#landlock), [Skriptkörning](#skriptkörning), [Härdning](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/security.md#h%C3%A4rdning)
+
+### Session
+
+1. Ett inloggat besök av en användare, som hålls igång av en kaka tills den går ut eller användaren loggar ut. 2. Inom utforskande testning en tidsbegränsad testperiod med ett uppdrag (se [sessionsbaserad testledning](#sessionsbaserad-testledning)).
+
+**I Qtestframe:** inloggningssessioner varar som standard i 12 timmar; du ser och avslutar dina under **Profil → Aktiva sessioner**. Utforskande sessioner finns under **Utforskande test** i ett projekt.
+
+**Se även:** [Varför avslutades min session?](#varför-avslutades-min-session), [CSRF-skydd](#csrf-skydd), [Sessionsbaserad testledning](#sessionsbaserad-testledning)
+
+### Sessionsbaserad testledning
+
+SBTM (session-based test management): ett sätt att planera, genomföra och redovisa [utforskande testning](#utforskande-testning), beskrivet av Jonathan och James Bach år 2000. Testningen sker i ostörda sessioner med fast längd, var och en med ett uppdrag (charter), anteckningar under testningen och en utvärdering (debriefing) med en testledare efteråt; mått visar hur sessionstiden användes.
+
+**I Qtestframe:** planera sessioner med uppdrag och omfattning, genomför dem med tidtagning och typade anteckningar (bugg, problem, fråga, idé …), skapa defekter från anteckningar och avsluta med en utvärdering och ett resultat; utvärderade sessioner kan räknas som verifieringsbevis.
+
+**Se även:** [Utforskande test](#utforskande-test), [Utforskande testning](#utforskande-testning), [Session](#session)
+
+### Shift-left
+
+Att flytta test- och kvalitetsarbetet tidigare i livscykeln: granska kraven före designen, skriva testfall före eller samtidigt med koden, köra automatiserade tester vid varje ändring. Defekter som hittas tidigt är mycket billigare att rätta än de som hittas i produktion.
+
+**I Qtestframe:** språkanalysen och granskningarna kontrollerar kraven medan de skrivs, ett länkat testfall kan skapas med varje krav, och utfall från CI kommer med varje bygge.
+
+**Se även:** [Kontinuerlig integration](#kontinuerlig-integration), [Testdriven utveckling](#testdriven-utveckling), [V-modellen](#v-modellen)
+
+### SKA, BÖR och FÅR
+
+De svenska kravorden. Svenska standarder (SIS, i enlighet med ISO/IEC Directives) använder *ska* för krav, *bör* för rekommendation, *får* för tillåtelse och *kan* för möjlighet; negationerna är *ska inte*, *bör inte* och *får inte*.
+
+**I Qtestframe:** svensk kravtext använder **SKA**/**SKALL** och **MÅSTE** (måste), **BÖR** (bör), **FÅR** (får), **FÅR INTE** och **SKA INTE** (får inte), **BÖR INTE**, **BEHÖVER INTE** och **VALFRI** (valfritt), **KOMMER ATT** (avsikt) och **BESKRIVER** (beskrivande). Analysen varnar för *måste inte*, som betyder ”behöver inte” men ofta läses som ett förbud. Observera att *får* också betyder ”tar emot”: *användaren får ett mejl* läses som tillåtelse.
+
+**Se även:** [Språkanalysen](#språkanalysen), [Kravord](#kravord), [Standarder för kravhantering](#standarder-och-vägledningar-för-kravhantering)
+
+### Skriptkörning
+
+Den del av servern som kör skripten i automatiserade testfall.
+
+**I Qtestframe:** när en administratör har slagit på den kan medlemmar med `script.execute` köra ett testfalls skript på servern. Varje skript körs i en avgränsad barnprocess med resursgränser, Landlock, seccomp och om så önskas utan nätverk; webbtester kör Playwright med en riktig webbläsare.
+
+**Se även:** [Automatiserade testfall: skript](#automatiserade-testfall-skript), [Landlock](#landlock), [Sandlådan för skript och webbtester](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/security.md#sandl%C3%A5dan-f%C3%B6r-skript-och-webbtester)
+
+### Specifikation
+
+Ett dokument, eller en strukturerad mängd objekt, som anger krav, design eller beteende fullständigt och exakt. Ett krav är ett enskilt påstående; en specifikation är den ordnade helheten med inledning, omfattning, definitioner och själva kraven.
+
+**I Qtestframe:** projektet är den levande specifikationen; **Skapa dokument → Kravspecifikation** skriver ett komplett dokument enligt ISO/IEC/IEEE 29148 till arkivet, och ReqIF utbyter specifikationen med andra verktyg.
+
+**Se även:** [Skapa en kravspecifikation eller en testplan](#skapa-en-kravspecifikation-eller-en-testplan), [Krav](#krav-2), [ReqIF](#reqif)
+
+### Språkanalys
+
+En automatisk granskning av kravtexten mot skrivregler.
+
+**I Qtestframe:** medan du skriver känner analysen igen [kravnivån](#kravnivå) från kravorden, markerar dem, listar fynd som vaga ord, reservationer, platshållare eller flera kravord i samma mening och sätter ett poängtal från 0 till 100, på svenska och engelska.
+
+**Se även:** [Språkanalysen](#språkanalysen), [INCOSE-regler](#incose-regler), [Kravord](#kravord)
+
+### Spårbarhet
+
+Förmågan att följa ett kravs liv framåt och bakåt: från ursprunget, genom förfining, design och genomförande, till dess testfall och deras utfall. Den stöder påverkansanalys, kontroller av fullständighet och revisioner.
+
+**I Qtestframe:** spårlänkar, relationer, kodlänkar, spårbarhetsmatrisen, beroendegrafer, spårbarhetsregler och påverkansanalysen tjänar alla spårbarheten.
+
+**Se även:** [Spårbarhet och täckning](#spårbarhet-och-täckning), [Framåtspårbarhet](#framåtspårbarhet), [Bakåtspårbarhet](#bakåtspårbarhet)
+
+### Spårbarhetsmatris
+
+En tabell med krav i den ena dimensionen och testfall (eller andra objekt) i den andra, där det markeras vilka som är länkade. Den visar med en blick vilka krav som saknar testfall och vilka testfall som inte verifierar något.
+
+**I Qtestframe:** **Spårbarhet** visar krav som rader och testfall som kolumner; varje markering färgas efter testfallets senaste utfall och får en ram när länken är misstänkt, och du kan länka och ta bort länkar direkt i matrisen.
+
+**Se även:** [Spårbarhetsmatrisen](#spårbarhetsmatrisen), [Spårlänk](#spårlänk), [Dubbelriktad spårbarhet](#dubbelriktad-spårbarhet)
+
+### Spårbarhetsregel
+
+En regel som objekten ska följa i sina länkar, till exempel ”varje godkänt krav på nivån måste har minst ett testfall” eller ”varje testfall verifierar ett krav”.
+
+**I Qtestframe:** ansvariga definierar regler med en fråga för objekten, ett villkor och en allvarlighetsgrad; överträdelser syns i kravanalysen och arbetslistorna, och ett utgångskriterium för releasen kan kräva att inga regler bryts.
+
+**Se även:** [Spårbarhetsregler](#spårbarhetsregler), [Konsistenskontroll](#konsistenskontroll), [Utgångskriterier](#utgångskriterier-1)
+
+### Spårlänk
+
+Ett registrerat samband mellan två objekt i livscykeln, till exempel ”testfall T verifierar krav K”. Spårlänkar är råmaterialet för [spårbarhet](#spårbarhet).
+
+**I Qtestframe:** en spårlänk kopplar ett testfall till ett krav som det verifierar, om du vill till ett visst utvärderingskriterium; den är grunden för täckningen. Andra länkar kopplar krav till varandra (relationer), till kod, körningar och dokument.
+
+**Se även:** [Länkade testfall](#länkade-testfall), [Spårbarhet](#spårbarhet), [Misstänkt länk](#misstänkt-länk)
+
+### STIX
+
+Structured Threat Information Expression: ett JSON-format från OASIS för utbyte av information om cyberhot, till exempel angreppsmönster, hotaktörer och motåtgärder, och sambanden mellan dem.
+
+**I Qtestframe:** MITRE publicerar ATT&CK, ATLAS och EMB3D som STIX 2.1-paket; katalogens listor över tekniker, hot och motåtgärder genereras från dem.
+
+**Se även:** [MITRE ATT&CK](#mitre-attck-1), [MITRE EMB3D](#mitre-emb3d), [Format, protokoll och ramverk](#format-protokoll-och-ramverk)
+
+### Stresstest
+
+En sorts [prestandatest](#prestandatest) bortom den förväntade belastningen eller med minskade resurser, för att hitta brytpunkten och se om systemet fallerar på ett kontrollerat sätt och återhämtar sig.
+
+**I Qtestframe:** formulera det förväntade beteendet vid överbelastning (till exempel ”avvisar nya sessioner med ett meddelande men behåller befintliga”) som ett krav med kriterier, så att stresstestet har något att verifiera.
+
+**Se även:** [Prestandatest](#prestandatest), [Lasttest](#lasttest), [Icke-funktionell testning](#icke-funktionell-testning)
+
+### Svartlådetest
+
+Test som bara utgår från specifikationen, utan att titta på koden eller den inre strukturen: testaren vet vad som går in och vad som ska komma ut. [Ekvivalensklassindelning](#ekvivalensklassindelning), [gränsvärden](#gränsvärdesanalys), [beslutstabeller](#beslutstabelltest) och [tillståndsövergångar](#tillståndsövergångstest) är svartlådetekniker (ISO/IEC/IEEE 29119-4).
+
+**I Qtestframe:** de flesta manuella testfall är svartlådetest som härletts ur kravtexten och dess utvärderingskriterier.
+
+**Se även:** [Vitlådetest](#vitlådetest), [Grålådetest](#grålådetest), [Testdesignteknik](#testdesignteknik)
+
+### Syslog
+
+Standarden för att skicka loggmeddelanden till en central loggserver. RFC 5424 definierar det nuvarande meddelandeformatet, RFC 3164 det äldre BSD-formatet.
+
+**I Qtestframe:** servern kan skicka sin logg och händelseloggen till syslog över UDP, TCP, TLS eller ett Unix-uttag, i formatet RFC 5424 eller RFC 3164.
+
+**Se även:** [Loggning och syslog](#loggning-och-syslog), [Händelselogg](#händelselogg-1), [Central syslog](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/logging-and-monitoring.md#central-syslog)
+
+### Systemelement
+
+En del i produktstrukturen: ett system, delsystem, en komponent, produkt eller leverantörsleverans.
+
+**I Qtestframe:** under **Verifiering → Systemelement** bygger du strukturen som ett träd och allokerar krav och testfall till elementen; varje element visar hur många av dess krav som är verifierade, och `element:"Kraftenhet"` filtrerar på det.
+
+**Se även:** [Systemelement](#systemelement), [Integrationstest](#integrationstest), [Programvarukrav](#programvarukrav)
+
+### Systemkrav
+
+Ett krav på systemet som helhet, sett utifrån: vad det ska göra och hur väl, på ingenjörernas språk snarare än intressenternas. Systemkrav härleds ur intressentkraven och förfinas till krav på delsystem, maskinvara och programvara.
+
+**I Qtestframe:** relatera dem uppåt till intressentkrav och nedåt till programvarukrav med **förfinar**; systemtest verifierar dem.
+
+**Se även:** [Intressentkrav](#intressentkrav), [Programvarukrav](#programvarukrav), [Systemtest](#systemtest)
+
+### Systemtest
+
+Testnivån som kontrollerar det kompletta, integrerade systemet mot systemkraven, i en miljö så lik produktionen som möjligt. Den omfattar både funktionella och icke-funktionella test.
+
+**I Qtestframe:** systemtestkörningar riktar sig oftast mot flera [testkonfigurationer](#testkonfiguration) och miljöer; deras utfall räknas in i releasens utgångskriterier.
+
+**Se även:** [Testnivå](#testnivå), [Acceptanstest](#acceptanstest), [Systemkrav](#systemkrav)
+
+### Säkerhetskopia
+
+En kopia av alla data som en installation kan återställas från efter ett fel. För Qtestframe är en säkerhetskopia av databasen plus nyckeln till de lagrade hemligheterna en säkerhetskopia av hela installationen.
+
+**I Qtestframe:** superadministratörer tar och återställer säkerhetskopior under **Administration → Säkerhetskopiering**, eller med `qtestframe backup` och `restore` på servern. En återställning loggar ut alla. Ett enskilt projekt sparas och flyttas i stället med ett [projektarkiv](#projektarkiv).
+
+**Se även:** [Säkerhetskopiering och återställning](#säkerhetskopiering-och-återställning), [Projektarkiv](#projektarkiv), [Säkerhetskopiering och migrering](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/backup-and-migration.md)
+
+### Säkerhetstest
+
+Test av om systemet skyddar data och funktioner mot angrepp och missbruk: autentisering, behörighetskontroll, hantering av indata, sessionshantering, kryptografi, loggning. Det sträcker sig från kontroller av enskilda krav till penetrationstester och fuzzning.
+
+**I Qtestframe:** katalogen har säkerhetskrav och testfall som hänvisar till OWASP ASVS, NIST, CWE och ATT&CK; registrera fynd som defekter, vid behov med allvarlighetsgraden *Kritisk*.
+
+**Se även:** [CWE](#cwe), [MITRE ATT&CK](#mitre-attck-1), [Icke-funktionell testning](#icke-funktionell-testning)
+
+## T
+
+### Testcykel
+
+En planerad period av testning för ett mål, till exempel regressionstest i en sprint eller acceptanstest inför en release, med sina testfall, testare, uppskattningar och datum.
+
+**I Qtestframe:** en testcykel innehåller planen (vilka testfall, i vilka konfigurationer, av vem, hur länge); när den startar skapar den sin [körning](#testkörning-1) och följer planerat mot exekverat, en nedbränning och varje testares arbetsbelastning. Cykler kan återkomma.
+
+**Se även:** [Testcykler](#testcykler), [Testkörning](#testkörning-1), [Testplan](#testplan)
+
+### Testdata
+
+De data ett testfall behöver: indata, förväntade värden, konton, filer och tillståndet i databaser. Testdata ska vara känd, upprepbar och säker (inga verkliga personuppgifter utan skäl).
+
+**I Qtestframe:** testfallets tabell **Testdata** innehåller parametrar och rader för [datadriven testning](#datadriven-testning); större datamängder och filer läggs som bilagor eller i dokumentarkivet, och hemliga värden i hemliga testvariabler.
+
+**Se även:** [Datadrivna testfall](#datadrivna-testfall), [Datadriven testning](#datadriven-testning), [Testmiljö](#testmiljö)
+
+### Testdesignteknik
+
+Ett systematiskt sätt att ta fram testfall och testdata ur ett testunderlag, så att testfallen väljs av ett skäl och deras täckning kan anges. ISO/IEC/IEEE 29119-4 delar in dem i specifikationsbaserade (svartlåda), strukturbaserade (vitlåda) och erfarenhetsbaserade tekniker.
+
+**I Qtestframe:** författaren väljer tekniken; ange den som en kategoridimension (till exempel *Teknik / Gränsvärden*) om du vill rapportera på den.
+
+**Se även:** [Ekvivalensklassindelning](#ekvivalensklassindelning), [Gränsvärdesanalys](#gränsvärdesanalys), [Felgissning](#felgissning)
+
+### Testdriven utveckling
+
+TDD: en utvecklingsmetod i korta cykler: skriv ett automatiserat test som misslyckas för nästa lilla del av beteendet, skriv precis så mycket kod att det går igenom, och förbättra sedan koden medan testerna förblir gröna.
+
+**I Qtestframe:** enhetstest som skrivs med TDD rapporteras med JUnit XML; koppla dem till de programvarukrav de täcker via testnycklarna.
+
+**Se även:** [Beteendedriven utveckling](#beteendedriven-utveckling), [Enhetstest](#enhetstest), [Shift-left](#shift-left)
+
+### Testfall
+
+En uppsättning förutsättningar, indata, åtgärder och förväntade resultat, framtagen för att kontrollera ett eller flera krav eller villkor. Ett bra testfall kan upprepas av någon annan med samma resultat.
+
+**I Qtestframe:** ett testfall (nyckel `…-TC-n`) är manuellt, med [steg](#teststeg), eller automatiserat, med ett skript eller ett webbtest i Playwright. Det har status (*Utkast*, *Klart*, *Granskning*, *Utfasat*), länkar till de krav det verifierar, testdata och versionshistorik.
+
+**Se även:** [Testfall](#testfall), [Teststeg](#teststeg), [Exekvering](#exekvering)
+
+### Testkonfiguration
+
+En kombination av de förhållanden ett testfall körs under, till exempel webbläsare, operativsystem, enhet eller språk. Att köra samma testfall i flera konfigurationer hittar problem som bara visar sig i en av dem.
+
+**I Qtestframe:** organisationen definierar konfigurationer (till exempel *Chrome / Windows*); en körning med tre konfigurationer får en exekvering per testfall och konfiguration, och ett krav är godkänt först när dess testfall är godkända i varje konfiguration de är planerade i.
+
+**Se även:** [Konfigurationer i en körning](#konfigurationer-i-en-körning), [Testkonfigurationer](#testkonfigurationer), [Parvis testning](#parvis-testning)
+
+### Testkörning
+
+En omgång där en utvald mängd testfall exekveras, i en miljö och ett bygge, ofta kallad testkampanj.
+
+**I Qtestframe:** en körning (till exempel *Regressionstest sprint 12*) har en [exekvering](#exekvering) per testfall (och konfiguration), visar framsteg och andel godkända och kan höra till en release. Körningar skapas för hand, av en testcykel, från en fråga eller av CI.
+
+**Se även:** [Testkörningar och exekvering](#testkörningar-och-exekvering), [Testcykel](#testcykel), [Testsvit](#testsvit)
+
+### Testmiljö
+
+Den maskinvara, programvara, det nätverk, de data och verktyg som testerna körs i, till exempel *staging* eller ett labbrack. Utfall betyder bara något tillsammans med den miljö de togs fram i.
+
+**I Qtestframe:** en körning registrerar **Miljö** och **Bygge**; kombinera med [testkonfigurationer](#testkonfiguration) för webbläsare eller enheter.
+
+**Se även:** [Skapa en körning](#skapa-en-körning), [Testkonfiguration](#testkonfiguration), [Testkörning](#testkörning-1)
+
+### Testnivå
+
+En grupp testaktiviteter som organiseras tillsammans och riktar sig mot en nivå av systemet: [enhetstest](#enhetstest) (komponenttest), [integrationstest](#integrationstest), [systemtest](#systemtest) och [acceptanstest](#acceptanstest), samt [end-to-end-test](#end-to-end-test) över flera system. Varje nivå har sitt eget testunderlag, sina testobjekt, typiska defekter och ansvariga (ISTQB:s ordlista).
+
+**I Qtestframe:** det finns inget fast fält för nivå; använd en kategoridimension som *Nivå / System*, mappar eller separata körningar och cykler per nivå.
+
+**Se även:** [Testtyp](#testtyp), [V-modellen](#v-modellen), [Kategorier](#kategorier)
+
+### Testorakel
+
+Källan som avgör om ett resultat är rätt: specifikationen, ett referenssystem, en tidigare version, en handräkning eller en expertbedömning. Utan orakel kan ett testfall köras men inte bedömas.
+
+**I Qtestframe:** det förväntade resultatet för varje steg och testfallets övergripande förväntade resultat är dess orakel; för automatiserade testfall är det kontrollerna i skriptet.
+
+**Se även:** [Teststeg](#teststeg), [Testfall](#testfall-2), [Manuella testfall: steg](#manuella-testfall-steg)
+
+### Testplan
+
+Ett dokument som beskriver testningens omfattning, angreppssätt, resurser, tidplan, ingångs- och utgångskriterier och risker (ISO/IEC/IEEE 29119-3). Det är överenskommelsen om vad som ska testas, hur och av vem.
+
+**I Qtestframe:** **Skapa dokument → Testplan** skriver en testplan med testspecifikation från projektet: de funktioner som ska testas, angreppssätt med ingångs- och utgångskriterier, miljö, roller, tidplan, varje testfall med sina steg och en bilaga om täckningen. En [testcykel](#testcykel) är den operativa planen för en testperiod.
+
+**Se även:** [Skapa en kravspecifikation eller en testplan](#skapa-en-kravspecifikation-eller-en-testplan), [Testcykel](#testcykel), [Utgångskriterier](#utgångskriterier-1)
+
+### Teststeg
+
+En åtgärd i ett manuellt testfall, med det förväntade resultatet av åtgärden.
+
+**I Qtestframe:** steg har en åtgärd, ett förväntat resultat och eventuellt platshållare för testdata; i exekveringsvyn får varje steg ett eget utfall, och ett steg kan anropa ett annat testfall som ett [delat steg](#delat-steg).
+
+**Se även:** [Manuella testfall: steg](#manuella-testfall-steg), [Testfall](#testfall-2), [Delat steg](#delat-steg)
+
+### Testsvit
+
+En mängd testfall som grupperats för ett syfte, till exempel alla testfall för en funktion eller den nattliga regressionen. I många verktyg är en svit en mapp; i JUnit XML är den en grupp testfall i en rapport.
+
+**I Qtestframe:** det finns inget separat svitobjekt: gruppera testfallen med mappar, kategorier eller taggar, spara frågan och skapa en körning från den.
+
+**Se även:** [Testkörning](#testkörning-1), [Frågespråk](#frågespråk), [JUnit XML](#junit-xml-1)
+
+### Testtyp
+
+En grupp testaktiviteter som riktar sig mot en sorts kvalitet: [funktionell](#funktionell-testning), [icke-funktionell](#icke-funktionell-testning) (prestanda, säkerhet, användbarhet, tillgänglighet …), ändringsrelaterad ([regressionstest](#regressionstest), bekräftelsetest) och strukturell testning. Varje testtyp kan utföras på varje [testnivå](#testnivå).
+
+**I Qtestframe:** använd en kategoridimension (*Typ / Säkerhet*) eller taggar; kravtyperna och katalogens kategorier följer samma indelning.
+
+**Se även:** [Testnivå](#testnivå), [Kategorier](#kategorier), [Icke-funktionell testning](#icke-funktionell-testning)
+
+### Testutfall
+
+Resultatet av att exekvera ett testfall, också kallat dess bedömning (verdict).
+
+**I Qtestframe:** en exekvering är *Godkänd*, *Underkänd*, *Blockerad* (kunde inte exekveras på grund av ett hinder), *Överhoppad* (medvetet utelämnad), *Pågår* eller *Ej körd*. Det senaste utfallet för varje testfall avgör täckningen för dess krav.
+
+**Se även:** [Så beräknas täckningen](#så-beräknas-täckningen), [Exekvering](#exekvering), [Inaktuellt utfall](#inaktuellt-utfall)
+
+### Tillgänglighetstest
+
+Test av om personer med funktionsnedsättning kan använda produkten: med enbart tangentbord, skärmläsare, förstoring, hög kontrast eller utan att vara beroende av färg. Automatiska verktyg hittar en del av problemen; resten kräver manuella kontroller mot en standard som [WCAG](#wcag).
+
+**I Qtestframe:** katalogen har tillgänglighetskrav och testfall som hänvisar till WCAG 2.2. Webbklienten siktar själv på WCAG 2.1 AA och kontrolleras med automatiska tillgänglighetstester i ljust, mörkt och högkontrasttema.
+
+**Se även:** [WCAG](#wcag), [Icke-funktionell testning](#icke-funktionell-testning), [Tillgänglighet och språk](#tillgänglighet-och-språk)
+
+### Tillståndsövergångstest
+
+En testdesignteknik för system vars beteende beror på deras tillstånd, till exempel en order (*skapad, betald, skickad, avbruten*) eller en session. Testfallen täcker tillstånden, de giltiga övergångarna och de händelser som ska avvisas i ett visst tillstånd (ISO/IEC/IEEE 29119-4).
+
+**I Qtestframe:** ett testfall per väg eller övergång, med tillståndet i förutsättningarna; testflödesdiagrammet visar stegens och beroendenas ordning.
+
+**Se även:** [Testdesignteknik](#testdesignteknik), [Testflöde](#testflöde), [Beslutstabelltest](#beslutstabelltest)
+
+### TOTP
+
+Time-based One-Time Password (RFC 6238): en sexsiffrig kod som beräknas från en delad hemlighet och det aktuella tidssteget på 30 sekunder och visas i en autentiseringsapp.
+
+**I Qtestframe:** den andra faktorn i [tvåstegsverifieringen](#tvåstegsverifiering-2): HMAC-SHA-1, 6 siffror, steg om 30 sekunder, ett stegs klockavvikelse tillåts och varje kod godtas bara en gång.
+
+**Se även:** [HOTP](#hotp), [Tvåstegsverifiering](#tvåstegsverifiering-2), [Flerfaktorsautentisering](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authentication.md#flerfaktorsautentisering)
+
+### Tvåstegsverifiering
+
+Inloggning med mer än ett slags bevis: något du vet (ett lösenord) och något du har (en telefon med en autentiseringsapp, en säkerhetsnyckel). Ett stulet lösenord räcker då inte. Kallas också flerfaktorsautentisering (MFA).
+
+**I Qtestframe:** den andra faktorn är en [TOTP](#totp)-kod med tio engångskoder för återställning. Server- och organisationspolicyer kan kräva den av alla eller av vissa roller; vid enkel inloggning sköter oftast identitetsleverantören den.
+
+**Se även:** [Tvåstegsverifiering](#tvåstegsverifiering), [TOTP](#totp), [WebAuthn och FIDO2](#webauthn-och-fido2)
+
+### Täckning
+
+Hur mycket av något som testerna når. Vad ”något” är avgör vilken sorts täckning det gäller: krav, risker, kod, konfigurationer eller datakombinationer. Täckning gäller alltid i förhållande till en modell och bevisar aldrig att det saknas defekter.
+
+**I Qtestframe:** ”täckning” betyder [kravtäckning](#kravtäckning): varje kravs verifieringsläge, härlett från de senaste utfallen för dess länkade testfall (*Ingen täckning*, *Ej körd*, *Godkänd*, *Underkänd*, *Delvis*). Risktäckningen visas i riskregistret.
+
+**Se även:** [Så beräknas täckningen](#så-beräknas-täckningen), [Kodtäckning](#kodtäckning), [Kravtäckning](#kravtäckning)
+
+## U
+
+### Undantag
+
+Ett formellt, signerat godkännande av att ett krav inte är uppfyllt (underkänt, otestat eller ej genomfört) för en release eller en period, oftast med villkor, kompenserande åtgärder och ett slutdatum (på engelska *waiver*). Till skillnad från en [avvikelse](#avvikelse) uppnås inte kravets syfte; risken accepteras.
+
+**I Qtestframe:** undantag begärs på sidan **Undantag** eller från ett krav, godkänns med en elektronisk signatur av någon med `waiver.approve` (aldrig den som begärde det) och gör att releasens utgångskriterier godtar de undantagna kraven.
+
+**Se även:** [Undantag och avvikelser](#undantag-och-avvikelser), [Avvikelse](#avvikelse), [Restrisk](#restrisk-1)
+
+### Utforskande testning
+
+Testdesign och testexekvering på samma gång: testaren lär sig produkten medan hen testar den och väljer nästa test utifrån det hen just såg. Den hittar problem som ingen tänkte på att skriva ett testfall för, och är mest effektiv när den är strukturerad med ett mål och en tidsram.
+
+**I Qtestframe:** utforskande testning sker i sessioner med uppdrag, tidtagning, typade anteckningar och en utvärdering; se [sessionsbaserad testledning](#sessionsbaserad-testledning).
+
+**Se även:** [Utforskande test](#utforskande-test), [Sessionsbaserad testledning](#sessionsbaserad-testledning), [Felgissning](#felgissning)
+
+### Utgångskriterier
+
+De villkor som ska vara uppfyllda för att avsluta en testaktivitet eller släppa en release: en andel krav täckta och godkända, inga öppna kritiska defekter, risker hanterade. De gör ”är vi klara?” till en kontroll i stället för en känsla (ISO/IEC/IEEE 29119-3, ISTQB:s ordlista).
+
+**I Qtestframe:** en [release](#release) har utgångskriterier som *Täckning*, *Klarade testfall*, *Obligatoriska krav klarade*, *Inga öppna defekter*, *Inga misstänkta länkar*, *Risker hanterade* eller *Restrisk*, och fliken **Status** visar go eller no-go.
+
+**Se även:** [Utgångskriterier](#utgångskriterier), [Ingångskriterier](#ingångskriterier), [Undantag](#undantag)
+
+### Uttalande om tillämplighet
+
+SoA (Statement of Applicability): dokumentet där en organisation för varje åtgärd i en referensförteckning som ISO/IEC 27001 bilaga A anger om den är tillämplig, varför eller varför inte, och om den är genomförd.
+
+**I Qtestframe:** sidan **SoA** listar åtgärderna med tillämplighet, motivering och ägare, härleder genomförandet från de krav som hänvisar till varje åtgärd och deras testfall, och rapporten **Uttalande om tillämplighet** skriver ut det.
+
+**Se även:** [Uttalande om tillämplighet](#uttalande-om-tillämplighet), [ISO/IEC 27001 bilaga A](#isoiec-27001-bilaga-a), [Undantag](#undantag)
+
+### Utvärderingskriterium
+
+En beskrivning av hur uppfyllandet av ett krav ska bedömas: vad som kontrolleras, med vilken [metod](#verifieringsmetod) och vilket tröskelvärde som ska nås, till exempel ”svarstid p95 under 2 s, mätt med 200 samtidiga användare”.
+
+**I Qtestframe:** varje krav kan ha flera kriterier, vart och ett med en metod (test, inspektion, analys, demonstration, granskning) och ett tröskelvärde. Testfall länkas till ett kriterium, andra metoder registreras som [verifieringsposter](#verifieringspost); kravet är verifierat när alla kriterier är det.
+
+**Se även:** [Utvärderingskriterier](#utvärderingskriterier), [Acceptanskriterier](#acceptanskriterier), [Verifiering](#verifiering)
+
+## V
+
+### V-modellen
+
+En livscykelmodell som ritas som ett V: den vänstra sidan går nedåt från krav via arkitektur till detaljerad design och kod, den högra sidan uppåt genom enhets-, integrations-, system- och acceptanstest, och varje testnivå verifierar arbetsprodukten mittemot. Den gör tidigt tydligt vilka test som ska verifiera vilken specifikation.
+
+**I Qtestframe:** kravnivåer som kopplas ihop med **förfinar** och de testfall som länkas på varje nivå speglar V:et; sammanräkningen visar verifieringen från V:ets botten till toppen.
+
+**Se även:** [Testnivå](#testnivå), [Verifiering](#verifiering-1), [Förfining](#förfining)
+
+### Validering
+
+Bekräftelse på att produkten uppfyller sin avsedda användning i sin avsedda miljö: ”bygger vi rätt produkt?” Validering involverar intressenter och verklig användning; en produkt kan klara all verifiering och ändå inte klara valideringen (IEEE 1012, ISO/IEC/IEEE 29148).
+
+**I Qtestframe:** acceptanstest, demonstrationer för användare och utforskande sessioner med användare ger valideringsbevis; registrera dem mot intressent- eller användarkraven.
+
+**Se även:** [Verifiering](#verifiering-1), [Acceptanstest](#acceptanstest), [Intressentkrav](#intressentkrav)
+
+### Variant
+
+En version i en produktfamilj som delar de flesta krav och testfall med de andra, till exempel en modell för en viss marknad.
+
+**I Qtestframe:** objekt kan gälla alla varianter eller bara vissa; listor, täckning, releaser, dokument och releasegrindar kan visas för en variant.
+
+**Se även:** [Varianter](#varianter), [Release](#release), [Testkonfiguration](#testkonfiguration)
+
+### Verifiering
+
+Bekräftelse, med objektiva bevis, på att en arbetsprodukt uppfyller sina specificerade krav: ”bygger vi produkten rätt?” Verifiering sker genom test, inspektion, analys, demonstration och granskning (IEEE 1012, ISTQB:s ordlista).
+
+**I Qtestframe:** ett krav är verifierat när varje utvärderingskriterium har godkända bevis (testutfall, verifieringsposter, eventuellt utforskande sessioner) och alla dess barn är verifierade; **Verifiering** visar trädet och luckorna.
+
+**Se även:** [Verifiering](#verifiering), [Validering](#validering), [Verifieringsmetod](#verifieringsmetod)
+
+### Verifieringsmetod
+
+Sättet att visa att ett krav är uppfyllt. De klassiska metoderna är **test** (exekvering med bestämda indata och förväntade resultat), **inspektion** (granskning av kod, dokument eller produkten), **analys** (beräkning, simulering, modellering), **demonstration** (att visa funktionen utan detaljerade mätningar) och **granskning** (en formell bedömning av kvalificerade personer).
+
+**I Qtestframe:** varje utvärderingskriterium har en av de fem metoderna; *Test* uppfylls av länkade testfall, de andra av [verifieringsposter](#verifieringspost).
+
+**Se även:** [Utvärderingskriterier](#utvärderingskriterier), [Verifieringspost](#verifieringspost), [Verifiering](#verifiering-1)
+
+### Verifieringspost
+
+Beviset för en verifiering som inte är en testexekvering: vem som inspekterade, analyserade, demonstrerade eller granskade vad, när, med vilket resultat och vilka dokument.
+
+**I Qtestframe:** en post har metod, utfall (*Godkänd*, *Underkänd*, *Godkänd med villkor*), utförare, datum, anteckning, dokument och giltighet; den kan signeras av en andra person och blir ogiltig när kravet ändras, om man har valt det.
+
+**Se även:** [Verifieringsposter](#verifieringsposter), [Verifieringsmetod](#verifieringsmetod), [Utvärderingskriterium](#utvärderingskriterium)
+
+### Verksamhetskrav
+
+Ett krav som anger ett mål eller behov hos organisationen, till exempel ”halvera den manuella orderhanteringen”, snarare än en funktion i ett system. Verksamhetskrav förklarar varför ett projekt finns och förfinas till intressent-, användar- och systemkrav.
+
+**I Qtestframe:** välj typen **Verksamhet**. Relatera de krav som genomför det med **förfinar**, så att kravhierarkin räknar samman deras verifiering till det.
+
+**Se även:** [Intressentkrav](#intressentkrav), [Förfining](#förfining), [Krav](#krav-2)
+
+### Version
+
+En sparad version av ett objekt. Varje ändring skapar en ny version, så historiken visar vem som ändrade vad, när och hur.
+
+**I Qtestframe:** fliken **Versionshistorik** jämför och återställer versioner; versionsnumret i redigerarens rubrik räknar dem. En [baslinje](#baslinje) registrerar en version av varje objekt vid ett visst tillfälle.
+
+**Se även:** [Versionshistorik och återställning](#versionshistorik-och-återställning), [Baslinje](#baslinje), [Baslinje eller version?](#baslinje-eller-version)
+
+### Vitlådetest
+
+Test som utgår från den inre strukturen i koden eller systemet: testfallen tas fram för att exekvera satser, grenar, villkor eller vägar, och [kodtäckningen](#kodtäckning) mäter hur långt de når (ISO/IEC/IEEE 29119-4).
+
+**I Qtestframe:** vitlådetest är oftast enhetstest som körs i CI; utfallen importeras, kodtäckningen stannar i byggverktygen.
+
+**Se även:** [Svartlådetest](#svartlådetest), [Kodtäckning](#kodtäckning), [Enhetstest](#enhetstest)
+
+## W
+
+### WCAG
+
+Web Content Accessibility Guidelines från W3C: testbara framgångskriterier, ordnade under principerna möjlig att uppfatta, hanterbar, begriplig och robust, på nivåerna A, AA och AAA. Version 2.2 (2023) bygger ut 2.1. Lagen om tillgänglighet till digital offentlig service hänvisar till dem via EN 301 549.
+
+**I Qtestframe:** webbklienten siktar på WCAG 2.1 AA, och katalogen har krav och testfall som hänvisar till WCAG 2.2 för dina egna produkter.
+
+**Se även:** [Tillgänglighetstest](#tillgänglighetstest), [Tillgänglighet och språk](#tillgänglighet-och-språk), [Standarder och vägledningar för test](#standarder-och-vägledningar-för-test)
+
+### WebAuthn och FIDO2
+
+W3C:s Web Authentication API och FIDO2-standarderna: inloggning med en säkerhetsnyckel eller en passkey, baserad på ett nyckelpar som är bundet till webbplatsen och därför står emot nätfiske.
+
+**I Qtestframe:** inte en inloggningsmetod i Qtestframe självt (det använder lösenord, enkel inloggning och TOTP), men katalogen har krav och testfall för passkeys och säkerhetsnycklar som hänvisar till WebAuthn.
+
+**Se även:** [Tvåstegsverifiering](#tvåstegsverifiering-2), [TOTP](#totp), [Katalog](#katalog-1)
+
+### Webbtest
+
+Ett automatiserat testfall som styr en riktig webbläsare genom en webbapplikation.
+
+**I Qtestframe:** webbtester är Playwright-skript (skriptspråket **Webbtest (Playwright)**), körs på servern som bakgrundsjobb när administratören har aktiverat dem och sparar utdata, skärmbilder och en spårning (trace) som bevis.
+
+**Se även:** [Webbtester (Playwright)](#webbtester-playwright), [End-to-end-test](#end-to-end-test), [Skriptkörning](#skriptkörning)
+
+### Webhook
+
+En HTTP-begäran som ett program skickar till ett annat när något händer, så att det andra inte behöver fråga om och om igen.
+
+**I Qtestframe:** projektets webhooks skickar händelser som `run.completed` eller `defect.created` som signerade JSON-begäranden med POST; inkommande webhooks från GitHub och GitLab skapar [kodlänkar](#kodlänk). Webhookhemligheter visas bara en gång.
+
+**Se även:** [Webhooks](#webhooks), [Kodlänkar](#kodlänkar), [Notis](#notis)
+
+## Ä
+
+### Ändringspåverkan
+
+Det som en ändring kan påverka: de testfall som verifierar ett ändrat krav, de krav som förfinar det eller beror på det, deras utfall, dokument och öppna defekter. En påverkansanalys hittar dem före eller efter ändringen, så att inget blir inaktuellt utan att någon märker det.
+
+**I Qtestframe:** när ett krav eller testfall ändras i sak blir dess länkar och relationer [misstänkta](#misstänkt-länk), utfallen [inaktuella](#inaktuellt-utfall), ärenden och framtagna dokument markeras som inaktuella, och påverkan sprids vidare längs relationerna upp till projektets påverkansdjup. Fliken **Påverkan** och påverkansanalysen visar vägarna.
+
+**Se även:** [Ändringspåverkan](#ändringspåverkan), [Misstänkt länk](#misstänkt-länk), [Baslinje](#baslinje)
+
+### Ärendesystem
+
+Ett verktyg där utvecklingsteam hanterar buggar och uppgifter, till exempel Jira, GitHub Issues eller GitLab.
+
+**I Qtestframe:** ett projekt kan skicka defekter och krav till Jira, GitHub, GitLab eller Request Tracker, synkronisera deras status och importera ärenden; ett ändrat krav markerar sitt ärende som inaktuellt.
+
+**Se även:** [Anslut Jira, GitHub eller GitLab](#anslut-jira-github-eller-gitlab), [Integrationer](#integrationer), [Defekt](#defekt)
+
 # Referenser
 
 Standarder, riktlinjer och andra dokument som ligger bakom Qtestframes sätt att skriva krav och testfall. Använd dem när du inför en process för kravspecifikationer, utbildar kravskrivare eller behöver motivera en regel för en granskare. Länkarna går till utgivaren. ISO- och IEEE-standarder är inte fritt tillgängliga, men deras katalogsidor beskriver omfattningen. Dokumenten är på engelska om inget annat anges.
@@ -4441,15 +6160,19 @@ Dessa dokument definierar kravnivåerna och [språkanalysen](#språkanalysen) i 
 
 | Dokument | Var |
 |---|---|
-| [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) – *HTTP Semantics* | REST-API:t |
+| [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) – *HTTP Semantics* | REST-API:t, OSLC och SCIM, även villkorade uppdateringar med `ETag` och `If-Match` |
 | [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259) – *JSON* | Anrop och svar i API:t, säkerhetskopior |
 | [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) – *Date and Time on the Internet: Timestamps* | Datum i API:t, i frågor (`updated_at>=2026-01-01`) och i händelseloggens filter |
 | [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) – *CSV Files* | CSV-export |
-| [RFC 5424](https://www.rfc-editor.org/rfc/rfc5424) – *The Syslog Protocol* | Serverns loggning till syslog |
+| [RFC 5424](https://www.rfc-editor.org/rfc/rfc5424) – *The Syslog Protocol* och [RFC 3164](https://www.rfc-editor.org/rfc/rfc3164) – *The BSD syslog Protocol* | Serverns loggning till syslog (båda formaten kan väljas) |
 | [RFC 5280](https://www.rfc-editor.org/rfc/rfc5280) – *X.509 Certificate and CRL Profile* | TLS-certifikat och certifikatskripten |
 | [RFC 6265](https://www.rfc-editor.org/rfc/rfc6265) – *HTTP State Management Mechanism* (kakor) | Sessionskakor |
 | [RFC 6749](https://www.rfc-editor.org/rfc/rfc6749) – *OAuth 2.0* och [RFC 7519](https://www.rfc-editor.org/rfc/rfc7519) – *JSON Web Token* | Enkel inloggning med [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html) |
+| [RFC 7636](https://www.rfc-editor.org/rfc/rfc7636) – *Proof Key for Code Exchange by OAuth Public Clients* (PKCE) | Inloggning med OpenID Connect (metoden S256) |
+| [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750) – *OAuth 2.0 Bearer Token Usage* | Huvudet `Authorization: Bearer` för API-nycklar och SCIM-nycklar |
 | [SAML 2.0 Core](https://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf) (OASIS) | Enkel inloggning med SAML |
+| [RFC 7643](https://www.rfc-editor.org/rfc/rfc7643) – *SCIM: Core Schema* och [RFC 7644](https://www.rfc-editor.org/rfc/rfc7644) – *SCIM: Protocol* | Provisionering av användare och grupper via `/scim/v2` |
+| [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238) – *TOTP: Time-Based One-Time Password Algorithm* och [RFC 4226](https://www.rfc-editor.org/rfc/rfc4226) – *HOTP* | Den andra faktorn i tvåstegsverifieringen |
 
 ## NIST-publikationer
 
@@ -4485,11 +6208,27 @@ Amerikanska National Institute of Standards and Technology ger ut fritt tillgän
 | Dokument | Relevans |
 |---|---|
 | [ISO/IEC/IEEE 29119](https://committee.iso.org/sites/jtc1sc7/home/projects/flagship-standards/isoiecieee-29119-series.html) – serien *Software testing*, särskilt [Part 1: General concepts](https://www.iso.org/standard/81291.html) (2022) och [Part 3: Test documentation](https://www.iso.org/standard/79429.html) (2021) | Testprocesser, dokumentmallar (testplan, testfall, testlogg, incidentrapport) och testtekniker. Del 3 ersätter IEEE 829. |
+| [ISO/IEC/IEEE 29119-4:2021](https://www.iso.org/standard/79430.html) – *Test techniques* | Specifikations-, struktur- och erfarenhetsbaserade testdesigntekniker som ekvivalensklassindelning, gränsvärdesanalys, beslutstabeller, tillståndsövergångar och kombinatorisk testning; se [Ordlistan](#testdesignteknik). |
 | [IEEE 1012-2016](https://standards.ieee.org/ieee/1012/5609/) – *System, Software, and Hardware Verification and Validation* | Verifierings- och valideringsaktiviteter och integritetsnivåer. |
 | [ISTQB Glossary](https://glossary.istqb.org/) och [Certified Tester Foundation Level v4.0](https://www.istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/) | Den gemensamma testterminologin (testfall, testkörning, defekt, täckning …). |
 | [OWASP Application Security Verification Standard (ASVS)](https://owasp.org/www-project-application-security-verification-standard/) | En färdig lista med testbara säkerhetskrav för webbapplikationer, i tre nivåer. |
 | [OWASP Web Security Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) | Hur säkerheten i webbapplikationer testas; kompletterar ASVS. |
 | [WCAG 2.2](https://www.w3.org/TR/WCAG22/) (och [WCAG 2.1](https://www.w3.org/TR/WCAG21/)) – *Web Content Accessibility Guidelines* | Testbara framgångskriterier för tillgänglighet. Qtestframe siktar själv på WCAG 2.1 AA, se [Tillgänglighet och språk](#tillgänglighet-och-språk). |
+
+## Format, protokoll och ramverk
+
+Utbytesformat, gränssnitt och kunskapsbaser som Qtestframe läser, skriver eller bygger på, och var de syns i verktyget. [Ordlistan](#uppslagsord-efter-ämne) förklarar vart och ett med några meningar.
+
+| Dokument | Används i Qtestframe till |
+|---|---|
+| [ReqIF 1.2](https://www.omg.org/spec/ReqIF/) – *Requirements Interchange Format* (OMG) | [Export och import med ReqIF](#samverkan-reqif-och-oslc) av krav, testfall, relationer, spårlänkar och bilagor |
+| [OSLC](https://open-services.net/) – *Open Services for Lifecycle Collaboration* (OASIS Open Project), Requirements Management 2.1 och Quality Management 2.1 | [OSLC-tjänsten](#oslc) för DOORS Next, Polarion, Codebeamer och andra verktyg |
+| [OpenAPI Specification 3.1](https://spec.openapis.org/oas/v3.1.0) (OpenAPI Initiative) | Beskrivningen av REST-API:t på `/api/v1/openapi.json` |
+| JUnit XML (ett de facto-format utan formell specifikation, som de flesta testramverk skriver) | [Import av utfall från CI](#junit-xml) |
+| [CommonMark](https://spec.commonmark.org/) – en specifikation av Markdown | Kommentarer i [diskussioner](#diskussioner), den här handboken och Markdown-exporten |
+| [STIX 2.1](https://docs.oasis-open.org/cti/stix/v2.1/stix-v2.1.html) – *Structured Threat Information Expression* (OASIS) | Formatet för MITRE:s data om ATT&CK, ATLAS och EMB3D, som katalogens listor genereras från |
+| [MITRE ATT&CK](https://attack.mitre.org/), [MITRE ATLAS](https://atlas.mitre.org/), [MITRE D3FEND](https://d3fend.mitre.org/), [MITRE EMB3D](https://emb3d.mitre.org/) och [CWE](https://cwe.mitre.org/) | Tekniker, försvar, hot och svagheter på risker, krav och testfall i [katalogen](#mitre-attck) |
+| [Landlock](https://docs.kernel.org/userspace-api/landlock.html) och [seccomp](https://docs.kernel.org/userspace-api/seccomp_filter.html) (Linuxkärnans dokumentation) | [Härdningen](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/security.md#h%C3%A4rdning) av servern och sandlådan för skript |
 
 ## Branschspecifika standarder
 
