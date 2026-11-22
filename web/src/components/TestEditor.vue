@@ -420,6 +420,8 @@ const impactOpen = ref(false)
 const impactPreview = ref<ChangeImpact | null>(null)
 const impactFields = ref<string[]>([])
 async function save() {
+  // under enforced change control the edit becomes a proposal
+  if (ccBar.value?.blocked()) return ccBar.value.propose()
   if (isNew.value || !loaded.value || !props.itemId) return doSave()
   const changed = contentChanges('test', loaded.value, bodyOf(form.value) as Record<string, unknown>)
   if (!changed.length) return doSave()

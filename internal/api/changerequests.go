@@ -1142,7 +1142,7 @@ func sourceChangeRequests(ctx context.Context, w *WorkContext) ([]WorkItem, erro
 	boards := map[string]*model.ChangeControlSettings{}
 	var out []WorkItem
 	for _, id := range ids {
-		cr, err := s.Store.GetChangeRequest(ctx, p.TenantID(), id)
+		cr, err := s.Store.GetChangeRequestSummary(ctx, p.TenantID(), id)
 		if err != nil {
 			if errors.Is(err, store.ErrNotFound) {
 				continue

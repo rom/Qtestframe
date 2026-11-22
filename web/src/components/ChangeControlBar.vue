@@ -59,7 +59,9 @@ function onProposed(cr: ChangeRequest) {
   emit('proposed', cr)
   void load()
 }
-defineExpose({ propose, reload: load })
+/** whether direct saves are refused (enforced change control) */
+const blocked = () => !!state.value?.blocked
+defineExpose({ propose, reload: load, blocked })
 </script>
 
 <template>

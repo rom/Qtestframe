@@ -572,12 +572,23 @@ func CRHash(cr *model.ChangeRequest) string {
 // GetChangeRequest returns a change request with its items (and their
 // current values), signatures and timeline.
 func (s *Store) GetChangeRequest(ctx context.Context, tenantID, id string) (*model.ChangeRequest, error) {
+	return s.getChangeRequest(ctx, tenantID, id, true)
+}
+
+// GetChangeRequestSummary returns a change request with its items (keys,
+// versions), signatures and hash, without the timeline and the current
+// values of the proposed fields (cheaper, for lists).
+func (s *Store) GetChangeRequestSummary(ctx context.Context, tenantID, id string) (*model.ChangeRequest, error) {
+	return s.getChangeRequest(ctx, tenantID, id, false)
+}
+
+func (s *Store) getChangeRequest(ctx context.Context, tenantID, id string, full bool) (*model.ChangeRequest, error) {
 	cr, err := scanCR(s.c(ctx).row(ctx, `SELECT `+crCols+` FROM change_requests WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "change request")
 	}
 	list := []model.ChangeRequest{*cr}
-	if err := s.decorateCRs(ctx, tenantID, cr.ProjectID, list, true); err != nil {
+	if err := s.decorateCRs(ctx, tenantID, cr.ProjectID, list, full); err != nil {
 		return nil, err
 	}
 	return &list[0], nil

@@ -570,7 +570,7 @@ Every tenant can change the permissions of all built-in roles except
 Inside a project, a **project role** (project sharing, table
 `project_members`, migrations 0024 and 0052; a member can hold several
 project roles, whose permissions add up) replaces the project permissions
-(`project.read/update/delete`, `requirement.*`, `test.*`, `run.*`,
+(`project.read/update/delete`, `requirement.*`, `change.*`, `test.*`, `run.*`,
 `script.execute`, `export`) of the organisation roles, and a restricted
 project is invisible to non-members; see
 [api.md](api.md#project-sharing-per-project-access) and
@@ -594,6 +594,8 @@ project is invisible to non-members; see
 | `audit.read` | | | | | ✔ | ✔ | ✔ | audit log |
 | `settings.manage` | | | | | ✔ | ✔ | ✔ | `PUT /settings` (test execution settings) |
 | `requirement.write` | | | ✔ | | | ✔ | ✔ | requirements, requirement folders/categories |
+| `change.create` | | | ✔ | | ✔ | ✔ | ✔ | propose, edit, submit, assess, apply, verify and close change requests |
+| `change.approve` | | | | | ✔ | ✔ | ✔ | decide change requests (board, e-signature); emergency override of enforced change control |
 | `project.create` | | | | | | ✔ | ✔ | create projects |
 | `project.update` | | | | | | ✔ | ✔ | rename project, all categories |
 | `project.delete` | | | | | | | ✔ | delete projects |
