@@ -277,6 +277,9 @@ func (s *Store) DeleteDefect(ctx context.Context, tenantID, id string) error {
 		if _, err := c.exec(ctx, `DELETE FROM defect_links WHERE defect_id = ?`, id); err != nil {
 			return err
 		}
+		if err := deleteComments(ctx, c, model.KindDefect, []string{id}); err != nil {
+			return err
+		}
 		res, err := c.exec(ctx, `DELETE FROM defects WHERE id = ? AND tenant_id = ?`, id, tenantID)
 		if err != nil {
 			return err

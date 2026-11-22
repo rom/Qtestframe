@@ -251,6 +251,9 @@ func (s *Store) DeleteRisk(ctx context.Context, tenantID, id string) error {
 		if _, err := c.exec(ctx, `DELETE FROM risk_requirements WHERE risk_id = ?`, id); err != nil {
 			return err
 		}
+		if err := deleteComments(ctx, c, model.KindRisk, []string{id}); err != nil {
+			return err
+		}
 		res, err := c.exec(ctx, `DELETE FROM risks WHERE id = ? AND tenant_id = ?`, id, tenantID)
 		if err != nil {
 			return err

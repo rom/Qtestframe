@@ -415,6 +415,9 @@ func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
 		if err := deleteDefectLinks(ctx, c, "run", []string{id}); err != nil {
 			return err
 		}
+		if err := deleteComments(ctx, c, model.DiscussionRun, []string{id}); err != nil {
+			return err
+		}
 		res, err := c.exec(ctx, `DELETE FROM test_runs WHERE id = ? AND tenant_id = ?`, id, tenantID)
 		if err != nil {
 			return err

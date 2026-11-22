@@ -362,5 +362,21 @@ func (s *Server) documentData(r *http.Request, p *Principal, pr *model.Project, 
 		d.Revisions = append(d.Revisions, rev)
 	}
 	sort.SliceStable(d.Revisions, func(i, j int) bool { return d.Revisions[i].Date.Before(d.Revisions[j].Date) })
+	// the discussions of the items (option include_discussions)
+	if o.Discussions {
+		kind, ids := model.KindRequirement, make([]string, 0, len(d.Requirements))
+		for _, q := range d.Requirements {
+			ids = append(ids, q.ID)
+		}
+		if plan {
+			kind, ids = model.KindTest, ids[:0]
+			for _, t := range d.Tests {
+				ids = append(ids, t.ID)
+			}
+		}
+		if d.Discussions, err = s.Store.ProjectDiscussions(ctx, tid, kind, ids); err != nil {
+			return nil, err
+		}
+	}
 	return d, nil
 }

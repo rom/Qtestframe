@@ -493,24 +493,6 @@ func (s *Server) afterItemChange(r *http.Request, p *Principal, kind, id, projec
 	}
 }
 
-// afterComment sends the webhook and notifies the people mentioned.
-func (s *Server) afterComment(r *http.Request, p *Principal, kind, id string, c *model.Comment) {
-	ctx := r.Context()
-	var projectID, key, title string
-	if kind == model.KindTest {
-		if t, err := s.Store.GetTest(ctx, p.TenantID(), id); err == nil {
-			projectID, key, title = t.ProjectID, t.Key, t.Title
-		}
-	} else if q, err := s.Store.GetRequirement(ctx, p.TenantID(), id); err == nil {
-		projectID, key, title = q.ProjectID, q.Key, q.Title
-	}
-	if projectID == "" {
-		return
-	}
-	s.notifyEvent(r, p, projectID, "comment.created", map[string]any{"kind": kind, "id": id, "key": key, "comment": c})
-	s.notifyMentions(ctx, p, projectID, kind, id, key+" "+title, c.Body)
-}
-
 // afterExecutionChange sends webhooks, tells a new assignee and the people
 // mentioned in new notes, and reports a run that just completed.
 func (s *Server) afterExecutionChange(r *http.Request, p *Principal, before, after *model.Execution, runBefore string) {

@@ -456,7 +456,9 @@ type Requirement struct {
 	LinkedTests  int    `json:"linked_tests"`
 	Coverage     string `json:"coverage,omitempty"` // none | not_run | passed | failed | partial
 	CommentCount int    `json:"comment_count"`
-	Relations    int    `json:"relation_count"`
+	// OpenDiscussions: threads of its discussion that are not resolved.
+	OpenDiscussions int `json:"open_discussions,omitempty"`
+	Relations       int `json:"relation_count"`
 	// SuspectLinks: links to tests that are suspect.
 	SuspectLinks int `json:"suspect_links"`
 	// RiskLevel: the highest level of the open risks it addresses ("" none).
@@ -567,11 +569,13 @@ type TestCase struct {
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 	// Derived.
-	FolderPath   string    `json:"folder_path,omitempty"`
-	LinkedReqs   int       `json:"linked_requirements"`
-	LastResult   string    `json:"last_result,omitempty"`
-	CommentCount int       `json:"comment_count"`
-	CalledBy     []TestRef `json:"called_by,omitempty"`
+	FolderPath   string `json:"folder_path,omitempty"`
+	LinkedReqs   int    `json:"linked_requirements"`
+	LastResult   string `json:"last_result,omitempty"`
+	CommentCount int    `json:"comment_count"`
+	// OpenDiscussions: threads of its discussion that are not resolved.
+	OpenDiscussions int       `json:"open_discussions,omitempty"`
+	CalledBy        []TestRef `json:"called_by,omitempty"`
 	// RelationRefs: requirements it verifies, tests it calls and tests that call it.
 	RelationRefs []ItemRef `json:"relations,omitempty"`
 	StepCount    int       `json:"step_count,omitempty"`
@@ -994,7 +998,7 @@ var WebhookEvents = []string{
 	"run.created", "run.updated", "run.completed", "execution.updated",
 	"defect.created", "defect.updated", "defect.status", "defect.assigned",
 	"risk.created", "risk.updated", "release.created", "release.updated", "release.released",
-	"comment.created", "review.requested", "review.completed", "baseline.signed",
+	"comment.created", "comment.mentioned", "comment.resolved", "review.requested", "review.completed", "baseline.signed",
 	"defect.regression",
 	"waiver.requested", "waiver.approved", "waiver.rejected", "waiver.revoked",
 }
@@ -1280,9 +1284,13 @@ type BaselineChange struct {
 
 // Comment is a discussion entry on a requirement or test.
 type Comment struct {
-	ID         string    `json:"id"`
-	EntityType string    `json:"entity_type"`
-	EntityID   string    `json:"entity_id"`
+	ID         string `json:"id"`
+	ProjectID  string `json:"project_id"`
+	EntityType string `json:"entity_type"`
+	EntityID   string `json:"entity_id"`
+	// ParentID is the first comment of the thread of a reply ("" for the
+	// comment that starts a thread).
+	ParentID   string    `json:"parent_id"`
 	UserID     string    `json:"user_id"`
 	UserEmail  string    `json:"user_email"`
 	UserName   string    `json:"user_name"`
@@ -1290,6 +1298,48 @@ type Comment struct {
 	Body       string    `json:"body"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+	// Resolved (first comment of a thread only): when and by whom.
+	ResolvedAt     *time.Time `json:"resolved_at"`
+	ResolvedBy     string     `json:"resolved_by,omitempty"`
+	ResolvedByName string     `json:"resolved_by_name,omitempty"`
+	// Deleted comments stay in the thread with an empty body.
+	Deleted   bool       `json:"deleted"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+	DeletedBy string     `json:"deleted_by,omitempty"`
+	// Mentions are the user ids @mentioned in the body.
+	Mentions []string `json:"mentions"`
+	// Reactions: reaction → user ids.
+	Reactions map[string][]string `json:"reactions"`
+}
+
+// Kinds of items that have discussions besides requirements, tests,
+// defects and risks.
+const (
+	DiscussionRun    = "run"
+	DiscussionReview = "review"
+)
+
+// DiscussionKinds are the entity types that have discussions.
+var DiscussionKinds = []string{KindRequirement, KindTest, KindDefect, KindRisk, DiscussionRun, DiscussionReview}
+
+// CommentReactions are the reactions a comment can get.
+var CommentReactions = []string{"+1", "-1", "heart", "tada", "eyes", "check"}
+
+// DiscussionThread is a thread of a discussion list: its first comment,
+// the item it is about and a summary of its replies.
+type DiscussionThread struct {
+	Root        Comment   `json:"root"`
+	ProjectKey  string    `json:"project_key"`
+	EntityKey   string    `json:"entity_key"`
+	EntityTitle string    `json:"entity_title"`
+	Replies     int       `json:"replies"`
+	LastAt      time.Time `json:"last_at"`
+	// LastBy is the display name (or e-mail) of who wrote last.
+	LastBy string `json:"last_by"`
+	// Participants: the user ids who wrote in the thread.
+	Participants []string `json:"participants"`
+	// Mentioned: the user ids mentioned anywhere in the thread.
+	Mentioned []string `json:"mentioned"`
 }
 
 // AuditEntry records a change.

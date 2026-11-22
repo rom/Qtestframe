@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -19,19 +20,21 @@ var (
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
 			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk", "catalog",
-			"blocked", "stale", "suspect_relations", "verification", "element", "variant", "applicability"},
+			"open_discussions", "blocked", "stale", "suspect_relations", "verification", "element", "variant", "applicability"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
 			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention",
+			"open-discussion": "open_discussions", "open-discussions": "open_discussions", "open_discussion": "open_discussions",
 			"verified": "verification", "elements": "element", "variants": "variant"},
 		Prefixes: customFieldPrefix,
 	}
 	testSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
-			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
+			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention", "open_discussions",
 			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
+			"open-discussion": "open_discussions", "open-discussions": "open_discussions", "open_discussion": "open_discussions",
 			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness",
 			"elements": "element", "variants": "variant"},
 		Prefixes: customFieldPrefix,
@@ -69,7 +72,14 @@ type projectContext struct {
 	cfgResults store.ConfigResults
 	comments   map[string]int
 	relCount   map[string]int
-	defects    map[string][]string
+	// discussions: item id → summary of its discussion; handles: user id
+	// → @handle (loaded on first use); me: the caller's user id (set by
+	// forCaller) for mention:me
+	discussions map[string]*store.DiscussionStats
+	handles     map[string]string
+	loadHandles func() map[string]string
+	me          string
+	defects     map[string][]string
 	// requirement id → related keys; parent/child keys of refines relations
 	related, parents, children map[string][]string
 	// item id → references to related items (both directions)
@@ -195,6 +205,10 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 	if pc.comments, pc.relCount, err = s.Store.ProjectCounts(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
+	if pc.discussions, err = s.Store.DiscussionIndex(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	pc.loadHandles = func() map[string]string { return s.userHandles(ctx, tenantID) }
 	if pc.defects, err = s.Store.TestDefects(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
@@ -278,6 +292,7 @@ func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.LinkedTests = len(pc.r2t[r.ID])
 	r.Coverage = store.CoverageOf(pc.r2t[r.ID], pc.cfgResults)
 	r.CommentCount = pc.comments[r.ID]
+	r.OpenDiscussions = pc.openDiscussions(r.ID)
 	r.Relations = pc.relCount[r.ID]
 	r.RelationRefs = pc.refs[r.ID]
 	r.CriteriaCount = len(r.Criteria)
@@ -302,6 +317,7 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 		t.LastResult = model.ResultNotRun
 	}
 	t.CommentCount = pc.comments[t.ID]
+	t.OpenDiscussions = pc.openDiscussions(t.ID)
 	t.StepCount = len(t.Steps)
 	t.Defects = pc.defects[t.ID]
 	t.SuspectLinks = pc.suspect[t.ID]
@@ -351,7 +367,8 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"defects":           {strconv.Itoa(r.OpenDefects)},
 		"risk":              {r.RiskLevel},
 		"catalog":           {r.CatalogRef},
-		"mention":           mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
+		"mention":           pc.mentionTerms(r.ID, r.Owner, r.Title, r.Description, r.Rationale, r.Source),
+		"open_discussions":  countTerm(r.OpenDiscussions),
 		"blocked":           {strconv.Itoa(r.BlockingDefects)},
 		"stale":             {strconv.Itoa(r.StaleResults)},
 		"suspect_relations": {strconv.Itoa(r.SuspectRelations)},
@@ -368,6 +385,65 @@ func mentions(texts ...string) []string {
 	var out []string
 	for _, h := range mention.Extract(strings.Join(texts, "\n")) {
 		out = append(out, h, "@"+h)
+	}
+	return out
+}
+
+// forCaller sets the caller for mention:me.
+func (pc *projectContext) forCaller(p *Principal) *projectContext {
+	if p != nil && p.User != nil {
+		pc.me = p.User.ID
+	}
+	return pc
+}
+
+func (pc *projectContext) openDiscussions(id string) int {
+	if st := pc.discussions[id]; st != nil {
+		return st.Open
+	}
+	return 0
+}
+
+// countTerm is a count as a query value, none for 0 (so has: means > 0).
+func countTerm(n int) []string {
+	if n == 0 {
+		return nil
+	}
+	return []string{strconv.Itoa(n)}
+}
+
+func (pc *projectContext) userHandle(id string) string {
+	if pc.handles == nil {
+		pc.handles = map[string]string{}
+		if pc.loadHandles != nil {
+			pc.handles = pc.loadHandles()
+		}
+	}
+	return pc.handles[id]
+}
+
+// mentionTerms are the mention values of an item: the @handles in its
+// texts and of the people mentioned in its discussion (each also as
+// "@handle"), and me/@me when the caller is one of them.
+func (pc *projectContext) mentionTerms(id string, texts ...string) []string {
+	out := mentions(texts...)
+	st := pc.discussions[id]
+	if st != nil {
+		for _, u := range st.Mentioned {
+			if h := pc.userHandle(u); h != "" && !slices.Contains(out, h) {
+				out = append(out, h, "@"+h)
+			}
+		}
+	}
+	if pc.me != "" {
+		me := st != nil && slices.Contains(st.Mentioned, pc.me)
+		if !me && len(out) > 0 {
+			h := pc.userHandle(pc.me)
+			me = h != "" && slices.Contains(out, h)
+		}
+		if me {
+			out = append(out, "me", "@me")
+		}
 	}
 	return out
 }
@@ -391,15 +467,16 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"last_result": {t.LastResult}, "created_by": {t.CreatedBy}, "created_at": {ts(t.CreatedAt)},
 		"updated_at": {ts(t.UpdatedAt)}, "defect": pc.defects[t.ID], "calls": calls,
 		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)}, "suspect": {strconv.Itoa(t.SuspectLinks)},
-		"mention":       mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
-		"depends_on":    pc.prereqKeys[t.ID],
-		"flaky":         {strconv.FormatBool(t.Flaky)},
-		"flakiness":     {strconv.Itoa(t.Flakiness)},
-		"catalog":       {t.CatalogRef},
-		"stale":         {strconv.FormatBool(t.Stale)},
-		"element":       pc.elementTerms(t.ElementIDs),
-		"variant":       pc.variantNames(t.ID),
-		"applicability": {pc.applicabilityKind(t.ID)},
+		"mention":          pc.mentionTerms(t.ID, append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
+		"open_discussions": countTerm(t.OpenDiscussions),
+		"depends_on":       pc.prereqKeys[t.ID],
+		"flaky":            {strconv.FormatBool(t.Flaky)},
+		"flakiness":        {strconv.Itoa(t.Flakiness)},
+		"catalog":          {t.CatalogRef},
+		"stale":            {strconv.FormatBool(t.Stale)},
+		"element":          pc.elementTerms(t.ElementIDs),
+		"variant":          pc.variantNames(t.ID),
+		"applicability":    {pc.applicabilityKind(t.ID)},
 	})
 }
 

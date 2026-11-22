@@ -244,10 +244,6 @@ func (s *Server) routes() {
 	h("GET /api/v1/projects/{pid}/relations", s.handleListProjectRelations, "requirement.read")
 	h("POST /api/v1/projects/{pid}/relations/bulk", s.atomic(s.handleBulkCreateRelations), "requirement.write")
 	h("DELETE /api/v1/projects/{pid}/relations/bulk", s.atomic(s.handleBulkDeleteRelations), "requirement.write")
-	h("GET /api/v1/requirements/{id}/comments", s.handleListComments(model.KindRequirement), "requirement.read")
-	h("POST /api/v1/requirements/{id}/comments", s.handleAddComment(model.KindRequirement), "requirement.read")
-	h("PATCH /api/v1/comments/{id}", s.handleUpdateComment)
-	h("DELETE /api/v1/comments/{id}", s.handleDeleteComment)
 	h("GET /api/v1/projects/{pid}/baselines", s.handleListBaselines, "requirement.read")
 	h("POST /api/v1/projects/{pid}/baselines", s.handleCreateBaseline, "requirement.write")
 	h("DELETE /api/v1/projects/{pid}/baselines/bulk", s.atomic(s.handleBulkDeleteBaselines), "requirement.write")
@@ -286,8 +282,6 @@ func (s *Server) routes() {
 	h("GET /api/v1/tests/{id}/links", s.handleItemLinks(model.KindTest), "test.read")
 	h("GET /api/v1/tests/{id}/history", s.handleHistory(model.KindTest), "test.read")
 	h("POST /api/v1/tests/{id}/restore", s.handleRestoreTest, "test.write")
-	h("GET /api/v1/tests/{id}/comments", s.handleListComments(model.KindTest), "test.read")
-	h("POST /api/v1/tests/{id}/comments", s.handleAddComment(model.KindTest), "test.read")
 	h("GET /api/v1/tests/{id}/executions", s.handleTestExecutions, "run.read")
 
 	// traceability
@@ -339,6 +333,8 @@ func (s *Server) routes() {
 	s.routesWaivers(h)
 	s.routesSoA(h)
 	s.routesNotifications(h)
+	// discussions on items (discussions.go)
+	s.routesDiscussions(h)
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)

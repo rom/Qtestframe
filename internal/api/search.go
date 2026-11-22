@@ -112,6 +112,9 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Princip
 		}
 		in := func(perm string) bool { return visibleIn(vis, p, pr.ID, rbac.Permission(perm)) }
 		pc, err := s.loadContext(ctx, p.TenantID(), pr)
+		if pc != nil {
+			pc.forCaller(p)
+		}
 		if err != nil {
 			s.fail(w, r, err)
 			return
