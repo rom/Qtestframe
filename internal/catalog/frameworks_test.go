@@ -163,7 +163,9 @@ func TestFrameworkProblems(t *testing.T) {
 			t.Errorf("%q %q %q: want %q, got %v", tc.req, tc.test, tc.risk, tc.want, err)
 		}
 	}
-	refs := func(s string) string { return strings.Replace(s, `"CWE-89 (SQL injection)"]`, `"MITRE EMB3D MID-008"]`, 1) }
+	refs := func(s string) string {
+		return strings.Replace(s, `"CWE-89 (SQL injection)"]`, `"MITRE EMB3D MID-008"]`, 1)
+	}
 	if _, err := Load(frameworkFS(refs), "d"); err == nil || !strings.Contains(err.Error(), "list EMB3D ids in emb3d, not in refs") {
 		t.Errorf("ref citing EMB3D: %v", err)
 	}
