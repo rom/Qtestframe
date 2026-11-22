@@ -51,11 +51,13 @@ type Store struct {
 	now func() time.Time
 	// keys encrypts the stored secrets (nil: plaintext; see secrets.go)
 	keys *secrets.Keyring
+	// sealer chains the audit log (auditchain.go)
+	sealer *auditSealer
 }
 
 // New returns a store over database d.
 func New(d *db.DB) *Store {
-	return &Store{DB: d, now: func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }}
+	return &Store{DB: d, now: func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }, sealer: newAuditSealer()}
 }
 
 // SetClock overrides the time source (tests).
@@ -63,7 +65,7 @@ func (s *Store) SetClock(f func() time.Time) { s.now = f }
 
 // WithClock returns a store over the same database with another time
 // source (e.g. to record backdated demo data).
-func (s *Store) WithClock(f func() time.Time) *Store { return &Store{DB: s.DB, now: f, keys: s.keys} }
+func (s *Store) WithClock(f func() time.Time) *Store { return &Store{DB: s.DB, now: f, keys: s.keys, sealer: s.sealer} }
 
 // Now returns the current time of the store's clock.
 func (s *Store) Now() time.Time { return s.now() }

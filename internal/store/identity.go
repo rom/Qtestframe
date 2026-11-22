@@ -102,7 +102,7 @@ func (s *Store) UpdateTenant(ctx context.Context, id, name string) (*model.Tenan
 func (s *Store) DeleteTenant(ctx context.Context, id string) error {
 	return s.tx(ctx, func(c conn) error {
 		// Tables carrying tenant_id without FK to tenants.
-		for _, t := range []string{"audit_log", "sessions", "comments", "revisions"} {
+		for _, t := range []string{"audit_log", "audit_heads", "audit_checkpoints", "audit_backfill", "sessions", "comments", "revisions"} {
 			if _, err := c.exec(ctx, `DELETE FROM `+t+` WHERE tenant_id = ?`, id); err != nil {
 				return err
 			}
@@ -363,8 +363,14 @@ func (s *Store) GetSession(ctx context.Context, id string) (*model.Session, erro
 
 // TouchSession records activity, at most once per minute per session.
 func (s *Store) TouchSession(ctx context.Context, sess *model.Session, ip string) error {
+	return s.TouchSessionEvery(ctx, sess, ip, time.Minute)
+}
+
+// TouchSessionEvery records activity at most once per interval (shorter for
+// an inactivity timeout).
+func (s *Store) TouchSessionEvery(ctx context.Context, sess *model.Session, ip string, every time.Duration) error {
 	now := s.now()
-	if sess.LastSeen != nil && now.Sub(*sess.LastSeen) < time.Minute && sess.IP == ip {
+	if sess.LastSeen != nil && now.Sub(*sess.LastSeen) < every && sess.IP == ip {
 		return nil
 	}
 	sess.LastSeen, sess.IP = &now, ip
@@ -525,13 +531,38 @@ func (s *Store) DeleteToken(ctx context.Context, tenantID, userID, id string) er
 // ---------------------------------------------------------------- audit
 
 // Audit appends an audit log entry; failures are returned but callers may
-// choose to only log them.
+// choose to only log them. The entry records the reason for change of ctx
+// (WithChangeReason) and is chained once the transaction of ctx commits
+// (auditchain.go).
 func (s *Store) Audit(ctx context.Context, e model.AuditEntry) error {
 	e.ID = newID()
-	e.CreatedAt = s.now()
-	_, err := s.c(ctx).exec(ctx, `INSERT INTO audit_log (id, tenant_id, user_id, user_email, action, entity_type, entity_id, details, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		e.ID, e.TenantID, e.UserID, e.UserEmail, e.Action, e.EntityType, e.EntityID, e.Details, e.CreatedAt)
-	return err
+	e.CreatedAt = s.now().UTC().Truncate(time.Microsecond)
+	if e.Reason == "" {
+		e.Reason = ChangeReason(ctx)
+	}
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO audit_log (id, tenant_id, user_id, user_email, action, entity_type, entity_id, details, reason, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		e.ID, e.TenantID, e.UserID, e.UserEmail, e.Action, e.EntityType, e.EntityID, e.Details, e.Reason, e.CreatedAt)
+	if err != nil {
+		return err
+	}
+	AfterCommit(ctx, func() { _ = s.SealAudit(ctx, e.TenantID) })
+	return nil
+}
+
+const auditListCols = `a.id, a.tenant_id, a.user_id, a.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), a.action, a.entity_type, a.entity_id, a.details, a.created_at, a.reason, COALESCE(a.seq, 0), a.prev_hash, a.hash`
+
+func scanAuditList(rows *sql.Rows) ([]model.AuditEntry, error) {
+	defer rows.Close()
+	out := []model.AuditEntry{}
+	for rows.Next() {
+		var e model.AuditEntry
+		if err := rows.Scan(&e.ID, &e.TenantID, &e.UserID, &e.UserEmail, &e.UserName, &e.UserAvatar, &e.Action, &e.EntityType, &e.EntityID, &e.Details, &e.CreatedAt,
+			&e.Reason, &e.Seq, &e.PrevHash, &e.Hash); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
 }
 
 // ListAuditRange returns the newest audit entries of a tenant within an
@@ -540,7 +571,7 @@ func (s *Store) ListAuditRange(ctx context.Context, tenantID string, from, to *t
 	if limit <= 0 || limit > 5000 {
 		limit = 500
 	}
-	q := `SELECT a.id, a.tenant_id, a.user_id, a.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), a.action, a.entity_type, a.entity_id, a.details, a.created_at
+	q := `SELECT ` + auditListCols + `
 		FROM audit_log a LEFT JOIN users u ON u.id = a.user_id WHERE a.tenant_id = ?`
 	args := []any{tenantID}
 	if from != nil {
@@ -551,42 +582,16 @@ func (s *Store) ListAuditRange(ctx context.Context, tenantID string, from, to *t
 		q += ` AND a.created_at <= ?`
 		args = append(args, to.UTC())
 	}
-	rows, err := s.c(ctx).query(ctx, q+` ORDER BY a.created_at DESC LIMIT ?`, append(args, limit)...)
+	rows, err := s.c(ctx).query(ctx, q+` ORDER BY a.created_at DESC, a.seq DESC LIMIT ?`, append(args, limit)...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	out := []model.AuditEntry{}
-	for rows.Next() {
-		var e model.AuditEntry
-		if err := rows.Scan(&e.ID, &e.TenantID, &e.UserID, &e.UserEmail, &e.UserName, &e.UserAvatar, &e.Action, &e.EntityType, &e.EntityID, &e.Details, &e.CreatedAt); err != nil {
-			return nil, err
-		}
-		out = append(out, e)
-	}
-	return out, rows.Err()
+	return scanAuditList(rows)
 }
 
 // ListAudit returns the newest audit entries of a tenant.
 func (s *Store) ListAudit(ctx context.Context, tenantID string, limit int) ([]model.AuditEntry, error) {
-	if limit <= 0 || limit > 5000 {
-		limit = 500
-	}
-	rows, err := s.c(ctx).query(ctx, `SELECT a.id, a.tenant_id, a.user_id, a.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), a.action, a.entity_type, a.entity_id, a.details, a.created_at
-		FROM audit_log a LEFT JOIN users u ON u.id = a.user_id WHERE a.tenant_id = ? ORDER BY a.created_at DESC LIMIT ?`, tenantID, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := []model.AuditEntry{}
-	for rows.Next() {
-		var e model.AuditEntry
-		if err := rows.Scan(&e.ID, &e.TenantID, &e.UserID, &e.UserEmail, &e.UserName, &e.UserAvatar, &e.Action, &e.EntityType, &e.EntityID, &e.Details, &e.CreatedAt); err != nil {
-			return nil, err
-		}
-		out = append(out, e)
-	}
-	return out, rows.Err()
+	return s.ListAuditRange(ctx, tenantID, nil, nil, limit)
 }
 
 // expiry helper used by token creation.

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
@@ -599,7 +598,7 @@ func (s *Server) handleBulkSignBaselines(w http.ResponseWriter, r *http.Request,
 	if !s.checkSigner(w, r, p, &req) {
 		return
 	}
-	if !slices.Contains(model.SignoffMeanings, req.Meaning) {
+	if req.Meaning == "" {
 		s.fail(w, r, badRequest("meaning must be one of %s", strings.Join(model.SignoffMeanings, ", ")))
 		return
 	}

@@ -35,6 +35,12 @@ func setupSecrets(ctx context.Context, cfg *config.Config, st *store.Store, note
 	if stats.Changed > 0 {
 		note(fmt.Sprintf("encrypted %d secret(s) that were stored as plaintext", stats.Changed))
 	}
+	// audit entries not chained yet (after the upgrade to the hash chain, or
+	// written by a process that stopped) are chained now that the key of the
+	// signed checkpoints is at hand
+	if err := st.SealAllAudit(ctx); err != nil {
+		note(fmt.Sprintf("audit trail: chaining the pending entries failed (retried with the next entry): %v", err))
+	}
 	return o.Provider, nil
 }
 

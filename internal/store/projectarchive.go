@@ -199,6 +199,13 @@ var ProjectArchiveExcluded = map[string]string{
 	"chat_deliveries":       "queue and log of chat posts",
 	"ci_deliveries":         "queue and log of CI status posts",
 	"similarity_embeddings": "cache of the embeddings service (computed again)",
+	"audit_heads":           "organisation audit trail (hash chain)",
+	"audit_checkpoints":     "organisation audit trail (hash chain)",
+	"audit_keys":            "server keys of the audit trail",
+	"audit_backfill":        "organisation audit trail (hash chain)",
+	"erecords_settings":     "organisation",
+	"esignatures":           "organisation records of electronic signatures (bound to the organisation's audit trail; the archived sign-offs are kept)",
+	"esign_tickets":         "secret (single-use signing tickets)",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.

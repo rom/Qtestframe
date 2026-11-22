@@ -90,6 +90,8 @@ type Server struct {
 	// system settings (systemsettings.go): live is the effective
 	// configuration (nil = Cfg, no overrides), boot the one at start-up.
 	sys sysState
+	// erec caches the electronic-records settings per tenant (erecords.go)
+	erec erecCache
 }
 
 // New creates a server and its identity providers. cfg is the
@@ -376,6 +378,8 @@ func (s *Server) routes() {
 	s.routesExploratory(h)
 	// similar requirements and tests, duplicates and conflicts (similarity.go)
 	s.routesSimilarity(h)
+	// tamper-evident audit trail and electronic-records mode (erecords.go)
+	s.routesERecords(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

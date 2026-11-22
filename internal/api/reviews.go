@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
-	"github.com/rom/qtestframe/internal/auth"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/rbac"
 	"github.com/rom/qtestframe/internal/store"
@@ -332,16 +330,17 @@ func (s *Server) handleSignBaseline(w http.ResponseWriter, r *http.Request, p *P
 }
 
 type signRequest struct {
-	Meaning  string `json:"meaning"`
-	Comment  string `json:"comment"`
-	Password string `json:"password"`
+	signerCreds
+	Comment string `json:"comment"`
 	// IDs: the baselines of a bulk sign-off.
 	IDs []string `json:"ids"`
+	// proof of the re-authentication (checkSigner)
+	proof *signerProof
 }
 
 // checkSigner decodes the request and confirms that the caller may sign:
-// a browser session, a review permission and their password (or a recent
-// single sign-on). It writes the error and returns false otherwise.
+// a browser session, a review permission and the re-authentication of
+// confirmSigner. It writes the error and returns false otherwise.
 func (s *Server) checkSigner(w http.ResponseWriter, r *http.Request, p *Principal, req *signRequest) bool {
 	if p.Token != nil || p.Session == nil {
 		writeError(w, http.StatusForbidden, "forbidden", "baselines are signed in the browser, not with an API token")
@@ -355,16 +354,9 @@ func (s *Server) checkSigner(w http.ResponseWriter, r *http.Request, p *Principa
 		s.fail(w, r, err)
 		return false
 	}
-	if p.User.PasswordHash != "" {
-		if !auth.CheckPassword(p.User.PasswordHash, req.Password) {
-			writeError(w, http.StatusForbidden, "reauth_failed", "the password is not correct")
-			return false
-		}
-	} else if time.Since(p.Session.CreatedAt) > 15*time.Minute {
-		writeError(w, http.StatusForbidden, "reauth_required", "sign in again (less than 15 minutes ago) to sign")
-		return false
-	}
-	return true
+	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, model.SignoffMeanings)
+	req.proof = proof
+	return ok
 }
 
 // signBaseline records the caller's signature on one baseline.
@@ -374,10 +366,17 @@ func (s *Server) signBaseline(r *http.Request, p *Principal, baselineID string, 
 		name = p.User.Email
 	}
 	so := &model.Signoff{BaselineID: baselineID, UserID: p.User.ID, UserEmail: p.User.Email, UserName: name, Meaning: req.Meaning, Comment: strings.TrimSpace(req.Comment)}
-	if err := s.Store.SignBaseline(r.Context(), p.TenantID(), so); err != nil {
+	meanings := model.SignoffMeanings
+	if st := s.erecords(r.Context(), p.TenantID()); st.Enabled {
+		meanings = st.Meanings
+	}
+	if err := s.Store.SignBaselineAs(r.Context(), p.TenantID(), so, meanings); err != nil {
 		return nil, err
 	}
 	s.audit(r.Context(), p, "baseline.signed", "baseline", so.BaselineID, so.Meaning+" "+so.ContentHash[:12])
+	if req.proof != nil {
+		s.recordSignature(r.Context(), p, model.SignBaselineSignoff, "baseline", so.BaselineID, req.proof, so.Comment)
+	}
 	if b, err := s.Store.GetBaseline(r.Context(), p.TenantID(), so.BaselineID); err == nil {
 		s.notifyEvent(r, p, b.ProjectID, "baseline.signed", map[string]any{"baseline_id": b.ID, "baseline": b.Name, "signoff": so})
 	}

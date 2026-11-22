@@ -69,6 +69,10 @@ var BackupTables = []string{
 	"secret_keys",
 	// chat notification channels (0045)
 	"chat_channels",
+	// the audit trail's hash chain: its ends, signed checkpoints and their
+	// keys (encrypted with the keys above), electronic-records settings and
+	// electronic signatures (0055)
+	"audit_heads", "audit_checkpoints", "audit_keys", "audit_backfill", "erecords_settings", "esignatures",
 }
 
 // tables that exist but are deliberately not part of a backup.
@@ -82,7 +86,9 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "
 	// queue and log of CI status posts (0053; the settings are backed up)
 	"ci_deliveries": true,
 	// vectors of the embeddings service: a cache, computed again
-	"similarity_embeddings": true}
+	"similarity_embeddings": true,
+	// single-use signing tickets, minutes long (0055)
+	"esign_tickets": true}
 
 // NotBackedUpTables returns the tables that exist but are deliberately not
 // part of a backup, sorted (for the administrator guide, see
