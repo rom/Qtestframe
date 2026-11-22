@@ -124,6 +124,10 @@ The requirement editor shows the risks a requirement mitigates under **Mitigates
 
 Tick risks in the register. The toolbar sets **status**, **likelihood** or **impact** of all of them, **Owner / category** sets either or both (empty clears), **Link requirements** links the same requirements to every ticked risk, and **Delete** removes them after confirmation. Only rows that are shown stay ticked, so filtering the register or choosing a heat-map cell never leaves hidden risks in the selection. Every risk is checked before any is changed. Changes other than linking and deleting can be undone with the undo button.
 
+### Import a risk register
+
+**Import** above the register reads a risk register from a CSV or Excel file: the *Risk register* sheet of the [risk report](#the-risk-report) (in English or Swedish), or a sheet of your own with columns such as *Key*, *Title*, *Description*, *Category*, *Owner*, *Likelihood*, *Impact*, *Status*, *Mitigation*, *Review date*, *Review owner*, *ATT&CK techniques* and *EMB3D threats*. Choose the file to see a preview: rows with the key of a risk of the project **change** it (only the columns the file has), the other rows become **new** risks, and each row lists its warnings. Unknown ATT&CK, ATLAS and EMB3D ids, unknown statuses and likelihoods or impacts outside 1–5 are left out with a warning; a row without a title is skipped. Select **Import** to save. *(Requirement author or any role with `requirement.write`)*
+
 ## The heat map
 
 The heat map counts the risks in a 5 × 5 grid: likelihood from 5 at the top to 1 at the bottom, impact from 1 on the left to 5 on the right. The colour of a cell is the level of its score. Select a cell to show only the risks with that likelihood and impact in the register; select it again, or the **×** on the filter chip, to show all.

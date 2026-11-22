@@ -104,6 +104,10 @@ Reports are produced in the language you currently use in Qtestframe (**User men
 
 Below the standard reports, **Documents** offers two complete documents: a **requirements specification** and a **test plan** with its test specification. **Create…** opens the generator in the [document archive](documents.md#create-a-requirements-specification-or-a-test-plan), where the document is saved.
 
+### Logo on the first page
+
+Reports and generated documents show the logo of the organisation or the project at the top of their first page, in PDF, Word and Markdown (where it is an embedded image). An administrator sets the organisation's logo under [Administration → Documents](administration.md#logo-on-reports-and-documents); a project can use its own instead, or none, under **Categories & settings → Project → Logo on reports and documents**, with the placement (left, centre or right), the maximum size and a preview of the first page.
+
 ## Custom reports
 
 Under **Custom report** you design a report yourself:
@@ -208,7 +212,7 @@ Use the status buttons above the table to show only some rows, and clear the box
 
 What the workbook contains:
 
-- **One row per item** with *ID*, *Key*, *Version* and one column per field: folder, title, description, obligation, type, priority, status, source, rationale, owner, tags, acceptance criteria (one per line, for example `test: Login works (threshold: 2 s)`) and one column per relation type (*Refines*, *Depends on* …) with the keys of the related requirements. Tests have preconditions, expected result, execution type, estimated minutes and *Verifies* (the keys of the requirements the test verifies) instead.
+- **One row per item** with *ID*, *Key*, *Version* and one column per field: folder, title, description, obligation, type, priority, status, source, rationale, owner, tags, acceptance criteria (one per line, for example `test: Login works (threshold: 2 s)`), *D3FEND* and *EMB3D* (ids separated by commas; unknown ids are left out with a warning in the preview) and one column per relation type (*Refines*, *Depends on* …) with the keys of the related requirements. Tests have preconditions, expected result, execution type, estimated minutes and *Verifies* (the keys of the requirements the test verifies) instead.
 - **Steps of tests** on the sheet *Steps*, one row per step: the test, the step number, action, data, expected result and, for a shared step, the key of the called test. The steps of a test listed on the *Tests* sheet are replaced by its rows on the *Steps* sheet.
 - **Drop-down lists** for the fields with fixed values, grey columns that are only for information (*Verified by*), and a sheet *Instructions*.
 

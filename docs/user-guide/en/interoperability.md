@@ -9,11 +9,11 @@ This page explains both. For the Excel round-trip and the other export formats s
 
 ## ReqIF export
 
-**Export** (in the project) offers **ReqIF** and **ReqIF (with attachments)**. A ReqIF file always contains the requirements with their folders (as chapter headings), custom fields, acceptance criteria and relations. Under **ReqIF content** you add more:
+**Export** (in the project) offers **ReqIF** and **ReqIF (with attachments)**. A ReqIF file always contains the requirements with their folders (as chapter headings), custom fields, acceptance criteria, D3FEND and EMB3D ids and relations; importing the file reads the D3FEND and EMB3D attributes back. Under **ReqIF content** you add more:
 
 | Option | What it adds |
 |---|---|
-| **Test cases with their steps and trace links** | Every test case as an object of the type *Test case* (title, description, preconditions, the steps as a table, expected result, execution type, priority, status, estimate, tags, custom fields), the test folders as a second chapter tree, and a *Verifies* relation from each test to each requirement it verifies. |
+| **Test cases with their steps and trace links** | Every test case as an object of the type *Test case* (title, description, preconditions, the steps as a table, expected result, execution type, priority, status, estimate, tags, D3FEND and EMB3D, custom fields), the test folders as a second chapter tree, and a *Verifies* relation from each test to each requirement it verifies. |
 | **Verification records** | Inspections, analyses, demonstrations and reviews recorded for the requirements, each related to its requirement (*Verification record of*). They are for reading in the other tool; importing the file ignores them. |
 | **Version** | *Current state*, or one of the project's [baselines](baselines.md): the requirements and tests exactly as the baseline froze them. The filter does not apply to a baseline; relations, links and records are those of today between its items. |
 

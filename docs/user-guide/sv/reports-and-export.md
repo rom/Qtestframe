@@ -106,6 +106,10 @@ Rapporter tas fram på det språk du just nu använder i Qtestframe (**Användar
 
 Under standardrapporterna finns **Dokument** med två kompletta dokument: en **kravspecifikation** och en **testplan** med testspecifikation. **Skapa …** öppnar verktyget i [dokumentarkivet](documents.md#skapa-en-kravspecifikation-eller-en-testplan), där dokumentet sparas.
 
+### Logotyp på första sidan
+
+Rapporter och genererade dokument visar organisationens eller projektets logotyp överst på första sidan, i PDF, Word och Markdown (där den är en inbäddad bild). En administratör anger organisationens logotyp under [Administration → Dokument](administration.md#logotyp-i-rapporter-och-dokument); ett projekt kan i stället använda en egen, eller ingen, under **Kategorier och inställningar → Projekt → Logotyp i rapporter och dokument**, med placeringen (vänster, mitten eller höger), största storleken och en förhandsvisning av första sidan.
+
 ## Egna rapporter
 
 Under **Anpassad rapport** utformar du en rapport själv:
@@ -210,7 +214,7 @@ Använd statusknapparna ovanför tabellen för att bara visa vissa rader, och av
 
 Det här innehåller arbetsboken:
 
-- **En rad per post** med *ID*, *Key*, *Version* och en kolumn per fält: mapp, titel, beskrivning, kravnivå, typ, prioritet, status, källa, motivering, ägare, taggar, acceptanskriterier (ett per rad, till exempel `test: Inloggning fungerar (threshold: 2 s)`) och en kolumn per relationstyp (*Refines*, *Depends on* …) med nycklarna till de relaterade kraven. Tester har i stället förutsättningar, förväntat resultat, exekveringstyp, uppskattade minuter och *Verifies* (nycklarna till de krav som testet verifierar).
+- **En rad per post** med *ID*, *Key*, *Version* och en kolumn per fält: mapp, titel, beskrivning, kravnivå, typ, prioritet, status, källa, motivering, ägare, taggar, acceptanskriterier (ett per rad, till exempel `test: Inloggning fungerar (threshold: 2 s)`), *D3FEND* och *EMB3D* (id åtskilda med kommatecken; okända id utelämnas med en varning i förhandsvisningen) och en kolumn per relationstyp (*Refines*, *Depends on* …) med nycklarna till de relaterade kraven. Tester har i stället förutsättningar, förväntat resultat, exekveringstyp, uppskattade minuter och *Verifies* (nycklarna till de krav som testet verifierar).
 - **Teststeg** på bladet *Steps*, en rad per steg: testet, stegnumret, åtgärd, data, förväntat resultat och, för ett delat steg, nyckeln till det anropade testet. Stegen i ett test som finns på bladet *Tests* ersätts av dess rader på bladet *Steps*.
 - **Listrutor** för fälten med fasta värden, grå kolumner som bara är information (*Verified by*) och ett blad *Instructions*.
 

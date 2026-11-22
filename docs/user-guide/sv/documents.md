@@ -56,7 +56,7 @@ Det nya dokumentet visas överst i arkivet, markerat, med **Öppna** (PDF) och *
 
 ### Sidlayout
 
-I PDF och Word delas ett krav eller testfall aldrig på två sidor när det får plats på en: om det inte får plats på resten av sidan börjar det på nästa, tillsammans med mapprubrikerna direkt före. Bara ett objekt som är längre än en sida fortsätter på nästa sida. I en specifikation med **Varje krav på en ny sida** börjar ändå varje krav på en ny sida. Word håller ihop objekten med styckeinställningarna *håll ihop med nästa* och *sidbrytning före*, så att layouten stämmer även när du redigerar filen. Markdown har inga sidor och ser likadan ut i båda fallen.
+I PDF och Word delas ett krav eller testfall aldrig på två sidor när det får plats på en: om det inte får plats på resten av sidan börjar det på nästa, tillsammans med mapprubrikerna direkt före. Bara ett objekt som är längre än en sida fortsätter på nästa sida. I en specifikation med **Varje krav på en ny sida** börjar ändå varje krav på en ny sida. Word håller ihop objekten med styckeinställningarna *håll ihop med nästa* och *sidbrytning före*, så att layouten stämmer även när du redigerar filen. Markdown har inga sidor och ser likadan ut i båda fallen. Titelsidan visar projektets eller organisationens [logotyp](reports-and-export.md#logotyp-på-första-sidan) överst.
 
 ### Bilagan Beroendegraf
 

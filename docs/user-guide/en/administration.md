@@ -166,6 +166,17 @@ What a rule forbids is refused by the server, also for API clients and CI import
 
 **Requirement status follows test results** (on by default) lets an implemented requirement become **Verified** when it is [verified](traceability-and-coverage.md#verification) — every criterion has passing evidence and every child requirement is verified — and go back to **Implemented** when that no longer holds. Turned off, statuses change only by hand and disagreements are listed under **Verification → Inconsistencies**. Whether each criterion needs evidence of its own is a project setting (**Settings → Project → Verification**).
 
+## Logo on reports and documents
+
+*(Admin and Test lead, or any role with `settings.manage`)* **Administration → Documents** sets the organisation's logo. It is shown at the top of the first page of every [report](reports-and-export.md#logo-on-the-first-page) and [generated document](documents.md#create-a-requirements-specification-or-a-test-plan) — requirements specifications, test plans, release, verification, SoA, quality, cycle and exploratory reports, custom reports and the change impact export — in PDF, Word and Markdown.
+
+- **Upload logo** takes a PNG, JPEG or SVG image of at most 2 MB. An SVG is converted into an image on the server by Qtestframe's own renderer: scripts, links, embedded images and texts in it are never used (convert texts to outlines before you upload it).
+- **Placement** puts the logo at the left (default), in the centre or at the right of the page.
+- **Maximum width** and **Maximum height** (in millimetres; default 50 × 20 mm) bound its size. The logo keeps its proportions and is never shown larger than its own size at 96 dpi.
+- The **preview** shows the first page of a document with the logo as it will be printed, also before you save.
+
+Projects use this logo unless they upload their own under **Categories & settings → Project → Logo on reports and documents**, or turn on **No logo in this project's documents** *(Manager and Admin, or any role with `project.update`)*. A [project archive](reports-and-export.md#save-and-load-projects) carries the project's own logo; the organisation's logo is part of backups.
+
 ## Field sets and templates
 
 *(Admin and Test lead, or any role with `settings.manage`)* **Administration → Field sets** keeps, per **project type**, the [custom fields](requirements.md#custom-fields) a new project of that type gets and the organisation's [templates](requirements.md#templates) for new requirements and tests. Changing a field set does not change existing projects: they keep their own copies and can apply the set again under **Categories & settings → Custom fields → Apply field set** (fields they already have are skipped). Organisation templates are offered in every project of the type, next to the built-in ones. Everyone in the organisation can read the field sets.

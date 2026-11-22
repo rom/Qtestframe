@@ -124,6 +124,10 @@ Kravredigeraren visar under **Åtgärdar risker** de risker som kravet åtgärda
 
 Kryssa i risker i registret. Verktygsfältet anger **status**, **sannolikhet** eller **konsekvens** för alla, **Ägare / kategori** anger det ena eller båda (tomt rensar), **Länka krav** länkar samma krav till varje markerad risk, och **Ta bort** tar bort dem efter bekräftelse. Bara rader som visas förblir markerade, så när du filtrerar registret eller väljer en ruta i värmekartan blir inga dolda risker kvar i urvalet. Alla risker kontrolleras innan någon ändras. Andra ändringar än länkning och borttagning kan ångras med ångra-knappen.
 
+### Importera ett riskregister
+
+**Importera** ovanför registret läser ett riskregister från en CSV- eller Excelfil: bladet *Riskregister* i [riskrapporten](#riskrapporten) (på engelska eller svenska), eller ett eget blad med kolumner som *Nyckel*, *Titel*, *Beskrivning*, *Kategori*, *Ägare*, *Sannolikhet*, *Konsekvens*, *Status*, *Åtgärd*, *Granskningsdatum*, *Granskningsansvarig*, *ATT&CK-tekniker* och *EMB3D-hot*. Välj filen för att se en förhandsvisning: rader med nyckeln till en risk i projektet **ändrar** den (bara de kolumner som filen har), de andra raderna blir **nya** risker, och varje rad listar sina varningar. Okända ATT&CK-, ATLAS- och EMB3D-id, okända statusar och sannolikheter eller konsekvenser utanför 1–5 utelämnas med en varning; en rad utan titel hoppas över. Välj **Importera** för att spara. *(Kravförfattare eller en roll med `requirement.write`)*
+
 ## Värmekartan
 
 Värmekartan räknar riskerna i ett rutnät med 5 × 5 rutor: sannolikhet från 5 överst till 1 nederst, konsekvens från 1 till vänster till 5 till höger. Rutans färg är nivån för dess poäng. Välj en ruta för att bara visa riskerna med den sannolikheten och konsekvensen i registret; välj den igen, eller **×** på filteretiketten, för att visa alla.

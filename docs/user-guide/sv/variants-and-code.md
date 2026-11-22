@@ -28,6 +28,8 @@ Ett krav eller testfall **gäller** alla varianter tills du anger något annat. 
 
 För att ange tillämpligheten för många objekt på en gång markerar du dem i listan och väljer **Gäller** i verktygsfältet.
 
+**När tillämpligheten ändras** kan objektets testfall, de krav som är relaterade till det och de andra objekt som [ändringspåverkan](traceability-and-coverage.md#ändringspåverkan) når behöva ses över: ett testfall som skrevs för *EU* kanske inte täcker *US*. Som standard **rekommenderas en granskning**: inget markeras misstänkt, och ägarna till de nådda objekten aviseras. Under **Kategorier och inställningar → Ändringspåverkan → Ändrad tillämplighet (varianter)** kan ett projekt i stället låta ändringen markera spårlänkar och relationer misstänkta (som en ändring av texten gör), eller inte ha någon påverkan. Att ändra tillämpligheten för många objekt på en gång, och att återställa en version eller en baslinje med en annan tillämplighet, fungerar på samma sätt.
+
 ### Historik, ångra och baslinjer
 
 En ändring av tillämpligheten finns i objektets **Historik** (som *Tillämplighet*, med varianterna före och efter) och i granskningsloggen. **Ångra** (Ctrl+Z) tar tillbaka den, även en ändring av många objekt på en gång: varje objekt får det det hade. När du återställer en äldre version från historiken återställs också den versionens tillämplighet.
@@ -36,7 +38,7 @@ En ändring av tillämpligheten finns i objektets **Historik** (som *Tillämplig
 
 ### Visa för en variant
 
-Välj en variant i **Visa för variant** i krav- och testfallslistorna och på sidan **Spårbarhet**. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
+Välj en variant i **Visa för variant** i krav- och testfallslistorna och på sidorna **Spårbarhet**, **Verifiering** och **Analys**. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
 
 | Fråga | Hittar |
 |---|---|

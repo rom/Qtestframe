@@ -584,7 +584,14 @@ catalogue item; they are in the history, the exports (columns `D3FEND` and
 `EMB3D`), project archives and backups (columns `requirements.d3fend`,
 `requirements.emb3d`, `test_cases.d3fend`, `test_cases.emb3d`, JSON
 lists), and the generated documents show them with names (field
-`frameworks`).
+`frameworks`). The imports read them back: the requirement import (CSV,
+XLSX and ReqIF columns or attributes `D3FEND` and `EMB3D`, also *D3FEND
+techniques*, *EMB3D threats and mitigations* and the Swedish headers;
+fields `d3fend` and `emb3d` of the mapping and of a `Candidate`), the Excel
+exchange (columns `D3FEND` and `EMB3D` of the workbook) and the ReqIF
+exchange (attributes `D3FEND` and `EMB3D` of Qtestframe's ReqIF export, or
+mapped). Unknown ids are left out with a warning on the row ("unknown D3FEND
+technique D3-XYZ left out"), the known ones are saved.
 
 `Analysis`:
 ```json
@@ -612,7 +619,7 @@ need `requirement.write` and take a `multipart/form-data` upload: field
 |---|---|
 | `format` | `csv`, `xlsx`, `reqif` (also `reqifz`) or `docx`; default from the file extension (`.csv .tsv .txt .xlsx .xlsm .reqif .reqifz .docx`), else sniffed from the content. `.xls`/`.doc` → 400 |
 | `sheet` | XLSX sheet name (case-insensitive); default: a sheet named *requirements*/*krav*, else the first sheet with a header row |
-| `mapping` | JSON object `{"<column header>": "<field>"}` overriding the guessed field of a column (case-insensitive header; `"ignore"` or `""` ignores it). Fields: `title`, `description`, `external_id`, `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tags`, `folder`, `criteria`. For ReqIF the headers are the attribute long names |
+| `mapping` | JSON object `{"<column header>": "<field>"}` overriding the guessed field of a column (case-insensitive header; `"ignore"` or `""` ignores it). Fields: `title`, `description`, `external_id`, `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tags`, `folder`, `criteria`, `d3fend`, `emb3d`. For ReqIF the headers are the attribute long names |
 | `folder_id` | target requirement folder (root of the imported folder paths); default top level; unknown → 400 |
 
 | Method | Path | Notes |
@@ -1252,9 +1259,13 @@ reverse order brings them back with their links.
 
 ## Requirement analytics
 
-`GET /projects/{pid}/analytics?lang=` (requirement.read) analyses all
+`GET /projects/{pid}/analytics?lang=&variant=` (requirement.read) analyses all
 requirements of the project; `lang` is `auto` (default, per requirement) or
-an analysis language. Test findings are included with `test.read`.
+an analysis language. Test findings are included with `test.read`. With
+`variant` (id or name) only the requirements and tests that apply to the
+variant are analysed, with the variant's coverage, linked tests, results
+and verification (as `GET /projects/{pid}/verification?variant=`);
+`GET /projects/{pid}/analytics/compliance` takes the same `variant`.
 
 ```json
 {"summary": {"requirements": 20, "tests": 18, "with_findings": 3, "health": 85, "problems": 1, "warnings": 2, "infos": 1,
@@ -1551,7 +1562,7 @@ passed yet), `none` (no evidence).
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/requirements/{id}/verification` | RequirementVerification: is it verified, and why (`requirement.read`) |
-| GET | `/projects/{pid}/verification?q=&folder_id=` | `{"strict","counts":{state: n},"criteria_verified","criteria_total","requirements":[RequirementVerification],"inconsistent":[…]}` over the requirements matching `q` (counts leave out rejected and obsolete ones) |
+| GET | `/projects/{pid}/verification?q=&folder_id=&variant=` | `{"strict","variant"?,"counts":{state: n},"criteria_verified","criteria_total","requirements":[RequirementVerification],"inconsistent":[…]}` over the requirements matching `q` (counts leave out rejected and obsolete ones). `variant` (id or name): only the requirements that apply to the variant, verified by the rules of the [variant coverage](#variants-and-applicability): only trace links between a requirement and a test that both apply count, a test's result is its latest result in the runs and configurations that count for the variant (stale passes are no evidence), step results only where the variant's result is the test's latest execution; verification records and exploratory sessions count as they are |
 | GET / PUT | `/projects/{pid}/verification-settings` | `{"strict_criteria", "updated_by", "updated_at"}`; PUT needs `project.update` and lets the statuses follow the evidence again |
 | PUT | `/links/{id}/criteria` | `{"criteria":[{"criterion_id","step_id"?}]}` → TraceLink (`test.write`); `[]` makes it a plain link; 400 for a criterion of another requirement or a step of another test |
 | GET | `/projects/{pid}/verification-records?requirement_id=` | `[VerificationRecord]`, newest first |
@@ -2469,7 +2480,7 @@ are per project.
 
 | Method | Path | Permission | Description |
 |---|---|---|---|
-| GET | `/projects/{pid}/correlation-settings` | project.read | `{relation_impact, relation_modes, impact_depth, impact_rules, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` |
+| GET | `/projects/{pid}/correlation-settings` | project.read | `{relation_impact, relation_modes, impact_depth, impact_rules, applicability_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` |
 | PUT | `/projects/{pid}/correlation-settings` | project.update | partial update; `relation_impact` is replaced as a whole |
 | GET | `/requirements/{id}/impact` | requirement.read | what a change of the requirement's substance makes suspect, out of date, outdated or stale |
 | GET | `/tests/{id}/impact` | test.read | the same for a test |
@@ -2550,6 +2561,17 @@ direction}]` from the changed item) and `owner`; the impact has `roots`,
 `risks`, `defects`, `links` (runs), `variants`, `code`. A status change only
 recommends reviews.
 
+**Changed applicability.** Changing the variants a requirement or test
+applies to (`PUT /requirements/{id}/applicability`, `PUT /tests/{id}/applicability`,
+`PUT /projects/{pid}/applicability`, and restoring a version or baseline
+with another applicability) is a change with the root field
+`applicability`; `applicability_impact` decides what it does: `review`
+(default) recommends a review of what the rules above reach — nothing is
+marked, the owners of the reached items are notified (`impact.review`) —
+`suspect` makes it a change of substance (the rules mark trace links and
+relations suspect, audited as for content changes), `off` does nothing.
+These endpoints take `?dry_run=impact` and `?impact=` like the others.
+
 **Dry run and choice.** Every endpoint that changes requirements or tests
 (`PATCH /requirements/{id}`, `PATCH /tests/{id}`, the `bulk` and `batch`
 endpoints, `exchange/{xlsx,reqif}/apply`, `requirements/import`,
@@ -2622,6 +2644,20 @@ deprecated id). A catalogue import copies the catalogue risk's `attack` and
 `atlas` into it. The field is in exports, project archives and backups
 (column `risks.attack`, a JSON list).
 
+**Risk register import.** `POST /projects/{pid}/risks/import` reads the
+risk register of the risks report (sheet *Risk register* of the XLSX, or the
+CSV) or a sheet of one's own: the sheet and header row with a *Title* column
+and the most risk columns among Key, Title, Description, Category, Owner,
+Likelihood, Impact, Status (code or English or Swedish label), Mitigation,
+Review date, Review owner, ATT&CK techniques and EMB3D threats (English or
+Swedish headers). A row naming the key of a risk of the project updates the
+columns the file has (`action` `update`, or `unchanged`); the others create
+risks (`create`; an unknown key gets a warning). Unknown ATT&CK and ATLAS
+techniques and EMB3D threats (a mitigation `MID-nnn` too), unknown
+statuses and likelihoods or impacts outside 1–5 are left out with a
+warning on the row; a row without a title is an `error` and skipped.
+`dry_run=true` previews without saving.
+
 `emb3d` lists the MITRE EMB3D threats that realise the risk on an embedded
 device (`["TID-201", "TID-327"]`, at most 20): trimmed, upper-cased, without
 duplicates and each a threat of `GET /catalog/emb3d?kind=threat` (400
@@ -2629,6 +2665,7 @@ otherwise; a mitigation `MID-nnn` is rejected). A catalogue import copies
 the catalogue risk's `emb3d`; column `risks.emb3d`.
 | POST | `/projects/{pid}/risks/bulk` | `{"ids":[...], "set": {"status"?, "owner"?, "category"?, "likelihood"?, "impact"?}, "add_requirement_ids"?, "remove_requirement_ids"?}` → `{"updated": n}`; every risk is validated before any is saved |
 | DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
+| POST | `/projects/{pid}/risks/import` | multipart `file` (CSV or XLSX) and `dry_run` → `{dry_run, sheet, columns, created, updated, unchanged, errors, rows:[{row, key, title, action, error?, warnings}]}` (see below); atomic; audited as `risk.import` |
 | POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
 | GET | `/requirements/{id}/risks` | the risks a requirement addresses |
 | POST | `/requirements/{id}/risks` | `{add:[risk ids], remove:[risk ids]}` – the risks a requirement mitigates, changed from its side (requirement.write); → the risks as for GET |
@@ -3047,6 +3084,47 @@ project.
 | PATCH | `/projects/{pid}` | `{"icon": "preset:rocket" \| ""}` |
 
 Project icon files are served by `/files/{id}/content?inline=1`.
+
+### Logo on reports and documents
+
+The first page of every report (`/reports/generate`, saved and scheduled
+reports, the change impact export) and generated document
+(`/documents/generate`) shows a logo in PDF, DOCX and Markdown (a data URI
+image; centred and right-aligned logos as `<p align>` HTML): the project's
+own, else the organisation's, unless the project turned it off. A logo is
+`{file_id, content_type, width, height, source, name, placement, max_width_mm, max_height_mm, url}`:
+`placement` `left` (default) | `center` | `right`; `max_width_mm` 5–170
+(default 50) and `max_height_mm` 5–40 (default 20) bound the printed size;
+the logo keeps its proportions and is never larger than its own size at
+96 dpi.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/settings/logo` | member | the organisation's logo |
+| PUT | `/settings/logo` | settings.manage | `{placement?, max_width_mm?, max_height_mm?}`; audited as `settings.logo` |
+| PUT | `/settings/logo/image` | settings.manage | multipart `file` (see below); audited as `settings.logo.upload` |
+| DELETE | `/settings/logo/image` | settings.manage | removes the image |
+| GET | `/settings/logo/image` | member | the image (PNG or JPEG) |
+| GET | `/projects/{pid}/logo` | project.read | `{own, organisation, effective: project \| organisation \| none}` |
+| PUT | `/projects/{pid}/logo` | project.update | `{placement?, max_width_mm?, max_height_mm?, off?}`; `off`: no logo, not even the organisation's; audited as `project.logo` |
+| PUT | `/projects/{pid}/logo/image` | project.update | multipart `file`: the project's own logo (turns `off` off) |
+| DELETE | `/projects/{pid}/logo/image` | project.update | the organisation's logo applies again |
+| GET | `/projects/{pid}/logo/image` | project.read | the image |
+
+Uploads are PNG, JPEG or SVG of at most 2 MB (400 otherwise, also for
+images smaller than 8 pixels, larger than 40 megapixels or with an aspect
+ratio beyond 50:1). PNG and JPEG are decoded and encoded again (no
+metadata, 8 bits, at most 1600 pixels on the longer side). An SVG is drawn
+by Qtestframe's own renderer into a PNG of 1000 pixels on the longer side —
+nothing in it is run or fetched: scripts, event handlers, `<image>`,
+`<use>`, `<foreignObject>`, links, external style sheets and entity
+declarations (rejected) are ignored; paths, basic shapes, fills, strokes,
+opacities, transforms, simple `<style>` rules and gradients (their first
+stop colour) are drawn; texts are not (convert them to outlines). The
+stored image is a file of kind `logo` (not listed in the document archive);
+`PUT /settings` keeps the logo as it is. Project archives carry the
+project's own logo (the organisation's logo belongs to the organisation and
+is in backups).
 
 ## Sign-in information
 
