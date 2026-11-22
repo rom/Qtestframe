@@ -409,7 +409,7 @@ function resetPassword(m: Membership) {
             /></span></template>
       </Column>
       <Column field="display_name" :header="t('common.name')" sortable />
-      <Column field="role" :header="t('common.roles')" sortable style="width: 260px">
+      <Column field="role" :header="t('common.roles')" sortable style="width: 320px">
         <template #body="{ data }">
           <RolePicker
             v-if="canManage && data.user_id !== auth.user?.id && !data.scim"
