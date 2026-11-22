@@ -125,7 +125,7 @@ func (s *Server) complianceInput(r *http.Request, p *Principal, pr *model.Projec
 		x := analytics.ComplianceRequirement{ID: rq.ID, Key: rq.Key, Title: rq.Title, Status: rq.Status, Obligation: rq.Obligation,
 			CatalogRef: rq.CatalogRef, Source: rq.Source}
 		for _, tid := range pc.r2t[rq.ID] {
-			x.Results = append(x.Results, pc.last[tid])
+			x.Results = append(x.Results, pc.evidence()[tid])
 		}
 		in.Requirements = append(in.Requirements, x)
 	}

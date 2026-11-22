@@ -454,8 +454,17 @@ func (s *Server) handleListDocuments(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, err)
 		return
 	}
+	// generated documents whose items changed since are outdated (correlations.go)
+	outdated, err := s.Store.OutdatedDocuments(r.Context(), p.TenantID(), pr.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	out := []model.FileInfo{}
 	for i := range fs {
+		if keys := outdated[fs[i].ID]; len(keys) > 0 {
+			fs[i].Outdated, fs[i].OutdatedItems = true, keys
+		}
 		if q.Match(fileRecord(&fs[i])) {
 			out = append(out, fs[i])
 		}

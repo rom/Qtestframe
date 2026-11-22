@@ -352,6 +352,8 @@ func (s *Server) routes() {
 	s.routesSuggest(h)
 	// Administration → System settings (systemsettings.go)
 	s.routesSystemSettings(h)
+	// change and defect correlations (correlations.go)
+	s.routesCorrelations(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

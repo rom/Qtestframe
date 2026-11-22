@@ -206,7 +206,7 @@ func (s *Server) traceGraph(ctx context.Context, tenantID string, pr *model.Proj
 	if err != nil {
 		return nil, err
 	}
-	g := &tracerules.Graph{Links: pc.links, Relations: rels, ItemLinks: links, LastResults: pc.last, Schemas: traceSchemas}
+	g := &tracerules.Graph{Links: pc.links, Relations: rels, ItemLinks: links, LastResults: pc.evidence(), Schemas: traceSchemas}
 	reqByID := make(map[string]*model.Requirement, len(reqs))
 	for i := range reqs {
 		rq := &reqs[i]

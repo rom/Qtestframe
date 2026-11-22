@@ -126,6 +126,8 @@ var projectArchiveTables = []archiveTable{
 	{"baseline_signoffs", inBaseline},
 	{"metric_snapshots", ofProject},
 	{"trace_rules", ofProject},
+	{"document_items", inFiles},
+	{"defect_regressions", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},

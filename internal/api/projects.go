@@ -184,8 +184,16 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request, p *Prin
 	}
 	reqStatus, reqObl, coverage := map[string]int{}, map[string]int{}, map[string]int{"passed": 0, "failed": 0, "not_run": 0, "none": 0, "partial": 0}
 	covered := 0
+	// change and defect correlations (correlations.go)
+	corr := map[string]int{"blocked_requirements": 0, "warned_requirements": 0, "stale_results": 0, "suspect_relations": 0}
 	for i := range reqs {
 		pc.decorateRequirement(&reqs[i])
+		if reqs[i].BlockingDefects > 0 {
+			corr["blocked_requirements"]++
+		} else if reqs[i].DefectWarnings > 0 {
+			corr["warned_requirements"]++
+		}
+		corr["suspect_relations"] += reqs[i].SuspectRelations
 		reqStatus[reqs[i].Status]++
 		obl := reqs[i].Obligation
 		if obl == "" {
@@ -203,6 +211,9 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request, p *Prin
 		testType[tests[i].ExecutionType]++
 		testStatus[tests[i].Status]++
 		results[tests[i].LastResult]++
+		if tests[i].Stale {
+			corr["stale_results"]++
+		}
 	}
 	runStatus := map[string]int{}
 	for _, rn := range runs {
@@ -241,6 +252,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request, p *Prin
 		"coverage_by_category": byCategory,
 		"defects_by_severity":  defects,
 		"flaky":                map[string]any{"total": flakyTotal, "items": flaky, "window": store.FlakyWindow, "min_flips": store.FlakyMinFlips},
+		"correlations":         corr,
 	})
 }
 

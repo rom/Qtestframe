@@ -808,6 +808,10 @@ type traceReq struct {
 	Title      string `json:"title"`
 	Obligation string `json:"obligation"`
 	Coverage   string `json:"coverage"`
+	// Blocked: open defects block it; StaleResults: linked tests with a
+	// stale latest result (correlations.go).
+	Blocked      bool `json:"blocked,omitempty"`
+	StaleResults int  `json:"stale_results,omitempty"`
 }
 
 type traceTest struct {
@@ -815,6 +819,8 @@ type traceTest struct {
 	Key        string `json:"key"`
 	Title      string `json:"title"`
 	LastResult string `json:"last_result"`
+	// Stale: the latest result is stale (no passing evidence).
+	Stale bool `json:"stale,omitempty"`
 }
 
 func (s *Server) handleTraceability(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -862,17 +868,21 @@ func (s *Server) handleTraceability(w http.ResponseWriter, r *http.Request, p *P
 		if filtered {
 			cov = store.CoverageInConfiguration(pc.r2t[rq.ID], pc.cfgResults, cfg)
 		}
-		res.Requirements = append(res.Requirements, traceReq{rq.ID, rq.Key, rq.Title, rq.Obligation, cov})
+		res.Requirements = append(res.Requirements, traceReq{rq.ID, rq.Key, rq.Title, rq.Obligation, cov, rq.BlockingDefects > 0, rq.StaleResults})
 	}
 	for _, t := range tests {
 		last := t.LastResult
 		if filtered {
-			last = pc.cfgResults[t.ID][cfg]
+			last = pc.cfgRaw[t.ID][cfg]
 			if last == "" {
 				last = model.ResultNotRun
 			}
 		}
-		res.Tests = append(res.Tests, traceTest{t.ID, t.Key, t.Title, last})
+		stale := t.Stale
+		if filtered {
+			stale = pc.stale.Unit(t.ID, cfg).Stale
+		}
+		res.Tests = append(res.Tests, traceTest{t.ID, t.Key, t.Title, last, stale})
 	}
 	writeJSON(w, http.StatusOK, res)
 }

@@ -53,6 +53,16 @@ func (d *Data) linkedRequirementIDs() map[string]bool {
 	return m
 }
 
+// resultText is the localized latest result of a test, marked when it is
+// stale (no passing evidence; see store/staleness.go).
+func (l loc) resultText(t *model.TestCase) string {
+	out := l.enum(EnumResult, lastResult(t))
+	if t.Stale {
+		out += " (" + l.t("stale") + ")"
+	}
+	return out
+}
+
 func lastResult(t *model.TestCase) string {
 	if t.LastResult == "" {
 		return model.ResultNotRun
@@ -159,7 +169,7 @@ func buildRequirementsCoverage(d *Data, _ map[string]string) (*export.Dataset, e
 				continue
 			}
 			keys = append(keys, t.Key)
-			results = append(results, t.Key+": "+l.enum(EnumResult, lastResult(t)))
+			results = append(results, t.Key+": "+l.resultText(t))
 		}
 		detail.Rows = append(detail.Rows, []string{r.Key, r.Title, l.enum(EnumStatus, r.Status), l.enum(EnumObligation, r.Obligation),
 			l.enum(EnumPriority, r.Priority), strings.Join(keys, ", "), strings.Join(results, "\n"), l.enum(EnumCoverage, r.Coverage)})
@@ -199,7 +209,7 @@ func buildTraceability(d *Data, _ map[string]string) (*export.Dataset, error) {
 				continue
 			}
 			n++
-			matrix.Rows = append(matrix.Rows, []string{r.Key, r.Title, l.enum(EnumCoverage, r.Coverage), t.Key, t.Title, l.enum(EnumResult, lastResult(t))})
+			matrix.Rows = append(matrix.Rows, []string{r.Key, r.Title, l.enum(EnumCoverage, r.Coverage), t.Key, t.Title, l.resultText(t)})
 		}
 		if n == 0 {
 			uncovered++
@@ -213,7 +223,7 @@ func buildTraceability(d *Data, _ map[string]string) (*export.Dataset, error) {
 	for i := range d.Tests {
 		t := &d.Tests[i]
 		if !linked[t.ID] {
-			orphans.Rows = append(orphans.Rows, []string{t.Key, t.Title, l.enum(EnumStatus, t.Status), l.enum(EnumResult, lastResult(t))})
+			orphans.Rows = append(orphans.Rows, []string{t.Key, t.Title, l.enum(EnumStatus, t.Status), l.resultText(t)})
 		}
 	}
 	sections := []export.Section{
@@ -438,7 +448,7 @@ func buildTestInventory(d *Data, _ map[string]string) (*export.Dataset, error) {
 		}
 		estimate += t.EstimatedMin
 		list.Rows = append(list.Rows, []string{t.Key, t.Title, t.FolderPath, l.enum(EnumExecution, t.ExecutionType), l.enum(EnumStatus, t.Status), l.enum(EnumPriority, t.Priority),
-			d.categoryNames(t.CategoryIDs), itoa(t.LinkedReqs), l.enum(EnumResult, lastResult(t))})
+			d.categoryNames(t.CategoryIDs), itoa(t.LinkedReqs), l.resultText(t)})
 	}
 	folderNames := make([]string, 0, len(folders))
 	for f := range folders {

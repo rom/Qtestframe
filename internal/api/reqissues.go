@@ -322,6 +322,11 @@ func (x *reqIssueCtx) update(req *model.Requirement, l *model.ItemLink) error {
 	if err := x.s.Store.SetItemLinkIssue(x.ctx, x.p.TenantID(), l); err != nil {
 		return err
 	}
+	// the issue follows the requirement again (correlations.go)
+	if err := x.s.Store.ClearIssueOutdated(x.ctx, x.p.TenantID(), l.ID); err != nil {
+		return err
+	}
+	l.Issue.OutdatedSince, l.Issue.OutdatedReason = nil, ""
 	x.s.audit(x.ctx, x.p, "requirement.issue.update", model.KindRequirement, req.ID, req.Key+" → "+x.t.Type+" "+is.Key)
 	return nil
 }

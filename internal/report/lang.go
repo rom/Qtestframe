@@ -252,6 +252,7 @@ var texts = map[string]map[string]string{
 		"Coverage":                                        "Täckning",
 		"Last test results":                               "Senaste testutfall",
 		"Result":                                          "Utfall",
+		"stale":                                           "inaktuellt",
 		"Recent test runs":                                "Senaste testkörningar",
 		"Run":                                             "Testkörning",
 		"Environment":                                     "Miljö",

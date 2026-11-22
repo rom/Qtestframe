@@ -39,15 +39,26 @@ func (s *Server) afterContentChange(ctx context.Context, p *Principal, kind, id,
 		return
 	}
 	reason := kind + " " + key + " changed (" + strings.Join(changed, ", ") + ") by " + p.User.Email
+	// results recorded before now go stale, documents generated before now are outdated
+	if err := s.Store.MarkContentChanged(ctx, p.TenantID(), kind, id); err != nil {
+		s.Log.Warn("mark content changed", "err", err)
+	}
 	reqs, err := s.Store.MarkLinksSuspect(ctx, p.TenantID(), kind, id, reason)
 	if err != nil {
 		s.Log.Warn("mark links suspect", "err", err)
 		return
 	}
-	if len(reqs) == 0 {
-		return
+	if len(reqs) > 0 {
+		s.audit(ctx, p, "link.suspect", kind, id, reason)
 	}
-	s.audit(ctx, p, "link.suspect", kind, id, reason)
+	if kind == model.KindRequirement {
+		// along the requirement relations, to tracker issues (correlations.go)
+		reqs = append(reqs, s.applyChangeImpact(ctx, p, id, key, reason)...)
+		// stale results of its tests may change its status even without links
+		reqs = append(reqs, id)
+	} else {
+		reqs = append(reqs, s.requirementsOfTests(ctx, p, projectID, []string{id})...)
+	}
 	s.syncEvidence(ctx, p, projectID, reqs)
 }
 

@@ -2457,6 +2457,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/impact:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Traceability
+      summary: Change impact of a requirement
+      operationId: getRequirementsByIdImpact
+      description: |-
+        what a change of the requirement's substance (title, description, obligation, criteria) makes suspect, out of date, outdated or stale: `{kind, id, key, title, requirements, tests, issues, documents, results, total}`. `requirements`: the requirements related to it along the relation types the project's `relation_impact` names (with `relation`, `direction`); `tests`: the tests verifying it and those requirements (`via`: the related requirement); `issues`: its tracker issues (when `flag_issues`); `documents`: the generated documents containing it; `results`: the latest results of its tests that go stale (when `stale_on_change`). `already` marks items that are suspect, out of date or stale already; `total` counts the others. Without `test.read` the tests and results are left out
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/restore:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -2561,6 +2589,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/relations/confirm:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Relations
+      summary: Confirm the suspect relations of a requirement
+      operationId: postRequirementsByIdRelationsConfirm
+      description: |-
+        confirms every suspect relation of the requirement (either end) → `{confirmed}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/relations/{id}:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -2574,6 +2630,34 @@ paths:
       responses:
         '204':
           description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/relations/{id}/confirm:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Relations
+      summary: Confirm a suspect relation
+      operationId: postRelationsByIdConfirm
+      description: |-
+        the related requirement still holds after the change at the other end: clears `suspect_since` → `{confirmed}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -3022,6 +3106,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BaselineDiff'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/baselines/{id}/impact:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Baselines
+      summary: Impact of the changes since a baseline
+      operationId: getBaselinesByIdImpact
+      description: |-
+        the project-wide impact of the changes between the baseline and the current state: `{baseline, changes: [{entity_type, entity_id, key, title, from_version, to_version, changed_fields, impact}], totals: {requirements, tests, issues, documents, results}}`; only items whose substance changed, the largest impact first; `totals` counts distinct items
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -3713,6 +3825,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/item-links/{id}/issue/confirm:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Requirement issues
+      summary: Confirm an out-of-date issue
+      operationId: postItemLinksByIdIssueConfirm
+      description: |-
+        the tracker issue of a requirement is still right although the requirement changed: clears `issue.outdated_since` → the link (updating the issue with `PUT /requirements/{id}/issue` clears it too); 400 for a link that is not an issue
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/item-links:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -3987,6 +4127,34 @@ paths:
                       $ref: '#/components/schemas/Revision'
                   total:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/impact:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Traceability
+      summary: Change impact of a test
+      operationId: getTestsByIdImpact
+      description: |-
+        what a change of the test's substance makes suspect or stale: `requirements` (the requirements it verifies, whose links become suspect), `documents` (test plans containing it) and `results` (its latest result); same shape as `GET /requirements/{id}/impact`
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -4405,6 +4573,34 @@ paths:
       responses:
         2XX:
           description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/regressions:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Defects
+      summary: Regression history of a test
+      operationId: getTestsByIdRegressions
+      description: |-
+        the regressions the test found: its failures after it had verified the fix of a defect (same items as `GET /defects/{id}/regressions`)
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -5528,6 +5724,34 @@ paths:
       responses:
         '204':
           description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/blocking-defects:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Defects
+      summary: Defects blocking a requirement
+      operationId: getRequirementsByIdBlockingDefects
+      description: |-
+        the open defects that block the requirement or warn about it under the project's severity rules (`blocking_severities`, `warning_severities`): defects linked to the requirement, to a test verifying it or to an execution of such a test → `{blocked, blocking, warnings, items: [{defect_id, key, title, severity, status, level: block | warn, via}]}` (`via`: `requirement` or the test key)
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -8336,6 +8560,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/defects/{id}/regressions:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Defects
+      summary: Regression history of a defect
+      operationId: getDefectsByIdRegressions
+      description: |-
+        the regressions of the defect (as the original or as the regression defect), newest first → `{items: [{id, defect_id, defect_key, regression_defect_id, regression_defect_key, test_case_id, test_key, execution_id, run_id, run_name, action: reopened | created, previous_status, created_by, created_at}]}`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/defects/{id}/sync:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -8706,6 +8958,34 @@ paths:
                       type: object
                   total:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/stale-results:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Traceability
+      summary: Staleness of the results of a requirement
+      operationId: getRequirementsByIdStaleResults
+      description: |-
+        the latest results of the tests verifying the requirement with their staleness → `{items: [{test_id, key, title, result, stale, reason: age | test_changed | requirement_changed, key, recorded_at}], stale_after_days, stale_on_change}`; empty without `test.read`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -10741,6 +11021,66 @@ paths:
           application/json:
             schema:
               type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/correlation-settings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Get correlation settings
+      operationId: getProjectsByPidCorrelationSettings
+      description: |-
+        the project's change and defect correlation settings `{relation_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Projects
+      summary: Save correlation settings
+      operationId: putProjectsByPidCorrelationSettings
+      description: |-
+        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off` → the settings as GET returns them
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
       responses:
         '200':
           description: OK
