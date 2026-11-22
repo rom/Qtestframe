@@ -243,6 +243,9 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedCoverageTests(ctx, st, tenantID, p.ID, reqs, tf, tf3, tf4); err != nil {
 		return nil, err
 	}
+	if err := seedVariantsAndCode(ctx, st, tenantID, p, reqs, testIDs, run); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

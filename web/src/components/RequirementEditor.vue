@@ -7,6 +7,8 @@ import ObligationKeywordLine from './ObligationKeywordLine.vue'
 import MentionText from './MentionText.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
+import ApplicabilityPanel from '@/components/ApplicabilityPanel.vue'
+import CodePanel from '@/components/CodePanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
@@ -94,6 +96,8 @@ async function openObligationHelp() {
   el?.querySelector<HTMLElement>('summary')?.focus()
 }
 const linkCount = ref<number | null>(null)
+/** commits and merge / pull requests of the Code tab */
+const codeCount = ref<number | null>(null)
 /** bumped when an issue link changed (reloads the links panel) */
 const linksVersion = ref(0)
 watch(
@@ -573,12 +577,14 @@ function criterionLabel(id: string | null) {
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="relations"><i class="pi pi-sitemap" aria-hidden="true" /> {{ t('common.relations') }} <span class="count">{{ relationCount }}</span></Tab>
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
+      <Tab value="code"><i class="pi pi-code" aria-hidden="true" /> {{ t('code.tab') }} <span v-if="codeCount" class="count">{{ codeCount }}</span></Tab>
       <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
+  <div v-if="item && tab === 'code'" v-bind="panel('code')"><CodePanel item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (codeCount = n)" /></div>
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')">
@@ -796,6 +802,7 @@ function criterionLabel(id: string | null) {
     </div>
 
     <RequirementRisks v-if="item" :requirement-id="item.id" :project-id="projectId" />
+    <ApplicabilityPanel v-if="item" item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" :refresh="links.length" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />

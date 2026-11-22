@@ -50,6 +50,8 @@ import { RUN_NAME, rememberValues } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
 import { enumOptions } from '@/i18n/labels'
 import HelpLink from '@/guide/HelpLink.vue'
+import VariantSelect from '@/components/VariantSelect.vue'
+import { useVariants } from '@/composables/variants'
 const prefs = usePrefsStore()
 
 const proj = useProjectStore()
@@ -81,11 +83,15 @@ async function load() {
 }
 const rel = useReleaseOptions(() => proj.pid)
 const cfg = useConfigurations(() => proj.pid)
+// the variant a new run tests (none: variant-neutral)
+const variants = useVariants(() => proj.pid)
+const runVariant = ref<string | null>(null)
 onMounted(() => {
   load()
   if (auth.can(P.projectRead)) {
     rel.load()
     cfg.load()
+    variants.load()
   }
 })
 
@@ -106,6 +112,7 @@ const previewError = ref<unknown>(null)
 function openCreate() {
   const d = new Date()
   form.value = { name: t('runs.defaultName', { date: d.toISOString().slice(0, 10) }), description: '', environment: '', build: '', query: '', release_id: '', configuration_ids: [] }
+  runVariant.value = null
   pickedTests.value = []
   folderKeys.value = {}
   folderExpanded.value = allKeys(testFolders.value)
@@ -155,6 +162,7 @@ async function create() {
     const run = await api.post<TestRun>(`/projects/${proj.pid}/runs`, {
       ...fields,
       ...(release_id ? { release_id } : {}),
+      ...(runVariant.value ? { variant_id: runVariant.value } : {}),
       test_ids: pickedTests.value.map((t) => t.id),
       folder_ids: selectedFolderIds.value,
     })
@@ -378,6 +386,11 @@ const runLayout = useColumnLayout(
           <HelpTip id="run.configurations" :label="t('configurations.runField')" />
           <MultiSelect v-model="form.configuration_ids" input-id="run-configs" :options="cfg.options.value" option-label="label" option-value="value" display="chip" filter :placeholder="t('configurations.runNone')" aria-describedby="run-configs-help" />
           <small id="run-configs-help" class="muted">{{ t('configurations.runHelp') }}</small>
+        </div>
+        <div v-if="variants.variants.value.length" class="field full">
+          <label for="run-variant">{{ t('variants.runField') }}</label>
+          <VariantSelect v-model="runVariant" input-id="run-variant" :variants="variants.variants.value" :placeholder="t('variants.runNone')" aria-describedby="run-variant-help" />
+          <small id="run-variant-help" class="muted">{{ t('variants.runHelp') }}</small>
         </div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="form.description" rows="2" auto-resize /></div>
       </div>

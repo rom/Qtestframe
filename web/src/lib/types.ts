@@ -1,4 +1,5 @@
 // TypeScript mirrors of internal/model/model.go (JSON tags are authoritative).
+import type { Applicability } from './variants'
 import type { MfaStatus } from './mfa'
 import type { FlakyTest, GroupCoverage } from './metrics'
 import type { ScriptJob } from './webTests'
@@ -337,6 +338,8 @@ export interface EvaluationCriterion {
 }
 
 export interface Requirement {
+  /** the variants it applies to (absent: all variants) */
+  applicability?: Applicability | null
   id: string
   project_id: string
   folder_id: string | null
@@ -407,6 +410,8 @@ export interface TestRef {
 }
 
 export interface TestCase {
+  /** the variants it applies to (absent: all variants) */
+  applicability?: Applicability | null
   id: string
   project_id: string
   folder_id: string | null
@@ -523,6 +528,11 @@ export interface TestRun {
   summary?: Record<string, number>
   /** configurations the run targets (each test is executed once per configuration) */
   configurations?: ConfigurationRef[] | null
+  /** the variant the run tests (null: variant-neutral) and the CI build of its results */
+  variant_id?: string | null
+  variant_name?: string
+  build_id?: string | null
+  build_label?: string
 }
 
 export interface StepResult {

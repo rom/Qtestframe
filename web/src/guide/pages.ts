@@ -14,6 +14,7 @@ export const GUIDE_PAGES = [
   'defects',
   'reviews-and-notifications',
   'traceability-and-coverage',
+  'variants-and-code',
   'baselines',
   'search-and-filters',
   'reports-and-export',

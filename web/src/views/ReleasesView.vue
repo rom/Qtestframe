@@ -55,6 +55,8 @@ import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
+import VariantSelect from '@/components/VariantSelect.vue'
+import { useVariants } from '@/composables/variants'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -78,10 +80,14 @@ const reports = ref<Record<string, ReleaseStatusReport | null>>({})
 const loading = ref(false)
 const error = ref('')
 
+// readiness for one variant (?variant=): its requirements, tests and results
+const variants = useVariants(() => proj.pid)
+const readinessVariant = ref<string | null>(null)
+watch(readinessVariant, () => void Promise.all(releases.value.map((r) => loadReport(r.id))))
 async function loadReport(id: string) {
   let rep: ReleaseStatusReport | null = null
   try {
-    rep = await api.get<ReleaseStatusReport>(`/releases/${id}/status`)
+    rep = await api.get<ReleaseStatusReport>(`/releases/${id}/status`, { variant: readinessVariant.value || undefined })
   } catch {
     rep = null
   }
@@ -217,7 +223,7 @@ async function loadRuns() {
     runs.value = []
   }
 }
-onMounted(() => Promise.all([load(), loadRequirements(), loadRuns()]))
+onMounted(() => Promise.all([load(), loadRequirements(), loadRuns(), variants.load()]))
 
 // ---------- selected release ----------
 type TabName = 'status' | 'scope' | 'runs' | 'criteria'
@@ -492,6 +498,7 @@ function itemNote(c: CriterionResult, note?: string) {
     </div>
     <div class="actions">
       <HelpLink page="releases-and-risks" />
+      <VariantSelect v-if="variants.variants.value.length" v-model="readinessVariant" :variants="variants.variants.value" :aria-label="t('variants.readinessFor')" :placeholder="t('variants.readinessAll')" />
       <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
       <Button v-if="canWrite" :label="t('releasesView.new')" icon="pi pi-plus" @click="openCreate" />
     </div>

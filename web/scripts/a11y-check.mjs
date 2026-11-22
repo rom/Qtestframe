@@ -260,6 +260,17 @@ async function discover(request) {
     ruleViolator && { name: 'requirement-trace-rules', path: `${p}/requirements?item=${ruleViolator.id}`, wait: '.p-drawer .trace-violations' },
     { name: 'traceability-selected', path: `${p}/traceability`, open: '.trace-bulk .p-checkbox', wait: '.trace-bulk' },
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
+    // variants and code (VariantsView, CodeView, the Code tab and the applicability dialog)
+    { name: 'variants', path: `${p}/variants`, wait: '.matrix, .empty-state' },
+    { name: 'variants-manage', path: `${p}/variants?tab=manage`, wait: '.variant-list, .empty-state' },
+    { name: 'variant-dialog', path: `${p}/variants`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
+    { name: 'code', path: `${p}/code`, wait: '#h-regression' },
+    { name: 'code-builds', path: `${p}/code?tab=builds`, wait: '#h-builds' },
+    { name: 'code-changes', path: `${p}/code?tab=changes`, wait: '#h-changes' },
+    { name: 'requirement-code', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-code)', wait: '.code-panel' },
+    { name: 'test-code', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-code)', wait: '.code-panel' },
+    { name: 'applicability-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer .applicability button:has(.pi-pencil)', wait: '.p-dialog' },
+    { name: 'code-settings', path: `${p}/settings?tab=project`, wait: '#h-code-settings' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
     // the requirement and test catalogue: both tabs, a selection, the preview, the import dialog, the areas drawer
