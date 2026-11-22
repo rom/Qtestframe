@@ -895,3 +895,35 @@ risks:
       title: Hemligheter och personuppgifter samlas i loggar
       description: Lösenord, token och personuppgifter skrivs till loggar som många personer och verktyg kan läsa och som sparas länge. En läcka av loggarna röjer dem.
       mitigation: Håll hemligheter borta från loggarna, identifiera användare med id i stället för namn och radera applikations- och felsökningsloggar efter 30 dagar.
+  - id: SLOG-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [log-sources, detection]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-53 Rev. 5 AU-5 (response to audit logging process failures)", "CWE-778 (insufficient logging)"]
+    mitigated_by: [SLOG-11, SLOG-16]
+    attack: [T1685]
+    en:
+      title: Attacker silences a log source and works unseen
+      description: An attacker stops the log agent on a compromised server, or a rule stops matching after a format change. Monitoring shows nothing while the attack goes on.
+      mitigation: Alert when a log source stops sending and test each security alert rule every month.
+    sv:
+      title: Angripare tystar en loggkälla och arbetar osedd
+      description: En angripare stoppar loggagenten på en komprometterad server, eller en regel slutar matcha efter en formatändring. Övervakningen visar ingenting medan angreppet pågår.
+      mitigation: Larma när en loggkälla slutar skicka och testa varje larmregel för säkerhet varje månad.
+  - id: SLOG-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [log-injection, forensics]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V16.4.1 (log injection)", "CWE-117 (improper output neutralization for logs)"]
+    mitigated_by: [SLOG-04, SLOG-08, SLOG-15]
+    attack: [T1070]
+    en:
+      title: Forged log entries and unsynchronised clocks mislead the investigation
+      description: "User input with line breaks writes fake log entries, and servers' clocks differ by minutes. Investigators cannot tell what happened in which order across services."
+      mitigation: Neutralise user input in logs, synchronise clocks and carry a correlation identifier across services.
+    sv:
+      title: Förfalskade loggposter och osynkroniserade klockor vilseleder utredningen
+      description: Användarinmatning med radbrytningar skriver falska loggposter och servrarnas klockor skiljer sig åt med flera minuter. Utredarna kan inte avgöra vad som hände i vilken ordning mellan tjänsterna.
+      mitigation: Neutralisera användarinmatning i loggar, synkronisera klockor och för med en korrelationsidentitet mellan tjänsterna.

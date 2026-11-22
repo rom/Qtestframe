@@ -758,3 +758,35 @@ risks:
       title: Klustret tas över via sitt administrationsgränssnitt
       description: Klustrets API kan nås från internet eller en arbetslast har en kraftfull token för tjänstekonto. En angripare kör kommandon i alla containrar och läser alla hemligheter i klustret.
       mitigation: Gör klustrets API nåbart endast via gemensam inloggning från listade nät, ge arbetslaster varken klusteradministratörsroll eller automatiska token, kryptera klustrets hemligheter och logga varje API-anrop.
+  - id: CNSEC-R04
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [resource-limits, noisy-neighbour]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-190 §4.4 (container countermeasures)", "CWE-770 (allocation of resources without limits or throttling)"]
+    mitigated_by: [CNSEC-05]
+    attack: [T1496.001]
+    en:
+      title: One container starves the node of resources
+      description: A container without CPU and memory limits runs away, or an attacker uses it for crypto mining. Other workloads on the node slow down or are killed.
+      mitigation: Set CPU and memory limits on every container.
+    sv:
+      title: En container svälter noden på resurser
+      description: En container utan gränser för processor och minne skenar, eller en angripare använder den för kryptobrytning. Andra arbetslaster på noden blir långsamma eller avslutas.
+      mitigation: Sätt gränser för processor och minne på varje container.
+  - id: CNSEC-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [runtime-detection, cluster-audit]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-190 §4.4 (container countermeasures)", "CWE-778 (insufficient logging)"]
+    mitigated_by: [CNSEC-11, CNSEC-12, CNSEC-13]
+    attack: [T1609, T1611]
+    en:
+      title: Intrusion in the cluster goes unnoticed
+      description: Nobody watches the processes in containers or the cluster API audit log, and nodes are not patched. An attacker runs commands in a container and moves on to the nodes undetected.
+      mitigation: Alert on unexpected processes in containers, send the cluster API audit log to the central store and keep the cluster on a supported, patched version.
+    sv:
+      title: Intrång i klustret upptäcks inte
+      description: Ingen övervakar processerna i containrar eller klustrets granskningslogg, och noderna uppdateras inte. En angripare kör kommandon i en container och tar sig vidare till noderna utan att upptäckas.
+      mitigation: Larma på oväntade processer i containrar, skicka klustrets granskningslogg till den centrala lagringen och håll klustret på en version med stöd och uppdateringar.

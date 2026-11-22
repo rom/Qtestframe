@@ -1211,3 +1211,35 @@ risks:
       title: Autentiseringen kringgås med standard- eller förfalskade inloggningsuppgifter
       description: En installation behåller ett standardlösenord, eller systemet godtar intyg från gemensam inloggning utan att kontrollera signatur, mottagare och utfärdare. Den som känner till standardlösenordet eller kan förfalska ett intyg loggar in som vilken användare som helst.
       mitigation: Leverera inga standardinloggningar, validera varje intyg från gemensam inloggning fullständigt och koppla federerade konton via utfärdare och subjekt.
+  - id: AUTH-R06
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [mfa-fatigue, push]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "RFC 6238", "CWE-308 (use of single-factor authentication)"]
+    mitigated_by: [AUTH-08, AUTH-19, AUTH-22]
+    attack: [T1621]
+    en:
+      title: "User approves an attacker's sign-in after repeated prompts"
+      description: An attacker with the password triggers sign-in prompts again and again until the tired user approves one. The second factor gives no protection.
+      mitigation: Prefer passkeys, use one-time codes that expire and are used once, and notify users of sign-ins from new devices.
+    sv:
+      title: Användare godkänner en angripares inloggning efter upprepade förfrågningar
+      description: En angripare som har lösenordet utlöser inloggningsförfrågningar gång på gång tills den trötta användaren godkänner en. Den andra faktorn ger inget skydd.
+      mitigation: Föredra passnycklar, använd engångskoder som löper ut och används en gång, och meddela användare vid inloggning från nya enheter.
+  - id: AUTH-R07
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [account-enumeration, reconnaissance]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V6.3.8 (no user enumeration)", "CWE-204 (observable response discrepancy)"]
+    mitigated_by: [AUTH-10, AUTH-09]
+    attack: [T1589]
+    en:
+      title: Sign-in reveals which accounts exist
+      description: The sign-in and reset pages answer differently for known and unknown addresses. Attackers build a list of valid accounts to target with password guessing and phishing.
+      mitigation: Give the same answer for known and unknown accounts and limit failed sign-in attempts.
+    sv:
+      title: Inloggningen avslöjar vilka konton som finns
+      description: Inloggnings- och återställningssidorna svarar olika för kända och okända adresser. Angripare bygger en lista över giltiga konton som de riktar lösenordsgissning och nätfiske mot.
+      mitigation: Ge samma svar för kända och okända konton och begränsa antalet misslyckade inloggningsförsök.

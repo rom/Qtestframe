@@ -877,3 +877,35 @@ risks:
       title: Angripare behåller en session efter att kontot har säkrats
       description: Användaren byter lösenord eller en administratör inaktiverar kontot, men redan öppna sessioner fortsätter att gälla. Angriparen som tog över kontot fortsätter att arbeta.
       mitigation: Ogiltigförklara sessioner på servern vid utloggning, vid lösenordsbyte och när ett konto inaktiveras, och låt användare se och avsluta sina aktiva sessioner.
+  - id: SESS-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [session-fixation, sign-in]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V7.2.4 (new session token at authentication)", "CWE-384 (session fixation)"]
+    mitigated_by: [SESS-02, SESS-07, SESS-14]
+    attack: [T1185, T1550.004]
+    en:
+      title: Session fixed by the attacker before the victim signs in
+      description: "The session token stays the same at sign-in, or appears in links. An attacker plants a known token on the victim's browser and uses the session once the victim has signed in."
+      mitigation: Issue a new session token at sign-in, never put session tokens in URLs and use a host-bound session cookie.
+    sv:
+      title: Sessionen bestäms av angriparen innan offret loggar in
+      description: Sessionstoken är densamma efter inloggning eller visas i länkar. En angripare planterar en känd token i offrets webbläsare och använder sessionen när offret har loggat in.
+      mitigation: Utfärda en ny sessionstoken vid inloggning, lägg aldrig sessionstoken i adresser och använd en sessionskaka som är bunden till värden.
+  - id: SESS-R05
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [shared-computers, timeouts]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V7.3.1 (inactivity timeout)", "CWE-613 (insufficient session expiration)"]
+    mitigated_by: [SESS-03, SESS-04, SESS-15]
+    attack: [T1078]
+    en:
+      title: Session left open on a shared computer used by the next person
+      description: A user walks away from a shared or public computer without signing out. The session never times out and browser data stays, so the next person continues as that user.
+      mitigation: Enforce idle and absolute session timeouts and clear browser data at sign-out.
+    sv:
+      title: Session som lämnats öppen på en delad dator används av nästa person
+      description: En användare går från en delad eller publik dator utan att logga ut. Sessionen löper aldrig ut och webbläsardata finns kvar, så nästa person fortsätter som den användaren.
+      mitigation: Tillämpa tidsgränser för inaktivitet och total sessionstid och rensa webbläsardata vid utloggning.

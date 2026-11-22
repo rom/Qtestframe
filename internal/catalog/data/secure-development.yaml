@@ -833,3 +833,35 @@ risks:
       title: Kända säkerhetsfynd blir liggande eller kommer tillbaka
       description: Fynd från skanningar och tester hopar sig utan tidsgränser, och rättade sårbarheter dyker upp igen i senare versioner. Produkten bär på kända svagheter som angripare kan hitta på samma sätt.
       mitigation: Rätta säkerhetsfynd inom fastställda tidsgränser, lägg till ett regressionstest för varje rättad sårbarhet, utbilda utvecklarna varje år och utse en säkerhetsansvarig i varje team.
+  - id: SDL-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [infrastructure-as-code, misconfiguration]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A05", "CWE-16 (configuration)"]
+    mitigated_by: [SDL-14, SDL-01]
+    attack: [T1530, T1190]
+    en:
+      title: Misconfiguration in infrastructure code exposes systems
+      description: Infrastructure code opens a storage bucket to the internet or a database port to all addresses, and nobody reviews it for security. The exposure is found by an attacker.
+      mitigation: Scan infrastructure code for security problems in the pipeline and threat model new components.
+    sv:
+      title: Felkonfiguration i infrastrukturkod exponerar system
+      description: Infrastrukturkoden öppnar en lagringsbehållare mot internet eller en databasport för alla adresser, och ingen granskar den ur säkerhetssynpunkt. Exponeringen upptäcks av en angripare.
+      mitigation: Skanna infrastrukturkod efter säkerhetsproblem i byggkedjan och hotmodellera nya komponenter.
+  - id: SDL-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [parsers, fuzzing]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "IEC 62443-4-1 SVV-3", "CWE-787 (out-of-bounds write)"]
+    mitigated_by: [SDL-13, SDL-11]
+    attack: [T1190, T1499.004]
+    en:
+      title: Crash or code execution in a parser of external input
+      description: A parser for an uploaded or received format breaks on malformed data. The attacker crashes the service at will or runs code through a memory error.
+      mitigation: Fuzz test parsers of external input and add a regression test for each fixed vulnerability.
+    sv:
+      title: Krasch eller kodkörning i en tolk för extern indata
+      description: En tolk för ett uppladdat eller mottaget format går sönder på felaktiga data. Angriparen kraschar tjänsten när hen vill eller kör kod genom ett minnesfel.
+      mitigation: Fuzztesta tolkar för extern indata och lägg till ett regressionstest för varje åtgärdad sårbarhet.

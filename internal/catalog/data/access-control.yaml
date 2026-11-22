@@ -911,3 +911,35 @@ risks:
       title: En person både begär och godkänner en kritisk ändring
       description: Samma användare kan skapa och godkänna en betalning, en behörighet eller en leverans. Bedrägeri eller ett allvarligt misstag passerar utan en andra granskning.
       mitigation: Tillämpa åtskillnad i arbetsuppgifter så att den som godkänner är en annan än den som begär, ge förhöjd behörighet bara under begränsad tid och kräv ett andra godkännande för stora ekonomiska ändringar.
+  - id: ACC-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [dormant-accounts, emergency-access]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-53 AC-2(3)", "CWE-262 (not using password aging)"]
+    mitigated_by: [ACC-14, ACC-15, ACC-09]
+    attack: [T1078]
+    en:
+      title: Dormant or emergency account used by an attacker
+      description: Accounts nobody uses stay enabled for years, and the emergency access account can be used without anyone noticing. An attacker who gets hold of the credentials works under an identity nobody watches.
+      mitigation: Disable accounts unused for 90 days, alert on every use of the emergency account and review access periodically.
+    sv:
+      title: Vilande konto eller nödkonto används av en angripare
+      description: Konton som ingen använder förblir aktiva i åratal och nödkontot kan användas utan att någon märker det. En angripare som kommer över uppgifterna arbetar under en identitet som ingen övervakar.
+      mitigation: Inaktivera konton som inte använts på 90 dagar, larma vid varje användning av nödkontot och granska behörigheter regelbundet.
+  - id: ACC-R06
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [standing-privileges, admin]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-53 AC-2(2)", "CWE-269 (improper privilege management)"]
+    mitigated_by: [ACC-11, ACC-06, ACC-13]
+    attack: [T1078, T1098]
+    en:
+      title: Permanent administrator rights multiply the damage of one compromised account
+      description: Many people hold administrator rights all the time, and rights are kept when people change roles. One phished account is enough to take over the whole system.
+      mitigation: Grant elevated access for a limited time when needed, require the administrator role for administration and let roles follow identity provider groups when people move.
+    sv:
+      title: Permanenta administratörsbehörigheter förstorar skadan av ett kapat konto
+      description: Många personer har administratörsbehörighet hela tiden och behörigheter behålls när personer byter roll. Ett nätfiskat konto räcker för att ta över hela systemet.
+      mitigation: Ge förhöjd behörighet tidsbegränsat när den behövs, kräv administratörsrollen för administration och låt roller följa grupperna i identitetsleverantören när personer byter tjänst.

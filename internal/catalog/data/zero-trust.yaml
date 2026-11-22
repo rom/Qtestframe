@@ -729,3 +729,35 @@ risks:
       title: Felaktig åtkomstpolicy öppnar eller stänger åtkomsten
       description: En åtkomstpolicy ändras utan granskning, eller beslutspunkten för policyn slutar fungera och tjänsterna faller tillbaka till att tillåta allt. Antingen kommer fel personer in eller så stängs alla ute utan spår av varför.
       mitigation: Håll åtkomstpolicyer som granskad kod, neka åtkomst när beslutspunkten inte kan nås och logga varje åtkomstbeslut med dess indata.
+  - id: ZTA-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [vpn, remote-access]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-207 §3.1.3 (network infrastructure and software defined perimeters)", "NIST SP 800-207"]
+    mitigated_by: [ZTA-08, ZTA-11, ZTA-07]
+    attack: [T1133, T1021]
+    en:
+      title: Stolen VPN credentials open the whole network
+      description: Remote access gives a full network connection once the VPN accepts the user. Stolen credentials or a vulnerable VPN appliance lets the attacker reach every internal system.
+      mitigation: Give remote access per application instead of network-wide, step up authentication on higher risk and re-evaluate sessions when a risk signal arrives.
+    sv:
+      title: Stulna VPN-uppgifter öppnar hela nätet
+      description: "Fjärråtkomsten ger en fullständig nätanslutning när VPN:et har godkänt användaren. Stulna uppgifter eller en sårbar VPN-enhet låter angriparen nå varje internt system."
+      mitigation: Ge fjärråtkomst per applikation i stället för till hela nätet, kräv starkare autentisering vid högre risk och omvärdera sessioner när en risksignal kommer.
+  - id: ZTA-R05
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [workload-identity, rogue-workload]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-207 §2.1 (tenets of zero trust)", "NIST SP 800-207A (service identity)"]
+    mitigated_by: [ZTA-09, ZTA-02, ZTA-03]
+    attack: [T1610, T1557]
+    en:
+      title: Rogue workload poses as a trusted service
+      description: Any process that reaches the network can call internal services, or obtain an identity without being registered. An attacker deploys a workload that impersonates a trusted service.
+      mitigation: Issue identities only to registered workloads, let services prove their identity with short-lived certificates and accept connections only from listed callers.
+    sv:
+      title: Obehörig arbetslast utger sig för att vara en betrodd tjänst
+      description: Varje process som når nätet kan anropa interna tjänster, eller få en identitet utan att vara registrerad. En angripare driftsätter en arbetslast som utger sig för att vara en betrodd tjänst.
+      mitigation: Ge identiteter bara till registrerade arbetslaster, låt tjänster styrka sin identitet med kortlivade certifikat och ta bara emot anslutningar från listade anropare.

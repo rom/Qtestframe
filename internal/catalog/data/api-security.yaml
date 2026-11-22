@@ -925,3 +925,35 @@ risks:
       title: Bortglömd API-ändpunkt lämnas öppen
       description: En gammal version eller en teständpunkt är fortfarande nåbar utan skydden i det aktuella API:et. Angripare hittar den och använder den för att kringgå autentiseringen eller läsa interna detaljer.
       mitigation: För en förteckning över alla exponerade ändpunkter och ta bort det som inte finns i den, autentisera varje klient och håll felsvaren fria från interna detaljer.
+  - id: APIS-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [refresh-tokens, token-theft]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "RFC 9700 §4.14 (refresh token protection)", "CWE-294 (authentication bypass by capture-replay)"]
+    mitigated_by: [APIS-12, APIS-13, APIS-04]
+    attack: [T1528, T1550.001]
+    en:
+      title: Stolen refresh token gives lasting access to the API
+      description: A long-lived refresh token is copied from a device or a log. The attacker keeps obtaining new access tokens for months, even after the user changes password.
+      mitigation: Keep access tokens short-lived, rotate refresh tokens and revoke the grant on reuse, and bind tokens for write access to the client.
+    sv:
+      title: "Stulen förnyelsetoken ger varaktig åtkomst till API:et"
+      description: En långlivad förnyelsetoken kopieras från en enhet eller en logg. Angriparen fortsätter att hämta nya åtkomsttoken i månader, även efter att användaren bytt lösenord.
+      mitigation: Håll åtkomsttoken kortlivade, rotera förnyelsetoken och återkalla behörigheten vid återanvändning, och bind token för skrivåtkomst till klienten.
+  - id: APIS-R06
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [business-flows, automation-abuse]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API6", "CWE-799 (improper control of interaction frequency)"]
+    mitigated_by: [APIS-16, APIS-03]
+    attack: [T1585]
+    en:
+      title: Sensitive business flow automated by bots
+      description: "Sign-up, booking or purchase endpoints accept any number of calls. Bots buy up limited stock, create fake accounts in bulk or send messages at the organisation's expense."
+      mitigation: Limit sensitive business flows per user and client and rate limit every API client.
+    sv:
+      title: Känsliga affärsflöden automatiseras av robotar
+      description: Ändpunkter för registrering, bokning eller köp tar emot hur många anrop som helst. Robotar köper upp begränsade lager, skapar falska konton i mängd eller skickar meddelanden på organisationens bekostnad.
+      mitigation: Begränsa känsliga affärsflöden per användare och klient och begränsa anropstakten för varje API-klient.
