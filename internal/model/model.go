@@ -1350,11 +1350,23 @@ const (
 	// CheckDuplicateSuspect: requirements with nearly identical text and no
 	// duplicates relation.
 	CheckDuplicateSuspect = "duplicate_suspect"
+	// CheckPotentialConflict: requirements that likely contradict each
+	// other (opposite obligations, thresholds that cannot both hold,
+	// mutually exclusive values) and are not related by conflicts_with.
+	CheckPotentialConflict = "potential_conflict"
+	// CheckTestDuplicateSuspect: tests with nearly identical text and no
+	// "duplicates" item link.
+	CheckTestDuplicateSuspect = "test_duplicate_suspect"
 )
+
+// DuplicateLinkLabel is the label of the item link that marks a test as
+// a duplicate of another test (tests have no relations).
+const DuplicateLinkLabel = "duplicates"
 
 // TraceBuiltinKinds lists the built-in consistency checks in display order.
 var TraceBuiltinKinds = []string{CheckConflictInRelease, CheckUnmetDependency, CheckObsoleteParent, CheckVerifiesInactive,
-	CheckBrokenPrerequisite, CheckUnevidencedMust, CheckUnmitigatedRisk, CheckUnjustifiedRejection, CheckDuplicateSuspect}
+	CheckBrokenPrerequisite, CheckUnevidencedMust, CheckUnmitigatedRisk, CheckUnjustifiedRejection, CheckDuplicateSuspect,
+	CheckPotentialConflict, CheckTestDuplicateSuspect}
 
 // IsBuiltinCheck reports whether kind is a built-in consistency check.
 func IsBuiltinCheck(kind string) bool { return slices.Contains(TraceBuiltinKinds, kind) }
@@ -1362,7 +1374,7 @@ func IsBuiltinCheck(kind string) bool { return slices.Contains(TraceBuiltinKinds
 // BuiltinScope is the item kind a built-in check applies to.
 func BuiltinScope(kind string) string {
 	switch kind {
-	case CheckVerifiesInactive, CheckBrokenPrerequisite:
+	case CheckVerifiesInactive, CheckBrokenPrerequisite, CheckTestDuplicateSuspect:
 		return KindTest
 	case CheckUnmitigatedRisk:
 		return KindRisk
@@ -1421,8 +1433,10 @@ type TraceRuleOptions struct {
 	// Every: every trace of the kind must meet the conditions (e.g. no
 	// suspect link at all), not only Min of them.
 	Every bool `json:"every,omitempty"`
-	// Threshold of duplicate_suspect: the least similarity (0.5–1) of two
-	// normalised texts that counts as a suspected duplicate (default 0.9).
+	// Threshold of duplicate_suspect and test_duplicate_suspect: the least
+	// similarity (0.5–1) of two items that counts as a suspected duplicate
+	// (default 0.68); of potential_conflict: the least confidence (0.5–1)
+	// of a reported conflict (default 0.6).
 	Threshold float64 `json:"threshold,omitempty"`
 	// Level of unmitigated_risk: the least risk level checked (RiskLevels,
 	// default high).

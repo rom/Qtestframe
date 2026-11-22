@@ -69,7 +69,9 @@ var BackupTables = []string{
 var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "job_runs": true, "script_jobs": true,
 	"mfa_challenges": true, "mfa_trusted_devices": true,
 	// personal autocomplete history: a convenience, not project data
-	"suggest_history": true}
+	"suggest_history": true,
+	// vectors of the embeddings service: a cache, computed again
+	"similarity_embeddings": true}
 
 // NotBackedUpTables returns the tables that exist but are deliberately not
 // part of a backup, sorted (for the administrator guide, see

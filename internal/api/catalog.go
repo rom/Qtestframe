@@ -329,6 +329,9 @@ type catalogImportRequest struct {
 	IncludeTests *bool `json:"include_tests"`
 	// AddCopies imports items the project already has (by catalog_ref) again.
 	AddCopies bool `json:"add_copies"`
+	// SkipSimilar leaves out catalogue requirements that are similar to a
+	// requirement of the project (suspected duplicates, reason "similar").
+	SkipSimilar bool `json:"skip_similar"`
 	// Source of the requirements; "" = the cited standards (refs).
 	Source *string `json:"source"`
 }
@@ -339,6 +342,9 @@ type catalogCreated struct {
 	Title      string  `json:"title"`
 	CatalogRef string  `json:"catalog_ref"`
 	FolderID   *string `json:"folder_id"`
+	// Similar: requirements of the project the new one is similar to (a
+	// suspected duplicate; requirements only).
+	Similar []similarHit `json:"similar,omitempty"`
 }
 
 type catalogLink struct {
@@ -352,7 +358,7 @@ type catalogLink struct {
 type catalogSkipped struct {
 	Kind       string              `json:"kind"`
 	CatalogRef string              `json:"catalog_ref"`
-	Reason     string              `json:"reason"` // exists | not_found | duplicate
+	Reason     string              `json:"reason"` // exists | not_found | duplicate | similar
 	Existing   []store.CatalogItem `json:"existing,omitempty"`
 }
 
@@ -624,6 +630,16 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 
+	// the requirements the project had (suspected duplicates of new ones)
+	var corpus *simCorpus
+	threshold, _ := s.thresholds(ctx, p.TenantID(), pr.ID, model.KindRequirement)
+	if len(reqs) > 0 {
+		if corpus, err = s.corpus(ctx, p.TenantID(), pr.ID, model.KindRequirement); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
+
 	// catalogue id → project items now created for it
 	newReq, newTest := map[string][]*model.Requirement{}, map[string][]*model.TestCase{}
 	for _, rq := range reqs {
@@ -637,6 +653,23 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 		}
 		m := catalogRequirement(rq, lang, req.Status, source)
 		m.ProjectID, m.CreatedBy = pr.ID, p.User.Email
+		var similar []similarHit
+		d := reqDoc(m)
+		d.ID = "\x00catalog"
+		matches, _ := s.similar(ctx, corpus, d, 3, threshold, nil)
+		for _, mt := range matches {
+			if x, ok := corpus.items[mt.ID]; ok {
+				similar = append(similar, similarHit{simItem: x, Score: round2(mt.Score)})
+			}
+		}
+		if len(similar) > 0 && req.SkipSimilar {
+			sk := catalogSkipped{Kind: model.KindRequirement, CatalogRef: rq.ID, Reason: "similar"}
+			for _, x := range similar {
+				sk.Existing = append(sk.Existing, store.CatalogItem{ID: x.ID, Key: x.Key, Title: x.Title})
+			}
+			out.Skipped = append(out.Skipped, sk)
+			continue
+		}
 		if m.FolderID, err = reqFolders.resolve(reqRoot, folderPathFor(c, req.Folders, rq.Area, lang)); err != nil {
 			s.fail(w, r, err)
 			return
@@ -646,7 +679,7 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 			return
 		}
 		newReq[rq.ID] = append(newReq[rq.ID], m)
-		out.Requirements = append(out.Requirements, catalogCreated{ID: m.ID, Key: m.Key, Title: m.Title, CatalogRef: rq.ID, FolderID: m.FolderID})
+		out.Requirements = append(out.Requirements, catalogCreated{ID: m.ID, Key: m.Key, Title: m.Title, CatalogRef: rq.ID, FolderID: m.FolderID, Similar: similar})
 	}
 	for _, t := range tests {
 		if ex := existingTests[t.ID]; len(ex) > 0 && !req.AddCopies {

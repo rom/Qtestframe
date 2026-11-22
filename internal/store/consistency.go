@@ -27,9 +27,16 @@ type ConsistencyDismissal struct {
 }
 
 // DismissableChecks are the built-in checks whose findings about a pair
-// of items can be dismissed: a suspected duplicate that is none, and a
-// dependency or prerequisite on a deleted item that has been dealt with.
-var DismissableChecks = []string{model.CheckDuplicateSuspect, model.CheckUnmetDependency, model.CheckBrokenPrerequisite}
+// of items can be dismissed: a suspected duplicate (requirement or test)
+// that is none, a potential conflict that is none, and a dependency or
+// prerequisite on a deleted item that has been dealt with.
+var DismissableChecks = []string{model.CheckDuplicateSuspect, model.CheckUnmetDependency, model.CheckBrokenPrerequisite,
+	model.CheckPotentialConflict, model.CheckTestDuplicateSuspect}
+
+// pairChecks are the dismissable checks about two existing items.
+func pairCheck(check string) bool {
+	return check == model.CheckDuplicateSuspect || check == model.CheckPotentialConflict || check == model.CheckTestDuplicateSuspect
+}
 
 func orderPair(a, b string) (string, string) {
 	if b < a {
@@ -40,8 +47,9 @@ func orderPair(a, b string) (string, string) {
 
 // DismissConsistency records that the finding of check about item (an
 // item of the project) and other is not a problem. For duplicate_suspect
-// both are requirements of the project; for the other checks other may be
-// a deleted item. Dismissing twice is not an error.
+// and potential_conflict both are requirements of the project, for
+// test_duplicate_suspect tests; for the other checks other may be a
+// deleted item. Dismissing twice is not an error.
 func (s *Store) DismissConsistency(ctx context.Context, tenantID, projectID, check, item, other, by string) (*ConsistencyDismissal, error) {
 	if !slices.Contains(DismissableChecks, check) {
 		return nil, Invalidf("findings of %q cannot be dismissed", check)
@@ -50,11 +58,11 @@ func (s *Store) DismissConsistency(ctx context.Context, tenantID, projectID, che
 		return nil, Invalidf("two different items are needed")
 	}
 	table := "requirements"
-	if check == model.CheckBrokenPrerequisite {
+	if check == model.CheckBrokenPrerequisite || check == model.CheckTestDuplicateSuspect {
 		table = "test_cases"
 	}
 	ids := []string{item}
-	if check == model.CheckDuplicateSuspect {
+	if pairCheck(check) {
 		ids = append(ids, other)
 	}
 	for _, id := range ids {

@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/similarity"
 )
 
 // Built-in consistency checks (model.TraceBuiltinKinds). Each one finds
@@ -62,7 +63,7 @@ const (
 
 // FixActions lists every fix action.
 var FixActions = []string{FixRemoveRelation, FixRemoveLink, FixRemoveDependency, FixRemoveFromRelease, FixSetObsolete,
-	FixAddJustification, FixLinkMitigation, FixMarkDuplicate, FixDismiss}
+	FixAddJustification, FixLinkMitigation, FixMarkDuplicate, FixMarkConflict, FixDismiss}
 
 // Builtin is the project default of a built-in check: what installing the
 // built-in checks into a project creates.
@@ -86,7 +87,9 @@ var Builtins = []Builtin{
 	{model.CheckUnevidencedMust, "MUST requirement in a release without passing evidence", "A MUST or SHALL requirement in a planned or active release has no passing evidence.", "warning", true},
 	{model.CheckUnmitigatedRisk, "High risk without verified mitigation", "A high or critical risk has no linked mitigation requirement, or none of its mitigations is verified.", "warning", true},
 	{model.CheckUnjustifiedRejection, "Regulatory requirement rejected without justification", "A requirement adopted from a regulation of the catalogue is rejected without a recorded justification.", "warning", true},
-	{model.CheckDuplicateSuspect, "Suspected duplicate requirements", "Requirements with nearly identical text and no duplicates relation.", "warning", true},
+	{model.CheckDuplicateSuspect, "Suspected duplicate requirements", "Requirements that say the same thing (similar text, synonyms included) and have no duplicates relation.", "warning", true},
+	{model.CheckPotentialConflict, "Potentially conflicting requirements", "Requirements that likely contradict each other (opposite obligations, thresholds that cannot both hold, mutually exclusive values) and have no conflicts_with relation.", "warning", true},
+	{model.CheckTestDuplicateSuspect, "Suspected duplicate tests", "Tests that say the same thing and are not linked as duplicates.", "warning", true},
 }
 
 // BuiltinRule returns the project default of a built-in check as a rule.
@@ -138,6 +141,12 @@ type Facts struct {
 	FromRegulation map[string]bool
 	// Justified: requirement ids whose rejection is justified.
 	Justified map[string]bool
+	// Docs: requirement and test id → its text for the similarity checks
+	// (a requirement without one: its Text as the description).
+	Docs map[string]similarity.Doc
+	// TestCreated: test id → creation time (test_duplicate_suspect reports
+	// the newer test).
+	TestCreated map[string]time.Time
 }
 
 // DismissKey is the key of a dismissed finding of check about items a, b.
@@ -169,8 +178,14 @@ type Hooks struct {
 	// FromRegulation reports whether a requirement was adopted from a
 	// regulation of the catalogue (unjustified_rejection).
 	FromRegulation func(g *Graph, reqID string) bool
-	// Similarity of two normalised texts, 0–1 (duplicate_suspect).
+	// Similarity of two texts, 0–1: when set, duplicate_suspect compares
+	// the Text of every pair of requirements with it instead of the
+	// similarity model.
 	Similarity func(a, b string) float64
+	// Scorer replaces the similarity model of the active items of a kind
+	// (m.Index, TF-IDF) for the duplicate checks, e.g. with embeddings
+	// (nil result: keep m.Index).
+	Scorer func(g *Graph, kind string, m *SimModel) similarity.Scorer
 }
 
 // DefaultHooks are today's predicates.
@@ -359,7 +374,15 @@ func (x *index) evaluateBuiltin(n int, r model.TraceRule, scope Scope) Result {
 	case model.CheckUnjustifiedRejection:
 		b.rejections(checked)
 	case model.CheckDuplicateSuspect:
-		b.duplicates(r, checked)
+		if x.g.Hooks.Similarity != nil {
+			b.duplicates(r, checked)
+		} else {
+			b.similarDuplicates(r, checked, model.KindRequirement)
+		}
+	case model.CheckTestDuplicateSuspect:
+		b.similarDuplicates(r, checked, model.KindTest)
+	case model.CheckPotentialConflict:
+		b.potentialConflicts(r, checked)
 	}
 	res.ViolationCount = len(res.Violations)
 	res.Passed = res.ViolationCount == 0
