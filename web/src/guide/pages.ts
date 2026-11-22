@@ -14,6 +14,7 @@ export const GUIDE_PAGES = [
   'test-cycles',
   'releases-and-risks',
   'waivers-and-soa',
+  'change-requests',
   'defects',
   'reviews-and-notifications',
   'discussions',

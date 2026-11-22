@@ -147,10 +147,10 @@ func TestChangeRequestFlow(t *testing.T) {
 	}
 
 	// who may decide
-	sme.m("POST", path+"/decision", map[string]any{"decision": "approve", "password": testPassword}, 403)    // the requester, no change.approve
-	a.m("POST", path+"/decision", map[string]any{"decision": "approve", "password": testPassword}, 403)      // not on the board
-	mgr.m("POST", path+"/decision", map[string]any{"decision": "approve", "password": "wrong"}, 403)         // signature
-	mgr.m("POST", path+"/decision", map[string]any{"decision": "defer", "password": testPassword}, 400)      // no comment
+	sme.m("POST", path+"/decision", map[string]any{"decision": "approve", "password": testPassword}, 403) // the requester, no change.approve
+	a.m("POST", path+"/decision", map[string]any{"decision": "approve", "password": testPassword}, 403)   // not on the board
+	mgr.m("POST", path+"/decision", map[string]any{"decision": "approve", "password": "wrong"}, 403)      // signature
+	mgr.m("POST", path+"/decision", map[string]any{"decision": "defer", "password": testPassword}, 400)   // no comment
 	cr = mgr.m("POST", path+"/decision", map[string]any{"decision": "approve", "comment": "Go", "password": testPassword}, 200)
 	appr := cr["approvals"].([]any)
 	if cr["status"] != "approved" || len(appr) != 1 || appr[0].(map[string]any)["meaning"] != "Approved by the CCB" || appr[0].(map[string]any)["valid"] != true {

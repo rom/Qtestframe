@@ -48,6 +48,7 @@ import (
 var projectScoped = map[string]bool{
 	string(rbac.ProjectRead): true, string(rbac.ProjectUpdate): true, string(rbac.ProjectDelete): true,
 	string(rbac.RequirementRd): true, string(rbac.RequirementWr): true, string(rbac.RequirementRev): true, string(rbac.WaiverApprove): true,
+	string(rbac.ChangeCreate): true, string(rbac.ChangeApprove): true,
 	string(rbac.TestRead): true, string(rbac.TestWrite): true, string(rbac.TestReview): true,
 	string(rbac.RunRead): true, string(rbac.RunWrite): true, string(rbac.RunExecute): true, string(rbac.CyclePlan): true,
 	string(rbac.ScriptExecute): true, string(rbac.Export): true, string(rbac.CommentCreate): true,

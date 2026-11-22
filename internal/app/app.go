@@ -416,6 +416,10 @@ func cmdSeedDemo(args []string, env Env) error {
 	if err := SeedDemoWorkList(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {
 		return err
 	}
+	// change control and change requests (seedchangerequests.go)
+	if err := SeedDemoChangeRequests(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {
+		return err
+	}
 	// discussions by the demo users (seeddiscussions.go)
 	if err := SeedDemoDiscussions(env.Ctx, st, t.ID, p); err != nil {
 		return err

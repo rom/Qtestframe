@@ -49,6 +49,7 @@ Projects can send signed events to other systems. Users with `project.update` se
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
+| change_request | `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented`, `change_request.closed` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -83,6 +84,7 @@ Projects can post their events to chat channels: Slack, Microsoft Teams, Matterm
 | Reviews | `review.requested` (Review requested), `review.completed` (Review completed) |
 | Releases | `release.created` (Release created), `release.updated` (Release updated), `release.released` (Release released) |
 | Waivers | `waiver.requested` (Waiver requested), `waiver.approved` (Waiver approved), `waiver.rejected` (Waiver rejected), `waiver.revoked` (Waiver revoked) |
+| Change requests | `change_request.submitted` (Change request submitted), `change_request.review` (Change request to decide), `change_request.approved` (Change request approved), `change_request.rejected` (Change request rejected), `change_request.deferred` (Change request deferred), `change_request.implemented` (Change request implemented), `change_request.closed` (Change request closed) |
 | Risks | `risk.created` (Risk identified), `risk.updated` (Risk updated) |
 
 <!-- END GENERATED: chat-events -->

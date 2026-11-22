@@ -1192,3 +1192,16 @@ button.readiness-cell:focus-visible { outline: 2px solid var(--p-primary-color);
 .app-dark .warned-badge {
   color: var(--p-amber-300, #fcd34d);
 }
+
+/* change requests: an item with open change requests (icon and text, not only colour) */
+.cr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 6px;
+  border: 1px solid var(--qtf-border);
+  color: var(--qtf-text);
+  white-space: nowrap;
+}

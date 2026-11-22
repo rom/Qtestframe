@@ -50,6 +50,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'discussions', name: 'discussions', component: () => import('./views/DiscussionsView.vue'), meta: { perm: P.projectRead } },
           { path: 'risks', name: 'risks', component: () => import('./views/RisksView.vue'), meta: { perm: P.requirementRead } },
           { path: 'waivers', name: 'waivers', component: () => import('./views/WaiversView.vue'), meta: { perm: P.requirementRead } },
+          { path: 'change-requests', name: 'changeRequests', component: () => import('./views/ChangeRequestsView.vue'), meta: { perm: P.requirementRead } },
           { path: 'soa', name: 'soa', component: () => import('./views/SoaView.vue'), meta: { perm: P.requirementRead } },
           { path: 'traceability', name: 'traceability', component: () => import('./views/TraceabilityView.vue') },
           { path: 'verification', name: 'verification', component: () => import('./views/VerificationView.vue'), meta: { perm: P.requirementRead } },
