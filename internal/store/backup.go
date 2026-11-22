@@ -95,6 +95,7 @@ var boolColumns = map[string]bool{
 	"verification_records.until_change": true, "verification_settings.strict_criteria": true,
 	"custom_fields.required": true, "custom_fields.show_in_list": true,
 	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
+	"chat_channels.enabled": true, "chat_channels.restricted_content": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).
