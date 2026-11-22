@@ -17,10 +17,13 @@
 // the login fails.
 import { createHmac } from 'node:crypto'
 import { existsSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
 import { AxeBuilder } from '@axe-core/playwright'
 
+/** the repository (test fixtures for uploads) */
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const BASE = (process.env.QTF_URL || 'http://127.0.0.1:8080').replace(/\/+$/, '')
 const EMAIL = process.env.QTF_EMAIL || 'admin@example.com'
 const PASSWORD = process.env.QTF_PASSWORD || 'Change-me-1234'
@@ -344,6 +347,16 @@ async function discover(request) {
     { name: 'folders-bulk-drawer', path: `${p}/requirements`, open: ['.page-header .actions button:has(.pi-folder)', '.p-drawer button.p-button:has(.pi-check-square)', '.p-drawer .p-tree .p-checkbox'], wait: '.p-drawer .folder-bulk', maxWidth: 1199 },
     { name: 'categories-bulk', path: `${p}/settings?tab=requirement`, open: '.category-grid .p-checkbox', wait: '.bulkbar' },
     { name: 'export', path: `${p}/export` },
+    // exchanging data: the Import menu, the ReqIF import with its preview (a DOORS-shaped fixture), the Excel round-trip import
+    { name: 'exchange-menu', path: `${p}/requirements`, open: 'button.exchange-menu', wait: '#exchange-menu' },
+    {
+      name: 'exchange-reqif-preview',
+      path: `${p}/requirements`,
+      open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(2) .p-menu-item-link'],
+      upload: ['.exchange-dialog input[type="file"]', 'internal/interop/testdata/doors.reqif'],
+      wait: '.exchange-dialog .ex-table',
+    },
+    { name: 'exchange-xlsx-dialog', path: `${p}/tests`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:last-child .p-menu-item-link'], wait: '.exchange-dialog' },
     // ReqIF selected: the aspects are disabled and a hint is shown
     { name: 'export-reqif', path: `${p}/export`, open: '.format-grid button:has(.pi-sitemap)', wait: 'fieldset.plain-fieldset[disabled]' },
     { name: 'documents', path: `${p}/documents` },
@@ -664,6 +677,11 @@ async function main() {
             for (const sel of r.open ? [].concat(r.open) : []) {
               await settle(page)
               await page.locator(sel).first().click()
+            }
+            // upload: [selector, file] — a file of the repository set in a file input (an import preview)
+            if (r.upload) {
+              await settle(page)
+              await page.locator(r.upload[0]).first().setInputFiles(join(REPO, r.upload[1]))
             }
             // press: [selector, key] — a key pressed in a field (opens an autocomplete list)
             if (r.press) {

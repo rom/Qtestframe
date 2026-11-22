@@ -138,6 +138,9 @@ func parseRows(rows [][]string, mapping map[string]string, num func(i int) int, 
 		var folders []string
 		mappedContent := false
 		for _, col := range out.columns {
+			if col.Index < len(row) {
+				hierarchyCell(&c, col.Header, cleanCell(row[col.Index]))
+			}
 			if col.Index >= len(row) || col.Field == "" {
 				continue
 			}
@@ -157,6 +160,7 @@ func parseRows(rows [][]string, mapping map[string]string, num func(i int) int, 
 				rw.obligation = firstNonEmpty(rw.obligation, v)
 			case FieldType:
 				rw.typ = firstNonEmpty(rw.typ, v)
+				c.rawType = firstNonEmpty(c.rawType, v)
 			case FieldPriority:
 				rw.priority = firstNonEmpty(rw.priority, v)
 			case FieldStatus:

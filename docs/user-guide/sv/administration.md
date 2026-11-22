@@ -243,6 +243,17 @@ Så fungerar det:
 
 **Senaste provisioneringshändelser** på samma sida visar de senaste ändringarna; varje ändring finns också i [händelseloggen](#händelselogg), med utföraren *SCIM: nyckelns namn*. **Återkalla** en nyckel när du byter ut den eller om den kan ha läckt; leverantören slutar då provisionera tills den får en ny. Alla ändringar i ett anrop sparas tillsammans eller inte alls, och en leverantör som skickar för många anrop bromsas (HTTP 429).
 
+## OSLC
+
+Qtestframe har en OSLC-leverantör med läsbehörighet (Requirements Management 2.0 och Quality Management 2.0) under `/api/v1/oslc/`, så att ALM-verktyg som IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion eller Codebeamer kan hitta krav och testfall och länka till dem. Den är alltid på; det finns inget att ställa in.
+
+- **Adresser:** katalogen `/api/v1/oslc/catalog` (en tjänsteleverantör per projekt) och upptäcktsdokumentet `/api/v1/oslc/rootservices` (öppet, innehåller inga data). Ange **Bas-URL** under [Systeminställningar](#systeminställningar) (`server.base_url`) så att resursadresserna är de som klienterna når.
+- **Konton:** klienter loggar in med en [API-nyckel](#api-nycklar) som `Authorization: Bearer …`; klienter som bara erbjuder användarnamn och lösenord kan skicka nyckeln som lösenord (valfritt användarnamn). Skapa nyckeln för en person eller ett tjänstekonto med rollen **Läsare** eller högre. Projektdelningen gäller: begränsade projekt visas bara för sina medlemmar.
+- **Stöds:** RDF/XML, Turtle och JSON-LD; krav och testfall med titel, beskrivning, datum, upphovsperson, taggar, status, prioritet, verifieringslänkar och relationer; frågor med `oslc.where` på identifierare, titel, skapad och ändrad, samt sidindelning.
+- **Stöds inte:** att skriva via OSLC (creation factories, uppdateringar), delegerade urvals- och skapadialoger, förhandsvisningar, resource shapes, OAuth 1.0a, tracked resource sets och konfigurationshantering. Använd [ReqIF och Excel fram och tillbaka](reports-and-export.md#utbyta-data-med-andra-verktyg) för att flytta krav in och ut.
+
+API-referensen (`docs/api.md`, avsnittet *OSLC*) listar egenskaperna och frågesyntaxen.
+
 ## Händelselogg
 
 *(Testledare och uppåt)* **Administration → Händelselogg** registrerar vem som gjorde vad och när i organisationen: skapande, ändring och borttagning av objekt, inloggningar, ändringar av medlemskap med mera. De nyaste posterna visas först. Varje post visar avataren för den som utförde händelsen.

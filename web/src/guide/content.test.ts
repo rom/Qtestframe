@@ -87,7 +87,7 @@ describe('the bundled user guide', () => {
       }
     }
     expect(broken).toEqual([])
-  })
+  }, 30_000) // renders every page of both languages: slow on a loaded machine
   it('has a FAQ with at least 25 questions in both languages', () => {
     for (const lang of LANGS) {
       const { headings } = processTokens(getPage(lang, 'faq')!.markdown, { lang, assets: {} })

@@ -337,6 +337,9 @@ func (s *Server) routes() {
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)
+	// Excel round-trip and ReqIF import (exchange.go), OSLC (oslc.go)
+	s.routesExchange(h)
+	s.routesOSLC(pub, h)
 	// SCIM provisioning: its own token authentication (scim.go)
 	s.routesSCIM(m)
 	s.routesSCIMAdmin(h)
@@ -541,7 +544,10 @@ func writeError(w http.ResponseWriter, status int, code, msg string) {
 // fail maps an error to an HTTP response.
 func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error) {
 	var qe *query.Error
+	var ae *apiErr
 	switch {
+	case errors.As(err, &ae):
+		writeError(w, ae.status, ae.code, ae.msg)
 	case errors.As(err, &qe):
 		pos := qe.Pos
 		// err may name the query it belongs to ("selector: query: …")

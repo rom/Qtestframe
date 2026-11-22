@@ -44,7 +44,7 @@ func (s *Server) parseImportUpload(w http.ResponseWriter, r *http.Request) (*req
 	if err != nil {
 		return nil, nil, err
 	}
-	opt := reqimport.Options{Format: r.FormValue("format"), Sheet: r.FormValue("sheet"), MaxCandidates: maxImportCandidates}
+	opt := reqimport.Options{Format: r.FormValue("format"), Sheet: r.FormValue("sheet"), Preset: r.FormValue("preset"), MaxCandidates: maxImportCandidates}
 	if m := strings.TrimSpace(r.FormValue("mapping")); m != "" && m != "null" {
 		if err := json.Unmarshal([]byte(m), &opt.Mapping); err != nil {
 			return nil, nil, badRequest("mapping must be a JSON object of column header → field: %v", err)
@@ -129,10 +129,12 @@ func markDuplicates(existing []model.Requirement, cands []reqimport.Candidate) i
 
 type importPreview struct {
 	*reqimport.Result
-	Fields       []string `json:"fields"`
-	Total        int      `json:"total"`
-	Duplicates   int      `json:"duplicates"`
-	TargetFolder string   `json:"target_folder"`
+	Fields []string `json:"fields"`
+	// Presets are the mapping presets for other tools' exports.
+	Presets      []reqimport.Preset `json:"presets"`
+	Total        int                `json:"total"`
+	Duplicates   int                `json:"duplicates"`
+	TargetFolder string             `json:"target_folder"`
 }
 
 func (s *Server) handleImportPreview(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -156,7 +158,7 @@ func (s *Server) handleImportPreview(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 	dups := markDuplicates(existing, res.Candidates)
-	writeJSON(w, http.StatusOK, importPreview{Result: res, Fields: reqimport.Fields, Total: len(res.Candidates), Duplicates: dups, TargetFolder: rootPath})
+	writeJSON(w, http.StatusOK, importPreview{Result: res, Fields: reqimport.Fields, Presets: reqimport.Presets, Total: len(res.Candidates), Duplicates: dups, TargetFolder: rootPath})
 }
 
 type importedItem struct {

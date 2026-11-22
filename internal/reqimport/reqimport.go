@@ -76,6 +76,12 @@ type Candidate struct {
 	Warnings []string `json:"warnings"`
 	// Duplicate is set by the importer: "external_id" or "title".
 	Duplicate string `json:"duplicate,omitempty"`
+
+	// hierarchy columns of tool exports (see presets.go): the DOORS object
+	// level, an outline number ("1.2.3") and the raw type value.
+	level   int
+	outline string
+	rawType string
 }
 
 // Column is a detected column (or ReqIF attribute) and the field it maps to
@@ -99,6 +105,9 @@ type Options struct {
 	Mapping map[string]string
 	// MaxCandidates limits the result (0 = DefaultMaxCandidates).
 	MaxCandidates int
+	// Preset names a mapping preset (Presets: "doors", "polarion"); its
+	// mapping applies under Mapping, and its heading rows become folders.
+	Preset string
 }
 
 // Result is a parsed file.
@@ -112,6 +121,8 @@ type Result struct {
 	// could not be turned into candidates (they are left out).
 	Warnings []string `json:"warnings"`
 	Errors   []string `json:"errors"`
+	// Preset is the mapping preset applied ("" none).
+	Preset string `json:"preset"`
 }
 
 func (r *Result) warn(format string, a ...any) {
@@ -133,6 +144,13 @@ func Parse(data []byte, filename string, opt Options) (res *Result, err error) {
 	if err := checkMapping(opt.Mapping); err != nil {
 		return nil, err
 	}
+	preset, err := presetOf(opt.Preset)
+	if err != nil {
+		return nil, err
+	}
+	if preset != nil {
+		opt.Mapping = preset.merge(opt.Mapping)
+	}
 	if len(bytes.TrimSpace(data)) == 0 {
 		return nil, invalidf("the file is empty")
 	}
@@ -153,6 +171,13 @@ func Parse(data []byte, filename string, opt Options) (res *Result, err error) {
 	}
 	if err != nil {
 		return nil, err
+	}
+	if preset != nil && preset.Headings && (format == FormatCSV || format == FormatXLSX) {
+		applyHeadings(res, preset)
+	}
+	res.Preset = ""
+	if preset != nil {
+		res.Preset = preset.ID
 	}
 	// JSON clients expect arrays, never null.
 	if res.Columns == nil {

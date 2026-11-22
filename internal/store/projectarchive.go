@@ -128,6 +128,9 @@ var projectArchiveTables = []archiveTable{
 	{"trace_rules", ofProject},
 	{"document_items", inFiles},
 	{"defect_regressions", ofProject},
+	// the ReqIF identifiers of the items, so a loaded project can be
+	// updated from the same documents
+	{"external_refs", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},
@@ -182,6 +185,7 @@ var mustMapColumns = map[string]string{
 	"revisions":       "entity_id",
 	"review_requests": "entity_id",
 	"item_links":      "source_id",
+	"external_refs":   "entity_id",
 }
 
 // sanitizeArchiveRow removes secrets from a row (when saving and again

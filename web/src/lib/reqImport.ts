@@ -70,6 +70,9 @@ export interface ImportPreview {
   warnings: string[]
   errors: string[]
   fields: string[]
+  /** mapping presets for the exports of other tools (DOORS, Polarion) */
+  presets?: { id: string; name: string }[]
+  preset?: string
   total: number
   duplicates: number
   target_folder: string
@@ -131,13 +134,14 @@ export function columnChoices(columns: readonly ImportColumn[], previous: Readon
 
 /** Multipart fields of a preview or import request. */
 export function importFields(
-  opts: { sheet?: string | null; mapping?: Record<string, string> },
+  opts: { sheet?: string | null; mapping?: Record<string, string>; preset?: string | null },
   options?: ImportOptions,
   exclude?: Iterable<number>,
 ): Record<string, string | undefined> {
   const f: Record<string, string | undefined> = {
     sheet: opts.sheet || undefined,
     mapping: opts.mapping ? JSON.stringify(opts.mapping) : undefined,
+    preset: opts.preset || undefined,
   }
   if (options) {
     f.folder_id = options.folderId || undefined
