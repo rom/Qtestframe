@@ -13,21 +13,22 @@ import (
 const runCols = `id, project_id, name, description, status, environment, build, created_by, created_at, started_at, completed_at, release_id,
 	variant_id, build_id, COALESCE((SELECT v.name FROM variants v WHERE v.id = test_runs.variant_id), ''),
 	COALESCE((SELECT CASE WHEN b.number <> '' THEN b.number ELSE b.external_id END FROM builds b WHERE b.id = test_runs.build_id), ''),
-	custom_fields`
+	custom_fields, cycle_id, COALESCE((SELECT c.name FROM test_cycles c WHERE c.id = test_runs.cycle_id), '')`
 
 func scanRun(r interface{ Scan(...any) error }) (*model.TestRun, error) {
 	var run model.TestRun
 	var st, ct sql.NullTime
-	var rel, variant, build sql.NullString
+	var rel, variant, build, cycle sql.NullString
 	var custom string
 	if err := r.Scan(&run.ID, &run.ProjectID, &run.Name, &run.Description, &run.Status, &run.Environment, &run.Build, &run.CreatedBy, &run.CreatedAt, &st, &ct, &rel,
-		&variant, &build, &run.VariantName, &run.BuildLabel, &custom); err != nil {
+		&variant, &build, &run.VariantName, &run.BuildLabel, &custom, &cycle, &run.CycleName); err != nil {
 		return nil, err
 	}
 	run.CustomFields = decodeCustom(custom)
 	run.StartedAt, run.CompletedAt = timePtr(st), timePtr(ct)
 	run.ReleaseID = strPtr(rel)
 	run.VariantID, run.BuildID = strPtr(variant), strPtr(build)
+	run.CycleID = strPtr(cycle)
 	return &run, nil
 }
 
@@ -70,8 +71,8 @@ func (s *Store) CreateRun(ctx context.Context, tenantID string, run *model.TestR
 			return err
 		}
 		run.CustomFields = custom
-		if _, err := c.exec(ctx, `INSERT INTO test_runs (id, tenant_id, project_id, name, description, status, environment, build, created_by, created_at, release_id, variant_id, build_id, custom_fields) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			run.ID, tenantID, run.ProjectID, run.Name, run.Description, run.Status, run.Environment, run.Build, run.CreatedBy, run.CreatedAt, nullStr(run.ReleaseID), nullStr(run.VariantID), nullStr(run.BuildID), encodeCustom(run.CustomFields)); err != nil {
+		if _, err := c.exec(ctx, `INSERT INTO test_runs (id, tenant_id, project_id, name, description, status, environment, build, created_by, created_at, release_id, variant_id, build_id, custom_fields, cycle_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			run.ID, tenantID, run.ProjectID, run.Name, run.Description, run.Status, run.Environment, run.Build, run.CreatedBy, run.CreatedAt, nullStr(run.ReleaseID), nullStr(run.VariantID), nullStr(run.BuildID), encodeCustom(run.CustomFields), nullStr(run.CycleID)); err != nil {
 			return err
 		}
 		for i, id := range cfgs {
@@ -413,6 +414,9 @@ func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
 			return err
 		}
 		if err := deleteDefectLinks(ctx, c, "run", []string{id}); err != nil {
+			return err
+		}
+		if err := deleteComments(ctx, c, model.DiscussionRun, []string{id}); err != nil {
 			return err
 		}
 		res, err := c.exec(ctx, `DELETE FROM test_runs WHERE id = ? AND tenant_id = ?`, id, tenantID)

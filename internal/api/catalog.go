@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/rom/qtestframe/internal/catalog"
@@ -26,9 +27,11 @@ func (s *Server) routesCatalog(h routeFunc) {
 	h("GET /api/v1/catalog/sources", s.handleCatalogSources, "project.read")
 	h("GET /api/v1/catalog/tests", s.handleCatalogTests, "test.read")
 	h("GET /api/v1/catalog/tests/{id}", s.handleCatalogTest, "test.read")
+	h("GET /api/v1/catalog/risks", s.handleCatalogRisks, "requirement.read")
+	h("GET /api/v1/catalog/risks/{id}", s.handleCatalogRisk, "requirement.read")
 	h("GET /api/v1/projects/{pid}/catalog", s.handleProjectCatalog, "project.read")
 	// write of each kind imported: see handleCatalogImport
-	h("POST /api/v1/projects/{pid}/catalog/import", s.atomic(s.handleCatalogImport), "project.read")
+	h("POST /api/v1/projects/{pid}/catalog/import", s.impactAware(s.handleCatalogImport, true), "project.read")
 }
 
 // catalogue returns the catalogue served (Server.Catalog, else the built-in one).
@@ -66,6 +69,7 @@ func (s *Server) handleCatalogOverview(w http.ResponseWriter, r *http.Request, p
 	writeJSON(w, http.StatusOK, map[string]any{
 		"languages": catalog.Languages, "lang": lang, "groups": c.Overview(lang), "catalogues": c.KindsOverview(lang),
 		"requirements": len(c.Requirements), "tests": len(c.Tests),
+		"risks": len(c.Risks), "risk_tags": c.Tags(model.KindRisk), "risk_categories": riskCategories(lang),
 		"requirement_tags": c.Tags(model.KindRequirement), "test_tags": c.Tags(model.KindTest),
 	})
 }
@@ -74,7 +78,7 @@ func catalogFilter(r *http.Request) catalog.Filter {
 	q := r.URL.Query()
 	return catalog.Filter{Area: q.Get("area"), Group: q.Get("group"), Type: q.Get("type"), Obligation: q.Get("obligation"),
 		Priority: q.Get("priority"), Tag: q.Get("tag"), Execution: q.Get("execution"),
-		Catalogue: q.Get("catalogue"), Source: q.Get("source"), Q: q.Get("q")}
+		Catalogue: q.Get("catalogue"), Source: q.Get("source"), Category: q.Get("category"), Level: q.Get("level"), Q: q.Get("q")}
 }
 
 // handleCatalogSources: GET /catalog/sources?lang=&catalogue=&all= — the
@@ -165,6 +169,101 @@ func (s *Server) handleCatalogTests(w http.ResponseWriter, r *http.Request, p *P
 	writeJSON(w, http.StatusOK, listOf(out))
 }
 
+// catalogRiskCategory is a risk category in one language.
+type catalogRiskCategory struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func riskCategories(lang string) []catalogRiskCategory {
+	out := make([]catalogRiskCategory, len(catalog.RiskCategories))
+	for i, g := range catalog.RiskCategories {
+		out[i] = catalogRiskCategory{ID: g.ID, Name: g.Name.Get(lang)}
+	}
+	return out
+}
+
+type catalogRiskItem struct {
+	catalog.RiskSummary
+	InProject []store.CatalogItem `json:"in_project,omitempty"`
+}
+
+// handleCatalogRisks: GET /catalog/risks?area=&group=&catalogue=&category=&level=&tag=&source=&q=&lang=&project_id=&not_in_project=
+func (s *Server) handleCatalogRisks(w http.ResponseWriter, r *http.Request, p *Principal) {
+	c, lang, ok := s.catalogRead(w, r)
+	if !ok {
+		return
+	}
+	inProject, err := s.catalogProject(r, p, model.KindRisk)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	hide := notInProject(r) && inProject != nil
+	out := []catalogRiskItem{}
+	for _, x := range c.FindRisks(catalogFilter(r), lang) {
+		if hide && len(inProject[x.ID]) > 0 {
+			continue
+		}
+		out = append(out, catalogRiskItem{RiskSummary: x, InProject: inProject[x.ID]})
+	}
+	writeJSON(w, http.StatusOK, listOf(out))
+}
+
+type catalogRiskDetail struct {
+	catalog.RiskSummary
+	AreaName   string              `json:"area_name"`
+	RefTargets []catalog.RefTarget `json:"ref_targets"`
+	// MitigatingRequirements are the catalogue requirements of mitigated_by,
+	// LinkedTests the tests listed on the risk.
+	MitigatingRequirements []catalogLinked     `json:"mitigating_requirements"`
+	LinkedTests            []catalogLinked     `json:"linked_tests"`
+	InProject              []store.CatalogItem `json:"in_project,omitempty"`
+}
+
+func (s *Server) handleCatalogRisk(w http.ResponseWriter, r *http.Request, p *Principal) {
+	c, lang, ok := s.catalogRead(w, r)
+	if !ok {
+		return
+	}
+	k := c.Risks[r.PathValue("id")]
+	if k == nil {
+		s.fail(w, r, store.ErrNotFound)
+		return
+	}
+	risks, err := s.catalogProject(r, p, model.KindRisk)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	var reqs, tests map[string][]store.CatalogItem
+	if risks != nil {
+		if reqs, err = s.catalogProject(r, p, model.KindRequirement); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if p.Can(rbac.TestRead) {
+			if tests, err = s.catalogProject(r, p, model.KindTest); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+		}
+	}
+	out := catalogRiskDetail{RiskSummary: c.SummarizeRisk(k, lang), AreaName: areaName(c, k.Area, lang), RefTargets: c.RefTargets(k.Refs, lang),
+		MitigatingRequirements: []catalogLinked{}, LinkedTests: []catalogLinked{}, InProject: risks[k.ID]}
+	for _, id := range k.MitigatedBy {
+		if rq := c.Requirements[id]; rq != nil {
+			out.MitigatingRequirements = append(out.MitigatingRequirements, catalogLinked{ID: id, Area: rq.Area, Title: rq.Localized(lang).Title, InProject: reqs[id]})
+		}
+	}
+	for _, id := range k.Tests {
+		if t := c.Tests[id]; t != nil {
+			out.LinkedTests = append(out.LinkedTests, catalogLinked{ID: id, Area: t.Area, Title: t.Localized(lang).Title, InProject: tests[id]})
+		}
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
 func (s *Server) catalogRead(w http.ResponseWriter, r *http.Request) (*catalog.Catalog, string, bool) {
 	c, err := s.catalogue()
 	if err == nil {
@@ -193,8 +292,10 @@ type catalogReqDetail struct {
 	// RefTargets are the refs with their sources and links.
 	RefTargets []catalog.RefTarget `json:"ref_targets"`
 	// LinkedTests are the catalogue tests that verify it.
-	LinkedTests []catalogLinked     `json:"linked_tests"`
-	InProject   []store.CatalogItem `json:"in_project,omitempty"`
+	LinkedTests []catalogLinked `json:"linked_tests"`
+	// MitigatesRisks are the catalogue risks it mitigates.
+	MitigatesRisks []catalogLinked     `json:"mitigates_risks"`
+	InProject      []store.CatalogItem `json:"in_project,omitempty"`
 }
 
 type catalogTestDetail struct {
@@ -239,12 +340,24 @@ func (s *Server) handleCatalogRequirement(w http.ResponseWriter, r *http.Request
 			return
 		}
 	}
+	var risks map[string][]store.CatalogItem
+	if reqs != nil {
+		if risks, err = s.catalogProject(r, p, model.KindRisk); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
 	x := rq.Localized(lang)
 	out := catalogReqDetail{ReqSummary: c.SummarizeRequirement(rq, lang), AreaName: areaName(c, rq.Area, lang), Rationale: x.Rationale,
-		Criteria: x.Criteria, RefTargets: c.RefTargets(rq.Refs, lang), LinkedTests: []catalogLinked{}, InProject: reqs[rq.ID]}
+		Criteria: x.Criteria, RefTargets: c.RefTargets(rq.Refs, lang), LinkedTests: []catalogLinked{}, MitigatesRisks: []catalogLinked{}, InProject: reqs[rq.ID]}
 	for _, id := range rq.Tests {
 		if t := c.Tests[id]; t != nil {
 			out.LinkedTests = append(out.LinkedTests, catalogLinked{ID: id, Area: t.Area, Title: t.Localized(lang).Title, InProject: tests[id]})
+		}
+	}
+	for _, id := range c.RisksOf[rq.ID] {
+		if k := c.Risks[id]; k != nil {
+			out.MitigatesRisks = append(out.MitigatesRisks, catalogLinked{ID: id, Area: k.Area, Title: k.Localized(lang).Title, InProject: risks[id]})
 		}
 	}
 	writeJSON(w, http.StatusOK, out)
@@ -290,8 +403,8 @@ func (s *Server) handleProjectCatalog(w http.ResponseWriter, r *http.Request, p 
 	if !ok {
 		return
 	}
-	out := map[string]map[string][]store.CatalogItem{"requirements": {}, "tests": {}}
-	for kind, name := range map[string]string{model.KindRequirement: "requirements", model.KindTest: "tests"} {
+	out := map[string]map[string][]store.CatalogItem{"requirements": {}, "tests": {}, "risks": {}}
+	for kind, name := range map[string]string{model.KindRequirement: "requirements", model.KindTest: "tests", model.KindRisk: "risks"} {
 		perm := rbac.RequirementRd
 		if kind == model.KindTest {
 			perm = rbac.TestRead
@@ -329,6 +442,19 @@ type catalogImportRequest struct {
 	IncludeTests *bool `json:"include_tests"`
 	// AddCopies imports items the project already has (by catalog_ref) again.
 	AddCopies bool `json:"add_copies"`
+	// RiskIDs are catalogue risks to add as project risks.
+	RiskIDs []string `json:"risk_ids"`
+	// IncludeRequirements adds the catalogue requirements that mitigate the
+	// chosen risks (default true), linked to the new risks.
+	IncludeRequirements *bool `json:"include_requirements"`
+	// IncludeRisks adds the catalogue risks that the chosen requirements
+	// mitigate (default false).
+	IncludeRisks bool `json:"include_risks"`
+	// RiskStatus of the new risks: identified (default) or mitigating.
+	RiskStatus string `json:"risk_status"`
+	// SkipSimilar leaves out catalogue requirements that are similar to a
+	// requirement of the project (suspected duplicates, reason "similar").
+	SkipSimilar bool `json:"skip_similar"`
 	// Source of the requirements; "" = the cited standards (refs).
 	Source *string `json:"source"`
 }
@@ -339,6 +465,9 @@ type catalogCreated struct {
 	Title      string  `json:"title"`
 	CatalogRef string  `json:"catalog_ref"`
 	FolderID   *string `json:"folder_id"`
+	// Similar: requirements of the project the new one is similar to (a
+	// suspected duplicate; requirements only).
+	Similar []similarHit `json:"similar,omitempty"`
 }
 
 type catalogLink struct {
@@ -352,16 +481,37 @@ type catalogLink struct {
 type catalogSkipped struct {
 	Kind       string              `json:"kind"`
 	CatalogRef string              `json:"catalog_ref"`
-	Reason     string              `json:"reason"` // exists | not_found | duplicate
+	Reason     string              `json:"reason"` // exists | not_found | duplicate | similar
 	Existing   []store.CatalogItem `json:"existing,omitempty"`
 }
 
+// catalogRiskLink is a risk–requirement link made by an import.
+type catalogRiskLink struct {
+	RiskID         string `json:"risk_id"`
+	RiskKey        string `json:"risk_key"`
+	RequirementID  string `json:"requirement_id"`
+	RequirementKey string `json:"requirement_key"`
+}
+
 type catalogImportResponse struct {
-	Requirements   []catalogCreated `json:"requirements"`
-	Tests          []catalogCreated `json:"tests"`
-	Links          []catalogLink    `json:"links"`
-	Skipped        []catalogSkipped `json:"skipped"`
-	FoldersCreated int              `json:"folders_created"`
+	Requirements   []catalogCreated  `json:"requirements"`
+	Tests          []catalogCreated  `json:"tests"`
+	Risks          []catalogCreated  `json:"risks"`
+	Links          []catalogLink     `json:"links"`
+	RiskLinks      []catalogRiskLink `json:"risk_links"`
+	Skipped        []catalogSkipped  `json:"skipped"`
+	FoldersCreated int               `json:"folders_created"`
+}
+
+// catalogRisk builds the project risk for a catalogue one.
+func catalogRisk(k *catalog.Risk, lang, status string) *model.Risk {
+	x := k.Localized(lang)
+	cat := k.Category
+	if rc := catalog.RiskCategory(k.Category); rc != nil {
+		cat = rc.Name.Get(lang)
+	}
+	return &model.Risk{Title: x.Title, Description: x.Description, Mitigation: x.Mitigation, Category: cat,
+		Likelihood: k.Likelihood, Impact: k.Impact, Status: status, CatalogRef: k.ID}
 }
 
 // folderResolver finds or creates folders by name path below a root.
@@ -531,10 +681,55 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, badRequest("invalid test_status %q", req.TestStatus))
 		return
 	}
-	reqIDs, testIDs := uniqStrings(req.RequirementIDs), uniqStrings(req.TestIDs)
-	if len(reqIDs)+len(testIDs) == 0 {
-		s.fail(w, r, badRequest("choose at least one requirement or test"))
+	if req.RiskStatus == "" {
+		req.RiskStatus = "identified"
+	}
+	if !slices.Contains(model.RiskOpenStatuses, req.RiskStatus) {
+		s.fail(w, r, badRequest("risk_status must be one of %s", strings.Join(model.RiskOpenStatuses, ", ")))
 		return
+	}
+	reqIDs, testIDs, riskIDs := uniqStrings(req.RequirementIDs), uniqStrings(req.TestIDs), uniqStrings(req.RiskIDs)
+	if len(reqIDs)+len(testIDs)+len(riskIDs) == 0 {
+		s.fail(w, r, badRequest("choose at least one requirement, test or risk"))
+		return
+	}
+	if (len(riskIDs) > 0 || req.IncludeRisks) && !p.Can(rbac.RequirementWr) {
+		writeError(w, http.StatusForbidden, "forbidden", "permission requirement.write required to add catalogue risks")
+		return
+	}
+	// risks: the chosen ones and, with include_risks, those the chosen
+	// requirements mitigate; requirements: the chosen ones and, with
+	// include_requirements, those that mitigate the chosen risks
+	out := catalogImportResponse{Requirements: []catalogCreated{}, Tests: []catalogCreated{}, Risks: []catalogCreated{}, Links: []catalogLink{},
+		RiskLinks: []catalogRiskLink{}, Skipped: []catalogSkipped{}}
+	var risks []*catalog.Risk
+	seenRisk := map[string]bool{}
+	for _, id := range riskIDs {
+		if k := c.Risks[id]; k != nil {
+			risks = append(risks, k)
+			seenRisk[id] = true
+		} else {
+			out.Skipped = append(out.Skipped, catalogSkipped{Kind: model.KindRisk, CatalogRef: id, Reason: "not_found"})
+		}
+	}
+	if req.IncludeRequirements == nil || *req.IncludeRequirements {
+		for _, k := range risks {
+			for _, id := range k.MitigatedBy {
+				if !slices.Contains(reqIDs, id) {
+					reqIDs = append(reqIDs, id)
+				}
+			}
+		}
+	}
+	if req.IncludeRisks {
+		for _, id := range reqIDs {
+			for _, kid := range c.RisksOf[id] {
+				if !seenRisk[kid] {
+					risks = append(risks, c.Risks[kid])
+					seenRisk[kid] = true
+				}
+			}
+		}
 	}
 	include := p.Can(rbac.TestWrite)
 	if req.IncludeTests != nil {
@@ -554,7 +749,6 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 	}
 	canTests := p.Can(rbac.TestWrite)
 
-	out := catalogImportResponse{Requirements: []catalogCreated{}, Tests: []catalogCreated{}, Links: []catalogLink{}, Skipped: []catalogSkipped{}}
 	// the requirements and tests to import, in catalogue order
 	var reqs []*catalog.Requirement
 	for _, id := range reqIDs {
@@ -583,13 +777,21 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 				}
 			}
 		}
+		for _, k := range risks {
+			for _, id := range k.Tests {
+				if t := c.Tests[id]; t != nil && !seenTest[id] {
+					tests = append(tests, t)
+					seenTest[id] = true
+				}
+			}
+		}
 	}
 	if len(tests) > 0 && isReviewDecision(model.KindTest, "", req.TestStatus) && !p.Can(rbac.TestReview) {
 		writeError(w, http.StatusForbidden, "forbidden", "permission test.review required to add "+req.TestStatus+" tests")
 		return
 	}
-	if len(reqs)+len(tests) > maxCatalogImport {
-		s.fail(w, r, badRequest("at most %d items per import (%d requirements and %d tests chosen)", maxCatalogImport, len(reqs), len(tests)))
+	if len(reqs)+len(tests)+len(risks) > maxCatalogImport {
+		s.fail(w, r, badRequest("at most %d items per import (%d requirements, %d tests and %d risks chosen)", maxCatalogImport, len(reqs), len(tests), len(risks)))
 		return
 	}
 
@@ -602,6 +804,13 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 	if err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	existingRisks := map[string][]store.CatalogItem{}
+	if p.Can(rbac.RequirementWr) {
+		if existingRisks, err = s.Store.CatalogItems(ctx, p.TenantID(), pr.ID, model.KindRisk); err != nil {
+			s.fail(w, r, err)
+			return
+		}
 	}
 	reqRoot, err := s.targetFolder(ctx, p, pr.ID, model.KindRequirement, req.RequirementFolderID, "requirement_folder_id")
 	if err != nil {
@@ -624,6 +833,16 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 
+	// the requirements the project had (suspected duplicates of new ones)
+	var corpus *simCorpus
+	threshold, _ := s.thresholds(ctx, p.TenantID(), pr.ID, model.KindRequirement)
+	if len(reqs) > 0 {
+		if corpus, err = s.corpus(ctx, p.TenantID(), pr.ID, model.KindRequirement); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
+
 	// catalogue id → project items now created for it
 	newReq, newTest := map[string][]*model.Requirement{}, map[string][]*model.TestCase{}
 	for _, rq := range reqs {
@@ -637,6 +856,23 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 		}
 		m := catalogRequirement(rq, lang, req.Status, source)
 		m.ProjectID, m.CreatedBy = pr.ID, p.User.Email
+		var similar []similarHit
+		d := reqDoc(m)
+		d.ID = "\x00catalog"
+		matches, _ := s.similar(ctx, corpus, d, 3, threshold, nil)
+		for _, mt := range matches {
+			if x, ok := corpus.items[mt.ID]; ok {
+				similar = append(similar, similarHit{simItem: x, Score: round2(mt.Score)})
+			}
+		}
+		if len(similar) > 0 && req.SkipSimilar {
+			sk := catalogSkipped{Kind: model.KindRequirement, CatalogRef: rq.ID, Reason: "similar"}
+			for _, x := range similar {
+				sk.Existing = append(sk.Existing, store.CatalogItem{ID: x.ID, Key: x.Key, Title: x.Title})
+			}
+			out.Skipped = append(out.Skipped, sk)
+			continue
+		}
 		if m.FolderID, err = reqFolders.resolve(reqRoot, folderPathFor(c, req.Folders, rq.Area, lang)); err != nil {
 			s.fail(w, r, err)
 			return
@@ -646,7 +882,7 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 			return
 		}
 		newReq[rq.ID] = append(newReq[rq.ID], m)
-		out.Requirements = append(out.Requirements, catalogCreated{ID: m.ID, Key: m.Key, Title: m.Title, CatalogRef: rq.ID, FolderID: m.FolderID})
+		out.Requirements = append(out.Requirements, catalogCreated{ID: m.ID, Key: m.Key, Title: m.Title, CatalogRef: rq.ID, FolderID: m.FolderID, Similar: similar})
 	}
 	for _, t := range tests {
 		if ex := existingTests[t.ID]; len(ex) > 0 && !req.AddCopies {
@@ -665,6 +901,21 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 		}
 		newTest[t.ID] = append(newTest[t.ID], m)
 		out.Tests = append(out.Tests, catalogCreated{ID: m.ID, Key: m.Key, Title: m.Title, CatalogRef: t.ID, FolderID: m.FolderID})
+	}
+	newRisk := map[string][]*model.Risk{}
+	for _, k := range risks {
+		if ex := existingRisks[k.ID]; len(ex) > 0 && !req.AddCopies {
+			out.Skipped = append(out.Skipped, catalogSkipped{Kind: model.KindRisk, CatalogRef: k.ID, Reason: "exists", Existing: ex})
+			continue
+		}
+		m := catalogRisk(k, lang, req.RiskStatus)
+		m.ProjectID, m.CreatedBy = pr.ID, p.User.Email
+		if err := s.Store.CreateRisk(store.LenientCustomFields(ctx), p.TenantID(), m); err != nil {
+			s.fail(w, r, fmt.Errorf("%s: %w", k.ID, err))
+			return
+		}
+		newRisk[k.ID] = append(newRisk[k.ID], m)
+		out.Risks = append(out.Risks, catalogCreated{ID: m.ID, Key: m.Key, Title: m.Title, CatalogRef: k.ID})
 	}
 	out.FoldersCreated = reqFolders.created + testFolders.created
 
@@ -735,8 +986,64 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 		}
 	}
 
+	// risk links: every new risk to the project requirements of the
+	// catalogue requirements that mitigate it, and every new requirement to
+	// the risks already in the project that it mitigates
+	risksOf := func(cid string) []ref {
+		var ks []ref
+		for _, m := range newRisk[cid] {
+			ks = append(ks, ref{m.ID, m.Key})
+		}
+		for _, ex := range existingRisks[cid] {
+			ks = append(ks, ref{ex.ID, ex.Key})
+		}
+		return ks
+	}
+	riskLinked := map[[2]string]bool{}
+	byReq := map[string][]string{}
+	var reqOrder []string
+	linkRisk := func(k, rq ref) {
+		key := [2]string{k.id, rq.id}
+		if riskLinked[key] {
+			return
+		}
+		riskLinked[key] = true
+		if byReq[rq.id] == nil {
+			reqOrder = append(reqOrder, rq.id)
+		}
+		byReq[rq.id] = append(byReq[rq.id], k.id)
+		out.RiskLinks = append(out.RiskLinks, catalogRiskLink{RiskID: k.id, RiskKey: k.key, RequirementID: rq.id, RequirementKey: rq.key})
+	}
+	for _, k := range risks {
+		for _, m := range newRisk[k.ID] {
+			for _, rid := range k.MitigatedBy {
+				for _, rq := range reqsOf(rid) {
+					linkRisk(ref{m.ID, m.Key}, rq)
+				}
+			}
+		}
+	}
+	for _, rq := range reqs {
+		for _, m := range newReq[rq.ID] {
+			for _, kid := range c.RisksOf[rq.ID] {
+				for _, k := range risksOf(kid) {
+					linkRisk(k, ref{m.ID, m.Key})
+				}
+			}
+		}
+	}
+	for _, rid := range reqOrder {
+		if err := s.Store.SetRequirementRisks(ctx, p.TenantID(), rid, byReq[rid], nil); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
+
 	for _, it := range out.Requirements {
 		s.recordRequirement(ctx, p, it.ID, "create")
+	}
+	for _, it := range out.Risks {
+		s.audit(ctx, p, "risk.create", "risk", it.ID, it.Key+" "+it.Title)
 	}
 	for _, it := range out.Tests {
 		s.recordTest(ctx, p, it.ID, "create")
@@ -744,12 +1051,12 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 	if len(linkedReqs) > 0 {
 		s.syncEvidence(ctx, p, pr.ID, uniqStrings(linkedReqs))
 	}
-	refs := make([]string, 0, len(out.Requirements)+len(out.Tests))
-	for _, it := range append(append([]catalogCreated{}, out.Requirements...), out.Tests...) {
+	refs := make([]string, 0, len(out.Requirements)+len(out.Tests)+len(out.Risks))
+	for _, it := range append(append(append([]catalogCreated{}, out.Requirements...), out.Tests...), out.Risks...) {
 		refs = append(refs, it.Key+"="+it.CatalogRef)
 	}
-	s.audit(ctx, p, "catalog.import", "project", pr.ID, fmt.Sprintf("%d requirements, %d tests, %d links, %d skipped (%s): %s",
-		len(out.Requirements), len(out.Tests), len(out.Links), len(out.Skipped), lang, truncate(strings.Join(refs, ", "), 2000)))
+	s.audit(ctx, p, "catalog.import", "project", pr.ID, fmt.Sprintf("%d requirements, %d tests, %d risks, %d links, %d risk links, %d skipped (%s): %s",
+		len(out.Requirements), len(out.Tests), len(out.Risks), len(out.Links), len(out.RiskLinks), len(out.Skipped), lang, truncate(strings.Join(refs, ", "), 2000)))
 	writeJSON(w, http.StatusCreated, out)
 }
 

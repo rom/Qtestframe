@@ -50,10 +50,12 @@ func boolParam(r *http.Request, name string, def bool) bool {
 
 // filterRequirements returns decorated requirements matching q and folder.
 func (s *Server) filterRequirements(r *http.Request, p *Principal, pr *model.Project, pc *projectContext, expr, folder string, recursive bool) ([]model.Requirement, error) {
+	pc.forCaller(p)
 	q, err := query.Parse(expr, requirementSchema)
 	if err != nil {
 		return nil, err
 	}
+	s.bindMe(r.Context(), p, q)
 	reqs, err := s.Store.ListRequirements(r.Context(), p.TenantID(), pr.ID)
 	if err != nil {
 		return nil, err
@@ -144,6 +146,10 @@ func (s *Server) handleCreateRequirement(w http.ResponseWriter, r *http.Request,
 	}
 	rq.ProjectID = pr.ID
 	rq.CreatedBy = p.User.Email
+	if err := s.normalizeOwner(r.Context(), p, pr.ID, &rq.Owner); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	if rq.Obligation == "" {
 		rq.Obligation = reqlang.DetectObligation(rq.Title + "\n" + rq.Description)
 	}
@@ -335,6 +341,12 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 	if !authorizeChange(w, p, model.KindRequirement, onlyKeys(keys, "status"), oldStatus, rq.Status) {
 		return
 	}
+	if keys["owner"] && rq.Owner != oldOwner {
+		if err := s.normalizeOwner(ctx, p, rq.ProjectID, &rq.Owner); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
 	s.ensureInitialRevision(ctx, p, model.KindRequirement, rq.ID)
 	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), rq, keys["criteria"]); isStale(err) {
 		s.staleItem(w, r, p, "requirement", rq.ID)
@@ -455,7 +467,7 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 			return
 		}
 		// a review decision needs the review permission; any other change write
-		statusOnly := req.Set.Priority == nil && req.Set.Obligation == nil && req.Set.ExecutionType == nil &&
+		statusOnly := req.Set.Priority == nil && req.Set.Obligation == nil && req.Set.ExecutionType == nil && req.Set.Owner == nil &&
 			len(req.Set.AddCategoryIDs) == 0 && len(req.Set.RemoveCategoryIDs) == 0 && len(req.Set.AddTags) == 0 && len(req.Set.RemoveTags) == 0
 		if req.Set.Status != nil {
 			if !authorizeChange(w, p, kind, statusOnly, "", *req.Set.Status) {
@@ -465,8 +477,24 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 			writeError(w, http.StatusForbidden, "forbidden", "permission "+string(writePerm(kind))+" required")
 			return
 		}
+		if err := s.normalizeOwner(r.Context(), p, pr.ID, req.Set.Owner); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		// owners before the change: a new owner is told (notify.go)
+		owners := map[string]string{}
+		// the change impact of a change of substance (obligation, execution
+		// type) or status: snapshots before, compared after (impact.go)
+		impact := req.Set.Status != nil || req.Set.Obligation != nil || req.Set.ExecutionType != nil
+		before := map[string]json.RawMessage{}
 		for _, id := range uniqStrings(req.IDs) {
 			s.ensureInitialRevision(r.Context(), p, kind, id)
+			if req.Set.Owner != nil {
+				owners[id] = s.ownerNow(r.Context(), p, kind, id)
+			}
+			if impact {
+				before[id] = s.snapshotOf(r.Context(), p, kind, id)
+			}
 		}
 		n, err := s.Store.BulkUpdateItems(r.Context(), p.TenantID(), kind, pr.ID, req.IDs, req.Set)
 		if err != nil {
@@ -475,6 +503,12 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 		}
 		for _, id := range uniqStrings(req.IDs) {
 			s.record(r.Context(), p, kind, id, "bulk_update")
+			if req.Set.Owner != nil && *req.Set.Owner != "" && owners[id] != *req.Set.Owner {
+				s.ownerAssigned(r, p, kind, pr.ID, id)
+			}
+			if b := before[id]; b != nil {
+				s.afterContentChange(r.Context(), p, kind, id, snapshotKey(b), pr.ID, b)
+			}
 		}
 		s.audit(r.Context(), p, kind+".bulk_update", kind, strings.Join(req.IDs, ","), "")
 		writeJSON(w, http.StatusOK, map[string]int{"updated": n})
@@ -511,10 +545,12 @@ func (s *Server) handleBulkDelete(kind string) handlerFunc {
 // ---------------------------------------------------------------- tests
 
 func (s *Server) filterTests(r *http.Request, p *Principal, pr *model.Project, pc *projectContext, expr, folder string, recursive bool) ([]model.TestCase, error) {
+	pc.forCaller(p)
 	q, err := query.Parse(expr, testSchema)
 	if err != nil {
 		return nil, err
 	}
+	s.bindMe(r.Context(), p, q)
 	tests, err := s.Store.ListTests(r.Context(), p.TenantID(), pr.ID)
 	if err != nil {
 		return nil, err
@@ -589,12 +625,16 @@ func (s *Server) handleCreateTest(w http.ResponseWriter, r *http.Request, p *Pri
 	}
 	t.ProjectID = pr.ID
 	t.CreatedBy = p.User.Email
+	if err := s.normalizeOwner(r.Context(), p, pr.ID, &t.Owner); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	if err := s.Store.CreateTest(r.Context(), p.TenantID(), &t); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(r.Context(), p, "test.create", "test", t.ID, t.Key)
-	s.afterItemChange(r, p, model.KindTest, t.ID, t.ProjectID, t.Key, t.Title, "", "", t.Description, true)
+	s.afterItemChange(r, p, model.KindTest, t.ID, t.ProjectID, t.Key, t.Title, "", t.Owner, t.Description, true)
 	s.recordTest(r.Context(), p, t.ID, "create")
 	writeJSON(w, http.StatusCreated, t)
 }
@@ -647,7 +687,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	id, project, key, oldStatus := t.ID, t.ProjectID, t.Key, t.Status
-	oldDesc := t.Description
+	oldOwner, oldDesc := t.Owner, t.Description
 	if keys["steps"] {
 		t.Steps = nil
 	}
@@ -666,6 +706,12 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 	if !authorizeChange(w, p, model.KindTest, onlyKeys(keys, "status"), oldStatus, t.Status) {
 		return
 	}
+	if keys["owner"] && t.Owner != oldOwner {
+		if err := s.normalizeOwner(ctx, p, t.ProjectID, &t.Owner); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
 	s.ensureInitialRevision(ctx, p, model.KindTest, t.ID)
 	if err := s.Store.UpdateTest(ctx, p.TenantID(), t, keys["steps"]); isStale(err) {
 		s.staleItem(w, r, p, "test", t.ID)
@@ -675,7 +721,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	s.audit(ctx, p, "test.update", "test", t.ID, t.Key)
-	s.afterItemChange(r, p, model.KindTest, t.ID, t.ProjectID, t.Key, t.Title, "", "", newText(oldDesc, t.Description), false)
+	s.afterItemChange(r, p, model.KindTest, t.ID, t.ProjectID, t.Key, t.Title, oldOwner, t.Owner, newText(oldDesc, t.Description), false)
 	if a := reviewAction(model.KindTest, oldStatus, t.Status); a != "" {
 		s.audit(ctx, p, a, "test", t.ID, t.Key+" "+oldStatus+" → "+t.Status)
 	}

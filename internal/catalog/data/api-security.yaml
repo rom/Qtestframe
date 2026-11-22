@@ -859,3 +859,65 @@ tests:
           expected: Den 11:e inbjudan och den 11:e inlösen avvisas med 429.
         - action: Skapa ett konto från källa B.
           expected: Anropet lyckas.
+
+risks:
+  - id: APIS-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [token-theft, api]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API2", "CWE-294 (authentication bypass by capture-replay)", "MITRE ATT&CK T1528 (steal application access token)", "MITRE ATT&CK T1550.001 (application access token)"]
+    mitigated_by: [APIS-04, APIS-12, APIS-13, APIS-11]
+    en:
+      title: Stolen API token used to act as a client
+      description: An access or refresh token leaks from a log, a device or a compromised client and the attacker calls the API as that client. Data is read or changed until the token expires or is revoked.
+      mitigation: Issue short-lived access tokens, rotate refresh tokens and revoke the grant on reuse, bind write tokens to the sender and make it possible to revoke a key at once.
+    sv:
+      title: Stulen API-token används för att uppträda som en klient
+      description: En åtkomst- eller förnyelsetoken läcker från en logg, en enhet eller en komprometterad klient och angriparen anropar API:et som den klienten. Data läses eller ändras tills token löper ut eller återkallas.
+      mitigation: Utfärda kortlivade åtkomsttoken, byt förnyelsetoken vid varje användning och återkalla behörigheten vid återanvändning, bind skrivande token till avsändaren och gör det möjligt att återkalla en nyckel direkt.
+  - id: APIS-R02
+    category: availability
+    likelihood: 4
+    impact: 3
+    tags: [denial-of-service, rate-limit]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API4 (unrestricted resource consumption)", "CWE-770 (allocation of resources without limits or throttling)", "MITRE ATT&CK T1499.003 (application exhaustion flood)"]
+    mitigated_by: [APIS-03, APIS-07, APIS-10, APIS-16]
+    en:
+      title: API overloaded by one client
+      description: A misbehaving or hostile client sends many requests, very large bodies or asks for huge pages. The service slows down or stops for every other client.
+      mitigation: Limit the request rate per client, the body size and the page size, and set limits on sensitive business flows.
+    sv:
+      title: API:et överbelastas av en enda klient
+      description: En felaktig eller fientlig klient skickar många anrop, mycket stora meddelanden eller begär enorma sidor. Tjänsten blir långsam eller slutar fungera för alla andra klienter.
+      mitigation: Begränsa anropsfrekvensen per klient, meddelandestorleken och sidstorleken och sätt gränser för känsliga affärsflöden.
+  - id: APIS-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [mass-assignment, api]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API3", "CWE-915 (mass assignment)", "CWE-863 (incorrect authorization)"]
+    mitigated_by: [APIS-09, APIS-05]
+    en:
+      title: Protected fields changed through the API
+      description: The API binds every field of a request to the stored object, so a client sets fields such as role, owner or price that it must not change. Users raise their own rights or alter business data.
+      mitigation: Accept only listed fields for each operation and limit operations with token scopes.
+    sv:
+      title: Skyddade fält ändras via API:et
+      description: API:et binder varje fält i ett anrop till det lagrade objektet, så att en klient sätter fält som roll, ägare eller pris som den inte får ändra. Användare höjer sin egen behörighet eller ändrar affärsdata.
+      mitigation: Ta bara emot listade fält för varje operation och begränsa operationerna med omfång i token.
+  - id: APIS-R04
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [shadow-api, inventory]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API9", "CWE-912 (hidden functionality)", "MITRE ATT&CK M1042 (disable or remove feature or program)"]
+    mitigated_by: [APIS-15, APIS-01, APIS-08]
+    en:
+      title: Forgotten API endpoint left open
+      description: An old version or a test endpoint stays reachable without the protection of the current API. Attackers find it and use it to bypass authentication or read internal details.
+      mitigation: Keep an inventory of every exposed endpoint and remove what is not in it, authenticate every client and keep error responses free of internal details.
+    sv:
+      title: Bortglömd API-ändpunkt lämnas öppen
+      description: En gammal version eller en teständpunkt är fortfarande nåbar utan skydden i det aktuella API:et. Angripare hittar den och använder den för att kringgå autentiseringen eller läsa interna detaljer.
+      mitigation: För en förteckning över alla exponerade ändpunkter och ta bort det som inte finns i den, autentisera varje klient och håll felsvaren fria från interna detaljer.

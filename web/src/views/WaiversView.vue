@@ -19,6 +19,8 @@ import Tag from 'primevue/tag'
 import ItemRef from '@/components/ItemRef.vue'
 import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
 import ESignDialog from '@/components/ESignDialog.vue'
+import VariantMultiSelect from '@/components/VariantMultiSelect.vue'
+import { useVariants } from '@/composables/variants'
 import HelpLink from '@/guide/HelpLink.vue'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { formatDate, formatDateTime } from '@/lib/format'
@@ -58,7 +60,13 @@ const today = new Date().toISOString().slice(0, 10)
 
 const typeLabel = (v: string) => t(`waivers.type.${v}`)
 const statusLabel = (v: string) => t(`waivers.status.${v}`)
-const scopeLabel = (w: Waiver) => (w.release_id ? w.release_name || t('waivers.release') : t('waivers.wholeProject'))
+const scopeLabel = (w: Waiver) => {
+  const base = w.release_id ? w.release_name || t('waivers.release') : t('waivers.wholeProject')
+  return w.variants?.length ? `${base} · ${t('waivers.onlyVariants', { names: w.variants.map((v) => v.name).join(', ') })}` : base
+}
+// the variants a waiver can be limited to
+const variantList = useVariants(() => proj.pid)
+onMounted(() => void variantList.load())
 
 // ---------- data ----------
 const waivers = ref<Waiver[]>([])
@@ -219,6 +227,7 @@ interface Form {
   title: string
   release_id: string
   requirement_ids: string[]
+  variant_ids: string[]
   justification: string
   compensating: string
   conditions: string
@@ -229,7 +238,7 @@ interface Form {
   expires_on: string
   submit: boolean
 }
-const blank = (): Form => ({ type: 'waiver', title: '', release_id: '', requirement_ids: [], justification: '', compensating: '', conditions: '', risk: '', new_risk_likelihood: 3, new_risk_impact: 3, approvers: '', expires_on: '', submit: false })
+const blank = (): Form => ({ type: 'waiver', title: '', release_id: '', requirement_ids: [], variant_ids: [], justification: '', compensating: '', conditions: '', risk: '', new_risk_likelihood: 3, new_risk_impact: 3, approvers: '', expires_on: '', submit: false })
 const formOpen = ref(false)
 const editing = ref<Waiver | null>(null)
 const form = ref<Form>(blank())
@@ -258,6 +267,7 @@ function openEdit(w: Waiver) {
     title: w.title,
     release_id: w.release_id ?? '',
     requirement_ids: [...w.requirement_ids],
+    variant_ids: [...(w.variant_ids ?? [])],
     justification: w.justification,
     compensating: w.compensating,
     conditions: w.conditions,
@@ -284,6 +294,7 @@ async function save() {
     title: f.title.trim(),
     release_id: f.release_id || null,
     requirement_ids: f.requirement_ids,
+    variant_ids: f.variant_ids,
     justification: f.justification,
     compensating: f.compensating,
     conditions: f.conditions,
@@ -474,6 +485,11 @@ async function save() {
         <div v-field class="field">
           <label for="wv-release">{{ t('waivers.scope') }}</label>
           <Select v-model="form.release_id" input-id="wv-release" :options="releaseOptions" option-label="label" option-value="value" />
+        </div>
+        <div v-if="variantList.variants.value.length" class="field full">
+          <label for="wv-variants">{{ t('waivers.variantsLabel') }}</label>
+          <VariantMultiSelect v-model="form.variant_ids" input-id="wv-variants" :variants="variantList.variants.value" :placeholder="t('waivers.variantsAll')" aria-describedby="wv-variants-help" />
+          <small id="wv-variants-help" class="muted">{{ t('waivers.variantsHelp') }}</small>
         </div>
         <div v-field class="field full"><label for="wv-title">{{ t('common.title') }}</label><InputText id="wv-title" v-model="form.title" autofocus /></div>
         <div class="field full">

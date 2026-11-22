@@ -179,6 +179,8 @@ async function discover(request) {
   const execs = run ? items(await api(request, 'GET', `/runs/${run.id}/executions`)) : []
   // prefer a manual execution with steps for the runner
   const tests = items(await api(request, 'GET', `/projects/${pid}/tests`))
+  // a requirement with a similar one (seed: "Password sign-in" and "Password login")
+  const simReq = reqs.find((r) => r.title === 'Password sign-in')
   const manual = new Set(tests.filter((t) => t.execution_type === 'manual').map((t) => t.id))
   const ex = execs.find((e) => manual.has(e.test_case_id)) ?? execs[0]
   // a run with an execution that is not ready (its readiness cell opens a popover)
@@ -200,6 +202,13 @@ async function discover(request) {
   const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
   const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
   const hasWaivers = items(await api(request, 'GET', `/projects/${pid}/waivers`)).length > 0
+  // a release gated per variant (seed: 1.5 for both products) and a requirement whose applicability changed
+  const gatedRelease = items(await api(request, 'GET', `/projects/${pid}/releases`)).find((r) => (r.variant_ids ?? []).length > 0)
+  const applicReq = items(await api(request, 'GET', `/projects/${pid}/requirements?q=applicability:selected`).catch(() => []))[0]
+  // exploratory sessions (seed-demo: debriefed, paused and planned ones)
+  const xSessions = items(await api(request, 'GET', `/projects/${pid}/exploratory-sessions`).catch(() => []))
+  const xDebriefed = xSessions.find((x) => x.status === 'debriefed')
+  const xOpen = xSessions.find((x) => x.status === 'paused' || x.status === 'in_progress')
   const hasBaselines = items(await api(request, 'GET', `/projects/${pid}/baselines`)).length > 0
   const firstBaseline = hasBaselines ? items(await api(request, 'GET', `/projects/${pid}/baselines`))[0] : null
   const documents = items(await api(request, 'GET', `/projects/${pid}/documents`))
@@ -237,6 +246,8 @@ async function discover(request) {
     }
   }
   const linkedReq = reqs.find((r) => r.linked_tests > 0) ?? reqs[0]
+  // the active test cycle (seed-demo: "Sprint 14 regression")
+  const cycle = items(await api(request, 'GET', `/projects/${pid}/cycles`).catch(() => [])).find((c) => c.status === 'active')
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -275,6 +286,18 @@ async function discover(request) {
     ruleViolator && { name: 'requirement-trace-rules', path: `${p}/requirements?item=${ruleViolator.id}`, wait: '.p-drawer .trace-violations' },
     { name: 'traceability-selected', path: `${p}/traceability`, open: '.trace-bulk .p-checkbox', wait: '.trace-bulk' },
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
+    // test cycles (CyclesView, CycleDetailView and their dialogs)
+    { name: 'cycles', path: `${p}/cycles`, wait: '.p-datatable, .empty-state' },
+    { name: 'cycles-timeline', path: `${p}/cycles?tab=timeline`, wait: '.timeline, .empty-state' },
+    { name: 'cycles-schedules', path: `${p}/cycles?tab=schedules`, wait: '.sched-row, .empty-state' },
+    { name: 'cycle-new-dialog', path: `${p}/cycles`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
+    { name: 'cycle-schedule-dialog', path: `${p}/cycles?tab=schedules`, open: '.sched-new', wait: '.p-dialog' },
+    cycle && { name: 'cycle', path: `${p}/cycles/${cycle.id}`, wait: '.p-datatable' },
+    cycle && { name: 'cycle-board', path: `${p}/cycles/${cycle.id}?tab=board`, wait: '.board, .empty-state' },
+    cycle && { name: 'cycle-progress', path: `${p}/cycles/${cycle.id}?tab=progress`, wait: 'canvas' },
+    cycle && { name: 'cycle-history', path: `${p}/cycles/${cycle.id}?tab=history`, wait: '.card' },
+    cycle && { name: 'cycle-add-dialog', path: `${p}/cycles/${cycle.id}`, open: '.filterbar button:has(.pi-plus)', wait: '.p-dialog' },
+    cycle && { name: 'cycle-edit-dialog', path: `${p}/cycles/${cycle.id}`, open: '.page-header .actions button:has(.pi-pencil)', wait: '.p-dialog' },
     // variants and code (VariantsView, CodeView, the Code tab and the applicability dialog)
     { name: 'variants', path: `${p}/variants`, wait: '.matrix, .empty-state' },
     { name: 'variants-manage', path: `${p}/variants?tab=manage`, wait: '.variant-list, .empty-state' },
@@ -298,6 +321,10 @@ async function discover(request) {
     { name: 'catalog-hardware', path: `${p}/catalog?catalogue=hardware&lang=sv`, wait: '.cat-list li, .list-pane .empty' },
     { name: 'catalog-source-picker', path: `${p}/catalog`, open: 'button:has(.pi-verified)', wait: '.p-dialog .src-search' },
     { name: 'catalog-areas-drawer', path: `${p}/catalog`, open: '.tabs-row button:has(.pi-sitemap)', wait: '.catalog-areas-drawer .p-tree', maxWidth: 1199 },
+    // catalogue risks: the tab, a risk preview with its mitigating requirements, the import dialog with the risk options
+    { name: 'catalog-risks', path: `${p}/catalog?tab=risks&lang=sv`, wait: '.cat-list li, .list-pane .empty' },
+    { name: 'catalog-risk-preview', path: `${p}/catalog?tab=risks&item=AUTH-R01&lang=en`, wait: '#cp-title' },
+    { name: 'catalog-risk-import-dialog', path: `${p}/catalog?tab=risks`, open: ['.cat-list li .p-checkbox', '.catalog-bar button:has(.pi-plus)'], wait: '.p-dialog #ci-include-reqs' },
     hasTags && { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
     { name: 'flow-list', path: `${p}/flow?view=list&test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-list, .empty' },
@@ -317,6 +344,14 @@ async function discover(request) {
     { name: 'baselines', path: `${p}/baselines` },
     { name: 'releases', path: `${p}/releases` },
     { name: 'risks', path: `${p}/risks`, wait: '.heat' },
+    { name: 'risks-area', path: `${p}/risks?area=authentication`, wait: '.heat' },
+    { name: 'requirement-mitigates-risks', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.requirement-risks button:has(.pi-plus)', wait: '.requirement-risks .add-row' },
+    // duplicates and conflicts: the review page (requirements, tests, dismissed), the merge dialog, the similar panel of the editor
+    { name: 'duplicates', path: `${p}/duplicates`, wait: '.dup-section' },
+    { name: 'duplicates-tests', path: `${p}/duplicates?kind=test`, wait: '.dup-section' },
+    { name: 'duplicates-dismissed', path: `${p}/duplicates`, open: '.dup-switch .p-toggleswitch', wait: '.dup-section' },
+    { name: 'duplicates-merge-dialog', path: `${p}/duplicates`, open: '.pair-actions button:has(.pi-arrow-right-arrow-left)', wait: '.p-dialog .survivor' },
+    simReq && { name: 'requirement-similar', path: `${p}/requirements?item=${simReq.id}`, wait: '.similar-panel' },
     // verification correlations: overview tabs, the requirement's verification tab and its dialogs, criterion rows of the matrix
     { name: 'verification', path: `${p}/verification`, wait: '.ver-counts' },
     { name: 'verification-elements', path: `${p}/verification?tab=elements`, wait: '.ver-counts' },
@@ -333,15 +368,32 @@ async function discover(request) {
     { name: 'waivers', path: `${p}/waivers`, wait: '.p-datatable-tbody tr' },
     { name: 'waiver-new-dialog', path: `${p}/waivers`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #wv-title' },
     hasWaivers && { name: 'waiver-detail', path: `${p}/waivers`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog .wv-fields' },
+    // exploratory testing: the session list with its metrics, the new-session dialog, the session runner (notes, shortcuts, debrief, defect from a note)
+    { name: 'exploratory', path: `${p}/exploratory`, wait: '.p-datatable-tbody tr' },
+    { name: 'exploratory-new-dialog', path: `${p}/exploratory`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #xs-title' },
+    xDebriefed && { name: 'exploratory-session', path: `${p}/exploratory/${xDebriefed.id}`, wait: '.xs-fields' },
+    xDebriefed && { name: 'exploratory-debrief-dialog', path: `${p}/exploratory/${xDebriefed.id}`, open: 'section[aria-labelledby="xs-debrief-h"] button:has(.pi-check-square)', wait: '.p-dialog #xs-db-sum' },
+    xOpen && { name: 'exploratory-session-runner', path: `${p}/exploratory/${xOpen.id}`, open: 'button[aria-controls="xs-keys"]', wait: '#xs-keys dl' },
+    xOpen && { name: 'exploratory-defect-dialog', path: `${p}/exploratory/${xOpen.id}`, open: '.xs-notes li:first-child button:has(.pi-exclamation-circle)', wait: '.p-dialog #xs-d-title' },
     { name: 'soa', path: `${p}/soa`, wait: '[role="grid"] [role="gridcell"]' },
     { name: 'soa-control', path: `${p}/soa`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: ['Control+Enter'], wait: '.p-dialog' },
     hasReleases && { name: 'release-waivers', path: `${p}/releases`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.rel-waivers' },
+    // release gates per variant: the criteria × variants matrix, the target variants of the release dialog
+    gatedRelease && { name: 'release-gates', path: `${p}/releases?r=${gatedRelease.id}&tab=status`, wait: '.gates .gate-table' },
+    gatedRelease && { name: 'release-variants-dialog', path: `${p}/releases?r=${gatedRelease.id}&tab=status`, open: '#release-detail button:has(.pi-pencil)', wait: '.p-dialog #rel-variants' },
+    // the history of an applicability change (diff of the variants)
+    applicReq && { name: 'applicability-history', path: `${p}/requirements?item=${applicReq.id}`, open: '.p-drawer [role="tab"]:has(.pi-history)', wait: '.history .rev-list' },
     { name: 'defects', path: `${p}/defects` },
     // with a selected row (bulk toolbar); only when the project has defects / risks
     hasDefects && { name: 'defects-bulk', path: `${p}/defects`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     hasNotifications && { name: 'notifications-bulk', path: '/notifications', open: '.list li .p-checkbox', wait: '.bulkbar' },
     hasRequested && { name: 'reviews-bulk', path: '/reviews', open: ['.page-header .actions .p-selectbutton:first-child .p-togglebutton:nth-child(2)', '.p-datatable-tbody .p-checkbox'], wait: '.bulkbar' },
     hasWebhooks && { name: 'webhooks-bulk', path: `${p}/settings?tab=project`, open: 'section.webhooks .p-datatable-tbody .p-checkbox', wait: 'section.webhooks .bulkbar' },
+    // chat notifications: the channel list (seeded), the new-channel dialog, editing a seeded channel, its delivery log
+    { name: 'chat-channels', path: `${p}/settings?tab=project`, wait: 'section.chats .p-datatable-tbody tr' },
+    { name: 'chat-channel-dialog', path: `${p}/settings?tab=project`, open: 'section.chats .head button:has(.pi-plus)', wait: '.p-dialog #ch-name' },
+    { name: 'chat-channel-edit-dialog', path: `${p}/settings?tab=project`, open: 'section.chats .p-datatable-tbody tr:first-child button:has(.pi-pencil)', wait: '.p-dialog #ch-name' },
+    { name: 'chat-delivery-log', path: `${p}/settings?tab=project`, open: 'section.chats .p-datatable-tbody tr:first-child button:has(.pi-list)', wait: '.p-dialog .p-datatable' },
     hasDocuments && { name: 'documents-bulk', path: `${p}/documents`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     // the comparison with restore checkboxes (needs items changed since the baseline)
     firstBaseline && { name: 'baseline-compare', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, wait: '.bl-section, [role="status"]' },
@@ -358,8 +410,21 @@ async function discover(request) {
     linkedReq && { name: 'requirement-impact', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
     { name: 'test-impact', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
     linkedReq && { name: 'impact-confirm-dialog', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer form input[required]', keys: ['End', 'X', 'Enter'], wait: '.impact-confirm-dialog' },
+    // transitive impact analysis: graph and table of a requirement's impact, the impact since a baseline
+    linkedReq && { name: 'impact-analysis', path: `${p}/impact?items=requirement:${linkedReq.id}`, wait: '.impact-node, .impact-view section.card + section.card' },
+    linkedReq && { name: 'impact-analysis-table', path: `${p}/impact?items=requirement:${linkedReq.id}`, open: '.impact-view .p-selectbutton .p-togglebutton:nth-child(2)', wait: '.impact-table, .impact-view p.muted' },
+    firstBaseline && { name: 'impact-analysis-baseline', path: `${p}/impact?baseline=${firstBaseline.id}`, wait: '.impact-view h2' },
     firstBaseline && { name: 'baseline-impact-dialog', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, open: '.filterbar button:has(.pi-share-alt)', wait: '.baseline-impact-dialog .row' },
     regressedDefect && { name: 'defect-regressions', path: `${p}/defects?item=${regressedDefect.id}`, wait: '#defect-regressions-h' },
+    // discussions (seed-demo: threads on requirements, a defect and the regression run): the project's list,
+    // the Discussion tab with a reply box and the reactions menu, a defect's and a run's discussion
+    { name: 'discussions', path: `${p}/discussions`, wait: '.p-datatable-tbody tr' },
+    { name: 'discussions-all', path: `${p}/discussions?status=all&filter=mine`, wait: '.p-datatable' },
+    { name: 'requirement-discussion', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}&tab=comments`, wait: '.p-drawer .discussion .thread' },
+    { name: 'discussion-reply', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}&tab=comments`, open: '.p-drawer .discussion .thread-actions button:has(.pi-reply)', wait: '.reply-box' },
+    { name: 'discussion-reactions', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}&tab=comments`, open: '.p-drawer .discussion .comment button:has(.pi-face-smile)', wait: '.p-menu' },
+    regressedDefect && { name: 'defect-discussion', path: `${p}/defects?item=${regressedDefect.id}`, wait: '.p-dialog .discussion' },
+    run && { name: 'run-discussion', path: `${p}/runs/${run.id}?tab=discussion`, wait: '.discussion' },
     // custom fields and item templates: the settings tabs, their dialogs, the picker of a new item, the field sets
     { name: 'custom-fields-settings', path: `${p}/settings?tab=customFields`, wait: '.cf-settings .cf-table' },
     { name: 'custom-field-dialog', path: `${p}/settings?tab=customFields`, open: '.cf-settings > .row button:has(.pi-plus)', wait: '.p-dialog .cf-form' },
@@ -399,7 +464,22 @@ async function discover(request) {
       upload: ['.exchange-dialog input[type="file"]', 'internal/interop/testdata/doors.reqif'],
       wait: '.exchange-dialog .ex-table',
     },
+    // a DOORS Next–shaped document with test cases: object and relation type mappings, the tests' diff
+    {
+      name: 'exchange-reqif-tests',
+      path: `${p}/requirements`,
+      open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(2) .p-menu-item-link'],
+      upload: ['.exchange-dialog input[type="file"]', 'internal/interop/testdata/dng-tests.reqif'],
+      wait: '.exchange-dialog .ex-table',
+    },
+    // the OSLC delegated dialogs (server-rendered pages other tools show)
+    { name: 'oslc-dialog-select', path: `/api/v1/oslc/projects/${pid}/dialogs/requirement/select`, wait: '#list li' },
+    { name: 'oslc-dialog-create', path: `/api/v1/oslc/projects/${pid}/dialogs/test/create?lang=sv`, wait: '#create:not([hidden])' },
     { name: 'exchange-xlsx-dialog', path: `${p}/tests`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:last-child .p-menu-item-link'], wait: '.exchange-dialog' },
+    // importing from Jira and Azure DevOps: the query forms (the demo has both sources, without tokens) and the settings card
+    { name: 'exchange-jira-dialog', path: `${p}/requirements`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(3) .p-menu-item-link'], wait: '.exchange-dialog form textarea' },
+    { name: 'exchange-azure-dialog', path: `${p}/requirements`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(4) .p-menu-item-link'], wait: '.exchange-dialog form textarea' },
+    { name: 'import-sources-settings', path: `${p}/settings?tab=project`, wait: '#h-import-sources + p + form' },
     // ReqIF selected: the aspects are disabled and a hint is shown
     { name: 'export-reqif', path: `${p}/export`, open: '.format-grid button:has(.pi-sitemap)', wait: 'fieldset.plain-fieldset[disabled]' },
     { name: 'documents', path: `${p}/documents` },
@@ -430,6 +510,12 @@ async function discover(request) {
     { name: 'bulk-review', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-verified)', wait: '.p-dialog .preview' },
     { name: 'notifications', path: '/notifications' },
     { name: 'reviews', path: '/reviews' },
+    // the personal work list (My work) across projects, filtered by project and reason; the dashboard widget
+    { name: 'my-work', path: '/my-work', wait: '.p-datatable-tbody tr' },
+    { name: 'my-work-filtered', path: `/my-work?project=${pid}&reason=overdue`, wait: '.p-datatable' },
+    { name: 'dashboard-my-work', path: `${p}/dashboard`, wait: 'section.my-work .count' },
+    // bulk "Set owner" of the selected tests
+    { name: 'owner-bulk', path: `${p}/tests`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-user)'], wait: '.p-dialog #bulk-owner' },
     { name: 'members', path: '/admin/members' },
     { name: 'members-add', path: '/admin/members', open: '.filterbar button:has(.pi-user-plus)', wait: '.p-dialog' },
     // public invitation page (an unknown token shows the explanation)
@@ -453,6 +539,7 @@ async function discover(request) {
     // system settings (super admins): every section, the OIDC provider dialog
     { name: 'system-settings', path: '/admin/system', wait: '.sys-field' },
     { name: 'system-settings-security', path: '/admin/system?section=security', wait: '.sys-field' },
+    { name: 'system-settings-similarity', path: '/admin/system?section=similarity', wait: '.sys-field' },
     { name: 'system-settings-oidc', path: '/admin/system?section=oidc', wait: '.sys-section .row' },
     { name: 'system-settings-oidc-dialog', path: '/admin/system?section=oidc', open: '.sys-section button:has(.pi-plus)', wait: '.p-dialog #oidc-provider-form' },
     { name: 'system-settings-logging', path: '/admin/system?section=logging', wait: '.sys-field' },

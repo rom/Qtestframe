@@ -159,6 +159,22 @@ export type Snapshot = Record<string, unknown>
 export interface TextOptions {
   /** Resolve ids (e.g. category ids, folder ids) to readable names. */
   resolve?: (field: string, id: string) => string | undefined
+  /** Text of an applicability (null: all variants). */
+  applicability?: (a: SnapshotApplicability | null) => string
+}
+
+/** The applicability a snapshot records: variants (with their names then) and/or an expression. */
+export interface SnapshotApplicability {
+  variant_ids?: string[]
+  variants?: { id: string; name: string }[]
+  expression?: string
+}
+
+/** Readable applicability: the variants' names and the expression; '' for all variants. */
+export function applicabilityText(a: SnapshotApplicability | null | undefined, all = ''): string {
+  if (!a || (!(a.variant_ids ?? []).length && !a.expression)) return all
+  const names = (a.variant_ids ?? []).map((id) => a.variants?.find((v) => v.id === id)?.name ?? id)
+  return [names.join(', '), a.expression ?? ''].filter(Boolean).join(' | ')
 }
 
 function itemLine(x: unknown, i: number): string {
@@ -179,6 +195,10 @@ function itemLine(x: unknown, i: number): string {
 
 /** Readable text for a snapshot value: lists of objects become numbered lines. */
 export function valueToText(field: string, value: unknown, opts: TextOptions = {}): string {
+  if (field === 'applicability') {
+    const a = (value ?? null) as SnapshotApplicability | null
+    return opts.applicability ? opts.applicability(a) : applicabilityText(a)
+  }
   if (value === null || value === undefined) return ''
   if (Array.isArray(value)) {
     if (value.every((v) => typeof v !== 'object' || v === null)) {
@@ -210,6 +230,13 @@ function comparable(v: unknown): unknown {
   })
 }
 
+/** An applicability compared by its variants and expression (not the names). */
+function applicabilityKey(v: unknown): string {
+  const a = (v ?? null) as SnapshotApplicability | null
+  if (!a || (!(a.variant_ids ?? []).length && !a.expression)) return ''
+  return JSON.stringify([[...(a.variant_ids ?? [])].sort(), a.expression ?? ''])
+}
+
 function same(a: unknown, b: unknown): boolean {
   if (isEmpty(a) && isEmpty(b)) return true
   return JSON.stringify(comparable(a)) === JSON.stringify(comparable(b))
@@ -235,6 +262,10 @@ export function changedKeys(before: Snapshot | null | undefined, after: Snapshot
       const b = (before?.[k] ?? {}) as Record<string, unknown>
       const a = (after?.[k] ?? {}) as Record<string, unknown>
       for (const ck of new Set([...Object.keys(b), ...Object.keys(a)])) if (!same(b[ck], a[ck])) out.push(`custom_fields.${ck}`)
+      continue
+    }
+    if (k === 'applicability') {
+      if (applicabilityKey(before?.[k]) !== applicabilityKey(after?.[k])) out.push(k)
       continue
     }
     if (!same(before?.[k], after?.[k])) out.push(k)

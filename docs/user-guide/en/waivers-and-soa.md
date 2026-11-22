@@ -45,6 +45,8 @@ While a waiver is approved and its expiry date has not passed, it is **in force*
 
 A requirement shows its waivers below its risks in the requirement editor.
 
+In a project with [variants](variants-and-code.md), a waiver can be limited to variants with **Only for variants**. In a release that targets variants it then accepts its requirements only in those variants and the variants below them; a release evaluated without variants counts only waivers for every variant (see [release gates per variant](variants-and-code.md#release-gates-per-variant)).
+
 ### Expiry and revocation
 
 The day after its expiry date, an approved waiver becomes **expired**: its requirements are no longer accepted, and the requester and approvers are notified. An approver can also **Revoke** an approved waiver at any time, with a reason. An approved waiver cannot be edited or deleted; revoke it and request a new one instead. Every step is recorded in the audit log.

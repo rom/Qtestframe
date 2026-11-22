@@ -1,6 +1,8 @@
 // Package tracker talks to external issue trackers (Jira Cloud/Server REST
-// API v2, GitHub Issues and GitLab REST API v4) to create issues for
-// defects and requirements, to update them and to read their status back.
+// API v2, GitHub Issues, GitLab REST API v4 and Request Tracker REST2) to
+// create issues for defects and requirements, to update them and to read
+// their status back, and reads issues and work items of Jira and Azure
+// DevOps to import them as requirements (source.go, azure.go).
 //
 // Requests honour the server's outbound proxy and TLS settings through the
 // http.Client they are given (by default one with the environment's proxy,
@@ -63,7 +65,7 @@ type Client interface {
 	// Check verifies the URL, credentials and project/repository.
 	Check(ctx context.Context) error
 	// Markup is the format of descriptions and comments: MarkupMarkdown
-	// (GitHub, GitLab) or MarkupJira (Jira wiki markup).
+	// (GitHub, GitLab, RT as plain text) or MarkupJira (Jira wiki markup).
 	Markup() string
 }
 
@@ -85,6 +87,8 @@ func New(t *model.DefectTracker, hc *http.Client) (Client, error) {
 		return &github{cfg: t, hc: hc}, nil
 	case "gitlab":
 		return newGitLab(t, hc), nil
+	case "rt":
+		return newRT(t, hc), nil
 	}
 	return nil, fmt.Errorf("no defect tracker is configured for the project")
 }

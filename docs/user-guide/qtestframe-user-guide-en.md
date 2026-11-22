@@ -21,13 +21,18 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Requirements](#requirements) | Obligation levels, the language analysis, fields, evaluation criteria, relations, comments, history, bulk edit, moving and attachments |
 | [Tests](#tests) | Manual steps, automated scripts, shared steps, categories, execution history, comments, history and attachments |
 | [Catalogue](#catalogue) | Standard requirements and tests to add to a project: browsing, searching, the preview and adding with tests and trace links |
+| [Test cycles](#test-cycles) | Planning test cycles: tests, testers and estimates, the runs a cycle creates, progress, burndown, workload, recurring cycles |
 | [Test runs and execution](#test-runs-and-execution) | Runs, the execution runner and its keyboard shortcuts, defects, CI import with API tokens, attachments |
+| [Exploratory testing](#exploratory-testing) | Session-based exploratory testing: charters, the session timer, typed notes with keyboard shortcuts, defects from notes, debriefs, metrics and the session report |
 | [Waivers, residual risk and the SoA](#waivers-residual-risk-and-the-statement-of-applicability) | Waivers and deviations with signed approvals, residual risk and its acceptance, the Statement of Applicability (ISO/IEC 27001 Annex A) |
 | [Traceability and coverage](#traceability-and-coverage) | The traceability matrix, how coverage is calculated, the dashboard |
+| [Duplicates and conflicts](#duplicates-and-conflicts) | Similar requirements while writing, suspected duplicate requirements and tests, potentially conflicting requirements, merging, thresholds |
 | [Variants and code](#variants-and-code) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
 | [Baselines](#baselines) | Freezing a release and comparing versions |
+| [Discussions](#discussions) | Threaded comments on items with Markdown, @mentions, reactions, resolving, and the project's Discussions page |
 | [Search and filters](#search-and-filters) | The query language with many examples |
 | [Reports and export](#reports-and-export) | Standard reports, the custom report builder, export formats and the document archive |
+| [Interoperability](#interoperability-reqif-and-oslc) | ReqIF export and import with tests, relations and attachments; OSLC links, selection and creation from DOORS Next, Polarion, Codebeamer |
 | [Documents](#documents-1) | The project's document archive: uploads, previews and links |
 | [Administration](#administration) | Organisations, users, members and roles, project sharing, password resets, API tokens, the audit log, backup and restore |
 | [Accessibility and languages](#accessibility-and-languages) | Keyboard use, screen readers, themes, English and Swedish, phones and tablets |
@@ -610,13 +615,13 @@ The dialog says how many relations will be added or removed before you confirm. 
 
 Type `@` in **Owner**, **Description**, **Rationale**, a comment, or in a test's description and preconditions and an execution's **Assignee** and notes: a list of people appears. It holds the users of the organisation (with their avatar) and names that are already used as owner or assignee in the project but have no account (*no account*). Keep typing to narrow the list, use the arrow keys and <kbd>Enter</kbd> or <kbd>Tab</kbd> to insert, or <kbd>Esc</kbd> to close the list.
 
-A mention is written as `@handle`: for users the part of the e-mail address before the `@` (`@anna.berg` for *anna.berg@example.com*), for other people the name with dots instead of spaces (`@carl.carlsson`). Mentions of known people are shown as a chip with avatar and name, in the editor's comments and in the **Owner** column. Plain names still work: the owner is free text.
+A mention is written as `@handle`: for users the part of the e-mail address before the `@` (`@anna.berg` for *anna.berg@example.com*), for other people the name with dots instead of spaces (`@carl.carlsson`). Mentions of known people are shown as a chip with avatar and name, in the editor's comments and in the **Owner** column. An owner who is a member of the organisation is stored as their e-mail address, however you name them (`@anna.berg`, *Anna Berg* or *anna.berg@example.com*), so the item shows up in their [work list](#my-work) and they are notified; a member who may not see the project cannot be the owner. Other names (for example someone outside the organisation) stay as plain text. **Set owner** in the bulk toolbar gives many requirements or tests the same owner (empty removes it); the filter `owner:me` finds your own items.
 
 To find everything that mentions someone, filter with `mention:anna.berg` (or `mention:@anna.berg`).
 
-## Comments
+## Discussion
 
-The **Comments** tab is a discussion thread on the requirement. Write in the field and select **Comment** (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Everyone who can read the requirement can read and write comments. You can edit and delete your own comments; administrators can delete any comment. The number of comments is shown on the tab and in the **Comments** column.
+The **Discussion** tab holds the requirement's [discussion](#discussions): threads of comments in Markdown, with replies, @mentions, reactions and **Resolve**. The number on the tab is the number of open threads; the **Comments** column counts the comments. Everyone who can read the requirement can read the discussion; writing in it needs `comment.create` (every role except Viewer). You can edit and remove your own comments; moderators can remove any comment.
 
 ## When someone else saved first
 
@@ -742,7 +747,7 @@ The dialog says how many links will be added or removed before you confirm; item
 
 ## Issues in GitLab, GitHub or Jira
 
-When the project is connected to an issue tracker (see [Connect Jira, GitHub or GitLab](#connect-jira-github-or-gitlab)), a requirement can be handed to the developers as an issue. The **Links** tab of the requirement then starts with **Issue in GitLab** (or GitHub, Jira):
+When the project is connected to an issue tracker (see [Connect Jira, GitHub or GitLab](#connect-jira-github-or-gitlab)), a requirement can be handed to the developers as an issue (in Request Tracker a ticket). The **Links** tab of the requirement then starts with **Issue in GitLab** (or GitHub, Jira):
 
 - **Create GitLab issue** shows a preview of the issue and creates it. The issue gets:
   - the title `[SHOP-REQ-12] <title>`;
@@ -780,7 +785,7 @@ Uploading and removing attachments needs the **Manager** role (the same as editi
 
 ## Import requirements
 
-Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import → From a file** in the header of the requirements page reads such a file and creates the requirements in one go. To update requirements from a DOORS or Polarion document again and again, or to edit requirements in Excel and bring the changes back, see [Exchanging data with other tools](#exchanging-data-with-other-tools). Importing needs the permission to edit requirements (**Manager** by default).
+Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import → From a file** in the header of the requirements page reads such a file and creates the requirements in one go. To update requirements from a DOORS or Polarion document again and again, to import them from Jira or Azure DevOps, or to edit requirements in Excel and bring the changes back, see [Exchanging data with other tools](#exchanging-data-with-other-tools). Importing needs the permission to edit requirements (**Manager** by default).
 
 1. Drag the file onto the dialog or choose it. Supported are **CSV** (comma, semicolon or tab separated; UTF-8 with or without byte order mark, UTF-16 and Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` and the zipped `.reqifz`) and **Word** (`.docx`), up to 20 MB and 5,000 requirements per file.
 2. Check the **preview**: the detected format, how each column is read and the first 50 requirements with notes (a derived title, an unknown value, a duplicate). Nothing is stored yet.
@@ -904,6 +909,7 @@ The page works like the [requirements page](#the-requirements-page): folder tree
 | **Status** | Draft, Ready, Review or Deprecated. |
 | **Priority** | Critical, High, Medium or Low. |
 | **Estimate (minutes)** | Expected duration. |
+| **Owner** | The project member responsible for the test. Type `@` to pick a person; the test then appears in their [work list](#my-work) while it is in draft or review, or when it becomes suspect or its results stale. |
 | **Folder**, **Categories**, **Tags** | Filing and classification. **Suggested tags** under the tags field come from the title, description, preconditions and steps, as for [requirements](#fields). |
 | **Overall expected result** | The expected outcome of the test as a whole. |
 
@@ -1076,7 +1082,7 @@ A flaky test hides real failures and wastes time on reruns: find the cause (timi
 
 ## Comments and history
 
-**Comments** and **History** work exactly as for [requirements](#comments). Restoring a test version restores its fields and steps as a new version; steps get new IDs and calls to deleted tests are dropped. If someone else saves a test while you edit it, you can compare and choose instead of overwriting their changes, see [When someone else saved first](#when-someone-else-saved-first).
+The **Discussion** tab and **History** work exactly as for [requirements](#discussion) (see [Discussions](#discussions)). Restoring a test version restores its fields and steps as a new version; steps get new IDs and calls to deleted tests are dropped. If someone else saves a test while you edit it, you can compare and choose instead of overwriting their changes, see [When someone else saved first](#when-someone-else-saved-first).
 
 ## Links
 
@@ -1088,9 +1094,9 @@ The **Attachments** tab holds files for the test: test data, expected screenshot
 
 # Catalogue
 
-The **catalogue** is a built-in library of standard requirements and tests for software development: security, privacy and compliance, performance and reliability, operations and maintainability, usability and accessibility (also forms, preferences and mobile apps), common functionality (also workflow and approvals, collaboration, files, scheduling) and domain-specific functionality such as e-commerce checkout, billing, industrial automation and control systems, electrical energy, oil and gas, telecom, the chemical industry and industrial manufacturing. Instead of writing *"Passwords must be at least 12 characters"* and its test for every project, you choose the items that fit and add them to the project in one go, with their tests and trace links.
+The **catalogue** is a built-in library of standard requirements and tests for software development: security, privacy and compliance, performance and reliability, operations and maintainability, usability and accessibility (also forms, preferences and mobile apps), common functionality (also workflow and approvals, collaboration, files, scheduling) and domain-specific functionality such as e-commerce checkout, billing, industrial automation and control systems, electrical energy, oil and gas, telecom, the chemical industry and industrial manufacturing. Instead of writing *"Passwords must be at least 12 characters"* and its test for every project, you choose the items that fit and add them to the project in one go, with their tests and trace links. The catalogue also describes the typical **risks** of each area (see [Risks in the catalogue](#risks-in-the-catalogue)), each linked to the requirements that mitigate it.
 
-Browsing the catalogue needs permission to read requirements or tests (every role has it). Adding requirements needs **Manager** (`requirement.write`), adding tests **Tester** (`test.write`).
+Browsing the catalogue needs permission to read requirements or tests (every role has it). Adding requirements and risks needs **Manager** (`requirement.write`), adding tests **Tester** (`test.write`).
 
 ## Where the texts come from
 
@@ -1106,14 +1112,14 @@ Every requirement lists at least one catalogue test that verifies it, and every 
 
 Open **Catalogue** in the project sidebar, or select **Add from catalogue** at the top of the requirement or test list.
 
-- Switch between **Requirements** and **Tests** at the top.
+- Switch between **Requirements**, **Tests** and **Risks** at the top.
 - Choose **English** or **Svenska** for the language of the texts. The items are added in this language.
 - **Catalogue type** limits the catalogue to one kind of work: *Software*, *Hardware*, *Equipment*, *Systems*, *Communications solutions*, *Projects*, *Services*, *Buildings and facilities*, *Governance*, *Documentation* or *Education* (only the types that have content are listed). It starts with the type that fits the project: software projects show *Software*, hardware projects *Hardware*, system projects *Systems* and business projects *Governance*; general projects show **All types**. The tree, the lists and the laws and standards follow the choice.
 - On the left, **Groups and areas** lists the catalogue's groups (for example *Security*) and their areas (for example *Authentication*) with the number of items that match the current search and filters. Select **Everything** to see all areas. Use the arrow keys to move in the tree and Enter to select. On a narrow screen the tree opens with the **Areas** button.
 - The **search** field finds items whose title, ID, tags, cited standards or description contain all the words you type (type `62443` or `27001`, for example, to list the items that cite that standard). The best matches come first: an exact ID such as `AUTH-01`, then the words in the title, then the other fields.
-- Narrow the list with **Type**, **Obligation** and **Priority** (requirements), **Execution** (tests) and **Tags**. **Hide items already in the project** leaves out what you have added before.
+- Narrow the list with **Type**, **Obligation** and **Priority** (requirements), **Execution** (tests), **Category** and **Risk level** (risks) and **Tags**. **Hide items already in the project** leaves out what you have added before.
 
-Each row shows the ID, the title, the obligation and priority, and how many catalogue tests verify the requirement (or how many requirements the test verifies). **In project** marks items that the project already has; hover over it to see their keys.
+Each row shows the ID, the title, the obligation and priority, how many catalogue tests verify the requirement and how many catalogue risks it mitigates (or how many requirements the test verifies). **In project** marks items that the project already has; hover over it to see their keys.
 
 ## Comply with laws, standards and best practices
 
@@ -1128,7 +1134,7 @@ Remove a source with the × on its chip, or **Clear the choice** to see the whol
 
 ## Preview an item
 
-Select a row to see the full text on the right (on a phone it opens as a panel): the description with the obligation keyword highlighted, the rationale, the evaluation criteria with their thresholds, the cited standards and the catalogue tests that verify the requirement. For a test you see the preconditions, the steps, the expected result and the requirements it verifies. Select an ID under *Verified by* or *Verifies* to jump to that item.
+Select a row to see the full text on the right (on a phone it opens as a panel): the description with the obligation keyword highlighted, the rationale, the evaluation criteria with their thresholds, the cited standards and the catalogue tests that verify the requirement. For a test you see the preconditions, the steps, the expected result and the requirements it verifies. A requirement also lists the catalogue risks it mitigates. Select an ID under *Verified by*, *Verifies* or *Mitigates* to jump to that item.
 
 ## Add items to the project
 
@@ -1142,17 +1148,41 @@ Select a row to see the full text on the right (on a phone it opens as a panel):
    - **Source of the requirements**: the cited standards (default) or one of the project's sources.
    - **Also add the tests that verify the chosen requirements** (on by default).
    - **Add copies of items already in the project**: off by default, so items the project already has are skipped.
-4. The summary shows how many requirements and tests will be added and how many are skipped. Select **Add**.
+4. The summary shows how many requirements and tests will be added and how many are skipped. When some of the chosen requirements say the same thing as requirements the project already has (written by hand, or from another catalogue entry), it lists them with the most similar project requirement and its similarity, and **Leave out the requirements similar to existing ones** skips them (reason *similar*). See [Duplicates and conflicts](#duplicates-and-conflicts).
+5. Select **Add**.
 
 At most 500 items can be added at once. The import is all or nothing: if something fails, nothing is added.
 
 Qtestframe creates the requirements and tests as if you had written them, with a first history version, and creates **trace links** between each requirement and the tests that verify it, also to matching items that were added to the project earlier. The automatic linked draft test that a new requirement usually gets is not created: the catalogue tests take its place.
 
+## Risks in the catalogue
+
+The **Risks** tab lists typical risks of the areas: what can go wrong, for example *Accounts taken over with leaked passwords* or *Pressure vessel bursts*. There are risks for security, privacy, AI, availability and operations, data, the supply chain, hardware, equipment and buildings (safety), services, governance and projects. Every risk has:
+
+- a **category** (security, privacy, safety, availability, data, compliance, supply chain, AI, operational, quality, project or environmental);
+- a description of the threat or hazard and its consequence;
+- a **typical likelihood and impact** on the same scale 1–5 as the [risk register](#the-risk-register), and the level they give (low, medium, high, critical);
+- a **suggested mitigation**;
+- the catalogue requirements that **mitigate** it (at least one, from any area), and sometimes catalogue tests that check it directly;
+- the sources it is based on under **Based on**: risk management standards (ISO 31000, ISO/IEC 27005, ISO/IEC 23894 for AI, ISO 14971 for medical devices, ISO 26262 for vehicles, ISO 12100 for machinery, IEC 62443-3-2 for industrial systems), the AI Act's risk management (Art. 9), the GDPR's impact assessment (Art. 35), threat catalogues (OWASP Top 10, ENISA Threat Landscape) and the CWE weaknesses and MITRE ATT&CK techniques of the mitigating requirements.
+
+Filter the risks by **Category** and **Risk level**, by area in the tree, by tag or by the laws and standards to comply with (a risk counts for a source when it cites it or one of its mitigating requirements does). The preview shows the description, the suggested mitigation and the mitigating requirements; select one to open it.
+
+**Add a risk with its mitigation.** Tick risks and select **Add N risks (+ requirements, tests)**. The dialog adds:
+
+- the risks as project risks, with title, description, category, suggested mitigation and the typical likelihood and impact (adjust them to your own assessment afterwards), with the status *Identified* or *Mitigating*;
+- with **Also add the requirements that mitigate the chosen risks** (on by default) the mitigating requirements, and with **Also add the tests that verify the chosen requirements** their tests;
+- links between each new risk and the project requirements that mitigate it, both the new ones and those added earlier.
+
+**Add requirements with their risks.** When you add requirements that mitigate catalogue risks, the dialog offers **Also add the N risks these requirements mitigate**. Requirements you add later are linked to the catalogue risks the project already has, so the order does not matter.
+
+Risks the project already has from the catalogue are skipped, like requirements and tests, unless you choose **Add copies of items already in the project**.
+
 ## After adding
 
-A box at the top of the page sums up what was added. **Open the added requirements** and **Open the added tests** open the lists filtered to the new items. **Undo** (or Ctrl+Z) moves them to the trash; redo brings them back with their links. Folders that the import created stay.
+A box at the top of the page sums up what was added, and how many of the added requirements are similar to requirements the project had, with a link to **Review duplicates**. **Open the added requirements**, **Open the added tests** and **Open the added risks** open the lists filtered to the new items. **Undo** (or Ctrl+Z) moves them to the trash (risks are deleted); redo brings them back with their links. Folders that the import created stay.
 
-The added items are ordinary project items: edit the texts and values to fit your system. The editor shows **From the catalogue: AUTH-01 · …** with the cited standards, and **Show in the catalogue** opens the original entry. This origin is kept when you edit, copy, move or restore the item. In filters, `catalog:AUTH-01` finds the items copied from one entry, `catalog:AUTH-*` those of an area and `has:catalog` every item from the catalogue (see [Search and filters](#search-and-filters)).
+The added items are ordinary project items: edit the texts and values to fit your system. The editor shows **From the catalogue: AUTH-01 · …** with the cited standards, and **Show in the catalogue** opens the original entry. This origin is kept when you edit, copy, move or restore the item. In filters, `catalog:AUTH-01` finds the items copied from one entry, `catalog:AUTH-*` those of an area and `has:catalog` every item from the catalogue (see [Search and filters](#search-and-filters)). A risk from the catalogue shows its ID under its category in the register; the register can show the risks of one catalogue area.
 
 ## Tips
 
@@ -1441,6 +1471,218 @@ The **Links** tab of the run page links the run to requirements, tests, other ru
 
 Runs and executions have **Attachments** too: log files, screenshots of a failure, test reports from other tools. In the runner, open the **Attachments** tab next to **Result** and drag files onto it or select **Choose files**; on the run page, attachments belong to the run as a whole. You can also attach a file from the project's [document archive](#documents-1). Uploading and removing attachments on runs and executions needs **Tester** (the right to record results).
 
+# Exploratory testing
+
+Exploratory testing is test design and test execution at the same time: the tester learns the product while testing it and decides what to try next from what they just saw. Qtestframe supports **session-based test management** (SBTM): the work is done in **sessions** of a fixed length, each with a **charter**, and every session ends with a **debrief**.
+
+| Action | Role needed |
+|---|---|
+| View sessions, notes, metrics and the history | Viewer (`run.read`) |
+| Plan, change and delete sessions; reopen a debrief | Tester (`run.write`) |
+| Run a session: the timer, notes, files, defects from notes, the debrief | Tester (`run.execute`) |
+| Export the session report | Viewer (`export`) |
+| Let sessions count as verification evidence | Manager (`project.update`) |
+
+Only the session's **tester** runs it, takes its notes and debriefs it. Someone else needs `run.write` as well: a test lead who stops a forgotten session, or a reviewer who debriefs it. A session without tester belongs to whoever starts it.
+
+## Plan a session
+
+Open **Exploratory** in the project's navigation and select **New session**.
+
+- **Charter**: a short name for the mission, for example *Explore checkout with expired cards*.
+- **Mission**: what to explore, with which resources, to discover what (*Explore … with … to discover …*).
+- **Tester**: who does the session (by default you).
+- **Time box**: the planned length, usually 30, 60 or 90 minutes; any length from 5 to 480 minutes is accepted.
+- **Areas**: the requirement and test folders the session explores. The metrics count sessions and bugs per area.
+- **Requirements** and **Tests** in scope: the items the session is about. A defect raised in the session is linked to these requirements, and a debriefed session can be evidence for them (see below).
+
+A new session is **planned**. The list shows every session with its charter, tester, status, outcome, session time against the time box, the number of notes and of bugs. Filter it by text, status and area, or select **My sessions**.
+
+## Run a session
+
+Open a session to see the **session runner**: the timer at the top, the note field, the notes taken so far, and on the side the charter with its scope, the screenshots and files, and the history.
+
+### The timer
+
+**Start** starts the timer, **Pause** pauses it (a break does not count) and **Resume** continues. **Stop** ends the session for good. The time is kept by the server, not by the browser: you can reload the page, close the browser or continue on another computer, and the session time stays right. The bar under the clock shows how much of the time box is used; past the time box it turns orange, but the timer keeps going.
+
+| Status | Meaning |
+|---|---|
+| Planned | Not started yet |
+| In progress | The timer runs |
+| Paused | Started, the timer is paused |
+| Completed | Stopped, waiting for the debrief |
+| Debriefed | Debriefed; the session is closed |
+
+### Notes
+
+Notes are taken from the start of the session until its debrief. Each note has a **type** and is stamped with the session time at which it was taken:
+
+- **Observation**: what you saw, including set-up and what works.
+- **Question**: something to ask the product owner or the developers.
+- **Issue**: something that is wrong or unclear but perhaps not a bug.
+- **Idea**: a test idea for later, or an improvement.
+- **Bug**: a problem in the product.
+
+Write the note and select **Add note**, or press **Ctrl+Enter**. Choose **Files of the session** to refer to screenshots you uploaded under **Screenshots and files** (the files are stored like every attachment and appear in the project's [documents](#documents-1)).
+
+### Keyboard shortcuts
+
+The runner is made to be used without the mouse. Outside the note field:
+
+| Key | Action |
+|---|---|
+| O, Q, I, D, B | Choose the note type (Observation, Question, Issue, iDea, Bug) and go to the note field |
+| N | Go to the note field and keep the type |
+| T | Start or pause the timer |
+| ? | Show or hide the shortcuts |
+
+In the note field, **Ctrl+Enter** (⌘+Enter on a Mac) adds the note and **Esc** leaves the field so that the letters work as shortcuts again. Screen readers announce the type chosen and each note added.
+
+### Raise a defect from a note
+
+Select **Raise defect** next to a note. The defect is prefilled: the title is the first line of the note, the description the note with the session's key, the session time and the charter, and *found in* is *test*. Change what you need and confirm. The defect is linked to the session and to the requirements in its scope, the note shows the defect's key and becomes a bug note. See [Defects](#defects-1).
+
+## Debrief
+
+When the session is stopped, the debrief opens. In SBTM the debrief is a short conversation between the tester and a test lead; record its result here:
+
+- **Summary**: what was covered, what was found, what is left.
+- **Outcome**: *Passed* (the scope works as required), *Failed* (problems found that fail it) or *Inconclusive* (it could not be judged, for example because it was blocked).
+- **Coverage of the charter**: your estimate in percent of how much of the charter the session covered.
+- **Time split**: the share of the session spent on **set-up** (preparing the environment and the data), **testing** (test design and execution) and **bug investigation** (investigating and reporting problems). The three add up to 100 %. The form suggests a split from the notes.
+- **Reviewer's comment**: what a reviewer adds.
+
+The tester debriefs their own session. Someone else with `run.write` can debrief it as a **reviewer**: the session then shows *Reviewed by*. A debrief can be changed later; **Reopen** (with `run.write`) removes it and makes the session completed again. A debriefed session and its notes cannot be changed.
+
+## Sessions as verification evidence
+
+By default exploratory sessions are not verification evidence. Under **Settings → Project → Verification** a manager can turn on **Exploratory sessions are verification evidence**. Then a debriefed session counts as evidence of kind *exploratory* for the requirements in its scope, about the requirement as a whole:
+
+- *Passed* passes, *Failed* fails, *Inconclusive* does not count;
+- for each requirement only the newest debriefed session counts; older ones are shown as *superseded*;
+- a session never verifies an [evaluation criterion](#requirements) on its own, so it verifies on its own only a requirement without criteria. With criteria it adds to the evidence: a failed session fails the requirement.
+
+The requirements' status follows the verification when the project lets the status follow the evidence. See [Traceability and coverage](#traceability-and-coverage).
+
+## Metrics
+
+Above the list, **Metrics** show the number of sessions, the session hours, the bugs (bug notes and notes a defect was raised from) and the **bugs per session hour**, the average time split and coverage of the debriefs, and the same per **area** and per **tester**.
+
+## Report, history and audit
+
+**Markdown** and **PDF** at the top of the runner export the **session report**: the charter and scope, the session time, the debrief, every note in the order taken and the defects raised. The same report, and the summary of all sessions (*Exploratory testing*), are standard reports on the **Reports** page, where they can also be saved in the document archive or e-mailed ([Reports and export](#reports-and-export)).
+
+**History** lists the revisions of the session: when it was planned, changed, stopped, debriefed and reopened, with the changed fields. Every action (planning, timer, notes, defects, debrief) is recorded in the organisation's audit log. Sessions, their scope and notes are part of the project archive (**Save project**) and of the backup.
+
+# Test cycles
+
+A **test cycle** plans the testing for one goal, for example *Sprint 14 regression* or *Release 2.1 acceptance*. It says which tests are to be run (its **plan**), in which configurations, by whom and how long they should take. When the cycle starts it creates its [test run](#test-runs-and-execution) and from then on tracks the results: planned against executed, passed, failed and blocked, estimated against actual time, a burndown and the workload of every tester.
+
+Select **Test cycles** in the project sidebar.
+
+| Task | Role (permission) |
+|---|---|
+| See cycles, their plan and progress | every role that sees runs (`run.read`) |
+| Create and change cycles, plan tests, assign testers, start and close cycles, recurring cycles | **Test lead**, **Manager**, **Admin** (`cycle.plan`) |
+| Create the cycle's runs | also `run.write` |
+| Execute the planned tests | **Tester** and above (`run.execute`), in the cycle's run as usual |
+
+## Creating a cycle
+
+Select **New cycle** and enter:
+
+- a **name**, unique in the project, and optionally a **goal**;
+- the **owner**, usually the test lead (you by default);
+- the **start date** and **end date**; they also bound the burndown;
+- optionally the **release**, **variant** and **build** the cycle tests, and its **environment**. The cycle's runs get them, so the results count for that release and variant;
+- the **configurations** to test in. Each planned test is then executed once per configuration, and each configuration can have its own tester;
+- optionally a time to **start automatically**: at that time the cycle starts by itself and its run is created;
+- or choose **Copy a previous cycle**: the new cycle gets that cycle's plan, testers, estimates, release, variant and configurations. This is the quickest way to the next sprint's regression.
+
+A new cycle is **Planned**.
+
+## Planning tests
+
+On the **Plan** tab, select **Plan tests** and choose how to add tests:
+
+| By | What is added |
+|---|---|
+| **Selection** | the tests you pick in the test picker |
+| **Query** | every test matching a [query](#search-and-filters), for example `tag:regression priority:high` |
+| **Folder** | the tests of a folder, and of the folders below it if you like |
+| **Regression selection** | the tests that verify changed requirements (and, if you like, the requirements that depend on, refine or are derived from them) with their prerequisites, as the [regression selection](#variants-and-code) on the Code page; for the cycle's variant |
+| **Previous cycle** | another cycle's plan with its testers, estimates and configurations |
+
+You can choose a **tester** and an **estimate** for the tests you add, and the configurations (without a choice, a test is planned in every configuration of the cycle). Tests already planned in a configuration are skipped.
+
+**Estimates.** Without an estimate of your own, a planned test gets the test's **Estimated minutes** (a field of the test), or else the average duration of its past executions with a result. Change estimates and testers later by selecting rows in the plan and choosing **Assign** or **Set estimate**; **Remove** takes rows out of the plan (results already recorded stay in the run).
+
+The plan shows every row with its configuration, tester, estimate, the latest result in the cycle's runs (select it to open the execution) and the actual time.
+
+## Running the cycle
+
+Select **Start cycle**. The cycle becomes **Active** and creates its run: one execution per planned test and configuration, assigned to the tester, with the cycle's release, variant, build and environment. The testers get a notification and execute as usual in the [execution runner](#test-runs-and-execution). Changing a tester in the plan also changes the executions that have no result yet.
+
+Tests planned after the start are not in a run yet; the button **Create run for n new tests** creates a further run of the cycle for them. **Close cycle** ends it; **Reopen** makes it active again.
+
+A planned test counts as **executed** once it has a final result (passed, failed, blocked or skipped) in one of the cycle's runs. If a test was run more than once, the latest final result counts.
+
+## Board by tester
+
+The **Board by tester** tab has a column per tester (and one for tests nobody is assigned to) with the open tests, the estimated time left, and the executed tests folded away. Select a test to open its execution.
+
+## Progress
+
+The key figures at the top show the planned tests (and how many have no tester), the share executed, the results, the estimated time with the time left, and the actual time of the executed tests against their estimates.
+
+The **Progress** tab has:
+
+- the **burndown**: per day from the start date to the end date, the planned tests (or the estimated time) not yet executed at the end of the day, against the **ideal** line from the whole plan on the first day to nothing on the last. The text above it says how far the cycle is behind or ahead of the ideal line today. Tests planned later appear from the day they were added;
+- the **workload per tester**: planned, executed (by result) and open tests per tester, with estimated time, time left and actual time.
+
+## Recurring cycles
+
+On the **Recurring** tab of the cycle list, a **recurring cycle** creates a new cycle on a schedule — daily, weekly on a weekday or monthly on a day, at a time in a time zone, like [scheduled report e-mails](#reports-and-export). Each new cycle gets:
+
+- its **name** from a pattern: `{date}` becomes the start date and `{n}` the number of the cycle, for example *Nightly regression {date}*;
+- the fields, plan, testers and estimates of a **template cycle**, and/or the tests matching a **query**;
+- today as its start date and the **duration** you set;
+- with **Start each new cycle at once**, its run straight away.
+
+The cycles are created as the recurring cycle's **owner**, who must still be allowed to plan cycles in the project. **Create the next cycle now** (the play button) creates one immediately. A recurring cycle whose last run failed shows the error.
+
+## Timeline
+
+The **Timeline** tab shows the cycles with dates as bars on a common time axis, coloured by status.
+
+## Filtering cycles
+
+The filter field of the cycle list takes the [query language](#search-and-filters) with these fields:
+
+| Field | Matches |
+|---|---|
+| `name`, `goal`, `description`, `environment` | text of the cycle |
+| `status` | `planned`, `active`, `closed` |
+| `owner`, `assignee` | the owner, any tester (e-mail or name) |
+| `release`, `variant`, `build`, `configuration` | what the cycle tests |
+| `start`, `end` | the dates, e.g. `start>=2027-03-01` |
+| `planned`, `executed`, `passed`, `failed`, `blocked`, `unassigned` | counts, e.g. `failed>0` |
+| `progress` | percent executed, e.g. `progress<50` |
+| `test` | a planned test's key |
+
+In the test list, `cycle:"Sprint 14"` finds the tests planned in a cycle; in the run list, `cycle:` finds the runs of a cycle.
+
+## Releases and reports
+
+A release can wait for a cycle: the exit criterion **Test cycle executed** (see [exit criteria](#exit-criteria)) is met when at least the threshold — 100 % by default — of the cycle's planned tests have a result.
+
+The **Test cycle report** on the [Reports](#reports-and-export) page shows one cycle's key figures, the workload per tester, the burndown and the whole plan with results, in PDF, Word, Excel, CSV or Markdown.
+
+## History and audit
+
+The **History** tab lists the versions of the cycle — its fields and its plan — with who changed what. Creating, changing, planning and deleting cycles and recurring cycles are recorded in the audit log. Cycles and recurring cycles are part of project archives and backups; a loaded project's recurring cycles are switched off until someone enables them.
+
 # Releases and risks
 
 A **release** is a version of your product that you plan, test and ship, for example *Spring 2027* or *2.1.0*. It brings together the requirements it must deliver (its **scope**), the test runs that test it and the **exit criteria** that decide whether it may ship. The **risk register** lists what could go wrong, how likely and how bad it would be, and which requirements address each risk. Open risks feed straight into the exit criteria of a release.
@@ -1502,6 +1744,7 @@ The **Exit criteria** tab lists the conditions the release must meet. Select **A
 | Traceability rules | no requirement in scope and no test linked to one breaks an enabled [traceability rule](#traceability-rules) of the chosen severity; the status tab lists the items with the rules they break | errors only, or errors and warnings |
 | No blocking defects | no requirement in scope is [blocked by an open defect](#blocking-defects) under the project's severity rules; a stale pass does not count for **Passed** and **Mandatory passed** | — |
 | Residual risk | no risk linked to the scope that is not closed has a [residual level](#residual-risk) above the threshold, unless its acceptance is signed | the project's risk acceptance threshold, or a level |
+| Test cycle executed | at least the threshold of the planned tests of the chosen [test cycle](#test-cycles) have a result in the cycle's runs; 100 % means the cycle is fully executed | threshold in % and the test cycle |
 
 A release without exit criteria is always a go.
 
@@ -1514,6 +1757,8 @@ The **Status** tab evaluates the exit criteria now. It shows **Go** when every c
 Each criterion shows whether it is met, the actual value next to the target (for example *80 % (target ≥ 95 %)*), and the items that block it: requirements without tests, failed tests, open defects or risks that still need action. Every item is a link that opens it.
 
 The badge in the release list is the same evaluation, so you can see at a glance which releases are ready.
+
+In a project with [variants](#variants-and-code), a release can target variants: the exit criteria are then evaluated for each of them, the **Status** tab shows a matrix of criteria × variants, and the release is a go only when every targeted variant is (see [release gates per variant](#release-gates-per-variant)).
 
 A percentage criterion with nothing to measure is **not met**: a release without requirements in its scope, or without executions for *executed*, shows *Nothing to measure yet* and is a no-go. A release without any exit criteria is always a go.
 
@@ -1540,7 +1785,7 @@ Every release is checked before any is changed. Changes of status (other than *R
 
 ## The risk register
 
-**Risks** lists the risks of the project. Every risk has a key such as *SHOP-RISK-3*, a title, a category, an owner, a **likelihood** and an **impact** from 1 to 5, a status and a **mitigation**: what you do to make it less likely or less harmful.
+**Risks** lists the risks of the project. Every risk has a key such as *SHOP-RISK-3*, a title, a category, an owner (a project member — type `@` to pick one — or a plain name), a **likelihood** and an **impact** from 1 to 5, a status and a **mitigation**: what you do to make it less likely or less harmful.
 
 | Likelihood | | Impact | |
 |---|---|---|---|
@@ -1552,9 +1797,9 @@ Every release is checked before any is changed. Changes of status (other than *R
 
 The register shows the score and level of each risk, its status, owner, the requirements that address it, and how many of them are **covered** (have tests) and **verified** (all their tests passed). Filter it by text, level or status. Closed risks are hidden unless you select **Include closed risks** or filter on the status *Closed*.
 
-To add a risk, select **New risk**. Choose the likelihood and impact (the dialog shows the score and level as you go), describe the mitigation and select **Link requirements** to choose the requirements that address the risk. Select a risk in the register to change it.
+To add a risk, select **New risk**. Choose the likelihood and impact (the dialog shows the score and level as you go), describe the mitigation and select **Link requirements** to choose the requirements that address the risk. Select a risk in the register to change it. You can also start from the typical risks of the [catalogue](#risks-in-the-catalogue): they come with a suggested mitigation and the requirements that mitigate them, already linked.
 
-The requirement editor shows the risks a requirement addresses under **Risks**, and the requirement list has optional **Risk** and **Open defects** columns (see **Columns**).
+The requirement editor shows the risks a requirement mitigates under **Mitigates risks**. Select **Link a risk** to choose a risk of the project that the requirement mitigates, or the **×** on a risk to remove the link; the risk's requirements change with it. The requirement list has optional **Risk** and **Open defects** columns (see **Columns**).
 
 ### Change many risks at once
 
@@ -1565,6 +1810,8 @@ Tick risks in the register. The toolbar sets **status**, **likelihood** or **imp
 The heat map counts the risks in a 5 × 5 grid: likelihood from 5 at the top to 1 at the bottom, impact from 1 on the left to 5 on the right. The colour of a cell is the level of its score. Select a cell to show only the risks with that likelihood and impact in the register; select it again, or the **×** on the filter chip, to show all.
 
 Next to the heat map, **Open risks by level** counts the risks that are not closed, per level; select a level to filter the register.
+
+When the project has risks from the catalogue, **Catalogue area** above the heat map shows only the risks of one area (for example *Authentication* or *Fire safety*), or those not from the catalogue. The heat map, the level counts and the register follow the choice, and the area is part of the page address. The risk list of the API takes the same choice as the query fields `catalog_area` (alias `area`) and `catalog`, for example `area:authentication` or `catalog:AUTH-R01`.
 
 ## Risk levels
 
@@ -1641,6 +1888,8 @@ While a waiver is approved and its expiry date has not passed, it is **in force*
 
 A requirement shows its waivers below its risks in the requirement editor.
 
+In a project with [variants](#variants-and-code), a waiver can be limited to variants with **Only for variants**. In a release that targets variants it then accepts its requirements only in those variants and the variants below them; a release evaluated without variants counts only waivers for every variant (see [release gates per variant](#release-gates-per-variant)).
+
 ### Expiry and revocation
 
 The day after its expiry date, an approved waiver becomes **expired**: its requirements are no longer accepted, and the requester and approvers are notified. An approver can also **Revoke** an approved waiver at any time, with a reason. An approved waiver cannot be edited or deleted; revoke it and request a new one instead. Every step is recorded in the audit log.
@@ -1683,7 +1932,7 @@ The table works like the [spreadsheet view](#requirements): type in the **Applic
 
 A **defect** (bug) is a problem found while testing. Every defect has a key such as `SHOP-BUG-3`, a title, a description, a status, a severity, a priority and an assignee, and it is linked to the requirements, tests and executions it concerns. Defects are under **Defects** in the project sidebar.
 
-Defects can be mirrored in **Jira**, **GitHub Issues** or **GitLab**: Qtestframe creates the issue for you and reads its status back, so the developers work in their tracker while the test team sees the state of each defect next to its tests.
+Defects can be mirrored in **Jira**, **GitHub Issues**, **GitLab** or **Request Tracker (RT)**: Qtestframe creates the issue for you and reads its status back, so the developers work in their tracker while the test team sees the state of each defect next to its tests.
 
 | Action | Role needed |
 |---|---|
@@ -1793,6 +2042,17 @@ The account needs permission to browse the project and to create issues in it.
 
 The status of a GitLab issue is *opened* or *closed*; see the table under [Push, sync and import](#push-sync-and-import).
 
+### Request Tracker (RT)
+
+Qtestframe works with RT 5 through its REST2 API.
+
+- **RT address**: the address of the RT instance, e.g. `https://rt.example.com` (without `/REST/2.0`).
+- **Queue**: the queue new tickets go to, by name (e.g. `General`) or number.
+- **Custom field for labels** (optional): RT has no labels. If the queue has a custom field for them, for example a multi-value field *Tags*, give its name: the labels of new tickets (the **Labels** field and the labels of [issues from requirements](#issues-in-gitlab-github-or-jira)) are written to it. Empty sends no labels.
+- **Token**: an authentication token of the RT user Qtestframe acts as. Sign in to RT as that user, open **Logged in as → Settings → Auth Tokens**, create a token and paste it. The user needs the rights *CreateTicket*, *ShowTicket*, *ModifyTicket* and *CommentOnTicket* in the queue. Qtestframe sends it as `Authorization: token …`.
+
+A ticket is referred to by its number: `#123` (also `123` or `RT#123`). The description of a ticket is its first message, which RT does not let anyone replace: **Update issue** on a requirement therefore changes the subject and adds the new text as a comment. Tickets are created and commented as plain text.
+
 ### The token
 
 The token is **write-only**: once saved it is never shown or sent back to the browser, the card only says **Token saved**. To keep it, leave the field empty when you change other settings. To replace it, type a new one and save. **Remove token** deletes it. Setting the tracker to **None** removes the whole connection.
@@ -1804,14 +2064,16 @@ With a tracker connected, the defect list has three more actions:
 - **Push to tracker** (the upload button of a defect) creates an issue from the defect: the title with the defect key, the description, the severity and priority, and the keys of the linked items. The defect then shows the issue key, a link to it and its status in the tracker. A defect that already has an issue cannot be pushed again.
 - **Sync** (the sync button of a defect) reads the issue's status and updates the defect's status; **Sync all** does this for every defect with an issue in the connected tracker and reports how many changed. Statuses are mapped as follows:
 
-  | Jira | GitHub | GitLab | Defect status |
-  |---|---|---|---|
-  | status category *To Do* | open | opened | Open |
-  | status category *In Progress* | | | In progress |
-  | *Done* | closed (completed) | closed | Closed |
-  | *Done* with resolution *Won't Do*, *Duplicate* or similar | closed (not planned) | | Rejected |
+  | Jira | GitHub | GitLab | RT | Defect status |
+  |---|---|---|---|---|
+  | status category *To Do* | open | opened | new | Open |
+  | status category *In Progress* | | | open, stalled | In progress |
+  | *Done* | closed (completed) | closed | resolved | Closed |
+  | *Done* with resolution *Won't Do*, *Duplicate* or similar | closed (not planned) | | rejected, deleted | Rejected |
 
-- **Import issue** creates a defect from an issue that already exists in the tracker: enter its key (`SHOP-123` in Jira, `#123` or `owner/repo#123` in GitHub, `#123` or `group/project#123` in GitLab) and the severity. Title and status come from the issue.
+  Statuses of a custom RT lifecycle that are not in the table leave the defect's status as it is; the RT status is still shown.
+
+- **Import issue** creates a defect from an issue that already exists in the tracker: enter its key (`SHOP-123` in Jira, `#123` or `owner/repo#123` in GitHub, `#123` or `group/project#123` in GitLab, `#123` in RT) and the severity. Title and status come from the issue.
 
 Sync reads only; it never changes the issue. Changes you make to a defect in Qtestframe are not written to the tracker.
 
@@ -1839,7 +2101,26 @@ Resolve or close the defects (in Qtestframe or in the tracker followed by **Sync
 
 # Reviews and notifications
 
-Qtestframe tells you when something needs your attention, lets you ask colleagues to review a requirement or a test, and records electronic sign-offs of baselines. Webhooks send the same events to other systems.
+Qtestframe tells you when something needs your attention, lets you ask colleagues to review a requirement or a test, and records electronic sign-offs of baselines. Webhooks and chat channels send the same events to other systems and to Slack, Teams and other chat tools.
+
+## My work
+
+**My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see. The badge next to it shows how many items are waiting; it turns red when some of them are overdue. Each row links to the item and says why it is there:
+
+| Reason | The item is listed because |
+|---|---|
+| **Owner** | you own a requirement in draft, review, approved or implemented, a test in draft or review, or an open risk (identified or mitigating) |
+| **Assigned** | an open defect or a test execution that has not been run yet (in a planned or running run) is assigned to you |
+| **Review requested** | someone asked you to review a requirement or a test |
+| **Approval** | a requested waiver or deviation waits for your signature: you are one of its approvers, or it names none and you may approve waivers. Your own requests are not listed. |
+| **Risk acceptance** | a mitigated or accepted risk is above the project's acceptance threshold and has no valid acceptance signature, and you may sign it |
+| **Risk review** | you own the next review of a risk and it is due within a week |
+| **Overdue** | its due date has passed: a review request's due date or a risk's review date |
+| **Suspect**, **Stale results**, **Blocked** | a requirement or test you own became suspect (something linked or related changed), has stale test results, or is blocked by an open defect — also when it is otherwise finished |
+
+Overdue items come first, then by due date, then the most recently changed. Choose a project to see only its items, or a reason to see only those rows. The project dashboard shows the same list for the project in the **My work** widget, with the number of items per reason; select a reason to open the filtered list.
+
+The work list is computed when you open it; finishing the work (approving the review, closing the defect, running the test, changing the status) removes the row.
 
 ## Notifications
 
@@ -1847,8 +2128,9 @@ The bell in the top bar shows how many notifications you have not read. Open it 
 
 You get a notification when someone else:
 
-- assigns a requirement (owner), an execution or a defect to you,
+- makes you the owner of a requirement, a test or a risk (also in a bulk change), or assigns an execution or a defect to you,
 - mentions you with `@handle` in a description, a comment or execution notes,
+- replies in or resolves a [discussion](#discussions) thread you wrote in, or starts a thread on an item you own or a review you take part in,
 - asks you to review something, or finishes a review you asked for,
 - changes the status of a defect assigned to you.
 
@@ -1933,6 +2215,114 @@ Under **Categories & settings**, project administrators (permission to change th
 Deliveries are not retried and redirects are not followed.
 
 Tick webhooks in the list to **Turn on** or **Turn off** several at once, **Add events** or **Remove events** (each webhook must keep at least one event, otherwise nothing is changed), **Send test** to all of them (the result of each is listed), or **Delete** them. Changes other than deleting can be undone with the undo button.
+
+## Chat notifications
+
+Under **Categories & settings**, project administrators (permission to change the project) can post the project's events to a chat channel in **Slack**, **Microsoft Teams**, **Mattermost**, **Rocket.Chat**, **Google Chat**, **Matrix** or **Discord**. Choose **Add chat channel**, pick the chat tool and paste the webhook URL that the tool gives you (Matrix: the homeserver, the room and the access token of a bot user). Your administrator guide describes how to get the URL in each tool.
+
+Each message names the event, links the item's key and title to the item in Qtestframe, and shows its status (in words and in colour), its priority, who did it and a short summary, such as "9 passed, 2 failed" for a completed run or the start of a new defect's description. Messages are written in the language you choose for the channel (English or Swedish) and are kept within the length limits of each chat tool.
+
+For every channel you choose:
+
+- **Events**: **All events** (including events that later versions of Qtestframe add), or a selection, grouped into test runs, defects, requirements and tests, reviews, releases, waivers and risks.
+- **Filters**: **only failed** test runs and results; a **lowest priority** (for example *High*: only items of high or critical priority; defects use their priority or severity, risks their level; events without a priority, such as a completed run, still pass); a **release** (only the release itself, its runs and results and its waivers).
+- **Digest**: 0 posts each event at once. With, say, 60 minutes the events are collected and posted as one message every hour ("12 events in BANK …", with the first events listed and "… and 4 more").
+- **Active**: turn the channel off without losing its settings.
+
+The webhook URL and the token are secrets: they are stored encrypted and never shown again; the list only shows where the channel posts (for example `hooks.slack.com`). To change them, enter a new one; leave the field empty to keep the saved one.
+
+**Send test message** posts a test message at once, also to a channel that is turned off, and tells you whether it arrived. **Delivery log** lists the last 50 posts with their HTTP status and error. A post that fails is tried again after 1, 2, 4, 8 and 16 minutes (a URL or token the chat tool refuses is not tried again). After 5 failed posts in a row the channel turns itself off, the list shows why, and the project's administrators get a notification. Fix the URL, send a test message and turn the channel on again.
+
+In a **restricted** project, messages show only the event, the item key, the status and the link, so titles and descriptions do not end up in a chat that people outside the project can read. An organisation administrator can allow a channel to show the full content.
+
+# Discussions
+
+Every requirement, test, defect, risk, test run and review request has a **discussion**: threads of comments where you ask questions, agree on changes and mention colleagues. A thread stays open until someone resolves it, so open questions do not get lost.
+
+## Where to find a discussion
+
+- **Requirements and tests**: the **Discussion** tab of the editor. The number on the tab is the number of open (unresolved) threads.
+- **Test runs**: the **Discussion** tab of the run, next to the executions, files and links.
+- **Defects and risks**: below the form when you open a defect or a risk.
+- **Review requests**: in the review dialog, below the checklist and the review comment. The reviewer, the person who asked for the review and everyone who can read the reviewed item take part.
+- **All threads of a project**: the project's **Discussions** page (see [The Discussions page](#the-discussions-page)).
+
+## Write a comment
+
+Type in the field at the bottom and select **Start thread** (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Each new comment written there starts a thread. To answer in a thread, select **Reply** below it. Replies are one level deep: a reply to a reply goes to the same thread.
+
+Comments are written in **Markdown**:
+
+| You type | You get |
+|---|---|
+| `**bold**`, `*italic*`, `~~struck~~` | **bold**, *italic*, ~~struck~~ |
+| `` `code` `` and blocks between ```` ``` ```` lines | code |
+| lines starting with `-` or `1.` | lists |
+| `> text` | a quote |
+| `[text](https://example.com)` or a bare address | a link (opens in a new tab) |
+| `SHOP-REQ-12`, `SHOP-TC-3`, `SHOP-BUG-4` | a link to that item |
+
+HTML typed into a comment is shown as text, and images are not shown, so a comment cannot load anything from other sites.
+
+## Mention people
+
+Type `@` and a list of the project's people appears, as in the other text fields (see [Mention people](requirements.md#mention-people)). Use the arrow keys and <kbd>Enter</kbd> or <kbd>Tab</kbd> to insert someone. Mentioned members get a notification, and an e-mail if they chose to get notifications by e-mail (see [Notifications](reviews-and-notifications.md#notifications)). Nobody hears about a project they cannot see.
+
+Who else is told:
+
+- the people who wrote in a thread, about new replies and when the thread is resolved;
+- the owner of the item (a requirement's owner, a defect's assignee, a risk's owner, the reviewer and the requester of a review request), about a new thread.
+
+Everybody is told once per comment, and never about their own comments.
+
+## Edit, remove, react
+
+- **Edit** (pencil) changes your own comment; it is then marked *(edited)*. People you mention in the new text are notified.
+- **Delete** (bin) removes your own comment. It stays in its thread as *This comment was removed*, so the replies still make sense; its text is gone. A **moderator** (someone who may change the project's settings, `project.update`, or manage members) can remove anybody's comment; the audit log records it as moderated.
+- **Add reaction** (smiley) adds a thumbs up, thumbs down, heart, hooray, *looking* or *done*. Select a reaction under a comment to add or take back yours.
+
+## Resolve and reopen
+
+When a question is answered, select **Resolve** below the thread. Resolved threads are folded away: turn on **Show resolved** to see them, marked *Resolved* (point at the mark to see who resolved it and when). **Reopen** opens a thread again. Anybody who can write in the discussion can resolve and reopen threads.
+
+## The Discussions page
+
+The project's **Discussions** page lists the threads of all its items, the latest activity first: the item (with its kind), who started the thread and how, the number of replies and who wrote last. Select an item to open it with its discussion.
+
+Narrow the list with:
+
+- **Open**, **Resolved** or **All** threads;
+- **All threads**, **I took part** (threads you wrote in) or **Mention me**;
+- the kind of item (requirements, tests, defects, risks, test runs, review requests);
+- **Search the comments** for a word in any comment of the thread.
+
+The filters are part of the page address, so you can bookmark *Open threads that mention me*.
+
+## Find items with open discussions
+
+In the requirement and test lists, filter with:
+
+- `has:open-discussion`: items with at least one unresolved thread (`open_discussions>2` for more than two);
+- `mentions:me`: items that mention you, in their texts or in their discussion; `mention:anna.berg` for someone else.
+
+See [Search and filters](search-and-filters.md).
+
+## Permissions
+
+| To | You need |
+|---|---|
+| read a discussion | the read permission of the item (for example `requirement.read`, `run.read`) |
+| comment, reply, edit your comments, resolve, reopen and react | `comment.create` (every role except **Viewer** by default) |
+| remove your own comments | `comment.create` |
+| remove anybody's comment | `project.update` in the project, or `member.manage` |
+
+`comment.create` is a project permission: a project role can grant or withhold it in one project. Every comment, edit, removal, resolution and reopening is recorded in the audit log (`comment.create`, `comment.update`, `comment.delete`, `comment.resolve`, `comment.reopen`).
+
+## Discussions elsewhere
+
+- **Generated documents**: tick **Discussions of the items** under *Appendices* when you generate a requirements specification or a test plan to add an appendix with the threads of its requirements or tests (see [Create a requirements specification or a test plan](documents.md#create-a-requirements-specification-or-a-test-plan)).
+- **Saved projects, backups and the trash**: discussions are part of a saved project and of a backup, and a deleted requirement or test comes back from the trash with its discussion. Deleting a defect, a risk or a run deletes its discussion.
+- **Webhooks**: the events `comment.created`, `comment.mentioned` and `comment.resolved` send new comments, mentions and resolved threads to other systems.
 
 # Traceability and coverage
 
@@ -2028,13 +2418,15 @@ Besides the rules you write, Qtestframe has **built-in checks** with a fixed con
 | Test verifies an inactive requirement | a test verifies a rejected or obsolete requirement |
 | Broken test prerequisite | a prerequisite of a test is deleted, its latest result failed, or prerequisites form a cycle |
 | MUST requirement in a release without passing evidence | a MUST or SHALL requirement in a planned or active release has no linked test that is not suspect and passed its latest execution |
-| High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or none of its requirements is verified |
+| High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or not every one of its requirements is verified (a risk whose requirements are all verified counts as mitigated) |
 | Regulatory requirement rejected without justification | a requirement added from a regulation of the [catalogue](#catalogue) (a law or directive) is rejected, and it has no comment and no rationale of its own |
-| Suspected duplicate requirements | two active requirements have nearly identical title and description (similarity of at least 0.9 by default) and no *duplicates* relation |
+| Suspected duplicate requirements | two active requirements say the same thing: their title, description and criteria are similar (at least 0.68 by default, synonyms and word forms in English and Swedish included) and they have no *duplicates* relation. See [Duplicates and conflicts](#duplicates-and-conflicts) |
+| Potentially conflicting requirements | two active requirements likely contradict each other: the same statement with opposite obligations (MUST and MUST NOT), thresholds on the same quantity that cannot both hold (≤ 2 s and ≥ 5 s) or different values of a mutually exclusive set (enabled and disabled), with a confidence of at least 0.6 by default, and they have no *conflicts with* relation |
+| Suspected duplicate tests | two active tests say the same thing (title, description, preconditions and steps) and are not linked as duplicates |
 
-A project gets them with **Add built-in checks** (on the rules or in **Analytics**): they are added as rules with the severity *warning*, so they show up in the release exit criterion [Traceability rules](#exit-criteria) only when it counts warnings, or after you raise a check to *error*. A built-in check is marked **Built-in**; you can rename it, change its severity, turn it off, narrow it with a query and, for the duplicate check, set the **Similarity threshold** (0.5 to 1) or, for the risk check, the **Least risk level**.
+A project gets them with **Add built-in checks** (on the rules or in **Analytics**): they are added as rules with the severity *warning*, so they show up in the release exit criterion [Traceability rules](#exit-criteria) only when it counts warnings, or after you raise a check to *error*. A built-in check is marked **Built-in**; you can rename it, change its severity, turn it off, narrow it with a query and, for the duplicate checks, set the **Similarity threshold** (0.5 to 1), for the conflict check the **Least confidence** (0.5 to 1) or, for the risk check, the **Least risk level**.
 
-Each violation names the other items involved (the conflicting requirement and the release, the obsolete parent, the failing prerequisite …), each a link, and offers a fix where one is obvious: **Remove relation**, **Unlink**, **Remove prerequisite**, **Remove from** the release, **Set obsolete**, **Record a justification**, **Link a mitigation**, and for a suspected duplicate **Mark as duplicate** (adds the *duplicates* relation) or **Not a problem** (the pair is not reported again). **Not a problem** also acknowledges a dependency on a deleted item.
+Each violation names the other items involved (the conflicting requirement and the release, the obsolete parent, the failing prerequisite …), each a link, and offers a fix where one is obvious: **Remove relation**, **Unlink**, **Remove prerequisite**, **Remove from** the release, **Set obsolete**, **Record a justification**, **Link a mitigation**, for a suspected duplicate **Mark as duplicate** (adds the *duplicates* relation; for tests an item link labelled *duplicates*), for a potential conflict **Mark as conflicting** (adds the *conflicts with* relation), and **Not a problem** (the pair is not reported again). [Duplicates and conflicts](#duplicates-and-conflicts) shows the evidence and can also merge duplicates. **Not a problem** also acknowledges a dependency on a deleted item.
 
 ## Change impact
 
@@ -2048,9 +2440,33 @@ A change of a requirement rarely stays with that requirement. When the **substan
 
 A change of a test's title, description, preconditions, steps, expected result, script or execution type makes its links suspect and its latest result stale.
 
+### A change travels on
+
+What a change makes suspect can in turn change, so the impact travels on: when A changes, B (which refines A) becomes suspect, then C (which refines B), and so on, up to the project's **impact depth** (3 by default, at most 10; see [How far a change travels](#how-far-a-change-travels)). Every item is reached once, along the shortest way, even when the relations form a cycle, and the dialogs show the **path** to it: *A → refined by → B → refined by → C → verified by → T-12*.
+
+Besides the requirement relations and the tests, a change reaches, as **Review recommended**:
+
+- the **risks** a changed requirement addresses (and, from a risk, the other requirements that address it);
+- the **open defects** of an affected requirement or test;
+- requirements and tests connected by **item links**, and linked runs;
+- tests that **call** a changed test as shared steps or **depend** on it;
+- the **variants** an affected item applies to (when chosen explicitly) and the **code changes** (commits, merge requests) that refer to it.
+
+These are not marked; their owners can be notified. A test that changes affects the requirements it verifies, not what lies beyond them. A change of the **status** alone (for example in a bulk status change) only recommends reviews. Tracker issues, documents and results belong to the changed item itself.
+
 ### Before you save
 
-When you save a change of substance and something would be marked, a dialog lists everything that becomes suspect, out of date, outdated or stale. Select **Save and mark** to save, or **Cancel** to go back to the editor. Items that are already marked are shown as such and are not counted again.
+Every change goes through the same preview: saving a requirement or test, a **bulk edit** or **bulk status change** in the list, an **Excel** or **ReqIF** round-trip import, **restoring a version** from the history and **restoring items from a baseline**. When something would be affected, a dialog shows it as a tree grouped by type and depth, with the counts by type and by depth, and for each item whether it **Becomes suspect** or only **Review recommended**, and the path along which the change reaches it. Choose what to do:
+
+| Choice | What happens |
+|---|---|
+| **Mark suspect** (the default) | Marks what the project's rules mark suspect, flags the tracker issues out of date and notifies the owners of the items recommended for review |
+| **Notify owners only** | Marks nothing; the owners (requirement and risk owners, defect assignees, test authors) get one notification each, listing their affected items |
+| **Skip** | Marks nothing and notifies nobody. Results recorded before the change still go stale and documents still become outdated: those follow from the change itself |
+
+Select **Save** to save with your choice, or **Cancel** to change nothing. Items that are already marked are shown as such and are not counted again.
+
+Through the API, every changing endpoint takes `?dry_run=impact` (the change is made in a transaction, its impact returned and everything rolled back) and `?impact=suspect|notify|skip`.
 
 ### The Impact tab
 
@@ -2059,15 +2475,19 @@ The **Impact** tab of a requirement or test shows the same list at any time, und
 - **Blocking defects**: the open defects that block it or warn about it (see [Blocking defects](#blocking-defects));
 - **Suspect now**: its suspect relations, with **Confirm** for each (and **Confirm all**), and the linked tests whose result is stale.
 
-The badges next to the requirement's key (**Blocked by 1 defect**, **1 stale result**, **1 suspect relation**) open the tab. For a test, the tab also shows its **Regression history** (see [Defects](#regressions)).
+The badges next to the requirement's key (**Blocked by 1 defect**, **1 stale result**, **1 suspect relation**) open the tab. For a test, the tab also shows its **Regression history** (see [Defects](#regressions)). **Impact analysis** opens the item in the [impact analysis](#impact-analysis).
 
 ### The impact of a baseline
 
 In **Baselines**, compare a baseline with the current state and select **Impact**. The dialog lists every requirement and test whose substance changed since the baseline, the largest impact first, with the totals of the items affected. Open an item to see what its change makes suspect, out of date, outdated or stale.
 
+### Impact analysis
+
+**Impact analysis** (in the project's sections) shows the impact of one or more items, or of everything that changed since a baseline, without changing anything. Select **Requirements** or **Tests** to pick items, or choose a baseline under **Changes since a baseline**, set the **Impact depth** and select **Analyse**. The result shows the counts by type and depth and either a **Graph** (the changed items on the left, every affected item to the right of the item it is reached from; dashed: review recommended) or a **Table** with the type, depth, effect, owner and path of every item. **CSV** and **PDF** export the analysis. The address of the page keeps the choice, so you can send an analysis as a link.
+
 ### Along which relations
 
-**Categories & settings → Change impact** decides, per relation type, which requirement becomes suspect when the one at the other end changes:
+**Categories & settings → Change impact** decides, per relation type, which requirement becomes suspect when the one at the other end changes, and whether it becomes **suspect** or only gets a **review recommended**:
 
 | Setting | Meaning |
 |---|---|
@@ -2076,7 +2496,15 @@ In **Baselines**, compare a baseline with the current state and select **Impact*
 | **Both directions** | either end changing makes the other suspect |
 | **Off** | changes do not travel along this type (the default for the other types) |
 
+The mode next to each type (**Becomes suspect** or **Review recommended**) applies to everything reached through it: an item is suspect only when every step on its path marks suspect.
+
 **Mark the tracker issues of a changed requirement out of date** can be turned off.
+
+### How far a change travels
+
+**Impact depth** (1 to 10, default 3) is the number of steps between requirements, tests and risks a change travels. Depth 1 is the direct impact only: the requirements related to the changed one and the tests of both. The verifying tests of an affected requirement and the defects, variants and code changes of an affected item do not count as a step.
+
+**Other connections** turns the other kinds of connection on or off: trace links (they can mark suspect or only recommend a review), shared steps, test dependencies, item links, risks, defects, variants and code changes (these only recommend a review).
 
 ## Stale results
 
@@ -2155,7 +2583,7 @@ Open a requirement and choose the **Verification** tab. It shows the state with 
 
 A test linked to a requirement can be mapped to the criteria it verifies. In the **Verification** tab choose **Map criteria** next to the test, tick the criteria and, if you want, the **step** of the test that shows it. A criterion mapped to a step is passed when that step passed in the test's latest execution. When you link a test you can also choose a criterion right away (the selector next to **Link tests**).
 
-A link **without** criteria counts for the whole requirement, as before: for every criterion that has no evidence of its own. A project that wants every criterion to have its own evidence turns on **strict criterion coverage** under **Settings → Project → Verification**. A failing test always fails the requirement, mapped or not.
+A link **without** criteria counts for the whole requirement, as before: for every criterion that has no evidence of its own. A project that wants every criterion to have its own evidence turns on **strict criterion coverage** under **Settings → Project → Verification**. A failing test always fails the requirement, mapped or not. There, too, a project can let debriefed [exploratory sessions](#sessions-as-verification-evidence) count as evidence for the requirements in their scope (off by default).
 
 ### Verification records
 
@@ -2307,6 +2735,87 @@ For each source:
 
 The standard report **Compliance** (see [Reports and export](#reports-and-export)) contains the same figures, per source and clause, with the gaps. The analysis helps you plan and follow up; it is not a legal assessment.
 
+# Duplicates and conflicts
+
+Large requirement sets collect the same requirement twice (written by two people, imported from a customer document and from the [catalogue](#catalogue)) and requirements that contradict each other (*passwords at least 12 characters* and *at most 8*). Qtestframe looks for both: while you write, in the [built-in consistency checks](#built-in-consistency-checks) and on the **Duplicates & conflicts** page, where you decide what to do about each pair.
+
+Everything is computed on the Qtestframe server. No text leaves it unless an administrator has turned on an [embeddings service](#embeddings-service).
+
+## Similar requirements while writing
+
+When you create or edit a requirement, **Similar requirements** below the description shows the five most similar requirements of the project, each with its similarity in percent, a moment after you stop typing. A similarity at or above the project's duplicate threshold (68 % by default) is highlighted: the requirement probably exists already. Open it in a new tab, or keep writing if yours says something else.
+
+The test editor has the same panel, **Similar tests**, which compares the title, description, preconditions and steps.
+
+Rejected and obsolete requirements and deprecated tests are not compared. The panel only appears for people who may change the item.
+
+## How similarity is measured
+
+Two requirements are similar when they use the same important words, not when they look alike letter by letter:
+
+- **Normalisation and word forms.** Texts are compared in lower case without punctuation; words are reduced to their stem in English and Swedish (*users*, *user* → *user*; *användaren*, *användarna* → *använd*), so inflections do not matter.
+- **Stop words.** Words without meaning of their own (*the*, *shall*, *och*, *ska* …) are ignored. The obligation keywords are compared by the conflict detection instead.
+- **Synonyms and abbreviations** of the domain count as the same word, also across the two languages: *log in*, *sign in*, *logga in* and *inloggning*; *user*, *end user*, *användare* and *brukare*; *e-mail*, *e-post* and *mejl*; *2FA*, *two-factor* and *tvåfaktorsautentisering*; *delete*, *remove*, *radera* and *ta bort*, and more.
+- **Compounds.** Swedish compounds are split when a part is a known word (*användarkonto* = *användare* + *konto*), and pieces of four letters make *lösenordsbyte* and *byte av lösenord* similar.
+- **Rare words count more.** A word that appears in a few requirements of the project says more than one that appears in most of them (TF-IDF over the project).
+- **Field weights.** The title counts most, then the description, then the acceptance criteria (for tests: preconditions, steps and expected results).
+
+The result is a similarity from 0 to 1 (shown as a percentage). Texts that are the same apart from case and punctuation are 100 %.
+
+## Potential conflicts
+
+Two requirements **potentially conflict** when they talk about the same thing (they share enough of their important words) and:
+
+| Kind | Example |
+|---|---|
+| **Opposite obligation** | *The user MUST be able to export reports as PDF.* and *The user MUST NOT be able to export reports as PDF.* (also *SKA* and *FÅR INTE*, *must* and *must never*) |
+| **Thresholds** that cannot both hold | *respond within 2 seconds* and *respond in no less than 5 s*; *at least 12 characters* and *at most 8 characters*; *minst 12 tecken* and *högst 8 tecken*. Units are converted (2000 ms = 2 s, 15 minuters = 900 s), and a negative obligation turns the comparison round (*must not exceed 2 s* = at most 2 s) |
+| **Exclusive values** | *enabled* and *disabled* by default, *mandatory* and *optional*, *encrypted* and *unencrypted*, *public* and *private*, *automatic* and *manual*, *aktiverad* and *avstängd* … |
+
+Each conflict has a **confidence** from 0 to 1, higher when the two statements share more of their content. The obligation keywords are recognised as in the [language analysis](#requirements) (English and Swedish). A pair that conflicts is not also reported as a duplicate.
+
+## The Duplicates & conflicts page
+
+Open **Duplicates & conflicts** in the project sidebar. Choose **Requirements** or **Tests** at the top.
+
+- **Potential conflicts** (requirements) shows each pair with its kind, confidence and the decisive terms, and the sentence of each requirement with the **evidence highlighted**: the keywords, the thresholds or the exclusive values.
+- **Suspected duplicate requirements** (or tests) shows each pair with its similarity and the number of trace links of each item.
+
+**Similarity from** and **Conflict confidence from** change what is listed; they start at the project's thresholds (the built-in checks). **Show dismissed** lists the pairs you dismissed too, so you can show them again.
+
+For each pair you can:
+
+| Action | What happens |
+|---|---|
+| **A duplicates B** | adds the relation *A duplicates B* (for tests: an item link labelled *duplicates*). The pair is no longer suspected. |
+| **Merge…** | choose the item to **keep**; the other one is merged into it: its trace links, relations (tests: prerequisites) and item links move to the item you keep, it gets the status *Obsolete* (tests: *Deprecated*) and is marked as a duplicate of the kept item. Both get a comment that records the merge, and the status change appears in the history. Links the kept item already has are not doubled. |
+| **Mark as conflicting** | adds the relation *conflicts with*. From then on the check [Conflicting requirements in a release](#built-in-consistency-checks) watches the pair. |
+| **Not a duplicate** / **Not a conflict** | dismisses the finding: the pair is not shown again by the page or the built-in checks (it is remembered per pair and check, also in backups and project archives). **Show again** undoes it. |
+
+Marking and merging need permission to change requirements (`requirement.write`) or tests (`test.write`). Everyone who can read the items can open the page.
+
+## Built-in checks
+
+The page uses the same detection as three [built-in consistency checks](#built-in-consistency-checks): **Suspected duplicate requirements**, **Potentially conflicting requirements** and **Suspected duplicate tests**. A violation is reported on the newer item of the pair; its fixes are **Mark as duplicate**, **Mark as conflicting** and **Not a problem**.
+
+## Thresholds
+
+| Setting | Default | Where |
+|---|---|---|
+| Similarity of a suspected duplicate | 0.68 | the rule of the check (**Similarity threshold**, 0.5 to 1) |
+| Confidence of a potential conflict | 0.6 | the rule of the conflict check (**Least confidence**, 0.5 to 1) |
+| Least similarity shown while writing | 0.25 | fixed |
+
+The defaults were chosen on a labelled set of English and Swedish requirements (paraphrased duplicates, contradictions of each kind, and related requirements that are neither, such as *lock the account* and *unlock an account*): with them every labelled duplicate and conflict is found and no unrelated pair is reported. Raise the duplicate threshold to about 0.8 when the check reports requirements that only share a topic; lower it towards 0.6 to find paraphrases with fewer common words. Similarity depends on the project: a word that is rare in a small project counts more than in a large one.
+
+## Importing from the catalogue
+
+Before you add requirements from the [catalogue](#catalogue), the dialog warns about the chosen requirements that are similar to requirements the project already has and can leave them out. After adding, the result says how many new requirements are similar to existing ones.
+
+## Embeddings service
+
+An administrator can let an external **embeddings service** (an OpenAI-compatible `/v1/embeddings` endpoint) compute the similarity instead (**Administration → System settings → Similarity**; see the administrator guide). The page and the panel then say *Embeddings service*. The title, description and criteria or steps of requirements and tests are then **sent to that service**. Its vectors are cached per item version, so unchanged items are not sent again. The conflict detection always runs on the server. When the service fails, the local similarity is used.
+
 # Variants and code
 
 A product is often built in several **variants**: models, markets or customer configurations. Not every requirement applies to every variant, and a test run on one variant says nothing about another. Qtestframe keeps track of which requirements and tests apply to which variants and computes coverage per variant.
@@ -2337,15 +2846,22 @@ A requirement or test **applies** to all variants until you say otherwise. Open 
 
 To set the applicability of many items at once, select them in the list and choose **Applies to** in the toolbar.
 
+### History, undo and baselines
+
+A change of the applicability is part of the item's **History** (shown as *Applicability*, with the variants before and after) and of the audit log. **Undo** (Ctrl+Z) takes it back, also for a change of many items at once: each item gets what it had. Restoring an older version from the history restores the applicability of that version too.
+
+[Baselines](#baselines) record the applicability of every item. **Compare** lists *Applies to (variants)* among the changed fields when it differs, and **Restore** from a baseline gives the items the applicability they had, even when nothing else changed. Variants deleted since are left out. A deleted item keeps its applicability in the trash, and project archives and backups contain it.
+
 ### Show for a variant
 
-In the requirement and test lists, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
+In the requirement and test lists and on the **Traceability** page, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
 
 | Query | Finds |
 |---|---|
 | `variant:"EU model"` | items that apply to the variant *EU model* |
 | `applicability:selected` | items that apply only to some variants |
 | `applicability:all` | items that apply to all variants |
+| `variant:US` (runs) | runs for the variant *US* |
 
 ## Coverage per variant
 
@@ -2361,7 +2877,18 @@ The **Coverage matrix** tab shows every requirement against every variant, with 
 
 ### Releases and documents for a variant
 
-On the **Releases** page, choose a variant in **Readiness for variant** to evaluate the exit criteria for it: only the release's requirements that apply to the variant, the tests that apply and the results that count. Releasing a release still checks all variants.
+On the **Releases** page, choose a variant in **Readiness for variant** to evaluate the exit criteria for it: only the release's requirements that apply to the variant, the tests that apply and the results that count.
+
+### Release gates per variant
+
+A release can **target** one or more variants: edit the release and choose them in **Target variants**. The exit criteria are then evaluated for every targeted variant, with the rules of [coverage per variant](#coverage-per-variant):
+
+- only the release's requirements that apply to the variant, and only their linked tests that apply to it, count;
+- only results of the release's runs for the variant or a variant above it, and of **variant-neutral** runs, count, in the configurations the variant is tested in. A variant-neutral run counts for every targeted variant.
+
+The **Status** tab shows the matrix **Exit criteria per variant**: one row per criterion, one column per variant, each cell *Met*, *Waived* (met because waivers or signed risk acceptances accept what is missing) or *Not met*, and the go / no-go of each variant at the bottom. The release is a **go only when every targeted variant is a go**; marking it released needs that go or a release note for the override. In the list of criteria below the matrix, a criterion is met when it is met in every variant, and each blocking item names the variants it blocks in. The [release readiness report](#reports-and-export) contains the same matrix.
+
+A [waiver](#waivers-residual-risk-and-the-statement-of-applicability) can be limited to variants (**Only for variants**): it then accepts its requirements only in those variants and the variants below them. A release without target variants counts only waivers for every variant. A release that targets no variant, and a project without variants, are evaluated as before.
 
 When you [create a document](#documents-1), choose **For variant**: the requirements specification or test plan then contains only what applies to the variant, with its coverage and results, and names the variant on the title page.
 
@@ -2545,11 +3072,15 @@ Keywords and field names are case-insensitive. Values with spaces need quotes: `
 
 ### Requirements
 
-`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (the folder path, e.g. `Checkout / Payment`), `category` (`categories`, value names), `dimension` (`Dimension/Name`), `coverage`, `linked` (keys of linked tests), `related`, `parent`, `child` (keys of related, parent and child requirements), `comments`, `mention` (`mentions`: [@handles](#mention-people) in owner, title, description, rationale and source), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: description, method and threshold), `risk` (the highest level of the open [risks](#risk-levels) it addresses: `risk:high`), `defects` (number of open defects on it or its tests: `defects>0`), `catalog` (the [catalogue](#catalogue) entry it was copied from: `catalog:AUTH-01`, `has:catalog`), `verification` (`verified`: the [verification](#verification) state, `verification:failed`), `element` (`elements`: a [system element](#system-elements) it is allocated to, or one above it: `element:"Power unit"`), `variant` (`variants`: the [variants](#variants-and-code) it applies to: `variant:"EU model"`), `applicability` (`all` or `selected`).
+`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (the folder path, e.g. `Checkout / Payment`), `category` (`categories`, value names), `dimension` (`Dimension/Name`), `coverage`, `linked` (keys of linked tests), `related`, `parent`, `child` (keys of related, parent and child requirements), `comments`, `open_discussions` (`open-discussion`: unresolved threads, `has:open-discussion`), `mention` (`mentions`: [@handles](#mention-people) in owner, title, description, rationale and source, and the people mentioned in its discussion; `mentions:me` for yourself), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: description, method and threshold), `risk` (the highest level of the open [risks](#risk-levels) it addresses: `risk:high`), `defects` (number of open defects on it or its tests: `defects>0`), `catalog` (the [catalogue](#catalogue) entry it was copied from: `catalog:AUTH-01`, `has:catalog`), `verification` (`verified`: the [verification](#verification) state, `verification:failed`), `element` (`elements`: a [system element](#system-elements) it is allocated to, or one above it: `element:"Power unit"`), `variant` (`variants`: the [variants](#variants-and-code) it applies to: `variant:"EU model"`), `applicability` (`all` or `selected`).
 
 ### Tests
 
-`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `mention` (@handles in the texts and steps), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from), `variant` (`variants`: the variants it applies to), `applicability` (`all` or `selected`).
+`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `open_discussions` (`open-discussion`: unresolved threads, `has:open-discussion`), `mention` (@handles in the texts and steps, and the people mentioned in its discussion; `mentions:me` for yourself), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from), `variant` (`variants`: the variants it applies to), `applicability` (`all` or `selected`).
+
+### Owners and assignees
+
+`owner:me` finds the requirements, tests and risks you own, `assignee:me` the defects and executions assigned to you, `review_owner:me` the risks whose review you own — however you are named in the field, and only you (not every name containing *me*). `owner:anna@example.com` finds the items of one member; `-owner:me` or `owner!=me` the others.
 
 ### Runs and executions
 
@@ -2658,8 +3189,8 @@ Select **Export** in the project sidebar.
    | **XLSX** | An Excel workbook with a *Summary* sheet and one sheet per aspect; bold header row, frozen first row, auto-filter and sensible column widths. |
    | **CSV** | One `.csv` file for one aspect; a `.zip` with one CSV per aspect when you choose several. UTF-8, comma-separated. |
    | **Markdown** | One `.md` file with every aspect: a heading, the project, filter and time, and a table per aspect. Plain text that reads well in a wiki, a Git repository or any text editor; keys link to Qtestframe when the server address is configured. |
-   | **ReqIF** | The requirements as a ReqIF 1.2 file (`.reqif`) for requirements tools such as IBM DOORS, Polarion, Jama or ProR. See [ReqIF for requirements tools](#reqif-for-requirements-tools). |
-   | **ReqIF (with attachments)** | A `.reqifz` archive: the ReqIF file and the requirements' attachments and images. |
+   | **ReqIF** | The requirements as a ReqIF 1.2 file (`.reqif`) for requirements tools such as IBM DOORS, Polarion, Codebeamer, Jama or ProR, optionally with the test cases and their trace links, the verification records or as a baseline froze them. See [ReqIF for requirements tools](#reqif-for-requirements-tools). |
+   | **ReqIF (with attachments)** | A `.reqifz` archive: the ReqIF file and the attachments and images of the items. |
 
 2. Choose the **Aspects**:
 
@@ -2671,7 +3202,7 @@ Select **Export** in the project sidebar.
    | **Traceability matrix** | one row per requirement–test link with coverage and last result; requirements without links get one row |
    | **Runs & executions** | one row per execution with run, status, environment, build, result, executed by, duration and notes |
 
-   ReqIF contains requirements only, so the aspects are not used for it.
+   The aspects are not used for ReqIF; it has its own choices under **ReqIF content** (test cases, verification records, a baseline), see [Interoperability](#reqif-export).
 
 3. Optionally enter a **Filter**. It applies to requirements if it is a valid requirement query and to tests if it is a valid test query: `obligation=must` filters only requirements, `type=automated` only tests, `folder:Checkout` both.
 4. Select **Download**. The file is named after the project key and the time, for example `SHOP-20261119-143000.xlsx`.
@@ -2708,7 +3239,10 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 | **Compliance** | compliance with laws, standards and best practices: per source, per clause, the missing catalogue requirements and the requirements not fulfilled (see [Compliance with laws and standards](#compliance-with-laws-and-standards)) | optional laws, standards and best practices (default: those the project uses) |
 | **Statement of Applicability** | every control of a standard with applicability, justification, implementation, owner, requirements and evidence (see [Statement of Applicability](#statement-of-applicability)) | the standard (default: ISO/IEC 27001:2022 Annex A) |
 | **Release readiness** | one release: go / no-go, every exit criterion with what blocks it and what a [waiver](#waivers-and-deviations) or risk sign-off accepts, the waivers in force and the risks above the acceptance threshold | the release (default: the current one) |
+| **Test cycle report** | one [test cycle](#test-cycles): planned against executed, passed, failed and blocked tests, estimated against actual time, the workload per tester, the burndown and the plan with every result | the cycle (default: the current one) |
 | **Quality metrics** | requirements volatility, defect density, escaped defects, test effectiveness, result age, review turnaround, time to fix defects and requirement quality, with their trends (see [Quality metrics](#quality-metrics)) | optional history in days (30, 90, 180 or 365) and the days after which a result is stale |
+| **Exploratory session** | one [exploratory session](#exploratory-testing): charter and scope, session time, the debrief with coverage, time split and outcome, every note and the defects raised | the session (default: the newest debriefed one) |
+| **Exploratory testing** | every exploratory session: key figures, sessions and bugs per session hour by area and by tester, the average time split and every session with its outcome | – |
 
 **The risk report** contains:
 
@@ -2813,14 +3347,15 @@ The file contains the project data in plain form. Store it as carefully as the p
 
 ## Exchanging data with other tools
 
-Requirements often live in more than one place: a customer keeps them in IBM DOORS or Siemens Polarion, a colleague prefers to review them in Excel, and an ALM tool wants to link to them. Qtestframe exchanges data in four ways, all under **Import** on the requirements and tests pages and through the API:
+Requirements often live in more than one place: a customer keeps them in IBM DOORS or Siemens Polarion, a colleague prefers to review them in Excel, and an ALM tool wants to link to them. Qtestframe exchanges data in five ways, all under **Import** on the requirements and tests pages and through the API:
 
 | Way | Direction | Good for |
 |---|---|---|
 | [Excel round-trip](#edit-in-excel-and-import-back) | out and back in | editing many items at once in Excel, also offline |
 | [ReqIF import with updates](#reqif-from-doors-and-polarion) | in, again and again | a specification maintained in DOORS, DOORS Next or Polarion |
+| [Jira and Azure DevOps](#jira-and-azure-devops) | in, again and again | requirements kept as Jira issues or Azure DevOps work items |
 | [CSV and Excel exports of DOORS and Polarion](#csv-and-excel-from-doors-and-polarion) | in, once | a first import when ReqIF is not available |
-| [OSLC](#oslc-links-from-alm-tools) | read by other tools | links from IBM ELM, Polarion, Codebeamer and other OSLC clients |
+| [OSLC](#oslc-links-from-alm-tools) | live, both ways | links, selection and creation from IBM ELM, Polarion, Codebeamer and other OSLC clients |
 
 Every import shows a **preview** first and saves nothing until you select **Save**. The preview compares the file with the project, row by row:
 
@@ -2863,10 +3398,39 @@ ReqIF is the format IBM DOORS, DOORS Next, Siemens Polarion and most requirement
 What happens:
 
 - **Relations** between the imported requirements (DOORS link modules, Polarion link roles) become requirement relations. Their type is taken from the name: *refines*, *satisfies* and *has parent* become *refines*, *derived from* becomes *derived from*, *depends on* and *requires* become *depends on*, and so on; others become *relates to*.
-- **Formatted text** (XHTML) becomes plain text with its line breaks and lists.
+- **Formatted text** (XHTML) becomes Markdown with its paragraphs, lists, tables and emphasis; images and other files embedded in a `.reqifz` become attachments.
+- **Test cases, trace links and more.** The same import reads test cases (with their steps) and the trace links between tests and requirements, maps object and relation types of the other tool, and can make nested requirements *refine* their parent. See [Interoperability](#reqif-import).
 - **Importing again** updates the requirements created by earlier imports of the same document and adds new ones. A requirement edited in Qtestframe since the last import shows as a conflict when the document has other values. Relations that were removed in the other tool are removed here too; relations you made in Qtestframe stay. Requirements are never deleted by an import.
 - A requirement without a title in the document gets the first words of its text when it is created; later imports keep the title you gave it.
 - A ReqIF file **exported from the same project** (see [above](#reqif-for-requirements-tools)) is matched to its requirements, so you can send a specification to a supplier and import their edited version back with the same preview.
+
+### Jira and Azure DevOps
+
+When the requirements are kept as issues in **Jira** or as work items in **Azure DevOps** (user stories, requirements, features), **Import → From Jira** or **From Azure DevOps** brings them in, and brings them in again when they change there *(Manager)*. A manager sets up the connection once under **Categories & settings → Project → Import sources** (see below).
+
+1. Say **what to import**:
+   - **Jira**: a **JQL query**, for example `project = SHOP AND issuetype = Story ORDER BY key`. The dialog starts with the default query of the import source, or with the project of the issue tracker.
+   - **Azure DevOps**: an **Area path** (for example `Shop\Web`; work items below it are included) and the **Work item types** (for example `User Story, Requirement`), or a **WIQL query** of your own, which replaces both, e.g. `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.State] <> 'Removed'`.
+2. Choose the **Target folder** for new requirements and whether to **Import links between the items as relations**, then select **Preview**. At most 1,000 items are read at a time; narrow the query if the preview says there are more.
+3. Check the **fields**: every field of the tracker that has a value is listed with a sample and the requirement field it goes to. The usual ones are preset: *Summary* / *Title* → title, *Description* → description, *Priority* → priority, *Labels* / *Tags* → tags, *Status* / *State* → status, and a field named *Acceptance Criteria* → acceptance criteria (one criterion per line or list item). Choose a field for any other one, also a [custom field](#custom-fields) of the project, or *ignore*. The preview updates at once.
+4. Check the rows (new, changed, unchanged, conflicts) and the relations, clear the rows you do not want and select **Save**.
+
+What happens:
+
+- **Text**: Jira descriptions (wiki markup) and the HTML fields of Azure DevOps become Markdown: headings, lists, bold, links, tables and code are kept.
+- **Values**: priorities such as *Highest*, *High* … or Azure DevOps priorities 1 to 4 become *critical* … *low*. Statuses are matched by name (*To Do* and *New* → draft, *In Progress*, *Active* and *Approved* → approved, *Done*, *Resolved* and *Closed* → implemented, *Removed* → obsolete) and, in Jira, otherwise by the status category. A value without a match is left out with a note on the row; the requirement keeps its value.
+- **Re-import**: the key of every issue (`SHOP-12`) or the ID of every work item is kept with the requirement it became. Importing again **updates** that requirement instead of creating a second one, and shows a conflict when the requirement was also edited in Qtestframe. New requirements get *Jira SHOP-12* or *Azure DevOps 1234* as their source. Requirements are never deleted by an import, and existing requirements stay in their folder.
+- **Relations**: links between imported items become requirement relations: in Jira *blocks* (the blocked issue *depends on* the other), *duplicates*, *clones* (*derived from*), *relates to* and the parent of a sub-task or child issue (*refines*); in Azure DevOps *Parent* (*refines*), *Predecessor* (*depends on*), *Duplicate of* and *Related*. A link removed in the tracker removes the relation at the next import with relations. Links to items outside the query are left out.
+- Only reading is needed: the import never changes anything in Jira or Azure DevOps.
+
+#### Import sources
+
+**Categories & settings → Project → Import sources** *(Manager)* holds the connections:
+
+- **Jira**: without an address of its own the import uses the [issue tracker](#connect-jira-github-or-gitlab) when that is Jira. Give a **Jira site address**, **Jira account e-mail** and **Token** when the requirements live in another Jira. **Default query** is the JQL the dialog starts with.
+- **Azure DevOps**: the **Organization address** (`https://dev.azure.com/organization`, or the collection address of Azure DevOps Server), the **Project**, a **Personal access token** with the scope *Work Items (Read)*, and optionally the default **Area path** and **Work item types**.
+
+Tokens are write-only, as for the issue tracker. **Check connection** tries the saved connection.
 
 ### CSV and Excel from DOORS and Polarion
 
@@ -2874,7 +3438,7 @@ When only a CSV or Excel export is available, use **Import → From a file** and
 
 ### OSLC: links from ALM tools
 
-OSLC (Open Services for Lifecycle Collaboration) lets other tools find Qtestframe's requirements and test cases and link to them. Qtestframe is a read-only OSLC provider for Requirements Management 2.0 and Quality Management 2.0. Give the tool the address of the catalog, `<server address>/api/v1/oslc/catalog` (or the discovery document `/api/v1/oslc/rootservices`), and an [API token](#api-tokens). The tool then sees the projects you may read, can search requirements and test cases by key, title or change date, and shows them with their links (which tests verify a requirement, which requirements a test verifies, relations). Selection dialogs inside the other tool and creating items through OSLC are not supported. Your administrator can find the details in [Administration](#oslc).
+OSLC (Open Services for Lifecycle Collaboration) lets other tools find Qtestframe's requirements and test cases, link to them, and create and change them. Qtestframe is an OSLC provider for Requirements Management 2.1 and Quality Management 2.1, with selection and creation windows that other tools show to their users. See [Interoperability](#oslc); your administrator connects the tools (administrator guide, *Connecting other tools*).
 
 ## Which one to use?
 
@@ -2893,6 +3457,85 @@ OSLC (Open Services for Lifecycle Collaboration) lets other tools find Qtestfram
 | A recurring list with your own columns | A saved **custom report** |
 | The same report in people's inbox every week | A saved custom report under **Scheduled reports** |
 | Hand a whole project over, keep a copy or start from a template | **Save project** and **Load project** (see [above](#save-and-load-projects)) |
+
+# Interoperability: ReqIF and OSLC
+
+Qtestframe works together with requirements and ALM tools such as IBM DOORS and DOORS Next (IBM Engineering Lifecycle Management), Siemens Polarion, Codebeamer, Jama and ProR in two ways:
+
+- **ReqIF files** move whole specifications between tools: requirements, test cases, folders, relations, trace links and attachments. You export a file here and import it there, or the other way round, as often as you like.
+- **OSLC** connects the tools live: another tool finds Qtestframe's requirements and test cases, links its own items to them, and can create and change them without a file.
+
+This page explains both. For the Excel round-trip and the other export formats see [Reports and export](#exchanging-data-with-other-tools); your administrator connects the tools as described in the administrator guide (*Connecting other tools*).
+
+## ReqIF export
+
+**Export** (in the project) offers **ReqIF** and **ReqIF (with attachments)**. A ReqIF file always contains the requirements with their folders (as chapter headings), custom fields, acceptance criteria and relations. Under **ReqIF content** you add more:
+
+| Option | What it adds |
+|---|---|
+| **Test cases with their steps and trace links** | Every test case as an object of the type *Test case* (title, description, preconditions, the steps as a table, expected result, execution type, priority, status, estimate, tags, custom fields), the test folders as a second chapter tree, and a *Verifies* relation from each test to each requirement it verifies. |
+| **Verification records** | Inspections, analyses, demonstrations and reviews recorded for the requirements, each related to its requirement (*Verification record of*). They are for reading in the other tool; importing the file ignores them. |
+| **Version** | *Current state*, or one of the project's [baselines](#baselines): the requirements and tests exactly as the baseline froze them. The filter does not apply to a baseline; relations, links and records are those of today between its items. |
+
+The filter limits the requirements as for the other formats; with test cases, only the tests that verify an exported requirement are included. **ReqIF (with attachments)** is a `.reqifz` archive with the attachments and the images of descriptions as files.
+
+The file uses the ReqIF standard names (*ReqIF.Name*, *ReqIF.Text*, *ReqIF.ChapterName*, *ReqIF.ForeignID*) that DOORS, DOORS Next, Polarion and Codebeamer recognise, and value lists (enumerations) for obligation, type, priority, status and select custom fields. Every object keeps the same identifier in every export, so a tool that imported it before updates its copy.
+
+## ReqIF import
+
+**Import → ReqIF from DOORS or Polarion, with updates** (in the requirements or tests list) reads a `.reqif` or `.reqifz` file and shows what would change before anything is saved *(Manager)*.
+
+1. **Choose the file.** The preview shows the document's object types, attributes and relation types with what Qtestframe makes of them, and the changes.
+2. **Object types.** Each type of object in the document becomes **Requirement**, **Test case**, **Heading (folder)** or is ignored. Qtestframe's own *Test case* type and types with *test* in their name are guessed as test cases, everything else as requirements; choose differently for the types of the other tool (for example DOORS Next *Test Case* artifacts, Polarion *Test Case* work items or Codebeamer *Test Case* trackers). Importing test cases needs the permission to write tests.
+3. **Attributes.** For requirements and for test cases separately, each attribute is read into the field shown: built-in fields and your project's [custom fields](#custom-fields) (matched by their label; value lists match by option name). **Test steps** reads a table (action, data, expected result) or a list. **Heading (folder)** marks the chapter names, **ID in the other tool** is kept in the source of new requirements. Choose another field or *ignore*; the preview updates at once.
+4. **Relation types.** Each relation type becomes a relation type of Qtestframe (*refines*, *depends on* …), a **trace link** (a test verifies a requirement) or is ignored. A relation between a test case and a requirement is always a trace link, whichever direction it has.
+5. **Where the items go.** Choose the target folders for requirements and for test cases, and whether **headings become folders**. With **Requirements nested below a requirement refine it**, a requirement that sits below another requirement in the document's hierarchy (as in DOORS) gets a *refines* relation to it.
+6. **Check the changes** for requirements and for test cases (new, changed, unchanged, conflicts, errors, cell by cell), the relations and trace links to add or remove, and the embedded files, and choose **Save**. Everything is saved in one go, or nothing.
+
+What happens:
+
+- **Formatted text** (XHTML) becomes Markdown with its paragraphs, lists, tables, bold and italic text and links.
+- **Embedded files** of a `.reqifz` (images and other objects in the text, the *Attachments* of a Qtestframe export) become attachments of the item, and the text shows the image from the attachment. A file the item has already is not attached again.
+- **Importing the same document again** updates the requirements, test cases, relations and trace links it created and adds new ones. An item changed in Qtestframe since the last import shows as a conflict when the document has other values. Relations and trace links removed in the other tool are removed here as well; those you made in Qtestframe stay. An import never deletes items.
+- A test step that calls a test case which is new in the same import is imported as a plain step; import the document once more to make it a call.
+
+### Round trip
+
+A ReqIF file exported from Qtestframe with test cases can be imported into another project (or another Qtestframe) and holds the same items afterwards: requirements and test cases with their fields, custom fields (define the same custom fields in the target project first), criteria, steps, folders, relations, trace links and attachments. The original keys are kept as the ID in the other tool; the items get keys of the target project. Importing the file into the **same** project matches every item, so you can send a specification to a supplier and import their edited version back with the same preview.
+
+## OSLC
+
+OSLC (Open Services for Lifecycle Collaboration) is the standard ALM tools use to link items across tools. Qtestframe is an OSLC provider for **Requirements Management 2.1** (requirements) and **Quality Management 2.1** (test cases). Once your administrator has connected a tool, its users can:
+
+- **Pick** Qtestframe requirements or test cases in a small selection window inside their tool, search by text, and link to them: for example link a DOORS Next requirement to the Qtestframe test case that validates it, or a Polarion work item to the requirement it implements.
+- **Create** a requirement or test case in Qtestframe from their tool, in a short creation window, and link it in the same step.
+- **Read** the items with their properties and links (which tests verify a requirement, which requirements it refines, which work items implement it), search them, and follow the links to the Qtestframe page.
+- **Change and delete** items through OSLC, with the same rules as in Qtestframe: validation, review permissions, history and the audit log. When someone changed the item in the meantime, the tool is told to read it again instead of overwriting the other change.
+
+The selection and creation windows use your Qtestframe session in the browser. If you are not signed in, they offer a link to sign in in another tab; then choose **Try again**.
+
+**Links.** OSLC links map to Qtestframe's own links:
+
+| OSLC link | In Qtestframe |
+|---|---|
+| *validatedBy* (requirement), *validatesRequirement* (test case) | trace link: the test verifies the requirement |
+| *elaborates* / *elaboratedBy* | relation *refines* |
+| *constrainedBy* / *constrains* | relation *depends on* |
+| *satisfies* / *satisfiedBy* | relation *derived from* |
+| *relation* | relation *relates to* |
+| *implementedBy*, *trackedBy*, *affectedBy*, *testsChangeRequest* and links to items of the other tool | an [item link](#links-to-other-items) to the item's address, labelled with the link name |
+
+Each tool connects with an [API token](#api-tokens) of a person or a service account; the tool can do what the token's role allows and sees only the projects that person may see.
+
+## Which one to use?
+
+| You want to … | Use |
+|---|---|
+| Hand a whole specification to a supplier or customer, or take theirs | ReqIF export and import |
+| Keep a specification maintained in DOORS, DOORS Next, Polarion or Codebeamer up to date in Qtestframe | ReqIF import, again after every change there |
+| Copy a project with its tests to another Qtestframe | ReqIF with test cases (or [Save and load projects](#save-and-load-projects)) |
+| Freeze what was handed over | ReqIF export of a baseline |
+| Link items of an ALM tool to requirements and tests while you work | OSLC |
 
 # Documents
 
@@ -2944,7 +3587,7 @@ Qtestframe can write two complete documents for you and save them in the archive
    - **Filter**: a [query](#search-and-filters) on the requirements (specification) or the tests (test plan), for example `status:approved` or `folder:Checkout`.
    - **Include rejected and obsolete requirements** (and, for a test plan, deprecated tests). They are left out by default.
    - **Group the requirements by** folder, category (one dimension) or type (specification only; a test plan is always grouped by folder).
-   - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report.
+   - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report. **Discussions of the items** adds an appendix with the [discussion](#discussions) threads of the requirements or tests (removed comments are left out; resolved threads are marked).
 3. Select **Create**. A progress bar shows while the document is being written; a project with thousands of requirements takes a few seconds.
 
 The new document appears at the top of the archive, highlighted, with **Open** (PDF) and **Download**. It is a *document* with the tags `generated`, `requirements-specification` or `test-plan` and the version (for example `v2.0`); the earlier versions of the same kind make up its revision history. Obligation keywords in requirement texts (MUST, SHALL, SKA …) are printed in bold.
@@ -3010,11 +3653,11 @@ Every organisation starts with six built-in roles. By default each role in the t
 | Role | Can additionally (default) |
 |---|---|
 | **Viewer** | read all projects, requirements, tests, runs, documents and the member list; search; export and generate reports |
-| **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content |
+| **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content; write in [discussions](#discussions) (*comment.create*, as all roles below except Viewer) |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
-| **Test lead** | mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
+| **Test lead** | plan [test cycles](#test-cycles) (*cycle.plan*), mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
 | **Manager** | approve and reject requirements (*requirement.review*), write requirements and requirement folders, create and edit projects, all categories and the [traceability rules](#traceability-rules), create baselines |
-| **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, delete any comment |
+| **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, remove any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
 
 The default matrix of permissions:
@@ -3024,8 +3667,9 @@ The default matrix of permissions:
 | `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.review` | | ✔ | | ✔ | ✔ | ✔ |
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
+| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
-| `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
 | `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
 
@@ -3202,7 +3846,7 @@ Only members with the permission *script.execute* (by default **Test lead** and 
 
 ## Consistency checks
 
-Projects do not get the [built-in consistency checks](#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*) are part of backups and project archives.
+Projects do not get the [built-in consistency checks](#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*, *not a conflict*) are part of backups and project archives; the cached vectors of the optional embeddings service are not (see [Duplicates and conflicts](#duplicates-and-conflicts)).
 
 ## API tokens
 
@@ -3245,12 +3889,13 @@ How it works:
 
 ## OSLC
 
-Qtestframe serves a read-only OSLC provider (Requirements Management 2.0 and Quality Management 2.0) at `/api/v1/oslc/`, so that ALM tools such as IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion or Codebeamer can find requirements and test cases and link to them. It is always on; there is nothing to configure.
+Qtestframe serves an OSLC provider (Requirements Management 2.1 and Quality Management 2.1) at `/api/v1/oslc/`, so that ALM tools such as IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion or Codebeamer can find, link, create and change requirements and test cases. It is always on; what users can do with it is described in [Interoperability](#oslc).
 
-- **Addresses:** the catalog `/api/v1/oslc/catalog` (one service provider per project), the discovery document `/api/v1/oslc/rootservices` (public, contains no data). Set **Base URL** under [System settings](#system-settings) (`server.base_url`) so that the resource addresses are the ones clients can reach.
-- **Accounts:** clients sign in with an [API token](#api-tokens) as `Authorization: Bearer …`; clients that only offer user name and password can send the token as the password (any user name). Create the token for a person or service account with the **Viewer** role or higher. Project sharing applies: restricted projects are only listed for their members.
-- **Supported:** RDF/XML, Turtle and JSON-LD; requirements and test cases with title, description, dates, creator, tags, status, priority, verification links and relations; queries with `oslc.where` on identifier, title, created and modified, and paging.
-- **Not supported:** writing through OSLC (creation factories, updates), delegated selection and creation dialogs, previews, resource shapes, OAuth 1.0a, tracked resource sets and configuration management. For moving requirements in and out, use [ReqIF and the Excel round-trip](#exchanging-data-with-other-tools).
+- **Addresses:** the catalog `/api/v1/oslc/catalog` (one service provider per project), a catalog per project `/api/v1/oslc/projects/<id>/catalog`, the discovery document `/api/v1/oslc/rootservices` (public, contains no data). Set **Base URL** under [System settings](#system-settings) (`server.base_url`) so that the resource addresses are the ones clients can reach.
+- **Accounts:** clients sign in with an [API token](#api-tokens) as `Authorization: Bearer …`; clients that only offer user name and password can send the token as the password (any user name). Create the token for a person or service account whose role allows what the tool should do: **Viewer** to read and link from the other side, a role with write permissions to create and change items. Project sharing applies: restricted projects are only listed for their members.
+- **Supported:** RDF/XML, Turtle and JSON-LD in both directions; creation factories, updates with `If-Match` (a stale update is refused), deletion to the trash; queries with `oslc.where` on any property, `oslc.select`, `oslc.orderBy`, `oslc.searchTerms` and paging; link properties as trace links, relations and links to the other tool's items; delegated selection and creation dialogs; resource shapes.
+- **Dialogs in a frame:** the selection and creation dialogs open in a window of their own. For tools that show them inside their page, the server operator lists the tool's address in `server.frame_ancestors` (administrator guide, *Connecting other tools*).
+- **Not supported:** OAuth 1.0a (use API tokens), previews, tracked resource sets and configuration management.
 
 The API reference (`docs/api.md`, section *OSLC*) lists the properties and the query syntax.
 
@@ -3567,7 +4212,7 @@ It gets a **new key** in the target project (for example `SHOP-REQ-7` becomes `C
 
 ### Who can see my comments?
 
-Everyone who can read the item, which means every member of the organisation with access to the project, whatever their role. Comments are not visible to other organisations. You can edit and delete your own comments; admins can delete any comment. Comments are deleted together with their item.
+Everyone who can read the item, which means every member of the organisation with access to the project, whatever their role. Comments are not visible to other organisations. You can edit and remove your own comments; moderators (who may change the project's settings) can remove any comment, which then shows as removed. Comments are deleted together with their item. See [Discussions](#discussions).
 
 ### What does "auto-generated" mean on a test?
 
@@ -3762,44 +4407,44 @@ Regulated domains add their own requirement and verification rules. Qtestframe's
 
 ## Sources cited in the catalogue
 
-The [requirement catalogue](#catalogue) cites 370 laws, standards, best practices and guidelines. Each source has the number of catalogue requirements that cite it and of catalogue tests that cite it or verify such a requirement, the same numbers as when you choose sources to comply with in the catalogue. Where a source groups several documents, they are listed below it. This section is generated from the catalogue.
+The [requirement catalogue](#catalogue) cites 370 laws, standards, best practices and guidelines. Each source has the number of catalogue requirements that cite it and of catalogue tests that cite it or verify such a requirement and, where there are any, of catalogue risks that cite it, the same numbers as when you choose sources to comply with in the catalogue. Where a source groups several documents, they are listed below it. This section is generated from the catalogue.
 
 ### Laws and regulations
 
 #### Laws and regulations: International
 
-- [UN Regulation No. 155 – Cyber security and cyber security management system](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-155-cyber-security-and-cyber-security) (UN R155): 2 requirements, 2 tests
-- [UN Regulation No. 156 – Software update and software update management system](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-156-software-update-and-software-update) (UN R156): 4 requirements, 4 tests
+- [UN Regulation No. 155 – Cyber security and cyber security management system](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-155-cyber-security-and-cyber-security) (UN R155): 2 requirements, 2 tests, 1 risk
+- [UN Regulation No. 156 – Software update and software update management system](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-156-software-update-and-software-update) (UN R156): 4 requirements, 4 tests, 2 risks
 
 #### Laws and regulations: European Union
 
-- [Artificial Intelligence Act, Regulation (EU) 2024/1689](https://eur-lex.europa.eu/eli/reg/2024/1689/oj) (AI Act): 40 requirements, 29 tests
-- [Batteries Regulation (EU) 2023/1542](https://eur-lex.europa.eu/eli/reg/2023/1542/oj): 3 requirements, 3 tests
-- [CLP Regulation (EC) No 1272/2008 on classification, labelling and packaging](https://eur-lex.europa.eu/eli/reg/2008/1272/oj): 2 requirements, 2 tests
+- [Artificial Intelligence Act, Regulation (EU) 2024/1689](https://eur-lex.europa.eu/eli/reg/2024/1689/oj) (AI Act): 40 requirements, 29 tests, 7 risks
+- [Batteries Regulation (EU) 2023/1542](https://eur-lex.europa.eu/eli/reg/2023/1542/oj): 3 requirements, 3 tests, 1 risk
+- [CLP Regulation (EC) No 1272/2008 on classification, labelling and packaging](https://eur-lex.europa.eu/eli/reg/2008/1272/oj): 2 requirements, 2 tests, 1 risk
 - [Commission Regulation (EU) 2019/1782, ecodesign requirements for external power supplies](https://eur-lex.europa.eu/eli/reg/2019/1782/oj): 1 requirement, 1 test
 - [Commission Regulation (EU) 2023/826, ecodesign requirements for off mode, standby mode and networked standby](https://eur-lex.europa.eu/eli/reg/2023/826/oj): 1 requirement, 1 test
-- [Cyber Resilience Act, Regulation (EU) 2024/2847](https://eur-lex.europa.eu/eli/reg/2024/2847/oj) (CRA): 100 requirements, 95 tests
-- [Data Act, Regulation (EU) 2023/2854](https://eur-lex.europa.eu/eli/reg/2023/2854/oj): 9 requirements, 6 tests
+- [Cyber Resilience Act, Regulation (EU) 2024/2847](https://eur-lex.europa.eu/eli/reg/2024/2847/oj) (CRA): 100 requirements, 95 tests, 4 risks
+- [Data Act, Regulation (EU) 2023/2854](https://eur-lex.europa.eu/eli/reg/2023/2854/oj): 9 requirements, 6 tests, 1 risk
 - [Decision No 768/2008/EC on a common framework for the marketing of products](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32008D0768) (Decision 768/2008/EC): 4 requirements, 3 tests
 - [Digital Omnibus on AI, Regulation (EU) 2026/1744 amending the AI Act](https://eur-lex.europa.eu/eli/reg/2026/1744/oj): 5 requirements, 4 tests
-- [Digital Operational Resilience Act, Regulation (EU) 2022/2554](https://eur-lex.europa.eu/eli/reg/2022/2554/oj) (DORA): 50 requirements, 42 tests
+- [Digital Operational Resilience Act, Regulation (EU) 2022/2554](https://eur-lex.europa.eu/eli/reg/2022/2554/oj) (DORA): 50 requirements, 42 tests, 1 risk
 - [Digital Services Act, Regulation (EU) 2022/2065](https://eur-lex.europa.eu/eli/reg/2022/2065/oj) (DSA): 1 requirement, 1 test
 - [E-PRTR Regulation (EC) No 166/2006](https://eur-lex.europa.eu/eli/reg/2006/166/oj): 1 requirement, 1 test
-- [Ecodesign for Sustainable Products Regulation, Regulation (EU) 2024/1781](https://eur-lex.europa.eu/eli/reg/2024/1781/oj) (ESPR): 5 requirements, 4 tests
+- [Ecodesign for Sustainable Products Regulation, Regulation (EU) 2024/1781](https://eur-lex.europa.eu/eli/reg/2024/1781/oj) (ESPR): 5 requirements, 4 tests, 1 risk
 - [eIDAS Regulation (EU) No 910/2014](https://eur-lex.europa.eu/eli/reg/2014/910/oj): 7 requirements, 7 tests
 - [EU electricity network codes and guidelines (SO GL, EB GL, NC ER)](https://eur-lex.europa.eu/eli/reg/2017/1485/oj): 4 requirements, 4 tests
   - [Commission Regulation (EU) 2017/1485](https://eur-lex.europa.eu/eli/reg/2017/1485/oj) · [Commission Regulation (EU) 2017/2195](https://eur-lex.europa.eu/eli/reg/2017/2195/oj) · [Commission Regulation (EU) 2017/2196](https://eur-lex.europa.eu/eli/reg/2017/2196/oj)
 - [EU ETS Monitoring and Reporting Regulation (EU) 2018/2066](https://eur-lex.europa.eu/eli/reg_impl/2018/2066/oj): 1 requirement, 1 test
-- [General Data Protection Regulation (EU) 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj) (GDPR): 97 requirements, 95 tests
+- [General Data Protection Regulation (EU) 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj) (GDPR): 97 requirements, 95 tests, 16 risks
 - [Interoperable Europe Act, Regulation (EU) 2024/903](https://eur-lex.europa.eu/eli/reg/2024/903/oj): 1 requirement, 1 test
-- [Machinery Regulation (EU) 2023/1230](https://eur-lex.europa.eu/eli/reg/2023/1230/oj): 25 requirements, 21 tests
-- [Medical Device Regulation (EU) 2017/745](https://eur-lex.europa.eu/eli/reg/2017/745/oj) (MDR): 6 requirements, 6 tests
-- [Methane Emissions Regulation (EU) 2024/1787](https://eur-lex.europa.eu/eli/reg/2024/1787/oj): 3 requirements, 3 tests
+- [Machinery Regulation (EU) 2023/1230](https://eur-lex.europa.eu/eli/reg/2023/1230/oj): 25 requirements, 21 tests, 4 risks
+- [Medical Device Regulation (EU) 2017/745](https://eur-lex.europa.eu/eli/reg/2017/745/oj) (MDR): 6 requirements, 6 tests, 2 risks
+- [Methane Emissions Regulation (EU) 2024/1787](https://eur-lex.europa.eu/eli/reg/2024/1787/oj): 3 requirements, 3 tests, 1 risk
 - [Network Code on Cybersecurity, Delegated Regulation (EU) 2024/1366](https://eur-lex.europa.eu/eli/reg_del/2024/1366/oj) (NCCS): 2 requirements, 2 tests
 - [NIS2 Implementing Regulation (EU) 2024/2690](https://eur-lex.europa.eu/eli/reg_impl/2024/2690/oj) (NIS2 IR): 13 requirements, 15 tests
 - [Open Internet Regulation (EU) 2015/2120](https://eur-lex.europa.eu/eli/reg/2015/2120/oj): 1 requirement, 1 test
-- [REACH, Regulation (EC) No 1907/2006](https://eur-lex.europa.eu/eli/reg/2006/1907/oj): 3 requirements, 3 tests
-- [Regulation (EC) No 765/2008 on accreditation and CE marking](https://eur-lex.europa.eu/eli/reg/2008/765/oj): 1 requirement, 1 test
+- [REACH, Regulation (EC) No 1907/2006](https://eur-lex.europa.eu/eli/reg/2006/1907/oj): 3 requirements, 3 tests, 1 risk
+- [Regulation (EC) No 765/2008 on accreditation and CE marking](https://eur-lex.europa.eu/eli/reg/2008/765/oj): 1 requirement, 1 test, 1 risk
 - [REMIT, Regulation (EU) No 1227/2011 on wholesale energy market integrity](https://eur-lex.europa.eu/eli/reg/2011/1227/oj): 1 requirement, 1 test
 - [Single Digital Gateway Regulation (EU) 2018/1724](https://eur-lex.europa.eu/eli/reg/2018/1724/oj) (SDG): 5 requirements, 5 tests
 
@@ -3808,28 +4453,28 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 - [Act (2006:985) on energy performance certificates for buildings](https://lagen.nu/2006:985): 1 requirement, 1 test
 - [Act on flammable and explosive goods (Lag 2010:1011)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-20101011-om-brandfarliga-och-explosiva_sfs-2010-1011/): 1 requirement, 1 test
 - [Archives Act (Arkivlag 1990:782)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arkivlag-1990782_sfs-1990-782/): 2 requirements, 1 test
-- [Boverket's building regulations (BFS 2024:4–2024:13, BFS 2026:4 and 2026:9), which replaced BBR (BFS 2011:6) and EKS](https://www.boverket.se/sv/byggande/regler-for-byggande/om-boverkets-nya-byggregler/): 9 requirements, 6 tests
+- [Boverket's building regulations (BFS 2024:4–2024:13, BFS 2026:4 and 2026:9), which replaced BBR (BFS 2011:6) and EKS](https://www.boverket.se/sv/byggande/regler-for-byggande/om-boverkets-nya-byggregler/): 9 requirements, 6 tests, 3 risks
 - [Camera Surveillance Act (2018:1200)](https://lagen.nu/2018:1200): 1 requirement, 1 test
-- [Civil Protection Act (2003:778)](https://lagen.nu/2003:778) (LSO): 5 requirements, 5 tests
-- [Electrical Safety Act (Elsäkerhetslag 2016:732)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/elsakerhetslag-2016732_sfs-2016-732/): 2 requirements, 1 test
+- [Civil Protection Act (2003:778)](https://lagen.nu/2003:778) (LSO): 5 requirements, 5 tests, 1 risk
+- [Electrical Safety Act (Elsäkerhetslag 2016:732)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/elsakerhetslag-2016732_sfs-2016-732/): 2 requirements, 1 test, 1 risk
 - [Inspection of lifts and other motor-driven devices: Plan- och byggförordning (2011:338) 5 kap. 8–11 §§ and Boverket BFS 2025:11 and 2025:12](https://www.boverket.se/sv/PBL-kunskapsbanken/regler-om-byggande/motordrivna-anordningar/hissar/): 1 requirement, 1 test
 - [Language Act (2009:600)](https://lagen.nu/2009:600): 3 requirements, 3 tests
-- [Public Access to Information and Secrecy Act (Offentlighets- och sekretesslag 2009:400)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/offentlighets-och-sekretesslag-2009400_sfs-2009-400/) (OSL): 2 requirements, 2 tests
-- [Public Procurement Act (2016:1145)](https://lagen.nu/2016:1145) (LOU): 4 requirements, 3 tests
+- [Public Access to Information and Secrecy Act (Offentlighets- och sekretesslag 2009:400)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/offentlighets-och-sekretesslag-2009400_sfs-2009-400/) (OSL): 2 requirements, 2 tests, 1 risk
+- [Public Procurement Act (2016:1145)](https://lagen.nu/2016:1145) (LOU): 4 requirements, 3 tests, 1 risk
 - [Swedish Act on accessibility of digital public services (2018:1937) and DIGG regulations](https://lagen.nu/2018:1937) (DOS-lagen): 4 requirements, 4 tests
   - [Lag (2018:1937)](https://lagen.nu/2018:1937) · [DIGG MDFFS 2019:2](https://www.digg.se/om-oss/forfattningssamling/foreskrifter-om-tillganglighet-till-digital-offentlig-service-mdffs-20192/grundforfattning-mdffs-20192)
 - [Swedish Administrative Procedure Act (2017:900)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/forvaltningslag-2017900_sfs-2017-900/): 1 requirement, 1 test
-- [Swedish Bookkeeping Act (1999:1078)](https://lagen.nu/1999:1078): 3 requirements, 3 tests
-- [Swedish Cybersecurity Act (2025:1506), implementing NIS2](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/cybersakerhetslag-20251506_sfs-2025-1506/) (Cybersäkerhetslag): 9 requirements, 7 tests
+- [Swedish Bookkeeping Act (1999:1078)](https://lagen.nu/1999:1078): 3 requirements, 3 tests, 1 risk
+- [Swedish Cybersecurity Act (2025:1506), implementing NIS2](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/cybersakerhetslag-20251506_sfs-2025-1506/) (Cybersäkerhetslag): 9 requirements, 7 tests, 3 risks
 - [Swedish Data Protection Act (2018:218), supplementing the GDPR](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018218-med-kompletterande-bestammelser_sfs-2018-218/): 1 requirement, 1 test
 - [Swedish Electricity Preparedness Act (1997:288)](https://lagen.nu/1997:288): 1 requirement, 1 test
 - [Swedish Electronic Communications Act (2022:482)](https://lagen.nu/2022:482) (LEK): 2 requirements, 2 tests
 - [Swedish Marketing Act (2008:486)](https://lagen.nu/2008:486): 2 requirements, 2 tests
 - [Swedish Patient Data Act (2008:355)](https://lagen.nu/2008:355): 1 requirement, 1 test
-- [Swedish Protective Security Act (2018:585), Ordinance (2021:955) and regulations](https://lagen.nu/2018:585) (Säkerhetsskydd): 20 requirements, 17 tests
+- [Swedish Protective Security Act (2018:585), Ordinance (2021:955) and regulations](https://lagen.nu/2018:585) (Säkerhetsskydd): 20 requirements, 17 tests, 3 risks
   - [Säkerhetsskyddslag (2018:585)](https://lagen.nu/2018:585) · [Säkerhetsskyddsförordning (2021:955)](https://lagen.nu/2021:955)
 - [Swedish Whistleblower Act (Lag 2021:890)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2021890-om-skydd-for-personer-som_sfs-2021-890/): 1 requirement, 1 test
-- [Swedish Work Environment Authority regulations (AFS 2023:1–2023:15)](https://www.av.se/arbetsmiljoarbete-och-inspektioner/publikationer/foreskrifter/): 4 requirements, 3 tests
+- [Swedish Work Environment Authority regulations (AFS 2023:1–2023:15)](https://www.av.se/arbetsmiljoarbete-och-inspektioner/publikationer/foreskrifter/): 4 requirements, 3 tests, 1 risk
 - [Ventilation inspection rules: Plan- och byggförordning (2011:338) 5 kap. 1–7 §§ and Boverket BFS 2011:16 (OVK)](https://www.boverket.se/sv/PBL-kunskapsbanken/regler-om-byggande/ovk/): 2 requirements, 2 tests
 
 #### Laws and regulations: United States
@@ -3837,7 +4482,7 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 - [HIPAA Security Rule (45 CFR Part 164)](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C): 1 requirement, 1 test
 - [OSHA Process Safety Management, 29 CFR 1910.119](https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.119): 1 requirement, 1 test
 - [US Code of Federal Regulations Title 47 (FCC), Parts 2 and 15](https://www.ecfr.gov/current/title-47) (FCC 47 CFR): 1 requirement, 1 test
-- [US FDA 21 CFR Part 11 (electronic records and signatures)](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11): 15 requirements, 14 tests
+- [US FDA 21 CFR Part 11 (electronic records and signatures)](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11): 15 requirements, 14 tests, 3 risks
 
 ### Directives
 
@@ -3845,35 +4490,35 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 
 - [ATEX Workplace Directive 1999/92/EC](https://eur-lex.europa.eu/eli/dir/1999/92/oj) (ATEX 153): 1 requirement, 1 test
 - [Common charger, Directive (EU) 2022/2380 amending the Radio Equipment Directive](https://eur-lex.europa.eu/eli/dir/2022/2380/oj): 1 requirement, 1 test
-- [Consumer Rights Directive 2011/83/EU (as amended by Directive (EU) 2023/2673)](https://eur-lex.europa.eu/eli/dir/2011/83/oj): 11 requirements, 9 tests
+- [Consumer Rights Directive 2011/83/EU (as amended by Directive (EU) 2023/2673)](https://eur-lex.europa.eu/eli/dir/2011/83/oj): 11 requirements, 9 tests, 2 risks
   - [Directive 2011/83/EU](https://eur-lex.europa.eu/eli/dir/2011/83/oj) · [Directive (EU) 2023/2673](https://eur-lex.europa.eu/eli/dir/2023/2673/oj)
-- [Critical Entities Resilience Directive (EU) 2022/2557](https://eur-lex.europa.eu/eli/dir/2022/2557/oj) (CER): 14 requirements, 12 tests
+- [Critical Entities Resilience Directive (EU) 2022/2557](https://eur-lex.europa.eu/eli/dir/2022/2557/oj) (CER): 14 requirements, 12 tests, 1 risk
 - [Electricity Market Directive (EU) 2019/944](https://eur-lex.europa.eu/eli/dir/2019/944/oj): 4 requirements, 4 tests
-- [Electromagnetic Compatibility Directive 2014/30/EU](https://eur-lex.europa.eu/eli/dir/2014/30/oj) (EMC): 12 requirements, 9 tests
+- [Electromagnetic Compatibility Directive 2014/30/EU](https://eur-lex.europa.eu/eli/dir/2014/30/oj) (EMC): 12 requirements, 9 tests, 1 risk
 - [Energy Efficiency Directive (EU) 2023/1791](https://eur-lex.europa.eu/eli/dir/2023/1791/oj): 2 requirements, 2 tests
 - [Energy Performance of Buildings Directive (EU) 2024/1275](https://eur-lex.europa.eu/eli/dir/2024/1275/oj) (EPBD): 3 requirements, 3 tests
 - [ePrivacy Directive 2002/58/EC](https://eur-lex.europa.eu/eli/dir/2002/58/oj): 15 requirements, 15 tests
 - [European Accessibility Act, Directive (EU) 2019/882](https://eur-lex.europa.eu/eli/dir/2019/882/oj) (EAA): 2 requirements, 2 tests
-- [European Electronic Communications Code, Directive (EU) 2018/1972](https://eur-lex.europa.eu/eli/dir/2018/1972/oj) (EECC): 11 requirements, 9 tests
+- [European Electronic Communications Code, Directive (EU) 2018/1972](https://eur-lex.europa.eu/eli/dir/2018/1972/oj) (EECC): 11 requirements, 9 tests, 2 risks
   - [Directive (EU) 2018/1972](https://eur-lex.europa.eu/eli/dir/2018/1972/oj) · [Commission Delegated Regulation (EU) 2023/444](https://eur-lex.europa.eu/eli/reg_del/2023/444/oj)
 - [Industrial Emissions Directive 2010/75/EU](https://eur-lex.europa.eu/eli/dir/2010/75/oj) (IED): 2 requirements, 1 test
 - [Lifts Directive 2014/33/EU](https://eur-lex.europa.eu/eli/dir/2014/33/oj): 1 requirement, 1 test
 - [Low Voltage Directive 2014/35/EU](https://eur-lex.europa.eu/eli/dir/2014/35/oj) (LVD): 11 requirements, 8 tests
 - [Measuring Instruments Directive 2014/32/EU](https://eur-lex.europa.eu/eli/dir/2014/32/oj) (MID): 2 requirements, 2 tests
-- [NIS2 Directive (EU) 2022/2555](https://eur-lex.europa.eu/eli/dir/2022/2555/oj): 30 requirements, 29 tests
+- [NIS2 Directive (EU) 2022/2555](https://eur-lex.europa.eu/eli/dir/2022/2555/oj): 30 requirements, 29 tests, 4 risks
 - [Noise at work, Directive 2003/10/EC on exposure of workers to the risks arising from noise](https://eur-lex.europa.eu/eli/dir/2003/10/oj): 1 requirement, 1 test
 - [Payment Services Directive (EU) 2015/2366 (PSD2) with the RTS on strong customer authentication](https://eur-lex.europa.eu/eli/dir/2015/2366/oj): 2 requirements, 2 tests
   - [Directive (EU) 2015/2366](https://eur-lex.europa.eu/eli/dir/2015/2366/oj) · [Commission Delegated Regulation (EU) 2018/389](https://eur-lex.europa.eu/eli/reg_del/2018/389/oj)
-- [Pressure Equipment Directive 2014/68/EU](https://eur-lex.europa.eu/eli/dir/2014/68/oj) (PED): 14 requirements, 9 tests
+- [Pressure Equipment Directive 2014/68/EU](https://eur-lex.europa.eu/eli/dir/2014/68/oj) (PED): 14 requirements, 9 tests, 3 risks
 - [Price Indication Directive 98/6/EC (as amended by Directive (EU) 2019/2161)](https://eur-lex.europa.eu/eli/dir/1998/6/oj): 1 requirement, 1 test
 - [Public Procurement Directive 2014/24/EU](https://eur-lex.europa.eu/eli/dir/2014/24/oj): 5 requirements, 4 tests
-- [Radio Equipment Directive 2014/53/EU with Delegated Regulation (EU) 2022/30 and EN 18031](https://eur-lex.europa.eu/eli/dir/2014/53/oj) (RED): 23 requirements, 23 tests
+- [Radio Equipment Directive 2014/53/EU with Delegated Regulation (EU) 2022/30 and EN 18031](https://eur-lex.europa.eu/eli/dir/2014/53/oj) (RED): 23 requirements, 23 tests, 1 risk
   - [Directive 2014/53/EU](https://eur-lex.europa.eu/eli/dir/2014/53/oj) · [Commission Delegated Regulation (EU) 2022/30](https://eur-lex.europa.eu/eli/reg_del/2022/30/oj) · [EN 18031](https://single-market-economy.ec.europa.eu/single-market/goods/european-standards/harmonised-standards/radio-equipment_en)
-- [RoHS Directive 2011/65/EU on hazardous substances in electrical and electronic equipment](https://eur-lex.europa.eu/eli/dir/2011/65/oj): 3 requirements, 2 tests
-- [Seveso III Directive 2012/18/EU](https://eur-lex.europa.eu/eli/dir/2012/18/oj): 3 requirements, 2 tests
-- [Unfair Commercial Practices Directive 2005/29/EC](https://eur-lex.europa.eu/eli/dir/2005/29/oj) (UCPD): 4 requirements, 4 tests
+- [RoHS Directive 2011/65/EU on hazardous substances in electrical and electronic equipment](https://eur-lex.europa.eu/eli/dir/2011/65/oj): 3 requirements, 2 tests, 1 risk
+- [Seveso III Directive 2012/18/EU](https://eur-lex.europa.eu/eli/dir/2012/18/oj): 3 requirements, 2 tests, 1 risk
+- [Unfair Commercial Practices Directive 2005/29/EC](https://eur-lex.europa.eu/eli/dir/2005/29/oj) (UCPD): 4 requirements, 4 tests, 1 risk
 - [Unfair Contract Terms Directive 93/13/EEC](https://eur-lex.europa.eu/eli/dir/1993/13/oj): 1 requirement, 1 test
-- [VAT Directive 2006/112/EC](https://eur-lex.europa.eu/eli/dir/2006/112/oj): 9 requirements, 8 tests
+- [VAT Directive 2006/112/EC](https://eur-lex.europa.eu/eli/dir/2006/112/oj): 9 requirements, 8 tests, 1 risk
 - [Waste Electrical and Electronic Equipment Directive 2012/19/EU](https://eur-lex.europa.eu/eli/dir/2012/19/oj) (WEEE): 6 requirements, 5 tests
 - [Waste Framework Directive 2008/98/EC](https://eur-lex.europa.eu/eli/dir/2008/98/oj): 1 requirement, 1 test
 - [Web Accessibility Directive (EU) 2016/2102](https://eur-lex.europa.eu/eli/dir/2016/2102/oj): 4 requirements, 4 tests
@@ -3885,7 +4530,7 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 
 #### Standards and specifications: International
 
-- [3GPP technical specifications](https://www.3gpp.org/specifications-technologies): 19 requirements, 16 tests
+- [3GPP technical specifications](https://www.3gpp.org/specifications-technologies): 19 requirements, 16 tests, 2 risks
   - [3GPP TS 22.179](https://www.3gpp.org/DynaReport/22179.htm) · [3GPP TS 22.280](https://www.3gpp.org/DynaReport/22280.htm) · [3GPP TS 23.167](https://www.3gpp.org/DynaReport/23167.htm) · [3GPP TS 23.283](https://www.3gpp.org/DynaReport/23283.htm) · [3GPP TS 23.501](https://www.3gpp.org/DynaReport/23501.htm) · [3GPP TS 23.682](https://www.3gpp.org/DynaReport/23682.htm) · [3GPP TS 28.552](https://www.3gpp.org/DynaReport/28552.htm) · [3GPP TS 32.240](https://www.3gpp.org/DynaReport/32240.htm) · [3GPP TS 32.298](https://www.3gpp.org/DynaReport/32298.htm) · [3GPP TS 32.401](https://www.3gpp.org/DynaReport/32401.htm) · [3GPP TS 33.126](https://www.3gpp.org/DynaReport/33126.htm) · [3GPP TS 33.127](https://www.3gpp.org/DynaReport/33127.htm) · [3GPP TS 33.180](https://www.3gpp.org/DynaReport/33180.htm) · [3GPP TS 33.501](https://www.3gpp.org/DynaReport/33501.htm)
 - [ANSI/ISA-101.01 Human machine interfaces for process automation](https://www.isa.org/standards-and-publications/isa-standards/isa-101-standards): 3 requirements, 3 tests
 - [C2PA content credentials specification](https://c2pa.org/specifications/specifications/2.1/specs/C2PA_Specification.html): 2 requirements, 2 tests
@@ -3895,11 +4540,11 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
   - [ECSS-Q-ST-30-11C](https://ecss.nl/standard/ecss-q-st-30-11c-rev-2-derating-eee-components-23-june-2021/)
 - [EMC standards (EN 55032, EN 55035, IEC 61000-4)](https://webstore.iec.ch/en/publication/22046): 7 requirements, 7 tests
   - [CISPR 32 (EN 55032)](https://webstore.iec.ch/en/publication/22046) · [CISPR 35 (EN 55035)](https://webstore.iec.ch/en/publication/25667) · [IEC 61000-4-2](https://webstore.iec.ch/en/publication/68954) · [IEC 61000-4-11](https://webstore.iec.ch/en/publication/63503) · [IEC 61000-4-6](https://webstore.iec.ch/en/publication/65586)
-- [Environmental testing and protection classes (IEC 60068, 60721-3, 60529, 62262)](https://webstore.iec.ch/en/publication/501): 11 requirements, 9 tests
+- [Environmental testing and protection classes (IEC 60068, 60721-3, 60529, 62262)](https://webstore.iec.ch/en/publication/501): 11 requirements, 9 tests, 1 risk
   - [IEC 60068-1](https://webstore.iec.ch/en/publication/501) · [IEC 60529](https://webstore.iec.ch/en/publication/2452)
 - [ETSI NFV specifications (network functions virtualisation)](https://www.etsi.org/technologies/nfv): 1 requirement, 1 test
   - [ETSI GS NFV-SEC 001](https://www.etsi.org/deliver/etsi_gs/NFV-SEC/001_099/001/) · [ETSI GS NFV-SEC 021](https://www.etsi.org/deliver/etsi_gs/NFV-SEC/001_099/021/) · [ETSI GS NFV-SOL 004](https://www.etsi.org/deliver/etsi_gs/NFV-SOL/001_099/004/)
-- [ETSI technical specifications (lawful interception, retained data, emergency location)](https://www.etsi.org/standards) (ETSI TS): 7 requirements, 6 tests
+- [ETSI technical specifications (lawful interception, retained data, emergency location)](https://www.etsi.org/standards) (ETSI TS): 7 requirements, 6 tests, 1 risk
   - [ETSI TS 102 232-1](https://www.etsi.org/deliver/etsi_ts/102200_102299/10223201/) · [ETSI TS 102 657](https://www.etsi.org/deliver/etsi_ts/102600_102699/102657/) · [ETSI TS 103 221-1](https://www.etsi.org/deliver/etsi_ts/103200_103299/10322101/) · [ETSI TS 103 221-2](https://www.etsi.org/deliver/etsi_ts/103200_103299/10322102/) · [ETSI TS 103 625](https://www.etsi.org/deliver/etsi_ts/103600_103699/103625/)
 - [FIRST standards and guidelines (CVSS, EPSS, multi-party disclosure)](https://www.first.org/standards/): 4 requirements, 5 tests
   - [FIRST CVSS v4.0](https://www.first.org/cvss/v4.0/specification-document) · [FIRST EPSS](https://www.first.org/epss/) · [FIRST Guidelines and Practices for Multi-Party Vulnerability Coordination](https://www.first.org/global/sigs/vulnerability-coordination/multiparty/guidelines-v1.1)
@@ -3915,37 +4560,37 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 - [IEC 61131-3 Programmable controller languages](https://webstore.iec.ch/en/publication/4552): 1 requirement, 1 test
 - [IEC 61340 Electrostatics, protection of electronic devices from electrostatic phenomena](https://webstore.iec.ch/en/publication/74748): 1 requirement, 1 test
   - [IEC 61340-5-1](https://webstore.iec.ch/en/publication/74748)
-- [IEC 61508 Functional safety of E/E/PE safety-related systems](https://webstore.iec.ch/en/publication/5515): 16 requirements, 13 tests
+- [IEC 61508 Functional safety of E/E/PE safety-related systems](https://webstore.iec.ch/en/publication/5515): 16 requirements, 13 tests, 6 risks
   - [IEC 61508-1](https://webstore.iec.ch/en/publication/5515) · [IEC 61508-2](https://webstore.iec.ch/en/publication/5516) · [IEC 61508-3](https://webstore.iec.ch/en/publication/5517) · [IEC 61508-5](https://webstore.iec.ch/en/publication/5519) · [IEC 61508-6](https://webstore.iec.ch/en/publication/5520)
-- [IEC 61511 Functional safety for the process industry sector](https://webstore.iec.ch/en/publication/24241): 15 requirements, 13 tests
+- [IEC 61511 Functional safety for the process industry sector](https://webstore.iec.ch/en/publication/24241): 15 requirements, 13 tests, 2 risks
 - [IEC 61850 Communication networks and systems for power utility automation](https://webstore.iec.ch/en/publication/6028): 5 requirements, 5 tests
   - [IEC 61850-5](https://webstore.iec.ch/en/publication/6012) · [IEC 61850-7-1](https://webstore.iec.ch/en/publication/6014) · [IEC 61850-10](https://webstore.iec.ch/en/publication/6008)
 - [IEC 62056 Electricity metering data exchange (DLMS/COSEM)](https://webstore.iec.ch/en/publication/67915): 1 requirement, 1 test
 - [IEC 62061 Functional safety of machinery control systems](https://webstore.iec.ch/en/publication/59927): 3 requirements, 3 tests
-- [IEC 62304 Medical device software – Software life cycle processes](https://webstore.iec.ch/en/publication/22794): 6 requirements, 6 tests
+- [IEC 62304 Medical device software – Software life cycle processes](https://webstore.iec.ch/en/publication/22794): 6 requirements, 6 tests, 2 risks
 - [IEC 62351 Power systems data and communications security](https://webstore.iec.ch/en/publication/6912): 4 requirements, 3 tests
   - [IEC 62351-5](https://webstore.iec.ch/en/publication/65511) · [IEC 62351-7](https://webstore.iec.ch/en/publication/30593)
-- [IEC 62366-1 Medical devices – Application of usability engineering to medical devices](https://webstore.iec.ch/en/publication/67220): 1 requirement, 1 test
-- [IEC 62402 Obsolescence management](https://webstore.iec.ch/en/publication/59531): 8 requirements, 6 tests
+- [IEC 62366-1 Medical devices – Application of usability engineering to medical devices](https://webstore.iec.ch/en/publication/67220): 1 requirement, 1 test, 1 risk
+- [IEC 62402 Obsolescence management](https://webstore.iec.ch/en/publication/59531): 8 requirements, 6 tests, 1 risk
 - [IEC 62443-2-1 Security programme requirements for asset owners](https://webstore.iec.ch/en/publication/62883): 4 requirements, 4 tests
-- [IEC 62443-2-4 Security programme requirements for IACS service providers](https://webstore.iec.ch/en/publication/67631): 13 requirements, 12 tests
-- [IEC 62443-3-2 Security risk assessment for system design](https://webstore.iec.ch/en/publication/30727): 6 requirements, 6 tests
-- [IEC 62443-3-3 System security requirements and security levels](https://webstore.iec.ch/en/publication/7033): 170 requirements, 159 tests
+- [IEC 62443-2-4 Security programme requirements for IACS service providers](https://webstore.iec.ch/en/publication/67631): 13 requirements, 12 tests, 1 risk
+- [IEC 62443-3-2 Security risk assessment for system design](https://webstore.iec.ch/en/publication/30727): 6 requirements, 6 tests, 8 risks
+- [IEC 62443-3-3 System security requirements and security levels](https://webstore.iec.ch/en/publication/7033): 170 requirements, 159 tests, 4 risks
 - [IEC 62443-4-1 Secure product development lifecycle requirements](https://webstore.iec.ch/en/publication/33615): 45 requirements, 39 tests
 - [IEC 62443-4-2 Technical security requirements for IACS components](https://webstore.iec.ch/en/publication/34421): 56 requirements, 56 tests
 - [IEC 62541 OPC Unified Architecture](https://reference.opcfoundation.org/) (OPC UA): 3 requirements, 3 tests
 - [IEC 62740 Root cause analysis (RCA)](https://webstore.iec.ch/en/publication/21810): 1 requirement, 1 test
 - [IEC 81001-5-1 Health software and health IT systems safety, effectiveness and security – Security activities in the product life cycle](https://webstore.iec.ch/en/publication/33615): 1 requirement, 1 test
 - [IEC 81346 Structuring principles and reference designations](https://www.iso.org/standard/82229.html): 2 requirements, 2 tests
-- [IEC acceptance and commissioning of process equipment (IEC 62381, IEC 62337)](https://webstore.iec.ch/en/publication/6871): 6 requirements, 4 tests
+- [IEC acceptance and commissioning of process equipment (IEC 62381, IEC 62337)](https://webstore.iec.ch/en/publication/6871): 6 requirements, 4 tests, 2 risks
   - [IEC 62337](https://webstore.iec.ch/en/publication/6871)
 - [IEC Common Information Model (IEC 61968, 61970, 62325)](https://webstore.iec.ch/en/publication/62698) (IEC CIM): 3 requirements, 3 tests
   - [IEC 61970-301](https://webstore.iec.ch/en/publication/62698)
-- [IEC dependability standards (IEC 60300, 60812, 61025, 61078, 61124, 61163, 61703, 61709, 62506, TR 63069)](https://webstore.iec.ch/en/publication/1293): 22 requirements, 18 tests
+- [IEC dependability standards (IEC 60300, 60812, 61025, 61078, 61124, 61163, 61703, 61709, 62506, TR 63069)](https://webstore.iec.ch/en/publication/1293): 22 requirements, 18 tests, 2 risks
   - [IEC 60300-1](https://webstore.iec.ch/en/publication/1293) · [IEC 60812](https://webstore.iec.ch/en/publication/26359) · [IEC 61025](https://webstore.iec.ch/en/publication/4311) · [IEC 61703](https://webstore.iec.ch/en/publication/25646) · [IEC 61709](https://webstore.iec.ch/en/publication/28554)
-- [IEC electrical product safety standards (IEC 62368-1, 60664-1, 60204-1, 60364-6)](https://webstore.iec.ch/en/publication/69308): 17 requirements, 15 tests
+- [IEC electrical product safety standards (IEC 62368-1, 60664-1, 60204-1, 60364-6)](https://webstore.iec.ch/en/publication/69308): 17 requirements, 15 tests, 3 risks
   - [IEC 62368-1](https://webstore.iec.ch/en/publication/69308) · [IEC 60664-1](https://webstore.iec.ch/en/publication/59671) · [IEC 60204-1](https://webstore.iec.ch/en/publication/26037) · [IEC 60364-6](https://webstore.iec.ch/en/publication/24656) · [IEC 60364-4-41](https://webstore.iec.ch/en/publication/60169)
-- [IEC standards for secondary lithium cells and batteries (IEC 62133, 61960, 62619)](https://webstore.iec.ch/en/publication/32662): 5 requirements, 5 tests
+- [IEC standards for secondary lithium cells and batteries (IEC 62133, 61960, 62619)](https://webstore.iec.ch/en/publication/32662): 5 requirements, 5 tests, 1 risk
 - [IEC TR 62443-2-3 Patch management in the IACS environment](https://webstore.iec.ch/en/publication/22811) (IEC 62443-2-3): 1 requirement, 1 test
 - [IEC/IEEE 60255-118-1 Synchrophasor measurements](https://webstore.iec.ch/en/publication/28722): 1 requirement, 1 test
 - [IEC/IEEE 82079-1 Preparation of information for use (instructions for use)](https://www.iso.org/standard/71620.html): 10 requirements, 8 tests
@@ -3953,12 +4598,12 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 - [IEEE 1588 Precision Time Protocol](https://standards.ieee.org/ieee/1588/6825/): 2 requirements, 2 tests
 - [IEEE 1815 Distributed Network Protocol (DNP3)](https://standards.ieee.org/ieee/1815/5414/): 1 requirement, 1 test
 - [IEEE 802.11 Wireless LAN medium access control and physical layer specifications](https://standards.ieee.org/ieee/802.11/10548/): 3 requirements, 1 test
-- [IEEE 802.1X Port-based network access control](https://standards.ieee.org/ieee/802.1X/7345/): 2 requirements, 2 tests
+- [IEEE 802.1X Port-based network access control](https://standards.ieee.org/ieee/802.1X/7345/): 2 requirements, 2 tests, 1 risk
 - [IEEE 9274.1.1 Experience API (xAPI)](https://standards.ieee.org/ieee/9274.1.1/7321/): 1 requirement, 1 test
-- [IETF RFCs and Internet-Drafts](https://www.rfc-editor.org/): 103 requirements, 93 tests
+- [IETF RFCs and Internet-Drafts](https://www.rfc-editor.org/): 103 requirements, 93 tests, 2 risks
   - [RFC 2104](https://www.rfc-editor.org/rfc/rfc2104) · [RFC 2369](https://www.rfc-editor.org/rfc/rfc2369) · [RFC 2474](https://www.rfc-editor.org/rfc/rfc2474) · [RFC 3161](https://www.rfc-editor.org/rfc/rfc3161) · [RFC 3207](https://www.rfc-editor.org/rfc/rfc3207) · [RFC 3246](https://www.rfc-editor.org/rfc/rfc3246) · [RFC 3261](https://www.rfc-editor.org/rfc/rfc3261) · [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) · [RFC 3414](https://www.rfc-editor.org/rfc/rfc3414) · [RFC 3464](https://www.rfc-editor.org/rfc/rfc3464) · [RFC 3629](https://www.rfc-editor.org/rfc/rfc3629) · [RFC 3711](https://www.rfc-editor.org/rfc/rfc3711) · [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986) · [RFC 4035](https://www.rfc-editor.org/rfc/rfc4035) · [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) · [RFC 4594](https://www.rfc-editor.org/rfc/rfc4594) · [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647) · [RFC 5321](https://www.rfc-editor.org/rfc/rfc5321) · [RFC 5322](https://www.rfc-editor.org/rfc/rfc5322) · [RFC 5424](https://www.rfc-editor.org/rfc/rfc5424) · [RFC 5545](https://www.rfc-editor.org/rfc/rfc5545) · [RFC 5546](https://www.rfc-editor.org/rfc/rfc5546) · [RFC 5853](https://www.rfc-editor.org/rfc/rfc5853) · [RFC 5880](https://www.rfc-editor.org/rfc/rfc5880) · [RFC 5905](https://www.rfc-editor.org/rfc/rfc5905) · [RFC 6047](https://www.rfc-editor.org/rfc/rfc6047) · [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238) · [RFC 6241](https://www.rfc-editor.org/rfc/rfc6241) · [RFC 6266](https://www.rfc-editor.org/rfc/rfc6266) · [RFC 6376](https://www.rfc-editor.org/rfc/rfc6376) · [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455) · [RFC 6585](https://www.rfc-editor.org/rfc/rfc6585) · [RFC 6716](https://www.rfc-editor.org/rfc/rfc6716) · [RFC 6749](https://www.rfc-editor.org/rfc/rfc6749) · [RFC 6797](https://www.rfc-editor.org/rfc/rfc6797) · [RFC 7208](https://www.rfc-editor.org/rfc/rfc7208) · [RFC 7519](https://www.rfc-editor.org/rfc/rfc7519) · [RFC 7643](https://www.rfc-editor.org/rfc/rfc7643) · [RFC 7644](https://www.rfc-editor.org/rfc/rfc7644) · [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932) · [RFC 7986](https://www.rfc-editor.org/rfc/rfc7986) · [RFC 8058](https://www.rfc-editor.org/rfc/rfc8058) · [RFC 8246](https://www.rfc-editor.org/rfc/rfc8246) · [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259) · [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288) · [RFC 8301](https://www.rfc-editor.org/rfc/rfc8301) · [RFC 8460](https://www.rfc-editor.org/rfc/rfc8460) · [RFC 8461](https://www.rfc-editor.org/rfc/rfc8461) · [RFC 8594](https://www.rfc-editor.org/rfc/rfc8594) · [RFC 8641](https://www.rfc-editor.org/rfc/rfc8641) · [RFC 8705](https://www.rfc-editor.org/rfc/rfc8705) · [RFC 8725](https://www.rfc-editor.org/rfc/rfc8725) · [RFC 9068](https://www.rfc-editor.org/rfc/rfc9068) · [RFC 9106](https://www.rfc-editor.org/rfc/rfc9106) · [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) · [RFC 9111](https://www.rfc-editor.org/rfc/rfc9111) · [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) · [RFC 9413](https://www.rfc-editor.org/rfc/rfc9413) · [RFC 9449](https://www.rfc-editor.org/rfc/rfc9449) · [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) · [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700) · [RFC 9745](https://www.rfc-editor.org/rfc/rfc9745) · [RFC 9989](https://www.rfc-editor.org/rfc/rfc9989) · [RFC 9990](https://www.rfc-editor.org/rfc/rfc9990) · [RFC 10024](https://www.rfc-editor.org/rfc/rfc10024) · [draft-ietf-httpapi-idempotency-key-header](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) · [draft-ietf-httpapi-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/)
-- [IPC electronics assembly and board standards (IPC-2221, IPC-6012, IPC-A-610, J-STD-001)](https://www.electronics.org/ipc-standards): 5 requirements, 4 tests
-- [ISA-18.2 / IEC 62682 Alarm management](https://webstore.iec.ch/en/publication/65543): 10 requirements, 9 tests
+- [IPC electronics assembly and board standards (IPC-2221, IPC-6012, IPC-A-610, J-STD-001)](https://www.electronics.org/ipc-standards): 5 requirements, 4 tests, 1 risk
+- [ISA-18.2 / IEC 62682 Alarm management](https://webstore.iec.ch/en/publication/65543): 10 requirements, 9 tests, 2 risks
   - [IEC 62682](https://webstore.iec.ch/en/publication/65543)
 - [ISA-88 / IEC 61512 Batch control](https://www.isa.org/standards-and-publications/isa-standards/isa-88-standards): 5 requirements, 5 tests
   - [IEC 61512-1](https://webstore.iec.ch/en/publication/75287)
@@ -3971,130 +4616,130 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 - [ISO 10007 Guidelines for configuration management](https://www.iso.org/standard/70400.html): 11 requirements, 8 tests
 - [ISO 10015 Guidelines for competence management and people development](https://www.iso.org/standard/69459.html): 11 requirements, 9 tests
 - [ISO 10075 Ergonomic principles related to mental workload](https://www.iso.org/standard/76686.html): 1 requirement, 1 test
-- [ISO 11064 Ergonomic design of control centres](https://www.iso.org/standard/19042.html): 5 requirements, 3 tests
+- [ISO 11064 Ergonomic design of control centres](https://www.iso.org/standard/19042.html): 5 requirements, 3 tests, 1 risk
 - [ISO 13485 Medical devices – Quality management systems](https://www.iso.org/standard/59752.html): 2 requirements, 2 tests
-- [ISO 13702 Control and mitigation of fires and explosions on offshore installations](https://www.iso.org/standard/57416.html): 2 requirements, 2 tests
-- [ISO 13849 Safety-related parts of machine control systems](https://www.iso.org/standard/73481.html): 3 requirements, 3 tests
+- [ISO 13702 Control and mitigation of fires and explosions on offshore installations](https://www.iso.org/standard/57416.html): 2 requirements, 2 tests, 1 risk
+- [ISO 13849 Safety-related parts of machine control systems](https://www.iso.org/standard/73481.html): 3 requirements, 3 tests, 1 risk
   - [ISO 13849-1](https://www.iso.org/standard/73481.html) · [ISO 13849-2](https://www.iso.org/standard/53640.html)
 - [ISO 14001 Environmental management systems](https://www.iso.org/standard/92300.html): 1 requirement, 1 test
 - [ISO 14064 Greenhouse gas quantification and reporting](https://www.iso.org/standard/66453.html): 1 requirement, 1 test
 - [ISO 14224 Reliability and maintenance data for petroleum and natural gas equipment](https://www.iso.org/standard/64076.html): 3 requirements, 3 tests
 - [ISO 14289 PDF/UA accessible PDF](https://www.iso.org/standard/64599.html): 3 requirements, 3 tests
 - [ISO 14721 Open archival information system (OAIS) reference model](https://www.iso.org/standard/87471.html): 1 requirement, 1 test
-- [ISO 14971 Medical devices – Application of risk management to medical devices](https://www.iso.org/standard/72704.html): 2 requirements, 2 tests
-- [ISO 15489 Records management](https://www.iso.org/standard/62542.html): 7 requirements, 6 tests
+- [ISO 14971 Medical devices – Application of risk management to medical devices](https://www.iso.org/standard/72704.html): 2 requirements, 2 tests, 4 risks
+- [ISO 15489 Records management](https://www.iso.org/standard/62542.html): 7 requirements, 6 tests, 1 risk
 - [ISO 17100 Translation services](https://www.iso.org/standard/59149.html): 1 requirement, 1 test
 - [ISO 17359 and ISO 13374 Condition monitoring of machines](https://www.iso.org/standard/71194.html): 3 requirements, 3 tests
   - [ISO 17359](https://www.iso.org/standard/71194.html) · [ISO 13374-1](https://www.iso.org/standard/21832.html)
 - [ISO 19011 Guidelines for auditing management systems](https://www.iso.org/standard/88984.html): 4 requirements, 3 tests
 - [ISO 20816 Mechanical vibration measurement](https://www.iso.org/standard/63180.html): 1 requirement, 1 test
-- [ISO 21502, 21508 and 21511 Project, programme and portfolio management](https://www.iso.org/standard/74947.html): 30 requirements, 23 tests
+- [ISO 21502, 21508 and 21511 Project, programme and portfolio management](https://www.iso.org/standard/74947.html): 30 requirements, 23 tests, 5 risks
   - [ISO 21502](https://www.iso.org/standard/74947.html) · [ISO 21508](https://www.iso.org/standard/63582.html) · [ISO 21511](https://www.iso.org/standard/69702.html)
-- [ISO 21504 Project, programme and portfolio management: guidance on portfolio management](https://www.iso.org/standard/82867.html): 9 requirements, 6 tests
+- [ISO 21504 Project, programme and portfolio management: guidance on portfolio management](https://www.iso.org/standard/82867.html): 9 requirements, 6 tests, 1 risk
 - [ISO 21542 Accessibility and usability of the built environment](https://www.iso.org/standard/71860.html): 2 requirements, 1 test
-- [ISO 22301 Business continuity management systems](https://www.iso.org/standard/75106.html): 24 requirements, 19 tests
-- [ISO 22400 Key performance indicators for manufacturing operations](https://www.iso.org/standard/54497.html): 3 requirements, 3 tests
+- [ISO 22301 Business continuity management systems](https://www.iso.org/standard/75106.html): 24 requirements, 19 tests, 4 risks
+- [ISO 22400 Key performance indicators for manufacturing operations](https://www.iso.org/standard/54497.html): 3 requirements, 3 tests, 1 risk
 - [ISO 22514 Statistical methods in process management (capability)](https://www.iso.org/standard/88883.html): 1 requirement, 1 test
 - [ISO 24089 Road vehicles – Software update engineering](https://www.iso.org/standard/77796.html): 4 requirements, 4 tests
 - [ISO 24495 Plain language](https://www.iso.org/standard/78907.html): 3 requirements, 3 tests
-- [ISO 26262 Road vehicles – Functional safety](https://www.iso.org/standard/68383.html): 5 requirements, 5 tests
+- [ISO 26262 Road vehicles – Functional safety](https://www.iso.org/standard/68383.html): 5 requirements, 5 tests, 3 risks
 - [ISO 29993 Learning services outside formal education](https://www.iso.org/standard/70357.html): 6 requirements, 4 tests
-- [ISO 31000 Risk management guidelines](https://www.iso.org/standard/65694.html): 14 requirements, 10 tests
+- [ISO 31000 Risk management guidelines](https://www.iso.org/standard/65694.html): 14 requirements, 10 tests, 97 risks
 - [ISO 32000 Portable Document Format (PDF)](https://www.iso.org/standard/75839.html): 1 requirement, 1 test
 - [ISO 3382-3 Acoustics: measurement of room acoustic parameters in open plan offices](https://www.iso.org/standard/77437.html): 1 requirement, 1 test
-- [ISO 37301 Compliance management systems: requirements with guidance for use](https://www.iso.org/standard/75080.html): 4 requirements, 2 tests
+- [ISO 37301 Compliance management systems: requirements with guidance for use](https://www.iso.org/standard/75080.html): 4 requirements, 2 tests, 1 risk
 - [ISO 3864 Safety colours and safety signs](https://www.iso.org/standard/66836.html): 1 requirement, 1 test
 - [ISO 41001 Facility management systems](https://www.iso.org/standard/68021.html): 2 requirements, 2 tests
 - [ISO 4126 Safety devices for protection against excessive pressure](https://www.iso.org/standard/50826.html): 1 requirement, 1 test
 - [ISO 4217 Currency codes](https://www.iso.org/standard/64758.html): 4 requirements, 4 tests
-- [ISO 45001 Occupational health and safety management systems](https://www.iso.org/standard/63787.html): 2 requirements, 2 tests
-- [ISO 50001 Energy management systems](https://www.iso.org/standard/69426.html): 2 requirements, 2 tests
-- [ISO 55001 Asset management systems](https://www.iso.org/standard/83054.html): 11 requirements, 10 tests
+- [ISO 45001 Occupational health and safety management systems](https://www.iso.org/standard/63787.html): 2 requirements, 2 tests, 2 risks
+- [ISO 50001 Energy management systems](https://www.iso.org/standard/69426.html): 2 requirements, 2 tests, 1 risk
+- [ISO 55001 Asset management systems](https://www.iso.org/standard/83054.html): 11 requirements, 10 tests, 2 risks
 - [ISO 639 Language codes](https://www.iso.org/standard/74575.html): 1 requirement, 1 test
 - [ISO 7870 Control charts](https://www.iso.org/standard/78859.html): 1 requirement, 1 test
 - [ISO 8000 Data quality](https://www.iso.org/standard/60805.html): 4 requirements, 4 tests
 - [ISO 8601 Date and time representation](https://www.iso.org/standard/70907.html): 7 requirements, 7 tests
-- [ISO 9001 Quality management systems](https://www.iso.org/standard/88464.html): 96 requirements, 77 tests
-- [ISO 9241 Ergonomics of human-system interaction](https://www.iso.org/standard/63500.html): 114 requirements, 100 tests
+- [ISO 9001 Quality management systems](https://www.iso.org/standard/88464.html): 96 requirements, 77 tests, 4 risks
+- [ISO 9241 Ergonomics of human-system interaction](https://www.iso.org/standard/63500.html): 114 requirements, 100 tests, 3 risks
   - [ISO 9241-11](https://www.iso.org/standard/63500.html) · [ISO 9241-110](https://www.iso.org/standard/75258.html) · [ISO 9241-143](https://www.iso.org/standard/53590.html) · [ISO 9241-303](https://www.iso.org/standard/57992.html)
 - [ISO/IEC 15415 and 15416 Bar code print quality](https://www.iso.org/standard/76876.html): 1 requirement, 1 test
   - [ISO/IEC 15415](https://www.iso.org/standard/76876.html) · [ISO/IEC 15416](https://www.iso.org/standard/83390.html)
 - [ISO/IEC 17025 Competence of testing and calibration laboratories](https://www.iso.org/standard/66912.html): 6 requirements, 6 tests
 - [ISO/IEC 19941 Cloud computing interoperability and portability](https://www.iso.org/standard/66639.html): 2 requirements, 2 tests
-- [ISO/IEC 20000-1 Service management systems](https://www.iso.org/standard/70636.html): 32 requirements, 30 tests
+- [ISO/IEC 20000-1 Service management systems](https://www.iso.org/standard/70636.html): 32 requirements, 30 tests, 7 risks
 - [ISO/IEC 20889 Privacy enhancing data de-identification techniques](https://www.iso.org/standard/69373.html): 1 requirement, 1 test
 - [ISO/IEC 21031 Software Carbon Intensity (SCI) specification](https://www.iso.org/standard/86612.html): 3 requirements, 3 tests
 - [ISO/IEC 25000 series quality measurement and reporting (25022, 25023, 25062)](https://www.iso.org/standard/35746.html): 8 requirements, 8 tests
   - [ISO/IEC 25022](https://www.iso.org/standard/35746.html) · [ISO/IEC 25023](https://www.iso.org/standard/35747.html) · [ISO/IEC 25062](https://www.iso.org/standard/43046.html)
-- [ISO/IEC 25010 Product quality model](https://www.iso.org/standard/78176.html): 179 requirements, 173 tests
-- [ISO/IEC 25012 Data quality model](https://www.iso.org/standard/35736.html): 16 requirements, 15 tests
-- [ISO/IEC 27001 Information security management systems](https://www.iso.org/standard/27001): 550 requirements, 499 tests
+- [ISO/IEC 25010 Product quality model](https://www.iso.org/standard/78176.html): 179 requirements, 173 tests, 10 risks
+- [ISO/IEC 25012 Data quality model](https://www.iso.org/standard/35736.html): 16 requirements, 15 tests, 4 risks
+- [ISO/IEC 27001 Information security management systems](https://www.iso.org/standard/27001): 550 requirements, 499 tests, 21 risks
 - [ISO/IEC 27002 Information security controls](https://www.iso.org/standard/75652.html): 4 requirements, 4 tests
-- [ISO/IEC 27005 Information security risk management](https://www.iso.org/standard/80585.html): 3 requirements, 2 tests
-- [ISO/IEC 27017 Information security controls for cloud services](https://www.iso.org/standard/82878.html): 8 requirements, 8 tests
+- [ISO/IEC 27005 Information security risk management](https://www.iso.org/standard/80585.html): 3 requirements, 2 tests, 77 risks
+- [ISO/IEC 27017 Information security controls for cloud services](https://www.iso.org/standard/82878.html): 8 requirements, 8 tests, 1 risk
 - [ISO/IEC 27018 Protection of PII in public clouds](https://www.iso.org/standard/88150.html): 5 requirements, 6 tests
-- [ISO/IEC 27019 Information security for the energy utility industry](https://www.iso.org/standard/85056.html): 7 requirements, 7 tests
-- [ISO/IEC 27031 ICT readiness for business continuity](https://www.iso.org/standard/80975.html): 6 requirements, 5 tests
-- [ISO/IEC 27033 Network security](https://www.iso.org/standard/63461.html): 15 requirements, 14 tests
+- [ISO/IEC 27019 Information security for the energy utility industry](https://www.iso.org/standard/85056.html): 7 requirements, 7 tests, 2 risks
+- [ISO/IEC 27031 ICT readiness for business continuity](https://www.iso.org/standard/80975.html): 6 requirements, 5 tests, 3 risks
+- [ISO/IEC 27033 Network security](https://www.iso.org/standard/63461.html): 15 requirements, 14 tests, 1 risk
   - [ISO/IEC 27033-1](https://www.iso.org/standard/63461.html) · [ISO/IEC 27033-2](https://www.iso.org/standard/51581.html) · [ISO/IEC 27033-4](https://www.iso.org/standard/51583.html) · [ISO/IEC 27033-5](https://www.iso.org/standard/51584.html) · [ISO/IEC 27033-6](https://www.iso.org/standard/51585.html)
 - [ISO/IEC 27034 Application security](https://www.iso.org/standard/44378.html): 1 requirement, 1 test
-- [ISO/IEC 27035 Information security incident management](https://www.iso.org/standard/78973.html): 10 requirements, 10 tests
+- [ISO/IEC 27035 Information security incident management](https://www.iso.org/standard/78973.html): 10 requirements, 10 tests, 4 risks
   - [ISO/IEC 27035-1](https://www.iso.org/standard/78973.html) · [ISO/IEC 27035-2](https://www.iso.org/standard/78974.html)
-- [ISO/IEC 27036 Information security for supplier relationships](https://www.iso.org/standard/82060.html): 11 requirements, 10 tests
+- [ISO/IEC 27036 Information security for supplier relationships](https://www.iso.org/standard/82060.html): 11 requirements, 10 tests, 3 risks
   - [ISO/IEC 27036-2](https://www.iso.org/standard/82060.html) · [ISO/IEC 27036-3](https://www.iso.org/standard/82890.html)
 - [ISO/IEC 27037 Handling of digital evidence](https://www.iso.org/standard/44381.html): 1 requirement, 1 test
 - [ISO/IEC 27040 Storage security](https://www.iso.org/standard/80194.html): 4 requirements, 4 tests
 - [ISO/IEC 27701 Privacy information management](https://www.iso.org/standard/85819.html): 23 requirements, 23 tests
-- [ISO/IEC 29147 Vulnerability disclosure](https://www.iso.org/standard/72311.html): 18 requirements, 16 tests
-- [ISO/IEC 30111 Vulnerability handling processes](https://www.iso.org/standard/69725.html): 15 requirements, 14 tests
-- [ISO/IEC 42001 AI management systems](https://www.iso.org/standard/81230.html): 42 requirements, 35 tests
-- [ISO/IEC AI standards (22989, 23894, 25059, 5259, 8183, TR 24027, TS 4213)](https://www.iso.org/standard/74296.html): 14 requirements, 11 tests
+- [ISO/IEC 29147 Vulnerability disclosure](https://www.iso.org/standard/72311.html): 18 requirements, 16 tests, 2 risks
+- [ISO/IEC 30111 Vulnerability handling processes](https://www.iso.org/standard/69725.html): 15 requirements, 14 tests, 3 risks
+- [ISO/IEC 42001 AI management systems](https://www.iso.org/standard/81230.html): 42 requirements, 35 tests, 5 risks
+- [ISO/IEC AI standards (22989, 23894, 25059, 5259, 8183, TR 24027, TS 4213)](https://www.iso.org/standard/74296.html): 14 requirements, 11 tests, 11 risks
   - [ISO/IEC 22989](https://www.iso.org/standard/74296.html) · [ISO/IEC 23894](https://www.iso.org/standard/77304.html) · [ISO/IEC 25059](https://www.iso.org/standard/80655.html) · [ISO/IEC 5259-2](https://www.iso.org/standard/81860.html) · [ISO/IEC 8183](https://www.iso.org/standard/83002.html) · [ISO/IEC TR 24027](https://www.iso.org/standard/77607.html) · [ISO/IEC TS 4213](https://www.iso.org/standard/79799.html)
 - [ISO/IEC/IEEE 12207 Software life cycle processes](https://www.iso.org/standard/63712.html): 1 requirement, 1 test
-- [ISO/IEC/IEEE 15288 System life cycle processes](https://www.iso.org/standard/81702.html): 39 requirements, 30 tests
+- [ISO/IEC/IEEE 15288 System life cycle processes](https://www.iso.org/standard/81702.html): 39 requirements, 30 tests, 7 risks
 - [ISO/IEC/IEEE 15289 Content of life-cycle information items](https://www.iso.org/standard/74909.html): 11 requirements, 8 tests
 - [ISO/IEC/IEEE 26514 Design and development of information for users](https://www.iso.org/standard/77451.html): 13 requirements, 10 tests
-- [ISO/IEC/IEEE 29119 Software testing](https://www.iso.org/standard/79429.html): 11 requirements, 9 tests
+- [ISO/IEC/IEEE 29119 Software testing](https://www.iso.org/standard/79429.html): 11 requirements, 9 tests, 1 risk
   - [ISO/IEC/IEEE 29119-3](https://www.iso.org/standard/79429.html)
-- [ISO/IEC/IEEE 29148 Requirements engineering](https://www.iso.org/standard/72089.html): 10 requirements, 7 tests
-- [ISO/IEC/IEEE 42010 Architecture description](https://www.iso.org/standard/74393.html): 5 requirements, 5 tests
-- [ISO/SAE 21434 Road vehicles – Cybersecurity engineering](https://www.iso.org/standard/70918.html): 3 requirements, 3 tests
+- [ISO/IEC/IEEE 29148 Requirements engineering](https://www.iso.org/standard/72089.html): 10 requirements, 7 tests, 2 risks
+- [ISO/IEC/IEEE 42010 Architecture description](https://www.iso.org/standard/74393.html): 5 requirements, 5 tests, 1 risk
+- [ISO/SAE 21434 Road vehicles – Cybersecurity engineering](https://www.iso.org/standard/70918.html): 3 requirements, 3 tests, 1 risk
 - [ITU-R recommendations (radio propagation)](https://www.itu.int/pub/R-REC): 1 requirement, 1 test
   - [ITU-R P.530](https://www.itu.int/rec/R-REC-P.530) · [ITU-R P.837](https://www.itu.int/rec/R-REC-P.837)
-- [ITU-T Recommendations](https://www.itu.int/en/ITU-T/publications/Pages/recs.aspx): 11 requirements, 10 tests
+- [ITU-T Recommendations](https://www.itu.int/en/ITU-T/publications/Pages/recs.aspx): 11 requirements, 10 tests, 1 risk
   - [ITU-T E.800](https://www.itu.int/rec/T-REC-E.800) · [ITU-T G.107](https://www.itu.int/rec/T-REC-G.107) · [ITU-T G.114](https://www.itu.int/rec/T-REC-G.114) · [ITU-T G.722](https://www.itu.int/rec/T-REC-G.722) · [ITU-T G.8271](https://www.itu.int/rec/T-REC-G.8271) · [ITU-T G.8275.1](https://www.itu.int/rec/T-REC-G.8275.1) · [ITU-T M.3400](https://www.itu.int/rec/T-REC-M.3400) · [ITU-T X.733](https://www.itu.int/rec/T-REC-X.733) · [ITU-T Y.1541](https://www.itu.int/rec/T-REC-Y.1541)
-- [LoRa Alliance LoRaWAN specifications (link layer, regional parameters, application layer)](https://resources.lora-alliance.org/technical-specifications): 6 requirements, 4 tests
-- [Machine safety standards (ISO 12100, 13850, 13855, 13857, 14118, 14119, 14120)](https://www.iso.org/standard/51528.html): 8 requirements, 7 tests
+- [LoRa Alliance LoRaWAN specifications (link layer, regional parameters, application layer)](https://resources.lora-alliance.org/technical-specifications): 6 requirements, 4 tests, 2 risks
+- [Machine safety standards (ISO 12100, 13850, 13855, 13857, 14118, 14119, 14120)](https://www.iso.org/standard/51528.html): 8 requirements, 7 tests, 4 risks
   - [ISO 12100](https://www.iso.org/standard/51528.html) · [ISO 13850](https://www.iso.org/standard/59970.html) · [ISO 13855](https://www.iso.org/standard/80590.html) · [ISO 13857](https://www.iso.org/standard/69569.html) · [ISO 14118](https://www.iso.org/standard/66460.html) · [ISO 14119](https://www.iso.org/standard/75942.html) · [ISO 14120](https://www.iso.org/standard/59545.html)
 - [Material declaration and marking standards (EN IEC 63000, IEC 62474, EN 50419)](https://webstore.iec.ch/en/publication/29857): 2 requirements, 2 tests
   - [IEC 62474](https://webstore.iec.ch/en/publication/29857)
-- [Metrology standards and guides (ISO 10012, JCGM 100 GUM, ILAC-G24)](https://www.iso.org/standard/26033.html): 5 requirements, 5 tests
+- [Metrology standards and guides (ISO 10012, JCGM 100 GUM, ILAC-G24)](https://www.iso.org/standard/26033.html): 5 requirements, 5 tests, 1 risk
   - [ISO 10012](https://www.iso.org/standard/26033.html) · [JCGM 100](https://www.bipm.org/en/doi/10.59161/JCGM100-2008E) · [ILAC-G24](https://ilac.org/publications-and-resources/ilac-guidance-series/)
-- [MITRE Common Weakness Enumeration (CWE)](https://cwe.mitre.org/): 244 requirements, 231 tests
-  - [CWE Top 25](https://cwe.mitre.org/top25/) · [CWE-20](https://cwe.mitre.org/data/definitions/20.html) · [CWE-22](https://cwe.mitre.org/data/definitions/22.html) · [CWE-59](https://cwe.mitre.org/data/definitions/59.html) · [CWE-78](https://cwe.mitre.org/data/definitions/78.html) · [CWE-79](https://cwe.mitre.org/data/definitions/79.html) · [CWE-89](https://cwe.mitre.org/data/definitions/89.html) · [CWE-90](https://cwe.mitre.org/data/definitions/90.html) · [CWE-93](https://cwe.mitre.org/data/definitions/93.html) · [CWE-113](https://cwe.mitre.org/data/definitions/113.html) · [CWE-116](https://cwe.mitre.org/data/definitions/116.html) · [CWE-117](https://cwe.mitre.org/data/definitions/117.html) · [CWE-121](https://cwe.mitre.org/data/definitions/121.html) · [CWE-180](https://cwe.mitre.org/data/definitions/180.html) · [CWE-204](https://cwe.mitre.org/data/definitions/204.html) · [CWE-209](https://cwe.mitre.org/data/definitions/209.html) · [CWE-212](https://cwe.mitre.org/data/definitions/212.html) · [CWE-214](https://cwe.mitre.org/data/definitions/214.html) · [CWE-223](https://cwe.mitre.org/data/definitions/223.html) · [CWE-226](https://cwe.mitre.org/data/definitions/226.html) · [CWE-250](https://cwe.mitre.org/data/definitions/250.html) · [CWE-256](https://cwe.mitre.org/data/definitions/256.html) · [CWE-257](https://cwe.mitre.org/data/definitions/257.html) · [CWE-260](https://cwe.mitre.org/data/definitions/260.html) · [CWE-266](https://cwe.mitre.org/data/definitions/266.html) · [CWE-269](https://cwe.mitre.org/data/definitions/269.html) · [CWE-276](https://cwe.mitre.org/data/definitions/276.html) · [CWE-290](https://cwe.mitre.org/data/definitions/290.html) · [CWE-294](https://cwe.mitre.org/data/definitions/294.html) · [CWE-295](https://cwe.mitre.org/data/definitions/295.html) · [CWE-297](https://cwe.mitre.org/data/definitions/297.html) · [CWE-306](https://cwe.mitre.org/data/definitions/306.html) · [CWE-307](https://cwe.mitre.org/data/definitions/307.html) · [CWE-308](https://cwe.mitre.org/data/definitions/308.html) · [CWE-311](https://cwe.mitre.org/data/definitions/311.html) · [CWE-312](https://cwe.mitre.org/data/definitions/312.html) · [CWE-319](https://cwe.mitre.org/data/definitions/319.html) · [CWE-324](https://cwe.mitre.org/data/definitions/324.html) · [CWE-326](https://cwe.mitre.org/data/definitions/326.html) · [CWE-327](https://cwe.mitre.org/data/definitions/327.html) · [CWE-328](https://cwe.mitre.org/data/definitions/328.html) · [CWE-330](https://cwe.mitre.org/data/definitions/330.html) · [CWE-331](https://cwe.mitre.org/data/definitions/331.html) · [CWE-338](https://cwe.mitre.org/data/definitions/338.html) · [CWE-346](https://cwe.mitre.org/data/definitions/346.html) · [CWE-347](https://cwe.mitre.org/data/definitions/347.html) · [CWE-352](https://cwe.mitre.org/data/definitions/352.html) · [CWE-353](https://cwe.mitre.org/data/definitions/353.html) · [CWE-359](https://cwe.mitre.org/data/definitions/359.html) · [CWE-384](https://cwe.mitre.org/data/definitions/384.html) · [CWE-400](https://cwe.mitre.org/data/definitions/400.html) · [CWE-409](https://cwe.mitre.org/data/definitions/409.html) · [CWE-427](https://cwe.mitre.org/data/definitions/427.html) · [CWE-434](https://cwe.mitre.org/data/definitions/434.html) · [CWE-459](https://cwe.mitre.org/data/definitions/459.html) · [CWE-489](https://cwe.mitre.org/data/definitions/489.html) · [CWE-494](https://cwe.mitre.org/data/definitions/494.html) · [CWE-497](https://cwe.mitre.org/data/definitions/497.html) · [CWE-502](https://cwe.mitre.org/data/definitions/502.html) · [CWE-506](https://cwe.mitre.org/data/definitions/506.html) · [CWE-521](https://cwe.mitre.org/data/definitions/521.html) · [CWE-522](https://cwe.mitre.org/data/definitions/522.html) · [CWE-524](https://cwe.mitre.org/data/definitions/524.html) · [CWE-525](https://cwe.mitre.org/data/definitions/525.html) · [CWE-526](https://cwe.mitre.org/data/definitions/526.html) · [CWE-532](https://cwe.mitre.org/data/definitions/532.html) · [CWE-540](https://cwe.mitre.org/data/definitions/540.html) · [CWE-552](https://cwe.mitre.org/data/definitions/552.html) · [CWE-565](https://cwe.mitre.org/data/definitions/565.html) · [CWE-598](https://cwe.mitre.org/data/definitions/598.html) · [CWE-601](https://cwe.mitre.org/data/definitions/601.html) · [CWE-602](https://cwe.mitre.org/data/definitions/602.html) · [CWE-611](https://cwe.mitre.org/data/definitions/611.html) · [CWE-614](https://cwe.mitre.org/data/definitions/614.html) · [CWE-620](https://cwe.mitre.org/data/definitions/620.html) · [CWE-636](https://cwe.mitre.org/data/definitions/636.html) · [CWE-639](https://cwe.mitre.org/data/definitions/639.html) · [CWE-640](https://cwe.mitre.org/data/definitions/640.html) · [CWE-646](https://cwe.mitre.org/data/definitions/646.html) · [CWE-653](https://cwe.mitre.org/data/definitions/653.html) · [CWE-749](https://cwe.mitre.org/data/definitions/749.html) · [CWE-770](https://cwe.mitre.org/data/definitions/770.html) · [CWE-776](https://cwe.mitre.org/data/definitions/776.html) · [CWE-778](https://cwe.mitre.org/data/definitions/778.html) · [CWE-798](https://cwe.mitre.org/data/definitions/798.html) · [CWE-799](https://cwe.mitre.org/data/definitions/799.html) · [CWE-807](https://cwe.mitre.org/data/definitions/807.html) · [CWE-829](https://cwe.mitre.org/data/definitions/829.html) · [CWE-837](https://cwe.mitre.org/data/definitions/837.html) · [CWE-862](https://cwe.mitre.org/data/definitions/862.html) · [CWE-863](https://cwe.mitre.org/data/definitions/863.html) · [CWE-912](https://cwe.mitre.org/data/definitions/912.html) · [CWE-915](https://cwe.mitre.org/data/definitions/915.html) · [CWE-916](https://cwe.mitre.org/data/definitions/916.html) · [CWE-918](https://cwe.mitre.org/data/definitions/918.html) · [CWE-922](https://cwe.mitre.org/data/definitions/922.html) · [CWE-926](https://cwe.mitre.org/data/definitions/926.html) · [CWE-939](https://cwe.mitre.org/data/definitions/939.html) · [CWE-942](https://cwe.mitre.org/data/definitions/942.html) · [CWE-1004](https://cwe.mitre.org/data/definitions/1004.html) · [CWE-1007](https://cwe.mitre.org/data/definitions/1007.html) · [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html) · [CWE-1191](https://cwe.mitre.org/data/definitions/1191.html) · [CWE-1236](https://cwe.mitre.org/data/definitions/1236.html) · [CWE-1244](https://cwe.mitre.org/data/definitions/1244.html) · [CWE-1263](https://cwe.mitre.org/data/definitions/1263.html) · [CWE-1266](https://cwe.mitre.org/data/definitions/1266.html) · [CWE-1275](https://cwe.mitre.org/data/definitions/1275.html) · [CWE-1326](https://cwe.mitre.org/data/definitions/1326.html) · [CWE-1328](https://cwe.mitre.org/data/definitions/1328.html) · [CWE-1333](https://cwe.mitre.org/data/definitions/1333.html) · [CWE-1336](https://cwe.mitre.org/data/definitions/1336.html) · [CWE-1357](https://cwe.mitre.org/data/definitions/1357.html) · [CWE-1390](https://cwe.mitre.org/data/definitions/1390.html) · [CWE-1392](https://cwe.mitre.org/data/definitions/1392.html) · [CWE-1393](https://cwe.mitre.org/data/definitions/1393.html) · [CWE-1394](https://cwe.mitre.org/data/definitions/1394.html) · [CWE-1395](https://cwe.mitre.org/data/definitions/1395.html) · [CWE-1426](https://cwe.mitre.org/data/definitions/1426.html) · [CWE-1427](https://cwe.mitre.org/data/definitions/1427.html) · [CWE-1428](https://cwe.mitre.org/data/definitions/1428.html) · [CWE-1463](https://cwe.mitre.org/data/definitions/1463.html) · [CWE-1464](https://cwe.mitre.org/data/definitions/1464.html) · [CWE-1465](https://cwe.mitre.org/data/definitions/1465.html) · [CWE-1466](https://cwe.mitre.org/data/definitions/1466.html) · [CWE-1469](https://cwe.mitre.org/data/definitions/1469.html) · [CWE-1470](https://cwe.mitre.org/data/definitions/1470.html) · [CWE-1472](https://cwe.mitre.org/data/definitions/1472.html)
-- [OASIS Common Security Advisory Framework (CSAF)](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html): 2 requirements, 2 tests
+- [MITRE Common Weakness Enumeration (CWE)](https://cwe.mitre.org/): 244 requirements, 231 tests, 70 risks
+  - [CWE Top 25](https://cwe.mitre.org/top25/) · [CWE-20](https://cwe.mitre.org/data/definitions/20.html) · [CWE-22](https://cwe.mitre.org/data/definitions/22.html) · [CWE-59](https://cwe.mitre.org/data/definitions/59.html) · [CWE-78](https://cwe.mitre.org/data/definitions/78.html) · [CWE-79](https://cwe.mitre.org/data/definitions/79.html) · [CWE-89](https://cwe.mitre.org/data/definitions/89.html) · [CWE-90](https://cwe.mitre.org/data/definitions/90.html) · [CWE-93](https://cwe.mitre.org/data/definitions/93.html) · [CWE-113](https://cwe.mitre.org/data/definitions/113.html) · [CWE-116](https://cwe.mitre.org/data/definitions/116.html) · [CWE-117](https://cwe.mitre.org/data/definitions/117.html) · [CWE-121](https://cwe.mitre.org/data/definitions/121.html) · [CWE-180](https://cwe.mitre.org/data/definitions/180.html) · [CWE-204](https://cwe.mitre.org/data/definitions/204.html) · [CWE-209](https://cwe.mitre.org/data/definitions/209.html) · [CWE-212](https://cwe.mitre.org/data/definitions/212.html) · [CWE-214](https://cwe.mitre.org/data/definitions/214.html) · [CWE-223](https://cwe.mitre.org/data/definitions/223.html) · [CWE-226](https://cwe.mitre.org/data/definitions/226.html) · [CWE-250](https://cwe.mitre.org/data/definitions/250.html) · [CWE-256](https://cwe.mitre.org/data/definitions/256.html) · [CWE-257](https://cwe.mitre.org/data/definitions/257.html) · [CWE-260](https://cwe.mitre.org/data/definitions/260.html) · [CWE-266](https://cwe.mitre.org/data/definitions/266.html) · [CWE-269](https://cwe.mitre.org/data/definitions/269.html) · [CWE-276](https://cwe.mitre.org/data/definitions/276.html) · [CWE-290](https://cwe.mitre.org/data/definitions/290.html) · [CWE-294](https://cwe.mitre.org/data/definitions/294.html) · [CWE-295](https://cwe.mitre.org/data/definitions/295.html) · [CWE-297](https://cwe.mitre.org/data/definitions/297.html) · [CWE-306](https://cwe.mitre.org/data/definitions/306.html) · [CWE-307](https://cwe.mitre.org/data/definitions/307.html) · [CWE-308](https://cwe.mitre.org/data/definitions/308.html) · [CWE-311](https://cwe.mitre.org/data/definitions/311.html) · [CWE-312](https://cwe.mitre.org/data/definitions/312.html) · [CWE-319](https://cwe.mitre.org/data/definitions/319.html) · [CWE-324](https://cwe.mitre.org/data/definitions/324.html) · [CWE-326](https://cwe.mitre.org/data/definitions/326.html) · [CWE-327](https://cwe.mitre.org/data/definitions/327.html) · [CWE-328](https://cwe.mitre.org/data/definitions/328.html) · [CWE-330](https://cwe.mitre.org/data/definitions/330.html) · [CWE-331](https://cwe.mitre.org/data/definitions/331.html) · [CWE-338](https://cwe.mitre.org/data/definitions/338.html) · [CWE-345](https://cwe.mitre.org/data/definitions/345.html) · [CWE-346](https://cwe.mitre.org/data/definitions/346.html) · [CWE-347](https://cwe.mitre.org/data/definitions/347.html) · [CWE-352](https://cwe.mitre.org/data/definitions/352.html) · [CWE-353](https://cwe.mitre.org/data/definitions/353.html) · [CWE-359](https://cwe.mitre.org/data/definitions/359.html) · [CWE-384](https://cwe.mitre.org/data/definitions/384.html) · [CWE-400](https://cwe.mitre.org/data/definitions/400.html) · [CWE-409](https://cwe.mitre.org/data/definitions/409.html) · [CWE-427](https://cwe.mitre.org/data/definitions/427.html) · [CWE-434](https://cwe.mitre.org/data/definitions/434.html) · [CWE-459](https://cwe.mitre.org/data/definitions/459.html) · [CWE-489](https://cwe.mitre.org/data/definitions/489.html) · [CWE-494](https://cwe.mitre.org/data/definitions/494.html) · [CWE-497](https://cwe.mitre.org/data/definitions/497.html) · [CWE-502](https://cwe.mitre.org/data/definitions/502.html) · [CWE-506](https://cwe.mitre.org/data/definitions/506.html) · [CWE-521](https://cwe.mitre.org/data/definitions/521.html) · [CWE-522](https://cwe.mitre.org/data/definitions/522.html) · [CWE-524](https://cwe.mitre.org/data/definitions/524.html) · [CWE-525](https://cwe.mitre.org/data/definitions/525.html) · [CWE-526](https://cwe.mitre.org/data/definitions/526.html) · [CWE-532](https://cwe.mitre.org/data/definitions/532.html) · [CWE-540](https://cwe.mitre.org/data/definitions/540.html) · [CWE-552](https://cwe.mitre.org/data/definitions/552.html) · [CWE-565](https://cwe.mitre.org/data/definitions/565.html) · [CWE-598](https://cwe.mitre.org/data/definitions/598.html) · [CWE-601](https://cwe.mitre.org/data/definitions/601.html) · [CWE-602](https://cwe.mitre.org/data/definitions/602.html) · [CWE-611](https://cwe.mitre.org/data/definitions/611.html) · [CWE-614](https://cwe.mitre.org/data/definitions/614.html) · [CWE-620](https://cwe.mitre.org/data/definitions/620.html) · [CWE-636](https://cwe.mitre.org/data/definitions/636.html) · [CWE-639](https://cwe.mitre.org/data/definitions/639.html) · [CWE-640](https://cwe.mitre.org/data/definitions/640.html) · [CWE-646](https://cwe.mitre.org/data/definitions/646.html) · [CWE-653](https://cwe.mitre.org/data/definitions/653.html) · [CWE-749](https://cwe.mitre.org/data/definitions/749.html) · [CWE-770](https://cwe.mitre.org/data/definitions/770.html) · [CWE-776](https://cwe.mitre.org/data/definitions/776.html) · [CWE-778](https://cwe.mitre.org/data/definitions/778.html) · [CWE-798](https://cwe.mitre.org/data/definitions/798.html) · [CWE-799](https://cwe.mitre.org/data/definitions/799.html) · [CWE-807](https://cwe.mitre.org/data/definitions/807.html) · [CWE-829](https://cwe.mitre.org/data/definitions/829.html) · [CWE-837](https://cwe.mitre.org/data/definitions/837.html) · [CWE-862](https://cwe.mitre.org/data/definitions/862.html) · [CWE-863](https://cwe.mitre.org/data/definitions/863.html) · [CWE-912](https://cwe.mitre.org/data/definitions/912.html) · [CWE-915](https://cwe.mitre.org/data/definitions/915.html) · [CWE-916](https://cwe.mitre.org/data/definitions/916.html) · [CWE-918](https://cwe.mitre.org/data/definitions/918.html) · [CWE-922](https://cwe.mitre.org/data/definitions/922.html) · [CWE-926](https://cwe.mitre.org/data/definitions/926.html) · [CWE-939](https://cwe.mitre.org/data/definitions/939.html) · [CWE-942](https://cwe.mitre.org/data/definitions/942.html) · [CWE-1004](https://cwe.mitre.org/data/definitions/1004.html) · [CWE-1007](https://cwe.mitre.org/data/definitions/1007.html) · [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html) · [CWE-1191](https://cwe.mitre.org/data/definitions/1191.html) · [CWE-1236](https://cwe.mitre.org/data/definitions/1236.html) · [CWE-1244](https://cwe.mitre.org/data/definitions/1244.html) · [CWE-1263](https://cwe.mitre.org/data/definitions/1263.html) · [CWE-1266](https://cwe.mitre.org/data/definitions/1266.html) · [CWE-1275](https://cwe.mitre.org/data/definitions/1275.html) · [CWE-1326](https://cwe.mitre.org/data/definitions/1326.html) · [CWE-1328](https://cwe.mitre.org/data/definitions/1328.html) · [CWE-1333](https://cwe.mitre.org/data/definitions/1333.html) · [CWE-1336](https://cwe.mitre.org/data/definitions/1336.html) · [CWE-1357](https://cwe.mitre.org/data/definitions/1357.html) · [CWE-1390](https://cwe.mitre.org/data/definitions/1390.html) · [CWE-1392](https://cwe.mitre.org/data/definitions/1392.html) · [CWE-1393](https://cwe.mitre.org/data/definitions/1393.html) · [CWE-1394](https://cwe.mitre.org/data/definitions/1394.html) · [CWE-1395](https://cwe.mitre.org/data/definitions/1395.html) · [CWE-1426](https://cwe.mitre.org/data/definitions/1426.html) · [CWE-1427](https://cwe.mitre.org/data/definitions/1427.html) · [CWE-1428](https://cwe.mitre.org/data/definitions/1428.html) · [CWE-1463](https://cwe.mitre.org/data/definitions/1463.html) · [CWE-1464](https://cwe.mitre.org/data/definitions/1464.html) · [CWE-1465](https://cwe.mitre.org/data/definitions/1465.html) · [CWE-1466](https://cwe.mitre.org/data/definitions/1466.html) · [CWE-1469](https://cwe.mitre.org/data/definitions/1469.html) · [CWE-1470](https://cwe.mitre.org/data/definitions/1470.html) · [CWE-1472](https://cwe.mitre.org/data/definitions/1472.html)
+- [OASIS Common Security Advisory Framework (CSAF)](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html): 2 requirements, 2 tests, 1 risk
 - [OASIS MQTT](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html): 2 requirements, 2 tests
 - [Offline web application specifications (W3C Service Workers, W3C Indexed Database API, WHATWG Storage)](https://www.w3.org/TR/service-workers/): 2 requirements, 2 tests
 - [Open Container Initiative specifications](https://opencontainers.org/) (OCI): 1 requirement, 1 test
   - [Open Container Initiative Image Format Specification](https://github.com/opencontainers/image-spec)
 - [OpenAPI Specification](https://spec.openapis.org/oas/v3.1.0): 5 requirements, 4 tests
-- [OpenChain ISO/IEC 5230 Open source licence compliance](https://www.iso.org/standard/81039.html): 8 requirements, 7 tests
+- [OpenChain ISO/IEC 5230 Open source licence compliance](https://www.iso.org/standard/81039.html): 8 requirements, 7 tests, 2 risks
 - [OpenFeature specification](https://openfeature.dev/specification/): 5 requirements, 5 tests
 - [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html) (OIDC): 2 requirements, 2 tests
 - [OpenTelemetry specification](https://opentelemetry.io/docs/specs/otel/): 5 requirements, 5 tests
 - [Operator interface standards (IEC 60073, 60447, 61310-1, EN 894-3, ISO 7010)](https://webstore.iec.ch/en/publication/5263): 4 requirements, 3 tests
   - [IEC 61310-1](https://webstore.iec.ch/en/publication/5263) · [ISO 7010](https://www.iso.org/standard/72424.html)
 - [OWASP Application Security Verification Standard (ASVS)](https://owasp.org/www-project-application-security-verification-standard/) (OWASP ASVS): 127 requirements, 121 tests
-- [OWASP Mobile Application Security Verification Standard (MASVS)](https://mas.owasp.org/MASVS/) (OWASP MASVS): 18 requirements, 18 tests
-- [PCI Data Security Standard and PCI SSC guidance](https://www.pcisecuritystandards.org/) (PCI DSS): 26 requirements, 25 tests
+- [OWASP Mobile Application Security Verification Standard (MASVS)](https://mas.owasp.org/MASVS/) (OWASP MASVS): 18 requirements, 18 tests, 3 risks
+- [PCI Data Security Standard and PCI SSC guidance](https://www.pcisecuritystandards.org/) (PCI DSS): 26 requirements, 25 tests, 2 risks
 - [Peppol BIS Billing](https://docs.peppol.eu/poacc/billing/3.0/): 1 requirement, 1 test
-- [SAE EIA-649 Configuration management standard](https://www.sae.org/standards/content/eia649c/): 4 requirements, 3 tests
+- [SAE EIA-649 Configuration management standard](https://www.sae.org/standards/content/eia649c/): 4 requirements, 3 tests, 1 risk
 - [SCORM e-learning content packaging](https://www.adlnet.gov/research/scorm): 1 requirement, 1 test
 - [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (SemVer): 7 requirements, 7 tests
-- [SPDX specification and licence list](https://spdx.dev/): 6 requirements, 7 tests
+- [SPDX specification and licence list](https://spdx.dev/): 6 requirements, 7 tests, 1 risk
   - [SPDX Specification 2.3](https://spdx.github.io/spdx-spec/v2.3/) · [SPDX License List](https://spdx.org/licenses/)
 - [Standard Webhooks specification](https://www.standardwebhooks.com/): 3 requirements, 3 tests
-- [Systems and software life-cycle standards (ISO/IEC/IEEE 15939, 24748-1, IEEE 1012)](https://www.iso.org/standard/71197.html): 10 requirements, 10 tests
+- [Systems and software life-cycle standards (ISO/IEC/IEEE 15939, 24748-1, IEEE 1012)](https://www.iso.org/standard/71197.html): 10 requirements, 10 tests, 2 risks
   - [ISO/IEC/IEEE 15939](https://www.iso.org/standard/71197.html) · [ISO/IEC/IEEE 24748-1](https://www.iso.org/standard/84709.html) · [IEEE 1012](https://standards.ieee.org/ieee/1012/5609/)
 - [Technical product documentation: title blocks and drawing principles (ISO 7200, ISO 128)](https://www.iso.org/standard/35446.html): 2 requirements, 1 test
   - [ISO 7200](https://www.iso.org/standard/35446.html) · [ISO 128-1](https://www.iso.org/standard/65296.html)
@@ -4113,31 +4758,31 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 
 - [EN 12464-1 Light and lighting: lighting of indoor work places](https://www.sis.se/en/produkter/construction-materials-and-building/lighting/interior-lighting/ss-en-12464-12021-f17a3ebb/): 1 requirement, 1 test
 - [EN 12845 Fixed firefighting systems: automatic sprinkler systems](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/firefighting/ss-en-128452015a22026/): 1 requirement, 1 test
-- [EN 13306 Maintenance terminology](https://www.sis.se/en/produkter/standardization/vocabularies/services/ss-en-133062017/): 11 requirements, 8 tests
+- [EN 13306 Maintenance terminology](https://www.sis.se/en/produkter/standardization/vocabularies/services/ss-en-133062017/): 11 requirements, 8 tests, 1 risk
 - [EN 14181 and EN 17255 Automated emission monitoring](https://www.sis.se/en/produkter/environment-health-protection-safety/air-quality/ssen141812014/): 1 requirement, 1 test
   - [EN 14181](https://www.sis.se/en/produkter/environment-health-protection-safety/air-quality/ssen141812014/)
-- [EN 16798-1 Energy performance of buildings: indoor environmental input parameters](https://www.sis.se/en/produkter/construction-materials-and-building/installations-in-buildings/general/ss-en-16798-12019/): 3 requirements, 2 tests
+- [EN 16798-1 Energy performance of buildings: indoor environmental input parameters](https://www.sis.se/en/produkter/construction-materials-and-building/installations-in-buildings/general/ss-en-16798-12019/): 3 requirements, 2 tests, 1 risk
 - [EN 16931 Electronic invoicing](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Obtaining+a+copy+of+the+European+standard+on+eInvoicing): 1 requirement, 1 test
 - [EN 1717 Protection against pollution of water intended for human consumption in potable water installations (backflow)](https://www.sis.se/en/produkter/fluid-systems-and-components-for-general-use/valves/general/ss-en-17172025/): 1 requirement, 1 test
 - [EN 3 Portable fire extinguishers](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/firefighting/ssen372004a12007/): 1 requirement, 1 test
 - [EN 301 549 Accessibility requirements for ICT products and services](https://www.etsi.org/deliver/etsi_en/301500_301599/301549/): 23 requirements, 19 tests
 - [EN 50110-1 Operation of electrical installations](https://elstandard.se/standard/3246401): 3 requirements, 3 tests
-- [EN 50126 and EN 50129 Railway RAMS and safety-related electronic systems](https://www.sis.se/en/produkter/electrical-engineering/electric-traction-equipment/ss-en-50126-1/): 12 requirements, 8 tests
-- [EN 50518 Monitoring and alarm receiving centre](https://www.sis.se/en/produkter/environment-health-protection-safety/alarm-and-warning-systems/ss-en-50518/): 2 requirements, 2 tests
-- [EN 50600 Data centre facilities and infrastructures](https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen506001/): 16 requirements, 13 tests
+- [EN 50126 and EN 50129 Railway RAMS and safety-related electronic systems](https://www.sis.se/en/produkter/electrical-engineering/electric-traction-equipment/ss-en-50126-1/): 12 requirements, 8 tests, 3 risks
+- [EN 50518 Monitoring and alarm receiving centre](https://www.sis.se/en/produkter/environment-health-protection-safety/alarm-and-warning-systems/ss-en-50518/): 2 requirements, 2 tests, 1 risk
+- [EN 50600 Data centre facilities and infrastructures](https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen506001/): 16 requirements, 13 tests, 2 risks
   - [EN 50600-1](https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen506001/) · [EN 50600-3-1](https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen5060031/)
 - [ETSI EN 300 220 Short Range Devices operating in the frequency range 25 MHz to 1 000 MHz](https://www.etsi.org/deliver/etsi_en/300200_300299/30022002/): 1 requirement, 1 test
-- [ETSI EN 303 645 Cyber security for consumer IoT](https://www.etsi.org/deliver/etsi_en/303600_303699/303645/): 7 requirements, 7 tests
-- [ETSI harmonised radio standards (EN 300 328, EN 300 396, EN 301 893)](https://www.etsi.org/deliver/etsi_en/300300_300399/300328/): 3 requirements, 2 tests
+- [ETSI EN 303 645 Cyber security for consumer IoT](https://www.etsi.org/deliver/etsi_en/303600_303699/303645/): 7 requirements, 7 tests, 3 risks
+- [ETSI harmonised radio standards (EN 300 328, EN 300 396, EN 301 893)](https://www.etsi.org/deliver/etsi_en/300300_300399/300328/): 3 requirements, 2 tests, 2 risks
   - [ETSI EN 300 328](https://www.etsi.org/deliver/etsi_en/300300_300399/300328/) · [ETSI EN 301 893](https://www.etsi.org/deliver/etsi_en/301800_301899/301893/)
-- [European accessibility standards for the built environment (EN 17210, EN 81-70)](https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/): 3 requirements, 2 tests
+- [European accessibility standards for the built environment (EN 17210, EN 81-70)](https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/): 3 requirements, 2 tests, 1 risk
   - [EN 17210](https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/)
-- [European fire and emergency standards (EN 54, EN 1155, EN 1838, EN 15004-1, EN 50172)](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/fire-protection/ss-en-54-120212/): 8 requirements, 7 tests
-- [European maintenance standards (EN 13269, EN 13460, EN 15341, EN 17007)](https://www.sis.se/en/produkter/image-technology/graphic-technology/reproduction-equipment/ss-en-153412019a12022/): 15 requirements, 13 tests
+- [European fire and emergency standards (EN 54, EN 1155, EN 1838, EN 15004-1, EN 50172)](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/fire-protection/ss-en-54-120212/): 8 requirements, 7 tests, 2 risks
+- [European maintenance standards (EN 13269, EN 13460, EN 15341, EN 17007)](https://www.sis.se/en/produkter/image-technology/graphic-technology/reproduction-equipment/ss-en-153412019a12022/): 15 requirements, 13 tests, 2 risks
   - [EN 15341](https://www.sis.se/en/produkter/image-technology/graphic-technology/reproduction-equipment/ss-en-153412019a12022/) · [EN 13460](https://www.sis.se/en/produkter/standardization/technical-product-documentation/ss-en-134602009/)
-- [European security and safety standards for buildings (EN 1627, EN 50131, EN 60839-11-1, EN 62676-4)](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-crime/ss-en-50131-1-6a7cf25e/): 6 requirements, 6 tests
+- [European security and safety standards for buildings (EN 1627, EN 50131, EN 60839-11-1, EN 62676-4)](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-crime/ss-en-50131-1-6a7cf25e/): 6 requirements, 6 tests, 1 risk
   - [EN 50131-1](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-crime/ss-en-50131-1-6a7cf25e/)
-- [Safety rules for lifts and escalators (EN 81-20, EN 81-28, EN 115-1)](https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-81-202020/): 2 requirements, 1 test
+- [Safety rules for lifts and escalators (EN 81-20, EN 81-28, EN 115-1)](https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-81-202020/): 2 requirements, 1 test, 1 risk
   - [EN 81-20](https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-81-202020/) · [EN 115-1](https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-115-12017/)
 
 #### Standards and specifications: Norway
@@ -4150,7 +4795,7 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 
 #### Standards and specifications: United States
 
-- [American Petroleum Institute standards and recommended practices](https://www.api.org/products-and-services/standards) (API): 7 requirements, 7 tests
+- [American Petroleum Institute standards and recommended practices](https://www.api.org/products-and-services/standards) (API): 7 requirements, 7 tests, 1 risk
 - [NERC Critical Infrastructure Protection standards](https://www.nerc.com/standards/reliability-standards) (NERC CIP): 2 requirements, 2 tests
 - [NIST cryptographic standards and guidelines (FIPS 180-4, SP 800-52, 800-57, 800-90A, 800-107, 800-131A)](https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines): 15 requirements, 16 tests
   - [NIST FIPS 180-4](https://doi.org/10.6028/NIST.FIPS.180-4) · [NIST SP 800-52 Rev. 2](https://doi.org/10.6028/NIST.SP.800-52r2) · [NIST SP 800-57 Part 1 Rev. 5](https://doi.org/10.6028/NIST.SP.800-57pt1r5) · [NIST SP 800-90A Rev. 1](https://doi.org/10.6028/NIST.SP.800-90Ar1) · [NIST SP 800-107 Rev. 1](https://doi.org/10.6028/NIST.SP.800-107r1) · [NIST SP 800-131A Rev. 2](https://doi.org/10.6028/NIST.SP.800-131Ar2)
@@ -4174,32 +4819,32 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
   - [Green Software Foundation: Carbon Aware SDK](https://github.com/Green-Software-Foundation/carbon-aware-sdk) · [Green Software Foundation: SCI guidance](https://sci-guide.greensoftware.foundation/)
 - [ISTQB syllabi](https://www.istqb.org/): 20 requirements, 21 tests
   - [ISTQB CTFL 4.0](https://www.istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/)
-- [ITIL 4 service management practices](https://www.axelos.com/certifications/itil-service-management): 96 requirements, 83 tests
+- [ITIL 4 service management practices](https://www.axelos.com/certifications/itil-service-management): 96 requirements, 83 tests, 10 risks
 - [Keep a Changelog](https://keepachangelog.com/en/1.1.0/): 4 requirements, 4 tests
 - [Kubernetes security documentation (Pod Security Standards, RBAC good practices, auditing, encryption at rest)](https://kubernetes.io/docs/concepts/security/): 7 requirements, 7 tests
 - [M3AAWG best practices for email](https://www.m3aawg.org/published-documents): 8 requirements, 8 tests
-- [MITRE ATLAS adversarial threat landscape for AI systems](https://atlas.mitre.org/): 1 requirement, 1 test
-- [MITRE ATT&CK](https://attack.mitre.org/): 233 requirements, 221 tests
+- [MITRE ATLAS adversarial threat landscape for AI systems](https://atlas.mitre.org/): 1 requirement, 1 test, 1 risk
+- [MITRE ATT&CK](https://attack.mitre.org/): 233 requirements, 221 tests, 70 risks
   - [MITRE ATT&CK Containers Matrix](https://attack.mitre.org/matrices/enterprise/containers/) · [MITRE ATT&CK M0930](https://attack.mitre.org/mitigations/M0930/) · [MITRE ATT&CK M0932](https://attack.mitre.org/mitigations/M0932/) · [MITRE ATT&CK M0934](https://attack.mitre.org/mitigations/M0934/) · [MITRE ATT&CK M0938](https://attack.mitre.org/mitigations/M0938/) · [MITRE ATT&CK M0942](https://attack.mitre.org/mitigations/M0942/) · [MITRE ATT&CK M0951](https://attack.mitre.org/mitigations/M0951/) · [MITRE ATT&CK M0953](https://attack.mitre.org/mitigations/M0953/) · [MITRE ATT&CK M1002](https://attack.mitre.org/mitigations/M1002/) · [MITRE ATT&CK M1013](https://attack.mitre.org/mitigations/M1013/) · [MITRE ATT&CK M1016](https://attack.mitre.org/mitigations/M1016/) · [MITRE ATT&CK M1017](https://attack.mitre.org/mitigations/M1017/) · [MITRE ATT&CK M1018](https://attack.mitre.org/mitigations/M1018/) · [MITRE ATT&CK M1021](https://attack.mitre.org/mitigations/M1021/) · [MITRE ATT&CK M1022](https://attack.mitre.org/mitigations/M1022/) · [MITRE ATT&CK M1026](https://attack.mitre.org/mitigations/M1026/) · [MITRE ATT&CK M1027](https://attack.mitre.org/mitigations/M1027/) · [MITRE ATT&CK M1029](https://attack.mitre.org/mitigations/M1029/) · [MITRE ATT&CK M1030](https://attack.mitre.org/mitigations/M1030/) · [MITRE ATT&CK M1032](https://attack.mitre.org/mitigations/M1032/) · [MITRE ATT&CK M1035](https://attack.mitre.org/mitigations/M1035/) · [MITRE ATT&CK M1037](https://attack.mitre.org/mitigations/M1037/) · [MITRE ATT&CK M1042](https://attack.mitre.org/mitigations/M1042/) · [MITRE ATT&CK M1045](https://attack.mitre.org/mitigations/M1045/) · [MITRE ATT&CK M1050](https://attack.mitre.org/mitigations/M1050/) · [MITRE ATT&CK M1051](https://attack.mitre.org/mitigations/M1051/) · [MITRE ATT&CK M1053](https://attack.mitre.org/mitigations/M1053/) · [MITRE ATT&CK M1054](https://attack.mitre.org/mitigations/M1054/) · [MITRE ATT&CK M1060](https://attack.mitre.org/mitigations/M1060/) · [MITRE ATT&CK T0809](https://attack.mitre.org/techniques/T0809/) · [MITRE ATT&CK T0814](https://attack.mitre.org/techniques/T0814/) · [MITRE ATT&CK T0822](https://attack.mitre.org/techniques/T0822/) · [MITRE ATT&CK T0830](https://attack.mitre.org/techniques/T0830/) · [MITRE ATT&CK T0843](https://attack.mitre.org/techniques/T0843/) · [MITRE ATT&CK T0847](https://attack.mitre.org/techniques/T0847/) · [MITRE ATT&CK T0858](https://attack.mitre.org/techniques/T0858/) · [MITRE ATT&CK T0863](https://attack.mitre.org/techniques/T0863/) · [MITRE ATT&CK T0880](https://attack.mitre.org/techniques/T0880/) · [MITRE ATT&CK T0886](https://attack.mitre.org/techniques/T0886/) · [MITRE ATT&CK T0889](https://attack.mitre.org/techniques/T0889/) · [MITRE ATT&CK T1021](https://attack.mitre.org/techniques/T1021/) · [MITRE ATT&CK T1036.010](https://attack.mitre.org/techniques/T1036/010/) · [MITRE ATT&CK T1040](https://attack.mitre.org/techniques/T1040/) · [MITRE ATT&CK T1046](https://attack.mitre.org/techniques/T1046/) · [MITRE ATT&CK T1048](https://attack.mitre.org/techniques/T1048/) · [MITRE ATT&CK T1052.001](https://attack.mitre.org/techniques/T1052/001/) · [MITRE ATT&CK T1059.004](https://attack.mitre.org/techniques/T1059/004/) · [MITRE ATT&CK T1059.007](https://attack.mitre.org/techniques/T1059/007/) · [MITRE ATT&CK T1068](https://attack.mitre.org/techniques/T1068/) · [MITRE ATT&CK T1070](https://attack.mitre.org/techniques/T1070/) · [MITRE ATT&CK T1071.004](https://attack.mitre.org/techniques/T1071/004/) · [MITRE ATT&CK T1078](https://attack.mitre.org/techniques/T1078/) · [MITRE ATT&CK T1078.001](https://attack.mitre.org/techniques/T1078/001/) · [MITRE ATT&CK T1078.004](https://attack.mitre.org/techniques/T1078/004/) · [MITRE ATT&CK T1080](https://attack.mitre.org/techniques/T1080/) · [MITRE ATT&CK T1091](https://attack.mitre.org/techniques/T1091/) · [MITRE ATT&CK T1098](https://attack.mitre.org/techniques/T1098/) · [MITRE ATT&CK T1098.004](https://attack.mitre.org/techniques/T1098/004/) · [MITRE ATT&CK T1098.006](https://attack.mitre.org/techniques/T1098/006/) · [MITRE ATT&CK T1105](https://attack.mitre.org/techniques/T1105/) · [MITRE ATT&CK T1110](https://attack.mitre.org/techniques/T1110/) · [MITRE ATT&CK T1110.001](https://attack.mitre.org/techniques/T1110/001/) · [MITRE ATT&CK T1110.002](https://attack.mitre.org/techniques/T1110/002/) · [MITRE ATT&CK T1110.003](https://attack.mitre.org/techniques/T1110/003/) · [MITRE ATT&CK T1110.004](https://attack.mitre.org/techniques/T1110/004/) · [MITRE ATT&CK T1111](https://attack.mitre.org/techniques/T1111/) · [MITRE ATT&CK T1114](https://attack.mitre.org/techniques/T1114/) · [MITRE ATT&CK T1123](https://attack.mitre.org/techniques/T1123/) · [MITRE ATT&CK T1125](https://attack.mitre.org/techniques/T1125/) · [MITRE ATT&CK T1133](https://attack.mitre.org/techniques/T1133/) · [MITRE ATT&CK T1190](https://attack.mitre.org/techniques/T1190/) · [MITRE ATT&CK T1195.001](https://attack.mitre.org/techniques/T1195/001/) · [MITRE ATT&CK T1195.002](https://attack.mitre.org/techniques/T1195/002/) · [MITRE ATT&CK T1199](https://attack.mitre.org/techniques/T1199/) · [MITRE ATT&CK T1200](https://attack.mitre.org/techniques/T1200/) · [MITRE ATT&CK T1204.002](https://attack.mitre.org/techniques/T1204/002/) · [MITRE ATT&CK T1210](https://attack.mitre.org/techniques/T1210/) · [MITRE ATT&CK T1213](https://attack.mitre.org/techniques/T1213/) · [MITRE ATT&CK T1409](https://attack.mitre.org/techniques/T1409/) · [MITRE ATT&CK T1430](https://attack.mitre.org/techniques/T1430/) · [MITRE ATT&CK T1474](https://attack.mitre.org/techniques/T1474/) · [MITRE ATT&CK T1486](https://attack.mitre.org/techniques/T1486/) · [MITRE ATT&CK T1490](https://attack.mitre.org/techniques/T1490/) · [MITRE ATT&CK T1496](https://attack.mitre.org/techniques/T1496/) · [MITRE ATT&CK T1498](https://attack.mitre.org/techniques/T1498/) · [MITRE ATT&CK T1499](https://attack.mitre.org/techniques/T1499/) · [MITRE ATT&CK T1499.003](https://attack.mitre.org/techniques/T1499/003/) · [MITRE ATT&CK T1499.004](https://attack.mitre.org/techniques/T1499/004/) · [MITRE ATT&CK T1505.003](https://attack.mitre.org/techniques/T1505/003/) · [MITRE ATT&CK T1513](https://attack.mitre.org/techniques/T1513/) · [MITRE ATT&CK T1525](https://attack.mitre.org/techniques/T1525/) · [MITRE ATT&CK T1528](https://attack.mitre.org/techniques/T1528/) · [MITRE ATT&CK T1530](https://attack.mitre.org/techniques/T1530/) · [MITRE ATT&CK T1539](https://attack.mitre.org/techniques/T1539/) · [MITRE ATT&CK T1542.001](https://attack.mitre.org/techniques/T1542/001/) · [MITRE ATT&CK T1542.003](https://attack.mitre.org/techniques/T1542/003/) · [MITRE ATT&CK T1550.001](https://attack.mitre.org/techniques/T1550/001/) · [MITRE ATT&CK T1550.004](https://attack.mitre.org/techniques/T1550/004/) · [MITRE ATT&CK T1552](https://attack.mitre.org/techniques/T1552/) · [MITRE ATT&CK T1552.001](https://attack.mitre.org/techniques/T1552/001/) · [MITRE ATT&CK T1552.004](https://attack.mitre.org/techniques/T1552/004/) · [MITRE ATT&CK T1552.005](https://attack.mitre.org/techniques/T1552/005/) · [MITRE ATT&CK T1552.007](https://attack.mitre.org/techniques/T1552/007/) · [MITRE ATT&CK T1555.006](https://attack.mitre.org/techniques/T1555/006/) · [MITRE ATT&CK T1557](https://attack.mitre.org/techniques/T1557/) · [MITRE ATT&CK T1565.001](https://attack.mitre.org/techniques/T1565/001/) · [MITRE ATT&CK T1566](https://attack.mitre.org/techniques/T1566/) · [MITRE ATT&CK T1566.002](https://attack.mitre.org/techniques/T1566/002/) · [MITRE ATT&CK T1566.003](https://attack.mitre.org/techniques/T1566/003/) · [MITRE ATT&CK T1577](https://attack.mitre.org/techniques/T1577/) · [MITRE ATT&CK T1584.001](https://attack.mitre.org/techniques/T1584/001/) · [MITRE ATT&CK T1589](https://attack.mitre.org/techniques/T1589/) · [MITRE ATT&CK T1598](https://attack.mitre.org/techniques/T1598/) · [MITRE ATT&CK T1601.002](https://attack.mitre.org/techniques/T1601/002/) · [MITRE ATT&CK T1606](https://attack.mitre.org/techniques/T1606/) · [MITRE ATT&CK T1606.002](https://attack.mitre.org/techniques/T1606/002/) · [MITRE ATT&CK T1609](https://attack.mitre.org/techniques/T1609/) · [MITRE ATT&CK T1610](https://attack.mitre.org/techniques/T1610/) · [MITRE ATT&CK T1611](https://attack.mitre.org/techniques/T1611/) · [MITRE ATT&CK T1617](https://attack.mitre.org/techniques/T1617/) · [MITRE ATT&CK T1635.001](https://attack.mitre.org/techniques/T1635/001/) · [MITRE ATT&CK T1638](https://attack.mitre.org/techniques/T1638/) · [MITRE ATT&CK T1657](https://attack.mitre.org/techniques/T1657/) · [MITRE ATT&CK T1677](https://attack.mitre.org/techniques/T1677/) · [MITRE ATT&CK T1684.001](https://attack.mitre.org/techniques/T1684/001/) · [MITRE ATT&CK T1684.002](https://attack.mitre.org/techniques/T1684/002/) · [MITRE ATT&CK T1685](https://attack.mitre.org/techniques/T1685/) · [MITRE ATT&CK T1685.002](https://attack.mitre.org/techniques/T1685/002/) · [MITRE ATT&CK T1689](https://attack.mitre.org/techniques/T1689/) · [MITRE ATT&CK T1692.001](https://attack.mitre.org/techniques/T1692/001/) · [MITRE ATT&CK T1693.001](https://attack.mitre.org/techniques/T1693/001/) · [MITRE ATT&CK T1693.002](https://attack.mitre.org/techniques/T1693/002/) · [MITRE ATT&CK T1694.001](https://attack.mitre.org/techniques/T1694/001/) · [MITRE ATT&CK T1698](https://attack.mitre.org/techniques/T1698/) · [MITRE ATT&CK T1699](https://attack.mitre.org/techniques/T1699/) · [MITRE ATT&CK TA0010](https://attack.mitre.org/tactics/TA0010/)
 - [Nielsen's usability heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/): 28 requirements, 25 tests
 - [Oil and Gas Methane Partnership 2.0 reporting framework](https://ogmpartnership.org/) (OGMP 2.0): 1 requirement, 1 test
 - [Open source and content licence conditions](https://opensource.org/licenses): 6 requirements, 7 tests
   - [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) · [BSD 3-Clause License](https://opensource.org/license/bsd-3-clause) · [MIT License](https://opensource.org/license/mit) · [GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html) · [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html) · [GNU LGPL v2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) · [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/) · [Server Side Public License v1](https://www.mongodb.com/legal/licensing/server-side-public-license) · [Creative Commons Attribution-ShareAlike 4.0](https://creativecommons.org/licenses/by-sa/4.0/) · [Creative Commons licences 4.0](https://creativecommons.org/licenses/) · [SIL Open Font License 1.1](https://openfontlicense.org/)
 - [OpenSSF Scorecard](https://scorecard.dev/): 3 requirements, 3 tests
-- [OWASP API Security Top 10](https://owasp.org/API-Security/editions/2023/en/0x11-t10/) (OWASP API Top 10): 13 requirements, 13 tests
+- [OWASP API Security Top 10](https://owasp.org/API-Security/editions/2023/en/0x11-t10/) (OWASP API Top 10): 13 requirements, 13 tests, 4 risks
 - [OWASP Mobile Application Security Testing Guide (MASTG)](https://mas.owasp.org/MASTG/) (OWASP MASTG): 0 requirements, 1 test
 - [OWASP Software Assurance Maturity Model (SAMM)](https://owaspsamm.org/) (OWASP SAMM): 3 requirements, 3 tests
-- [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/): 4 requirements, 4 tests
-- [OWASP Top 10 for LLM applications](https://genai.owasp.org/llm-top-10/) (OWASP LLM Top 10): 14 requirements, 12 tests
-- [OWASP Top 10 web application security risks](https://owasp.org/Top10/): 36 requirements, 37 tests
+- [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/): 4 requirements, 4 tests, 1 risk
+- [OWASP Top 10 for LLM applications](https://genai.owasp.org/llm-top-10/) (OWASP LLM Top 10): 14 requirements, 12 tests, 6 risks
+- [OWASP Top 10 web application security risks](https://owasp.org/Top10/): 36 requirements, 37 tests, 18 risks
 - [PMBOK Guide (Project Management Institute)](https://www.pmi.org/standards/pmbok): 6 requirements, 6 tests
-- [PRINCE2 project management method](https://www.axelos.com/certifications/propath/prince2-project-management): 14 requirements, 12 tests
+- [PRINCE2 project management method](https://www.axelos.com/certifications/propath/prince2-project-management): 14 requirements, 12 tests, 1 risk
 - RACI responsibility assignment matrix: 1 requirement, 1 test
 - [REUSE Specification (licence and copyright information)](https://reuse.software/spec-3.2/): 1 requirement, 1 test
-- [Scaled Agile Framework (SAFe)](https://framework.scaledagile.com/): 2 requirements, 1 test
+- [Scaled Agile Framework (SAFe)](https://framework.scaledagile.com/): 2 requirements, 1 test, 1 risk
 - [SLSA supply-chain levels for software artifacts](https://slsa.dev/spec/v1.0/): 7 requirements, 7 tests
 - System Usability Scale (SUS): 1 requirement, 1 test
-- [The Scrum Guide (Schwaber and Sutherland)](https://scrumguides.org/scrum-guide.html): 6 requirements, 4 tests
+- [The Scrum Guide (Schwaber and Sutherland)](https://scrumguides.org/scrum-guide.html): 6 requirements, 4 tests, 1 risk
 - [The Twelve-Factor App](https://12factor.net/): 20 requirements, 20 tests
 - Training design and evaluation models (ADDIE, Kirkpatrick): 9 requirements, 5 tests
   - [Kirkpatrick four-level training evaluation model](https://www.kirkpatrickpartners.com/the-kirkpatrick-model/)
@@ -4209,17 +4854,17 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 - [FEMA Incident Command System](https://training.fema.gov/emiweb/is/icsresource/) (ICS): 1 requirement, 1 test
 - [NIST AI Risk Management Framework and Generative AI Profile](https://www.nist.gov/itl/ai-risk-management-framework) (NIST AI RMF): 26 requirements, 22 tests
   - [NIST AI RMF 1.0](https://doi.org/10.6028/NIST.AI.100-1) · [NIST AI 600-1](https://doi.org/10.6028/NIST.AI.600-1) · [NIST AI 100-2](https://doi.org/10.6028/NIST.AI.100-2e2025)
-- [NIST SP 800-218 Secure Software Development Framework (SSDF)](https://doi.org/10.6028/NIST.SP.800-218) (NIST SSDF): 24 requirements, 21 tests
+- [NIST SP 800-218 Secure Software Development Framework (SSDF)](https://doi.org/10.6028/NIST.SP.800-218) (NIST SSDF): 24 requirements, 21 tests, 3 risks
 
 ### Guidelines and guidance
 
 #### Guidelines and guidance: International
 
-- [ASHRAE TC 9.9 Thermal guidelines for data processing environments](https://tc0909.ashraetcs.org/): 2 requirements, 2 tests
+- [ASHRAE TC 9.9 Thermal guidelines for data processing environments](https://tc0909.ashraetcs.org/): 2 requirements, 2 tests, 1 risk
 - [CERT/CC Guide to Coordinated Vulnerability Disclosure](https://certcc.github.io/CERT-Guide-to-CVD/): 3 requirements, 3 tests
 - [DNV-RP-G108 Cyber security in the oil and gas industry](https://www.dnv.com/cybersecurity/recommended-practices/dnv-rp-g108-cyber-security-in-the-oil-and-gas-industry-based-on-IEC-62443.html): 1 requirement, 1 test
 - [EEMUA 191 Alarm systems guide](https://www.eemua.org/products/publications/digital/eemua-publication-191): 2 requirements, 2 tests
-- [GSMA specifications and guidelines (FS, NG and SGP series, IoT Security Guidelines)](https://www.gsma.com/solutions-and-impact/technologies/security/cybersecurity-knowledge-base/interworking-security/): 5 requirements, 4 tests
+- [GSMA specifications and guidelines (FS, NG and SGP series, IoT Security Guidelines)](https://www.gsma.com/solutions-and-impact/technologies/security/cybersecurity-knowledge-base/interworking-security/): 5 requirements, 4 tests, 1 risk
   - [GSMA SGP.32](https://www.gsma.com/solutions-and-impact/technologies/esim/gsma_resources/sgp-32-v1-3) · [GSMA IoT Security Guidelines](https://www.gsma.com/solutions-and-impact/technologies/internet-of-things/introduction-gsma-iot-security-guidelines-assessment/)
 - [IOGP reports](https://idms.iogp.org/): 1 requirement, 1 test
 - [OWASP Cheat Sheet Series and guides](https://cheatsheetseries.owasp.org/) (OWASP Cheat Sheets): 71 requirements, 67 tests
@@ -4227,7 +4872,7 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 - [PIC/S guidance on data management and integrity](https://picscheme.org/en/publications): 2 requirements, 2 tests
 - Platform design guidelines (Material Design, Apple Human Interface Guidelines): 11 requirements, 11 tests
   - [Material Design](https://m3.material.io/) · [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
-- [UN Recommendations on the Transport of Dangerous Goods, Manual of Tests and Criteria](https://unece.org/transport/dangerous-goods/un-manual-tests-and-criteria): 1 requirement, 1 test
+- [UN Recommendations on the Transport of Dangerous Goods, Manual of Tests and Criteria](https://unece.org/transport/dangerous-goods/un-manual-tests-and-criteria): 1 requirement, 1 test, 1 risk
 - [W3C Web Sustainability Guidelines (WSG)](https://www.w3.org/TR/web-sustainability-guidelines/): 6 requirements, 5 tests
 - [Web performance guidance (web.dev, HTTP Archive, Google Web Fundamentals)](https://web.dev/): 7 requirements, 4 tests
   - [web.dev Core Web Vitals](https://web.dev/articles/vitals) · [web.dev Performance budgets](https://web.dev/articles/performance-budgets-101) · [HTTP Archive Web Almanac 2024, Page Weight chapter](https://almanac.httparchive.org/en/2024/page-weight)
@@ -4237,8 +4882,8 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 - [CEN/TR 16355 Recommendations for prevention of Legionella growth in installations inside buildings conveying water for human consumption](https://www.din.de/en/wdc-beuth:din21:154167737): 1 requirement, 1 test
 - [EDPB and Article 29 Working Party guidelines](https://www.edpb.europa.eu/documents_en): 16 requirements, 16 tests
   - [EDPB Guidelines 9/2022](https://www.edpb.europa.eu/documents/guideline/guidelines-92022-on-personal-data-breach-notification-under-gdpr_en)
-- [ENISA guidance](https://www.enisa.europa.eu/publications): 3 requirements, 3 tests
-- [EU Good Manufacturing Practice guidelines (EudraLex Volume 4)](https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en) (EU GMP): 18 requirements, 18 tests
+- [ENISA guidance](https://www.enisa.europa.eu/publications): 3 requirements, 3 tests, 8 risks
+- [EU Good Manufacturing Practice guidelines (EudraLex Volume 4)](https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en) (EU GMP): 18 requirements, 18 tests, 1 risk
 - [Medical Device Coordination Group (MDCG) guidance documents](https://health.ec.europa.eu/medical-devices-sector/new-regulations/guidance-mdcg-endorsed-documents-and-other-guidance_en): 1 requirement, 1 test
 - [NIS Cooperation Group: Coordinated Implementation Roadmap for the Transition to Post-Quantum Cryptography (v1.1, 2025)](https://digital-strategy.ec.europa.eu/en/library/coordinated-implementation-roadmap-transition-post-quantum-cryptography): 3 requirements, 2 tests
 - [The Blue Guide on the implementation of EU product rules (2022/C 247/01)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52022XC0629%2804%29): 2 requirements, 2 tests
@@ -4251,19 +4896,19 @@ The [requirement catalogue](#catalogue) cites 370 laws, standards, best practice
 
 - [CISA guidance and catalogues (KEV, VEX)](https://www.cisa.gov/known-exploited-vulnerabilities-catalog): 9 requirements, 9 tests
   - [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) · [CISA Minimum Requirements for VEX](https://www.cisa.gov/resources-tools/resources/minimum-requirements-vulnerability-exploitability-exchange-vex)
-- [NIST IR 8547 Transition to Post-Quantum Cryptography Standards](https://doi.org/10.6028/NIST.IR.8547): 5 requirements, 4 tests
-- [NIST SP 800-190 Application container security guide](https://doi.org/10.6028/NIST.SP.800-190): 15 requirements, 15 tests
+- [NIST IR 8547 Transition to Post-Quantum Cryptography Standards](https://doi.org/10.6028/NIST.IR.8547): 5 requirements, 4 tests, 1 risk
+- [NIST SP 800-190 Application container security guide](https://doi.org/10.6028/NIST.SP.800-190): 15 requirements, 15 tests, 2 risks
 - [NIST SP 800-204D Software supply chain security in DevSecOps CI/CD pipelines](https://csrc.nist.gov/pubs/sp/800/204/d/final): 3 requirements, 3 tests
-- [NIST SP 800-207 Zero trust architecture](https://doi.org/10.6028/NIST.SP.800-207): 17 requirements, 17 tests
+- [NIST SP 800-207 Zero trust architecture](https://doi.org/10.6028/NIST.SP.800-207): 17 requirements, 17 tests, 3 risks
 - [NIST SP 800-209 Security guidelines for storage infrastructure](https://doi.org/10.6028/NIST.SP.800-209): 1 requirement, 1 test
 - [NIST SP 800-34 Contingency planning guide](https://doi.org/10.6028/NIST.SP.800-34r1): 2 requirements, 2 tests
-- [NIST SP 800-61 Computer security incident handling guide](https://doi.org/10.6028/NIST.SP.800-61r2): 9 requirements, 9 tests
-- [NIST SP 800-63-4 Digital Identity Guidelines (63A-4, 63B-4)](https://pages.nist.gov/800-63-4/): 27 requirements, 27 tests
+- [NIST SP 800-61 Computer security incident handling guide](https://doi.org/10.6028/NIST.SP.800-61r2): 9 requirements, 9 tests, 1 risk
+- [NIST SP 800-63-4 Digital Identity Guidelines (63A-4, 63B-4)](https://pages.nist.gov/800-63-4/): 27 requirements, 27 tests, 1 risk
   - [NIST SP 800-63A-4](https://doi.org/10.6028/NIST.SP.800-63A-4) · [NIST SP 800-63B-4](https://doi.org/10.6028/NIST.SP.800-63B-4)
 - [NIST SP 800-63C Digital Identity Guidelines: Federation and Assertions](https://pages.nist.gov/800-63-4/sp800-63c.html): 1 requirement, 1 test
 - [NIST SP 800-82 Guide to operational technology security](https://doi.org/10.6028/NIST.SP.800-82r3): 7 requirements, 6 tests
 - [NIST SP 800-84 Test, training and exercise programmes](https://doi.org/10.6028/NIST.SP.800-84): 1 requirement, 3 tests
-- [NIST SP 800-88 Guidelines for media sanitization](https://doi.org/10.6028/NIST.SP.800-88r2): 5 requirements, 5 tests
+- [NIST SP 800-88 Guidelines for media sanitization](https://doi.org/10.6028/NIST.SP.800-88r2): 5 requirements, 5 tests, 1 risk
 - [NIST system and platform security guidance (SP 800-160, 800-193, 800-90B)](https://doi.org/10.6028/NIST.SP.800-160v1r1): 7 requirements, 6 tests
   - [NIST SP 800-160 Vol. 1 Rev. 1](https://doi.org/10.6028/NIST.SP.800-160v1r1) · [NIST SP 800-193](https://doi.org/10.6028/NIST.SP.800-193) · [NIST SP 800-90B](https://doi.org/10.6028/NIST.SP.800-90B)
 - [NTIA Minimum Elements for a Software Bill of Materials](https://www.ntia.gov/report/2021/minimum-elements-software-bill-materials-sbom) (NTIA SBOM): 1 requirement, 1 test

@@ -14,7 +14,7 @@ import (
 
 const riskCols = `id, project_id, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at,
 	residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner,
-	accepted_by, accepted_name, accepted_at, acceptance_comment, acceptance_hash, custom_fields`
+	accepted_by, accepted_name, accepted_at, acceptance_comment, acceptance_hash, custom_fields, catalog_ref`
 
 func scanRisk(r interface{ Scan(...any) error }) (*model.Risk, error) {
 	var k model.Risk
@@ -23,7 +23,7 @@ func scanRisk(r interface{ Scan(...any) error }) (*model.Risk, error) {
 	var custom string
 	if err := r.Scan(&k.ID, &k.ProjectID, &k.Key, &k.Title, &k.Description, &k.Category, &k.Likelihood, &k.Impact, &k.Status, &k.Mitigation, &k.Owner, &k.CreatedBy, &k.CreatedAt, &k.UpdatedAt,
 		&k.ResidualLikelihood, &k.ResidualImpact, &manual, &k.ResidualJustification, &k.ReviewDate, &k.ReviewOwner,
-		&k.AcceptedBy, &k.AcceptedName, &acc, &k.AcceptanceComment, &k.AcceptanceHash, &custom); err != nil {
+		&k.AcceptedBy, &k.AcceptedName, &acc, &k.AcceptanceComment, &k.AcceptanceHash, &custom, &k.CatalogRef); err != nil {
 		return nil, err
 	}
 	k.ResidualManual = manual != 0
@@ -91,9 +91,9 @@ func (s *Store) CreateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 		}
 		k.Key = key
 		if _, err := c.exec(ctx, `INSERT INTO risks (id, tenant_id, project_id, seq, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at,
-			residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner, custom_fields) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner, custom_fields, catalog_ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			k.ID, tenantID, k.ProjectID, seq, k.Key, k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.CreatedBy, k.CreatedAt, k.UpdatedAt,
-			k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields)); err != nil {
+			k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields), k.CatalogRef); err != nil {
 			return mapErr(err, "risk")
 		}
 		return setRiskRequirements(ctx, c, tenantID, k.ProjectID, k.ID, k.RequirementIDs, nil)
@@ -153,6 +153,36 @@ func (s *Store) SetRiskRequirements(ctx context.Context, tenantID, riskID string
 		return err
 	}
 	return s.tx(ctx, func(c conn) error { return setRiskRequirements(ctx, c, tenantID, k.ProjectID, k.ID, add, remove) })
+}
+
+// SetRequirementRisks adds and removes the risks a requirement mitigates
+// (the same links as SetRiskRequirements, from the requirement's side).
+// Every risk must belong to the requirement's project.
+func (s *Store) SetRequirementRisks(ctx context.Context, tenantID, requirementID string, add, remove []string) error {
+	var projectID string
+	if err := s.c(ctx).row(ctx, `SELECT project_id FROM requirements WHERE id = ? AND tenant_id = ?`, requirementID, tenantID).Scan(&projectID); err != nil {
+		return mapErr(err, "requirement")
+	}
+	return s.tx(ctx, func(c conn) error {
+		for _, id := range add {
+			var pid string
+			if err := c.row(ctx, `SELECT project_id FROM risks WHERE id = ? AND tenant_id = ?`, id, tenantID).Scan(&pid); err != nil {
+				return mapErr(err, "risk")
+			}
+			if pid != projectID {
+				return Invalidf("risk %s belongs to another project", id)
+			}
+			if _, err := c.exec(ctx, `INSERT INTO risk_requirements (risk_id, requirement_id) VALUES (?, ?) ON CONFLICT DO NOTHING`, id, requirementID); err != nil {
+				return err
+			}
+		}
+		for _, id := range remove {
+			if _, err := c.exec(ctx, `DELETE FROM risk_requirements WHERE risk_id = ? AND requirement_id = ?`, id, requirementID); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // GetRisk returns a risk with its requirements and their coverage.
@@ -249,6 +279,9 @@ func (s *Store) decorateRisks(ctx context.Context, tenantID, projectID string, r
 func (s *Store) DeleteRisk(ctx context.Context, tenantID, id string) error {
 	return s.tx(ctx, func(c conn) error {
 		if _, err := c.exec(ctx, `DELETE FROM risk_requirements WHERE risk_id = ?`, id); err != nil {
+			return err
+		}
+		if err := deleteComments(ctx, c, model.KindRisk, []string{id}); err != nil {
 			return err
 		}
 		res, err := c.exec(ctx, `DELETE FROM risks WHERE id = ? AND tenant_id = ?`, id, tenantID)

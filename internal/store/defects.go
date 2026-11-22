@@ -202,13 +202,14 @@ func (s *Store) defectLinks(ctx context.Context, tenantID string, ids []string) 
 		return out, nil
 	}
 	rows, err := s.c(ctx).query(ctx, `SELECT l.defect_id, l.entity_type, l.entity_id,
-		COALESCE(r.key, t.key, et.key, ru.name, ''), COALESCE(r.title, t.title, et.title, '')
+		COALESCE(r.key, t.key, et.key, ru.name, xs.key, ''), COALESCE(r.title, t.title, et.title, xs.title, '')
 		FROM defect_links l
 		LEFT JOIN requirements r ON l.entity_type = 'requirement' AND r.id = l.entity_id
 		LEFT JOIN test_cases t ON l.entity_type = 'test' AND t.id = l.entity_id
 		LEFT JOIN test_executions e ON l.entity_type = 'execution' AND e.id = l.entity_id
 		LEFT JOIN test_cases et ON et.id = e.test_case_id
 		LEFT JOIN test_runs ru ON l.entity_type = 'run' AND ru.id = l.entity_id
+		LEFT JOIN exploratory_sessions xs ON l.entity_type = 'exploratory_session' AND xs.id = l.entity_id
 		WHERE l.defect_id IN (`+placeholders(len(ids))+`) ORDER BY l.entity_type`, anySlice(ids)...)
 	if err != nil {
 		return nil, err
@@ -235,6 +236,7 @@ func addDefectLink(ctx context.Context, c conn, tenantID, projectID, defectID st
 		model.KindTest:        `SELECT project_id FROM test_cases WHERE id = ? AND tenant_id = ?`,
 		"execution":           `SELECT r.project_id FROM test_executions e JOIN test_runs r ON r.id = e.run_id WHERE e.id = ? AND e.tenant_id = ?`,
 		"run":                 `SELECT project_id FROM test_runs WHERE id = ? AND tenant_id = ?`,
+		model.KindExploratory: `SELECT project_id FROM exploratory_sessions WHERE id = ? AND tenant_id = ?`,
 	}[l.EntityType]
 	var pid string
 	if err := c.row(ctx, q, l.EntityID, tenantID).Scan(&pid); err != nil {
@@ -275,6 +277,9 @@ func (s *Store) UnlinkDefect(ctx context.Context, tenantID, defectID string, l m
 func (s *Store) DeleteDefect(ctx context.Context, tenantID, id string) error {
 	return s.tx(ctx, func(c conn) error {
 		if _, err := c.exec(ctx, `DELETE FROM defect_links WHERE defect_id = ?`, id); err != nil {
+			return err
+		}
+		if err := deleteComments(ctx, c, model.KindDefect, []string{id}); err != nil {
 			return err
 		}
 		res, err := c.exec(ctx, `DELETE FROM defects WHERE id = ? AND tenant_id = ?`, id, tenantID)
@@ -481,11 +486,26 @@ func (s *Store) SaveDefectTracker(ctx context.Context, tenantID, projectID strin
 		if !gitlabProjectRe.MatchString(t.Project) || slices.ContainsFunc(strings.Split(t.Project, "/"), func(s string) bool { return strings.Trim(s, ".") == "" }) {
 			return Invalidf("project must be a GitLab project ID or path, e.g. 42 or group/subgroup/project")
 		}
+	case "rt":
+		t.URL = strings.TrimRight(strings.TrimSuffix(t.URL, "/REST/2.0"), "/")
+		if u, err := url.Parse(t.URL); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.RawQuery != "" || u.User != nil {
+			return Invalidf("the RT URL must be an http(s) URL, e.g. https://rt.example.com")
+		}
+		t.Queue = strings.TrimSpace(t.Queue)
+		if t.Queue == "" || utf8.RuneCountInString(t.Queue) > 200 || strings.ContainsAny(t.Queue, "/\\?#") {
+			return Invalidf("queue must be the name or number of an RT queue, e.g. General")
+		}
+		t.LabelsField = strings.TrimSpace(t.LabelsField)
+		// RT tickets get no milestone or assignee from here
+		t.Milestone, t.Assignee = "", ""
 	default:
-		return Invalidf("type must be jira, github, gitlab or empty")
+		return Invalidf("type must be jira, github, gitlab, rt or empty")
 	}
 	if t.Type != "gitlab" {
 		t.Project = ""
+	}
+	if t.Type != "rt" {
+		t.Queue, t.LabelsField = "", ""
 	}
 	if t.Type == "jira" {
 		// Jira issues get no milestone or assignee from here
@@ -500,7 +520,7 @@ func (s *Store) SaveDefectTracker(ctx context.Context, tenantID, projectID strin
 	t.Milestone = strings.TrimSpace(t.Milestone)
 	t.Assignee = strings.TrimSpace(t.Assignee)
 	t.RequirementLabels = strings.TrimSpace(t.RequirementLabels)
-	for name, v := range map[string]string{"labels": t.Labels, "milestone": t.Milestone, "assignee": t.Assignee, "requirement_labels": t.RequirementLabels, "requirement_issue_type": t.RequirementIssueType, "issue_type": t.IssueType} {
+	for name, v := range map[string]string{"labels": t.Labels, "milestone": t.Milestone, "assignee": t.Assignee, "requirement_labels": t.RequirementLabels, "requirement_issue_type": t.RequirementIssueType, "issue_type": t.IssueType, "labels_field": t.LabelsField} {
 		if utf8.RuneCountInString(v) > 500 {
 			return Invalidf("%s may have at most 500 characters", name)
 		}

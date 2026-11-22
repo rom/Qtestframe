@@ -27,7 +27,7 @@ test('confirms the impact of a change and shows suspect relations, stale results
   await expect(confirm).toContainText(b.key)
   await expect(confirm).toContainText(tc.key)
   await expect(confirm).toContainText('Results that go stale')
-  await confirm.getByRole('button', { name: 'Save and mark' }).click()
+  await confirm.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByText('Requirement saved')).toBeVisible()
   await expect(confirm).toBeHidden()
 

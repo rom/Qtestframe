@@ -19,6 +19,7 @@ package query
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -172,6 +173,9 @@ type node struct {
 	num     float64
 	isNum   bool
 	desc    bool // sort: descending
+	// bound: the values a bound word stands for (see Bind); the condition
+	// matches a record value equal to one of them.
+	bound []string
 }
 
 // Query is a parsed expression.
@@ -807,6 +811,46 @@ func (q *Query) Compare(a, b Record) int {
 // ---------------------------------------------------------------------------
 // Evaluation
 
+// Bind gives a word a meaning in some fields: a condition "field:word",
+// "field=word" or "field!=word" on one of fields (resolved names) then
+// compares the field with values instead, exactly and ignoring case. It is
+// how "owner:me" and "assignee:me" name the caller (values: the ways the
+// caller can be named). Other conditions are not changed.
+func (q *Query) Bind(fields []string, word string, values []string) {
+	if q.IsEmpty() {
+		return
+	}
+	set := []string{}
+	for _, v := range values {
+		if v = strings.TrimSpace(v); v != "" {
+			set = append(set, v)
+		}
+	}
+	var walk func(n *node)
+	walk = func(n *node) {
+		switch n.kind {
+		case nAnd, nOr:
+			for _, c := range n.children {
+				walk(c)
+			}
+			return
+		case nNot:
+			walk(n.child)
+			return
+		}
+		if n.isRe || !strings.EqualFold(n.value, word) || !slices.Contains(fields, n.field) {
+			return
+		}
+		switch n.ck {
+		case cContains, cEq:
+			n.ck, n.bound = cEq, set
+		case cNe:
+			n.bound = set
+		}
+	}
+	walk(q.root)
+}
+
 // IsEmpty reports whether the query has no conditions (matches everything).
 func (q *Query) IsEmpty() bool { return q == nil || q.root == nil }
 
@@ -859,7 +903,15 @@ func (n *node) matchValues(vals []string) bool {
 		return false
 	case cEq, cNe:
 		var hit bool
-		if n.value == "" {
+		if n.bound != nil {
+			for _, v := range vals {
+				for _, b := range n.bound {
+					if strings.EqualFold(strings.TrimSpace(v), b) {
+						hit = true
+					}
+				}
+			}
+		} else if n.value == "" {
 			hit = true
 			for _, v := range vals {
 				if v != "" {

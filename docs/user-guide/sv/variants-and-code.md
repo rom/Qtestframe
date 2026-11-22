@@ -28,15 +28,22 @@ Ett krav eller testfall **gäller** alla varianter tills du anger något annat. 
 
 För att ange tillämpligheten för många objekt på en gång markerar du dem i listan och väljer **Gäller** i verktygsfältet.
 
+### Historik, ångra och baslinjer
+
+En ändring av tillämpligheten finns i objektets **Historik** (som *Tillämplighet*, med varianterna före och efter) och i granskningsloggen. **Ångra** (Ctrl+Z) tar tillbaka den, även en ändring av många objekt på en gång: varje objekt får det det hade. När du återställer en äldre version från historiken återställs också den versionens tillämplighet.
+
+[Baslinjer](baselines.md) sparar tillämpligheten för varje objekt. **Jämför** visar *Gäller för (varianter)* bland de ändrade fälten när den skiljer sig, och **Återställ** från en baslinje ger objekten den tillämplighet de hade, även när inget annat ändrats. Varianter som tagits bort sedan dess lämnas utanför. Ett borttaget objekt behåller sin tillämplighet i papperskorgen, och projektarkiv och säkerhetskopior innehåller den.
+
 ### Visa för en variant
 
-Välj en variant i **Visa för variant** i krav- och testfallslistorna. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
+Välj en variant i **Visa för variant** i krav- och testfallslistorna och på sidan **Spårbarhet**. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
 
 | Fråga | Hittar |
 |---|---|
 | `variant:"EU-modell"` | objekt som gäller varianten *EU-modell* |
 | `applicability:selected` | objekt som bara gäller vissa varianter |
 | `applicability:all` | objekt som gäller alla varianter |
+| `variant:US` (körningar) | körningar för varianten *US* |
 
 ## Täckning per variant
 
@@ -52,7 +59,18 @@ Fliken **Täckningsmatris** visar alla krav mot alla varianter, med hur många a
 
 ### Releaser och dokument för en variant
 
-Välj en variant i **Status för variant** på sidan **Releaser** för att utvärdera slutkriterierna för den: bara releasens krav som gäller varianten, testfallen som gäller den och resultaten som räknas. När en release släpps prövas fortfarande alla varianter.
+Välj en variant i **Status för variant** på sidan **Releaser** för att utvärdera utgångskriterierna för den: bara releasens krav som gäller varianten, testfallen som gäller den och resultaten som räknas.
+
+### Releasegrindar per variant
+
+En release kan **rikta sig mot** en eller flera varianter: redigera releasen och välj dem i **Målvarianter**. Utgångskriterierna utvärderas då för varje målvariant, med reglerna för [täckning per variant](#täckning-per-variant):
+
+- bara releasens krav som gäller varianten, och bara deras länkade testfall som gäller den, räknas;
+- bara resultat från releasens körningar för varianten eller en variant över den, och från **variantneutrala** körningar, räknas, i de konfigurationer varianten testas i. En variantneutral körning räknas för varje målvariant.
+
+Fliken **Status** visar matrisen **Utgångskriterier per variant**: en rad per kriterium, en kolumn per variant, varje cell *Uppfyllt*, *Undantaget* (uppfyllt eftersom undantag eller signerade riskacceptanser accepterar det som saknas) eller *Ej uppfyllt*, och go / no-go för varje variant längst ned. Releasen är **go först när varje målvariant är go**; för att markera den som släppt krävs detta go eller en releaseanteckning för att släppa ändå. I listan med kriterier under matrisen är ett kriterium uppfyllt när det är uppfyllt i alla varianter, och varje blockerande objekt anger i vilka varianter det blockerar. [Rapporten om releaseberedskap](reports-and-export.md) innehåller samma matris.
+
+Ett [undantag](waivers-and-soa.md) kan begränsas till varianter (**Endast för varianter**): det accepterar då sina krav bara i de varianterna och varianterna under dem. En release utan målvarianter räknar bara undantag för alla varianter. En release utan målvarianter, och ett projekt utan varianter, utvärderas som tidigare.
 
 När du [skapar ett dokument](documents.md) väljer du **För variant**: kravspecifikationen eller testplanen innehåller då bara det som gäller varianten, med dess täckning och resultat, och anger varianten på titelsidan.
 

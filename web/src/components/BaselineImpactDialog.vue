@@ -42,8 +42,11 @@ watch(visible, (v) => v && load())
       <div v-else-if="loading && !data" class="empty"><ProgressSpinner style="width: 30px; height: 30px" :aria-label="t('common.loading')" /></div>
       <template v-else-if="data">
         <div class="row" role="status">
-          <Tag v-for="s in IMPACT_SECTIONS" :key="s" :value="`${t(`correlations.section.${s}`)}: ${data.totals[s] ?? 0}`" severity="secondary" />
+          <Tag v-for="s in IMPACT_SECTIONS.filter((x) => data!.totals[x])" :key="s" :value="`${t(`correlations.section.${s}`)}: ${data.totals[s] ?? 0}`" severity="secondary" />
         </div>
+        <RouterLink :to="{ name: 'impact', params: { projectId }, query: { baseline: baselineId ?? undefined } }" class="small">
+          <i class="pi pi-bullseye" aria-hidden="true" /> {{ t('correlations.openAnalysis') }}
+        </RouterLink>
         <p v-if="!data.changes.length" class="muted small">{{ t('correlations.baselineNone') }}</p>
         <details v-for="c in data.changes" :key="c.entity_type + c.entity_id" class="baseline-impact-item">
           <summary>

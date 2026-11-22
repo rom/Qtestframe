@@ -546,7 +546,7 @@ func (s *Server) handleInReview(w http.ResponseWriter, r *http.Request, p *Princ
 			continue
 		}
 		x := inReviewItem{InReviewItem: it, Reasons: []string{}}
-		if it.EntityType == model.KindRequirement && isMe(it.Owner) {
+		if isMe(it.Owner) {
 			x.Reasons = append(x.Reasons, "owner")
 		}
 		if isMe(it.CreatedBy) {

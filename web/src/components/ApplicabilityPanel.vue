@@ -13,9 +13,10 @@ import { api } from '@/lib/api'
 import { appliesToAll, type Applicability, type ApplicabilityView, type VariantCoverageRow } from '@/lib/variants'
 import { useVariants } from '@/composables/variants'
 import { useNotify } from '@/composables/notify'
+import { useUndoStore } from '@/stores/undo'
 import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{ itemType: 'requirement' | 'test'; itemId: string; projectId: string; canWrite: boolean; refresh?: unknown }>()
+const props = defineProps<{ itemType: 'requirement' | 'test'; itemId: string; projectId: string; canWrite: boolean; refresh?: unknown; itemKey?: string }>()
 const emit = defineEmits<{ changed: [a: Applicability | null] }>()
 const { t } = useI18n()
 const notify = useNotify()
@@ -42,6 +43,9 @@ async function load() {
   }
 }
 watch(() => [props.itemId, props.refresh], load, { immediate: true })
+// an undo or redo may have changed it
+const undoStore = useUndoStore()
+watch(() => undoStore.version, load)
 
 const all = computed(() => appliesToAll(view.value))
 function saved(v: ApplicabilityView) {
@@ -92,7 +96,7 @@ const cfgLabel = (c: { id: string; name: string }) => (c.id ? c.name : t('config
         </tbody>
       </table>
     </div>
-    <ApplicabilityDialog v-model:visible="dialog" :project-id="projectId" :item-type="itemType" :item-ids="[itemId]" :initial="view" :variants="vs.variants.value" @saved="saved" />
+    <ApplicabilityDialog v-model:visible="dialog" :project-id="projectId" :item-type="itemType" :item-ids="[itemId]" :initial="view" :variants="vs.variants.value" :item-key="itemKey" @saved="saved" />
   </section>
 </template>
 

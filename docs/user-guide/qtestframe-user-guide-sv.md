@@ -22,12 +22,17 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Testfall](#testfall) | Manuella steg, automatiserade skript, delade steg, kategorier, exekveringshistorik, kommentarer, versionshistorik och bilagor |
 | [Katalog](#katalog) | Standardkrav och testfall att lägga till i ett projekt: bläddra, söka, förhandsvisa och lägga till med testfall och spårlänkar |
 | [Testkörningar och exekvering](#testkörningar-och-exekvering) | Körningar, exekveringsvyn och dess kortkommandon, defekter, CI-import med API-nycklar, bilagor |
+| [Utforskande test](#utforskande-test) | Sessionsbaserad utforskande testning: uppdrag, sessionens tidtagning, typade anteckningar med kortkommandon, defekter från anteckningar, utvärderingar, mått och sessionsrapporten |
 | [Undantag, restrisk och SoA](#undantag-restrisk-och-uttalande-om-tillämplighet) | Undantag och avvikelser med signerade godkännanden, restrisk och dess acceptans, uttalandet om tillämplighet (ISO/IEC 27001 bilaga A) |
 | [Spårbarhet och täckning](#spårbarhet-och-täckning) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
+| [Testcykler](#testcykler) | Planera testcykler: testfall, testare och uppskattningar, körningarna en cykel skapar, framsteg, nedbränning, arbetsbelastning, återkommande cykler |
+| [Dubbletter och konflikter](#dubbletter-och-konflikter) | Liknande krav medan du skriver, misstänkt dubblerade krav och testfall, möjligen motstridiga krav, sammanslagning, gränsvärden |
 | [Varianter och kod](#varianter-och-kod) | Varianter och tillämplighet, täckning per variant, incheckningar, merge requests, byggen och regressionsurvalet |
 | [Baslinjer](#baslinjer) | Frysa en release och jämföra versioner |
+| [Diskussioner](#diskussioner) | Kommentarstrådar på objekt med Markdown, @omnämnanden, reaktioner och lösta trådar, och projektets sida Diskussioner |
 | [Sökning och filter](#sökning-och-filter) | Frågespråket med många exempel |
 | [Rapporter och export](#rapporter-och-export) | Standardrapporter, den egna rapportbyggaren, exportformat och dokumentarkivet |
+| [Samverkan](#samverkan-reqif-och-oslc) | ReqIF-export och -import med testfall, relationer och bilagor; OSLC-länkar, urval och skapande från DOORS Next, Polarion, Codebeamer |
 | [Dokument](#dokument-1) | Projektets dokumentarkiv: uppladdning, förhandsvisning och länkar |
 | [Administration](#administration) | Organisationer, användare, medlemmar och roller, delning av projekt, återställning av lösenord, API-nycklar, händelseloggen, säkerhetskopiering och återställning |
 | [Tillgänglighet och språk](#tillgänglighet-och-språk) | Tangentbord, skärmläsare, teman, engelska och svenska, mobiler och surfplattor |
@@ -629,13 +634,13 @@ Dialogen visar hur många relationer som läggs till eller tas bort innan du bek
 
 Skriv `@` i **Ägare**, **Beskrivning**, **Motivering**, en kommentar, eller i ett testfalls beskrivning och förutsättningar och en exekverings **Tilldelad** och anteckningar: en lista med personer visas. Den innehåller organisationens användare (med avatar) och namn som redan används som ägare eller tilldelad i projektet men saknar konto (*inget konto*). Skriv vidare för att begränsa listan, använd piltangenterna och <kbd>Enter</kbd> eller <kbd>Tabb</kbd> för att infoga, eller <kbd>Esc</kbd> för att stänga listan.
 
-Ett omnämnande skrivs som `@namn`: för användare delen av e-postadressen före `@` (`@anna.berg` för *anna.berg@example.com*), för andra personer namnet med punkter i stället för mellanslag (`@carl.carlsson`). Omnämnanden av kända personer visas som en etikett med avatar och namn, i kommentarerna och i kolumnen **Ägare**. Vanliga namn fungerar fortfarande: ägaren är fritext.
+Ett omnämnande skrivs som `@namn`: för användare delen av e-postadressen före `@` (`@anna.berg` för *anna.berg@example.com*), för andra personer namnet med punkter i stället för mellanslag (`@carl.carlsson`). Omnämnanden av kända personer visas som en etikett med avatar och namn, i kommentarerna och i kolumnen **Ägare**. En ägare som är medlem i organisationen sparas med sin e-postadress, hur du än anger personen (`@anna.berg`, *Anna Berg* eller *anna.berg@example.com*), så att posten visas i personens [arbetslista](#mitt-arbete) och personen får en notis; en medlem som inte ser projektet kan inte vara ägare. Andra namn (till exempel någon utanför organisationen) sparas som vanlig text. **Ange ägare** i verktygsfältet för massändring ger många krav eller testfall samma ägare (tomt tar bort den); filtret `owner:me` hittar dina egna poster.
 
 Filtrera med `mention:anna.berg` (eller `mention:@anna.berg`) för att hitta allt som nämner en person.
 
-## Kommentarer
+## Diskussion
 
-Fliken **Kommentarer** är en diskussionstråd för kravet. Skriv i fältet och välj **Kommentera** (eller tryck <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Alla som kan läsa kravet kan läsa och skriva kommentarer. Du kan redigera och ta bort dina egna kommentarer; administratörer kan ta bort alla kommentarer. Antalet kommentarer visas på fliken och i kolumnen **Kommentarer**.
+Fliken **Diskussion** innehåller kravets [diskussion](#diskussioner): trådar med kommentarer i Markdown, med svar, @omnämnanden, reaktioner och **Markera som löst**. Siffran på fliken är antalet öppna trådar; kolumnen **Kommentarer** räknar kommentarerna. Alla som kan läsa kravet kan läsa diskussionen; att skriva i den kräver `comment.create` (alla roller utom Läsare). Du kan redigera och ta bort dina egna kommentarer; moderatorer kan ta bort alla kommentarer.
 
 ## När någon annan har sparat först
 
@@ -761,7 +766,7 @@ Dialogen visar hur många länkar som läggs till eller tas bort innan du bekrä
 
 ## Ärenden i GitLab, GitHub eller Jira
 
-När projektet är anslutet till en ärendehanterare (se [Anslut Jira, GitHub eller GitLab](#anslut-jira-github-eller-gitlab)) kan ett krav lämnas över till utvecklarna som ett ärende. Kravets flik **Länkar** börjar då med **Ärende i GitLab** (eller GitHub, Jira):
+När projektet är anslutet till en ärendehanterare (se [Anslut Jira, GitHub eller GitLab](#anslut-jira-github-eller-gitlab)) kan ett krav lämnas över till utvecklarna som ett ärende (i Request Tracker en ticket). Kravets flik **Länkar** börjar då med **Ärende i GitLab** (eller GitHub, Jira):
 
 - **Skapa GitLab-ärende** visar en förhandsvisning av ärendet och skapar det. Ärendet får:
   - titeln `[SHOP-REQ-12] <titel>`;
@@ -799,7 +804,7 @@ Att ladda upp och ta bort bilagor kräver rollen **Ansvarig** (samma som att red
 
 ## Importera krav
 
-Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt kravverktyg eller ett Word-dokument. **Importera → Från en fil** i sidhuvudet på kravsidan läser en sådan fil och skapar alla krav på en gång. För att uppdatera krav från ett DOORS- eller Polarion-dokument gång på gång, eller redigera krav i Excel och hämta tillbaka ändringarna, se [Utbyta data med andra verktyg](#utbyta-data-med-andra-verktyg). Import kräver behörighet att redigera krav (**Manager** som standard).
+Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt kravverktyg eller ett Word-dokument. **Importera → Från en fil** i sidhuvudet på kravsidan läser en sådan fil och skapar alla krav på en gång. För att uppdatera krav från ett DOORS- eller Polarion-dokument gång på gång, importera dem från Jira eller Azure DevOps, eller redigera krav i Excel och hämta tillbaka ändringarna, se [Utbyta data med andra verktyg](#utbyta-data-med-andra-verktyg). Import kräver behörighet att redigera krav (**Manager** som standard).
 
 1. Dra filen till dialogrutan eller välj den. Filformat som stöds är **CSV** (separerad med komma, semikolon eller tabb; UTF-8 med eller utan BOM, UTF-16 och Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` och den zippade `.reqifz`) och **Word** (`.docx`), högst 20 MB och 5 000 krav per fil.
 2. Granska **förhandsvisningen**: det upptäckta formatet, hur varje kolumn läses och de första 50 kraven med anmärkningar (härledd rubrik, okänt värde, dubblett). Inget har sparats än.
@@ -923,6 +928,7 @@ Sidan fungerar som [kravsidan](#kravsidan): mappträd, filterfält med snabbfilt
 | **Status** | Utkast, Klart, Granskning eller Utfasat. |
 | **Prioritet** | Kritisk, Hög, Medel eller Låg. |
 | **Uppskattning (minuter)** | Förväntad tidsåtgång. |
+| **Ägare** | Den projektmedlem som ansvarar för testfallet. Skriv `@` för att välja en person; testfallet visas då i personens [arbetslista](#mitt-arbete) medan det är utkast eller under granskning, eller när det blir misstänkt eller får inaktuella resultat. |
 | **Mapp**, **Kategorier**, **Taggar** | Placering och klassificering. **Föreslagna taggar** under taggfältet kommer från titeln, beskrivningen, förutsättningarna och stegen, som för [krav](#fält). |
 | **Förväntat slutresultat** | Det förväntade utfallet av testfallet som helhet. |
 
@@ -1095,7 +1101,7 @@ Ett instabilt testfall döljer verkliga fel och kostar tid i omkörningar: hitta
 
 ## Kommentarer och versionshistorik
 
-**Kommentarer** och **Versionshistorik** fungerar precis som för [krav](#kommentarer). När du återställer en version av ett testfall återställs fälten och stegen som en ny version; stegen får nya id:n och anrop till borttagna testfall tas bort. Om någon annan sparar ett testfall medan du redigerar det kan du jämföra och välja i stället för att skriva över den andras ändringar, se [När någon annan har sparat först](#när-någon-annan-har-sparat-först).
+Fliken **Diskussion** och **Versionshistorik** fungerar precis som för [krav](#diskussion) (se [Diskussioner](#diskussioner)). När du återställer en version av ett testfall återställs fälten och stegen som en ny version; stegen får nya id:n och anrop till borttagna testfall tas bort. Om någon annan sparar ett testfall medan du redigerar det kan du jämföra och välja i stället för att skriva över den andras ändringar, se [När någon annan har sparat först](#när-någon-annan-har-sparat-först).
 
 ## Länkar
 
@@ -1107,9 +1113,9 @@ Fliken **Bilagor** innehåller filer för testfallet: testdata, förväntade sk�
 
 # Katalog
 
-**Katalogen** är ett inbyggt bibliotek med standardkrav och testfall för programvaruutveckling: säkerhet, integritet och regelefterlevnad, prestanda och tillförlitlighet, drift och underhåll, användbarhet och tillgänglighet (även formulär, användarinställningar och mobilappar), vanlig funktionalitet (även arbetsflöde och godkännanden, samarbete, filer, schemaläggning) samt domänspecifik funktionalitet som kassa i e-handel, fakturering, industriella automations- och styrsystem, elenergi, olja och gas, telekom, kemisk industri samt industriell tillverkning. I stället för att skriva *"Lösenord ska vara minst 12 tecken"* och dess testfall i varje projekt väljer du de poster som passar och lägger till dem i projektet på en gång, med testfall och spårlänkar.
+**Katalogen** är ett inbyggt bibliotek med standardkrav och testfall för programvaruutveckling: säkerhet, integritet och regelefterlevnad, prestanda och tillförlitlighet, drift och underhåll, användbarhet och tillgänglighet (även formulär, användarinställningar och mobilappar), vanlig funktionalitet (även arbetsflöde och godkännanden, samarbete, filer, schemaläggning) samt domänspecifik funktionalitet som kassa i e-handel, fakturering, industriella automations- och styrsystem, elenergi, olja och gas, telekom, kemisk industri samt industriell tillverkning. I stället för att skriva *"Lösenord ska vara minst 12 tecken"* och dess testfall i varje projekt väljer du de poster som passar och lägger till dem i projektet på en gång, med testfall och spårlänkar. Katalogen beskriver också de typiska **riskerna** inom varje område (se [Risker i katalogen](#risker-i-katalogen)), var och en kopplad till de krav som åtgärdar den.
 
-För att bläddra i katalogen behövs behörighet att läsa krav eller testfall (alla roller har den). Att lägga till krav kräver **Ansvarig** (`requirement.write`), att lägga till testfall **Testare** (`test.write`).
+För att bläddra i katalogen behövs behörighet att läsa krav eller testfall (alla roller har den). Att lägga till krav och risker kräver **Ansvarig** (`requirement.write`), att lägga till testfall **Testare** (`test.write`).
 
 ## Varifrån texterna kommer
 
@@ -1125,14 +1131,14 @@ Varje krav anger minst ett testfall i katalogen som verifierar det, och varje te
 
 Öppna **Katalog** i projektets sidomeny eller välj **Lägg till från katalogen** överst i listan med krav eller testfall.
 
-- Växla mellan **Krav** och **Testfall** överst.
+- Växla mellan **Krav**, **Testfall** och **Risker** överst.
 - Välj **English** eller **Svenska** som språk för texterna. Posterna läggs till på det språket.
 - **Katalogtyp** begränsar katalogen till ett slags arbete: *Programvara*, *Hårdvara*, *Utrustning*, *System*, *Kommunikationslösningar*, *Projekt*, *Tjänster*, *Byggnader och anläggningar*, *Styrning*, *Dokumentation* eller *Utbildning* (bara typer med innehåll visas). Den börjar med typen som passar projektet: programvaruprojekt visar *Programvara*, hårdvaruprojekt *Hårdvara*, systemprojekt *System* och verksamhetsprojekt *Styrning*; allmänna projekt visar **Alla typer**. Trädet, listorna och lagarna och standarderna följer valet.
 - Till vänster visar **Grupper och områden** katalogens grupper (till exempel *Säkerhet*) och deras områden (till exempel *Autentisering*) med antalet poster som matchar sökningen och filtren. Välj **Allt** för att se alla områden. Flytta i trädet med piltangenterna och välj med Enter. På en smal skärm öppnas trädet med knappen **Områden**.
 - **Sökfältet** hittar poster vars titel, ID, taggar, standarder eller beskrivning innehåller alla ord du skriver (skriv till exempel `62443` eller `27001` för att lista posterna som hänvisar till den standarden). De bästa träffarna kommer först: ett exakt ID som `AUTH-01`, sedan orden i titeln, sedan de andra fälten.
-- Begränsa listan med **Typ**, **Förpliktelse** och **Prioritet** (krav), **Utförande** (testfall) och **Taggar**. **Dölj poster som redan finns i projektet** visar inte det du har lagt till tidigare.
+- Begränsa listan med **Typ**, **Förpliktelse** och **Prioritet** (krav), **Utförande** (testfall), **Kategori** och **Risknivå** (risker) och **Taggar**. **Dölj poster som redan finns i projektet** visar inte det du har lagt till tidigare.
 
-Varje rad visar ID, titel, förpliktelse och prioritet samt hur många testfall i katalogen som verifierar kravet (eller hur många krav testfallet verifierar). **I projektet** markerar poster som projektet redan har; håll pekaren över märket för att se deras nycklar.
+Varje rad visar ID, titel, förpliktelse och prioritet, hur många testfall i katalogen som verifierar kravet och hur många risker i katalogen det åtgärdar (eller hur många krav testfallet verifierar). **I projektet** markerar poster som projektet redan har; håll pekaren över märket för att se deras nycklar.
 
 ## Uppfyll lagar, standarder och bästa praxis
 
@@ -1147,7 +1153,7 @@ Ta bort en källa med × på dess etikett, eller välj **Rensa valet** för att 
 
 ## Förhandsvisa en post
 
-Välj en rad för att se hela texten till höger (på en mobil öppnas den som en panel): beskrivningen med förpliktelseordet markerat, motiveringen, utvärderingskriterierna med gränsvärden, standarderna och katalogens testfall som verifierar kravet. För ett testfall ser du förutsättningarna, stegen, det förväntade resultatet och kraven det verifierar. Välj ett ID under *Verifieras av* eller *Verifierar* för att gå till den posten.
+Välj en rad för att se hela texten till höger (på en mobil öppnas den som en panel): beskrivningen med förpliktelseordet markerat, motiveringen, utvärderingskriterierna med gränsvärden, standarderna och katalogens testfall som verifierar kravet. För ett testfall ser du förutsättningarna, stegen, det förväntade resultatet och kraven det verifierar. Ett krav visar även de risker i katalogen som det åtgärdar. Välj ett ID under *Verifieras av*, *Verifierar* eller *Åtgärdar* för att gå till den posten.
 
 ## Lägg till poster i projektet
 
@@ -1161,17 +1167,41 @@ Välj en rad för att se hela texten till höger (på en mobil öppnas den som e
    - **Källa för kraven**: de angivna standarderna (standard) eller en av projektets källor.
    - **Lägg även till testfallen som verifierar de valda kraven** (på som standard).
    - **Lägg till kopior av poster som redan finns i projektet**: av som standard, så att poster som projektet redan har hoppas över.
-4. Sammanfattningen visar hur många krav och testfall som läggs till och hur många som hoppas över. Välj **Lägg till**.
+4. Sammanfattningen visar hur många krav och testfall som läggs till och hur många som hoppas över. När några av de valda kraven säger samma sak som krav som projektet redan har (skrivna för hand eller från en annan katalogpost) listas de med det mest lika projektkravet och dess likhet, och **Hoppa över kraven som liknar befintliga** hoppar över dem (orsak *similar*). Se [Dubbletter och konflikter](#dubbletter-och-konflikter).
+5. Välj **Lägg till**.
 
 Högst 500 poster kan läggas till åt gången. Importen sker helt eller inte alls: om något misslyckas läggs ingenting till.
 
 Qtestframe skapar kraven och testfallen som om du hade skrivit dem, med en första version i historiken, och skapar **spårlänkar** mellan varje krav och testfallen som verifierar det, även till motsvarande poster som lagts till i projektet tidigare. Det automatiska länkade testfallsutkastet som ett nytt krav annars får skapas inte: katalogens testfall ersätter det.
 
+## Risker i katalogen
+
+Fliken **Risker** listar typiska risker inom områdena: vad som kan gå fel, till exempel *Konton tas över med läckta lösenord* eller *Tryckkärl brister*. Det finns risker för informationssäkerhet, integritet, AI, tillgänglighet och drift, data, leverantörskedjan, hårdvara, utrustning och byggnader (personsäkerhet), tjänster, styrning och projekt. Varje risk har:
+
+- en **kategori** (informationssäkerhet, integritet, personsäkerhet, tillgänglighet, data, regelefterlevnad, leverantörskedja, AI, drift, kvalitet, projekt eller miljö);
+- en beskrivning av hotet eller faran och dess konsekvens;
+- en **typisk sannolikhet och konsekvens** på samma skala 1–5 som i [riskregistret](#riskregistret), och den nivå de ger (låg, medel, hög, kritisk);
+- en **föreslagen åtgärd**;
+- de krav i katalogen som **åtgärdar** den (minst ett, från vilket område som helst), och ibland testfall i katalogen som kontrollerar den direkt;
+- källorna den bygger på under **Baserad på**: standarder för riskhantering (ISO 31000, ISO/IEC 27005, ISO/IEC 23894 för AI, ISO 14971 för medicintekniska produkter, ISO 26262 för fordon, ISO 12100 för maskiner, IEC 62443-3-2 för industriella system), AI-förordningens riskhantering (art. 9), dataskyddsförordningens konsekvensbedömning (art. 35), hotkataloger (OWASP Top 10, ENISA Threat Landscape) och CWE-svagheterna och MITRE ATT&CK-teknikerna i de åtgärdande kraven.
+
+Filtrera riskerna på **Kategori** och **Risknivå**, på område i trädet, på tagg eller på de lagar och standarder som ska uppfyllas (en risk räknas för en källa när den själv eller något av dess åtgärdande krav hänvisar till källan). Förhandsvisningen visar beskrivningen, den föreslagna åtgärden och de åtgärdande kraven; välj ett för att öppna det.
+
+**Lägg till en risk med dess åtgärder.** Markera risker och välj **Lägg till N risker (+ krav, testfall)**. Dialogen lägger till:
+
+- riskerna som risker i projektet, med titel, beskrivning, kategori, föreslagen åtgärd och den typiska sannolikheten och konsekvensen (justera dem efter er egen bedömning efteråt), med statusen *Identifierad* eller *Åtgärdas*;
+- med **Lägg även till de krav som åtgärdar de valda riskerna** (på som standard) de åtgärdande kraven, och med **Lägg även till testfallen som verifierar de valda kraven** deras testfall;
+- kopplingar mellan varje ny risk och de krav i projektet som åtgärdar den, både de nya och de som lagts till tidigare.
+
+**Lägg till krav med deras risker.** När du lägger till krav som åtgärdar risker i katalogen erbjuder dialogen **Lägg även till de N risker som kraven åtgärdar**. Krav som du lägger till senare kopplas till de risker från katalogen som projektet redan har, så ordningen spelar ingen roll.
+
+Risker som projektet redan har från katalogen hoppas över, precis som krav och testfall, om du inte väljer **Lägg till kopior av poster som redan finns i projektet**.
+
 ## Efteråt
 
-En ruta överst på sidan sammanfattar vad som lades till. **Öppna de tillagda kraven** och **Öppna de tillagda testfallen** öppnar listorna filtrerade på de nya posterna. **Ångra** (eller Ctrl+Z) flyttar dem till papperskorgen; gör om tar tillbaka dem med sina länkar. Mappar som importen skapade finns kvar.
+En ruta överst på sidan sammanfattar vad som lades till, och hur många av de tillagda kraven som liknar krav som projektet hade, med en länk till **Granska dubbletter**. **Öppna de tillagda kraven**, **Öppna de tillagda testfallen** och **Öppna de tillagda riskerna** öppnar listorna filtrerade på de nya posterna. **Ångra** (eller Ctrl+Z) flyttar dem till papperskorgen (risker tas bort); gör om tar tillbaka dem med sina länkar. Mappar som importen skapade finns kvar.
 
-De tillagda posterna är vanliga poster i projektet: anpassa texterna och värdena till ert system. Redigeraren visar **Från katalogen: AUTH-01 · …** med standarderna, och **Visa i katalogen** öppnar originalposten. Ursprunget behålls när du redigerar, kopierar, flyttar eller återställer posten. I filter hittar `catalog:AUTH-01` posterna som kopierats från en katalogpost, `catalog:AUTH-*` ett områdes poster och `has:catalog` alla poster från katalogen (se [Sökning och filter](#sökning-och-filter)).
+De tillagda posterna är vanliga poster i projektet: anpassa texterna och värdena till ert system. Redigeraren visar **Från katalogen: AUTH-01 · …** med standarderna, och **Visa i katalogen** öppnar originalposten. Ursprunget behålls när du redigerar, kopierar, flyttar eller återställer posten. I filter hittar `catalog:AUTH-01` posterna som kopierats från en katalogpost, `catalog:AUTH-*` ett områdes poster och `has:catalog` alla poster från katalogen (se [Sökning och filter](#sökning-och-filter)). En risk från katalogen visar sitt ID under kategorin i registret; registret kan visa riskerna inom ett område i katalogen.
 
 ## Tips
 
@@ -1462,6 +1492,218 @@ Fliken **Länkar** på körningens sida länkar körningen till krav, testfall, 
 
 Även körningar och exekveringar har **Bilagor**: loggfiler, skärmbilder av ett fel, testrapporter från andra verktyg. I exekveringsvyn öppnar du fliken **Bilagor** bredvid **Resultat** och drar filer dit eller väljer **Välj filer**; på körningens sida hör bilagorna till körningen som helhet. Du kan också bifoga en fil från projektets [dokumentarkiv](#dokument-1). Att ladda upp och ta bort bilagor för körningar och exekveringar kräver **Testare** (rätten att registrera utfall).
 
+# Utforskande test
+
+Utforskande test är testdesign och testutförande på samma gång: testaren lär sig produkten medan hen testar den och bestämmer vad som ska prövas härnäst utifrån det hen just såg. Qtestframe stöder **sessionsbaserad testledning** (SBTM): arbetet görs i **sessioner** med en bestämd längd, var och en med ett **uppdrag**, och varje session avslutas med en **utvärdering**.
+
+| Åtgärd | Roll som krävs |
+|---|---|
+| Se sessioner, anteckningar, mått och historik | Läsare (`run.read`) |
+| Planera, ändra och ta bort sessioner; öppna en utvärdering igen | Testare (`run.write`) |
+| Genomföra en session: tidtagningen, anteckningar, filer, defekter från anteckningar, utvärderingen | Testare (`run.execute`) |
+| Exportera sessionsrapporten | Läsare (`export`) |
+| Låta sessioner räknas som verifieringsbevis | Förvaltare (`project.update`) |
+
+Bara sessionens **testare** genomför den, antecknar och utvärderar den. Någon annan behöver dessutom `run.write`: en testledare som stoppar en bortglömd session, eller en granskare som utvärderar den. En session utan testare tillhör den som startar den.
+
+## Planera en session
+
+Öppna **Utforskande** i projektets navigering och välj **Ny session**.
+
+- **Uppdrag**: ett kort namn på uppdraget, till exempel *Utforska kassan med utgångna kort*.
+- **Mål**: vad som ska utforskas, med vilka resurser, för att upptäcka vad (*Utforska … med … för att upptäcka …*).
+- **Testare**: vem som gör sessionen (som standard du).
+- **Tidsram**: den planerade längden, oftast 30, 60 eller 90 minuter; alla längder från 5 till 480 minuter godtas.
+- **Områden**: de krav- och testmappar som sessionen utforskar. Måtten räknar sessioner och buggar per område.
+- **Krav** och **Testfall** i omfattningen: det sessionen handlar om. En defekt som skapas i sessionen länkas till dessa krav, och en utvärderad session kan vara bevis för dem (se nedan).
+
+En ny session är **planerad**. Listan visar alla sessioner med uppdrag, testare, status, utfall, sessionstid mot tidsramen, antal anteckningar och buggar. Filtrera på text, status och område, eller välj **Mina sessioner**.
+
+## Genomföra en session
+
+Öppna en session för att se **sessionsvyn**: tidtagningen överst, anteckningsfältet, anteckningarna hittills och vid sidan uppdraget med dess omfattning, skärmbilder och filer samt historiken.
+
+### Tidtagningen
+
+**Starta** startar tidtagningen, **Pausa** pausar den (en paus räknas inte) och **Fortsätt** fortsätter. **Stoppa** avslutar sessionen för gott. Tiden hålls av servern, inte av webbläsaren: du kan ladda om sidan, stänga webbläsaren eller fortsätta på en annan dator, och sessionstiden stämmer ändå. Stapeln under klockan visar hur mycket av tidsramen som har använts; efter tidsramen blir den orange, men tidtagningen fortsätter.
+
+| Status | Betydelse |
+|---|---|
+| Planerad | Inte startad än |
+| Pågår | Tidtagningen går |
+| Pausad | Startad, tidtagningen är pausad |
+| Avslutad | Stoppad, väntar på utvärdering |
+| Utvärderad | Utvärderad; sessionen är stängd |
+
+### Anteckningar
+
+Anteckningar görs från sessionens start till dess utvärdering. Varje anteckning har en **typ** och stämplas med den sessionstid då den gjordes:
+
+- **Observation**: vad du såg, även förberedelser och det som fungerar.
+- **Fråga**: något att fråga produktägaren eller utvecklarna.
+- **Problem**: något som är fel eller oklart men kanske inte en bugg.
+- **Idé**: en testidé för senare, eller en förbättring.
+- **Bugg**: ett fel i produkten.
+
+Skriv anteckningen och välj **Lägg till anteckning**, eller tryck **Ctrl+Enter**. Välj **Sessionens filer** för att hänvisa till skärmbilder som du laddat upp under **Skärmbilder och filer** (filerna lagras som alla bilagor och syns i projektets [dokument](#dokument-1)).
+
+### Kortkommandon
+
+Sessionsvyn är gjord för att användas utan mus. Utanför anteckningsfältet:
+
+| Tangent | Åtgärd |
+|---|---|
+| O, Q, I, D, B | Välj typ av anteckning (Observation, fråga/Question, problem/Issue, iDé, Bugg) och gå till anteckningsfältet |
+| N | Gå till anteckningsfältet och behåll typen |
+| T | Starta eller pausa tidtagningen |
+| ? | Visa eller dölj kortkommandona |
+
+Tangenterna är desamma på alla språk. I anteckningsfältet lägger **Ctrl+Enter** (⌘+Enter på Mac) till anteckningen och **Esc** lämnar fältet så att bokstäverna fungerar som kortkommandon igen. Skärmläsare läser upp vald typ och varje tillagd anteckning.
+
+### Skapa en defekt från en anteckning
+
+Välj **Skapa defekt** vid en anteckning. Defekten är förifylld: titeln är anteckningens första rad, beskrivningen anteckningen med sessionens nyckel, sessionstiden och uppdraget, och *hittad i* är *test*. Ändra det som behövs och bekräfta. Defekten länkas till sessionen och till kraven i dess omfattning, anteckningen visar defektens nyckel och blir en bugganteckning. Se [Defekter](#defekter-1).
+
+## Utvärdering
+
+När sessionen stoppas öppnas utvärderingen. I SBTM är utvärderingen ett kort samtal mellan testaren och en testledare; registrera resultatet här:
+
+- **Sammanfattning**: vad som täcktes, vad som hittades, vad som återstår.
+- **Utfall**: *Godkänd* (omfattningen fungerar som krävs), *Underkänd* (problem hittades som underkänner den) eller *Ofullständig* (den kunde inte bedömas, till exempel för att den var blockerad).
+- **Täckning av uppdraget**: din uppskattning i procent av hur mycket av uppdraget sessionen täckte.
+- **Tidsfördelning**: andelen av sessionen som gick åt till **förberedelse** (miljö och testdata), **testning** (testdesign och utförande) och **felutredning** (utreda och rapportera fel). De tre blir tillsammans 100 %. Formuläret föreslår en fördelning utifrån anteckningarna.
+- **Granskarens kommentar**: det en granskare lägger till.
+
+Testaren utvärderar sin egen session. Någon annan med `run.write` kan utvärdera den som **granskare**: sessionen visar då *Granskad av*. En utvärdering kan ändras senare; **Öppna igen** (med `run.write`) tar bort den och gör sessionen avslutad igen. En utvärderad session och dess anteckningar kan inte ändras.
+
+## Sessioner som verifieringsbevis
+
+Som standard är utforskande sessioner inte verifieringsbevis. Under **Inställningar → Projekt → Verifiering** kan en förvaltare slå på **Utforskande sessioner är verifieringsbevis**. Då räknas en utvärderad session som bevis av typen *utforskande* för kraven i dess omfattning, för kravet som helhet:
+
+- *Godkänd* godkänner, *Underkänd* underkänner, *Ofullständig* räknas inte;
+- för varje krav räknas bara den senast utvärderade sessionen; äldre visas som *ersatta*;
+- en session verifierar aldrig ett [utvärderingskriterium](#krav) ensam, så ensam verifierar den bara ett krav utan kriterier. Med kriterier bidrar den till bevisen: en underkänd session underkänner kravet.
+
+Kravens status följer verifieringen när projektet låter statusen följa bevisen. Se [Spårbarhet och täckning](#spårbarhet-och-täckning).
+
+## Mått
+
+Ovanför listan visar **Mått** antal sessioner, sessionstimmar, buggar (bugganteckningar och anteckningar som en defekt skapats från) och **buggar per sessionstimme**, utvärderingarnas genomsnittliga tidsfördelning och täckning, samt detsamma per **område** och per **testare**.
+
+## Rapport, historik och händelselogg
+
+**Markdown** och **PDF** överst i sessionsvyn exporterar **sessionsrapporten**: uppdraget och omfattningen, sessionstiden, utvärderingen, alla anteckningar i den ordning de gjordes och de defekter som skapats. Samma rapport, och sammanställningen av alla sessioner (*Utforskande test*), är standardrapporter på sidan **Rapporter**, där de också kan sparas i dokumentarkivet eller skickas med e-post ([Rapporter och export](#rapporter-och-export)).
+
+**Historik** listar sessionens versioner: när den planerades, ändrades, stoppades, utvärderades och öppnades igen, med de ändrade fälten. Varje åtgärd (planering, tidtagning, anteckningar, defekter, utvärdering) registreras i organisationens händelselogg. Sessioner, deras omfattning och anteckningar ingår i projektarkivet (**Spara projekt**) och i säkerhetskopian.
+
+# Testcykler
+
+En **testcykel** planerar testningen för ett mål, till exempel *Regression sprint 14* eller *Acceptanstest release 2.1*. Den anger vilka testfall som ska köras (dess **plan**), i vilka konfigurationer, av vem och hur lång tid de bör ta. När cykeln startar skapar den sin [testkörning](#testkörningar-och-exekvering) och följer sedan resultaten: planerade mot utförda, godkända, underkända och blockerade, uppskattad mot faktisk tid, en nedbränning och arbetsbelastningen för varje testare.
+
+Välj **Testcykler** i projektets sidofält.
+
+| Uppgift | Roll (behörighet) |
+|---|---|
+| Se cykler, deras plan och framsteg | alla roller som ser körningar (`run.read`) |
+| Skapa och ändra cykler, planera testfall, tilldela testare, starta och avsluta cykler, återkommande cykler | **Testledare**, **Ansvarig**, **Administratör** (`cycle.plan`) |
+| Skapa cykelns körningar | även `run.write` |
+| Utföra de planerade testfallen | **Testare** och högre (`run.execute`), i cykelns körning som vanligt |
+
+## Skapa en cykel
+
+Välj **Ny cykel** och ange:
+
+- ett **namn**, unikt i projektet, och gärna ett **mål**;
+- **ägaren**, oftast testledaren (du själv som standard);
+- **startdatum** och **slutdatum**; de avgränsar också nedbränningen;
+- valfritt den **release**, **variant** och det **bygge** som cykeln testar, och dess **miljö**. Cykelns körningar får dem, så att resultaten räknas för den releasen och varianten;
+- de **konfigurationer** som ska testas. Varje planerat testfall utförs då en gång per konfiguration, och varje konfiguration kan ha en egen testare;
+- valfritt en tid då cykeln **startar automatiskt**: då startar den av sig själv och dess körning skapas;
+- eller välj **Kopiera en tidigare cykel**: den nya cykeln får den cykelns plan, testare, uppskattningar, release, variant och konfigurationer. Det är det snabbaste sättet att få nästa sprints regression.
+
+En ny cykel är **Planerad**.
+
+## Planera testfall
+
+Välj **Planera testfall** på fliken **Plan** och välj hur testfallen ska läggas till:
+
+| Genom | Vad som läggs till |
+|---|---|
+| **Urval** | testfallen du väljer i testfallsväljaren |
+| **Fråga** | alla testfall som matchar en [fråga](#sökning-och-filter), till exempel `tag:regression priority:high` |
+| **Mapp** | testfallen i en mapp, och om du vill i mapparna under den |
+| **Regressionsurval** | testfallen som verifierar ändrade krav (och om du vill kraven som beror på, förfinar eller härleds från dem) med deras förutsättningar, som [regressionsurvalet](#varianter-och-kod) på sidan Kod; för cykelns variant |
+| **Tidigare cykel** | en annan cykels plan med testare, uppskattningar och konfigurationer |
+
+Du kan välja en **testare** och en **uppskattning** för testfallen du lägger till, och konfigurationerna (utan val planeras ett testfall i alla cykelns konfigurationer). Testfall som redan är planerade i en konfiguration hoppas över.
+
+**Uppskattningar.** Utan en egen uppskattning får ett planerat testfall testfallets **Uppskattade minuter** (ett fält i testfallet), annars medeltiden för dess tidigare exekveringar med ett utfall. Ändra uppskattningar och testare senare genom att markera rader i planen och välja **Tilldela** eller **Ange uppskattning**; **Ta bort** tar rader ur planen (utfall som redan är registrerade finns kvar i körningen).
+
+Planen visar varje rad med konfiguration, testare, uppskattning, det senaste utfallet i cykelns körningar (välj det för att öppna exekveringen) och den faktiska tiden.
+
+## Köra cykeln
+
+Välj **Starta cykeln**. Cykeln blir **Pågår** och skapar sin körning: en exekvering per planerat testfall och konfiguration, tilldelad testaren, med cykelns release, variant, bygge och miljö. Testarna får en avisering och utför som vanligt i [exekveringsvyn](#testkörningar-och-exekvering). Byter du testare i planen ändras också de exekveringar som ännu saknar utfall.
+
+Testfall som planeras efter starten finns inte i någon körning ännu; knappen **Skapa körning för n nya testfall** skapar ytterligare en körning av cykeln för dem. **Avsluta cykeln** avslutar den; **Öppna igen** gör den pågående igen.
+
+Ett planerat testfall räknas som **utfört** när det har ett slutligt utfall (godkänt, underkänt, blockerat eller överhoppat) i någon av cykelns körningar. Har ett testfall körts flera gånger räknas det senaste slutliga utfallet.
+
+## Tavla per testare
+
+Fliken **Tavla per testare** har en kolumn per testare (och en för testfall som ingen är tilldelad) med de öppna testfallen, uppskattad tid kvar och de utförda testfallen hopfällda. Välj ett testfall för att öppna dess exekvering.
+
+## Framsteg
+
+Nyckeltalen överst visar de planerade testfallen (och hur många som saknar testare), andelen utförda, utfallen, den uppskattade tiden med tiden kvar, och den faktiska tiden för de utförda testfallen mot deras uppskattningar.
+
+Fliken **Framsteg** har:
+
+- **nedbränningen**: per dag från startdatum till slutdatum de planerade testfall (eller den uppskattade tid) som inte var utförda vid dagens slut, mot den **ideala** linjen från hela planen den första dagen till ingenting den sista. Texten ovanför anger hur långt efter eller före den ideala linjen cykeln ligger i dag. Testfall som planerats senare syns från den dag de lades till;
+- **arbetsbelastningen per testare**: planerade, utförda (per utfall) och öppna testfall per testare, med uppskattad tid, tid kvar och faktisk tid.
+
+## Återkommande cykler
+
+På fliken **Återkommande** i cykellistan skapar en **återkommande cykel** en ny cykel enligt ett schema – dagligen, varje vecka på en veckodag eller varje månad på en dag, vid en tid i en tidszon, som [schemalagda rapporter via e-post](#rapporter-och-export). Varje ny cykel får:
+
+- sitt **namn** från ett mönster: `{date}` blir startdatumet och `{n}` cykelns nummer, till exempel *Nattlig regression {date}*;
+- fälten, planen, testarna och uppskattningarna från en **mallcykel**, och/eller testfallen som matchar en **fråga**;
+- dagens datum som startdatum och den **längd** du anger;
+- med **Starta varje ny cykel direkt** sin körning med en gång.
+
+Cyklerna skapas som den återkommande cykelns **ägare**, som fortfarande måste få planera cykler i projektet. **Skapa nästa cykel nu** (spelaknappen) skapar en direkt. En återkommande cykel vars senaste körning misslyckades visar felet.
+
+## Tidslinje
+
+Fliken **Tidslinje** visar cyklerna med datum som staplar på en gemensam tidsaxel, färgade efter status.
+
+## Filtrera cykler
+
+Filterfältet i cykellistan tar [frågespråket](#sökning-och-filter) med dessa fält:
+
+| Fält | Matchar |
+|---|---|
+| `name`, `goal`, `description`, `environment` | cykelns text |
+| `status` | `planned`, `active`, `closed` |
+| `owner`, `assignee` | ägaren, någon testare (e-post eller namn) |
+| `release`, `variant`, `build`, `configuration` | det cykeln testar |
+| `start`, `end` | datumen, t.ex. `start>=2027-03-01` |
+| `planned`, `executed`, `passed`, `failed`, `blocked`, `unassigned` | antal, t.ex. `failed>0` |
+| `progress` | procent utförda, t.ex. `progress<50` |
+| `test` | nyckeln till ett planerat testfall |
+
+I testfallslistan hittar `cycle:"Sprint 14"` testfallen som är planerade i en cykel; i körningslistan hittar `cycle:` en cykels körningar.
+
+## Releaser och rapporter
+
+En release kan vänta på en cykel: utgångskriteriet **Testcykel genomförd** (se [utgångskriterier](#utgångskriterier)) är uppfyllt när minst tröskeln – 100 % som standard – av cykelns planerade testfall har ett utfall.
+
+**Testcykelrapporten** på sidan [Rapporter](#rapporter-och-export) visar en cykels nyckeltal, arbetsbelastningen per testare, nedbränningen och hela planen med utfall, som PDF, Word, Excel, CSV eller Markdown.
+
+## Historik och granskningslogg
+
+Fliken **Historik** listar cykelns versioner – fälten och planen – med vem som ändrade vad. Att skapa, ändra, planera och ta bort cykler och återkommande cykler registreras i granskningsloggen. Cykler och återkommande cykler ingår i projektarkiv och säkerhetskopior; i ett inläst projekt är de återkommande cyklerna avstängda tills någon slår på dem.
+
 # Releaser och risker
 
 En **release** är en version av produkten som du planerar, testar och levererar, till exempel *Vår 2027* eller *2.1.0*. Den samlar de krav som ska levereras (releasens **omfattning**), de testkörningar som testar den och de **utgångskriterier** som avgör om den får släppas. **Riskregistret** listar vad som kan gå fel, hur sannolikt det är, hur allvarlig konsekvensen blir och vilka krav som hanterar varje risk. Öppna risker påverkar direkt en releases utgångskriterier.
@@ -1523,6 +1765,7 @@ Fliken **Utgångskriterier** listar de villkor som releasen måste uppfylla. Vä
 | Spårbarhetsregler | inget krav i omfattningen och inget testfall som är länkat till ett sådant bryter mot en påslagen [spårbarhetsregel](#spårbarhetsregler) med den valda allvarligheten; statusfliken listar objekten med reglerna de bryter mot | bara fel, eller fel och varningar |
 | Inga blockerande defekter | inget krav i omfattningen [blockeras av en öppen defekt](#blockerande-defekter) enligt projektets regler för allvarlighetsgrad; ett inaktuellt godkänt utfall räknas inte för **Klarade testfall** och **Obligatoriska krav klarade** | — |
 | Restrisk | ingen risk kopplad till omfattningen som inte är stängd har en [restnivå](#restrisk) över gränsen, om inte accepteringen är signerad | projektets gräns för riskacceptans, eller en nivå |
+| Testcykel genomförd | minst tröskeln av de planerade testfallen i den valda [testcykeln](#testcykler) har ett utfall i cykelns körningar; 100 % betyder att cykeln är helt genomförd | tröskel i % och testcykeln |
 
 En release utan utgångskriterier är alltid go.
 
@@ -1535,6 +1778,8 @@ Fliken **Status** utvärderar utgångskriterierna just nu. Den visar **Go** när
 Varje kriterium visar om det är uppfyllt, det faktiska värdet bredvid målet (till exempel *80 % (mål ≥ 95 %)*) och det som blockerar kriteriet: krav utan testfall, underkända testfall, öppna defekter eller risker som fortfarande kräver åtgärd. Varje objekt är en länk som öppnar det.
 
 Etiketten i listan över releaser bygger på samma utvärdering, så att du direkt ser vilka releaser som är klara.
+
+I ett projekt med [varianter](#varianter-och-kod) kan en release rikta sig mot varianter: utgångskriterierna utvärderas då för var och en av dem, fliken **Status** visar en matris med kriterier × varianter, och releasen är go först när varje målvariant är det (se [releasegrindar per variant](#releasegrindar-per-variant)).
 
 Ett procentkriterium utan något att mäta är **inte uppfyllt**: en release utan krav i omfattningen, eller utan exekveringar för *exekverade*, visar *Inget att mäta än* och får no-go. En release helt utan utgångskriterier får alltid go.
 
@@ -1561,7 +1806,7 @@ Alla releaser kontrolleras innan någon ändras. Ändringar av status (utom *Sl�
 
 ## Riskregistret
 
-**Risker** listar projektets risker. Varje risk har en nyckel som *SHOP-RISK-3*, en titel, en kategori, en ägare, en **sannolikhet** och en **konsekvens** från 1 till 5, en status och en **åtgärd**: det ni gör för att göra risken mindre sannolik eller mindre skadlig.
+**Risker** listar projektets risker. Varje risk har en nyckel som *SHOP-RISK-3*, en titel, en kategori, en ägare (en projektmedlem — skriv `@` för att välja — eller ett vanligt namn), en **sannolikhet** och en **konsekvens** från 1 till 5, en status och en **åtgärd**: det ni gör för att göra risken mindre sannolik eller mindre skadlig.
 
 | Sannolikhet | | Konsekvens | |
 |---|---|---|---|
@@ -1573,9 +1818,9 @@ Alla releaser kontrolleras innan någon ändras. Ändringar av status (utom *Sl�
 
 Registret visar varje risks poäng och nivå, status, ägare, de krav som hanterar risken och hur många av dem som är **täckta** (har testfall) och **verifierade** (alla testfall godkända). Filtrera på text, nivå eller status. Stängda risker döljs om du inte väljer **Ta med stängda risker** eller filtrerar på statusen *Stängd*.
 
-Lägg till en risk med **Ny risk**. Välj sannolikhet och konsekvens (dialogen visar poäng och nivå medan du väljer), beskriv åtgärden och välj **Länka krav** för att välja de krav som hanterar risken. Välj en risk i registret för att ändra den.
+Lägg till en risk med **Ny risk**. Välj sannolikhet och konsekvens (dialogen visar poäng och nivå medan du väljer), beskriv åtgärden och välj **Länka krav** för att välja de krav som hanterar risken. Välj en risk i registret för att ändra den. Du kan också utgå från de typiska riskerna i [katalogen](#risker-i-katalogen): de kommer med en föreslagen åtgärd och de krav som åtgärdar dem, redan kopplade.
 
-Kravredigeraren visar under **Risker** de risker som kravet hanterar, och kravlistan har de valfria kolumnerna **Risk** och **Öppna defekter** (se **Kolumner**).
+Kravredigeraren visar under **Åtgärdar risker** de risker som kravet åtgärdar. Välj **Koppla en risk** för att välja en risk i projektet som kravet åtgärdar, eller **×** vid en risk för att ta bort kopplingen; riskens krav ändras samtidigt. Kravlistan har de valfria kolumnerna **Risk** och **Öppna defekter** (se **Kolumner**).
 
 ### Ändra många risker på en gång
 
@@ -1586,6 +1831,8 @@ Kryssa i risker i registret. Verktygsfältet anger **status**, **sannolikhet** e
 Värmekartan räknar riskerna i ett rutnät med 5 × 5 rutor: sannolikhet från 5 överst till 1 nederst, konsekvens från 1 till vänster till 5 till höger. Rutans färg är nivån för dess poäng. Välj en ruta för att bara visa riskerna med den sannolikheten och konsekvensen i registret; välj den igen, eller **×** på filteretiketten, för att visa alla.
 
 Bredvid värmekartan räknar **Öppna risker per nivå** de risker som inte är stängda, per nivå; välj en nivå för att filtrera registret.
+
+När projektet har risker från katalogen visar **Område i katalogen** ovanför värmekartan bara riskerna inom ett område (till exempel *Autentisering* eller *Brandskydd*), eller de som inte kommer från katalogen. Värmekartan, antalen per nivå och registret följer valet, och området ingår i sidans adress. API:ets risklista tar samma val som frågefälten `catalog_area` (alias `area`) och `catalog`, till exempel `area:authentication` eller `catalog:AUTH-R01`.
 
 ## Risknivåer
 
@@ -1662,6 +1909,8 @@ Så länge ett undantag är godkänt och slutdatumet inte har passerats **gälle
 
 Ett krav visar sina undantag under sina risker i kravredigeraren.
 
+I ett projekt med [varianter](#varianter-och-kod) kan ett undantag begränsas till varianter med **Endast för varianter**. I en release som riktar sig mot varianter accepterar det då sina krav bara i de varianterna och varianterna under dem; en release som utvärderas utan varianter räknar bara undantag för alla varianter (se [releasegrindar per variant](#releasegrindar-per-variant)).
+
 ### Utgång och återkallelse
 
 Dagen efter slutdatumet blir ett godkänt undantag **utgånget**: dess krav accepteras inte längre, och den som begärde det och godkännarna får ett meddelande. En godkännare kan också när som helst **Återkalla** ett godkänt undantag, med en motivering. Ett godkänt undantag kan inte redigeras eller tas bort; återkalla det och begär ett nytt i stället. Varje steg loggas i granskningsloggen.
@@ -1704,7 +1953,7 @@ Tabellen fungerar som [kalkylbladsvyn](#krav): skriv i cellerna **Tillämplig**,
 
 En **defekt** (bugg) är ett problem som hittats vid testning. Varje defekt har en nyckel som `SHOP-BUG-3`, en titel, en beskrivning, en status, en allvarlighetsgrad, en prioritet och en tilldelad person, och den kopplas till de krav, testfall och exekveringar den gäller. Defekterna finns under **Defekter** i projektets sidomeny.
 
-Defekter kan speglas i **Jira**, **GitHub Issues** eller **GitLab**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
+Defekter kan speglas i **Jira**, **GitHub Issues**, **GitLab** eller **Request Tracker (RT)**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
 
 | Åtgärd | Roll som krävs |
 |---|---|
@@ -1814,6 +2063,17 @@ Kontot behöver behörighet att bläddra i projektet och skapa ärenden i det.
 
 Ett GitLab-ärendes status är *opened* eller *closed*; se tabellen under [Skicka, synkronisera och importera](#skicka-synkronisera-och-importera).
 
+### Request Tracker (RT)
+
+Qtestframe arbetar med RT 5 via dess REST2-API.
+
+- **RT-adress**: adressen till RT-instansen, t.ex. `https://rt.example.com` (utan `/REST/2.0`).
+- **Kö**: kön som nya ärenden hamnar i, med namn (t.ex. `General`) eller nummer.
+- **Anpassat fält för etiketter** (valfritt): RT har inga etiketter. Om kön har ett anpassat fält för dem, till exempel ett flervärdesfält *Tags*, anger du dess namn: etiketterna för nya ärenden (fältet **Etiketter** och etiketterna för [ärenden från krav](#ärenden-i-gitlab-github-eller-jira)) skrivs till det. Tomt skickar inga etiketter.
+- **Token**: en autentiseringstoken för den RT-användare som Qtestframe agerar som. Logga in i RT som den användaren, öppna **Logged in as → Settings → Auth Tokens**, skapa en token och klistra in den. Användaren behöver rättigheterna *CreateTicket*, *ShowTicket*, *ModifyTicket* och *CommentOnTicket* i kön. Qtestframe skickar den som `Authorization: token …`.
+
+Ett ärende anges med sitt nummer: `#123` (även `123` eller `RT#123`). Ett RT-ärendes beskrivning är dess första meddelande, som RT inte låter någon ersätta: **Uppdatera ärende** på ett krav ändrar därför ämnet och lägger till den nya texten som en kommentar. Ärenden skapas och kommenteras som vanlig text.
+
 ### Token
 
 Token kan **bara skrivas, aldrig läsas**: när den väl är sparad visas den aldrig och skickas aldrig tillbaka till webbläsaren, kortet säger bara **Token sparad**. Lämna fältet tomt när du ändrar andra inställningar för att behålla den. Skriv en ny och spara för att byta. **Ta bort token** raderar den. Om du sätter ärendehanteraren till **Ingen** tas hela anslutningen bort.
@@ -1825,14 +2085,16 @@ När en ärendehanterare är ansluten har listan över defekter tre åtgärder t
 - **Skicka till ärendehanteraren** (uppladdningsknappen för en defekt) skapar ett ärende från defekten: titeln med defektens nyckel, beskrivningen, allvarlighetsgraden och prioriteten samt nycklarna för de kopplade objekten. Defekten visar sedan ärendets nyckel, en länk till det och dess status i ärendehanteraren. En defekt som redan har ett ärende kan inte skickas igen.
 - **Synkronisera** (synkknappen för en defekt) läser ärendets status och uppdaterar defektens status; **Synkronisera alla** gör det för varje defekt med ett ärende i den anslutna ärendehanteraren och visar hur många som ändrades. Statusarna översätts så här:
 
-  | Jira | GitHub | GitLab | Defektens status |
-  |---|---|---|---|
-  | statuskategori *To Do* | open | opened | Öppen |
-  | statuskategori *In Progress* | | | Pågår |
-  | *Done* | closed (completed) | closed | Stängd |
-  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | | Avvisad |
+  | Jira | GitHub | GitLab | RT | Defektens status |
+  |---|---|---|---|---|
+  | statuskategori *To Do* | open | opened | new | Öppen |
+  | statuskategori *In Progress* | | | open, stalled | Pågår |
+  | *Done* | closed (completed) | closed | resolved | Stängd |
+  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | | rejected, deleted | Avvisad |
 
-- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub, `#123` eller `grupp/projekt#123` i GitLab) och allvarlighetsgraden. Titel och status hämtas från ärendet.
+  Statusar i en egen RT-livscykel som inte finns i tabellen lämnar defektens status som den är; RT-statusen visas ändå.
+
+- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub, `#123` eller `grupp/projekt#123` i GitLab, `#123` i RT) och allvarlighetsgraden. Titel och status hämtas från ärendet.
 
 Synkronisering läser bara; den ändrar aldrig ärendet. Ändringar du gör i en defekt i Qtestframe skrivs inte till ärendehanteraren.
 
@@ -1860,7 +2122,26 @@ Defektdialogen visar en defekts **Regressionshistorik**, och fliken **Påverkan*
 
 # Granskningar och notiser
 
-Qtestframe säger till när något behöver din uppmärksamhet, låter dig be kollegor granska ett krav eller ett test och sparar elektroniska signeringar av baslinjer. Webhooks skickar samma händelser vidare till andra system.
+Qtestframe säger till när något behöver din uppmärksamhet, låter dig be kollegor granska ett krav eller ett test och sparar elektroniska signeringar av baslinjer. Webhooks och chattkanaler skickar samma händelser vidare till andra system och till Slack, Teams och andra chattverktyg.
+
+## Mitt arbete
+
+**Mitt arbete** i huvudnavigeringen (under **Projekt** och **Sök**) är din personliga arbetslista: allt som väntar på dig, i alla projekt som du ser. Siffran bredvid visar hur många poster som väntar; den blir röd när några av dem är försenade. Varje rad länkar till posten och visar varför den finns med:
+
+| Orsak | Posten finns med eftersom |
+|---|---|
+| **Ägare** | du äger ett krav med status utkast, granskning, godkänt eller implementerat, ett testfall med status utkast eller granskning, eller en öppen risk (identifierad eller under åtgärd) |
+| **Tilldelad** | en öppen defekt eller en testexekvering som inte har körts än (i en planerad eller pågående körning) är tilldelad dig |
+| **Granskning begärd** | någon har bett dig granska ett krav eller ett testfall |
+| **Godkännande** | ett begärt undantag eller en avvikelse väntar på din signatur: du är en av godkännarna, eller inga godkännare anges och du får godkänna undantag. Dina egna begäranden visas inte. |
+| **Riskaccept** | en åtgärdad eller accepterad risk ligger över projektets acceptansnivå och saknar en giltig signerad accept, och du får signera den |
+| **Riskgenomgång** | du äger nästa genomgång av en risk och den infaller inom en vecka |
+| **Försenad** | förfallodatumet har passerat: en granskningsförfrågans förfallodatum eller en risks genomgångsdatum |
+| **Misstänkt**, **Inaktuella resultat**, **Blockerad** | ett krav eller testfall som du äger har blivit misstänkt (något länkat eller relaterat har ändrats), har inaktuella testresultat eller blockeras av en öppen defekt — även när det annars är klart |
+
+Försenade poster kommer först, sedan efter förfallodatum, sedan de senast ändrade. Välj ett projekt för att bara se dess poster, eller en orsak för att bara se de raderna. Projektets översikt visar samma lista för projektet i widgeten **Mitt arbete**, med antalet poster per orsak; välj en orsak för att öppna den filtrerade listan.
+
+Arbetslistan beräknas när du öppnar den; när arbetet är gjort (granskningen godkänd, defekten stängd, testet kört, statusen ändrad) försvinner raden.
 
 ## Notiser
 
@@ -1868,8 +2149,9 @@ Klockan i övre fältet visar hur många notiser du inte har läst. Öppna den f
 
 Du får en notis när någon annan:
 
-- tilldelar dig ett krav (ägare), en exekvering eller en defekt,
+- gör dig till ägare av ett krav, ett testfall eller en risk (även vid en massändring), eller tilldelar dig en exekvering eller en defekt,
 - nämner dig med `@handle` i en beskrivning, en kommentar eller anteckningar vid exekvering,
+- svarar i eller löser en [diskussionstråd](#diskussioner) som du har skrivit i, eller startar en tråd om ett objekt du är ansvarig för eller en granskning du deltar i,
 - ber dig granska något, eller har granskat det du bad om,
 - ändrar status på en defekt som är tilldelad dig.
 
@@ -1954,6 +2236,114 @@ Under **Kategorier & inställningar** kan projektets administratörer (behörigh
 Leveranser görs inte om och omdirigeringar följs inte.
 
 Kryssa i webhooks i listan för att **Slå på** eller **Stäng av** flera på en gång, **Lägg till händelser** eller **Ta bort händelser** (varje webhook måste ha minst en händelse kvar, annars ändras ingenting), **Skicka test** till alla (resultatet för varje visas) eller **Ta bort** dem. Andra ändringar än borttagning kan ångras med ångra-knappen.
+
+## Chattaviseringar
+
+Under **Kategorier & inställningar** kan projektets administratörer (behörighet att ändra projektet) skicka projektets händelser till en chattkanal i **Slack**, **Microsoft Teams**, **Mattermost**, **Rocket.Chat**, **Google Chat**, **Matrix** eller **Discord**. Välj **Lägg till chattkanal**, välj chattverktyg och klistra in den webhook-URL som verktyget ger dig (Matrix: hemservern, rummet och åtkomsttoken för en botanvändare). Administratörshandboken beskriver hur du får fram URL:en i varje verktyg.
+
+Varje meddelande anger händelsen, länkar objektets nyckel och titel till objektet i Qtestframe och visar dess status (i ord och färg), prioritet, vem som gjorde det och en kort sammanfattning, till exempel ”9 passed, 2 failed” för en avslutad körning eller början av en ny defekts beskrivning. Meddelandena skrivs på det språk du väljer för kanalen (engelska eller svenska) och hålls inom varje chattverktygs längdgränser.
+
+För varje kanal väljer du:
+
+- **Händelser**: **Alla händelser** (även händelser som senare versioner av Qtestframe lägger till) eller ett urval, grupperat i testkörningar, defekter, krav och tester, granskningar, releaser, undantag och risker.
+- **Filter**: **bara underkända** testkörningar och resultat; en **lägsta prioritet** (till exempel *Hög*: bara objekt med hög eller kritisk prioritet; defekter använder sin prioritet eller allvarlighetsgrad, risker sin nivå; händelser utan prioritet, som en avslutad körning, släpps ändå igenom); en **release** (bara releasen själv, dess körningar och resultat och dess undantag).
+- **Sammandrag**: 0 skickar varje händelse direkt. Med till exempel 60 minuter samlas händelserna och skickas som ett meddelande varje timme (”12 händelser i BANK …”, med de första händelserna och ”… och 4 till”).
+- **Aktiv**: stäng av kanalen utan att förlora dess inställningar.
+
+Webhook-URL:en och token är hemligheter: de lagras krypterade och visas aldrig igen; listan visar bara vart kanalen skickar (till exempel `hooks.slack.com`). Ange en ny för att byta; lämna fältet tomt för att behålla den sparade.
+
+**Skicka testmeddelande** skickar ett testmeddelande direkt, även till en avstängd kanal, och visar om det kom fram. **Leveranslogg** listar de senaste 50 meddelandena med HTTP-status och fel. Ett meddelande som misslyckas försöks igen efter 1, 2, 4, 8 och 16 minuter (en URL eller token som chattverktyget vägrar försöks inte igen). Efter 5 misslyckade meddelanden i rad stänger kanalen av sig själv, listan visar varför och projektets administratörer får en avisering. Rätta URL:en, skicka ett testmeddelande och slå på kanalen igen.
+
+I ett **begränsat** projekt visar meddelandena bara händelse, objektets nyckel, status och länk, så att titlar och beskrivningar inte hamnar i en chatt som personer utanför projektet kan läsa. En organisationsadministratör kan tillåta att en kanal visar hela innehållet.
+
+# Diskussioner
+
+Varje krav, testfall, defekt, risk, testkörning och granskningsbegäran har en **diskussion**: trådar med kommentarer där ni ställer frågor, kommer överens om ändringar och nämner kollegor. En tråd är öppen tills någon markerar den som löst, så att öppna frågor inte glöms bort.
+
+## Var du hittar en diskussion
+
+- **Krav och testfall**: fliken **Diskussion** i redigeraren. Siffran på fliken är antalet öppna (olösta) trådar.
+- **Testkörningar**: körningens flik **Diskussion**, bredvid exekveringarna, filerna och länkarna.
+- **Defekter och risker**: under formuläret när du öppnar en defekt eller en risk.
+- **Granskningsbegäranden**: i granskningsdialogen, under checklistan och granskningskommentaren. Granskaren, den som bad om granskningen och alla som kan läsa det granskade objektet deltar.
+- **Alla trådar i ett projekt**: projektets sida **Diskussioner** (se [Sidan Diskussioner](#sidan-diskussioner)).
+
+## Skriva en kommentar
+
+Skriv i fältet längst ned och välj **Starta tråd** (eller tryck <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Varje ny kommentar som skrivs där startar en tråd. För att svara i en tråd väljer du **Svara** under den. Svar finns i en nivå: ett svar på ett svar hamnar i samma tråd.
+
+Kommentarer skrivs i **Markdown**:
+
+| Du skriver | Du får |
+|---|---|
+| `**fetstil**`, `*kursiv*`, `~~överstruken~~` | **fetstil**, *kursiv*, ~~överstruken~~ |
+| `` `kod` `` och block mellan rader med ```` ``` ```` | kod |
+| rader som börjar med `-` eller `1.` | listor |
+| `> text` | ett citat |
+| `[text](https://example.com)` eller en ensam adress | en länk (öppnas i en ny flik) |
+| `SHOP-REQ-12`, `SHOP-TC-3`, `SHOP-BUG-4` | en länk till objektet |
+
+HTML som skrivs i en kommentar visas som text, och bilder visas inte, så en kommentar kan inte hämta något från andra webbplatser.
+
+## Nämna personer
+
+Skriv `@` så visas en lista med projektets personer, som i de andra textfälten (se [Nämn personer](requirements.md#nämn-personer)). Använd piltangenterna och <kbd>Enter</kbd> eller <kbd>Tab</kbd> för att infoga någon. Medlemmar som nämns får en notis, och ett e-postmeddelande om de har valt notiser via e-post (se [Notiser](reviews-and-notifications.md#notiser)). Ingen får höra om ett projekt som de inte kan se.
+
+Vilka som också får veta:
+
+- de som har skrivit i en tråd, om nya svar och när tråden markeras som löst;
+- objektets ansvarige (kravets ägare, defektens tilldelade, riskens ägare, granskaren och den som begärde en granskning), om en ny tråd.
+
+Var och en får veta det en gång per kommentar, och aldrig om sina egna kommentarer.
+
+## Redigera, ta bort, reagera
+
+- **Redigera** (pennan) ändrar din egen kommentar; den markeras sedan *(redigerad)*. Personer som du nämner i den nya texten får en notis.
+- **Ta bort** (papperskorgen) tar bort din egen kommentar. Den finns kvar i tråden som *Kommentaren har tagits bort*, så att svaren fortfarande går att förstå; texten är borta. En **moderator** (den som får ändra projektets inställningar, `project.update`, eller hantera medlemmar) kan ta bort allas kommentarer; händelseloggen visar att den modererades.
+- **Lägg till reaktion** (smileyn) lägger till tummen upp, tummen ner, hjärta, hurra, *tittar på det* eller *klart*. Välj en reaktion under en kommentar för att lägga till eller ta tillbaka din.
+
+## Markera som löst och öppna igen
+
+När en fråga är besvarad väljer du **Markera som löst** under tråden. Lösta trådar fälls ihop: slå på **Visa lösta** för att se dem, markerade *Löst* (peka på markeringen för att se vem som löste den och när). **Öppna igen** öppnar en tråd på nytt. Alla som får skriva i diskussionen kan lösa och öppna trådar.
+
+## Sidan Diskussioner
+
+Projektets sida **Diskussioner** listar trådarna för alla dess objekt, den senaste aktiviteten först: objektet (med sin typ), vem som startade tråden och hur, antalet svar och vem som skrev senast. Välj ett objekt för att öppna det med dess diskussion.
+
+Begränsa listan med:
+
+- **Öppna**, **Lösta** eller **Alla** trådar;
+- **Alla trådar**, **Jag deltar i** (trådar du har skrivit i) eller **Nämner mig**;
+- typ av objekt (krav, testfall, defekter, risker, testkörningar, granskningsbegäranden);
+- **Sök i kommentarerna** efter ett ord i någon av trådens kommentarer.
+
+Filtren är en del av sidans adress, så du kan spara *Öppna trådar som nämner mig* som bokmärke.
+
+## Hitta objekt med öppna diskussioner
+
+I listorna över krav och testfall filtrerar du med:
+
+- `has:open-discussion`: objekt med minst en olöst tråd (`open_discussions>2` för fler än två);
+- `mentions:me`: objekt som nämner dig, i texterna eller i diskussionen; `mention:anna.berg` för någon annan.
+
+Se [Sökning och filter](search-and-filters.md).
+
+## Behörigheter
+
+| För att | Behöver du |
+|---|---|
+| läsa en diskussion | läsbehörigheten för objektet (till exempel `requirement.read`, `run.read`) |
+| kommentera, svara, redigera dina kommentarer, lösa, öppna igen och reagera | `comment.create` (alla roller utom **Läsare** som standard) |
+| ta bort dina egna kommentarer | `comment.create` |
+| ta bort allas kommentarer | `project.update` i projektet, eller `member.manage` |
+
+`comment.create` är en projektbehörighet: en projektroll kan ge eller ta bort den i ett enskilt projekt. Varje kommentar, ändring, borttagning, lösning och återöppning registreras i händelseloggen (`comment.create`, `comment.update`, `comment.delete`, `comment.resolve`, `comment.reopen`).
+
+## Diskussioner på andra ställen
+
+- **Skapade dokument**: markera **Diskussioner om objekten** under *Bilagor* när du skapar en kravspecifikation eller en testplan för att lägga till en bilaga med trådarna för dess krav eller testfall (se [Skapa en kravspecifikation eller en testplan](documents.md#skapa-en-kravspecifikation-eller-en-testplan)).
+- **Sparade projekt, säkerhetskopior och papperskorgen**: diskussioner ingår i ett sparat projekt och i en säkerhetskopia, och ett borttaget krav eller testfall kommer tillbaka från papperskorgen med sin diskussion. När en defekt, en risk eller en körning tas bort tas dess diskussion bort.
+- **Webhooks**: händelserna `comment.created`, `comment.mentioned` och `comment.resolved` skickar nya kommentarer, omnämnanden och lösta trådar till andra system.
 
 # Spårbarhet och täckning
 
@@ -2049,13 +2439,15 @@ Utöver de regler du skriver har Qtestframe **inbyggda kontroller** med fasta vi
 | Testfall verifierar ett inaktivt krav | ett testfall verifierar ett avvisat eller föråldrat krav |
 | Trasig testförutsättning | en förutsättning för ett testfall är borttagen, underkändes senast, eller förutsättningarna bildar en cykel |
 | SKA-krav i en release utan godkänt belägg | ett MUST- eller SHALL-krav i en planerad eller aktiv release har inget länkat testfall som inte är misstänkt och som godkändes senast |
-| Hög risk utan verifierad åtgärd | en hög eller kritisk risk (inte stängd eller accepterad) saknar länkat krav, eller inget av dess krav är verifierat |
+| Hög risk utan verifierad åtgärd | en hög eller kritisk risk (inte stängd eller accepterad) saknar länkat krav, eller har krav som inte är verifierade (en risk vars krav alla är verifierade räknas som åtgärdad) |
 | Regelverkskrav avvisat utan motivering | ett krav som lagts till från ett regelverk i [katalogen](#katalog) (en lag eller ett direktiv) är avvisat och har ingen kommentar och ingen egen motivering |
-| Misstänkt dubblerade krav | två aktiva krav har nästan identisk titel och beskrivning (likhet minst 0,9 som standard) och ingen relation *dubblerar* |
+| Misstänkt dubblerade krav | två aktiva krav säger samma sak: titel, beskrivning och kriterier liknar varandra (minst 0,68 som standard, synonymer och böjningsformer på svenska och engelska inräknade) och de har ingen relation *dubblerar*. Se [Dubbletter och konflikter](#dubbletter-och-konflikter) |
+| Möjligen motstridiga krav | två aktiva krav motsäger troligen varandra: samma påstående med motsatta förpliktelser (SKA och FÅR INTE), gränsvärden för samma storhet som inte kan gälla samtidigt (≤ 2 s och ≥ 5 s) eller olika värden ur en uppsättning som utesluter varandra (aktiverad och avstängd), med en säkerhet på minst 0,6 som standard, och de har ingen relation *står i konflikt med* |
+| Misstänkt dubblerade testfall | två aktiva testfall säger samma sak (titel, beskrivning, förutsättningar och steg) och är inte länkade som dubbletter |
 
-Ett projekt får dem med **Lägg till inbyggda kontroller** (bland reglerna eller under **Analys**): de läggs till som regler med allvarligheten *varning*, så de syns i utgångskriteriet [Spårbarhetsregler](#utgångskriterier) först när det räknar varningar, eller när du höjer en kontroll till *fel*. En inbyggd kontroll är märkt **Inbyggd**; du kan byta namn, ändra allvarlighet, stänga av den, begränsa den med en fråga och, för dubblettkontrollen, ange **Likhetsgräns** (0,5 till 1) eller, för riskkontrollen, **Lägsta risknivå**.
+Ett projekt får dem med **Lägg till inbyggda kontroller** (bland reglerna eller under **Analys**): de läggs till som regler med allvarligheten *varning*, så de syns i utgångskriteriet [Spårbarhetsregler](#utgångskriterier) först när det räknar varningar, eller när du höjer en kontroll till *fel*. En inbyggd kontroll är märkt **Inbyggd**; du kan byta namn, ändra allvarlighet, stänga av den, begränsa den med en fråga och, för dubblettkontrollerna, ange **Likhetsgräns** (0,5 till 1), för konfliktkontrollen **Lägsta säkerhet** (0,5 till 1) eller, för riskkontrollen, **Lägsta risknivå**.
 
-Varje överträdelse visar de andra berörda objekten (det motstridiga kravet och releasen, den föråldrade föräldern, förutsättningen som underkändes …), var och en som länk, och föreslår en åtgärd där det finns en självklar: **Ta bort relationen**, **Ta bort länken**, **Ta bort förutsättningen**, **Ta bort från** releasen, **Markera som föråldrat**, **Registrera en motivering**, **Länka en åtgärd**, och för en misstänkt dubblett **Markera som dubblett** (lägger till relationen *dubblerar*) eller **Inget problem** (paret rapporteras inte igen). **Inget problem** kvitterar också ett beroende på ett borttaget objekt.
+Varje överträdelse visar de andra berörda objekten (det motstridiga kravet och releasen, den föråldrade föräldern, förutsättningen som underkändes …), var och en som länk, och föreslår en åtgärd där det finns en självklar: **Ta bort relationen**, **Ta bort länken**, **Ta bort förutsättningen**, **Ta bort från** releasen, **Markera som föråldrat**, **Registrera en motivering**, **Länka en åtgärd**, för en misstänkt dubblett **Markera som dubblett** (lägger till relationen *dubblerar*; för testfall en objektlänk med etiketten *duplicates*), för en möjlig konflikt **Markera som motstridiga** (lägger till relationen *står i konflikt med*) och **Inget problem** (paret rapporteras inte igen). [Dubbletter och konflikter](#dubbletter-och-konflikter) visar beläggen och kan också slå ihop dubbletter. **Inget problem** kvitterar också ett beroende på ett borttaget objekt.
 
 ## Ändringspåverkan
 
@@ -2069,9 +2461,33 @@ En ändring av ett krav stannar sällan hos det kravet. När **innehållet** i e
 
 En ändring av ett testfalls titel, beskrivning, förutsättningar, steg, förväntade resultat, skript eller körningstyp gör dess länkar misstänkta och dess senaste utfall inaktuellt.
 
+### En ändring sprids vidare
+
+Det som en ändring gör misstänkt kan i sin tur ändras, så påverkan sprids vidare: när A ändras blir B (som förfinar A) misstänkt, sedan C (som förfinar B) och så vidare, upp till projektets **påverkansdjup** (3 som standard, högst 10; se [Hur långt en ändring sprids](#hur-långt-en-ändring-sprids)). Varje post nås en gång, längs den kortaste vägen, även när relationerna bildar en cykel, och dialogerna visar **vägen** dit: *A → förfinas av → B → förfinas av → C → verifieras av → T-12*.
+
+Utöver kravrelationerna och testfallen når en ändring, som **Granskning rekommenderas**:
+
+- **riskerna** som ett ändrat krav hanterar (och, från en risk, de andra krav som hanterar den);
+- de **öppna defekterna** för ett påverkat krav eller testfall;
+- krav och testfall som är kopplade med **länkar**, och länkade körningar;
+- testfall som **anropar** ett ändrat testfall som delade steg eller **beror på** det;
+- **varianterna** som en påverkad post gäller (när de är valda uttryckligen) och **kodändringarna** (commits, merge requests) som hänvisar till den.
+
+De markeras inte; deras ägare kan aviseras. Ett testfall som ändras påverkar kraven som det verifierar, inte det som ligger bortom dem. En ändring av bara **statusen** (till exempel i en statusändring för flera) rekommenderar bara granskningar. Ärenden, dokument och utfall hör till den ändrade posten själv.
+
 ### Innan du sparar
 
-När du sparar en ändring av innehållet och något skulle markeras visar en dialog allt som blir misstänkt eller inaktuellt. Välj **Spara och markera** för att spara, eller **Avbryt** för att gå tillbaka till redigeringen. Objekt som redan är markerade visas som sådana och räknas inte igen.
+Varje ändring går igenom samma förhandsgranskning: när du sparar ett krav eller testfall, gör en **massredigering** eller **statusändring för flera** i listan, en **Excel**- eller **ReqIF**-import, **återställer en version** från historiken eller **återställer poster från en baslinje**. När något skulle påverkas visar en dialog det som ett träd grupperat per typ och djup, med antalen per typ och per djup, och för varje post om den **Blir misstänkt** eller bara **Granskning rekommenderas**, och vägen som ändringen når den längs. Välj vad som ska göras:
+
+| Val | Vad som händer |
+|---|---|
+| **Markera misstänkt** (standard) | Markerar det som projektets regler markerar misstänkt, markerar ärendena som inaktuella och aviserar ägarna till posterna som rekommenderas för granskning |
+| **Avisera bara ägarna** | Markerar ingenting; ägarna (kravens och riskernas ägare, defekternas tilldelade, testfallens författare) får en avisering var med sina påverkade poster |
+| **Hoppa över** | Markerar ingenting och aviserar ingen. Utfall som registrerats före ändringen blir ändå inaktuella och dokument blir ändå inaktuella: det följer av själva ändringen |
+
+Välj **Spara** för att spara med ditt val, eller **Avbryt** för att inte ändra något. Poster som redan är markerade visas som sådana och räknas inte igen.
+
+Via API:t tar varje ändrande anrop `?dry_run=impact` (ändringen görs i en transaktion, dess påverkan returneras och allt rullas tillbaka) och `?impact=suspect|notify|skip`.
 
 ### Fliken Påverkan
 
@@ -2080,15 +2496,19 @@ Fliken **Påverkan** för ett krav eller testfall visar samma lista när som hel
 - **Blockerande defekter**: de öppna defekter som blockerar det eller varnar för det (se [Blockerande defekter](#blockerande-defekter));
 - **Misstänkt nu**: dess misstänkta relationer, med **Bekräfta** för var och en (och **Bekräfta alla**), och de länkade testfall vars utfall är inaktuellt.
 
-Märkena bredvid kravets nyckel (**Blockeras av 1 defekt**, **1 inaktuellt utfall**, **1 misstänkt relation**) öppnar fliken. För ett testfall visar fliken också dess **Regressionshistorik** (se [Defekter](#regressioner)).
+Märkena bredvid kravets nyckel (**Blockeras av 1 defekt**, **1 inaktuellt utfall**, **1 misstänkt relation**) öppnar fliken. För ett testfall visar fliken också dess **Regressionshistorik** (se [Defekter](#regressioner)). **Påverkansanalys** öppnar posten i [påverkansanalysen](#påverkansanalys).
 
 ### Påverkan sedan en baslinje
 
 Under **Baslinjer**, jämför en baslinje med nuläget och välj **Påverkan**. Dialogen listar varje krav och testfall vars innehåll ändrats sedan baslinjen, med störst påverkan först, och summan av de objekt som påverkas. Öppna ett objekt för att se vad dess ändring gör misstänkt eller inaktuellt.
 
+### Påverkansanalys
+
+**Påverkansanalys** (bland projektets avsnitt) visar påverkan av en eller flera poster, eller av allt som ändrats sedan en baslinje, utan att ändra något. Välj **Krav** eller **Testfall** för att välja poster, eller välj en baslinje under **Ändringar sedan en baslinje**, ange **Påverkansdjup** och välj **Analysera**. Resultatet visar antalen per typ och djup och antingen en **Graf** (de ändrade posterna till vänster, varje påverkad post till höger om posten den nås från; streckad: granskning rekommenderas) eller en **Tabell** med typ, djup, effekt, ägare och väg för varje post. **CSV** och **PDF** exporterar analysen. Sidans adress behåller valet, så du kan skicka en analys som en länk.
+
 ### Genom vilka relationer
 
-**Kategorier & inställningar → Ändringspåverkan** avgör, per relationstyp, vilket krav som blir misstänkt när kravet i andra änden ändras:
+**Kategorier & inställningar → Ändringspåverkan** avgör, per relationstyp, vilket krav som blir misstänkt när kravet i andra änden ändras, och om det blir **misstänkt** eller bara får en **rekommenderad granskning**:
 
 | Inställning | Betydelse |
 |---|---|
@@ -2097,7 +2517,15 @@ Under **Baslinjer**, jämför en baslinje med nuläget och välj **Påverkan**. 
 | **Båda riktningarna** | en ändring i endera änden gör den andra misstänkt |
 | **Av** | ändringar sprids inte genom typen (standard för övriga typer) |
 
+Läget bredvid varje typ (**Blir misstänkt** eller **Granskning rekommenderas**) gäller allt som nås genom den: en post är misstänkt bara när varje steg på vägen markerar misstänkt.
+
 **Markera ärendena för ett ändrat krav som inaktuella** kan stängas av.
+
+### Hur långt en ändring sprids
+
+**Påverkansdjup** (1 till 10, standard 3) är antalet steg mellan krav, testfall och risker som en ändring sprids. Djup 1 är bara den direkta påverkan: kraven som är relaterade till det ändrade och testfallen för båda. De verifierande testfallen för ett påverkat krav och defekter, varianter och kodändringar för en påverkad post räknas inte som ett steg.
+
+**Andra kopplingar** slår på eller av de andra slagen av koppling: spårlänkar (de kan markera misstänkt eller bara rekommendera granskning), delade steg, testberoenden, länkar, risker, defekter, varianter och kodändringar (de rekommenderar bara granskning).
 
 ## Inaktuella utfall
 
@@ -2176,7 +2604,7 @@ Täckningen visar om de länkade testfallen är godkända. **Verifiering** går 
 
 Ett testfall som är länkat till ett krav kan kopplas till de kriterier det verifierar. Välj **Koppla kriterier** bredvid testfallet på fliken **Verifiering**, kryssa i kriterierna och, om du vill, det **steg** i testfallet som visar det. Ett kriterium som är kopplat till ett steg är godkänt när det steget godkändes i testfallets senaste exekvering. När du länkar ett testfall kan du också välja ett kriterium direkt (väljaren bredvid **Länka testfall**).
 
-En länk **utan** kriterier räknas för hela kravet, som tidigare: för varje kriterium som saknar egna belägg. Ett projekt som vill att varje kriterium har egna belägg slår på **strikt kriterietäckning** under **Inställningar → Projekt → Verifiering**. Ett underkänt testfall underkänner alltid kravet, kopplat eller inte.
+En länk **utan** kriterier räknas för hela kravet, som tidigare: för varje kriterium som saknar egna belägg. Ett projekt som vill att varje kriterium har egna belägg slår på **strikt kriterietäckning** under **Inställningar → Projekt → Verifiering**. Ett underkänt testfall underkänner alltid kravet, kopplat eller inte. Där kan ett projekt också låta utvärderade [utforskande sessioner](#sessioner-som-verifieringsbevis) räknas som belägg för kraven i deras omfattning (avstängt som standard).
 
 ### Verifieringsposter
 
@@ -2328,6 +2756,87 @@ För varje källa:
 
 Standardrapporten **Efterlevnad** (se [Rapporter och export](#rapporter-och-export)) innehåller samma siffror, per källa och avsnitt, med luckorna. Analysen hjälper dig att planera och följa upp; den är ingen juridisk bedömning.
 
+# Dubbletter och konflikter
+
+I stora kravmängder hamnar samma krav ofta två gånger (skrivet av två personer, importerat både från ett kunddokument och från [katalogen](#katalog)), och en del krav motsäger varandra (*lösenord minst 12 tecken* och *högst 8*). Qtestframe letar efter båda: medan du skriver, i de [inbyggda konsistenskontrollerna](#inbyggda-konsistenskontroller) och på sidan **Dubbletter och konflikter**, där du bestämmer vad som ska göras med varje par.
+
+Allt beräknas på Qtestframe-servern. Ingen text lämnar den om inte en administratör har slagit på en [tjänst för inbäddningar](#tjänst-för-inbäddningar).
+
+## Liknande krav medan du skriver
+
+När du skapar eller redigerar ett krav visar **Liknande krav** under beskrivningen de fem krav i projektet som liknar det mest, vart och ett med likheten i procent, en stund efter att du slutat skriva. En likhet på eller över projektets dubblettgräns (68 % som standard) markeras: kravet finns troligen redan. Öppna det i en ny flik, eller fortsätt skriva om ditt säger något annat.
+
+Testfallsredigeraren har samma panel, **Liknande testfall**, som jämför titel, beskrivning, förutsättningar och steg.
+
+Avvisade och föråldrade krav och utfasade testfall jämförs inte. Panelen visas bara för den som får ändra objektet.
+
+## Hur likheten mäts
+
+Två krav liknar varandra när de använder samma viktiga ord, inte när de ser lika ut bokstav för bokstav:
+
+- **Normalisering och böjningsformer.** Texterna jämförs med små bokstäver och utan skiljetecken; orden förkortas till sin stam på svenska och engelska (*användaren*, *användarna* → *använd*; *users*, *user* → *user*), så böjningar spelar ingen roll.
+- **Stoppord.** Ord utan egen betydelse (*och*, *ska*, *the*, *shall* …) räknas inte. Förpliktelseorden jämförs i stället av konfliktsökningen.
+- **Synonymer och förkortningar** inom området räknas som samma ord, även mellan språken: *logga in*, *inloggning*, *log in* och *sign in*; *användare*, *brukare*, *user* och *end user*; *e-post*, *mejl* och *e-mail*; *2FA*, *tvåfaktorsautentisering* och *two-factor*; *radera*, *ta bort*, *delete* och *remove*, med flera.
+- **Sammansättningar.** Svenska sammansatta ord delas när en del är ett känt ord (*användarkonto* = *användare* + *konto*), och bitar om fyra bokstäver gör *lösenordsbyte* och *byte av lösenord* lika.
+- **Ovanliga ord väger tyngre.** Ett ord som finns i några få krav i projektet säger mer än ett som finns i de flesta (TF-IDF över projektet).
+- **Fältvikter.** Titeln väger mest, sedan beskrivningen och sist acceptanskriterierna (för testfall: förutsättningar, steg och förväntat resultat).
+
+Resultatet är en likhet från 0 till 1 (visas i procent). Texter som bara skiljer sig i versaler och skiljetecken är 100 %.
+
+## Möjliga konflikter
+
+Två krav är **möjligen motstridiga** när de handlar om samma sak (de har tillräckligt många viktiga ord gemensamt) och:
+
+| Slag | Exempel |
+|---|---|
+| **Motsatt förpliktelse** | *Användaren ska kunna exportera rapporter som PDF.* och *Användaren får inte kunna exportera rapporter som PDF.* (även *MUST* och *MUST NOT*, *ska* och *ska aldrig*) |
+| **Gränsvärden** som inte kan gälla samtidigt | *svara inom 2 sekunder* och *en svarstid på minst 5 sekunder*; *minst 12 tecken* och *högst 8 tecken*; *at least 12 characters* och *at most 8 characters*. Enheter räknas om (2000 ms = 2 s, 15 minuters = 900 s), och en negativ förpliktelse vänder jämförelsen (*får inte överstiga 2 s* = högst 2 s) |
+| **Uteslutande värden** | *aktiverad* och *avstängd* som standard, *obligatorisk* och *frivillig*, *krypterad* och *okrypterad*, *offentlig* och *privat*, *automatisk* och *manuell*, *enabled* och *disabled* … |
+
+Varje konflikt har en **säkerhet** från 0 till 1, högre när de två påståendena har mer innehåll gemensamt. Förpliktelseorden känns igen som i [språkanalysen](#krav) (svenska och engelska). Ett par som är motstridigt rapporteras inte också som dubblett.
+
+## Sidan Dubbletter och konflikter
+
+Öppna **Dubbletter och konflikter** i projektets sidomeny. Välj **Krav** eller **Testfall** överst.
+
+- **Möjliga konflikter** (krav) visar varje par med slag, säkerhet och de avgörande orden, och meningen i vart och ett av kraven med **beläggen markerade**: förpliktelseorden, gränsvärdena eller de uteslutande värdena.
+- **Misstänkt dubblerade krav** (eller testfall) visar varje par med likheten och antalet spårlänkar för varje objekt.
+
+**Likhet från** och **Säkerhet för konflikt från** ändrar vad som visas; de börjar på projektets gränser (de inbyggda kontrollerna). **Visa avfärdade** visar också paren du har avfärdat, så att du kan visa dem igen.
+
+För varje par kan du:
+
+| Åtgärd | Vad som händer |
+|---|---|
+| **A dubblerar B** | lägger till relationen *A dubblerar B* (för testfall: en objektlänk med etiketten *duplicates*). Paret är inte längre misstänkt. |
+| **Slå ihop…** | välj vilket objekt som ska **behållas**; det andra slås ihop med det: dess spårlänkar, relationer (testfall: förutsättningar) och objektlänkar flyttas till objektet du behåller, det får statusen *Inaktuellt* (testfall: *Utfasat*) och markeras som dubblett av det behållna objektet. Båda får en kommentar om sammanslagningen, och statusändringen syns i historiken. Länkar som det behållna objektet redan har dubbleras inte. |
+| **Markera som motstridiga** | lägger till relationen *står i konflikt med*. Därefter bevakas paret av kontrollen [Motstridiga krav i en release](#inbyggda-konsistenskontroller). |
+| **Ingen dubblett** / **Ingen konflikt** | avfärdar fyndet: paret visas inte igen på sidan eller i de inbyggda kontrollerna (det sparas per par och kontroll, även i säkerhetskopior och projektarkiv). **Visa igen** ångrar det. |
+
+Att markera och slå ihop kräver behörighet att ändra krav (`requirement.write`) eller testfall (`test.write`). Alla som kan läsa objekten kan öppna sidan.
+
+## Inbyggda kontroller
+
+Sidan använder samma sökning som tre [inbyggda konsistenskontroller](#inbyggda-konsistenskontroller): **Misstänkt dubblerade krav**, **Möjligen motstridiga krav** och **Misstänkt dubblerade testfall**. En överträdelse rapporteras på det nyare objektet i paret; åtgärderna är **Markera som dubblett**, **Markera som motstridiga** och **Inget problem**.
+
+## Gränsvärden
+
+| Inställning | Standard | Var |
+|---|---|---|
+| Likhet för en misstänkt dubblett | 0,68 | kontrollens regel (**Likhetsgräns**, 0,5 till 1) |
+| Säkerhet för en möjlig konflikt | 0,6 | konfliktkontrollens regel (**Lägsta säkerhet**, 0,5 till 1) |
+| Lägsta likhet som visas medan du skriver | 0,25 | fast |
+
+Standardvärdena valdes på en märkt uppsättning svenska och engelska krav (omformulerade dubbletter, motsägelser av varje slag och närliggande krav som är varken eller, som *spärra kontot* och *låsa upp ett konto*): med dem hittas varje märkt dubblett och konflikt, och inget orelaterat par rapporteras. Höj dubblettgränsen till omkring 0,8 när kontrollen rapporterar krav som bara har samma ämne; sänk den mot 0,6 för att hitta omformuleringar med färre gemensamma ord. Likheten beror på projektet: ett ord som är ovanligt i ett litet projekt väger tyngre än i ett stort.
+
+## Import från katalogen
+
+Innan du lägger till krav från [katalogen](#katalog) varnar dialogen för de valda krav som liknar krav som projektet redan har, och kan hoppa över dem. Efteråt visar resultatet hur många nya krav som liknar befintliga.
+
+## Tjänst för inbäddningar
+
+En administratör kan låta en extern **tjänst för inbäddningar** (en OpenAI-kompatibel slutpunkt `/v1/embeddings`) beräkna likheten i stället (**Administration → Systeminställningar → Likhet**; se administratörsguiden). Sidan och panelen visar då *Tjänst för inbäddningar*. Titel, beskrivning och kriterier eller steg för krav och testfall **skickas då till tjänsten**. Vektorerna cachas per objektversion, så oförändrade objekt skickas inte igen. Konfliktsökningen körs alltid på servern. När tjänsten inte svarar används den lokala likheten.
+
 # Varianter och kod
 
 En produkt byggs ofta i flera **varianter**: modeller, marknader eller kundkonfigurationer. Alla krav gäller inte alla varianter, och en testkörning på en variant säger ingenting om en annan. Qtestframe håller reda på vilka krav och testfall som gäller vilka varianter och beräknar täckningen per variant.
@@ -2358,15 +2867,22 @@ Ett krav eller testfall **gäller** alla varianter tills du anger något annat. 
 
 För att ange tillämpligheten för många objekt på en gång markerar du dem i listan och väljer **Gäller** i verktygsfältet.
 
+### Historik, ångra och baslinjer
+
+En ändring av tillämpligheten finns i objektets **Historik** (som *Tillämplighet*, med varianterna före och efter) och i granskningsloggen. **Ångra** (Ctrl+Z) tar tillbaka den, även en ändring av många objekt på en gång: varje objekt får det det hade. När du återställer en äldre version från historiken återställs också den versionens tillämplighet.
+
+[Baslinjer](#baslinjer) sparar tillämpligheten för varje objekt. **Jämför** visar *Gäller för (varianter)* bland de ändrade fälten när den skiljer sig, och **Återställ** från en baslinje ger objekten den tillämplighet de hade, även när inget annat ändrats. Varianter som tagits bort sedan dess lämnas utanför. Ett borttaget objekt behåller sin tillämplighet i papperskorgen, och projektarkiv och säkerhetskopior innehåller den.
+
 ### Visa för en variant
 
-Välj en variant i **Visa för variant** i krav- och testfallslistorna. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
+Välj en variant i **Visa för variant** i krav- och testfallslistorna och på sidan **Spårbarhet**. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
 
 | Fråga | Hittar |
 |---|---|
 | `variant:"EU-modell"` | objekt som gäller varianten *EU-modell* |
 | `applicability:selected` | objekt som bara gäller vissa varianter |
 | `applicability:all` | objekt som gäller alla varianter |
+| `variant:US` (körningar) | körningar för varianten *US* |
 
 ## Täckning per variant
 
@@ -2382,7 +2898,18 @@ Fliken **Täckningsmatris** visar alla krav mot alla varianter, med hur många a
 
 ### Releaser och dokument för en variant
 
-Välj en variant i **Status för variant** på sidan **Releaser** för att utvärdera slutkriterierna för den: bara releasens krav som gäller varianten, testfallen som gäller den och resultaten som räknas. När en release släpps prövas fortfarande alla varianter.
+Välj en variant i **Status för variant** på sidan **Releaser** för att utvärdera utgångskriterierna för den: bara releasens krav som gäller varianten, testfallen som gäller den och resultaten som räknas.
+
+### Releasegrindar per variant
+
+En release kan **rikta sig mot** en eller flera varianter: redigera releasen och välj dem i **Målvarianter**. Utgångskriterierna utvärderas då för varje målvariant, med reglerna för [täckning per variant](#täckning-per-variant):
+
+- bara releasens krav som gäller varianten, och bara deras länkade testfall som gäller den, räknas;
+- bara resultat från releasens körningar för varianten eller en variant över den, och från **variantneutrala** körningar, räknas, i de konfigurationer varianten testas i. En variantneutral körning räknas för varje målvariant.
+
+Fliken **Status** visar matrisen **Utgångskriterier per variant**: en rad per kriterium, en kolumn per variant, varje cell *Uppfyllt*, *Undantaget* (uppfyllt eftersom undantag eller signerade riskacceptanser accepterar det som saknas) eller *Ej uppfyllt*, och go / no-go för varje variant längst ned. Releasen är **go först när varje målvariant är go**; för att markera den som släppt krävs detta go eller en releaseanteckning för att släppa ändå. I listan med kriterier under matrisen är ett kriterium uppfyllt när det är uppfyllt i alla varianter, och varje blockerande objekt anger i vilka varianter det blockerar. [Rapporten om releaseberedskap](#rapporter-och-export) innehåller samma matris.
+
+Ett [undantag](#undantag-restrisk-och-uttalande-om-tillämplighet) kan begränsas till varianter (**Endast för varianter**): det accepterar då sina krav bara i de varianterna och varianterna under dem. En release utan målvarianter räknar bara undantag för alla varianter. En release utan målvarianter, och ett projekt utan varianter, utvärderas som tidigare.
 
 När du [skapar ett dokument](#dokument-1) väljer du **För variant**: kravspecifikationen eller testplanen innehåller då bara det som gäller varianten, med dess täckning och resultat, och anger varianten på titelsidan.
 
@@ -2568,11 +3095,15 @@ Nyckelord och fältnamn är skiftlägesokänsliga. Värden med blanksteg behöve
 
 ### Krav
 
-`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (mappens sökväg, t.ex. `Kassa / Betalning`), `category` (`categories`, värdenas namn), `dimension` (`Dimension/Namn`), `coverage`, `linked` (nycklar för länkade testfall), `related`, `parent`, `child` (nycklar för relaterade, överordnade och underordnade krav), `comments`, `mention` (`mentions`: [@-namn](#nämn-personer) i ägare, titel, beskrivning, motivering och källa), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: beskrivning, metod och tröskelvärde), `risk` (högsta nivån bland de öppna [risker](#risknivåer) som kravet hanterar: `risk:high`), `defects` (antal öppna defekter på kravet eller dess testfall: `defects>0`), `catalog` ([katalogposten](#katalog) kravet kopierades från: `catalog:AUTH-01`, `has:catalog`), `verification` (`verified`: [verifieringsläget](#verifiering), `verification:failed`), `element` (`elements`: ett [systemelement](#systemelement) som kravet är allokerat till, eller ett över det: `element:"Kraftenhet"`), `variant` (`variants`: [varianterna](#varianter-och-kod) kravet gäller: `variant:"EU-modell"`), `applicability` (`all` eller `selected`).
+`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (mappens sökväg, t.ex. `Kassa / Betalning`), `category` (`categories`, värdenas namn), `dimension` (`Dimension/Namn`), `coverage`, `linked` (nycklar för länkade testfall), `related`, `parent`, `child` (nycklar för relaterade, överordnade och underordnade krav), `comments`, `open_discussions` (`open-discussion`: olösta trådar, `has:open-discussion`), `mention` (`mentions`: [@-namn](#nämn-personer) i ägare, titel, beskrivning, motivering och källa, och personerna som nämns i diskussionen; `mentions:me` för dig själv), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: beskrivning, metod och tröskelvärde), `risk` (högsta nivån bland de öppna [risker](#risknivåer) som kravet hanterar: `risk:high`), `defects` (antal öppna defekter på kravet eller dess testfall: `defects>0`), `catalog` ([katalogposten](#katalog) kravet kopierades från: `catalog:AUTH-01`, `has:catalog`), `verification` (`verified`: [verifieringsläget](#verifiering), `verification:failed`), `element` (`elements`: ett [systemelement](#systemelement) som kravet är allokerat till, eller ett över det: `element:"Kraftenhet"`), `variant` (`variants`: [varianterna](#varianter-och-kod) kravet gäller: `variant:"EU-modell"`), `applicability` (`all` eller `selected`).
 
 ### Testfall
 
-`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: åtgärd, förväntat resultat och data för alla steg), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (nycklar för länkade krav), `last_result` (`result`), `defect` (`defects`), `calls` (nycklar för anropade testfall), `depends_on` (`depends`: nycklar för förutsättningar), `comments`, `mention` (@-namn i texterna och stegen), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` för [instabila testfall](#instabila-testfall): `flaky:true`), `flakiness` (`flips`: antalet växlingar mellan godkänt och underkänt bland de senaste utfallen: `flakiness>=3`), `catalog` (katalogposten testfallet kopierades från), `variant` (`variants`: varianterna testfallet gäller), `applicability` (`all` eller `selected`).
+`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: åtgärd, förväntat resultat och data för alla steg), `priority`, `status`, `estimate`, `owner`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (nycklar för länkade krav), `last_result` (`result`), `defect` (`defects`), `calls` (nycklar för anropade testfall), `depends_on` (`depends`: nycklar för förutsättningar), `comments`, `open_discussions` (`open-discussion`: olösta trådar, `has:open-discussion`), `mention` (@-namn i texterna och stegen, och personerna som nämns i diskussionen; `mentions:me` för dig själv), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` för [instabila testfall](#instabila-testfall): `flaky:true`), `flakiness` (`flips`: antalet växlingar mellan godkänt och underkänt bland de senaste utfallen: `flakiness>=3`), `catalog` (katalogposten testfallet kopierades från), `variant` (`variants`: varianterna testfallet gäller), `applicability` (`all` eller `selected`).
+
+### Ägare och tilldelade
+
+`owner:me` hittar kraven, testfallen och riskerna som du äger, `assignee:me` defekterna och exekveringarna som är tilldelade dig, `review_owner:me` riskerna vars genomgång du äger — hur du än anges i fältet, och bara dig (inte alla namn som innehåller *me*). `owner:anna@example.com` hittar en medlems poster; `-owner:me` eller `owner!=me` de övriga.
 
 ### Körningar och exekveringar
 
@@ -2682,8 +3213,8 @@ Välj **Export** i projektets sidopanel.
    | **XLSX** | En Excel-arbetsbok med bladet *Summary* och ett blad per del; fet rubrikrad, låst första rad, autofilter och lämpliga kolumnbredder. |
    | **CSV** | En `.csv`-fil för en del; ett `.zip`-arkiv med en CSV-fil per del när du väljer flera. UTF-8, kommaavgränsad. |
    | **Markdown** | En `.md`-fil med alla delar: en rubrik, projektet, filtret och tidpunkten och en tabell per del. Ren text som läses bra i en wiki, ett Git-förråd eller vilken textredigerare som helst; nycklar länkar till Qtestframe när serverns adress är inställd. |
-   | **ReqIF** | Kraven som en ReqIF 1.2-fil (`.reqif`) för kravverktyg som IBM DOORS, Polarion, Jama eller ProR. Se [ReqIF för kravverktyg](#reqif-för-kravverktyg). |
-   | **ReqIF (med bilagor)** | Ett `.reqifz`-arkiv: ReqIF-filen och kravens bilagor och bilder. |
+   | **ReqIF** | Kraven som en ReqIF 1.2-fil (`.reqif`) för kravverktyg som IBM DOORS, Polarion, Codebeamer, Jama eller ProR, om du vill med testfallen och deras spårlänkar, verifieringsposterna eller som en baslinje frös dem. Se [ReqIF för kravverktyg](#reqif-för-kravverktyg). |
+   | **ReqIF (med bilagor)** | Ett `.reqifz`-arkiv: ReqIF-filen och posternas bilagor och bilder. |
 
 2. Välj **Innehåll**:
 
@@ -2697,7 +3228,7 @@ Välj **Export** i projektets sidopanel.
 
    Kolumnrubrikerna i de exporterade filerna är på engelska.
 
-   ReqIF innehåller bara krav, så valet av innehåll används inte för det formatet.
+   Valet av innehåll används inte för ReqIF; formatet har egna val under **Innehåll i ReqIF** (testfall, verifieringsposter, en baslinje), se [Samverkan](#reqif-export).
 
 3. Ange eventuellt ett **Filter**. Det gäller krav om det är en giltig fråga för krav och testfall om det är en giltig fråga för testfall: `obligation=must` filtrerar bara krav, `type=automated` bara testfall, `folder:Kassa` båda.
 4. Välj **Ladda ned**. Filen namnges efter projektnyckeln och tidpunkten, till exempel `SHOP-20261119-143000.xlsx`.
@@ -2734,7 +3265,10 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 | **Efterlevnad** | efterlevnad av lagar, standarder och bästa praxis: per källa, per avsnitt, de katalogkrav som saknas och de krav som inte är uppfyllda (se [Efterlevnad av lagar och standarder](#efterlevnad-av-lagar-och-standarder)) | valfria lagar, standarder och bästa praxis (standard: de som projektet använder) |
 | **Uttalande om tillämplighet** | varje åtgärd i en standard med tillämplighet, motivering, införande, ägare, krav och belägg (se [Uttalande om tillämplighet](#uttalande-om-tillämplighet)) | standarden (standard: ISO/IEC 27001:2022 bilaga A) |
 | **Releaseberedskap** | en release: go / no-go, varje utgångskriterium med vad som stoppar det och vad ett [undantag](#undantag-och-avvikelser) eller en signerad risk accepterar, gällande undantag och riskerna över acceptansgränsen | releasen (standard: den aktuella) |
+| **Testcykelrapport** | en [testcykel](#testcykler): planerade mot utförda, godkända, underkända och blockerade testfall, uppskattad mot faktisk tid, arbetsbelastningen per testare, nedbränningen och planen med varje utfall | cykeln (standard: den aktuella) |
 | **Kvalitetsmått** | kravens föränderlighet, defekttäthet, läckta defekter, testeffektivitet, resultatens ålder, granskningstid, tid till rättning och kravkvalitet, med trender (se [Kvalitetsmått](#kvalitetsmått)) | valfri historik i dagar (30, 90, 180 eller 365) och efter hur många dagar ett resultat är inaktuellt |
+| **Utforskande testsession** | en [utforskande session](#utforskande-test): uppdrag och omfattning, sessionstid, utvärderingen med täckning, tidsfördelning och utfall, alla anteckningar och skapade defekter | sessionen (standard: den senast utvärderade) |
+| **Utforskande test** | alla utforskande sessioner: nyckeltal, sessioner och buggar per sessionstimme per område och testare, genomsnittlig tidsfördelning och varje session med sitt utfall | – |
 
 **Riskrapporten** innehåller:
 
@@ -2839,12 +3373,13 @@ Filen innehåller projektets data i klartext. Förvara den lika omsorgsfullt som
 
 ## Utbyta data med andra verktyg
 
-Krav finns ofta på mer än ett ställe: en kund håller dem i IBM DOORS eller Siemens Polarion, en kollega vill granska dem i Excel och ett ALM-verktyg vill länka till dem. Qtestframe utbyter data på fyra sätt, alla under **Importera** på krav- och testsidorna och via API:et:
+Krav finns ofta på mer än ett ställe: en kund håller dem i IBM DOORS eller Siemens Polarion, en kollega vill granska dem i Excel och ett ALM-verktyg vill länka till dem. Qtestframe utbyter data på fem sätt, alla under **Importera** på krav- och testsidorna och via API:et:
 
 | Sätt | Riktning | Passar för |
 |---|---|---|
 | [Excel fram och tillbaka](#redigera-i-excel-och-importera-tillbaka) | ut och in igen | redigera många poster på en gång i Excel, även offline |
 | [ReqIF-import med uppdateringar](#reqif-från-doors-och-polarion) | in, gång på gång | en specifikation som förvaltas i DOORS, DOORS Next eller Polarion |
+| [Jira och Azure DevOps](#jira-och-azure-devops) | in, gång på gång | krav som förvaltas som Jira-ärenden eller arbetsobjekt i Azure DevOps |
 | [CSV- och Excel-exporter från DOORS och Polarion](#csv-och-excel-från-doors-och-polarion) | in, en gång | en första import när ReqIF inte finns |
 | [OSLC](#oslc-länkar-från-alm-verktyg) | läses av andra verktyg | länkar från IBM ELM, Polarion, Codebeamer och andra OSLC-klienter |
 
@@ -2891,10 +3426,39 @@ ReqIF är formatet som IBM DOORS, DOORS Next, Siemens Polarion och de flesta kra
 Det här händer:
 
 - **Relationer** mellan de importerade kraven (länkmoduler i DOORS, länkroller i Polarion) blir kravrelationer. Typen tas från namnet: *refines*, *satisfies* och *has parent* blir *förfinar*, *derived from* blir *härledd från*, *depends on* och *requires* blir *beror på* och så vidare; övriga blir *relaterar till*.
-- **Formaterad text** (XHTML) blir vanlig text med sina radbrytningar och listor.
+- **Formaterad text** (XHTML) blir Markdown med sina stycken, listor, tabeller och betoningar; bilder och andra filer som är inbäddade i en `.reqifz` blir bilagor.
+- **Testfall, spårlänkar och mer.** Samma import läser testfall (med steg) och spårlänkarna mellan testfall och krav, översätter det andra verktygets objekt- och relationstyper och kan låta nästlade krav *förfina* sitt överordnade krav. Se [Samverkan](#reqif-import).
 - **En ny import** uppdaterar kraven som skapades av tidigare importer av samma dokument och lägger till nya. Ett krav som har ändrats i Qtestframe sedan förra importen visas som en konflikt när dokumentet har andra värden. Relationer som har tagits bort i det andra verktyget tas bort här också; relationer som du har skapat i Qtestframe finns kvar. En import tar aldrig bort krav.
 - Ett krav utan titel i dokumentet får de första orden i sin text när det skapas; senare importer behåller titeln du har gett det.
 - En ReqIF-fil som har **exporterats från samma projekt** (se [ovan](#reqif-för-kravverktyg)) matchas mot sina krav, så att du kan skicka en specifikation till en leverantör och importera deras redigerade version tillbaka med samma förhandsgranskning.
+
+### Jira och Azure DevOps
+
+När kraven förvaltas som ärenden i **Jira** eller som arbetsobjekt i **Azure DevOps** (user stories, krav, features) hämtar **Importera → Från Jira** eller **Från Azure DevOps** in dem, och hämtar in dem igen när de ändras där *(Manager)*. En projektansvarig ställer in anslutningen en gång under **Kategorier & inställningar → Projekt → Importkällor** (se nedan).
+
+1. Ange **vad som ska importeras**:
+   - **Jira**: en **JQL-fråga**, till exempel `project = SHOP AND issuetype = Story ORDER BY key`. Dialogen börjar med importkällans standardfråga eller med ärendehanterarens projekt.
+   - **Azure DevOps**: en **Områdessökväg** (till exempel `Shop\Web`; arbetsobjekt under den ingår) och **Typer av arbetsobjekt** (till exempel `User Story, Requirement`), eller en egen **WIQL-fråga** som ersätter båda, t.ex. `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.State] <> 'Removed'`.
+2. Välj **Målmapp** för nya krav och om **länkar mellan objekten ska importeras som relationer**, och välj sedan **Förhandsvisa**. Högst 1 000 objekt läses åt gången; avgränsa frågan om förhandsvisningen säger att det finns fler.
+3. Kontrollera **fälten**: varje fält i ärendehanteraren som har ett värde visas med ett exempel och det kravfält det hamnar i. De vanliga är förinställda: *Summary* / *Title* → titel, *Description* → beskrivning, *Priority* → prioritet, *Labels* / *Tags* → taggar, *Status* / *State* → status och ett fält som heter *Acceptance Criteria* → acceptanskriterier (ett kriterium per rad eller listpunkt). Välj ett fält för vilket annat fält som helst, även ett [eget fält](#egna-fält) i projektet, eller *ignorera*. Förhandsvisningen uppdateras direkt.
+4. Kontrollera raderna (nya, ändrade, oförändrade, konflikter) och relationerna, avmarkera rader du inte vill ha och välj **Spara**.
+
+Det här händer:
+
+- **Text**: beskrivningar i Jira (wiki-markup) och HTML-fälten i Azure DevOps blir Markdown: rubriker, listor, fetstil, länkar, tabeller och kod behålls.
+- **Värden**: prioriteter som *Highest*, *High* … eller Azure DevOps-prioriteterna 1 till 4 blir *kritisk* … *låg*. Statusar matchas på namn (*To Do* och *New* → utkast, *In Progress*, *Active* och *Approved* → godkänd, *Done*, *Resolved* och *Closed* → implementerad, *Removed* → föråldrad) och i Jira annars på statuskategorin. Ett värde utan motsvarighet utelämnas med en anteckning på raden; kravet behåller sitt värde.
+- **Ny import**: nyckeln för varje ärende (`SHOP-12`) eller id:t för varje arbetsobjekt sparas med kravet det blev. En ny import **uppdaterar** det kravet i stället för att skapa ett till, och visar en konflikt när kravet också har ändrats i Qtestframe. Nya krav får *Jira SHOP-12* eller *Azure DevOps 1234* som källa. En import tar aldrig bort krav, och befintliga krav stannar i sin mapp.
+- **Relationer**: länkar mellan importerade objekt blir kravrelationer: i Jira *blocks* (det blockerade ärendet *beror på* det andra), *duplicates*, *clones* (*härledd från*), *relates to* och föräldern till en deluppgift eller ett barnärende (*förfinar*); i Azure DevOps *Parent* (*förfinar*), *Predecessor* (*beror på*), *Duplicate of* och *Related*. En länk som tas bort i ärendehanteraren tar bort relationen vid nästa import med relationer. Länkar till objekt utanför frågan utelämnas.
+- Det räcker med läsrätt: importen ändrar aldrig något i Jira eller Azure DevOps.
+
+#### Importkällor
+
+**Kategorier & inställningar → Projekt → Importkällor** *(Manager)* innehåller anslutningarna:
+
+- **Jira**: utan en egen adress använder importen [ärendehanteraren](#anslut-jira-github-eller-gitlab) när den är Jira. Ange **Jira-webbplatsens adress**, **e-post för Jira-kontot** och **Token** när kraven finns i en annan Jira. **Standardfråga** är JQL-frågan som dialogen börjar med.
+- **Azure DevOps**: **Organisationens adress** (`https://dev.azure.com/organisation`, eller samlingens adress i Azure DevOps Server), **Projekt**, en **Personlig åtkomsttoken** med behörigheten *Work Items (Read)* och eventuellt standardvärden för **Områdessökväg** och **Typer av arbetsobjekt**.
+
+Token kan bara skrivas, som för ärendehanteraren. **Testa anslutningen** provar den sparade anslutningen.
 
 ### CSV och Excel från DOORS och Polarion
 
@@ -2902,7 +3466,7 @@ När bara en CSV- eller Excel-export finns använder du **Importera → Från en
 
 ### OSLC: länkar från ALM-verktyg
 
-OSLC (Open Services for Lifecycle Collaboration) låter andra verktyg hitta kraven och testfallen i Qtestframe och länka till dem. Qtestframe är en OSLC-leverantör med läsbehörighet för Requirements Management 2.0 och Quality Management 2.0. Ge verktyget adressen till katalogen, `<serverns adress>/api/v1/oslc/catalog` (eller upptäcktsdokumentet `/api/v1/oslc/rootservices`), och en [API-nyckel](#api-nycklar). Verktyget ser då de projekt du får läsa, kan söka krav och testfall på nyckel, titel eller ändringsdatum och visar dem med sina länkar (vilka tester som verifierar ett krav, vilka krav ett test verifierar, relationer). Urvalsdialoger i det andra verktyget och att skapa poster via OSLC stöds inte. Din administratör hittar detaljerna under [Administration](#oslc).
+Med OSLC (Open Services for Lifecycle Collaboration) kan andra verktyg hitta Qtestframes krav och testfall, länka till dem och skapa och ändra dem. Qtestframe är en OSLC-leverantör för Requirements Management 2.1 och Quality Management 2.1, med urvals- och skapafönster som andra verktyg visar för sina användare. Se [Samverkan](#oslc); din administratör kopplar in verktygen (administratörshandboken, *Koppla ihop med andra verktyg*).
 
 ## Vilket ska jag välja?
 
@@ -2921,6 +3485,85 @@ OSLC (Open Services for Lifecycle Collaboration) låter andra verktyg hitta krav
 | En återkommande lista med egna kolumner | En sparad **anpassad rapport** |
 | Samma rapport i mottagarnas inkorg varje vecka | En sparad anpassad rapport under **Schemalagda rapporter** |
 | Lämna över ett helt projekt, behålla en kopia eller utgå från en mall | **Spara projekt** och **Läs in projekt** (se [ovan](#spara-och-läs-in-projekt)) |
+
+# Samverkan: ReqIF och OSLC
+
+Qtestframe fungerar tillsammans med krav- och ALM-verktyg som IBM DOORS och DOORS Next (IBM Engineering Lifecycle Management), Siemens Polarion, Codebeamer, Jama och ProR på två sätt:
+
+- **ReqIF-filer** flyttar hela specifikationer mellan verktyg: krav, testfall, mappar, relationer, spårlänkar och bilagor. Du exporterar en fil här och importerar den där, eller tvärtom, så ofta du vill.
+- **OSLC** kopplar ihop verktygen direkt: ett annat verktyg hittar Qtestframes krav och testfall, länkar sina egna poster till dem och kan skapa och ändra dem utan någon fil.
+
+Den här sidan förklarar båda. Excel fram och tillbaka och de andra exportformaten beskrivs i [Rapporter och export](#utbyta-data-med-andra-verktyg); din administratör kopplar ihop verktygen enligt administratörshandboken (*Koppla ihop med andra verktyg*).
+
+## ReqIF-export
+
+**Export** (i projektet) har **ReqIF** och **ReqIF (med bilagor)**. En ReqIF-fil innehåller alltid kraven med sina mappar (som kapitelrubriker), egna fält, acceptanskriterier och relationer. Under **Innehåll i ReqIF** lägger du till mer:
+
+| Val | Det här tillkommer |
+|---|---|
+| **Testfall med steg och spårlänkar** | Varje testfall som ett objekt av typen *Test case* (titel, beskrivning, förutsättningar, stegen som en tabell, förväntat resultat, exekveringstyp, prioritet, status, uppskattning, taggar, egna fält), testmapparna som ett andra kapitelträd och en relation *Verifies* från varje testfall till varje krav som det verifierar. |
+| **Verifieringsposter** | Granskningar, analyser, demonstrationer och genomgångar som har registrerats för kraven, var och en relaterad till sitt krav (*Verification record of*). De är till för att läsas i det andra verktyget; en import av filen hoppar över dem. |
+| **Version** | *Nuvarande läge*, eller en av projektets [baslinjer](#baslinjer): kraven och testfallen exakt som baslinjen frös dem. Filtret gäller inte för en baslinje; relationer, länkar och poster är dagens mellan dess poster. |
+
+Filtret begränsar kraven som för de andra formaten; med testfall tas bara de testfall med som verifierar ett exporterat krav. **ReqIF (med bilagor)** är ett `.reqifz`-arkiv med bilagorna och bilderna i beskrivningarna som filer.
+
+Filen använder ReqIF-standardnamnen (*ReqIF.Name*, *ReqIF.Text*, *ReqIF.ChapterName*, *ReqIF.ForeignID*) som DOORS, DOORS Next, Polarion och Codebeamer känner igen, och värdelistor (uppräkningar) för kravnivå, typ, prioritet, status och egna fält med val. Varje objekt behåller samma identifierare i varje export, så att ett verktyg som har importerat den tidigare uppdaterar sin kopia.
+
+## ReqIF-import
+
+**Importera → ReqIF från DOORS eller Polarion, med uppdateringar** (i krav- eller testfallslistan) läser en `.reqif`- eller `.reqifz`-fil och visar vad som skulle ändras innan något sparas *(Manager)*.
+
+1. **Välj filen.** Förhandsgranskningen visar dokumentets objekttyper, attribut och relationstyper med vad Qtestframe gör av dem, och ändringarna.
+2. **Objekttyper.** Varje typ av objekt i dokumentet blir **Krav**, **Testfall**, **Rubrik (mapp)** eller hoppas över. Qtestframes egen typ *Test case* och typer med *test* i namnet gissas som testfall, allt annat som krav; välj annorlunda för det andra verktygets typer (till exempel artefakter av typen *Test Case* i DOORS Next, arbetsposter av typen *Test Case* i Polarion eller trackers av typen *Test Case* i Codebeamer). Att importera testfall kräver behörighet att skriva testfall.
+3. **Attribut.** För krav och testfall var för sig läses varje attribut in i fältet som visas: inbyggda fält och projektets [egna fält](#egna-fält) (som matchas på sin etikett; värdelistor matchas på valens namn). **Teststeg** läser en tabell (åtgärd, data, förväntat resultat) eller en lista. **Rubrik (mapp)** markerar kapitelnamnen, **ID i det andra verktyget** sparas i källan för nya krav. Välj ett annat fält eller *ignorera*; förhandsgranskningen uppdateras direkt.
+4. **Relationstyper.** Varje relationstyp blir en relationstyp i Qtestframe (*förfinar*, *beror på* …), en **spårlänk** (ett testfall verifierar ett krav) eller hoppas över. En relation mellan ett testfall och ett krav blir alltid en spårlänk, oavsett riktning.
+5. **Var posterna hamnar.** Välj målmapparna för krav och för testfall, och om **rubriker blir mappar**. Med **Krav som ligger under ett krav förfinar det** får ett krav som ligger under ett annat krav i dokumentets hierarki (som i DOORS) en relation *förfinar* till det.
+6. **Kontrollera ändringarna** för krav och för testfall (nya, ändrade, oförändrade, konflikter, fel, cell för cell), relationerna och spårlänkarna som läggs till eller tas bort och de inbäddade filerna, och välj **Spara**. Allt sparas på en gång, eller ingenting.
+
+Det här händer:
+
+- **Formaterad text** (XHTML) blir Markdown med sina stycken, listor, tabeller, fet och kursiv text och länkar.
+- **Inbäddade filer** i en `.reqifz` (bilder och andra objekt i texten, *Attachments* i en export från Qtestframe) blir bilagor till posten, och texten visar bilden från bilagan. En fil som posten redan har bifogas inte igen.
+- **En ny import av samma dokument** uppdaterar kraven, testfallen, relationerna och spårlänkarna som det skapade och lägger till nya. En post som har ändrats i Qtestframe sedan förra importen visas som en konflikt när dokumentet har andra värden. Relationer och spårlänkar som har tagits bort i det andra verktyget tas bort här också; de som du har skapat i Qtestframe finns kvar. En import tar aldrig bort poster.
+- Ett teststeg som anropar ett testfall som är nytt i samma import importeras som ett vanligt steg; importera dokumentet en gång till för att göra det till ett anrop.
+
+### Fram och tillbaka
+
+En ReqIF-fil som har exporterats från Qtestframe med testfall kan importeras till ett annat projekt (eller ett annat Qtestframe) och innehåller sedan samma poster: krav och testfall med fält, egna fält (skapa samma egna fält i målprojektet först), kriterier, steg, mappar, relationer, spårlänkar och bilagor. De ursprungliga nycklarna sparas som ID i det andra verktyget; posterna får nycklar i målprojektet. Om du importerar filen till **samma** projekt matchas varje post, så att du kan skicka en specifikation till en leverantör och importera deras redigerade version tillbaka med samma förhandsgranskning.
+
+## OSLC
+
+OSLC (Open Services for Lifecycle Collaboration) är standarden som ALM-verktyg använder för att länka poster mellan verktyg. Qtestframe är en OSLC-leverantör för **Requirements Management 2.1** (krav) och **Quality Management 2.1** (testfall). När din administratör har kopplat in ett verktyg kan dess användare:
+
+- **Välja** krav eller testfall i Qtestframe i ett litet urvalsfönster i sitt eget verktyg, söka på text och länka till dem: till exempel länka ett krav i DOORS Next till testfallet i Qtestframe som validerar det, eller en arbetspost i Polarion till kravet som den implementerar.
+- **Skapa** ett krav eller testfall i Qtestframe från sitt verktyg, i ett kort formulär, och länka det i samma steg.
+- **Läsa** posterna med egenskaper och länkar (vilka testfall som verifierar ett krav, vilka krav det förfinar, vilka arbetsposter som implementerar det), söka i dem och följa länkarna till sidan i Qtestframe.
+- **Ändra och ta bort** poster via OSLC, med samma regler som i Qtestframe: kontroller, granskningsbehörigheter, historik och granskningsloggen. Om någon har ändrat posten under tiden får verktyget veta att det ska läsa den igen i stället för att skriva över den andra ändringen.
+
+Urvals- och skapafönstren använder din session i Qtestframe i webbläsaren. Om du inte är inloggad visas en länk för att logga in i en annan flik; välj sedan **Försök igen**.
+
+**Länkar.** OSLC-länkar motsvarar Qtestframes egna länkar:
+
+| OSLC-länk | I Qtestframe |
+|---|---|
+| *validatedBy* (krav), *validatesRequirement* (testfall) | spårlänk: testfallet verifierar kravet |
+| *elaborates* / *elaboratedBy* | relationen *förfinar* |
+| *constrainedBy* / *constrains* | relationen *beror på* |
+| *satisfies* / *satisfiedBy* | relationen *härledd från* |
+| *relation* | relationen *relaterar till* |
+| *implementedBy*, *trackedBy*, *affectedBy*, *testsChangeRequest* och länkar till poster i det andra verktyget | en [länk](#länkar) till postens adress, med länkens namn som etikett |
+
+Varje verktyg ansluter med en [API-nyckel](#api-nycklar) för en person eller ett tjänstekonto; verktyget kan göra det som nyckelns roll tillåter och ser bara projekt som den personen får se.
+
+## Vilket ska jag välja?
+
+| Du vill … | Använd |
+|---|---|
+| Lämna en hel specifikation till en leverantör eller kund, eller ta emot deras | ReqIF-export och -import |
+| Hålla en specifikation som underhålls i DOORS, DOORS Next, Polarion eller Codebeamer aktuell i Qtestframe | ReqIF-import, igen efter varje ändring där |
+| Kopiera ett projekt med testfall till ett annat Qtestframe | ReqIF med testfall (eller [Spara och läs in projekt](#spara-och-läs-in-projekt)) |
+| Frysa det som lämnades över | ReqIF-export av en baslinje |
+| Länka poster i ett ALM-verktyg till krav och testfall medan du arbetar | OSLC |
 
 # Dokument
 
@@ -2972,7 +3615,7 @@ Qtestframe kan skriva två kompletta dokument åt dig och spara dem i arkivet:
    - **Filter**: en [fråga](#sökning-och-filter) på kraven (specifikation) eller testfallen (testplan), till exempel `status:approved` eller `folder:Kassa`.
    - **Ta med avvisade och inaktuella krav** (och, för en testplan, utfasade testfall). De utelämnas som standard.
    - **Gruppera kraven efter** mapp, kategori (en dimension) eller typ (bara specifikation; en testplan grupperas alltid efter mapp).
-   - Vilka **fält** som visas för varje krav eller testfall, och vilka **bilagor**. *Senaste utfall* är avstängt som standard: en specifikation beskriver, den rapporterar inte.
+   - Vilka **fält** som visas för varje krav eller testfall, och vilka **bilagor**. *Senaste utfall* är avstängt som standard: en specifikation beskriver, den rapporterar inte. **Diskussioner om objekten** lägger till en bilaga med trådarna i kravens eller testfallens [diskussioner](#diskussioner) (borttagna kommentarer utelämnas; lösta trådar är markerade).
 3. Välj **Skapa**. En förloppsindikator visas medan dokumentet skrivs; ett projekt med tusentals krav tar några sekunder.
 
 Det nya dokumentet visas överst i arkivet, markerat, med **Öppna** (PDF) och **Ladda ner**. Det är ett *dokument* med taggarna `generated`, `requirements-specification` eller `test-plan` och versionen (till exempel `v2.0`); de tidigare versionerna av samma typ utgör dess revisionshistorik. Nyckelord i kravtexterna (MUST, SHALL, SKA …) skrivs i fetstil.
@@ -3037,9 +3680,9 @@ Varje organisation börjar med sex inbyggda roller. Som standard kan varje roll 
 | Roll | Kan dessutom (standard) |
 |---|---|
 | **Läsare** | läsa alla projekt, krav, testfall, körningar, dokument och medlemslistan; söka; exportera och ta fram rapporter |
-| **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet |
+| **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet; skriva i [diskussioner](#diskussioner) (*comment.create*, som alla roller nedan utom Läsare) |
 | **Testare** | skriva och länka testfall, hantera testmappar och testfallskategorier, skapa och redigera körningar, registrera utfall, importera utfall från CI, ladda upp bilagor till testfall, körningar och exekveringar, skapa egna API-nycklar |
-| **Testledare** | markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
+| **Testledare** | planera [testcykler](#testcykler) (*cycle.plan*), markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
 | **Ansvarig** | godkänna och avvisa krav (*requirement.review*), skriva krav och kravmappar, skapa och redigera projekt, alla kategorier och [spårbarhetsreglerna](#spårbarhetsregler), skapa baslinjer |
 | **Administratör** | allt: ta bort projekt, hantera medlemmar och roller, byta namn på organisationen, återställa medlemmars lösenord, ta bort alla kommentarer |
 | **Superadministratör** | allt i alla organisationer; hantera organisationer och användare; säkerhetskopiering och återställning |
@@ -3051,8 +3694,9 @@ Standardmatrisen med behörigheter:
 | `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.review` | | ✔ | | ✔ | ✔ | ✔ |
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
+| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
-| `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
 | `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
 
@@ -3229,7 +3873,7 @@ Bara medlemmar med behörigheten *script.execute* (som standard **Testledare** o
 
 ## Konsistenskontroller
 
-Projekt får inte de [inbyggda konsistenskontrollerna](#inbyggda-konsistenskontroller) som regler automatiskt: en förvaltare lägger till dem med **Lägg till inbyggda kontroller** (de börjar som varningar, så releasernas beredskap ändras inte). Avfärdade fynd (*ingen dubblett*) ingår i säkerhetskopior och projektarkiv.
+Projekt får inte de [inbyggda konsistenskontrollerna](#inbyggda-konsistenskontroller) som regler automatiskt: en förvaltare lägger till dem med **Lägg till inbyggda kontroller** (de börjar som varningar, så releasernas beredskap ändras inte). Avfärdade fynd (*ingen dubblett*, *ingen konflikt*) ingår i säkerhetskopior och projektarkiv; de cachade vektorerna från den valfria tjänsten för inbäddningar gör det inte (se [Dubbletter och konflikter](#dubbletter-och-konflikter)).
 
 ## API-nycklar
 
@@ -3272,12 +3916,13 @@ Så fungerar det:
 
 ## OSLC
 
-Qtestframe har en OSLC-leverantör med läsbehörighet (Requirements Management 2.0 och Quality Management 2.0) under `/api/v1/oslc/`, så att ALM-verktyg som IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion eller Codebeamer kan hitta krav och testfall och länka till dem. Den är alltid på; det finns inget att ställa in.
+Qtestframe har en OSLC-leverantör (Requirements Management 2.1 och Quality Management 2.1) under `/api/v1/oslc/`, så att ALM-verktyg som IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion eller Codebeamer kan hitta, länka, skapa och ändra krav och testfall. Den är alltid på; vad användarna kan göra med den beskrivs i [Samverkan](#oslc).
 
-- **Adresser:** katalogen `/api/v1/oslc/catalog` (en tjänsteleverantör per projekt) och upptäcktsdokumentet `/api/v1/oslc/rootservices` (öppet, innehåller inga data). Ange **Bas-URL** under [Systeminställningar](#systeminställningar) (`server.base_url`) så att resursadresserna är de som klienterna når.
-- **Konton:** klienter loggar in med en [API-nyckel](#api-nycklar) som `Authorization: Bearer …`; klienter som bara erbjuder användarnamn och lösenord kan skicka nyckeln som lösenord (valfritt användarnamn). Skapa nyckeln för en person eller ett tjänstekonto med rollen **Läsare** eller högre. Projektdelningen gäller: begränsade projekt visas bara för sina medlemmar.
-- **Stöds:** RDF/XML, Turtle och JSON-LD; krav och testfall med titel, beskrivning, datum, upphovsperson, taggar, status, prioritet, verifieringslänkar och relationer; frågor med `oslc.where` på identifierare, titel, skapad och ändrad, samt sidindelning.
-- **Stöds inte:** att skriva via OSLC (creation factories, uppdateringar), delegerade urvals- och skapadialoger, förhandsvisningar, resource shapes, OAuth 1.0a, tracked resource sets och konfigurationshantering. Använd [ReqIF och Excel fram och tillbaka](#utbyta-data-med-andra-verktyg) för att flytta krav in och ut.
+- **Adresser:** katalogen `/api/v1/oslc/catalog` (en tjänsteleverantör per projekt), en katalog per projekt `/api/v1/oslc/projects/<id>/catalog`, upptäcktsdokumentet `/api/v1/oslc/rootservices` (öppet, innehåller inga data). Ställ in **Bas-URL** under [Systeminställningar](#systeminställningar) (`server.base_url`) så att resursadresserna är de som klienterna når.
+- **Konton:** klienter loggar in med en [API-nyckel](#api-nycklar) som `Authorization: Bearer …`; klienter som bara har användarnamn och lösenord kan skicka nyckeln som lösenord (valfritt användarnamn). Skapa nyckeln för en person eller ett tjänstekonto vars roll tillåter det som verktyget ska göra: **Läsare** för att läsa och länka från andra hållet, en roll med skrivbehörighet för att skapa och ändra poster. Projektdelning gäller: begränsade projekt listas bara för sina medlemmar.
+- **Stöds:** RDF/XML, Turtle och JSON-LD åt båda hållen; creation factories, uppdateringar med `If-Match` (en inaktuell uppdatering nekas), borttagning till papperskorgen; frågor med `oslc.where` på valfri egenskap, `oslc.select`, `oslc.orderBy`, `oslc.searchTerms` och sidindelning; länkegenskaper som spårlänkar, relationer och länkar till det andra verktygets poster; delegerade urvals- och skapadialoger; resource shapes.
+- **Dialoger i en ram:** urvals- och skapadialogerna öppnas i ett eget fönster. För verktyg som visar dem inne på sin sida lägger serverns operatör in verktygets adress i `server.frame_ancestors` (administratörshandboken, *Koppla ihop med andra verktyg*).
+- **Stöds inte:** OAuth 1.0a (använd API-nycklar), förhandsvisningar, tracked resource sets och konfigurationshantering.
 
 API-referensen (`docs/api.md`, avsnittet *OSLC*) listar egenskaperna och frågesyntaxen.
 
@@ -3594,7 +4239,7 @@ Det får en **ny nyckel** i målprojektet (till exempel blir `SHOP-REQ-7` `CORE-
 
 ### Vem kan se mina kommentarer?
 
-Alla som kan läsa objektet, det vill säga alla medlemmar i organisationen med åtkomst till projektet, oavsett roll. Kommentarer syns inte för andra organisationer. Du kan redigera och ta bort dina egna kommentarer; administratörer kan ta bort alla kommentarer. Kommentarerna tas bort tillsammans med sitt objekt.
+Alla som kan läsa objektet, det vill säga alla medlemmar i organisationen med åtkomst till projektet, oavsett roll. Kommentarer syns inte för andra organisationer. Du kan redigera och ta bort dina egna kommentarer; moderatorer (som får ändra projektets inställningar) kan ta bort alla kommentarer, som då visas som borttagna. Kommentarerna tas bort tillsammans med sitt objekt. Se [Diskussioner](#diskussioner).
 
 ### Vad betyder ”auto-generated” på ett testfall?
 
@@ -3789,79 +4434,79 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 
 ## Källor som katalogen hänvisar till
 
-[Kravkatalogen](#katalog) hänvisar till 370 lagar, standarder, bästa praxis och vägledningar. Vid varje källa står hur många krav i katalogen som hänvisar till den och hur många testfall i katalogen som hänvisar till den eller verifierar ett sådant krav, samma antal som när du väljer källor att uppfylla i katalogen. När en källa samlar flera dokument listas de under den. Avsnittet genereras från katalogen.
+[Kravkatalogen](#katalog) hänvisar till 370 lagar, standarder, bästa praxis och vägledningar. Vid varje källa står hur många krav i katalogen som hänvisar till den och hur många testfall i katalogen som hänvisar till den eller verifierar ett sådant krav och, när det finns några, hur många risker i katalogen som hänvisar till den, samma antal som när du väljer källor att uppfylla i katalogen. När en källa samlar flera dokument listas de under den. Avsnittet genereras från katalogen.
 
 ### Lagar och förordningar
 
 #### Lagar och förordningar: Internationella
 
-- [FN-föreskrift nr 155 – Cybersäkerhet och ledningssystem för cybersäkerhet](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-155-cyber-security-and-cyber-security) (UN R155): 2 krav, 2 testfall
-- [FN-föreskrift nr 156 – Programuppdateringar och ledningssystem för programuppdateringar](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-156-software-update-and-software-update) (UN R156): 4 krav, 4 testfall
+- [FN-föreskrift nr 155 – Cybersäkerhet och ledningssystem för cybersäkerhet](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-155-cyber-security-and-cyber-security) (UN R155): 2 krav, 2 testfall, 1 risk
+- [FN-föreskrift nr 156 – Programuppdateringar och ledningssystem för programuppdateringar](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-156-software-update-and-software-update) (UN R156): 4 krav, 4 testfall, 2 risker
 
 #### Lagar och förordningar: Europeiska unionen
 
-- [AI-förordningen (EU) 2024/1689](https://eur-lex.europa.eu/eli/reg/2024/1689/oj) (AI Act): 40 krav, 29 testfall
-- [Batteriförordningen (EU) 2023/1542](https://eur-lex.europa.eu/eli/reg/2023/1542/oj): 3 krav, 3 testfall
+- [AI-förordningen (EU) 2024/1689](https://eur-lex.europa.eu/eli/reg/2024/1689/oj) (AI Act): 40 krav, 29 testfall, 7 risker
+- [Batteriförordningen (EU) 2023/1542](https://eur-lex.europa.eu/eli/reg/2023/1542/oj): 3 krav, 3 testfall, 1 risk
 - [Beslut nr 768/2008/EG om en gemensam ram för saluföring av produkter](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32008D0768) (Decision 768/2008/EC): 4 krav, 3 testfall
-- [CLP-förordningen (EG) nr 1272/2008 om klassificering, märkning och förpackning](https://eur-lex.europa.eu/eli/reg/2008/1272/oj): 2 krav, 2 testfall
-- [Cyberresiliensförordningen (EU) 2024/2847](https://eur-lex.europa.eu/eli/reg/2024/2847/oj) (CRA): 100 krav, 95 testfall
-- [Dataförordningen (EU) 2023/2854](https://eur-lex.europa.eu/eli/reg/2023/2854/oj) (Data Act): 9 krav, 6 testfall
-- [Dataskyddsförordningen (EU) 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj) (GDPR): 97 krav, 95 testfall
+- [CLP-förordningen (EG) nr 1272/2008 om klassificering, märkning och förpackning](https://eur-lex.europa.eu/eli/reg/2008/1272/oj): 2 krav, 2 testfall, 1 risk
+- [Cyberresiliensförordningen (EU) 2024/2847](https://eur-lex.europa.eu/eli/reg/2024/2847/oj) (CRA): 100 krav, 95 testfall, 4 risker
+- [Dataförordningen (EU) 2023/2854](https://eur-lex.europa.eu/eli/reg/2023/2854/oj) (Data Act): 9 krav, 6 testfall, 1 risk
+- [Dataskyddsförordningen (EU) 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj) (GDPR): 97 krav, 95 testfall, 16 risker
 - [Digital omnibusförordning om AI, förordning (EU) 2026/1744 om ändring av AI-förordningen](https://eur-lex.europa.eu/eli/reg/2026/1744/oj) (Digital Omnibus on AI): 5 krav, 4 testfall
 - [E-PRTR-förordningen (EG) nr 166/2006](https://eur-lex.europa.eu/eli/reg/2006/166/oj): 1 krav, 1 testfall
 - [eIDAS-förordningen (EU) nr 910/2014](https://eur-lex.europa.eu/eli/reg/2014/910/oj): 7 krav, 7 testfall
 - [EU:s nätföreskrifter och riktlinjer för el (SO GL, EB GL, NC ER)](https://eur-lex.europa.eu/eli/reg/2017/1485/oj): 4 krav, 4 testfall
   - [Commission Regulation (EU) 2017/1485](https://eur-lex.europa.eu/eli/reg/2017/1485/oj) · [Commission Regulation (EU) 2017/2195](https://eur-lex.europa.eu/eli/reg/2017/2195/oj) · [Commission Regulation (EU) 2017/2196](https://eur-lex.europa.eu/eli/reg/2017/2196/oj)
-- [Förordning (EG) nr 765/2008 om ackreditering och CE-märkning](https://eur-lex.europa.eu/eli/reg/2008/765/oj): 1 krav, 1 testfall
-- [Förordningen om digital operativ motståndskraft (DORA), (EU) 2022/2554](https://eur-lex.europa.eu/eli/reg/2022/2554/oj): 50 krav, 42 testfall
+- [Förordning (EG) nr 765/2008 om ackreditering och CE-märkning](https://eur-lex.europa.eu/eli/reg/2008/765/oj): 1 krav, 1 testfall, 1 risk
+- [Förordningen om digital operativ motståndskraft (DORA), (EU) 2022/2554](https://eur-lex.europa.eu/eli/reg/2022/2554/oj): 50 krav, 42 testfall, 1 risk
 - [Förordningen om digitala tjänster (EU) 2022/2065](https://eur-lex.europa.eu/eli/reg/2022/2065/oj) (DSA): 1 krav, 1 testfall
-- [Förordningen om ekodesign för hållbara produkter (EU) 2024/1781](https://eur-lex.europa.eu/eli/reg/2024/1781/oj) (ESPR): 5 krav, 4 testfall
+- [Förordningen om ekodesign för hållbara produkter (EU) 2024/1781](https://eur-lex.europa.eu/eli/reg/2024/1781/oj) (ESPR): 5 krav, 4 testfall, 1 risk
 - [Förordningen om en gemensam digital ingång (EU) 2018/1724](https://eur-lex.europa.eu/eli/reg/2018/1724/oj) (SDG): 5 krav, 5 testfall
 - [Förordningen om ett kompatibelt Europa (EU) 2024/903](https://eur-lex.europa.eu/eli/reg/2024/903/oj): 1 krav, 1 testfall
-- [Förordningen om medicintekniska produkter (EU) 2017/745](https://eur-lex.europa.eu/eli/reg/2017/745/oj) (MDR): 6 krav, 6 testfall
-- [Förordningen om metanutsläpp i energisektorn (EU) 2024/1787](https://eur-lex.europa.eu/eli/reg/2024/1787/oj): 3 krav, 3 testfall
+- [Förordningen om medicintekniska produkter (EU) 2017/745](https://eur-lex.europa.eu/eli/reg/2017/745/oj) (MDR): 6 krav, 6 testfall, 2 risker
+- [Förordningen om metanutsläpp i energisektorn (EU) 2024/1787](https://eur-lex.europa.eu/eli/reg/2024/1787/oj): 3 krav, 3 testfall, 1 risk
 - [Förordningen om öppen internetanslutning (EU) 2015/2120](https://eur-lex.europa.eu/eli/reg/2015/2120/oj): 1 krav, 1 testfall
 - [Förordningen om övervakning och rapportering inom EU ETS, (EU) 2018/2066](https://eur-lex.europa.eu/eli/reg_impl/2018/2066/oj): 1 krav, 1 testfall
 - [Genomförandeförordningen till NIS2, (EU) 2024/2690](https://eur-lex.europa.eu/eli/reg_impl/2024/2690/oj) (NIS2 IR): 13 krav, 15 testfall
 - [Kommissionens förordning (EU) 2019/1782 om ekodesignkrav för externa nätaggregat](https://eur-lex.europa.eu/eli/reg/2019/1782/oj): 1 krav, 1 testfall
 - [Kommissionens förordning (EU) 2023/826 om ekodesignkrav för frånläge, standbyläge och nätverksanslutet standbyläge](https://eur-lex.europa.eu/eli/reg/2023/826/oj): 1 krav, 1 testfall
-- [Maskinförordningen (EU) 2023/1230](https://eur-lex.europa.eu/eli/reg/2023/1230/oj): 25 krav, 21 testfall
+- [Maskinförordningen (EU) 2023/1230](https://eur-lex.europa.eu/eli/reg/2023/1230/oj): 25 krav, 21 testfall, 4 risker
 - [Nätföreskrifter för cybersäkerhet, delegerad förordning (EU) 2024/1366](https://eur-lex.europa.eu/eli/reg_del/2024/1366/oj) (NCCS): 2 krav, 2 testfall
-- [Reach-förordningen (EG) nr 1907/2006](https://eur-lex.europa.eu/eli/reg/2006/1907/oj) (REACH): 3 krav, 3 testfall
+- [Reach-förordningen (EG) nr 1907/2006](https://eur-lex.europa.eu/eli/reg/2006/1907/oj) (REACH): 3 krav, 3 testfall, 1 risk
 - [REMIT, förordning (EU) nr 1227/2011 om integritet och öppenhet på grossistmarknaderna för energi](https://eur-lex.europa.eu/eli/reg/2011/1227/oj): 1 krav, 1 testfall
 
 #### Lagar och förordningar: Sverige
 
-- [Arbetsmiljöverkets föreskrifter (AFS 2023:1–2023:15)](https://www.av.se/arbetsmiljoarbete-och-inspektioner/publikationer/foreskrifter/): 4 krav, 3 testfall
+- [Arbetsmiljöverkets föreskrifter (AFS 2023:1–2023:15)](https://www.av.se/arbetsmiljoarbete-och-inspektioner/publikationer/foreskrifter/): 4 krav, 3 testfall, 1 risk
 - [Arkivlag (1990:782)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arkivlag-1990782_sfs-1990-782/): 2 krav, 1 testfall
-- [Bokföringslagen (1999:1078)](https://lagen.nu/1999:1078): 3 krav, 3 testfall
-- [Boverkets byggregler (BFS 2024:4–2024:13, BFS 2026:4 och 2026:9), som har ersatt BBR (BFS 2011:6) och EKS](https://www.boverket.se/sv/byggande/regler-for-byggande/om-boverkets-nya-byggregler/): 9 krav, 6 testfall
-- [Cybersäkerhetslag (2025:1506), som genomför NIS2](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/cybersakerhetslag-20251506_sfs-2025-1506/): 9 krav, 7 testfall
+- [Bokföringslagen (1999:1078)](https://lagen.nu/1999:1078): 3 krav, 3 testfall, 1 risk
+- [Boverkets byggregler (BFS 2024:4–2024:13, BFS 2026:4 och 2026:9), som har ersatt BBR (BFS 2011:6) och EKS](https://www.boverket.se/sv/byggande/regler-for-byggande/om-boverkets-nya-byggregler/): 9 krav, 6 testfall, 3 risker
+- [Cybersäkerhetslag (2025:1506), som genomför NIS2](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/cybersakerhetslag-20251506_sfs-2025-1506/): 9 krav, 7 testfall, 3 risker
 - [Elberedskapslag (1997:288)](https://lagen.nu/1997:288): 1 krav, 1 testfall
-- [Elsäkerhetslag (2016:732)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/elsakerhetslag-2016732_sfs-2016-732/): 2 krav, 1 testfall
+- [Elsäkerhetslag (2016:732)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/elsakerhetslag-2016732_sfs-2016-732/): 2 krav, 1 testfall, 1 risk
 - [Funktionskontroll av ventilationssystem: plan- och byggförordningen (2011:338) 5 kap. 1–7 §§ och Boverkets BFS 2011:16 (OVK)](https://www.boverket.se/sv/PBL-kunskapsbanken/regler-om-byggande/ovk/): 2 krav, 2 testfall
 - [Förvaltningslag (2017:900)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/forvaltningslag-2017900_sfs-2017-900/): 1 krav, 1 testfall
 - [Kamerabevakningslag (2018:1200)](https://lagen.nu/2018:1200): 1 krav, 1 testfall
 - [Kontroll av hissar och andra motordrivna anordningar: plan- och byggförordningen (2011:338) 5 kap. 8–11 §§ och Boverkets BFS 2025:11 och 2025:12](https://www.boverket.se/sv/PBL-kunskapsbanken/regler-om-byggande/motordrivna-anordningar/hissar/): 1 krav, 1 testfall
-- [Lag (2003:778) om skydd mot olyckor](https://lagen.nu/2003:778) (LSO): 5 krav, 5 testfall
+- [Lag (2003:778) om skydd mot olyckor](https://lagen.nu/2003:778) (LSO): 5 krav, 5 testfall, 1 risk
 - [Lag (2006:985) om energideklaration för byggnader](https://lagen.nu/2006:985): 1 krav, 1 testfall
 - [Lag (2010:1011) om brandfarliga och explosiva varor](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-20101011-om-brandfarliga-och-explosiva_sfs-2010-1011/): 1 krav, 1 testfall
-- [Lag (2016:1145) om offentlig upphandling (LOU)](https://lagen.nu/2016:1145): 4 krav, 3 testfall
+- [Lag (2016:1145) om offentlig upphandling (LOU)](https://lagen.nu/2016:1145): 4 krav, 3 testfall, 1 risk
 - [Lag (2018:218) med kompletterande bestämmelser till EU:s dataskyddsförordning](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018218-med-kompletterande-bestammelser_sfs-2018-218/): 1 krav, 1 testfall
 - [Lag (2021:890) om skydd för personer som rapporterar om missförhållanden](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2021890-om-skydd-for-personer-som_sfs-2021-890/): 1 krav, 1 testfall
 - [Lagen (2018:1937) om tillgänglighet till digital offentlig service och DIGG:s föreskrifter](https://lagen.nu/2018:1937) (DOS-lagen): 4 krav, 4 testfall
   - [Lag (2018:1937)](https://lagen.nu/2018:1937) · [DIGG MDFFS 2019:2](https://www.digg.se/om-oss/forfattningssamling/foreskrifter-om-tillganglighet-till-digital-offentlig-service-mdffs-20192/grundforfattning-mdffs-20192)
 - [Lagen (2022:482) om elektronisk kommunikation](https://lagen.nu/2022:482) (LEK): 2 krav, 2 testfall
 - [Marknadsföringslagen (2008:486)](https://lagen.nu/2008:486): 2 krav, 2 testfall
-- [Offentlighets- och sekretesslag (2009:400)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/offentlighets-och-sekretesslag-2009400_sfs-2009-400/) (OSL): 2 krav, 2 testfall
+- [Offentlighets- och sekretesslag (2009:400)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/offentlighets-och-sekretesslag-2009400_sfs-2009-400/) (OSL): 2 krav, 2 testfall, 1 risk
 - [Patientdatalagen (2008:355)](https://lagen.nu/2008:355): 1 krav, 1 testfall
 - [Språklag (2009:600)](https://lagen.nu/2009:600): 3 krav, 3 testfall
-- [Säkerhetsskyddslagen (2018:585), säkerhetsskyddsförordningen (2021:955) och föreskrifter](https://lagen.nu/2018:585): 20 krav, 17 testfall
+- [Säkerhetsskyddslagen (2018:585), säkerhetsskyddsförordningen (2021:955) och föreskrifter](https://lagen.nu/2018:585): 20 krav, 17 testfall, 3 risker
   - [Säkerhetsskyddslag (2018:585)](https://lagen.nu/2018:585) · [Säkerhetsskyddsförordning (2021:955)](https://lagen.nu/2021:955)
 
 #### Lagar och förordningar: USA
 
-- [Amerikanska FDA 21 CFR Part 11 (elektroniska register och underskrifter)](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11): 15 krav, 14 testfall
+- [Amerikanska FDA 21 CFR Part 11 (elektroniska register och underskrifter)](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11): 15 krav, 14 testfall, 3 risker
 - [HIPAA Security Rule (45 CFR del 164)](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C): 1 krav, 1 testfall
 - [OSHA processäkerhet, 29 CFR 1910.119](https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.119): 1 krav, 1 testfall
 - [USA:s Code of Federal Regulations avdelning 47 (FCC), del 2 och 15](https://www.ecfr.gov/current/title-47) (FCC 47 CFR): 1 krav, 1 testfall
@@ -3879,30 +4524,30 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 - [Direktivet om avfall som utgörs av eller innehåller elektriska eller elektroniska produkter (WEEE) 2012/19/EU](https://eur-lex.europa.eu/eli/dir/2012/19/oj): 6 krav, 5 testfall
 - [Direktivet om byggnaders energiprestanda (EU) 2024/1275](https://eur-lex.europa.eu/eli/dir/2024/1275/oj) (EPBD): 3 krav, 3 testfall
 - [Direktivet om integritet och elektronisk kommunikation 2002/58/EG](https://eur-lex.europa.eu/eli/dir/2002/58/oj) (ePrivacy): 15 krav, 15 testfall
-- [Direktivet om kritiska entiteters motståndskraft (CER), (EU) 2022/2557](https://eur-lex.europa.eu/eli/dir/2022/2557/oj): 14 krav, 12 testfall
+- [Direktivet om kritiska entiteters motståndskraft (CER), (EU) 2022/2557](https://eur-lex.europa.eu/eli/dir/2022/2557/oj): 14 krav, 12 testfall, 1 risk
 - [Direktivet om offentlig upphandling 2014/24/EU](https://eur-lex.europa.eu/eli/dir/2014/24/oj): 5 krav, 4 testfall
 - [Direktivet om oskäliga avtalsvillkor 93/13/EEG](https://eur-lex.europa.eu/eli/dir/1993/13/oj): 1 krav, 1 testfall
-- [Direktivet om otillbörliga affärsmetoder 2005/29/EG](https://eur-lex.europa.eu/eli/dir/2005/29/oj) (UCPD): 4 krav, 4 testfall
-- [Direktivet om tryckbärande anordningar 2014/68/EU](https://eur-lex.europa.eu/eli/dir/2014/68/oj) (PED): 14 krav, 9 testfall
+- [Direktivet om otillbörliga affärsmetoder 2005/29/EG](https://eur-lex.europa.eu/eli/dir/2005/29/oj) (UCPD): 4 krav, 4 testfall, 1 risk
+- [Direktivet om tryckbärande anordningar 2014/68/EU](https://eur-lex.europa.eu/eli/dir/2014/68/oj) (PED): 14 krav, 9 testfall, 3 risker
 - [Elmarknadsdirektivet (EU) 2019/944](https://eur-lex.europa.eu/eli/dir/2019/944/oj): 4 krav, 4 testfall
-- [EMC-direktivet 2014/30/EU](https://eur-lex.europa.eu/eli/dir/2014/30/oj): 12 krav, 9 testfall
+- [EMC-direktivet 2014/30/EU](https://eur-lex.europa.eu/eli/dir/2014/30/oj): 12 krav, 9 testfall, 1 risk
 - [Energieffektivitetsdirektivet (EU) 2023/1791](https://eur-lex.europa.eu/eli/dir/2023/1791/oj): 2 krav, 2 testfall
-- [Europeiska kodexen för elektronisk kommunikation, direktiv (EU) 2018/1972](https://eur-lex.europa.eu/eli/dir/2018/1972/oj) (EECC): 11 krav, 9 testfall
+- [Europeiska kodexen för elektronisk kommunikation, direktiv (EU) 2018/1972](https://eur-lex.europa.eu/eli/dir/2018/1972/oj) (EECC): 11 krav, 9 testfall, 2 risker
   - [Directive (EU) 2018/1972](https://eur-lex.europa.eu/eli/dir/2018/1972/oj) · [Commission Delegated Regulation (EU) 2023/444](https://eur-lex.europa.eu/eli/reg_del/2023/444/oj)
 - [Gemensam laddare, direktiv (EU) 2022/2380 om ändring av radioutrustningsdirektivet](https://eur-lex.europa.eu/eli/dir/2022/2380/oj): 1 krav, 1 testfall
 - [Hissdirektivet 2014/33/EU](https://eur-lex.europa.eu/eli/dir/2014/33/oj): 1 krav, 1 testfall
 - [Industriutsläppsdirektivet 2010/75/EU](https://eur-lex.europa.eu/eli/dir/2010/75/oj) (IED): 2 krav, 1 testfall
-- [Konsumenträttighetsdirektivet 2011/83/EU (ändrat genom direktiv (EU) 2023/2673)](https://eur-lex.europa.eu/eli/dir/2011/83/oj): 11 krav, 9 testfall
+- [Konsumenträttighetsdirektivet 2011/83/EU (ändrat genom direktiv (EU) 2023/2673)](https://eur-lex.europa.eu/eli/dir/2011/83/oj): 11 krav, 9 testfall, 2 risker
   - [Directive 2011/83/EU](https://eur-lex.europa.eu/eli/dir/2011/83/oj) · [Directive (EU) 2023/2673](https://eur-lex.europa.eu/eli/dir/2023/2673/oj)
 - [Lågspänningsdirektivet 2014/35/EU](https://eur-lex.europa.eu/eli/dir/2014/35/oj) (LVD): 11 krav, 8 testfall
-- [Mervärdesskattedirektivet 2006/112/EG](https://eur-lex.europa.eu/eli/dir/2006/112/oj): 9 krav, 8 testfall
+- [Mervärdesskattedirektivet 2006/112/EG](https://eur-lex.europa.eu/eli/dir/2006/112/oj): 9 krav, 8 testfall, 1 risk
 - [Mätinstrumentdirektivet 2014/32/EU](https://eur-lex.europa.eu/eli/dir/2014/32/oj) (MID): 2 krav, 2 testfall
-- [NIS2-direktivet (EU) 2022/2555](https://eur-lex.europa.eu/eli/dir/2022/2555/oj): 30 krav, 29 testfall
+- [NIS2-direktivet (EU) 2022/2555](https://eur-lex.europa.eu/eli/dir/2022/2555/oj): 30 krav, 29 testfall, 4 risker
 - [Prisinformationsdirektivet 98/6/EG (ändrat genom direktiv (EU) 2019/2161)](https://eur-lex.europa.eu/eli/dir/1998/6/oj): 1 krav, 1 testfall
-- [Radioutrustningsdirektivet 2014/53/EU med delegerad förordning (EU) 2022/30 och EN 18031](https://eur-lex.europa.eu/eli/dir/2014/53/oj) (RED): 23 krav, 23 testfall
+- [Radioutrustningsdirektivet 2014/53/EU med delegerad förordning (EU) 2022/30 och EN 18031](https://eur-lex.europa.eu/eli/dir/2014/53/oj) (RED): 23 krav, 23 testfall, 1 risk
   - [Directive 2014/53/EU](https://eur-lex.europa.eu/eli/dir/2014/53/oj) · [Commission Delegated Regulation (EU) 2022/30](https://eur-lex.europa.eu/eli/reg_del/2022/30/oj) · [EN 18031](https://single-market-economy.ec.europa.eu/single-market/goods/european-standards/harmonised-standards/radio-equipment_en)
-- [RoHS-direktivet 2011/65/EU om farliga ämnen i elektrisk och elektronisk utrustning](https://eur-lex.europa.eu/eli/dir/2011/65/oj): 3 krav, 2 testfall
-- [Seveso III-direktivet 2012/18/EU](https://eur-lex.europa.eu/eli/dir/2012/18/oj): 3 krav, 2 testfall
+- [RoHS-direktivet 2011/65/EU om farliga ämnen i elektrisk och elektronisk utrustning](https://eur-lex.europa.eu/eli/dir/2011/65/oj): 3 krav, 2 testfall, 1 risk
+- [Seveso III-direktivet 2012/18/EU](https://eur-lex.europa.eu/eli/dir/2012/18/oj): 3 krav, 2 testfall, 1 risk
 - [Tillgänglighetsdirektivet (EU) 2019/882](https://eur-lex.europa.eu/eli/dir/2019/882/oj) (EAA): 2 krav, 2 testfall
 - [Visselblåsardirektivet (EU) 2019/1937](https://eur-lex.europa.eu/eli/dir/2019/1937/oj) (Whistleblower Directive): 1 krav, 1 testfall
 - [Webbtillgänglighetsdirektivet (EU) 2016/2102](https://eur-lex.europa.eu/eli/dir/2016/2102/oj): 4 krav, 4 testfall
@@ -3912,7 +4557,7 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 
 #### Standarder och specifikationer: Internationella
 
-- [3GPP tekniska specifikationer](https://www.3gpp.org/specifications-technologies): 19 krav, 16 testfall
+- [3GPP tekniska specifikationer](https://www.3gpp.org/specifications-technologies): 19 krav, 16 testfall, 2 risker
   - [3GPP TS 22.179](https://www.3gpp.org/DynaReport/22179.htm) · [3GPP TS 22.280](https://www.3gpp.org/DynaReport/22280.htm) · [3GPP TS 23.167](https://www.3gpp.org/DynaReport/23167.htm) · [3GPP TS 23.283](https://www.3gpp.org/DynaReport/23283.htm) · [3GPP TS 23.501](https://www.3gpp.org/DynaReport/23501.htm) · [3GPP TS 23.682](https://www.3gpp.org/DynaReport/23682.htm) · [3GPP TS 28.552](https://www.3gpp.org/DynaReport/28552.htm) · [3GPP TS 32.240](https://www.3gpp.org/DynaReport/32240.htm) · [3GPP TS 32.298](https://www.3gpp.org/DynaReport/32298.htm) · [3GPP TS 32.401](https://www.3gpp.org/DynaReport/32401.htm) · [3GPP TS 33.126](https://www.3gpp.org/DynaReport/33126.htm) · [3GPP TS 33.127](https://www.3gpp.org/DynaReport/33127.htm) · [3GPP TS 33.180](https://www.3gpp.org/DynaReport/33180.htm) · [3GPP TS 33.501](https://www.3gpp.org/DynaReport/33501.htm)
 - [ANSI/ISA-101.01 Operatörsgränssnitt för processautomation](https://www.isa.org/standards-and-publications/isa-standards/isa-101-standards): 3 krav, 3 testfall
 - [C2PA-specifikationen för innehållsursprung](https://c2pa.org/specifications/specifications/2.1/specs/C2PA_Specification.html): 2 krav, 2 testfall
@@ -3924,7 +4569,7 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
   - [CISPR 32 (EN 55032)](https://webstore.iec.ch/en/publication/22046) · [CISPR 35 (EN 55035)](https://webstore.iec.ch/en/publication/25667) · [IEC 61000-4-2](https://webstore.iec.ch/en/publication/68954) · [IEC 61000-4-11](https://webstore.iec.ch/en/publication/63503) · [IEC 61000-4-6](https://webstore.iec.ch/en/publication/65586)
 - [ETSI NFV-specifikationer (virtualisering av nätfunktioner)](https://www.etsi.org/technologies/nfv): 1 krav, 1 testfall
   - [ETSI GS NFV-SEC 001](https://www.etsi.org/deliver/etsi_gs/NFV-SEC/001_099/001/) · [ETSI GS NFV-SEC 021](https://www.etsi.org/deliver/etsi_gs/NFV-SEC/001_099/021/) · [ETSI GS NFV-SOL 004](https://www.etsi.org/deliver/etsi_gs/NFV-SOL/001_099/004/)
-- [ETSI tekniska specifikationer (laglig avlyssning, lagrade data, nödpositionering)](https://www.etsi.org/standards) (ETSI TS): 7 krav, 6 testfall
+- [ETSI tekniska specifikationer (laglig avlyssning, lagrade data, nödpositionering)](https://www.etsi.org/standards) (ETSI TS): 7 krav, 6 testfall, 1 risk
   - [ETSI TS 102 232-1](https://www.etsi.org/deliver/etsi_ts/102200_102299/10223201/) · [ETSI TS 102 657](https://www.etsi.org/deliver/etsi_ts/102600_102699/102657/) · [ETSI TS 103 221-1](https://www.etsi.org/deliver/etsi_ts/103200_103299/10322101/) · [ETSI TS 103 221-2](https://www.etsi.org/deliver/etsi_ts/103200_103299/10322102/) · [ETSI TS 103 625](https://www.etsi.org/deliver/etsi_ts/103600_103699/103625/)
 - [FIRST:s standarder och riktlinjer (CVSS, EPSS, samordnat offentliggörande)](https://www.first.org/standards/): 4 krav, 5 testfall
   - [FIRST CVSS v4.0](https://www.first.org/cvss/v4.0/specification-document) · [FIRST EPSS](https://www.first.org/epss/) · [FIRST Guidelines and Practices for Multi-Party Vulnerability Coordination](https://www.first.org/global/sigs/vulnerability-coordination/multiparty/guidelines-v1.1)
@@ -3940,22 +4585,22 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 - [IEC 61131-3 Programspråk för programmerbara styrsystem](https://webstore.iec.ch/en/publication/4552): 1 krav, 1 testfall
 - [IEC 61340 Elektrostatik, skydd av elektroniska komponenter mot elektrostatiska fenomen](https://webstore.iec.ch/en/publication/74748): 1 krav, 1 testfall
   - [IEC 61340-5-1](https://webstore.iec.ch/en/publication/74748)
-- [IEC 61508 Funktionssäkerhet för elektriska, elektroniska och programmerbara säkerhetssystem](https://webstore.iec.ch/en/publication/5515): 16 krav, 13 testfall
+- [IEC 61508 Funktionssäkerhet för elektriska, elektroniska och programmerbara säkerhetssystem](https://webstore.iec.ch/en/publication/5515): 16 krav, 13 testfall, 6 risker
   - [IEC 61508-1](https://webstore.iec.ch/en/publication/5515) · [IEC 61508-2](https://webstore.iec.ch/en/publication/5516) · [IEC 61508-3](https://webstore.iec.ch/en/publication/5517) · [IEC 61508-5](https://webstore.iec.ch/en/publication/5519) · [IEC 61508-6](https://webstore.iec.ch/en/publication/5520)
-- [IEC 61511 Funktionssäkerhet inom processindustrin](https://webstore.iec.ch/en/publication/24241): 15 krav, 13 testfall
+- [IEC 61511 Funktionssäkerhet inom processindustrin](https://webstore.iec.ch/en/publication/24241): 15 krav, 13 testfall, 2 risker
 - [IEC 61850 Kommunikation för automation i elnät](https://webstore.iec.ch/en/publication/6028): 5 krav, 5 testfall
   - [IEC 61850-5](https://webstore.iec.ch/en/publication/6012) · [IEC 61850-7-1](https://webstore.iec.ch/en/publication/6014) · [IEC 61850-10](https://webstore.iec.ch/en/publication/6008)
 - [IEC 62056 Datautbyte för elmätning (DLMS/COSEM)](https://webstore.iec.ch/en/publication/67915): 1 krav, 1 testfall
 - [IEC 62061 Funktionssäkerhet för maskiners styrsystem](https://webstore.iec.ch/en/publication/59927): 3 krav, 3 testfall
-- [IEC 62304 Programvara för medicintekniska produkter – Livscykelprocesser](https://webstore.iec.ch/en/publication/22794): 6 krav, 6 testfall
+- [IEC 62304 Programvara för medicintekniska produkter – Livscykelprocesser](https://webstore.iec.ch/en/publication/22794): 6 krav, 6 testfall, 2 risker
 - [IEC 62351 Säkerhet för data och kommunikation i elkraftsystem](https://webstore.iec.ch/en/publication/6912): 4 krav, 3 testfall
   - [IEC 62351-5](https://webstore.iec.ch/en/publication/65511) · [IEC 62351-7](https://webstore.iec.ch/en/publication/30593)
-- [IEC 62366-1 Medicintekniska produkter – Användbarhetsteknik för medicintekniska produkter](https://webstore.iec.ch/en/publication/67220): 1 krav, 1 testfall
-- [IEC 62402 Hantering av inkurans](https://webstore.iec.ch/en/publication/59531): 8 krav, 6 testfall
+- [IEC 62366-1 Medicintekniska produkter – Användbarhetsteknik för medicintekniska produkter](https://webstore.iec.ch/en/publication/67220): 1 krav, 1 testfall, 1 risk
+- [IEC 62402 Hantering av inkurans](https://webstore.iec.ch/en/publication/59531): 8 krav, 6 testfall, 1 risk
 - [IEC 62443-2-1 Krav på säkerhetsprogram för anläggningsägare](https://webstore.iec.ch/en/publication/62883): 4 krav, 4 testfall
-- [IEC 62443-2-4 Krav på säkerhetsprogram för tjänsteleverantörer](https://webstore.iec.ch/en/publication/67631): 13 krav, 12 testfall
-- [IEC 62443-3-2 Säkerhetsriskbedömning för systemdesign](https://webstore.iec.ch/en/publication/30727): 6 krav, 6 testfall
-- [IEC 62443-3-3 Säkerhetskrav och säkerhetsnivåer för system](https://webstore.iec.ch/en/publication/7033): 170 krav, 159 testfall
+- [IEC 62443-2-4 Krav på säkerhetsprogram för tjänsteleverantörer](https://webstore.iec.ch/en/publication/67631): 13 krav, 12 testfall, 1 risk
+- [IEC 62443-3-2 Säkerhetsriskbedömning för systemdesign](https://webstore.iec.ch/en/publication/30727): 6 krav, 6 testfall, 8 risker
+- [IEC 62443-3-3 Säkerhetskrav och säkerhetsnivåer för system](https://webstore.iec.ch/en/publication/7033): 170 krav, 159 testfall, 4 risker
 - [IEC 62443-4-1 Krav på säker produktutvecklingsprocess](https://webstore.iec.ch/en/publication/33615): 45 krav, 39 testfall
 - [IEC 62443-4-2 Tekniska säkerhetskrav för komponenter i industriella styrsystem](https://webstore.iec.ch/en/publication/34421): 56 krav, 56 testfall
 - [IEC 62541 OPC Unified Architecture](https://reference.opcfoundation.org/) (OPC UA): 3 krav, 3 testfall
@@ -3963,13 +4608,13 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 - [IEC 81001-5-1 Hälsoprogramvara och hälso-IT-system – Säkerhetsaktiviteter i produktens livscykel](https://webstore.iec.ch/en/publication/33615): 1 krav, 1 testfall
 - [IEC 81346 Strukturering och referensbeteckningar](https://www.iso.org/standard/82229.html): 2 krav, 2 testfall
 - [IEC TR 62443-2-3 Patchhantering i industriella styrsystem](https://webstore.iec.ch/en/publication/22811) (IEC 62443-2-3): 1 krav, 1 testfall
-- [IEC-standarder för acceptans och idrifttagning av processutrustning (IEC 62381, IEC 62337)](https://webstore.iec.ch/en/publication/6871): 6 krav, 4 testfall
+- [IEC-standarder för acceptans och idrifttagning av processutrustning (IEC 62381, IEC 62337)](https://webstore.iec.ch/en/publication/6871): 6 krav, 4 testfall, 2 risker
   - [IEC 62337](https://webstore.iec.ch/en/publication/6871)
-- [IEC-standarder för driftsäkerhet (IEC 60300, 60812, 61025, 61078, 61124, 61163, 61703, 61709, 62506, TR 63069)](https://webstore.iec.ch/en/publication/1293): 22 krav, 18 testfall
+- [IEC-standarder för driftsäkerhet (IEC 60300, 60812, 61025, 61078, 61124, 61163, 61703, 61709, 62506, TR 63069)](https://webstore.iec.ch/en/publication/1293): 22 krav, 18 testfall, 2 risker
   - [IEC 60300-1](https://webstore.iec.ch/en/publication/1293) · [IEC 60812](https://webstore.iec.ch/en/publication/26359) · [IEC 61025](https://webstore.iec.ch/en/publication/4311) · [IEC 61703](https://webstore.iec.ch/en/publication/25646) · [IEC 61709](https://webstore.iec.ch/en/publication/28554)
-- [IEC-standarder för elsäkerhet hos produkter (IEC 62368-1, 60664-1, 60204-1, 60364-6)](https://webstore.iec.ch/en/publication/69308): 17 krav, 15 testfall
+- [IEC-standarder för elsäkerhet hos produkter (IEC 62368-1, 60664-1, 60204-1, 60364-6)](https://webstore.iec.ch/en/publication/69308): 17 krav, 15 testfall, 3 risker
   - [IEC 62368-1](https://webstore.iec.ch/en/publication/69308) · [IEC 60664-1](https://webstore.iec.ch/en/publication/59671) · [IEC 60204-1](https://webstore.iec.ch/en/publication/26037) · [IEC 60364-6](https://webstore.iec.ch/en/publication/24656) · [IEC 60364-4-41](https://webstore.iec.ch/en/publication/60169)
-- [IEC-standarder för sekundära litiumceller och litiumbatterier (IEC 62133, 61960, 62619)](https://webstore.iec.ch/en/publication/32662): 5 krav, 5 testfall
+- [IEC-standarder för sekundära litiumceller och litiumbatterier (IEC 62133, 61960, 62619)](https://webstore.iec.ch/en/publication/32662): 5 krav, 5 testfall, 1 risk
 - [IEC/IEEE 60255-118-1 Synkrofasmätning](https://webstore.iec.ch/en/publication/28722): 1 krav, 1 testfall
 - [IEC/IEEE 82079-1 Framtagning av information för användning (bruksanvisningar)](https://www.iso.org/standard/71620.html): 10 krav, 8 testfall
 - [IEC:s gemensamma informationsmodell (IEC 61968, 61970, 62325)](https://webstore.iec.ch/en/publication/62698) (IEC CIM): 3 krav, 3 testfall
@@ -3978,12 +4623,12 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 - [IEEE 1588 Precision Time Protocol](https://standards.ieee.org/ieee/1588/6825/): 2 krav, 2 testfall
 - [IEEE 1815 Distributed Network Protocol (DNP3)](https://standards.ieee.org/ieee/1815/5414/): 1 krav, 1 testfall
 - [IEEE 802.11 Specifikationer för åtkomstkontroll och fysiskt lager i trådlösa lokala nät](https://standards.ieee.org/ieee/802.11/10548/): 3 krav, 1 testfall
-- [IEEE 802.1X Portbaserad nätverksåtkomstkontroll](https://standards.ieee.org/ieee/802.1X/7345/): 2 krav, 2 testfall
+- [IEEE 802.1X Portbaserad nätverksåtkomstkontroll](https://standards.ieee.org/ieee/802.1X/7345/): 2 krav, 2 testfall, 1 risk
 - [IEEE 9274.1.1 Experience API (xAPI)](https://standards.ieee.org/ieee/9274.1.1/7321/): 1 krav, 1 testfall
-- [IETF:s RFC:er och Internet-Drafts](https://www.rfc-editor.org/) (IETF RFC): 103 krav, 93 testfall
+- [IETF:s RFC:er och Internet-Drafts](https://www.rfc-editor.org/) (IETF RFC): 103 krav, 93 testfall, 2 risker
   - [RFC 2104](https://www.rfc-editor.org/rfc/rfc2104) · [RFC 2369](https://www.rfc-editor.org/rfc/rfc2369) · [RFC 2474](https://www.rfc-editor.org/rfc/rfc2474) · [RFC 3161](https://www.rfc-editor.org/rfc/rfc3161) · [RFC 3207](https://www.rfc-editor.org/rfc/rfc3207) · [RFC 3246](https://www.rfc-editor.org/rfc/rfc3246) · [RFC 3261](https://www.rfc-editor.org/rfc/rfc3261) · [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) · [RFC 3414](https://www.rfc-editor.org/rfc/rfc3414) · [RFC 3464](https://www.rfc-editor.org/rfc/rfc3464) · [RFC 3629](https://www.rfc-editor.org/rfc/rfc3629) · [RFC 3711](https://www.rfc-editor.org/rfc/rfc3711) · [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986) · [RFC 4035](https://www.rfc-editor.org/rfc/rfc4035) · [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) · [RFC 4594](https://www.rfc-editor.org/rfc/rfc4594) · [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647) · [RFC 5321](https://www.rfc-editor.org/rfc/rfc5321) · [RFC 5322](https://www.rfc-editor.org/rfc/rfc5322) · [RFC 5424](https://www.rfc-editor.org/rfc/rfc5424) · [RFC 5545](https://www.rfc-editor.org/rfc/rfc5545) · [RFC 5546](https://www.rfc-editor.org/rfc/rfc5546) · [RFC 5853](https://www.rfc-editor.org/rfc/rfc5853) · [RFC 5880](https://www.rfc-editor.org/rfc/rfc5880) · [RFC 5905](https://www.rfc-editor.org/rfc/rfc5905) · [RFC 6047](https://www.rfc-editor.org/rfc/rfc6047) · [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238) · [RFC 6241](https://www.rfc-editor.org/rfc/rfc6241) · [RFC 6266](https://www.rfc-editor.org/rfc/rfc6266) · [RFC 6376](https://www.rfc-editor.org/rfc/rfc6376) · [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455) · [RFC 6585](https://www.rfc-editor.org/rfc/rfc6585) · [RFC 6716](https://www.rfc-editor.org/rfc/rfc6716) · [RFC 6749](https://www.rfc-editor.org/rfc/rfc6749) · [RFC 6797](https://www.rfc-editor.org/rfc/rfc6797) · [RFC 7208](https://www.rfc-editor.org/rfc/rfc7208) · [RFC 7519](https://www.rfc-editor.org/rfc/rfc7519) · [RFC 7643](https://www.rfc-editor.org/rfc/rfc7643) · [RFC 7644](https://www.rfc-editor.org/rfc/rfc7644) · [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932) · [RFC 7986](https://www.rfc-editor.org/rfc/rfc7986) · [RFC 8058](https://www.rfc-editor.org/rfc/rfc8058) · [RFC 8246](https://www.rfc-editor.org/rfc/rfc8246) · [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259) · [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288) · [RFC 8301](https://www.rfc-editor.org/rfc/rfc8301) · [RFC 8460](https://www.rfc-editor.org/rfc/rfc8460) · [RFC 8461](https://www.rfc-editor.org/rfc/rfc8461) · [RFC 8594](https://www.rfc-editor.org/rfc/rfc8594) · [RFC 8641](https://www.rfc-editor.org/rfc/rfc8641) · [RFC 8705](https://www.rfc-editor.org/rfc/rfc8705) · [RFC 8725](https://www.rfc-editor.org/rfc/rfc8725) · [RFC 9068](https://www.rfc-editor.org/rfc/rfc9068) · [RFC 9106](https://www.rfc-editor.org/rfc/rfc9106) · [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) · [RFC 9111](https://www.rfc-editor.org/rfc/rfc9111) · [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) · [RFC 9413](https://www.rfc-editor.org/rfc/rfc9413) · [RFC 9449](https://www.rfc-editor.org/rfc/rfc9449) · [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) · [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700) · [RFC 9745](https://www.rfc-editor.org/rfc/rfc9745) · [RFC 9989](https://www.rfc-editor.org/rfc/rfc9989) · [RFC 9990](https://www.rfc-editor.org/rfc/rfc9990) · [RFC 10024](https://www.rfc-editor.org/rfc/rfc10024) · [draft-ietf-httpapi-idempotency-key-header](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) · [draft-ietf-httpapi-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/)
-- [IPC-standarder för kretskort och elektronikmontering (IPC-2221, IPC-6012, IPC-A-610, J-STD-001)](https://www.electronics.org/ipc-standards): 5 krav, 4 testfall
-- [ISA-18.2 / IEC 62682 Larmhantering](https://webstore.iec.ch/en/publication/65543): 10 krav, 9 testfall
+- [IPC-standarder för kretskort och elektronikmontering (IPC-2221, IPC-6012, IPC-A-610, J-STD-001)](https://www.electronics.org/ipc-standards): 5 krav, 4 testfall, 1 risk
+- [ISA-18.2 / IEC 62682 Larmhantering](https://webstore.iec.ch/en/publication/65543): 10 krav, 9 testfall, 2 risker
   - [IEC 62682](https://webstore.iec.ch/en/publication/65543)
 - [ISA-88 / IEC 61512 Satsvis processtyrning](https://www.isa.org/standards-and-publications/isa-standards/isa-88-standards): 5 krav, 5 testfall
   - [IEC 61512-1](https://webstore.iec.ch/en/publication/75287)
@@ -3996,133 +4641,133 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 - [ISO 10007 Riktlinjer för konfigurationsledning](https://www.iso.org/standard/70400.html): 11 krav, 8 testfall
 - [ISO 10015 Riktlinjer för kompetensförsörjning och personalutveckling](https://www.iso.org/standard/69459.html): 11 krav, 9 testfall
 - [ISO 10075 Ergonomiska principer för mental belastning](https://www.iso.org/standard/76686.html): 1 krav, 1 testfall
-- [ISO 11064 Ergonomisk utformning av kontrollcentraler](https://www.iso.org/standard/19042.html): 5 krav, 3 testfall
+- [ISO 11064 Ergonomisk utformning av kontrollcentraler](https://www.iso.org/standard/19042.html): 5 krav, 3 testfall, 1 risk
 - [ISO 13485 Medicintekniska produkter – Ledningssystem för kvalitet](https://www.iso.org/standard/59752.html): 2 krav, 2 testfall
-- [ISO 13702 Kontroll och begränsning av brand och explosion på offshoreanläggningar](https://www.iso.org/standard/57416.html): 2 krav, 2 testfall
-- [ISO 13849 Säkerhetsrelaterade delar av maskiners styrsystem](https://www.iso.org/standard/73481.html): 3 krav, 3 testfall
+- [ISO 13702 Kontroll och begränsning av brand och explosion på offshoreanläggningar](https://www.iso.org/standard/57416.html): 2 krav, 2 testfall, 1 risk
+- [ISO 13849 Säkerhetsrelaterade delar av maskiners styrsystem](https://www.iso.org/standard/73481.html): 3 krav, 3 testfall, 1 risk
   - [ISO 13849-1](https://www.iso.org/standard/73481.html) · [ISO 13849-2](https://www.iso.org/standard/53640.html)
 - [ISO 14001 Miljöledningssystem](https://www.iso.org/standard/92300.html): 1 krav, 1 testfall
 - [ISO 14064 Kvantifiering och rapportering av växthusgaser](https://www.iso.org/standard/66453.html): 1 krav, 1 testfall
 - [ISO 14224 Tillförlitlighets- och underhållsdata för utrustning inom olja och gas](https://www.iso.org/standard/64076.html): 3 krav, 3 testfall
 - [ISO 14289 PDF/UA tillgänglig PDF](https://www.iso.org/standard/64599.html): 3 krav, 3 testfall
 - [ISO 14721 Referensmodell för öppna arkivinformationssystem (OAIS)](https://www.iso.org/standard/87471.html): 1 krav, 1 testfall
-- [ISO 14971 Medicintekniska produkter – Riskhantering för medicintekniska produkter](https://www.iso.org/standard/72704.html): 2 krav, 2 testfall
-- [ISO 15489 Informationshantering: dokumenthantering](https://www.iso.org/standard/62542.html): 7 krav, 6 testfall
+- [ISO 14971 Medicintekniska produkter – Riskhantering för medicintekniska produkter](https://www.iso.org/standard/72704.html): 2 krav, 2 testfall, 4 risker
+- [ISO 15489 Informationshantering: dokumenthantering](https://www.iso.org/standard/62542.html): 7 krav, 6 testfall, 1 risk
 - [ISO 17100 Översättningstjänster](https://www.iso.org/standard/59149.html): 1 krav, 1 testfall
 - [ISO 17359 och ISO 13374 Tillståndsövervakning av maskiner](https://www.iso.org/standard/71194.html): 3 krav, 3 testfall
   - [ISO 17359](https://www.iso.org/standard/71194.html) · [ISO 13374-1](https://www.iso.org/standard/21832.html)
 - [ISO 19011 Vägledning för revision av ledningssystem](https://www.iso.org/standard/88984.html): 4 krav, 3 testfall
 - [ISO 20816 Mätning av mekaniska vibrationer](https://www.iso.org/standard/63180.html): 1 krav, 1 testfall
-- [ISO 21502, 21508 och 21511 Projekt-, program- och portföljstyrning](https://www.iso.org/standard/74947.html): 30 krav, 23 testfall
+- [ISO 21502, 21508 och 21511 Projekt-, program- och portföljstyrning](https://www.iso.org/standard/74947.html): 30 krav, 23 testfall, 5 risker
   - [ISO 21502](https://www.iso.org/standard/74947.html) · [ISO 21508](https://www.iso.org/standard/63582.html) · [ISO 21511](https://www.iso.org/standard/69702.html)
-- [ISO 21504 Projekt-, program- och portföljstyrning: vägledning för portföljstyrning](https://www.iso.org/standard/82867.html): 9 krav, 6 testfall
+- [ISO 21504 Projekt-, program- och portföljstyrning: vägledning för portföljstyrning](https://www.iso.org/standard/82867.html): 9 krav, 6 testfall, 1 risk
 - [ISO 21542 Tillgänglighet och användbarhet i den byggda miljön](https://www.iso.org/standard/71860.html): 2 krav, 1 testfall
-- [ISO 22301 Ledningssystem för kontinuitet](https://www.iso.org/standard/75106.html): 24 krav, 19 testfall
-- [ISO 22400 Nyckeltal för tillverkning](https://www.iso.org/standard/54497.html): 3 krav, 3 testfall
+- [ISO 22301 Ledningssystem för kontinuitet](https://www.iso.org/standard/75106.html): 24 krav, 19 testfall, 4 risker
+- [ISO 22400 Nyckeltal för tillverkning](https://www.iso.org/standard/54497.html): 3 krav, 3 testfall, 1 risk
 - [ISO 22514 Statistiska metoder för processtyrning (duglighet)](https://www.iso.org/standard/88883.html): 1 krav, 1 testfall
 - [ISO 24089 Vägfordon – Teknik för programuppdateringar](https://www.iso.org/standard/77796.html): 4 krav, 4 testfall
 - [ISO 24495 Klarspråk](https://www.iso.org/standard/78907.html): 3 krav, 3 testfall
-- [ISO 26262 Vägfordon – Funktionssäkerhet](https://www.iso.org/standard/68383.html): 5 krav, 5 testfall
+- [ISO 26262 Vägfordon – Funktionssäkerhet](https://www.iso.org/standard/68383.html): 5 krav, 5 testfall, 3 risker
 - [ISO 29993 Utbildningstjänster utanför det formella utbildningssystemet](https://www.iso.org/standard/70357.html): 6 krav, 4 testfall
-- [ISO 31000 Riskhantering: vägledning](https://www.iso.org/standard/65694.html): 14 krav, 10 testfall
+- [ISO 31000 Riskhantering: vägledning](https://www.iso.org/standard/65694.html): 14 krav, 10 testfall, 97 risker
 - [ISO 32000 Portable Document Format (PDF)](https://www.iso.org/standard/75839.html): 1 krav, 1 testfall
 - [ISO 3382-3 Akustik: mätning av rumsakustiska parametrar i kontorslandskap](https://www.iso.org/standard/77437.html): 1 krav, 1 testfall
-- [ISO 37301 Ledningssystem för regelefterlevnad: krav med vägledning](https://www.iso.org/standard/75080.html): 4 krav, 2 testfall
+- [ISO 37301 Ledningssystem för regelefterlevnad: krav med vägledning](https://www.iso.org/standard/75080.html): 4 krav, 2 testfall, 1 risk
 - [ISO 3864 Säkerhetsfärger och säkerhetsskyltar](https://www.iso.org/standard/66836.html): 1 krav, 1 testfall
 - [ISO 41001 Ledningssystem för fastighetsförvaltning (facility management)](https://www.iso.org/standard/68021.html): 2 krav, 2 testfall
 - [ISO 4126 Säkerhetsanordningar för skydd mot för högt tryck](https://www.iso.org/standard/50826.html): 1 krav, 1 testfall
 - [ISO 4217 Valutakoder](https://www.iso.org/standard/64758.html): 4 krav, 4 testfall
-- [ISO 45001 Ledningssystem för arbetsmiljö](https://www.iso.org/standard/63787.html): 2 krav, 2 testfall
-- [ISO 50001 Ledningssystem för energi](https://www.iso.org/standard/69426.html): 2 krav, 2 testfall
-- [ISO 55001 Ledningssystem för tillgångsförvaltning](https://www.iso.org/standard/83054.html): 11 krav, 10 testfall
+- [ISO 45001 Ledningssystem för arbetsmiljö](https://www.iso.org/standard/63787.html): 2 krav, 2 testfall, 2 risker
+- [ISO 50001 Ledningssystem för energi](https://www.iso.org/standard/69426.html): 2 krav, 2 testfall, 1 risk
+- [ISO 55001 Ledningssystem för tillgångsförvaltning](https://www.iso.org/standard/83054.html): 11 krav, 10 testfall, 2 risker
 - [ISO 639 Språkkoder](https://www.iso.org/standard/74575.html): 1 krav, 1 testfall
 - [ISO 7870 Styrdiagram](https://www.iso.org/standard/78859.html): 1 krav, 1 testfall
 - [ISO 8000 Datakvalitet](https://www.iso.org/standard/60805.html): 4 krav, 4 testfall
 - [ISO 8601 Representation av datum och tid](https://www.iso.org/standard/70907.html): 7 krav, 7 testfall
-- [ISO 9001 Ledningssystem för kvalitet](https://www.iso.org/standard/88464.html): 96 krav, 77 testfall
-- [ISO 9241 Ergonomi för människa–system-interaktion](https://www.iso.org/standard/63500.html): 114 krav, 100 testfall
+- [ISO 9001 Ledningssystem för kvalitet](https://www.iso.org/standard/88464.html): 96 krav, 77 testfall, 4 risker
+- [ISO 9241 Ergonomi för människa–system-interaktion](https://www.iso.org/standard/63500.html): 114 krav, 100 testfall, 3 risker
   - [ISO 9241-11](https://www.iso.org/standard/63500.html) · [ISO 9241-110](https://www.iso.org/standard/75258.html) · [ISO 9241-143](https://www.iso.org/standard/53590.html) · [ISO 9241-303](https://www.iso.org/standard/57992.html)
 - [ISO/IEC 15415 och 15416 Utskriftskvalitet för streckkoder](https://www.iso.org/standard/76876.html): 1 krav, 1 testfall
   - [ISO/IEC 15415](https://www.iso.org/standard/76876.html) · [ISO/IEC 15416](https://www.iso.org/standard/83390.html)
 - [ISO/IEC 17025 Kompetens hos provnings- och kalibreringslaboratorier](https://www.iso.org/standard/66912.html): 6 krav, 6 testfall
 - [ISO/IEC 19941 Interoperabilitet och portabilitet för molntjänster](https://www.iso.org/standard/66639.html): 2 krav, 2 testfall
-- [ISO/IEC 20000-1 Ledningssystem för tjänster](https://www.iso.org/standard/70636.html): 32 krav, 30 testfall
+- [ISO/IEC 20000-1 Ledningssystem för tjänster](https://www.iso.org/standard/70636.html): 32 krav, 30 testfall, 7 risker
 - [ISO/IEC 20889 Tekniker för avidentifiering av data](https://www.iso.org/standard/69373.html): 1 krav, 1 testfall
 - [ISO/IEC 21031 Specifikation för programvarans koldioxidintensitet (SCI)](https://www.iso.org/standard/86612.html): 3 krav, 3 testfall
 - [ISO/IEC 25000-serien, kvalitetsmätning och rapportering (25022, 25023, 25062)](https://www.iso.org/standard/35746.html): 8 krav, 8 testfall
   - [ISO/IEC 25022](https://www.iso.org/standard/35746.html) · [ISO/IEC 25023](https://www.iso.org/standard/35747.html) · [ISO/IEC 25062](https://www.iso.org/standard/43046.html)
-- [ISO/IEC 25010 Kvalitetsmodell för produkter](https://www.iso.org/standard/78176.html): 179 krav, 173 testfall
-- [ISO/IEC 25012 Kvalitetsmodell för data](https://www.iso.org/standard/35736.html): 16 krav, 15 testfall
-- [ISO/IEC 27001 Ledningssystem för informationssäkerhet](https://www.iso.org/standard/27001): 550 krav, 499 testfall
+- [ISO/IEC 25010 Kvalitetsmodell för produkter](https://www.iso.org/standard/78176.html): 179 krav, 173 testfall, 10 risker
+- [ISO/IEC 25012 Kvalitetsmodell för data](https://www.iso.org/standard/35736.html): 16 krav, 15 testfall, 4 risker
+- [ISO/IEC 27001 Ledningssystem för informationssäkerhet](https://www.iso.org/standard/27001): 550 krav, 499 testfall, 21 risker
 - [ISO/IEC 27002 Säkerhetsåtgärder för informationssäkerhet](https://www.iso.org/standard/75652.html): 4 krav, 4 testfall
-- [ISO/IEC 27005 Riskhantering för informationssäkerhet](https://www.iso.org/standard/80585.html): 3 krav, 2 testfall
-- [ISO/IEC 27017 Säkerhetsåtgärder för molntjänster](https://www.iso.org/standard/82878.html): 8 krav, 8 testfall
+- [ISO/IEC 27005 Riskhantering för informationssäkerhet](https://www.iso.org/standard/80585.html): 3 krav, 2 testfall, 77 risker
+- [ISO/IEC 27017 Säkerhetsåtgärder för molntjänster](https://www.iso.org/standard/82878.html): 8 krav, 8 testfall, 1 risk
 - [ISO/IEC 27018 Skydd av personuppgifter i publika moln](https://www.iso.org/standard/88150.html): 5 krav, 6 testfall
-- [ISO/IEC 27019 Informationssäkerhet för energibranschen](https://www.iso.org/standard/85056.html): 7 krav, 7 testfall
-- [ISO/IEC 27031 IT-beredskap för kontinuitet](https://www.iso.org/standard/80975.html): 6 krav, 5 testfall
-- [ISO/IEC 27033 Nätverkssäkerhet](https://www.iso.org/standard/63461.html): 15 krav, 14 testfall
+- [ISO/IEC 27019 Informationssäkerhet för energibranschen](https://www.iso.org/standard/85056.html): 7 krav, 7 testfall, 2 risker
+- [ISO/IEC 27031 IT-beredskap för kontinuitet](https://www.iso.org/standard/80975.html): 6 krav, 5 testfall, 3 risker
+- [ISO/IEC 27033 Nätverkssäkerhet](https://www.iso.org/standard/63461.html): 15 krav, 14 testfall, 1 risk
   - [ISO/IEC 27033-1](https://www.iso.org/standard/63461.html) · [ISO/IEC 27033-2](https://www.iso.org/standard/51581.html) · [ISO/IEC 27033-4](https://www.iso.org/standard/51583.html) · [ISO/IEC 27033-5](https://www.iso.org/standard/51584.html) · [ISO/IEC 27033-6](https://www.iso.org/standard/51585.html)
 - [ISO/IEC 27034 Applikationssäkerhet](https://www.iso.org/standard/44378.html): 1 krav, 1 testfall
-- [ISO/IEC 27035 Hantering av informationssäkerhetsincidenter](https://www.iso.org/standard/78973.html): 10 krav, 10 testfall
+- [ISO/IEC 27035 Hantering av informationssäkerhetsincidenter](https://www.iso.org/standard/78973.html): 10 krav, 10 testfall, 4 risker
   - [ISO/IEC 27035-1](https://www.iso.org/standard/78973.html) · [ISO/IEC 27035-2](https://www.iso.org/standard/78974.html)
-- [ISO/IEC 27036 Informationssäkerhet i leverantörsrelationer](https://www.iso.org/standard/82060.html): 11 krav, 10 testfall
+- [ISO/IEC 27036 Informationssäkerhet i leverantörsrelationer](https://www.iso.org/standard/82060.html): 11 krav, 10 testfall, 3 risker
   - [ISO/IEC 27036-2](https://www.iso.org/standard/82060.html) · [ISO/IEC 27036-3](https://www.iso.org/standard/82890.html)
 - [ISO/IEC 27037 Hantering av digitala bevis](https://www.iso.org/standard/44381.html): 1 krav, 1 testfall
 - [ISO/IEC 27040 Lagringssäkerhet](https://www.iso.org/standard/80194.html): 4 krav, 4 testfall
 - [ISO/IEC 27701 Ledningssystem för integritetsskydd](https://www.iso.org/standard/85819.html): 23 krav, 23 testfall
-- [ISO/IEC 29147 Offentliggörande av sårbarheter](https://www.iso.org/standard/72311.html): 18 krav, 16 testfall
-- [ISO/IEC 30111 Processer för sårbarhetshantering](https://www.iso.org/standard/69725.html): 15 krav, 14 testfall
-- [ISO/IEC 42001 Ledningssystem för AI](https://www.iso.org/standard/81230.html): 42 krav, 35 testfall
-- [ISO/IEC-standarder för AI (22989, 23894, 25059, 5259, 8183, TR 24027, TS 4213)](https://www.iso.org/standard/74296.html): 14 krav, 11 testfall
+- [ISO/IEC 29147 Offentliggörande av sårbarheter](https://www.iso.org/standard/72311.html): 18 krav, 16 testfall, 2 risker
+- [ISO/IEC 30111 Processer för sårbarhetshantering](https://www.iso.org/standard/69725.html): 15 krav, 14 testfall, 3 risker
+- [ISO/IEC 42001 Ledningssystem för AI](https://www.iso.org/standard/81230.html): 42 krav, 35 testfall, 5 risker
+- [ISO/IEC-standarder för AI (22989, 23894, 25059, 5259, 8183, TR 24027, TS 4213)](https://www.iso.org/standard/74296.html): 14 krav, 11 testfall, 11 risker
   - [ISO/IEC 22989](https://www.iso.org/standard/74296.html) · [ISO/IEC 23894](https://www.iso.org/standard/77304.html) · [ISO/IEC 25059](https://www.iso.org/standard/80655.html) · [ISO/IEC 5259-2](https://www.iso.org/standard/81860.html) · [ISO/IEC 8183](https://www.iso.org/standard/83002.html) · [ISO/IEC TR 24027](https://www.iso.org/standard/77607.html) · [ISO/IEC TS 4213](https://www.iso.org/standard/79799.html)
 - [ISO/IEC/IEEE 12207 Livscykelprocesser för programvara](https://www.iso.org/standard/63712.html): 1 krav, 1 testfall
-- [ISO/IEC/IEEE 15288 Livscykelprocesser för system](https://www.iso.org/standard/81702.html): 39 krav, 30 testfall
+- [ISO/IEC/IEEE 15288 Livscykelprocesser för system](https://www.iso.org/standard/81702.html): 39 krav, 30 testfall, 7 risker
 - [ISO/IEC/IEEE 15289 Innehåll i informationsobjekt för livscykeln](https://www.iso.org/standard/74909.html): 11 krav, 8 testfall
 - [ISO/IEC/IEEE 26514 Utformning av användarinformation](https://www.iso.org/standard/77451.html): 13 krav, 10 testfall
-- [ISO/IEC/IEEE 29119 Programvarutestning](https://www.iso.org/standard/79429.html): 11 krav, 9 testfall
+- [ISO/IEC/IEEE 29119 Programvarutestning](https://www.iso.org/standard/79429.html): 11 krav, 9 testfall, 1 risk
   - [ISO/IEC/IEEE 29119-3](https://www.iso.org/standard/79429.html)
-- [ISO/IEC/IEEE 29148 Kravhantering](https://www.iso.org/standard/72089.html): 10 krav, 7 testfall
-- [ISO/IEC/IEEE 42010 Arkitekturbeskrivning](https://www.iso.org/standard/74393.html): 5 krav, 5 testfall
-- [ISO/SAE 21434 Vägfordon – Cybersäkerhetsteknik](https://www.iso.org/standard/70918.html): 3 krav, 3 testfall
+- [ISO/IEC/IEEE 29148 Kravhantering](https://www.iso.org/standard/72089.html): 10 krav, 7 testfall, 2 risker
+- [ISO/IEC/IEEE 42010 Arkitekturbeskrivning](https://www.iso.org/standard/74393.html): 5 krav, 5 testfall, 1 risk
+- [ISO/SAE 21434 Vägfordon – Cybersäkerhetsteknik](https://www.iso.org/standard/70918.html): 3 krav, 3 testfall, 1 risk
 - [ITU-R-rekommendationer (radioutbredning)](https://www.itu.int/pub/R-REC): 1 krav, 1 testfall
   - [ITU-R P.530](https://www.itu.int/rec/R-REC-P.530) · [ITU-R P.837](https://www.itu.int/rec/R-REC-P.837)
-- [ITU-T-rekommendationer](https://www.itu.int/en/ITU-T/publications/Pages/recs.aspx): 11 krav, 10 testfall
+- [ITU-T-rekommendationer](https://www.itu.int/en/ITU-T/publications/Pages/recs.aspx): 11 krav, 10 testfall, 1 risk
   - [ITU-T E.800](https://www.itu.int/rec/T-REC-E.800) · [ITU-T G.107](https://www.itu.int/rec/T-REC-G.107) · [ITU-T G.114](https://www.itu.int/rec/T-REC-G.114) · [ITU-T G.722](https://www.itu.int/rec/T-REC-G.722) · [ITU-T G.8271](https://www.itu.int/rec/T-REC-G.8271) · [ITU-T G.8275.1](https://www.itu.int/rec/T-REC-G.8275.1) · [ITU-T M.3400](https://www.itu.int/rec/T-REC-M.3400) · [ITU-T X.733](https://www.itu.int/rec/T-REC-X.733) · [ITU-T Y.1541](https://www.itu.int/rec/T-REC-Y.1541)
-- [LoRa Alliance LoRaWAN-specifikationer (länklager, regionala parametrar, applikationslager)](https://resources.lora-alliance.org/technical-specifications): 6 krav, 4 testfall
-- [Miljöprovning och skyddsklasser (IEC 60068, 60721-3, 60529, 62262)](https://webstore.iec.ch/en/publication/501): 11 krav, 9 testfall
+- [LoRa Alliance LoRaWAN-specifikationer (länklager, regionala parametrar, applikationslager)](https://resources.lora-alliance.org/technical-specifications): 6 krav, 4 testfall, 2 risker
+- [Miljöprovning och skyddsklasser (IEC 60068, 60721-3, 60529, 62262)](https://webstore.iec.ch/en/publication/501): 11 krav, 9 testfall, 1 risk
   - [IEC 60068-1](https://webstore.iec.ch/en/publication/501) · [IEC 60529](https://webstore.iec.ch/en/publication/2452)
-- [MITRE Common Weakness Enumeration (CWE)](https://cwe.mitre.org/): 244 krav, 231 testfall
-  - [CWE Top 25](https://cwe.mitre.org/top25/) · [CWE-20](https://cwe.mitre.org/data/definitions/20.html) · [CWE-22](https://cwe.mitre.org/data/definitions/22.html) · [CWE-59](https://cwe.mitre.org/data/definitions/59.html) · [CWE-78](https://cwe.mitre.org/data/definitions/78.html) · [CWE-79](https://cwe.mitre.org/data/definitions/79.html) · [CWE-89](https://cwe.mitre.org/data/definitions/89.html) · [CWE-90](https://cwe.mitre.org/data/definitions/90.html) · [CWE-93](https://cwe.mitre.org/data/definitions/93.html) · [CWE-113](https://cwe.mitre.org/data/definitions/113.html) · [CWE-116](https://cwe.mitre.org/data/definitions/116.html) · [CWE-117](https://cwe.mitre.org/data/definitions/117.html) · [CWE-121](https://cwe.mitre.org/data/definitions/121.html) · [CWE-180](https://cwe.mitre.org/data/definitions/180.html) · [CWE-204](https://cwe.mitre.org/data/definitions/204.html) · [CWE-209](https://cwe.mitre.org/data/definitions/209.html) · [CWE-212](https://cwe.mitre.org/data/definitions/212.html) · [CWE-214](https://cwe.mitre.org/data/definitions/214.html) · [CWE-223](https://cwe.mitre.org/data/definitions/223.html) · [CWE-226](https://cwe.mitre.org/data/definitions/226.html) · [CWE-250](https://cwe.mitre.org/data/definitions/250.html) · [CWE-256](https://cwe.mitre.org/data/definitions/256.html) · [CWE-257](https://cwe.mitre.org/data/definitions/257.html) · [CWE-260](https://cwe.mitre.org/data/definitions/260.html) · [CWE-266](https://cwe.mitre.org/data/definitions/266.html) · [CWE-269](https://cwe.mitre.org/data/definitions/269.html) · [CWE-276](https://cwe.mitre.org/data/definitions/276.html) · [CWE-290](https://cwe.mitre.org/data/definitions/290.html) · [CWE-294](https://cwe.mitre.org/data/definitions/294.html) · [CWE-295](https://cwe.mitre.org/data/definitions/295.html) · [CWE-297](https://cwe.mitre.org/data/definitions/297.html) · [CWE-306](https://cwe.mitre.org/data/definitions/306.html) · [CWE-307](https://cwe.mitre.org/data/definitions/307.html) · [CWE-308](https://cwe.mitre.org/data/definitions/308.html) · [CWE-311](https://cwe.mitre.org/data/definitions/311.html) · [CWE-312](https://cwe.mitre.org/data/definitions/312.html) · [CWE-319](https://cwe.mitre.org/data/definitions/319.html) · [CWE-324](https://cwe.mitre.org/data/definitions/324.html) · [CWE-326](https://cwe.mitre.org/data/definitions/326.html) · [CWE-327](https://cwe.mitre.org/data/definitions/327.html) · [CWE-328](https://cwe.mitre.org/data/definitions/328.html) · [CWE-330](https://cwe.mitre.org/data/definitions/330.html) · [CWE-331](https://cwe.mitre.org/data/definitions/331.html) · [CWE-338](https://cwe.mitre.org/data/definitions/338.html) · [CWE-346](https://cwe.mitre.org/data/definitions/346.html) · [CWE-347](https://cwe.mitre.org/data/definitions/347.html) · [CWE-352](https://cwe.mitre.org/data/definitions/352.html) · [CWE-353](https://cwe.mitre.org/data/definitions/353.html) · [CWE-359](https://cwe.mitre.org/data/definitions/359.html) · [CWE-384](https://cwe.mitre.org/data/definitions/384.html) · [CWE-400](https://cwe.mitre.org/data/definitions/400.html) · [CWE-409](https://cwe.mitre.org/data/definitions/409.html) · [CWE-427](https://cwe.mitre.org/data/definitions/427.html) · [CWE-434](https://cwe.mitre.org/data/definitions/434.html) · [CWE-459](https://cwe.mitre.org/data/definitions/459.html) · [CWE-489](https://cwe.mitre.org/data/definitions/489.html) · [CWE-494](https://cwe.mitre.org/data/definitions/494.html) · [CWE-497](https://cwe.mitre.org/data/definitions/497.html) · [CWE-502](https://cwe.mitre.org/data/definitions/502.html) · [CWE-506](https://cwe.mitre.org/data/definitions/506.html) · [CWE-521](https://cwe.mitre.org/data/definitions/521.html) · [CWE-522](https://cwe.mitre.org/data/definitions/522.html) · [CWE-524](https://cwe.mitre.org/data/definitions/524.html) · [CWE-525](https://cwe.mitre.org/data/definitions/525.html) · [CWE-526](https://cwe.mitre.org/data/definitions/526.html) · [CWE-532](https://cwe.mitre.org/data/definitions/532.html) · [CWE-540](https://cwe.mitre.org/data/definitions/540.html) · [CWE-552](https://cwe.mitre.org/data/definitions/552.html) · [CWE-565](https://cwe.mitre.org/data/definitions/565.html) · [CWE-598](https://cwe.mitre.org/data/definitions/598.html) · [CWE-601](https://cwe.mitre.org/data/definitions/601.html) · [CWE-602](https://cwe.mitre.org/data/definitions/602.html) · [CWE-611](https://cwe.mitre.org/data/definitions/611.html) · [CWE-614](https://cwe.mitre.org/data/definitions/614.html) · [CWE-620](https://cwe.mitre.org/data/definitions/620.html) · [CWE-636](https://cwe.mitre.org/data/definitions/636.html) · [CWE-639](https://cwe.mitre.org/data/definitions/639.html) · [CWE-640](https://cwe.mitre.org/data/definitions/640.html) · [CWE-646](https://cwe.mitre.org/data/definitions/646.html) · [CWE-653](https://cwe.mitre.org/data/definitions/653.html) · [CWE-749](https://cwe.mitre.org/data/definitions/749.html) · [CWE-770](https://cwe.mitre.org/data/definitions/770.html) · [CWE-776](https://cwe.mitre.org/data/definitions/776.html) · [CWE-778](https://cwe.mitre.org/data/definitions/778.html) · [CWE-798](https://cwe.mitre.org/data/definitions/798.html) · [CWE-799](https://cwe.mitre.org/data/definitions/799.html) · [CWE-807](https://cwe.mitre.org/data/definitions/807.html) · [CWE-829](https://cwe.mitre.org/data/definitions/829.html) · [CWE-837](https://cwe.mitre.org/data/definitions/837.html) · [CWE-862](https://cwe.mitre.org/data/definitions/862.html) · [CWE-863](https://cwe.mitre.org/data/definitions/863.html) · [CWE-912](https://cwe.mitre.org/data/definitions/912.html) · [CWE-915](https://cwe.mitre.org/data/definitions/915.html) · [CWE-916](https://cwe.mitre.org/data/definitions/916.html) · [CWE-918](https://cwe.mitre.org/data/definitions/918.html) · [CWE-922](https://cwe.mitre.org/data/definitions/922.html) · [CWE-926](https://cwe.mitre.org/data/definitions/926.html) · [CWE-939](https://cwe.mitre.org/data/definitions/939.html) · [CWE-942](https://cwe.mitre.org/data/definitions/942.html) · [CWE-1004](https://cwe.mitre.org/data/definitions/1004.html) · [CWE-1007](https://cwe.mitre.org/data/definitions/1007.html) · [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html) · [CWE-1191](https://cwe.mitre.org/data/definitions/1191.html) · [CWE-1236](https://cwe.mitre.org/data/definitions/1236.html) · [CWE-1244](https://cwe.mitre.org/data/definitions/1244.html) · [CWE-1263](https://cwe.mitre.org/data/definitions/1263.html) · [CWE-1266](https://cwe.mitre.org/data/definitions/1266.html) · [CWE-1275](https://cwe.mitre.org/data/definitions/1275.html) · [CWE-1326](https://cwe.mitre.org/data/definitions/1326.html) · [CWE-1328](https://cwe.mitre.org/data/definitions/1328.html) · [CWE-1333](https://cwe.mitre.org/data/definitions/1333.html) · [CWE-1336](https://cwe.mitre.org/data/definitions/1336.html) · [CWE-1357](https://cwe.mitre.org/data/definitions/1357.html) · [CWE-1390](https://cwe.mitre.org/data/definitions/1390.html) · [CWE-1392](https://cwe.mitre.org/data/definitions/1392.html) · [CWE-1393](https://cwe.mitre.org/data/definitions/1393.html) · [CWE-1394](https://cwe.mitre.org/data/definitions/1394.html) · [CWE-1395](https://cwe.mitre.org/data/definitions/1395.html) · [CWE-1426](https://cwe.mitre.org/data/definitions/1426.html) · [CWE-1427](https://cwe.mitre.org/data/definitions/1427.html) · [CWE-1428](https://cwe.mitre.org/data/definitions/1428.html) · [CWE-1463](https://cwe.mitre.org/data/definitions/1463.html) · [CWE-1464](https://cwe.mitre.org/data/definitions/1464.html) · [CWE-1465](https://cwe.mitre.org/data/definitions/1465.html) · [CWE-1466](https://cwe.mitre.org/data/definitions/1466.html) · [CWE-1469](https://cwe.mitre.org/data/definitions/1469.html) · [CWE-1470](https://cwe.mitre.org/data/definitions/1470.html) · [CWE-1472](https://cwe.mitre.org/data/definitions/1472.html)
-- [OASIS Common Security Advisory Framework (CSAF)](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html): 2 krav, 2 testfall
+- [MITRE Common Weakness Enumeration (CWE)](https://cwe.mitre.org/): 244 krav, 231 testfall, 70 risker
+  - [CWE Top 25](https://cwe.mitre.org/top25/) · [CWE-20](https://cwe.mitre.org/data/definitions/20.html) · [CWE-22](https://cwe.mitre.org/data/definitions/22.html) · [CWE-59](https://cwe.mitre.org/data/definitions/59.html) · [CWE-78](https://cwe.mitre.org/data/definitions/78.html) · [CWE-79](https://cwe.mitre.org/data/definitions/79.html) · [CWE-89](https://cwe.mitre.org/data/definitions/89.html) · [CWE-90](https://cwe.mitre.org/data/definitions/90.html) · [CWE-93](https://cwe.mitre.org/data/definitions/93.html) · [CWE-113](https://cwe.mitre.org/data/definitions/113.html) · [CWE-116](https://cwe.mitre.org/data/definitions/116.html) · [CWE-117](https://cwe.mitre.org/data/definitions/117.html) · [CWE-121](https://cwe.mitre.org/data/definitions/121.html) · [CWE-180](https://cwe.mitre.org/data/definitions/180.html) · [CWE-204](https://cwe.mitre.org/data/definitions/204.html) · [CWE-209](https://cwe.mitre.org/data/definitions/209.html) · [CWE-212](https://cwe.mitre.org/data/definitions/212.html) · [CWE-214](https://cwe.mitre.org/data/definitions/214.html) · [CWE-223](https://cwe.mitre.org/data/definitions/223.html) · [CWE-226](https://cwe.mitre.org/data/definitions/226.html) · [CWE-250](https://cwe.mitre.org/data/definitions/250.html) · [CWE-256](https://cwe.mitre.org/data/definitions/256.html) · [CWE-257](https://cwe.mitre.org/data/definitions/257.html) · [CWE-260](https://cwe.mitre.org/data/definitions/260.html) · [CWE-266](https://cwe.mitre.org/data/definitions/266.html) · [CWE-269](https://cwe.mitre.org/data/definitions/269.html) · [CWE-276](https://cwe.mitre.org/data/definitions/276.html) · [CWE-290](https://cwe.mitre.org/data/definitions/290.html) · [CWE-294](https://cwe.mitre.org/data/definitions/294.html) · [CWE-295](https://cwe.mitre.org/data/definitions/295.html) · [CWE-297](https://cwe.mitre.org/data/definitions/297.html) · [CWE-306](https://cwe.mitre.org/data/definitions/306.html) · [CWE-307](https://cwe.mitre.org/data/definitions/307.html) · [CWE-308](https://cwe.mitre.org/data/definitions/308.html) · [CWE-311](https://cwe.mitre.org/data/definitions/311.html) · [CWE-312](https://cwe.mitre.org/data/definitions/312.html) · [CWE-319](https://cwe.mitre.org/data/definitions/319.html) · [CWE-324](https://cwe.mitre.org/data/definitions/324.html) · [CWE-326](https://cwe.mitre.org/data/definitions/326.html) · [CWE-327](https://cwe.mitre.org/data/definitions/327.html) · [CWE-328](https://cwe.mitre.org/data/definitions/328.html) · [CWE-330](https://cwe.mitre.org/data/definitions/330.html) · [CWE-331](https://cwe.mitre.org/data/definitions/331.html) · [CWE-338](https://cwe.mitre.org/data/definitions/338.html) · [CWE-345](https://cwe.mitre.org/data/definitions/345.html) · [CWE-346](https://cwe.mitre.org/data/definitions/346.html) · [CWE-347](https://cwe.mitre.org/data/definitions/347.html) · [CWE-352](https://cwe.mitre.org/data/definitions/352.html) · [CWE-353](https://cwe.mitre.org/data/definitions/353.html) · [CWE-359](https://cwe.mitre.org/data/definitions/359.html) · [CWE-384](https://cwe.mitre.org/data/definitions/384.html) · [CWE-400](https://cwe.mitre.org/data/definitions/400.html) · [CWE-409](https://cwe.mitre.org/data/definitions/409.html) · [CWE-427](https://cwe.mitre.org/data/definitions/427.html) · [CWE-434](https://cwe.mitre.org/data/definitions/434.html) · [CWE-459](https://cwe.mitre.org/data/definitions/459.html) · [CWE-489](https://cwe.mitre.org/data/definitions/489.html) · [CWE-494](https://cwe.mitre.org/data/definitions/494.html) · [CWE-497](https://cwe.mitre.org/data/definitions/497.html) · [CWE-502](https://cwe.mitre.org/data/definitions/502.html) · [CWE-506](https://cwe.mitre.org/data/definitions/506.html) · [CWE-521](https://cwe.mitre.org/data/definitions/521.html) · [CWE-522](https://cwe.mitre.org/data/definitions/522.html) · [CWE-524](https://cwe.mitre.org/data/definitions/524.html) · [CWE-525](https://cwe.mitre.org/data/definitions/525.html) · [CWE-526](https://cwe.mitre.org/data/definitions/526.html) · [CWE-532](https://cwe.mitre.org/data/definitions/532.html) · [CWE-540](https://cwe.mitre.org/data/definitions/540.html) · [CWE-552](https://cwe.mitre.org/data/definitions/552.html) · [CWE-565](https://cwe.mitre.org/data/definitions/565.html) · [CWE-598](https://cwe.mitre.org/data/definitions/598.html) · [CWE-601](https://cwe.mitre.org/data/definitions/601.html) · [CWE-602](https://cwe.mitre.org/data/definitions/602.html) · [CWE-611](https://cwe.mitre.org/data/definitions/611.html) · [CWE-614](https://cwe.mitre.org/data/definitions/614.html) · [CWE-620](https://cwe.mitre.org/data/definitions/620.html) · [CWE-636](https://cwe.mitre.org/data/definitions/636.html) · [CWE-639](https://cwe.mitre.org/data/definitions/639.html) · [CWE-640](https://cwe.mitre.org/data/definitions/640.html) · [CWE-646](https://cwe.mitre.org/data/definitions/646.html) · [CWE-653](https://cwe.mitre.org/data/definitions/653.html) · [CWE-749](https://cwe.mitre.org/data/definitions/749.html) · [CWE-770](https://cwe.mitre.org/data/definitions/770.html) · [CWE-776](https://cwe.mitre.org/data/definitions/776.html) · [CWE-778](https://cwe.mitre.org/data/definitions/778.html) · [CWE-798](https://cwe.mitre.org/data/definitions/798.html) · [CWE-799](https://cwe.mitre.org/data/definitions/799.html) · [CWE-807](https://cwe.mitre.org/data/definitions/807.html) · [CWE-829](https://cwe.mitre.org/data/definitions/829.html) · [CWE-837](https://cwe.mitre.org/data/definitions/837.html) · [CWE-862](https://cwe.mitre.org/data/definitions/862.html) · [CWE-863](https://cwe.mitre.org/data/definitions/863.html) · [CWE-912](https://cwe.mitre.org/data/definitions/912.html) · [CWE-915](https://cwe.mitre.org/data/definitions/915.html) · [CWE-916](https://cwe.mitre.org/data/definitions/916.html) · [CWE-918](https://cwe.mitre.org/data/definitions/918.html) · [CWE-922](https://cwe.mitre.org/data/definitions/922.html) · [CWE-926](https://cwe.mitre.org/data/definitions/926.html) · [CWE-939](https://cwe.mitre.org/data/definitions/939.html) · [CWE-942](https://cwe.mitre.org/data/definitions/942.html) · [CWE-1004](https://cwe.mitre.org/data/definitions/1004.html) · [CWE-1007](https://cwe.mitre.org/data/definitions/1007.html) · [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html) · [CWE-1191](https://cwe.mitre.org/data/definitions/1191.html) · [CWE-1236](https://cwe.mitre.org/data/definitions/1236.html) · [CWE-1244](https://cwe.mitre.org/data/definitions/1244.html) · [CWE-1263](https://cwe.mitre.org/data/definitions/1263.html) · [CWE-1266](https://cwe.mitre.org/data/definitions/1266.html) · [CWE-1275](https://cwe.mitre.org/data/definitions/1275.html) · [CWE-1326](https://cwe.mitre.org/data/definitions/1326.html) · [CWE-1328](https://cwe.mitre.org/data/definitions/1328.html) · [CWE-1333](https://cwe.mitre.org/data/definitions/1333.html) · [CWE-1336](https://cwe.mitre.org/data/definitions/1336.html) · [CWE-1357](https://cwe.mitre.org/data/definitions/1357.html) · [CWE-1390](https://cwe.mitre.org/data/definitions/1390.html) · [CWE-1392](https://cwe.mitre.org/data/definitions/1392.html) · [CWE-1393](https://cwe.mitre.org/data/definitions/1393.html) · [CWE-1394](https://cwe.mitre.org/data/definitions/1394.html) · [CWE-1395](https://cwe.mitre.org/data/definitions/1395.html) · [CWE-1426](https://cwe.mitre.org/data/definitions/1426.html) · [CWE-1427](https://cwe.mitre.org/data/definitions/1427.html) · [CWE-1428](https://cwe.mitre.org/data/definitions/1428.html) · [CWE-1463](https://cwe.mitre.org/data/definitions/1463.html) · [CWE-1464](https://cwe.mitre.org/data/definitions/1464.html) · [CWE-1465](https://cwe.mitre.org/data/definitions/1465.html) · [CWE-1466](https://cwe.mitre.org/data/definitions/1466.html) · [CWE-1469](https://cwe.mitre.org/data/definitions/1469.html) · [CWE-1470](https://cwe.mitre.org/data/definitions/1470.html) · [CWE-1472](https://cwe.mitre.org/data/definitions/1472.html)
+- [OASIS Common Security Advisory Framework (CSAF)](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html): 2 krav, 2 testfall, 1 risk
 - [OASIS MQTT](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html): 2 krav, 2 testfall
 - [Open Container Initiatives specifikationer](https://opencontainers.org/) (OCI): 1 krav, 1 testfall
   - [Open Container Initiative Image Format Specification](https://github.com/opencontainers/image-spec)
 - [OpenAPI Specification](https://spec.openapis.org/oas/v3.1.0): 5 krav, 4 testfall
-- [OpenChain ISO/IEC 5230 Efterlevnad av licenser för öppen källkod](https://www.iso.org/standard/81039.html): 8 krav, 7 testfall
+- [OpenChain ISO/IEC 5230 Efterlevnad av licenser för öppen källkod](https://www.iso.org/standard/81039.html): 8 krav, 7 testfall, 2 risker
 - [OpenFeature-specifikationen](https://openfeature.dev/specification/): 5 krav, 5 testfall
 - [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html) (OIDC): 2 krav, 2 testfall
 - [OpenTelemetry-specifikationen](https://opentelemetry.io/docs/specs/otel/): 5 krav, 5 testfall
 - [OWASP Application Security Verification Standard (ASVS)](https://owasp.org/www-project-application-security-verification-standard/) (OWASP ASVS): 127 krav, 121 testfall
-- [OWASP Mobile Application Security Verification Standard (MASVS)](https://mas.owasp.org/MASVS/) (OWASP MASVS): 18 krav, 18 testfall
-- [PCI Data Security Standard och vägledning från PCI SSC](https://www.pcisecuritystandards.org/) (PCI DSS): 26 krav, 25 testfall
+- [OWASP Mobile Application Security Verification Standard (MASVS)](https://mas.owasp.org/MASVS/) (OWASP MASVS): 18 krav, 18 testfall, 3 risker
+- [PCI Data Security Standard och vägledning från PCI SSC](https://www.pcisecuritystandards.org/) (PCI DSS): 26 krav, 25 testfall, 2 risker
 - [Peppol BIS Billing](https://docs.peppol.eu/poacc/billing/3.0/): 1 krav, 1 testfall
 - [Riktlinjer för tillgängligt webbinnehåll (WCAG) 2.2](https://www.w3.org/TR/WCAG22/) (WCAG 2.2): 71 krav, 57 testfall
-- [SAE EIA-649 Standard för konfigurationsledning](https://www.sae.org/standards/content/eia649c/): 4 krav, 3 testfall
+- [SAE EIA-649 Standard för konfigurationsledning](https://www.sae.org/standards/content/eia649c/): 4 krav, 3 testfall, 1 risk
 - [SCORM, paketering av e-lärandeinnehåll](https://www.adlnet.gov/research/scorm): 1 krav, 1 testfall
 - [Semantisk versionshantering](https://semver.org/spec/v2.0.0.html) (SemVer): 7 krav, 7 testfall
-- [SPDX-specifikationen och licenslistan](https://spdx.dev/): 6 krav, 7 testfall
+- [SPDX-specifikationen och licenslistan](https://spdx.dev/): 6 krav, 7 testfall, 1 risk
   - [SPDX Specification 2.3](https://spdx.github.io/spdx-spec/v2.3/) · [SPDX License List](https://spdx.org/licenses/)
 - [Specifikationer för webbapplikationer offline (W3C Service Workers, W3C Indexed Database API, WHATWG Storage)](https://www.w3.org/TR/service-workers/): 2 krav, 2 testfall
 - [Standard Webhooks-specifikationen](https://www.standardwebhooks.com/): 3 krav, 3 testfall
-- [Standarder för livscykel för system och programvara (ISO/IEC/IEEE 15939, 24748-1, IEEE 1012)](https://www.iso.org/standard/71197.html): 10 krav, 10 testfall
+- [Standarder för livscykel för system och programvara (ISO/IEC/IEEE 15939, 24748-1, IEEE 1012)](https://www.iso.org/standard/71197.html): 10 krav, 10 testfall, 2 risker
   - [ISO/IEC/IEEE 15939](https://www.iso.org/standard/71197.html) · [ISO/IEC/IEEE 24748-1](https://www.iso.org/standard/84709.html) · [IEEE 1012](https://standards.ieee.org/ieee/1012/5609/)
-- [Standarder för maskinsäkerhet (ISO 12100, 13850, 13855, 13857, 14118, 14119, 14120)](https://www.iso.org/standard/51528.html): 8 krav, 7 testfall
+- [Standarder för maskinsäkerhet (ISO 12100, 13850, 13855, 13857, 14118, 14119, 14120)](https://www.iso.org/standard/51528.html): 8 krav, 7 testfall, 4 risker
   - [ISO 12100](https://www.iso.org/standard/51528.html) · [ISO 13850](https://www.iso.org/standard/59970.html) · [ISO 13855](https://www.iso.org/standard/80590.html) · [ISO 13857](https://www.iso.org/standard/69569.html) · [ISO 14118](https://www.iso.org/standard/66460.html) · [ISO 14119](https://www.iso.org/standard/75942.html) · [ISO 14120](https://www.iso.org/standard/59545.html)
 - [Standarder för materialdeklaration och märkning (EN IEC 63000, IEC 62474, EN 50419)](https://webstore.iec.ch/en/publication/29857): 2 krav, 2 testfall
   - [IEC 62474](https://webstore.iec.ch/en/publication/29857)
 - [Standarder för operatörsgränssnitt (IEC 60073, 60447, 61310-1, EN 894-3, ISO 7010)](https://webstore.iec.ch/en/publication/5263): 4 krav, 3 testfall
   - [IEC 61310-1](https://webstore.iec.ch/en/publication/5263) · [ISO 7010](https://www.iso.org/standard/72424.html)
-- [Standarder och vägledningar för mätteknik (ISO 10012, JCGM 100 GUM, ILAC-G24)](https://www.iso.org/standard/26033.html): 5 krav, 5 testfall
+- [Standarder och vägledningar för mätteknik (ISO 10012, JCGM 100 GUM, ILAC-G24)](https://www.iso.org/standard/26033.html): 5 krav, 5 testfall, 1 risk
   - [ISO 10012](https://www.iso.org/standard/26033.html) · [JCGM 100](https://www.bipm.org/en/doi/10.59161/JCGM100-2008E) · [ILAC-G24](https://ilac.org/publications-and-resources/ilac-guidance-series/)
 - [Teknisk produktdokumentation: namnrutor och ritningsprinciper (ISO 7200, ISO 128)](https://www.iso.org/standard/35446.html): 2 krav, 1 testfall
   - [ISO 7200](https://www.iso.org/standard/35446.html) · [ISO 128-1](https://www.iso.org/standard/65296.html)
@@ -4140,31 +4785,31 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 
 - [EN 12464-1 Ljus och belysning: belysning av arbetsplatser inomhus](https://www.sis.se/en/produkter/construction-materials-and-building/lighting/interior-lighting/ss-en-12464-12021-f17a3ebb/): 1 krav, 1 testfall
 - [EN 12845 Fasta släcksystem: automatiska sprinklersystem](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/firefighting/ss-en-128452015a22026/): 1 krav, 1 testfall
-- [EN 13306 Underhållsterminologi](https://www.sis.se/en/produkter/standardization/vocabularies/services/ss-en-133062017/): 11 krav, 8 testfall
+- [EN 13306 Underhållsterminologi](https://www.sis.se/en/produkter/standardization/vocabularies/services/ss-en-133062017/): 11 krav, 8 testfall, 1 risk
 - [EN 14181 och EN 17255 Automatisk utsläppsmätning](https://www.sis.se/en/produkter/environment-health-protection-safety/air-quality/ssen141812014/): 1 krav, 1 testfall
   - [EN 14181](https://www.sis.se/en/produkter/environment-health-protection-safety/air-quality/ssen141812014/)
-- [EN 16798-1 Byggnaders energiprestanda: indata för inomhusmiljön](https://www.sis.se/en/produkter/construction-materials-and-building/installations-in-buildings/general/ss-en-16798-12019/): 3 krav, 2 testfall
+- [EN 16798-1 Byggnaders energiprestanda: indata för inomhusmiljön](https://www.sis.se/en/produkter/construction-materials-and-building/installations-in-buildings/general/ss-en-16798-12019/): 3 krav, 2 testfall, 1 risk
 - [EN 16931 Elektronisk fakturering](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Obtaining+a+copy+of+the+European+standard+on+eInvoicing): 1 krav, 1 testfall
 - [EN 1717 Skydd mot förorening av dricksvatten i dricksvatteninstallationer (återströmning)](https://www.sis.se/en/produkter/fluid-systems-and-components-for-general-use/valves/general/ss-en-17172025/): 1 krav, 1 testfall
 - [EN 3 Handbrandsläckare](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/firefighting/ssen372004a12007/): 1 krav, 1 testfall
 - [EN 301 549 Tillgänglighetskrav för IKT-produkter och tjänster](https://www.etsi.org/deliver/etsi_en/301500_301599/301549/): 23 krav, 19 testfall
 - [EN 50110-1 Skötsel av elektriska anläggningar](https://elstandard.se/standard/3246401): 3 krav, 3 testfall
-- [EN 50126 och EN 50129 RAMS för järnväg och säkerhetsrelaterade elektroniska system](https://www.sis.se/en/produkter/electrical-engineering/electric-traction-equipment/ss-en-50126-1/): 12 krav, 8 testfall
-- [EN 50518 Larmcentraler för övervakning och larmmottagning](https://www.sis.se/en/produkter/environment-health-protection-safety/alarm-and-warning-systems/ss-en-50518/): 2 krav, 2 testfall
-- [EN 50600 Datacenteranläggningar och infrastruktur](https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen506001/): 16 krav, 13 testfall
+- [EN 50126 och EN 50129 RAMS för järnväg och säkerhetsrelaterade elektroniska system](https://www.sis.se/en/produkter/electrical-engineering/electric-traction-equipment/ss-en-50126-1/): 12 krav, 8 testfall, 3 risker
+- [EN 50518 Larmcentraler för övervakning och larmmottagning](https://www.sis.se/en/produkter/environment-health-protection-safety/alarm-and-warning-systems/ss-en-50518/): 2 krav, 2 testfall, 1 risk
+- [EN 50600 Datacenteranläggningar och infrastruktur](https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen506001/): 16 krav, 13 testfall, 2 risker
   - [EN 50600-1](https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen506001/) · [EN 50600-3-1](https://www.sis.se/en/produkter/information-technology-office-machines/general/ssen5060031/)
 - [ETSI EN 300 220 Kortdistansutrustning i frekvensområdet 25 MHz till 1 000 MHz](https://www.etsi.org/deliver/etsi_en/300200_300299/30022002/): 1 krav, 1 testfall
-- [ETSI EN 303 645 Cybersäkerhet för konsumentprodukter för sakernas internet](https://www.etsi.org/deliver/etsi_en/303600_303699/303645/): 7 krav, 7 testfall
-- [ETSI harmoniserade radiostandarder (EN 300 328, EN 300 396, EN 301 893)](https://www.etsi.org/deliver/etsi_en/300300_300399/300328/): 3 krav, 2 testfall
+- [ETSI EN 303 645 Cybersäkerhet för konsumentprodukter för sakernas internet](https://www.etsi.org/deliver/etsi_en/303600_303699/303645/): 7 krav, 7 testfall, 3 risker
+- [ETSI harmoniserade radiostandarder (EN 300 328, EN 300 396, EN 301 893)](https://www.etsi.org/deliver/etsi_en/300300_300399/300328/): 3 krav, 2 testfall, 2 risker
   - [ETSI EN 300 328](https://www.etsi.org/deliver/etsi_en/300300_300399/300328/) · [ETSI EN 301 893](https://www.etsi.org/deliver/etsi_en/301800_301899/301893/)
-- [Europeiska standarder för brand och nödbelysning (EN 54, EN 1155, EN 1838, EN 15004-1, EN 50172)](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/fire-protection/ss-en-54-120212/): 8 krav, 7 testfall
-- [Europeiska standarder för skydd av byggnader (EN 1627, EN 50131, EN 60839-11-1, EN 62676-4)](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-crime/ss-en-50131-1-6a7cf25e/): 6 krav, 6 testfall
+- [Europeiska standarder för brand och nödbelysning (EN 54, EN 1155, EN 1838, EN 15004-1, EN 50172)](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-fire/fire-protection/ss-en-54-120212/): 8 krav, 7 testfall, 2 risker
+- [Europeiska standarder för skydd av byggnader (EN 1627, EN 50131, EN 60839-11-1, EN 62676-4)](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-crime/ss-en-50131-1-6a7cf25e/): 6 krav, 6 testfall, 1 risk
   - [EN 50131-1](https://www.sis.se/en/produkter/environment-health-protection-safety/protection-against-crime/ss-en-50131-1-6a7cf25e/)
-- [Europeiska tillgänglighetsstandarder för byggd miljö (EN 17210, EN 81-70)](https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/): 3 krav, 2 testfall
+- [Europeiska tillgänglighetsstandarder för byggd miljö (EN 17210, EN 81-70)](https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/): 3 krav, 2 testfall, 1 risk
   - [EN 17210](https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/)
-- [Europeiska underhållsstandarder (EN 13269, EN 13460, EN 15341, EN 17007)](https://www.sis.se/en/produkter/image-technology/graphic-technology/reproduction-equipment/ss-en-153412019a12022/): 15 krav, 13 testfall
+- [Europeiska underhållsstandarder (EN 13269, EN 13460, EN 15341, EN 17007)](https://www.sis.se/en/produkter/image-technology/graphic-technology/reproduction-equipment/ss-en-153412019a12022/): 15 krav, 13 testfall, 2 risker
   - [EN 15341](https://www.sis.se/en/produkter/image-technology/graphic-technology/reproduction-equipment/ss-en-153412019a12022/) · [EN 13460](https://www.sis.se/en/produkter/standardization/technical-product-documentation/ss-en-134602009/)
-- [Säkerhetsregler för hissar och rulltrappor (EN 81-20, EN 81-28, EN 115-1)](https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-81-202020/): 2 krav, 1 testfall
+- [Säkerhetsregler för hissar och rulltrappor (EN 81-20, EN 81-28, EN 115-1)](https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-81-202020/): 2 krav, 1 testfall, 1 risk
   - [EN 81-20](https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-81-202020/) · [EN 115-1](https://www.sis.se/en/produkter/maskinsakerhet-357f77b1/passenger-goods-and-service-lifts/ss-en-115-12017/)
 
 #### Standarder och specifikationer: Norge
@@ -4177,7 +4822,7 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 
 #### Standarder och specifikationer: USA
 
-- [American Petroleum Institutes standarder och rekommenderade praxis](https://www.api.org/products-and-services/standards) (API): 7 krav, 7 testfall
+- [American Petroleum Institutes standarder och rekommenderade praxis](https://www.api.org/products-and-services/standards) (API): 7 krav, 7 testfall, 1 risk
 - [NERC:s standarder för skydd av kritisk infrastruktur (CIP)](https://www.nerc.com/standards/reliability-standards) (NERC CIP): 2 krav, 2 testfall
 - [NIST SP 800-53 Säkerhets- och integritetsåtgärder](https://doi.org/10.6028/NIST.SP.800-53r5): 59 krav, 57 testfall
 - [NIST:s kryptografiska standarder och riktlinjer (FIPS 180-4, SP 800-52, 800-57, 800-90A, 800-107, 800-131A)](https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines): 15 krav, 16 testfall
@@ -4199,30 +4844,30 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 - [Googles böcker om Site Reliability Engineering](https://sre.google/books/) (Google SRE): 51 krav, 49 testfall
 - [ISTQB:s kursplaner](https://www.istqb.org/): 20 krav, 21 testfall
   - [ISTQB CTFL 4.0](https://www.istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/)
-- [ITIL 4, praxis för tjänstehantering](https://www.axelos.com/certifications/itil-service-management): 96 krav, 83 testfall
+- [ITIL 4, praxis för tjänstehantering](https://www.axelos.com/certifications/itil-service-management): 96 krav, 83 testfall, 10 risker
 - [Keep a Changelog](https://keepachangelog.com/en/1.1.0/): 4 krav, 4 testfall
 - [Kubernetes säkerhetsdokumentation (Pod Security Standards, god praxis för RBAC, granskning, kryptering vid lagring)](https://kubernetes.io/docs/concepts/security/): 7 krav, 7 testfall
 - [M3AAWG:s bästa praxis för e-post](https://www.m3aawg.org/published-documents): 8 krav, 8 testfall
-- [MITRE ATLAS, hotlandskap för AI-system](https://atlas.mitre.org/): 1 krav, 1 testfall
-- [MITRE ATT&CK](https://attack.mitre.org/): 233 krav, 221 testfall
+- [MITRE ATLAS, hotlandskap för AI-system](https://atlas.mitre.org/): 1 krav, 1 testfall, 1 risk
+- [MITRE ATT&CK](https://attack.mitre.org/): 233 krav, 221 testfall, 70 risker
   - [MITRE ATT&CK Containers Matrix](https://attack.mitre.org/matrices/enterprise/containers/) · [MITRE ATT&CK M0930](https://attack.mitre.org/mitigations/M0930/) · [MITRE ATT&CK M0932](https://attack.mitre.org/mitigations/M0932/) · [MITRE ATT&CK M0934](https://attack.mitre.org/mitigations/M0934/) · [MITRE ATT&CK M0938](https://attack.mitre.org/mitigations/M0938/) · [MITRE ATT&CK M0942](https://attack.mitre.org/mitigations/M0942/) · [MITRE ATT&CK M0951](https://attack.mitre.org/mitigations/M0951/) · [MITRE ATT&CK M0953](https://attack.mitre.org/mitigations/M0953/) · [MITRE ATT&CK M1002](https://attack.mitre.org/mitigations/M1002/) · [MITRE ATT&CK M1013](https://attack.mitre.org/mitigations/M1013/) · [MITRE ATT&CK M1016](https://attack.mitre.org/mitigations/M1016/) · [MITRE ATT&CK M1017](https://attack.mitre.org/mitigations/M1017/) · [MITRE ATT&CK M1018](https://attack.mitre.org/mitigations/M1018/) · [MITRE ATT&CK M1021](https://attack.mitre.org/mitigations/M1021/) · [MITRE ATT&CK M1022](https://attack.mitre.org/mitigations/M1022/) · [MITRE ATT&CK M1026](https://attack.mitre.org/mitigations/M1026/) · [MITRE ATT&CK M1027](https://attack.mitre.org/mitigations/M1027/) · [MITRE ATT&CK M1029](https://attack.mitre.org/mitigations/M1029/) · [MITRE ATT&CK M1030](https://attack.mitre.org/mitigations/M1030/) · [MITRE ATT&CK M1032](https://attack.mitre.org/mitigations/M1032/) · [MITRE ATT&CK M1035](https://attack.mitre.org/mitigations/M1035/) · [MITRE ATT&CK M1037](https://attack.mitre.org/mitigations/M1037/) · [MITRE ATT&CK M1042](https://attack.mitre.org/mitigations/M1042/) · [MITRE ATT&CK M1045](https://attack.mitre.org/mitigations/M1045/) · [MITRE ATT&CK M1050](https://attack.mitre.org/mitigations/M1050/) · [MITRE ATT&CK M1051](https://attack.mitre.org/mitigations/M1051/) · [MITRE ATT&CK M1053](https://attack.mitre.org/mitigations/M1053/) · [MITRE ATT&CK M1054](https://attack.mitre.org/mitigations/M1054/) · [MITRE ATT&CK M1060](https://attack.mitre.org/mitigations/M1060/) · [MITRE ATT&CK T0809](https://attack.mitre.org/techniques/T0809/) · [MITRE ATT&CK T0814](https://attack.mitre.org/techniques/T0814/) · [MITRE ATT&CK T0822](https://attack.mitre.org/techniques/T0822/) · [MITRE ATT&CK T0830](https://attack.mitre.org/techniques/T0830/) · [MITRE ATT&CK T0843](https://attack.mitre.org/techniques/T0843/) · [MITRE ATT&CK T0847](https://attack.mitre.org/techniques/T0847/) · [MITRE ATT&CK T0858](https://attack.mitre.org/techniques/T0858/) · [MITRE ATT&CK T0863](https://attack.mitre.org/techniques/T0863/) · [MITRE ATT&CK T0880](https://attack.mitre.org/techniques/T0880/) · [MITRE ATT&CK T0886](https://attack.mitre.org/techniques/T0886/) · [MITRE ATT&CK T0889](https://attack.mitre.org/techniques/T0889/) · [MITRE ATT&CK T1021](https://attack.mitre.org/techniques/T1021/) · [MITRE ATT&CK T1036.010](https://attack.mitre.org/techniques/T1036/010/) · [MITRE ATT&CK T1040](https://attack.mitre.org/techniques/T1040/) · [MITRE ATT&CK T1046](https://attack.mitre.org/techniques/T1046/) · [MITRE ATT&CK T1048](https://attack.mitre.org/techniques/T1048/) · [MITRE ATT&CK T1052.001](https://attack.mitre.org/techniques/T1052/001/) · [MITRE ATT&CK T1059.004](https://attack.mitre.org/techniques/T1059/004/) · [MITRE ATT&CK T1059.007](https://attack.mitre.org/techniques/T1059/007/) · [MITRE ATT&CK T1068](https://attack.mitre.org/techniques/T1068/) · [MITRE ATT&CK T1070](https://attack.mitre.org/techniques/T1070/) · [MITRE ATT&CK T1071.004](https://attack.mitre.org/techniques/T1071/004/) · [MITRE ATT&CK T1078](https://attack.mitre.org/techniques/T1078/) · [MITRE ATT&CK T1078.001](https://attack.mitre.org/techniques/T1078/001/) · [MITRE ATT&CK T1078.004](https://attack.mitre.org/techniques/T1078/004/) · [MITRE ATT&CK T1080](https://attack.mitre.org/techniques/T1080/) · [MITRE ATT&CK T1091](https://attack.mitre.org/techniques/T1091/) · [MITRE ATT&CK T1098](https://attack.mitre.org/techniques/T1098/) · [MITRE ATT&CK T1098.004](https://attack.mitre.org/techniques/T1098/004/) · [MITRE ATT&CK T1098.006](https://attack.mitre.org/techniques/T1098/006/) · [MITRE ATT&CK T1105](https://attack.mitre.org/techniques/T1105/) · [MITRE ATT&CK T1110](https://attack.mitre.org/techniques/T1110/) · [MITRE ATT&CK T1110.001](https://attack.mitre.org/techniques/T1110/001/) · [MITRE ATT&CK T1110.002](https://attack.mitre.org/techniques/T1110/002/) · [MITRE ATT&CK T1110.003](https://attack.mitre.org/techniques/T1110/003/) · [MITRE ATT&CK T1110.004](https://attack.mitre.org/techniques/T1110/004/) · [MITRE ATT&CK T1111](https://attack.mitre.org/techniques/T1111/) · [MITRE ATT&CK T1114](https://attack.mitre.org/techniques/T1114/) · [MITRE ATT&CK T1123](https://attack.mitre.org/techniques/T1123/) · [MITRE ATT&CK T1125](https://attack.mitre.org/techniques/T1125/) · [MITRE ATT&CK T1133](https://attack.mitre.org/techniques/T1133/) · [MITRE ATT&CK T1190](https://attack.mitre.org/techniques/T1190/) · [MITRE ATT&CK T1195.001](https://attack.mitre.org/techniques/T1195/001/) · [MITRE ATT&CK T1195.002](https://attack.mitre.org/techniques/T1195/002/) · [MITRE ATT&CK T1199](https://attack.mitre.org/techniques/T1199/) · [MITRE ATT&CK T1200](https://attack.mitre.org/techniques/T1200/) · [MITRE ATT&CK T1204.002](https://attack.mitre.org/techniques/T1204/002/) · [MITRE ATT&CK T1210](https://attack.mitre.org/techniques/T1210/) · [MITRE ATT&CK T1213](https://attack.mitre.org/techniques/T1213/) · [MITRE ATT&CK T1409](https://attack.mitre.org/techniques/T1409/) · [MITRE ATT&CK T1430](https://attack.mitre.org/techniques/T1430/) · [MITRE ATT&CK T1474](https://attack.mitre.org/techniques/T1474/) · [MITRE ATT&CK T1486](https://attack.mitre.org/techniques/T1486/) · [MITRE ATT&CK T1490](https://attack.mitre.org/techniques/T1490/) · [MITRE ATT&CK T1496](https://attack.mitre.org/techniques/T1496/) · [MITRE ATT&CK T1498](https://attack.mitre.org/techniques/T1498/) · [MITRE ATT&CK T1499](https://attack.mitre.org/techniques/T1499/) · [MITRE ATT&CK T1499.003](https://attack.mitre.org/techniques/T1499/003/) · [MITRE ATT&CK T1499.004](https://attack.mitre.org/techniques/T1499/004/) · [MITRE ATT&CK T1505.003](https://attack.mitre.org/techniques/T1505/003/) · [MITRE ATT&CK T1513](https://attack.mitre.org/techniques/T1513/) · [MITRE ATT&CK T1525](https://attack.mitre.org/techniques/T1525/) · [MITRE ATT&CK T1528](https://attack.mitre.org/techniques/T1528/) · [MITRE ATT&CK T1530](https://attack.mitre.org/techniques/T1530/) · [MITRE ATT&CK T1539](https://attack.mitre.org/techniques/T1539/) · [MITRE ATT&CK T1542.001](https://attack.mitre.org/techniques/T1542/001/) · [MITRE ATT&CK T1542.003](https://attack.mitre.org/techniques/T1542/003/) · [MITRE ATT&CK T1550.001](https://attack.mitre.org/techniques/T1550/001/) · [MITRE ATT&CK T1550.004](https://attack.mitre.org/techniques/T1550/004/) · [MITRE ATT&CK T1552](https://attack.mitre.org/techniques/T1552/) · [MITRE ATT&CK T1552.001](https://attack.mitre.org/techniques/T1552/001/) · [MITRE ATT&CK T1552.004](https://attack.mitre.org/techniques/T1552/004/) · [MITRE ATT&CK T1552.005](https://attack.mitre.org/techniques/T1552/005/) · [MITRE ATT&CK T1552.007](https://attack.mitre.org/techniques/T1552/007/) · [MITRE ATT&CK T1555.006](https://attack.mitre.org/techniques/T1555/006/) · [MITRE ATT&CK T1557](https://attack.mitre.org/techniques/T1557/) · [MITRE ATT&CK T1565.001](https://attack.mitre.org/techniques/T1565/001/) · [MITRE ATT&CK T1566](https://attack.mitre.org/techniques/T1566/) · [MITRE ATT&CK T1566.002](https://attack.mitre.org/techniques/T1566/002/) · [MITRE ATT&CK T1566.003](https://attack.mitre.org/techniques/T1566/003/) · [MITRE ATT&CK T1577](https://attack.mitre.org/techniques/T1577/) · [MITRE ATT&CK T1584.001](https://attack.mitre.org/techniques/T1584/001/) · [MITRE ATT&CK T1589](https://attack.mitre.org/techniques/T1589/) · [MITRE ATT&CK T1598](https://attack.mitre.org/techniques/T1598/) · [MITRE ATT&CK T1601.002](https://attack.mitre.org/techniques/T1601/002/) · [MITRE ATT&CK T1606](https://attack.mitre.org/techniques/T1606/) · [MITRE ATT&CK T1606.002](https://attack.mitre.org/techniques/T1606/002/) · [MITRE ATT&CK T1609](https://attack.mitre.org/techniques/T1609/) · [MITRE ATT&CK T1610](https://attack.mitre.org/techniques/T1610/) · [MITRE ATT&CK T1611](https://attack.mitre.org/techniques/T1611/) · [MITRE ATT&CK T1617](https://attack.mitre.org/techniques/T1617/) · [MITRE ATT&CK T1635.001](https://attack.mitre.org/techniques/T1635/001/) · [MITRE ATT&CK T1638](https://attack.mitre.org/techniques/T1638/) · [MITRE ATT&CK T1657](https://attack.mitre.org/techniques/T1657/) · [MITRE ATT&CK T1677](https://attack.mitre.org/techniques/T1677/) · [MITRE ATT&CK T1684.001](https://attack.mitre.org/techniques/T1684/001/) · [MITRE ATT&CK T1684.002](https://attack.mitre.org/techniques/T1684/002/) · [MITRE ATT&CK T1685](https://attack.mitre.org/techniques/T1685/) · [MITRE ATT&CK T1685.002](https://attack.mitre.org/techniques/T1685/002/) · [MITRE ATT&CK T1689](https://attack.mitre.org/techniques/T1689/) · [MITRE ATT&CK T1692.001](https://attack.mitre.org/techniques/T1692/001/) · [MITRE ATT&CK T1693.001](https://attack.mitre.org/techniques/T1693/001/) · [MITRE ATT&CK T1693.002](https://attack.mitre.org/techniques/T1693/002/) · [MITRE ATT&CK T1694.001](https://attack.mitre.org/techniques/T1694/001/) · [MITRE ATT&CK T1698](https://attack.mitre.org/techniques/T1698/) · [MITRE ATT&CK T1699](https://attack.mitre.org/techniques/T1699/) · [MITRE ATT&CK TA0010](https://attack.mitre.org/tactics/TA0010/)
 - Modeller för utformning och utvärdering av utbildning (ADDIE, Kirkpatrick): 9 krav, 5 testfall
   - [Kirkpatrick four-level training evaluation model](https://www.kirkpatrickpartners.com/the-kirkpatrick-model/)
 - [Nielsens användbarhetsheuristiker](https://www.nngroup.com/articles/ten-usability-heuristics/): 28 krav, 25 testfall
 - [Oil and Gas Methane Partnership 2.0, rapporteringsramverk](https://ogmpartnership.org/) (OGMP 2.0): 1 krav, 1 testfall
 - [OpenSSF Scorecard](https://scorecard.dev/): 3 krav, 3 testfall
-- [OWASP API Security Top 10](https://owasp.org/API-Security/editions/2023/en/0x11-t10/) (OWASP API Top 10): 13 krav, 13 testfall
+- [OWASP API Security Top 10](https://owasp.org/API-Security/editions/2023/en/0x11-t10/) (OWASP API Top 10): 13 krav, 13 testfall, 4 risker
 - [OWASP Mobile Application Security Testing Guide (MASTG, testguide för mobilappar)](https://mas.owasp.org/MASTG/) (OWASP MASTG): 0 krav, 1 testfall
 - [OWASP Software Assurance Maturity Model (SAMM)](https://owaspsamm.org/) (OWASP SAMM): 3 krav, 3 testfall
-- [OWASP Top 10 CI/CD Security Risks (säkerhetsrisker i CI/CD)](https://owasp.org/www-project-top-10-ci-cd-security-risks/): 4 krav, 4 testfall
-- [OWASP Top 10 för LLM-applikationer](https://genai.owasp.org/llm-top-10/) (OWASP LLM Top 10): 14 krav, 12 testfall
-- [OWASP Top 10, de största säkerhetsriskerna för webbapplikationer](https://owasp.org/Top10/): 36 krav, 37 testfall
+- [OWASP Top 10 CI/CD Security Risks (säkerhetsrisker i CI/CD)](https://owasp.org/www-project-top-10-ci-cd-security-risks/): 4 krav, 4 testfall, 1 risk
+- [OWASP Top 10 för LLM-applikationer](https://genai.owasp.org/llm-top-10/) (OWASP LLM Top 10): 14 krav, 12 testfall, 6 risker
+- [OWASP Top 10, de största säkerhetsriskerna för webbapplikationer](https://owasp.org/Top10/): 36 krav, 37 testfall, 18 risker
 - [PMBOK Guide (Project Management Institute)](https://www.pmi.org/standards/pmbok): 6 krav, 6 testfall
-- [PRINCE2, projektstyrningsmetod](https://www.axelos.com/certifications/propath/prince2-project-management): 14 krav, 12 testfall
+- [PRINCE2, projektstyrningsmetod](https://www.axelos.com/certifications/propath/prince2-project-management): 14 krav, 12 testfall, 1 risk
 - RACI-matris för ansvarsfördelning: 1 krav, 1 testfall
 - [REUSE-specifikationen (licens- och upphovsrättsinformation)](https://reuse.software/spec-3.2/): 1 krav, 1 testfall
-- [Scaled Agile Framework (SAFe), ramverk för skalad agilitet](https://framework.scaledagile.com/): 2 krav, 1 testfall
-- [Scrumguiden (Schwaber och Sutherland)](https://scrumguides.org/scrum-guide.html) (Scrum Guide): 6 krav, 4 testfall
+- [Scaled Agile Framework (SAFe), ramverk för skalad agilitet](https://framework.scaledagile.com/): 2 krav, 1 testfall, 1 risk
+- [Scrumguiden (Schwaber och Sutherland)](https://scrumguides.org/scrum-guide.html) (Scrum Guide): 6 krav, 4 testfall, 1 risk
 - [SLSA, nivåer för säkerhet i programvarans leveranskedja](https://slsa.dev/spec/v1.0/): 7 krav, 7 testfall
 - System Usability Scale (SUS): 1 krav, 1 testfall
 - [The Twelve-Factor App](https://12factor.net/): 20 krav, 20 testfall
@@ -4234,7 +4879,7 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 #### Bästa praxis och ramverk: USA
 
 - [FEMA Incident Command System](https://training.fema.gov/emiweb/is/icsresource/) (ICS): 1 krav, 1 testfall
-- [NIST SP 800-218 Ramverk för säker programvaruutveckling (SSDF)](https://doi.org/10.6028/NIST.SP.800-218) (NIST SSDF): 24 krav, 21 testfall
+- [NIST SP 800-218 Ramverk för säker programvaruutveckling (SSDF)](https://doi.org/10.6028/NIST.SP.800-218) (NIST SSDF): 24 krav, 21 testfall, 3 risker
 - [NIST:s ramverk för AI-riskhantering och profilen för generativ AI](https://www.nist.gov/itl/ai-risk-management-framework) (NIST AI RMF): 26 krav, 22 testfall
   - [NIST AI RMF 1.0](https://doi.org/10.6028/NIST.AI.100-1) · [NIST AI 600-1](https://doi.org/10.6028/NIST.AI.600-1) · [NIST AI 100-2](https://doi.org/10.6028/NIST.AI.100-2e2025)
 
@@ -4242,12 +4887,12 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 
 #### Riktlinjer och vägledningar: Internationella
 
-- [ASHRAE TC 9.9 Termiska riktlinjer för datormiljöer](https://tc0909.ashraetcs.org/): 2 krav, 2 testfall
+- [ASHRAE TC 9.9 Termiska riktlinjer för datormiljöer](https://tc0909.ashraetcs.org/): 2 krav, 2 testfall, 1 risk
 - [CERT/CC:s vägledning om samordnat offentliggörande av sårbarheter](https://certcc.github.io/CERT-Guide-to-CVD/): 3 krav, 3 testfall
 - [DNV-RP-G108 Cybersäkerhet inom olje- och gasindustrin](https://www.dnv.com/cybersecurity/recommended-practices/dnv-rp-g108-cyber-security-in-the-oil-and-gas-industry-based-on-IEC-62443.html): 1 krav, 1 testfall
 - [EEMUA 191 Vägledning för larmsystem](https://www.eemua.org/products/publications/digital/eemua-publication-191): 2 krav, 2 testfall
-- [FN:s rekommendationer om transport av farligt gods, handbok för provning och kriterier](https://unece.org/transport/dangerous-goods/un-manual-tests-and-criteria): 1 krav, 1 testfall
-- [GSMA:s specifikationer och riktlinjer (FS-, NG- och SGP-serierna, IoT Security Guidelines)](https://www.gsma.com/solutions-and-impact/technologies/security/cybersecurity-knowledge-base/interworking-security/): 5 krav, 4 testfall
+- [FN:s rekommendationer om transport av farligt gods, handbok för provning och kriterier](https://unece.org/transport/dangerous-goods/un-manual-tests-and-criteria): 1 krav, 1 testfall, 1 risk
+- [GSMA:s specifikationer och riktlinjer (FS-, NG- och SGP-serierna, IoT Security Guidelines)](https://www.gsma.com/solutions-and-impact/technologies/security/cybersecurity-knowledge-base/interworking-security/): 5 krav, 4 testfall, 1 risk
   - [GSMA SGP.32](https://www.gsma.com/solutions-and-impact/technologies/esim/gsma_resources/sgp-32-v1-3) · [GSMA IoT Security Guidelines](https://www.gsma.com/solutions-and-impact/technologies/internet-of-things/introduction-gsma-iot-security-guidelines-assessment/)
 - [IOGP-rapporter](https://idms.iogp.org/): 1 krav, 1 testfall
 - [OWASP Cheat Sheet Series och vägledningar](https://cheatsheetseries.owasp.org/) (OWASP Cheat Sheets): 71 krav, 67 testfall
@@ -4263,11 +4908,11 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 
 - [Blå guiden om genomförandet av EU:s produktregler (2022/C 247/01)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52022XC0629%2804%29) (Blue Guide): 2 krav, 2 testfall
 - [CEN/TR 16355 Rekommendationer för att förhindra tillväxt av legionella i dricksvatteninstallationer i byggnader](https://www.din.de/en/wdc-beuth:din21:154167737): 1 krav, 1 testfall
-- [EU:s riktlinjer för god tillverkningssed (EudraLex volym 4)](https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en) (EU GMP): 18 krav, 18 testfall
+- [EU:s riktlinjer för god tillverkningssed (EudraLex volym 4)](https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en) (EU GMP): 18 krav, 18 testfall, 1 risk
 - [NIS-samarbetsgruppen: samordnad färdplan för övergången till postkvantkryptografi (v1.1, 2025)](https://digital-strategy.ec.europa.eu/en/library/coordinated-implementation-roadmap-transition-post-quantum-cryptography): 3 krav, 2 testfall
 - [Riktlinjer från EDPB och artikel 29-gruppen](https://www.edpb.europa.eu/documents_en): 16 krav, 16 testfall
   - [EDPB Guidelines 9/2022](https://www.edpb.europa.eu/documents/guideline/guidelines-92022-on-personal-data-breach-notification-under-gdpr_en)
-- [Vägledningar från ENISA](https://www.enisa.europa.eu/publications): 3 krav, 3 testfall
+- [Vägledningar från ENISA](https://www.enisa.europa.eu/publications): 3 krav, 3 testfall, 8 risker
 - [Vägledningar från samordningsgruppen för medicintekniska produkter (MDCG)](https://health.ec.europa.eu/medical-devices-sector/new-regulations/guidance-mdcg-endorsed-documents-and-other-guidance_en): 1 krav, 1 testfall
 
 #### Riktlinjer och vägledningar: Storbritannien
@@ -4278,19 +4923,19 @@ Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravn
 
 - [CISA:s vägledningar och kataloger (KEV, VEX)](https://www.cisa.gov/known-exploited-vulnerabilities-catalog): 9 krav, 9 testfall
   - [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) · [CISA Minimum Requirements for VEX](https://www.cisa.gov/resources-tools/resources/minimum-requirements-vulnerability-exploitability-exchange-vex)
-- [NIST IR 8547 Övergång till standarder för postkvantkryptografi](https://doi.org/10.6028/NIST.IR.8547): 5 krav, 4 testfall
-- [NIST SP 800-190 Säkerhet för applikationscontainrar](https://doi.org/10.6028/NIST.SP.800-190): 15 krav, 15 testfall
+- [NIST IR 8547 Övergång till standarder för postkvantkryptografi](https://doi.org/10.6028/NIST.IR.8547): 5 krav, 4 testfall, 1 risk
+- [NIST SP 800-190 Säkerhet för applikationscontainrar](https://doi.org/10.6028/NIST.SP.800-190): 15 krav, 15 testfall, 2 risker
 - [NIST SP 800-204D Säkerhet i leveranskedjan för programvara i CI/CD-pipelines för DevSecOps](https://csrc.nist.gov/pubs/sp/800/204/d/final): 3 krav, 3 testfall
-- [NIST SP 800-207 Nollförtroendearkitektur](https://doi.org/10.6028/NIST.SP.800-207): 17 krav, 17 testfall
+- [NIST SP 800-207 Nollförtroendearkitektur](https://doi.org/10.6028/NIST.SP.800-207): 17 krav, 17 testfall, 3 risker
 - [NIST SP 800-209 Säkerhetsriktlinjer för lagringsinfrastruktur](https://doi.org/10.6028/NIST.SP.800-209): 1 krav, 1 testfall
 - [NIST SP 800-34 Vägledning för kontinuitetsplanering](https://doi.org/10.6028/NIST.SP.800-34r1): 2 krav, 2 testfall
-- [NIST SP 800-61 Vägledning för hantering av säkerhetsincidenter](https://doi.org/10.6028/NIST.SP.800-61r2): 9 krav, 9 testfall
-- [NIST SP 800-63-4 Riktlinjer för digital identitet (63A-4, 63B-4)](https://pages.nist.gov/800-63-4/): 27 krav, 27 testfall
+- [NIST SP 800-61 Vägledning för hantering av säkerhetsincidenter](https://doi.org/10.6028/NIST.SP.800-61r2): 9 krav, 9 testfall, 1 risk
+- [NIST SP 800-63-4 Riktlinjer för digital identitet (63A-4, 63B-4)](https://pages.nist.gov/800-63-4/): 27 krav, 27 testfall, 1 risk
   - [NIST SP 800-63A-4](https://doi.org/10.6028/NIST.SP.800-63A-4) · [NIST SP 800-63B-4](https://doi.org/10.6028/NIST.SP.800-63B-4)
 - [NIST SP 800-63C Riktlinjer för digital identitet: federation och intyg](https://pages.nist.gov/800-63-4/sp800-63c.html): 1 krav, 1 testfall
 - [NIST SP 800-82 Vägledning för säkerhet i driftteknik (OT)](https://doi.org/10.6028/NIST.SP.800-82r3): 7 krav, 6 testfall
 - [NIST SP 800-84 Program för test, utbildning och övning](https://doi.org/10.6028/NIST.SP.800-84): 1 krav, 3 testfall
-- [NIST SP 800-88 Riktlinjer för sanering av lagringsmedia](https://doi.org/10.6028/NIST.SP.800-88r2): 5 krav, 5 testfall
+- [NIST SP 800-88 Riktlinjer för sanering av lagringsmedia](https://doi.org/10.6028/NIST.SP.800-88r2): 5 krav, 5 testfall, 1 risk
 - [NIST-vägledning för system- och plattformssäkerhet (SP 800-160, 800-193, 800-90B)](https://doi.org/10.6028/NIST.SP.800-160v1r1): 7 krav, 6 testfall
   - [NIST SP 800-160 Vol. 1 Rev. 1](https://doi.org/10.6028/NIST.SP.800-160v1r1) · [NIST SP 800-193](https://doi.org/10.6028/NIST.SP.800-193) · [NIST SP 800-90B](https://doi.org/10.6028/NIST.SP.800-90B)
 - [NTIA:s minimikrav för en programvaruförteckning (SBOM)](https://www.ntia.gov/report/2021/minimum-elements-software-bill-materials-sbom) (NTIA SBOM): 1 krav, 1 testfall

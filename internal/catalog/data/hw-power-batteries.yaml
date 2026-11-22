@@ -736,3 +736,50 @@ tests:
           data: laddning med produktens profil, urladdning med 0,5 C
         - action: Mät kapaciteten efter den sista cykeln.
           expected: Varje batteri har 80 % eller mer av märkkapaciteten.
+
+risks:
+  - id: HWPWR-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [lithium, thermal-runaway, fire]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62133-2:2017 (safety of portable sealed secondary lithium cells and batteries)"]
+    mitigated_by: [HWPWR-08, HWPWR-10, HWPWR-11, HWPWR-14]
+    en:
+      title: Battery fire from thermal runaway
+      description: A lithium cell is overcharged, charged out of its temperature range or damaged and goes into thermal runaway. The fire spreads to the other cells and the surroundings.
+      mitigation: Use cells and packs certified to IEC 62133-2, charge only within the cell temperature range, add an independent second level of overcharge protection and design the pack so that one cell in runaway does not spread fire.
+    sv:
+      title: Batteribrand till följd av termisk rusning
+      description: En litiumcell överladdas, laddas utanför sitt temperaturområde eller skadas och går in i termisk rusning. Branden sprids till de andra cellerna och till omgivningen.
+      mitigation: Använd celler och batteripaket certifierade enligt IEC 62133-2, ladda bara inom cellens temperaturområde, inför en oberoende andra nivå av överladdningsskydd och konstruera paketet så att en cell i termisk rusning inte sprider brand.
+  - id: HWPWR-R02
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [power-supply, brown-out]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62368-1:2023"]
+    mitigated_by: [HWPWR-01, HWPWR-02, HWPWR-03, HWPWR-05, HWDES-16]
+    en:
+      title: Device misbehaves on a weak or disturbed supply
+      description: Supply voltage drops, short circuits or peak loads cause resets, corrupt memory or damaged outputs. The device stops or loses data in the field.
+      mitigation: Keep a power budget with 20 % margin, operate over the full input range, warn before supply rails drop, protect outputs against short circuit and behave cleanly during voltage dips.
+    sv:
+      title: Enheten beter sig felaktigt vid svag eller störd matning
+      description: Spänningsfall, kortslutningar eller lasttoppar orsakar omstarter, korrupt minne eller skadade utgångar. Enheten stannar eller förlorar data i fält.
+      mitigation: Håll en effektbudget med 20 % marginal, fungera över hela matningsområdet, varna innan matningsspänningarna faller, skydda utgångar mot kortslutning och bete dig korrekt vid spänningsdippar.
+  - id: HWPWR-R03
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [transport, batteries-regulation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "UN Manual of Tests and Criteria §38.3 (lithium metal and lithium ion batteries)", "Regulation (EU) 2023/1542 (Batteries Regulation) Art. 13(1) (label with the general information of Annex VI Part A)"]
+    mitigated_by: [HWPWR-09, HWPWR-12, HWPWR-13]
+    en:
+      title: Battery products cannot be shipped or sold
+      description: A UN 38.3 test summary or the label required by the Batteries Regulation is missing. Shipments are refused by carriers or the products are stopped on the market.
+      mitigation: Provide a UN 38.3 test summary for each shipped lithium battery, label batteries as the Batteries Regulation requires and make the state of health readable.
+    sv:
+      title: Batteriprodukter kan inte skickas eller säljas
+      description: En sammanfattning av UN 38.3-provningen eller den märkning som batteriförordningen kräver saknas. Transportörer vägrar ta emot försändelserna eller produkterna stoppas på marknaden.
+      mitigation: Ta fram en sammanfattning av UN 38.3-provningen för varje litiumbatteri som skickas, märk batterierna som batteriförordningen kräver och gör hälsotillståndet läsbart.

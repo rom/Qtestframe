@@ -19,7 +19,7 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import QueryInput from './QueryInput.vue'
 import ConsistencyViolation from './ConsistencyViolation.vue'
-import { builtinScope, isBuiltin } from '@/lib/consistency'
+import { builtinScope, isBuiltin, THRESHOLD_DEFAULTS } from '@/lib/consistency'
 import HelpTip from '@/guide/HelpTip.vue'
 import { api, ApiError } from '@/lib/api'
 import { P } from '@/lib/permissions'
@@ -350,10 +350,10 @@ function remove(r: TraceRule) {
           <span class="row small nowrap"><ToggleSwitch v-model="form.enabled" input-id="tr-enabled" /><label for="tr-enabled">{{ t('traceRules.enabled') }}</label></span>
         </div>
         <div v-if="builtinForm" class="field full small muted">{{ t(`consistency.check.${form.kind}.description`) }}</div>
-        <div v-if="builtinForm && form.kind === 'duplicate_suspect'" v-field class="field">
-          <label for="tr-threshold">{{ t('consistency.threshold') }}</label>
+        <div v-if="builtinForm && form.kind in THRESHOLD_DEFAULTS" v-field class="field">
+          <label for="tr-threshold">{{ form.kind === 'potential_conflict' ? t('consistency.confidence') : t('consistency.threshold') }}</label>
           <InputNumber v-model="form.threshold" input-id="tr-threshold" :min="0.5" :max="1" :step="0.05" :min-fraction-digits="2" :max-fraction-digits="2" show-buttons aria-describedby="tr-threshold-h" />
-          <small id="tr-threshold-h" class="muted">{{ t('consistency.thresholdHint') }}</small>
+          <small id="tr-threshold-h" class="muted">{{ form.kind === 'potential_conflict' ? t('consistency.confidenceHint') : t('consistency.thresholdHint') }}</small>
         </div>
         <div v-if="builtinForm && form.kind === 'unmitigated_risk'" v-field class="field">
           <label for="tr-level">{{ t('consistency.level') }}</label>

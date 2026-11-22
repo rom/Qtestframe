@@ -7,7 +7,8 @@ import ColumnsMenu from '@/components/ColumnsMenu.vue'
 import { useColumnLayout, type ColumnDef } from '@/composables/columns'
 import MentionInput from '@/components/MentionInput.vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import DiscussionPanel from '@/components/DiscussionPanel.vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -80,7 +81,10 @@ const composed = computed(() => and(q.value, anyOf('status', statusFilter.value)
 const canWrite = computed(() => auth.can(P.runWrite))
 const linkCount = ref<number | null>(null)
 const canExecute = computed(() => auth.can(P.runExecute))
-const tab = ref('executions')
+const route = useRoute()
+const tab = ref(route.query.tab === 'discussion' ? 'discussion' : 'executions')
+// unresolved threads of the run's discussion (badge of its tab)
+const openDiscussions = ref(0)
 const attachmentCount = ref<number | null>(null)
 const tabsId = 'run-tabs'
 const panel = (v: string) => ({ role: 'tabpanel', id: `${tabsId}_tabpanel_${v}`, 'aria-labelledby': `${tabsId}_tab_${v}` })
@@ -484,8 +488,12 @@ async function copySnippet(text: string = ciSnippet.value) {
         <Tab value="executions"><i class="pi pi-list" aria-hidden="true" /> {{ t('common.executions') }} <span class="count">{{ executions.length }}</span></Tab>
         <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
         <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
+        <Tab value="discussion"><i class="pi pi-comments" aria-hidden="true" /> {{ t('discussions.tab') }} <span v-if="openDiscussions" class="count" :title="t('discussions.openBadge', { n: openDiscussions }, openDiscussions)">{{ openDiscussions }}</span><span v-if="openDiscussions" class="sr-only">{{ t('discussions.openBadge', { n: openDiscussions }, openDiscussions) }}</span></Tab>
       </TabList>
     </Tabs>
+    <div v-show="tab === 'discussion'" v-bind="panel('discussion')" class="card">
+      <DiscussionPanel entity="run" :entity-id="runId" :project-id="proj.pid" @open="(n) => (openDiscussions = n)" />
+    </div>
     <div v-if="tab === 'links'" v-bind="panel('links')" class="card">
       <ItemLinksPanel item-type="run" :item-id="runId" :project-id="proj.pid" :can-write="canWrite" @count="(n) => (linkCount = n)" />
     </div>

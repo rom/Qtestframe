@@ -15,11 +15,12 @@ The people who *use* Qtestframe – including organisation administrators who ma
 7. [Runtime system settings](#runtime-system-settings) – what super administrators can change in the web client, and what needs a restart.
 8. [Security](#security) – TLS, hardening with Landlock and seccomp, encryption of stored secrets and the key providers, key rotation, disaster recovery, the audit log, security headers.
 9. [E-mail, webhooks and integrations](#e-mail-webhooks-and-integrations) – SMTP, notifications, webhooks, Jira, GitHub and GitLab, the script and web test runner.
-10. [Logging and monitoring](#logging-and-monitoring) – log formats, syslog, health endpoints.
-11. [Backup, restore and migration](#backup-restore-and-migration) – what a backup contains, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
-12. [Operations runbook](#operations-runbook) – routine tasks, capacity, troubleshooting, log messages.
-13. [Command line reference](#command-line-reference) – every `qtestframe` command and flag.
-14. [Features added later](#features-added-later) – administration notes of newer features.
+10. [Connecting other tools](#connecting-other-tools-oslc-and-reqif) – OSLC connections with IBM DOORS Next and ETM, Polarion and Codebeamer, dialogs in frames, ReqIF.
+11. [Logging and monitoring](#logging-and-monitoring) – log formats, syslog, health endpoints.
+12. [Backup, restore and migration](#backup-restore-and-migration) – what a backup contains, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
+13. [Operations runbook](#operations-runbook) – routine tasks, capacity, troubleshooting, log messages.
+14. [Command line reference](#command-line-reference) – every `qtestframe` command and flag.
+15. [Features added later](#features-added-later) – administration notes of newer features.
 
 ## Conventions
 
@@ -337,6 +338,7 @@ Every key of the file, its type, its default and the environment variable that s
 | `server.write_timeout` | duration | `2m` | — | Longest time to write a response (downloads, exports, backups in the web client). Keep it above `runner.timeout`. |
 | `server.trusted_proxies` | list | — | — | Addresses or CIDR ranges of reverse proxies. Only for requests from them is `X-Forwarded-For` used as the client address (its last entry), for logs, the audit trail and the sign-in limits. |
 | `server.hsts` | bool | `true` | — | Send `Strict-Transport-Security` (two years, subdomains included) on HTTPS connections the server terminates itself. A TLS-terminating proxy must send it instead. |
+| `server.frame_ancestors` | list | — | — | Origins (`https://doors.example.com`) of other tools that may show the OSLC selection and creation dialogs in a frame (`Content-Security-Policy: frame-ancestors`). Without any the dialogs open in a window of their own. The browser must also send the session cookie to the frame: both tools on the same site (subdomains of one domain). |
 
 ### `database`
 
@@ -521,6 +523,16 @@ Every key of the file, its type, its default and the environment variable that s
 | `secrets.pkcs11.pin_file` | string | — | — | File with the user PIN (relative: in `$CREDENTIALS_DIRECTORY`). `QTF_SECRETS_PKCS11_PIN` wins over it. |
 | `secrets.pkcs11.key_label` | string | `qtestframe-kek` | — | `CKA_LABEL` of the AES key that wraps the data keys; must be unique in the token. |
 | `secrets.pkcs11.generate_key` | bool | `false` | — | Create a non-extractable AES-256 key with `key_label` when the token has none. |
+
+### `similarity`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `similarity.embeddings.enabled` | bool | `false` | — | Use an embeddings service for the similarity of requirements and tests (suspected duplicates, the *Similar requirements* panel). Off by default: the similarity is then computed on the server. **When on, the title, description and criteria or steps of the items are sent to that service.** Also in **Administration → System settings**. |
+| `similarity.embeddings.url` | string | — | — | URL of an OpenAI-compatible embeddings endpoint, e.g. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, answer `{data: [{embedding}]}`). |
+| `similarity.embeddings.model` | string | — | — | Model sent as `model` (empty: the service's default). Vectors are cached per item version and model; changing the model computes them again. |
+| `similarity.embeddings.api_key_file` | string | — | — | File with the API key, sent as a bearer token (relative: in `$CREDENTIALS_DIRECTORY`). The key can also be stored in the system settings; it is never shown again. |
+| `similarity.embeddings.timeout` | duration | `30s` | — | Longest time to wait for the service. When it fails or times out, the local similarity is used. |
 
 <!-- END GENERATED: config-reference -->
 
@@ -826,7 +838,9 @@ These are the permissions of the built-in roles until an organisation changes th
 | `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `run.write` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  | ✔ | ✔ | ✔ | ✔ |
+| `cycle.plan` |  |  |  | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  | ✔ | ✔ | ✔ |
+| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `audit.read` |  |  |  | ✔ | ✔ | ✔ |
 | `token.manage` |  |  | ✔ | ✔ | ✔ | ✔ |
@@ -994,6 +1008,11 @@ The settings the page offers, generated from `internal/settings`:
 | Script and web test runner | `runner.web.trace` | `on_failure`, `always`, `off` | after a restart |
 | Script and web test runner | `runner.web.video` | `off`, `on_failure`, `always` | after a restart |
 | Script and web test runner | `runner.web.playwright_dir` | text | shown only (file) |
+| Similarity (duplicates) | `similarity.embeddings.enabled` | on/off | at once |
+| Similarity (duplicates) | `similarity.embeddings.url` | text | at once |
+| Similarity (duplicates) | `similarity.embeddings.model` | text | at once |
+| Similarity (duplicates) | `similarity.embeddings.api_key` | secret (write-only) | at once |
+| Similarity (duplicates) | `similarity.embeddings.timeout` | 1s–5m | at once |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1006,6 +1025,24 @@ What each key means is in the [configuration reference](#reference). Everything 
 - **Syslog over TLS** uses `ca_file`, `cert_file` and `key_file` from the file; they are readable after the lock-down because they are added to the Landlock read-only paths at start-up. A Unix socket that was not configured at start-up may be refused by Landlock; use `udp`, `tcp` or `tls`, or restart.
 - **Secrets** entered on the page (the SMTP password, OIDC client secrets) are write-only, stored [encrypted](#encryption-of-stored-secrets), never logged and never shown again.
 - **Test buttons** (*Test connection* for OIDC discovery, *Send test message* for syslog, *Send test e-mail*) make the server connect to an address the super administrator enters. Filter the server's egress if it can reach internal services.
+
+## Embeddings service for similar items
+
+Suspected duplicate requirements and tests, the *Similar requirements* panel of the editors and the catalogue import warning compare items on the server by default: TF-IDF over the project with stemming, stop words and synonyms for English and Swedish (see the user guide, *Duplicates and conflicts*). Nothing is sent anywhere.
+
+Optionally, an **OpenAI-compatible embeddings endpoint** computes the similarity instead: **Administration → System settings → Similarity (duplicates)**, or `similarity.embeddings` in the [configuration file](#reference).
+
+| Setting | Meaning |
+|---|---|
+| `similarity.embeddings.enabled` | off by default |
+| `similarity.embeddings.url` | the endpoint, e.g. `https://llm.example.com/v1/embeddings`; it receives `POST {"model": …, "input": [texts]}` and answers `{"data": [{"index": i, "embedding": [numbers]}]}` |
+| `similarity.embeddings.model` | sent as `model` (empty: the service's default) |
+| `similarity.embeddings.api_key` | sent as `Authorization: Bearer …`; write-only, stored [encrypted](#encryption-of-stored-secrets); in the file only as `api_key_file` |
+| `similarity.embeddings.timeout` | longest wait (default 30 s) |
+
+**Privacy.** When it is on, the **title, description and acceptance criteria of requirements and the title, description, preconditions and steps of tests are sent to that service**, of every project of every organisation on the server, whenever the similarity checks run or someone types in an editor (the text being written is sent too). Use a service run by your organisation or one you have an agreement with; leave it off otherwise.
+
+The vectors are stored in the table `similarity_embeddings` per item, model and text (a changed item is sent again, an unchanged one is not). It is a cache: it is not part of backups or project archives and is filled again after a restore. Changing the model computes every vector again. **Test the service** on the page sends one short example sentence and reports the vector size. When the service fails or times out, the server logs a warning and uses the local similarity, so the checks never stop working. The conflict detection (opposite obligations, thresholds, exclusive values) always runs on the server. The thresholds of the checks apply to the service's cosine similarity as well; services differ, so check the suspected duplicates after turning it on and adjust the threshold of the duplicate checks if needed.
 
 ## Audit and export
 
@@ -1113,7 +1150,7 @@ The server must read some secrets back, so it cannot hash them. These are stored
 | webhook signing secrets | `webhooks.secret` |
 | defect tracker tokens (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | values of secret web test variables | `projects.web_tests` |
-| SMTP password and OIDC client secrets entered in the web client | `system_settings` |
+| SMTP password, OIDC client secrets and the key of the embeddings service entered in the web client | `system_settings` |
 
 Passwords (bcrypt), API and SCIM tokens, sessions, invitations, remembered devices and recovery codes are stored as hashes and need no key. Secrets of the configuration file, `*_file` options and `QTF_*` variables are never stored in the database.
 
@@ -1243,7 +1280,7 @@ Other limits: JSON bodies at most 8 MiB, headers 1 MiB, `ReadHeaderTimeout` 10 s
 
 ## Outgoing connections
 
-Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
+Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. When the optional [embeddings service](#embeddings-service-for-similar-items) is on, the server sends the text of requirements and tests to it. Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
 
 ## Checklist
 
@@ -1306,7 +1343,7 @@ Projects can send signed events to other systems. Users with `project.update` se
 | defect | `defect.created`, `defect.updated`, `defect.status`, `defect.assigned`, `defect.regression` |
 | risk | `risk.created`, `risk.updated` |
 | release | `release.created`, `release.updated`, `release.released` |
-| comment | `comment.created` |
+| comment | `comment.created`, `comment.mentioned`, `comment.resolved` |
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
@@ -1324,9 +1361,52 @@ Each delivery is a `POST` with a JSON body `{"id", "event", "project_id", "actor
 
 Receivers should verify the signature (compare in constant time) and ignore repeated `id`s. Deliveries are made after the change is committed, time out after 10 seconds, **never follow redirects** and are tried once; the status of the last delivery is shown with the webhook, and failures are logged (`webhook delivery`). The webhook secrets are stored encrypted. Loaded project archives contain no secrets and their webhooks are disabled.
 
+## Chat notifications
+
+Projects can post their events to chat channels: Slack, Microsoft Teams, Mattermost, Rocket.Chat, Google Chat, Matrix and Discord. Users with `project.update` set the channels up in the project settings (see the user guide, *Reviews and notifications*). Nothing needs to be configured on the server, but:
+
+- Set `server.base_url` (or the system setting): without it messages cannot link to the items.
+- The server must reach the chat tool over HTTPS (outbound proxy and firewall). Posts time out after 10 seconds and never follow redirects.
+- The webhook URL or the Matrix token of a channel is stored encrypted like the other secrets (`qtestframe secrets` re-encrypts it), is never returned by the API, written to the audit log or shown in an error, and is left out of project archives (a loaded channel is off until someone enters a new URL).
+
+**Events.** A channel offers the events of the central event registry (the same as the webhooks above), grouped for the settings. The list is derived from the registry: an event that a later version adds appears in the channel settings and in **All events** without any change to the chat code; its group is taken from the part of its name before the dot (unknown parts go to *Other*), its label from the event name unless a translation exists.
+
+<!-- BEGIN GENERATED: chat-events (make admin-guide-ref) -->
+
+| Group | Events |
+|---|---|
+| Test runs | `run.created` (Test run created), `run.updated` (Test run updated), `run.completed` (Test run completed), `execution.updated` (Test result recorded) |
+| Defects | `defect.created` (Defect reported), `defect.updated` (Defect updated), `defect.status` (Defect status changed), `defect.assigned` (Defect assigned), `defect.regression` (Regression detected) |
+| Requirements and tests | `requirement.created` (Requirement created), `requirement.updated` (Requirement updated), `test.created` (Test created), `test.updated` (Test updated), `comment.created` (New comment), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baseline signed) |
+| Reviews | `review.requested` (Review requested), `review.completed` (Review completed) |
+| Releases | `release.created` (Release created), `release.updated` (Release updated), `release.released` (Release released) |
+| Waivers | `waiver.requested` (Waiver requested), `waiver.approved` (Waiver approved), `waiver.rejected` (Waiver rejected), `waiver.revoked` (Waiver revoked) |
+| Risks | `risk.created` (Risk identified), `risk.updated` (Risk updated) |
+
+<!-- END GENERATED: chat-events -->
+
+**Delivery.** Every post is stored in a queue (table `chat_deliveries`) once the change is committed and sent at once in the background. A failed post is retried by the server's minute job with exponential backoff (1, 2, 4, 8 and 16 minutes, or the `Retry-After` of an HTTP 429, at most an hour), up to 6 attempts; an HTTP 4xx answer other than 408 and 429 (the chat tool refused the URL, token or message) is final. Several servers sharing one PostgreSQL database never post the same message twice (a post is claimed before it is sent). After 5 failed posts in a row the channel turns itself off; the project's administrators get an in-app notification (and an e-mail if they chose immediate e-mails), and the audit log has a `chat.disabled` entry. The last 50 posts of each channel are kept as its delivery log; the queue and the log are not part of a backup (the channels are). Digest channels collect their events and post them as one message every N minutes (1–1440).
+
+**Content.** Messages contain the event, the item key and title, the status, the priority, the person and a summary of at most a few hundred characters. They never contain secrets. In a project with restricted access, messages contain only the event, key, status and link unless an organisation administrator (`tenant.manage`) allows the channel the full content. Broadcast mentions (`@channel`, `@here`, `@all`, `@everyone`) in texts are defused.
+
+### Setting up each chat tool
+
+| Tool | What to create | What to enter in Qtestframe |
+|---|---|---|
+| Slack | A Slack app with **Incoming Webhooks** turned on; **Add New Webhook to Workspace** and choose the channel. Messages use Block Kit. | The webhook URL `https://hooks.slack.com/services/…` |
+| Microsoft Teams | In the channel: **Workflows** → template *Post to a channel when a webhook request is received* (Power Automate). Messages are Adaptive Cards 1.4. | The URL of the workflow's HTTP trigger |
+| Microsoft Teams (Office 365 connector) | The older **Incoming Webhook** connector of a channel (MessageCard format). Microsoft is retiring these connectors: use it only where Workflows are not available. | The connector URL |
+| Mattermost | **Integrations → Incoming Webhooks → Add Incoming Webhook**, choose the channel. Allow integrations to override the user name if the posts should show *Qtestframe*. | The URL `https://<server>/hooks/<id>` |
+| Rocket.Chat | **Administration → Workspace → Integrations → New → Incoming**: turn it on, choose the channel (`#qa`) and the user to post as; no script is needed. | The webhook URL shown after saving |
+| Google Chat | In the space: **Apps & integrations → Webhooks → Add webhook**. Messages are cards (cardsV2). | The webhook URL (it contains `key` and `token` parameters) |
+| Matrix | A bot account on the homeserver; invite it to the room and let it join. Get its access token (for example by signing in with it once through the client API). Messages are `m.notice` events with HTML. | The homeserver URL, the room ID (`!…:server`) or alias (`#…:server`) and the access token |
+| Discord | **Channel settings → Integrations → Webhooks → New Webhook**. Messages are embeds; mentions are turned off. | The webhook URL `https://discord.com/api/webhooks/…` |
+
+Use **Send test message** to check a channel; the delivery log shows the HTTP status and the error of each post (for example `HTTP 404: no_service` from Slack when the webhook was removed, `HTTP 401: M_UNKNOWN_TOKEN` from Matrix). Personal chat notifications (direct messages to one user) are not offered; users get those as in-app notifications and e-mails.
+
 ## Defect and issue trackers
 
-Projects can push defects and requirements to **Jira**, **GitHub** or **GitLab**, sync their status back and import issues. Users with `project.update` connect a project under its settings ([user guide](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/en/defects.md#connect-jira-github-or-gitlab)); pushing and syncing needs `run.execute`, issues from requirements `requirement.write`.
+Projects can push defects and requirements to **Jira**, **GitHub**, **GitLab** or **Request Tracker (RT)**, sync their status back and import issues. Users with `project.update` connect a project under its settings ([user guide](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/en/defects.md#connect-jira-github-or-gitlab)); pushing and syncing needs `run.execute`, issues from requirements `requirement.write`.
 
 | Tracker | URL | Credential | Smallest useful scope |
 |---|---|---|---|
@@ -1334,8 +1414,26 @@ Projects can push defects and requirements to **Jira**, **GitHub** or **GitLab**
 | Jira Server / Data Center | your Jira URL | personal access token (Bearer) | as above |
 | GitHub | default `https://api.github.com` (GitHub Enterprise: its API URL) | token (Bearer) | fine-grained token with *Issues: read and write* on the one repository |
 | GitLab | default `https://gitlab.com`, or a self-managed instance (HTTPS) | token in `PRIVATE-TOKEN` | project access token with the `api` scope and the Reporter role |
+| Request Tracker 5 | the RT base URL, e.g. `https://rt.example.com` (REST2 below `/REST/2.0`) | auth token in `Authorization: token …` | an RT user with *CreateTicket*, *ShowTicket*, *ModifyTicket* and *CommentOnTicket* in the queue |
 
 The token is entered once, stored encrypted, and never returned by the API (only *has token*); it is not part of a project archive. Requests honour `HTTPS_PROXY`/`NO_PROXY` and the system's CA certificates, have a timeout, and wait for the tracker's `Retry-After` when it is short. Pushes and syncs are audited (`defect.push`, `defect.sync`, `requirement.issue.*`).
+
+### Request Tracker
+
+RT needs the REST2 API, which is part of RT 5 (for RT 4.4 the extension *RT::Extension::REST2*). Create a dedicated RT user for Qtestframe, grant it the rights above in the queue (a group right on the queue is the simplest), sign in as that user and create a token under **Logged in as → Settings → Auth Tokens**. The project settings take the RT base URL, the **queue** (name or ID) and optionally the name of a custom field that receives labels (RT has no labels of its own). Check that a reverse proxy in front of RT passes the `Authorization` header to `/REST/2.0`. Status sync maps the default lifecycle (*new*, *open*, *stalled*, *resolved*, *rejected*, *deleted*); statuses of custom lifecycles are shown but do not change the defect. Sync is on demand (**Sync** / **Sync all**, or `POST /api/v1/projects/{pid}/defects/sync` from a scheduler), as for the other trackers: no inbound webhook is needed.
+
+## Requirement import from Jira and Azure DevOps
+
+Users with `requirement.write` import requirements from a Jira JQL query or an Azure DevOps WIQL query ([user guide](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/en/reports-and-export.md#jira-and-azure-devops)); the connections are set by users with `project.update` under **Project → Import sources** and stored in `projects.import_sources` (migration 0037).
+
+| Source | URL | Credential | Smallest useful scope |
+|---|---|---|---|
+| Jira Cloud | `https://<site>.atlassian.net` (or none: the project's Jira issue tracker is used) | user e-mail + API token (HTTP Basic) | *Browse projects* in the projects queried |
+| Jira Server / Data Center | your Jira URL | personal access token (Bearer) | as above |
+| Azure DevOps Services | `https://dev.azure.com/<organization>` and the project name | personal access token (HTTP Basic with an empty user name) | scope *Work Items (Read)*, organization limited to the one organization |
+| Azure DevOps Server | the collection URL, e.g. `https://tfs.example.com/tfs/DefaultCollection` | personal access token | as above |
+
+Jira is searched with `POST /rest/api/2/search/jql` (Jira Cloud) and, when that does not exist, `POST /rest/api/2/search` (Server and Data Center); Azure DevOps with the WIQL, fields and work items endpoints of REST API 7.1. At most 1,000 items are read per import. The import only reads; it is audited as `requirement.import`, the connection changes as `import_sources.update`. Tokens are encrypted with the server's secret keys (they are re-encrypted by key rotation), never returned, and left out of project archives. The import is reached through the server's outbound proxy (`HTTPS_PROXY`, `NO_PROXY`) like the trackers; allow the hosts above in a firewall.
 
 ## Script and web test runner
 
@@ -1402,6 +1500,116 @@ Web tests always run as **background jobs**; `max_parallel` of them run at a tim
 Projects set the base URL of the system under test and test variables under **Settings → Web tests**. Test variables reach every automated script as `QTF_VAR_<NAME>`; secret ones are stored encrypted and masked as `***` in stored output (not in screenshots or traces).
 
 The container image needs `--build-arg WITH_PLAYWRIGHT=true` and `QTF_RUNNER_ENABLED=true`, `QTF_RUNNER_WEB_ENABLED=true` (see [Installation](#in-a-container-docker-or-podman)).
+
+# Connecting other tools (OSLC and ReqIF)
+
+Qtestframe exchanges requirements and test cases with ALM and requirements tools in two ways (the user guide page *Interoperability* describes what users see):
+
+- **OSLC**, live: Qtestframe is an OSLC provider for Requirements Management 2.1 (requirements) and Quality Management 2.1 (test cases). Other tools discover it, query, create, change and delete items, link their own items to them, and show Qtestframe's selection and creation dialogs to their users.
+- **ReqIF files**, for whole specifications: export from one tool, import into the other, repeatedly. Nothing needs to be set up on the server.
+
+This chapter is about setting up OSLC connections with IBM Engineering Lifecycle Management (DOORS Next, Engineering Test Management), Siemens Polarion and PTC Codebeamer, and about what to check when one does not work.
+
+## What the server offers
+
+| Address | Use |
+|---|---|
+| `<base_url>/api/v1/oslc/rootservices` | Jazz-style discovery document (public, holds no data). IBM ELM and tools that use "friends" start here. |
+| `<base_url>/api/v1/oslc/catalog` | Service provider catalog: one service provider per project the account may read. |
+| `<base_url>/api/v1/oslc/projects/<project id>/catalog` | A catalog with one project only, for tools that connect one of their projects to one project here. |
+| `<base_url>/api/v1/oslc/projects/<project id>` | The service provider of a project: query capabilities, creation factories, selection and creation dialogs, resource shapes. |
+
+The project id is the one in the web address of the project (`/p/<id>/…`). Resources are served as RDF/XML (the OSLC default), Turtle or JSON-LD; request bodies are accepted in the same formats. The API reference (`docs/api.md`, section *OSLC*) lists every property, the link properties and the query syntax.
+
+## Before you connect a tool
+
+1. **Base URL.** Set `server.base_url` (or **Base URL** in *System settings*) to the address the other tool reaches Qtestframe at, for example `https://qtf.example.com`. Every OSLC resource address is built from it; behind a reverse proxy it must be the public address, not the internal one.
+2. **TLS.** Most ALM servers refuse plain HTTP and certificates they do not trust. Use a certificate of a CA the other tool's Java trust store knows (or add your CA to it).
+3. **A service account and an API token.** OSLC clients authenticate with an API token, either as `Authorization: Bearer <token>` or as the password of Basic authentication (any user name), on the OSLC paths only. OAuth 1.0a, which IBM ELM uses between Jazz applications, is not supported; use the Basic/token form in the other tool's "custom" or "basic" connection type. Create a user (for example `alm-connector@example.com`) and give it the role the connection needs:
+   - **Viewer** to let the tool read and link (the link is stored in the other tool; Qtestframe shows it there).
+   - A role with `requirement.write` and/or `test.write` to let the tool create and change items, and `test.write` to change trace links (*validatedBy* / *validatesRequirement*).
+   Sign in as that user, create the token under **Administration → API tokens** with the role the connection needs (a token can have a lower role than its account, never a higher one) and give it to the administrator of the other tool. Restricted projects are only visible when the account is a member.
+4. **Dialogs in a frame** (optional). The selection and creation dialogs open in a window of their own, which works everywhere. Tools that show them inside their own page (an iframe) need two things:
+   - the tool's origin in `server.frame_ancestors`, for example
+     ```yaml
+     server:
+       base_url: https://qtf.example.com
+       frame_ancestors:
+         - https://elm.example.com
+         - https://polarion.example.com
+     ```
+     The dialog pages then send `Content-Security-Policy: frame-ancestors 'self' https://elm.example.com …`; without the setting they may only be framed by Qtestframe itself.
+   - the browser must send Qtestframe's session cookie inside the frame. The cookie is `SameSite=Lax`, so the frame works when both tools are on the **same site** (subdomains of one registrable domain, such as `qtf.example.com` and `elm.example.com`). For tools on another site, leave the dialogs in a window.
+   The dialogs use the user's own session: each user signs in to Qtestframe in the browser (the dialog offers a link if they have not).
+
+## IBM DOORS Next and Engineering Test Management
+
+DOORS Next links its requirements to test cases of a QM provider, and ETM links its test cases to requirements of an RM provider. Qtestframe can take the RM role (its requirements) and the QM role (its test cases).
+
+1. In the ELM **Lifecycle Project Administration** (or the project area's **Associations**), add an association to an **OSLC provider that is not a Jazz application**: choose *Add → Service provider catalog* (wording varies by version) and enter `<base_url>/api/v1/oslc/catalog`, or `<base_url>/api/v1/oslc/projects/<id>/catalog` for one project. When the version only accepts friends, register a friend with the root services `<base_url>/api/v1/oslc/rootservices` and choose the basic authentication method with the service account's e-mail and the API token as password.
+2. Choose the association type: **Provides Requirements** (or *Uses Requirements* from the ETM side) for Qtestframe requirements, **Provides Test Cases** (*Validated By*) for Qtestframe test cases.
+3. In a DOORS Next artifact, **Links → Add link → Validated By** now offers *Qtestframe* as a target: the selection dialog opens, the user searches and ticks test cases, and DOORS Next stores the links. **Create** opens Qtestframe's creation dialog instead.
+
+Links stored by DOORS Next live in DOORS Next. When a tool writes the link into the Qtestframe resource as well (a PUT with `oslc_qm:validatesRequirement` or `oslc_rm:validatedBy`), Qtestframe keeps it as a trace link when the other end is one of its own items, or as an item link to the other tool's address otherwise.
+
+## Siemens Polarion
+
+Polarion links work items to OSLC resources of other servers through *OSLC connections*:
+
+1. In **Administration → Linked data / OSLC → Remote OSLC providers** (Polarion's *Connections* configuration), add a provider with the catalog `<base_url>/api/v1/oslc/catalog`, authentication **Basic**, user the service account's e-mail and password the API token.
+2. Map the link roles: a Polarion requirement *is validated by* → Qtestframe test cases (`oslc_qm:TestCase`), a Polarion test case *verifies* → Qtestframe requirements (`oslc_rm:Requirement`).
+3. Polarion users then pick Qtestframe items in the **Link to OSLC resource** dialog, which opens Qtestframe's selection dialog.
+
+For a one-off or regular transfer of a Polarion document, use ReqIF instead: export the document as ReqIF in Polarion and import it in Qtestframe with *Import → ReqIF … with updates*; map the work item types (for example *Test Case* to test cases) in the import preview.
+
+## PTC Codebeamer
+
+Codebeamer connects to OSLC providers as *Remote trackers / OSLC associations*:
+
+1. In the project's **Admin → Integrations → OSLC**, add a server with the root services or catalog address above, authentication **Basic** with the service account and the API token.
+2. Choose the remote service: *Requirements* (Qtestframe requirements) or *Test cases* (Qtestframe test cases), and the Codebeamer association type it should create (for example *verifies* or *related*).
+3. Codebeamer's association dialog then lists Qtestframe items; the delegated dialogs are used where Codebeamer supports them.
+
+Codebeamer also exports and imports ReqIF; its *Test Case* trackers map to Qtestframe test cases in the import preview.
+
+## Other OSLC clients and scripts
+
+Any OSLC 2.0 client works with the catalog and a token. A quick check from the command line:
+
+```sh
+curl -H "Authorization: Bearer $QTF_TOKEN" -H "Accept: text/turtle" \
+  "https://qtf.example.com/api/v1/oslc/projects/<id>/requirements?oslc.where=qtf:status=%22approved%22&oslc.select=dcterms:title"
+```
+
+Creating a requirement:
+
+```sh
+curl -H "Authorization: Bearer $QTF_TOKEN" -H "Content-Type: text/turtle" -H "Accept: text/turtle" \
+  --data-binary '<> a <http://open-services.net/ns/rm#Requirement> ; <http://purl.org/dc/terms/title> "Emergency stop" .' \
+  "https://qtf.example.com/api/v1/oslc/projects/<id>/requirements"
+```
+
+The answer is `201 Created` with the new address in `Location` and the version in `ETag`. An update (PUT) with `If-Match: "<ETag>"` is refused with `412 Precondition Failed` when someone saved in the meantime, as in the web client.
+
+## What is stored, audited and backed up
+
+- Items created, changed or deleted through OSLC are ordinary items: they have history, the changes are in the audit log under the account of the token, and deletion moves them to the project's trash.
+- Trace links, relations and item links written through OSLC are ordinary links; links to resources of other tools are item links to their URL, labelled with the OSLC property (`oslc_rm:implementedBy` …).
+- The ReqIF import records where every item, relation and trace link came from (table `external_refs`), so that importing the same document again updates them. This table is part of backups and of project archives.
+- Nothing about a connection is stored in Qtestframe besides the API token: the other tool keeps the connection settings.
+
+## Troubleshooting
+
+| Symptom | Check |
+|---|---|
+| The tool says the catalog is empty | The account is not a member of the project (restricted projects), or the token's role has no read permission. Open the catalog address with the token in a browser or with `curl`. |
+| Links point to `http://localhost:…` or an internal host | `server.base_url` is not the public address. |
+| 401 Unauthorized | The token is wrong, expired or revoked; Basic authentication must carry the token as the password. Plain passwords are not accepted on the OSLC paths. |
+| 403 Forbidden on create or update | The token's role lacks `requirement.write` / `test.write`, or `test.write` for trace links. |
+| 412 Precondition Failed | The item changed since the tool read it; the tool must read it again (its ETag is the item's version). |
+| 415 Unsupported Media Type | The tool sends a body that is not Turtle, RDF/XML or JSON-LD. |
+| The dialog stays blank in a frame | The tool's origin is not in `server.frame_ancestors`, or the tools are on different sites so the browser does not send the session cookie: use the dialog in a window. |
+| The dialog says *You are not signed in* | The user has no Qtestframe session in this browser: sign in in another tab and choose **Try again**. |
 
 # Logging and monitoring
 
@@ -1503,9 +1711,9 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**In a backup** (87 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `secret_keys`.
+**In a backup** (94 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
 
-**Not in a backup:** `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `suggest_history`.
+**Not in a backup:** `chat_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1617,6 +1825,15 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 34 | `0034_custom_fields.sql` |
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
+| 37 | `0037_import_sources.sql` |
+| 38 | `0038_owners_worklist.sql` |
+| 39 | `0039_discussions.sql` |
+| 40 | `0040_exploratory.sql` |
+| 41 | `0041_test_cycles.sql` |
+| 43 | `0043_similarity.sql` |
+| 45 | `0045_chat_channels.sql` |
+| 46 | `0046_variant_gates.sql` |
+| 47 | `0047_risk_catalog.sql` |
 
 <!-- END GENERATED: migrations -->
 
@@ -1983,3 +2200,9 @@ and checked against the code):
 ## Code webhooks
 ## Variants
 -->
+
+## Exploratory testing
+
+Exploratory test sessions (migration 0040) need no configuration. They use the run permissions: `run.read` to see sessions, `run.write` to plan, change and delete them and to debrief or stop someone else's session, `run.execute` to run one's own session (timer, notes, defects from notes, debrief). The session timer is kept in the database (`exploratory_sessions.running_since`, `elapsed_seconds`), so a restart of the server does not lose session time; a session left running keeps counting until someone pauses or stops it.
+
+The tables `exploratory_sessions`, `exploratory_scope` and `exploratory_notes` are part of the backup and of project archives; screenshots are ordinary attachments (`files`, `attachments`) and count against `files.max_upload_mb`. Whether debriefed sessions are verification evidence is a project setting (`verification_settings.exploratory_evidence`, off by default), changed by someone with `project.update`. Every action is written to the audit log with actions `exploratory.*`.

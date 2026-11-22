@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// The project's verification settings: strict criterion coverage.
+// The project's verification settings: strict criterion coverage, and
+// whether debriefed exploratory sessions count as evidence.
 import { ref, watch } from 'vue'
 import ToggleSwitch from 'primevue/toggleswitch'
 import { useI18n } from 'vue-i18n'
@@ -27,10 +28,10 @@ watch(
   },
   { immediate: true },
 )
-async function toggle(v: boolean) {
+async function toggle(v: boolean, field: 'strict_criteria' | 'exploratory_evidence' = 'strict_criteria') {
   busy.value = true
   try {
-    settings.value = await api.put<VerificationSettings>(`/projects/${props.projectId}/verification-settings`, { strict_criteria: v })
+    settings.value = await api.put<VerificationSettings>(`/projects/${props.projectId}/verification-settings`, { [field]: v })
     notify.ok(t('verification.settingsSaved'))
   } catch (e) {
     notify.fail(e)
@@ -48,6 +49,13 @@ async function toggle(v: boolean) {
       <div>
         <label :for="`${id}-strict`"><b>{{ t('verification.strictLabel') }}</b></label>
         <p :id="`${id}-hint`" class="small muted" style="margin: 2px 0 0">{{ t('verification.strictHint') }}</p>
+      </div>
+    </div>
+    <div class="row nowrap" style="gap: 8px; align-items: flex-start; margin-top: 10px">
+      <ToggleSwitch :model-value="!!settings.exploratory_evidence" :input-id="`${id}-expl`" :disabled="!canEdit || busy" :aria-describedby="`${id}-expl-hint`" @update:model-value="(v: boolean) => toggle(v, 'exploratory_evidence')" />
+      <div>
+        <label :for="`${id}-expl`"><b>{{ t('exploratory.evidenceLabel') }}</b></label>
+        <p :id="`${id}-expl-hint`" class="small muted" style="margin: 2px 0 0">{{ t('exploratory.evidenceHint') }}</p>
         <p v-if="settings.updated_by" class="small muted" style="margin: 2px 0 0">{{ t('verification.settingsChanged', { user: settings.updated_by, date: formatDateTime(settings.updated_at ?? '') }) }}</p>
       </div>
     </div>

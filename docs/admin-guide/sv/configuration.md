@@ -94,6 +94,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `server.write_timeout` | tidslängd | `2m` | — | Längsta tid för att skriva ett svar (nedladdningar, exporter, säkerhetskopior i webbklienten). Håll den över `runner.timeout`. |
 | `server.trusted_proxies` | lista | — | — | Adresser eller CIDR-intervall för omvända proxyer. Bara för begäranden från dem används `X-Forwarded-For` som klientadress (sista posten), i loggar, granskningsloggen och inloggningsgränserna. |
 | `server.hsts` | bool | `true` | — | Skicka `Strict-Transport-Security` (två år, med underdomäner) på HTTPS-anslutningar som servern själv avslutar. En proxy som avslutar TLS måste skicka den i stället. |
+| `server.frame_ancestors` | lista | — | — | Ursprung (`https://doors.example.com`) för andra verktyg som får visa OSLC-dialogerna för att välja och skapa i en ram (`Content-Security-Policy: frame-ancestors`). Utan några öppnas dialogerna i ett eget fönster. Webbläsaren måste också skicka sessionskakan till ramen: båda verktygen på samma webbplats (underdomäner till samma domän). |
 
 ### `database`
 
@@ -278,6 +279,16 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `secrets.pkcs11.pin_file` | text | — | — | Fil med användar-PIN (relativ: i `$CREDENTIALS_DIRECTORY`). `QTF_SECRETS_PKCS11_PIN` vinner över den. |
 | `secrets.pkcs11.key_label` | text | `qtestframe-kek` | — | `CKA_LABEL` för AES-nyckeln som omsluter datanycklarna; måste vara unik i tokenen. |
 | `secrets.pkcs11.generate_key` | bool | `false` | — | Skapa en icke-exporterbar AES-256-nyckel med `key_label` när tokenen saknar en. |
+
+### `similarity`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `similarity.embeddings.enabled` | bool | `false` | — | Använd en tjänst för inbäddningar (embeddings) för likheten mellan krav och tester (misstänkta dubbletter, panelen *Liknande krav*). Av som standard: likheten beräknas då på servern. **När den är på skickas rubrik, beskrivning och kriterier eller steg för objekten till tjänsten.** Finns även under **Administration → Systeminställningar**. |
+| `similarity.embeddings.url` | text | — | — | Adress till en OpenAI-kompatibel embeddings-slutpunkt, t.ex. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, svaret `{data: [{embedding}]}`). |
+| `similarity.embeddings.model` | text | — | — | Modell som skickas som `model` (tom: tjänstens standard). Vektorerna cachas per objektversion och modell; byts modellen beräknas de om. |
+| `similarity.embeddings.api_key_file` | text | — | — | Fil med API-nyckeln, som skickas som bearer-token (relativ: i `$CREDENTIALS_DIRECTORY`). Nyckeln kan också sparas i systeminställningarna; den visas aldrig igen. |
+| `similarity.embeddings.timeout` | tidslängd | `30s` | — | Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten. |
 
 <!-- END GENERATED: config-reference -->
 

@@ -847,3 +847,35 @@ tests:
           expected: Båda anropen lyckas.
         - action: Sök efter titeln i produktion.
           expected: Inget objekt hittas.
+
+risks:
+  - id: API-R01
+    category: quality
+    likelihood: 4
+    impact: 3
+    tags: [breaking-change, versioning]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 (interoperability)"]
+    mitigated_by: [API-04, API-05, API-06, API-18, API-07]
+    en:
+      title: API change breaks customer integrations
+      description: A field is renamed or removed without notice, and integrations built by customers and partners stop working. Business processes on their side fail silently.
+      mitigation: Put the major version in the path with a support period, make no breaking change within a major version, announce deprecation in response headers, publish a changelog and keep the OpenAPI description complete.
+    sv:
+      title: API-ändring förstör kundernas integrationer
+      description: Ett fält byter namn eller tas bort utan förvarning, och integrationer som kunder och partner har byggt slutar fungera. Affärsprocesser hos dem fallerar obemärkt.
+      mitigation: Lägg huvudversionen i sökvägen med en stödperiod, gör inga bakåtinkompatibla ändringar inom en huvudversion, meddela utfasning i svarsrubriker, publicera en ändringslogg och håll OpenAPI-beskrivningen fullständig.
+  - id: API-R02
+    category: data
+    likelihood: 3
+    impact: 3
+    tags: [duplicates, webhooks]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "CWE-345 (insufficient verification of data authenticity)"]
+    mitigated_by: [API-11, API-13, API-14, API-16]
+    en:
+      title: Integration messages lost, duplicated or forged
+      description: Retried create requests make duplicates, webhooks are lost on a short outage or a forged webhook is accepted. The systems drift apart and someone must reconcile by hand.
+      mitigation: Use idempotency keys for create requests, sign webhook requests, retry webhooks with backoff and answer long-running operations with a status resource.
+    sv:
+      title: Integrationsmeddelanden går förlorade, dubbleras eller förfalskas
+      description: Upprepade anrop för att skapa poster ger dubbletter, webhookar går förlorade vid ett kort avbrott eller en förfalskad webhook godtas. Systemen glider isär och någon måste stämma av för hand.
+      mitigation: Använd idempotensnycklar för anrop som skapar poster, signera webhookanrop, gör omförsök av webhookar med ökande väntetid och besvara långvariga operationer med en statusresurs.

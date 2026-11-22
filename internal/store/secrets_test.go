@@ -26,6 +26,8 @@ const (
 	varValue     = "variable-test-value"
 	mailValue    = "smtp-test-value"
 	oidcValue    = "oidc-test-value"
+	jiraValue    = "jira-import-test-value"
+	azureValue   = "azure-import-test-value"
 )
 
 func writeSecrets(t *testing.T, st *store.Store) fixture {
@@ -41,6 +43,8 @@ func writeSecrets(t *testing.T, st *store.Store) fixture {
 	w := &model.Webhook{ProjectID: p.ID, Name: "hook", URL: "https://example.com/h", Secret: hookValue, Events: []string{"*"}, Enabled: true}
 	must(t, st.CreateWebhook(ctx, ten.ID, w))
 	must(t, st.SaveDefectTracker(ctx, ten.ID, p.ID, &model.DefectTracker{Type: "github", Repo: "o/r", Token: trackerValue}, false))
+	must(t, st.SaveImportSources(ctx, ten.ID, p.ID, &model.ImportSources{Jira: model.JiraImportSource{URL: "https://jira.example.com", Token: jiraValue},
+		Azure: model.AzureDevOpsSource{URL: "https://dev.azure.com/acme", Project: "Shop", Token: azureValue}}, store.ClearTokens{}))
 	must(t, st.SaveWebTestSettings(ctx, ten.ID, p.ID, &model.WebTestSettings{Variables: []model.TestVariable{
 		{Name: "PASSWORD", Value: varValue, Secret: true}, {Name: "USER", Value: "plain-user"},
 	}}))
@@ -57,7 +61,7 @@ func raw(t *testing.T, st *store.Store) string {
 	var b strings.Builder
 	for _, q := range []string{
 		`SELECT totp_secret FROM user_mfa`, `SELECT secret FROM webhooks`, `SELECT defect_tracker FROM projects`,
-		`SELECT web_tests FROM projects`, `SELECT value FROM system_settings`,
+		`SELECT web_tests FROM projects`, `SELECT value FROM system_settings`, `SELECT import_sources FROM projects`,
 	} {
 		rows, err := st.DB.QueryContext(ctx, q)
 		must(t, err)
@@ -71,7 +75,11 @@ func raw(t *testing.T, st *store.Store) string {
 	return b.String()
 }
 
-var allValues = []string{totpValue, hookValue, trackerValue, varValue, mailValue, oidcValue}
+var allValues = []string{totpValue, hookValue, trackerValue, varValue, mailValue, oidcValue, jiraValue, azureValue}
+
+// changedRows is the number of rows a migration rewrites: the two import
+// source tokens share a row.
+var changedRows = len(allValues) - 1
 
 // readSecrets checks that every secret reads back as plaintext.
 func readSecrets(t *testing.T, st *store.Store, f fixture) {
@@ -92,6 +100,10 @@ func readSecrets(t *testing.T, st *store.Store, f fixture) {
 	tr, err := st.DefectTracker(ctx, f.tenant, f.project)
 	if err != nil || tr.Token != trackerValue || !tr.HasToken {
 		t.Fatalf("tracker: %v %v", tr, err)
+	}
+	is, err := st.ImportSources(ctx, f.tenant, f.project)
+	if err != nil || is.Jira.Token != jiraValue || is.Azure.Token != azureValue || !is.Azure.HasToken {
+		t.Fatalf("import sources: %v %v", is, err)
 	}
 	wt, err := st.WebTestSettings(ctx, f.tenant, f.project)
 	if err != nil || len(wt.Variables) != 2 || wt.Variables[0].Value != varValue || wt.Variables[1].Value != "plain-user" {
@@ -199,7 +211,7 @@ func TestSecretsMigrateLegacyPlaintext(t *testing.T) {
 	readSecrets(t, st, f) // legacy plaintext reads as it is
 	stats, err := st.MigrateSecrets(ctx)
 	must(t, err)
-	if stats.Changed != len(allValues) || stats.Plaintext != 0 {
+	if stats.Changed != changedRows || stats.Plaintext != 0 {
 		t.Fatalf("%+v", stats)
 	}
 	r = raw(t, st)
@@ -218,7 +230,7 @@ func TestSecretsMigrateLegacyPlaintext(t *testing.T) {
 	// decrypt (before a downgrade) writes plaintext back
 	stats, err = st.DecryptSecrets(ctx)
 	must(t, err)
-	if stats.Changed != len(allValues) || stats.Plaintext != len(allValues) {
+	if stats.Changed != changedRows || stats.Plaintext != len(allValues) {
 		t.Fatalf("%+v", stats)
 	}
 	readSecrets(t, old, f)
@@ -240,7 +252,7 @@ func TestSecretsRotateAndReload(t *testing.T) {
 	}
 	id, stats, pruned, err := st.RotateSecrets(ctx, false)
 	must(t, err)
-	if id == first || stats.Changed != len(allValues) || stats.Encrypted[id] != len(allValues) || len(pruned) != 0 {
+	if id == first || stats.Changed != changedRows || stats.Encrypted[id] != len(allValues) || len(pruned) != 0 {
 		t.Fatalf("%s %+v %v", id, stats, pruned)
 	}
 	readSecrets(t, st, f)

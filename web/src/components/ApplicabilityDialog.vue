@@ -13,9 +13,10 @@ import HelpLink from '@/guide/HelpLink.vue'
 import { api, errorMessage } from '@/lib/api'
 import { applicabilityBody, applicabilityMode, variantOptions, type Applicability, type ApplicabilityView, type Variant } from '@/lib/variants'
 import { uid } from '@/lib/a11y'
+import { entry, recordUndo } from '@/lib/undoActions'
 import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{ projectId: string; itemType: 'requirement' | 'test'; itemIds: string[]; initial?: Applicability | null; variants: Variant[] }>()
+const props = defineProps<{ projectId: string; itemType: 'requirement' | 'test'; itemIds: string[]; initial?: Applicability | null; variants: Variant[]; itemKey?: string }>()
 const visible = defineModel<boolean>('visible', { required: true })
 const emit = defineEmits<{ saved: [view: ApplicabilityView] }>()
 const { t } = useI18n()
@@ -49,17 +50,41 @@ async function save() {
   busy.value = true
   error.value = ''
   const body = applicabilityBody(mode.value, ids.value, expression.value)
+  const itemPath = (id: string) => `/${props.itemType === 'test' ? 'tests' : 'requirements'}/${id}/applicability`
+  const bulkPath = `/projects/${props.projectId}/applicability`
+  const itemType = props.itemType
   try {
     let view: ApplicabilityView
     if (props.itemIds.length === 1) {
-      view = await api.put<ApplicabilityView>(`/${props.itemType === 'test' ? 'tests' : 'requirements'}/${props.itemIds[0]}/applicability`, body)
+      const path = itemPath(props.itemIds[0])
+      const before = { variant_ids: [...(props.initial?.variant_ids ?? [])], expression: props.initial?.expression ?? '' }
+      view = await api.put<ApplicabilityView>(path, body)
+      recordUndo(entry(t('undo.a.applicability', { key: props.itemKey ?? '' }), () => api.put(path, before), () => api.put(path, body)))
     } else {
-      const res = await api.put<{ updated: number; applicability: ApplicabilityView }>(`/projects/${props.projectId}/applicability`, {
-        item_type: props.itemType,
-        item_ids: props.itemIds,
+      const itemIds = [...props.itemIds]
+      const res = await api.put<{ updated: number; applicability: ApplicabilityView; previous?: { item_id: string; variant_ids: string[]; expression: string }[] }>(bulkPath, {
+        item_type: itemType,
+        item_ids: itemIds,
         ...body,
       })
       view = res.applicability
+      // undo gives every item what it had: one change per distinct applicability
+      const groups = new Map<string, { variant_ids: string[]; expression: string; ids: string[] }>()
+      for (const p of res.previous ?? []) {
+        const k = JSON.stringify([[...p.variant_ids].sort(), p.expression])
+        const g = groups.get(k) ?? { variant_ids: p.variant_ids, expression: p.expression, ids: [] }
+        g.ids.push(p.item_id)
+        groups.set(k, g)
+      }
+      recordUndo(
+        entry(
+          t('undo.a.applicabilityMany', { n: itemIds.length }),
+          async () => {
+            for (const g of groups.values()) await api.put(bulkPath, { item_type: itemType, item_ids: g.ids, variant_ids: g.variant_ids, expression: g.expression })
+          },
+          () => api.put(bulkPath, { item_type: itemType, item_ids: itemIds, ...body }),
+        ),
+      )
     }
     visible.value = false
     emit('saved', view)

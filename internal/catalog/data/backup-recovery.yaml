@@ -857,3 +857,65 @@ tests:
           expected: Ingen kopia saknas i någon av listorna och storlekarna stämmer.
         - action: Kontrollera slutet på lagringstiden och senaste verifieringsresultatet för 5 poster.
           expected: Varje post har ett slutdatum och ett verifieringsdatum som inte är äldre än verifieringsintervallet.
+
+risks:
+  - id: BCK-R01
+    category: data
+    likelihood: 3
+    impact: 5
+    tags: [ransomware, backup-deletion]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.13", "MITRE ATT&CK T1490 (inhibit system recovery)", "MITRE ATT&CK T1486 (data encrypted for impact)"]
+    mitigated_by: [BCK-07, BCK-06, BCK-08, BCK-16, BCK-17]
+    en:
+      title: Ransomware encrypts data and destroys the backups
+      description: An attacker with administrator rights deletes or encrypts the backups before encrypting production. No clean copy remains and the organisation must rebuild or pay.
+      mitigation: Protect backups against deletion, keep a copy in another region, encrypt backups, alert on unusual backup sizes and keep an inventory of existing backups.
+    sv:
+      title: Ransomware krypterar data och förstör säkerhetskopiorna
+      description: En angripare med administratörsbehörighet raderar eller krypterar säkerhetskopiorna innan produktionen krypteras. Ingen ren kopia finns kvar och organisationen måste bygga upp allt igen eller betala.
+      mitigation: Skydda säkerhetskopior mot radering, ha en kopia i en annan region, kryptera säkerhetskopiorna, larma vid ovanlig storlek på säkerhetskopior och för en förteckning över befintliga säkerhetskopior.
+  - id: BCK-R02
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [restore, untested-backup]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.8.13", "ISO/IEC 27031:2025 (recovery time objective)"]
+    mitigated_by: [BCK-04, BCK-05, BCK-10, BCK-15, BCK-13]
+    en:
+      title: Backups turn out to be unusable when needed
+      description: Backups have failed silently, are incomplete or nobody knows how to restore them. A restore takes days instead of hours or fails entirely.
+      mitigation: Verify backups automatically, alert on failed or missing backups, drill a full restore every quarter from the runbook alone and restore database and files to the same point.
+    sv:
+      title: Säkerhetskopiorna visar sig vara oanvändbara när de behövs
+      description: Säkerhetskopieringen har misslyckats obemärkt, är ofullständig eller ingen vet hur återställningen görs. En återställning tar dagar i stället för timmar eller misslyckas helt.
+      mitigation: Verifiera säkerhetskopior automatiskt, larma vid misslyckade eller uteblivna säkerhetskopior, öva en fullständig återställning varje kvartal enbart utifrån driftinstruktionen och återställ databas och filer till samma tidpunkt.
+  - id: BCK-R03
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [data-loss, rpo]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27031:2025 (recovery point objective)"]
+    mitigated_by: [BCK-01, BCK-02, BCK-03, BCK-14, BCK-12]
+    en:
+      title: More data lost than the business can accept
+      description: Backups are taken too seldom or not before risky changes such as migrations. After a failure or a mistake, a day's work or more is lost.
+      mitigation: Take daily full backups, set and meet recovery point and time objectives, back up before each database migration and allow restore of a single deleted project.
+    sv:
+      title: Mer data går förlorad än verksamheten kan acceptera
+      description: Säkerhetskopior tas för sällan eller inte före riskfyllda ändringar som migreringar. Efter ett fel eller ett misstag går en dags arbete eller mer förlorad.
+      mitigation: Ta dagliga fullständiga säkerhetskopior, fastställ och uppfyll mål för återställningspunkt och återställningstid, säkerhetskopiera före varje databasmigrering och tillåt återställning av ett enskilt raderat projekt.
+  - id: BCK-R04
+    category: availability
+    likelihood: 2
+    impact: 5
+    tags: [disaster-recovery]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 22301:2019 §8.4 (business continuity plans and procedures)", "ISO/IEC 27031:2025 (ICT readiness for business continuity)"]
+    mitigated_by: [BCK-11, BCK-06, BCK-09]
+    en:
+      title: Loss of the primary site with no recovery plan
+      description: Fire, flood or a regional cloud outage destroys the primary environment. Without a practised disaster recovery plan and copies elsewhere, recovery takes weeks.
+      mitigation: Document and exercise a disaster recovery plan, keep backup copies in another region and retain backups for the set period.
+    sv:
+      title: Den primära driftplatsen går förlorad utan återställningsplan
+      description: Brand, översvämning eller ett regionalt molnavbrott förstör den primära miljön. Utan en övad katastrofplan och kopior på annan plats tar återställningen veckor.
+      mitigation: Dokumentera och öva en plan för katastrofåterställning, ha kopior av säkerhetskopiorna i en annan region och spara dem under fastställd tid.

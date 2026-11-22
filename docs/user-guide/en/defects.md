@@ -2,7 +2,7 @@
 
 A **defect** (bug) is a problem found while testing. Every defect has a key such as `SHOP-BUG-3`, a title, a description, a status, a severity, a priority and an assignee, and it is linked to the requirements, tests and executions it concerns. Defects are under **Defects** in the project sidebar.
 
-Defects can be mirrored in **Jira**, **GitHub Issues** or **GitLab**: Qtestframe creates the issue for you and reads its status back, so the developers work in their tracker while the test team sees the state of each defect next to its tests.
+Defects can be mirrored in **Jira**, **GitHub Issues**, **GitLab** or **Request Tracker (RT)**: Qtestframe creates the issue for you and reads its status back, so the developers work in their tracker while the test team sees the state of each defect next to its tests.
 
 | Action | Role needed |
 |---|---|
@@ -112,6 +112,17 @@ The account needs permission to browse the project and to create issues in it.
 
 The status of a GitLab issue is *opened* or *closed*; see the table under [Push, sync and import](#push-sync-and-import).
 
+### Request Tracker (RT)
+
+Qtestframe works with RT 5 through its REST2 API.
+
+- **RT address**: the address of the RT instance, e.g. `https://rt.example.com` (without `/REST/2.0`).
+- **Queue**: the queue new tickets go to, by name (e.g. `General`) or number.
+- **Custom field for labels** (optional): RT has no labels. If the queue has a custom field for them, for example a multi-value field *Tags*, give its name: the labels of new tickets (the **Labels** field and the labels of [issues from requirements](requirements.md#issues-in-gitlab-github-or-jira)) are written to it. Empty sends no labels.
+- **Token**: an authentication token of the RT user Qtestframe acts as. Sign in to RT as that user, open **Logged in as → Settings → Auth Tokens**, create a token and paste it. The user needs the rights *CreateTicket*, *ShowTicket*, *ModifyTicket* and *CommentOnTicket* in the queue. Qtestframe sends it as `Authorization: token …`.
+
+A ticket is referred to by its number: `#123` (also `123` or `RT#123`). The description of a ticket is its first message, which RT does not let anyone replace: **Update issue** on a requirement therefore changes the subject and adds the new text as a comment. Tickets are created and commented as plain text.
+
 ### The token
 
 The token is **write-only**: once saved it is never shown or sent back to the browser, the card only says **Token saved**. To keep it, leave the field empty when you change other settings. To replace it, type a new one and save. **Remove token** deletes it. Setting the tracker to **None** removes the whole connection.
@@ -123,14 +134,16 @@ With a tracker connected, the defect list has three more actions:
 - **Push to tracker** (the upload button of a defect) creates an issue from the defect: the title with the defect key, the description, the severity and priority, and the keys of the linked items. The defect then shows the issue key, a link to it and its status in the tracker. A defect that already has an issue cannot be pushed again.
 - **Sync** (the sync button of a defect) reads the issue's status and updates the defect's status; **Sync all** does this for every defect with an issue in the connected tracker and reports how many changed. Statuses are mapped as follows:
 
-  | Jira | GitHub | GitLab | Defect status |
-  |---|---|---|---|
-  | status category *To Do* | open | opened | Open |
-  | status category *In Progress* | | | In progress |
-  | *Done* | closed (completed) | closed | Closed |
-  | *Done* with resolution *Won't Do*, *Duplicate* or similar | closed (not planned) | | Rejected |
+  | Jira | GitHub | GitLab | RT | Defect status |
+  |---|---|---|---|---|
+  | status category *To Do* | open | opened | new | Open |
+  | status category *In Progress* | | | open, stalled | In progress |
+  | *Done* | closed (completed) | closed | resolved | Closed |
+  | *Done* with resolution *Won't Do*, *Duplicate* or similar | closed (not planned) | | rejected, deleted | Rejected |
 
-- **Import issue** creates a defect from an issue that already exists in the tracker: enter its key (`SHOP-123` in Jira, `#123` or `owner/repo#123` in GitHub, `#123` or `group/project#123` in GitLab) and the severity. Title and status come from the issue.
+  Statuses of a custom RT lifecycle that are not in the table leave the defect's status as it is; the RT status is still shown.
+
+- **Import issue** creates a defect from an issue that already exists in the tracker: enter its key (`SHOP-123` in Jira, `#123` or `owner/repo#123` in GitHub, `#123` or `group/project#123` in GitLab, `#123` in RT) and the severity. Title and status come from the issue.
 
 Sync reads only; it never changes the issue. Changes you make to a defect in Qtestframe are not written to the tracker.
 

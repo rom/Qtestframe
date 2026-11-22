@@ -72,6 +72,8 @@ tags:
   description: Baselines and electronic sign-offs
 - name: Releases
   description: Releases and exit criteria
+- name: Cycles
+  description: Test cycles, their plan, progress and recurring schedules
 - name: Defects
   description: Defects and the issue tracker (Jira, GitHub or GitLab)
 - name: Requirement issues
@@ -82,8 +84,12 @@ tags:
   description: Waivers and deviations with their electronically signed approvals
 - name: Reviews
   description: Review requests
+- name: Discussions
+  description: Threaded comments on requirements, tests, defects, risks, runs and review requests
+- name: My work
+  description: The personal work list across projects
 - name: Notifications and webhooks
-  description: In-app notifications and webhooks
+  description: In-app notifications, webhooks and chat channels
 - name: Files
   description: Files, attachments, documents, avatars
 - name: Reports and export
@@ -96,6 +102,8 @@ tags:
   description: Built-in catalogue of standard requirements and tests, and copying them into a project
 - name: Operations
   description: Health, readiness and this description
+- name: Exploratory testing
+  description: Session-based exploratory testing (charters, timer, notes, debriefs, metrics)
 paths:
   /healthz:
     get:
@@ -252,7 +260,7 @@ paths:
       summary: OSLC requirement query
       operationId: getOslcProjectsByPidRequirements
       description: |-
-        Query capability: the requirements as rdfs:member of the query base with their properties, and an oslc:ResponseInfo (oslc:totalCount, oslc:nextPage). oslc.select and oslc.orderBy are ignored.
+        Query capability: the requirements as rdfs:member of the query base with their properties, and an oslc:ResponseInfo (oslc:totalCount, oslc:nextPage). oslc.where works on every property of the resources (several values: one must match; != none may); oslc.select limits the properties shown, oslc.orderBy (+/- prefixed names) sorts, oslc.searchTerms searches identifier, title and description.
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -295,6 +303,53 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - OSLC
+      summary: OSLC creation factory (requirements)
+      operationId: postOslcProjectsByPidRequirements
+      description: |-
+        Creates a oslc_rm:Requirement from Turtle, RDF/XML or JSON-LD (dcterms:title required; dcterms:description may be an rdf:XMLLiteral, read as Markdown; qtf: properties; link properties become trace links, relations and item links to other tools' URLs). → 201 with Location, ETag and the resource.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          text/turtle:
+            schema:
+              type: string
+          application/rdf+xml:
+            schema:
+              type: string
+          application/ld+json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: the created resource
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '400':
+          description: the body is not valid RDF, or a value is invalid (oslc:Error)
+        '415':
+          description: the Content-Type is not Turtle, RDF/XML or JSON-LD
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/oslc/projects/{pid}/requirements/{item}:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -327,6 +382,111 @@ paths:
             application/ld+json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - OSLC
+      summary: OSLC update (requirements)
+      operationId: putOslcProjectsByPidRequirementsByItem
+      description: |-
+        Updates the properties the body carries (oslc.properties: a selective update that also clears the listed properties the body leaves out). Link properties replace the links of their kind. With If-Match the ETag must be the current version (412 otherwise). → the resource with its new ETag.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      parameters:
+      - name: If-Match
+        in: header
+        required: false
+        schema:
+          type: string
+        description: the ETag (version) the change is based on; a different version answers 412
+      - name: oslc.properties
+        in: query
+        schema:
+          type: string
+        description: selective update; the listed properties (prefixed names) that the body leaves out are cleared
+      - name: oslc.prefix
+        in: query
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          text/turtle:
+            schema:
+              type: string
+          application/rdf+xml:
+            schema:
+              type: string
+          application/ld+json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '400':
+          description: the body is not valid RDF, or a value is invalid (oslc:Error)
+        '415':
+          description: the Content-Type is not Turtle, RDF/XML or JSON-LD
+        '412':
+          description: the If-Match version is not the current one (oslc:Error)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - OSLC
+      summary: OSLC delete (requirements)
+      operationId: deleteOslcProjectsByPidRequirementsByItem
+      description: |-
+        Deletes the item (to the project's trash, as in the web client). With If-Match the ETag must be the current version.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      parameters:
+      - name: If-Match
+        in: header
+        required: false
+        schema:
+          type: string
+        description: the ETag (version) the change is based on; a different version answers 412
+      responses:
+        '204':
+          description: deleted
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '412':
+          description: the If-Match version is not the current one (oslc:Error)
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -387,6 +547,53 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - OSLC
+      summary: OSLC creation factory (tests)
+      operationId: postOslcProjectsByPidTests
+      description: |-
+        Creates a oslc_qm:TestCase from Turtle, RDF/XML or JSON-LD (dcterms:title required; dcterms:description may be an rdf:XMLLiteral, read as Markdown; qtf: properties; link properties become trace links, relations and item links to other tools' URLs). → 201 with Location, ETag and the resource.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          text/turtle:
+            schema:
+              type: string
+          application/rdf+xml:
+            schema:
+              type: string
+          application/ld+json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: the created resource
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '400':
+          description: the body is not valid RDF, or a value is invalid (oslc:Error)
+        '415':
+          description: the Content-Type is not Turtle, RDF/XML or JSON-LD
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/oslc/projects/{pid}/tests/{item}:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -425,6 +632,257 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - OSLC
+      summary: OSLC update (tests)
+      operationId: putOslcProjectsByPidTestsByItem
+      description: |-
+        Updates the properties the body carries (oslc.properties: a selective update that also clears the listed properties the body leaves out). Link properties replace the links of their kind. With If-Match the ETag must be the current version (412 otherwise). → the resource with its new ETag.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      parameters:
+      - name: If-Match
+        in: header
+        required: false
+        schema:
+          type: string
+        description: the ETag (version) the change is based on; a different version answers 412
+      - name: oslc.properties
+        in: query
+        schema:
+          type: string
+        description: selective update; the listed properties (prefixed names) that the body leaves out are cleared
+      - name: oslc.prefix
+        in: query
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          text/turtle:
+            schema:
+              type: string
+          application/rdf+xml:
+            schema:
+              type: string
+          application/ld+json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '400':
+          description: the body is not valid RDF, or a value is invalid (oslc:Error)
+        '415':
+          description: the Content-Type is not Turtle, RDF/XML or JSON-LD
+        '412':
+          description: the If-Match version is not the current one (oslc:Error)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - OSLC
+      summary: OSLC delete (tests)
+      operationId: deleteOslcProjectsByPidTestsByItem
+      description: |-
+        Deletes the item (to the project's trash, as in the web client). With If-Match the ETag must be the current version.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      parameters:
+      - name: If-Match
+        in: header
+        required: false
+        schema:
+          type: string
+        description: the ETag (version) the change is based on; a different version answers 412
+      responses:
+        '204':
+          description: deleted
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '412':
+          description: the If-Match version is not the current one (oslc:Error)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/catalog:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - OSLC
+      summary: OSLC catalog of one project
+      operationId: getOslcProjectsByPidCatalog
+      description: |-
+        oslc:ServiceProviderCatalog holding the service provider of this project only, for tools that connect one of their projects to one project here.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/shapes/{kind}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: kind
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - requirement
+        - test
+    get:
+      tags:
+      - OSLC
+      summary: OSLC resource shape
+      operationId: getOslcProjectsByPidShapesByKind
+      description: |-
+        oslc:ResourceShape of requirements or test cases: the properties with oslc:occurs, oslc:valueType, oslc:readOnly and the allowed values of the enumerations.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/dialogs/{kind}/{mode}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: kind
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - requirement
+        - test
+    - name: mode
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - select
+        - create
+    get:
+      tags:
+      - OSLC
+      summary: OSLC delegated dialog
+      operationId: getOslcProjectsByPidDialogsByKindByMode
+      description: |-
+        An HTML page another tool shows in a frame or window so that its user selects or creates requirements or test cases. It uses the browser's Qtestframe session and answers with `{"oslc:results": [{"oslc:label", "rdf:resource"}]}` by postMessage (`oslc-response:` prefix) or the windowName protocol (`#oslc-core-windowName-1.0`). Framing is allowed for `server.frame_ancestors`. `lang` (en, sv) or Accept-Language choose the language.
+
+        **Permission:** none (public page; the data needs a session).
+      x-permission: none
+      security: []
+      parameters:
+      - name: lang
+        in: query
+        schema:
+          type: string
+          enum:
+          - en
+          - sv
+      responses:
+        '200':
+          description: the dialog page
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/dialog.js:
+    get:
+      tags:
+      - OSLC
+      summary: Script of the OSLC dialogs
+      operationId: getOslcDialogJs
+      description: |-
+        The script of the delegated dialogs.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: JavaScript
+          content:
+            text/javascript:
+              schema:
+                type: string
         default:
           $ref: '#/components/responses/Error'
   /api/v1/oslc/rootservices:
@@ -2407,7 +2865,7 @@ paths:
       summary: Set applicability of several items
       operationId: putProjectsByPidApplicability
       description: |-
-        `{item_type: requirement|test, item_ids: [...], variant_ids: [...], expression: ""}` → `{updated, applicability}`; needs `requirement.write` or `test.write` for the item type. Empty list and expression: all variants
+        `{item_type: requirement|test, item_ids: [...], variant_ids: [...], expression: ""}` → `{updated, applicability, previous: [{item_id, variant_ids, expression}]}` (`previous`: what each item applied to before, to undo the change); needs `requirement.write` or `test.write` for the item type. Empty list and expression: all variants. Each item whose applicability changes gets a revision (action `applicability`) in its history
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -2675,6 +3133,9 @@ paths:
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -2746,6 +3207,9 @@ paths:
 
         **Permission:** `requirement.read` (write or review per item).
       x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -2916,6 +3380,8 @@ paths:
         **Permission:** `requirement.read`.
       x-permission: requirement.read
       parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
@@ -3138,6 +3604,68 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/impact:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Traceability
+      summary: Impact analysis
+      operationId: postProjectsByPidImpact
+      description: |-
+        `{"items": [{"kind": "requirement"|"test", "id"}], "baseline_id"?, "depth"?: 1-10}` → the combined transitive change impact of the items and/or of the changes since the baseline (changes of substance; status-only changes only recommend reviews), same shape as `GET /requirements/{id}/impact` with `roots` the analysed items
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/impact/export:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: Export an impact analysis
+      operationId: getProjectsByPidImpactExport
+      description: |-
+        the impact analysis as a file: `?items=kind:id,kind:id`, `?baseline=`, `?depth=`, `?format=csv|pdf` (default csv), `?lang=en|sv`; a summary per kind and one row per affected item with its depth, effect, owner and path
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: The file
+          content:
+            text/csv: {}
+            application/pdf: {}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/impact:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -3147,7 +3675,7 @@ paths:
       summary: Change impact of a requirement
       operationId: getRequirementsByIdImpact
       description: |-
-        what a change of the requirement's substance (title, description, obligation, criteria) makes suspect, out of date, outdated or stale: `{kind, id, key, title, requirements, tests, issues, documents, results, total}`. `requirements`: the requirements related to it along the relation types the project's `relation_impact` names (with `relation`, `direction`); `tests`: the tests verifying it and those requirements (`via`: the related requirement); `issues`: its tracker issues (when `flag_issues`); `documents`: the generated documents containing it; `results`: the latest results of its tests that go stale (when `stale_on_change`). `already` marks items that are suspect, out of date or stale already; `total` counts the others. Without `test.read` the tests and results are left out
+        what a change of the requirement's substance (title, description, obligation, criteria) makes suspect, out of date, outdated or stale, or recommends for review, transitively up to the project's `impact_depth` (or `?depth=` 1–10): `{kind, id, key, title, roots, depth, requirements, tests, risks, defects, links, issues, documents, results, variants, code, total, suspect, review, by_kind, by_depth}`. Every item has `depth`, `mode` (`suspect` | `review`), `path` (`[{kind, id, key, edge, direction}]` from the changed item) and `owner`; depth 1 is the one-level analysis described here. `requirements`: the requirements related to it along the relation types the project's `relation_impact` names (with `relation`, `direction`); `tests`: the tests verifying it and those requirements (`via`: the related requirement); `issues`: its tracker issues (when `flag_issues`); `documents`: the generated documents containing it; `results`: the latest results of its tests that go stale (when `stale_on_change`). `already` marks items that are suspect, out of date or stale already; `total` counts the others. Without `test.read` the tests and results are left out
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -3179,6 +3707,9 @@ paths:
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -3454,7 +3985,7 @@ paths:
       summary: List comments (requirement)
       operationId: getRequirementsByIdComments
       description: |-
-        `[Comment]` oldest first: `{id, entity_type, entity_id, user_id, user_email, user_name, body, created_at, updated_at}`
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -3488,8 +4019,11 @@ paths:
       - Requirements
       summary: Add comment (requirement)
       operationId: postRequirementsByIdComments
-      description: '**Permission:** `requirement.read`.'
-      x-permission: requirement.read
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`. Markdown; `@handle` mentions notify the people mentioned.
+
+        **Permission:** `requirement.read`, `comment.create`.
+      x-permission: requirement.read, comment.create
       requestBody:
         required: true
         content:
@@ -3525,10 +4059,10 @@ paths:
       summary: Update comment
       operationId: patchCommentsById
       description: |-
-        `{"body"}`, author only
+        `{"body"}`, author only; people newly mentioned are notified
 
-        **Permission:** any authenticated user; the handler checks: the author only.
-      x-permission: authenticated
+        **Permission:** `comment.create`; the handler checks: the author only.
+      x-permission: comment.create
       requestBody:
         required: false
         content:
@@ -3557,13 +4091,535 @@ paths:
       summary: Delete comment
       operationId: deleteCommentsById
       description: |-
-        author, or `member.manage`
+        Removes the comment: it stays in its thread as removed (body cleared). The author, or a moderator (`project.update` in the project, or `member.manage`).
 
-        **Permission:** any authenticated user; the handler checks: the author, or `member.manage`.
+        **Permission:** any authenticated user; the handler checks: the author, or a moderator.
       x-permission: authenticated
       responses:
         '204':
           description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/defects/{id}/comments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Discussions
+      summary: List comments (defect)
+      operationId: getDefectsByIdComments
+      description: |-
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Discussions
+      summary: Add comment (defect)
+      operationId: postDefectsByIdComments
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`.
+
+        **Permission:** `project.read`, `comment.create`.
+      x-permission: project.read, comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                parent_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/risks/{id}/comments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Discussions
+      summary: List comments (risk)
+      operationId: getRisksByIdComments
+      description: |-
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Discussions
+      summary: Add comment (risk)
+      operationId: postRisksByIdComments
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`.
+
+        **Permission:** `requirement.read`, `comment.create`.
+      x-permission: requirement.read, comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                parent_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/comments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Discussions
+      summary: List comments (run)
+      operationId: getRunsByIdComments
+      description: |-
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Discussions
+      summary: Add comment (run)
+      operationId: postRunsByIdComments
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`.
+
+        **Permission:** `run.read`, `comment.create`.
+      x-permission: run.read, comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                parent_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/reviews/{id}/comments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Discussions
+      summary: List comments (review request)
+      operationId: getReviewsByIdComments
+      description: |-
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
+
+        **Permission:** any authenticated user; the handler checks: the reviewer, the requester or the read permission of the reviewed item.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Discussions
+      summary: Add comment (review request)
+      operationId: postReviewsByIdComments
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`.
+
+        **Permission:** any authenticated user; the handler checks: the reviewer, the requester or the read permission of the reviewed item, `comment.create`.
+      x-permission: comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                parent_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/comments/{id}/resolve:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Discussions
+      summary: Resolve thread
+      operationId: postCommentsByIdResolve
+      description: |-
+        Resolves the thread of the comment (any comment of the thread) → its first comment. The people who wrote in the thread are notified; webhook event `comment.resolved`.
+
+        **Permission:** `comment.create` (and the read permission of the item).
+      x-permission: comment.create
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/comments/{id}/reopen:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Discussions
+      summary: Reopen thread
+      operationId: postCommentsByIdReopen
+      description: |-
+        Reopens a resolved thread → its first comment.
+
+        **Permission:** `comment.create` (and the read permission of the item).
+      x-permission: comment.create
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/comments/{id}/reactions:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Discussions
+      summary: React to comment
+      operationId: postCommentsByIdReactions
+      description: |-
+        `{"reaction"}` (`+1`, `-1`, `heart`, `tada`, `eyes`, `check`): adds the caller's reaction, or takes it back → `{reactions: {reaction: [user id]}}`.
+
+        **Permission:** `comment.create` (and the read permission of the item).
+      x-permission: comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reaction:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reactions:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/discussions:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Discussions
+      summary: List project discussions
+      operationId: getProjectsByPidDiscussions
+      description: |-
+        The project's discussion threads (default: the open ones) with the item each is about, the number of replies and the latest activity.
+
+        **Permission:** `project.read`; threads whose item the caller may not read are left out.
+      x-permission: project.read
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [open, resolved, all]
+      - name: filter
+        in: query
+        description: '`mine`: threads the caller wrote in; `mentioned`: threads that mention the caller'
+        schema:
+          type: string
+          enum: [mine, mentioned]
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum: [requirement, test, defect, risk, run, review]
+      - name: q
+        in: query
+        description: text in a comment (case-insensitive)
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Threads, latest activity first
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiscussionThread'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/discussions:
+    get:
+      tags:
+      - Discussions
+      summary: List my discussions
+      operationId: getDiscussions
+      description: |-
+        Threads across the projects the caller sees; without `filter` the threads that mention the caller (default: the open ones).
+
+        **Permission:** any authenticated user; only the projects and items the caller may read.
+      x-permission: authenticated
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [open, resolved, all]
+      - name: filter
+        in: query
+        description: '`mine`: threads the caller wrote in; `mentioned`: threads that mention the caller'
+        schema:
+          type: string
+          enum: [mine, mentioned]
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum: [requirement, test, defect, risk, run, review]
+      - name: q
+        in: query
+        description: text in a comment (case-insensitive)
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Threads, latest activity first
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiscussionThread'
+                  total:
+                    type: integer
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -3895,6 +4951,9 @@ paths:
 
         **Permission:** `requirement.read` checked by the router; requirement.read, plus write permission for each item's kind.
       x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -4079,6 +5138,9 @@ paths:
 
         **Permission:** `test.read`.
       x-permission: test.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -4150,6 +5212,9 @@ paths:
 
         **Permission:** `test.read` (write or review per item).
       x-permission: test.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -4260,6 +5325,8 @@ paths:
         **Permission:** `test.read`.
       x-permission: test.read
       parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
@@ -4976,7 +6043,7 @@ paths:
       summary: Create a waiver or deviation
       operationId: postProjectsByPidWaivers
       description: |-
-        `{"type": "waiver"|"deviation", "title", "release_id" (null: the whole project), "requirement_ids", "justification", "compensating", "conditions", "risk_id", "new_risk": {"title", "likelihood", "impact"} (creates a risk for the requirements and links it), "approvers": [e-mail], "expires_on": "YYYY-MM-DD", "submit": false}` → 201 the waiver (key PROJ-WVR-n), a draft or with `submit` requested (needs requirements, a justification and, for a deviation, compensating measures; the approvers are notified).
+        `{"type": "waiver"|"deviation", "title", "release_id" (null: the whole project), "requirement_ids", "variant_ids" (ids or names: limits the waiver to these variants, each with the variants below it; [] every variant — in a release gated per variant it then accepts only in them), "justification", "compensating", "conditions", "risk_id", "new_risk": {"title", "likelihood", "impact"} (creates a risk for the requirements and links it), "approvers": [e-mail], "expires_on": "YYYY-MM-DD", "submit": false}` → 201 the waiver (key PROJ-WVR-n), a draft or with `submit` requested (needs requirements, a justification and, for a deviation, compensating measures; the approvers are notified).
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
@@ -5276,6 +6343,9 @@ paths:
 
         **Permission:** `test.write`.
       x-permission: test.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -5307,7 +6377,7 @@ paths:
       summary: List comments (test)
       operationId: getTestsByIdComments
       description: |-
-        `[Comment]` oldest first: `{id, entity_type, entity_id, user_id, user_email, user_name, body, created_at, updated_at}`
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
 
         **Permission:** `test.read`.
       x-permission: test.read
@@ -5341,8 +6411,11 @@ paths:
       - Requirements
       summary: Add comment (test)
       operationId: postTestsByIdComments
-      description: '**Permission:** `test.read`.'
-      x-permission: test.read
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`. Markdown; `@handle` mentions notify the people mentioned.
+
+        **Permission:** `test.read`, `comment.create`.
+      x-permission: test.read, comment.create
       requestBody:
         required: true
         content:
@@ -6599,10 +7672,13 @@ paths:
       summary: Apply a ReqIF import
       operationId: postProjectsByPidExchangeReqifApply
       description: |-
-        Parses and compares the file again (same fields as the preview) and saves the confirmed rows in one transaction through the regular create and update handlers (history, audit, suspect links). Conflicts are skipped unless `overwrite_conflicts`; `exclude` (JSON array of row indexes) leaves rows out. Records the IDENTIFIERs of the objects and relations (`external_refs`) for the next re-import, adds the relations of the document and removes relations imported before that the document no longer has. → `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, references_saved, items:[{index, location, id, key, title, action, version}], skipped_rows:[{index, location, title, reason}]}`; audited as `requirement.import`
+        Parses and compares the file again (same fields as the preview) and saves the confirmed rows in one transaction through the regular create and update handlers (history, audit, suspect links). Conflicts are skipped unless `overwrite_conflicts`; `exclude` (JSON array of row indexes) leaves rows out. Records the IDENTIFIERs of the objects and relations (`external_refs`) for the next re-import, adds the relations and trace links of the document and removes those imported before that the document no longer has, attaches the embedded files. → totals of requirements and tests `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, links_added, links_removed, references_saved, files_attached, tests (the tests' share), items:[{index, location, id, key, title, action, version}], skipped_rows:[{index, location, title, reason}]}`; audited as `requirement.import`
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -6633,7 +7709,7 @@ paths:
       summary: Preview a ReqIF import
       operationId: postProjectsByPidExchangeReqifPreview
       description: |-
-        Reads a ReqIF 1.x document (.reqif or .reqifz, e.g. from IBM DOORS, DOORS Next or Siemens Polarion) and compares it with the project; nothing is stored. Objects already imported (by IDENTIFIER) or exported from this project are updates. → the diff (as for the Excel preview) plus `{title, tool, qtestframe, attributes:[{name, type, values, objects, sample, object_types, field, guess}], targets:[{key, label, type}], relation_types:{name: type}, relations:{add, remove, keep, changes:[…]}, folders, skipped, errors, previous, target_folder}`
+        Reads a ReqIF 1.x document (.reqif or .reqifz, e.g. from IBM DOORS, DOORS Next or Siemens Polarion) and compares it with the project; nothing is stored. Objects already imported (by IDENTIFIER) or exported from this project are updates. Test objects (by object type) are compared with the tests, SPEC-RELATIONs between a test and a requirement are trace links, files embedded in the XHTML of a .reqifz become attachments. → the requirements' diff (as for the Excel preview) plus `{tests (the tests' diff or null), title, tool, qtestframe, attributes, test_attributes:[{name, type, values, objects, sample, object_types, field, guess}], targets, test_targets:[{key, label, type}], object_types:[{name, objects, kind, guess}], relation_types:{name: type}, relation_type_mapping:[{name, relations, type, guess}], relation_targets, relations:{add, remove, keep, links, changes:[{ref, type, file_type, source, target, action, kind}]}, folders, test_folders, files:[{object, ref, name, size, existing}], skipped, errors, previous, target_folder, test_target_folder, can_import_tests}`
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
@@ -6714,6 +7790,9 @@ paths:
 
         **Permission:** `project.read` (and the write permission of the kind; the review permission to set a review status).
       x-permission: project.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -6864,7 +7943,7 @@ paths:
       summary: Export
       operationId: getProjectsByPidExport
       description: |-
-        Downloads project data. `format` `xlsx`, `csv`, `pdf`, `docx`, `md` (aliases `excel`, `word`, `markdown`) export the chosen `aspects` (`md`: one GitHub-flavoured Markdown document, `text/markdown`); `reqif` and `reqifz` export the requirements as ReqIF 1.2 (aspects do not apply): `.reqif` is the XML document, `.reqifz` a ZIP with the document and the requirements' attachments below `files/<key>/`. `q` is applied to requirements if it is a valid requirement query and to tests if it is a valid test query. The response has `Content-Disposition: attachment; filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`.
+        Downloads project data. `format` `xlsx`, `csv`, `pdf`, `docx`, `md` (aliases `excel`, `word`, `markdown`) export the chosen `aspects` (`md`: one GitHub-flavoured Markdown document, `text/markdown`); `reqif` and `reqifz` export the requirements as ReqIF 1.2 with their folders, custom fields, criteria and relations (aspects do not apply); `include=tests` adds the test cases (type "Test case", with steps, custom fields and folders) and their "Verifies" links, `include=records` the verification records; `baseline=<id>` exports the frozen versions of a baseline's items (not with `q`). `.reqif` is the XML document, `.reqifz` a ZIP with the document and the items' attachments below `files/<key>/`. `q` is applied to requirements if it is a valid requirement query and to tests if it is a valid test query. The response has `Content-Disposition: attachment; filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`.
 
         **Permission:** `export`.
       x-permission: export
@@ -6890,6 +7969,18 @@ paths:
         in: query
         required: false
         description: comma-separated subset of requirements, criteria, tests, traceability, runs (default all; not for ReqIF)
+        schema:
+          type: string
+      - name: include
+        in: query
+        required: false
+        description: 'ReqIF only: comma-separated tests, records'
+        schema:
+          type: string
+      - name: baseline
+        in: query
+        required: false
+        description: 'ReqIF only: the id of a baseline of the project to export'
         schema:
           type: string
       - $ref: '#/components/parameters/q'
@@ -8148,6 +9239,9 @@ paths:
                     glossary:
                       type: boolean
                       default: true
+                    include_discussions:
+                      type: boolean
+                      description: add an appendix with the discussions of the items
                     lang:
                       type: string
                       enum:
@@ -9325,7 +10419,7 @@ paths:
       summary: Create release
       operationId: postProjectsByPidReleases
       description: |-
-        `{"name","version","description","status","target_date":"YYYY-MM-DD","exit_criteria":[ExitCriterion]}`; without `exit_criteria` the defaults are used
+        `{"name","version","description","status","target_date":"YYYY-MM-DD","exit_criteria":[ExitCriterion],"variant_ids":[ids or names]}` (`variant_ids`: the variants the release targets; its exit criteria are then evaluated per variant); without `exit_criteria` the defaults are used
 
         **Permission:** `project.update`.
       x-permission: project.update
@@ -9444,7 +10538,7 @@ paths:
       summary: Update release
       operationId: patchReleasesById
       description: |-
-        any of the fields above, plus `release_note`, `override`. Setting `status` to `released` needs a go; without it 409 `{"code":"no_go","status":ReleaseStatusReport}` unless `override: true` and a `release_note`. Releasing sets `released_at`/`released_by` and creates the baseline "Release <name>" of the scope and its tests
+        any of the fields above (including `variant_ids`: the variants the release targets, ids or names; `[]` none), plus `release_note`, `override`. Setting `status` to `released` needs a go; without it 409 `{"code":"no_go","status":ReleaseStatusReport}` unless `override: true` and a `release_note`. Releasing sets `released_at`/`released_by` and creates the baseline "Release <name>" of the scope and its tests
 
         **Permission:** `project.update`.
       x-permission: project.update
@@ -9534,7 +10628,7 @@ paths:
       summary: Release status
       operationId: getReleasesByIdStatus
       description: |-
-        `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, actual, total, items:[{kind,id,key,title,note}], available}], summary}`
+        `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, state, actual, total, items:[{kind,id,key,title,note,variants}], waived, accepted, available}], summary, waivers, variant, variants}`. `state`: pass | waived | fail. `?variant=<id or name>`: the readiness for that variant. Without it, a release with `variant_ids` is evaluated per targeted variant: `variants: [{variant: {id, name}, go, criteria, summary}]`, `go` only when every variant's is, and `criteria` combine the variants (met when met in every variant; `items[].variants` names the variants an item blocks in); `summary.variants`, `summary.variants_go`. Per variant only the release's requirements and tests that apply to it count, with the results of runs for the variant (or one of its ancestors) and of variant-neutral runs, in the configurations it is tested in; a waiver limited to variants accepts only in them
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -10048,7 +11142,7 @@ paths:
       summary: Get tracker
       operationId: getProjectsByPidDefectTracker
       description: |-
-        `{type: ""|jira|github|gitlab, url, project_key, repo, project, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned
+        `{type: ""|jira|github|gitlab|rt, url, project_key, repo, project, queue, labels_field, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -10553,6 +11647,109 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/import-sources:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: Get the requirement import sources
+      operationId: getProjectsByPidImportSources
+      description: |-
+        The connections requirements are imported from: `{jira: {url, user, jql, has_token}, azure_devops: {url, project, area_path, work_item_types, has_token}, jira_from_tracker, tracker_jira_url, tracker_jira_key}`. Without a Jira URL of its own the Jira import uses the defect tracker when it is Jira (`jira_from_tracker`). Tokens are never returned.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Import
+      summary: Save the requirement import sources
+      operationId: putProjectsByPidImportSources
+      description: |-
+        Same fields plus `jira.token` and `azure_devops.token` (write-only; empty keeps the saved one) and `clear_tokens: {jira, azure_devops}`. An Azure DevOps `url` (organization or collection) needs a `project`. Audited as `import_sources.update`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/import-sources/{source}/check:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    post:
+      tags:
+      - Import
+      summary: Check an import source
+      operationId: postProjectsByPidImportSourcesBySourceCheck
+      description: |-
+        Tries the connection (Jira: a search of one issue; Azure DevOps: reads the project). 200 or 502 `tracker_error` with the tracker's message.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/defects/sync:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -10956,6 +12153,53 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Risks
+      summary: Change the risks a requirement mitigates
+      operationId: postRequirementsByIdRisks
+      description: |-
+        `{"add": [risk ids], "remove": [risk ids]}` – links the requirement to risks of its project or removes the links (the same links as `POST /risks/{id}/requirements`, from the requirement's side) → the risks the requirement now mitigates, as `GET`. A risk of another project is refused with 400. Audited as `risk.requirements` on each risk
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                add:
+                  type: array
+                  items:
+                    type: string
+                remove:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: The risks the requirement mitigates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Risk'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/stale-results:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -11091,6 +12335,101 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/my-work:
+    get:
+      tags:
+      - My work
+      summary: List my work
+      operationId: getMyWork
+      description: |-
+        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `waiver_approval`, `risk_acceptance`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
+
+        **Permission:** any authenticated user; the handler checks: signed in, and the permissions of each row's project.
+      x-permission: authenticated
+      parameters:
+      - name: project
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Project id or key.
+      - name: source
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Comma-separated source names (owned, defects, executions, reviews, waivers, risk_acceptance).
+      - name: reason
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Keep only the rows with this reason.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkItem'
+                  total:
+                    type: integer
+                  summary:
+                    $ref: '#/components/schemas/WorkSummary'
+                  sources:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/my-work/count:
+    get:
+      tags:
+      - My work
+      summary: Count my work
+      operationId: getMyWorkCount
+      description: |-
+        The summary of the caller's work list (for the badge in the main navigation and the dashboard widget); takes the same `project` and `source` parameters as `GET /my-work`.
+
+        **Permission:** any authenticated user; the handler checks: signed in.
+      x-permission: authenticated
+      parameters:
+      - name: project
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: source
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/webhook-events:
@@ -11372,6 +12711,241 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/chat-events:
+    get:
+      tags:
+      - Notifications and webhooks
+      summary: Chat events
+      operationId: getChatEvents
+      description: |-
+        the events of the central registry with `group` and `labels` {en, sv}, the `groups` and the `providers`; new registry events appear here at once
+
+        **Permission:** any authenticated user; the handler checks: signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/chat-channels:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Notifications and webhooks
+      summary: List chat channels
+      operationId: getProjectsByPidChatChannels
+      description: |-
+        `[ChatChannel]` without URL or token (`has_secret`, `target`), with `pending` digest events; `restricted`, `can_allow_restricted`, `base_url`
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Notifications and webhooks
+      summary: Create chat channel
+      operationId: postProjectsByPidChatChannels
+      description: |-
+        `{"name","provider":"slack"|"teams"|"teams_legacy"|"mattermost"|"rocketchat"|"googlechat"|"matrix"|"discord","url" (webhook URL; Matrix: "homeserver","room","token"),"events":["*"|event...],"filters":{"failed_only","min_priority","release_id"},"language":"en"|"sv","digest_minutes","enabled","restricted_content"}` → ChatChannel (the URL / token is write-only); `restricted_content` needs `tenant.manage`
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/chat-channels/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Notifications and webhooks
+      summary: Update chat channel
+      operationId: patchChatChannelsById
+      description: |-
+        fields of `{"name","provider":"slack"|"teams"|"teams_legacy"|"mattermost"|"rocketchat"|"googlechat"|"matrix"|"discord","url" (webhook URL; Matrix: "homeserver","room","token"),"events":["*"|event...],"filters":{"failed_only","min_priority","release_id"},"language":"en"|"sv","digest_minutes","enabled","restricted_content"}`; an empty or missing `url` / `token` keeps the stored one; the provider cannot change; `enabled: true` clears the failures
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Notifications and webhooks
+      summary: Delete chat channel
+      operationId: deleteChatChannelsById
+      description: |-
+        removes the channel and its delivery log
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/chat-channels/{id}/test:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Notifications and webhooks
+      summary: Test chat channel
+      operationId: postChatChannelsByIdTest
+      description: |-
+        posts a test message now (also to a channel that is off) → `{"ok","status","error"}`; logged, never retried
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/chat-channels/{id}/deliveries:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Notifications and webhooks
+      summary: Chat deliveries
+      operationId: getChatChannelsByIdDeliveries
+      description: |-
+        the delivery log, newest first: the last 50 finished posts and the queued ones `[{event,count,status,attempts,status_code,error,created_at,next_attempt_at,sent_at}]`
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -11757,6 +13331,95 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/requirements/import/{source}/preview:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    post:
+      tags:
+      - Import
+      summary: Preview an import from Jira or Azure DevOps
+      operationId: postProjectsByPidRequirementsImportBySourcePreview
+      description: |-
+        Runs a query in the tracker and compares the issues or work items with the project; nothing is stored. Body: `{query, area_path, work_item_types, mapping: {field name: requirement field or cf.<key>, "" to ignore}, folder_id, relations (default true), limit (at most 1000)}`. `query` is JQL (Jira) or WIQL (Azure DevOps); for Azure DevOps without a query `area_path` and `work_item_types` build one (both missing: the saved defaults). Items imported before (by key or work item ID) are updates; links between the items become relations. → the diff as for the ReqIF preview (`attributes` are the tracker's fields) plus `{source, query, truncated}`. A tracker error is 502 `tracker_error`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: The diff; nothing is stored
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/requirements/import/{source}/apply:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    post:
+      tags:
+      - Import
+      summary: Import requirements from Jira or Azure DevOps
+      operationId: postProjectsByPidRequirementsImportBySourceApply
+      description: |-
+        Runs the query again and saves the diff in one transaction: the body of the preview plus `overwrite_conflicts`, `create` (default true) and `exclude_refs` (keys or IDs of items to leave out). The key of every imported item is kept as an external reference (system `jira` or `azure-devops`), so the next import updates the requirement; relations removed in the tracker are removed. → `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, references_saved, items, skipped_rows}`. Audited as `requirement.import`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/requirements/import:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -11770,6 +13433,9 @@ paths:
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -11798,7 +13464,7 @@ paths:
       summary: Catalogue overview
       operationId: getCatalog
       description: |-
-        The groups of the catalogue in display order, each with its areas and item counts, in `lang` → `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[{tag, count}], catalogues:[{id, name, description, areas, requirements, tests}]}`. Every area has `catalogue`, the catalogue type it belongs to.
+        The groups of the catalogue in display order, each with its areas and item counts, in `lang` → `{languages, lang, groups:[{id, name, requirements, tests, risks, areas:[{id, prefix, group, name, description, requirements, tests, risks}]}], requirements, tests, risks, requirement_tags:[{tag, count}], test_tags:[{tag, count}], risk_tags:[{tag, count}], risk_categories:[{id, name}], catalogues:[{id, name, description, areas, requirements, tests, risks}]}`. Every area has `catalogue`, the catalogue type it belongs to.
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -11889,7 +13555,7 @@ paths:
       summary: Get a catalogue requirement
       operationId: getCatalogRequirementsById
       description: |-
-        A requirement with its full text in `lang`: `CatalogRequirement` plus `{area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], in_project?}` (`in_project` with `project_id`)
+        A requirement with its full text in `lang`: `CatalogRequirement` plus `{area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], mitigates_risks:[{id, area, title, in_project?}], in_project?}` (`in_project` with `project_id`)
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -12032,6 +13698,97 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/catalog/risks:
+    get:
+      tags:
+      - Catalogue
+      summary: List catalogue risks
+      operationId: getCatalogRisks
+      description: |-
+        `{"items":[CatalogRisk]}` in `lang`: the typical risks of the areas with category, typical likelihood and impact (1–5), level, suggested mitigation and the catalogue requirements that mitigate them (`mitigated_by`). Filters as for the requirements, plus `category` and `level` (low, medium, high, critical), comma-separated; `source` matches risks that cite a source or are mitigated by a requirement that cites it. `q` also searches the mitigation and the ids of the mitigating requirements
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogArea'
+      - $ref: '#/components/parameters/catalogGroup'
+      - $ref: '#/components/parameters/catalogQ'
+      - $ref: '#/components/parameters/catalogTag'
+      - name: category
+        in: query
+        required: false
+        description: risk categories (security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental), comma-separated
+        schema:
+          type: string
+      - name: level
+        in: query
+        required: false
+        description: risk levels of the typical likelihood × impact (low, medium, high, critical), comma-separated
+        schema:
+          type: string
+      - $ref: '#/components/parameters/catalogCatalogue'
+      - $ref: '#/components/parameters/catalogSource'
+      - $ref: '#/components/parameters/catalogProject'
+      - $ref: '#/components/parameters/catalogNotInProject'
+      responses:
+        '200':
+          description: The matching risks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CatalogRisk'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/risks/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: catalogue id, e.g. AUTH-R01
+      schema:
+        type: string
+    get:
+      tags:
+      - Catalogue
+      summary: Get a catalogue risk
+      operationId: getCatalogRisksById
+      description: |-
+        A risk in `lang`: `CatalogRisk` plus `{area_name, ref_targets:[{ref, source?, name?, url?}], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[{id, area, title, in_project?}], in_project?}`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogProject'
+      responses:
+        '200':
+          description: The risk
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogRisk'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/catalog:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -12041,7 +13798,7 @@ paths:
       summary: Catalogue items in a project
       operationId: getProjectsByPidCatalog
       description: |-
-        Which catalogue items the project already has, by `catalog_ref` → `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {"AUTH-T01": [...]}}`; a kind the caller may not read stays empty
+        Which catalogue items the project already has, by `catalog_ref` → `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {"AUTH-T01": [...]}, "risks": {"AUTH-R01": [...]}}`; a kind the caller may not read stays empty
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -12074,10 +13831,13 @@ paths:
       summary: Add catalogue items to a project
       operationId: postProjectsByPidCatalogImport
       description: |-
-        Copies catalogue requirements and tests into the project in `lang` (at most 500 items, all or nothing) → 201 `{requirements:[{id, key, title, catalog_ref, folder_id}], tests:[...], links:[{id, requirement_id, requirement_key, test_case_id, test_case_key}], skipped:[{kind, catalog_ref, reason, existing?}], folders_created}`. With `include_tests` (default true when the caller has test.write) the catalogue tests that verify the chosen requirements are added too. Trace links connect each new requirement to the project tests of its catalogue tests and each new test to the project requirements it verifies, new or already there. Items the project already has (same `catalog_ref`) are skipped with reason `exists` unless `add_copies`; unknown ids are skipped with `not_found`. `folders`: `none`, `area` (a folder per area) or `group` (group / area) below the target folders, reusing folders of the same name. The automatic linked test of new requirements is not created. Audited as `catalog.import`
+        Copies catalogue requirements, tests and risks into the project in `lang` (at most 500 items, all or nothing) → 201 `{requirements:[{id, key, title, catalog_ref, folder_id}], tests:[...], risks:[{id, key, title, catalog_ref}], links:[{id, requirement_id, requirement_key, test_case_id, test_case_key}], risk_links:[{risk_id, risk_key, requirement_id, requirement_key}], skipped:[{kind, catalog_ref, reason, existing?}], folders_created}`. A risk brings the requirements that mitigate it (`include_requirements`, default true) and, with `include_tests`, their tests and the tests listed on the risk; `include_risks` adds the risks the chosen requirements mitigate. Each new risk is linked to the project requirements of its mitigating catalogue requirements and each new requirement to the project risks it mitigates, new or already there. With `include_tests` (default true when the caller has test.write) the catalogue tests that verify the chosen requirements are added too. Trace links connect each new requirement to the project tests of its catalogue tests and each new test to the project requirements it verifies, new or already there. Items the project already has (same `catalog_ref`) are skipped with reason `exists` unless `add_copies`; unknown ids are skipped with `not_found`. `folders`: `none`, `area` (a folder per area) or `group` (group / area) below the target folders, reusing folders of the same name. The automatic linked test of new requirements is not created. Audited as `catalog.import`
 
-        **Permission:** `project.read`, plus `requirement.write` for requirements and `test.write` for tests and links (`requirement.review` / `test.review` for a review decision status).
+        **Permission:** `project.read`, plus `requirement.write` for requirements and risks and `test.write` for tests and links (`requirement.review` / `test.review` for a review decision status).
       x-permission: project.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -13280,7 +15040,7 @@ paths:
       summary: Get correlation settings
       operationId: getProjectsByPidCorrelationSettings
       description: |-
-        the project's change and defect correlation settings `{relation_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
+        the project's change and defect correlation settings `{relation_impact, relation_modes, impact_depth, impact_rules, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -13305,7 +15065,7 @@ paths:
       summary: Save correlation settings
       operationId: putProjectsByPidCorrelationSettings
       description: |-
-        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off` → the settings as GET returns them
+        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `relation_modes` (relation type → `suspect` | `review`); `impact_depth` 1–10 (default 3); `impact_rules` (`verifies`, `calls`, `test_depends_on`, `item_link`, `risk`, `defect`, `variant`, `code` → `{direction, mode}`; only `verifies` can mark `suspect`); `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off` → the settings as GET returns them
 
         **Permission:** `project.update`.
       x-permission: project.update
@@ -13367,7 +15127,7 @@ paths:
       summary: Dismiss a consistency finding
       operationId: postProjectsByPidConsistencyDismissals
       description: |-
-        `{check: duplicate_suspect|unmet_dependency|broken_prerequisite, item_id, other_id}`: not a duplicate, or a dependency on a deleted item dealt with. Needs requirement.write (test.write for broken_prerequisite) in the project.
+        `{check: duplicate_suspect|potential_conflict|test_duplicate_suspect|unmet_dependency|broken_prerequisite, item_id, other_id}`: not a duplicate, not a conflict, or a dependency on a deleted item dealt with. Needs requirement.write (test.write for broken_prerequisite and test_duplicate_suspect) in the project.
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -13413,6 +15173,165 @@ paths:
       responses:
         '204':
           description: No content
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/consistency/review:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: Review suspected duplicates and potential conflicts
+      operationId: getProjectsByPidConsistencyReview
+      description: |-
+        `?kind=requirement|test&threshold=0.3–1&confidence=0.5–1&dismissed=true` → `{kind, engine: tfidf|embeddings, threshold, conflict_confidence, duplicates:[{a, b, score, dismissed}], conflicts:[{a, b, kind: obligation|threshold|exclusive, reason, confidence, similarity, note, evidence_a:{field, parts:[{text, mark}]}, evidence_b, dismissed}], dismissed, truncated}`. Pairs already marked (duplicates or conflicts_with relation; a `duplicates` item link between tests) are left out, dismissed ones unless `dismissed=true`. The thresholds default to the project's built-in checks. Needs the read permission of the kind.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: threshold
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: confidence
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: dismissed
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/consistency/merge:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Traceability
+      summary: Merge a duplicate into the item that survives
+      operationId: postProjectsByPidConsistencyMerge
+      description: |-
+        `{kind: requirement|test, survivor_id, duplicate_id}`: the duplicate's trace links, relations (requirements) or prerequisites (tests) and item links move to the survivor; the duplicate becomes obsolete (tests: deprecated) through the ordinary update and is marked as a duplicate (relation `duplicates`, or an item link labelled `duplicates` between tests); both get a comment. Atomic. → `{survivor, duplicate, moved:{links, relations, dependencies, item_links, dropped}}`. Needs the write permission of the kind.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/similar:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Requirements
+      summary: Similar requirements or tests
+      operationId: postProjectsByPidSimilar
+      description: |-
+        `{kind: requirement|test, title, description, details:[], exclude_id, limit (≤ 20, default 5), min}` → `{engine, threshold, items:[{id, kind, key, title, status, links, created_at, score}]}`: the active items most similar to a text being written (local TF-IDF over the project with stemming and synonyms for English and Swedish, or the configured embeddings service). Needs the read permission of the kind.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/catalog/similar:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Catalogue
+      summary: Catalogue requirements similar to the project's
+      operationId: postProjectsByPidCatalogSimilar
+      description: |-
+        `{requirement_ids, lang}` → `{items:[{catalog_ref, title, similar:[{id, key, title, status, score}]}]}`: the chosen catalogue requirements that are suspected duplicates of requirements the project has (warning before an import; `skip_similar` on the import leaves them out).
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -14972,6 +16891,38 @@ paths:
           $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/embeddings:
+    post:
+      tags:
+      - Administration
+      summary: Test the embeddings service with the settings
+      operationId: postAdminSettingsTestEmbeddings
+      description: |-
+        `{"values": {"similarity.embeddings.url": "…"}}` (optional unsaved values of the similarity section; the stored key is used unless one is given): sends one short text to the service and reports `{ok, message, error}` (the vector size). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/admin/settings/test/email:
     post:
       tags:
@@ -15960,6 +17911,1088 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exploratory-sessions:
+    parameters:
+    - "$ref": "#/components/parameters/pid"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "List exploratory sessions"
+      operationId: "getProjectsByPidExploratorySessions"
+      description: "The exploratory test sessions of the project, newest first, with their scope (areas, requirements, tests), note counts, `bug_count` and the debrief. `elapsed_seconds` includes the running part of a running session. Filters: `status` (planned, in_progress, paused, completed, debriefed), `tester` (e-mail), `outcome` (passed, failed, inconclusive), `mine=true` (the caller is the tester), `requirement_id`, `test_id`, `folder_id` (sessions with this item in their scope) and `q`, a query over key, title, mission (alias charter), status, tester (assignee, owner), outcome (result), area (folder), requirement, test, notes, bugs, timebox, created_by and id.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      parameters:
+        - name: "status"
+          in: "query"
+          required: false
+          description: "planned | in_progress | paused | completed | debriefed"
+          schema:
+            type: "string"
+        - name: "tester"
+          in: "query"
+          required: false
+          description: "the tester's e-mail"
+          schema:
+            type: "string"
+        - name: "outcome"
+          in: "query"
+          required: false
+          description: "passed | failed | inconclusive"
+          schema:
+            type: "string"
+        - name: "mine"
+          in: "query"
+          required: false
+          description: "true: only the caller's sessions"
+          schema:
+            type: "string"
+        - name: "requirement_id"
+          in: "query"
+          required: false
+          description: "sessions with this requirement in scope"
+          schema:
+            type: "string"
+        - name: "test_id"
+          in: "query"
+          required: false
+          description: "sessions with this test in scope"
+          schema:
+            type: "string"
+        - name: "folder_id"
+          in: "query"
+          required: false
+          description: "sessions with this area (folder) in scope"
+          schema:
+            type: "string"
+        - name: "q"
+          in: "query"
+          required: false
+          description: "query expression"
+          schema:
+            type: "string"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Plan an exploratory session"
+      operationId: "postProjectsByPidExploratorySessions"
+      description: "Creates a planned session (key PROJ-EXP-n): `title` (the charter, required), `mission`, `tester` (e-mail of a member who may run sessions in the project; default the caller), `timebox_minutes` (5–480, default 60; 30, 60 and 90 are usual) and `scope`, a list of `{type: folder | requirement | test, id}` of the project.\n\n**Permission:** `run.write`."
+      x-permission: "run.write"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratorySessionInput"
+      responses:
+        "201":
+          description: "Created"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/projects/{pid}/exploratory-metrics:
+    parameters:
+    - "$ref": "#/components/parameters/pid"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "Exploratory testing metrics"
+      operationId: "getProjectsByPidExploratoryMetrics"
+      description: "Sessions by status and outcome, session hours, bugs (bug notes and notes a defect was raised from) and bugs per session hour, the average time split and coverage of the debriefs, and the same per area (folder in the scope; `id` \"\" = no area) and per tester.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "Get an exploratory session"
+      operationId: "getExploratorySessionsById"
+      description: "The session with its scope, the timer (`started_at`, `running_since` while it runs, `elapsed_seconds` now, `ended_at`), the debrief (`reviewed`: by someone other than the tester), note counts and the linked defects.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    patch:
+      tags:
+        - "Exploratory testing"
+      summary: "Change an exploratory session"
+      operationId: "patchExploratorySessionsById"
+      description: "Changes the charter (`title`, `mission`, `scope`), the `tester` and the `timebox_minutes`; fields left out stay. A debriefed session cannot be changed (409).\n\n**Permission:** `run.write`."
+      x-permission: "run.write"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratorySessionInput"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Exploratory testing"
+      summary: "Delete an exploratory session"
+      operationId: "deleteExploratorySessionsById"
+      description: "Deletes the session with its notes, its attachments (files without other links) and its defect links (the defects stay).\n\n**Permission:** `run.write`."
+      x-permission: "run.write"
+      responses:
+        "204":
+          description: "No content"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/timer:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Start, pause or stop the session timer"
+      operationId: "postExploratorySessionsByIdTimer"
+      description: "`{\"action\": \"start\" | \"pause\" | \"stop\"}`: start (planned or paused → in_progress), pause (in_progress → paused), stop (in_progress or paused → completed). The server records the time, so it survives reloads. Only the tester, or someone with `run.write`, runs a session; a session without tester becomes the caller's at its start. 409 for an action the status does not allow.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratoryTimer"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/debrief:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    put:
+      tags:
+        - "Exploratory testing"
+      summary: "Debrief an exploratory session"
+      operationId: "putExploratorySessionsByIdDebrief"
+      description: "Records (or replaces) the debrief of a completed session: `summary`, `coverage_pct` (estimate, 0–100), the SBTM time split `setup_pct`, `testing_pct`, `bug_pct` (summing to 100), `outcome` (passed, failed, inconclusive) and `comment` (a reviewer's remarks). The tester debriefs their own session; a reviewer needs `run.write` as well. When the project counts exploratory sessions as verification evidence (`exploratory_evidence` of the verification settings), the scoped requirements' status follows.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratoryDebrief"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Exploratory testing"
+      summary: "Reopen a debriefed session"
+      operationId: "deleteExploratorySessionsByIdDebrief"
+      description: "Removes the debrief: debriefed → completed (409 otherwise).\n\n**Permission:** `run.write`."
+      x-permission: "run.write"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/history:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "History of an exploratory session"
+      operationId: "getExploratorySessionsByIdHistory"
+      description: "The revisions of the session (create, update, stop, debrief, reopen), newest first, with the changed fields.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/report:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "Exploratory session report"
+      operationId: "getExploratorySessionsByIdReport"
+      description: "The session report (template `exploratory_session` of the report generation): `format` md (default), pdf, docx, xlsx or csv; `lang` en or sv; `archive=true` saves it in the project's documents and answers with the file.\n\n**Permission:** `run.read`, `export`."
+      x-permission: "run.read, export"
+      parameters:
+        - name: "format"
+          in: "query"
+          required: false
+          description: "md | pdf | docx | xlsx | csv"
+          schema:
+            type: "string"
+        - name: "lang"
+          in: "query"
+          required: false
+          description: "en | sv"
+          schema:
+            type: "string"
+        - name: "archive"
+          in: "query"
+          required: false
+          description: "true: save in the project documents"
+          schema:
+            type: "string"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/notes:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "List the notes of a session"
+      operationId: "getExploratorySessionsByIdNotes"
+      description: "The notes in the order taken, each with its type, the session time it was taken at (`elapsed_seconds`), its files and the defect raised from it.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Add a note"
+      operationId: "postExploratorySessionsByIdNotes"
+      description: "`{\"type\": \"observation\" | \"question\" | \"issue\" | \"idea\" | \"bug\", \"body\", \"file_ids\"}` (file_ids: attachments of the session). Notes are taken from the start of the session until its debrief (409 otherwise), by the tester or someone with `run.write`.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratoryNoteInput"
+      responses:
+        "201":
+          description: "Created"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/notes/{note}:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    - name: note
+      in: path
+      required: true
+      schema:
+        type: string
+      description: note id
+    patch:
+      tags:
+        - "Exploratory testing"
+      summary: "Change a note"
+      operationId: "patchExploratorySessionsByIdNotesByNote"
+      description: "Changes `type`, `body` and `file_ids` of a note: its author, or someone with `run.write`; not after the debrief.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratoryNoteInput"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Exploratory testing"
+      summary: "Delete a note"
+      operationId: "deleteExploratorySessionsByIdNotesByNote"
+      description: "Deletes a note: its author, or someone with `run.write`; not after the debrief.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      responses:
+        "204":
+          description: "No content"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/notes/{note}/defect:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    - name: note
+      in: path
+      required: true
+      schema:
+        type: string
+      description: note id
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Raise a defect from a note"
+      operationId: "postExploratorySessionsByIdNotesByNoteDefect"
+      description: "Creates a defect prefilled from the note (title: its first line; description: the note, the session and its charter; found in: test), linked to the session and to the requirements in its scope. The body may override `title`, `description`, `severity`, `priority` and `assignee`. The note is marked with the defect and becomes a bug note. 409 when a defect was already raised from it.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      responses:
+        "201":
+          description: "Created"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/attachments:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "List attachments (exploratory sessions)"
+      operationId: "getExploratorySessionsByIdAttachments"
+      description: "**Permission:** any authenticated user; the handler checks `run.read` in the session's project."
+      x-permission: "authenticated"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Upload attachment (exploratory sessions)"
+      operationId: "postExploratorySessionsByIdAttachments"
+      description: "Multipart upload (`file`, optional `description`, `tags`) of a screenshot or file to the session, stored like every attachment.\n\n**Permission:** any authenticated user; the handler checks `run.execute` in the session's project."
+      x-permission: "authenticated"
+      responses:
+        "201":
+          description: "Created"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/attachments/link:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Link a project document (exploratory sessions)"
+      operationId: "postExploratorySessionsByIdAttachmentsLink"
+      description: "`{\"file_id\"}` of a file of the project.\n\n**Permission:** any authenticated user; the handler checks `run.execute` in the session's project."
+      x-permission: "authenticated"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/attachments/{file}:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    - name: file
+      in: path
+      required: true
+      schema:
+        type: string
+      description: file id
+    delete:
+      tags:
+        - "Exploratory testing"
+      summary: "Unlink attachment (exploratory sessions)"
+      operationId: "deleteExploratorySessionsByIdAttachmentsByFile"
+      description: "**Permission:** any authenticated user; the handler checks `run.execute` in the session's project."
+      x-permission: "authenticated"
+      responses:
+        "204":
+          description: "No content"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/projects/{pid}/cycles:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Cycles
+      summary: Test cycles
+      operationId: getProjectsByPidCycles
+      description: |-
+        The test cycles of the project (active first, then planned and closed; by start date) with their progress `{planned, executed, passed, failed, blocked, skipped, not_run, not_in_run, unassigned, estimated_minutes, remaining_minutes, actual_ms, percent_executed, percent_passed}` and `run_ids`. `?q=` filters with the query language (fields `name`, `goal`, `status`, `owner`, `release`, `variant`, `build`, `environment`, `configuration`, `start`, `end`, `planned`, `executed`, `progress`, `passed`, `failed`, `blocked`, `unassigned`, `test`, `assignee`, `created_by`, `created_at`).
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Cycles
+      summary: Create a test cycle
+      operationId: postProjectsByPidCycles
+      description: |-
+        `{name, goal?, description?, owner_id? (default: the caller), release_id?, variant_id? (id or name), build_id?, environment?, configuration_ids?, start_date?, end_date? (YYYY-MM-DD), scheduled_start_at? (RFC 3339: the cycle starts by itself), copy_from? (a cycle whose plan, testers, estimates, release, variant, build and configurations are copied)}`. A new cycle is planned.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Cycles
+      summary: Test cycle
+      operationId: getCyclesById
+      description: |-
+        A cycle with `run_ids` and `progress`.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Cycles
+      summary: Update a test cycle
+      operationId: patchCyclesById
+      description: |-
+        The fields of the create request (all optional), `status` (planned, active, closed) and `clear_scheduled_start`. Starting a planned cycle (status active) creates its run of the planned tests, assigned to their testers, with the cycle's release, variant, build and configurations.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Cycles
+      summary: Delete a test cycle
+      operationId: deleteCyclesById
+      description: |-
+        Deletes the cycle and its plan; its runs stay (without cycle).
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/tests:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Cycles
+      summary: Plan of a test cycle
+      operationId: getCyclesByIdTests
+      description: |-
+        The planned tests (one row per test and configuration) with `assignee_id`, `estimate_minutes` and, from the cycle's runs, the latest `execution_id`, `run_id`, `status`, `executed_by`, `finished_at`, `duration_ms`. `?assignee=<user id>|none` keeps one tester's rows.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Cycles
+      summary: Plan tests
+      operationId: postCyclesByIdTests
+      description: |-
+        Adds tests: `test_ids`, `tests` (`[{test_id, configuration_id?, assignee_id?, estimate_minutes?}]`), `query`, `folder_id` (+ `recursive`, default true), `regression` (the body of POST /projects/{pid}/regression) or `copy_from` (another cycle's plan); `assignee_id`, `estimate_minutes` and `configuration_ids` apply to the tests given by id, query, folder or regression. Without `configuration_ids` a test is planned in every configuration of the cycle. The default estimate is the test's estimate, else the average duration of its past executions. Query, folder and regression need test.read too. → `{added, cycle}`
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Cycles
+      summary: Change planned tests
+      operationId: patchCyclesByIdTests
+      description: |-
+        `{ids: [row ids] | all: true, assignee_id?, estimate_minutes?}`; a new tester is also set on the rows' executions without a final result. → `{updated}`
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Cycles
+      summary: Remove planned tests
+      operationId: deleteCyclesByIdTests
+      description: |-
+        `{ids: [row ids]}` → `{removed}` (their executions stay in the runs).
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/runs:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Cycles
+      summary: Create the cycle's next run
+      operationId: postCyclesByIdRuns
+      description: |-
+        Creates a run of the planned tests that no run of the cycle contains yet (needs run.write too); a planned cycle becomes active. 400 when every planned test is in a run, 409 for a closed cycle.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/progress:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Cycles
+      summary: Test cycle progress
+      operationId: getCyclesByIdProgress
+      description: |-
+        `{cycle, testers: [{assignee_id, planned, executed, passed, failed, blocked, estimated_minutes, remaining_minutes, actual_ms}], burndown: [{day, remaining, remaining_minutes, ideal, ideal_minutes}]}`: the burndown runs from the start date to the end date (else today); remaining is null after today; the ideal line goes from the whole plan to 0.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/history:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Cycles
+      summary: Test cycle history
+      operationId: getCyclesByIdHistory
+      description: |-
+        The revisions of the cycle (its fields and plan), newest first.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/cycle-schedules:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Cycles
+      summary: Recurring test cycles
+      operationId: getProjectsByPidCycleSchedules
+      description: |-
+        The schedules that create test cycles.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Cycles
+      summary: Create a recurring test cycle
+      operationId: postProjectsByPidCycleSchedules
+      description: |-
+        `{name_pattern ({date}, {n}), template_cycle_id? and/or query?, owner_id? (default: the caller), frequency (daily, weekly, monthly), weekday (0–6), day_of_month (1–28), time (HH:MM), timezone, duration_days (1–366), auto_start, enabled}`. On the schedule a cycle is created from the template's plan and the tests matching the query, as the owner (who must hold cycle.plan); with auto_start it starts.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycle-schedules/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Cycles
+      summary: Update a recurring test cycle
+      operationId: patchCycleSchedulesById
+      description: |-
+        The fields of the create request (all optional); the next run is computed again.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Cycles
+      summary: Delete a recurring test cycle
+      operationId: deleteCycleSchedulesById
+      description: |-
+        The cycles it created stay.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycle-schedules/{id}/run:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Cycles
+      summary: Create the next cycle now
+      operationId: postCycleSchedulesByIdRun
+      description: |-
+        Creates a cycle from the schedule now (the schedule keeps its next run) and returns it.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -16082,6 +19115,22 @@ components:
       description: filter expression (see the query language in docs/api.md)
       schema:
         type: string
+    DryRunImpact:
+      name: dry_run
+      in: query
+      required: false
+      description: '`impact`: run the change in a transaction, answer `{dry_run: "impact", status, impact}` with the combined change impact of the items whose substance or status it changes (same shape as `GET /requirements/{id}/impact`, with `roots`) and roll everything back — nothing is saved. (The boolean `dry_run` of the requirement import keeps its meaning.)'
+      schema:
+        type: string
+        enum: [impact]
+    ImpactChoice:
+      name: impact
+      in: query
+      required: false
+      description: 'what saving does with the change impact: `suspect` (default) marks what the project''s rules mark suspect and notifies the owners of the items only recommended for review; `notify` marks nothing and notifies the owners of every affected item; `skip` marks nothing and notifies nobody (results recorded before still go stale, documents still become outdated). A status change only recommends reviews: its owners are notified with `notify` only.'
+      schema:
+        type: string
+        enum: [suspect, notify, skip]
     IfMatch:
       name: If-Match
       in: header
@@ -16129,6 +19178,96 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    ExploratorySessionInput:
+      type: "object"
+      properties:
+        title:
+          type: "string"
+          description: "the charter (at most 300 characters)"
+        mission:
+          type: "string"
+        tester:
+          type: "string"
+          description: "e-mail"
+        timebox_minutes:
+          type: "integer"
+          minimum: 5
+          maximum: 480
+        scope:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              type:
+                type: "string"
+                enum:
+                  - "folder"
+                  - "requirement"
+                  - "test"
+              id:
+                type: "string"
+    ExploratoryTimer:
+      type: "object"
+      required:
+        - "action"
+      properties:
+        action:
+          type: "string"
+          enum:
+            - "start"
+            - "pause"
+            - "stop"
+    ExploratoryDebrief:
+      type: "object"
+      required:
+        - "outcome"
+        - "setup_pct"
+        - "testing_pct"
+        - "bug_pct"
+      properties:
+        summary:
+          type: "string"
+        coverage_pct:
+          type: "integer"
+          minimum: 0
+          maximum: 100
+        setup_pct:
+          type: "integer"
+          minimum: 0
+          maximum: 100
+        testing_pct:
+          type: "integer"
+          minimum: 0
+          maximum: 100
+        bug_pct:
+          type: "integer"
+          minimum: 0
+          maximum: 100
+        outcome:
+          type: "string"
+          enum:
+            - "passed"
+            - "failed"
+            - "inconclusive"
+        comment:
+          type: "string"
+    ExploratoryNoteInput:
+      type: "object"
+      properties:
+        type:
+          type: "string"
+          enum:
+            - "observation"
+            - "question"
+            - "issue"
+            - "idea"
+            - "bug"
+        body:
+          type: "string"
+        file_ids:
+          type: "array"
+          items:
+            type: "string"
     BatchUpdate:
       type: object
       required:
@@ -16293,6 +19432,75 @@ components:
           type: array
           items:
             type: object
+    CatalogRisk:
+      type: object
+      properties:
+        id:
+          type: string
+        area:
+          type: string
+        group:
+          type: string
+        catalogue:
+          type: string
+          description: the catalogue type of its area
+        category:
+          type: string
+          description: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project or environmental
+        category_name:
+          type: string
+          description: the category in `lang`
+        likelihood:
+          type: integer
+          description: typical likelihood 1–5
+        impact:
+          type: integer
+          description: typical impact 1–5
+        score:
+          type: integer
+        level:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+          - critical
+        tags:
+          type: array
+          items:
+            type: string
+        refs:
+          type: array
+          description: the risk sources and standards it cites
+          items:
+            type: string
+        sources:
+          type: array
+          description: ids of the reference sources its refs cite
+          items:
+            type: string
+        mitigated_by:
+          type: array
+          description: catalogue requirements that mitigate it
+          items:
+            type: string
+        tests:
+          type: array
+          description: catalogue tests that check the risk directly
+          items:
+            type: string
+        title:
+          type: string
+        description:
+          type: string
+          description: the threat or hazard and its consequence
+        mitigation:
+          type: string
+          description: the suggested mitigation
+        in_project:
+          type: array
+          items:
+            type: object
     CatalogImport:
       type: object
       properties:
@@ -16329,6 +19537,20 @@ components:
           description: status of the tests (default draft)
         include_tests:
           type: boolean
+        risk_ids:
+          type: array
+          description: catalogue risks to add as project risks
+          items:
+            type: string
+        include_requirements:
+          type: boolean
+          description: add the catalogue requirements that mitigate the chosen risks (default true)
+        include_risks:
+          type: boolean
+          description: add the catalogue risks that the chosen requirements mitigate (default false)
+        risk_status:
+          type: string
+          description: status of the new risks, identified (default) or mitigating
         add_copies:
           type: boolean
         source:
@@ -16848,18 +20070,36 @@ components:
           description: .reqif or .reqifz, at most 20 MB
         mapping:
           type: string
-          description: JSON object attribute long name → field key, heading, external_id, version or "" (ignored)
+          description: JSON object requirement attribute long name → field key (custom fields as cf:<key>), heading, external_id, version or "" (ignored)
+        test_mapping:
+          type: string
+          description: JSON object test attribute long name → field key, steps, heading, external_id or "" (ignored)
+        object_types:
+          type: string
+          description: JSON object SPEC-OBJECT-TYPE long name → requirement, test, heading or ignore (default guessed; "Test case" and types named like it are tests)
+        relation_types:
+          type: string
+          description: JSON object SPEC-RELATION-TYPE long name → a relation type, verifies (a trace link) or ignore
         folder_id:
           type: string
-          description: The folder the hierarchy goes below
+          description: The requirement folder the hierarchy goes below
+        test_folder_id:
+          type: string
+          description: The test folder the tests' hierarchy goes below
         hierarchy:
           type: boolean
           description: Heading objects become folders (default true)
+        refines:
+          type: boolean
+          description: A requirement nested below another requirement refines it (default false)
         overwrite_conflicts:
           type: boolean
         exclude:
           type: string
-          description: JSON array of row indexes
+          description: JSON array of requirement row indexes
+        exclude_tests:
+          type: string
+          description: JSON array of test row indexes
     ExchangeDiff:
       type: object
       properties:
@@ -17587,6 +20827,9 @@ components:
           - deprecated
         estimated_minutes:
           type: integer
+        owner:
+          type: string
+          description: The project member responsible for the test (e-mail address; a name that is no member stays as text).
         tags:
           type: array
           items:
@@ -17911,6 +21154,12 @@ components:
       properties:
         type:
           type: string
+          enum:
+          - ''
+          - jira
+          - github
+          - gitlab
+          - rt
         url:
           type: string
         project_key:
@@ -17922,6 +21171,12 @@ components:
         project:
           type: string
           description: GitLab project ID or path (group/subgroup/project)
+        queue:
+          type: string
+          description: Request Tracker queue (name or ID) of new tickets
+        labels_field:
+          type: string
+          description: Request Tracker custom field that receives the labels (empty sends none)
         labels:
           type: string
         milestone:
@@ -17945,6 +21200,12 @@ components:
     Risk:
       type: object
       properties:
+        catalog_ref:
+          type: string
+          description: the catalogue risk it was copied from ('' = none)
+        catalog_area:
+          type: string
+          description: the catalogue area of that risk (derived)
         id:
           type: string
         project_id:
@@ -18016,6 +21277,74 @@ components:
         created_at:
           type: string
           format: date-time
+    WorkItem:
+      type: object
+      description: A row of the work list (GET /my-work).
+      properties:
+        kind:
+          type: string
+          description: requirement, test, risk, defect, execution, waiver, ...; kind and id identify the row
+        id:
+          type: string
+        entity_type:
+          type: string
+          description: The item the row links to.
+        entity_id:
+          type: string
+        run_id:
+          type: string
+          description: The run of an execution.
+        key:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        project_id:
+          type: string
+        project_key:
+          type: string
+        project_name:
+          type: string
+        reasons:
+          type: array
+          items:
+            type: string
+          description: owner, assigned, review_requested, waiver_approval, risk_acceptance, risk_review, overdue, suspect, stale, blocked
+        detail:
+          type: string
+          description: The run of an execution, the requester of a review or waiver, the residual level of a risk to accept.
+        due:
+          type: string
+          description: YYYY-MM-DD, absent without a due date
+        overdue:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+        sources:
+          type: array
+          items:
+            type: string
+    WorkSummary:
+      type: object
+      properties:
+        count:
+          type: integer
+        overdue:
+          type: integer
+        by_reason:
+          type: object
+          additionalProperties:
+            type: integer
+        by_kind:
+          type: object
+          additionalProperties:
+            type: integer
+        by_project:
+          type: object
+          additionalProperties:
+            type: integer
     Webhook:
       type: object
       properties:
@@ -18181,6 +21510,21 @@ components:
           type: string
         release_note:
           type: string
+        variant_ids:
+          type: array
+          description: the variants the release targets (the exit criteria are evaluated for each); empty for none
+          items:
+            type: string
+        variants:
+          type: array
+          description: names of the targeted variants (derived)
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
         created_by:
           type: string
         created_at:
@@ -18755,10 +22099,16 @@ components:
       properties:
         id:
           type: string
+        project_id:
+          type: string
         entity_type:
           type: string
+          enum: [requirement, test, defect, risk, run, review]
         entity_id:
           type: string
+        parent_id:
+          type: string
+          description: the first comment of the thread ("" for a comment that starts a thread)
         user_id:
           type: string
         user_email:
@@ -18769,12 +22119,65 @@ components:
           type: string
         body:
           type: string
+          description: Markdown; empty for a removed comment
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        resolved_by:
+          type: string
+        resolved_by_name:
+          type: string
+        deleted:
+          type: boolean
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+        mentions:
+          type: array
+          description: user ids mentioned in the body
+          items:
+            type: string
+        reactions:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    DiscussionThread:
+      type: object
+      properties:
+        root:
+          $ref: '#/components/schemas/Comment'
+        project_key:
+          type: string
+        entity_key:
+          type: string
+        entity_title:
+          type: string
+        replies:
+          type: integer
+        last_at:
+          type: string
+          format: date-time
+        last_by:
+          type: string
+        participants:
+          type: array
+          items:
+            type: string
+        mentioned:
+          type: array
+          items:
+            type: string
     AuditEntry:
       type: object
       properties:

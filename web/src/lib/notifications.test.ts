@@ -23,11 +23,15 @@ describe('notificationTarget', () => {
   const n = (entity_type: string) => ({ project_id: 'p1', entity_type, entity_id: 'x' })
   it('leads to the item', () => {
     expect(notificationTarget(n('requirement'))).toEqual({ name: 'requirements', params: { projectId: 'p1' }, query: { item: 'x' } })
+    expect(notificationTarget(n('cycle'))).toEqual({ name: 'cycle', params: { projectId: 'p1', cycleId: 'x' } })
     expect(notificationTarget(n('test'))?.name).toBe('tests')
     expect(notificationTarget(n('defect'))?.name).toBe('defects')
     expect(notificationTarget(n('waiver'))).toEqual({ name: 'waivers', params: { projectId: 'p1' }, query: { waiver: 'x' } })
     expect(notificationTarget(n('risk'))?.query).toEqual({ risk: 'x' })
     expect(notificationTarget(n('execution'))).toEqual({ name: 'runs', params: { projectId: 'p1' } })
+    expect(notificationTarget(n('run'))).toEqual({ name: 'run', params: { projectId: 'p1', runId: 'x' }, query: { tab: 'discussion' } })
+    expect(notificationTarget(n('review'))).toEqual({ name: 'reviews', query: { review: 'x' } })
+    expect(notificationTarget(n('chat_channel'))).toEqual({ name: 'settings', params: { projectId: 'p1' } })
     expect(notificationTarget(n('other'))?.name).toBe('dashboard')
   })
   it('needs a project', () => {

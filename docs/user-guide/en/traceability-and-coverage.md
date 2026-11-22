@@ -92,13 +92,15 @@ Besides the rules you write, Qtestframe has **built-in checks** with a fixed con
 | Test verifies an inactive requirement | a test verifies a rejected or obsolete requirement |
 | Broken test prerequisite | a prerequisite of a test is deleted, its latest result failed, or prerequisites form a cycle |
 | MUST requirement in a release without passing evidence | a MUST or SHALL requirement in a planned or active release has no linked test that is not suspect and passed its latest execution |
-| High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or none of its requirements is verified |
+| High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or not every one of its requirements is verified (a risk whose requirements are all verified counts as mitigated) |
 | Regulatory requirement rejected without justification | a requirement added from a regulation of the [catalogue](catalogue.md) (a law or directive) is rejected, and it has no comment and no rationale of its own |
-| Suspected duplicate requirements | two active requirements have nearly identical title and description (similarity of at least 0.9 by default) and no *duplicates* relation |
+| Suspected duplicate requirements | two active requirements say the same thing: their title, description and criteria are similar (at least 0.68 by default, synonyms and word forms in English and Swedish included) and they have no *duplicates* relation. See [Duplicates and conflicts](duplicates-and-conflicts.md) |
+| Potentially conflicting requirements | two active requirements likely contradict each other: the same statement with opposite obligations (MUST and MUST NOT), thresholds on the same quantity that cannot both hold (≤ 2 s and ≥ 5 s) or different values of a mutually exclusive set (enabled and disabled), with a confidence of at least 0.6 by default, and they have no *conflicts with* relation |
+| Suspected duplicate tests | two active tests say the same thing (title, description, preconditions and steps) and are not linked as duplicates |
 
-A project gets them with **Add built-in checks** (on the rules or in **Analytics**): they are added as rules with the severity *warning*, so they show up in the release exit criterion [Traceability rules](releases-and-risks.md#exit-criteria) only when it counts warnings, or after you raise a check to *error*. A built-in check is marked **Built-in**; you can rename it, change its severity, turn it off, narrow it with a query and, for the duplicate check, set the **Similarity threshold** (0.5 to 1) or, for the risk check, the **Least risk level**.
+A project gets them with **Add built-in checks** (on the rules or in **Analytics**): they are added as rules with the severity *warning*, so they show up in the release exit criterion [Traceability rules](releases-and-risks.md#exit-criteria) only when it counts warnings, or after you raise a check to *error*. A built-in check is marked **Built-in**; you can rename it, change its severity, turn it off, narrow it with a query and, for the duplicate checks, set the **Similarity threshold** (0.5 to 1), for the conflict check the **Least confidence** (0.5 to 1) or, for the risk check, the **Least risk level**.
 
-Each violation names the other items involved (the conflicting requirement and the release, the obsolete parent, the failing prerequisite …), each a link, and offers a fix where one is obvious: **Remove relation**, **Unlink**, **Remove prerequisite**, **Remove from** the release, **Set obsolete**, **Record a justification**, **Link a mitigation**, and for a suspected duplicate **Mark as duplicate** (adds the *duplicates* relation) or **Not a problem** (the pair is not reported again). **Not a problem** also acknowledges a dependency on a deleted item.
+Each violation names the other items involved (the conflicting requirement and the release, the obsolete parent, the failing prerequisite …), each a link, and offers a fix where one is obvious: **Remove relation**, **Unlink**, **Remove prerequisite**, **Remove from** the release, **Set obsolete**, **Record a justification**, **Link a mitigation**, for a suspected duplicate **Mark as duplicate** (adds the *duplicates* relation; for tests an item link labelled *duplicates*), for a potential conflict **Mark as conflicting** (adds the *conflicts with* relation), and **Not a problem** (the pair is not reported again). [Duplicates and conflicts](duplicates-and-conflicts.md) shows the evidence and can also merge duplicates. **Not a problem** also acknowledges a dependency on a deleted item.
 
 ## Change impact
 
@@ -112,9 +114,33 @@ A change of a requirement rarely stays with that requirement. When the **substan
 
 A change of a test's title, description, preconditions, steps, expected result, script or execution type makes its links suspect and its latest result stale.
 
+### A change travels on
+
+What a change makes suspect can in turn change, so the impact travels on: when A changes, B (which refines A) becomes suspect, then C (which refines B), and so on, up to the project's **impact depth** (3 by default, at most 10; see [How far a change travels](#how-far-a-change-travels)). Every item is reached once, along the shortest way, even when the relations form a cycle, and the dialogs show the **path** to it: *A → refined by → B → refined by → C → verified by → T-12*.
+
+Besides the requirement relations and the tests, a change reaches, as **Review recommended**:
+
+- the **risks** a changed requirement addresses (and, from a risk, the other requirements that address it);
+- the **open defects** of an affected requirement or test;
+- requirements and tests connected by **item links**, and linked runs;
+- tests that **call** a changed test as shared steps or **depend** on it;
+- the **variants** an affected item applies to (when chosen explicitly) and the **code changes** (commits, merge requests) that refer to it.
+
+These are not marked; their owners can be notified. A test that changes affects the requirements it verifies, not what lies beyond them. A change of the **status** alone (for example in a bulk status change) only recommends reviews. Tracker issues, documents and results belong to the changed item itself.
+
 ### Before you save
 
-When you save a change of substance and something would be marked, a dialog lists everything that becomes suspect, out of date, outdated or stale. Select **Save and mark** to save, or **Cancel** to go back to the editor. Items that are already marked are shown as such and are not counted again.
+Every change goes through the same preview: saving a requirement or test, a **bulk edit** or **bulk status change** in the list, an **Excel** or **ReqIF** round-trip import, **restoring a version** from the history and **restoring items from a baseline**. When something would be affected, a dialog shows it as a tree grouped by type and depth, with the counts by type and by depth, and for each item whether it **Becomes suspect** or only **Review recommended**, and the path along which the change reaches it. Choose what to do:
+
+| Choice | What happens |
+|---|---|
+| **Mark suspect** (the default) | Marks what the project's rules mark suspect, flags the tracker issues out of date and notifies the owners of the items recommended for review |
+| **Notify owners only** | Marks nothing; the owners (requirement and risk owners, defect assignees, test authors) get one notification each, listing their affected items |
+| **Skip** | Marks nothing and notifies nobody. Results recorded before the change still go stale and documents still become outdated: those follow from the change itself |
+
+Select **Save** to save with your choice, or **Cancel** to change nothing. Items that are already marked are shown as such and are not counted again.
+
+Through the API, every changing endpoint takes `?dry_run=impact` (the change is made in a transaction, its impact returned and everything rolled back) and `?impact=suspect|notify|skip`.
 
 ### The Impact tab
 
@@ -123,15 +149,19 @@ The **Impact** tab of a requirement or test shows the same list at any time, und
 - **Blocking defects**: the open defects that block it or warn about it (see [Blocking defects](#blocking-defects));
 - **Suspect now**: its suspect relations, with **Confirm** for each (and **Confirm all**), and the linked tests whose result is stale.
 
-The badges next to the requirement's key (**Blocked by 1 defect**, **1 stale result**, **1 suspect relation**) open the tab. For a test, the tab also shows its **Regression history** (see [Defects](defects.md#regressions)).
+The badges next to the requirement's key (**Blocked by 1 defect**, **1 stale result**, **1 suspect relation**) open the tab. For a test, the tab also shows its **Regression history** (see [Defects](defects.md#regressions)). **Impact analysis** opens the item in the [impact analysis](#impact-analysis).
 
 ### The impact of a baseline
 
 In **Baselines**, compare a baseline with the current state and select **Impact**. The dialog lists every requirement and test whose substance changed since the baseline, the largest impact first, with the totals of the items affected. Open an item to see what its change makes suspect, out of date, outdated or stale.
 
+### Impact analysis
+
+**Impact analysis** (in the project's sections) shows the impact of one or more items, or of everything that changed since a baseline, without changing anything. Select **Requirements** or **Tests** to pick items, or choose a baseline under **Changes since a baseline**, set the **Impact depth** and select **Analyse**. The result shows the counts by type and depth and either a **Graph** (the changed items on the left, every affected item to the right of the item it is reached from; dashed: review recommended) or a **Table** with the type, depth, effect, owner and path of every item. **CSV** and **PDF** export the analysis. The address of the page keeps the choice, so you can send an analysis as a link.
+
 ### Along which relations
 
-**Categories & settings → Change impact** decides, per relation type, which requirement becomes suspect when the one at the other end changes:
+**Categories & settings → Change impact** decides, per relation type, which requirement becomes suspect when the one at the other end changes, and whether it becomes **suspect** or only gets a **review recommended**:
 
 | Setting | Meaning |
 |---|---|
@@ -140,7 +170,15 @@ In **Baselines**, compare a baseline with the current state and select **Impact*
 | **Both directions** | either end changing makes the other suspect |
 | **Off** | changes do not travel along this type (the default for the other types) |
 
+The mode next to each type (**Becomes suspect** or **Review recommended**) applies to everything reached through it: an item is suspect only when every step on its path marks suspect.
+
 **Mark the tracker issues of a changed requirement out of date** can be turned off.
+
+### How far a change travels
+
+**Impact depth** (1 to 10, default 3) is the number of steps between requirements, tests and risks a change travels. Depth 1 is the direct impact only: the requirements related to the changed one and the tests of both. The verifying tests of an affected requirement and the defects, variants and code changes of an affected item do not count as a step.
+
+**Other connections** turns the other kinds of connection on or off: trace links (they can mark suspect or only recommend a review), shared steps, test dependencies, item links, risks, defects, variants and code changes (these only recommend a review).
 
 ## Stale results
 
@@ -219,7 +257,7 @@ Open a requirement and choose the **Verification** tab. It shows the state with 
 
 A test linked to a requirement can be mapped to the criteria it verifies. In the **Verification** tab choose **Map criteria** next to the test, tick the criteria and, if you want, the **step** of the test that shows it. A criterion mapped to a step is passed when that step passed in the test's latest execution. When you link a test you can also choose a criterion right away (the selector next to **Link tests**).
 
-A link **without** criteria counts for the whole requirement, as before: for every criterion that has no evidence of its own. A project that wants every criterion to have its own evidence turns on **strict criterion coverage** under **Settings → Project → Verification**. A failing test always fails the requirement, mapped or not.
+A link **without** criteria counts for the whole requirement, as before: for every criterion that has no evidence of its own. A project that wants every criterion to have its own evidence turns on **strict criterion coverage** under **Settings → Project → Verification**. A failing test always fails the requirement, mapped or not. There, too, a project can let debriefed [exploratory sessions](exploratory-testing.md#sessions-as-verification-evidence) count as evidence for the requirements in their scope (off by default).
 
 ### Verification records
 

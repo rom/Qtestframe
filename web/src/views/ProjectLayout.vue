@@ -6,6 +6,7 @@ import Message from 'primevue/message'
 import ProjectIcon from '@/components/ProjectIcon.vue'
 import Button from 'primevue/button'
 import SharingDialog from '@/components/SharingDialog.vue'
+import ImpactGateHost from '@/components/ImpactGateHost.vue'
 import { canShare, isRestricted } from '@/lib/sharing'
 import { useAuthStore } from '@/stores/auth'
 import { useProjectStore } from '@/stores/project'
@@ -54,17 +55,22 @@ const tabs = computed(() => [
   { to: 'requirements', icon: 'pi pi-list-check', label: t('nav.requirements') },
   { to: 'tests', icon: 'pi pi-check-square', label: t('nav.tests') },
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
+  { to: 'exploratory', icon: 'pi pi-compass', label: t('nav.exploratory') },
+  { to: 'cycles', icon: 'pi pi-sync', label: t('nav.cycles') },
   { to: 'releases', icon: 'pi pi-box', label: t('nav.releases') },
   { to: 'defects', icon: 'pi pi-exclamation-circle', label: t('nav.defects') },
   { to: 'risks', icon: 'pi pi-shield', label: t('nav.risks') },
   { to: 'waivers', icon: 'pi pi-verified', label: t('nav.waivers') },
+  { to: 'discussions', icon: 'pi pi-comments', label: t('nav.discussions') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
   { to: 'verification', icon: 'pi pi-verified', label: t('nav.verification') },
   { to: 'variants', icon: 'pi pi-clone', label: t('variants.nav') },
   { to: 'code', icon: 'pi pi-code', label: t('code.nav') },
   { to: 'analytics', icon: 'pi pi-chart-bar', label: t('nav.analytics') },
+  { to: 'duplicates', icon: 'pi pi-copy', label: t('nav.duplicates') },
   { to: 'soa', icon: 'pi pi-table', label: t('nav.soa') },
   { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
+  { to: 'impact', icon: 'pi pi-bullseye', label: t('nav.impact') },
   { to: 'flow', icon: 'pi pi-share-alt', label: t('nav.flow') },
   ...(isSoftware(proj.project) ? [{ to: 'prompts', icon: 'pi pi-sparkles', label: t('nav.prompts') }] : []),
   { to: 'catalog', icon: 'pi pi-book', label: t('nav.catalog') },
@@ -77,6 +83,8 @@ const tabs = computed(() => [
 ])
 const ready = computed(() => proj.project?.id === props.projectId)
 const isRunsChild = computed(() => route.name === 'run' || route.name === 'execute')
+const isExploratoryChild = computed(() => route.name === 'exploratorySession')
+const childActive = (to: string) => (to === 'runs' && isRunsChild.value) || (to === 'exploratory' && isExploratoryChild.value) || (to === 'cycles' && route.name === 'cycle')
 </script>
 
 <template>
@@ -99,12 +107,13 @@ const isRunsChild = computed(() => route.name === 'run' || route.name === 'execu
         v-for="tab in tabs"
         :key="tab.to"
         :to="{ name: tab.to, params: { projectId } }"
-        :class="{ 'router-link-active': tab.to === 'runs' && isRunsChild }"
-        :aria-current="tab.to === 'runs' && isRunsChild ? 'page' : undefined"
+        :class="{ 'router-link-active': childActive(tab.to) }"
+        :aria-current="childActive(tab.to) ? 'page' : undefined"
       >
         <i :class="tab.icon" aria-hidden="true" />{{ tab.label }}
       </RouterLink>
     </nav>
     <RouterView :key="projectId" />
+    <ImpactGateHost />
   </template>
 </template>

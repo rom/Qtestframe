@@ -808,3 +808,35 @@ tests:
           expected: Den är mindre än 12 månader gammal och omfattar varje tjänst.
         - action: Jämför uppmätt återställningstid och dataförlust med målen.
           expected: Varje uppmätt värde ligger inom sitt mål, eller så har avvikelsen en åtgärdsplan.
+
+risks:
+  - id: SVSLA-R01
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [sla, measurement]
+    refs: ["ITIL 4 Service level management", "ISO/IEC 20000-1:2018 §8.3.3"]
+    mitigated_by: [SVSLA-01, SVSLA-06, SVSLA-08, SVSLA-09, SVSLA-07]
+    en:
+      title: Poor service without consequences
+      description: Targets are vague, reports come late and measurement data cannot be checked. The provider misses the service level but the customer cannot show it or claim credits.
+      mitigation: Agree measurable targets, receive the monthly report within 10 working days and the measurement data within 5, hold quarterly service reviews and apply service credits on the next invoice.
+    sv:
+      title: Dålig service utan konsekvenser
+      description: Målen är vaga, rapporterna kommer sent och mätdata kan inte kontrolleras. Leverantören missar servicenivån men kunden kan inte visa det eller kräva vite.
+      mitigation: Kom överens om mätbara mål, få månadsrapporten inom 10 arbetsdagar och mätdata inom 5, håll kvartalsvisa uppföljningsmöten och tillämpa vite på nästa faktura.
+  - id: SVSLA-R02
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [incident-response, priority]
+    refs: ["ITIL 4 Service level management", "ISO/IEC 20000-1:2018 §8.6.1"]
+    mitigated_by: [SVSLA-03, SVSLA-04, SVSLA-05, SVSLA-14, SVSLA-17]
+    en:
+      title: Critical incident handled at normal pace
+      description: Priority is set arbitrarily and there are no response or resolution targets for priority 1. A business-critical outage waits in the queue while escalation contacts are unknown.
+      mitigation: Set priority from impact and urgency, respond within 15 minutes and resolve within 4 hours for priority 1, agree an escalation matrix and set recovery time and point objectives per service.
+    sv:
+      title: Kritisk incident hanteras i normal takt
+      description: Prioriteten sätts godtyckligt och det finns inga mål för svars- eller lösningstid för prioritet 1. Ett verksamhetskritiskt avbrott väntar i kön medan eskaleringskontakterna är okända.
+      mitigation: Sätt prioritet utifrån påverkan och brådska, svara inom 15 minuter och lös inom 4 timmar för prioritet 1, kom överens om en eskaleringsmatris och fastställ mål för återställningstid och återställningspunkt per tjänst.

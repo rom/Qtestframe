@@ -69,7 +69,7 @@ const (
 )
 
 // Sections of the administration view, in order.
-var Sections = []string{"general", "security", "oidc", "logging", "email", "runner", "retention"}
+var Sections = []string{"general", "security", "oidc", "logging", "email", "runner", "similarity", "retention"}
 
 // Def describes one setting.
 type Def struct {
@@ -219,6 +219,28 @@ var Registry = []*Def{
 	enum("runner.web.trace", "runner", Restart, []string{"on_failure", "always", "off"}, func(c *config.Config) *string { return &c.Runner.Web.Trace }),
 	enum("runner.web.video", "runner", Restart, []string{"off", "on_failure", "always"}, func(c *config.Config) *string { return &c.Runner.Web.Video }),
 	str("runner.web.playwright_dir", "runner", ReadOnly, func(c *config.Config) *string { return &c.Runner.Web.PlaywrightDir }),
+
+	// similarity: the optional embeddings service (off by default; sends
+	// the text of requirements and tests to it)
+	flag("similarity.embeddings.enabled", "similarity", Runtime, func(c *config.Config) *bool { return &c.Similarity.Embeddings.Enabled }),
+	checked(optional(str("similarity.embeddings.url", "similarity", Runtime, func(c *config.Config) *string { return &c.Similarity.Embeddings.URL })), checkEndpoint),
+	checked(optional(str("similarity.embeddings.model", "similarity", Runtime, func(c *config.Config) *string { return &c.Similarity.Embeddings.Model })), oneLine),
+	{Key: "similarity.embeddings.api_key", Section: "similarity", Kind: Secret, Apply: Runtime, Optional: true,
+		get: func(c *config.Config) any { return c.Similarity.Embeddings.APIKey }, set: func(c *config.Config, v any) { c.Similarity.Embeddings.APIKey = v.(string) }},
+	dur("similarity.embeddings.timeout", "similarity", Runtime, time.Second, 5*time.Minute, func(c *config.Config) *time.Duration { return &c.Similarity.Embeddings.Timeout }),
+}
+
+// checkEndpoint: an absolute http(s) URL (or empty).
+func checkEndpoint(v any) error {
+	s := v.(string)
+	if s == "" {
+		return nil
+	}
+	u, err := url.Parse(s)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.Fragment != "" || strings.ContainsAny(s, " \r\n") {
+		return errors.New("must be an absolute http(s) URL, e.g. https://llm.example.com/v1/embeddings")
+	}
+	return nil
 }
 
 var tagRE = regexp.MustCompile(`^[A-Za-z0-9._-]{1,48}$`)

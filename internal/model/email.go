@@ -1,7 +1,6 @@
 package model
 
 import (
-	"errors"
 	"time"
 )
 
@@ -98,45 +97,5 @@ func ParseTimeOfDay(s string) (hour, minute int, ok bool) {
 // NextRun returns the first scheduled time strictly after after, or an
 // error when the schedule is invalid.
 func (s *ReportSubscription) NextRun(after time.Time) (time.Time, error) {
-	if s.Timezone == "" || s.Timezone == "Local" {
-		return time.Time{}, errors.New("unknown time zone")
-	}
-	loc, err := time.LoadLocation(s.Timezone)
-	if err != nil {
-		return time.Time{}, errors.New("unknown time zone")
-	}
-	h, m, ok := ParseTimeOfDay(s.TimeOfDay)
-	if !ok {
-		return time.Time{}, errors.New("time must be HH:MM")
-	}
-	t := after.In(loc)
-	y, mo, d := t.Date()
-	var c time.Time
-	switch s.Frequency {
-	case FrequencyDaily:
-		c = time.Date(y, mo, d, h, m, 0, 0, loc)
-		if !c.After(after) {
-			c = time.Date(y, mo, d+1, h, m, 0, 0, loc)
-		}
-	case FrequencyWeekly:
-		if s.Weekday < 0 || s.Weekday > 6 {
-			return time.Time{}, errors.New("weekday must be 0 (Sunday) to 6")
-		}
-		ahead := (s.Weekday - int(t.Weekday()) + 7) % 7
-		c = time.Date(y, mo, d+ahead, h, m, 0, 0, loc)
-		if !c.After(after) {
-			c = time.Date(y, mo, d+ahead+7, h, m, 0, 0, loc)
-		}
-	case FrequencyMonthly:
-		if s.DayOfMonth < 1 || s.DayOfMonth > 28 {
-			return time.Time{}, errors.New("day of month must be 1 to 28")
-		}
-		c = time.Date(y, mo, s.DayOfMonth, h, m, 0, 0, loc)
-		if !c.After(after) {
-			c = time.Date(y, mo+1, s.DayOfMonth, h, m, 0, 0, loc)
-		}
-	default:
-		return time.Time{}, errors.New("frequency must be daily, weekly or monthly")
-	}
-	return c.UTC(), nil
+	return Schedule{Frequency: s.Frequency, Weekday: s.Weekday, DayOfMonth: s.DayOfMonth, TimeOfDay: s.TimeOfDay, Timezone: s.Timezone}.NextRun(after)
 }

@@ -59,6 +59,7 @@ The **Exit criteria** tab lists the conditions the release must meet. Select **A
 | Traceability rules | no requirement in scope and no test linked to one breaks an enabled [traceability rule](traceability-and-coverage.md#traceability-rules) of the chosen severity; the status tab lists the items with the rules they break | errors only, or errors and warnings |
 | No blocking defects | no requirement in scope is [blocked by an open defect](traceability-and-coverage.md#blocking-defects) under the project's severity rules; a stale pass does not count for **Passed** and **Mandatory passed** | — |
 | Residual risk | no risk linked to the scope that is not closed has a [residual level](waivers-and-soa.md#residual-risk) above the threshold, unless its acceptance is signed | the project's risk acceptance threshold, or a level |
+| Test cycle executed | at least the threshold of the planned tests of the chosen [test cycle](test-cycles.md) have a result in the cycle's runs; 100 % means the cycle is fully executed | threshold in % and the test cycle |
 
 A release without exit criteria is always a go.
 
@@ -71,6 +72,8 @@ The **Status** tab evaluates the exit criteria now. It shows **Go** when every c
 Each criterion shows whether it is met, the actual value next to the target (for example *80 % (target ≥ 95 %)*), and the items that block it: requirements without tests, failed tests, open defects or risks that still need action. Every item is a link that opens it.
 
 The badge in the release list is the same evaluation, so you can see at a glance which releases are ready.
+
+In a project with [variants](variants-and-code.md), a release can target variants: the exit criteria are then evaluated for each of them, the **Status** tab shows a matrix of criteria × variants, and the release is a go only when every targeted variant is (see [release gates per variant](variants-and-code.md#release-gates-per-variant)).
 
 A percentage criterion with nothing to measure is **not met**: a release without requirements in its scope, or without executions for *executed*, shows *Nothing to measure yet* and is a no-go. A release without any exit criteria is always a go.
 
@@ -97,7 +100,7 @@ Every release is checked before any is changed. Changes of status (other than *R
 
 ## The risk register
 
-**Risks** lists the risks of the project. Every risk has a key such as *SHOP-RISK-3*, a title, a category, an owner, a **likelihood** and an **impact** from 1 to 5, a status and a **mitigation**: what you do to make it less likely or less harmful.
+**Risks** lists the risks of the project. Every risk has a key such as *SHOP-RISK-3*, a title, a category, an owner (a project member — type `@` to pick one — or a plain name), a **likelihood** and an **impact** from 1 to 5, a status and a **mitigation**: what you do to make it less likely or less harmful.
 
 | Likelihood | | Impact | |
 |---|---|---|---|
@@ -109,9 +112,9 @@ Every release is checked before any is changed. Changes of status (other than *R
 
 The register shows the score and level of each risk, its status, owner, the requirements that address it, and how many of them are **covered** (have tests) and **verified** (all their tests passed). Filter it by text, level or status. Closed risks are hidden unless you select **Include closed risks** or filter on the status *Closed*.
 
-To add a risk, select **New risk**. Choose the likelihood and impact (the dialog shows the score and level as you go), describe the mitigation and select **Link requirements** to choose the requirements that address the risk. Select a risk in the register to change it.
+To add a risk, select **New risk**. Choose the likelihood and impact (the dialog shows the score and level as you go), describe the mitigation and select **Link requirements** to choose the requirements that address the risk. Select a risk in the register to change it. You can also start from the typical risks of the [catalogue](catalogue.md#risks-in-the-catalogue): they come with a suggested mitigation and the requirements that mitigate them, already linked.
 
-The requirement editor shows the risks a requirement addresses under **Risks**, and the requirement list has optional **Risk** and **Open defects** columns (see **Columns**).
+The requirement editor shows the risks a requirement mitigates under **Mitigates risks**. Select **Link a risk** to choose a risk of the project that the requirement mitigates, or the **×** on a risk to remove the link; the risk's requirements change with it. The requirement list has optional **Risk** and **Open defects** columns (see **Columns**).
 
 ### Change many risks at once
 
@@ -122,6 +125,8 @@ Tick risks in the register. The toolbar sets **status**, **likelihood** or **imp
 The heat map counts the risks in a 5 × 5 grid: likelihood from 5 at the top to 1 at the bottom, impact from 1 on the left to 5 on the right. The colour of a cell is the level of its score. Select a cell to show only the risks with that likelihood and impact in the register; select it again, or the **×** on the filter chip, to show all.
 
 Next to the heat map, **Open risks by level** counts the risks that are not closed, per level; select a level to filter the register.
+
+When the project has risks from the catalogue, **Catalogue area** above the heat map shows only the risks of one area (for example *Authentication* or *Fire safety*), or those not from the catalogue. The heat map, the level counts and the register follow the choice, and the area is part of the page address. The risk list of the API takes the same choice as the query fields `catalog_area` (alias `area`) and `catalog`, for example `area:authentication` or `catalog:AUTH-R01`.
 
 ## Risk levels
 

@@ -45,7 +45,7 @@ Projects can send signed events to other systems. Users with `project.update` se
 | defect | `defect.created`, `defect.updated`, `defect.status`, `defect.assigned`, `defect.regression` |
 | risk | `risk.created`, `risk.updated` |
 | release | `release.created`, `release.updated`, `release.released` |
-| comment | `comment.created` |
+| comment | `comment.created`, `comment.mentioned`, `comment.resolved` |
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
@@ -63,9 +63,52 @@ Each delivery is a `POST` with a JSON body `{"id", "event", "project_id", "actor
 
 Receivers should verify the signature (compare in constant time) and ignore repeated `id`s. Deliveries are made after the change is committed, time out after 10 seconds, **never follow redirects** and are tried once; the status of the last delivery is shown with the webhook, and failures are logged (`webhook delivery`). The webhook secrets are stored encrypted. Loaded project archives contain no secrets and their webhooks are disabled.
 
+## Chat notifications
+
+Projects can post their events to chat channels: Slack, Microsoft Teams, Mattermost, Rocket.Chat, Google Chat, Matrix and Discord. Users with `project.update` set the channels up in the project settings (see the user guide, *Reviews and notifications*). Nothing needs to be configured on the server, but:
+
+- Set `server.base_url` (or the system setting): without it messages cannot link to the items.
+- The server must reach the chat tool over HTTPS (outbound proxy and firewall). Posts time out after 10 seconds and never follow redirects.
+- The webhook URL or the Matrix token of a channel is stored encrypted like the other secrets (`qtestframe secrets` re-encrypts it), is never returned by the API, written to the audit log or shown in an error, and is left out of project archives (a loaded channel is off until someone enters a new URL).
+
+**Events.** A channel offers the events of the central event registry (the same as the webhooks above), grouped for the settings. The list is derived from the registry: an event that a later version adds appears in the channel settings and in **All events** without any change to the chat code; its group is taken from the part of its name before the dot (unknown parts go to *Other*), its label from the event name unless a translation exists.
+
+<!-- BEGIN GENERATED: chat-events (make admin-guide-ref) -->
+
+| Group | Events |
+|---|---|
+| Test runs | `run.created` (Test run created), `run.updated` (Test run updated), `run.completed` (Test run completed), `execution.updated` (Test result recorded) |
+| Defects | `defect.created` (Defect reported), `defect.updated` (Defect updated), `defect.status` (Defect status changed), `defect.assigned` (Defect assigned), `defect.regression` (Regression detected) |
+| Requirements and tests | `requirement.created` (Requirement created), `requirement.updated` (Requirement updated), `test.created` (Test created), `test.updated` (Test updated), `comment.created` (New comment), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baseline signed) |
+| Reviews | `review.requested` (Review requested), `review.completed` (Review completed) |
+| Releases | `release.created` (Release created), `release.updated` (Release updated), `release.released` (Release released) |
+| Waivers | `waiver.requested` (Waiver requested), `waiver.approved` (Waiver approved), `waiver.rejected` (Waiver rejected), `waiver.revoked` (Waiver revoked) |
+| Risks | `risk.created` (Risk identified), `risk.updated` (Risk updated) |
+
+<!-- END GENERATED: chat-events -->
+
+**Delivery.** Every post is stored in a queue (table `chat_deliveries`) once the change is committed and sent at once in the background. A failed post is retried by the server's minute job with exponential backoff (1, 2, 4, 8 and 16 minutes, or the `Retry-After` of an HTTP 429, at most an hour), up to 6 attempts; an HTTP 4xx answer other than 408 and 429 (the chat tool refused the URL, token or message) is final. Several servers sharing one PostgreSQL database never post the same message twice (a post is claimed before it is sent). After 5 failed posts in a row the channel turns itself off; the project's administrators get an in-app notification (and an e-mail if they chose immediate e-mails), and the audit log has a `chat.disabled` entry. The last 50 posts of each channel are kept as its delivery log; the queue and the log are not part of a backup (the channels are). Digest channels collect their events and post them as one message every N minutes (1–1440).
+
+**Content.** Messages contain the event, the item key and title, the status, the priority, the person and a summary of at most a few hundred characters. They never contain secrets. In a project with restricted access, messages contain only the event, key, status and link unless an organisation administrator (`tenant.manage`) allows the channel the full content. Broadcast mentions (`@channel`, `@here`, `@all`, `@everyone`) in texts are defused.
+
+### Setting up each chat tool
+
+| Tool | What to create | What to enter in Qtestframe |
+|---|---|---|
+| Slack | A Slack app with **Incoming Webhooks** turned on; **Add New Webhook to Workspace** and choose the channel. Messages use Block Kit. | The webhook URL `https://hooks.slack.com/services/…` |
+| Microsoft Teams | In the channel: **Workflows** → template *Post to a channel when a webhook request is received* (Power Automate). Messages are Adaptive Cards 1.4. | The URL of the workflow's HTTP trigger |
+| Microsoft Teams (Office 365 connector) | The older **Incoming Webhook** connector of a channel (MessageCard format). Microsoft is retiring these connectors: use it only where Workflows are not available. | The connector URL |
+| Mattermost | **Integrations → Incoming Webhooks → Add Incoming Webhook**, choose the channel. Allow integrations to override the user name if the posts should show *Qtestframe*. | The URL `https://<server>/hooks/<id>` |
+| Rocket.Chat | **Administration → Workspace → Integrations → New → Incoming**: turn it on, choose the channel (`#qa`) and the user to post as; no script is needed. | The webhook URL shown after saving |
+| Google Chat | In the space: **Apps & integrations → Webhooks → Add webhook**. Messages are cards (cardsV2). | The webhook URL (it contains `key` and `token` parameters) |
+| Matrix | A bot account on the homeserver; invite it to the room and let it join. Get its access token (for example by signing in with it once through the client API). Messages are `m.notice` events with HTML. | The homeserver URL, the room ID (`!…:server`) or alias (`#…:server`) and the access token |
+| Discord | **Channel settings → Integrations → Webhooks → New Webhook**. Messages are embeds; mentions are turned off. | The webhook URL `https://discord.com/api/webhooks/…` |
+
+Use **Send test message** to check a channel; the delivery log shows the HTTP status and the error of each post (for example `HTTP 404: no_service` from Slack when the webhook was removed, `HTTP 401: M_UNKNOWN_TOKEN` from Matrix). Personal chat notifications (direct messages to one user) are not offered; users get those as in-app notifications and e-mails.
+
 ## Defect and issue trackers
 
-Projects can push defects and requirements to **Jira**, **GitHub** or **GitLab**, sync their status back and import issues. Users with `project.update` connect a project under its settings ([user guide](../../user-guide/en/defects.md#connect-jira-github-or-gitlab)); pushing and syncing needs `run.execute`, issues from requirements `requirement.write`.
+Projects can push defects and requirements to **Jira**, **GitHub**, **GitLab** or **Request Tracker (RT)**, sync their status back and import issues. Users with `project.update` connect a project under its settings ([user guide](../../user-guide/en/defects.md#connect-jira-github-or-gitlab)); pushing and syncing needs `run.execute`, issues from requirements `requirement.write`.
 
 | Tracker | URL | Credential | Smallest useful scope |
 |---|---|---|---|
@@ -73,8 +116,26 @@ Projects can push defects and requirements to **Jira**, **GitHub** or **GitLab**
 | Jira Server / Data Center | your Jira URL | personal access token (Bearer) | as above |
 | GitHub | default `https://api.github.com` (GitHub Enterprise: its API URL) | token (Bearer) | fine-grained token with *Issues: read and write* on the one repository |
 | GitLab | default `https://gitlab.com`, or a self-managed instance (HTTPS) | token in `PRIVATE-TOKEN` | project access token with the `api` scope and the Reporter role |
+| Request Tracker 5 | the RT base URL, e.g. `https://rt.example.com` (REST2 below `/REST/2.0`) | auth token in `Authorization: token …` | an RT user with *CreateTicket*, *ShowTicket*, *ModifyTicket* and *CommentOnTicket* in the queue |
 
 The token is entered once, stored encrypted, and never returned by the API (only *has token*); it is not part of a project archive. Requests honour `HTTPS_PROXY`/`NO_PROXY` and the system's CA certificates, have a timeout, and wait for the tracker's `Retry-After` when it is short. Pushes and syncs are audited (`defect.push`, `defect.sync`, `requirement.issue.*`).
+
+### Request Tracker
+
+RT needs the REST2 API, which is part of RT 5 (for RT 4.4 the extension *RT::Extension::REST2*). Create a dedicated RT user for Qtestframe, grant it the rights above in the queue (a group right on the queue is the simplest), sign in as that user and create a token under **Logged in as → Settings → Auth Tokens**. The project settings take the RT base URL, the **queue** (name or ID) and optionally the name of a custom field that receives labels (RT has no labels of its own). Check that a reverse proxy in front of RT passes the `Authorization` header to `/REST/2.0`. Status sync maps the default lifecycle (*new*, *open*, *stalled*, *resolved*, *rejected*, *deleted*); statuses of custom lifecycles are shown but do not change the defect. Sync is on demand (**Sync** / **Sync all**, or `POST /api/v1/projects/{pid}/defects/sync` from a scheduler), as for the other trackers: no inbound webhook is needed.
+
+## Requirement import from Jira and Azure DevOps
+
+Users with `requirement.write` import requirements from a Jira JQL query or an Azure DevOps WIQL query ([user guide](../../user-guide/en/reports-and-export.md#jira-and-azure-devops)); the connections are set by users with `project.update` under **Project → Import sources** and stored in `projects.import_sources` (migration 0037).
+
+| Source | URL | Credential | Smallest useful scope |
+|---|---|---|---|
+| Jira Cloud | `https://<site>.atlassian.net` (or none: the project's Jira issue tracker is used) | user e-mail + API token (HTTP Basic) | *Browse projects* in the projects queried |
+| Jira Server / Data Center | your Jira URL | personal access token (Bearer) | as above |
+| Azure DevOps Services | `https://dev.azure.com/<organization>` and the project name | personal access token (HTTP Basic with an empty user name) | scope *Work Items (Read)*, organization limited to the one organization |
+| Azure DevOps Server | the collection URL, e.g. `https://tfs.example.com/tfs/DefaultCollection` | personal access token | as above |
+
+Jira is searched with `POST /rest/api/2/search/jql` (Jira Cloud) and, when that does not exist, `POST /rest/api/2/search` (Server and Data Center); Azure DevOps with the WIQL, fields and work items endpoints of REST API 7.1. At most 1,000 items are read per import. The import only reads; it is audited as `requirement.import`, the connection changes as `import_sources.update`. Tokens are encrypted with the server's secret keys (they are re-encrypted by key rotation), never returned, and left out of project archives. The import is reached through the server's outbound proxy (`HTTPS_PROXY`, `NO_PROXY`) like the trackers; allow the hosts above in a firewall.
 
 ## Script and web test runner
 

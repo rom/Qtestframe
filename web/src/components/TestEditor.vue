@@ -6,7 +6,7 @@ import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
 import StaleBadge from './StaleBadge.vue'
-import { contentChanges, needsImpactConfirm, type ChangeImpact } from '@/lib/correlations'
+import { contentChanges, needsImpactConfirm, type ChangeImpact, type ImpactChoice } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
@@ -23,6 +23,7 @@ import TraceRuleViolations from './TraceRuleViolations.vue'
 import { P } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
+import SimilarItemsPanel from './SimilarItemsPanel.vue'
 import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, ref, watch } from 'vue'
@@ -42,7 +43,8 @@ import ItemPickerDialog from './ItemPickerDialog.vue'
 import TestDependenciesPanel from './TestDependenciesPanel.vue'
 import ApplicabilityPanel from './ApplicabilityPanel.vue'
 import CodePanel from './CodePanel.vue'
-import CommentsPanel from './CommentsPanel.vue'
+import DiscussionPanel from './DiscussionPanel.vue'
+import { useRoute } from 'vue-router'
 import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import TestExecutionsPanel from './TestExecutionsPanel.vue'
@@ -133,6 +135,7 @@ function blank() {
     priority: 'medium',
     status: 'draft',
     estimated_minutes: 0 as number | null,
+    owner: '',
     tags: [] as string[],
     category_ids: [] as string[],
     folder_id: (props.folderId ?? null) as string | null,
@@ -182,6 +185,8 @@ async function load() {
     const t = await api.get<TestCase>(`/tests/${props.itemId}`)
     item.value = t
     commentCount.value = t.comment_count ?? 0
+    openDiscussions.value = t.open_discussions ?? 0
+    if (route.query.tab === 'comments') tab.value = 'comments'
     attachmentCount.value = null
     form.value = {
       title: t.title,
@@ -194,6 +199,7 @@ async function load() {
       priority: t.priority,
       status: t.status,
       estimated_minutes: t.estimated_minutes,
+      owner: t.owner ?? '',
       tags: [...(t.tags ?? [])],
       category_ids: [...(t.category_ids ?? [])],
       folder_id: t.folder_id,
@@ -270,6 +276,9 @@ const calledBy = computed(() => item.value?.called_by ?? [])
 // ---------- tabs ----------
 const tab = ref('details')
 const commentCount = ref(0)
+// unresolved threads of the discussion (badge of the Discussion tab)
+const openDiscussions = ref(0)
+const route = useRoute()
 const attachmentCount = ref<number | null>(null)
 const execCount = ref<number | null>(null)
 /** open defects of the test and its executions (known once the tab was opened) */
@@ -395,11 +404,11 @@ async function save() {
   impactFields.value = changed
   impactOpen.value = true
 }
-async function confirmImpact() {
-  await doSave()
+async function confirmImpact(choice: ImpactChoice) {
+  await doSave(choice)
   impactOpen.value = false
 }
-async function doSave() {
+async function doSave(choice?: ImpactChoice) {
   saving.value = true
   error.value = ''
   const body = bodyOf(form.value)
@@ -407,7 +416,7 @@ async function doSave() {
   try {
     const saved = isNew.value
       ? await api.post<TestCase>(`/projects/${props.projectId}/tests`, body)
-      : await api.patch<TestCase>(`/tests/${props.itemId}`, body, { ifMatch: item.value?.version })
+      : await api.patch<TestCase>(`/tests/${props.itemId}`, body, { ifMatch: item.value?.version, params: choice ? { impact: choice } : undefined })
     notify.ok(isNew.value ? t('tests.created') : t('tests.saved'), saved?.key)
     if (saved?.id) {
       if (isNew.value) recordUndo(createdEntry(t('undo.a.create', { key: saved.key }), delTest(saved.id)))
@@ -518,7 +527,7 @@ const scriptPlaceholder = computed(() => {
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
       <Tab value="code"><i class="pi pi-code" aria-hidden="true" /> {{ t('code.tab') }} <span v-if="codeCount" class="count">{{ codeCount }}</span></Tab>
       <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
-      <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('discussions.tab') }} <span v-if="openDiscussions" class="count" :title="t('discussions.openBadge', { n: openDiscussions }, openDiscussions)">{{ openDiscussions }}</span><span v-if="openDiscussions" class="sr-only">{{ t('discussions.openBadge', { n: openDiscussions }, openDiscussions) }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
       <Tab value="impact"><i class="pi pi-share-alt" aria-hidden="true" /> {{ t('correlations.tab') }}</Tab>
@@ -529,7 +538,7 @@ const scriptPlaceholder = computed(() => {
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'impact'" v-bind="panel('impact')"><ImpactPanel kind="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @changed="load" /></div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
-  <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
+  <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><DiscussionPanel entity="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (commentCount = n)" @open="(n) => (openDiscussions = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
   <HistoryPanel
@@ -569,6 +578,16 @@ const scriptPlaceholder = computed(() => {
         <label>{{ t('common.description') }}</label>
         <MentionInput v-model="form.description" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
       </div>
+      <SimilarItemsPanel
+        v-if="canWrite"
+        class="full"
+        kind="test"
+        :project-id="projectId"
+        :title="form.title"
+        :description="form.description"
+        :details="[form.preconditions, form.expected_result, ...form.steps.map((s) => `${s.action} ${s.expected}`)]"
+        :exclude-id="item?.id"
+      />
       <div v-field class="field full">
         <label>{{ t('tests.preconditions') }}</label>
         <HelpTip id="test.preconditions" :label="t('tests.preconditions')" />
@@ -587,6 +606,10 @@ const scriptPlaceholder = computed(() => {
         <label>{{ t('tests.estimate') }}</label>
         <HelpTip id="test.estimate" :label="t('tests.estimate')" />
         <InputNumber v-model="form.estimated_minutes" :min="0" show-buttons :disabled="!canWrite" fluid />
+      </div>
+      <div v-field class="field">
+        <label>{{ t('common.owner') }}</label>
+        <MentionInput v-model="form.owner" :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.folder') }}</label>
@@ -702,7 +725,7 @@ const scriptPlaceholder = computed(() => {
     </div>
 
     <TestDependenciesPanel v-if="item" :project-id="projectId" :test-id="item.id" :can-write="canWrite" @changed="emit('saved', item)" />
-    <ApplicabilityPanel v-if="item" item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" />
+    <ApplicabilityPanel v-if="item" item-type="test" :item-id="item.id" :item-key="item.key" :project-id="projectId" :can-write="canWrite" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />

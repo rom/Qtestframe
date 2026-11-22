@@ -922,8 +922,8 @@ notifications are those of single saves.
 | GET | `/projects/{pid}/exchange/xlsx?kind=requirement\|test&q=&folder_id=` | `export` + read of the kind | the round-trip workbook; audited as `project.export` |
 | POST | `/projects/{pid}/exchange/xlsx/preview` | write of the kind | multipart `file` (+ `kind`) → diff |
 | POST | `/projects/{pid}/exchange/xlsx/apply` | write of the kind | + `overwrite_conflicts`, `create` (default true), `exclude` (JSON array of row indexes) → result; audited as `requirement.import` / `test.import` |
-| POST | `/projects/{pid}/exchange/reqif/preview` | `requirement.write` | multipart `file` (.reqif / .reqifz), `mapping`, `folder_id`, `hierarchy` → diff + attributes |
-| POST | `/projects/{pid}/exchange/reqif/apply` | `requirement.write` | + `overwrite_conflicts`, `exclude` → result; audited as `requirement.import` |
+| POST | `/projects/{pid}/exchange/reqif/preview` | `requirement.write` (+ `test.write` for test objects) | multipart `file` (.reqif / .reqifz), `mapping`, `test_mapping`, `object_types`, `relation_types`, `folder_id`, `test_folder_id`, `hierarchy`, `refines` → diff + mappings |
+| POST | `/projects/{pid}/exchange/reqif/apply` | `requirement.write` (+ `test.write`) | + `overwrite_conflicts`, `create`, `exclude`, `exclude_tests` → result; audited as `requirement.import` |
 
 **The workbook.** Sheet *Requirements* or *Tests*: `ID` (the item id: do
 not change it), `Key`, `Version` (the version exported: the base of the
@@ -968,39 +968,80 @@ skipped_rows:[{index, location, title, reason}]}` with `reason` `error`,
 between preview and apply, nothing is saved and the answer is 409 `stale`.
 
 **ReqIF import.** ReqIF 1.0–1.2 (`.reqif`, or `.reqifz` with one or more
-`.reqif` files), e.g. from IBM DOORS, DOORS Next or Siemens Polarion. Each
-`SPEC-OBJECT` becomes a requirement; its attributes (all
-`ATTRIBUTE-DEFINITION-*` types; XHTML as plain text, enumerations as their
-value names) map to fields by `mapping` (JSON: attribute long name → field
-key, `heading` (the chapter name: the object is a folder), `external_id`
-(recorded as `ID: <id>` in the source of new requirements), `version`, or
-`""` to ignore), guessed from the name (`ReqIF.Name`, `ReqIF.Text`,
-`ReqIF.ChapterName`, `ReqIF.ForeignID`, Polarion's `Title`, `Description`,
-`ID`, `Status`, `Severity`, `Assignee` …). With `hierarchy` (default true)
-heading objects (a chapter name and no text, or an object type named
-*Heading*/*Chapter*) become folders below `folder_id`, nested as in the
-`SPECIFICATION`; with several specifications each is a top folder. Objects
-without a title attribute get one from the first words of their text when
-they are created. `SPEC-RELATION`s between imported objects become
-relations; the type is mapped by name (`Refines`, *satisfies*, *parent* →
-`refines`; *derived* → `derived_from`; *depends*, *requires* →
-`depends_on`; *conflicts* → `conflicts_with`; *duplicates*; *provides*,
-*implements*; otherwise `relates_to`). The preview adds `{title, tool,
-qtestframe, attributes:[{name, type, values, objects, sample, object_types,
-field, guess}], targets:[{key, label, type}], relation_types, relations:{add,
-remove, keep, changes:[{ref, type, file_type, source, target, action}]},
-folders, skipped, errors, previous, target_folder}`.
+`.reqif` files), e.g. from IBM DOORS, DOORS Next, Siemens Polarion,
+Codebeamer or Qtestframe's own export.
 
-**Re-import.** The import keeps the `IDENTIFIER` of every imported object
-and relation and the version the import wrote (table `external_refs`).
-Importing the document again updates those requirements (`previous` counts
-them); a requirement edited here since the last import is a `conflict` when
-the document's values differ. Relations imported before that the document
-no longer has are removed; relations made in Qtestframe are kept.
-Requirements are never deleted. A document exported from the same project
-(`IDENTIFIER` `qtf-req-<id>`, see *ReqIF export*) matches its requirements
-directly, with its `Version` attribute as the base version, so the ReqIF
-export round-trips through the import.
+* *Object types.* Each `SPEC-OBJECT-TYPE` is mapped to `requirement`,
+  `test`, `heading` (the objects are folders) or `ignore` by
+  `object_types` (JSON: type long name → kind). The guess: the *Test case*
+  type of Qtestframe's export and other types with *test* in the name are
+  tests (without `test.write` they are left out, with a warning), *Verification
+  record* is ignored, everything else is a requirement.
+* *Attributes.* All `ATTRIBUTE-DEFINITION-*` types; XHTML becomes Markdown
+  (paragraphs, line breaks, lists, headings, tables as GFM tables, code,
+  bold, italics, links; `<object>` and `<img>` as images — the preview image
+  inside an OLE object stands for it), enumerations their value names.
+  `mapping` (requirement attributes) and `test_mapping` (attributes of test
+  types) are JSON objects attribute long name → field key (custom fields as
+  `cf:<key>`, matched by label like the built-in fields; enumerations map to
+  select fields by option name), `heading` (the chapter name: the object is
+  a folder), `external_id` (recorded as `ID: <id>` in the source of new
+  requirements), `version`, `steps` (tests: an XHTML table Action | Data |
+  Expected result | Calls, headers optional, or a list, one step per item)
+  or `""` to ignore; guessed from the name (`ReqIF.Name`, `ReqIF.Text`,
+  `ReqIF.ChapterName`, `ReqIF.ForeignID`, Polarion's `Title`,
+  `Description`, `ID`, `Status`, `Severity`, `Assignee`, *Steps*,
+  *Preconditions*, *Expected result* …).
+* *Hierarchy.* With `hierarchy` (default true) heading objects (a chapter
+  name and no text, an object type named *Heading*/*Chapter*, or a type
+  mapped to `heading`) become folders below `folder_id` (requirements) or
+  `test_folder_id` (tests), nested as in the `SPECIFICATION`; when several
+  specifications hold items of one kind each is a top folder. With
+  `refines` a requirement nested below another requirement (not a heading)
+  refines it.
+* *Relations.* `SPEC-RELATION`s between imported objects: between a test and
+  a requirement (either direction) a trace link, between requirements a
+  relation. `relation_types` (JSON: type long name → relation type,
+  `verifies` or `ignore`) overrides the guess (`Refines`, *satisfies*,
+  *parent* → `refines`; *derived* → `derived_from`; *depends*, *requires*
+  → `depends_on`; *conflicts* → `conflicts_with`; *duplicates*;
+  *provides*, *implements*; *verifies*, *validated by*, *tested by* →
+  `verifies`; otherwise `relates_to`). Relations between two tests are left
+  out.
+* *Embedded files.* Files of a `.reqifz` that the XHTML references
+  (`<object data="files/…">`, `<img src>`, links) become attachments of the
+  item, and the Markdown points to them. A file the item has already (same
+  name and content) is not added again.
+* Objects without a title attribute get one from the first words of their
+  text (tests also from their `LONG-NAME`) when they are created. A call
+  step to a test that is new in the same import is imported as a plain step
+  (import again to make it a call).
+
+The preview adds `{tests (the tests' diff, or null), title, tool,
+qtestframe, attributes, test_attributes:[{name, type, values, objects,
+sample, object_types, field, guess}], targets, test_targets:[{key, label,
+type}], object_types:[{name, objects, kind, guess}], relation_types:{name:
+type}, relation_type_mapping:[{name, relations, type, guess}],
+relation_targets, relations:{add, remove, keep, links, changes:[{ref, type,
+file_type, source, target, action, kind}]}, folders, test_folders,
+files:[{object, ref, name, size, existing}], skipped, errors, previous,
+target_folder, test_target_folder, can_import_tests}`. The apply result
+holds the totals of requirements and tests plus `tests` (the tests' share),
+`references_saved` and `files_attached`.
+
+**Re-import.** The import keeps the `IDENTIFIER` of every imported object,
+relation and trace link and the version the import wrote (table
+`external_refs`). Importing the document again updates those items
+(`previous` counts them); an item edited here since the last import is a
+`conflict` when the document's values differ. Relations and links imported
+before that the document no longer has are removed; those made in
+Qtestframe are kept. Items are never deleted. A document exported from the
+same project (`IDENTIFIER` `qtf-req-<id>` / `qtf-test-<id>`, see *ReqIF
+export*) matches its items directly, with its `Version` attribute as the
+base version, so the ReqIF export round-trips through the import: export a
+project with `include=tests`, import it into an empty project with the same
+custom fields, export that again, and the documents hold the same items,
+values, folders, relations and links (a test checks this).
 
 **Custom fields and other extra fields** take part through the field
 registry of `internal/interop` (`interop.Register`): an extension returns
@@ -1008,6 +1049,37 @@ fields with a stable `key`, a `label`, a type and functions to read a value
 and write it into the create / PATCH body; they then appear as workbook
 columns, as ReqIF mapping targets and in the diff.
 
+
+### Import from Jira and Azure DevOps
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/import-sources` | project.read | `{jira: {url, user, jql, has_token}, azure_devops: {url, project, area_path, work_item_types, has_token}, jira_from_tracker, tracker_jira_url, tracker_jira_key}` |
+| PUT | `/projects/{pid}/import-sources` | project.update | same fields plus `jira.token`, `azure_devops.token` (write-only; empty keeps the saved one) and `clear_tokens: {jira, azure_devops}` |
+| POST | `/projects/{pid}/import-sources/{source}/check` | project.update | `source` `jira` or `azure-devops`; 200 or 502 `tracker_error` |
+| POST | `/projects/{pid}/requirements/import/{source}/preview` | requirement.write | runs the query; the diff as for ReqIF plus `{source, query, truncated}` |
+| POST | `/projects/{pid}/requirements/import/{source}/apply` | requirement.write | runs the query again and saves (one transaction) |
+
+The body of preview and apply is JSON: `query` (JQL for Jira, WIQL for
+Azure DevOps), or for Azure DevOps `area_path` and `work_item_types` (both
+missing: the saved defaults), `mapping` (the tracker's field name →
+requirement field, `cf.<key>` for a custom field, `""` to ignore),
+`folder_id` (target of new requirements), `relations` (default true) and
+`limit` (at most 1000); apply also `overwrite_conflicts`, `create` and
+`exclude_refs` (issue keys or work item IDs to leave out). The items are
+put into a ReqIF model and go through the ReqIF import: the same
+`attributes` (the tracker's fields, with `guess` the default mapping),
+`targets`, diff and relations. Each imported item is recorded as an
+external reference (system `jira` with the issue key, or `azure-devops`
+with the work item ID), so the next import updates the requirement; links
+between imported items (Jira issue links and parents, Azure DevOps parent,
+predecessor, duplicate and related links) become relations and are removed
+when the link is gone. Jira descriptions (wiki markup) and Azure DevOps
+HTML fields become Markdown; statuses and priorities are mapped by name
+(and by the Jira status category), values without a match are left out
+with a warning on the row. Without a Jira URL of its own the Jira import
+uses the project's defect tracker when it is Jira. Tokens are encrypted
+and never returned; tracker errors answer 502 `tracker_error`.
 ## Catalogue
 
 A built-in library of standard requirements and tests for software
@@ -1023,8 +1095,10 @@ with the binary.
 
 Items are organised in **groups** (e.g. Security) of **areas** (e.g.
 Authentication). Requirement ids are `<PREFIX>-NN` (`AUTH-01`), test ids
-`<PREFIX>-TNN` (`AUTH-T01`); a requirement lists the catalogue tests that
-verify it (`tests`), a test the requirements it verifies (`requirements`).
+`<PREFIX>-TNN` (`AUTH-T01`) and risk ids `<PREFIX>-RNN` (`AUTH-R01`); a
+requirement lists the catalogue tests that verify it (`tests`) and the risks
+it mitigates (`risks`), a test the requirements it verifies (`requirements`),
+a risk the requirements that mitigate it (`mitigated_by`).
 `lang` is `en` (default) or `sv`; a text missing in Swedish falls back to
 English. List filters take comma-separated values. Every area belongs to a
 **catalogue type** (`catalogue`: software, hardware, equipment, system,
@@ -1039,17 +1113,20 @@ selects the items that comply with them.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[…], catalogues:[{id, name, description, areas, requirements, tests}]}` – groups in display order with item counts; `catalogues` are the catalogue types that have areas |
-| GET | `/catalog/sources?lang=&catalogue=&all=` | project.read | `{lang, kinds:[{id, name}], sources:[{id, kind, jurisdiction?, short?, name, url?, requirements, tests, catalogues:[id]}]}` – the reference sources grouped by kind (law, directive, standard, practice, guideline). `requirements` cite the source, `tests` cite it or verify such a requirement (what adding them brings), counted in the catalogue types of `catalogue`; sources nothing cites are left out unless `all=true` |
-| GET | `/catalog/requirements?lang=&area=&group=&catalogue=&source=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, type, obligation, priority, tags, refs, sources, tests, title, description, in_project?}]}`. `source`: requirements whose refs cite one of the sources. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
-| GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}]` |
+| GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, risks, areas:[{id, prefix, group, name, description, requirements, tests, risks}]}], requirements, tests, risks, requirement_tags:[{tag, count}], test_tags:[…], risk_tags:[…], risk_categories:[{id, name}], catalogues:[{id, name, description, areas, requirements, tests, risks}]}` – groups in display order with item counts; `catalogues` are the catalogue types that have areas |
+| GET | `/catalog/sources?lang=&catalogue=&all=` | project.read | `{lang, kinds:[{id, name}], sources:[{id, kind, jurisdiction?, short?, name, url?, requirements, tests, risks, catalogues:[id]}]}` – the reference sources grouped by kind (law, directive, standard, practice, guideline). `requirements` cite the source, `tests` cite it or verify such a requirement (what adding them brings), `risks` cite it, counted in the catalogue types of `catalogue`; sources nothing cites are left out unless `all=true` |
+| GET | `/catalog/requirements?lang=&area=&group=&catalogue=&source=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, type, obligation, priority, tags, refs, sources, tests, risks, title, description, in_project?}]}`. `source`: requirements whose refs cite one of the sources. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
+| GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], mitigates_risks:[{id, area, title, in_project?}]` |
 | GET | `/catalog/tests?lang=&area=&group=&catalogue=&source=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, catalogue, priority, execution, tags, refs, sources, requirements, steps (count), title, description, in_project?}]}`; `source` matches tests that cite a source or verify a requirement citing it; `q` also searches the steps and the ids of the verified requirements |
 | GET | `/catalog/tests/{id}?lang=&project_id=` | test.read | the summary plus `area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}]` |
-| GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
+| GET | `/catalog/risks?lang=&area=&group=&catalogue=&source=&q=&category=&level=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, category, category_name, likelihood, impact, score, level, tags, refs, sources, mitigated_by, tests, title, description, mitigation, in_project?}]}` – the typical risks of the areas: the threat or hazard and its consequence (`description`), a typical likelihood and impact on the project scale 1–5 with their level, and a suggested `mitigation`. `category`: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental; `level`: low, medium, high, critical; `source` matches risks that cite a source or are mitigated by a requirement citing it; `q` also searches the mitigation and the mitigating requirement ids |
+| GET | `/catalog/risks/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, ref_targets, mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[…]` |
+| GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}, "risks": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
 | POST | `/projects/{pid}/catalog/import` | project.read + see below | copies catalogue items into the project, see below |
 
-**Origin.** Requirements and tests have `catalog_ref`: the catalogue id they
-were copied from, `""` otherwise. It is set only by the import, ignored in
+**Origin.** Requirements, tests and risks have `catalog_ref`: the catalogue id they
+were copied from, `""` otherwise (a risk also has the derived `catalog_area`;
+query fields `catalog` and `catalog_area`, alias `area`, in the risk list). It is set only by the import, ignored in
 create and update requests, and kept when an item is edited, restored from a
 revision or baseline, copied, moved (also to another project), trashed and
 restored, and in backups. The query field `catalog` filters by it:
@@ -1067,12 +1144,16 @@ restored, and in backups. The query field `catalog` filters by it:
   "status": "draft", "test_status": "draft",
   "include_tests": true,
   "add_copies": false,
-  "source": "Standard"
+  "source": "Standard",
+  "risk_ids": ["AUTH-R01"],
+  "include_requirements": true,
+  "include_risks": false,
+  "risk_status": "identified"
 }
 ```
 
-- At most 500 items per request (chosen requirements and tests plus the
-  included tests), else 400. The request is atomic: on an error nothing is
+- At most 500 items per request (chosen requirements, tests and risks plus
+  the included ones), else 400. The request is atomic: on an error nothing is
   stored.
 - `include_tests` (default `true` when the caller has `test.write`) also adds
   the catalogue tests that verify the chosen requirements.
@@ -1090,6 +1171,17 @@ restored, and in backups. The query field `catalog` filters by it:
   (`""` = top level). `folders: "area"` adds a folder per area below them,
   `"group"` a group folder with area folders, named in `lang`; folders of
   the same name are reused.
+- **Risks:** `risk_ids` adds catalogue risks as project risks (title,
+  description, mitigation, category in `lang`, the typical likelihood and
+  impact, `risk_status` `identified` (default) or `mitigating`,
+  `catalog_ref`). `include_requirements` (default `true`) adds the catalogue
+  requirements that mitigate them, and with `include_tests` their tests and
+  the tests listed on the risk; `include_risks` (default `false`) adds the
+  risks the chosen requirements mitigate. Each new risk is linked
+  (`risk_requirements`) to the project requirements of its mitigating
+  catalogue requirements and each new requirement to the project risks it
+  mitigates, new or added earlier (`risk_links` in the response). Risks need
+  `requirement.write`.
 - Items the project already has (same `catalog_ref`) are skipped with reason
   `exists` (and the `existing` items) unless `add_copies` is true; unknown
   ids are skipped with `not_found`.
@@ -1110,14 +1202,16 @@ restored, and in backups. The query field `catalog` filters by it:
 {
   "requirements": [{"id": "…", "key": "WEB-REQ-12", "title": "…", "catalog_ref": "AUTH-01", "folder_id": "…"}],
   "tests": [{"id": "…", "key": "WEB-TC-30", "title": "…", "catalog_ref": "AUTH-T01", "folder_id": "…"}],
+  "risks": [{"id": "…", "key": "WEB-RISK-4", "title": "…", "catalog_ref": "AUTH-R01", "folder_id": null}],
   "links": [{"id": "…", "requirement_id": "…", "requirement_key": "WEB-REQ-12", "test_case_id": "…", "test_case_key": "WEB-TC-30"}],
+  "risk_links": [{"risk_id": "…", "risk_key": "WEB-RISK-4", "requirement_id": "…", "requirement_key": "WEB-REQ-12"}],
   "skipped": [{"kind": "requirement", "catalog_ref": "AUTH-02", "reason": "exists", "existing": [{"id": "…", "key": "WEB-REQ-3", "title": "…"}]}],
   "folders_created": 2
 }
 ```
 
 To undo an import, delete the created items with the bulk delete routes
-(requirements first, then tests); restoring the trash entries in the
+(risks, then requirements, then tests); restoring the trash entries in the
 reverse order brings them back with their links.
 
 ## Requirement analytics
@@ -1361,7 +1455,7 @@ and no options except `threshold` and `level`; the scope is fixed.
 | `verifies_inactive` | tests | it verifies a rejected or obsolete requirement |
 | `broken_prerequisite` | tests | a prerequisite is deleted, its latest result is failed, or prerequisites form a cycle |
 | `unevidenced_must` | requirements | it is MUST / MUST NOT / SHALL / SHALL NOT, in a planned or active release and has no passing evidence (a linked test that is not suspect passed its latest execution) |
-| `unmitigated_risk` | risks | a risk of at least `level` (default `high`) that is not closed or accepted has no mitigation requirement, or none of them is verified; in a release scope the risks of its requirements count |
+| `unmitigated_risk` | risks | a risk of at least `level` (default `high`) that is not closed or accepted has no mitigation requirement, or not every one of them is verified (a risk whose mitigations are all verified counts as mitigated); in a release scope the risks of its requirements count |
 | `unjustified_rejection` | requirements | it was adopted from a regulation of the catalogue (its catalogue item cites a law or directive) and is rejected without a justification: no comment and no rationale of its own |
 | `duplicate_suspect` | requirements | its normalised title and description are at least `threshold` (0.5–1, default 0.9) similar to an older active requirement's (Dice coefficient of character trigrams) and neither a `duplicates` relation nor a dismissal links them |
 
@@ -1680,8 +1774,41 @@ variant and reports their coverage (`coverage`, `linked_tests`) or result
 and reports that filter requirements or tests. `GET
 /releases/{id}/status?variant=` evaluates a release for one variant (its
 scope requirements that apply, their tests that apply and the results that
-count; the report has `variant`); releasing still evaluates all variants.
-Generated documents take `options.variant`.
+count; the report has `variant`). Generated documents take
+`options.variant`. Runs have the query field `variant` (the name of the
+variant a run tests; none for variant-neutral runs), e.g. `variant:US`.
+
+**History and baselines.** A change of an item's applicability is a
+revision (action `applicability`, changed field `applicability`) in its
+history; the snapshot's `applicability` holds `variant_ids`, the
+variants' names at the time and `expression` (`null`: all variants). The
+audit entry `requirement.applicability` / `test.applicability` reads
+`KEY: before → after`. Restoring a revision or restoring from a baseline
+restores the applicability the snapshot records (snapshots from before it
+was recorded leave it as it is; deleted variants are left out); a baseline
+item whose content is unchanged but whose applicability differs is
+restored too. Baselines snapshot the applicability and `compare` reports
+`applicability` among the changed fields. The trash keeps it with a
+deleted item; project archives and backups contain `item_applicability`.
+
+**Release gates per variant.** A release with `variant_ids` (the
+variants it targets) is evaluated for each of them (`GET
+/releases/{id}/status` → `variants: [{variant, go, criteria, summary}]`),
+with the rules above: per variant only its applicable scope requirements,
+their applicable tests and the results of runs for the variant, an
+ancestor or no variant (variant-neutral runs count for every variant), in
+the variant's configurations. The release is a go only when every
+targeted variant is (marking it released needs that go or an override);
+the combined `criteria` are met when met in every variant, `state` is
+`pass`, `waived` (met thanks to waivers or accepted risks) or `fail`,
+and blocking items name their `variants`. A waiver with `variant_ids`
+accepts its requirements only in those variants (and the variants below
+them); a release evaluated without a variant counts only waivers for every
+variant. The release readiness report adds the table "Exit criteria per
+variant". Deleting a variant removes it from the releases that target it;
+waivers limited to it then cover no variant (deleting never widens a
+waiver). Projects without variants, and releases without `variant_ids`,
+are evaluated as before.
 
 ## Code and builds
 
@@ -1999,6 +2126,7 @@ Exit criterion types (`threshold` in percent, default 100):
 | `trace_rules` | no scope requirement and no test linked to one breaks an enabled [traceability rule](#traceability-rules) of severity `level` (`error`, the default: errors only; `warning`: errors and warnings). The items list each item once with the names of the rules it breaks as `note` |
 | `no_blocking_defects` | no scope requirement is blocked by an open defect under the project's severity rules (see [change and defect correlations](#change-and-defect-correlations)); a default of new releases |
 | `residual_risk` | no risk (not closed) linked to a scope requirement has a residual level above `level` (the release's risk acceptance threshold; default the project's, see [Risks](#risks)) unless its "accept risk" sign-off is valid; accepted risks are listed in `accepted` |
+| `cycle_executed` | at least `threshold` % of the planned tests of the [test cycle](#test-cycles) `cycle_id` (of the release's project) have a final result in the cycle's runs (default 100: "fully executed"); `items` lists the tests not yet executed |
 
 **Waivers.** An approved, unexpired [waiver](#waivers-and-deviations) for
 the release or for the whole project makes the criteria treat its
@@ -2010,6 +2138,77 @@ test whose scope requirements are all waived. They are listed in `waived`
 scope risks whose residual level is above `risk_threshold` (note: the
 level, with `, accepted` when signed off) and
 `summary.residual_above_threshold` counts those not accepted.
+
+## Test cycles
+
+A test cycle groups the executions planned for a goal ("Sprint 14
+regression"), optionally for a release, a variant and a build, with start
+and end dates, a status (`planned`, `active`, `closed`) and an owner (user
+id). Its **plan** has one row per test and configuration with a tester
+(`assignee_id`, a member who may see the project's runs) and an estimate in
+minutes. Starting the cycle creates its run; the progress is derived from
+the executions of the cycle's runs (`test_runs.cycle_id`, read-only on the
+run as `cycle_id` / `cycle_name`). Reading needs `run.read`, planning
+`cycle.plan` (test leads, managers, admins); creating runs needs
+`run.write` too.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/cycles` | `[TestCycle]` with `run_ids` and `progress`; `?q=` filters (fields `name`, `goal`, `description`, `status`, `owner`, `release`, `variant`, `build`, `environment`, `configuration`, `start`, `end`, `planned`, `executed`, `progress` (percent executed), `passed`, `failed`, `blocked`, `unassigned`, `test` (planned test keys), `assignee` (testers by e-mail or name), `created_by`, `created_at`) |
+| POST | `/projects/{pid}/cycles` | `{"name","goal","description","owner_id" (default: the caller),"release_id","variant_id" (id or name),"build_id","environment","configuration_ids","start_date","end_date","scheduled_start_at","copy_from"}` → 201. `copy_from` copies another cycle's plan, testers and estimates (and its release, variant, build and configurations). A new cycle is `planned`; names are unique per project (case-insensitive) |
+| GET | `/cycles/{id}` | TestCycle |
+| PATCH | `/cycles/{id}` | the fields above, `status` and `clear_scheduled_start`. `planned` → `active` creates the run of the planned tests (in their configurations, executions assigned to the testers' e-mails, with the cycle's release, variant, build and environment) and tells the testers |
+| DELETE | `/cycles/{id}` | the plan goes; the runs stay without cycle |
+| GET | `/cycles/{id}/tests` | the plan: `[{id, test_case_id, test_key, test_title, configuration_id, configuration_name, assignee_id, estimate_minutes, added_by, added_at, execution_id, run_id, status, executed_by, finished_at, duration_ms}]`; the result is the latest execution of the test and configuration in the cycle's runs (a final result wins over a newer execution without one). `?assignee=<user id>` or `none` |
+| POST | `/cycles/{id}/tests` | (atomic) `{"test_ids"?, "tests"?: [{test_id, configuration_id?, assignee_id?, estimate_minutes?}], "query"?, "folder_id"?, "recursive"? (default true), "regression"?: <body of POST /projects/{pid}/regression>, "copy_from"?, "assignee_id"?, "estimate_minutes"?, "configuration_ids"?}` → `{"added", "cycle"}`. Without a configuration a test is planned once per configuration of the cycle; pairs already planned are skipped (at most 5000 rows). The default estimate is the test's `estimated_minutes`, else the average duration of its executions with a final result (rounded up to minutes). Query, folder and regression need `test.read`. 409 for a closed cycle |
+| PATCH | `/cycles/{id}/tests` | (atomic) `{"ids": [row ids] \| "all": true, "assignee_id"?, "estimate_minutes"?}` → `{"updated"}`; a new tester is also set on the rows' executions that have no final result |
+| DELETE | `/cycles/{id}/tests` | (atomic) `{"ids": [row ids]}` → `{"removed"}`; their executions stay |
+| POST | `/cycles/{id}/runs` | creates a run (named after the cycle, "(2)", "(3)" … for later ones) of the planned tests that no run of the cycle contains yet → 201 TestRun; a planned cycle becomes active. 400 when there is nothing new, 409 for a closed cycle |
+| GET | `/cycles/{id}/progress` | `{"cycle", "testers": [{assignee_id, planned, executed, passed, failed, blocked, estimated_minutes, remaining_minutes, actual_ms}], "burndown": [{day, remaining, remaining_minutes, ideal, ideal_minutes}]}` |
+| GET | `/cycles/{id}/history` | revisions of the cycle: its fields and its plan (test key, configuration, tester, estimate) |
+| GET | `/projects/{pid}/cycle-schedules` | recurring cycles |
+| POST | `/projects/{pid}/cycle-schedules` | `{"name_pattern" ({date}: the start date, {n}: the number), "template_cycle_id"?, "query"?, "owner_id"?, "frequency" (daily, weekly, monthly), "weekday" (0 = Sunday … 6), "day_of_month" (1–28), "time" (HH:MM), "timezone", "duration_days" (1–366), "auto_start", "enabled"}` → 201 |
+| PATCH | `/cycle-schedules/{id}` | the fields above; the next run is computed again |
+| DELETE | `/cycle-schedules/{id}` | the cycles it created stay |
+| POST | `/cycle-schedules/{id}/run` | creates the next cycle now → 201 TestCycle |
+
+`progress` counts the plan: `planned`, `executed` (a final result:
+passed, failed, blocked or skipped), `passed`, `failed`, `blocked`,
+`skipped`, `in_progress`, `not_run`, `not_in_run` (rows no run of the
+cycle contains yet), `unassigned`, `estimated_minutes`,
+`remaining_minutes` (estimates of the rows not executed),
+`estimated_minutes_executed`, `actual_ms` (durations of the executed rows),
+`percent_executed`, `percent_passed`.
+
+The **burndown** has one point per day from `start_date` (else the day the
+cycle was created) to `end_date` (else today; at most 365 days):
+`remaining` / `remaining_minutes` are the rows planned by the end of the
+day that had no final result then (`null` for days after today); the
+ideal line falls linearly from the whole plan on the first day to 0 on the
+last.
+
+**Scheduling.** The background jobs (every minute, also without e-mail)
+start the planned cycles whose `scheduled_start_at` has come (as the owner,
+who must hold `cycle.plan`; otherwise the scheduled start is dropped and
+`cycle.start_failed` is audited) and run the schedules that are due: a new
+cycle named after the pattern (made unique), starting today in the
+schedule's time zone and lasting `duration_days`, with the template's
+fields and plan plus the tests matching `query`; with `auto_start` it
+starts. A schedule that missed runs creates one cycle; `last_error`,
+`last_cycle_id` and `runs` record the outcome. Schedules use the same
+daily / weekly / monthly times as [e-mailed reports](#e-mail).
+
+Audit actions: `cycle.create`, `cycle.update`, `cycle.plan`,
+`cycle.delete`, `cycle_schedule.create`, `cycle_schedule.update`,
+`cycle_schedule.delete`, and `run.create` for the cycle's runs. The
+report template `cycle` (parameter `cycle_id`; default the first active or
+planned cycle) renders a cycle's progress, workload, burndown and plan.
+Test query term `cycle:` matches the names of the cycles planning a test,
+run query term `cycle:` the name of a run's cycle.
+
+The store function `Store.AssignedCycleTests(ctx, tenantID, userID)` lists
+a user's planned tests without a final result in open cycles (for a
+personal work list; the caller filters the projects the user may see).
 
 ## Defects
 
@@ -2032,13 +2231,13 @@ Statuses: `open`, `in_progress` (open), `resolved`, `closed`, `rejected`.
 Severities: `critical`, `major`, `minor`, `trivial`. Requirements carry
 `open_defects` (query field `defects`).
 
-**Jira, GitHub and GitLab.** Each project can be connected to one tracker.
+**Jira, GitHub, GitLab and Request Tracker.** Each project can be connected to one tracker.
 The same connection is used for defects and for
 [issues created from requirements](#issues-from-requirements).
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github\|gitlab, url, project_key, repo, project, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned |
+| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github\|gitlab\|rt, url, project_key, repo, project, queue, labels_field, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned |
 | PUT | `/projects/{pid}/defect-tracker` | project.update | same fields plus `token` (write-only; empty keeps the saved one) and `clear_token` |
 | POST | `/projects/{pid}/defect-tracker/check` | project.update | 200 or 502 `tracker_error` |
 | POST | `/defects/{id}/push` | run.execute | creates the issue → Defect with `external_key`, `external_url`; 409 when already linked |
@@ -2066,6 +2265,19 @@ issue; `milestone` (GitLab: the number shown as `%3` or the title, also of
 a group milestone; GitHub: number or title) and `assignee` (username or
 numeric ID; GitHub login) are given to new issues. Jira ignores labels,
 milestone and assignee of the settings.
+
+Request Tracker (`type: "rt"`) uses the REST2 API of RT 5 below
+`url` + `/REST/2.0` (a trailing `/REST/2.0` is removed) with an RT auth
+token sent as `Authorization: token <token>`. New tickets go to `queue`
+(name or ID) as `text/plain`; `labels` and the labels of issues from
+requirements are written to the custom field `labels_field` when it is set
+(RT has no labels). Tickets are referred to as `#123` (`123` and `RT#123`
+are accepted). Status mapping of the default lifecycle: `new` → `open`,
+`open` and `stalled` → `in_progress`, `resolved` → `closed`, `rejected` and
+`deleted` → `rejected`; other statuses leave the defect's status. An update
+of an issue from a requirement sets the subject and adds the new text as a
+comment (an RT ticket's content cannot be replaced). The check reads the
+queue.
 
 The token is encrypted at rest like the other stored secrets and is write
 only: no answer, error message or audit entry contains it. Requests to the
@@ -2133,11 +2345,13 @@ are per project.
 
 | Method | Path | Permission | Description |
 |---|---|---|---|
-| GET | `/projects/{pid}/correlation-settings` | project.read | `{relation_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` |
+| GET | `/projects/{pid}/correlation-settings` | project.read | `{relation_impact, relation_modes, impact_depth, impact_rules, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` |
 | PUT | `/projects/{pid}/correlation-settings` | project.update | partial update; `relation_impact` is replaced as a whole |
 | GET | `/requirements/{id}/impact` | requirement.read | what a change of the requirement's substance makes suspect, out of date, outdated or stale |
 | GET | `/tests/{id}/impact` | test.read | the same for a test |
 | GET | `/baselines/{id}/impact` | requirement.read | the impact of every change of substance since the baseline, with totals |
+| POST | `/projects/{pid}/impact` | requirement.read | impact analysis: `{items: [{kind, id}], baseline_id?, depth?}` → the combined transitive impact |
+| GET | `/projects/{pid}/impact/export` | requirement.read | the same as CSV or PDF (`?items=kind:id,…&baseline=&depth=&format=csv|pdf&lang=`) |
 | POST | `/relations/{id}/confirm` | requirement.write | clears the suspect mark of a relation → `{confirmed}` |
 | POST | `/requirements/{id}/relations/confirm` | requirement.write | confirms all suspect relations of a requirement |
 | POST | `/item-links/{id}/issue/confirm` | requirement.write | the tracker issue is still right: clears `issue.outdated_since` |
@@ -2195,6 +2409,35 @@ results are left out. `GET /baselines/{id}/impact` returns
 for the items whose substance changed since the baseline (largest impact
 first; totals count distinct items).
 
+**Transitive impact.** The change travels on from what it reaches, breadth
+first and cycle safe, up to `impact_depth` steps (1–10, default 3; `?depth=`
+on the impact endpoints). Depth counts the steps between requirements,
+tests and risks; trace links attach evidence without counting as a step
+and are not followed further, and the defects, variants, code changes and
+runs of a reached item are attached the same way, so depth 1 is the
+one-level impact above. Besides relations (`relation_impact`, with
+`relation_modes` `suspect` | `review`), `impact_rules` (`{direction, mode}`)
+govern `verifies`, `calls` (shared steps), `test_depends_on`, `item_link`,
+`risk`, `defect`, `variant` and `code`; only `verifies` can mark suspect,
+the others recommend a review. The mode of an item is the weakest on its
+path. Every item has `depth`, `mode`, `path` (`[{kind, id, key, edge,
+direction}]` from the changed item) and `owner`; the impact has `roots`,
+`depth`, `suspect`, `review`, `by_kind`, `by_depth` and the further lists
+`risks`, `defects`, `links` (runs), `variants`, `code`. A status change only
+recommends reviews.
+
+**Dry run and choice.** Every endpoint that changes requirements or tests
+(`PATCH /requirements/{id}`, `PATCH /tests/{id}`, the `bulk` and `batch`
+endpoints, `exchange/{xlsx,reqif}/apply`, `requirements/import`,
+`catalog/import`, `POST /requirements/{id}/restore`, `POST /tests/{id}/restore`,
+`POST /baselines/{id}/restore`) takes `?dry_run=impact` — the change runs in
+a transaction, the answer is `{dry_run: "impact", status, impact}` and
+everything is rolled back — and `?impact=suspect|notify|skip`: `suspect`
+(default) marks what the rules mark and notifies the owners of the items
+recommended for review (event `impact.review`); `notify` marks nothing and
+notifies every affected owner; `skip` marks nothing and notifies nobody.
+A bulk change applies the combined impact once, before it commits.
+
 **Result staleness.** A result is stale when it is older than
 `stale_after_days`, or (with `stale_on_change`) when its test or a
 requirement the test verifies changed in substance after it was recorded.
@@ -2244,12 +2487,13 @@ Reading needs `requirement.read`, changing `requirement.write`.
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/risks` | `[Risk]`, highest score first |
-| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...]}` (likelihood and impact default to 3) |
+| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...]}` (likelihood and impact default to 3); `catalog_ref` is kept only when it names a catalogue risk (an undone import created again) |
 | GET / PATCH / DELETE | `/risks/{id}` | |
 | POST | `/projects/{pid}/risks/bulk` | `{"ids":[...], "set": {"status"?, "owner"?, "category"?, "likelihood"?, "impact"?}, "add_requirement_ids"?, "remove_requirement_ids"?}` → `{"updated": n}`; every risk is validated before any is saved |
 | DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
 | GET | `/requirements/{id}/risks` | the risks a requirement addresses |
+| POST | `/requirements/{id}/risks` | `{add:[risk ids], remove:[risk ids]}` – the risks a requirement mitigates, changed from its side (requirement.write); → the risks as for GET |
 | GET | `/projects/{pid}/risk-settings` | (requirement.read) `{"threshold", "effective", "default", "levels"}` |
 | PUT | `/projects/{pid}/risk-settings` | (project.update) `{"threshold": "low"\|"medium"\|"high"\|"critical"\|""}`: the project's risk acceptance threshold (`""` = medium) |
 | POST | `/risks/{id}/accept` | (waiver.approve) `{"comment", "password"}`: the "accept risk" electronic signature (as for [waiver decisions](#waivers-and-deviations)); the risk becomes `accepted` |
@@ -2275,6 +2519,47 @@ effect; `threshold` is the project's risk acceptance threshold and
 (`review_due` once the date is reached). The acceptance sign-off fills
 `accepted_by`, `accepted_name`, `accepted_at` and `acceptance_comment`;
 `acceptance_valid` is false when the residual assessment changed since.
+
+## Exploratory testing
+
+Session-based exploratory testing (SBTM). A session has a charter (`title`,
+`mission`, `scope` of areas = folders, requirements and tests), a `tester`
+(e-mail), a time box and a timer kept by the server. Reading needs
+`run.read`; planning, changing and deleting `run.write`; running a session
+(timer, notes, defects from notes, debrief) `run.execute`, and only the
+session's tester does that unless the caller also holds `run.write`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/exploratory-sessions?status=&tester=&outcome=&mine=&requirement_id=&test_id=&folder_id=&q=` | `[ExploratorySession]`, newest first; `q` over key, title, mission (alias charter), status, tester (assignee, owner), outcome (result), area (folder), requirement, test, notes, bugs, timebox |
+| POST | `/projects/{pid}/exploratory-sessions` | `{"title", "mission", "tester", "timebox_minutes": 5–480, "scope": [{"type": "folder"\|"requirement"\|"test", "id"}]}` → 201, planned, key `PROJ-EXP-n` |
+| GET / PATCH / DELETE | `/exploratory-sessions/{id}` | PATCH not after the debrief (409); DELETE removes notes, attachments and defect links |
+| POST | `/exploratory-sessions/{id}/timer` | `{"action": "start"\|"pause"\|"stop"}`; planned/paused → in_progress → paused → completed |
+| PUT / DELETE | `/exploratory-sessions/{id}/debrief` | `{"summary", "coverage_pct", "setup_pct", "testing_pct", "bug_pct", "outcome": "passed"\|"failed"\|"inconclusive", "comment"}` (split sums to 100) → debriefed; DELETE (run.write) reopens |
+| GET / POST | `/exploratory-sessions/{id}/notes` | `{"type": "observation"\|"question"\|"issue"\|"idea"\|"bug", "body", "file_ids"}`; stamped with the session time |
+| PATCH / DELETE | `/exploratory-sessions/{id}/notes/{note}` | the note's author, or run.write |
+| POST | `/exploratory-sessions/{id}/notes/{note}/defect` | creates a prefilled defect linked to the session and its scoped requirements (optional `title`, `description`, `severity`, `priority`, `assignee`) |
+| GET | `/exploratory-sessions/{id}/history` | revisions (create, update, stop, debrief, reopen) |
+| GET | `/exploratory-sessions/{id}/report?format=md\|pdf\|docx&lang=&archive=` | the `exploratory_session` report (also needs `export`) |
+| GET / POST / DELETE | `/exploratory-sessions/{id}/attachments…` | screenshots and files, as for other attachments |
+| GET | `/projects/{pid}/exploratory-metrics` | counts by status and outcome, hours, bugs, bugs per session hour, average split and coverage, by area and by tester |
+
+`ExploratorySession` = `{id, project_id, key, title, mission, tester,
+timebox_minutes, status, started_at, running_since, elapsed_seconds,
+ended_at, scope: [{type, id, key, title}], debrief: {summary, coverage_pct,
+setup_pct, testing_pct, bug_pct, outcome, by, name, comment, at, reviewed} |
+null, version, note_count, note_types, bug_count, defects, created_by,
+created_at, updated_at}`. `elapsed_seconds` includes the running part at
+the time of the answer.
+
+With `exploratory_evidence` in `PUT /projects/{pid}/verification-settings`
+(default false), a debriefed session counts as verification evidence of kind
+`exploratory` for its scoped requirements, about the requirement as a whole
+(never for a criterion on its own): passed passes, failed fails,
+inconclusive does not count, and only the newest session per requirement
+counts. Defects link to sessions with `entity_type` `exploratory_session`.
+The report templates `exploratory_session` (param `session_id`) and
+`exploratory_sessions` are part of `/reports/templates`.
 
 ## Waivers and deviations
 
@@ -2371,7 +2656,10 @@ default off). See [E-mail](#e-mail).
 Users are notified (never about their own actions) when they are made
 owner, assignee of an execution or a defect, are @mentioned in a
 description, comment or execution notes, get a review request or a
-decision on one, and when a defect assigned to them changes status.
+decision on one, and when a defect assigned to them changes status. In
+discussions, the people who wrote in a thread hear about replies and about
+the thread being resolved, and the owner of an item (requirement owner,
+defect assignee, risk owner, reviewer and requester) about new threads.
 
 A webhook delivery is `POST <url>` with `Content-Type: application/json`,
 headers `X-Qtestframe-Event`, `X-Qtestframe-Webhook` and
@@ -2381,22 +2669,78 @@ secret>`, and body
 `requirement.created/updated`, `test.created/updated`,
 `run.created/updated/completed`, `execution.updated`,
 `defect.created/updated/status/assigned`, `risk.created/updated`,
-`release.created/updated/released`, `comment.created`,
+`release.created/updated/released`, `comment.created/mentioned/resolved`,
 `review.requested/completed`, `baseline.signed`, `defect.regression`,
 `waiver.requested/approved/rejected/revoked`. Deliveries run in the
 background with a 10 s timeout, are not retried and do not follow
 redirects; the latest outcome is stored as `last_status`, `last_error`.
 
-## Comments
+## My work
+
+The personal work list: what needs the caller, across the projects they
+can see (project sharing and the permissions there apply to every row).
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/my-work?project=&source=&reason=` | signed in | `{"items":[WorkItem],"total":n,"summary":WorkSummary,"sources":[...]}`; `project` is a project id or key, `source` comma-separated source names, `reason` keeps the rows with that reason |
+| GET | `/my-work/count?project=&source=` | signed in | `WorkSummary`: `{"count","overdue","by_reason","by_kind","by_project"}` (the badge in the navigation, the dashboard widget) |
+
+`WorkItem`: `{kind, id, entity_type, entity_id, run_id?, key, title,
+status, project_id, project_key, project_name, reasons, detail?, due?,
+overdue, updated_at, sources}`. Rows of the same item (`kind` + `id`) are
+merged and their reasons joined; overdue rows come first, then by due
+date, then the most recently changed. Sources and reasons:
+
+| Source | Rows | Reasons |
+|---|---|---|
+| `owned` | requirements the caller owns in draft, review, approved or implemented; tests in draft or review; open risks (identified, mitigating) | `owner` |
+| | owned requirements and tests (not rejected, obsolete or deprecated) with suspect links or relations, stale results or blocking defects | `suspect`, `stale`, `blocked` |
+| | risks whose review the caller owns, due within 7 days | `risk_review` (`due` = review date) |
+| `defects` | open defects (open, in progress) assigned to the caller | `assigned` |
+| `executions` | executions assigned to the caller, not run or in progress, in planned or running runs (`run_id`, `detail` = run name) | `assigned` |
+| `reviews` | pending review requests to the caller (the row is the item to review; `due` = the review's due date) | `review_requested` |
+| `waivers` | requested waivers the caller may decide and has not signed (one of its approvers, or holds `waiver.approve` when it names none; never the requester) | `waiver_approval` |
+| `risk_acceptance` | mitigated or accepted risks above the acceptance threshold without a valid acceptance signature, for holders of `waiver.approve` | `risk_acceptance` |
+| `cycles` | tests of planned or active test cycles assigned to the caller without a final result (a test in one of the cycle's runs is the row of its execution; `detail` = cycle, `due` = its end date) | `assigned` |
+| `exploratory` | exploratory sessions the caller is the tester of, planned, running or paused | `assigned` |
+| `mentions` | items with an unresolved discussion thread that mentions the caller (`detail` = who wrote last); a requirement can also be an `owned` row, and the reasons are joined | `mentioned` |
+
+A row with a due date before today also has the reason `overdue`. The
+sources are a small registry in `internal/api/worklist.go`; its comment
+describes how to add one.
+
+## Discussions
+
+Threaded comments on requirements, tests, defects, risks, test runs and
+review requests. A thread is a comment with `parent_id` "" and its replies
+(`parent_id` = the first comment; a reply to a reply joins the same
+thread). Bodies are Markdown (rendered and sanitised by the client);
+`@handle` mentions of members are stored as user ids in `mentions`.
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/requirements/{id}/comments`, `/tests/{id}/comments` | `[Comment]` oldest first: `{id, entity_type, entity_id, user_id, user_email, user_name, body, created_at, updated_at}` |
-| POST | same | `{"body"}` (1–10000 chars); any member who can read the item |
-| PATCH | `/comments/{id}` | `{"body"}`, author only |
-| DELETE | `/comments/{id}` | author, or `member.manage` |
+| GET | `/requirements/{id}/comments`, `/tests/{id}/comments`, `/defects/{id}/comments`, `/risks/{id}/comments`, `/runs/{id}/comments`, `/reviews/{id}/comments` | `[Comment]` oldest first, removed ones included: `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`; the read permission of the item (a review request: its reviewer, its requester or the read permission of the reviewed item) |
+| POST | same | (`comment.create`) `{"body", "parent_id"?}` (1–10000 chars) |
+| PATCH | `/comments/{id}` | (`comment.create`) `{"body"}`, author only |
+| DELETE | `/comments/{id}` | the author, or a moderator (`project.update` in the project, or `member.manage`): the comment stays in its thread as removed, its body, mentions and reactions are cleared |
+| POST | `/comments/{id}/resolve`, `/comments/{id}/reopen` | (`comment.create`) resolves or reopens the thread of the comment → its first comment |
+| POST | `/comments/{id}/reactions` | (`comment.create`) `{"reaction"}` (`+1`, `-1`, `heart`, `tada`, `eyes`, `check`) adds or takes back the caller's reaction → `{reactions}` |
+| GET | `/projects/{pid}/discussions` | the project's threads: `?status=open` (default) `\|resolved\|all`, `?filter=mine` (threads the caller wrote in) `\|mentioned`, `?type=`, `?q=` (text), `?limit=` → `[DiscussionThread]` `{root, project_key, entity_key, entity_title, replies, last_at, last_by, participants, mentioned}`, latest activity first |
+| GET | `/discussions` | the same across the projects the caller sees; without `filter`, the threads that mention the caller |
 
-Requirement and test lists add `comment_count`.
+Requirement and test lists add `comment_count` (comments not removed) and
+`open_discussions` (unresolved threads). In their query language
+`has:open-discussion` (alias of `open_discussions`, e.g.
+`open_discussions>1`) finds items with unresolved threads; `mention:`
+(`mentions:`) also matches the people mentioned in an item's discussion,
+and `mentions:me` the caller.
+
+Audit log: `comment.create`, `comment.update`, `comment.delete` (with
+"(moderated)" when someone else's comment was removed), `comment.resolve`,
+`comment.reopen`. Webhook events: `comment.created`, `comment.mentioned`
+(data with `mentioned`: user ids), `comment.resolved`; each with
+`{kind, id, key, title, comment}`. Comments are part of project archives,
+backups and the trash of requirements and tests.
 
 ## Test execution history, defects and shared steps
 
@@ -2472,6 +2816,7 @@ format, file name, item counts and duration).
     "dimension": "Level",               // category dimension for group_by category
     "fields": ["description", "tests"], // default: all but "results"
     "traceability": true, "glossary": true,
+    "include_discussions": false,       // appendix with the items' discussions
     "lang": "sv"                        // default: the user's language
   }
 }
@@ -2919,130 +3264,107 @@ spreadsheet view saves an edit, a paste or a fill-down with one call):
 
 ## OSLC
 
-A minimal, **read-only** OSLC provider for Requirements Management 2.0 and
-Quality Management 2.0, so that OSLC clients (IBM ELM / DOORS Next, Polarion,
-Codebeamer, custom tools) can discover, query and link to requirements and
-test cases. All paths are below `/api/v1/oslc/`.
+An OSLC provider for Requirements Management 2.1 and Quality Management 2.1,
+so that OSLC clients (IBM ELM / DOORS Next, Polarion, Codebeamer, custom
+tools) can discover, query, create, update, delete and link requirements and
+test cases. All paths are below `/api/v1/oslc/`. The administrator guide
+(*Connecting other tools*) shows how to connect DOORS Next, Polarion and
+Codebeamer.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/oslc/rootservices` | none | discovery (Jazz rootservices): `rmServiceProviders` and `qmServiceProviders` point to the catalog |
-| GET | `/oslc/catalog` | authenticated | `oslc:ServiceProviderCatalog`, one `oslc:ServiceProvider` per project the caller may read |
-| GET | `/oslc/projects/{pid}` | `project.read` | `oslc:ServiceProvider` with an RM and a QM `oslc:Service`, each with a `oslc:QueryCapability` (when the caller may read the kind) |
+| GET | `/oslc/rootservices` | none | Jazz-style discovery: `oslc_rm_v1:rmServiceProviders`, `oslc_qm_v1:qmServiceProviders` and `jd:oslcCatalogs` point to the catalog |
+| GET | `/oslc/catalog` | authenticated | `oslc:ServiceProviderCatalog`, one `oslc:ServiceProvider` (and a catalog) per project the caller may read |
+| GET | `/oslc/projects/{pid}/catalog` | `project.read` | the catalog of one project |
+| GET | `/oslc/projects/{pid}` | `project.read` | `oslc:ServiceProvider` with an RM and a QM `oslc:Service`: query capability, selection dialog and (with the write permission) creation factory and creation dialog |
+| GET | `/oslc/projects/{pid}/shapes/{requirement\|test}` | `project.read` | `oslc:ResourceShape` |
 | GET | `/oslc/projects/{pid}/requirements` | `requirement.read` | query capability for `oslc_rm:Requirement` |
-| GET | `/oslc/projects/{pid}/requirements/{item}` | `requirement.read` | one requirement, by id or key |
-| GET | `/oslc/projects/{pid}/tests` | `test.read` | query capability for `oslc_qm:TestCase` |
-| GET | `/oslc/projects/{pid}/tests/{item}` | `test.read` | one test case, by id or key |
+| POST | `/oslc/projects/{pid}/requirements` | `requirement.write` | creation factory → 201, `Location`, `ETag` |
+| GET | `/oslc/projects/{pid}/requirements/{item}` | `requirement.read` | one requirement, by id or key; `ETag` = version |
+| PUT | `/oslc/projects/{pid}/requirements/{item}` | `requirement.write` | update; `If-Match` → 412 when stale |
+| DELETE | `/oslc/projects/{pid}/requirements/{item}` | `requirement.write` | to the trash; `If-Match` optional → 204 |
+| … | `/oslc/projects/{pid}/tests`, `…/tests/{item}` | `test.read` / `test.write` | the same for `oslc_qm:TestCase` |
+| GET | `/oslc/projects/{pid}/dialogs/{requirement\|test}/{select\|create}` | none (the page uses the session) | delegated selection and creation dialogs (HTML) |
 
-**Formats.** By the `Accept` header: `application/rdf+xml` (default, also
-for `application/xml` and `*/*`), `text/turtle`, `application/ld+json`
-(also `application/json`). Responses carry `OSLC-Core-Version: 2.0`.
+**Formats.** Responses by the `Accept` header: `application/rdf+xml`
+(default, also for `application/xml` and `*/*`), `text/turtle`,
+`application/ld+json` (also `application/json`). Request bodies by
+`Content-Type`: Turtle, RDF/XML (`rdf:Description` or typed nodes,
+`rdf:parseType="Literal"` XHTML, `rdf:resource`) or JSON-LD (inline
+`@context`, `@graph`) and the OSLC 2.0 JSON format; others → 415.
+Responses carry `OSLC-Core-Version: 2.0`; errors in an RDF request are an
+`oslc:Error` (`oslc:statusCode`, `oslc:message`).
 
 **Resources.** Requirements: `dcterms:identifier` (key), `dcterms:title`,
 `dcterms:description`, `dcterms:created`, `dcterms:modified`,
 `dcterms:creator` (`foaf:Person`), `dcterms:subject` (tags),
-`oslc:shortTitle`, `oslc:serviceProvider`, `rdfs:seeAlso` (the web page),
-`oslc_rm:validatedBy` (tests), relations as `qtf:<type>` and the nearest
-OSLC property (`refines` → `oslc_rm:elaborates`, `depends_on` →
-`oslc_rm:constrainedBy`, `derived_from` → `oslc_rm:satisfies`, others
-`dcterms:relation`), and `qtf:status`, `qtf:obligation`, `qtf:type`,
-`qtf:priority`, `qtf:source`, `qtf:owner`, `qtf:version`, `qtf:folder`.
-Test cases: the dcterms properties, `oslc_qm:validatesRequirement`,
+`oslc:shortTitle`, `oslc:serviceProvider`, `oslc:instanceShape`,
+`rdfs:seeAlso` (the web page), `oslc_rm:validatedBy` (tests), relations as
+`qtf:<type>` on the source and the OSLC RM properties (`refines` →
+`oslc_rm:elaborates` / on the target `oslc_rm:elaboratedBy`, `depends_on`
+→ `oslc_rm:constrainedBy` / `oslc_rm:constrains`, `derived_from` →
+`oslc_rm:satisfies` / `oslc_rm:satisfiedBy`, `relates_to` →
+`dcterms:relation`), item links to URLs (`oslc_rm:implementedBy`,
+`trackedBy`, `affectedBy` … by their label, others `dcterms:references`),
+and `qtf:status`, `qtf:obligation`, `qtf:type`, `qtf:priority`,
+`qtf:source`, `qtf:rationale`, `qtf:owner`, `qtf:version`, `qtf:folder`.
+Test cases: the dcterms properties, `oslc_qm:validatesRequirement`, item
+links (`oslc_qm:testsChangeRequest`, `relatedChangeRequest` …),
 `qtf:status`, `qtf:priority`, `qtf:executionType`, `qtf:preconditions`,
-`qtf:expectedResult`, `qtf:version`, `qtf:folder`. The `qtf:` namespace is
-`<base_url>/api/v1/oslc/vocab#`. The `ETag` of a resource is its version.
+`qtf:expectedResult`, `qtf:estimatedMinutes`, `qtf:version`,
+`qtf:folder`. The `qtf:` namespace is `<base_url>/api/v1/oslc/vocab#`.
 
-**Queries.** `oslc.where` with `dcterms:identifier`, `dcterms:title`,
-`dcterms:modified` and `dcterms:created`; operators `= != < > <= >=` and
-`in [v1, v2]`, terms joined by `and`; values are quoted strings (a
-`^^xsd:dateTime` or `@lang` suffix is accepted), numbers or `<iri>`; dates
-compare as times. `oslc.prefix` declares further prefixes
-(`dc=<http://purl.org/dc/terms/>`). Results are the members of the query
-base (`rdfs:member`) with their properties and an `oslc:ResponseInfo`
-(`oslc:totalCount`, `oslc:nextPage`); `oslc.pageSize` (default 100, at
-most 1,000) and `page` page through them. Other properties, nested terms and
-`oslc.searchTerms` → 400; `oslc.select` and `oslc.orderBy` are ignored (all
-properties, key order).
+**Writes.** POST to the query base creates (`dcterms:title` required); PUT
+changes the properties the body carries and leaves the others;
+`oslc.properties=dcterms:title,oslc_rm:validatedBy` makes it a selective
+update, clearing the listed properties the body leaves out. Writable:
+`dcterms:title`, `dcterms:description` (an `rdf:XMLLiteral` is converted
+from XHTML to Markdown), `dcterms:subject`, the `qtf:` properties above
+(`qtf:folder`: a path, missing folders are created) and the link
+properties: `oslc_rm:validatedBy` / `oslc_qm:validatesRequirement` replace
+the trace links (needs `test.write`), the relation properties (both
+directions) replace the relations of their type, and values that are not
+resources of the project (a work item or requirement in another tool)
+become item links to their URL labelled with the property
+(`oslc_rm:implementedBy` …). With `If-Match` the ETag must be the current
+version (412 otherwise, as for a PATCH of the web client). Every save goes
+through the regular handlers: validation, review permissions, history,
+audit, suspect links, notifications. DELETE moves the item to the trash.
+
+**Queries.** `oslc.where` works on every property of the resources: terms
+joined by `and`, operators `= != < > <= >=` and `in [v1, v2]`, values
+quoted strings (a `^^xsd:dateTime` or `@lang` suffix is accepted), numbers
+or `<iri>`; dates compare as times; of several values one must match (`!=`:
+none may be equal). `oslc.select` limits the properties of the members
+(`*` all; nested selections select the property), `oslc.orderBy`
+(`+dcterms:title,-dcterms:modified`) sorts, `oslc.searchTerms` (`"brake"
+"stop"`) searches identifier, title and description. `oslc.prefix`
+declares further prefixes (`dc=<http://purl.org/dc/terms/>`). Results are
+the members of the query base (`rdfs:member`) with their properties and an
+`oslc:ResponseInfo` (`oslc:totalCount`, `oslc:nextPage`); `oslc.pageSize`
+(default 100, at most 1,000) and `page` page through them. Nested terms →
+400.
+
+**Delegated dialogs.** `…/dialogs/{kind}/select` lists the project's items
+with a search and check boxes, `…/create` a short form. They use the
+browser's Qtestframe session (without one they offer to sign in in another
+tab) and send `{"oslc:results": [{"oslc:label": "<key> <title>",
+"rdf:resource": "<resource URL>"}]}` by `postMessage` (`oslc-response:`
+prefix, to the opener or parent) or, with `#oslc-core-windowName-1.0`, by
+the windowName protocol. They may be framed by the origins of
+`server.frame_ancestors` (else the same origin only); English or Swedish by
+`lang` or `Accept-Language`.
 
 **Authentication.** An API token as `Authorization: Bearer <token>`, or —
 for clients that only offer Basic authentication — as the password of
 `Authorization: Basic` (any user name), on the OSLC paths only; a browser
-session works too. The token's role and the project access rules apply:
-restricted projects are listed and served only to their members (404
-otherwise).
+session works too (with the CSRF token for writes). The token's role and
+the project access rules apply: restricted projects are listed and served
+only to their members (404 otherwise).
 
-**Not supported:** creation factories and other writes, delegated UIs
-(selection and creation dialogs), resource previews (compact), resource
-shapes, OAuth 1.0a, TRS and the OSLC Configuration Management domain.
-
-## Export
-
-`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|md|reqif|reqifz&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
-(permission `export`)
-
-* `format` also accepts `excel`, `word` and `markdown`. `aspects` defaults to all;
-  unknown aspects are a 400. `q` is applied to requirements if it is a valid
-  requirement query and to tests if it is a valid test query.
-* CSV with more than one aspect is delivered as a ZIP of CSV files.
-* `md` is one [Markdown document](#markdown-documents) with every aspect.
-* `reqif` and `reqifz` export the (filtered) requirements as
-  [ReqIF 1.2](#reqif-export); `aspects` does not apply. `reqif` is the XML
-  document (`application/xml`), `reqifz` a ZIP (`application/zip`) with the
-  document `<KEY>.reqif` and the requirements' attachments below
-  `files/<requirement key>/`.
-* `requirements`, `tests` and `runs` end with one column per custom field of
-  the kind (`Label` or `Label (unit)`, the value in its re-importable form).
-* `tests` has the columns `Parameters` and `Data rows` (count); `test_data`
-  lists the data table, one line per row and parameter (`Test`, `Row`,
-  `Row name`, `Parameter`, `Value`); `runs` has `Configuration` and
-  `Iterations` per execution.
-* Response has `Content-Disposition: attachment;
-  filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`. Formula injection is
-  neutralised in CSV; see [design.md §11](design.md#11-export-formats).
-
-### Export a view
-
-`POST /projects/{pid}/export/view` (permission `export`) renders a table the
-client shows, such as the spreadsheet view of requirements or tests with its
-visible columns, their order, the sort and the filters, with the same
-writers as the project export:
-
-```json
-{"format": "xlsx", "name": "requirements", "title": "Requirements", "lang": "en",
- "filter": "status = draft", "columns": ["Key", "Title", "Status"],
- "rows": [["DEMO-1", "Login", "Draft"]]}
-```
-
-* `format` is `xlsx`, `csv`, `md`, `pdf` or `docx` (aliases as above);
-  `columns` 1–200 headers; each row at most as many cells as there are
-  columns; at most 2,000,000 cells. `lang` (`en`, `sv`) is the language of
-  the texts the writers add; `filter` is shown under the title in Markdown.
-* The file is `<KEY>-<name>-<YYYYMMDD-HHMMSS>.<ext>` (`name` reduced to
-  `a-z`, `0-9` and `-`). Formula injection is neutralised in CSV as in the
-  project export. Audited as `project.export`.
-
-### Markdown documents
-
-`format=md` (alias `markdown`; `text/markdown; charset=utf-8`, extension
-`.md`) is available wherever a file is generated from a table: the project
-export, every report template, custom and saved reports, report batches
-(a ZIP of `.md` files), e-mailed and scheduled reports and the audit log
-export. The document is GitHub-flavoured Markdown:
-
-* `# <title>`, then the subtitle (project, filter) and a list of metadata
-  (`**Generated:**` date, and where they apply the aspects, filter or date
-  range), then a contents list of the sections when there are several;
-* one `## <section>` per section with a GFM table; `|` is escaped as `\|`,
-  line breaks in a cell become `<br>`, Markdown and HTML characters are
-  backslash-escaped, so cell texts show literally;
-* cells that are http(s) URLs become links; when `server.base_url` is
-  configured, requirement, test case and defect keys of the project link
-  to `<base_url>/go/<key>`;
-* empty sections show *(no data)* / *(no rows)*. Reports have no charts,
-  so the document has no images.
-
-In reports the texts the document adds follow the report language
-(e.g. `**Skapad:**`, `Innehåll` in Swedish).
+**Not supported:** OAuth 1.0a (use API tokens), resource previews
+(compact), TRS, nested `oslc.where` terms and the OSLC Configuration
+Management domain.
 
 ### ReqIF export
 
@@ -3078,17 +3400,37 @@ as the standard prescribes); XHTML values use the prefix `xhtml:` bound to
 * Requirement relations between exported requirements are `SPEC-RELATION`s
   (source → target) with one `SPEC-RELATION-TYPE` per relation type
   (`Refines`, `Depends on`, …).
+* With `include=tests`: `SPEC-OBJECT-TYPE` *Test case* with
+  `ReqIF.ForeignID`, `ReqIF.Name`, `ReqIF.Text`, `Preconditions`, `Steps`
+  (an XHTML table Action | Data | Expected result | Calls), `Expected
+  result`, `Execution type`, `Priority`, `Status` (enumerations),
+  `Estimated minutes`, `Tags`, `Version`, created by / on, the test custom
+  fields and `Attachments`; a second `SPECIFICATION` holds the test folder
+  tree; trace links are `SPEC-RELATION`s of the type *Verifies* (test →
+  requirement, `qtf-link-<id>`). With a filter only the tests that verify
+  an exported requirement are included.
+* With `include=records`: `SPEC-OBJECT-TYPE` *Verification record*
+  (requirement, criterion, method, result, performed by / on, note, valid
+  until, validity, signed off by) in a third `SPECIFICATION`, each related
+  to its requirement by a *Verification record of* relation. The importer
+  ignores them.
+* `baseline=<id>`: the items as the baseline froze them (with their
+  custom fields, criteria and steps); folders, relations, links and records
+  are today's between those items. The title and comment name the
+  baseline.
 * `IDENTIFIER`s are derived from the database ids (`qtf-req-<id>`,
   `qtf-folder-<id>`, `qtf-rel-<id>`, …), so repeated exports keep them;
   `LONG-NAME` of a requirement is its key, of a heading the folder name;
   `LAST-CHANGE` is the item's last update.
 
-Importing the file again (`POST /projects/{pid}/requirements/import`)
-restores title, description (the importer reads the XHTML of a Qtestframe
-file back as Markdown), obligation, type, priority, status, source,
-rationale, owner, tags, criteria and folders; the key becomes the external
-ID (`ID: <key>` in the source). Relations, categories and attachments are
-not imported.
+The ReqIF import with re-import (`/projects/{pid}/exchange/reqif/…`, see
+*Exchange*) reads everything back except categories, records and the
+creation data: requirements and tests with their fields, custom fields,
+criteria, steps, folders, relations, trace links and attachments. The simple
+requirement import (`POST /projects/{pid}/requirements/import`) restores
+the requirements' title, description, obligation, type, priority, status,
+source, rationale, owner, tags, criteria and folders; the key becomes the
+external ID (`ID: <key>` in the source).
 
 ## OpenAPI description
 
@@ -3140,7 +3482,7 @@ the requirement is allocated to, or of one above it, e.g. `element:"Power unit"`
 
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of
-steps), priority, status, estimate, tag, folder, category, dimension, linked,
+steps), priority, status, estimate, owner, tag, folder, category, dimension, linked,
 last_result, created_by, created_at, updated_at, flaky (true/false),
 flakiness (alias flips), catalog, stale` (true/false) and `element` (as for requirements).
 
@@ -3151,7 +3493,18 @@ variants the item applies to) and `applicability` (`all` | `selected`), see
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Risk fields (`GET /projects/{pid}/risks?q=`): `id,
 key, title, description, category, likelihood, impact, score, level, status,
-mitigation, owner, created_by`.
+mitigation, owner, review_owner, review_date, created_by`.
+
+Owners and assignees: `owner:me` (also `owner=me`, `owner!=me`) and
+`assignee:me` (defects, executions) match the items of the caller, however
+they are named in the field (e-mail address, display name or @handle), and
+not merely values containing "me"; `review_owner:me` likewise for risks.
+`owner:anna@example.com` finds the items of one member. An owner is a
+project member stored as their e-mail address; writes accept the display
+name, the e-mail address, `@handle` or the user id of a member and store
+the e-mail address (a member who may not see the project is refused with
+400), any other name stays as free text. Changing a member's e-mail address
+moves their owner and assignee references along.
 
 Custom fields: every list with custom fields (requirements, tests, runs,
 defects, risks) accepts `cf.<key>` with every operator (`cf.supplier:"Acme"`,

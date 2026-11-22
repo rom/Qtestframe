@@ -27,11 +27,11 @@ Every organisation starts with six built-in roles. By default each role in the t
 | Role | Can additionally (default) |
 |---|---|
 | **Viewer** | read all projects, requirements, tests, runs, documents and the member list; search; export and generate reports |
-| **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content |
+| **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content; write in [discussions](discussions.md) (*comment.create*, as all roles below except Viewer) |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
-| **Test lead** | mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
+| **Test lead** | plan [test cycles](test-cycles.md) (*cycle.plan*), mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
 | **Manager** | approve and reject requirements (*requirement.review*), write requirements and requirement folders, create and edit projects, all categories and the [traceability rules](traceability-and-coverage.md#traceability-rules), create baselines |
-| **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, delete any comment |
+| **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, remove any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
 
 The default matrix of permissions:
@@ -41,8 +41,9 @@ The default matrix of permissions:
 | `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.review` | | ✔ | | ✔ | ✔ | ✔ |
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
+| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
-| `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
 | `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
 
@@ -219,7 +220,7 @@ Only members with the permission *script.execute* (by default **Test lead** and 
 
 ## Consistency checks
 
-Projects do not get the [built-in consistency checks](traceability-and-coverage.md#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*) are part of backups and project archives.
+Projects do not get the [built-in consistency checks](traceability-and-coverage.md#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*, *not a conflict*) are part of backups and project archives; the cached vectors of the optional embeddings service are not (see [Duplicates and conflicts](duplicates-and-conflicts.md)).
 
 ## API tokens
 
@@ -262,12 +263,13 @@ How it works:
 
 ## OSLC
 
-Qtestframe serves a read-only OSLC provider (Requirements Management 2.0 and Quality Management 2.0) at `/api/v1/oslc/`, so that ALM tools such as IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion or Codebeamer can find requirements and test cases and link to them. It is always on; there is nothing to configure.
+Qtestframe serves an OSLC provider (Requirements Management 2.1 and Quality Management 2.1) at `/api/v1/oslc/`, so that ALM tools such as IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion or Codebeamer can find, link, create and change requirements and test cases. It is always on; what users can do with it is described in [Interoperability](interoperability.md#oslc).
 
-- **Addresses:** the catalog `/api/v1/oslc/catalog` (one service provider per project), the discovery document `/api/v1/oslc/rootservices` (public, contains no data). Set **Base URL** under [System settings](#system-settings) (`server.base_url`) so that the resource addresses are the ones clients can reach.
-- **Accounts:** clients sign in with an [API token](#api-tokens) as `Authorization: Bearer …`; clients that only offer user name and password can send the token as the password (any user name). Create the token for a person or service account with the **Viewer** role or higher. Project sharing applies: restricted projects are only listed for their members.
-- **Supported:** RDF/XML, Turtle and JSON-LD; requirements and test cases with title, description, dates, creator, tags, status, priority, verification links and relations; queries with `oslc.where` on identifier, title, created and modified, and paging.
-- **Not supported:** writing through OSLC (creation factories, updates), delegated selection and creation dialogs, previews, resource shapes, OAuth 1.0a, tracked resource sets and configuration management. For moving requirements in and out, use [ReqIF and the Excel round-trip](reports-and-export.md#exchanging-data-with-other-tools).
+- **Addresses:** the catalog `/api/v1/oslc/catalog` (one service provider per project), a catalog per project `/api/v1/oslc/projects/<id>/catalog`, the discovery document `/api/v1/oslc/rootservices` (public, contains no data). Set **Base URL** under [System settings](#system-settings) (`server.base_url`) so that the resource addresses are the ones clients can reach.
+- **Accounts:** clients sign in with an [API token](#api-tokens) as `Authorization: Bearer …`; clients that only offer user name and password can send the token as the password (any user name). Create the token for a person or service account whose role allows what the tool should do: **Viewer** to read and link from the other side, a role with write permissions to create and change items. Project sharing applies: restricted projects are only listed for their members.
+- **Supported:** RDF/XML, Turtle and JSON-LD in both directions; creation factories, updates with `If-Match` (a stale update is refused), deletion to the trash; queries with `oslc.where` on any property, `oslc.select`, `oslc.orderBy`, `oslc.searchTerms` and paging; link properties as trace links, relations and links to the other tool's items; delegated selection and creation dialogs; resource shapes.
+- **Dialogs in a frame:** the selection and creation dialogs open in a window of their own. For tools that show them inside their page, the server operator lists the tool's address in `server.frame_ancestors` (administrator guide, *Connecting other tools*).
+- **Not supported:** OAuth 1.0a (use API tokens), previews, tracked resource sets and configuration management.
 
 The API reference (`docs/api.md`, section *OSLC*) lists the properties and the query syntax.
 

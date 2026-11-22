@@ -620,3 +620,50 @@ tests:
           expected: Varje chargenummer har ett kontrollintyg med specifika provningsresultat.
         - action: Jämför materialsort och provningsresultat i varje intyg med konstruktionsspecifikationen.
           expected: Materialsorten stämmer och resultaten uppfyller de specificerade värdena.
+
+risks:
+  - id: EQPED-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [overpressure, rupture]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive 2014/68/EU (PED) Annex I §2.11 (safety accessories)"]
+    mitigated_by: [EQPED-05, EQPED-06, EQPED-07, EQPED-08]
+    en:
+      title: Pressure vessel bursts
+      description: Pressure rises above the design limit because a safety valve is set too high or undersized, or the wall has corroded below its design thickness. The vessel ruptures with blast and fragments.
+      mitigation: Analyse hazards for each design, calculate strength at design conditions with a corrosion allowance, limit pressure surges to 10 % above PS and set and size safety valves for the full relief load.
+    sv:
+      title: Tryckkärl brister
+      description: Trycket stiger över konstruktionsgränsen eftersom en säkerhetsventil är inställd för högt eller är underdimensionerad, eller väggen har korroderat under sin konstruktionstjocklek. Kärlet brister med tryckvåg och splitter.
+      mitigation: Gör en riskanalys för varje konstruktion, hållfasthetsberäkna vid konstruktionsdata med korrosionstillägg, begränsa tryckstötar till 10 % över PS och ställ in och dimensionera säkerhetsventiler för hela avblåsningsflödet.
+  - id: EQPED-R02
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [welding, materials]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive 2014/68/EU (PED) Annex I §3.1.2 (permanent joining)"]
+    mitigated_by: [EQPED-09, EQPED-10, EQPED-11, EQPED-12]
+    en:
+      title: Defective weld or material causes a leak or failure
+      description: A weld made without an approved procedure or a material without traceable properties contains a hidden defect. The equipment leaks hazardous fluid or fails in service.
+      mitigation: Let qualified personnel make permanent joints with approved procedures, test joints non-destructively, carry out a hydrostatic proof test and keep material inspection documents for each pressure-bearing part.
+    sv:
+      title: Felaktig svets eller felaktigt material orsakar läckage eller haveri
+      description: En svets som gjorts utan godkänd procedur eller ett material utan spårbara egenskaper har ett dolt fel. Utrustningen läcker farligt medium eller havererar i drift.
+      mitigation: Låt kvalificerad personal utföra permanenta förband enligt godkända procedurer, prova förbanden oförstörande, gör en hydrostatisk provtryckning och spara materialintyg för varje tryckbärande del.
+  - id: EQPED-R03
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [inspection, classification]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive 2014/68/EU (PED) Art. 13 (classification of pressure equipment)"]
+    mitigated_by: [EQPED-01, EQPED-02, EQPED-03, EQPED-15, EQPED-13]
+    en:
+      title: Pressure equipment used without required assessment or inspection
+      description: The category is not determined, the wrong conformity module is used or periodic inspections are missed. The equipment is used unlawfully and defects stay undetected.
+      mitigation: Keep a register of pressure equipment with its classification, determine the category before design, use the matching conformity module, inspect before first use and at the set intervals and mark the data plate.
+    sv:
+      title: Trycksatt anordning används utan krävd bedömning eller kontroll
+      description: Kategorin bestäms inte, fel modul för bedömning av överensstämmelse används eller återkommande kontroller missas. Anordningen används i strid med reglerna och fel förblir oupptäckta.
+      mitigation: För ett register över trycksatta anordningar med deras klassning, bestäm kategorin innan konstruktionen börjar, använd den modul som motsvarar kategorin, kontrollera före första användning och med fastställda intervall och märk dataskylten.

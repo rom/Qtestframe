@@ -49,8 +49,8 @@ var projectScoped = map[string]bool{
 	string(rbac.ProjectRead): true, string(rbac.ProjectUpdate): true, string(rbac.ProjectDelete): true,
 	string(rbac.RequirementRd): true, string(rbac.RequirementWr): true, string(rbac.RequirementRev): true, string(rbac.WaiverApprove): true,
 	string(rbac.TestRead): true, string(rbac.TestWrite): true, string(rbac.TestReview): true,
-	string(rbac.RunRead): true, string(rbac.RunWrite): true, string(rbac.RunExecute): true,
-	string(rbac.ScriptExecute): true, string(rbac.Export): true,
+	string(rbac.RunRead): true, string(rbac.RunWrite): true, string(rbac.RunExecute): true, string(rbac.CyclePlan): true,
+	string(rbac.ScriptExecute): true, string(rbac.Export): true, string(rbac.CommentCreate): true,
 }
 
 // adminUser reports whether the caller is an organisation administrator
@@ -330,29 +330,30 @@ var resourceProjects = map[string]string{
 	"verification-records":  `SELECT project_id FROM verification_records WHERE id = ? AND tenant_id = ?`,
 	"elements":              `SELECT project_id FROM system_elements WHERE id = ? AND tenant_id = ?`,
 	"waivers":               `SELECT project_id FROM waivers WHERE id = ? AND tenant_id = ?`,
+	"exploratory-sessions":  `SELECT project_id FROM exploratory_sessions WHERE id = ? AND tenant_id = ?`,
 	"webhooks":              `SELECT project_id FROM webhooks WHERE id = ? AND tenant_id = ?`,
+	"chat-channels":         `SELECT project_id FROM chat_channels WHERE id = ? AND tenant_id = ?`,
 	"trace-rules":           `SELECT project_id FROM trace_rules WHERE id = ? AND tenant_id = ?`,
 	"custom-fields":         `SELECT project_id FROM custom_fields WHERE id = ? AND tenant_id = ?`,
 	"templates":             `SELECT project_id FROM item_templates WHERE id = ? AND tenant_id = ?`,
 	"configurations":        `SELECT project_id FROM configurations WHERE id = ? AND tenant_id = ?`,
 	"variants":              `SELECT project_id FROM variants WHERE id = ? AND tenant_id = ?`,
 	"builds":                `SELECT project_id FROM builds WHERE id = ? AND tenant_id = ?`,
+	"cycles":                `SELECT project_id FROM test_cycles WHERE id = ? AND tenant_id = ?`,
+	"cycle-schedules":       `SELECT project_id FROM test_cycle_schedules WHERE id = ? AND tenant_id = ?`,
 	"test-dependencies":     `SELECT project_id FROM test_dependencies WHERE id = ? AND tenant_id = ?`,
 	"reports/definitions":   `SELECT project_id FROM report_definitions WHERE id = ? AND tenant_id = ?`,
 	"reports/subscriptions": `SELECT project_id FROM report_subscriptions WHERE id = ? AND tenant_id = ?`,
 	"reviews":               `SELECT project_id FROM review_requests WHERE id = ? AND tenant_id = ?`,
 	"files":                 `SELECT COALESCE(project_id, '') FROM files WHERE id = ? AND tenant_id = ?`,
-	"comments": `SELECT COALESCE(r.project_id, t.project_id, '') FROM comments c
-		LEFT JOIN requirements r ON c.entity_type = 'requirement' AND r.id = c.entity_id
-		LEFT JOIN test_cases t ON c.entity_type = 'test' AND t.id = c.entity_id
-		WHERE c.id = ? AND c.tenant_id = ?`,
+	"comments":              `SELECT COALESCE(project_id, '') FROM comments WHERE id = ? AND tenant_id = ?`,
 }
 
 // nonProjectResources are {id} resources that belong to no project.
 var nonProjectResources = map[string]bool{
 	"auth/sessions": true, "tenants": true, "users": true, "tokens": true,
 	"scim/tokens": true, "scim/groups": true, "avatars": true,
-	"catalog/requirements": true, "catalog/tests": true,
+	"catalog/requirements": true, "catalog/tests": true, "catalog/risks": true,
 	// the organisation's field sets and templates per project type
 	"field-sets/fields": true, "template-sets/templates": true,
 }

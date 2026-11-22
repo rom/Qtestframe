@@ -813,3 +813,35 @@ tests:
           expected: Båda anges tillsammans med datum för testet.
         - action: Öppna den testrapport som det hänvisas till.
           expected: Rapporten visar samma maxvärde och den mätning som pekade ut den begränsande komponenten, och den är högst 12 månader gammal.
+
+risks:
+  - id: SCAL-R01
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [growth, capacity]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 (capacity)"]
+    mitigated_by: [SCAL-04, SCAL-05, SCAL-06, SCAL-13, SCAL-16]
+    en:
+      title: System cannot grow with the number of users
+      description: State kept in instances, database connections or unknown limits stop the system from scaling out. A successful launch or season overloads the service.
+      mitigation: Keep application instances stateless, show throughput gain from added instances, scale out automatically, size database connections for maximum scale-out and document the tested scaling limit.
+    sv:
+      title: Systemet kan inte växa med antalet användare
+      description: Tillstånd som hålls i instanser, databasanslutningar eller okända gränser hindrar systemet från att skala ut. En lyckad lansering eller säsong överbelastar tjänsten.
+      mitigation: Håll applikationsinstanserna tillståndslösa, visa ökad genomströmning när instanser läggs till, skala ut automatiskt, dimensionera databasanslutningarna för största utskalning och dokumentera den testade skalningsgränsen.
+  - id: SCAL-R02
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [capacity-planning, quota]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 20000-1:2018 §8.4.3 (capacity management)"]
+    mitigated_by: [SCAL-07, SCAL-08, SCAL-11, SCAL-02]
+    en:
+      title: Capacity runs out without warning
+      description: Storage, quotas or headroom are used up because nobody forecasts growth. The service stops accepting data or new customers at short notice.
+      mitigation: Keep capacity headroom in production, forecast capacity every quarter, warn before storage quotas are used up and define the supported data volume per organisation.
+    sv:
+      title: Kapaciteten tar slut utan förvarning
+      description: Lagring, kvoter eller marginal förbrukas eftersom ingen prognostiserar tillväxten. Tjänsten slutar ta emot data eller nya kunder med kort varsel.
+      mitigation: Ha kapacitetsmarginal i produktion, gör en kapacitetsprognos varje kvartal, varna innan lagringskvoter är förbrukade och definiera den datamängd per organisation som stöds.

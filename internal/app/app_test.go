@@ -330,6 +330,21 @@ func TestSeedDemo(t *testing.T) {
 		t.Errorf("grant %+v %v", g, err)
 	}
 	ps = slices.DeleteFunc(ps, func(p model.Project) bool { return p.Key == "VAULT" })
+	// test cycles: closed, active (half executed, with a burndown), planned
+	for _, pr := range ps {
+		cycles, err := st.ListCycles(context.Background(), tn.ID, pr.ID)
+		if err != nil || len(cycles) != 3 || cycles[0].Name != "Sprint 14 regression" || cycles[0].Progress.Executed == 0 ||
+			cycles[0].Progress.Executed == cycles[0].Progress.Planned || cycles[1].ScheduledStartAt == nil || cycles[2].Progress.Executed != cycles[2].Progress.Planned {
+			t.Fatalf("cycles of %s: %+v %v", pr.Key, cycles, err)
+		}
+		rep, err := st.CycleReport(context.Background(), tn.ID, cycles[0].ID)
+		if err != nil || len(rep.Testers) < 2 || len(rep.Burndown) != 14 || *rep.Burndown[0].Remaining == *rep.Burndown[9].Remaining {
+			t.Fatalf("cycle report %+v %v", rep, err)
+		}
+		if work, err := st.AssignedCycleTests(context.Background(), tn.ID, dana.ID); err != nil || len(work) == 0 {
+			t.Fatalf("dana's work %v %v", work, err)
+		}
+	}
 	// the web test against the server itself
 	set, err := st.WebTestSettings(context.Background(), tn.ID, ps[0].ID)
 	if err != nil || len(set.Variables) != 1 {
@@ -345,14 +360,42 @@ func TestSeedDemo(t *testing.T) {
 	if web != 1 {
 		t.Errorf("%d web tests", web)
 	}
+	// discussions: open threads (one mentions Erik), a resolved one
+	erik, _ := st.GetUserByEmail(context.Background(), DemoOutsiderEmail)
+	if th, err := st.ListDiscussionThreads(context.Background(), tn.ID, store.DiscussionFilter{ProjectIDs: []string{ps[0].ID}, Status: store.ThreadsAll}); err != nil || len(th) != 4 {
+		t.Errorf("threads %+v %v", th, err)
+	}
+	if th, err := st.OpenThreadsMentioning(context.Background(), tn.ID, erik.ID, nil); err != nil || len(th) != 2 {
+		t.Errorf("Erik's threads %+v %v", th, err)
+	}
+	if err := SeedDemoDiscussions(context.Background(), st, tn.ID, &ps[0]); err != nil {
+		t.Error(err) // a second time: nothing
+	}
 	// with bootstrap credentials the administrator is created before the
 	// demo users (who would otherwise stop the bootstrap of the first start)
 	bcfg := writeConfig(t, "bootstrap: {admin_email: boss@example.com, admin_password: "+strongPassword+"}")
 	if r := run(t, "", "seed-demo", "--config", bcfg); r.code != 0 {
 		t.Fatalf("seed with bootstrap: %+v", r)
 	}
-	if u, err := openTestStore(t, bcfg).GetUserByEmail(context.Background(), "boss@example.com"); err != nil || !u.SuperAdmin {
+	bst := openTestStore(t, bcfg)
+	if u, err := bst.GetUserByEmail(context.Background(), "boss@example.com"); err != nil || !u.SuperAdmin {
 		t.Errorf("bootstrap admin %+v %v", u, err)
+	}
+	// owners and assignments for "My work"
+	btn, err := bst.GetTenantBySlug(context.Background(), "default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	owned, err := bst.OwnedItems(context.Background(), btn.ID, []string{"boss@example.com"})
+	kinds := map[string]int{}
+	for _, o := range owned {
+		kinds[o.Kind]++
+	}
+	if err != nil || kinds["requirement"] == 0 || kinds["test"] == 0 || kinds["risk"] == 0 {
+		t.Errorf("owned %v %v", kinds, err)
+	}
+	if ex, err := bst.AssignedExecutions(context.Background(), btn.ID, []string{"boss@example.com"}); err != nil || len(ex) == 0 {
+		t.Errorf("executions %v %v", ex, err)
 	}
 	if itoa(0) != "0" || itoa(123) != "123" {
 		t.Errorf("itoa: %q %q", itoa(0), itoa(123))

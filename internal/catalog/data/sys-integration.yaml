@@ -850,3 +850,35 @@ tests:
           expected: Det planerade slutet ligger minst 12 månader efter releasen.
         - action: Öppna konformitetsrapporterna och de gemensamma testrapporterna för varje externt gränssnitt.
           expected: Varje gränssnitt har en konformitetsrapport eller en anteckning om att ingen testsvit finns, och en gemensam rapport undertecknad av båda parter före driftstart.
+
+risks:
+  - id: SYINT-R01
+    category: project
+    likelihood: 4
+    impact: 4
+    tags: [interfaces, integration]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.8 (integration process)", "IEEE 1012-2016 (system, software and hardware verification and validation)"]
+    mitigated_by: [SYINT-01, SYINT-02, SYINT-03, SYINT-04, SYINT-06]
+    en:
+      title: Subsystems do not fit together at integration
+      description: Interfaces are described differently by the two sides or not at all, and elements arrive at integration without being verified. Integration takes months longer than planned.
+      mitigation: Keep a register of interfaces with an interface control document for each external one, agree it with both sides before implementation, check compatibility with simulators and integrate only elements that have passed their own verification.
+    sv:
+      title: Delsystemen passar inte ihop vid integrationen
+      description: Gränssnitten beskrivs olika av de två parterna eller inte alls, och element kommer till integrationen utan att vara verifierade. Integrationen tar månader längre än planerat.
+      mitigation: För ett register över gränssnitt med ett gränssnittsdokument för varje externt gränssnitt, kom överens om det med båda parter före implementering, kontrollera kompatibiliteten med simulatorer och integrera bara element som klarat sin egen verifiering.
+  - id: SYINT-R02
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [verification, test-environment]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)", "IEEE 1012-2016 (system, software and hardware verification and validation)"]
+    mitigated_by: [SYINT-08, SYINT-09, SYINT-11, SYINT-18, SYINT-12]
+    en:
+      title: Verification results do not prove the delivered system
+      description: The test object and environment are not recorded, the environment differs from operation and changes are not re-verified. Faults pass verification and appear in operation.
+      mitigation: Plan verification for each requirement, record the configuration of test object and environment with each result, re-verify after changes based on their impact, assess differences from the operational environment and validate with real users.
+    sv:
+      title: Verifieringsresultaten bevisar inte det levererade systemet
+      description: Testobjektet och miljön registreras inte, miljön skiljer sig från drift och ändringar verifieras inte på nytt. Fel passerar verifieringen och visar sig i drift.
+      mitigation: Planera verifiering för varje krav, registrera konfigurationen av testobjekt och miljö med varje resultat, verifiera på nytt efter ändringar utifrån deras påverkan, bedöm skillnader mot driftmiljön och validera med verkliga användare.

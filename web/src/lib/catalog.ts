@@ -5,7 +5,7 @@
 // instant with several hundred items.
 import { anyOf } from './query'
 
-export type CatalogKind = 'requirement' | 'test'
+export type CatalogKind = 'requirement' | 'test' | 'risk'
 export type CatalogLang = 'en' | 'sv'
 
 export interface CatalogArea {
@@ -18,6 +18,7 @@ export interface CatalogArea {
   description: string
   requirements: number
   tests: number
+  risks?: number
 }
 
 export interface CatalogGroup {
@@ -25,6 +26,7 @@ export interface CatalogGroup {
   name: string
   requirements: number
   tests: number
+  risks?: number
   areas: CatalogArea[]
 }
 
@@ -52,6 +54,10 @@ export interface CatalogOverview {
   requirement_tags: CatalogTagCount[]
   test_tags: CatalogTagCount[]
   catalogues?: CatalogType[]
+  risks?: number
+  risk_tags?: CatalogTagCount[]
+  /** risk categories in the language */
+  risk_categories?: { id: string; name: string }[]
 }
 
 /** A law, regulation, standard or best practice the catalogue cites (GET /catalog/sources). */
@@ -68,6 +74,8 @@ export interface CatalogSource {
   requirements: number
   /** tests citing it or verifying such a requirement */
   tests: number
+  /** risks citing it */
+  risks?: number
   catalogues: string[]
 }
 
@@ -97,7 +105,8 @@ interface CatalogBase {
   catalogue?: string
   /** ids of the reference sources its refs cite */
   sources?: string[]
-  priority: string
+  /** requirements and tests: critical, high, medium, low (risks have none) */
+  priority?: string
   tags: string[]
   refs: string[]
   title: string
@@ -110,6 +119,8 @@ export interface CatalogRequirement extends CatalogBase {
   obligation: string
   /** catalogue tests that verify it */
   tests: string[]
+  /** catalogue risks it mitigates */
+  risks?: string[]
 }
 
 export interface CatalogTest extends CatalogBase {
@@ -120,7 +131,25 @@ export interface CatalogTest extends CatalogBase {
   steps: number
 }
 
-export type CatalogItem = CatalogRequirement | CatalogTest
+/** A typical risk of an area with the catalogue requirements that mitigate it. */
+export interface CatalogRisk extends CatalogBase {
+  /** security, privacy, safety, availability, … */
+  category: string
+  category_name: string
+  /** typical likelihood and impact on the project scale 1–5 */
+  likelihood: number
+  impact: number
+  score: number
+  /** low | medium | high | critical */
+  level: string
+  /** catalogue requirements that mitigate it */
+  mitigated_by: string[]
+  /** catalogue tests that check it directly */
+  tests: string[]
+  mitigation: string
+}
+
+export type CatalogItem = CatalogRequirement | CatalogTest | CatalogRisk
 
 export interface CatalogLinked {
   id: string
@@ -167,6 +196,7 @@ export interface CatalogRequirementDetail extends CatalogRequirement {
   criteria: CatalogCriterion[]
   ref_targets?: CatalogRefTarget[]
   linked_tests: CatalogLinked[]
+  mitigates_risks?: CatalogLinked[]
 }
 
 export interface CatalogTestDetail extends CatalogTest {
@@ -178,10 +208,18 @@ export interface CatalogTestDetail extends CatalogTest {
   linked_requirements: CatalogLinked[]
 }
 
+export interface CatalogRiskDetail extends CatalogRisk {
+  area_name: string
+  ref_targets?: CatalogRefTarget[]
+  mitigating_requirements: CatalogLinked[]
+  linked_tests: CatalogLinked[]
+}
+
 /** GET /projects/{pid}/catalog */
 export interface ProjectCatalog {
   requirements: Record<string, InProjectItem[]>
   tests: Record<string, InProjectItem[]>
+  risks?: Record<string, InProjectItem[]>
 }
 
 export interface CatalogCreated {
@@ -190,17 +228,25 @@ export interface CatalogCreated {
   title: string
   catalog_ref: string
   folder_id: string | null
+  /** requirements of the project the new one is similar to (suspected duplicates) */
+  similar?: { id: string; key: string; title: string; score: number }[]
 }
 
 export interface CatalogImportResult {
   requirements: CatalogCreated[]
   tests: CatalogCreated[]
+  risks?: CatalogCreated[]
   links: { id: string; requirement_id: string; requirement_key: string; test_case_id: string; test_case_key: string }[]
+  risk_links?: { risk_id: string; risk_key: string; requirement_id: string; requirement_key: string }[]
   skipped: { kind: CatalogKind; catalog_ref: string; reason: string; existing?: InProjectItem[] }[]
   folders_created: number
 }
 
 export const isRequirement = (x: CatalogItem): x is CatalogRequirement => 'obligation' in x
+export const isRisk = (x: CatalogItem): x is CatalogRisk => 'mitigated_by' in x
+
+/** The ids at the other end of an item's catalogue links (tests of a requirement, requirements of a test or risk). */
+export const linkedIds = (x: CatalogItem): string[] => (isRequirement(x) ? x.tests : isRisk(x) ? x.mitigated_by : x.requirements)
 
 // ---------------------------------------------------------------- search
 
@@ -228,7 +274,8 @@ export function searchScore(item: CatalogItem, words: readonly string[]): number
     [item.tags.join(' ').toLowerCase(), 6],
     [item.refs.join(' ').toLowerCase(), 4],
     [item.description.toLowerCase(), 3],
-    [(isRequirement(item) ? item.tests : item.requirements).join(' ').toLowerCase(), 2],
+    [linkedIds(item).join(' ').toLowerCase(), 2],
+    ...(isRisk(item) ? ([[item.mitigation.toLowerCase(), 1]] as [string, number][]) : []),
   ]
   let total = words.length > 1 && fields[0][0].includes(words.join(' ')) ? 50 : 0
   const id = item.id.toLowerCase()
@@ -262,6 +309,9 @@ export interface CatalogFilters {
   priorities: string[]
   tags: string[]
   executions: string[]
+  /** risks: categories and levels */
+  categories?: string[]
+  levels?: string[]
   hideInProject: boolean
   /** catalogue type ("" = every type) */
   catalogue?: string
@@ -270,12 +320,12 @@ export interface CatalogFilters {
 }
 
 export function emptyFilters(): CatalogFilters {
-  return { node: 'all', q: '', types: [], obligations: [], priorities: [], tags: [], executions: [], hideInProject: false, catalogue: '', sources: [] }
+  return { node: 'all', q: '', types: [], obligations: [], priorities: [], tags: [], executions: [], categories: [], levels: [], hideInProject: false, catalogue: '', sources: [] }
 }
 
 /** Number of filters set besides the tree node and the search. */
 export function activeFilters(f: CatalogFilters): number {
-  return [f.types, f.obligations, f.priorities, f.tags, f.executions].filter((x) => x.length).length + (f.hideInProject ? 1 : 0)
+  return [f.types, f.obligations, f.priorities, f.tags, f.executions, f.categories ?? [], f.levels ?? []].filter((x) => x.length).length + (f.hideInProject ? 1 : 0)
 }
 
 export function matchesNode(item: CatalogItem, node: NodeKey): boolean {
@@ -289,13 +339,14 @@ const okAny = (want: readonly string[], v: string) => !want.length || want.inclu
 
 /**
  * The sources an item brings: a requirement those it cites, a test those it
- * cites and those of the requirements it verifies (as the server's ?source=).
+ * cites and those of the requirements it verifies, a risk those it cites and
+ * those of the requirements that mitigate it (as the server's ?source=).
  */
 export function itemSources(item: CatalogItem, reqById?: ReadonlyMap<string, CatalogRequirement>): string[] {
   const own = item.sources ?? []
   if (isRequirement(item) || !reqById) return own
   const out = new Set(own)
-  for (const r of item.requirements) for (const s of reqById.get(r)?.sources ?? []) out.add(s)
+  for (const r of linkedIds(item)) for (const s of reqById.get(r)?.sources ?? []) out.add(s)
   return [...out]
 }
 
@@ -304,8 +355,9 @@ export function matchesFields(item: CatalogItem, f: CatalogFilters, inProject: R
   if (f.hideInProject && inProject.has(item.id)) return false
   if (f.catalogue && (item.catalogue ?? 'software') !== f.catalogue) return false
   if (f.sources?.length && !itemSources(item, reqById).some((s) => f.sources!.includes(s))) return false
-  if (!okAny(f.priorities, item.priority)) return false
   if (f.tags.length && !item.tags.some((t) => f.tags.includes(t))) return false
+  if (isRisk(item)) return okAny(f.categories ?? [], item.category) && okAny(f.levels ?? [], item.level)
+  if (!okAny(f.priorities, item.priority ?? '')) return false
   if (isRequirement(item)) return okAny(f.types, item.type) && okAny(f.obligations, item.obligation)
   return okAny(f.executions, item.execution)
 }
@@ -354,7 +406,7 @@ export interface CatalogTreeNode {
 
 /** Groups and areas as tree nodes with counts for the kind; with a catalogue type only its areas (and groups with such areas). */
 export function catalogTree(groups: readonly CatalogGroup[], kind: CatalogKind, counts: ReadonlyMap<NodeKey, number>, catalogue = ''): CatalogTreeNode[] {
-  const total = (x: { requirements: number; tests: number }) => (kind === 'requirement' ? x.requirements : x.tests)
+  const total = (x: { requirements: number; tests: number; risks?: number }) => (kind === 'requirement' ? x.requirements : kind === 'risk' ? (x.risks ?? 0) : x.tests)
   const inType = (a: CatalogArea) => !catalogue || (a.catalogue ?? 'software') === catalogue
   return groups
     .map((g) => ({ g, areas: g.areas.filter((a) => inType(a) && total(a) > 0) }))
@@ -465,6 +517,13 @@ export function inProjectSet(map: Record<string, InProjectItem[]> | null | undef
 export interface ImportPlan {
   /** requirements that will be created */
   requirements: string[]
+  /** of requirements, the ones added because they mitigate a chosen risk */
+  includedRequirements: string[]
+  /** risks that will be created: chosen ones and, with includeRisks, those the requirements mitigate */
+  risks: string[]
+  /** of risks, the ones added because a requirement mitigates them */
+  includedRisks: string[]
+  skippedRisks: string[]
   /** tests that will be created: chosen ones and, with includeTests, those verifying the requirements */
   tests: string[]
   /** of tests, the ones added because they verify a chosen requirement */
@@ -481,14 +540,51 @@ export function importPlan(
   reqById: ReadonlyMap<string, CatalogRequirement>,
   inReqs: ReadonlySet<string>,
   inTests: ReadonlySet<string>,
-  opts: { includeTests: boolean; addCopies: boolean },
+  opts: {
+    includeTests: boolean
+    addCopies: boolean
+    riskIds?: readonly string[]
+    riskById?: ReadonlyMap<string, CatalogRisk>
+    inRisks?: ReadonlySet<string>
+    /** add the requirements that mitigate the chosen risks (default true) */
+    includeRequirements?: boolean
+    /** add the risks the requirements mitigate (default false) */
+    includeRisks?: boolean
+  },
 ): ImportPlan {
-  const plan: ImportPlan = { requirements: [], tests: [], included: [], skippedRequirements: [], skippedTests: [] }
-  for (const id of new Set(reqIds)) (inReqs.has(id) && !opts.addCopies ? plan.skippedRequirements : plan.requirements).push(id)
+  const plan: ImportPlan = { requirements: [], includedRequirements: [], risks: [], includedRisks: [], skippedRisks: [], tests: [], included: [], skippedRequirements: [], skippedTests: [] }
+  const riskById = opts.riskById ?? new Map<string, CatalogRisk>()
+  const chosenRisks = [...new Set(opts.riskIds ?? [])]
+  const allReqs = [...new Set(reqIds)]
+  const chosenReqs = new Set(allReqs)
+  if (opts.includeRequirements ?? true) {
+    for (const k of chosenRisks) for (const r of riskById.get(k)?.mitigated_by ?? []) if (!allReqs.includes(r)) allReqs.push(r)
+  }
+  const allRisks = [...chosenRisks]
+  if (opts.includeRisks) {
+    for (const r of allReqs) for (const k of reqById.get(r)?.risks ?? []) if (!allRisks.includes(k)) allRisks.push(k)
+  }
+  for (const id of allReqs) {
+    if (inReqs.has(id) && !opts.addCopies) {
+      if (chosenReqs.has(id)) plan.skippedRequirements.push(id)
+      continue
+    }
+    plan.requirements.push(id)
+    if (!chosenReqs.has(id)) plan.includedRequirements.push(id)
+  }
+  const inRisks = opts.inRisks ?? new Set<string>()
+  for (const id of allRisks) {
+    if (inRisks.has(id) && !opts.addCopies) plan.skippedRisks.push(id)
+    else {
+      plan.risks.push(id)
+      if (!chosenRisks.includes(id)) plan.includedRisks.push(id)
+    }
+  }
   const chosen = new Set(testIds)
   const all = [...chosen]
   if (opts.includeTests) {
-    for (const id of new Set(reqIds)) for (const t of reqById.get(id)?.tests ?? []) if (!chosen.has(t) && !all.includes(t)) all.push(t)
+    for (const id of allReqs) for (const t of reqById.get(id)?.tests ?? []) if (!chosen.has(t) && !all.includes(t)) all.push(t)
+    for (const id of allRisks) for (const t of riskById.get(id)?.tests ?? []) if (!chosen.has(t) && !all.includes(t)) all.push(t)
   }
   for (const id of all) {
     if (inTests.has(id) && !opts.addCopies) plan.skippedTests.push(id)
@@ -513,4 +609,11 @@ export function createdQuery(keys: readonly string[], max = 3500): string {
 /** "Catalogue id · standards" shown in the editors for an item's origin. */
 export function originText(ref: string, refs: readonly string[] | null | undefined): string {
   return [ref, ...(refs ?? [])].filter(Boolean).join(' · ')
+}
+
+/** A catalogue requirement similar to requirements of the project (POST /projects/{pid}/catalog/similar). */
+export interface CatalogSimilar {
+  catalog_ref: string
+  title: string
+  similar: { id: string; key: string; title: string; status: string; score: number }[]
 }

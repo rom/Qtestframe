@@ -59,6 +59,7 @@ Fliken **Utgångskriterier** listar de villkor som releasen måste uppfylla. Vä
 | Spårbarhetsregler | inget krav i omfattningen och inget testfall som är länkat till ett sådant bryter mot en påslagen [spårbarhetsregel](traceability-and-coverage.md#spårbarhetsregler) med den valda allvarligheten; statusfliken listar objekten med reglerna de bryter mot | bara fel, eller fel och varningar |
 | Inga blockerande defekter | inget krav i omfattningen [blockeras av en öppen defekt](traceability-and-coverage.md#blockerande-defekter) enligt projektets regler för allvarlighetsgrad; ett inaktuellt godkänt utfall räknas inte för **Klarade testfall** och **Obligatoriska krav klarade** | — |
 | Restrisk | ingen risk kopplad till omfattningen som inte är stängd har en [restnivå](waivers-and-soa.md#restrisk) över gränsen, om inte accepteringen är signerad | projektets gräns för riskacceptans, eller en nivå |
+| Testcykel genomförd | minst tröskeln av de planerade testfallen i den valda [testcykeln](test-cycles.md) har ett utfall i cykelns körningar; 100 % betyder att cykeln är helt genomförd | tröskel i % och testcykeln |
 
 En release utan utgångskriterier är alltid go.
 
@@ -71,6 +72,8 @@ Fliken **Status** utvärderar utgångskriterierna just nu. Den visar **Go** när
 Varje kriterium visar om det är uppfyllt, det faktiska värdet bredvid målet (till exempel *80 % (mål ≥ 95 %)*) och det som blockerar kriteriet: krav utan testfall, underkända testfall, öppna defekter eller risker som fortfarande kräver åtgärd. Varje objekt är en länk som öppnar det.
 
 Etiketten i listan över releaser bygger på samma utvärdering, så att du direkt ser vilka releaser som är klara.
+
+I ett projekt med [varianter](variants-and-code.md) kan en release rikta sig mot varianter: utgångskriterierna utvärderas då för var och en av dem, fliken **Status** visar en matris med kriterier × varianter, och releasen är go först när varje målvariant är det (se [releasegrindar per variant](variants-and-code.md#releasegrindar-per-variant)).
 
 Ett procentkriterium utan något att mäta är **inte uppfyllt**: en release utan krav i omfattningen, eller utan exekveringar för *exekverade*, visar *Inget att mäta än* och får no-go. En release helt utan utgångskriterier får alltid go.
 
@@ -97,7 +100,7 @@ Alla releaser kontrolleras innan någon ändras. Ändringar av status (utom *Sl�
 
 ## Riskregistret
 
-**Risker** listar projektets risker. Varje risk har en nyckel som *SHOP-RISK-3*, en titel, en kategori, en ägare, en **sannolikhet** och en **konsekvens** från 1 till 5, en status och en **åtgärd**: det ni gör för att göra risken mindre sannolik eller mindre skadlig.
+**Risker** listar projektets risker. Varje risk har en nyckel som *SHOP-RISK-3*, en titel, en kategori, en ägare (en projektmedlem — skriv `@` för att välja — eller ett vanligt namn), en **sannolikhet** och en **konsekvens** från 1 till 5, en status och en **åtgärd**: det ni gör för att göra risken mindre sannolik eller mindre skadlig.
 
 | Sannolikhet | | Konsekvens | |
 |---|---|---|---|
@@ -109,9 +112,9 @@ Alla releaser kontrolleras innan någon ändras. Ändringar av status (utom *Sl�
 
 Registret visar varje risks poäng och nivå, status, ägare, de krav som hanterar risken och hur många av dem som är **täckta** (har testfall) och **verifierade** (alla testfall godkända). Filtrera på text, nivå eller status. Stängda risker döljs om du inte väljer **Ta med stängda risker** eller filtrerar på statusen *Stängd*.
 
-Lägg till en risk med **Ny risk**. Välj sannolikhet och konsekvens (dialogen visar poäng och nivå medan du väljer), beskriv åtgärden och välj **Länka krav** för att välja de krav som hanterar risken. Välj en risk i registret för att ändra den.
+Lägg till en risk med **Ny risk**. Välj sannolikhet och konsekvens (dialogen visar poäng och nivå medan du väljer), beskriv åtgärden och välj **Länka krav** för att välja de krav som hanterar risken. Välj en risk i registret för att ändra den. Du kan också utgå från de typiska riskerna i [katalogen](catalogue.md#risker-i-katalogen): de kommer med en föreslagen åtgärd och de krav som åtgärdar dem, redan kopplade.
 
-Kravredigeraren visar under **Risker** de risker som kravet hanterar, och kravlistan har de valfria kolumnerna **Risk** och **Öppna defekter** (se **Kolumner**).
+Kravredigeraren visar under **Åtgärdar risker** de risker som kravet åtgärdar. Välj **Koppla en risk** för att välja en risk i projektet som kravet åtgärdar, eller **×** vid en risk för att ta bort kopplingen; riskens krav ändras samtidigt. Kravlistan har de valfria kolumnerna **Risk** och **Öppna defekter** (se **Kolumner**).
 
 ### Ändra många risker på en gång
 
@@ -122,6 +125,8 @@ Kryssa i risker i registret. Verktygsfältet anger **status**, **sannolikhet** e
 Värmekartan räknar riskerna i ett rutnät med 5 × 5 rutor: sannolikhet från 5 överst till 1 nederst, konsekvens från 1 till vänster till 5 till höger. Rutans färg är nivån för dess poäng. Välj en ruta för att bara visa riskerna med den sannolikheten och konsekvensen i registret; välj den igen, eller **×** på filteretiketten, för att visa alla.
 
 Bredvid värmekartan räknar **Öppna risker per nivå** de risker som inte är stängda, per nivå; välj en nivå för att filtrera registret.
+
+När projektet har risker från katalogen visar **Område i katalogen** ovanför värmekartan bara riskerna inom ett område (till exempel *Autentisering* eller *Brandskydd*), eller de som inte kommer från katalogen. Värmekartan, antalen per nivå och registret följer valet, och området ingår i sidans adress. API:ets risklista tar samma val som frågefälten `catalog_area` (alias `area`) och `catalog`, till exempel `area:authentication` eller `catalog:AUTH-R01`.
 
 ## Risknivåer
 

@@ -26,9 +26,9 @@ Varje organisation börjar med sex inbyggda roller. Som standard kan varje roll 
 | Roll | Kan dessutom (standard) |
 |---|---|
 | **Läsare** | läsa alla projekt, krav, testfall, körningar, dokument och medlemslistan; söka; exportera och ta fram rapporter |
-| **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet |
+| **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet; skriva i [diskussioner](discussions.md) (*comment.create*, som alla roller nedan utom Läsare) |
 | **Testare** | skriva och länka testfall, hantera testmappar och testfallskategorier, skapa och redigera körningar, registrera utfall, importera utfall från CI, ladda upp bilagor till testfall, körningar och exekveringar, skapa egna API-nycklar |
-| **Testledare** | markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
+| **Testledare** | planera [testcykler](test-cycles.md) (*cycle.plan*), markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
 | **Ansvarig** | godkänna och avvisa krav (*requirement.review*), skriva krav och kravmappar, skapa och redigera projekt, alla kategorier och [spårbarhetsreglerna](traceability-and-coverage.md#spårbarhetsregler), skapa baslinjer |
 | **Administratör** | allt: ta bort projekt, hantera medlemmar och roller, byta namn på organisationen, återställa medlemmars lösenord, ta bort alla kommentarer |
 | **Superadministratör** | allt i alla organisationer; hantera organisationer och användare; säkerhetskopiering och återställning |
@@ -40,8 +40,9 @@ Standardmatrisen med behörigheter:
 | `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.review` | | ✔ | | ✔ | ✔ | ✔ |
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
+| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
-| `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
 | `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
 
@@ -218,7 +219,7 @@ Bara medlemmar med behörigheten *script.execute* (som standard **Testledare** o
 
 ## Konsistenskontroller
 
-Projekt får inte de [inbyggda konsistenskontrollerna](traceability-and-coverage.md#inbyggda-konsistenskontroller) som regler automatiskt: en förvaltare lägger till dem med **Lägg till inbyggda kontroller** (de börjar som varningar, så releasernas beredskap ändras inte). Avfärdade fynd (*ingen dubblett*) ingår i säkerhetskopior och projektarkiv.
+Projekt får inte de [inbyggda konsistenskontrollerna](traceability-and-coverage.md#inbyggda-konsistenskontroller) som regler automatiskt: en förvaltare lägger till dem med **Lägg till inbyggda kontroller** (de börjar som varningar, så releasernas beredskap ändras inte). Avfärdade fynd (*ingen dubblett*, *ingen konflikt*) ingår i säkerhetskopior och projektarkiv; de cachade vektorerna från den valfria tjänsten för inbäddningar gör det inte (se [Dubbletter och konflikter](duplicates-and-conflicts.md)).
 
 ## API-nycklar
 
@@ -261,12 +262,13 @@ Så fungerar det:
 
 ## OSLC
 
-Qtestframe har en OSLC-leverantör med läsbehörighet (Requirements Management 2.0 och Quality Management 2.0) under `/api/v1/oslc/`, så att ALM-verktyg som IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion eller Codebeamer kan hitta krav och testfall och länka till dem. Den är alltid på; det finns inget att ställa in.
+Qtestframe har en OSLC-leverantör (Requirements Management 2.1 och Quality Management 2.1) under `/api/v1/oslc/`, så att ALM-verktyg som IBM Engineering Lifecycle Management (DOORS Next, ETM), Polarion eller Codebeamer kan hitta, länka, skapa och ändra krav och testfall. Den är alltid på; vad användarna kan göra med den beskrivs i [Samverkan](interoperability.md#oslc).
 
-- **Adresser:** katalogen `/api/v1/oslc/catalog` (en tjänsteleverantör per projekt) och upptäcktsdokumentet `/api/v1/oslc/rootservices` (öppet, innehåller inga data). Ange **Bas-URL** under [Systeminställningar](#systeminställningar) (`server.base_url`) så att resursadresserna är de som klienterna når.
-- **Konton:** klienter loggar in med en [API-nyckel](#api-nycklar) som `Authorization: Bearer …`; klienter som bara erbjuder användarnamn och lösenord kan skicka nyckeln som lösenord (valfritt användarnamn). Skapa nyckeln för en person eller ett tjänstekonto med rollen **Läsare** eller högre. Projektdelningen gäller: begränsade projekt visas bara för sina medlemmar.
-- **Stöds:** RDF/XML, Turtle och JSON-LD; krav och testfall med titel, beskrivning, datum, upphovsperson, taggar, status, prioritet, verifieringslänkar och relationer; frågor med `oslc.where` på identifierare, titel, skapad och ändrad, samt sidindelning.
-- **Stöds inte:** att skriva via OSLC (creation factories, uppdateringar), delegerade urvals- och skapadialoger, förhandsvisningar, resource shapes, OAuth 1.0a, tracked resource sets och konfigurationshantering. Använd [ReqIF och Excel fram och tillbaka](reports-and-export.md#utbyta-data-med-andra-verktyg) för att flytta krav in och ut.
+- **Adresser:** katalogen `/api/v1/oslc/catalog` (en tjänsteleverantör per projekt), en katalog per projekt `/api/v1/oslc/projects/<id>/catalog`, upptäcktsdokumentet `/api/v1/oslc/rootservices` (öppet, innehåller inga data). Ställ in **Bas-URL** under [Systeminställningar](#systeminställningar) (`server.base_url`) så att resursadresserna är de som klienterna når.
+- **Konton:** klienter loggar in med en [API-nyckel](#api-nycklar) som `Authorization: Bearer …`; klienter som bara har användarnamn och lösenord kan skicka nyckeln som lösenord (valfritt användarnamn). Skapa nyckeln för en person eller ett tjänstekonto vars roll tillåter det som verktyget ska göra: **Läsare** för att läsa och länka från andra hållet, en roll med skrivbehörighet för att skapa och ändra poster. Projektdelning gäller: begränsade projekt listas bara för sina medlemmar.
+- **Stöds:** RDF/XML, Turtle och JSON-LD åt båda hållen; creation factories, uppdateringar med `If-Match` (en inaktuell uppdatering nekas), borttagning till papperskorgen; frågor med `oslc.where` på valfri egenskap, `oslc.select`, `oslc.orderBy`, `oslc.searchTerms` och sidindelning; länkegenskaper som spårlänkar, relationer och länkar till det andra verktygets poster; delegerade urvals- och skapadialoger; resource shapes.
+- **Dialoger i en ram:** urvals- och skapadialogerna öppnas i ett eget fönster. För verktyg som visar dem inne på sin sida lägger serverns operatör in verktygets adress i `server.frame_ancestors` (administratörshandboken, *Koppla ihop med andra verktyg*).
+- **Stöds inte:** OAuth 1.0a (använd API-nycklar), förhandsvisningar, tracked resource sets och konfigurationshantering.
 
 API-referensen (`docs/api.md`, avsnittet *OSLC*) listar egenskaperna och frågesyntaxen.
 

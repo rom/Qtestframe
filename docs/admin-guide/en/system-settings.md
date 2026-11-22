@@ -93,6 +93,11 @@ The settings the page offers, generated from `internal/settings`:
 | Script and web test runner | `runner.web.trace` | `on_failure`, `always`, `off` | after a restart |
 | Script and web test runner | `runner.web.video` | `off`, `on_failure`, `always` | after a restart |
 | Script and web test runner | `runner.web.playwright_dir` | text | shown only (file) |
+| Similarity (duplicates) | `similarity.embeddings.enabled` | on/off | at once |
+| Similarity (duplicates) | `similarity.embeddings.url` | text | at once |
+| Similarity (duplicates) | `similarity.embeddings.model` | text | at once |
+| Similarity (duplicates) | `similarity.embeddings.api_key` | secret (write-only) | at once |
+| Similarity (duplicates) | `similarity.embeddings.timeout` | 1s–5m | at once |
 
 <!-- END GENERATED: system-settings -->
 
@@ -105,6 +110,24 @@ What each key means is in the [configuration reference](configuration.md#referen
 - **Syslog over TLS** uses `ca_file`, `cert_file` and `key_file` from the file; they are readable after the lock-down because they are added to the Landlock read-only paths at start-up. A Unix socket that was not configured at start-up may be refused by Landlock; use `udp`, `tcp` or `tls`, or restart.
 - **Secrets** entered on the page (the SMTP password, OIDC client secrets) are write-only, stored [encrypted](security.md#encryption-of-stored-secrets), never logged and never shown again.
 - **Test buttons** (*Test connection* for OIDC discovery, *Send test message* for syslog, *Send test e-mail*) make the server connect to an address the super administrator enters. Filter the server's egress if it can reach internal services.
+
+## Embeddings service for similar items
+
+Suspected duplicate requirements and tests, the *Similar requirements* panel of the editors and the catalogue import warning compare items on the server by default: TF-IDF over the project with stemming, stop words and synonyms for English and Swedish (see the user guide, *Duplicates and conflicts*). Nothing is sent anywhere.
+
+Optionally, an **OpenAI-compatible embeddings endpoint** computes the similarity instead: **Administration → System settings → Similarity (duplicates)**, or `similarity.embeddings` in the [configuration file](configuration.md#reference).
+
+| Setting | Meaning |
+|---|---|
+| `similarity.embeddings.enabled` | off by default |
+| `similarity.embeddings.url` | the endpoint, e.g. `https://llm.example.com/v1/embeddings`; it receives `POST {"model": …, "input": [texts]}` and answers `{"data": [{"index": i, "embedding": [numbers]}]}` |
+| `similarity.embeddings.model` | sent as `model` (empty: the service's default) |
+| `similarity.embeddings.api_key` | sent as `Authorization: Bearer …`; write-only, stored [encrypted](security.md#encryption-of-stored-secrets); in the file only as `api_key_file` |
+| `similarity.embeddings.timeout` | longest wait (default 30 s) |
+
+**Privacy.** When it is on, the **title, description and acceptance criteria of requirements and the title, description, preconditions and steps of tests are sent to that service**, of every project of every organisation on the server, whenever the similarity checks run or someone types in an editor (the text being written is sent too). Use a service run by your organisation or one you have an agreement with; leave it off otherwise.
+
+The vectors are stored in the table `similarity_embeddings` per item, model and text (a changed item is sent again, an unchanged one is not). It is a cache: it is not part of backups or project archives and is filled again after a restore. Changing the model computes every vector again. **Test the service** on the page sends one short example sentence and reports the vector size. When the service fails or times out, the server logs a warning and uses the local similarity, so the checks never stop working. The conflict detection (opposite obligations, thresholds, exclusive values) always runs on the server. The thresholds of the checks apply to the service's cosine similarity as well; services differ, so check the suspected duplicates after turning it on and adjust the threshold of the duplicate checks if needed.
 
 ## Audit and export
 

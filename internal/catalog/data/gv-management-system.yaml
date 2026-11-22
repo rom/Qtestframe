@@ -876,3 +876,35 @@ tests:
           expected: De är 93.
         - action: Kontrollera inkludering, skäl och, för inkluderade åtgärder, status för varje åtgärd.
           expected: Varje fält är ifyllt, och uttalandet har ett daterat godkännande.
+
+risks:
+  - id: GVMS-R01
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [certification, audit]
+    refs: ["ISO/IEC 27001:2022 §9.2.2", "ISO/IEC 27001:2022 §9.3.3"]
+    mitigated_by: [GVMS-09, GVMS-10, GVMS-12, GVMS-13, GVMS-14]
+    en:
+      title: Management system exists on paper only
+      description: Audits are skipped or done by the people audited, findings are not followed up and management reviews take no decisions. The certification audit finds major nonconformities.
+      mitigation: Audit each process within 3 years with auditors independent of their own work, correct nonconformities with root cause and effectiveness check and hold a management review every year with decisions and owners.
+    sv:
+      title: Ledningssystemet finns bara på papperet
+      description: Revisioner hoppas över eller görs av dem som revideras, fynd följs inte upp och ledningens genomgångar fattar inga beslut. Certifieringsrevisionen hittar större avvikelser.
+      mitigation: Revidera varje process inom 3 år med revisorer som inte granskar sitt eget arbete, åtgärda avvikelser med grundorsak och effektivitetskontroll och håll ledningens genomgång varje år med beslut och ansvariga.
+  - id: GVMS-R02
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [legal-requirements, policy]
+    refs: ["ISO/IEC 27001:2022 §4.2", "ISO/IEC 27001:2022 §6.1.3"]
+    mitigated_by: [GVMS-07, GVMS-08, GVMS-02, GVMS-19, GVMS-21]
+    en:
+      title: Legal or contractual requirement overlooked
+      description: There is no register of obligations, policies are not reviewed and controls are chosen without reasons. A new requirement is missed until a customer or authority points it out.
+      mitigation: Keep a register of legal and contractual requirements, check each policy for compliance every year, review policies every 12 months, register interested parties and their requirements and justify each control in the statement of applicability.
+    sv:
+      title: Rättsligt eller avtalsmässigt krav förbises
+      description: Det finns inget register över krav, policyer granskas inte och skydd väljs utan motivering. Ett nytt krav missas tills en kund eller myndighet påpekar det.
+      mitigation: För ett register över rättsliga och avtalsmässiga krav, kontrollera efterlevnaden av varje policy varje år, gå igenom policyerna var 12:e månad, registrera intressenter och deras krav och motivera varje skydd i uttalandet om tillämplighet.

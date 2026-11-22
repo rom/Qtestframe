@@ -11,8 +11,8 @@ import (
 // the failed execution of the regression run is a regression of a resolved
 // defect (which is reopened and, being critical, blocks the requirements
 // its test verifies), and a requirement whose substance changed makes the
-// requirement that refines it suspect, with the links of its tests, and its
-// own results stale.
+// requirement that refines it suspect, transitively (the one refining that
+// one too), with the links of their tests, and its own results stale.
 func seedCorrelations(ctx context.Context, st *store.Store, tenantID string, run *model.TestRun, changed *model.Requirement) error {
 	es, err := st.ListExecutions(ctx, tenantID, run.ID)
 	if err != nil {
@@ -30,15 +30,27 @@ func seedCorrelations(ctx context.Context, st *store.Store, tenantID string, run
 	if err := st.MarkContentChanged(ctx, tenantID, model.KindRequirement, changed.ID); err != nil {
 		return err
 	}
-	if _, err := st.MarkLinksSuspect(ctx, tenantID, model.KindRequirement, changed.ID, reason); err != nil {
-		return err
-	}
-	irs, err := st.MarkRelationsSuspect(ctx, tenantID, changed.ID, reason)
+	// the transitive impact (store/impact.go): the requirement that refines
+	// it, the one refining that (two steps), their tests
+	x, err := st.LoadImpactIndex(ctx, tenantID, changed.ProjectID)
 	if err != nil {
 		return err
 	}
-	for _, ir := range irs {
-		if _, err := st.MarkLinksSuspect(ctx, tenantID, model.KindRequirement, ir.OtherID, "requirement "+changed.Key+" ("+ir.Relation.Type+") changed: "+reason); err != nil {
+	_, marks := x.Analyze([]store.ImpactRoot{{Kind: model.KindRequirement, ID: changed.ID}}, 0)
+	for _, m := range marks {
+		why := reason
+		if m.Depth > 1 && m.From != m.Root {
+			why = store.PathText(m.Path) + ": " + reason
+		}
+		switch m.Edge {
+		case model.EdgeIssue:
+			_, err = st.MarkIssueOutdated(ctx, tenantID, m.ID, why)
+		case model.EdgeVerifies:
+			_, err = st.MarkLinkSuspect(ctx, tenantID, m.ID, why)
+		default:
+			_, err = st.MarkRelationSuspect(ctx, tenantID, m.ID, m.End, why)
+		}
+		if err != nil {
 			return err
 		}
 	}

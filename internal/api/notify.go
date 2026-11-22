@@ -203,26 +203,10 @@ func (s *Server) notifyDefect(r *http.Request, p *Principal, d *model.Defect, ev
 // e-mail, display name, handle, @handle; lower case) to the user id; nil
 // when the members cannot be read.
 func (s *Server) peopleIndex(ctx context.Context, p *Principal) map[string]string {
-	ms, err := s.Store.ListTenantMembers(ctx, p.TenantID())
-	if err != nil {
-		return nil
+	if pp := s.loadPeople(ctx, p); pp != nil {
+		return pp.index
 	}
-	users := make([]mention.User, 0, len(ms))
-	for _, m := range ms {
-		users = append(users, mention.User{ID: m.UserID, Email: m.Email, Name: m.Name})
-	}
-	index := map[string]string{}
-	for _, d := range mention.Directory(users, nil) {
-		if d.UserID == "" {
-			continue
-		}
-		for _, k := range []string{d.UserID, d.Email, d.Name, d.Handle, "@" + d.Handle} {
-			if k != "" {
-				index[strings.ToLower(k)] = d.UserID
-			}
-		}
-	}
-	return index
+	return nil
 }
 
 // ---------------------------------------------------------------- webhooks
@@ -244,8 +228,10 @@ func Sign(secret string, body []byte) string {
 	return "sha256=" + hex.EncodeToString(m.Sum(nil))
 }
 
-// notifyEvent posts an event to the project's webhooks in the background.
+// notifyEvent posts an event to the project's webhooks and chat channels
+// (chat.go) in the background.
 func (s *Server) notifyEvent(r *http.Request, p *Principal, projectID, event string, data any) {
+	s.notifyChat(r, p, projectID, event, data)
 	hooks, err := s.Store.WebhooksFor(r.Context(), p.TenantID(), projectID, event)
 	if err != nil || len(hooks) == 0 {
 		return
@@ -491,24 +477,6 @@ func (s *Server) afterItemChange(r *http.Request, p *Principal, kind, id, projec
 	if text != "" {
 		s.notifyMentions(ctx, p, projectID, kind, id, key+" "+title, text)
 	}
-}
-
-// afterComment sends the webhook and notifies the people mentioned.
-func (s *Server) afterComment(r *http.Request, p *Principal, kind, id string, c *model.Comment) {
-	ctx := r.Context()
-	var projectID, key, title string
-	if kind == model.KindTest {
-		if t, err := s.Store.GetTest(ctx, p.TenantID(), id); err == nil {
-			projectID, key, title = t.ProjectID, t.Key, t.Title
-		}
-	} else if q, err := s.Store.GetRequirement(ctx, p.TenantID(), id); err == nil {
-		projectID, key, title = q.ProjectID, q.Key, q.Title
-	}
-	if projectID == "" {
-		return
-	}
-	s.notifyEvent(r, p, projectID, "comment.created", map[string]any{"kind": kind, "id": id, "key": key, "comment": c})
-	s.notifyMentions(ctx, p, projectID, kind, id, key+" "+title, c.Body)
 }
 
 // afterExecutionChange sends webhooks, tells a new assignee and the people

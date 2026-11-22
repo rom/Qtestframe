@@ -138,9 +138,11 @@ export const QUERY_HELP: QueryHelpEntry[] = [
   { example: 'dimension:"Polarity/Negative"', meaning: 'Category as Dimension/Name', id: 'dimension' },
   { example: 'has:criteria   (or field:*)', meaning: 'Field not empty', id: 'has' },
   { example: 'verification:verified  element:"Power unit"', meaning: 'Verification state; allocated to a system element (or below it)', id: 'verification' },
+  { example: 'has:open-discussion  mentions:me', meaning: 'Unresolved discussion threads; mentioned (also in its discussion)', id: 'discussion' },
   { example: '(a OR b) AND c', meaning: 'Grouping', id: 'group' },
   { example: 'cf.supplier:"Acme"  cf.mass>2', meaning: 'Custom field (by its key)', id: 'custom' },
   { example: 'sort:-cf.mass  sort:title', meaning: 'Sort the result (- for descending)', id: 'sort' },
+  { example: 'owner:me  assignee:me', meaning: 'Items you own / that are assigned to you; or owner: and the e-mail address of a member', id: 'me' },
 ]
 
 export const QUERY_OPERATORS: QueryHelpEntry[] = [
@@ -150,25 +152,30 @@ export const QUERY_OPERATORS: QueryHelpEntry[] = [
   { example: '>  >=  <  <=', meaning: 'numeric or date comparison', id: 'opCompare' },
 ]
 
-export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit' | 'defect', string[]> = {
+export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit' | 'defect' | 'cycle', string[]> = {
   requirement: [
     'key', 'title', 'description', 'obligation', 'type', 'priority', 'status', 'source', 'rationale', 'owner',
     'tag', 'version', 'folder', 'category', 'dimension', 'coverage', 'linked', 'created_by', 'created_at',
-    'updated_at', 'criteria', 'related', 'parent', 'child', 'comments', 'mention', 'suspect', 'risk', 'defects', 'catalog',
+    'updated_at', 'criteria', 'related', 'parent', 'child', 'comments', 'open_discussions', 'mention', 'suspect', 'risk', 'defects', 'catalog',
     'blocked', 'stale', 'suspect_relations',
     'verification', 'element',
     'variant', 'applicability',
   ],
   test: [
     'key', 'title', 'description', 'preconditions', 'execution_type', 'type', 'script_language', 'script',
-    'expected', 'step', 'priority', 'status', 'estimate', 'tag', 'folder', 'category', 'dimension', 'linked',
-    'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'version', 'mention', 'depends_on', 'suspect', 'flaky', 'flakiness', 'catalog', 'stale',
+    'expected', 'step', 'priority', 'status', 'estimate', 'owner', 'tag', 'folder', 'category', 'dimension', 'linked',
+    'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'open_discussions', 'version', 'mention', 'depends_on', 'suspect', 'flaky', 'flakiness', 'catalog', 'stale',
     'element',
     'variant', 'applicability',
+    'cycle',
   ],
-  run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at'],
+  run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at', 'configuration', 'variant', 'cycle'],
   execution: ['key', 'title', 'status', 'assignee', 'executed_by', 'notes', 'output', 'defect', 'mention'],
   document: ['name', 'description', 'tag', 'kind', 'type', 'uploaded_by', 'created_at', 'size', 'linked'],
   audit: ['action', 'entity', 'entity_id', 'user', 'details', 'created_at'],
   defect: ['key', 'title', 'description', 'status', 'severity', 'priority', 'assignee', 'external', 'created_by', 'open', 'linked'],
+  cycle: [
+    'name', 'goal', 'description', 'status', 'owner', 'release', 'variant', 'build', 'environment', 'configuration', 'start', 'end',
+    'planned', 'executed', 'progress', 'passed', 'failed', 'blocked', 'unassigned', 'test', 'assignee', 'created_by', 'created_at',
+  ],
 }

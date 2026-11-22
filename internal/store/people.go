@@ -32,8 +32,12 @@ func (s *Store) ProjectTags(ctx context.Context, tenantID, projectID string) (ma
 // requirements and the assignees of its executions, one entry per use.
 func (s *Store) ProjectPeopleNames(ctx context.Context, tenantID, projectID string) ([]string, error) {
 	rows, err := s.c(ctx).query(ctx, `SELECT owner FROM requirements WHERE tenant_id = ? AND project_id = ? AND owner <> ''
+		UNION ALL SELECT owner FROM test_cases WHERE tenant_id = ? AND project_id = ? AND owner <> ''
+		UNION ALL SELECT owner FROM risks WHERE tenant_id = ? AND project_id = ? AND owner <> ''
+		UNION ALL SELECT assignee FROM defects WHERE tenant_id = ? AND project_id = ? AND assignee <> ''
 		UNION ALL SELECT e.assignee FROM test_executions e JOIN test_runs r ON r.id = e.run_id
-		WHERE e.tenant_id = ? AND r.project_id = ? AND e.assignee IS NOT NULL AND e.assignee <> ''`, tenantID, projectID, tenantID, projectID)
+		WHERE e.tenant_id = ? AND r.project_id = ? AND e.assignee IS NOT NULL AND e.assignee <> ''`,
+		tenantID, projectID, tenantID, projectID, tenantID, projectID, tenantID, projectID, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import HelpTip from '@/guide/HelpTip.vue'
+import { impactGateFor } from '@/composables/impact'
+import type { ImpactDryRun } from '@/lib/correlations'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -33,7 +35,7 @@ import { useI18n } from 'vue-i18n'
 
 const proj = useProjectStore()
 /** a changed field of the comparison; custom_fields.<key> shows the field's label */
-const changedLabel = (f: string) => (f.startsWith('custom_fields.') ? (proj.customFields.find((x) => x.key === f.slice(14))?.label ?? f.slice(14)) : f)
+const changedLabel = (f: string) => (f.startsWith('custom_fields.') ? (proj.customFields.find((x) => x.key === f.slice(14))?.label ?? f.slice(14)) : f === 'applicability' ? t('fields.applicability') : f)
 const auth = useAuthStore()
 const prefs = usePrefsStore()
 const route = useRoute()
@@ -168,7 +170,11 @@ function restoreSelected() {
     async () => {
       restoring.value = true
       try {
-        const res = await api.post<{ restored: unknown[]; skipped: { key: string; reason: string }[] }>(`/baselines/${selectedId.value}/restore`, { items })
+        const path = `/baselines/${selectedId.value}/restore`
+        // what restoring affects: preview, then the chosen handling (impact gate)
+        const params = await impactGateFor(proj.pid, (q) => api.post<ImpactDryRun>(path, { items }, { params: q }))
+        if (!params) return
+        const res = await api.post<{ restored: unknown[]; skipped: { key: string; reason: string }[] }>(path, { items }, { params })
         const skipped = res.skipped.map((s) => `${s.key}: ${t(`baselines.bulk.reason.${s.reason}`)}`).join('\n')
         if (res.skipped.length) notify.failText(t('baselines.bulk.restoredSome', { n: res.restored.length, skipped: res.skipped.length }), skipped)
         else notify.ok(t('baselines.bulk.restored', { n: res.restored.length }, res.restored.length))

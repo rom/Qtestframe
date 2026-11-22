@@ -55,14 +55,17 @@ var customFieldPrefix = []string{"cf."}
 
 // riskSchema: the query fields of risks.
 var riskSchema = &query.Schema{
-	Fields:   []string{"id", "key", "title", "description", "category", "likelihood", "impact", "score", "level", "status", "mitigation", "owner", "created_by"},
+	Fields:   []string{"id", "key", "title", "description", "category", "likelihood", "impact", "score", "level", "status", "mitigation", "owner", "review_owner", "review_date", "created_by", "catalog", "catalog_area"},
+	Aliases:  map[string]string{"area": "catalog_area"},
 	Prefixes: customFieldPrefix,
 }
 
 func riskRecord(k *model.Risk) query.MapRecord {
 	return withCustom(k.CustomFields, query.MapRecord{"id": {k.ID}, "key": {k.Key}, "title": {k.Title}, "description": {k.Description},
 		"category": {k.Category}, "likelihood": {strconv.Itoa(k.Likelihood)}, "impact": {strconv.Itoa(k.Impact)}, "score": {strconv.Itoa(k.Score)},
-		"level": {k.Level}, "status": {k.Status}, "mitigation": {k.Mitigation}, "owner": {k.Owner}, "created_by": {k.CreatedBy}})
+		"level": {k.Level}, "status": {k.Status}, "mitigation": {k.Mitigation}, "owner": {k.Owner},
+		"review_owner": {k.ReviewOwner}, "review_date": {k.ReviewDate}, "created_by": {k.CreatedBy},
+		"catalog": {k.CatalogRef}, "catalog_area": {k.CatalogArea}})
 }
 
 // withCustom adds the custom values of an item to its query record as

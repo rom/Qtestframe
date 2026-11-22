@@ -173,13 +173,13 @@ Dialogen visar hur många relationer som läggs till eller tas bort innan du bek
 
 Skriv `@` i **Ägare**, **Beskrivning**, **Motivering**, en kommentar, eller i ett testfalls beskrivning och förutsättningar och en exekverings **Tilldelad** och anteckningar: en lista med personer visas. Den innehåller organisationens användare (med avatar) och namn som redan används som ägare eller tilldelad i projektet men saknar konto (*inget konto*). Skriv vidare för att begränsa listan, använd piltangenterna och <kbd>Enter</kbd> eller <kbd>Tabb</kbd> för att infoga, eller <kbd>Esc</kbd> för att stänga listan.
 
-Ett omnämnande skrivs som `@namn`: för användare delen av e-postadressen före `@` (`@anna.berg` för *anna.berg@example.com*), för andra personer namnet med punkter i stället för mellanslag (`@carl.carlsson`). Omnämnanden av kända personer visas som en etikett med avatar och namn, i kommentarerna och i kolumnen **Ägare**. Vanliga namn fungerar fortfarande: ägaren är fritext.
+Ett omnämnande skrivs som `@namn`: för användare delen av e-postadressen före `@` (`@anna.berg` för *anna.berg@example.com*), för andra personer namnet med punkter i stället för mellanslag (`@carl.carlsson`). Omnämnanden av kända personer visas som en etikett med avatar och namn, i kommentarerna och i kolumnen **Ägare**. En ägare som är medlem i organisationen sparas med sin e-postadress, hur du än anger personen (`@anna.berg`, *Anna Berg* eller *anna.berg@example.com*), så att posten visas i personens [arbetslista](reviews-and-notifications.md#mitt-arbete) och personen får en notis; en medlem som inte ser projektet kan inte vara ägare. Andra namn (till exempel någon utanför organisationen) sparas som vanlig text. **Ange ägare** i verktygsfältet för massändring ger många krav eller testfall samma ägare (tomt tar bort den); filtret `owner:me` hittar dina egna poster.
 
 Filtrera med `mention:anna.berg` (eller `mention:@anna.berg`) för att hitta allt som nämner en person.
 
-## Kommentarer
+## Diskussion
 
-Fliken **Kommentarer** är en diskussionstråd för kravet. Skriv i fältet och välj **Kommentera** (eller tryck <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Alla som kan läsa kravet kan läsa och skriva kommentarer. Du kan redigera och ta bort dina egna kommentarer; administratörer kan ta bort alla kommentarer. Antalet kommentarer visas på fliken och i kolumnen **Kommentarer**.
+Fliken **Diskussion** innehåller kravets [diskussion](discussions.md): trådar med kommentarer i Markdown, med svar, @omnämnanden, reaktioner och **Markera som löst**. Siffran på fliken är antalet öppna trådar; kolumnen **Kommentarer** räknar kommentarerna. Alla som kan läsa kravet kan läsa diskussionen; att skriva i den kräver `comment.create` (alla roller utom Läsare). Du kan redigera och ta bort dina egna kommentarer; moderatorer kan ta bort alla kommentarer.
 
 ## När någon annan har sparat först
 
@@ -305,7 +305,7 @@ Dialogen visar hur många länkar som läggs till eller tas bort innan du bekrä
 
 ## Ärenden i GitLab, GitHub eller Jira
 
-När projektet är anslutet till en ärendehanterare (se [Anslut Jira, GitHub eller GitLab](defects.md#anslut-jira-github-eller-gitlab)) kan ett krav lämnas över till utvecklarna som ett ärende. Kravets flik **Länkar** börjar då med **Ärende i GitLab** (eller GitHub, Jira):
+När projektet är anslutet till en ärendehanterare (se [Anslut Jira, GitHub eller GitLab](defects.md#anslut-jira-github-eller-gitlab)) kan ett krav lämnas över till utvecklarna som ett ärende (i Request Tracker en ticket). Kravets flik **Länkar** börjar då med **Ärende i GitLab** (eller GitHub, Jira):
 
 - **Skapa GitLab-ärende** visar en förhandsvisning av ärendet och skapar det. Ärendet får:
   - titeln `[SHOP-REQ-12] <titel>`;
@@ -343,7 +343,7 @@ Att ladda upp och ta bort bilagor kräver rollen **Ansvarig** (samma som att red
 
 ## Importera krav
 
-Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt kravverktyg eller ett Word-dokument. **Importera → Från en fil** i sidhuvudet på kravsidan läser en sådan fil och skapar alla krav på en gång. För att uppdatera krav från ett DOORS- eller Polarion-dokument gång på gång, eller redigera krav i Excel och hämta tillbaka ändringarna, se [Utbyta data med andra verktyg](reports-and-export.md#utbyta-data-med-andra-verktyg). Import kräver behörighet att redigera krav (**Manager** som standard).
+Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt kravverktyg eller ett Word-dokument. **Importera → Från en fil** i sidhuvudet på kravsidan läser en sådan fil och skapar alla krav på en gång. För att uppdatera krav från ett DOORS- eller Polarion-dokument gång på gång, importera dem från Jira eller Azure DevOps, eller redigera krav i Excel och hämta tillbaka ändringarna, se [Utbyta data med andra verktyg](reports-and-export.md#utbyta-data-med-andra-verktyg). Import kräver behörighet att redigera krav (**Manager** som standard).
 
 1. Dra filen till dialogrutan eller välj den. Filformat som stöds är **CSV** (separerad med komma, semikolon eller tabb; UTF-8 med eller utan BOM, UTF-16 och Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` och den zippade `.reqifz`) och **Word** (`.docx`), högst 20 MB och 5 000 krav per fil.
 2. Granska **förhandsvisningen**: det upptäckta formatet, hur varje kolumn läses och de första 50 kraven med anmärkningar (härledd rubrik, okänt värde, dubblett). Inget har sparats än.

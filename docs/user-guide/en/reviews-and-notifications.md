@@ -1,6 +1,25 @@
 # Reviews and notifications
 
-Qtestframe tells you when something needs your attention, lets you ask colleagues to review a requirement or a test, and records electronic sign-offs of baselines. Webhooks send the same events to other systems.
+Qtestframe tells you when something needs your attention, lets you ask colleagues to review a requirement or a test, and records electronic sign-offs of baselines. Webhooks and chat channels send the same events to other systems and to Slack, Teams and other chat tools.
+
+## My work
+
+**My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see. The badge next to it shows how many items are waiting; it turns red when some of them are overdue. Each row links to the item and says why it is there:
+
+| Reason | The item is listed because |
+|---|---|
+| **Owner** | you own a requirement in draft, review, approved or implemented, a test in draft or review, or an open risk (identified or mitigating) |
+| **Assigned** | an open defect or a test execution that has not been run yet (in a planned or running run) is assigned to you |
+| **Review requested** | someone asked you to review a requirement or a test |
+| **Approval** | a requested waiver or deviation waits for your signature: you are one of its approvers, or it names none and you may approve waivers. Your own requests are not listed. |
+| **Risk acceptance** | a mitigated or accepted risk is above the project's acceptance threshold and has no valid acceptance signature, and you may sign it |
+| **Risk review** | you own the next review of a risk and it is due within a week |
+| **Overdue** | its due date has passed: a review request's due date or a risk's review date |
+| **Suspect**, **Stale results**, **Blocked** | a requirement or test you own became suspect (something linked or related changed), has stale test results, or is blocked by an open defect — also when it is otherwise finished |
+
+Overdue items come first, then by due date, then the most recently changed. Choose a project to see only its items, or a reason to see only those rows. The project dashboard shows the same list for the project in the **My work** widget, with the number of items per reason; select a reason to open the filtered list.
+
+The work list is computed when you open it; finishing the work (approving the review, closing the defect, running the test, changing the status) removes the row.
 
 ## Notifications
 
@@ -8,8 +27,9 @@ The bell in the top bar shows how many notifications you have not read. Open it 
 
 You get a notification when someone else:
 
-- assigns a requirement (owner), an execution or a defect to you,
+- makes you the owner of a requirement, a test or a risk (also in a bulk change), or assigns an execution or a defect to you,
 - mentions you with `@handle` in a description, a comment or execution notes,
+- replies in or resolves a [discussion](discussions.md) thread you wrote in, or starts a thread on an item you own or a review you take part in,
 - asks you to review something, or finishes a review you asked for,
 - changes the status of a defect assigned to you.
 
@@ -94,3 +114,22 @@ Under **Categories & settings**, project administrators (permission to change th
 Deliveries are not retried and redirects are not followed.
 
 Tick webhooks in the list to **Turn on** or **Turn off** several at once, **Add events** or **Remove events** (each webhook must keep at least one event, otherwise nothing is changed), **Send test** to all of them (the result of each is listed), or **Delete** them. Changes other than deleting can be undone with the undo button.
+
+## Chat notifications
+
+Under **Categories & settings**, project administrators (permission to change the project) can post the project's events to a chat channel in **Slack**, **Microsoft Teams**, **Mattermost**, **Rocket.Chat**, **Google Chat**, **Matrix** or **Discord**. Choose **Add chat channel**, pick the chat tool and paste the webhook URL that the tool gives you (Matrix: the homeserver, the room and the access token of a bot user). Your administrator guide describes how to get the URL in each tool.
+
+Each message names the event, links the item's key and title to the item in Qtestframe, and shows its status (in words and in colour), its priority, who did it and a short summary, such as "9 passed, 2 failed" for a completed run or the start of a new defect's description. Messages are written in the language you choose for the channel (English or Swedish) and are kept within the length limits of each chat tool.
+
+For every channel you choose:
+
+- **Events**: **All events** (including events that later versions of Qtestframe add), or a selection, grouped into test runs, defects, requirements and tests, reviews, releases, waivers and risks.
+- **Filters**: **only failed** test runs and results; a **lowest priority** (for example *High*: only items of high or critical priority; defects use their priority or severity, risks their level; events without a priority, such as a completed run, still pass); a **release** (only the release itself, its runs and results and its waivers).
+- **Digest**: 0 posts each event at once. With, say, 60 minutes the events are collected and posted as one message every hour ("12 events in BANK …", with the first events listed and "… and 4 more").
+- **Active**: turn the channel off without losing its settings.
+
+The webhook URL and the token are secrets: they are stored encrypted and never shown again; the list only shows where the channel posts (for example `hooks.slack.com`). To change them, enter a new one; leave the field empty to keep the saved one.
+
+**Send test message** posts a test message at once, also to a channel that is turned off, and tells you whether it arrived. **Delivery log** lists the last 50 posts with their HTTP status and error. A post that fails is tried again after 1, 2, 4, 8 and 16 minutes (a URL or token the chat tool refuses is not tried again). After 5 failed posts in a row the channel turns itself off, the list shows why, and the project's administrators get a notification. Fix the URL, send a test message and turn the channel on again.
+
+In a **restricted** project, messages show only the event, the item key, the status and the link, so titles and descriptions do not end up in a chat that people outside the project can read. An organisation administrator can allow a channel to show the full content.

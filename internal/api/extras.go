@@ -110,7 +110,7 @@ func (s *Server) handleRestoreRequirement(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusForbidden, "forbidden", "permission requirement.review required to restore a version with status "+old.Status)
 		return
 	}
-	if err := s.restoreRequirementTo(ctx, p, cur, &old, "version "+itoa(rev.Version)); err != nil {
+	if err := s.restoreRequirementTo(ctx, p, cur, &old, rev.Snapshot, "version "+itoa(rev.Version)); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -150,7 +150,7 @@ func (s *Server) handleRestoreTest(w http.ResponseWriter, r *http.Request, p *Pr
 		writeError(w, http.StatusForbidden, "forbidden", "permission test.review required to restore a version with status "+old.Status)
 		return
 	}
-	if err := s.restoreTestTo(ctx, p, cur, &old, "version "+itoa(rev.Version)); err != nil {
+	if err := s.restoreTestTo(ctx, p, cur, &old, rev.Snapshot, "version "+itoa(rev.Version)); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -163,8 +163,9 @@ func (s *Server) handleRestoreTest(w http.ResponseWriter, r *http.Request, p *Pr
 }
 
 // restoreRequirementTo gives a requirement the content of an older version
-// (from a revision or a baseline); what names the source for the audit.
-func (s *Server) restoreRequirementTo(ctx context.Context, p *Principal, cur, old *model.Requirement, what string) error {
+// (from a revision or a baseline, snap its snapshot: the applicability it
+// records is restored too); what names the source for the audit.
+func (s *Server) restoreRequirementTo(ctx context.Context, p *Principal, cur, old *model.Requirement, snap json.RawMessage, what string) error {
 	s.ensureInitialRevision(ctx, p, model.KindRequirement, cur.ID)
 	before := store.SnapshotRequirement(cur)
 	cur.Title, cur.Description, cur.Obligation, cur.Type = old.Title, old.Description, old.Obligation, old.Type
@@ -178,6 +179,9 @@ func (s *Server) restoreRequirementTo(ctx context.Context, p *Principal, cur, ol
 	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), cur, true); err != nil {
 		return err
 	}
+	if _, err := s.restoreApplicability(ctx, p, model.KindRequirement, cur.ID, cur.ProjectID, snap); err != nil {
+		return err
+	}
 	s.recordRequirement(ctx, p, cur.ID, "restore")
 	s.afterContentChange(ctx, p, model.KindRequirement, cur.ID, cur.Key, cur.ProjectID, before)
 	s.audit(ctx, p, "requirement.restore", "requirement", cur.ID, cur.Key+" to "+what)
@@ -185,12 +189,13 @@ func (s *Server) restoreRequirementTo(ctx context.Context, p *Principal, cur, ol
 }
 
 // restoreTestTo gives a test the content of an older version.
-func (s *Server) restoreTestTo(ctx context.Context, p *Principal, cur, old *model.TestCase, what string) error {
+func (s *Server) restoreTestTo(ctx context.Context, p *Principal, cur, old *model.TestCase, snap json.RawMessage, what string) error {
 	s.ensureInitialRevision(ctx, p, model.KindTest, cur.ID)
 	before := store.SnapshotTest(cur)
 	cur.Title, cur.Description, cur.Preconditions, cur.ExecutionType = old.Title, old.Description, old.Preconditions, old.ExecutionType
 	cur.ScriptLanguage, cur.Script, cur.ExpectedResult = old.ScriptLanguage, old.Script, old.ExpectedResult
 	cur.Priority, cur.Status, cur.EstimatedMin, cur.Tags = old.Priority, old.Status, old.EstimatedMin, old.Tags
+	cur.Owner = old.Owner
 	cur.CustomFields = s.restorableCustom(ctx, p, cur.ProjectID, model.KindTest, old.CustomFields, cur.CustomFields)
 	var err error
 	if cur.CategoryIDs, err = s.existingCategories(ctx, p, cur.ProjectID, old.CategoryIDs); err != nil {
@@ -210,10 +215,71 @@ func (s *Server) restoreTestTo(ctx context.Context, p *Principal, cur, old *mode
 	if err := s.Store.UpdateTest(ctx, p.TenantID(), cur, true); err != nil {
 		return err
 	}
+	if _, err := s.restoreApplicability(ctx, p, model.KindTest, cur.ID, cur.ProjectID, snap); err != nil {
+		return err
+	}
 	s.recordTest(ctx, p, cur.ID, "restore")
 	s.afterContentChange(ctx, p, model.KindTest, cur.ID, cur.Key, cur.ProjectID, before)
 	s.audit(ctx, p, "test.restore", "test", cur.ID, cur.Key+" to "+what)
 	return nil
+}
+
+// snapshotApplicability returns the applicability a snapshot records,
+// limited to the variants that still exist, and whether it records one
+// (snapshots from before applicability was recorded do not).
+func (s *Server) snapshotApplicability(ctx context.Context, p *Principal, projectID string, snap json.RawMessage) (*model.Applicability, bool, error) {
+	a, ok := store.SnapshotApplicability(snap)
+	if !ok || a == nil {
+		return nil, ok, nil
+	}
+	names, err := s.variantNameMap(ctx, p, projectID)
+	if err != nil {
+		return nil, false, err
+	}
+	ids := []string{}
+	for _, id := range a.VariantIDs {
+		if _, ok := names[id]; ok {
+			ids = append(ids, id)
+		}
+	}
+	return &model.Applicability{VariantIDs: ids, Expression: a.Expression}, true, nil
+}
+
+// applicabilityDiffers reports whether an item's applicability differs
+// from the one a snapshot records.
+func (s *Server) applicabilityDiffers(ctx context.Context, p *Principal, kind, id, projectID string, snap json.RawMessage) (bool, error) {
+	want, ok, err := s.snapshotApplicability(ctx, p, projectID, snap)
+	if err != nil || !ok {
+		return false, err
+	}
+	cur, err := s.Store.ApplicabilityOf(ctx, p.TenantID(), kind, id)
+	if err != nil {
+		return false, err
+	}
+	return !sameApplicability(cur, want), nil
+}
+
+// restoreApplicability gives an item the applicability a snapshot records
+// (nothing when it records none or the same); reports whether it changed.
+func (s *Server) restoreApplicability(ctx context.Context, p *Principal, kind, id, projectID string, snap json.RawMessage) (bool, error) {
+	want, ok, err := s.snapshotApplicability(ctx, p, projectID, snap)
+	if err != nil || !ok {
+		return false, err
+	}
+	cur, err := s.Store.ApplicabilityOf(ctx, p.TenantID(), kind, id)
+	if err != nil {
+		return false, err
+	}
+	if sameApplicability(cur, want) {
+		return false, nil
+	}
+	if want == nil {
+		want = &model.Applicability{}
+	}
+	if _, err := s.Store.SetApplicability(ctx, p.TenantID(), projectID, kind, []string{id}, want, p.User.Email); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // existingCategories filters category ids to those still in the project.
@@ -338,13 +404,16 @@ func (s *Server) currentItems(r *http.Request, p *Principal, pr *model.Project, 
 		return nil, err
 	}
 	items := make([]model.BaselineItem, 0, len(reqs)+len(tests))
+	// the snapshots record the applicability (the variants each item applies to)
 	for i := range reqs {
 		rq := &reqs[i]
-		items = append(items, model.BaselineItem{EntityType: model.KindRequirement, EntityID: rq.ID, Key: rq.Key, Title: rq.Title, Version: rq.Version, Snapshot: store.SnapshotRequirement(rq)})
+		items = append(items, model.BaselineItem{EntityType: model.KindRequirement, EntityID: rq.ID, Key: rq.Key, Title: rq.Title, Version: rq.Version,
+			Snapshot: store.WithApplicability(store.SnapshotRequirement(rq), rq.Applicability)})
 	}
 	for i := range tests {
 		t := &tests[i]
-		items = append(items, model.BaselineItem{EntityType: model.KindTest, EntityID: t.ID, Key: t.Key, Title: t.Title, Version: t.Version, Snapshot: store.SnapshotTest(t)})
+		items = append(items, model.BaselineItem{EntityType: model.KindTest, EntityID: t.ID, Key: t.Key, Title: t.Title, Version: t.Version,
+			Snapshot: store.WithApplicability(store.SnapshotTest(t), t.Applicability)})
 	}
 	return items, nil
 }
@@ -431,112 +500,6 @@ func (s *Server) handleDeleteBaseline(w http.ResponseWriter, r *http.Request, p 
 		return
 	}
 	s.audit(r.Context(), p, "baseline.delete", "baseline", id, "")
-	w.WriteHeader(http.StatusNoContent)
-}
-
-// ---------------------------------------------------------------- comments
-
-func readPerm(kind string) rbac.Permission {
-	if kind == model.KindTest {
-		return rbac.TestRead
-	}
-	return rbac.RequirementRd
-}
-
-func (s *Server) handleListComments(kind string) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, p *Principal) {
-		id := r.PathValue("id")
-		if err := s.itemExists(r.Context(), p, kind, id); err != nil {
-			s.fail(w, r, err)
-			return
-		}
-		cs, err := s.Store.ListComments(r.Context(), p.TenantID(), kind, id)
-		if err != nil {
-			s.fail(w, r, err)
-			return
-		}
-		writeJSON(w, http.StatusOK, listOf(cs))
-	}
-}
-
-func (s *Server) handleAddComment(kind string) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, p *Principal) {
-		id := r.PathValue("id")
-		if err := s.itemExists(r.Context(), p, kind, id); err != nil {
-			s.fail(w, r, err)
-			return
-		}
-		var req struct {
-			Body string `json:"body"`
-		}
-		if err := decode(r, &req); err != nil {
-			s.fail(w, r, err)
-			return
-		}
-		c := &model.Comment{EntityType: kind, EntityID: id, UserID: p.User.ID, Body: req.Body}
-		if err := s.Store.AddComment(r.Context(), p.TenantID(), c); err != nil {
-			s.fail(w, r, err)
-			return
-		}
-		c.UserEmail, c.UserName = p.User.Email, p.User.DisplayName
-		s.audit(r.Context(), p, "comment.create", kind, id, "")
-		s.afterComment(r, p, kind, id, c)
-		writeJSON(w, http.StatusCreated, c)
-	}
-}
-
-// comment loads {id} and checks that the caller may see its entity.
-func (s *Server) comment(w http.ResponseWriter, r *http.Request, p *Principal) (*model.Comment, bool) {
-	c, err := s.Store.GetComment(r.Context(), p.TenantID(), r.PathValue("id"))
-	if err != nil {
-		s.fail(w, r, err)
-		return nil, false
-	}
-	if !p.Can(readPerm(c.EntityType)) {
-		writeError(w, http.StatusForbidden, "forbidden", "permission "+string(readPerm(c.EntityType))+" required")
-		return nil, false
-	}
-	return c, true
-}
-
-func (s *Server) handleUpdateComment(w http.ResponseWriter, r *http.Request, p *Principal) {
-	c, ok := s.comment(w, r, p)
-	if !ok {
-		return
-	}
-	if c.UserID != p.User.ID {
-		writeError(w, http.StatusForbidden, "forbidden", "only the author can edit a comment")
-		return
-	}
-	var req struct {
-		Body string `json:"body"`
-	}
-	if err := decode(r, &req); err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	c.Body = req.Body
-	if err := s.Store.UpdateComment(r.Context(), p.TenantID(), c); err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, c)
-}
-
-func (s *Server) handleDeleteComment(w http.ResponseWriter, r *http.Request, p *Principal) {
-	c, ok := s.comment(w, r, p)
-	if !ok {
-		return
-	}
-	if c.UserID != p.User.ID && !p.Can(rbac.MemberManage) {
-		writeError(w, http.StatusForbidden, "forbidden", "only the author or an administrator can delete a comment")
-		return
-	}
-	if err := s.Store.DeleteComment(r.Context(), p.TenantID(), c.ID); err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	s.audit(r.Context(), p, "comment.delete", c.EntityType, c.EntityID, "")
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -728,6 +691,22 @@ func (s *Server) handleRevokeOtherSessions(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, map[string]int{"revoked": n})
 }
 
+// restoreOnlyApplicability restores the applicability of an item whose
+// content has not changed since a snapshot; reports whether it changed.
+func (s *Server) restoreOnlyApplicability(ctx context.Context, p *Principal, kind, id, key, projectID string, snap json.RawMessage, what string) (bool, error) {
+	differs, err := s.applicabilityDiffers(ctx, p, kind, id, projectID, snap)
+	if err != nil || !differs {
+		return false, err
+	}
+	s.ensureInitialRevision(ctx, p, kind, id)
+	if _, err := s.restoreApplicability(ctx, p, kind, id, projectID, snap); err != nil {
+		return false, err
+	}
+	s.record(ctx, p, kind, id, "restore")
+	s.audit(ctx, p, kind+".restore", kind, id, key+" applicability to "+what)
+	return true, nil
+}
+
 // handleRestoreFromBaseline: POST /baselines/{id}/restore
 // {"items": [{"entity_type", "entity_id"}]} gives each item the content it
 // had in the baseline. Items not in the baseline, deleted, unchanged since,
@@ -790,8 +769,18 @@ func (s *Server) handleRestoreFromBaseline(w http.ResponseWriter, r *http.Reques
 				continue
 			}
 			if cur.Version == bi.Version {
-				out.Reason = "unchanged"
-				skipped = append(skipped, out)
+				// the content is the same: only the applicability may differ
+				done, err := s.restoreOnlyApplicability(ctx, p, model.KindRequirement, cur.ID, cur.Key, cur.ProjectID, bi.Snapshot, what)
+				if err != nil {
+					s.fail(w, r, err)
+					return
+				}
+				if !done {
+					out.Reason = "unchanged"
+					skipped = append(skipped, out)
+					continue
+				}
+				restored = append(restored, out)
 				continue
 			}
 			var old model.Requirement
@@ -804,7 +793,7 @@ func (s *Server) handleRestoreFromBaseline(w http.ResponseWriter, r *http.Reques
 				skipped = append(skipped, out)
 				continue
 			}
-			if err := s.restoreRequirementTo(ctx, p, cur, &old, what); err != nil {
+			if err := s.restoreRequirementTo(ctx, p, cur, &old, bi.Snapshot, what); err != nil {
 				s.fail(w, r, err)
 				return
 			}
@@ -816,8 +805,17 @@ func (s *Server) handleRestoreFromBaseline(w http.ResponseWriter, r *http.Reques
 				continue
 			}
 			if cur.Version == bi.Version {
-				out.Reason = "unchanged"
-				skipped = append(skipped, out)
+				done, err := s.restoreOnlyApplicability(ctx, p, model.KindTest, cur.ID, cur.Key, cur.ProjectID, bi.Snapshot, what)
+				if err != nil {
+					s.fail(w, r, err)
+					return
+				}
+				if !done {
+					out.Reason = "unchanged"
+					skipped = append(skipped, out)
+					continue
+				}
+				restored = append(restored, out)
 				continue
 			}
 			var old model.TestCase
@@ -830,7 +828,7 @@ func (s *Server) handleRestoreFromBaseline(w http.ResponseWriter, r *http.Reques
 				skipped = append(skipped, out)
 				continue
 			}
-			if err := s.restoreTestTo(ctx, p, cur, &old, what); err != nil {
+			if err := s.restoreTestTo(ctx, p, cur, &old, bi.Snapshot, what); err != nil {
 				s.fail(w, r, err)
 				return
 			}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { changedKeys, diffSnapshots, diffWords, MAX_DIFF_CELLS, mergeSegments, parseSnapshot, sortFields, tokenize, valueToText, type DiffSegment } from './diff'
+import { applicabilityText, changedKeys, diffSnapshots, diffWords, MAX_DIFF_CELLS, mergeSegments, parseSnapshot, sortFields, tokenize, valueToText, type DiffSegment } from './diff'
 
 const join = (segs: DiffSegment[], ops: string[]) => segs.filter((s) => ops.includes(s.op)).map((s) => s.text).join('')
 
@@ -154,5 +154,22 @@ describe('snapshots', () => {
     expect(parseSnapshot(null)).toBeNull()
     expect(parseSnapshot([1])).toBeNull()
     expect(parseSnapshot(5)).toBeNull()
+  })
+})
+
+describe('applicability in snapshots', () => {
+  const eu = { variant_ids: ['v1'], variants: [{ id: 'v1', name: 'EU' }], expression: '' }
+  it('describes the variants and the expression, all variants when null', () => {
+    expect(applicabilityText(eu)).toBe('EU')
+    expect(applicabilityText({ variant_ids: ['v1', 'v2'], variants: [{ id: 'v1', name: 'EU' }], expression: 'region:US' })).toBe('EU, v2 | region:US')
+    expect(applicabilityText(null, 'All variants')).toBe('All variants')
+    expect(valueToText('applicability', null, { applicability: (a) => applicabilityText(a, 'All') })).toBe('All')
+  })
+  it('compares by variants and expression, not names', () => {
+    expect(changedKeys({ applicability: eu }, { applicability: { ...eu, variants: [{ id: 'v1', name: 'Europe' }] } })).toEqual([])
+    expect(changedKeys({ applicability: null }, {})).toEqual([])
+    expect(changedKeys({ applicability: null }, { applicability: eu })).toEqual(['applicability'])
+    const d = diffSnapshots({ applicability: null }, { applicability: eu }, ['applicability'], { applicability: (a) => applicabilityText(a, 'All variants') })
+    expect(d[0]).toMatchObject({ field: 'applicability', before: 'All variants', after: 'EU' })
   })
 })

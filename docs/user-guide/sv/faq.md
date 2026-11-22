@@ -78,7 +78,7 @@ Det får en **ny nyckel** i målprojektet (till exempel blir `SHOP-REQ-7` `CORE-
 
 ### Vem kan se mina kommentarer?
 
-Alla som kan läsa objektet, det vill säga alla medlemmar i organisationen med åtkomst till projektet, oavsett roll. Kommentarer syns inte för andra organisationer. Du kan redigera och ta bort dina egna kommentarer; administratörer kan ta bort alla kommentarer. Kommentarerna tas bort tillsammans med sitt objekt.
+Alla som kan läsa objektet, det vill säga alla medlemmar i organisationen med åtkomst till projektet, oavsett roll. Kommentarer syns inte för andra organisationer. Du kan redigera och ta bort dina egna kommentarer; moderatorer (som får ändra projektets inställningar) kan ta bort alla kommentarer, som då visas som borttagna. Kommentarerna tas bort tillsammans med sitt objekt. Se [Diskussioner](discussions.md).
 
 ### Vad betyder ”auto-generated” på ett testfall?
 

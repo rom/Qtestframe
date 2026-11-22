@@ -831,3 +831,50 @@ tests:
           expected: Exporten listar 20 driftsättningar med båda tiderna.
         - action: Beräkna längden för var och en och räkna dem som tog över 30 minuter.
           expected: Högst 1 driftsättning tog längre än 30 minuter.
+
+risks:
+  - id: DEP-R01
+    category: operational
+    likelihood: 4
+    impact: 3
+    tags: [failed-release, rollback]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.8.32"]
+    mitigated_by: [DEP-03, DEP-04, DEP-14, DEP-05, DEP-01]
+    en:
+      title: Faulty release takes production down
+      description: A release with a serious fault is rolled out to all users at once and cannot be undone quickly. Users face errors until a fix is built and deployed.
+      mitigation: Deploy through an automated pipeline, start with a canary release, run a smoke test with automatic rollback, upgrade without failed requests and keep rollback to the previous version.
+    sv:
+      title: Felaktig leverans slår ut produktionen
+      description: En leverans med ett allvarligt fel rullas ut till alla användare samtidigt och kan inte backas snabbt. Användarna möter fel tills en rättning byggts och driftsatts.
+      mitigation: Driftsätt via en automatiserad pipeline, börja med en kanarieleverans, kör ett röktest med automatisk återgång, uppgradera utan misslyckade anrop och behåll möjligheten att återgå till föregående version.
+  - id: DEP-R02
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [migration, schema]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.8.32"]
+    mitigated_by: [DEP-06, DEP-07, BCK-14]
+    en:
+      title: Database migration corrupts data or blocks rollback
+      description: A manual or incompatible schema change damages data, or makes it impossible to return to the previous version. The release cannot be undone without data loss.
+      mitigation: Version and automate database migrations, keep schema changes compatible with the previous version and back up before each migration.
+    sv:
+      title: Databasmigrering förstör data eller hindrar återgång
+      description: En manuell eller inkompatibel schemaändring skadar data eller gör det omöjligt att återgå till föregående version. Leveransen kan inte backas utan dataförlust.
+      mitigation: Versionshantera och automatisera databasmigreringar, håll schemaändringarna kompatibla med föregående version och säkerhetskopiera före varje migrering.
+  - id: DEP-R03
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [configuration-drift, environments]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.8.9"]
+    mitigated_by: [DEP-02, DEP-08, DEP-10, DEP-11, DEP-16]
+    en:
+      title: Release works in test but fails in production
+      description: Environments differ, builds are made per environment or production is changed by hand. Faults appear only in production and changes cannot be traced.
+      mitigation: Use one build artefact for every environment, keep configuration outside the code, make staging match production, manage infrastructure as code and let another person approve production deployments.
+    sv:
+      title: Leveransen fungerar i test men fallerar i produktion
+      description: Miljöerna skiljer sig, byggen görs per miljö eller produktionen ändras för hand. Fel visar sig först i produktion och ändringar kan inte spåras.
+      mitigation: Använd en byggartefakt för alla miljöer, håll konfigurationen utanför koden, låt testmiljön motsvara produktionen, hantera infrastrukturen som kod och låt en annan person godkänna driftsättning i produktion.

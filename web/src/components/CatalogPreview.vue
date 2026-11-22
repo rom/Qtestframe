@@ -1,6 +1,8 @@
 <script setup lang="ts">
-// Full text of one catalogue requirement or test in the chosen language,
-// with the catalogue items at the other end of its trace links.
+// Full text of one catalogue requirement, test or risk in the chosen
+// language, with the catalogue items at the other end of its links (tests of
+// a requirement and the risks it mitigates, requirements of a test, the
+// mitigating requirements of a risk).
 import { computed, ref, watch } from 'vue'
 import ProgressSpinner from 'primevue/progressspinner'
 import Message from 'primevue/message'
@@ -8,7 +10,8 @@ import Tag from 'primevue/tag'
 import StatusTag from './StatusTag.vue'
 import ObligationText from './ObligationText.vue'
 import { api, errorMessage } from '@/lib/api'
-import { refLinks, type CatalogKind, type CatalogLinked, type CatalogRequirementDetail, type CatalogTestDetail } from '@/lib/catalog'
+import { refLinks, type CatalogKind, type CatalogLinked, type CatalogRequirementDetail, type CatalogRiskDetail, type CatalogTestDetail } from '@/lib/catalog'
+import { riskLevelSeverity } from '@/lib/risks'
 import { enumLabel } from '@/i18n/labels'
 import { useI18n } from 'vue-i18n'
 
@@ -18,6 +21,7 @@ const { t } = useI18n()
 
 const req = ref<CatalogRequirementDetail | null>(null)
 const test = ref<CatalogTestDetail | null>(null)
+const risk = ref<CatalogRiskDetail | null>(null)
 const loading = ref(false)
 const error = ref('')
 
@@ -25,16 +29,12 @@ async function load() {
   error.value = ''
   if (!props.id) return
   loading.value = true
-  const path = props.kind === 'requirement' ? 'requirements' : 'tests'
+  const path = props.kind === 'requirement' ? 'requirements' : props.kind === 'risk' ? 'risks' : 'tests'
   try {
-    const d = await api.get<CatalogRequirementDetail & CatalogTestDetail>(`/catalog/${path}/${encodeURIComponent(props.id)}`, { lang: props.lang, project_id: props.projectId })
-    if (props.kind === 'requirement') {
-      req.value = d
-      test.value = null
-    } else {
-      test.value = d
-      req.value = null
-    }
+    const d = await api.get<CatalogRequirementDetail & CatalogTestDetail & CatalogRiskDetail>(`/catalog/${path}/${encodeURIComponent(props.id)}`, { lang: props.lang, project_id: props.projectId })
+    req.value = props.kind === 'requirement' ? d : null
+    test.value = props.kind === 'test' ? d : null
+    risk.value = props.kind === 'risk' ? d : null
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -43,9 +43,10 @@ async function load() {
 }
 watch(() => [props.kind, props.id, props.lang, props.projectId], load, { immediate: true })
 
-const item = computed(() => req.value ?? test.value)
-const linked = computed<CatalogLinked[]>(() => req.value?.linked_tests ?? test.value?.linked_requirements ?? [])
+const item = computed(() => req.value ?? test.value ?? risk.value)
+const linked = computed<CatalogLinked[]>(() => req.value?.linked_tests ?? test.value?.linked_requirements ?? risk.value?.mitigating_requirements ?? [])
 const otherKind = computed<CatalogKind>(() => (props.kind === 'requirement' ? 'test' : 'requirement'))
+const linkedTitle = computed(() => (req.value ? t('catalog.verifyingTests') : risk.value ? t('catalog.risk.mitigatedBy') : t('catalog.verifiedRequirements')))
 // the cited standards, linked to their text where the source registry knows it
 const refs = computed(() => refLinks(item.value?.refs ?? [], item.value?.ref_targets))
 const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key).join(', ')
@@ -63,15 +64,26 @@ const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key)
       <h2 id="cp-title" class="cp-title">{{ item.title }}</h2>
       <div class="row" style="gap: 6px; flex-wrap: wrap; margin-bottom: 8px">
         <StatusTag v-if="req" :value="req.obligation" kind="obligation" />
-        <StatusTag :value="item.priority" kind="priority" />
+        <StatusTag v-if="item.priority" :value="item.priority" kind="priority" />
+        <template v-if="risk">
+          <Tag :value="t(`risksView.level.${risk.level}`)" :severity="riskLevelSeverity(risk.level)" />
+          <Tag :value="risk.category_name" severity="secondary" />
+          <span class="small muted">{{ t('catalog.risk.score', { likelihood: risk.likelihood, impact: risk.impact, score: risk.score }) }}</span>
+        </template>
         <Tag v-if="req" :value="enumLabel('requirementType', req.type)" severity="secondary" />
         <Tag v-if="test" :value="enumLabel('executionType', test.execution)" severity="secondary" />
         <Tag v-for="tg in item.tags" :key="tg" :value="tg" severity="secondary" class="cp-tag" />
       </div>
       <Message v-if="item.in_project?.length" severity="info" :closable="false" class="small">{{ t('catalog.inProjectAs', { keys: keys(item.in_project) }) }}</Message>
 
-      <h3>{{ t('catalog.description') }}</h3>
-      <p class="text"><ObligationText :text="item.description" :lang="lang" /></p>
+      <h3>{{ risk ? t('catalog.risk.description') : t('catalog.description') }}</h3>
+      <p v-if="risk" class="text">{{ risk.description }}</p>
+      <p v-else class="text"><ObligationText :text="item.description" :lang="lang" /></p>
+
+      <template v-if="risk">
+        <h3>{{ t('catalog.risk.mitigation') }}</h3>
+        <p class="text">{{ risk.mitigation }}</p>
+      </template>
 
       <template v-if="req">
         <h3>{{ t('catalog.rationale') }}</h3>
@@ -116,10 +128,32 @@ const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key)
       </template>
 
       <template v-if="linked.length">
-        <h3>{{ req ? t('catalog.verifyingTests') : t('catalog.verifiedRequirements') }}</h3>
+        <h3>{{ linkedTitle }}</h3>
         <ul class="cp-list">
           <li v-for="l in linked" :key="l.id">
             <button type="button" class="linklike" @click="emit('open', otherKind, l.id)">
+              <span class="key">{{ l.id }}</span> <span class="cp-link-title">{{ l.title }}</span>
+            </button>
+            <Tag v-if="l.in_project?.length" :value="t('catalog.inProject')" severity="success" class="small" />
+          </li>
+        </ul>
+      </template>
+      <template v-if="risk?.linked_tests.length">
+        <h3>{{ t('catalog.risk.tests') }}</h3>
+        <ul class="cp-list">
+          <li v-for="l in risk.linked_tests" :key="l.id">
+            <button type="button" class="linklike" @click="emit('open', 'test', l.id)">
+              <span class="key">{{ l.id }}</span> <span class="cp-link-title">{{ l.title }}</span>
+            </button>
+            <Tag v-if="l.in_project?.length" :value="t('catalog.inProject')" severity="success" class="small" />
+          </li>
+        </ul>
+      </template>
+      <template v-if="req?.mitigates_risks?.length">
+        <h3>{{ t('catalog.risk.mitigates') }}</h3>
+        <ul class="cp-list">
+          <li v-for="l in req.mitigates_risks" :key="l.id">
+            <button type="button" class="linklike" @click="emit('open', 'risk', l.id)">
               <span class="key">{{ l.id }}</span> <span class="cp-link-title">{{ l.title }}</span>
             </button>
             <Tag v-if="l.in_project?.length" :value="t('catalog.inProject')" severity="success" class="small" />

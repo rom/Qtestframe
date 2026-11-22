@@ -151,12 +151,13 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 	if reqQ != "" || testQ != "" {
 		d.Query = expr
 	}
-	if id != report.RunSummary && id != report.Defects && id != report.TestInventory {
+	light := id == report.RunSummary || id == report.Defects || id == report.ExploratorySession || id == report.ExploratorySessions
+	if !light && id != report.TestInventory {
 		if d.Requirements, err = s.filterRequirements(r, p, pr, pc, reqQ, "", true); err != nil {
 			return nil, err
 		}
 	}
-	if id != report.RunSummary && id != report.Defects {
+	if !light {
 		if d.Tests, err = s.filterTests(r, p, pr, pc, testQ, "", true); err != nil {
 			return nil, err
 		}
@@ -180,6 +181,8 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 			return nil, err
 		}
 		d.Runs = []model.TestRun{*run}
+	case report.ExploratorySession, report.ExploratorySessions:
+		// sessions instead of runs (exploratoryReportData)
 	default:
 		if d.Runs, err = s.Store.ListRuns(ctx, p.TenantID(), pr.ID); err != nil {
 			return nil, err
@@ -203,8 +206,16 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 			return nil, err
 		}
 	}
+	if err := s.exploratoryReportData(r, p, pr, id, params, d); err != nil {
+		return nil, err
+	}
 	if err := s.waiverReportData(r, p, pr, id, params, d); err != nil {
 		return nil, err
+	}
+	if id == report.CycleReportID {
+		if d.Cycle, err = s.cycleReportData(ctx, p, pr, strings.TrimSpace(params["cycle_id"])); err != nil {
+			return nil, err
+		}
 	}
 	if id == report.Verification {
 		if d.Verification, err = s.verificationData(ctx, p, pc, d.Requirements); err != nil {
@@ -287,6 +298,7 @@ func (s *Server) customRecords(r *http.Request, p *Principal, pr *model.Project,
 	if err != nil {
 		return nil, err
 	}
+	s.bindMe(r.Context(), p, q)
 	var runs []model.TestRun
 	if c.Entity == report.EntityExecution && c.RunID != "" {
 		run, err := s.projectRun(r, p, pr, c.RunID)

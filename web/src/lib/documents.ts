@@ -42,6 +42,8 @@ export interface DocForm {
   fields: string[]
   traceability: boolean
   glossary: boolean
+  /** appendix with the discussions of the items */
+  discussions: boolean
   lang: string
 }
 
@@ -60,6 +62,7 @@ export function blankDocForm(kind: DocKind, lang: string): DocForm {
     fields: defaultDocFields(kind),
     traceability: true,
     glossary: true,
+    discussions: false,
     lang,
   }
 }
@@ -81,6 +84,7 @@ export function generateDocBody(form: DocForm) {
     glossary: form.glossary,
     lang: form.lang,
   }
+  if (form.discussions) options.include_discussions = true
   const text = { title: form.title, version: form.version, author: form.author, query: form.query, baseline_id: form.baselineId }
   for (const [k, v] of Object.entries(text)) if (v.trim()) options[k] = v.trim()
   if (form.kind === 'requirements_spec') {

@@ -14,8 +14,8 @@ func TestPeopleAndMentions(t *testing.T) {
 	pid := a.project("PPL")
 	e.member("viewer.one@example.com", rbac.RoleViewer)
 	r1 := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "A", "owner": " @viewer.one ", "description": "Ask @admin about it.", "create_test": false}, 201)
-	if r1["owner"] != "@viewer.one" {
-		t.Errorf("owner not trimmed: %q", r1["owner"])
+	if r1["owner"] != "viewer.one@example.com" { // a member: stored as the e-mail address
+		t.Errorf("owner not normalised: %q", r1["owner"])
 	}
 	a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "B", "owner": "Carl Carlsson", "create_test": false}, 201)
 

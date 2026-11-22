@@ -839,3 +839,65 @@ tests:
           expected: Minst ett datalager listas, eller så anger klassningen att det inte finns något.
         - action: Läs krypteringsalgoritm och nyckellängd för varje listat datalager.
           expected: Vart och ett visar AES med en 256-bitarsnyckel.
+
+risks:
+  - id: CRY-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [tls, adversary-in-the-middle]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-295 (improper certificate validation)", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1557 (adversary-in-the-middle)", "MITRE ATT&CK T1040 (network sniffing)"]
+    mitigated_by: [CRY-01, CRY-02, CRY-03, CRY-04]
+    en:
+      title: Traffic intercepted or altered in transit
+      description: A connection uses an old protocol, plain text or a client that does not validate certificates. Someone on the network reads credentials and data or changes them on the way.
+      mitigation: Use TLS 1.2 or later externally and encrypted connections internally, enable HTTP Strict Transport Security and never turn off certificate validation.
+    sv:
+      title: Trafik avlyssnas eller ändras under överföring
+      description: En förbindelse använder ett gammalt protokoll, klartext eller en klient som inte validerar certifikat. Någon i nätet läser inloggningsuppgifter och data eller ändrar dem på vägen.
+      mitigation: Använd TLS 1.2 eller senare externt och krypterade förbindelser internt, aktivera HTTP Strict Transport Security och stäng aldrig av certifikatvalideringen.
+  - id: CRY-R02
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [key-management, encryption]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-522 (insufficiently protected credentials)", "CWE-324 (use of a key past its expiration date)", "MITRE ATT&CK T1552.004 (private keys)"]
+    mitigated_by: [CRY-11, CRY-08, CRY-15, CRY-06]
+    en:
+      title: Encryption keys stolen together with the data
+      description: Data is encrypted, but the keys are stored next to it, used for many purposes and never rotated. One breach exposes all encrypted data, including copies taken earlier.
+      mitigation: Keep master keys in a hardware security module, use one key for one purpose, rotate keys and encrypt stored data with keys held apart from it.
+    sv:
+      title: Krypteringsnycklar stjäls tillsammans med data
+      description: Data krypteras men nycklarna lagras bredvid, används för många syften och byts aldrig. Ett intrång röjer all krypterad data, även kopior som tagits tidigare.
+      mitigation: Förvara huvudnycklar i en hårdvarusäkerhetsmodul, använd en nyckel för ett syfte, byt nycklar regelbundet och kryptera lagrad data med nycklar som hålls åtskilda från den.
+  - id: CRY-R03
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [post-quantum, harvest-now-decrypt-later]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST IR 8547", "CWE-327 (broken or risky cryptographic algorithm)", "CWE-326 (inadequate encryption strength)"]
+    mitigated_by: [CRY-13, CRY-17, CRY-12, CRY-14, CRY-16]
+    en:
+      title: Recorded traffic decrypted by a future quantum computer
+      description: An adversary records encrypted traffic today and decrypts it once quantum computers break the key exchange. Data with a long confidentiality need, such as health or trade secrets, is exposed years later.
+      mitigation: Use hybrid post-quantum key exchange, keep an inventory of cryptographic use, make algorithms changeable by configuration and plan the migration of quantum-vulnerable algorithms.
+    sv:
+      title: Inspelad trafik dekrypteras av en framtida kvantdator
+      description: En motståndare spelar in krypterad trafik i dag och dekrypterar den när kvantdatorer bryter nyckelutbytet. Uppgifter med långt konfidentialitetsbehov, som hälsodata eller affärshemligheter, röjs flera år senare.
+      mitigation: Använd hybridnyckelutbyte med postkvantalgoritmer, för en förteckning över kryptografins användning, gör algoritmerna utbytbara via konfiguration och planera migreringen av kvantsårbara algoritmer.
+  - id: CRY-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [randomness, weak-algorithm]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-338 (cryptographically weak PRNG)", "CWE-327 (broken or risky cryptographic algorithm)", "CWE-328 (use of weak hash)"]
+    mitigated_by: [CRY-09, CRY-10, SESS-01]
+    en:
+      title: Tokens or signatures broken because of weak cryptography
+      description: Session tokens, reset codes or keys come from a predictable random generator, or data is protected with a broken hash or cipher. An attacker predicts tokens or forges protected values.
+      mitigation: Use a cryptographically secure random generator for every secret value and allow no broken algorithms.
+    sv:
+      title: Token eller signaturer knäcks på grund av svag kryptografi
+      description: Sessionstoken, återställningskoder eller nycklar kommer från en förutsägbar slumptalsgenerator, eller data skyddas med en knäckt hash eller ett knäckt chiffer. En angripare förutsäger token eller förfalskar skyddade värden.
+      mitigation: Använd en kryptografiskt säker slumptalsgenerator för alla hemliga värden och tillåt inga knäckta algoritmer.

@@ -1,8 +1,8 @@
 # Catalogue
 
-The **catalogue** is a built-in library of standard requirements and tests for software development: security, privacy and compliance, performance and reliability, operations and maintainability, usability and accessibility (also forms, preferences and mobile apps), common functionality (also workflow and approvals, collaboration, files, scheduling) and domain-specific functionality such as e-commerce checkout, billing, industrial automation and control systems, electrical energy, oil and gas, telecom, the chemical industry and industrial manufacturing. Instead of writing *"Passwords must be at least 12 characters"* and its test for every project, you choose the items that fit and add them to the project in one go, with their tests and trace links.
+The **catalogue** is a built-in library of standard requirements and tests for software development: security, privacy and compliance, performance and reliability, operations and maintainability, usability and accessibility (also forms, preferences and mobile apps), common functionality (also workflow and approvals, collaboration, files, scheduling) and domain-specific functionality such as e-commerce checkout, billing, industrial automation and control systems, electrical energy, oil and gas, telecom, the chemical industry and industrial manufacturing. Instead of writing *"Passwords must be at least 12 characters"* and its test for every project, you choose the items that fit and add them to the project in one go, with their tests and trace links. The catalogue also describes the typical **risks** of each area (see [Risks in the catalogue](#risks-in-the-catalogue)), each linked to the requirements that mitigate it.
 
-Browsing the catalogue needs permission to read requirements or tests (every role has it). Adding requirements needs **Manager** (`requirement.write`), adding tests **Tester** (`test.write`).
+Browsing the catalogue needs permission to read requirements or tests (every role has it). Adding requirements and risks needs **Manager** (`requirement.write`), adding tests **Tester** (`test.write`).
 
 ## Where the texts come from
 
@@ -18,14 +18,14 @@ Every requirement lists at least one catalogue test that verifies it, and every 
 
 Open **Catalogue** in the project sidebar, or select **Add from catalogue** at the top of the requirement or test list.
 
-- Switch between **Requirements** and **Tests** at the top.
+- Switch between **Requirements**, **Tests** and **Risks** at the top.
 - Choose **English** or **Svenska** for the language of the texts. The items are added in this language.
 - **Catalogue type** limits the catalogue to one kind of work: *Software*, *Hardware*, *Equipment*, *Systems*, *Communications solutions*, *Projects*, *Services*, *Buildings and facilities*, *Governance*, *Documentation* or *Education* (only the types that have content are listed). It starts with the type that fits the project: software projects show *Software*, hardware projects *Hardware*, system projects *Systems* and business projects *Governance*; general projects show **All types**. The tree, the lists and the laws and standards follow the choice.
 - On the left, **Groups and areas** lists the catalogue's groups (for example *Security*) and their areas (for example *Authentication*) with the number of items that match the current search and filters. Select **Everything** to see all areas. Use the arrow keys to move in the tree and Enter to select. On a narrow screen the tree opens with the **Areas** button.
 - The **search** field finds items whose title, ID, tags, cited standards or description contain all the words you type (type `62443` or `27001`, for example, to list the items that cite that standard). The best matches come first: an exact ID such as `AUTH-01`, then the words in the title, then the other fields.
-- Narrow the list with **Type**, **Obligation** and **Priority** (requirements), **Execution** (tests) and **Tags**. **Hide items already in the project** leaves out what you have added before.
+- Narrow the list with **Type**, **Obligation** and **Priority** (requirements), **Execution** (tests), **Category** and **Risk level** (risks) and **Tags**. **Hide items already in the project** leaves out what you have added before.
 
-Each row shows the ID, the title, the obligation and priority, and how many catalogue tests verify the requirement (or how many requirements the test verifies). **In project** marks items that the project already has; hover over it to see their keys.
+Each row shows the ID, the title, the obligation and priority, how many catalogue tests verify the requirement and how many catalogue risks it mitigates (or how many requirements the test verifies). **In project** marks items that the project already has; hover over it to see their keys.
 
 ## Comply with laws, standards and best practices
 
@@ -40,7 +40,7 @@ Remove a source with the × on its chip, or **Clear the choice** to see the whol
 
 ## Preview an item
 
-Select a row to see the full text on the right (on a phone it opens as a panel): the description with the obligation keyword highlighted, the rationale, the evaluation criteria with their thresholds, the cited standards and the catalogue tests that verify the requirement. For a test you see the preconditions, the steps, the expected result and the requirements it verifies. Select an ID under *Verified by* or *Verifies* to jump to that item.
+Select a row to see the full text on the right (on a phone it opens as a panel): the description with the obligation keyword highlighted, the rationale, the evaluation criteria with their thresholds, the cited standards and the catalogue tests that verify the requirement. For a test you see the preconditions, the steps, the expected result and the requirements it verifies. A requirement also lists the catalogue risks it mitigates. Select an ID under *Verified by*, *Verifies* or *Mitigates* to jump to that item.
 
 ## Add items to the project
 
@@ -54,17 +54,41 @@ Select a row to see the full text on the right (on a phone it opens as a panel):
    - **Source of the requirements**: the cited standards (default) or one of the project's sources.
    - **Also add the tests that verify the chosen requirements** (on by default).
    - **Add copies of items already in the project**: off by default, so items the project already has are skipped.
-4. The summary shows how many requirements and tests will be added and how many are skipped. Select **Add**.
+4. The summary shows how many requirements and tests will be added and how many are skipped. When some of the chosen requirements say the same thing as requirements the project already has (written by hand, or from another catalogue entry), it lists them with the most similar project requirement and its similarity, and **Leave out the requirements similar to existing ones** skips them (reason *similar*). See [Duplicates and conflicts](duplicates-and-conflicts.md).
+5. Select **Add**.
 
 At most 500 items can be added at once. The import is all or nothing: if something fails, nothing is added.
 
 Qtestframe creates the requirements and tests as if you had written them, with a first history version, and creates **trace links** between each requirement and the tests that verify it, also to matching items that were added to the project earlier. The automatic linked draft test that a new requirement usually gets is not created: the catalogue tests take its place.
 
+## Risks in the catalogue
+
+The **Risks** tab lists typical risks of the areas: what can go wrong, for example *Accounts taken over with leaked passwords* or *Pressure vessel bursts*. There are risks for security, privacy, AI, availability and operations, data, the supply chain, hardware, equipment and buildings (safety), services, governance and projects. Every risk has:
+
+- a **category** (security, privacy, safety, availability, data, compliance, supply chain, AI, operational, quality, project or environmental);
+- a description of the threat or hazard and its consequence;
+- a **typical likelihood and impact** on the same scale 1–5 as the [risk register](releases-and-risks.md#the-risk-register), and the level they give (low, medium, high, critical);
+- a **suggested mitigation**;
+- the catalogue requirements that **mitigate** it (at least one, from any area), and sometimes catalogue tests that check it directly;
+- the sources it is based on under **Based on**: risk management standards (ISO 31000, ISO/IEC 27005, ISO/IEC 23894 for AI, ISO 14971 for medical devices, ISO 26262 for vehicles, ISO 12100 for machinery, IEC 62443-3-2 for industrial systems), the AI Act's risk management (Art. 9), the GDPR's impact assessment (Art. 35), threat catalogues (OWASP Top 10, ENISA Threat Landscape) and the CWE weaknesses and MITRE ATT&CK techniques of the mitigating requirements.
+
+Filter the risks by **Category** and **Risk level**, by area in the tree, by tag or by the laws and standards to comply with (a risk counts for a source when it cites it or one of its mitigating requirements does). The preview shows the description, the suggested mitigation and the mitigating requirements; select one to open it.
+
+**Add a risk with its mitigation.** Tick risks and select **Add N risks (+ requirements, tests)**. The dialog adds:
+
+- the risks as project risks, with title, description, category, suggested mitigation and the typical likelihood and impact (adjust them to your own assessment afterwards), with the status *Identified* or *Mitigating*;
+- with **Also add the requirements that mitigate the chosen risks** (on by default) the mitigating requirements, and with **Also add the tests that verify the chosen requirements** their tests;
+- links between each new risk and the project requirements that mitigate it, both the new ones and those added earlier.
+
+**Add requirements with their risks.** When you add requirements that mitigate catalogue risks, the dialog offers **Also add the N risks these requirements mitigate**. Requirements you add later are linked to the catalogue risks the project already has, so the order does not matter.
+
+Risks the project already has from the catalogue are skipped, like requirements and tests, unless you choose **Add copies of items already in the project**.
+
 ## After adding
 
-A box at the top of the page sums up what was added. **Open the added requirements** and **Open the added tests** open the lists filtered to the new items. **Undo** (or Ctrl+Z) moves them to the trash; redo brings them back with their links. Folders that the import created stay.
+A box at the top of the page sums up what was added, and how many of the added requirements are similar to requirements the project had, with a link to **Review duplicates**. **Open the added requirements**, **Open the added tests** and **Open the added risks** open the lists filtered to the new items. **Undo** (or Ctrl+Z) moves them to the trash (risks are deleted); redo brings them back with their links. Folders that the import created stay.
 
-The added items are ordinary project items: edit the texts and values to fit your system. The editor shows **From the catalogue: AUTH-01 · …** with the cited standards, and **Show in the catalogue** opens the original entry. This origin is kept when you edit, copy, move or restore the item. In filters, `catalog:AUTH-01` finds the items copied from one entry, `catalog:AUTH-*` those of an area and `has:catalog` every item from the catalogue (see [Search and filters](search-and-filters.md)).
+The added items are ordinary project items: edit the texts and values to fit your system. The editor shows **From the catalogue: AUTH-01 · …** with the cited standards, and **Show in the catalogue** opens the original entry. This origin is kept when you edit, copy, move or restore the item. In filters, `catalog:AUTH-01` finds the items copied from one entry, `catalog:AUTH-*` those of an area and `has:catalog` every item from the catalogue (see [Search and filters](search-and-filters.md)). A risk from the catalogue shows its ID under its category in the register; the register can show the risks of one catalogue area.
 
 ## Tips
 

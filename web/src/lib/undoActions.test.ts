@@ -5,6 +5,10 @@ const calls: string[] = []
 vi.mock('./api', () => ({
   api: {
     patch: vi.fn(async (p: string, b: unknown) => void calls.push(`PATCH ${p} ${JSON.stringify(b)}`)),
+    get: vi.fn(async (p: string) => {
+      calls.push(`GET ${p}`)
+      return { id: 'k1', title: 'Risk', likelihood: 4, impact: 3, status: 'identified', requirement_ids: ['r1'], catalog_ref: 'AUTH-R01', score: 12 }
+    }),
     post: vi.fn(async (p: string, b?: unknown) => {
       calls.push(`POST ${p}${b ? ' ' + JSON.stringify(b) : ''}`)
       return { id: 'new' }
@@ -98,5 +102,19 @@ describe('undo actions', () => {
     await gone.undo()
     await gone.redo()
     expect(calls).toEqual(['DELETE /projects/none/requirements/bulk {"ids":["r1"]}'])
+  })
+  it('deletes added risks and creates them again', async () => {
+    const e = addedItemsEntry('Add', 'p1', ['r1'], [], ['k1'])
+    await e.undo()
+    await e.redo()
+    expect(calls[0]).toBe('GET /risks/k1')
+    expect(calls[1]).toBe('DELETE /projects/p1/risks/bulk {"ids":["k1"]}')
+    expect(calls[2]).toBe('DELETE /projects/p1/requirements/bulk {"ids":["r1"]}')
+    expect(calls[3]).toBe('POST /trash/tr/restore')
+    expect(calls[4]).toMatch(/^POST \/projects\/p1\/risks .*"catalog_ref":"AUTH-R01"/)
+    expect(calls[4]).not.toContain('score')
+    calls.length = 0
+    await e.undo()
+    expect(calls[0]).toBe('GET /risks/new')
   })
 })

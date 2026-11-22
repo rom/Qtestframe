@@ -19,7 +19,9 @@ import (
 //     suspect (the relation is marked), with their verifying tests (their
 //     trace links are marked, see MarkLinksSuspect); its tracker issues are
 //     flagged out of date and the generated documents containing it are
-//     outdated. ImpactIndex previews all of it before a change is saved.
+//     outdated. The change travels on transitively (impact.go) up to the
+//     project's impact depth; ImpactIndex previews all of it before a
+//     change is saved.
 //   - result staleness: staleness.go.
 //   - blocking defects: DefectBlocks.
 //   - regressions: regressions.go.
@@ -45,6 +47,7 @@ func (s *Store) CorrelationSettings(ctx context.Context, tenantID, projectID str
 	if set.WarningSeverities == nil {
 		set.WarningSeverities = []string{}
 	}
+	fillImpactRules(&set)
 	return &set, nil
 }
 
@@ -106,7 +109,78 @@ func NormalizeCorrelationSettings(set *model.CorrelationSettings) error {
 	if !slices.Contains(model.RegressionActions, set.RegressionAction) {
 		return Invalidf("regression_action must be one of %s", strings.Join(model.RegressionActions, ", "))
 	}
+	if set.ImpactDepth == 0 {
+		set.ImpactDepth = model.DefaultImpactDepth
+	}
+	if set.ImpactDepth < 1 || set.ImpactDepth > model.MaxImpactDepth {
+		return Invalidf("impact_depth must be between 1 and %d", model.MaxImpactDepth)
+	}
+	modes := map[string]string{}
+	for typ, m := range set.RelationModes {
+		if !slices.Contains(model.RelationTypes, typ) {
+			return Invalidf("unknown relation type %q", typ)
+		}
+		if m == "" {
+			m = model.ModeSuspect
+		}
+		if !slices.Contains(model.ImpactModes, m) {
+			return Invalidf("relation_modes of %s must be one of %s", typ, strings.Join(model.ImpactModes, ", "))
+		}
+		modes[typ] = m
+	}
+	for _, typ := range model.RelationTypes {
+		if _, ok := modes[typ]; !ok {
+			modes[typ] = model.ModeSuspect
+		}
+	}
+	set.RelationModes = modes
+	for edge, r := range set.ImpactRules {
+		if !slices.Contains(model.ImpactEdgeKinds, edge) {
+			return Invalidf("unknown impact rule %q (one of %s)", edge, strings.Join(model.ImpactEdgeKinds, ", "))
+		}
+		if r.Direction == "" {
+			r.Direction = model.ImpactOff
+		}
+		if !slices.Contains(model.ImpactDirections, r.Direction) {
+			return Invalidf("impact_rules.%s.direction must be one of %s", edge, strings.Join(model.ImpactDirections, ", "))
+		}
+		if r.Mode == "" {
+			r.Mode = model.ModeReview
+		}
+		if !slices.Contains(model.ImpactModes, r.Mode) {
+			return Invalidf("impact_rules.%s.mode must be one of %s", edge, strings.Join(model.ImpactModes, ", "))
+		}
+		if r.Mode == model.ModeSuspect && !model.Markable(edge) {
+			return Invalidf("impact_rules.%s can only recommend a review (mode review)", edge)
+		}
+		set.ImpactRules[edge] = r
+	}
+	fillImpactRules(set)
 	return nil
+}
+
+// fillImpactRules gives settings stored before the transitive impact
+// their default rules and relation modes.
+func fillImpactRules(set *model.CorrelationSettings) {
+	if set.ImpactRules == nil {
+		set.ImpactRules = map[string]model.ImpactRule{}
+	}
+	for edge, r := range model.DefaultImpactRules() {
+		if _, ok := set.ImpactRules[edge]; !ok {
+			set.ImpactRules[edge] = r
+		}
+	}
+	if set.RelationModes == nil {
+		set.RelationModes = map[string]string{}
+	}
+	for _, typ := range model.RelationTypes {
+		if set.RelationModes[typ] == "" {
+			set.RelationModes[typ] = model.ModeSuspect
+		}
+	}
+	if set.ImpactDepth <= 0 {
+		set.ImpactDepth = model.DefaultImpactDepth
+	}
 }
 
 // SaveCorrelationSettings validates and stores a project's settings.
@@ -169,42 +243,6 @@ func ImpactedRelations(rels []model.Relation, reqID string, set *model.Correlati
 	return out
 }
 
-// MarkRelationsSuspect marks the relations along which a change of a
-// requirement travels suspect (relations already suspect keep their date
-// and reason) and returns the impacted relations that were newly marked.
-func (s *Store) MarkRelationsSuspect(ctx context.Context, tenantID, reqID, reason string) ([]ImpactedRelation, error) {
-	r, err := s.GetRequirement(ctx, tenantID, reqID)
-	if err != nil {
-		return nil, err
-	}
-	set, err := s.CorrelationSettings(ctx, tenantID, r.ProjectID)
-	if err != nil {
-		return nil, err
-	}
-	rels, err := s.ListRelations(ctx, tenantID, r.ProjectID, reqID)
-	if err != nil {
-		return nil, err
-	}
-	if len(reason) > 500 {
-		reason = reason[:500]
-	}
-	var out []ImpactedRelation
-	for _, ir := range ImpactedRelations(rels, reqID, set) {
-		if ir.Relation.SuspectSince != nil {
-			continue
-		}
-		res, err := s.c(ctx).exec(ctx, `UPDATE requirement_relations SET suspect_since = ?, suspect_reason = ?, suspect_end = ? WHERE id = ? AND tenant_id = ? AND suspect_since IS NULL`,
-			s.now(), reason, ir.End, ir.Relation.ID, tenantID)
-		if err != nil {
-			return out, err
-		}
-		if n, _ := res.RowsAffected(); n > 0 {
-			out = append(out, ir)
-		}
-	}
-	return out, nil
-}
-
 // ConfirmRelations clears the suspect mark of relations: by ID, or all
 // suspect relations of a requirement. Returns the confirmed relations.
 func (s *Store) ConfirmRelations(ctx context.Context, tenantID string, ids []string, reqID string) ([]model.Relation, error) {
@@ -260,22 +298,6 @@ func (s *Store) SuspectRelationCounts(ctx context.Context, tenantID, projectID s
 }
 
 // ---------------------------------------------------------------- tracker issues
-
-// MarkIssuesOutdated flags the tracker issues of a requirement out of date
-// (issues already flagged keep their date and reason) and returns how
-// many were newly flagged.
-func (s *Store) MarkIssuesOutdated(ctx context.Context, tenantID, reqID, reason string) (int, error) {
-	if len(reason) > 500 {
-		reason = reason[:500]
-	}
-	res, err := s.c(ctx).exec(ctx, `UPDATE item_links SET issue_outdated_since = ?, issue_outdated_reason = ? WHERE tenant_id = ? AND source_type = ? AND source_id = ?
-		AND target_type = 'url' AND issue_key <> '' AND issue_outdated_since IS NULL`, s.now(), reason, tenantID, model.KindRequirement, reqID)
-	if err != nil {
-		return 0, err
-	}
-	n, _ := res.RowsAffected()
-	return int(n), nil
-}
 
 // ClearIssueOutdated clears the out-of-date flag of an issue link (the
 // issue was updated from its requirement, or someone confirmed it).
@@ -370,177 +392,6 @@ func (s *Store) OutdatedDocuments(ctx context.Context, tenantID, projectID strin
 		sort.Slice(out[k], func(i, j int) bool { return naturalLess(out[k][i], out[k][j]) })
 	}
 	return out, nil
-}
-
-// ---------------------------------------------------------------- impact
-
-// ImpactIndex holds what the change impact of a project's items needs,
-// loaded once (one item, or every changed item of a baseline diff).
-type ImpactIndex struct {
-	Settings *model.CorrelationSettings
-	Stale    *StaleIndex
-	reqs     map[string][2]string // id → key, title
-	tests    map[string][2]string
-	rels     []model.Relation
-	links    []model.TraceLink
-	issues   map[string][]model.ItemLink
-	docs     map[string][]documentEntry // kind:id → documents
-	last     map[string]string
-}
-
-// LoadImpactIndex loads the impact index of a project.
-func (s *Store) LoadImpactIndex(ctx context.Context, tenantID, projectID string) (*ImpactIndex, error) {
-	x := &ImpactIndex{reqs: map[string][2]string{}, tests: map[string][2]string{}, issues: map[string][]model.ItemLink{}, docs: map[string][]documentEntry{}}
-	var err error
-	if x.Settings, err = s.CorrelationSettings(ctx, tenantID, projectID); err != nil {
-		return nil, err
-	}
-	if x.Stale, err = s.LoadStaleIndex(ctx, tenantID, projectID); err != nil {
-		return nil, err
-	}
-	for _, q := range []struct {
-		table string
-		m     map[string][2]string
-	}{{"requirements", x.reqs}, {"test_cases", x.tests}} {
-		rows, err := s.c(ctx).query(ctx, `SELECT id, key, title FROM `+q.table+` WHERE tenant_id = ? AND project_id = ?`, tenantID, projectID)
-		if err != nil {
-			return nil, err
-		}
-		for rows.Next() {
-			var id, key, title string
-			if err := rows.Scan(&id, &key, &title); err != nil {
-				rows.Close()
-				return nil, err
-			}
-			q.m[id] = [2]string{key, title}
-		}
-		rows.Close()
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-	}
-	if x.rels, err = s.ListRelations(ctx, tenantID, projectID, ""); err != nil {
-		return nil, err
-	}
-	if x.links, err = s.ListLinks(ctx, tenantID, projectID, "", ""); err != nil {
-		return nil, err
-	}
-	issues, err := s.IssueLinks(ctx, tenantID, projectID, nil)
-	if err != nil {
-		return nil, err
-	}
-	for _, l := range issues {
-		x.issues[l.SourceID] = append(x.issues[l.SourceID], l)
-	}
-	entries, err := s.documentEntries(ctx, tenantID, projectID)
-	if err != nil {
-		return nil, err
-	}
-	for _, e := range entries {
-		x.docs[e.kind+":"+e.id] = append(x.docs[e.kind+":"+e.id], e)
-	}
-	if x.last, err = s.LastResults(ctx, tenantID, projectID); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-// Of returns what a change of the substance of a requirement or test
-// would make suspect, out of date, outdated or stale (nil when the item is
-// not in the project).
-func (x *ImpactIndex) Of(kind, id string) *model.ChangeImpact {
-	names := x.reqs
-	if kind == model.KindTest {
-		names = x.tests
-	}
-	n, ok := names[id]
-	if !ok {
-		return nil
-	}
-	imp := &model.ChangeImpact{Kind: kind, ID: id, Key: n[0], Title: n[1], Requirements: []model.ImpactItem{}, Tests: []model.ImpactItem{},
-		Issues: []model.ImpactItem{}, Documents: []model.ImpactItem{}, Results: []model.ImpactItem{}}
-	seenTest := map[string]bool{}
-	addTest := func(l model.TraceLink, via string) {
-		k := l.TestCaseID + "|" + l.RequirementID
-		if seenTest[k] {
-			return
-		}
-		seenTest[k] = true
-		t := x.tests[l.TestCaseID]
-		imp.Tests = append(imp.Tests, model.ImpactItem{Kind: model.KindTest, ID: l.TestCaseID, Key: t[0], Title: t[1], Via: via, Already: l.SuspectSince != nil, RequirementID: l.RequirementID})
-	}
-	addResult := func(testID string) {
-		st, ok := x.last[testID]
-		if !ok || st == model.ResultNotRun || !x.Settings.StaleOnChange {
-			return
-		}
-		for _, r := range imp.Results {
-			if r.TestID == testID {
-				return
-			}
-		}
-		t := x.tests[testID]
-		imp.Results = append(imp.Results, model.ImpactItem{Kind: "result", ID: testID, TestID: testID, Key: t[0], Title: t[1], Result: st, Already: x.Stale.Test(testID).Stale})
-	}
-	if kind == model.KindRequirement {
-		for _, l := range x.links {
-			if l.RequirementID == id {
-				addTest(l, "")
-				addResult(l.TestCaseID)
-			}
-		}
-		for _, ir := range ImpactedRelations(x.rels, id, x.Settings) {
-			imp.Requirements = append(imp.Requirements, model.ImpactItem{Kind: model.KindRequirement, ID: ir.OtherID, Key: ir.OtherKey, Title: ir.OtherTitle,
-				Relation: ir.Relation.Type, Direction: ir.Direction, Already: ir.Relation.SuspectSince != nil})
-			for _, l := range x.links {
-				if l.RequirementID == ir.OtherID {
-					addTest(l, ir.OtherKey)
-				}
-			}
-		}
-		if x.Settings.FlagIssues {
-			for _, l := range x.issues[id] {
-				imp.Issues = append(imp.Issues, model.ImpactItem{Kind: "issue", ID: l.ID, Key: l.Issue.Key, Title: l.Label, URL: l.URL, RequirementID: id, Already: l.Issue.OutdatedSince != nil})
-			}
-		}
-	} else {
-		for _, l := range x.links {
-			if l.TestCaseID == id {
-				r := x.reqs[l.RequirementID]
-				imp.Requirements = append(imp.Requirements, model.ImpactItem{Kind: model.KindRequirement, ID: l.RequirementID, Key: r[0], Title: r[1], Relation: "verifies", Direction: "outgoing", Already: l.SuspectSince != nil})
-			}
-		}
-		addResult(id)
-	}
-	seenDoc := map[string]bool{}
-	for _, e := range x.docs[kind+":"+id] {
-		if seenDoc[e.fileID] {
-			continue
-		}
-		seenDoc[e.fileID] = true
-		imp.Documents = append(imp.Documents, model.ImpactItem{Kind: "document", ID: e.fileID, Key: e.fileName, Already: e.outdated()})
-	}
-	for _, list := range [][]model.ImpactItem{imp.Requirements, imp.Tests, imp.Issues, imp.Documents, imp.Results} {
-		for _, it := range list {
-			if !it.Already {
-				imp.Total++
-			}
-		}
-	}
-	return imp
-}
-
-// ChangeImpact returns the impact of a change of one item.
-func (s *Store) ChangeImpact(ctx context.Context, tenantID, projectID, kind, id string) (*model.ChangeImpact, error) {
-	x, err := s.LoadImpactIndex(ctx, tenantID, projectID)
-	if err != nil {
-		return nil, err
-	}
-	imp := x.Of(kind, id)
-	if imp == nil {
-		return nil, mapErr(sql.ErrNoRows, kind)
-	}
-	return imp, nil
 }
 
 // ---------------------------------------------------------------- blocking defects

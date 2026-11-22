@@ -4,6 +4,7 @@
 import ItemRef from '../components/ItemRef.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import Column from 'primevue/column'
@@ -66,6 +67,19 @@ function work(r: ReviewRequest) {
   current.value = r
   working.value = true
 }
+// ?review=<id> (from a discussion or a notification) opens that request
+const route = useRoute()
+async function openFromRoute() {
+  const id = typeof route.query.review === 'string' ? route.query.review : ''
+  if (!id) return
+  try {
+    work(await api.get<ReviewRequest>(`/reviews/${id}`))
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+onMounted(openFromRoute)
+watch(() => route.query.review, openFromRoute)
 function itemRoute(r: ReviewRequest) {
   return notificationTarget({ project_id: r.project_id, entity_type: r.entity_type, entity_id: r.entity_id })!
 }

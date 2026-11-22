@@ -427,20 +427,22 @@ type Category struct {
 
 // Requirement is a single specification statement.
 type Requirement struct {
-	ID          string   `json:"id"`
-	ProjectID   string   `json:"project_id"`
-	FolderID    *string  `json:"folder_id"`
-	Key         string   `json:"key"`
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Obligation  string   `json:"obligation"`
-	Type        string   `json:"type"`
-	Priority    string   `json:"priority"`
-	Status      string   `json:"status"`
-	Source      string   `json:"source"`
-	Rationale   string   `json:"rationale"`
-	Owner       string   `json:"owner"`
-	Tags        []string `json:"tags"`
+	ID          string  `json:"id"`
+	ProjectID   string  `json:"project_id"`
+	FolderID    *string `json:"folder_id"`
+	Key         string  `json:"key"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	Obligation  string  `json:"obligation"`
+	Type        string  `json:"type"`
+	Priority    string  `json:"priority"`
+	Status      string  `json:"status"`
+	Source      string  `json:"source"`
+	Rationale   string  `json:"rationale"`
+	// Owner: the project member responsible for the requirement (e-mail
+	// address; a name that is not a member stays as text, "" none).
+	Owner string   `json:"owner"`
+	Tags  []string `json:"tags"`
 	// CatalogRef is the catalogue id the requirement was copied from
 	// (internal/catalog), "" otherwise.
 	CatalogRef  string                `json:"catalog_ref"`
@@ -456,7 +458,9 @@ type Requirement struct {
 	LinkedTests  int    `json:"linked_tests"`
 	Coverage     string `json:"coverage,omitempty"` // none | not_run | passed | failed | partial
 	CommentCount int    `json:"comment_count"`
-	Relations    int    `json:"relation_count"`
+	// OpenDiscussions: threads of its discussion that are not resolved.
+	OpenDiscussions int `json:"open_discussions,omitempty"`
+	Relations       int `json:"relation_count"`
 	// SuspectLinks: links to tests that are suspect.
 	SuspectLinks int `json:"suspect_links"`
 	// RiskLevel: the highest level of the open risks it addresses ("" none).
@@ -537,21 +541,24 @@ type TestRef struct {
 
 // TestCase describes a manual or automated test.
 type TestCase struct {
-	ID             string   `json:"id"`
-	ProjectID      string   `json:"project_id"`
-	FolderID       *string  `json:"folder_id"`
-	Key            string   `json:"key"`
-	Title          string   `json:"title"`
-	Description    string   `json:"description"`
-	Preconditions  string   `json:"preconditions"`
-	ExecutionType  string   `json:"execution_type"`
-	ScriptLanguage string   `json:"script_language"`
-	Script         string   `json:"script"`
-	ExpectedResult string   `json:"expected_result"`
-	Priority       string   `json:"priority"`
-	Status         string   `json:"status"`
-	EstimatedMin   int      `json:"estimated_minutes"`
-	Tags           []string `json:"tags"`
+	ID             string  `json:"id"`
+	ProjectID      string  `json:"project_id"`
+	FolderID       *string `json:"folder_id"`
+	Key            string  `json:"key"`
+	Title          string  `json:"title"`
+	Description    string  `json:"description"`
+	Preconditions  string  `json:"preconditions"`
+	ExecutionType  string  `json:"execution_type"`
+	ScriptLanguage string  `json:"script_language"`
+	Script         string  `json:"script"`
+	ExpectedResult string  `json:"expected_result"`
+	Priority       string  `json:"priority"`
+	Status         string  `json:"status"`
+	EstimatedMin   int     `json:"estimated_minutes"`
+	// Owner: the project member responsible for the test (e-mail address;
+	// a name that is not a member stays as text, "" none).
+	Owner string   `json:"owner"`
+	Tags  []string `json:"tags"`
 	// CatalogRef is the catalogue id the test was copied from, "" otherwise.
 	CatalogRef  string     `json:"catalog_ref"`
 	Position    int        `json:"position"`
@@ -567,11 +574,13 @@ type TestCase struct {
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 	// Derived.
-	FolderPath   string    `json:"folder_path,omitempty"`
-	LinkedReqs   int       `json:"linked_requirements"`
-	LastResult   string    `json:"last_result,omitempty"`
-	CommentCount int       `json:"comment_count"`
-	CalledBy     []TestRef `json:"called_by,omitempty"`
+	FolderPath   string `json:"folder_path,omitempty"`
+	LinkedReqs   int    `json:"linked_requirements"`
+	LastResult   string `json:"last_result,omitempty"`
+	CommentCount int    `json:"comment_count"`
+	// OpenDiscussions: threads of its discussion that are not resolved.
+	OpenDiscussions int       `json:"open_discussions,omitempty"`
+	CalledBy        []TestRef `json:"called_by,omitempty"`
 	// RelationRefs: requirements it verifies, tests it calls and tests that call it.
 	RelationRefs []ItemRef `json:"relations,omitempty"`
 	StepCount    int       `json:"step_count,omitempty"`
@@ -673,8 +682,11 @@ type TestRun struct {
 	// belong to.
 	VariantID *string `json:"variant_id"`
 	BuildID   *string `json:"build_id"`
+	// CycleID: the test cycle that created the run (read-only).
+	CycleID *string `json:"cycle_id"`
 	// Derived.
 	Summary     map[string]int `json:"summary,omitempty"`
+	CycleName   string         `json:"cycle_name,omitempty"`
 	ReleaseName string         `json:"release_name,omitempty"`
 	VariantName string         `json:"variant_name,omitempty"`
 	BuildLabel  string         `json:"build_label,omitempty"`
@@ -796,7 +808,7 @@ const DefectEscapedPhase = "production"
 
 var (
 	// DefectLinkTypes are the items a defect can be linked to.
-	DefectLinkTypes = []string{KindRequirement, KindTest, "execution", "run"}
+	DefectLinkTypes = []string{KindRequirement, KindTest, "execution", "run", KindExploratory}
 )
 
 // Defect is a problem found while testing, optionally mirrored in an
@@ -841,12 +853,18 @@ type DefectLink struct {
 // DefectTracker is a project's connection to an external issue tracker. It
 // is used for defects and for issues created from requirements.
 type DefectTracker struct {
-	// Type: "" (none), "jira", "github" or "gitlab".
+	// Type: "" (none), "jira", "github", "gitlab" or "rt" (Request Tracker).
 	Type string `json:"type"`
 	// URL: Jira base URL (https://example.atlassian.net), the GitHub API
-	// URL (default https://api.github.com) or the GitLab instance URL
-	// (default https://gitlab.com; https only).
+	// URL (default https://api.github.com), the GitLab instance URL
+	// (default https://gitlab.com; https only) or the base URL of the RT
+	// instance (https://rt.example.com, without /REST/2.0).
 	URL string `json:"url"`
+	// Queue: the RT queue new tickets go to (name or numeric ID).
+	Queue string `json:"queue"`
+	// LabelsField: the RT custom field (name) that receives the labels of
+	// new tickets; empty sends no labels to RT.
+	LabelsField string `json:"labels_field"`
 	// ProjectKey: Jira project key; Repo: GitHub owner/repo; Project:
 	// GitLab project ID or path (group/subgroup/project).
 	ProjectKey string `json:"project_key"`
@@ -877,6 +895,43 @@ type DefectTracker struct {
 	// Token is write-only: the API reports only HasToken.
 	Token    string `json:"token,omitempty"`
 	HasToken bool   `json:"has_token"`
+}
+
+// ImportSources are a project's connections for importing requirements
+// from Jira and Azure DevOps (internal/tracker source.go). Tokens are
+// write-only: the API reports only HasToken.
+type ImportSources struct {
+	Jira  JiraImportSource  `json:"jira"`
+	Azure AzureDevOpsSource `json:"azure_devops"`
+}
+
+// JiraImportSource is the Jira instance requirements are imported from.
+// An empty URL uses the project's defect tracker when it is Jira.
+type JiraImportSource struct {
+	URL string `json:"url"`
+	// User: the account e-mail for an API token (Jira Cloud); empty for a
+	// personal access token sent as a bearer token.
+	User     string `json:"user"`
+	Token    string `json:"token,omitempty"`
+	HasToken bool   `json:"has_token"`
+	// JQL is the query the import dialog starts with.
+	JQL string `json:"jql"`
+}
+
+// AzureDevOpsSource is the Azure DevOps (Services or Server) project work
+// items are imported from.
+type AzureDevOpsSource struct {
+	// URL is the organization (https://dev.azure.com/org) or collection URL
+	// (https://tfs.example.com/tfs/DefaultCollection).
+	URL     string `json:"url"`
+	Project string `json:"project"`
+	// Token is a personal access token with the Work Items (Read) scope.
+	Token    string `json:"token,omitempty"`
+	HasToken bool   `json:"has_token"`
+	// AreaPath and WorkItemTypes (comma-separated) are the defaults of the
+	// import dialog's simple query.
+	AreaPath      string `json:"area_path"`
+	WorkItemTypes string `json:"work_item_types"`
 }
 
 // RiskStatuses are the states of a risk; RiskOpenStatuses still need action.
@@ -958,6 +1013,10 @@ type Risk struct {
 	// CustomFields are the values of the project's custom fields (field key
 	// → value); a PATCH merges them, null removes a value.
 	CustomFields CustomValues `json:"custom_fields,omitempty"`
+	// CatalogRef is the catalogue risk it was copied from ("" none), and
+	// CatalogArea that risk's catalogue area (derived by the API).
+	CatalogRef  string `json:"catalog_ref"`
+	CatalogArea string `json:"catalog_area,omitempty"`
 }
 
 // ResidualOf returns the residual likelihood, impact and source in effect
@@ -994,7 +1053,7 @@ var WebhookEvents = []string{
 	"run.created", "run.updated", "run.completed", "execution.updated",
 	"defect.created", "defect.updated", "defect.status", "defect.assigned",
 	"risk.created", "risk.updated", "release.created", "release.updated", "release.released",
-	"comment.created", "review.requested", "review.completed", "baseline.signed",
+	"comment.created", "comment.mentioned", "comment.resolved", "review.requested", "review.completed", "baseline.signed",
 	"defect.regression",
 	"waiver.requested", "waiver.approved", "waiver.rejected", "waiver.revoked",
 }
@@ -1095,6 +1154,7 @@ var ExitCriterionTypes = []string{
 	"trace_rules",         // the enabled traceability rules pass on the scope (level error: errors only, warning: also warnings)
 	"residual_risk",       // no risk linked to scope requirements has a residual level above the threshold (the level; default the project's) unless the risk is accepted
 	"no_blocking_defects", // no scope requirement is blocked by an open defect (the project's severity rules)
+	"cycle_executed",      // % of the planned tests of a test cycle (CycleID) with a final result (default 100: fully executed)
 }
 
 // ExitCriterion is one condition a release must meet.
@@ -1107,6 +1167,8 @@ type ExitCriterion struct {
 	// for residual_risk the risk acceptance threshold of the release (""
 	// = the project's).
 	Level string `json:"level,omitempty"`
+	// CycleID: the test cycle of cycle_executed.
+	CycleID string `json:"cycle_id,omitempty"`
 }
 
 // Release is a version of the product with its scope and exit criteria.
@@ -1122,13 +1184,19 @@ type Release struct {
 	ReleasedAt   *time.Time      `json:"released_at"`
 	ReleasedBy   string          `json:"released_by"`
 	ReleaseNote  string          `json:"release_note"`
-	CreatedBy    string          `json:"created_by"`
-	CreatedAt    time.Time       `json:"created_at"`
-	UpdatedAt    time.Time       `json:"updated_at"`
+	// VariantIDs are the variants the release targets (migration 0046):
+	// the exit criteria are evaluated for each of them and the release is
+	// a go only when every targeted variant is. Empty: evaluated without a
+	// variant (all requirements, all results).
+	VariantIDs []string  `json:"variant_ids"`
+	CreatedBy  string    `json:"created_by"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 	// Derived.
-	RequirementIDs []string `json:"requirement_ids,omitempty"`
-	Requirements   int      `json:"requirement_count"`
-	Runs           int      `json:"run_count"`
+	Variants       []VariantRef `json:"variants,omitempty"`
+	RequirementIDs []string     `json:"requirement_ids,omitempty"`
+	Requirements   int          `json:"requirement_count"`
+	Runs           int          `json:"run_count"`
 }
 
 // DefaultExitCriteria are given to new releases.
@@ -1280,9 +1348,13 @@ type BaselineChange struct {
 
 // Comment is a discussion entry on a requirement or test.
 type Comment struct {
-	ID         string    `json:"id"`
-	EntityType string    `json:"entity_type"`
-	EntityID   string    `json:"entity_id"`
+	ID         string `json:"id"`
+	ProjectID  string `json:"project_id"`
+	EntityType string `json:"entity_type"`
+	EntityID   string `json:"entity_id"`
+	// ParentID is the first comment of the thread of a reply ("" for the
+	// comment that starts a thread).
+	ParentID   string    `json:"parent_id"`
 	UserID     string    `json:"user_id"`
 	UserEmail  string    `json:"user_email"`
 	UserName   string    `json:"user_name"`
@@ -1290,6 +1362,48 @@ type Comment struct {
 	Body       string    `json:"body"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+	// Resolved (first comment of a thread only): when and by whom.
+	ResolvedAt     *time.Time `json:"resolved_at"`
+	ResolvedBy     string     `json:"resolved_by,omitempty"`
+	ResolvedByName string     `json:"resolved_by_name,omitempty"`
+	// Deleted comments stay in the thread with an empty body.
+	Deleted   bool       `json:"deleted"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+	DeletedBy string     `json:"deleted_by,omitempty"`
+	// Mentions are the user ids @mentioned in the body.
+	Mentions []string `json:"mentions"`
+	// Reactions: reaction → user ids.
+	Reactions map[string][]string `json:"reactions"`
+}
+
+// Kinds of items that have discussions besides requirements, tests,
+// defects and risks.
+const (
+	DiscussionRun    = "run"
+	DiscussionReview = "review"
+)
+
+// DiscussionKinds are the entity types that have discussions.
+var DiscussionKinds = []string{KindRequirement, KindTest, KindDefect, KindRisk, DiscussionRun, DiscussionReview}
+
+// CommentReactions are the reactions a comment can get.
+var CommentReactions = []string{"+1", "-1", "heart", "tada", "eyes", "check"}
+
+// DiscussionThread is a thread of a discussion list: its first comment,
+// the item it is about and a summary of its replies.
+type DiscussionThread struct {
+	Root        Comment   `json:"root"`
+	ProjectKey  string    `json:"project_key"`
+	EntityKey   string    `json:"entity_key"`
+	EntityTitle string    `json:"entity_title"`
+	Replies     int       `json:"replies"`
+	LastAt      time.Time `json:"last_at"`
+	// LastBy is the display name (or e-mail) of who wrote last.
+	LastBy string `json:"last_by"`
+	// Participants: the user ids who wrote in the thread.
+	Participants []string `json:"participants"`
+	// Mentioned: the user ids mentioned anywhere in the thread.
+	Mentioned []string `json:"mentioned"`
 }
 
 // AuditEntry records a change.
@@ -1342,7 +1456,7 @@ const (
 	// CheckUnevidencedMust: a MUST requirement of a release has no passing evidence.
 	CheckUnevidencedMust = "unevidenced_must"
 	// CheckUnmitigatedRisk: a high or critical risk has no mitigation
-	// requirement, or none of them is verified.
+	// requirement, or not all of them are verified.
 	CheckUnmitigatedRisk = "unmitigated_risk"
 	// CheckUnjustifiedRejection: a requirement adopted from a regulation of
 	// the catalogue is rejected without a recorded justification.
@@ -1350,11 +1464,23 @@ const (
 	// CheckDuplicateSuspect: requirements with nearly identical text and no
 	// duplicates relation.
 	CheckDuplicateSuspect = "duplicate_suspect"
+	// CheckPotentialConflict: requirements that likely contradict each
+	// other (opposite obligations, thresholds that cannot both hold,
+	// mutually exclusive values) and are not related by conflicts_with.
+	CheckPotentialConflict = "potential_conflict"
+	// CheckTestDuplicateSuspect: tests with nearly identical text and no
+	// "duplicates" item link.
+	CheckTestDuplicateSuspect = "test_duplicate_suspect"
 )
+
+// DuplicateLinkLabel is the label of the item link that marks a test as
+// a duplicate of another test (tests have no relations).
+const DuplicateLinkLabel = "duplicates"
 
 // TraceBuiltinKinds lists the built-in consistency checks in display order.
 var TraceBuiltinKinds = []string{CheckConflictInRelease, CheckUnmetDependency, CheckObsoleteParent, CheckVerifiesInactive,
-	CheckBrokenPrerequisite, CheckUnevidencedMust, CheckUnmitigatedRisk, CheckUnjustifiedRejection, CheckDuplicateSuspect}
+	CheckBrokenPrerequisite, CheckUnevidencedMust, CheckUnmitigatedRisk, CheckUnjustifiedRejection, CheckDuplicateSuspect,
+	CheckPotentialConflict, CheckTestDuplicateSuspect}
 
 // IsBuiltinCheck reports whether kind is a built-in consistency check.
 func IsBuiltinCheck(kind string) bool { return slices.Contains(TraceBuiltinKinds, kind) }
@@ -1362,7 +1488,7 @@ func IsBuiltinCheck(kind string) bool { return slices.Contains(TraceBuiltinKinds
 // BuiltinScope is the item kind a built-in check applies to.
 func BuiltinScope(kind string) string {
 	switch kind {
-	case CheckVerifiesInactive, CheckBrokenPrerequisite:
+	case CheckVerifiesInactive, CheckBrokenPrerequisite, CheckTestDuplicateSuspect:
 		return KindTest
 	case CheckUnmitigatedRisk:
 		return KindRisk
@@ -1421,8 +1547,10 @@ type TraceRuleOptions struct {
 	// Every: every trace of the kind must meet the conditions (e.g. no
 	// suspect link at all), not only Min of them.
 	Every bool `json:"every,omitempty"`
-	// Threshold of duplicate_suspect: the least similarity (0.5–1) of two
-	// normalised texts that counts as a suspected duplicate (default 0.9).
+	// Threshold of duplicate_suspect and test_duplicate_suspect: the least
+	// similarity (0.5–1) of two items that counts as a suspected duplicate
+	// (default 0.68); of potential_conflict: the least confidence (0.5–1)
+	// of a reported conflict (default 0.6).
 	Threshold float64 `json:"threshold,omitempty"`
 	// Level of unmitigated_risk: the least risk level checked (RiskLevels,
 	// default high).

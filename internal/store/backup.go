@@ -33,7 +33,7 @@ const BackupFormatVersion = 1
 var BackupTables = []string{
 	"tenants", "users", "memberships", "api_tokens", "projects", "configurations", "releases", "folders", "categories",
 	"requirements", "requirement_categories", "evaluation_criteria", "test_cases", "test_steps",
-	"test_case_categories", "trace_links", "variants", "builds", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
+	"test_case_categories", "trace_links", "variants", "builds", "test_cycles", "test_cycle_tests", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
 	"audit_log", "revisions", "requirement_relations", "baselines", "baseline_items", "comments",
 	"files", "file_blobs", "attachments", "report_definitions", "login_events", "roles", "test_dependencies",
 	"trash", "item_links", "release_requirements", "defects", "defect_links", "risks", "risk_requirements", "notifications", "webhooks", "review_requests", "baseline_signoffs",
@@ -59,9 +59,16 @@ var BackupTables = []string{
 	"item_applicability", "code_changes", "code_change_items", "code_settings",
 	// custom fields, their archived values and item templates
 	"custom_fields", "field_set_fields", "custom_field_archive", "item_templates", "org_item_templates", "project_template_defaults",
+	// exploratory testing sessions, their scope and notes (0040)
+	"exploratory_sessions", "exploratory_scope", "exploratory_notes",
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available
+	// test cycles (0041); test_cycles and test_cycle_tests come before
+	// test_runs above
+	"test_cycle_schedules",
 	"secret_keys",
+	// chat notification channels (0045)
+	"chat_channels",
 }
 
 // tables that exist but are deliberately not part of a backup.
@@ -69,7 +76,11 @@ var BackupTables = []string{
 var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "job_runs": true, "script_jobs": true,
 	"mfa_challenges": true, "mfa_trusted_devices": true,
 	// personal autocomplete history: a convenience, not project data
-	"suggest_history": true}
+	"suggest_history": true,
+	// queue and log of chat posts (the channels are backed up)
+	"chat_deliveries": true,
+	// vectors of the embeddings service: a cache, computed again
+	"similarity_embeddings": true}
 
 // NotBackedUpTables returns the tables that exist but are deliberately not
 // part of a backup, sorted (for the administrator guide, see
@@ -89,8 +100,10 @@ var boolColumns = map[string]bool{
 	"login_events.success": true, "scim_users.active": true, "trace_rules.enabled": true,
 	"invitations.sso": true, "report_subscriptions.enabled": true, "secret_keys.active": true,
 	"verification_records.until_change": true, "verification_settings.strict_criteria": true,
-	"custom_fields.required": true, "custom_fields.show_in_list": true,
+	"verification_settings.exploratory_evidence": true, "custom_fields.required": true, "custom_fields.show_in_list": true,
 	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
+	"chat_channels.enabled": true, "chat_channels.restricted_content": true,
+	"test_cycle_schedules.auto_start": true, "test_cycle_schedules.enabled": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

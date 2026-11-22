@@ -111,7 +111,7 @@ describe('test fields', () => {
   const fs = sheetFields(ctx({ kind: 'test' }))
   const test: SheetRow = { id: 't1', key: 'T-1', title: 'Log in', execution_type: 'manual', status: 'draft', priority: 'low', step_count: 3, estimated_minutes: 0, tags: null, category_ids: null, folder_id: null }
   it('has the test columns', () => {
-    expect(fs.map((f) => f.id)).toEqual(['key', 'title', 'description', 'priority', 'status', 'execution_type', 'preconditions', 'expected_result', 'estimated_minutes', 'category_ids', 'tags', 'folder', 'step_count', 'last_result', 'linked_requirements', 'created_by', 'version'])
+    expect(fs.map((f) => f.id)).toEqual(['key', 'title', 'description', 'priority', 'status', 'execution_type', 'preconditions', 'expected_result', 'estimated_minutes', 'category_ids', 'tags', 'owner', 'folder', 'step_count', 'last_result', 'linked_requirements', 'created_by', 'version'])
     expect(byId(fs, 'step_count').text(test)).toBe('3')
     expect(byId(fs, 'step_count').text({ ...test, step_count: undefined, steps: [{}, {}] })).toBe('2')
     expect(byId(fs, 'tags').text(test)).toBe('')

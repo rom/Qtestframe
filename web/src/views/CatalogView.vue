@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// The built-in catalogue of standard requirements and tests: browse by
+// The built-in catalogue of standard requirements, tests and risks: browse by
 // catalogue type, group and area, search and filter (client-side, see
 // lib/catalog.ts), pick laws, standards and best practices to comply with,
 // preview an item and add a selection to the project.
@@ -46,12 +46,14 @@ import {
   type CatalogKind,
   type CatalogOverview,
   type CatalogRequirement,
+  type CatalogRisk,
   type CatalogSources,
   type CatalogTest,
   type ProjectCatalog,
 } from '@/lib/catalog'
 import { addedItemsEntry, recordUndo } from '@/lib/undoActions'
 import { useBreakpoint } from '@/lib/breakpoint'
+import { riskLevelSeverity, RISK_LEVELS } from '@/lib/risks'
 import { P } from '@/lib/permissions'
 import { enumLabel, enumOptions } from '@/i18n/labels'
 import { useAuthStore } from '@/stores/auth'
@@ -75,13 +77,14 @@ const canReadTests = computed(() => auth.can(P.testRead))
 const canWriteReqs = computed(() => auth.can(P.requirementWrite))
 const canWriteTests = computed(() => auth.can(P.testWrite))
 
-const kind = ref<CatalogKind>(route.query.tab === 'tests' || !canReadReqs.value ? 'test' : 'requirement')
+const kind = ref<CatalogKind>(route.query.tab === 'tests' || !canReadReqs.value ? 'test' : route.query.tab === 'risks' ? 'risk' : 'requirement')
 const lang = ref<string>(route.query.lang === 'sv' || route.query.lang === 'en' ? String(route.query.lang) : String(locale.value).startsWith('sv') ? 'sv' : 'en')
 
 const overview = ref<CatalogOverview | null>(null)
 const reqs = ref<CatalogRequirement[]>([])
 const tests = ref<CatalogTest[]>([])
-const inProject = ref<ProjectCatalog>({ requirements: {}, tests: {} })
+const risks = ref<CatalogRisk[]>([])
+const inProject = ref<ProjectCatalog>({ requirements: {}, tests: {}, risks: {} })
 const loading = ref(false)
 const error = ref('')
 
@@ -90,14 +93,16 @@ async function loadCatalog() {
   error.value = ''
   try {
     const q = { lang: lang.value }
-    const [ov, r, ts] = await Promise.all([
+    const [ov, r, ts, ks] = await Promise.all([
       api.get<CatalogOverview>('/catalog', q),
       canReadReqs.value ? api.get<{ items: CatalogRequirement[] }>('/catalog/requirements', q) : Promise.resolve({ items: [] }),
       canReadTests.value ? api.get<{ items: CatalogTest[] }>('/catalog/tests', q) : Promise.resolve({ items: [] }),
+      canReadReqs.value ? api.get<{ items: CatalogRisk[] }>('/catalog/risks', q) : Promise.resolve({ items: [] }),
     ])
     overview.value = ov
     reqs.value = asItems(r)
     tests.value = asItems(ts)
+    risks.value = asItems(ks)
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -108,7 +113,7 @@ async function loadInProject() {
   try {
     inProject.value = await api.get<ProjectCatalog>(`/projects/${proj.pid}/catalog`)
   } catch {
-    inProject.value = { requirements: {}, tests: {} }
+    inProject.value = { requirements: {}, tests: {}, risks: {} }
   }
 }
 onMounted(() => Promise.all([loadCatalog(), loadInProject()]))
@@ -153,7 +158,7 @@ watch(catalogue, () => {
     keepNode = false
     return
   }
-  for (const k of ['requirement', 'test'] as const) filters.value[k].node = 'all'
+  for (const k of ['requirement', 'test', 'risk'] as const) filters.value[k].node = 'all'
 })
 const sourceById = computed(() => new Map((sourceData.value?.sources ?? []).map((x) => [x.id, x])))
 const sourceName = (id: string) => {
@@ -171,19 +176,22 @@ function removeSource(id: string) {
 
 const inReqs = computed(() => inProjectSet(inProject.value.requirements))
 const inTests = computed(() => inProjectSet(inProject.value.tests))
-const inSet = computed(() => (kind.value === 'requirement' ? inReqs.value : inTests.value))
-const inMap = computed(() => (kind.value === 'requirement' ? inProject.value.requirements : inProject.value.tests))
+const inRisks = computed(() => inProjectSet(inProject.value.risks))
+const inSet = computed(() => (kind.value === 'requirement' ? inReqs.value : kind.value === 'risk' ? inRisks.value : inTests.value))
+const inMap = computed(() => (kind.value === 'requirement' ? inProject.value.requirements : kind.value === 'risk' ? (inProject.value.risks ?? {}) : inProject.value.tests))
 const reqById = computed(() => new Map(reqs.value.map((r) => [r.id, r])))
+const riskById = computed(() => new Map(risks.value.map((r) => [r.id, r])))
 
 // ---------- filters (per tab) ----------
 const filters = ref<Record<CatalogKind, CatalogFilters>>({
   requirement: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '' },
   test: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '' },
+  risk: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '' },
 })
 const f = computed(() => filters.value[kind.value])
 // the tab's filters with the catalogue type and the sources (shared by both tabs)
 const fx = computed<CatalogFilters>(() => ({ ...f.value, catalogue: catalogue.value, sources: sourceIds.value }))
-const items = computed<CatalogItem[]>(() => (kind.value === 'requirement' ? reqs.value : tests.value))
+const items = computed<CatalogItem[]>(() => (kind.value === 'requirement' ? reqs.value : kind.value === 'risk' ? risks.value : tests.value))
 const shown = computed(() => filterCatalog(items.value, fx.value, inSet.value, { reqById: reqById.value }))
 const counts = computed(() => nodeCounts(filterCatalog(items.value, fx.value, inSet.value, { node: false, reqById: reqById.value })))
 const testById = computed(() => new Map(tests.value.map((x) => [x.id, x])))
@@ -200,7 +208,7 @@ const compliance = computed(() => {
 })
 function addCompliance() {
   if (!compliance.value?.missing.length) return
-  selected.value = { requirement: new Set(compliance.value.missing), test: new Set() }
+  selected.value = { requirement: new Set(compliance.value.missing), test: new Set(), risk: new Set() }
   importOpen.value = true
 }
 const limit = ref(PAGE)
@@ -213,10 +221,15 @@ const obligationOptions = computed(() =>
 )
 const priorityOptions = computed(() => enumOptions('priority', ['critical', 'high', 'medium', 'low']))
 const executionOptions = computed(() => enumOptions('executionType', ['manual', 'automated']))
+const categoryOptions = computed(() =>
+  (overview.value?.risk_categories ?? []).filter((c) => risks.value.some((k) => k.category === c.id)).map((c) => ({ label: c.name, value: c.id })),
+)
+const levelOptions = computed(() => [...RISK_LEVELS].reverse().map((v) => ({ label: t(`risksView.level.${v}`), value: v })))
 const tagOpts = computed(() => tagOptions(items.value).map((x) => ({ label: x, value: x })))
 const kindOptions = computed(() => [
   ...(canReadReqs.value ? [{ label: `${t('catalog.requirements')} (${reqs.value.length})`, value: 'requirement' }] : []),
   ...(canReadTests.value ? [{ label: `${t('catalog.tests')} (${tests.value.length})`, value: 'test' }] : []),
+  ...(canReadReqs.value ? [{ label: `${t('catalog.risks')} (${risks.value.length})`, value: 'risk' }] : []),
 ])
 const langOptions = [
   { label: 'English', value: 'en' },
@@ -248,7 +261,7 @@ function selectNode(key: string) {
 const nodeTitle = computed(() => nodeLabel(overview.value?.groups ?? [], f.value.node) || t('catalog.all'))
 
 // ---------- selection ----------
-const selected = ref<Record<CatalogKind, Set<string>>>({ requirement: new Set(), test: new Set() })
+const selected = ref<Record<CatalogKind, Set<string>>>({ requirement: new Set(), test: new Set(), risk: new Set() })
 const sel = computed(() => selected.value[kind.value])
 const shownIds = computed(() => shown.value.map((x) => x.id))
 const headState = computed(() => selectionState(sel.value, shownIds.value))
@@ -259,24 +272,39 @@ function toggle(id: string, on: boolean) {
   selected.value[kind.value] = toggleIds(sel.value, [id], on)
 }
 function clearSelection() {
-  selected.value = { requirement: new Set(), test: new Set() }
+  selected.value = { requirement: new Set(), test: new Set(), risk: new Set() }
 }
 const plan = computed(() =>
   importPlan([...selected.value.requirement], canWriteTests.value ? [...selected.value.test] : [], reqById.value, inReqs.value, inTests.value, {
     includeTests: canWriteTests.value,
     addCopies: false,
+    riskIds: canWriteReqs.value ? [...selected.value.risk] : [],
+    riskById: riskById.value,
+    inRisks: inRisks.value,
   }),
 )
+const nRisks = (n: number) => t('catalog.nRisks', { n }, n)
 const nReqs = (n: number) => t('catalog.nRequirements', { n }, n)
 const nTests = (n: number) => t('catalog.nTests', { n }, n)
 const resultSummary = (r: CatalogImportResult) =>
-  t('catalog.result.summary', { requirements: nReqs(r.requirements.length), tests: nTests(r.tests.length), links: t('catalog.nLinks', { n: r.links.length }, r.links.length) })
-const nSelected = computed(() => selected.value.requirement.size + selected.value.test.size)
-const canImport = computed(() => (selected.value.requirement.size > 0 && canWriteReqs.value) || (selected.value.test.size > 0 && canWriteTests.value))
+  r.risks?.length
+    ? t('catalog.result.summaryRisks', {
+        risks: nRisks(r.risks.length),
+        requirements: nReqs(r.requirements.length),
+        tests: nTests(r.tests.length),
+        links: t('catalog.nLinks', { n: r.links.length + (r.risk_links?.length ?? 0) }, r.links.length + (r.risk_links?.length ?? 0)),
+      })
+    : t('catalog.result.summary', { requirements: nReqs(r.requirements.length), tests: nTests(r.tests.length), links: t('catalog.nLinks', { n: r.links.length + (r.risk_links?.length ?? 0) }, r.links.length + (r.risk_links?.length ?? 0)) })
+const nSelected = computed(() => selected.value.requirement.size + selected.value.test.size + selected.value.risk.size)
+const canImport = computed(
+  () => ((selected.value.requirement.size > 0 || selected.value.risk.size > 0) && canWriteReqs.value) || (selected.value.test.size > 0 && canWriteTests.value),
+)
 const addLabel = computed(() =>
-  selected.value.requirement.size
-    ? t('catalog.addButton', { requirements: nReqs(plan.value.requirements.length), tests: nTests(plan.value.tests.length) })
-    : t('catalog.addTests', { n: plan.value.tests.length }, plan.value.tests.length),
+  selected.value.risk.size && canWriteReqs.value
+    ? t('catalog.addRisksButton', { risks: nRisks(plan.value.risks.length), requirements: nReqs(plan.value.requirements.length), tests: nTests(plan.value.tests.length) })
+    : selected.value.requirement.size
+      ? t('catalog.addButton', { requirements: nReqs(plan.value.requirements.length), tests: nTests(plan.value.tests.length) })
+      : t('catalog.addTests', { n: plan.value.tests.length }, plan.value.tests.length),
 )
 
 // ---------- preview ----------
@@ -293,7 +321,7 @@ function openPreview(id: string, k: CatalogKind = kind.value) {
   previewId.value = id
 }
 function openLinked(k: CatalogKind, id: string) {
-  if (k !== kind.value && ((k === 'requirement' && canReadReqs.value) || (k === 'test' && canReadTests.value))) kind.value = k
+  if (k !== kind.value && (((k === 'requirement' || k === 'risk') && canReadReqs.value) || (k === 'test' && canReadTests.value))) kind.value = k
   openPreview(id, k)
   void nextTick(() => document.getElementById(`ci-${id}`)?.scrollIntoView({ block: 'nearest' }))
 }
@@ -304,7 +332,7 @@ watch([kind, previewId, lang, () => f.value.node, () => f.value.q, catalogue, so
   router.replace({
     query: {
       ...route.query,
-      tab: kind.value === 'test' ? 'tests' : undefined,
+      tab: kind.value === 'test' ? 'tests' : kind.value === 'risk' ? 'risks' : undefined,
       item: previewId.value || undefined,
       lang: lang.value,
       node: f.value.node !== 'all' ? f.value.node : undefined,
@@ -323,15 +351,24 @@ const sources = computed(() => proj.project?.requirement_sources ?? [])
 async function onImported(res: CatalogImportResult) {
   result.value = res
   clearSelection()
-  const n = res.requirements.length + res.tests.length
+  const n = res.requirements.length + res.tests.length + (res.risks?.length ?? 0)
   if (n) {
-    const item = recordUndo(addedItemsEntry(t('catalog.undoLabel', { n }), proj.pid, res.requirements.map((r) => r.id), res.tests.map((x) => x.id)))
+    const item = recordUndo(
+      addedItemsEntry(
+        t('catalog.undoLabel', { n }),
+        proj.pid,
+        res.requirements.map((r) => r.id),
+        res.tests.map((x) => x.id),
+        (res.risks ?? []).map((x) => x.id),
+      ),
+    )
     undoId.value = item?.id ?? null
   }
   notify.ok(t('catalog.result.title'), resultSummary(res))
   await Promise.all([loadInProject(), res.folders_created ? Promise.all([proj.loadFolders('requirement'), proj.loadFolders('test')]) : Promise.resolve()])
   void nextTick(() => document.getElementById('catalog-result')?.focus())
 }
+const similarCreated = computed(() => (result.value?.requirements ?? []).filter((r) => r.similar?.length).length)
 const canUndoResult = computed(() => undoId.value !== null && undoStore.next?.id === undoId.value && !undoStore.busy)
 async function undoImport() {
   if (undoId.value === null) return
@@ -346,6 +383,10 @@ async function undoImport() {
 }
 const reqQuery = computed(() => createdQuery(result.value?.requirements.map((r) => r.key) ?? []))
 const testQuery = computed(() => createdQuery(result.value?.tests.map((r) => r.key) ?? []))
+const riskArea = computed(() => {
+  const areas = new Set((result.value?.risks ?? []).map((r) => riskById.value.get(r.catalog_ref)?.area).filter(Boolean))
+  return areas.size === 1 ? [...areas][0] : undefined
+})
 const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(', ')
 </script>
 
@@ -373,6 +414,10 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
         <b>{{ t('catalog.result.title') }}</b> –
         {{ resultSummary(result) }}
         <span v-if="result.skipped.length" class="muted"> · {{ t('catalog.result.skipped', { n: result.skipped.length }, result.skipped.length) }}</span>
+        <span v-if="similarCreated" class="muted">
+          · {{ t('catalog.result.similar', { n: similarCreated }, similarCreated) }}
+          <RouterLink :to="{ name: 'duplicates', params: { projectId: proj.pid } }">{{ t('catalog.result.review') }}</RouterLink>
+        </span>
       </div>
       <div class="row" style="gap: 8px; flex-wrap: wrap">
         <RouterLink v-if="result.requirements.length" class="p-button p-button-sm p-button-outlined" :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { q: reqQuery } }">
@@ -380,6 +425,9 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
         </RouterLink>
         <RouterLink v-if="result.tests.length" class="p-button p-button-sm p-button-outlined" :to="{ name: 'tests', params: { projectId: proj.pid }, query: { q: testQuery } }">
           {{ t('catalog.result.openTests') }}
+        </RouterLink>
+        <RouterLink v-if="result.risks?.length" class="p-button p-button-sm p-button-outlined" :to="{ name: 'risks', params: { projectId: proj.pid }, query: { area: riskArea } }">
+          {{ t('catalog.result.openRisks') }}
         </RouterLink>
         <Button v-if="canUndoResult" :label="t('catalog.result.undo')" icon="pi pi-undo" size="small" severity="secondary" outlined @click="undoImport" />
         <Button :label="t('catalog.result.dismiss')" size="small" text severity="secondary" @click="result = null" />
@@ -479,8 +527,12 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
             <MultiSelect v-model="f.types" :options="typeOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterType')" :aria-label="t('catalog.filterType')" :max-selected-labels="2" show-clear />
             <MultiSelect v-model="f.obligations" :options="obligationOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterObligation')" :aria-label="t('catalog.filterObligation')" :max-selected-labels="2" show-clear />
           </template>
+          <template v-else-if="kind === 'risk'">
+            <MultiSelect v-model="f.categories" :options="categoryOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterCategory')" :aria-label="t('catalog.filterCategory')" :max-selected-labels="2" show-clear />
+            <MultiSelect v-model="f.levels" :options="levelOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterLevel')" :aria-label="t('catalog.filterLevel')" :max-selected-labels="2" show-clear />
+          </template>
           <MultiSelect v-else v-model="f.executions" :options="executionOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterExecution')" :aria-label="t('catalog.filterExecution')" show-clear />
-          <MultiSelect v-model="f.priorities" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterPriority')" :aria-label="t('catalog.filterPriority')" :max-selected-labels="2" show-clear />
+          <MultiSelect v-if="kind !== 'risk'" v-model="f.priorities" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterPriority')" :aria-label="t('catalog.filterPriority')" :max-selected-labels="2" show-clear />
           <MultiSelect v-model="f.tags" :options="tagOpts" option-label="label" option-value="value" filter :placeholder="t('catalog.filterTags')" :aria-label="t('catalog.filterTags')" :max-selected-labels="2" show-clear />
           <span class="row small nowrap">
             <ToggleSwitch v-model="f.hideInProject" input-id="cat-hide" />
@@ -526,7 +578,13 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
                   <StatusTag :value="it.obligation" kind="obligation" />
                   <StatusTag :value="it.priority" kind="priority" />
                   <span class="small muted"><i class="pi pi-check-square" aria-hidden="true" /> {{ t('catalog.linkedTests', { n: it.tests.length }, it.tests.length) }}</span>
+                  <span v-if="it.risks?.length" class="small muted"><i class="pi pi-shield" aria-hidden="true" /> {{ t('catalog.mitigatesRisks', { n: it.risks.length }, it.risks.length) }}</span>
                   <Tag v-for="sid in (it.sources ?? []).filter((x) => sourceIds.includes(x))" :key="sid" :value="sourceName(sid)" severity="info" />
+                </template>
+                <template v-else-if="'mitigated_by' in it">
+                  <Tag :value="t(`risksView.level.${it.level}`)" :severity="riskLevelSeverity(it.level)" />
+                  <span class="small muted">{{ it.category_name }} · {{ t('catalog.risk.score', { likelihood: it.likelihood, impact: it.impact, score: it.score }) }}</span>
+                  <span class="small muted"><i class="pi pi-list-check" aria-hidden="true" /> {{ t('catalog.mitigatingRequirements', { n: it.mitigated_by.length }, it.mitigated_by.length) }}</span>
                 </template>
                 <template v-else>
                   <StatusTag :value="it.priority" kind="priority" />
@@ -559,7 +617,11 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
     </div>
 
     <div v-if="nSelected" class="bulkbar catalog-bar" role="toolbar" :aria-label="t('catalog.selected', { n: nSelected }, nSelected)">
-      <b role="status" aria-live="polite">{{ t('catalog.selectedSummary', { requirements: nReqs(selected.requirement.size), tests: nTests(selected.test.size) }) }}</b>
+      <b role="status" aria-live="polite">{{
+        selected.risk.size
+          ? t('catalog.selectedSummaryRisks', { risks: nRisks(selected.risk.size), requirements: nReqs(selected.requirement.size), tests: nTests(selected.test.size) })
+          : t('catalog.selectedSummary', { requirements: nReqs(selected.requirement.size), tests: nTests(selected.test.size) })
+      }}</b>
       <Button v-if="canImport" :label="addLabel" icon="pi pi-plus" size="small" aria-haspopup="dialog" @click="importOpen = true" />
       <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('catalog.clearSelection')" v-tooltip.top="t('catalog.clearSelection')" @click="clearSelection" />
     </div>
@@ -601,6 +663,9 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
       :test-folders="proj.folders.test"
       :sources="sources"
       :can-tests="canWriteTests"
+      :risk-ids="canWriteReqs ? [...selected.risk] : []"
+      :risk-by-id="riskById"
+      :in-risks="inRisks"
       @imported="onImported"
     />
   </div>

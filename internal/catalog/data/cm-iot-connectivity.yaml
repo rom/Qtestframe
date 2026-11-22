@@ -644,3 +644,35 @@ tests:
           expected: Var och en av de 50 enheterna rapporterar den nya versionen.
         - action: Beräkna gatewayens sändningstid per delband från spektrumloggen för sessionens mest belastade timme.
           expected: Varje delband håller sig inom sin gräns.
+
+risks:
+  - id: CMIOT-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [iot, device-keys]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GSMA IoT Security Guidelines", "LoRaWAN L2 1.0.4 Specification (security)"]
+    mitigated_by: [CMIOT-03, CMIOT-04, CMIOT-09, CMIOT-11]
+    en:
+      title: IoT devices impersonated or used as a way in
+      description: Devices share a root key, are personalised by hand or reach the internet directly. One extracted key lets an attacker fake measurements from all devices or use them to reach the network.
+      mitigation: Activate LoRaWAN devices over the air with no shared root key, keep cellular devices on a private APN without internet access and send messages over TLS with a certificate per device.
+    sv:
+      title: IoT-enheter förfalskas eller används som väg in
+      description: Enheterna delar en rotnyckel, personaliseras för hand eller når internet direkt. En enda utvunnen nyckel låter en angripare förfalska mätvärden från alla enheter eller använda dem för att nå nätet.
+      mitigation: Aktivera LoRaWAN-enheter via radio utan delad rotnyckel, håll mobila enheter på en privat APN utan internetåtkomst och skicka meddelanden över TLS med ett certifikat per enhet.
+  - id: CMIOT-R02
+    category: availability
+    likelihood: 4
+    impact: 3
+    tags: [coverage, battery-life]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "LoRaWAN L2 1.0.4 Specification (network architecture)"]
+    mitigated_by: [CMIOT-02, CMIOT-06, CMIOT-07, CMIOT-08, CMIOT-13]
+    en:
+      title: Measurements stop arriving from installed devices
+      description: Devices are mounted where coverage is weak, depend on a single gateway or drain their batteries early. Data gaps go unnoticed until someone needs the values.
+      mitigation: Measure coverage at each installation point, ensure each device is heard by two gateways, require a delivery ratio of 99 %, configure power saving for 10 years of battery life and alarm when a device misses 3 reporting intervals.
+    sv:
+      title: Mätvärden från installerade enheter slutar komma fram
+      description: Enheterna monteras där täckningen är svag, är beroende av en enda gateway eller tömmer sina batterier i förtid. Luckor i data upptäcks inte förrän någon behöver värdena.
+      mitigation: Mät täckningen vid varje installationspunkt, se till att varje enhet hörs av två gatewayer, kräv en leveransgrad på 99 %, ställ in energisparläge för 10 års batteritid och larma när en enhet missar 3 rapporteringsintervall.

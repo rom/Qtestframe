@@ -46,6 +46,7 @@ func blocks() []block {
 		{"permissions", "authorisation.md", permissionMatrix},
 		{"hardening", "security.md", hardeningLists},
 		{"webhook-events", "integrations.md", webhookEvents},
+		{"chat-events", "integrations.md", chatEvents},
 		{"backup-tables", "backup-and-migration.md", backupTables},
 		{"migrations", "backup-and-migration.md", migrationList},
 		{"cli", "cli-reference.md", cliReference},

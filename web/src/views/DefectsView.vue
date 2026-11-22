@@ -325,7 +325,8 @@ function remove(d: Defect) {
   })
 }
 
-const linkIcon = (l: DefectLink) => (l.entity_type === 'requirement' ? 'pi pi-list-check' : l.entity_type === 'test' ? 'pi pi-check-square' : l.entity_type === 'run' ? 'pi pi-play' : 'pi pi-play-circle')
+const linkIcon = (l: DefectLink) =>
+  l.entity_type === 'requirement' ? 'pi pi-list-check' : l.entity_type === 'test' ? 'pi pi-check-square' : l.entity_type === 'run' ? 'pi pi-play' : l.entity_type === 'exploratory_session' ? 'pi pi-compass' : 'pi pi-play-circle'
 const pad = (n: number) => String(n).padStart(8, '0')
 const sortKey = (d: Defect) => pad(keyNumber(d.key))
 const sortStatus = (d: Defect) => pad(statusRank(d.status))

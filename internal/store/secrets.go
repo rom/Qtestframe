@@ -30,6 +30,9 @@ func adWebhook(id string) string  { return "webhooks.secret|" + id }
 func adTracker(projectID string) string {
 	return "projects.defect_tracker.token|" + projectID
 }
+func adImportSource(projectID, source string) string {
+	return "projects.import_sources." + source + ".token|" + projectID
+}
 func adWebVar(projectID, name string) string {
 	return "projects.web_tests.variables." + strings.ToUpper(name) + ".value|" + projectID
 }
@@ -41,7 +44,7 @@ func adOIDCSecret(provider string) string {
 // SecretSettings are the system settings (table system_settings) whose
 // values hold secrets: the value of a "string" setting is a JSON string;
 // an "oidc" setting is a list of providers whose client_secret is secret.
-var SecretSettings = map[string]string{"email.password": "string", "auth.oidc": "oidc"}
+var SecretSettings = map[string]string{"email.password": "string", "auth.oidc": "oidc", "similarity.embeddings.api_key": "string"}
 
 // Keyring returns the keyring (nil when secrets are stored as plaintext).
 func (s *Store) Keyring() *secrets.Keyring { return s.keys }
@@ -349,11 +352,13 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 		st.count(field, v)
 		return v, nil
 	}
-	// user_mfa.totp_secret, webhooks.secret, code_settings.webhook_secret
+	// user_mfa.totp_secret, webhooks.secret, code_settings.webhook_secret,
+	// chat_channels.secret
 	for _, t := range []struct{ table, id, col, field string }{
 		{"user_mfa", "user_id", "totp_secret", "user_mfa.totp_secret"},
 		{"webhooks", "id", "secret", "webhooks.secret"},
 		{"code_settings", "project_id", "webhook_secret", "code_settings.webhook_secret"},
+		{"chat_channels", "id", "secret", "chat_channels.secret"},
 	} {
 		pairs, err := idValues(ctx, c, `SELECT `+t.id+`, `+t.col+` FROM `+t.table)
 		if err != nil {
@@ -366,6 +371,8 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 				ad = adWebhook(p[0])
 			case "code_settings":
 				ad = adCodeSecret(p[0])
+			case "chat_channels":
+				ad = adChat(p[0])
 			}
 			v, err := apply(t.field, p[1], ad)
 			if err != nil {
@@ -382,8 +389,8 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 			}
 		}
 	}
-	// projects.defect_tracker, projects.web_tests
-	for _, col := range []string{"defect_tracker", "web_tests"} {
+	// projects.defect_tracker, projects.web_tests, projects.import_sources
+	for _, col := range []string{"defect_tracker", "web_tests", "import_sources"} {
 		pairs, err := idValues(ctx, c, `SELECT id, `+col+` FROM projects`)
 		if err != nil {
 			return nil, err
@@ -450,8 +457,8 @@ func idValues(ctx context.Context, c conn, q string) ([][2]string, error) {
 }
 
 // recodeProjectJSON applies fn to the secrets in a project's
-// defect_tracker (token) or web_tests (values of secret variables) JSON,
-// keeping every other field as it is.
+// defect_tracker (token), import_sources (tokens) or web_tests (values of
+// secret variables) JSON, keeping every other field as it is.
 func recodeProjectJSON(col, projectID, raw string, fn func(field, old, ad string) (string, error)) (string, bool, error) {
 	var m map[string]any
 	if raw == "" || json.Unmarshal([]byte(raw), &m) != nil || m == nil {
@@ -470,6 +477,21 @@ func recodeProjectJSON(col, projectID, raw string, fn func(field, old, ad string
 		}
 		if v != tok {
 			m["token"], changed = v, true
+		}
+	case "import_sources":
+		for _, src := range []string{"jira", "azure_devops"} {
+			sm, _ := m[src].(map[string]any)
+			tok, _ := sm["token"].(string)
+			if tok == "" {
+				continue
+			}
+			v, err := fn("projects.import_sources.token", tok, adImportSource(projectID, src))
+			if err != nil {
+				return "", false, err
+			}
+			if v != tok {
+				sm["token"], changed = v, true
+			}
 		}
 	case "web_tests":
 		vars, _ := m["variables"].([]any)

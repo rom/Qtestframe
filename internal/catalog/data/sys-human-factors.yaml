@@ -520,3 +520,35 @@ tests:
           data: utlösning av huvudmatarpumpen under uppstart
         - action: Beräkna medelvärdet av skattningarna för varje toppscenario.
           expected: Varje medelvärde ligger under 60.
+
+risks:
+  - id: SYHF-R01
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [mode-confusion, automation]
+    refs: ["ISO 9241-210:2019 §7.2 (understanding and specifying the context of use)", "ISO 11064-5:2008 (displays and controls)"]
+    mitigated_by: [SYHF-07, SYHF-08, SYHF-09, SYHF-13, SYHF-06]
+    en:
+      title: Operator loses track of what the automation is doing
+      description: The active mode or automation state is not shown, the operator cannot take over quickly or the workload in peak situations is too high. A wrong action during a disturbance escalates the event.
+      mitigation: Show the active operating mode and automation state at all times, allow manual takeover within 2 seconds, give an overview of the whole area of responsibility, assess mental workload in peak scenarios and mitigate each critical use error.
+    sv:
+      title: Operatören tappar greppet om vad automatiken gör
+      description: Det aktiva läget eller automatikens tillstånd visas inte, operatören kan inte ta över snabbt eller arbetsbelastningen i toppsituationer är för hög. En felaktig åtgärd under en störning förvärrar händelsen.
+      mitigation: Visa aktivt driftläge och automatikens tillstånd hela tiden, tillåt manuellt övertagande inom 2 sekunder, ge en översikt över hela ansvarsområdet, bedöm den mentala arbetsbelastningen i toppscenarier och åtgärda varje kritiskt användningsfel.
+  - id: SYHF-R02
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [user-acceptance, context-of-use]
+    refs: ["ISO 9241-210:2019 §7.3 (specifying the user requirements)", "ISO 9241-210:2019 §7.5 (evaluating the design)"]
+    mitigated_by: [SYHF-01, SYHF-02, SYHF-03, SYHF-05, SYHF-14]
+    en:
+      title: System is rejected by the people who must use it
+      description: Users and their working conditions are not studied and evaluation happens only at acceptance. The system works as specified but not for the crews, who refuse it or work around it.
+      mitigation: Plan human-centred design, document the context of use for each user group, trace user requirements to it, evaluate usability with representative users in each iteration and validate with operating crews before acceptance.
+    sv:
+      title: Systemet avvisas av dem som ska använda det
+      description: Användarna och deras arbetsförhållanden studeras inte och utvärdering sker först vid godkännandet. Systemet fungerar enligt specifikationen men inte för personalen, som vägrar använda det eller går runt det.
+      mitigation: Planera människocentrerad design, dokumentera användningssammanhanget för varje användargrupp, spåra användarkraven till det, utvärdera användbarheten med representativa användare i varje iteration och validera med driftpersonalen före godkännandet.

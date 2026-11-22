@@ -369,8 +369,9 @@ OIDC/SAML login neither creates nor changes that membership, so
 | project/requirement/test/run read, member.read, export | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | test.review | | ✔ | | ✔ | ✔ | ✔ |
 | requirement.review | | ✔ | | | ✔ | ✔ |
+| comment.create | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | test.write, run.write, run.execute, token.manage | | | ✔ | ✔ | ✔ | ✔ |
-| script.execute, audit.read, settings.manage | | | | ✔ | ✔ | ✔ |
+| cycle.plan, script.execute, audit.read, settings.manage | | | | ✔ | ✔ | ✔ |
 | requirement.write, waiver.approve, project.create, project.update | | | | | ✔ | ✔ |
 | project.delete, member.manage, role.manage, tenant.manage | | | | | | ✔ |
 
@@ -584,7 +585,7 @@ Further measures:
 * Secret files are read once at start-up, before Landlock is applied
   (SIGHUP re-reads only the TLS key pair); they are not logged. Core dumps
   are disabled (`LimitCORE=0`).
-* **Secrets stored in the database.** Defect tracker tokens (Jira, GitHub, GitLab)
+* **Secrets stored in the database.** Defect tracker tokens (Jira, GitHub, GitLab, Request Tracker), the tokens of the requirement import sources (Jira, Azure DevOps)
   and webhook signing secrets are stored per project in the database,
   **encrypted** (see below; earlier versions stored them in plain text,
   which no longer holds), so that the server can use them. The API never returns a tracker token

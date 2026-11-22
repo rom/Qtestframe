@@ -821,3 +821,50 @@ tests:
         - action: Räkna om den samlade tillgängligheten för beroenden som anropas i serie.
           expected: Resultatet är minst tjänstens mål, eller så anger förteckningen den åtgärd som täpper till gapet.
           data: "exempel: 99,95 % × 99,9 % = 99,85 %"
+
+risks:
+  - id: AVL-R01
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [single-point-of-failure, outage]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.8.14", "ISO/IEC 25010:2023 (availability)"]
+    mitigated_by: [AVL-05, AVL-06, AVL-07, AVL-15, AVL-09]
+    en:
+      title: Loss of one component takes the whole service down
+      description: A single server, database or availability zone fails and nothing takes over. All users lose the service for hours and committed data may be lost.
+      mitigation: Remove single points of failure, fail over after loss of an availability zone and of the database without losing committed data, and replace failed instances automatically.
+    sv:
+      title: Bortfall av en komponent slår ut hela tjänsten
+      description: En enda server, databas eller tillgänglighetszon slutar fungera och inget tar över. Alla användare förlorar tjänsten i flera timmar och sparade uppgifter kan gå förlorade.
+      mitigation: Ta bort enskilda felpunkter, växla över vid bortfall av en tillgänglighetszon och av databasen utan att förlora sparade uppgifter och ersätt felande instanser automatiskt.
+  - id: AVL-R02
+    category: availability
+    likelihood: 4
+    impact: 3
+    tags: [detection, status-page]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 20000-1:2018 §8.7.1 (service availability management)"]
+    mitigated_by: [AVL-02, AVL-10, AVL-11, AVL-14]
+    en:
+      title: Outage noticed first by customers
+      description: The service is down or partly broken but internal checks do not see it, and the status page goes down with production. Customers flood support and lose trust.
+      mitigation: Probe availability from outside, report availability per core function and keep a status page that is independent of production and updated during incidents.
+    sv:
+      title: Avbrott upptäcks först av kunderna
+      description: Tjänsten ligger nere eller fungerar delvis men interna kontroller ser det inte, och statussidan går ner tillsammans med produktionen. Kunderna överöser supporten och förlorar förtroendet.
+      mitigation: Mät tillgängligheten utifrån, rapportera tillgänglighet per kärnfunktion och ha en statussida som är oberoende av produktionen och uppdateras under incidenter.
+  - id: AVL-R03
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [maintenance, dependency]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 20000-1:2018 §8.7.1 (service availability management)"]
+    mitigated_by: [AVL-03, AVL-04, AVL-12, AVL-13, AVL-17]
+    en:
+      title: Planned work or a dependency breaks the availability target
+      description: Maintenance runs in business hours without notice, or a critical dependency has lower availability than the service promises. The availability target is missed and service credits must be paid.
+      mitigation: Announce planned downtime, limit its length, maintain outside business hours in read-only mode and document the availability of critical dependencies.
+    sv:
+      title: Planerat arbete eller ett beroende bryter tillgänglighetsmålet
+      description: Underhåll görs under kontorstid utan förvarning, eller ett kritiskt beroende har lägre tillgänglighet än tjänsten utlovar. Tillgänglighetsmålet missas och vite måste betalas.
+      mitigation: Meddela planerade avbrott, begränsa deras längd, gör underhåll utanför kontorstid i skrivskyddat läge och dokumentera de kritiska beroendenas tillgänglighet.

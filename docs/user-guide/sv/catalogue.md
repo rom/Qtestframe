@@ -1,8 +1,8 @@
 # Katalog
 
-**Katalogen** är ett inbyggt bibliotek med standardkrav och testfall för programvaruutveckling: säkerhet, integritet och regelefterlevnad, prestanda och tillförlitlighet, drift och underhåll, användbarhet och tillgänglighet (även formulär, användarinställningar och mobilappar), vanlig funktionalitet (även arbetsflöde och godkännanden, samarbete, filer, schemaläggning) samt domänspecifik funktionalitet som kassa i e-handel, fakturering, industriella automations- och styrsystem, elenergi, olja och gas, telekom, kemisk industri samt industriell tillverkning. I stället för att skriva *"Lösenord ska vara minst 12 tecken"* och dess testfall i varje projekt väljer du de poster som passar och lägger till dem i projektet på en gång, med testfall och spårlänkar.
+**Katalogen** är ett inbyggt bibliotek med standardkrav och testfall för programvaruutveckling: säkerhet, integritet och regelefterlevnad, prestanda och tillförlitlighet, drift och underhåll, användbarhet och tillgänglighet (även formulär, användarinställningar och mobilappar), vanlig funktionalitet (även arbetsflöde och godkännanden, samarbete, filer, schemaläggning) samt domänspecifik funktionalitet som kassa i e-handel, fakturering, industriella automations- och styrsystem, elenergi, olja och gas, telekom, kemisk industri samt industriell tillverkning. I stället för att skriva *"Lösenord ska vara minst 12 tecken"* och dess testfall i varje projekt väljer du de poster som passar och lägger till dem i projektet på en gång, med testfall och spårlänkar. Katalogen beskriver också de typiska **riskerna** inom varje område (se [Risker i katalogen](#risker-i-katalogen)), var och en kopplad till de krav som åtgärdar den.
 
-För att bläddra i katalogen behövs behörighet att läsa krav eller testfall (alla roller har den). Att lägga till krav kräver **Ansvarig** (`requirement.write`), att lägga till testfall **Testare** (`test.write`).
+För att bläddra i katalogen behövs behörighet att läsa krav eller testfall (alla roller har den). Att lägga till krav och risker kräver **Ansvarig** (`requirement.write`), att lägga till testfall **Testare** (`test.write`).
 
 ## Varifrån texterna kommer
 
@@ -18,14 +18,14 @@ Varje krav anger minst ett testfall i katalogen som verifierar det, och varje te
 
 Öppna **Katalog** i projektets sidomeny eller välj **Lägg till från katalogen** överst i listan med krav eller testfall.
 
-- Växla mellan **Krav** och **Testfall** överst.
+- Växla mellan **Krav**, **Testfall** och **Risker** överst.
 - Välj **English** eller **Svenska** som språk för texterna. Posterna läggs till på det språket.
 - **Katalogtyp** begränsar katalogen till ett slags arbete: *Programvara*, *Hårdvara*, *Utrustning*, *System*, *Kommunikationslösningar*, *Projekt*, *Tjänster*, *Byggnader och anläggningar*, *Styrning*, *Dokumentation* eller *Utbildning* (bara typer med innehåll visas). Den börjar med typen som passar projektet: programvaruprojekt visar *Programvara*, hårdvaruprojekt *Hårdvara*, systemprojekt *System* och verksamhetsprojekt *Styrning*; allmänna projekt visar **Alla typer**. Trädet, listorna och lagarna och standarderna följer valet.
 - Till vänster visar **Grupper och områden** katalogens grupper (till exempel *Säkerhet*) och deras områden (till exempel *Autentisering*) med antalet poster som matchar sökningen och filtren. Välj **Allt** för att se alla områden. Flytta i trädet med piltangenterna och välj med Enter. På en smal skärm öppnas trädet med knappen **Områden**.
 - **Sökfältet** hittar poster vars titel, ID, taggar, standarder eller beskrivning innehåller alla ord du skriver (skriv till exempel `62443` eller `27001` för att lista posterna som hänvisar till den standarden). De bästa träffarna kommer först: ett exakt ID som `AUTH-01`, sedan orden i titeln, sedan de andra fälten.
-- Begränsa listan med **Typ**, **Förpliktelse** och **Prioritet** (krav), **Utförande** (testfall) och **Taggar**. **Dölj poster som redan finns i projektet** visar inte det du har lagt till tidigare.
+- Begränsa listan med **Typ**, **Förpliktelse** och **Prioritet** (krav), **Utförande** (testfall), **Kategori** och **Risknivå** (risker) och **Taggar**. **Dölj poster som redan finns i projektet** visar inte det du har lagt till tidigare.
 
-Varje rad visar ID, titel, förpliktelse och prioritet samt hur många testfall i katalogen som verifierar kravet (eller hur många krav testfallet verifierar). **I projektet** markerar poster som projektet redan har; håll pekaren över märket för att se deras nycklar.
+Varje rad visar ID, titel, förpliktelse och prioritet, hur många testfall i katalogen som verifierar kravet och hur många risker i katalogen det åtgärdar (eller hur många krav testfallet verifierar). **I projektet** markerar poster som projektet redan har; håll pekaren över märket för att se deras nycklar.
 
 ## Uppfyll lagar, standarder och bästa praxis
 
@@ -40,7 +40,7 @@ Ta bort en källa med × på dess etikett, eller välj **Rensa valet** för att 
 
 ## Förhandsvisa en post
 
-Välj en rad för att se hela texten till höger (på en mobil öppnas den som en panel): beskrivningen med förpliktelseordet markerat, motiveringen, utvärderingskriterierna med gränsvärden, standarderna och katalogens testfall som verifierar kravet. För ett testfall ser du förutsättningarna, stegen, det förväntade resultatet och kraven det verifierar. Välj ett ID under *Verifieras av* eller *Verifierar* för att gå till den posten.
+Välj en rad för att se hela texten till höger (på en mobil öppnas den som en panel): beskrivningen med förpliktelseordet markerat, motiveringen, utvärderingskriterierna med gränsvärden, standarderna och katalogens testfall som verifierar kravet. För ett testfall ser du förutsättningarna, stegen, det förväntade resultatet och kraven det verifierar. Ett krav visar även de risker i katalogen som det åtgärdar. Välj ett ID under *Verifieras av*, *Verifierar* eller *Åtgärdar* för att gå till den posten.
 
 ## Lägg till poster i projektet
 
@@ -54,17 +54,41 @@ Välj en rad för att se hela texten till höger (på en mobil öppnas den som e
    - **Källa för kraven**: de angivna standarderna (standard) eller en av projektets källor.
    - **Lägg även till testfallen som verifierar de valda kraven** (på som standard).
    - **Lägg till kopior av poster som redan finns i projektet**: av som standard, så att poster som projektet redan har hoppas över.
-4. Sammanfattningen visar hur många krav och testfall som läggs till och hur många som hoppas över. Välj **Lägg till**.
+4. Sammanfattningen visar hur många krav och testfall som läggs till och hur många som hoppas över. När några av de valda kraven säger samma sak som krav som projektet redan har (skrivna för hand eller från en annan katalogpost) listas de med det mest lika projektkravet och dess likhet, och **Hoppa över kraven som liknar befintliga** hoppar över dem (orsak *similar*). Se [Dubbletter och konflikter](duplicates-and-conflicts.md).
+5. Välj **Lägg till**.
 
 Högst 500 poster kan läggas till åt gången. Importen sker helt eller inte alls: om något misslyckas läggs ingenting till.
 
 Qtestframe skapar kraven och testfallen som om du hade skrivit dem, med en första version i historiken, och skapar **spårlänkar** mellan varje krav och testfallen som verifierar det, även till motsvarande poster som lagts till i projektet tidigare. Det automatiska länkade testfallsutkastet som ett nytt krav annars får skapas inte: katalogens testfall ersätter det.
 
+## Risker i katalogen
+
+Fliken **Risker** listar typiska risker inom områdena: vad som kan gå fel, till exempel *Konton tas över med läckta lösenord* eller *Tryckkärl brister*. Det finns risker för informationssäkerhet, integritet, AI, tillgänglighet och drift, data, leverantörskedjan, hårdvara, utrustning och byggnader (personsäkerhet), tjänster, styrning och projekt. Varje risk har:
+
+- en **kategori** (informationssäkerhet, integritet, personsäkerhet, tillgänglighet, data, regelefterlevnad, leverantörskedja, AI, drift, kvalitet, projekt eller miljö);
+- en beskrivning av hotet eller faran och dess konsekvens;
+- en **typisk sannolikhet och konsekvens** på samma skala 1–5 som i [riskregistret](releases-and-risks.md#riskregistret), och den nivå de ger (låg, medel, hög, kritisk);
+- en **föreslagen åtgärd**;
+- de krav i katalogen som **åtgärdar** den (minst ett, från vilket område som helst), och ibland testfall i katalogen som kontrollerar den direkt;
+- källorna den bygger på under **Baserad på**: standarder för riskhantering (ISO 31000, ISO/IEC 27005, ISO/IEC 23894 för AI, ISO 14971 för medicintekniska produkter, ISO 26262 för fordon, ISO 12100 för maskiner, IEC 62443-3-2 för industriella system), AI-förordningens riskhantering (art. 9), dataskyddsförordningens konsekvensbedömning (art. 35), hotkataloger (OWASP Top 10, ENISA Threat Landscape) och CWE-svagheterna och MITRE ATT&CK-teknikerna i de åtgärdande kraven.
+
+Filtrera riskerna på **Kategori** och **Risknivå**, på område i trädet, på tagg eller på de lagar och standarder som ska uppfyllas (en risk räknas för en källa när den själv eller något av dess åtgärdande krav hänvisar till källan). Förhandsvisningen visar beskrivningen, den föreslagna åtgärden och de åtgärdande kraven; välj ett för att öppna det.
+
+**Lägg till en risk med dess åtgärder.** Markera risker och välj **Lägg till N risker (+ krav, testfall)**. Dialogen lägger till:
+
+- riskerna som risker i projektet, med titel, beskrivning, kategori, föreslagen åtgärd och den typiska sannolikheten och konsekvensen (justera dem efter er egen bedömning efteråt), med statusen *Identifierad* eller *Åtgärdas*;
+- med **Lägg även till de krav som åtgärdar de valda riskerna** (på som standard) de åtgärdande kraven, och med **Lägg även till testfallen som verifierar de valda kraven** deras testfall;
+- kopplingar mellan varje ny risk och de krav i projektet som åtgärdar den, både de nya och de som lagts till tidigare.
+
+**Lägg till krav med deras risker.** När du lägger till krav som åtgärdar risker i katalogen erbjuder dialogen **Lägg även till de N risker som kraven åtgärdar**. Krav som du lägger till senare kopplas till de risker från katalogen som projektet redan har, så ordningen spelar ingen roll.
+
+Risker som projektet redan har från katalogen hoppas över, precis som krav och testfall, om du inte väljer **Lägg till kopior av poster som redan finns i projektet**.
+
 ## Efteråt
 
-En ruta överst på sidan sammanfattar vad som lades till. **Öppna de tillagda kraven** och **Öppna de tillagda testfallen** öppnar listorna filtrerade på de nya posterna. **Ångra** (eller Ctrl+Z) flyttar dem till papperskorgen; gör om tar tillbaka dem med sina länkar. Mappar som importen skapade finns kvar.
+En ruta överst på sidan sammanfattar vad som lades till, och hur många av de tillagda kraven som liknar krav som projektet hade, med en länk till **Granska dubbletter**. **Öppna de tillagda kraven**, **Öppna de tillagda testfallen** och **Öppna de tillagda riskerna** öppnar listorna filtrerade på de nya posterna. **Ångra** (eller Ctrl+Z) flyttar dem till papperskorgen (risker tas bort); gör om tar tillbaka dem med sina länkar. Mappar som importen skapade finns kvar.
 
-De tillagda posterna är vanliga poster i projektet: anpassa texterna och värdena till ert system. Redigeraren visar **Från katalogen: AUTH-01 · …** med standarderna, och **Visa i katalogen** öppnar originalposten. Ursprunget behålls när du redigerar, kopierar, flyttar eller återställer posten. I filter hittar `catalog:AUTH-01` posterna som kopierats från en katalogpost, `catalog:AUTH-*` ett områdes poster och `has:catalog` alla poster från katalogen (se [Sökning och filter](search-and-filters.md)).
+De tillagda posterna är vanliga poster i projektet: anpassa texterna och värdena till ert system. Redigeraren visar **Från katalogen: AUTH-01 · …** med standarderna, och **Visa i katalogen** öppnar originalposten. Ursprunget behålls när du redigerar, kopierar, flyttar eller återställer posten. I filter hittar `catalog:AUTH-01` posterna som kopierats från en katalogpost, `catalog:AUTH-*` ett områdes poster och `has:catalog` alla poster från katalogen (se [Sökning och filter](search-and-filters.md)). En risk från katalogen visar sitt ID under kategorin i registret; registret kan visa riskerna inom ett område i katalogen.
 
 ## Tips
 

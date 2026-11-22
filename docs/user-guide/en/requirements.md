@@ -156,13 +156,13 @@ The dialog says how many relations will be added or removed before you confirm. 
 
 Type `@` in **Owner**, **Description**, **Rationale**, a comment, or in a test's description and preconditions and an execution's **Assignee** and notes: a list of people appears. It holds the users of the organisation (with their avatar) and names that are already used as owner or assignee in the project but have no account (*no account*). Keep typing to narrow the list, use the arrow keys and <kbd>Enter</kbd> or <kbd>Tab</kbd> to insert, or <kbd>Esc</kbd> to close the list.
 
-A mention is written as `@handle`: for users the part of the e-mail address before the `@` (`@anna.berg` for *anna.berg@example.com*), for other people the name with dots instead of spaces (`@carl.carlsson`). Mentions of known people are shown as a chip with avatar and name, in the editor's comments and in the **Owner** column. Plain names still work: the owner is free text.
+A mention is written as `@handle`: for users the part of the e-mail address before the `@` (`@anna.berg` for *anna.berg@example.com*), for other people the name with dots instead of spaces (`@carl.carlsson`). Mentions of known people are shown as a chip with avatar and name, in the editor's comments and in the **Owner** column. An owner who is a member of the organisation is stored as their e-mail address, however you name them (`@anna.berg`, *Anna Berg* or *anna.berg@example.com*), so the item shows up in their [work list](reviews-and-notifications.md#my-work) and they are notified; a member who may not see the project cannot be the owner. Other names (for example someone outside the organisation) stay as plain text. **Set owner** in the bulk toolbar gives many requirements or tests the same owner (empty removes it); the filter `owner:me` finds your own items.
 
 To find everything that mentions someone, filter with `mention:anna.berg` (or `mention:@anna.berg`).
 
-## Comments
+## Discussion
 
-The **Comments** tab is a discussion thread on the requirement. Write in the field and select **Comment** (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Everyone who can read the requirement can read and write comments. You can edit and delete your own comments; administrators can delete any comment. The number of comments is shown on the tab and in the **Comments** column.
+The **Discussion** tab holds the requirement's [discussion](discussions.md): threads of comments in Markdown, with replies, @mentions, reactions and **Resolve**. The number on the tab is the number of open threads; the **Comments** column counts the comments. Everyone who can read the requirement can read the discussion; writing in it needs `comment.create` (every role except Viewer). You can edit and remove your own comments; moderators can remove any comment.
 
 ## When someone else saved first
 
@@ -288,7 +288,7 @@ The dialog says how many links will be added or removed before you confirm; item
 
 ## Issues in GitLab, GitHub or Jira
 
-When the project is connected to an issue tracker (see [Connect Jira, GitHub or GitLab](defects.md#connect-jira-github-or-gitlab)), a requirement can be handed to the developers as an issue. The **Links** tab of the requirement then starts with **Issue in GitLab** (or GitHub, Jira):
+When the project is connected to an issue tracker (see [Connect Jira, GitHub or GitLab](defects.md#connect-jira-github-or-gitlab)), a requirement can be handed to the developers as an issue (in Request Tracker a ticket). The **Links** tab of the requirement then starts with **Issue in GitLab** (or GitHub, Jira):
 
 - **Create GitLab issue** shows a preview of the issue and creates it. The issue gets:
   - the title `[SHOP-REQ-12] <title>`;
@@ -326,7 +326,7 @@ Uploading and removing attachments needs the **Manager** role (the same as editi
 
 ## Import requirements
 
-Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import → From a file** in the header of the requirements page reads such a file and creates the requirements in one go. To update requirements from a DOORS or Polarion document again and again, or to edit requirements in Excel and bring the changes back, see [Exchanging data with other tools](reports-and-export.md#exchanging-data-with-other-tools). Importing needs the permission to edit requirements (**Manager** by default).
+Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import → From a file** in the header of the requirements page reads such a file and creates the requirements in one go. To update requirements from a DOORS or Polarion document again and again, to import them from Jira or Azure DevOps, or to edit requirements in Excel and bring the changes back, see [Exchanging data with other tools](reports-and-export.md#exchanging-data-with-other-tools). Importing needs the permission to edit requirements (**Manager** by default).
 
 1. Drag the file onto the dialog or choose it. Supported are **CSV** (comma, semicolon or tab separated; UTF-8 with or without byte order mark, UTF-16 and Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` and the zipped `.reqifz`) and **Word** (`.docx`), up to 20 MB and 5,000 requirements per file.
 2. Check the **preview**: the detected format, how each column is read and the first 50 requirements with notes (a derived title, an unknown value, a duplicate). Nothing is stored yet.

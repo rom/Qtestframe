@@ -3,6 +3,7 @@
 // executions. New defects can start from a draft (e.g. from a failed
 // execution); links of an existing defect are saved one by one.
 import RegressionHistory from './RegressionHistory.vue'
+import DiscussionPanel from './DiscussionPanel.vue'
 import { DEFECT_PHASES } from '@/lib/quality'
 import ItemRef from './ItemRef.vue'
 import CustomFieldsEditor from './CustomFieldsEditor.vue'
@@ -16,6 +17,7 @@ import Select from 'primevue/select'
 import Message from 'primevue/message'
 import ItemPickerDialog from './ItemPickerDialog.vue'
 import SuggestInput from './SuggestInput.vue'
+import MentionInput from './MentionInput.vue'
 import { rememberValues, savedEntries } from '@/lib/suggest'
 import { usePrefsStore } from '@/stores/prefs'
 import { api, asItems, errorMessage } from '@/lib/api'
@@ -150,7 +152,7 @@ async function save() {
         <div v-field class="field"><label>{{ t('defectsView.severityLabel') }}</label><Select v-model="form.severity" :options="severityOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('common.priority') }}</label><Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
         <div v-field class="field"><label>{{ t('quality.foundIn') }}</label><Select v-model="form.found_in" :options="phaseOptions" option-label="label" option-value="value" :disabled="!canEdit" /></div>
-        <div v-field class="field"><label>{{ t('defectsView.assignee') }}</label><InputText v-model="form.assignee" :disabled="!canEdit" :placeholder="t('defectsView.assigneePlaceholder')" /></div>
+        <div v-field class="field"><label>{{ t('defectsView.assignee') }}</label><MentionInput v-model="form.assignee" :project-id="projectId" :disabled="!canEdit" :placeholder="t('defectsView.assigneePlaceholder')" /></div>
       </div>
       <div v-field class="field"><label>{{ t('common.description') }}</label><SuggestInput v-model="form.description" field="defect.description" :project-id="projectId" multiline rows="5" auto-resize :disabled="!canEdit" :placeholder="t('defectsView.descriptionPlaceholder')" /></div>
 
@@ -197,6 +199,7 @@ async function save() {
         <div class="small muted" style="margin-top: 4px">{{ t('defectsView.externalManualHint') }}</div>
       </details>
     </form>
+    <DiscussionPanel v-if="!isNew && defect" entity="defect" :entity-id="defect.id" :project-id="projectId" compact class="dialog-discussion" />
     <template #footer>
       <Button :label="canEdit ? t('common.cancel') : t('common.close')" text severity="secondary" @click="visible = false" />
       <Button v-if="canEdit" type="submit" form="defect-form" :label="isNew ? t('defectsView.report') : t('common.save')" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />

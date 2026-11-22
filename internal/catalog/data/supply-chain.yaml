@@ -771,3 +771,50 @@ tests:
         - action: Kontrollera att varje referens slutar med en commit-hash på 40 tecken eller en sha256-sammanfattning.
           expected: Ingen referens använder en etikett eller ett grennamn.
           data: "uses: owner/action@v4 (underkänd), uses: owner/action@<40 hexadecimala tecken> (godkänd)"
+
+risks:
+  - id: SUP-R01
+    category: supply-chain
+    likelihood: 4
+    impact: 4
+    tags: [vulnerable-dependency, sbom]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A06", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    mitigated_by: [SUP-01, SUP-02, SUP-03, SUP-04, SUP-09]
+    en:
+      title: Known vulnerability in a dependency exploited
+      description: A library with a published vulnerability stays in the product because nobody knows it is used or the fix is postponed. Attackers exploit it with public tools soon after disclosure.
+      mitigation: Produce a software bill of materials for each release, scan dependencies on every build, fix critical vulnerabilities within 7 days and high ones within 30 days, and remove end-of-life components.
+    sv:
+      title: Känd sårbarhet i ett beroende utnyttjas
+      description: Ett bibliotek med en publicerad sårbarhet blir kvar i produkten eftersom ingen vet att det används eller rättningen skjuts upp. Angripare utnyttjar den med publika verktyg kort efter att den offentliggjorts.
+      mitigation: Ta fram en programvaruförteckning för varje leverans, skanna beroenden vid varje bygge, rätta kritiska sårbarheter inom 7 dagar och höga inom 30 dagar och ta bort komponenter som inte längre stöds.
+  - id: SUP-R02
+    category: supply-chain
+    likelihood: 3
+    impact: 5
+    tags: [malicious-package, typosquatting]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-506 (embedded malicious code)", "CWE-427 (uncontrolled search path element)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
+    mitigated_by: [SUP-13, SUP-14, SUP-15, SUP-11, SUP-07]
+    en:
+      title: Malicious package pulled into the build
+      description: A compromised new version, a look-alike name or a public package with an internal name is installed during the build. Its install script or code steals secrets or plants a back door in the product.
+      mitigation: Resolve internal names only from the internal registry, let new versions wait 7 days, turn off install scripts, fetch packages through an internal mirror and review new components.
+    sv:
+      title: Skadligt paket dras in i bygget
+      description: En komprometterad ny version, ett förväxlingsbart namn eller ett publikt paket med ett internt namn installeras vid bygget. Dess installationsskript eller kod stjäl hemligheter eller planterar en bakdörr i produkten.
+      mitigation: Slå upp interna namn bara i det interna registret, låt nya versioner vänta 7 dagar, stäng av installationsskript, hämta paket via en intern spegel och granska nya komponenter.
+  - id: SUP-R03
+    category: supply-chain
+    likelihood: 2
+    impact: 5
+    tags: [build-integrity, pipeline]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)", "MITRE ATT&CK M1045 (code signing)"]
+    mitigated_by: [SUP-08, SUP-05, SUP-12, SUP-16, SUP-06]
+    en:
+      title: Release artefact tampered with between build and delivery
+      description: A release is built on a developer machine or a pipeline step is replaced, and customers install a modified artefact. The compromise spreads to every customer through a trusted update.
+      mitigation: Build releases only in the pipeline, sign artefacts and their build provenance, pin dependencies and pin third-party pipeline steps by commit hash.
+    sv:
+      title: Leveransartefakt manipuleras mellan bygge och leverans
+      description: En leverans byggs på en utvecklares dator eller ett steg i pipelinen byts ut, och kunderna installerar en ändrad artefakt. Intrånget sprids till alla kunder genom en betrodd uppdatering.
+      mitigation: Bygg leveranser bara i pipelinen, signera artefakter och deras byggursprung, lås beroendeversioner och lås tredjepartssteg i pipelinen via incheckningens hash.

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
+import DiscussionPanel from '@/components/DiscussionPanel.vue'
 import ItemRef from '../components/ItemRef.vue'
 import { customCellText, customColumns } from '@/lib/customColumns'
 import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
@@ -35,6 +36,7 @@ import { useAuthStore } from '@/stores/auth'
 import { usePrefsStore } from '@/stores/prefs'
 import { useNotify } from '@/composables/notify'
 import SuggestInput from '@/components/SuggestInput.vue'
+import MentionInput from '@/components/MentionInput.vue'
 import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
 
@@ -44,7 +46,7 @@ const prefs = usePrefsStore()
 const route = useRoute()
 const router = useRouter()
 const notify = useNotify()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 /** custom fields shown in lists (show_in_list) as columns */
 const listedCols = computed(() => customColumns(useProjectStore().customFieldsFor('risk').filter((f) => f.show_in_list)))
@@ -84,7 +86,7 @@ async function loadRequirements() {
   }
 }
 onMounted(async () => {
-  await Promise.all([load(), loadRequirements(), loadThreshold()])
+  await Promise.all([load(), loadRequirements(), loadThreshold(), loadAreaNames()])
   openFromRoute()
 })
 
@@ -117,20 +119,46 @@ const viewOptions = computed(() => [
 const sourceLabel = (s?: string) => t(`residual.source.${s || 'inherent'}`)
 const aboveCount = computed(() => risks.value.filter((r) => r.above_threshold && !r.acceptance_valid).length)
 
+// ---------- catalogue area: narrows the heat map, the level counts and the register ----------
+const area = ref<string>(typeof route.query.area === 'string' ? route.query.area : '')
+const areaNames = ref<Record<string, string>>({})
+async function loadAreaNames() {
+  try {
+    const ov = await api.get<{ groups: { areas: { id: string; name: string }[] }[] }>('/catalog', { lang: String(locale.value).startsWith('sv') ? 'sv' : 'en' })
+    areaNames.value = Object.fromEntries(ov.groups.flatMap((g) => g.areas.map((a) => [a.id, a.name])))
+  } catch {
+    areaNames.value = {}
+  }
+}
+const ALL_AREAS = '*'
+const NO_AREA = '-'
+const areaOptions = computed(() => {
+  const ids = [...new Set(risks.value.map((r) => r.catalog_area ?? '').filter(Boolean))]
+  ids.sort((a, b) => (areaNames.value[a] ?? a).localeCompare(areaNames.value[b] ?? b))
+  return [
+    { label: t('risksView.area.all'), value: ALL_AREAS },
+    ...ids.map((id) => ({ label: areaNames.value[id] ?? id, value: id })),
+    ...(ids.length && risks.value.some((r) => !r.catalog_area) ? [{ label: t('risksView.area.none'), value: NO_AREA }] : []),
+  ]
+})
+const areaSel = computed({ get: () => area.value || ALL_AREAS, set: (v: string) => (area.value = v === ALL_AREAS ? '' : v) })
+const scoped = computed(() => (!area.value ? risks.value : risks.value.filter((r) => (area.value === NO_AREA ? !r.catalog_area : r.catalog_area === area.value))))
+watch(area, (v) => router.replace({ query: { ...route.query, area: v || undefined } }))
+
 // ---------- filters and heat map ----------
 const text = ref('')
 const levels = ref<string[]>([])
 const statuses = ref<string[]>([])
 const includeClosed = ref(false)
 const cell = ref<{ likelihood: number; impact: number } | null>(null)
-const grid = computed(() => heatGrid(view.value === 'after' ? atResidual(risks.value) : risks.value, includeClosed.value))
+const grid = computed(() => heatGrid(view.value === 'after' ? atResidual(scoped.value) : scoped.value, includeClosed.value))
 const filtered = computed(() =>
   filterRisks(
-    risks.value.filter((r) => includeClosed.value || r.status !== 'closed' || statuses.value.includes('closed')),
+    scoped.value.filter((r) => includeClosed.value || r.status !== 'closed' || statuses.value.includes('closed')),
     { residual: view.value === 'after', likelihood: cell.value?.likelihood, impact: cell.value?.impact, levels: levels.value, statuses: statuses.value, text: text.value },
   ),
 )
-const counts = computed(() => levelCounts(risks.value.filter((r) => r.status !== 'closed')))
+const counts = computed(() => levelCounts(scoped.value.filter((r) => r.status !== 'closed')))
 const levelOptions = computed(() => RISK_LEVELS.map((v) => ({ label: levelLabel(v), value: v })))
 const statusOptions = computed(() => RISK_STATUSES.map((v) => ({ label: statusLabel(v), value: v })))
 const scaleOptions = (label: (n: number) => string) => RISK_SCALE.map((n) => ({ label: `${n} – ${label(n)}`, value: n }))
@@ -218,9 +246,10 @@ function toggleCell(c: HeatCell) {
 function cellLabel(c: HeatCell) {
   return t('risksView.cellLabel', { likelihood: c.likelihood, impact: c.impact, score: c.score, level: levelLabel(c.level), count: t('risksView.riskCount', { count: c.count }, c.count) })
 }
-const hasFilter = computed(() => !!cell.value || !!levels.value.length || !!statuses.value.length || !!text.value.trim())
+const hasFilter = computed(() => !!cell.value || !!levels.value.length || !!statuses.value.length || !!text.value.trim() || !!area.value)
 function clearFilters() {
   cell.value = null
+  area.value = ''
   levels.value = []
   statuses.value = []
   text.value = ''
@@ -429,6 +458,10 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <h2 id="heat-title" class="grow">{{ view === 'after' ? t('residual.heatAfter') : t('risksView.heatMap') }}</h2>
           <SelectButton v-model="view" :options="viewOptions" option-label="label" option-value="value" :allow-empty="false" :aria-label="t('residual.view')" size="small" />
         </div>
+        <div v-if="areaOptions.length > 1" class="row small area-row">
+          <label for="risk-area">{{ t('risksView.area.label') }}</label>
+          <Select v-model="areaSel" input-id="risk-area" :options="areaOptions" option-label="label" option-value="value" size="small" filter class="area-select" />
+        </div>
         <div class="heat-wrap">
           <table class="heat">
             <caption class="sr-only">{{ t('risksView.heatCaption') }}</caption>
@@ -485,6 +518,10 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         </Tag>
         <Button v-if="hasFilter" :label="t('common.clear')" text size="small" severity="secondary" @click="clearFilters" />
         <span class="small muted" role="status">{{ t('risksView.shown', { count: filtered.length, total: risks.length }) }}</span>
+        <Tag v-if="area" severity="info" class="cell-chip">
+          <span>{{ t('risksView.area.chip', { area: areaNames[area] ?? (area === NO_AREA ? t('risksView.area.none') : area) }) }}</span>
+          <button type="button" class="link-button" :aria-label="t('risksView.area.clear')" @click="area = ''"><i class="pi pi-times" aria-hidden="true" /></button>
+        </Tag>
       </div>
       <div v-if="selection.length && canWrite" class="bulkbar" role="toolbar" :aria-label="t('risksView.bulk.toolbar')">
         <b>{{ t('common.selected', { count: selection.length }) }}</b>
@@ -517,7 +554,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         <Column field="title" :header="t('common.title')" sortable body-class="stack-main" style="min-width: 200px">
           <template #body="{ data }">
             <button type="button" class="link-button" style="font-weight: 600" :aria-label="t('risksView.openRisk', { key: data.key, title: data.title })" @click.stop="openEdit(data as Risk)">{{ data.title }}</button>
-            <div v-if="data.category" class="small muted">{{ data.category }}</div>
+            <div v-if="data.category || data.catalog_ref" class="small muted">{{ data.category }}<template v-if="data.catalog_ref"><template v-if="data.category"> · </template><span :title="t('risksView.fromCatalogue')">{{ data.catalog_ref }}</span></template></div>
           </template>
         </Column>
         <Column field="likelihood" :header="t('risksView.likelihood')" sortable style="width: 110px"><template #body="{ data }"><span :title="likelihoodLabel(data.likelihood)">{{ data.likelihood }}</span></template></Column>
@@ -592,7 +629,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <label for="risk-status">{{ t('common.status') }}</label>
           <Select v-model="form.status" input-id="risk-status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
         </div>
-        <div v-field class="field"><label for="risk-owner">{{ t('common.owner') }}</label><SuggestInput id="risk-owner" v-model="form.owner" field="risk.owner" :project-id="proj.pid" :disabled="!canWrite" /></div>
+        <div v-field class="field"><label for="risk-owner">{{ t('common.owner') }}</label><MentionInput id="risk-owner" v-model="form.owner" suggest="risk.owner" :project-id="proj.pid" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" /></div>
         <div v-field class="field"><label for="risk-category">{{ t('common.category') }}</label><InputText id="risk-category" v-model="form.category" :placeholder="t('risksView.categoryPlaceholder')" :disabled="!canWrite" /></div>
         <div v-field class="field full"><label for="risk-desc">{{ t('common.description') }}</label><Textarea id="risk-desc" v-model="form.description" rows="2" auto-resize :disabled="!canWrite" /></div>
         <div v-field class="field full"><label for="risk-mitigation">{{ t('risksView.mitigation') }}</label><SuggestInput id="risk-mitigation" v-model="form.mitigation" field="risk.mitigation" :project-id="proj.pid" multiline rows="3" auto-resize :placeholder="t('risksView.mitigationPlaceholder')" :disabled="!canWrite" /></div>
@@ -624,7 +661,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
             <label for="risk-review-date">{{ t('residual.reviewDate') }}</label>
             <InputText id="risk-review-date" v-model="form.review_date" type="date" :disabled="!canWrite" />
           </div>
-          <div v-field class="field"><label for="risk-review-owner">{{ t('residual.reviewOwner') }}</label><InputText id="risk-review-owner" v-model="form.review_owner" :disabled="!canWrite" /></div>
+          <div v-field class="field"><label for="risk-review-owner">{{ t('residual.reviewOwner') }}</label><MentionInput id="risk-review-owner" v-model="form.review_owner" :project-id="proj.pid" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" /></div>
         </div>
         <div v-if="editing" class="row small" style="margin-top: 8px">
           <template v-if="editing.accepted_by">
@@ -657,6 +694,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         <Button v-if="canWrite" type="submit" :label="editing ? t('common.save') : t('common.create')" icon="pi pi-check" :loading="busy" :disabled="!form.title.trim() || residualInvalid" />
       </div>
     </form>
+    <DiscussionPanel v-if="editing" entity="risk" :entity-id="editing.id" :project-id="proj.pid" compact class="dialog-discussion" />
   </Dialog>
   <ItemPickerDialog v-model:visible="bulkPicker" kind="requirement" :project-id="proj.pid" :header="t('risksView.bulk.linkHeader', { n: selection.length }, selection.length)" :confirm-label="t('common.link')" @pick="bulkLink" />
   <Dialog v-model:visible="ownerDialog" :header="t('risksView.bulk.ownerHeader', { n: selection.length }, selection.length)" modal style="width: min(440px, 96vw)">
@@ -665,7 +703,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         <Checkbox v-model="bulkOwnerOn" binary input-id="bk-risk-owner-on" />
         <label for="bk-risk-owner-on">{{ t('risksView.bulk.setOwner') }}</label>
       </div>
-      <InputText v-model="bulkOwner" :disabled="!bulkOwnerOn" :aria-label="t('risksView.bulk.setOwner')" :placeholder="t('risksView.bulk.emptyClears')" />
+      <MentionInput v-model="bulkOwner" :project-id="proj.pid" :disabled="!bulkOwnerOn" :aria-label="t('risksView.bulk.setOwner')" :placeholder="t('risksView.bulk.emptyClears')" />
       <div class="row">
         <Checkbox v-model="bulkCategoryOn" binary input-id="bk-risk-cat-on" />
         <label for="bk-risk-cat-on">{{ t('risksView.bulk.setCategory') }}</label>
@@ -729,4 +767,6 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
   .heat-cell { width: 44px; height: 44px; }
   .heat { border-spacing: 3px; }
 }
+.area-row { gap: 8px; align-items: center; margin: 4px 0 8px; }
+.area-select { min-width: 12rem; }
 </style>

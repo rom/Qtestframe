@@ -94,6 +94,7 @@ Every key of the file, its type, its default and the environment variable that s
 | `server.write_timeout` | duration | `2m` | — | Longest time to write a response (downloads, exports, backups in the web client). Keep it above `runner.timeout`. |
 | `server.trusted_proxies` | list | — | — | Addresses or CIDR ranges of reverse proxies. Only for requests from them is `X-Forwarded-For` used as the client address (its last entry), for logs, the audit trail and the sign-in limits. |
 | `server.hsts` | bool | `true` | — | Send `Strict-Transport-Security` (two years, subdomains included) on HTTPS connections the server terminates itself. A TLS-terminating proxy must send it instead. |
+| `server.frame_ancestors` | list | — | — | Origins (`https://doors.example.com`) of other tools that may show the OSLC selection and creation dialogs in a frame (`Content-Security-Policy: frame-ancestors`). Without any the dialogs open in a window of their own. The browser must also send the session cookie to the frame: both tools on the same site (subdomains of one domain). |
 
 ### `database`
 
@@ -278,6 +279,16 @@ Every key of the file, its type, its default and the environment variable that s
 | `secrets.pkcs11.pin_file` | string | — | — | File with the user PIN (relative: in `$CREDENTIALS_DIRECTORY`). `QTF_SECRETS_PKCS11_PIN` wins over it. |
 | `secrets.pkcs11.key_label` | string | `qtestframe-kek` | — | `CKA_LABEL` of the AES key that wraps the data keys; must be unique in the token. |
 | `secrets.pkcs11.generate_key` | bool | `false` | — | Create a non-extractable AES-256 key with `key_label` when the token has none. |
+
+### `similarity`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `similarity.embeddings.enabled` | bool | `false` | — | Use an embeddings service for the similarity of requirements and tests (suspected duplicates, the *Similar requirements* panel). Off by default: the similarity is then computed on the server. **When on, the title, description and criteria or steps of the items are sent to that service.** Also in **Administration → System settings**. |
+| `similarity.embeddings.url` | string | — | — | URL of an OpenAI-compatible embeddings endpoint, e.g. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, answer `{data: [{embedding}]}`). |
+| `similarity.embeddings.model` | string | — | — | Model sent as `model` (empty: the service's default). Vectors are cached per item version and model; changing the model computes them again. |
+| `similarity.embeddings.api_key_file` | string | — | — | File with the API key, sent as a bearer token (relative: in `$CREDENTIALS_DIRECTORY`). The key can also be stored in the system settings; it is never shown again. |
+| `similarity.embeddings.timeout` | duration | `30s` | — | Longest time to wait for the service. When it fails or times out, the local similarity is used. |
 
 <!-- END GENERATED: config-reference -->
 

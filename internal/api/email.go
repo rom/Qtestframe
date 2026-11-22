@@ -131,6 +131,12 @@ func (s *Server) notificationURL(n *model.Notification) string {
 		return p + "/risks?risk=" + q
 	case "execution":
 		return p + "/runs"
+	case model.DiscussionRun:
+		return p + "/runs/" + url.PathEscape(n.EntityID)
+	case model.DiscussionReview:
+		return p + "/reviews"
+	case "chat_channel":
+		return p + "/settings"
 	}
 	return p + "/dashboard"
 }
@@ -184,6 +190,8 @@ func eventLabel(lang, event string) string {
 	sv := mailLang(lang) == "sv"
 	labels := map[string][2]string{
 		"mention":          {"You were mentioned", "Du har nämnts"},
+		"comment.created":  {"New comment", "Ny kommentar"},
+		"comment.resolved": {"Discussion resolved", "Diskussionen är löst"},
 		"assigned":         {"Assigned to you", "Tilldelad dig"},
 		"defect.created":   {"New defect", "Ny defekt"},
 		"defect.assigned":  {"Defect assigned to you", "Defekt tilldelad dig"},
@@ -197,6 +205,8 @@ func eventLabel(lang, event string) string {
 		"waiver.revoked":   {"Waiver revoked", "Undantag återkallat"},
 		"waiver.expired":   {"Waiver expired", "Undantag har gått ut"},
 		"project.shared":   {"A project was shared with you", "Ett projekt har delats med dig"},
+		"impact.review":    {"A change affects your items: review recommended", "En ändring påverkar dina poster: granskning rekommenderas"},
+		"chat.disabled":    {"A chat channel was turned off", "En chattkanal har stängts av"},
 	}
 	l, ok := labels[event]
 	if !ok {
@@ -300,6 +310,14 @@ func (s *Server) RunJobs(ctx context.Context) {
 	// expired waivers no longer accept their requirements (also without e-mail)
 	if _, err := s.RunWaiverExpiry(ctx); err != nil {
 		s.Log.Warn("waiver expiry job", "err", err)
+	}
+	// chat digests and retries (also without e-mail)
+	if _, err := s.RunChatJobs(ctx); err != nil {
+		s.Log.Warn("chat job", "err", err)
+	}
+	// scheduled cycle starts and recurring cycles (also without e-mail)
+	if _, err := s.RunCycleJobs(ctx); err != nil {
+		s.Log.Warn("test cycle job", "err", err)
 	}
 	if !s.emailOn() {
 		return

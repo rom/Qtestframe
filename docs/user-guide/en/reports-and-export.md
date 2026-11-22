@@ -22,8 +22,8 @@ Select **Export** in the project sidebar.
    | **XLSX** | An Excel workbook with a *Summary* sheet and one sheet per aspect; bold header row, frozen first row, auto-filter and sensible column widths. |
    | **CSV** | One `.csv` file for one aspect; a `.zip` with one CSV per aspect when you choose several. UTF-8, comma-separated. |
    | **Markdown** | One `.md` file with every aspect: a heading, the project, filter and time, and a table per aspect. Plain text that reads well in a wiki, a Git repository or any text editor; keys link to Qtestframe when the server address is configured. |
-   | **ReqIF** | The requirements as a ReqIF 1.2 file (`.reqif`) for requirements tools such as IBM DOORS, Polarion, Jama or ProR. See [ReqIF for requirements tools](#reqif-for-requirements-tools). |
-   | **ReqIF (with attachments)** | A `.reqifz` archive: the ReqIF file and the requirements' attachments and images. |
+   | **ReqIF** | The requirements as a ReqIF 1.2 file (`.reqif`) for requirements tools such as IBM DOORS, Polarion, Codebeamer, Jama or ProR, optionally with the test cases and their trace links, the verification records or as a baseline froze them. See [ReqIF for requirements tools](#reqif-for-requirements-tools). |
+   | **ReqIF (with attachments)** | A `.reqifz` archive: the ReqIF file and the attachments and images of the items. |
 
 2. Choose the **Aspects**:
 
@@ -35,7 +35,7 @@ Select **Export** in the project sidebar.
    | **Traceability matrix** | one row per requirement–test link with coverage and last result; requirements without links get one row |
    | **Runs & executions** | one row per execution with run, status, environment, build, result, executed by, duration and notes |
 
-   ReqIF contains requirements only, so the aspects are not used for it.
+   The aspects are not used for ReqIF; it has its own choices under **ReqIF content** (test cases, verification records, a baseline), see [Interoperability](interoperability.md#reqif-export).
 
 3. Optionally enter a **Filter**. It applies to requirements if it is a valid requirement query and to tests if it is a valid test query: `obligation=must` filters only requirements, `type=automated` only tests, `folder:Checkout` both.
 4. Select **Download**. The file is named after the project key and the time, for example `SHOP-20261119-143000.xlsx`.
@@ -72,7 +72,10 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 | **Compliance** | compliance with laws, standards and best practices: per source, per clause, the missing catalogue requirements and the requirements not fulfilled (see [Compliance with laws and standards](traceability-and-coverage.md#compliance-with-laws-and-standards)) | optional laws, standards and best practices (default: those the project uses) |
 | **Statement of Applicability** | every control of a standard with applicability, justification, implementation, owner, requirements and evidence (see [Statement of Applicability](waivers-and-soa.md#statement-of-applicability)) | the standard (default: ISO/IEC 27001:2022 Annex A) |
 | **Release readiness** | one release: go / no-go, every exit criterion with what blocks it and what a [waiver](waivers-and-soa.md#waivers-and-deviations) or risk sign-off accepts, the waivers in force and the risks above the acceptance threshold | the release (default: the current one) |
+| **Test cycle report** | one [test cycle](test-cycles.md): planned against executed, passed, failed and blocked tests, estimated against actual time, the workload per tester, the burndown and the plan with every result | the cycle (default: the current one) |
 | **Quality metrics** | requirements volatility, defect density, escaped defects, test effectiveness, result age, review turnaround, time to fix defects and requirement quality, with their trends (see [Quality metrics](traceability-and-coverage.md#quality-metrics)) | optional history in days (30, 90, 180 or 365) and the days after which a result is stale |
+| **Exploratory session** | one [exploratory session](exploratory-testing.md): charter and scope, session time, the debrief with coverage, time split and outcome, every note and the defects raised | the session (default: the newest debriefed one) |
+| **Exploratory testing** | every exploratory session: key figures, sessions and bugs per session hour by area and by tester, the average time split and every session with its outcome | – |
 
 **The risk report** contains:
 
@@ -177,14 +180,15 @@ The file contains the project data in plain form. Store it as carefully as the p
 
 ## Exchanging data with other tools
 
-Requirements often live in more than one place: a customer keeps them in IBM DOORS or Siemens Polarion, a colleague prefers to review them in Excel, and an ALM tool wants to link to them. Qtestframe exchanges data in four ways, all under **Import** on the requirements and tests pages and through the API:
+Requirements often live in more than one place: a customer keeps them in IBM DOORS or Siemens Polarion, a colleague prefers to review them in Excel, and an ALM tool wants to link to them. Qtestframe exchanges data in five ways, all under **Import** on the requirements and tests pages and through the API:
 
 | Way | Direction | Good for |
 |---|---|---|
 | [Excel round-trip](#edit-in-excel-and-import-back) | out and back in | editing many items at once in Excel, also offline |
 | [ReqIF import with updates](#reqif-from-doors-and-polarion) | in, again and again | a specification maintained in DOORS, DOORS Next or Polarion |
+| [Jira and Azure DevOps](#jira-and-azure-devops) | in, again and again | requirements kept as Jira issues or Azure DevOps work items |
 | [CSV and Excel exports of DOORS and Polarion](#csv-and-excel-from-doors-and-polarion) | in, once | a first import when ReqIF is not available |
-| [OSLC](#oslc-links-from-alm-tools) | read by other tools | links from IBM ELM, Polarion, Codebeamer and other OSLC clients |
+| [OSLC](#oslc-links-from-alm-tools) | live, both ways | links, selection and creation from IBM ELM, Polarion, Codebeamer and other OSLC clients |
 
 Every import shows a **preview** first and saves nothing until you select **Save**. The preview compares the file with the project, row by row:
 
@@ -227,10 +231,39 @@ ReqIF is the format IBM DOORS, DOORS Next, Siemens Polarion and most requirement
 What happens:
 
 - **Relations** between the imported requirements (DOORS link modules, Polarion link roles) become requirement relations. Their type is taken from the name: *refines*, *satisfies* and *has parent* become *refines*, *derived from* becomes *derived from*, *depends on* and *requires* become *depends on*, and so on; others become *relates to*.
-- **Formatted text** (XHTML) becomes plain text with its line breaks and lists.
+- **Formatted text** (XHTML) becomes Markdown with its paragraphs, lists, tables and emphasis; images and other files embedded in a `.reqifz` become attachments.
+- **Test cases, trace links and more.** The same import reads test cases (with their steps) and the trace links between tests and requirements, maps object and relation types of the other tool, and can make nested requirements *refine* their parent. See [Interoperability](interoperability.md#reqif-import).
 - **Importing again** updates the requirements created by earlier imports of the same document and adds new ones. A requirement edited in Qtestframe since the last import shows as a conflict when the document has other values. Relations that were removed in the other tool are removed here too; relations you made in Qtestframe stay. Requirements are never deleted by an import.
 - A requirement without a title in the document gets the first words of its text when it is created; later imports keep the title you gave it.
 - A ReqIF file **exported from the same project** (see [above](#reqif-for-requirements-tools)) is matched to its requirements, so you can send a specification to a supplier and import their edited version back with the same preview.
+
+### Jira and Azure DevOps
+
+When the requirements are kept as issues in **Jira** or as work items in **Azure DevOps** (user stories, requirements, features), **Import → From Jira** or **From Azure DevOps** brings them in, and brings them in again when they change there *(Manager)*. A manager sets up the connection once under **Categories & settings → Project → Import sources** (see below).
+
+1. Say **what to import**:
+   - **Jira**: a **JQL query**, for example `project = SHOP AND issuetype = Story ORDER BY key`. The dialog starts with the default query of the import source, or with the project of the issue tracker.
+   - **Azure DevOps**: an **Area path** (for example `Shop\Web`; work items below it are included) and the **Work item types** (for example `User Story, Requirement`), or a **WIQL query** of your own, which replaces both, e.g. `SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.State] <> 'Removed'`.
+2. Choose the **Target folder** for new requirements and whether to **Import links between the items as relations**, then select **Preview**. At most 1,000 items are read at a time; narrow the query if the preview says there are more.
+3. Check the **fields**: every field of the tracker that has a value is listed with a sample and the requirement field it goes to. The usual ones are preset: *Summary* / *Title* → title, *Description* → description, *Priority* → priority, *Labels* / *Tags* → tags, *Status* / *State* → status, and a field named *Acceptance Criteria* → acceptance criteria (one criterion per line or list item). Choose a field for any other one, also a [custom field](requirements.md#custom-fields) of the project, or *ignore*. The preview updates at once.
+4. Check the rows (new, changed, unchanged, conflicts) and the relations, clear the rows you do not want and select **Save**.
+
+What happens:
+
+- **Text**: Jira descriptions (wiki markup) and the HTML fields of Azure DevOps become Markdown: headings, lists, bold, links, tables and code are kept.
+- **Values**: priorities such as *Highest*, *High* … or Azure DevOps priorities 1 to 4 become *critical* … *low*. Statuses are matched by name (*To Do* and *New* → draft, *In Progress*, *Active* and *Approved* → approved, *Done*, *Resolved* and *Closed* → implemented, *Removed* → obsolete) and, in Jira, otherwise by the status category. A value without a match is left out with a note on the row; the requirement keeps its value.
+- **Re-import**: the key of every issue (`SHOP-12`) or the ID of every work item is kept with the requirement it became. Importing again **updates** that requirement instead of creating a second one, and shows a conflict when the requirement was also edited in Qtestframe. New requirements get *Jira SHOP-12* or *Azure DevOps 1234* as their source. Requirements are never deleted by an import, and existing requirements stay in their folder.
+- **Relations**: links between imported items become requirement relations: in Jira *blocks* (the blocked issue *depends on* the other), *duplicates*, *clones* (*derived from*), *relates to* and the parent of a sub-task or child issue (*refines*); in Azure DevOps *Parent* (*refines*), *Predecessor* (*depends on*), *Duplicate of* and *Related*. A link removed in the tracker removes the relation at the next import with relations. Links to items outside the query are left out.
+- Only reading is needed: the import never changes anything in Jira or Azure DevOps.
+
+#### Import sources
+
+**Categories & settings → Project → Import sources** *(Manager)* holds the connections:
+
+- **Jira**: without an address of its own the import uses the [issue tracker](defects.md#connect-jira-github-or-gitlab) when that is Jira. Give a **Jira site address**, **Jira account e-mail** and **Token** when the requirements live in another Jira. **Default query** is the JQL the dialog starts with.
+- **Azure DevOps**: the **Organization address** (`https://dev.azure.com/organization`, or the collection address of Azure DevOps Server), the **Project**, a **Personal access token** with the scope *Work Items (Read)*, and optionally the default **Area path** and **Work item types**.
+
+Tokens are write-only, as for the issue tracker. **Check connection** tries the saved connection.
 
 ### CSV and Excel from DOORS and Polarion
 
@@ -238,7 +271,7 @@ When only a CSV or Excel export is available, use **Import → From a file** and
 
 ### OSLC: links from ALM tools
 
-OSLC (Open Services for Lifecycle Collaboration) lets other tools find Qtestframe's requirements and test cases and link to them. Qtestframe is a read-only OSLC provider for Requirements Management 2.0 and Quality Management 2.0. Give the tool the address of the catalog, `<server address>/api/v1/oslc/catalog` (or the discovery document `/api/v1/oslc/rootservices`), and an [API token](administration.md#api-tokens). The tool then sees the projects you may read, can search requirements and test cases by key, title or change date, and shows them with their links (which tests verify a requirement, which requirements a test verifies, relations). Selection dialogs inside the other tool and creating items through OSLC are not supported. Your administrator can find the details in [Administration](administration.md#oslc).
+OSLC (Open Services for Lifecycle Collaboration) lets other tools find Qtestframe's requirements and test cases, link to them, and create and change them. Qtestframe is an OSLC provider for Requirements Management 2.1 and Quality Management 2.1, with selection and creation windows that other tools show to their users. See [Interoperability](interoperability.md#oslc); your administrator connects the tools (administrator guide, *Connecting other tools*).
 
 ## Which one to use?
 

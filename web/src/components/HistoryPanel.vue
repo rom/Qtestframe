@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useUndoStore } from '@/stores/undo'
 import { useProjectStore } from '@/stores/project'
+import { impactGateFor } from '@/composables/impact'
+import type { ImpactDryRun } from '@/lib/correlations'
 import { entry, recordUndo } from '@/lib/undoActions'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
@@ -11,7 +13,7 @@ import UserAvatar from './UserAvatar.vue'
 import { usePeopleStore } from '@/stores/people'
 import { useConfirm } from 'primevue/useconfirm'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { diffSnapshots, parseSnapshot } from '@/lib/diff'
+import { applicabilityText, diffSnapshots, parseSnapshot } from '@/lib/diff'
 import { formatDateTime, formatFullDateTime } from '@/lib/format'
 import type { Revision } from '@/lib/types'
 import { useNotify } from '@/composables/notify'
@@ -19,7 +21,7 @@ import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
 
 const props = defineProps<{
-  entity: 'requirement' | 'test'
+  entity: 'requirement' | 'test' | 'exploratory_session' | 'cycle'
   entityId: string
   canRestore: boolean
   /** Current version of the item (restoring it would be a no-op). */
@@ -46,7 +48,7 @@ const loading = ref(false)
 const error = ref('')
 const selectedId = ref<string | null>(null)
 const restoring = ref(false)
-const path = computed(() => `/${props.entity === 'requirement' ? 'requirements' : 'tests'}/${props.entityId}`)
+const path = computed(() => `/${props.entity === 'requirement' ? 'requirements' : props.entity === 'exploratory_session' ? 'exploratory-sessions' : props.entity === 'cycle' ? 'cycles' : 'tests'}/${props.entityId}`)
 
 const undoStore = useUndoStore()
 watch(
@@ -78,10 +80,10 @@ const changes = computed(() => {
   const before = previous.value ? parseSnapshot(previous.value.snapshot) : null
   // the first revision has nothing to compare with: list its fields as added
   // server-computed changed_fields are authoritative when present
-  return diffSnapshots(before, after, before && Array.isArray(cur.changed_fields) ? cur.changed_fields : null, { resolve: props.resolve })
+  return diffSnapshots(before, after, before && Array.isArray(cur.changed_fields) ? cur.changed_fields : null, { resolve: props.resolve, applicability: (a) => applicabilityText(a, t('variants.allVariants')) })
 })
 
-const ACTION_SEVERITY: Record<string, string> = { create: 'success', update: 'info', restore: 'warn', move: 'secondary', bulk_update: 'secondary', import: 'secondary' }
+const ACTION_SEVERITY: Record<string, string> = { create: 'success', update: 'info', restore: 'warn', move: 'secondary', bulk_update: 'secondary', import: 'secondary', applicability: 'contrast' }
 
 function restore() {
   const r = selected.value
@@ -97,7 +99,10 @@ function restore() {
       try {
         const current = revisions.value[0]
         const p = path.value
-        const item = await api.post(`${p}/restore`, { revision_id: r.id })
+        // what restoring the version affects: preview, then the chosen handling (impact gate)
+        const params = await impactGateFor(useProjectStore().pid, (q) => api.post<ImpactDryRun>(`${p}/restore`, { revision_id: r.id }, { params: q }))
+        if (!params) return
+        const item = await api.post(`${p}/restore`, { revision_id: r.id }, { params })
         if (current && current.id !== r.id) {
           const key = (item as { key?: string } | undefined)?.key ?? ''
           recordUndo(entry(t('undo.a.restoreVersion', { version: r.version, key }), () => api.post(`${p}/restore`, { revision_id: current.id }), () => api.post(`${p}/restore`, { revision_id: r.id })))

@@ -823,3 +823,50 @@ tests:
           data: "förra månadens incidenter"
         - action: Beräkna de två medianerna per allvarlighetsgrad och jämför med rapporten.
           expected: Värdena stämmer.
+
+risks:
+  - id: INC-R01
+    category: operational
+    likelihood: 3
+    impact: 4
+    tags: [incident-handling, coordination]
+    refs: ["ISO/IEC 27035-1:2023", "NIST SP 800-61 Rev. 3", "ISO 31000:2018 §6.4.2 (risk identification)"]
+    mitigated_by: [INC-01, INC-02, INC-03, INC-04, INC-12]
+    en:
+      title: Major incident handled in chaos
+      description: Nobody is on call, roles are unclear and the team has never practised. Decisions are slow and contradictory, and the impact of the incident grows.
+      mitigation: Keep a reviewed incident response plan with severity levels, an on-call rotation around the clock, an incident commander and channel, and exercise twice a year.
+    sv:
+      title: Stor incident hanteras i kaos
+      description: Ingen har jour, rollerna är oklara och teamet har aldrig övat. Besluten är långsamma och motsägelsefulla och incidentens påverkan växer.
+      mitigation: Ha en granskad plan för incidenthantering med allvarlighetsnivåer, jour dygnet runt, en incidentledare och en incidentkanal, och öva två gånger om året.
+  - id: INC-R02
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [notification, nis2]
+    refs: ["ISO/IEC 27035-1:2023", "Directive (EU) 2022/2555 (NIS2) Art. 23", "GDPR Art. 33(1)"]
+    mitigated_by: [INC-05, INC-06, INC-07, INC-13, INC-16]
+    en:
+      title: Customers and authorities informed too late
+      description: Affected customers and the authorities hear about an incident late or not at all. Legal deadlines are missed and customers cannot protect themselves.
+      mitigation: Tell affected customers within 60 minutes, give regular status updates, report personal data breaches within 72 hours and reportable incidents within 24 hours, and send a written incident report.
+    sv:
+      title: Kunder och myndigheter informeras för sent
+      description: Berörda kunder och myndigheter får veta om en incident sent eller inte alls. Lagstadgade tidsfrister missas och kunderna kan inte skydda sig.
+      mitigation: Informera berörda kunder inom 60 minuter, ge regelbundna lägesuppdateringar, anmäl personuppgiftsincidenter inom 72 timmar och rapporteringspliktiga incidenter inom 24 timmar och skicka en skriftlig incidentrapport.
+  - id: INC-R03
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [evidence, lessons-learned]
+    refs: ["ISO/IEC 27035-2:2023", "ISO/IEC 27001:2022 A.5.28"]
+    mitigated_by: [INC-08, INC-09, INC-10, INC-11, INC-14]
+    en:
+      title: Same incident happens again
+      description: Evidence is destroyed while cleaning up, no timeline is kept and no review follows. The root cause stays unknown and the incident repeats.
+      mitigation: Preserve evidence before systems are cleaned, record a timeline, review each incident within 5 working days, close the actions within 30 days and communicate independently of the affected systems.
+    sv:
+      title: Samma incident inträffar igen
+      description: Bevis förstörs vid uppstädningen, ingen tidslinje förs och ingen uppföljning görs. Grundorsaken förblir okänd och incidenten upprepas.
+      mitigation: Säkra bevis innan systemen rensas, för en tidslinje, följ upp varje incident inom 5 arbetsdagar, stäng åtgärderna inom 30 dagar och kommunicera oberoende av de drabbade systemen.

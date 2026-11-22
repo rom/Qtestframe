@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/rom/qtestframe/internal/model"
 )
@@ -18,7 +18,7 @@ import (
 // snapshots.
 var derivedFields = map[string]bool{
 	"updated_at": true, "version": true, "folder_path": true, "linked_tests": true,
-	"coverage": true, "comment_count": true, "relation_count": true,
+	"coverage": true, "comment_count": true, "open_discussions": true, "relation_count": true,
 	"linked_requirements": true, "last_result": true, "called_by": true,
 	"created_at": true, "created_by": true, "position": true,
 	// evidence and quality state, not content
@@ -30,11 +30,12 @@ var derivedFields = map[string]bool{
 // SnapshotRequirement returns the JSON snapshot stored for a requirement.
 func SnapshotRequirement(r *model.Requirement) json.RawMessage {
 	c := *r
-	c.FolderPath, c.LinkedTests, c.Coverage, c.CommentCount, c.Relations = "", 0, "", 0, 0
+	c.FolderPath, c.LinkedTests, c.Coverage, c.CommentCount, c.Relations, c.OpenDiscussions = "", 0, "", 0, 0, 0
 	c.RelationRefs, c.CriteriaCount = nil, 0
 	c.SuspectLinks, c.RiskLevel, c.OpenDefects = 0, "", 0
 	c.BlockingDefects, c.DefectWarnings, c.StaleResults, c.SuspectRelations = 0, 0, 0, 0
 	c.Verification, c.CriteriaVerified, c.ElementIDs = "", 0, nil
+	c.Applicability = snapApplicability(c.Applicability)
 	if c.Criteria == nil {
 		c.Criteria = []model.EvaluationCriterion{}
 	}
@@ -45,11 +46,12 @@ func SnapshotRequirement(r *model.Requirement) json.RawMessage {
 // SnapshotTest returns the JSON snapshot stored for a test case.
 func SnapshotTest(t *model.TestCase) json.RawMessage {
 	c := *t
-	c.FolderPath, c.LinkedReqs, c.LastResult, c.CommentCount, c.CalledBy = "", 0, "", 0, nil
+	c.FolderPath, c.LinkedReqs, c.LastResult, c.CommentCount, c.CalledBy, c.OpenDiscussions = "", 0, "", 0, nil, 0
 	c.RelationRefs, c.StepCount, c.Defects = nil, 0, nil
 	c.SuspectLinks = 0
 	c.Stale, c.StaleReason = false, ""
 	c.ElementIDs = nil
+	c.Applicability = snapApplicability(c.Applicability)
 	steps := make([]model.TestStep, len(c.Steps))
 	for i, st := range c.Steps {
 		st.CallTestKey, st.CallTestTitle = "", ""
@@ -91,6 +93,22 @@ func ChangedFields(from, to json.RawMessage) []string {
 	return out
 }
 
+// SnapshotChanges is ChangedFields for two snapshots of a requirement or
+// test; the applicability counts only when both record one (a snapshot
+// from before applicability was recorded says nothing about it).
+func SnapshotChanges(from, to json.RawMessage) []string {
+	out := ChangedFields(from, to)
+	if !slices.Contains(out, "applicability") {
+		return out
+	}
+	_, a := SnapshotApplicability(from)
+	_, b := SnapshotApplicability(to)
+	if a && b {
+		return out
+	}
+	return slices.DeleteFunc(out, func(f string) bool { return f == "applicability" })
+}
+
 // changedCustom lists the custom fields whose values differ between two
 // snapshots' custom_fields objects, as custom_fields.<key>.
 func changedCustom(from, to any) []string {
@@ -111,8 +129,25 @@ func changedCustom(from, to any) []string {
 }
 
 // normalize removes volatile IDs inside steps so that re-saving identical
-// steps (which get new IDs) is not reported as a change.
+// steps (which get new IDs) is not reported as a change, and compares an
+// applicability by its variants and expression only (not the names).
 func normalize(key string, v any) any {
+	if key == "applicability" {
+		m, _ := v.(map[string]any)
+		ids, _ := m["variant_ids"].([]any)
+		expr, _ := m["expression"].(string)
+		if len(ids) == 0 && expr == "" {
+			return nil
+		}
+		list := make([]string, 0, len(ids))
+		for _, x := range ids {
+			if s, ok := x.(string); ok {
+				list = append(list, s)
+			}
+		}
+		sort.Strings(list)
+		return [2]any{list, expr}
+	}
 	if key != "steps" {
 		return v
 	}
@@ -137,15 +172,107 @@ func normalize(key string, v any) any {
 	return out
 }
 
+// snapApplicability is an applicability as snapshots keep it: the variants
+// (with their names at the time) and the expression; nil for all variants.
+func snapApplicability(a *model.Applicability) *model.Applicability {
+	if a.All() {
+		return nil
+	}
+	c := &model.Applicability{VariantIDs: append([]string{}, a.VariantIDs...), Expression: a.Expression, Variants: append([]model.VariantRef{}, a.Variants...)}
+	if c.VariantIDs == nil {
+		c.VariantIDs = []string{}
+	}
+	return c
+}
+
+// WithApplicability sets the applicability of a requirement or test
+// snapshot (key applicability, null for all variants). Snapshots that have
+// the key restore it; older ones (without the key) leave it as it is.
+func WithApplicability(snapshot json.RawMessage, a *model.Applicability) json.RawMessage {
+	var m map[string]json.RawMessage
+	if json.Unmarshal(snapshot, &m) != nil || m == nil {
+		return snapshot
+	}
+	b, _ := json.Marshal(snapApplicability(a))
+	m["applicability"] = b
+	out, err := json.Marshal(m)
+	if err != nil {
+		return snapshot
+	}
+	return out
+}
+
+// SnapshotApplicability returns the applicability a snapshot records (nil:
+// all variants) and whether it records one at all.
+func SnapshotApplicability(snapshot json.RawMessage) (*model.Applicability, bool) {
+	var m map[string]json.RawMessage
+	if json.Unmarshal(snapshot, &m) != nil {
+		return nil, false
+	}
+	raw, ok := m["applicability"]
+	if !ok {
+		return nil, false
+	}
+	var a *model.Applicability
+	_ = json.Unmarshal(raw, &a)
+	if a.All() {
+		return nil, true
+	}
+	if a.VariantIDs == nil {
+		a.VariantIDs = []string{}
+	}
+	return a, true
+}
+
+// ApplicabilityOf returns the applicability of a requirement or test with
+// the names of its variants (nil: all variants).
+func (s *Store) ApplicabilityOf(ctx context.Context, tenantID, itemType, itemID string) (*model.Applicability, error) {
+	a, err := s.GetApplicability(ctx, tenantID, itemType, itemID)
+	if err != nil || a.All() {
+		return nil, err
+	}
+	a.Variants = []model.VariantRef{}
+	if len(a.VariantIDs) > 0 {
+		rows, err := s.c(ctx).query(ctx, `SELECT id, name FROM variants WHERE tenant_id = ? AND id IN (`+placeholders(len(a.VariantIDs))+`)`, append([]any{tenantID}, anySlice(a.VariantIDs)...)...)
+		if err != nil {
+			return nil, err
+		}
+		names := map[string]string{}
+		for rows.Next() {
+			var id, name string
+			if err := rows.Scan(&id, &name); err != nil {
+				rows.Close()
+				return nil, err
+			}
+			names[id] = name
+		}
+		rows.Close()
+		for _, id := range a.VariantIDs {
+			if n, ok := names[id]; ok {
+				a.Variants = append(a.Variants, model.VariantRef{ID: id, Name: n})
+			}
+		}
+	}
+	return a, nil
+}
+
 // AddRevision stores a snapshot of an entity. changed_fields is computed
-// against the previous revision.
+// against the previous revision. The snapshot of a requirement or test
+// gets its current applicability (see WithApplicability).
 func (s *Store) AddRevision(ctx context.Context, tenantID, entityType, entityID string, version int, action, user string, snapshot json.RawMessage) error {
+	if entityType == model.KindRequirement || entityType == model.KindTest {
+		a, err := s.ApplicabilityOf(ctx, tenantID, entityType, entityID)
+		if err != nil {
+			return err
+		}
+		snapshot = WithApplicability(snapshot, a)
+	}
 	var prev string
 	err := s.c(ctx).row(ctx, `SELECT snapshot FROM revisions WHERE entity_type = ? AND entity_id = ? ORDER BY created_at DESC, version DESC LIMIT 1`, entityType, entityID).Scan(&prev)
 	var changed []string
 	switch {
 	case err == nil:
-		changed = ChangedFields(json.RawMessage(prev), snapshot)
+		changed = SnapshotChanges(json.RawMessage(prev), snapshot)
 	case err == sql.ErrNoRows:
 		changed = []string{}
 	default:
@@ -486,7 +613,7 @@ func CompareItems(fromLabel, toLabel string, from, to []model.BaselineItem) mode
 			d.Added = append(d.Added, model.BaselineChange{EntityType: it.EntityType, EntityID: it.EntityID, Key: it.Key, Title: it.Title, ToVersion: it.Version})
 			continue
 		}
-		fields := ChangedFields(o.Snapshot, it.Snapshot)
+		fields := SnapshotChanges(o.Snapshot, it.Snapshot)
 		if len(fields) == 0 {
 			d.Unchanged++
 			continue
@@ -503,95 +630,11 @@ func CompareItems(fromLabel, toLabel string, from, to []model.BaselineItem) mode
 	return d
 }
 
-// ---------------------------------------------------------------- comments
-
-// MaxCommentLength bounds comment bodies (in characters).
-const MaxCommentLength = 10000
-
-func validComment(body string) (string, error) {
-	body = strings.TrimSpace(body)
-	if body == "" || utf8.RuneCountInString(body) > MaxCommentLength {
-		return "", Invalidf("comment must be 1-%d characters", MaxCommentLength)
-	}
-	return body, nil
-}
-
-const commentSelect = `SELECT c.id, c.entity_type, c.entity_id, c.user_id, COALESCE(u.email, ''), COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), c.body, c.created_at, c.updated_at
-	FROM comments c LEFT JOIN users u ON u.id = c.user_id`
-
-func scanComment(r interface{ Scan(...any) error }) (*model.Comment, error) {
-	var c model.Comment
-	if err := r.Scan(&c.ID, &c.EntityType, &c.EntityID, &c.UserID, &c.UserEmail, &c.UserName, &c.UserAvatar, &c.Body, &c.CreatedAt, &c.UpdatedAt); err != nil {
-		return nil, err
-	}
-	return &c, nil
-}
-
-// AddComment stores a comment (the entity must have been checked by the caller).
-func (s *Store) AddComment(ctx context.Context, tenantID string, c *model.Comment) error {
-	body, err := validComment(c.Body)
-	if err != nil {
-		return err
-	}
-	c.ID, c.Body, c.CreatedAt = newID(), body, s.now()
-	c.UpdatedAt = c.CreatedAt
-	_, err = s.c(ctx).exec(ctx, `INSERT INTO comments (id, tenant_id, entity_type, entity_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		c.ID, tenantID, c.EntityType, c.EntityID, c.UserID, c.Body, c.CreatedAt, c.UpdatedAt)
-	return err
-}
-
-// ListComments returns the comments of an entity, oldest first.
-func (s *Store) ListComments(ctx context.Context, tenantID, entityType, entityID string) ([]model.Comment, error) {
-	rows, err := s.c(ctx).query(ctx, commentSelect+` WHERE c.tenant_id = ? AND c.entity_type = ? AND c.entity_id = ? ORDER BY c.created_at`, tenantID, entityType, entityID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := []model.Comment{}
-	for rows.Next() {
-		c, err := scanComment(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, *c)
-	}
-	return out, rows.Err()
-}
-
-// GetComment returns one comment.
-func (s *Store) GetComment(ctx context.Context, tenantID, id string) (*model.Comment, error) {
-	c, err := scanComment(s.c(ctx).row(ctx, commentSelect+` WHERE c.id = ? AND c.tenant_id = ?`, id, tenantID))
-	return c, mapErr(err, "comment")
-}
-
-// UpdateComment changes the body of a comment.
-func (s *Store) UpdateComment(ctx context.Context, tenantID string, c *model.Comment) error {
-	body, err := validComment(c.Body)
-	if err != nil {
-		return err
-	}
-	c.Body, c.UpdatedAt = body, s.now()
-	_, err = s.c(ctx).exec(ctx, `UPDATE comments SET body = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`, c.Body, c.UpdatedAt, c.ID, tenantID)
-	return err
-}
-
-// DeleteComment removes a comment.
-func (s *Store) DeleteComment(ctx context.Context, tenantID, id string) error {
-	res, err := s.c(ctx).exec(ctx, `DELETE FROM comments WHERE id = ? AND tenant_id = ?`, id, tenantID)
-	if err != nil {
-		return err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return mapErr(sql.ErrNoRows, "comment")
-	}
-	return nil
-}
-
 // ProjectCounts returns per-item comment counts and relation counts for a
 // project (entity id → count).
 func (s *Store) ProjectCounts(ctx context.Context, tenantID, projectID string) (comments, relations map[string]int, err error) {
 	comments, relations = map[string]int{}, map[string]int{}
-	rows, err := s.c(ctx).query(ctx, `SELECT c.entity_id, COUNT(*) FROM comments c WHERE c.tenant_id = ? AND (
+	rows, err := s.c(ctx).query(ctx, `SELECT c.entity_id, COUNT(*) FROM comments c WHERE c.tenant_id = ? AND c.deleted_at IS NULL AND (
 		c.entity_id IN (SELECT id FROM requirements WHERE project_id = ?) OR c.entity_id IN (SELECT id FROM test_cases WHERE project_id = ?))
 		GROUP BY c.entity_id`, tenantID, projectID, projectID)
 	if err != nil {
@@ -667,6 +710,10 @@ func deleteEntityData(ctx context.Context, c conn, entityType string, ids []stri
 		if err := deleteDefectLinks(ctx, c, "execution", execs); err != nil {
 			return err
 		}
+	}
+	// the discussions of the item's review requests
+	if _, err := c.exec(ctx, `DELETE FROM comments WHERE entity_type = 'review' AND entity_id IN (SELECT id FROM review_requests WHERE entity_type = ? AND entity_id IN (`+placeholders(len(ids))+`))`, append([]any{entityType}, anySlice(ids)...)...); err != nil {
+		return err
 	}
 	if _, err := c.exec(ctx, `DELETE FROM review_requests WHERE entity_type = ? AND entity_id IN (`+placeholders(len(ids))+`)`, append([]any{entityType}, anySlice(ids)...)...); err != nil {
 		return err

@@ -628,3 +628,50 @@ tests:
           expected: Den är godkänd av kunden och omfattar åtgärden och tillgångsklassen.
         - action: Läs avtalets avslutsklausul.
           expected: Den kräver överlämning av regler, spelböcker och konfiguration av loggkällor inom 30 dagar i ett dokumenterat format.
+
+risks:
+  - id: SVCLD-R01
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [vendor-lock-in, exit]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Regulation (EU) 2023/2854 (Data Act) Art. 25 (contractual terms concerning switching)"]
+    mitigated_by: [SVCLD-01, SVCLD-02, SVCLD-03, SVCLD-04, SVCLD-05]
+    en:
+      title: Locked in with a cloud provider
+      description: The contract has a long notice period, charges for switching or does not say which data can be exported. The customer cannot leave when prices rise or the service gets worse.
+      mitigation: Limit the notice period to 2 months and the transition period to 30 days with the service running, list all exportable data, keep a retrieval period of at least 30 days and accept no switching charges.
+    sv:
+      title: Inlåst hos en molnleverantör
+      description: Avtalet har lång uppsägningstid, avgifter för byte eller anger inte vilka data som kan exporteras. Kunden kan inte lämna när priserna stiger eller tjänsten försämras.
+      mitigation: Begränsa uppsägningstiden till 2 månader och övergångsperioden till 30 dagar med tjänsten i drift, lista alla exporterbara data, ha minst 30 dagar för att hämta data och godta inga avgifter för byte.
+  - id: SVCLD-R02
+    category: privacy
+    likelihood: 2
+    impact: 4
+    tags: [foreign-access, encryption]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27017:2026 (shared roles and responsibilities within a cloud computing environment)"]
+    mitigated_by: [SVCLD-06, SVCLD-07, SVCLD-08, SVCLD-09]
+    en:
+      title: Cloud data reached by a foreign authority or a misunderstood responsibility
+      description: The provider is subject to foreign law that can compel access, or the customer assumes the provider handles a control that is in fact the customer's. Data is disclosed or left unprotected.
+      mitigation: Publish the jurisdiction and safeguards against foreign government access, agree a shared responsibility matrix per service model, use customer-managed keys and require 90 days' notice before a feature is removed.
+    sv:
+      title: Molndata nås av en utländsk myndighet eller lämnas oskyddad på grund av missförstått ansvar
+      description: Leverantören omfattas av utländsk lag som kan tvinga fram åtkomst, eller kunden tror att leverantören hanterar ett skydd som i själva verket är kundens. Data röjs eller lämnas oskyddad.
+      mitigation: Publicera jurisdiktion och skydd mot utländska myndigheters åtkomst, kom överens om en ansvarsfördelningsmatris per tjänstemodell, använd nycklar som kunden förvaltar och kräv 90 dagars varsel innan en funktion tas bort.
+  - id: SVCLD-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [managed-detection, soc]
+    refs: ["ISO/IEC 27035-2:2023", "MITRE ATT&CK T1685.002 (disable or modify cloud log)"]
+    mitigated_by: [SVCLD-10, SVCLD-11, SVCLD-12, SVCLD-13, SVCLD-14]
+    en:
+      title: Managed detection service misses or mishandles an attack
+      description: The security operations provider analyses alerts slowly, covers few attack techniques or responds without an agreed playbook. An intrusion goes unnoticed or a response causes an outage.
+      mitigation: Analyse critical alerts within 30 minutes around the clock, map detection coverage to attack techniques every quarter, alert when a log source stops, respond only by approved playbooks and report monthly.
+    sv:
+      title: Tjänsten för bevakning missar eller felhanterar en attack
+      description: Leverantören av säkerhetsövervakning analyserar larm långsamt, täcker få angreppstekniker eller agerar utan överenskommen arbetsgång. Ett intrång upptäcks inte eller en åtgärd orsakar ett avbrott.
+      mitigation: Analysera kritiska larm inom 30 minuter dygnet runt, kartlägg detekteringstäckningen mot angreppstekniker varje kvartal, larma när en loggkälla tystnar, agera bara enligt godkända arbetsgångar och rapportera varje månad.

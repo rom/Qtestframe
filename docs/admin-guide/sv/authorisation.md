@@ -29,7 +29,9 @@ Det här är de inbyggda rollernas behörigheter tills en organisation ändrar d
 | `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `run.write` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  | ✔ | ✔ | ✔ | ✔ |
+| `cycle.plan` |  |  |  | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  | ✔ | ✔ | ✔ |
+| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `audit.read` |  |  |  | ✔ | ✔ | ✔ |
 | `token.manage` |  |  | ✔ | ✔ | ✔ | ✔ |

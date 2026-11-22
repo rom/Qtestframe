@@ -137,6 +137,16 @@ const (
 // Values without a label (custom statuses, …) are humanized.
 func EnumLabel(lang, kind, value string) string { return newLoc(lang).enum(kind, value) }
 
+// f translates an English text and fills its {name} placeholders (pairs
+// of name, value).
+func (l loc) f(en string, kv ...string) string {
+	s := l.t(en)
+	for i := 0; i+1 < len(kv); i += 2 {
+		s = strings.ReplaceAll(s, "{"+kv[i]+"}", kv[i+1])
+	}
+	return s
+}
+
 func (l loc) enum(kind, v string) string {
 	if v == "" {
 		return ""

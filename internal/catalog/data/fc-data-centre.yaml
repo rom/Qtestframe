@@ -866,3 +866,50 @@ tests:
           expected: Varje arbetsorder har en bifogad arbetsinstruktion.
         - action: Kontrollera att varje arbetsinstruktion har steg, riskbedömning, reträttplan och godkännandedatum.
           expected: De 3 delarna finns och godkännandet ligger minst 2 arbetsdagar före arbetet.
+
+risks:
+  - id: FCDC-R01
+    category: availability
+    likelihood: 2
+    impact: 5
+    tags: [power-outage, generator]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "EN 50600-2-2 (power distribution)"]
+    mitigated_by: [FCDC-02, FCDC-03, FCDC-04, FCDC-05, FCDC-15]
+    en:
+      title: Data centre loses power
+      description: A grid outage coincides with a failed UPS battery, a generator that does not start or too little fuel. Every system in the data centre goes down at once and some do not restart cleanly.
+      mitigation: Feed each rack through two independent power paths, let the UPS bridge until the generator takes the load, keep fuel for 48 hours, run the generator monthly with a yearly full-load test and discharge-test the UPS batteries every year.
+    sv:
+      title: Datacentret förlorar strömmen
+      description: Ett elavbrott sammanfaller med ett felande UPS-batteri, ett reservkraftverk som inte startar eller för lite bränsle. Alla system i datacentret går ner samtidigt och en del startar inte om utan problem.
+      mitigation: Mata varje rack via två oberoende kraftvägar, låt UPS:en överbrygga tills reservkraftverket tar lasten, ha bränsle för 48 timmar, provkör reservkraftverket varje månad med ett årligt fullastprov och provurladda UPS-batterierna varje år.
+  - id: FCDC-R02
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [cooling, overheating]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "EN 50600-2-3 (environmental control)", "ASHRAE TC 9.9 Thermal Guidelines for Data Processing Environments"]
+    mitigated_by: [FCDC-06, FCDC-07, FCDC-16, FCDC-17, FCDC-10]
+    en:
+      title: Equipment overheats after a cooling failure
+      description: A cooling unit fails on a hot day or a water leak damages the cooling, and inlet temperatures rise unnoticed. Servers throttle or shut down and hardware is damaged.
+      mitigation: Keep inlet temperatures within limits with one cooling unit out, alarm within 5 minutes above 27 °C, contain the aisles, control the dew point and detect water leaks under the floor and at cooling units.
+    sv:
+      title: Utrustning överhettas efter ett kylfel
+      description: En kylenhet slutar fungera en varm dag eller ett vattenläckage skadar kylningen, och inloppstemperaturerna stiger obemärkt. Servrar strypes eller stängs av och hårdvara skadas.
+      mitigation: Håll inloppstemperaturen inom gränserna med en kylenhet ur drift, larma inom 5 minuter över 27 °C, kapsla in gångarna, styr daggpunkten och upptäck vattenläckage under golvet och vid kylenheter.
+  - id: FCDC-R03
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [fire, data-hall]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "EN 54-20"]
+    mitigated_by: [FCDC-08, FCDC-09, FCDC-19]
+    en:
+      title: Fire in the data hall
+      description: An electrical fault starts a fire in a rack or the power room, possibly during maintenance work. Equipment and data are destroyed and staff are in danger.
+      mitigation: Install very early smoke detection with alarm to a staffed centre, use a gas extinguishing room that holds the concentration for 10 minutes and approve a method statement before work on power or cooling.
+    sv:
+      title: Brand i datahallen
+      description: Ett elfel startar en brand i ett rack eller i elrummet, kanske under ett underhållsarbete. Utrustning och data förstörs och personalen är i fara.
+      mitigation: Installera mycket tidig rökdetektering med larm till en bemannad central, använd ett gassläckningsrum som håller koncentrationen i 10 minuter och godkänn en arbetsbeskrivning före arbete med kraft eller kyla.

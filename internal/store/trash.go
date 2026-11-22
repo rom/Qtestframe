@@ -255,6 +255,10 @@ func snapshotItems(ctx context.Context, c conn, kind string, ids []string) (*tra
 			return nil, err
 		}
 	}
+	// the variants the items apply to come back with them
+	if _, err := add("item_applicability", `item_type = ? AND item_id IN (`+in+`)`, append([]any{kind}, idArgs...)...); err != nil {
+		return nil, err
+	}
 	if _, err := add("defect_links", `entity_type = ? AND entity_id IN (`+in+`)`, append([]any{kind}, idArgs...)...); err != nil {
 		return nil, err
 	}
@@ -620,6 +624,8 @@ func (s *Store) RestoreTrash(ctx context.Context, tenantID, id string) (*TrashEn
 				case "attachments":
 					ignoreConflict = true
 					ok, err = need(row, "files", "file_id")
+				case "item_applicability":
+					ignoreConflict = true
 				}
 				if err != nil {
 					return err

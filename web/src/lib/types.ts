@@ -372,6 +372,8 @@ export interface Requirement {
   linked_tests: number
   coverage?: string
   comment_count?: number
+  /** unresolved discussion threads */
+  open_discussions?: number
   relation_count?: number
   /** Related items in both directions (requirement relations and verifying tests). */
   relations?: ItemRef[] | null
@@ -446,6 +448,8 @@ export interface TestCase {
   priority: string
   status: string
   estimated_minutes: number
+  /** the member responsible (e-mail address), or a name; "" none */
+  owner?: string
   tags: string[] | null
   /** catalogue id the item was copied from ("" otherwise) */
   catalog_ref?: string
@@ -460,6 +464,8 @@ export interface TestCase {
   linked_requirements: number
   last_result?: string
   comment_count?: number
+  /** unresolved discussion threads */
+  open_discussions?: number
   called_by?: TestRef[] | null
   /** links to requirements that are suspect */
   suspect_links?: number
@@ -562,6 +568,9 @@ export interface TestRun {
   variant_name?: string
   build_id?: string | null
   build_label?: string
+  /** the test cycle that created the run */
+  cycle_id?: string | null
+  cycle_name?: string
 }
 
 export interface StepResult {
@@ -776,18 +785,47 @@ export interface BaselineDiff {
   unchanged: number
 }
 
+/** Items that have discussions. */
+export type DiscussionKind = 'requirement' | 'test' | 'defect' | 'risk' | 'run' | 'review'
+
 export interface Comment {
   id: string
-  entity_type: string
+  project_id: string
+  entity_type: DiscussionKind | string
   entity_id: string
+  /** the first comment of the thread of a reply ('' starts a thread) */
+  parent_id: string
   user_id: string
   user_email: string
   user_name: string
   /** avatar of the author (when the server includes it) */
   user_avatar?: string
+  /** Markdown; empty when removed */
   body: string
   created_at: string
   updated_at: string
+  resolved_at?: string | null
+  resolved_by?: string
+  resolved_by_name?: string
+  deleted?: boolean
+  deleted_at?: string
+  /** user ids mentioned in the body */
+  mentions?: string[]
+  /** reaction → user ids */
+  reactions?: Record<string, string[]>
+}
+
+/** A thread of a discussion list (GET /projects/{pid}/discussions). */
+export interface DiscussionThread {
+  root: Comment
+  project_key: string
+  entity_key: string
+  entity_title: string
+  replies: number
+  last_at: string
+  last_by: string
+  participants: string[]
+  mentioned: string[]
 }
 
 export interface AuditEntry {
@@ -1063,6 +1101,8 @@ export interface ExitCriterion {
   threshold?: number
   /** minimum severity (defects), risk level (risks) or rule severity (trace_rules: error | warning) */
   level?: string
+  /** the test cycle of cycle_executed */
+  cycle_id?: string
 }
 
 export interface Release {
@@ -1078,6 +1118,9 @@ export interface Release {
   released_at: string | null
   released_by: string
   release_note: string
+  /** the variants the release targets (exit criteria evaluated per variant) */
+  variant_ids?: string[]
+  variants?: { id: string; name: string }[]
   created_by: string
   created_at: string
   updated_at: string
@@ -1092,10 +1135,15 @@ export interface ReleaseItem {
   key: string
   title: string
   note?: string
+  /** combined criteria of a release gated per variant: the variants the item appears in */
+  variants?: string[]
 }
 
 export interface CriterionResult extends ExitCriterion {
   met: boolean
+  /** pass | waived | fail */
+  state?: 'pass' | 'waived' | 'fail'
+
   actual: number
   total: number
   items: ReleaseItem[] | null
@@ -1116,6 +1164,17 @@ export interface ReleaseStatusReport {
   risk_threshold?: string
   /** risks of the scope whose residual level is above the threshold (note: level, ", accepted") */
   residual_risks?: ReleaseItem[]
+  /** the variant evaluated for (?variant=) */
+  variant?: { id: string; name: string }
+  /** a release that targets variants: the gate of each */
+  variants?: VariantGate[]
+}
+
+export interface VariantGate {
+  variant: { id: string; name: string }
+  go: boolean
+  criteria: CriterionResult[]
+  summary: Record<string, number>
 }
 
 // ---------------------------------------------------------------- defects
@@ -1161,7 +1220,7 @@ export interface LinkedDefect extends Defect {
 }
 
 export interface DefectTracker {
-  /** "", jira, github or gitlab */
+  /** "", jira, github, gitlab or rt (Request Tracker) */
   type: string
   url: string
   project_key: string
@@ -1176,11 +1235,25 @@ export interface DefectTracker {
   requirement_labels?: string
   /** Jira issue type of issues from requirements */
   requirement_issue_type?: string
+  /** RT queue (name or ID) */
+  queue?: string
+  /** RT custom field that receives the labels */
+  labels_field?: string
   comment_on_pass?: boolean
   user: string
   /** write-only */
   token?: string
   has_token: boolean
+}
+
+/** The connections requirements are imported from (GET /projects/{pid}/import-sources). */
+export interface ImportSources {
+  jira: { url: string; user: string; jql: string; token?: string; has_token: boolean }
+  azure_devops: { url: string; project: string; area_path: string; work_item_types: string; token?: string; has_token: boolean }
+  /** the Jira import uses the defect tracker's connection */
+  jira_from_tracker: boolean
+  tracker_jira_url?: string
+  tracker_jira_key?: string
 }
 
 // ---------------------------------------------------------------- risks
@@ -1226,6 +1299,9 @@ export interface Risk {
   residual_source?: string
   threshold?: string
   above_threshold?: boolean
+  /** the catalogue risk it was copied from ("" none) and that risk's catalogue area */
+  catalog_ref?: string
+  catalog_area?: string
   acceptance_valid?: boolean
   review_due?: boolean
 }
@@ -1425,6 +1501,8 @@ export interface VerificationRecord {
 
 export interface VerificationSettings {
   strict_criteria: boolean
+  /** debriefed exploratory sessions count as evidence for their scoped requirements */
+  exploratory_evidence?: boolean
   updated_by?: string
   updated_at?: string | null
 }
@@ -1519,4 +1597,130 @@ export interface QualityReport {
   review_turnaround: QualityDurations & { pending: number; oldest_pending_days: number; trend: QualityPeriod[] }
   fix_time: QualityDurations & { open: number; by_severity: (QualityDurations & { severity: string })[]; trend: QualityPeriod[] }
   requirement_quality: { requirements: number; with_warnings: number; percent: number; by_rule: QualityCount[]; trend: QualityPeriod[]; items: QualityItem[] }
+}
+
+// ---------- test cycles (internal/model/cycles.go) ----------
+
+export interface CycleProgress {
+  planned: number
+  executed: number
+  passed: number
+  failed: number
+  blocked: number
+  skipped: number
+  in_progress: number
+  not_run: number
+  not_in_run: number
+  unassigned: number
+  estimated_minutes: number
+  remaining_minutes: number
+  actual_ms: number
+  estimated_minutes_executed: number
+  percent_executed: number
+  percent_passed: number
+}
+
+export interface TestCycle {
+  id: string
+  project_id: string
+  name: string
+  goal: string
+  description: string
+  /** planned | active | closed */
+  status: string
+  owner_id: string
+  release_id: string | null
+  variant_id: string | null
+  build_id: string | null
+  environment: string
+  configuration_ids: string[]
+  start_date: string
+  end_date: string
+  scheduled_start_at: string | null
+  schedule_id: string | null
+  version: number
+  started_at: string | null
+  closed_at: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+  release_name?: string
+  variant_name?: string
+  build_label?: string
+  run_ids: string[]
+  progress: CycleProgress
+}
+
+export interface TestCycleTest {
+  id: string
+  cycle_id: string
+  test_case_id: string
+  test_key: string
+  test_title: string
+  configuration_id: string | null
+  configuration_name?: string
+  assignee_id: string
+  estimate_minutes: number
+  position: number
+  added_by: string
+  added_at: string
+  execution_id: string | null
+  run_id: string | null
+  status: string
+  executed_by?: string
+  finished_at: string | null
+  duration_ms: number
+}
+
+export interface CycleTesterLoad {
+  assignee_id: string
+  planned: number
+  executed: number
+  passed: number
+  failed: number
+  blocked: number
+  estimated_minutes: number
+  remaining_minutes: number
+  actual_ms: number
+}
+
+export interface CycleBurndownPoint {
+  day: string
+  /** null after today */
+  remaining: number | null
+  remaining_minutes: number | null
+  ideal: number
+  ideal_minutes: number
+}
+
+export interface CycleReport {
+  cycle: TestCycle
+  testers: CycleTesterLoad[]
+  burndown: CycleBurndownPoint[]
+}
+
+export interface CycleSchedule {
+  id: string
+  project_id: string
+  name_pattern: string
+  template_cycle_id: string | null
+  template_name?: string
+  query: string
+  owner_id: string
+  frequency: 'daily' | 'weekly' | 'monthly' | string
+  weekday: number
+  day_of_month: number
+  time: string
+  timezone: string
+  duration_days: number
+  auto_start: boolean
+  enabled: boolean
+  runs: number
+  next_run_at: string | null
+  last_run_at: string | null
+  last_cycle_id: string | null
+  last_error: string
+  created_by: string
+  created_at: string
+  updated_at: string
 }

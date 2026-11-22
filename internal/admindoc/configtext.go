@@ -49,6 +49,10 @@ var keyDocs = map[string]text{
 		"Send `Strict-Transport-Security` (two years, subdomains included) on HTTPS connections the server terminates itself. A TLS-terminating proxy must send it instead.",
 		"Skicka `Strict-Transport-Security` (två år, med underdomäner) på HTTPS-anslutningar som servern själv avslutar. En proxy som avslutar TLS måste skicka den i stället.",
 	},
+	"server.frame_ancestors": {
+		"Origins (`https://doors.example.com`) of other tools that may show the OSLC selection and creation dialogs in a frame (`Content-Security-Policy: frame-ancestors`). Without any the dialogs open in a window of their own. The browser must also send the session cookie to the frame: both tools on the same site (subdomains of one domain).",
+		"Ursprung (`https://doors.example.com`) för andra verktyg som får visa OSLC-dialogerna för att välja och skapa i en ram (`Content-Security-Policy: frame-ancestors`). Utan några öppnas dialogerna i ett eget fönster. Webbläsaren måste också skicka sessionskakan till ramen: båda verktygen på samma webbplats (underdomäner till samma domän).",
+	},
 	"database.driver": {
 		"`sqlite` (a file, nothing to install) or `postgres`.",
 		"`sqlite` (en fil, inget att installera) eller `postgres`.",
@@ -456,6 +460,26 @@ var keyDocs = map[string]text{
 	"email.digest_hour": {
 		"Hour of the day (UTC, 0–23) when daily digests are sent.",
 		"Timme på dygnet (UTC, 0–23) då dagliga sammanfattningar skickas.",
+	},
+	"similarity.embeddings.enabled": {
+		"Use an embeddings service for the similarity of requirements and tests (suspected duplicates, the *Similar requirements* panel). Off by default: the similarity is then computed on the server. **When on, the title, description and criteria or steps of the items are sent to that service.** Also in **Administration → System settings**.",
+		"Använd en tjänst för inbäddningar (embeddings) för likheten mellan krav och tester (misstänkta dubbletter, panelen *Liknande krav*). Av som standard: likheten beräknas då på servern. **När den är på skickas rubrik, beskrivning och kriterier eller steg för objekten till tjänsten.** Finns även under **Administration → Systeminställningar**.",
+	},
+	"similarity.embeddings.url": {
+		"URL of an OpenAI-compatible embeddings endpoint, e.g. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, answer `{data: [{embedding}]}`).",
+		"Adress till en OpenAI-kompatibel embeddings-slutpunkt, t.ex. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, svaret `{data: [{embedding}]}`).",
+	},
+	"similarity.embeddings.model": {
+		"Model sent as `model` (empty: the service's default). Vectors are cached per item version and model; changing the model computes them again.",
+		"Modell som skickas som `model` (tom: tjänstens standard). Vektorerna cachas per objektversion och modell; byts modellen beräknas de om.",
+	},
+	"similarity.embeddings.api_key_file": {
+		"File with the API key, sent as a bearer token (relative: in `$CREDENTIALS_DIRECTORY`). The key can also be stored in the system settings; it is never shown again.",
+		"Fil med API-nyckeln, som skickas som bearer-token (relativ: i `$CREDENTIALS_DIRECTORY`). Nyckeln kan också sparas i systeminställningarna; den visas aldrig igen.",
+	},
+	"similarity.embeddings.timeout": {
+		"Longest time to wait for the service. When it fails or times out, the local similarity is used.",
+		"Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten.",
 	},
 	"system_settings.locked": {
 		"Settings that cannot be changed in **Administration → System settings**: keys (`logging.level`), prefixes ending in `.*` (`email.*`) or `*`. Their stored overrides are ignored.",

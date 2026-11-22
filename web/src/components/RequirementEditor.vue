@@ -16,7 +16,7 @@ import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
 import StaleBadge from './StaleBadge.vue'
-import { contentChanges, needsImpactConfirm, type ChangeImpact } from '@/lib/correlations'
+import { contentChanges, needsImpactConfirm, type ChangeImpact, type ImpactChoice } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
 import AutoComplete from 'primevue/autocomplete'
@@ -27,6 +27,7 @@ import TraceRuleViolations from './TraceRuleViolations.vue'
 import { P } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
+import SimilarItemsPanel from './SimilarItemsPanel.vue'
 import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
@@ -42,7 +43,8 @@ import StatusTag from './StatusTag.vue'
 import TagsInput from './TagsInput.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
-import CommentsPanel from './CommentsPanel.vue'
+import DiscussionPanel from './DiscussionPanel.vue'
+import { useRoute } from 'vue-router'
 import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import RelationsPanel from './RelationsPanel.vue'
@@ -169,6 +171,9 @@ watch([() => meta.meta.auto_create_test, () => prefs.prefs.create_linked_test], 
 // ---------- tabs ----------
 const tab = ref('details')
 const commentCount = ref(0)
+// unresolved threads of the discussion (badge of the Discussion tab)
+const openDiscussions = ref(0)
+const route = useRoute()
 const attachmentCount = ref<number | null>(null)
 const relationCount = ref(0)
 /** open defects (of the requirement, its tests and their executions) */
@@ -261,6 +266,8 @@ async function load() {
     const r = await api.get<Requirement>(`/requirements/${props.itemId}`)
     item.value = r
     commentCount.value = r.comment_count ?? 0
+    openDiscussions.value = r.open_discussions ?? 0
+    if (route.query.tab === 'comments') tab.value = 'comments'
     attachmentCount.value = null
     relationCount.value = r.relation_count ?? 0
     openDefects.value = r.open_defects ?? 0
@@ -521,11 +528,11 @@ async function save() {
   impactFields.value = changed
   impactOpen.value = true
 }
-async function confirmImpact() {
-  await doSave()
+async function confirmImpact(choice: ImpactChoice) {
+  await doSave(choice)
   impactOpen.value = false
 }
-async function doSave() {
+async function doSave(choice?: ImpactChoice) {
   saving.value = true
   error.value = ''
   const body = bodyOf(form.value)
@@ -533,7 +540,7 @@ async function doSave() {
   try {
     const saved = isNew.value
       ? await api.post<Requirement & { linked_test?: TestCase }>(`/projects/${props.projectId}/requirements`, { ...body, create_test: createTest.value })
-      : await api.patch<Requirement>(`/requirements/${props.itemId}`, body, { ifMatch: item.value?.version })
+      : await api.patch<Requirement>(`/requirements/${props.itemId}`, body, { ifMatch: item.value?.version, params: choice ? { impact: choice } : undefined })
     const linked = isNew.value ? (saved as Requirement & { linked_test?: TestCase })?.linked_test : undefined
     notify.ok(
       isNew.value ? t('requirements.created') : t('requirements.saved'),
@@ -633,7 +640,7 @@ function criterionLabel(id: string | null) {
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
       <Tab value="code"><i class="pi pi-code" aria-hidden="true" /> {{ t('code.tab') }} <span v-if="codeCount" class="count">{{ codeCount }}</span></Tab>
       <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
-      <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('discussions.tab') }} <span v-if="openDiscussions" class="count" :title="t('discussions.openBadge', { n: openDiscussions }, openDiscussions)">{{ openDiscussions }}</span><span v-if="openDiscussions" class="sr-only">{{ t('discussions.openBadge', { n: openDiscussions }, openDiscussions) }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
       <Tab value="impact"><i class="pi pi-share-alt" aria-hidden="true" /> {{ t('correlations.tab') }}</Tab>
@@ -650,7 +657,7 @@ function criterionLabel(id: string | null) {
     <RequirementIssuePanel :requirement-id="item.id" :can-write="canWrite" @changed="linksVersion++" />
     <ItemLinksPanel :key="linksVersion" item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" />
   </div>
-  <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="requirement" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
+  <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><DiscussionPanel entity="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (commentCount = n)" @open="(n) => (openDiscussions = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="requirement" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
   <HistoryPanel
@@ -717,6 +724,15 @@ function criterionLabel(id: string | null) {
       />
       <ObligationHelp v-if="canWrite" :id="obligationHelpId" :open="isNew || obligationHelpOpen" />
     </div>
+    <SimilarItemsPanel
+      v-if="canWrite"
+      kind="requirement"
+      :project-id="projectId"
+      :title="form.title"
+      :description="form.description"
+      :details="form.criteria.map((c) => c.description)"
+      :exclude-id="item?.id"
+    />
 
     <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis" role="region" :aria-label="t('analysis.title')" :aria-busy="analyzing">
       <div class="row" style="justify-content: space-between; margin-bottom: 8px">
@@ -880,7 +896,7 @@ function criterionLabel(id: string | null) {
 
     <RequirementRisks v-if="item" :requirement-id="item.id" :project-id="projectId" />
     <RequirementWaivers v-if="item" :requirement-id="item.id" :project-id="projectId" />
-    <ApplicabilityPanel v-if="item" item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" :refresh="links.length" />
+    <ApplicabilityPanel v-if="item" item-type="requirement" :item-id="item.id" :item-key="item.key" :project-id="projectId" :can-write="canWrite" :refresh="links.length" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />

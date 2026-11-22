@@ -720,3 +720,50 @@ tests:
           expected: Varje läsare läser klart.
         - action: Ställ de tre frågorna och bedöm svaren mot meddelandet.
           expected: Minst 4 läsare svarar rätt på alla tre.
+
+risks:
+  - id: CONS-R01
+    category: compliance
+    likelihood: 4
+    impact: 3
+    tags: [cookies, tracking]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 7(1)", "GDPR Art. 4(11)"]
+    mitigated_by: [CONS-01, CONS-02, CONS-07, CONS-08, PRIV-10]
+    en:
+      title: Tracking without valid consent
+      description: Cookies and trackers are set before the visitor chooses, refusing is harder than accepting or choices are pre-selected. The consent is not valid, which can lead to fines and an order to delete the collected data.
+      mitigation: Make refusing as easy as accepting, ask per purpose with nothing pre-selected, block no access for refusing, honour the browser opt-out signal and track nothing before consent.
+    sv:
+      title: Spårning utan giltigt samtycke
+      description: Kakor och spårare sätts innan besökaren har valt, det är svårare att neka än att godta eller valen är förvalda. Samtycket är inte giltigt, vilket kan leda till sanktionsavgifter och krav på att insamlade uppgifter raderas.
+      mitigation: Gör det lika enkelt att neka som att godta, fråga per ändamål utan förval, blockera ingen åtkomst för den som nekar, respektera webbläsarens signal om att avstå och spåra ingenting före samtycke.
+  - id: CONS-R02
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [third-party, data-sharing]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 13(1)(e)", "CWE-359 (exposure of private personal information)"]
+    mitigated_by: [CONS-03, CONS-04, CONS-09]
+    en:
+      title: Visitor data shared with unknown third parties
+      description: Tracking scripts and server-side forwarding send visitor data to recipients that are not listed. Visitors cannot know who has their data and the organisation cannot answer requests about it.
+      mitigation: Keep an inventory of every cookie and tracker, name recipients before consent is given and forward no tracking data without consent.
+    sv:
+      title: Besökares uppgifter delas med okända tredje parter
+      description: Spårningsskript och vidarebefordran från servern skickar besökares uppgifter till mottagare som inte är listade. Besökarna kan inte veta vem som har deras uppgifter och organisationen kan inte besvara frågor om dem.
+      mitigation: För en förteckning över alla kakor och spårare, namnge mottagarna innan samtycke ges och vidarebefordra inga spårningsuppgifter utan samtycke.
+  - id: CONS-R03
+    category: privacy
+    likelihood: 2
+    impact: 4
+    tags: [children]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 8(1)", "GDPR Art. 8(2)"]
+    mitigated_by: [CONS-11, CONS-12, CONS-13, CONS-14]
+    en:
+      title: Children's data processed without protection
+      description: Children sign up without parental consent and get public profiles, profiling or location sharing. Children are exposed to contact and tracking they cannot judge.
+      mitigation: Ask for parental consent for children under 13 and confirm it through a separate channel, give child accounts no profiling, public profile or location and write a privacy notice that children understand.
+    sv:
+      title: Barns uppgifter behandlas utan skydd
+      description: Barn registrerar sig utan föräldrars samtycke och får offentliga profiler, profilering eller delning av plats. Barnen utsätts för kontakter och spårning som de inte kan bedöma.
+      mitigation: Begär föräldrars samtycke för barn under 13 år och bekräfta det via en separat kanal, ge barnkonton varken profilering, offentlig profil eller plats och skriv en integritetsinformation som barn förstår.

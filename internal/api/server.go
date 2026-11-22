@@ -96,6 +96,7 @@ type Server struct {
 // configuration of the file and the environment; the system settings
 // stored in the database are applied over it (see systemsettings.go).
 func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner, ui fs.FS) (*Server, error) {
+	registerCustomFieldExchange()
 	s := &Server{
 		Store: st, Cfg: cfg, Log: log, Runner: r, UI: ui,
 		OIDC:    map[string]*auth.OIDCProvider{},
@@ -227,34 +228,30 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/tags/suggest", s.handleSuggestTags, "requirement.read")
 	h("POST /api/v1/projects/{pid}/requirements", s.handleCreateRequirement, "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/move", s.handleMoveItems(model.KindRequirement), "requirement.write")
-	h("POST /api/v1/projects/{pid}/requirements/bulk", s.atomic(s.handleBulk(model.KindRequirement)), "requirement.read")
-	h("POST /api/v1/projects/{pid}/requirements/batch", s.atomic(s.handleBatchUpdate(model.KindRequirement)), "requirement.read") // write or review per item: see batch.go
+	h("POST /api/v1/projects/{pid}/requirements/bulk", s.impactAware(s.handleBulk(model.KindRequirement), true), "requirement.read")
+	h("POST /api/v1/projects/{pid}/requirements/batch", s.impactAware(s.handleBatchUpdate(model.KindRequirement), true), "requirement.read") // write or review per item: see batch.go
 	h("POST /api/v1/projects/{pid}/requirements/review", s.atomic(s.handleBulkReview(model.KindRequirement)), "requirement.read")
 	h("DELETE /api/v1/projects/{pid}/requirements/bulk", s.atomic(s.handleBulkDelete(model.KindRequirement)), "requirement.write")
 	h("GET /api/v1/requirements/{id}", s.handleGetRequirement, "requirement.read")
-	h("PATCH /api/v1/requirements/{id}", s.handleUpdateRequirement, "requirement.read") // write or review: see review.go
+	h("PATCH /api/v1/requirements/{id}", s.impactAware(s.handleUpdateRequirement, false), "requirement.read") // write or review: see review.go
 	h("POST /api/v1/requirements/{id}/copy", s.handleCopyRequirement, "requirement.write")
 	h("DELETE /api/v1/requirements/{id}", s.handleDeleteRequirement, "requirement.write")
 	h("GET /api/v1/requirements/{id}/links", s.handleItemLinks(model.KindRequirement), "requirement.read")
 	h("GET /api/v1/requirements/{id}/history", s.handleHistory(model.KindRequirement), "requirement.read")
-	h("POST /api/v1/requirements/{id}/restore", s.handleRestoreRequirement, "requirement.write")
+	h("POST /api/v1/requirements/{id}/restore", s.impactAware(s.handleRestoreRequirement, false), "requirement.write")
 	h("GET /api/v1/requirements/{id}/relations", s.handleListRequirementRelations, "requirement.read")
 	h("POST /api/v1/requirements/{id}/relations", s.handleCreateRelation, "requirement.write")
 	h("DELETE /api/v1/relations/{id}", s.handleDeleteRelation, "requirement.write")
 	h("GET /api/v1/projects/{pid}/relations", s.handleListProjectRelations, "requirement.read")
 	h("POST /api/v1/projects/{pid}/relations/bulk", s.atomic(s.handleBulkCreateRelations), "requirement.write")
 	h("DELETE /api/v1/projects/{pid}/relations/bulk", s.atomic(s.handleBulkDeleteRelations), "requirement.write")
-	h("GET /api/v1/requirements/{id}/comments", s.handleListComments(model.KindRequirement), "requirement.read")
-	h("POST /api/v1/requirements/{id}/comments", s.handleAddComment(model.KindRequirement), "requirement.read")
-	h("PATCH /api/v1/comments/{id}", s.handleUpdateComment)
-	h("DELETE /api/v1/comments/{id}", s.handleDeleteComment)
 	h("GET /api/v1/projects/{pid}/baselines", s.handleListBaselines, "requirement.read")
 	h("POST /api/v1/projects/{pid}/baselines", s.handleCreateBaseline, "requirement.write")
 	h("DELETE /api/v1/projects/{pid}/baselines/bulk", s.atomic(s.handleBulkDeleteBaselines), "requirement.write")
 	h("POST /api/v1/projects/{pid}/baselines/signoffs", s.atomic(s.handleBulkSignBaselines), "requirement.read")
 	h("GET /api/v1/baselines/{id}", s.handleGetBaseline, "requirement.read")
 	h("GET /api/v1/baselines/{id}/compare", s.handleCompareBaseline, "requirement.read")
-	h("POST /api/v1/baselines/{id}/restore", s.atomic(s.handleRestoreFromBaseline), "requirement.read")
+	h("POST /api/v1/baselines/{id}/restore", s.impactAware(s.handleRestoreFromBaseline, true), "requirement.read")
 	h("DELETE /api/v1/baselines/{id}", s.handleDeleteBaseline, "requirement.write")
 	h("POST /api/v1/reqlang/analyze", s.handleAnalyze)
 
@@ -262,12 +259,12 @@ func (s *Server) routes() {
 	h("GET /api/v1/projects/{pid}/tests", s.handleListTests, "test.read")
 	h("POST /api/v1/projects/{pid}/tests", s.handleCreateTest, "test.write")
 	h("POST /api/v1/projects/{pid}/tests/move", s.handleMoveItems(model.KindTest), "test.write")
-	h("POST /api/v1/projects/{pid}/tests/bulk", s.atomic(s.handleBulk(model.KindTest)), "test.read")
-	h("POST /api/v1/projects/{pid}/tests/batch", s.atomic(s.handleBatchUpdate(model.KindTest)), "test.read")
+	h("POST /api/v1/projects/{pid}/tests/bulk", s.impactAware(s.handleBulk(model.KindTest), true), "test.read")
+	h("POST /api/v1/projects/{pid}/tests/batch", s.impactAware(s.handleBatchUpdate(model.KindTest), true), "test.read")
 	h("POST /api/v1/projects/{pid}/tests/review", s.atomic(s.handleBulkReview(model.KindTest)), "test.read")
 	h("DELETE /api/v1/projects/{pid}/tests/bulk", s.atomic(s.handleBulkDelete(model.KindTest)), "test.write")
 	h("GET /api/v1/tests/{id}", s.handleGetTest, "test.read")
-	h("PATCH /api/v1/tests/{id}", s.handleUpdateTest, "test.read") // write or review: see review.go
+	h("PATCH /api/v1/tests/{id}", s.impactAware(s.handleUpdateTest, false), "test.read") // write or review: see review.go
 	h("DELETE /api/v1/tests/{id}", s.handleDeleteTest, "test.write")
 	h("GET /api/v1/requirements/{id}/item-links", s.handleListItemLinks(model.KindRequirement), "requirement.read")
 	h("POST /api/v1/requirements/{id}/item-links", s.handleCreateItemLink(model.KindRequirement), "requirement.write")
@@ -285,9 +282,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/tests/{id}/copy", s.handleCopyTest, "test.write")
 	h("GET /api/v1/tests/{id}/links", s.handleItemLinks(model.KindTest), "test.read")
 	h("GET /api/v1/tests/{id}/history", s.handleHistory(model.KindTest), "test.read")
-	h("POST /api/v1/tests/{id}/restore", s.handleRestoreTest, "test.write")
-	h("GET /api/v1/tests/{id}/comments", s.handleListComments(model.KindTest), "test.read")
-	h("POST /api/v1/tests/{id}/comments", s.handleAddComment(model.KindTest), "test.read")
+	h("POST /api/v1/tests/{id}/restore", s.impactAware(s.handleRestoreTest, false), "test.write")
 	h("GET /api/v1/tests/{id}/executions", s.handleTestExecutions, "run.read")
 
 	// traceability
@@ -332,6 +327,7 @@ func (s *Server) routes() {
 	s.routesRoles(h)
 	s.routesDependencies(h)
 	s.routesReleases(h)
+	s.routesCycles(h)
 	s.routesMetrics(h)
 	s.routesDefects(h)
 	s.routesRequirementIssues(h)
@@ -339,11 +335,16 @@ func (s *Server) routes() {
 	s.routesWaivers(h)
 	s.routesSoA(h)
 	s.routesNotifications(h)
+	s.routesWorkList(h)
+	// discussions on items (discussions.go)
+	s.routesDiscussions(h)
+	s.routesChat(h)
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)
 	// Excel round-trip and ReqIF import (exchange.go), OSLC (oslc.go)
 	s.routesExchange(h)
+	s.routesRequirementSources(h)
 	s.routesOSLC(pub, h)
 	// SCIM provisioning: its own token authentication (scim.go)
 	s.routesSCIM(m)
@@ -368,6 +369,10 @@ func (s *Server) routes() {
 	s.routesCorrelations(h)
 	// custom fields, field sets and item templates (customfields.go)
 	s.routesCustomFields(h)
+	// exploratory testing sessions (exploratory.go)
+	s.routesExploratory(h)
+	// similar requirements and tests, duplicates and conflicts (similarity.go)
+	s.routesSimilarity(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

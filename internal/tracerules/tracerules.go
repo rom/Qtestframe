@@ -51,6 +51,7 @@ type Graph struct {
 	Hooks Hooks
 
 	linksByReq map[string][]model.TraceLink
+	sims       map[string]*SimModel
 }
 
 // Violation is an item that breaks a rule.

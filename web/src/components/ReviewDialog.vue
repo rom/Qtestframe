@@ -9,6 +9,7 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
 import SuggestInput from './SuggestInput.vue'
+import DiscussionPanel from './DiscussionPanel.vue'
 import { api } from '@/lib/api'
 import { REVIEW_COMMENT, rememberValues, savedEntries } from '@/lib/suggest'
 import { usePrefsStore } from '@/stores/prefs'
@@ -98,6 +99,7 @@ async function save(decision = '') {
       <SuggestInput id="rv-comment" v-model="comment" field="review.comment" :project-id="review.project_id" multiline rows="3" auto-resize fluid :disabled="!pending" />
       <Message v-if="tried === 'approved' && open.length" severity="error" :closable="false">{{ t('reviews.needChecklist', { n: open.length }, open.length) }}</Message>
       <Message v-if="tried === 'changes_requested' && !comment.trim()" severity="error" :closable="false">{{ t('reviews.needComment') }}</Message>
+      <DiscussionPanel entity="review" :entity-id="review.id" :project-id="review.project_id" compact class="dialog-discussion" />
     </template>
     <template #footer>
       <Button :label="t('common.close')" severity="secondary" text @click="visible = false" />

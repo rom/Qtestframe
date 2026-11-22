@@ -78,7 +78,7 @@ It gets a **new key** in the target project (for example `SHOP-REQ-7` becomes `C
 
 ### Who can see my comments?
 
-Everyone who can read the item, which means every member of the organisation with access to the project, whatever their role. Comments are not visible to other organisations. You can edit and delete your own comments; admins can delete any comment. Comments are deleted together with their item.
+Everyone who can read the item, which means every member of the organisation with access to the project, whatever their role. Comments are not visible to other organisations. You can edit and remove your own comments; moderators (who may change the project's settings) can remove any comment, which then shows as removed. Comments are deleted together with their item. See [Discussions](discussions.md).
 
 ### What does "auto-generated" mean on a test?
 

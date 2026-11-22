@@ -1129,3 +1129,80 @@ tests:
           expected: Ett meddelande kommer inom 5 minuter med tid, ungefärlig plats och enhetstyp.
         - action: Följ länken i meddelandet som anmäler inloggningen som okänd.
           expected: Användaren leds till att byta lösenord och avsluta andra sessioner.
+
+risks:
+  - id: AUTH-R01
+    category: security
+    likelihood: 5
+    impact: 4
+    tags: [credential-stuffing, password]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "ENISA Threat Landscape 2024", "CWE-307 (improper restriction of excessive authentication attempts)", "MITRE ATT&CK T1110.004 (credential stuffing)", "MITRE ATT&CK T1110.003 (password spraying)"]
+    mitigated_by: [AUTH-02, AUTH-07, AUTH-09, SLOG-06]
+    en:
+      title: Accounts taken over with leaked passwords
+      description: Attackers try passwords leaked from other services, or a few common passwords on many accounts. Accounts whose users reuse passwords are taken over and their data and rights misused.
+      mitigation: Refuse breached and common passwords, offer multi-factor authentication to every user, limit failed sign-in attempts and alert on mass sign-in failures.
+    sv:
+      title: Konton tas över med läckta lösenord
+      description: Angripare provar lösenord som läckt från andra tjänster, eller några vanliga lösenord mot många konton. Konton vars användare återanvänder lösenord tas över och deras data och behörigheter missbrukas.
+      mitigation: Avvisa läckta och vanliga lösenord, erbjud flerfaktorsautentisering till alla användare, begränsa antalet misslyckade inloggningsförsök och larma vid många misslyckade inloggningar.
+  - id: AUTH-R02
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [phishing, mfa, administrator]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1111 (multi-factor authentication interception)", "MITRE ATT&CK T1598 (phishing for information)"]
+    mitigated_by: [AUTH-06, AUTH-18, AUTH-08, AUTH-19]
+    en:
+      title: Administrator account phished
+      description: An administrator enters the password and a one-time code on a fake sign-in page, or approves a code sent by SMS to an attacker. The attacker gets full control of the system.
+      mitigation: Require multi-factor authentication for administrators, avoid SMS and voice codes for them, prefer phishing-resistant passkeys and make one-time codes single-use and short-lived.
+    sv:
+      title: Administratörskonto nätfiskas
+      description: En administratör skriver in lösenordet och en engångskod på en falsk inloggningssida, eller godkänner en kod som skickats via sms till en angripare. Angriparen får full kontroll över systemet.
+      mitigation: Kräv flerfaktorsautentisering för administratörer, undvik sms- och röstkoder för dem, föredra nätfiskeresistenta passnycklar och gör engångskoder kortlivade och användbara en gång.
+  - id: AUTH-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [account-recovery, password-reset]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "CWE-640 (weak password recovery mechanism)", "MITRE ATT&CK T1098 (account manipulation)"]
+    mitigated_by: [AUTH-11, AUTH-12, AUTH-13, AUTH-16, AUTH-20]
+    en:
+      title: Account taken over through password recovery
+      description: A reset link that never expires, can be reused or is protected only by guessable security questions lets an attacker set a new password. The real user is locked out and may not notice in time.
+      mitigation: Let reset links expire and work only once, use no security questions, notify users of credential changes and provide single-use recovery codes for a lost second factor.
+    sv:
+      title: Konto tas över via lösenordsåterställning
+      description: En återställningslänk som aldrig löper ut, kan återanvändas eller bara skyddas av gissningsbara säkerhetsfrågor låter en angripare sätta ett nytt lösenord. Den riktiga användaren stängs ute och märker det kanske inte i tid.
+      mitigation: Låt återställningslänkar löpa ut och fungera en gång, använd inga säkerhetsfrågor, meddela användaren när inloggningsuppgifter ändras och ge engångskoder för återställning när den andra faktorn har förlorats.
+  - id: AUTH-R04
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [password-storage, data-breach]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-916 (password hash with insufficient computational effort)", "CWE-257 (storing passwords in a recoverable format)", "MITRE ATT&CK T1110.002 (password cracking)"]
+    mitigated_by: [AUTH-05, CRY-05]
+    en:
+      title: Leaked password database cracked offline
+      description: A copy of the user table leaks and the stored passwords are recovered because they are stored in a weak or reversible form. Users' passwords are exposed here and on every service where they reuse them.
+      mitigation: Store passwords only as salted one-way hashes with a slow password hashing algorithm and a sufficient work factor.
+    sv:
+      title: Läckt lösenordsdatabas knäcks offline
+      description: En kopia av användartabellen läcker och de lagrade lösenorden återskapas eftersom de lagras i en svag eller återställbar form. Användarnas lösenord röjs här och på alla tjänster där de återanvänds.
+      mitigation: Lagra lösenord endast som saltade envägshashar med en långsam hashalgoritm för lösenord och tillräcklig arbetsfaktor.
+  - id: AUTH-R05
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [default-credentials, single-sign-on]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1392 (use of default credentials)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1078.001 (default accounts)", "MITRE ATT&CK T1606.002 (SAML tokens)"]
+    mitigated_by: [AUTH-15, AUTH-14, AUTH-21]
+    en:
+      title: Authentication bypassed with default or forged credentials
+      description: An installation keeps a default password, or the system accepts single sign-on assertions without checking signature, audience and issuer. Anyone who knows the default or can forge an assertion signs in as any user.
+      mitigation: Ship no default credentials, validate every single sign-on assertion fully and link federated accounts by issuer and subject.
+    sv:
+      title: Autentiseringen kringgås med standard- eller förfalskade inloggningsuppgifter
+      description: En installation behåller ett standardlösenord, eller systemet godtar intyg från gemensam inloggning utan att kontrollera signatur, mottagare och utfärdare. Den som känner till standardlösenordet eller kan förfalska ett intyg loggar in som vilken användare som helst.
+      mitigation: Leverera inga standardinloggningar, validera varje intyg från gemensam inloggning fullständigt och koppla federerade konton via utfärdare och subjekt.

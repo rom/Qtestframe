@@ -1153,3 +1153,50 @@ tests:
           data: "blandning klassad Flam. Liq. 2 och Acute Tox. 3"
         - action: Jämför etiketten med grunddata.
           expected: Produktbeteckning, de två piktogrammen, signalordet "Fara", varje faro- och skyddsangivelse och leverantörens kontaktuppgifter finns med.
+
+risks:
+  - id: CHEM-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [process-safety, bypass]
+    refs: ["IEC 61511-1:2016 §11 (SIS design and engineering)", "IEC 61508-1:2010 §7.4 (hazard and risk analysis)"]
+    mitigated_by: [CHEM-05, CHEM-06, CHEM-10, CHEM-19, CHEM-17]
+    en:
+      title: Safety function defeated during operation
+      description: Batch control writes to the safety system, a bypass is left on or a change is made without management of change. A runaway reaction or release happens with the protection out of service.
+      mitigation: Give batch control no write access to the safety system, authorise bypasses with expiry, manage changes before activation, track proof test due dates and zone the process control network with controlled remote access.
+    sv:
+      title: Säkerhetsfunktion sätts ur spel under drift
+      description: Batchstyrningen skriver till säkerhetssystemet, en förbikoppling lämnas på eller en ändring görs utan ändringshantering. En skenande reaktion eller ett utsläpp inträffar medan skyddet är ur drift.
+      mitigation: Ge batchstyrningen ingen skrivåtkomst till säkerhetssystemet, godkänn förbikopplingar med slutdatum, hantera ändringar före aktivering, följ förfallodatum för provning av säkerhetsfunktioner och dela in processnätet i zoner med kontrollerad fjärråtkomst.
+  - id: CHEM-R02
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [seveso, hazardous-substances]
+    refs: ["Directive 2012/18/EU (Seveso III) Art. 3(2)", "Regulation (EC) No 1272/2008 Art. 17"]
+    mitigated_by: [CHEM-07, CHEM-08, CHEM-09, CHEM-22]
+    en:
+      title: Hazardous substances above what the site is approved for
+      description: Stock of hazardous substances is not tracked per location, so the site exceeds a Seveso threshold or stores substances without current safety data. The site operates outside its permit and emergency plans are wrong.
+      mitigation: Keep an inventory of hazardous substances per storage location, keep a current safety data sheet for each, compare site totals with the Seveso III thresholds and print CLP label elements correctly.
+    sv:
+      title: Farliga ämnen över den mängd anläggningen har tillstånd för
+      description: Lagret av farliga ämnen följs inte per plats, så anläggningen överskrider en Sevesogräns eller lagrar ämnen utan aktuella säkerhetsdatablad. Anläggningen drivs utanför sitt tillstånd och beredskapsplanerna är felaktiga.
+      mitigation: För en förteckning över farliga ämnen per lagerplats, ha ett aktuellt säkerhetsdatablad för varje ämne, jämför anläggningens totala mängder med tröskelvärdena i Seveso III och skriv ut CLP-märkningens element korrekt.
+  - id: CHEM-R03
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [gmp, batch-record]
+    refs: ["EU GMP Chapter 5 (production)", "EU GMP Annex 11 §9 (audit trails)"]
+    mitigated_by: [CHEM-01, CHEM-03, CHEM-04, CHEM-16, CHEM-21]
+    en:
+      title: Batch made with the wrong recipe or unreliable records
+      description: A control recipe is built from an unreleased master, expired material is dispensed or the batch record has gaps. The batch must be rejected or, worse, defective product is released.
+      mitigation: Create control recipes only from released master recipes approved with two signatures, keep a complete electronic batch record with an audit trail following ALCOA+ and block dispensing of expired material.
+    sv:
+      title: Batch tillverkas med fel recept eller otillförlitliga register
+      description: Ett styrrecept byggs från ett grundrecept som inte är frisläppt, utgånget material doseras eller batchprotokollet har luckor. Batchen måste kasseras eller, värre, en felaktig produkt släpps ut.
+      mitigation: Skapa styrrecept bara från frisläppta grundrecept som godkänts med två underskrifter, för ett fullständigt elektroniskt batchprotokoll med granskningslogg enligt ALCOA+ och spärra dosering av utgånget material.

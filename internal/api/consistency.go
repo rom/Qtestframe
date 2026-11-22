@@ -53,6 +53,7 @@ func (s *Server) traceFacts(ctx context.Context, tenantID string, pr *model.Proj
 	for _, t := range tests {
 		f.TestStatus[t.ID] = t.Status
 	}
+	s.similarityFacts(ctx, tenantID, pr.ID, g, reqs, tests)
 	f.Dependencies = pc.deps
 	rels, err := s.Store.ListReleases(ctx, tenantID, pr.ID)
 	if err != nil {
@@ -277,7 +278,7 @@ func (s *Server) handleDismiss(add bool) handlerFunc {
 			return
 		}
 		perm := rbac.RequirementWr
-		if b.Check == model.CheckBrokenPrerequisite {
+		if b.Check == model.CheckBrokenPrerequisite || b.Check == model.CheckTestDuplicateSuspect {
 			perm = rbac.TestWrite
 		}
 		ctx := r.Context()

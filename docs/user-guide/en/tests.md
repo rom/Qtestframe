@@ -19,6 +19,7 @@ The page works like the [requirements page](requirements.md#the-requirements-pag
 | **Status** | Draft, Ready, Review or Deprecated. |
 | **Priority** | Critical, High, Medium or Low. |
 | **Estimate (minutes)** | Expected duration. |
+| **Owner** | The project member responsible for the test. Type `@` to pick a person; the test then appears in their [work list](reviews-and-notifications.md#my-work) while it is in draft or review, or when it becomes suspect or its results stale. |
 | **Folder**, **Categories**, **Tags** | Filing and classification. **Suggested tags** under the tags field come from the title, description, preconditions and steps, as for [requirements](requirements.md#fields). |
 | **Overall expected result** | The expected outcome of the test as a whole. |
 
@@ -191,7 +192,7 @@ A flaky test hides real failures and wastes time on reruns: find the cause (timi
 
 ## Comments and history
 
-**Comments** and **History** work exactly as for [requirements](requirements.md#comments). Restoring a test version restores its fields and steps as a new version; steps get new IDs and calls to deleted tests are dropped. If someone else saves a test while you edit it, you can compare and choose instead of overwriting their changes, see [When someone else saved first](requirements.md#when-someone-else-saved-first).
+The **Discussion** tab and **History** work exactly as for [requirements](requirements.md#discussion) (see [Discussions](discussions.md)). Restoring a test version restores its fields and steps as a new version; steps get new IDs and calls to deleted tests are dropped. If someone else saves a test while you edit it, you can compare and choose instead of overwriting their changes, see [When someone else saved first](requirements.md#when-someone-else-saved-first).
 
 ## Links
 

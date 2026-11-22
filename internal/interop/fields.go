@@ -309,6 +309,7 @@ func testFields() []Field {
 				b["estimated_minutes"] = n
 				return nil
 			}},
+		{Key: "owner", Label: "Owner", Aliases: []string{"Ägare"}, Type: Text, Get: tst(func(t *model.TestCase) string { return t.Owner }), Put: put("owner")},
 		{Key: "tags", Label: "Tags", Aliases: []string{"Taggar"}, Type: List, Get: tst(func(t *model.TestCase) string { return JoinList(t.Tags) }), Put: putList("tags")},
 		{Key: "verifies", Label: "Verifies", Aliases: []string{"Verifierar", "Linked requirements"}, Type: Keys,
 			Get: func(it *Item) string { return JoinList(sortedCopy(it.Links)) }},

@@ -183,7 +183,7 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	for _, rel := range []struct {
 		src, dst int
 		typ      string
-	}{{1, 0, "depends_on"}, {2, 0, "provides"}, {3, 0, "depends_on"}, {4, 3, "refines"}, {6, 7, "derived_from"}} {
+	}{{1, 0, "depends_on"}, {2, 0, "provides"}, {3, 0, "depends_on"}, {4, 3, "refines"}, {5, 4, "refines"}, {6, 7, "derived_from"}} {
 		if rel.src >= len(reqs) || rel.dst >= len(reqs) {
 			continue
 		}
@@ -227,6 +227,29 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := st.CreateRequirement(ctx, tenantID, dup); err != nil {
 		return nil, err
 	}
+	// Duplicates & conflicts: a requirement that says "Password login" in
+	// other words, two that contradict existing ones (a threshold and an
+	// opposite obligation) and a test that repeats "Login with valid
+	// credentials"
+	for _, x := range []struct {
+		folder                 *model.Folder
+		title, desc, typ, area string
+	}{
+		{rf, "Password sign-in", "Users SHALL log in with their e-mail address and password.", "functional", "Security"},
+		{rf2, "Transfer confirmation delay", "Transfers MUST be confirmed in no less than 5 seconds, so that the fraud checks can finish.", "performance", "Core"},
+		{rf2, "No statement export", "Users MUST NOT export account statements.", "security", "UI"},
+	} {
+		r := &model.Requirement{ProjectID: p.ID, FolderID: &x.folder.ID, Title: x.title, Description: x.desc, Obligation: reqlang.DetectObligation(x.desc),
+			Type: x.typ, Priority: "medium", Status: "draft", CategoryIDs: []string{cat("Area", x.area)}, CreatedBy: "seed", Tags: []string{strings.ToLower(x.area)}}
+		if err := st.CreateRequirement(ctx, tenantID, r); err != nil {
+			return nil, err
+		}
+	}
+	if err := st.CreateTest(ctx, tenantID, &model.TestCase{ProjectID: p.ID, FolderID: &tf.ID, Title: "Sign in with a valid password", ExecutionType: model.ExecManual,
+		Steps:  []model.TestStep{{Action: "Open the sign-in page", Expected: "Login form is shown"}, {Action: "Enter a valid email and password"}, {Action: "Press Sign in", Expected: "Dashboard is shown"}},
+		Status: "draft", CreatedBy: "seed", Tags: []string{model.ExecManual}}); err != nil {
+		return nil, err
+	}
 	if err := st.CreateRisk(ctx, tenantID, &model.Risk{ProjectID: p.ID, Title: "Credential stuffing takes over accounts", Category: "security",
 		Likelihood: 4, Impact: 5, Owner: "security team", CreatedBy: "seed"}); err != nil {
 		return nil, err
@@ -266,7 +289,7 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	// change impact, stale results, blocking defects and a regression (seedcorrelations.go)
 	var changed *model.Requirement
 	if len(reqs) > 4 {
-		changed = reqs[3] // reqs[4] refines it
+		changed = reqs[3] // reqs[4] refines it, reqs[5] refines reqs[4] (transitive impact)
 	}
 	if err := seedCorrelations(ctx, st, tenantID, run, changed); err != nil {
 		return nil, err
@@ -280,7 +303,23 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedVariantsAndCode(ctx, st, tenantID, p, reqs, testIDs, run); err != nil {
 		return nil, err
 	}
+	if err := seedCatalogRisks(ctx, st, tenantID, p.ID, rf, reqs); err != nil {
+		return nil, err
+	}
 	if err := seedCustomFields(ctx, st, tenantID, p.ID, reqs); err != nil {
+		return nil, err
+	}
+	if err := seedChat(ctx, st, tenantID, p); err != nil {
+		return nil, err
+	}
+	if err := seedImportSources(ctx, st, tenantID, p, reqs); err != nil {
+		return nil, err
+	}
+	// exploratory test sessions (seedexploratory.go)
+	if err := seedExploratory(ctx, st, clock, tenantID, p, []*model.Folder{rf, rf2, rf3}, reqs, testIDs); err != nil {
+		return nil, err
+	}
+	if err := seedInterop(ctx, st, tenantID, reqs, testIDs); err != nil {
 		return nil, err
 	}
 	return p, nil

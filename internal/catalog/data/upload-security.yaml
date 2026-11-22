@@ -781,3 +781,50 @@ tests:
           expected: Skannern läser in den nya signaturen.
         - action: Kontrollera filens status och ägarens aviseringar under de följande 24 timmarna.
           expected: Filen är i karantän, kan inte längre laddas ned och ägaren har fått ett meddelande.
+
+risks:
+  - id: UPLS-R01
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [web-shell, upload]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-434 (unrestricted upload of file with dangerous type)", "CWE-22 (path traversal)", "MITRE ATT&CK T1505.003 (web shell)"]
+    mitigated_by: [UPLS-01, UPLS-02, UPLS-05, UPLS-09, INP-08]
+    en:
+      title: Uploaded file runs as code on the server
+      description: An uploaded script is stored where the web server executes it, or an archive entry writes outside the target directory. The attacker gets a web shell and controls the server.
+      mitigation: Allow only listed file types checked against the content, store files under generated names outside the web root and keep archive entries inside the target directory.
+    sv:
+      title: Uppladdad fil körs som kod på servern
+      description: Ett uppladdat skript lagras där webbservern kör det, eller en post i ett arkiv skriver utanför målkatalogen. Angriparen får ett webbskal och styr servern.
+      mitigation: Tillåt bara listade filtyper som kontrolleras mot innehållet, lagra filer under genererade namn utanför webbroten och håll arkivets poster inom målkatalogen.
+  - id: UPLS-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [malware, shared-files]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "MITRE ATT&CK T1204.002 (malicious file)", "MITRE ATT&CK T1080 (taint shared content)"]
+    mitigated_by: [UPLS-03, UPLS-04, UPLS-13, UPLS-16, UPLS-14]
+    en:
+      title: Malware spread to other users through shared files
+      description: A user uploads an infected document that colleagues or customers download and open. Their computers are infected through a file they trust because it came from the system.
+      mitigation: Scan files for malware before they are shared and again with new signatures, quarantine infected files, flag documents with macros or scripts and re-encode images.
+    sv:
+      title: Skadlig kod sprids till andra användare via delade filer
+      description: En användare laddar upp ett smittat dokument som kollegor eller kunder hämtar och öppnar. Deras datorer smittas via en fil de litar på eftersom den kom från systemet.
+      mitigation: Skanna filer efter skadlig kod innan de delas och igen med nya signaturer, sätt smittade filer i karantän, flagga dokument med makron eller skript och koda om bilder.
+  - id: UPLS-R03
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [zip-bomb, storage]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "CWE-409 (improper handling of highly compressed data)", "CWE-400 (uncontrolled resource consumption)", "MITRE ATT&CK T1499.004 (application or system exploitation)"]
+    mitigated_by: [UPLS-08, UPLS-15, INP-07]
+    en:
+      title: Storage or processing exhausted by uploads
+      description: A small archive unpacks to terabytes, or abandoned and oversized uploads fill the disk. Uploads, previews and other services stop working.
+      mitigation: Limit the size and number of unpacked entries, check the type and size of uploads and remove incomplete uploads after 24 hours.
+    sv:
+      title: Lagring eller bearbetning tar slut på grund av uppladdningar
+      description: Ett litet arkiv packas upp till terabyte, eller övergivna och överstora uppladdningar fyller disken. Uppladdning, förhandsvisning och andra tjänster slutar fungera.
+      mitigation: Begränsa storleken på och antalet uppackade poster, kontrollera uppladdningarnas typ och storlek och ta bort ofullständiga uppladdningar efter 24 timmar.

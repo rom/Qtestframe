@@ -22,6 +22,8 @@ func (s *Server) routesCorrelations(h routeFunc) {
 	h("GET /api/v1/requirements/{id}/impact", s.handleImpact(model.KindRequirement), "requirement.read")
 	h("GET /api/v1/tests/{id}/impact", s.handleImpact(model.KindTest), "test.read")
 	h("GET /api/v1/baselines/{id}/impact", s.handleBaselineImpact, "requirement.read")
+	h("POST /api/v1/projects/{pid}/impact", s.handleProjectImpact, "requirement.read")
+	h("GET /api/v1/projects/{pid}/impact/export", s.handleProjectImpactExport, "requirement.read")
 	h("POST /api/v1/relations/{id}/confirm", s.handleConfirmRelation, "requirement.write")
 	h("POST /api/v1/requirements/{id}/relations/confirm", s.handleConfirmRequirementRelations, "requirement.write")
 	h("POST /api/v1/item-links/{id}/issue/confirm", s.handleConfirmIssue, "requirement.write")
@@ -105,39 +107,45 @@ func (s *Server) itemProject(ctx context.Context, p *Principal, kind, id string)
 
 // handleImpact: GET /requirements/{id}/impact and /tests/{id}/impact —
 // what a change of the item's substance makes suspect, out of date,
-// outdated or stale (the preview before saving, and the Impact tab).
+// outdated or stale, or recommends for review, up to the project's impact
+// depth or ?depth= (the preview before saving, and the Impact tab).
 func (s *Server) handleImpact(kind string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, p *Principal) {
 		ctx := r.Context()
+		depth, err := itemImpactDepth(r)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
 		pid, _, err := s.itemProject(ctx, p, kind, r.PathValue("id"))
 		if err != nil {
 			s.fail(w, r, err)
 			return
 		}
-		imp, err := s.Store.ChangeImpact(ctx, p.TenantID(), pid, kind, r.PathValue("id"))
+		x, err := s.Store.LoadImpactIndex(ctx, p.TenantID(), pid)
 		if err != nil {
 			s.fail(w, r, err)
 			return
 		}
+		if !x.Has(kind, r.PathValue("id")) {
+			s.fail(w, r, store.ErrNotFound)
+			return
+		}
+		imp, _ := x.Analyze([]store.ImpactRoot{{Kind: kind, ID: r.PathValue("id")}}, depth)
 		s.redactImpact(p, imp)
 		writeJSON(w, http.StatusOK, imp)
 	}
 }
 
 // redactImpact leaves out the tests (and their results) a caller without
-// test.read may not see.
+// test.read may not see, with what is reached through them.
 func (s *Server) redactImpact(p *Principal, imp *model.ChangeImpact) {
-	if !p.Can(rbac.TestRead) {
-		imp.Tests, imp.Results = []model.ImpactItem{}, []model.ImpactItem{}
-		imp.Total = 0
-		for _, list := range [][]model.ImpactItem{imp.Requirements, imp.Issues, imp.Documents} {
-			for _, it := range list {
-				if !it.Already {
-					imp.Total++
-				}
-			}
-		}
+	if p.Can(rbac.TestRead) {
+		return
 	}
+	store.FilterImpact(imp, func(it model.ImpactItem) bool {
+		return it.Kind != model.KindTest && it.Kind != "result"
+	})
 }
 
 // BaselineImpact is the impact of the changes between a baseline and the
@@ -146,8 +154,7 @@ type BaselineImpact struct {
 	Baseline string `json:"baseline"`
 	// Changes: the items whose substance changed since the baseline.
 	Changes []BaselineImpactChange `json:"changes"`
-	// Totals: distinct items affected, by kind (requirements, tests,
-	// issues, documents, results).
+	// Totals: distinct items affected, by kind (model.ImpactSections).
 	Totals map[string]int `json:"totals"`
 }
 
@@ -197,56 +204,20 @@ func (s *Server) handleBaselineImpact(w http.ResponseWriter, r *http.Request, p 
 		}
 		s.redactImpact(p, imp)
 		out.Changes = append(out.Changes, BaselineImpactChange{BaselineChange: c, Impact: imp})
-		for kind, list := range map[string][]model.ImpactItem{"requirements": imp.Requirements, "tests": imp.Tests, "issues": imp.Issues, "documents": imp.Documents, "results": imp.Results} {
+		for kind, list := range imp.Lists() {
 			if seen[kind] == nil {
 				seen[kind] = map[string]bool{}
 			}
-			for _, it := range list {
+			for _, it := range *list {
 				seen[kind][it.ID] = true
 			}
 		}
 	}
-	for _, kind := range []string{"requirements", "tests", "issues", "documents", "results"} {
+	for _, kind := range model.ImpactSections {
 		out.Totals[kind] = len(seen[kind])
 	}
 	sort.SliceStable(out.Changes, func(i, j int) bool { return out.Changes[i].Impact.Total > out.Changes[j].Impact.Total })
 	writeJSON(w, http.StatusOK, out)
-}
-
-// applyChangeImpact carries out the change impact of a requirement whose
-// substance changed: its relations along the configured types become
-// suspect with the trace links of the requirements at their other end, and
-// its tracker issues are flagged out of date. Returns the requirements
-// whose links changed. reason describes the change.
-func (s *Server) applyChangeImpact(ctx context.Context, p *Principal, id, key, reason string) []string {
-	var reqs []string
-	irs, err := s.Store.MarkRelationsSuspect(ctx, p.TenantID(), id, reason)
-	if err != nil {
-		s.Log.Warn("mark relations suspect", "err", err)
-	}
-	for _, ir := range irs {
-		s.audit(ctx, p, "relation.suspect", "relation", ir.Relation.ID, ir.OtherKey+" "+ir.Relation.Type+" "+key+": "+reason)
-		via := "requirement " + key + " (" + ir.Relation.Type + ") changed: " + reason
-		got, err := s.Store.MarkLinksSuspect(ctx, p.TenantID(), model.KindRequirement, ir.OtherID, via)
-		if err != nil {
-			s.Log.Warn("mark links suspect", "err", err)
-			continue
-		}
-		reqs = append(reqs, got...)
-	}
-	r, err := s.Store.GetRequirement(ctx, p.TenantID(), id)
-	if err != nil {
-		return reqs
-	}
-	set, err := s.Store.CorrelationSettings(ctx, p.TenantID(), r.ProjectID)
-	if err == nil && set.FlagIssues {
-		if n, err := s.Store.MarkIssuesOutdated(ctx, p.TenantID(), id, reason); err != nil {
-			s.Log.Warn("mark issues outdated", "err", err)
-		} else if n > 0 {
-			s.audit(ctx, p, "requirement.issue.outdated", model.KindRequirement, id, key+": "+reason)
-		}
-	}
-	return reqs
 }
 
 // ---------------------------------------------------------------- confirm

@@ -34,10 +34,10 @@ const maxExchangeBytes = 20 << 20
 
 func (s *Server) routesExchange(h routeFunc) {
 	h("GET /api/v1/projects/{pid}/exchange/xlsx", s.handleExchangeExport, "export")
-	h("POST /api/v1/projects/{pid}/exchange/xlsx/preview", s.handleExchangeXLSXPreview, "project.read")       // write of the kind: see exchange.go
-	h("POST /api/v1/projects/{pid}/exchange/xlsx/apply", s.atomic(s.handleExchangeXLSXApply), "project.read") // write of the kind
+	h("POST /api/v1/projects/{pid}/exchange/xlsx/preview", s.handleExchangeXLSXPreview, "project.read")                  // write of the kind: see exchange.go
+	h("POST /api/v1/projects/{pid}/exchange/xlsx/apply", s.impactAware(s.handleExchangeXLSXApply, true), "project.read") // write of the kind
 	h("POST /api/v1/projects/{pid}/exchange/reqif/preview", s.handleReqIFPreview, "requirement.write")
-	h("POST /api/v1/projects/{pid}/exchange/reqif/apply", s.atomic(s.handleReqIFApply), "requirement.write")
+	h("POST /api/v1/projects/{pid}/exchange/reqif/apply", s.impactAware(s.handleReqIFApply, true), "requirement.write")
 }
 
 func exchangeKind(v string) (string, error) {
@@ -105,7 +105,7 @@ func folderPaths(folders []model.Folder) map[string]string {
 // loadExchange loads the items of kind (filtered by q and folder_id of
 // the request when filter is set) with their relations and links.
 func (s *Server) loadExchange(r *http.Request, p *Principal, pr *model.Project, kind string, filter bool) (*exchangeData, error) {
-	ctx := r.Context()
+	ctx := withExchangeStore(r.Context(), s.Store)
 	fields, err := interop.FieldsFor(ctx, p.TenantID(), pr.ID, kind)
 	if err != nil {
 		return nil, err
@@ -239,7 +239,7 @@ func (s *Server) handleExchangeExport(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, err)
 		return
 	}
-	if perm := readPerm(kind); !p.Can(perm) {
+	if perm := readPermOf(kind); !p.Can(perm) {
 		writeError(w, http.StatusForbidden, "forbidden", "permission "+string(perm)+" required")
 		return
 	}

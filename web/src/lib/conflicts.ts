@@ -84,7 +84,7 @@ export const REQUIREMENT_FIELDS = {
 
 /** The editable fields of a test and how to compare them. */
 export const TEST_FIELDS = {
-  fields: ['title', 'description', 'preconditions', 'execution_type', 'script_language', 'script', 'expected_result', 'priority', 'status', 'estimated_minutes', 'tags', 'category_ids', 'folder_id', 'steps', 'parameters', 'data_rows'],
+  fields: ['title', 'description', 'preconditions', 'execution_type', 'script_language', 'script', 'expected_result', 'priority', 'status', 'estimated_minutes', 'owner', 'tags', 'category_ids', 'folder_id', 'steps', 'parameters', 'data_rows'],
   normalize: {
     tags: asSet,
     category_ids: asSet,

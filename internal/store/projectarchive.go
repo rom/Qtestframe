@@ -105,6 +105,10 @@ var projectArchiveTables = []archiveTable{
 	{"trace_links", ofProject},
 	{"variants", ofProject},
 	{"builds", ofProject},
+	// test cycles before the runs they created
+	{"test_cycles", ofProject},
+	{"test_cycle_tests", `cycle_id IN (SELECT id FROM test_cycles WHERE project_id = ?)`},
+	{"test_cycle_schedules", ofProject},
 	{"test_runs", ofProject},
 	{"run_configurations", inRuns},
 	{"test_executions", inRuns},
@@ -124,6 +128,7 @@ var projectArchiveTables = []archiveTable{
 	{"risks", ofProject},
 	{"risk_requirements", `risk_id IN (SELECT id FROM risks WHERE project_id = ?)`},
 	{"webhooks", ofProject},
+	{"chat_channels", ofProject},
 	{"review_requests", ofProject},
 	{"baseline_signoffs", inBaseline},
 	{"metric_snapshots", ofProject},
@@ -153,6 +158,10 @@ var projectArchiveTables = []archiveTable{
 	{"custom_field_archive", ofProject},
 	{"item_templates", ofProject},
 	{"project_template_defaults", ofProject},
+	// exploratory testing sessions
+	{"exploratory_sessions", ofProject},
+	{"exploratory_scope", `session_id IN (SELECT id FROM exploratory_sessions WHERE project_id = ?)`},
+	{"exploratory_notes", `session_id IN (SELECT id FROM exploratory_sessions WHERE project_id = ?)`},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},
@@ -161,32 +170,34 @@ var projectArchiveTables = []archiveTable{
 // ProjectArchiveExcluded names the tables that are deliberately not part
 // of a project archive, with the reason.
 var ProjectArchiveExcluded = map[string]string{
-	"tenants":              "organisation",
-	"users":                "accounts (references such as created_by are kept as values)",
-	"memberships":          "access rights",
-	"project_members":      "access rights (a loaded project gets its own sharing)",
-	"api_tokens":           "secret",
-	"audit_log":            "organisation audit trail",
-	"login_events":         "account history",
-	"roles":                "organisation roles",
-	"trash":                "deleted items",
-	"notifications":        "personal",
-	"report_subscriptions": "personal e-mail schedules",
-	"invitations":          "secret",
-	"scim_tokens":          "secret",
-	"scim_settings":        "organisation",
-	"system_settings":      "server configuration",
-	"secret_keys":          "server encryption keys",
-	"scim_users":           "organisation",
-	"scim_groups":          "organisation",
-	"scim_group_members":   "organisation",
-	"file_blobs":           "stored as files/<id>",
-	"user_mfa":             "secret (second factors)",
-	"mfa_recovery_codes":   "secret (second factors)",
-	"mfa_policies":         "organisation",
-	"code_settings":        "secret (webhook secret of the code integration)",
-	"field_set_fields":     "organisation field sets (the project has its own copies)",
-	"org_item_templates":   "organisation templates",
+	"tenants":               "organisation",
+	"users":                 "accounts (references such as created_by are kept as values)",
+	"memberships":           "access rights",
+	"project_members":       "access rights (a loaded project gets its own sharing)",
+	"api_tokens":            "secret",
+	"audit_log":             "organisation audit trail",
+	"login_events":          "account history",
+	"roles":                 "organisation roles",
+	"trash":                 "deleted items",
+	"notifications":         "personal",
+	"report_subscriptions":  "personal e-mail schedules",
+	"invitations":           "secret",
+	"scim_tokens":           "secret",
+	"scim_settings":         "organisation",
+	"system_settings":       "server configuration",
+	"secret_keys":           "server encryption keys",
+	"scim_users":            "organisation",
+	"scim_groups":           "organisation",
+	"scim_group_members":    "organisation",
+	"file_blobs":            "stored as files/<id>",
+	"user_mfa":              "secret (second factors)",
+	"mfa_recovery_codes":    "secret (second factors)",
+	"mfa_policies":          "organisation",
+	"code_settings":         "secret (webhook secret of the code integration)",
+	"field_set_fields":      "organisation field sets (the project has its own copies)",
+	"org_item_templates":    "organisation templates",
+	"chat_deliveries":       "queue and log of chat posts",
+	"similarity_embeddings": "cache of the embeddings service (computed again)",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.
@@ -214,17 +225,28 @@ var mustMapColumns = map[string]string{
 	// polymorphic references to requirements and tests
 	"item_applicability": "item_id",
 	"code_change_items":  "item_id",
+	// polymorphic references to folders, requirements and tests
+	"exploratory_scope": "entity_id",
 }
 
 // sanitizeArchiveRow removes secrets from a row (when saving and again
 // when loading, so a hand-made archive cannot bring them in either).
 func sanitizeArchiveRow(table string, row map[string]any) {
 	switch table {
+	case "test_cycle_schedules":
+		// a loaded project does not create cycles until someone enables it
+		row["enabled"] = false
+		row["next_run_at"] = nil
 	case "webhooks":
 		// the secret is write-only; a loaded webhook stays off until an
 		// administrator sets a new secret and enables it
 		row["secret"] = ""
 		row["enabled"] = false
+	case "chat_channels":
+		// the webhook URL or access token is write-only, as above
+		row["secret"] = ""
+		row["enabled"] = false
+		row["next_digest_at"] = nil
 	case "projects":
 		if s, ok := row["defect_tracker"].(string); ok && s != "" {
 			var m map[string]any
@@ -235,6 +257,20 @@ func sanitizeArchiveRow(table string, row map[string]any) {
 				row["defect_tracker"] = string(b)
 			} else {
 				row["defect_tracker"] = "{}"
+			}
+		}
+		// requirement import sources: the tokens stay behind
+		if s, ok := row["import_sources"].(string); ok && s != "" {
+			var m map[string]map[string]any
+			if json.Unmarshal([]byte(s), &m) == nil && m != nil {
+				for _, src := range m {
+					delete(src, "token")
+					delete(src, "has_token")
+				}
+				b, _ := json.Marshal(m)
+				row["import_sources"] = string(b)
+			} else {
+				row["import_sources"] = "{}"
 			}
 		}
 		// web test variables: secret values are write-only and stay behind

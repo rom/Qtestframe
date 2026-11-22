@@ -996,3 +996,50 @@ tests:
           expected: Varje enhet tar högst 0,50 W.
         - action: Återaktivera varje enhet från viloläget med den angivna funktionen.
           expected: Varje enhet återgår till påläge.
+
+risks:
+  - id: HWENV-R01
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [environmental-stress, field-failure]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 60068-2-14:2023 (change of temperature)"]
+    mitigated_by: [HWENV-01, HWENV-02, HWENV-03, HWENV-04, HWENV-05, HWENV-06]
+    en:
+      title: Product fails in the real environment of use
+      description: Cold, heat, humidity, vibration or temperature changes in the field exceed what the design was tested for. Units stop working, crack solder joints or corrode.
+      mitigation: Write an environmental specification with test levels and test operation at the temperature limits, after damp heat, after temperature cycling and under vibration.
+    sv:
+      title: Produkten fallerar i den verkliga användningsmiljön
+      description: Kyla, värme, fukt, vibrationer eller temperaturväxlingar i fält går utöver det som konstruktionen provats för. Enheter slutar fungera, får spruckna lödfogar eller korroderar.
+      mitigation: Skriv en miljöspecifikation med provnivåer och prova funktionen vid temperaturgränserna, efter fuktig värme, efter temperaturcykling och under vibration.
+  - id: HWENV-R02
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [rohs, reach]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive 2011/65/EU (RoHS) Art. 4(1)", "Regulation (EC) No 1907/2006 (REACH) Art. 33(1) (duty to communicate information on substances in articles)"]
+    mitigated_by: [HWENV-11, HWENV-12, HWENV-13, HWENV-14]
+    en:
+      title: Restricted substances found in the product
+      description: A supplier part contains lead, a restricted flame retardant or a substance of very high concern, or an exemption expires unnoticed. Products are blocked at the border or must be withdrawn.
+      mitigation: Keep restricted substances below the RoHS limits, collect material declarations for each part, track RoHS exemptions with their expiry dates and communicate substances of very high concern.
+    sv:
+      title: Begränsade ämnen hittas i produkten
+      description: En inköpt komponent innehåller bly, ett begränsat flamskyddsmedel eller ett särskilt farligt ämne, eller ett undantag löper ut obemärkt. Produkter stoppas vid gränsen eller måste dras tillbaka.
+      mitigation: Håll begränsade ämnen under RoHS-gränserna, samla in materialdeklarationer för varje komponent, följ RoHS-undantagen med deras slutdatum och informera om särskilt farliga ämnen.
+  - id: HWENV-R03
+    category: environmental
+    likelihood: 3
+    impact: 3
+    tags: [repairability, ecodesign]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Regulation (EU) 2024/1781 (ESPR) Art. 5 (ecodesign requirements)"]
+    mitigated_by: [HWENV-18, HWENV-19, HWENV-20, HWENV-21, HWENV-22]
+    en:
+      title: Product cannot be repaired and is scrapped early
+      description: Spare parts, repair information or reusable fasteners are missing, and standby power is high. The product is discarded early, ecodesign requirements are not met and customers demanding sustainability choose another supplier.
+      mitigation: Keep spare parts for 7 years, give repair information to professional repairers, use reusable fasteners and common tools, link units to their digital product passport and keep standby power within the ecodesign limits.
+    sv:
+      title: Produkten kan inte repareras och skrotas i förtid
+      description: Reservdelar, reparationsinformation eller återanvändbara fästelement saknas och effekten i viloläge är hög. Produkten kasseras i förtid, ekodesignkraven uppfylls inte och kunder som kräver hållbarhet väljer en annan leverantör.
+      mitigation: Håll reservdelar i 7 år, ge reparationsinformation till professionella reparatörer, använd återanvändbara fästelement och vanliga verktyg, koppla enheterna till deras digitala produktpass och håll effekten i viloläge inom ekodesigngränserna.

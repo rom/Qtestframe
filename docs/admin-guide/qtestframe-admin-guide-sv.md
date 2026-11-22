@@ -15,11 +15,12 @@ De som *använder* Qtestframe – även organisationsadministratörer som hanter
 7. [Systeminställningar under drift](#systeminställningar-under-drift) – vad superadministratörer kan ändra i webbklienten, och vad som kräver omstart.
 8. [Säkerhet](#säkerhet) – TLS, härdning med Landlock och seccomp, kryptering av lagrade hemligheter och nyckelleverantörerna, nyckelbyte, katastrofåterställning, granskningsloggen, säkerhetshuvuden.
 9. [E-post, webhooks och integrationer](#e-post-webhooks-och-integrationer) – SMTP, aviseringar, webhooks, Jira, GitHub och GitLab, körning av skript och webbtester.
-10. [Loggning och övervakning](#loggning-och-övervakning) – loggformat, syslog, hälsokontroller.
-11. [Säkerhetskopiering, återställning och migrering](#säkerhetskopiering-återställning-och-migrering) – vad en säkerhetskopia innehåller, återställning, uppgradering och nedgradering, flytt mellan SQLite och PostgreSQL.
-12. [Driftrutiner](#driftrutiner) – återkommande uppgifter, kapacitet, felsökning, loggmeddelanden.
-13. [Kommandoradsreferens](#kommandoradsreferens) – alla `qtestframe`-kommandon och flaggor.
-14. [Funktioner som lagts till senare](#funktioner-som-lagts-till-senare) – administrationsanteckningar för nyare funktioner.
+10. [Koppla ihop med andra verktyg](#koppla-ihop-med-andra-verktyg-oslc-och-reqif) – OSLC-kopplingar till IBM DOORS Next och ETM, Polarion och Codebeamer, dialoger i ramar, ReqIF.
+11. [Loggning och övervakning](#loggning-och-övervakning) – loggformat, syslog, hälsokontroller.
+12. [Säkerhetskopiering, återställning och migrering](#säkerhetskopiering-återställning-och-migrering) – vad en säkerhetskopia innehåller, återställning, uppgradering och nedgradering, flytt mellan SQLite och PostgreSQL.
+13. [Driftrutiner](#driftrutiner) – återkommande uppgifter, kapacitet, felsökning, loggmeddelanden.
+14. [Kommandoradsreferens](#kommandoradsreferens) – alla `qtestframe`-kommandon och flaggor.
+15. [Funktioner som lagts till senare](#funktioner-som-lagts-till-senare) – administrationsanteckningar för nyare funktioner.
 
 ## Konventioner
 
@@ -337,6 +338,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `server.write_timeout` | tidslängd | `2m` | — | Längsta tid för att skriva ett svar (nedladdningar, exporter, säkerhetskopior i webbklienten). Håll den över `runner.timeout`. |
 | `server.trusted_proxies` | lista | — | — | Adresser eller CIDR-intervall för omvända proxyer. Bara för begäranden från dem används `X-Forwarded-For` som klientadress (sista posten), i loggar, granskningsloggen och inloggningsgränserna. |
 | `server.hsts` | bool | `true` | — | Skicka `Strict-Transport-Security` (två år, med underdomäner) på HTTPS-anslutningar som servern själv avslutar. En proxy som avslutar TLS måste skicka den i stället. |
+| `server.frame_ancestors` | lista | — | — | Ursprung (`https://doors.example.com`) för andra verktyg som får visa OSLC-dialogerna för att välja och skapa i en ram (`Content-Security-Policy: frame-ancestors`). Utan några öppnas dialogerna i ett eget fönster. Webbläsaren måste också skicka sessionskakan till ramen: båda verktygen på samma webbplats (underdomäner till samma domän). |
 
 ### `database`
 
@@ -521,6 +523,16 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `secrets.pkcs11.pin_file` | text | — | — | Fil med användar-PIN (relativ: i `$CREDENTIALS_DIRECTORY`). `QTF_SECRETS_PKCS11_PIN` vinner över den. |
 | `secrets.pkcs11.key_label` | text | `qtestframe-kek` | — | `CKA_LABEL` för AES-nyckeln som omsluter datanycklarna; måste vara unik i tokenen. |
 | `secrets.pkcs11.generate_key` | bool | `false` | — | Skapa en icke-exporterbar AES-256-nyckel med `key_label` när tokenen saknar en. |
+
+### `similarity`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `similarity.embeddings.enabled` | bool | `false` | — | Använd en tjänst för inbäddningar (embeddings) för likheten mellan krav och tester (misstänkta dubbletter, panelen *Liknande krav*). Av som standard: likheten beräknas då på servern. **När den är på skickas rubrik, beskrivning och kriterier eller steg för objekten till tjänsten.** Finns även under **Administration → Systeminställningar**. |
+| `similarity.embeddings.url` | text | — | — | Adress till en OpenAI-kompatibel embeddings-slutpunkt, t.ex. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, svaret `{data: [{embedding}]}`). |
+| `similarity.embeddings.model` | text | — | — | Modell som skickas som `model` (tom: tjänstens standard). Vektorerna cachas per objektversion och modell; byts modellen beräknas de om. |
+| `similarity.embeddings.api_key_file` | text | — | — | Fil med API-nyckeln, som skickas som bearer-token (relativ: i `$CREDENTIALS_DIRECTORY`). Nyckeln kan också sparas i systeminställningarna; den visas aldrig igen. |
+| `similarity.embeddings.timeout` | tidslängd | `30s` | — | Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten. |
 
 <!-- END GENERATED: config-reference -->
 
@@ -826,7 +838,9 @@ Det här är de inbyggda rollernas behörigheter tills en organisation ändrar d
 | `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `run.write` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  | ✔ | ✔ | ✔ | ✔ |
+| `cycle.plan` |  |  |  | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  | ✔ | ✔ | ✔ |
+| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `audit.read` |  |  |  | ✔ | ✔ | ✔ |
 | `token.manage` |  |  | ✔ | ✔ | ✔ | ✔ |
@@ -994,6 +1008,11 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Körning av skript och webbtester | `runner.web.trace` | `on_failure`, `always`, `off` | efter omstart |
 | Körning av skript och webbtester | `runner.web.video` | `off`, `on_failure`, `always` | efter omstart |
 | Körning av skript och webbtester | `runner.web.playwright_dir` | text | visas bara (filen) |
+| Likhet (dubbletter) | `similarity.embeddings.enabled` | på/av | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.url` | text | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.model` | text | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.api_key` | hemlighet (skrivskyddad läsning) | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.timeout` | 1s–5m | direkt |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1006,6 +1025,24 @@ Vad varje nyckel betyder står i [konfigurationsreferensen](#referens). Allt ann
 - **Syslog över TLS** använder `ca_file`, `cert_file` och `key_file` från filen; de är läsbara efter låsningen eftersom de läggs till bland Landlocks skrivskyddade sökvägar vid start. En Unix-socket som inte var konfigurerad vid start kan nekas av Landlock; använd `udp`, `tcp` eller `tls`, eller starta om.
 - **Hemligheter** som anges på sidan (SMTP-lösenordet, OIDC-klienthemligheter) kan bara skrivas, lagras [krypterade](#kryptering-av-lagrade-hemligheter), loggas aldrig och visas aldrig igen.
 - **Testknapparna** (*Testa anslutningen* för OIDC-discovery, *Skicka testmeddelande* för syslog, *Skicka testmejl*) får servern att ansluta till en adress som superadministratören anger. Filtrera serverns utgående trafik om den når interna tjänster.
+
+## Tjänst för inbäddningar för liknande objekt
+
+Misstänkt dubblerade krav och testfall, panelen *Liknande krav* i redigerarna och varningen vid import från katalogen jämför objekt på servern som standard: TF-IDF över projektet med ordstammar, stoppord och synonymer för svenska och engelska (se användarguiden, *Dubbletter och konflikter*). Ingenting skickas någonstans.
+
+Om man vill kan en **OpenAI-kompatibel embeddings-slutpunkt** beräkna likheten i stället: **Administration → Systeminställningar → Likhet (dubbletter)**, eller `similarity.embeddings` i [konfigurationsfilen](#referens).
+
+| Inställning | Betydelse |
+|---|---|
+| `similarity.embeddings.enabled` | av som standard |
+| `similarity.embeddings.url` | slutpunkten, t.ex. `https://llm.example.com/v1/embeddings`; den får `POST {"model": …, "input": [texter]}` och svarar `{"data": [{"index": i, "embedding": [tal]}]}` |
+| `similarity.embeddings.model` | skickas som `model` (tom: tjänstens standard) |
+| `similarity.embeddings.api_key` | skickas som `Authorization: Bearer …`; kan bara skrivas, lagras [krypterad](#kryptering-av-lagrade-hemligheter); i filen bara som `api_key_file` |
+| `similarity.embeddings.timeout` | längsta väntan (standard 30 s) |
+
+**Integritet.** När den är på **skickas titel, beskrivning och acceptanskriterier för krav och titel, beskrivning, förutsättningar och steg för testfall till tjänsten**, för alla projekt i alla organisationer på servern, när likhetskontrollerna körs eller någon skriver i en redigerare (texten som skrivs skickas också). Använd en tjänst som drivs av er organisation eller som ni har avtal med; låt den annars vara av.
+
+Vektorerna lagras i tabellen `similarity_embeddings` per objekt, modell och text (ett ändrat objekt skickas igen, ett oförändrat inte). Den är en cache: den ingår inte i säkerhetskopior eller projektarkiv och fylls på nytt efter en återställning. Byts modellen beräknas alla vektorer om. **Testa tjänsten** på sidan skickar en kort exempelmening och visar vektorns storlek. När tjänsten misslyckas eller inte svarar loggar servern en varning och använder den lokala likheten, så kontrollerna slutar aldrig fungera. Konfliktsökningen (motsatta förpliktelser, gränsvärden, uteslutande värden) körs alltid på servern. Kontrollernas gränsvärden gäller även tjänstens cosinuslikhet; tjänster skiljer sig, så granska de misstänkta dubbletterna när den har slagits på och justera gränsen för dubblettkontrollerna vid behov.
 
 ## Granskning och export
 
@@ -1113,7 +1150,7 @@ Servern måste kunna läsa vissa hemligheter tillbaka, så de kan inte hashas. D
 | signeringshemligheter för webhooks | `webhooks.secret` |
 | token för ärendesystem (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | värden för hemliga webbtestvariabler | `projects.web_tests` |
-| SMTP-lösenord och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
+| SMTP-lösenord, nyckeln till tjänsten för inbäddningar och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
 
 Lösenord (bcrypt), API- och SCIM-nycklar, sessioner, inbjudningar, ihågkomna enheter och återställningskoder lagras som hashar och behöver ingen nyckel. Hemligheter i konfigurationsfilen, `*_file`-inställningar och `QTF_*`-variabler lagras aldrig i databasen.
 
@@ -1243,7 +1280,7 @@ Andra gränser: JSON-innehåll högst 8 MiB, huvuden 1 MiB, `ReadHeaderTimeout` 
 
 ## Utgående anslutningar
 
-Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
+Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. När den valfria [tjänsten för inbäddningar](#tjänst-för-inbäddningar-för-liknande-objekt) är på skickar servern texten i krav och testfall till den. Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
 
 ## Checklista
 
@@ -1306,7 +1343,7 @@ Projekt kan skicka signerade händelser till andra system. Användare med `proje
 | defect | `defect.created`, `defect.updated`, `defect.status`, `defect.assigned`, `defect.regression` |
 | risk | `risk.created`, `risk.updated` |
 | release | `release.created`, `release.updated`, `release.released` |
-| comment | `comment.created` |
+| comment | `comment.created`, `comment.mentioned`, `comment.resolved` |
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
@@ -1324,9 +1361,52 @@ Varje leverans är en `POST` med JSON-innehållet `{"id", "event", "project_id",
 
 Mottagare bör verifiera signaturen (jämför i konstant tid) och ignorera upprepade `id`. Leveranser görs när ändringen har sparats, avbryts efter 10 sekunder, **följer aldrig omdirigeringar** och försöks en gång; status för den senaste leveransen visas vid webhooken, och fel loggas (`webhook delivery`). Webhook-hemligheterna lagras krypterade. Inlästa projektarkiv innehåller inga hemligheter och deras webhooks är avstängda.
 
+## Chattaviseringar
+
+Projekt kan skicka sina händelser till chattkanaler: Slack, Microsoft Teams, Mattermost, Rocket.Chat, Google Chat, Matrix och Discord. Användare med `project.update` lägger upp kanalerna i projektinställningarna (se användarhandboken, *Granskningar och notiser*). Inget behöver konfigureras på servern, men:
+
+- Ange `server.base_url` (eller systeminställningen): utan den kan meddelandena inte länka till objekten.
+- Servern måste nå chattverktyget över HTTPS (utgående proxy och brandvägg). Anropen avbryts efter 10 sekunder och följer aldrig omdirigeringar.
+- En kanals webhook-URL eller Matrix-token lagras krypterad som de andra hemligheterna (`qtestframe secrets` krypterar om den), returneras aldrig av API:t, skrivs inte till granskningsloggen eller i ett felmeddelande och tas inte med i projektarkiv (en inläst kanal är avstängd tills någon anger en ny URL).
+
+**Händelser.** En kanal erbjuder händelserna i det centrala händelseregistret (samma som för webhooks ovan), grupperade för inställningarna. Listan härleds ur registret: en händelse som en senare version lägger till syns i kanalinställningarna och i **Alla händelser** utan någon ändring i chattkoden; gruppen tas från den del av namnet som står före punkten (okända delar hamnar under *Övrigt*), etiketten från händelsens namn om ingen översättning finns.
+
+<!-- BEGIN GENERATED: chat-events (make admin-guide-ref) -->
+
+| Grupp | Händelser |
+|---|---|
+| Testkörningar | `run.created` (Testkörning skapad), `run.updated` (Testkörning ändrad), `run.completed` (Testkörning avslutad), `execution.updated` (Testresultat registrerat) |
+| Defekter | `defect.created` (Defekt rapporterad), `defect.updated` (Defekt ändrad), `defect.status` (Defektens status ändrad), `defect.assigned` (Defekt tilldelad), `defect.regression` (Regression upptäckt) |
+| Krav och tester | `requirement.created` (Krav skapat), `requirement.updated` (Krav ändrat), `test.created` (Test skapat), `test.updated` (Test ändrat), `comment.created` (Ny kommentar), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baslinje signerad) |
+| Granskningar | `review.requested` (Granskning begärd), `review.completed` (Granskning klar) |
+| Releaser | `release.created` (Release skapad), `release.updated` (Release ändrad), `release.released` (Release släppt) |
+| Undantag | `waiver.requested` (Undantag begärt), `waiver.approved` (Undantag godkänt), `waiver.rejected` (Undantag avslaget), `waiver.revoked` (Undantag återkallat) |
+| Risker | `risk.created` (Risk identifierad), `risk.updated` (Risk ändrad) |
+
+<!-- END GENERATED: chat-events -->
+
+**Leverans.** Varje meddelande sparas i en kö (tabellen `chat_deliveries`) när ändringen är sparad och skickas direkt i bakgrunden. Ett misslyckat meddelande försöks igen av serverns minutjobb med exponentiell väntetid (1, 2, 4, 8 och 16 minuter, eller `Retry-After` i ett HTTP 429-svar, högst en timme), upp till 6 försök; ett HTTP 4xx-svar utom 408 och 429 (chattverktyget vägrade URL, token eller meddelande) är slutgiltigt. Flera servrar som delar en PostgreSQL-databas skickar aldrig samma meddelande två gånger (ett meddelande reserveras innan det skickas). Efter 5 misslyckade meddelanden i rad stänger kanalen av sig själv; projektets administratörer får en avisering i appen (och ett e-postmeddelande om de valt omedelbar e-post), och granskningsloggen får en post `chat.disabled`. De senaste 50 meddelandena för varje kanal sparas som dess leveranslogg; kön och loggen ingår inte i säkerhetskopior (kanalerna gör det). Kanaler med sammandrag samlar sina händelser och skickar dem som ett meddelande var N:e minut (1–1440).
+
+**Innehåll.** Meddelandena innehåller händelsen, objektets nyckel och titel, status, prioritet, personen och en sammanfattning på högst några hundra tecken. De innehåller aldrig hemligheter. I ett projekt med begränsad åtkomst innehåller meddelandena bara händelse, nyckel, status och länk, om inte en organisationsadministratör (`tenant.manage`) tillåter kanalen hela innehållet. Massomnämnanden (`@channel`, `@here`, `@all`, `@everyone`) i texterna oskadliggörs.
+
+### Så lägger du upp varje chattverktyg
+
+| Verktyg | Vad du skapar | Vad du anger i Qtestframe |
+|---|---|---|
+| Slack | En Slack-app med **Incoming Webhooks** påslaget; **Add New Webhook to Workspace** och välj kanalen. Meddelandena använder Block Kit. | Webhook-URL:en `https://hooks.slack.com/services/…` |
+| Microsoft Teams | I kanalen: **Arbetsflöden** → mallen *Publicera i en kanal när en webhook-begäran tas emot* (Power Automate). Meddelandena är Adaptive Cards 1.4. | URL:en till arbetsflödets HTTP-utlösare |
+| Microsoft Teams (Office 365-anslutning) | Den äldre anslutningen **Incoming Webhook** för en kanal (formatet MessageCard). Microsoft fasar ut dessa anslutningar: använd den bara där Arbetsflöden inte finns. | Anslutningens URL |
+| Mattermost | **Integrations → Incoming Webhooks → Add Incoming Webhook**, välj kanalen. Tillåt att integrationer ändrar användarnamnet om meddelandena ska visas som *Qtestframe*. | URL:en `https://<server>/hooks/<id>` |
+| Rocket.Chat | **Administration → Workspace → Integrations → New → Incoming**: slå på den, välj kanal (`#qa`) och användaren som skriver; inget skript behövs. | Webhook-URL:en som visas när du sparat |
+| Google Chat | I utrymmet: **Appar och integrationer → Webhooks → Lägg till webhook**. Meddelandena är kort (cardsV2). | Webhook-URL:en (den innehåller parametrarna `key` och `token`) |
+| Matrix | Ett botkonto på hemservern; bjud in det till rummet och låt det gå med. Hämta dess åtkomsttoken (till exempel genom att logga in med det en gång via klient-API:t). Meddelandena är `m.notice`-händelser med HTML. | Hemserverns URL, rummets ID (`!…:server`) eller alias (`#…:server`) och åtkomsttoken |
+| Discord | **Kanalinställningar → Integrationer → Webhooks → Ny webhook**. Meddelandena är embeds; omnämnanden är avstängda. | Webhook-URL:en `https://discord.com/api/webhooks/…` |
+
+Använd **Skicka testmeddelande** för att kontrollera en kanal; leveransloggen visar HTTP-status och fel för varje meddelande (till exempel `HTTP 404: no_service` från Slack när webhooken tagits bort, `HTTP 401: M_UNKNOWN_TOKEN` från Matrix). Personliga chattaviseringar (direktmeddelanden till en användare) erbjuds inte; användarna får sådana som aviseringar i appen och e-post.
+
 ## Defekt- och ärendesystem
 
-Projekt kan skicka defekter och krav till **Jira**, **GitHub** eller **GitLab**, synkronisera deras status tillbaka och importera ärenden. Användare med `project.update` ansluter ett projekt i dess inställningar ([användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/defects.md#anslut-jira-github-eller-gitlab)); att skicka och synkronisera kräver `run.execute`, ärenden från krav `requirement.write`.
+Projekt kan skicka defekter och krav till **Jira**, **GitHub**, **GitLab** eller **Request Tracker (RT)**, synkronisera deras status tillbaka och importera ärenden. Användare med `project.update` ansluter ett projekt i dess inställningar ([användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/defects.md#anslut-jira-github-eller-gitlab)); att skicka och synkronisera kräver `run.execute`, ärenden från krav `requirement.write`.
 
 | System | Adress | Inloggning | Minsta användbara omfattning |
 |---|---|---|---|
@@ -1334,8 +1414,26 @@ Projekt kan skicka defekter och krav till **Jira**, **GitHub** eller **GitLab**,
 | Jira Server / Data Center | er Jira-adress | personlig åtkomsttoken (Bearer) | som ovan |
 | GitHub | standard `https://api.github.com` (GitHub Enterprise: dess API-adress) | token (Bearer) | finkornig token med *Issues: read and write* för det enda repot |
 | GitLab | standard `https://gitlab.com`, eller en egen instans (HTTPS) | token i `PRIVATE-TOKEN` | projektåtkomsttoken med omfattningen `api` och rollen Reporter |
+| Request Tracker 5 | RT:s basadress, t.ex. `https://rt.example.com` (REST2 under `/REST/2.0`) | autentiseringstoken i `Authorization: token …` | en RT-användare med *CreateTicket*, *ShowTicket*, *ModifyTicket* och *CommentOnTicket* i kön |
 
 Token anges en gång, lagras krypterad och returneras aldrig av API:t (bara *har token*); den ingår inte i ett projektarkiv. Begäranden följer `HTTPS_PROXY`/`NO_PROXY` och systemets CA-certifikat, har en tidsgräns, och väntar på systemets `Retry-After` när den är kort. Utskick och synkroniseringar granskas (`defect.push`, `defect.sync`, `requirement.issue.*`).
+
+### Request Tracker
+
+RT behöver REST2-API:et, som ingår i RT 5 (för RT 4.4 tillägget *RT::Extension::REST2*). Skapa en egen RT-användare för Qtestframe, ge den rättigheterna ovan i kön (en grupprättighet på kön är enklast), logga in som den användaren och skapa en token under **Logged in as → Settings → Auth Tokens**. Projektinställningarna tar RT:s basadress, **kön** (namn eller id) och eventuellt namnet på ett anpassat fält som tar emot etiketter (RT har inga egna etiketter). Kontrollera att en omvänd proxy framför RT skickar vidare huvudet `Authorization` till `/REST/2.0`. Statussynkroniseringen översätter standardlivscykeln (*new*, *open*, *stalled*, *resolved*, *rejected*, *deleted*); statusar i egna livscykler visas men ändrar inte defekten. Synkronisering sker på begäran (**Synkronisera** / **Synkronisera alla**, eller `POST /api/v1/projects/{pid}/defects/sync` från en schemaläggare), som för de andra systemen: ingen inkommande webhook behövs.
+
+## Kravimport från Jira och Azure DevOps
+
+Användare med `requirement.write` importerar krav från en JQL-fråga i Jira eller en WIQL-fråga i Azure DevOps ([användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/reports-and-export.md#jira-och-azure-devops)); anslutningarna ställs in av användare med `project.update` under **Projekt → Importkällor** och lagras i `projects.import_sources` (migrering 0037).
+
+| Källa | Adress | Inloggning | Minsta användbara omfattning |
+|---|---|---|---|
+| Jira Cloud | `https://<webbplats>.atlassian.net` (eller ingen: projektets Jira-ärendehanterare används) | användarens e-post + API-token (HTTP Basic) | *Browse projects* i de projekt som frågas |
+| Jira Server / Data Center | er Jira-adress | personlig åtkomsttoken (Bearer) | som ovan |
+| Azure DevOps Services | `https://dev.azure.com/<organisation>` och projektets namn | personlig åtkomsttoken (HTTP Basic med tomt användarnamn) | omfattningen *Work Items (Read)*, begränsad till den enda organisationen |
+| Azure DevOps Server | samlingens adress, t.ex. `https://tfs.example.com/tfs/DefaultCollection` | personlig åtkomsttoken | som ovan |
+
+Jira söks med `POST /rest/api/2/search/jql` (Jira Cloud) och, när den inte finns, `POST /rest/api/2/search` (Server och Data Center); Azure DevOps med slutpunkterna för WIQL, fält och arbetsobjekt i REST API 7.1. Högst 1 000 objekt läses per import. Importen läser bara; den granskas som `requirement.import`, ändringar av anslutningen som `import_sources.update`. Token krypteras med serverns hemliga nycklar (de krypteras om vid nyckelrotation), returneras aldrig och utelämnas ur projektarkiv. Importen når källorna via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) som ärendehanterarna; tillåt adresserna ovan i en brandvägg.
 
 ## Körning av skript och webbtester
 
@@ -1402,6 +1500,116 @@ Webbtester körs alltid som **bakgrundsjobb**; `max_parallel` av dem körs samti
 Projekten anger adressen till systemet som testas och testvariabler under **Inställningar → Webbtester**. Testvariabler når varje automatiskt skript som `QTF_VAR_<NAMN>`; hemliga lagras krypterade och maskeras som `***` i sparad utdata (inte i skärmbilder eller trace).
 
 Containeravbilden kräver `--build-arg WITH_PLAYWRIGHT=true` och `QTF_RUNNER_ENABLED=true`, `QTF_RUNNER_WEB_ENABLED=true` (se [Installation](#i-en-container-docker-eller-podman)).
+
+# Koppla ihop med andra verktyg (OSLC och ReqIF)
+
+Qtestframe utbyter krav och testfall med ALM- och kravverktyg på två sätt (användarhandbokens sida *Samverkan* beskriver vad användarna ser):
+
+- **OSLC**, direkt: Qtestframe är en OSLC-leverantör för Requirements Management 2.1 (krav) och Quality Management 2.1 (testfall). Andra verktyg hittar den, ställer frågor, skapar, ändrar och tar bort poster, länkar sina egna poster till dem och visar Qtestframes urvals- och skapadialoger för sina användare.
+- **ReqIF-filer**, för hela specifikationer: export från ett verktyg, import i det andra, gång på gång. Inget behöver ställas in på servern.
+
+Det här kapitlet handlar om att sätta upp OSLC-kopplingar till IBM Engineering Lifecycle Management (DOORS Next, Engineering Test Management), Siemens Polarion och PTC Codebeamer, och om vad du kontrollerar när en koppling inte fungerar.
+
+## Det här erbjuder servern
+
+| Adress | Användning |
+|---|---|
+| `<base_url>/api/v1/oslc/rootservices` | Upptäcktsdokument i Jazz-stil (öppet, innehåller inga data). IBM ELM och verktyg som använder "friends" börjar här. |
+| `<base_url>/api/v1/oslc/catalog` | Katalog över tjänsteleverantörer: en per projekt som kontot får läsa. |
+| `<base_url>/api/v1/oslc/projects/<projekt-id>/catalog` | En katalog med bara ett projekt, för verktyg som kopplar ett av sina projekt till ett projekt här. |
+| `<base_url>/api/v1/oslc/projects/<projekt-id>` | Projektets tjänsteleverantör: frågefunktioner, creation factories, urvals- och skapadialoger, resource shapes. |
+
+Projekt-id:t är det i projektets webbadress (`/p/<id>/…`). Resurser skickas som RDF/XML (OSLC:s standard), Turtle eller JSON-LD; innehåll i begäranden tas emot i samma format. API-referensen (`docs/api.md`, avsnittet *OSLC*) listar alla egenskaper, länkegenskaperna och frågesyntaxen.
+
+## Innan du kopplar in ett verktyg
+
+1. **Bas-URL.** Ställ in `server.base_url` (eller **Bas-URL** i *Systeminställningar*) på adressen som det andra verktyget når Qtestframe på, till exempel `https://qtf.example.com`. Varje OSLC-resursadress byggs av den; bakom en omvänd proxy måste det vara den publika adressen, inte den interna.
+2. **TLS.** De flesta ALM-servrar vägrar vanlig HTTP och certifikat som de inte litar på. Använd ett certifikat från en CA som det andra verktygets Java-förtroendelager känner till (eller lägg till din CA där).
+3. **Ett tjänstekonto och en API-nyckel.** OSLC-klienter loggar in med en API-nyckel, antingen som `Authorization: Bearer <nyckel>` eller som lösenord i Basic-autentisering (valfritt användarnamn), bara på OSLC-sökvägarna. OAuth 1.0a, som IBM ELM använder mellan Jazz-program, stöds inte; använd anslutningstypen "custom" eller "basic" i det andra verktyget med nyckeln. Skapa en användare (till exempel `alm-connector@example.com`) och ge den rollen som kopplingen behöver:
+   - **Läsare** för att låta verktyget läsa och länka (länken sparas i det andra verktyget; Qtestframe visar den där).
+   - En roll med `requirement.write` och/eller `test.write` för att låta verktyget skapa och ändra poster, och `test.write` för att ändra spårlänkar (*validatedBy* / *validatesRequirement*).
+   Logga in som den användaren, skapa nyckeln under **Administration → API-nycklar** med rollen som kopplingen behöver (en nyckel kan ha lägre roll än sitt konto, aldrig högre) och ge den till administratören för det andra verktyget. Begränsade projekt syns bara när kontot är medlem.
+4. **Dialoger i en ram** (valfritt). Urvals- och skapadialogerna öppnas i ett eget fönster, vilket fungerar överallt. Verktyg som visar dem inne på sin egen sida (en iframe) behöver två saker:
+   - verktygets ursprung i `server.frame_ancestors`, till exempel
+     ```yaml
+     server:
+       base_url: https://qtf.example.com
+       frame_ancestors:
+         - https://elm.example.com
+         - https://polarion.example.com
+     ```
+     Dialogsidorna skickar då `Content-Security-Policy: frame-ancestors 'self' https://elm.example.com …`; utan inställningen får bara Qtestframe självt visa dem i en ram.
+   - webbläsaren måste skicka Qtestframes sessionskaka inne i ramen. Kakan är `SameSite=Lax`, så ramen fungerar när båda verktygen ligger på **samma webbplats** (underdomäner till samma registrerbara domän, som `qtf.example.com` och `elm.example.com`). För verktyg på en annan webbplats låter du dialogerna öppnas i ett fönster.
+   Dialogerna använder användarens egen session: varje användare loggar in i Qtestframe i webbläsaren (dialogen visar en länk om de inte har gjort det).
+
+## IBM DOORS Next och Engineering Test Management
+
+DOORS Next länkar sina krav till testfall hos en QM-leverantör, och ETM länkar sina testfall till krav hos en RM-leverantör. Qtestframe kan ha RM-rollen (sina krav) och QM-rollen (sina testfall).
+
+1. Lägg till en association i ELM:s **Lifecycle Project Administration** (eller projektområdets **Associations**) till en **OSLC-leverantör som inte är ett Jazz-program**: välj *Add → Service provider catalog* (ordalydelsen varierar mellan versioner) och ange `<base_url>/api/v1/oslc/catalog`, eller `<base_url>/api/v1/oslc/projects/<id>/catalog` för ett projekt. När versionen bara tar emot friends registrerar du en friend med rotdokumentet `<base_url>/api/v1/oslc/rootservices` och väljer Basic-autentisering med tjänstekontots e-postadress och API-nyckeln som lösenord.
+2. Välj associationstyp: **Provides Requirements** (eller *Uses Requirements* från ETM-sidan) för krav i Qtestframe, **Provides Test Cases** (*Validated By*) för testfall i Qtestframe.
+3. I en artefakt i DOORS Next erbjuder **Links → Add link → Validated By** nu *Qtestframe* som mål: urvalsdialogen öppnas, användaren söker och markerar testfall, och DOORS Next sparar länkarna. **Create** öppnar Qtestframes skapadialog i stället.
+
+Länkar som DOORS Next sparar finns i DOORS Next. När ett verktyg också skriver länken i Qtestframe-resursen (en PUT med `oslc_qm:validatesRequirement` eller `oslc_rm:validatedBy`) behåller Qtestframe den som en spårlänk när den andra änden är en av dess egna poster, annars som en länk till det andra verktygets adress.
+
+## Siemens Polarion
+
+Polarion länkar arbetsposter till OSLC-resurser på andra servrar genom *OSLC-anslutningar*:
+
+1. Lägg till en leverantör i **Administration → Linked data / OSLC → Remote OSLC providers** (Polarions konfiguration av *Connections*) med katalogen `<base_url>/api/v1/oslc/catalog`, autentisering **Basic**, tjänstekontots e-postadress som användare och API-nyckeln som lösenord.
+2. Mappa länkrollerna: ett krav i Polarion *is validated by* → testfall i Qtestframe (`oslc_qm:TestCase`), ett testfall i Polarion *verifies* → krav i Qtestframe (`oslc_rm:Requirement`).
+3. Polarions användare väljer sedan poster i Qtestframe i dialogen **Link to OSLC resource**, som öppnar Qtestframes urvalsdialog.
+
+För en enstaka eller regelbunden överföring av ett Polarion-dokument använder du ReqIF i stället: exportera dokumentet som ReqIF i Polarion och importera det i Qtestframe med *Importera → ReqIF … med uppdateringar*; mappa arbetsposttyperna (till exempel *Test Case* till testfall) i förhandsgranskningen av importen.
+
+## PTC Codebeamer
+
+Codebeamer ansluter till OSLC-leverantörer som *Remote trackers / OSLC associations*:
+
+1. Lägg till en server i projektets **Admin → Integrations → OSLC** med rotdokumentets eller katalogens adress ovan, autentisering **Basic** med tjänstekontot och API-nyckeln.
+2. Välj fjärrtjänst: *Requirements* (krav i Qtestframe) eller *Test cases* (testfall i Qtestframe), och vilken associationstyp i Codebeamer den ska skapa (till exempel *verifies* eller *related*).
+3. Codebeamers associationsdialog listar sedan poster i Qtestframe; de delegerade dialogerna används där Codebeamer stöder dem.
+
+Codebeamer exporterar och importerar också ReqIF; dess trackers av typen *Test Case* mappas till testfall i förhandsgranskningen av importen.
+
+## Andra OSLC-klienter och skript
+
+Alla OSLC 2.0-klienter fungerar med katalogen och en nyckel. En snabb kontroll från kommandoraden:
+
+```sh
+curl -H "Authorization: Bearer $QTF_TOKEN" -H "Accept: text/turtle" \
+  "https://qtf.example.com/api/v1/oslc/projects/<id>/requirements?oslc.where=qtf:status=%22approved%22&oslc.select=dcterms:title"
+```
+
+Skapa ett krav:
+
+```sh
+curl -H "Authorization: Bearer $QTF_TOKEN" -H "Content-Type: text/turtle" -H "Accept: text/turtle" \
+  --data-binary '<> a <http://open-services.net/ns/rm#Requirement> ; <http://purl.org/dc/terms/title> "Nödstopp" .' \
+  "https://qtf.example.com/api/v1/oslc/projects/<id>/requirements"
+```
+
+Svaret är `201 Created` med den nya adressen i `Location` och versionen i `ETag`. En uppdatering (PUT) med `If-Match: "<ETag>"` nekas med `412 Precondition Failed` om någon har sparat under tiden, som i webbklienten.
+
+## Det här sparas, loggas och säkerhetskopieras
+
+- Poster som skapas, ändras eller tas bort via OSLC är vanliga poster: de har historik, ändringarna står i granskningsloggen under nyckelns konto, och borttagning flyttar dem till projektets papperskorg.
+- Spårlänkar, relationer och länkar som skrivs via OSLC är vanliga länkar; länkar till resurser i andra verktyg är länkar till deras URL, med OSLC-egenskapen som etikett (`oslc_rm:implementedBy` …).
+- ReqIF-importen sparar var varje post, relation och spårlänk kom ifrån (tabellen `external_refs`), så att en ny import av samma dokument uppdaterar dem. Tabellen ingår i säkerhetskopior och projektarkiv.
+- Inget om en koppling sparas i Qtestframe utöver API-nyckeln: det andra verktyget har kopplingens inställningar.
+
+## Felsökning
+
+| Symptom | Kontrollera |
+|---|---|
+| Verktyget säger att katalogen är tom | Kontot är inte medlem i projektet (begränsade projekt), eller nyckelns roll saknar läsbehörighet. Öppna katalogadressen med nyckeln i en webbläsare eller med `curl`. |
+| Länkar pekar på `http://localhost:…` eller en intern värd | `server.base_url` är inte den publika adressen. |
+| 401 Unauthorized | Nyckeln är fel, har gått ut eller har återkallats; Basic-autentisering måste ha nyckeln som lösenord. Vanliga lösenord tas inte emot på OSLC-sökvägarna. |
+| 403 Forbidden vid skapa eller ändra | Nyckelns roll saknar `requirement.write` / `test.write`, eller `test.write` för spårlänkar. |
+| 412 Precondition Failed | Posten har ändrats sedan verktyget läste den; verktyget måste läsa den igen (dess ETag är postens version). |
+| 415 Unsupported Media Type | Verktyget skickar innehåll som inte är Turtle, RDF/XML eller JSON-LD. |
+| Dialogen förblir tom i en ram | Verktygets ursprung finns inte i `server.frame_ancestors`, eller verktygen ligger på olika webbplatser så att webbläsaren inte skickar sessionskakan: använd dialogen i ett fönster. |
+| Dialogen säger *Du är inte inloggad* | Användaren har ingen session i Qtestframe i den här webbläsaren: logga in i en annan flik och välj **Försök igen**. |
 
 # Loggning och övervakning
 
@@ -1503,9 +1711,9 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**I en säkerhetskopia** (87 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `secret_keys`.
+**I en säkerhetskopia** (94 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
 
-**Inte i en säkerhetskopia:** `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `suggest_history`.
+**Inte i en säkerhetskopia:** `chat_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1617,6 +1825,15 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 34 | `0034_custom_fields.sql` |
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
+| 37 | `0037_import_sources.sql` |
+| 38 | `0038_owners_worklist.sql` |
+| 39 | `0039_discussions.sql` |
+| 40 | `0040_exploratory.sql` |
+| 41 | `0041_test_cycles.sql` |
+| 43 | `0043_similarity.sql` |
+| 45 | `0045_chat_channels.sql` |
+| 46 | `0046_variant_gates.sql` |
+| 47 | `0047_risk_catalog.sql` |
 
 <!-- END GENERATED: migrations -->
 
@@ -1983,3 +2200,9 @@ docs/user-guide/<lang>/administration.md och kontrollerat mot koden):
 ## Kod-webhooks
 ## Varianter
 -->
+
+## Utforskande test
+
+Utforskande testsessioner (migrering 0040) behöver ingen konfiguration. De använder behörigheterna för testkörningar: `run.read` för att se sessioner, `run.write` för att planera, ändra och ta bort dem och för att utvärdera eller stoppa någon annans session, `run.execute` för att genomföra sin egen session (tidtagning, anteckningar, defekter från anteckningar, utvärdering). Sessionens tidtagning hålls i databasen (`exploratory_sessions.running_since`, `elapsed_seconds`), så en omstart av servern tappar ingen sessionstid; en session som lämnas igång fortsätter att räkna tills någon pausar eller stoppar den.
+
+Tabellerna `exploratory_sessions`, `exploratory_scope` och `exploratory_notes` ingår i säkerhetskopian och i projektarkiv; skärmbilder är vanliga bilagor (`files`, `attachments`) och räknas mot `files.max_upload_mb`. Om utvärderade sessioner är verifieringsbevis är en projektinställning (`verification_settings.exploratory_evidence`, avstängd som standard) som ändras av någon med `project.update`. Varje åtgärd skrivs till händelseloggen med åtgärderna `exploratory.*`.

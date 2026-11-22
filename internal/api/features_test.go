@@ -248,9 +248,11 @@ func TestComments(t *testing.T) {
 	rid := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "R"}, 201)["id"].(string)
 	tid := a.m("POST", "/api/v1/projects/"+pid+"/tests", map[string]any{"title": "T"}, 201)["id"].(string)
 	e.member("viewer@example.com", rbac.RoleViewer)
-	v := e.login("viewer@example.com")
+	e.login("viewer@example.com").m("POST", "/api/v1/requirements/"+rid+"/comments", map[string]any{"body": "x"}, 403) // no comment.create
+	e.member("tester@example.com", rbac.RoleTester)
+	v := e.login("tester@example.com")
 	c := v.m("POST", "/api/v1/requirements/"+rid+"/comments", map[string]any{"body": "  Is this testable?  "}, 201)
-	if c["body"] != "Is this testable?" || c["user_email"] != "viewer@example.com" {
+	if c["body"] != "Is this testable?" || c["user_email"] != "tester@example.com" {
 		t.Fatal(c)
 	}
 	a.m("POST", "/api/v1/requirements/"+rid+"/comments", map[string]any{"body": "Yes"}, 201)
@@ -278,7 +280,7 @@ func TestComments(t *testing.T) {
 	v.m("PATCH", "/api/v1/comments/"+cid, map[string]any{"body": ""}, 400)
 	v.m("PATCH", "/api/v1/comments/"+cid, "{", 400)
 	other := list[1]["id"].(string)
-	v.m("DELETE", "/api/v1/comments/"+other, nil, 403)       // viewer cannot delete others' comments
+	v.m("DELETE", "/api/v1/comments/"+other, nil, 403)       // a tester cannot delete others' comments
 	a.call("DELETE", "/api/v1/comments/"+cid, nil, 204, nil) // admin can
 	a.m("DELETE", "/api/v1/comments/"+cid, nil, 404)
 	a.m("PATCH", "/api/v1/comments/missing", map[string]any{"body": "x"}, 404)

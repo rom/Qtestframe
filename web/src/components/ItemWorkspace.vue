@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { impactGateFor } from '@/composables/impact'
+import type { ImpactDryRun } from '@/lib/correlations'
 import StaleBadge from './StaleBadge.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import { useUndoStore } from '@/stores/undo'
@@ -30,6 +32,7 @@ import RequirementImportDialog from './RequirementImportDialog.vue'
 import ExchangeImportDialog from './ExchangeImportDialog.vue'
 import Menu from 'primevue/menu'
 import type { ExchangeMode } from '@/lib/exchange'
+import type { ImportSourceId } from '@/lib/importSources'
 import BulkReviewDialog from './BulkReviewDialog.vue'
 import ApplicabilityDialog from './ApplicabilityDialog.vue'
 import VariantSelect from './VariantSelect.vue'
@@ -59,6 +62,7 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { rememberFocus } from '@/lib/a11y'
 import RelationsCell from './RelationsCell.vue'
+import MentionInput from './MentionInput.vue'
 import ColumnsMenu from './ColumnsMenu.vue'
 import { useColumnLayout } from '@/composables/columns'
 import MentionText from './MentionText.vue'
@@ -269,6 +273,7 @@ const baseColumns = computed<Col[]>(() =>
         { field: 'category_ids', header: t('workspace.colCategories'), sortable: false },
         { field: 'folder_path', header: t('workspace.colFolder') },
         { field: 'estimated_minutes', header: t('workspace.colEstimate'), width: '100px' },
+        { field: 'owner', header: t('workspace.colOwner') },
         { field: 'script_language', header: t('workspace.colScriptLanguage'), width: '110px' },
         { field: 'step_count', header: t('workspace.colSteps'), width: '80px' },
         { field: 'tags', header: t('workspace.colTags'), sortable: false },
@@ -344,9 +349,9 @@ async function onImported(res: ImportResult | { folders_created: number }) {
 
 // ---------- exchange: ReqIF with updates, the Excel round-trip ----------
 const exchangeOpen = ref(false)
-const exchangeMode = ref<ExchangeMode>('xlsx')
+const exchangeMode = ref<ExchangeMode | ImportSourceId>('xlsx')
 const exchangeMenu = ref<InstanceType<typeof Menu> | null>(null)
-function openExchange(mode: ExchangeMode) {
+function openExchange(mode: ExchangeMode | ImportSourceId) {
   exchangeMode.value = mode
   exchangeOpen.value = true
 }
@@ -363,6 +368,8 @@ const exchangeItems = computed(() => [
     ? [
         { label: t('exchange.fromFile'), icon: 'pi pi-upload', command: () => (importOpen.value = true) },
         { label: t('exchange.fromReqif'), icon: 'pi pi-sitemap', command: () => openExchange('reqif') },
+        { label: t('exchange.fromJira'), icon: 'pi pi-cloud-download', command: () => openExchange('jira') },
+        { label: t('exchange.fromAzure'), icon: 'pi pi-microsoft', command: () => openExchange('azure-devops') },
       ]
     : []),
   ...(canExport.value ? [{ label: t('exchange.exportXlsx'), icon: 'pi pi-file-excel', command: exportRoundTrip }] : []),
@@ -392,8 +399,12 @@ async function bulkSet(set: Record<string, unknown>) {
     return { id, old }
   })
   const bulkPath = `/projects/${pid.value}/${plural.value}/bulk`
+  // a change of status or substance: preview its impact first (impact gate)
+  const gated = 'status' in set || 'obligation' in set || 'execution_type' in set
+  const params = gated ? await impactGateFor(pid.value, (q) => api.post<ImpactDryRun>(bulkPath, { ids, set }, { params: q })) : {}
+  if (!params) return
   try {
-    await api.post(bulkPath, { ids, set })
+    await api.post(bulkPath, { ids, set }, { params })
     recordUndo(
       entry(
         t('undo.a.bulk', { n: ids.length }),
@@ -451,6 +462,16 @@ function openCatDialog(mode: 'add' | 'remove') {
 async function applyCats() {
   catDialog.value = false
   await bulkSet(catMode.value === 'add' ? { add_category_ids: catIds.value } : { remove_category_ids: catIds.value })
+}
+const ownerDialog = ref(false)
+const ownerValue = ref('')
+function openOwnerDialog() {
+  ownerValue.value = ''
+  ownerDialog.value = true
+}
+async function applyOwner() {
+  ownerDialog.value = false
+  await bulkSet({ owner: ownerValue.value.trim() })
 }
 const moveDialog = ref(false)
 function onPickFolder(id: string | null) {
@@ -679,6 +700,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <Button :label="t('workspace.categoriesButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeCategories')" v-tooltip.bottom="t('workspace.removeCategories')" @click="openCatDialog('remove')" />
         <Button :label="t('workspace.tagsButton')" icon="pi pi-plus" size="small" severity="secondary" outlined :aria-label="t('workspace.addTags')" v-tooltip.bottom="t('workspace.addTags')" @click="openTagDialog('add')" />
         <Button :label="t('workspace.tagsButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeTags')" v-tooltip.bottom="t('workspace.removeTags')" @click="openTagDialog('remove')" />
+        <Button :label="t('workspace.setOwner')" icon="pi pi-user" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openOwnerDialog" />
         <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
         <Button :label="t('links.title')" icon="pi pi-link" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkLinksOpen = true" />
         <Button v-if="variantList.variants.value.length" :label="t('variants.appliesTo')" icon="pi pi-clone" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkApplicabilityOpen = true" />
@@ -893,6 +915,17 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     <template #footer>
       <Button :label="t('common.cancel')" text severity="secondary" @click="catDialog = false" />
       <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!catIds.length" @click="applyCats" />
+    </template>
+  </Dialog>
+  <Dialog v-model:visible="ownerDialog" :header="t('workspace.setOwner')" modal style="width: min(480px, 95vw)">
+    <div class="grid" style="gap: 10px">
+      <label for="bulk-owner" class="block-label">{{ t('common.owner') }}</label>
+      <MentionInput id="bulk-owner" v-model="ownerValue" :project-id="pid" :placeholder="t('workspace.ownerPlaceholder', { at: '@' })" aria-describedby="bulk-owner-hint" />
+      <div id="bulk-owner-hint" class="small muted">{{ t(isReq ? 'workspace.appliesToRequirements' : 'workspace.appliesToTests', selection.length) }} · {{ t('workspace.ownerEmptyClears') }}</div>
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="ownerDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" @click="applyOwner" />
     </template>
   </Dialog>
   <FolderPickerDialog v-model:visible="moveDialog" :folders="folders" :header="t('workspace.moveSelection')" @pick="onPickFolder" />

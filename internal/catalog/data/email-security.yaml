@@ -795,3 +795,50 @@ tests:
           expected: Varje länk börjar med https:// och en listad domän.
         - action: Anropa varje länk och följ omdirigeringarna.
           expected: Ingen omdirigering leder till en värd utanför listan.
+
+risks:
+  - id: MAILS-R01
+    category: security
+    likelihood: 4
+    impact: 3
+    tags: [spoofing, phishing]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
+    mitigated_by: [MAILS-01, MAILS-02, MAILS-03, MAILS-13, MAILS-14]
+    en:
+      title: Phishing email sent in the organisation's name
+      description: Attackers send email that appears to come from the system's own domain, asking users to sign in or pay. Users trust the sender and give away credentials or money.
+      mitigation: Publish SPF, sign with DKIM, enforce a rejecting DMARC policy, declare domains that send no email and review the DMARC reports.
+    sv:
+      title: Nätfiskemejl skickas i organisationens namn
+      description: Angripare skickar e-post som ser ut att komma från systemets egen domän och ber användare logga in eller betala. Användarna litar på avsändaren och lämnar ut inloggningsuppgifter eller pengar.
+      mitigation: Publicera SPF, signera med DKIM, tillämpa en DMARC-policy som avvisar, ange domäner som inte skickar e-post och granska DMARC-rapporterna.
+  - id: MAILS-R02
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [injection, email-content]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-93 (CRLF injection)", "CWE-79 (cross-site scripting)", "MITRE ATT&CK T1566.002 (spearphishing link)"]
+    mitigated_by: [MAILS-05, MAILS-06, MAILS-16]
+    en:
+      title: System email abused to carry attacker content
+      description: User input reaches email headers or HTML bodies unencoded, so attackers add recipients, scripts or links to their own sites. Messages from a trusted sender spread phishing or malware.
+      mitigation: Prevent header injection, encode user content in HTML email and let links point only to the system's own HTTPS domains.
+    sv:
+      title: Systemets e-post missbrukas för att bära angriparens innehåll
+      description: Användarinmatning når e-postens rubriker eller HTML-innehåll utan kodning, så att angripare lägger till mottagare, skript eller länkar till egna webbplatser. Meddelanden från en betrodd avsändare sprider nätfiske eller skadlig kod.
+      mitigation: Förhindra injektion i rubriker, koda användarinnehåll i HTML-e-post och låt länkar bara peka på systemets egna HTTPS-domäner.
+  - id: MAILS-R03
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [confidentiality, email]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GDPR Art. 32(1)(a)", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1114 (email collection)"]
+    mitigated_by: [MAILS-07, MAILS-04, MAILS-08]
+    en:
+      title: Confidential content exposed in email
+      description: Passwords, personal data or long-lived invitation links are sent in email. Messages are forwarded, stored in many mailboxes or read in transit, and the content reaches people it was not meant for.
+      mitigation: Send no passwords or confidential content in email, encrypt email in transport and let invitation links work once and expire.
+    sv:
+      title: Konfidentiellt innehåll röjs i e-post
+      description: Lösenord, personuppgifter eller långlivade inbjudningslänkar skickas med e-post. Meddelanden vidarebefordras, lagras i många brevlådor eller läses under överföring och innehållet når personer det inte var avsett för.
+      mitigation: Skicka inga lösenord eller konfidentiellt innehåll med e-post, kryptera e-posten under transport och låt inbjudningslänkar fungera en gång och löpa ut.

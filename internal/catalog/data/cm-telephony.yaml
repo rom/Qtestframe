@@ -784,3 +784,35 @@ tests:
           data: Vi ses vid gate 12 kl. 14.30
         - action: Skriv ett svar på den andra klienten.
           expected: Varje tecken visas på den första klienten inom 1 sekund.
+
+risks:
+  - id: CMTEL-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [emergency-call, 112]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive (EU) 2018/1972 Art. 109"]
+    mitigated_by: [CMTEL-01, CMTEL-02, CMTEL-03, CMTEL-04, CMTEL-15]
+    en:
+      title: Emergency call fails or sends help to the wrong place
+      description: A phone needs a prefix or sign-in to call 112, the site address is not sent or a site cut off from the call server cannot call out. Help is delayed or goes to the wrong address.
+      mitigation: Allow 112 from each phone without prefix or sign-in, send the site address with each emergency call, alert the security desk, keep emergency calls working at a site cut off from the call server and plan the migration of analogue alarm and lift lines.
+    sv:
+      title: Nödsamtal misslyckas eller skickar hjälpen till fel plats
+      description: En telefon kräver prefix eller inloggning för att ringa 112, platsens adress skickas inte med eller en plats som är avskuren från samtalsservern kan inte ringa ut. Hjälpen försenas eller åker till fel adress.
+      mitigation: Tillåt 112 från varje telefon utan prefix eller inloggning, skicka platsens adress med varje nödsamtal, larma säkerhetsdisken, håll nödsamtal fungerande på en plats som är avskuren från samtalsservern och planera migreringen av analoga larm- och hisslinjer.
+  - id: CMTEL-R02
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [toll-fraud, voicemail]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "RFC 3711"]
+    mitigated_by: [CMTEL-09, CMTEL-10, CMTEL-16, CMTEL-08]
+    en:
+      title: Phone system abused for toll fraud or eavesdropping
+      description: Attackers guess voicemail PINs or misuse extensions to call premium-rate numbers abroad, or listen to unencrypted calls. The bill reaches large sums over a weekend.
+      mitigation: Allow international and premium-rate calls only for granted extensions, alarm on high call costs, require voicemail PINs of at least 6 digits with no default and encrypt signalling and media.
+    sv:
+      title: Telefonisystemet missbrukas för samtalsbedrägeri eller avlyssning
+      description: Angripare gissar röstbrevlådans kod eller missbrukar anknytningar för att ringa betalnummer utomlands, eller avlyssnar okrypterade samtal. Fakturan når stora belopp under en helg.
+      mitigation: Tillåt utlands- och betalsamtal bara för anknytningar med behörighet, larma vid höga samtalskostnader, kräv koder till röstbrevlådan med minst 6 siffror utan standardkod och kryptera signalering och media.

@@ -827,3 +827,50 @@ tests:
           expected: Sessionen är fortfarande aktiv och den skrivna texten finns kvar i formuläret.
         - action: Låt webbläsaren vara inaktiv tills nästa varning och svara inte.
           expected: Sessionen avslutas 2 minuter efter varningen.
+
+risks:
+  - id: SESS-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [session-hijacking, cookie]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "CWE-614 (sensitive cookie without Secure attribute)", "CWE-1004 (sensitive cookie without HttpOnly flag)", "MITRE ATT&CK T1539 (steal web session cookie)", "MITRE ATT&CK T1550.004 (web session cookie)"]
+    mitigated_by: [SESS-06, SESS-07, SESS-14, SESS-03, SESS-04]
+    en:
+      title: Session hijacked with a stolen cookie
+      description: A session token leaks from an unprotected cookie, a URL or a shared computer and is replayed by an attacker. The attacker acts as the user without knowing the password and without a second factor.
+      mitigation: Set the Secure, HttpOnly and SameSite attributes and the __Host- prefix, keep tokens out of URLs and limit the idle and absolute lifetime of sessions.
+    sv:
+      title: Session kapas med en stulen kaka
+      description: En sessionstoken läcker från en oskyddad kaka, en adress eller en delad dator och spelas upp av en angripare. Angriparen agerar som användaren utan att känna till lösenordet och utan en andra faktor.
+      mitigation: Sätt attributen Secure, HttpOnly och SameSite och prefixet __Host-, håll token borta från adresser och begränsa sessionernas inaktivitetstid och totala livslängd.
+  - id: SESS-R02
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [csrf, session]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A01", "CWE-352 (cross-site request forgery)", "CWE-384 (session fixation)"]
+    mitigated_by: [SESS-08, SESS-02, SESS-12]
+    en:
+      title: Actions performed by a forged cross-site request
+      description: A page on another site makes the signed-in user's browser send a request that changes data, or plants a session identifier before sign-in. The system accepts it as the user's own action.
+      mitigation: Protect state-changing requests against cross-site request forgery, issue a new session token at sign-in and require a recent sign-in before high-impact actions.
+    sv:
+      title: Åtgärder utförs via en förfalskad begäran från en annan webbplats
+      description: En sida på en annan webbplats får den inloggade användarens webbläsare att skicka en begäran som ändrar data, eller planterar en sessionsidentifierare före inloggningen. Systemet godtar den som användarens egen åtgärd.
+      mitigation: Skydda ändrande anrop mot förfalskade begäranden, ge en ny sessionstoken vid inloggning och kräv en nyligen gjord inloggning före åtgärder med stor påverkan.
+  - id: SESS-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [session-revocation, compromised-account]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1465 (improper session invalidation after user logout)", "CWE-1466 (improper session invalidation after authentication credential change)", "MITRE ATT&CK T1078 (valid accounts)"]
+    mitigated_by: [SESS-05, SESS-10, SESS-13, SESS-09]
+    en:
+      title: Attacker keeps a session after the account is secured
+      description: The user changes the password or an administrator disables the account, but sessions already open stay valid. The attacker who took over the account keeps working.
+      mitigation: Invalidate sessions on the server at sign-out, on password change and when an account is disabled, and let users see and end their active sessions.
+    sv:
+      title: Angripare behåller en session efter att kontot har säkrats
+      description: Användaren byter lösenord eller en administratör inaktiverar kontot, men redan öppna sessioner fortsätter att gälla. Angriparen som tog över kontot fortsätter att arbeta.
+      mitigation: Ogiltigförklara sessioner på servern vid utloggning, vid lösenordsbyte och när ett konto inaktiveras, och låt användare se och avsluta sina aktiva sessioner.

@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/mail"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -39,6 +40,9 @@ type Config struct {
 	// Secrets configures the encryption of the secrets stored in the
 	// database (see internal/secrets and docs/security.md).
 	Secrets Secrets `yaml:"secrets"`
+	// Similarity configures the detection of similar requirements and
+	// tests (suspected duplicates, see internal/similarity).
+	Similarity Similarity `yaml:"similarity"`
 
 	// Meta records where values came from (file keys, environment
 	// variables); filled by Load, not part of the YAML.
@@ -220,6 +224,46 @@ type Email struct {
 	DigestHour int `yaml:"digest_hour"`
 }
 
+// Similarity configures the similarity checks. Without embeddings the
+// similarity is computed locally (TF-IDF); nothing leaves the server.
+type Similarity struct {
+	Embeddings Embeddings `yaml:"embeddings"`
+}
+
+// Embeddings is an optional OpenAI-compatible embeddings endpoint
+// (POST {model, input} → {data: [{embedding}]}). When enabled, the text of
+// requirements and tests is sent to it to compute their similarity. The
+// key is never written in the file: it comes from api_key_file or the
+// system settings.
+type Embeddings struct {
+	Enabled    bool          `yaml:"enabled"`
+	URL        string        `yaml:"url"`
+	Model      string        `yaml:"model"`
+	APIKeyFile string        `yaml:"api_key_file"`
+	APIKey     string        `yaml:"-"`
+	Timeout    time.Duration `yaml:"timeout"`
+}
+
+// On reports whether the embeddings endpoint is to be used.
+func (e Embeddings) On() bool { return e.Enabled && e.URL != "" }
+
+func (e Embeddings) validate() []error {
+	var errs []error
+	if e.URL != "" {
+		u, err := url.Parse(e.URL)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errs = append(errs, errors.New("similarity.embeddings.url must be an absolute http(s) URL"))
+		}
+	}
+	if e.Enabled && e.URL == "" {
+		errs = append(errs, errors.New("similarity.embeddings.url is required when embeddings are enabled"))
+	}
+	if e.Timeout < 0 {
+		errs = append(errs, errors.New("similarity.embeddings.timeout must not be negative"))
+	}
+	return errs
+}
+
 // On reports whether outgoing mail is configured and enabled.
 func (e Email) On() bool {
 	return e.Host != "" && (e.Enabled == nil || *e.Enabled)
@@ -235,6 +279,10 @@ type Server struct {
 	WriteTimeout   time.Duration `yaml:"write_timeout"`
 	TrustedProxies []string      `yaml:"trusted_proxies"`
 	HSTS           bool          `yaml:"hsts"`
+	// FrameAncestors are the origins (https://doors.example.com) that may
+	// show the OSLC delegated dialogs in a frame; without any they open
+	// in a window of their own.
+	FrameAncestors []string `yaml:"frame_ancestors"`
 }
 
 // Database selects the SQL backend.
@@ -479,6 +527,7 @@ func Default() Config {
 		Hardening:    Hardening{NoNewPrivs: true, Landlock: true, Seccomp: true, DropCapabilities: true},
 		Bootstrap:    Bootstrap{TenantSlug: "default", TenantName: "Default"},
 		Email:        Email{Port: 587, TLS: "starttls", Timeout: 30 * time.Second, DigestHour: 7, FromName: "Qtestframe"},
+		Similarity:   Similarity{Embeddings: Embeddings{Timeout: 30 * time.Second}},
 		Secrets: Secrets{Provider: SecretsLocal, TPM: TPMKey{Device: "/dev/tpmrm0", PCRBank: "sha256"},
 			PKCS11: PKCS11Key{KeyLabel: "qtestframe-kek"}},
 	}
@@ -715,6 +764,12 @@ func (c *Config) resolveSecrets() error {
 		}
 		c.Meta.FileKeys["email.password"] = true
 	}
+	if c.Similarity.Embeddings.APIKeyFile != "" {
+		if c.Similarity.Embeddings.APIKey, err = readSecret(c.Similarity.Embeddings.APIKeyFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["similarity.embeddings.api_key"] = true
+	}
 	if env := os.Getenv("QTF_EMAIL_PASSWORD"); env != "" {
 		c.Email.Password = env
 		c.Meta.EnvKeys["email.password"] = "QTF_EMAIL_PASSWORD"
@@ -772,6 +827,11 @@ func (c *Config) Validate() error {
 	}
 	if (c.Server.TLSCert == "") != (c.Server.TLSKey == "") {
 		errs = append(errs, errors.New("server.tls_cert and server.tls_key must be set together"))
+	}
+	for _, o := range c.Server.FrameAncestors {
+		if !ValidOrigin(o) {
+			errs = append(errs, fmt.Errorf("server.frame_ancestors: %q is not an origin such as https://doors.example.com", o))
+		}
 	}
 	if c.Auth.SessionTTL <= 0 {
 		errs = append(errs, errors.New("auth.session_ttl must be positive"))
@@ -831,6 +891,7 @@ func (c *Config) Validate() error {
 	errs = append(errs, c.Runner.Web.validate()...)
 	errs = append(errs, c.Email.validate()...)
 	errs = append(errs, c.Secrets.validate()...)
+	errs = append(errs, c.Similarity.Embeddings.validate()...)
 	if c.Email.On() && c.Server.BaseURL == "" {
 		errs = append(errs, errors.New("server.base_url is required for e-mail (links in the messages)"))
 	}
@@ -902,4 +963,14 @@ func (e Email) validate() []error {
 		errs = append(errs, errors.New("email.digest_hour must be between 0 and 23"))
 	}
 	return errs
+}
+
+// ValidOrigin reports whether s is an origin: http(s)://host[:port]
+// without a path, query or user.
+func ValidOrigin(s string) bool {
+	u, err := url.Parse(s)
+	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.User != nil {
+		return false
+	}
+	return (u.Path == "" || u.Path == "/") && u.RawQuery == "" && u.Fragment == "" && !strings.ContainsAny(s, " ;,'\"")
 }

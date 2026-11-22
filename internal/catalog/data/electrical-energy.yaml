@@ -1105,3 +1105,50 @@ tests:
           data: "enhet G2, 300 MW otillgängligt"
         - action: Kontrollera testplattformen klockan 15.00.
           expected: Ett meddelande är publicerat med enhet, otillgänglig kapacitet, starttid och förväntat slut.
+
+risks:
+  - id: ENRG-R01
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [grid, scada, sabotage]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "ISO/IEC 27019:2024", "MITRE ATT&CK T0886 (remote services)"]
+    mitigated_by: [ENRG-05, ENRG-06, ENRG-07, ENRG-16, ENRG-17]
+    en:
+      title: Grid switching operated by an attacker
+      description: An attacker sends forged telecontrol or protection messages, or uses a remote engineering connection to a substation. Breakers open, large areas lose power and equipment can be damaged.
+      mitigation: Authenticate telecontrol commands and protection messages with replay checks, limit switching by role and area, collect security events from SCADA and IEDs centrally and allow remote engineering only through a controlled gateway.
+    sv:
+      title: Kopplingar i elnätet manövreras av en angripare
+      description: En angripare skickar förfalskade fjärrkontroll- eller skyddsmeddelanden eller använder en fjärranslutning för ingenjörsarbete till en ställverksstation. Brytare löser ut, stora områden blir strömlösa och utrustning kan skadas.
+      mitigation: Autentisera fjärrkontrollkommandon och skyddsmeddelanden med kontroll mot uppspelning, begränsa kopplingar efter roll och ansvarsområde, samla säkerhetshändelser från SCADA och IED:er centralt och tillåt fjärråtkomst för ingenjörsarbete bara via en kontrollerad gateway.
+  - id: ENRG-R02
+    category: availability
+    likelihood: 2
+    impact: 5
+    tags: [control-centre, blackout]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 22301:2019 §8.4"]
+    mitigated_by: [ENRG-15, ENRG-11, ENRG-01, ENRG-02]
+    en:
+      title: Grid cannot be operated during a disturbance
+      description: The control centre is lost or telemetry stops during a large disturbance, and the grid state is unknown. Restoration takes much longer and the disturbance can grow into a blackout.
+      mitigation: Let a backup control centre take over within 3 hours, shed load by configured under-frequency stages and keep telemetry and state estimation current.
+    sv:
+      title: Elnätet kan inte drivas under en störning
+      description: Driftcentralen förloras eller telemetrin upphör under en stor störning, och nätets tillstånd är okänt. Återuppbyggnaden tar mycket längre tid och störningen kan växa till ett omfattande elavbrott.
+      mitigation: Låt en reservdriftcentral ta över inom 3 timmar, koppla bort last enligt inställda steg vid underfrekvens och håll telemetri och tillståndsskattning aktuella.
+  - id: ENRG-R03
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [smart-meter, remote-disconnection]
+    refs: ["ISO/IEC 27019:2024", "GDPR Art. 5(1)(c)"]
+    mitigated_by: [ENRG-08, ENRG-09, ENRG-10]
+    en:
+      title: Smart meter data or remote disconnection misused
+      description: Detailed consumption data reveals people's daily life to unauthorised parties, or a mass remote disconnection is triggered by mistake or by an attacker, including households with protected customers.
+      mitigation: Give detailed meter data only to the customer and authorised parties, require two persons and a protected-customer check for remote disconnection and roll out signed meter firmware in stages.
+    sv:
+      title: Mätdata från elmätare eller fjärrfrånkoppling missbrukas
+      description: Detaljerade förbrukningsdata avslöjar människors vardag för obehöriga, eller en massfrånkoppling på distans utlöses av misstag eller av en angripare, även för hushåll med skyddade kunder.
+      mitigation: Lämna detaljerade mätdata bara till kunden och behöriga parter, kräv två personer och kontroll av skyddade kunder för fjärrfrånkoppling och rulla ut signerad mätarfirmware stegvis.

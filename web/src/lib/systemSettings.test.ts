@@ -63,6 +63,7 @@ const SERVER_KEYS = [
   'email.enabled', 'email.host', 'email.port', 'email.tls', 'email.username', 'email.password', 'email.from', 'email.from_name', 'email.timeout', 'email.digest_hour',
   'runner.enabled', 'runner.timeout', 'runner.max_output_bytes', 'runner.deny_network', 'runner.sandbox', 'runner.web.enabled', 'runner.web.browser', 'runner.web.headless',
   'runner.web.timeout', 'runner.web.job_timeout', 'runner.web.max_parallel', 'runner.web.max_evidence_mb', 'runner.web.screenshots', 'runner.web.trace', 'runner.web.video', 'runner.web.playwright_dir',
+  'similarity.embeddings.enabled', 'similarity.embeddings.url', 'similarity.embeddings.model', 'similarity.embeddings.api_key', 'similarity.embeddings.timeout',
 ]
 
 describe('system settings texts', () => {

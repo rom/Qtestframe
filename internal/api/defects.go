@@ -70,6 +70,7 @@ func (s *Server) handleListDefects(w http.ResponseWriter, r *http.Request, p *Pr
 		s.fail(w, r, err)
 		return
 	}
+	s.bindMe(r.Context(), p, q)
 	list, err := s.Store.ListDefects(r.Context(), p.TenantID(), pr.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -288,7 +289,7 @@ func (s *Server) handlePutTracker(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(r.Context(), p, "defect_tracker.update", "project", pr.ID, t.Type+" "+t.URL+" "+t.ProjectKey+t.Repo)
+	s.audit(r.Context(), p, "defect_tracker.update", "project", pr.ID, t.Type+" "+t.URL+" "+t.ProjectKey+t.Repo+t.Project+t.Queue)
 	t.Token = ""
 	writeJSON(w, http.StatusOK, t)
 }

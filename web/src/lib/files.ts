@@ -8,7 +8,7 @@ export const DEFAULT_MAX_UPLOAD_MB = 25
 export const MB = 1024 * 1024
 
 /** Entities that take attachments, with their API collection. */
-export const ATTACHABLE = { requirement: 'requirements', test: 'tests', run: 'runs', execution: 'executions', step: 'step-results' } as const
+export const ATTACHABLE = { requirement: 'requirements', test: 'tests', run: 'runs', execution: 'executions', step: 'step-results', exploratory_session: 'exploratory-sessions' } as const
 export type AttachableType = keyof typeof ATTACHABLE
 
 /** Archive kinds a user can filter by. */
@@ -163,6 +163,8 @@ export function linkTarget(link: FileLink, projectId: string, runId?: string): L
       return runId && link.execution_id
         ? { name: 'execute', params: { ...params, runId, executionId: link.execution_id }, query: { step: link.entity_id } }
         : { name: 'runs', params }
+    case 'exploratory_session':
+      return { name: 'exploratorySession', params: { ...params, sessionId: link.entity_id } }
     default:
       return null
   }
@@ -181,6 +183,8 @@ export function linkIcon(type: string): string {
       return 'pi pi-play'
     case 'step':
       return 'pi pi-camera'
+    case 'exploratory_session':
+      return 'pi pi-compass'
     default:
       return 'pi pi-link'
   }

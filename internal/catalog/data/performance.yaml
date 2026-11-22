@@ -879,3 +879,50 @@ tests:
           expected: Batchjobben körs klart eller pågår under hela perioden.
         - action: Jämför 95:e percentilerna.
           expected: Värdet med batchjobb är högst 20 % högre än referensvärdet.
+
+risks:
+  - id: PERF-R01
+    category: quality
+    likelihood: 4
+    impact: 3
+    tags: [response-time, user-experience]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 (time behaviour)"]
+    mitigated_by: [PERF-01, PERF-02, PERF-03, PERF-05, PERF-06]
+    en:
+      title: Slow responses drive users away
+      description: Pages, saves and searches take several seconds as data grows. Users give up tasks, work around the system or choose a competitor.
+      mitigation: Set and measure response time targets for reads, saves and searches, and for page loading and interaction in the browser.
+    sv:
+      title: Långa svarstider får användare att lämna
+      description: Sidor, sparningar och sökningar tar flera sekunder när datamängden växer. Användarna avbryter uppgifter, går runt systemet eller väljer en konkurrent.
+      mitigation: Fastställ och mät mål för svarstider vid läsning, sparning och sökning samt för sidladdning och interaktion i webbläsaren.
+  - id: PERF-R02
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [regression, load]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 (capacity)"]
+    mitigated_by: [PERF-16, PERF-12, PERF-14, PERF-17]
+    en:
+      title: Performance regression found only in production
+      description: A change makes a core journey slower and nothing in the pipeline measures it. The problem shows during the next peak, when it is hardest to fix.
+      mitigation: Stop the build on a performance regression, test at twice the expected load, check response times just after a deployment and verify recovery after a load spike.
+    sv:
+      title: Försämrad prestanda upptäcks först i produktion
+      description: En ändring gör en central användarresa långsammare och inget i pipelinen mäter det. Problemet syns vid nästa topp, när det är svårast att rätta.
+      mitigation: Stoppa bygget vid försämrad prestanda, testa vid dubbla den förväntade lasten, kontrollera svarstiderna direkt efter en driftsättning och verifiera återhämtningen efter en lasttopp.
+  - id: PERF-R03
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [batch, memory-leak]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 (resource utilization)"]
+    mitigated_by: [PERF-10, PERF-11, PERF-18, PERF-09]
+    en:
+      title: Background work degrades the service over time
+      description: Memory grows until the process restarts, or nightly batch jobs run into business hours. Interactive users get slow responses or errors at unpredictable times.
+      mitigation: Check that memory does not grow over time, limit the duration of nightly jobs, keep batch jobs from slowing interactive use and keep processor utilisation within its target.
+    sv:
+      title: Bakgrundsarbete försämrar tjänsten över tid
+      description: Minnet växer tills processen startar om, eller nattliga batchjobb drar ut in i kontorstid. Interaktiva användare får långa svarstider eller fel vid oförutsägbara tidpunkter.
+      mitigation: Kontrollera att minnet inte växer över tid, begränsa de nattliga jobbens körtid, hindra batchjobb från att sakta ned interaktiv användning och håll processorutnyttjandet inom målet.

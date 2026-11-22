@@ -17,13 +17,18 @@ export const BUILTIN_KINDS = [
   'unmitigated_risk',
   'unjustified_rejection',
   'duplicate_suspect',
+  'potential_conflict',
+  'test_duplicate_suspect',
 ] as const
 
+/** Built-in checks with a threshold option (similarity or confidence) and its default. */
+export const THRESHOLD_DEFAULTS: Record<string, number> = { duplicate_suspect: 0.68, test_duplicate_suspect: 0.68, potential_conflict: 0.6 }
+
 /** Reason codes of violations (Violation.check). */
-export const REASONS = ['conflict', 'rejected', 'obsolete', 'deleted', 'failing', 'cycle', 'no_evidence', 'no_mitigation', 'not_verified', 'unjustified', 'similar'] as const
+export const REASONS = ['conflict', 'rejected', 'obsolete', 'deleted', 'failing', 'cycle', 'no_evidence', 'no_mitigation', 'not_verified', 'unjustified', 'similar', 'opposite_obligation', 'threshold', 'exclusive'] as const
 
 /** Roles of related items. */
-export const ROLES = ['conflicts_with', 'depends_on', 'refines', 'derived_from', 'verifies', 'prerequisite', 'release', 'mitigation', 'duplicate'] as const
+export const ROLES = ['conflicts_with', 'depends_on', 'refines', 'derived_from', 'verifies', 'prerequisite', 'release', 'mitigation', 'duplicate', 'conflict'] as const
 
 /** Fix actions (tracerules FixActions). */
 export const FIX_ACTIONS = [
@@ -35,13 +40,17 @@ export const FIX_ACTIONS = [
   'add_justification',
   'link_mitigation',
   'mark_duplicate',
+  'mark_conflict',
   'dismiss',
 ] as const
 
 export type FixAction = (typeof FIX_ACTIONS)[number]
 
+/** Label of the item link that marks a test as a duplicate (model.DuplicateLinkLabel). */
+export const DUPLICATE_LINK_LABEL = 'duplicates'
+
 /** Checks whose findings about a pair can be dismissed. */
-export const DISMISSABLE = ['duplicate_suspect', 'unmet_dependency', 'broken_prerequisite']
+export const DISMISSABLE = ['duplicate_suspect', 'unmet_dependency', 'broken_prerequisite', 'potential_conflict', 'test_duplicate_suspect']
 
 export function isBuiltin(kind: string | null | undefined): boolean {
   return (BUILTIN_KINDS as readonly string[]).includes(kind ?? '')
@@ -49,7 +58,7 @@ export function isBuiltin(kind: string | null | undefined): boolean {
 
 /** The item kind a built-in check applies to. */
 export function builtinScope(kind: string): 'requirement' | 'test' | 'risk' {
-  if (kind === 'verifies_inactive' || kind === 'broken_prerequisite') return 'test'
+  if (kind === 'verifies_inactive' || kind === 'broken_prerequisite' || kind === 'test_duplicate_suspect') return 'test'
   if (kind === 'unmitigated_risk') return 'risk'
   return 'requirement'
 }
@@ -87,6 +96,7 @@ export function relatedFixes(check: string, r: TraceRelated): FixAction[] {
   if (r.link && r.role === 'prerequisite' && r.check !== 'failing') out.push('remove_dependency')
   if (r.kind === 'release' && check === 'conflict_in_release') out.push('remove_from_release')
   if (r.role === 'duplicate') out.push('mark_duplicate', 'dismiss')
+  else if (r.role === 'conflict') out.push('mark_conflict', 'dismiss')
   else if (!r.link && r.check === 'deleted' && DISMISSABLE.includes(check)) out.push('dismiss')
   return out
 }
@@ -96,8 +106,9 @@ export function itemFixes(v: Pick<TraceViolation, 'fixes'>): FixAction[] {
   return (v.fixes ?? []).filter((f): f is FixAction => f === 'set_obsolete' || f === 'add_justification' || f === 'link_mitigation')
 }
 
-/** The permission a fix action needs. */
-export function fixPermission(f: FixAction): string {
+/** The permission a fix action needs (check: the rule kind of the violation). */
+export function fixPermission(f: FixAction, check = ''): string {
+  if (builtinScope(check) === 'test' && (f === 'mark_duplicate' || f === 'dismiss')) return P.testWrite
   switch (f) {
     case 'remove_link':
     case 'remove_dependency':
@@ -133,7 +144,11 @@ export async function applyFix(f: FixAction, check: string, v: Pick<TraceViolati
       await api.patch(`/requirements/${v.id}`, { status: 'obsolete' })
       return true
     case 'mark_duplicate':
-      if (r) await api.post(`/requirements/${v.id}/relations`, { target_id: r.id, type: 'duplicates' })
+      if (r && v.kind === 'test') await api.post(`/tests/${v.id}/item-links`, { target_type: 'test', target_id: r.id, label: DUPLICATE_LINK_LABEL })
+      else if (r) await api.post(`/requirements/${v.id}/relations`, { target_id: r.id, type: 'duplicates' })
+      return true
+    case 'mark_conflict':
+      if (r) await api.post(`/requirements/${v.id}/relations`, { target_id: r.id, type: 'conflicts_with' })
       return true
     case 'dismiss':
       if (r) await api.post(`/projects/${projectId}/consistency/dismissals`, { check, item_id: v.id, other_id: r.id })
@@ -164,6 +179,7 @@ export function relatedLine(r: TraceRelated, t: T, statusLabel: (s: string) => s
   const role = t(`consistency.role.${r.role}`)
   if (r.check === 'deleted') return `${role} · ${t('consistency.deleted')}`
   if (r.note && r.role === 'duplicate') return `${role} · ${t('consistency.similarity', { pct: r.note })}`
+  if (r.role === 'conflict') return `${role} · ${t(`consistency.reason.${r.check || 'exclusive'}`, { keys: r.key, note: r.note ?? '', n: 1 }, 1)}`
   if (r.check === 'failing') return `${role} · ${t('consistency.failing')}`
   if (r.check === 'cycle') return `${role} · ${t('consistency.cycle')}`
   return r.status ? `${role} · ${statusLabel(r.status)}` : role

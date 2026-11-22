@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockCounts, contentChanges, impactSections, needsImpactConfirm, setSeverityLevel, severityLevel, withDefaults, type ChangeImpact } from './correlations'
+import { blockCounts, contentChanges, depthCounts, impactGraph, impactItems, impactSections, impactTree, needsImpactConfirm, pathText, setSeverityLevel, severityLevel, withDefaults, type ChangeImpact } from './correlations'
 
 const impact = (p: Partial<ChangeImpact> = {}): ChangeImpact => ({
   kind: 'requirement',
@@ -76,5 +76,54 @@ describe('messages', () => {
       expect(['age', 'test_changed', 'requirement_changed'].filter((d) => !c.staleReason[d])).toEqual([])
       expect([...CONTENT_FIELDS.requirement, ...CONTENT_FIELDS.test].filter((d) => !c.field[d])).toEqual([])
     }
+  })
+})
+
+describe('transitive impact', () => {
+  const a = { kind: 'requirement', id: 'a', key: 'A' }
+  const imp = impact({
+    roots: [{ kind: 'requirement', id: 'a', key: 'A', title: 'root' }],
+    requirements: [
+      { kind: 'requirement', id: 'b', key: 'B', depth: 1, mode: 'suspect', path: [a, { kind: 'requirement', id: 'b', key: 'B', edge: 'refines', direction: 'incoming' }] },
+      {
+        kind: 'requirement',
+        id: 'c',
+        key: 'C',
+        depth: 2,
+        mode: 'review',
+        path: [a, { kind: 'requirement', id: 'b', key: 'B', edge: 'refines' }, { kind: 'requirement', id: 'c', key: 'C', edge: 'depends_on' }],
+      },
+    ],
+    tests: [{ kind: 'test', id: 't', key: 'T-12', depth: 2, path: [a, { kind: 'requirement', id: 'b', key: 'B', edge: 'refines' }, { kind: 'test', id: 't', key: 'T-12', edge: 'verifies' }] }],
+  })
+  it('groups by section and depth', () => {
+    const tree = impactTree(imp)
+    expect(tree.map((s) => [s.section, s.count, s.depths.map((d) => [d.depth, d.items.length])])).toEqual([
+      ['requirements', 2, [[1, 1], [2, 1]]],
+      ['tests', 1, [[2, 1]]],
+    ])
+    expect(depthCounts(imp)).toEqual([{ depth: 1, count: 1 }, { depth: 2, count: 2 }])
+    expect(impactItems(imp).map((i) => i.section)).toEqual(['requirements', 'requirements', 'tests'])
+    expect(impactTree(null)).toEqual([])
+  })
+  it('renders paths and builds the graph', () => {
+    expect(pathText(imp.tests[0]!.path)).toBe('A → refines → B → verifies → T-12')
+    expect(pathText(imp.tests[0]!.path, (e) => e.toUpperCase())).toBe('A → REFINES → B → VERIFIES → T-12')
+    expect(pathText(undefined)).toBe('')
+    const g = impactGraph(imp)
+    expect(g.nodes.map((n) => n.key)).toEqual(['A', 'B', 'C', 'T-12'])
+    expect(g.nodes[0]!.root).toBe(true)
+    expect(g.edges.map((e) => `${e.source}>${e.target}:${e.type}`)).toEqual(['requirement:a>requirement:b:refines', 'requirement:b>requirement:c:depends_on', 'requirement:b>test:t:verifies'])
+    expect(impactGraph(null)).toEqual({ nodes: [], edges: [] })
+  })
+  it('fills the impact settings', () => {
+    const s = withDefaults({ impact_depth: 5, relation_modes: { refines: 'review' }, impact_rules: { risk: { direction: 'off', mode: 'suspect' } } })
+    expect(s.impact_depth).toBe(5)
+    expect(s.relation_modes.refines).toBe('review')
+    expect(s.relation_modes.depends_on).toBe('suspect')
+    // only trace links can mark suspect
+    expect(s.impact_rules.risk).toEqual({ direction: 'off', mode: 'review' })
+    expect(s.impact_rules.verifies).toEqual({ direction: 'both', mode: 'suspect' })
+    expect(withDefaults(null).impact_depth).toBe(3)
   })
 })

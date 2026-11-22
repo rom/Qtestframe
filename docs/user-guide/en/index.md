@@ -21,13 +21,18 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Requirements](requirements.md) | Obligation levels, the language analysis, fields, evaluation criteria, relations, comments, history, bulk edit, moving and attachments |
 | [Tests](tests.md) | Manual steps, automated scripts, shared steps, categories, execution history, comments, history and attachments |
 | [Catalogue](catalogue.md) | Standard requirements and tests to add to a project: browsing, searching, the preview and adding with tests and trace links |
+| [Test cycles](test-cycles.md) | Planning test cycles: tests, testers and estimates, the runs a cycle creates, progress, burndown, workload, recurring cycles |
 | [Test runs and execution](runs.md) | Runs, the execution runner and its keyboard shortcuts, defects, CI import with API tokens, attachments |
+| [Exploratory testing](exploratory-testing.md) | Session-based exploratory testing: charters, the session timer, typed notes with keyboard shortcuts, defects from notes, debriefs, metrics and the session report |
 | [Waivers, residual risk and the SoA](waivers-and-soa.md) | Waivers and deviations with signed approvals, residual risk and its acceptance, the Statement of Applicability (ISO/IEC 27001 Annex A) |
 | [Traceability and coverage](traceability-and-coverage.md) | The traceability matrix, how coverage is calculated, the dashboard |
+| [Duplicates and conflicts](duplicates-and-conflicts.md) | Similar requirements while writing, suspected duplicate requirements and tests, potentially conflicting requirements, merging, thresholds |
 | [Variants and code](variants-and-code.md) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
 | [Baselines](baselines.md) | Freezing a release and comparing versions |
+| [Discussions](discussions.md) | Threaded comments on items with Markdown, @mentions, reactions, resolving, and the project's Discussions page |
 | [Search and filters](search-and-filters.md) | The query language with many examples |
 | [Reports and export](reports-and-export.md) | Standard reports, the custom report builder, export formats and the document archive |
+| [Interoperability](interoperability.md) | ReqIF export and import with tests, relations and attachments; OSLC links, selection and creation from DOORS Next, Polarion, Codebeamer |
 | [Documents](documents.md) | The project's document archive: uploads, previews and links |
 | [Administration](administration.md) | Organisations, users, members and roles, project sharing, password resets, API tokens, the audit log, backup and restore |
 | [Accessibility and languages](accessibility-and-languages.md) | Keyboard use, screen readers, themes, English and Swedish, phones and tablets |

@@ -149,6 +149,8 @@ describe('tracker settings', () => {
       assignee: '',
       requirement_labels: '',
       requirement_issue_type: '',
+      queue: '',
+      labels_field: '',
       comment_on_pass: false,
       user: '',
       token: '',

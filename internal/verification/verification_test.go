@@ -215,3 +215,34 @@ func TestElementCoverage(t *testing.T) {
 		t.Fatalf("sub %+v", out[1])
 	}
 }
+
+func TestExploratorySessions(t *testing.T) {
+	day := time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC)
+	in := Input{
+		Requirements: []model.Requirement{req("a", "implemented"), req("b", "implemented", "c1"), req("c", "implemented")},
+		Links:        []model.TraceLink{link("l1", "b", "t1", model.LinkCriterion{CriterionID: "b-c1"}), link("l2", "c", "t2")},
+		Last:         map[string]string{"t1": "passed", "t2": "passed"},
+		Sessions: []Session{
+			{ID: "s1", Key: "P-EXP-1", Outcome: "passed", At: day, RequirementIDs: []string{"a", "b", "c", "gone"}},
+			{ID: "s2", Key: "P-EXP-2", Outcome: "inconclusive", At: day.Add(time.Hour), RequirementIDs: []string{"a"}},
+		},
+	}
+	res := Compute(in)
+	if v := res["a"]; !v.Verified || len(v.Evidence) != 2 || v.Evidence[0].State != model.EvidenceVoid || v.Evidence[0].Note != "inconclusive" || v.Evidence[1].Kind != "exploratory" {
+		t.Fatalf("%+v", v)
+	}
+	// a criterion is never verified by a session alone, but a session adds to it
+	if v := res["b"]; !v.Verified || len(v.Criteria[0].Evidence) != 1 {
+		t.Fatalf("%+v", v)
+	}
+	in.Links = in.Links[1:]
+	if v := Compute(in)["b"]; v.Verified || v.Own != model.VerPending || v.Criteria[0].State != model.VerNone {
+		t.Fatalf("%+v", v)
+	}
+	// a failed session fails the requirement; the older one is superseded
+	in.Sessions = append(in.Sessions, Session{ID: "s3", Key: "P-EXP-3", Outcome: "failed", At: day.Add(2 * time.Hour), RequirementIDs: []string{"c"}})
+	v := Compute(in)["c"]
+	if v.Own != model.VerFailed || v.Evidence[2].Note != "superseded" {
+		t.Fatalf("%+v", v.Evidence)
+	}
+}
