@@ -1284,3 +1284,49 @@ risks:
       title: AI-system manipuleras eller försämras i drift
       description: Förgiftad data eller fientlig inmatning ändrar systemets beteende, eller dess noggrannhet sjunker efter lansering utan att någon märker det. Felaktiga svar skadar människor tills en allvarlig incident avslöjar problemet.
       mitigation: Skydda mot förgiftning och fientlig inmatning, definiera ett reservbeteende vid ogiltig inmatning och fel, logga varje användning, övervaka prestandan efter lansering och rapportera allvarliga incidenter inom de lagstadgade tidsfristerna.
+  - id: AIACT-R05
+    category: ai
+    likelihood: 3
+    impact: 4
+    tags: [data-poisoning, adversarial-input]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)", "EU AI Act (Regulation (EU) 2024/1689) Art. 15(5) (cybersecurity of high-risk AI systems)", "MITRE ATLAS (adversarial threat landscape for AI systems)"]
+    mitigated_by: [AIACT-15, AIACT-06, AIACT-16]
+    atlas: [AML.T0020, AML.T0043]
+    en:
+      title: High-risk AI system poisoned through its training data
+      description: An attacker plants manipulated examples in data that is collected for retraining. The model learns a hidden behaviour that favours or harms certain cases, and the provider breaks its robustness obligations.
+      mitigation: Document the origin and preparation of training data, protect against poisoning and adversarial input and monitor performance after the system is placed on the market.
+    sv:
+      title: AI-system med hög risk förgiftas genom sina träningsdata
+      description: En angripare planterar manipulerade exempel i data som samlas in för omträning. Modellen lär sig ett dolt beteende som gynnar eller missgynnar vissa fall, och leverantören bryter mot kraven på robusthet.
+      mitigation: Dokumentera ursprung och beredning av träningsdata, skydda mot förgiftning och manipulerad indata och övervaka prestandan efter att systemet släppts ut på marknaden.
+  - id: AIACT-R06
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [deep-fakes, transparency]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)", "EU AI Act (Regulation (EU) 2024/1689) Art. 50(2) (marking of synthetic content)", "EU AI Act (Regulation (EU) 2024/1689) Art. 50(4) (disclosure of deep fakes)"]
+    mitigated_by: [AIACT-19, AIACT-20, AIACT-18]
+    en:
+      title: Generated content passed off as real
+      description: Images, audio or text produced by the system carry no marking, and deep fakes are published without a label. People are misled and the provider and deployer break the transparency obligations.
+      mitigation: Mark generated content in a machine-readable way, label deep fakes visibly and tell people when they interact with an AI system.
+    sv:
+      title: Genererat innehåll framställs som äkta
+      description: Bilder, ljud eller text som systemet skapar saknar märkning, och deepfakes publiceras utan etikett. Människor vilseleds och leverantör och tillhandahållare bryter mot transparenskraven.
+      mitigation: Märk genererat innehåll maskinläsbart, märk deepfakes synligt och berätta för människor när de interagerar med ett AI-system.
+  - id: AIACT-R07
+    category: compliance
+    likelihood: 2
+    impact: 5
+    tags: [prohibited-practices, screening]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)", "EU AI Act (Regulation (EU) 2024/1689) Art. 5(1) (prohibited AI practices, as amended by Regulation (EU) 2026/1744)"]
+    mitigated_by: [AIACT-02, AIACT-01, AIACT-26]
+    en:
+      title: AI feature turns out to be a prohibited practice
+      description: A feature that infers emotions at work, scores people socially or exploits vulnerable groups is released without screening. It must be withdrawn and the fines are the highest the Act provides.
+      mitigation: Screen every AI system for prohibited practices before release, record its risk category and assess the impact on fundamental rights before first use.
+    sv:
+      title: AI-funktion visar sig vara en förbjuden praxis
+      description: En funktion som tolkar känslor på arbetsplatsen, poängsätter människor socialt eller utnyttjar sårbara grupper släpps utan granskning. Den måste dras tillbaka och sanktionsavgifterna är de högsta som förordningen anger.
+      mitigation: Granska varje AI-system mot förbjudna metoder före release, registrera dess riskkategori och bedöm påverkan på grundläggande rättigheter före första användning.

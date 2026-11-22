@@ -1147,3 +1147,68 @@ risks:
       title: Kostnaderna för AI-användning skenar
       description: En användare, ett skript eller en attack skickar långa eller många förfrågningar till en betald modell. Fakturan växer mångfaldigt och tjänsten stryps för alla.
       mitigation: Begränsa antalet token och förfrågningar per användare och anropsfrekvensen per klient.
+  - id: AIENG-R05
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [agents, tool-calls]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM01 (prompt injection)", "OWASP Top 10 for LLM Applications 2025 LLM05 (improper output handling)"]
+    mitigated_by: [AIENG-12, AIENG-13, AIML-06]
+    attack: [T1698]
+    atlas: [AML.T0053, AML.T0051.001]
+    en:
+      title: AI agent performs harmful actions through its tools
+      description: An agent reads a manipulated web page or document and calls its tools to send e-mail, change records or transfer money. Nobody confirms the actions before they happen.
+      mitigation: Let the user confirm tool calls with side effects, treat model output as untrusted input and never let model output trigger privileged actions on its own.
+    sv:
+      title: AI-agent utför skadliga åtgärder via sina verktyg
+      description: En agent läser en manipulerad webbsida eller ett dokument och anropar sina verktyg för att skicka e-post, ändra poster eller föra över pengar. Ingen bekräftar åtgärderna innan de sker.
+      mitigation: Låt användaren bekräfta verktygsanrop med sidoeffekter, behandla modellens utdata som obetrodd indata och låt aldrig modellens utdata utlösa privilegierade åtgärder på egen hand.
+  - id: AIENG-R06
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [system-prompt, prompt-extraction]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM07 (system prompt leakage)"]
+    mitigated_by: [AIENG-14, AIENG-18]
+    atlas: [AML.T0056, AML.T0054]
+    en:
+      title: System prompt extracted with credentials and access rules
+      description: Users jailbreak the assistant into revealing its system prompt. It contains API keys, internal addresses or the rules that are meant to limit what the assistant does.
+      mitigation: Keep credentials and access rules out of the system prompt, enforce access outside the model and red-team each major release.
+    sv:
+      title: Systemprompten lockas fram med inloggningsuppgifter och åtkomstregler
+      description: Användare kringgår assistentens spärrar så att den avslöjar sin systemprompt. Den innehåller API-nycklar, interna adresser eller de regler som ska begränsa vad assistenten gör.
+      mitigation: Håll inloggningsuppgifter och åtkomstregler utanför systemprompten, upprätthåll åtkomst utanför modellen och genomför red teaming före varje större release.
+  - id: AIENG-R07
+    category: ai
+    likelihood: 3
+    impact: 4
+    tags: [rag, hallucination]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM09 (misinformation)"]
+    mitigated_by: [AIENG-19, AIENG-20, AIENG-05]
+    atlas: [AML.T0070]
+    en:
+      title: Assistant answers from poisoned or irrelevant sources
+      description: A document with false content is added to the knowledge base, or no relevant source exists and the model invents an answer. Users act on confident answers that are wrong.
+      mitigation: Cite the sources of each answer, withhold an answer when no relevant source is found and evaluate the application on a fixed suite.
+    sv:
+      title: Assistenten svarar utifrån förgiftade eller irrelevanta källor
+      description: Ett dokument med felaktigt innehåll läggs till i kunskapsbasen, eller ingen relevant källa finns och modellen hittar på ett svar. Användare agerar på säkra svar som är fel.
+      mitigation: Ange källorna för varje svar, avstå från att svara när ingen relevant källa finns och utvärdera applikationen mot en fast testsvit.
+  - id: AIENG-R08
+    category: privacy
+    likelihood: 2
+    impact: 4
+    tags: [training-data, membership-inference]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "GDPR Art. 5(1)(c)"]
+    mitigated_by: [AIENG-24, AIML-14, AIML-04]
+    atlas: [AML.T0024.000, AML.T0057]
+    en:
+      title: Personal data in training data recovered from the model
+      description: "Training data contains names, identity numbers or health details. Through crafted queries the model reproduces them, or reveals that a person's data was used."
+      mitigation: Scan training data for personal data, remove direct identifiers before text is sent to an external model and never use customer data to train external models.
+    sv:
+      title: Personuppgifter i träningsdata kan tas fram ur modellen
+      description: Träningsdata innehåller namn, personnummer eller hälsouppgifter. Genom utformade frågor återger modellen dem, eller avslöjar att en persons data har använts.
+      mitigation: Sök igenom träningsdata efter personuppgifter, ta bort direkta identifierare innan text skickas till en extern modell och använd aldrig kunddata för att träna externa modeller.

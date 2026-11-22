@@ -723,3 +723,35 @@ risks:
       title: Fel som ett utvecklingsverktyg för in upptäcks inte
       description: En kompilator, kodgenerator eller ett testverktyg för in ett fel eller missar att upptäcka ett, och inget annat i processen fångar det. Ett säkerhetsrelaterat fel når fordonet.
       mitigation: Bestäm verktygsförtroendenivån för varje programvaruverktyg och kvalificera de verktyg som behöver det.
+  - id: AUTOSW-R05
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [ota-updates, signatures]
+    refs: ["ISO 26262-3:2018 §6 (hazard analysis and risk assessment)", "UN Regulation No. 156 §7.2.1.1 (authenticity and integrity of software updates)"]
+    mitigated_by: [AUTOSW-08, AUTOSW-09]
+    attack: [T1195.002, T1601.002]
+    en:
+      title: Malicious software installed through the update channel
+      description: The vehicle accepts update packages that are not signed, or older vulnerable versions. An attacker who reaches the update path installs software of their choice in vehicles in the field.
+      mitigation: Accept only authenticated software updates, reject downgrades to vulnerable versions and keep the software identification readable.
+    sv:
+      title: Skadlig programvara installeras via uppdateringskanalen
+      description: Fordonet tar emot uppdateringspaket som inte är signerade, eller äldre sårbara versioner. En angripare som når uppdateringsvägen installerar valfri programvara i fordon i trafik.
+      mitigation: Ta bara emot autentiserade programuppdateringar, avvisa nedgradering till sårbara versioner och håll programvaruidentiteten läsbar.
+  - id: AUTOSW-R06
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [fleet-monitoring, end-of-support]
+    refs: ["ISO 26262-3:2018 §6 (hazard analysis and risk assessment)", "ISO/SAE 21434:2021 §8 (continual cybersecurity activities)", "ISO/SAE 21434:2021 §14 (end of cybersecurity support and decommissioning)"]
+    mitigated_by: [AUTOSW-07, AUTOSW-12, AUTOSW-06]
+    attack: [T1210]
+    en:
+      title: New attack on vehicles in the field goes unnoticed
+      description: Nobody monitors vehicles for signs of attack after sale, and owners are not told when security support ends. A new attack technique spreads across the fleet before the manufacturer reacts.
+      mitigation: Monitor vehicles in the field for cybersecurity events, update the threat analysis and announce the end of cybersecurity support.
+    sv:
+      title: Nytt angrepp mot fordon i trafik upptäcks inte
+      description: Ingen övervakar fordonen efter tecken på angrepp efter försäljningen, och ägarna får inte veta när säkerhetsstödet upphör. En ny angreppsteknik sprids i fordonsflottan innan tillverkaren reagerar.
+      mitigation: Övervaka fordon i trafik efter cybersäkerhetshändelser, uppdatera hotanalysen och meddela när cybersäkerhetsstödet upphör.

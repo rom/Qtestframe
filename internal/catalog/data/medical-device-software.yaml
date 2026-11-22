@@ -755,3 +755,34 @@ risks:
       title: Problem i fält återförs eller rapporteras inte
       description: Klagomål och problemrapporter hanteras ett och ett utan säkerhetsbedömning. Allvarliga tillbud rapporteras sent och riskhanteringsfilen lär sig aldrig av erfarenheterna i fält.
       mitigation: Bedöm problemrapporter ur säkerhetssynpunkt, rapportera allvarliga tillbud i tid och återför fältdata till riskhanteringsfilen.
+  - id: MDSW-R05
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [connected-device, hospital-network]
+    refs: ["ISO 14971:2019 §5.4 (identification of hazards and hazardous situations)", "Regulation (EU) 2017/745 (MDR) Annex I §17.2", "Regulation (EU) 2017/745 (MDR) Annex I §17.4"]
+    mitigated_by: [MDSW-08, MDSW-09, MDSW-02]
+    attack: [T1210, T1486]
+    en:
+      title: Connected medical device compromised in the hospital network
+      description: A device with an unpatched component is placed on a flat hospital network. Ransomware or an intruder reaches it, therapy is interrupted and patient data is exposed.
+      mitigation: Threat model and security test before release, state minimum IT requirements for the operating network and track known anomalies and vulnerabilities in third-party components.
+    sv:
+      title: Uppkopplad medicinteknisk produkt komprometteras i sjukhusnätet
+      description: En produkt med en ouppdaterad komponent placeras i ett platt sjukhusnät. Utpressningsprogram eller en inkräktare når den, behandling avbryts och patientdata exponeras.
+      mitigation: Hotmodellera och säkerhetstesta före release, ange minimikrav på IT-miljön där produkten används och följ kända avvikelser och sårbarheter i komponenter från tredje part.
+  - id: MDSW-R06
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [change-impact, regression]
+    refs: ["ISO 14971:2019 §5.4 (identification of hazards and hazardous situations)", "IEC 62304:2006+A1:2015 §6 (software maintenance process)"]
+    mitigated_by: [MDSW-06, MDSW-03, MDSW-04]
+    en:
+      title: Software change reintroduces a controlled hazard
+      description: A small change is released without risk analysis and regression testing. A risk control that was verified earlier no longer works and a patient is harmed.
+      mitigation: Analyse risk and run regression tests for each change, trace hazards to their verification and evaluate residual anomalies before release.
+    sv:
+      title: Programändring återinför en kontrollerad fara
+      description: En liten ändring släpps utan riskanalys och regressionstest. En riskåtgärd som verifierats tidigare fungerar inte längre och en patient skadas.
+      mitigation: Analysera risker och kör regressionstester vid varje ändring, spåra faror till deras verifiering och bedöm kvarvarande avvikelser före release.

@@ -1153,3 +1153,35 @@ risks:
       title: Mätdata från elmätare eller fjärrfrånkoppling missbrukas
       description: Detaljerade förbrukningsdata avslöjar människors vardag för obehöriga, eller en massfrånkoppling på distans utlöses av misstag eller av en angripare, även för hushåll med skyddade kunder.
       mitigation: Lämna detaljerade mätdata bara till kunden och behöriga parter, kräv två personer och kontroll av skyddade kunder för fjärrfrånkoppling och rulla ut signerad mätarfirmware stegvis.
+  - id: ENRG-R04
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [goose, substation]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62351-6:2020", "IEC 62443-3-3:2013 SR 1.13"]
+    mitigated_by: [ENRG-07, ENRG-17, ENRG-16]
+    attack: [T1692.001, T0830]
+    en:
+      title: Forged protection messages trip or block breakers in a substation
+      description: Protection messages in the substation network are not authenticated, and engineering access is not controlled. An attacker replays or forges trip messages and disconnects customers or damages equipment.
+      mitigation: Authenticate protection messages and check replay, route remote engineering access through a controlled gateway and collect security events from SCADA and IEDs centrally.
+    sv:
+      title: Förfalskade skyddsmeddelanden löser ut eller blockerar brytare i ett ställverk
+      description: Skyddsmeddelanden i ställverksnätet autentiseras inte och ingenjörsåtkomsten kontrolleras inte. En angripare spelar upp eller förfalskar utlösningsmeddelanden och kopplar bort kunder eller skadar utrustning.
+      mitigation: "Autentisera skyddsmeddelanden och kontrollera återuppspelning, led fjärråtkomst för ingenjörer via en kontrollerad gateway och samla säkerhetshändelser från SCADA och IED:er centralt."
+  - id: ENRG-R05
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [smart-meters, mass-disconnection]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "ISO/IEC 27019:2024", "IEC 62443-4-2:2019 CR 3.4"]
+    mitigated_by: [ENRG-09, ENRG-10]
+    attack: [T0831, T1693.001]
+    en:
+      title: Mass remote disconnection of customers through the metering system
+      description: An attacker or a single insider sends disconnection commands to many meters at once, or pushes manipulated meter firmware. Thousands of households lose power and the grid is destabilised.
+      mitigation: Require two persons and a protected-customer check for remote disconnection and roll out signed meter firmware in stages.
+    sv:
+      title: Massfrånkoppling av kunder via mätsystemet
+      description: En angripare eller en enskild insider skickar frånkopplingskommandon till många mätare samtidigt, eller sprider manipulerad mätarprogramvara. Tusentals hushåll blir strömlösa och nätet destabiliseras.
+      mitigation: Kräv två personer och kontroll av skyddade kunder vid fjärrfrånkoppling och rulla ut signerad mätarprogramvara stegvis.

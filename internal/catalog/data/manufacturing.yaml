@@ -1169,3 +1169,34 @@ risks:
       title: Produkter tillverkas utanför specifikationen
       description: Processen driver utan larm, operatörer arbetar efter en gammal revision av instruktionen eller saknar behörighet, eller mätningar görs med okalibrerad utrustning. Kassationer och reklamationer ökar.
       mitigation: Larma med statistisk processtyrning vid mätvärden utanför styrgränserna, matcha arbetsinstruktionens revision mot ordern, kontrollera operatörens behörighet vid start, spärra mätningar med utrustning vars kalibrering gått ut och verifiera etiketter genom skanning.
+  - id: MFG-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [opc-ua, mqtt]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62541-2", "OASIS MQTT Version 5.0 §5"]
+    mitigated_by: [MFG-09, MFG-10, MFG-16]
+    attack: [T0830, T0832]
+    en:
+      title: Production data and commands manipulated on the shop-floor network
+      description: Machine data travels over unencrypted OPC UA and MQTT, and the network is flat. An attacker reads recipes and changes setpoints or reported quantities.
+      mitigation: Sign and encrypt OPC UA connections, use MQTT only over TLS with an identity per device and segment the shop-floor network into zones.
+    sv:
+      title: Produktionsdata och kommandon manipuleras i verkstadsnätet
+      description: Maskindata går okrypterat via OPC UA och MQTT och nätet är platt. En angripare läser recept och ändrar börvärden eller rapporterade mängder.
+      mitigation: Signera och kryptera OPC UA-anslutningar, använd MQTT bara över TLS med en identitet per enhet och dela in verkstadsnätet i zoner.
+  - id: MFG-R05
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [machine-safety, mes]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "Regulation (EU) 2023/1230 Annex III §1.2.1"]
+    mitigated_by: [MFG-15, MFG-19]
+    en:
+      title: Production software overrides a machine safety function
+      description: To keep the line running, the production system sends commands that bypass a guard or interlock, or lets an unqualified operator start a machine. An operator is injured.
+      mitigation: Never let production software override machine safety functions and check operator qualification at start.
+    sv:
+      title: Produktionsprogramvaran åsidosätter en maskins säkerhetsfunktion
+      description: För att hålla linjen igång skickar produktionssystemet kommandon som kringgår ett skydd eller en förregling, eller låter en operatör utan behörighet starta en maskin. En operatör skadas.
+      mitigation: Låt aldrig produktionsprogramvara åsidosätta maskiners säkerhetsfunktioner och kontrollera operatörens behörighet vid start.

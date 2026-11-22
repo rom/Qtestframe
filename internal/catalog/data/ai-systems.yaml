@@ -928,3 +928,49 @@ risks:
       title: Personer vet inte att de har att göra med AI
       description: Användare får inte veta att de talar med ett AI-system eller att AI bidrog till ett beslut om dem, och ingen kan förklara beslutet i efterhand. Kraven på öppenhet bryts och förtroendet går förlorat.
       mitigation: Informera användare när de interagerar med ett AI-system, dokumentera varje AI-funktion, förklara AI-stödda beslut om en person och spara loggar över prompter och svar i 30 dagar.
+  - id: AIML-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [jailbreak, harmful-content]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "NIST AI 600-1 (Generative AI Profile) §2", "NIST AI RMF 1.0 MANAGE 4.1 (post-deployment monitoring)"]
+    mitigated_by: [AIML-09, AIML-11, AIML-08]
+    atlas: [AML.T0054, AML.T0048.001]
+    en:
+      title: AI feature jailbroken into producing harmful content
+      description: "Users find phrasings that get past the content policy. The feature produces instructions for harm or offensive text under the organisation's name, and screenshots spread."
+      mitigation: Refuse requests against the content policy, pass an evaluation set before each model or prompt change and let users report harmful answers.
+    sv:
+      title: AI-funktionens spärrar kringgås så att den skapar skadligt innehåll
+      description: Användare hittar formuleringar som tar sig förbi innehållspolicyn. Funktionen skapar instruktioner för skada eller kränkande text i organisationens namn, och skärmdumpar sprids.
+      mitigation: Avvisa förfrågningar som strider mot innehållspolicyn, kräv godkänd utvärdering före varje ändring av modell eller prompt och låt användare rapportera skadliga svar.
+  - id: AIML-R06
+    category: ai
+    likelihood: 3
+    impact: 4
+    tags: [automated-decisions, explanation]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "GDPR Art. 22 (automated individual decision-making)", "GDPR Art. 22(3)"]
+    mitigated_by: [AIML-03, AIML-17]
+    en:
+      title: Person affected by a decision based only on AI output
+      description: "A case officer approves the AI's recommendation without own review, and the person cannot get an explanation. Wrong decisions cannot be challenged and the organisation breaks the rules on automated decisions."
+      mitigation: Make no decision about a person based only on AI output and explain AI-assisted decisions to the person on request.
+    sv:
+      title: "Person drabbas av ett beslut som bara bygger på AI:ns utdata"
+      description: "En handläggare godkänner AI:ns rekommendation utan egen prövning, och personen kan inte få en förklaring. Felaktiga beslut kan inte ifrågasättas och organisationen bryter mot reglerna om automatiserade beslut."
+      mitigation: "Fatta inga beslut om en person enbart på AI:ns utdata och förklara AI-stödda beslut för personen på begäran."
+  - id: AIML-R07
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [model-providers, data-location]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "GDPR Art. 13(1)(e)", "ISO/IEC 42001:2023 Annex A.9 (use of AI systems)"]
+    mitigated_by: [AIML-16, AIML-12, AIML-13]
+    en:
+      title: "Organisation's data processed by an unknown model provider abroad"
+      description: AI features send text to external model providers without administrators knowing which ones or where. Data ends up in regions and with processors the organisation never approved.
+      mitigation: Show administrators the model providers and processing regions, let them turn off AI features and let users keep their content out of AI features.
+    sv:
+      title: Organisationens data behandlas av en okänd modelleverantör utomlands
+      description: AI-funktioner skickar text till externa modelleverantörer utan att administratörerna vet vilka eller var. Data hamnar i regioner och hos biträden som organisationen aldrig har godkänt.
+      mitigation: Visa administratörer modelleverantörer och behandlingsregioner, låt dem stänga av AI-funktioner och låt användare hålla sitt innehåll utanför AI-funktionerna.

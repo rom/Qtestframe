@@ -1188,3 +1188,35 @@ risks:
       title: Processen kan inte styras eller återställas efter en störning
       description: Nätbelastning eller ett kommunikationsavbrott lämnar styrenheterna i ett odefinierat tillstånd, och deras konfigurationer kan inte återställas. Produktionen står stilla i flera dagar.
       mitigation: Gå till ett säkert tillstånd vid kommunikationsavbrott, håll styrcykeln deterministisk under nätbelastning, säkerhetskopiera styrenheternas konfigurationer och för en förteckning över styrenheter, RTU:er och operatörspaneler.
+  - id: ICS-R06
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [removable-media, engineering-stations]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 2.3", "IEC 62443-3-3 SR 3.2"]
+    mitigated_by: [ICS-20, ICS-19, ICS-21]
+    attack: [T0847, T0863]
+    en:
+      title: Malware carried into the control system on a USB stick
+      description: A technician copies files to an HMI or engineering station from a USB stick. Malware on the stick spreads in the control network, which has no other way in from outside.
+      mitigation: Block removable media at control stations, allow only approved programs on HMIs and engineering stations and disable unused ports and services.
+    sv:
+      title: Skadlig kod förs in i styrsystemet på ett USB-minne
+      description: En tekniker kopierar filer till en operatörsstation eller ingenjörsstation från ett USB-minne. Skadlig kod på minnet sprids i styrnätet, som saknar andra vägar in utifrån.
+      mitigation: Blockera flyttbara medier vid styrstationer, tillåt bara godkända program på operatörs- och ingenjörsstationer och stäng av oanvända portar och tjänster.
+  - id: ICS-R07
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [asset-inventory, monitoring]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3:2013 SR 7.8", "IEC 62443-3-3:2013 SR 2.8"]
+    mitigated_by: [ICS-04, ICS-18, ICS-13]
+    attack: [T0846, T0889]
+    en:
+      title: Unknown devices and logic changes in the control network go unseen
+      description: There is no inventory of controllers and HMIs and nobody watches the control network. An attacker scans for devices and changes controller logic without triggering any alarm.
+      mitigation: Keep an inventory of controllers, RTUs and HMIs, monitor security events from the control system centrally and detect unapproved logic changes.
+    sv:
+      title: Okända enheter och logikändringar i styrnätet syns inte
+      description: Det finns ingen förteckning över styrenheter och operatörsstationer och ingen övervakar styrnätet. En angripare söker efter enheter och ändrar styrlogik utan att något larm utlöses.
+      mitigation: "För en förteckning över styrenheter, RTU:er och operatörsstationer, övervaka säkerhetshändelser från styrsystemet centralt och upptäck ändringar av logik som inte godkänts."

@@ -1162,3 +1162,34 @@ risks:
       title: Obemannad anläggning förlorar kontakten med kontrollrummet
       description: Styrförbindelsen till en fjärranläggning bryts eller angrips, och huvudkontrollrummet blir otillgängligt. Anläggningen körs utan övervakning och data går förlorade.
       mitigation: Buffra anläggningens data vid avbrott och fyll på i efterhand, stäng in obemannade anläggningar säkert vid avbrott, autentisera och kryptera styrförbindelsen och låt ett alternativt kontrollrum ta över inom 30 minuter.
+  - id: OILG-R04
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [remote-installations, control-link]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3:2013 SR 3.1", "IEC 61511-1:2016 §11.3"]
+    mitigated_by: [OILG-13, OILG-12]
+    attack: [T0830, T1692.001]
+    en:
+      title: Control commands to an unmanned installation forged over the link
+      description: The link to remote installations is not authenticated or encrypted. An attacker on the link sends commands that open valves or start pumps, or blinds the control room.
+      mitigation: Authenticate and encrypt the control link to remote installations and let installations shut in safely when the link is lost.
+    sv:
+      title: Styrkommandon till en obemannad anläggning förfalskas över länken
+      description: Länken till obemannade anläggningar är inte autentiserad eller krypterad. En angripare på länken skickar kommandon som öppnar ventiler eller startar pumpar, eller förblindar kontrollrummet.
+      mitigation: Autentisera och kryptera styrlänken till obemannade anläggningar och låt anläggningarna stänga in säkert när länken bryts.
+  - id: OILG-R05
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [metering, fiscal-measurement]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "API MPMS Chapter 21.1"]
+    mitigated_by: [OILG-08, OILG-09]
+    en:
+      title: Fiscal metering misreports the quantities sold or taxed
+      description: A flow computer calculates differently from the reference, or its configuration is changed without a trace. Partners and the state are billed or taxed on wrong quantities.
+      mitigation: Check flow computer quantities against the reference calculation and keep an audit trail of metering configuration changes.
+    sv:
+      title: Fiskal mätning rapporterar fel mängder för försäljning eller beskattning
+      description: En flödesdator räknar annorlunda än referensen, eller dess konfiguration ändras utan spår. Partner och staten faktureras eller beskattas på fel mängder.
+      mitigation: Kontrollera flödesdatorns mängder mot referensberäkningen och för en ändringslogg över konfigurationen av mätningen.
