@@ -869,3 +869,49 @@ tests:
           expected: En text anger att behörigheten att godkänna saknas.
         - action: Flytta tangentbordsfokus till åtgärden.
           expected: Samma orsak visas och läses upp av skärmläsare.
+risks:
+  - id: USE-R01
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [deletion, undo]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9241-110:2020 use error robustness"]
+    mitigated_by: [USE-05, USE-06, USE-14]
+    en:
+      title: Users lose work through a single wrong click
+      description: Delete acts immediately without confirmation or undo, and leaving a page discards unsaved changes silently. Users lose hours of work and stop trusting the system.
+      mitigation: Confirm permanent deletion, offer undo of recent actions and warn before unsaved changes are lost.
+    sv:
+      title: Användare förlorar arbete genom ett enda felklick
+      description: Radera verkställs direkt utan bekräftelse eller ångra, och när användaren lämnar en sida försvinner osparade ändringar utan varning. Användare förlorar timmar av arbete och slutar lita på systemet.
+      mitigation: Bekräfta permanent radering, erbjud ångra för nyligen gjorda åtgärder och varna innan osparade ändringar går förlorade.
+  - id: USE-R02
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [adoption, user-testing]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9241-210:2019 §7.5 (evaluating the design)", "ISO 9241-11:2018 effectiveness"]
+    mitigated_by: [USE-18, USE-09, USE-15]
+    en:
+      title: Core task redesigned without testing with users
+      description: A core workflow is changed based on assumptions. Completion rates drop, support calls rise and users fall back on spreadsheets and e-mail.
+      mitigation: Test with users before changing core tasks and measure completion rate and satisfaction release by release.
+    sv:
+      title: Central uppgift görs om utan test med användare
+      description: Ett centralt arbetsflöde ändras utifrån antaganden. Andelen slutförda uppgifter sjunker, supportsamtalen ökar och användarna går tillbaka till kalkylblad och e-post.
+      mitigation: Testa med användare innan centrala uppgifter ändras och mät andel slutförda uppgifter och nöjdhet release för release.
+  - id: USE-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [error-messages, feedback]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9241-110:2020 use error robustness", "ISO 9241-110:2020 self-descriptiveness"]
+    mitigated_by: [USE-07, USE-03, USE-19, USE-04]
+    en:
+      title: Users repeat actions or give up because the system gives no feedback
+      description: Actions show no response for several seconds and errors say only that something went wrong. Users click again, create duplicates or abandon the task.
+      mitigation: Give feedback within one second, show progress for long operations, state cause and next step in error messages and explain why an action is unavailable.
+    sv:
+      title: Användare upprepar åtgärder eller ger upp eftersom systemet inte ger återkoppling
+      description: Åtgärder visar inget svar på flera sekunder och fel säger bara att något gick fel. Användare klickar igen, skapar dubbletter eller avbryter uppgiften.
+      mitigation: Ge återkoppling inom en sekund, visa förlopp för långa åtgärder, ange orsak och nästa steg i felmeddelanden och förklara varför en åtgärd inte är tillgänglig.

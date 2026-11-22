@@ -644,3 +644,49 @@ tests:
           data: "budgethistorik för 6 månader"
         - action: Öppna efteranalysen för varje händelse.
           expected: Var och en har grundorsak, ägare och daterade åtgärder och pekar inte ut någon person som orsak.
+risks:
+  - id: SLO-R01
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [error-budget, reliability]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Google SRE workbook Appendix B (example error budget policy)", "Google SRE workbook ch. 5 (Alerting on SLOs)"]
+    mitigated_by: [SLO-05, SLO-06, SLO-07]
+    en:
+      title: Reliability erodes release by release without anyone stopping
+      description: Objectives exist on paper but nobody watches the error budget. Releases continue while the service misses its targets, and users notice before the team does.
+      mitigation: Agree an error budget policy, alert on burn rate and show the remaining budget on a dashboard.
+    sv:
+      title: Tillförlitligheten urholkas release för release utan att någon stoppar
+      description: Målen finns på papper men ingen följer felbudgeten. Releaser fortsätter medan tjänsten missar sina mål, och användarna märker det innan teamet gör det.
+      mitigation: Kom överens om en policy för felbudgeten, larma på förbrukningstakten och visa den återstående budgeten på en tavla.
+  - id: SLO-R02
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [indicators, measurement]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Google SRE workbook ch. 2 (Implementing SLOs)"]
+    mitigated_by: [SLO-01, SLO-03, SLO-04]
+    en:
+      title: Objectives met on paper while users suffer
+      description: Indicators are measured inside the servers instead of at the user-facing boundary, or cover only some user journeys. Dashboards are green while users see errors and slow pages.
+      mitigation: Define indicators for each critical user journey, measure them at the user-facing boundary and include latency.
+    sv:
+      title: Målen uppfylls på papperet medan användarna drabbas
+      description: Indikatorer mäts inne i servrarna i stället för vid gränsen mot användaren, eller täcker bara vissa användarflöden. Tavlorna är gröna medan användarna ser fel och långsamma sidor.
+      mitigation: Definiera indikatorer för varje kritiskt användarflöde, mät dem vid gränsen mot användaren och ta med svarstid.
+  - id: SLO-R03
+    category: availability
+    likelihood: 2
+    impact: 4
+    tags: [dependencies, cascading]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Google SRE book ch. 4 (Service Level Objectives)", "Google SRE book ch. 15 (Postmortem Culture)"]
+    mitigated_by: [SLO-10, SLO-12, RES-01]
+    en:
+      title: Internal dependency drags the whole service below its target
+      description: An internal service the product depends on has a looser objective than the product promises. Its outages consume the error budget again and again and nobody learns from them.
+      mitigation: Give internal dependencies stricter objectives than the services built on them and hold a postmortem after a large budget loss.
+    sv:
+      title: Internt beroende drar hela tjänsten under målet
+      description: En intern tjänst som produkten är beroende av har ett lägre mål än det produkten lovar. Dess avbrott förbrukar felbudgeten gång på gång och ingen drar lärdom av dem.
+      mitigation: Ge interna beroenden strängare mål än tjänsterna som bygger på dem och håll en efteranalys efter en stor förlust av budget.

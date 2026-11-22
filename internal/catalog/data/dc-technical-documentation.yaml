@@ -932,3 +932,49 @@ tests:
           expected: Varje produkt har ett blad på svenska.
         - action: Jämför datumet då bladet togs emot med datumet för första leverans.
           expected: Bladet togs emot senast det datumet.
+risks:
+  - id: DCTD-R01
+    category: operational
+    likelihood: 3
+    impact: 4
+    tags: [as-built, maintenance]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC/IEEE 15289:2019 (information items)", "ISO 9001:2026 §7.5.2"]
+    mitigated_by: [DCTD-07, DCTD-08, DCTD-14, DCTD-12]
+    en:
+      title: Plant maintained from drawings that do not match the installation
+      description: As-built documentation is not delivered, deviations from the design are not recorded or documentation is not updated after changes. Fault finding takes long and maintenance work is done on the wrong equipment.
+      mitigation: Make as-built documentation with listed deviations a condition for acceptance and update documentation within a set time of every change.
+    sv:
+      title: Anläggningen underhålls från ritningar som inte stämmer med installationen
+      description: Relationshandlingar levereras inte, avvikelser från konstruktionen dokumenteras inte eller dokumentationen uppdateras inte efter ändringar. Felsökning tar lång tid och underhåll utförs på fel utrustning.
+      mitigation: Gör relationshandlingar med förtecknade avvikelser till ett villkor för godkännande och uppdatera dokumentationen inom en fastställd tid efter varje ändring.
+  - id: DCTD-R02
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [maintenance-safety, instructions]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "IEC/IEEE 82079-1:2019 §7.11 (safety-related information)", "Regulation (EU) 2023/1230 Annex III §1.7.4"]
+    mitigated_by: [DCTD-10, DCTD-09, DCTD-06]
+    en:
+      title: Maintenance worker hurt because the manual lacks safety information
+      description: A maintenance task is described without isolation steps, residual hazards or protective equipment, or the designations in the manual differ from the labels on site. The worker opens the wrong circuit or skips a safety step.
+      mitigation: Give every maintenance task its safety information and use the same reference designations in drawings, manuals and on site.
+    sv:
+      title: Underhållstekniker skadas eftersom manualen saknar säkerhetsinformation
+      description: En underhållsuppgift beskrivs utan frånskiljning, kvarstående risker eller skyddsutrustning, eller beteckningarna i manualen skiljer sig från märkningen på plats. Teknikern bryter fel krets eller hoppar över ett säkerhetssteg.
+      mitigation: Ge varje underhållsuppgift dess säkerhetsinformation och använd samma referensbeteckningar i ritningar, manualer och på plats.
+  - id: DCTD-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [interfaces, change-notice]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC/IEEE 15289:2019 (specification)", "Keep a Changelog 1.1.0"]
+    mitigated_by: [DCTD-04, DCTD-05, DCTD-19]
+    en:
+      title: Integrators build against an outdated interface description
+      description: Interface specifications are missing or not kept current, and incompatible changes are made without notice. Connected systems fail after the next release.
+      mitigation: Specify every external interface, announce incompatible changes 30 days ahead and keep an API changelog with deprecation and removal dates.
+    sv:
+      title: Integratörer bygger mot en inaktuell gränssnittsbeskrivning
+      description: Gränssnittsspecifikationer saknas eller hålls inte aktuella, och inkompatibla ändringar görs utan förvarning. Anslutna system slutar fungera efter nästa release.
+      mitigation: "Specificera varje externt gränssnitt, meddela inkompatibla ändringar 30 dagar i förväg och för en ändringslogg för API:et med datum för utfasning och borttagning."

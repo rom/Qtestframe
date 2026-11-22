@@ -866,3 +866,65 @@ tests:
           expected: Utgåvan i förteckningen är den aktuella, eller så finns en planerad ändring dokumenterad.
         - action: Jämför mallversionen i vart och ett av de 10 dokumenten med biblioteket.
           expected: Varje dokument använder den aktuella versionen.
+risks:
+  - id: DCDC-R01
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [obsolete-documents, versions]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9001:2026 §7.5.3 (control of documented information)"]
+    mitigated_by: [DCDC-05, DCDC-06, DCDC-01]
+    en:
+      title: Work done to an obsolete procedure or drawing
+      description: Old printouts and copies stay at the points of use after a new version is approved, and recipients are not told of the change. Staff follow outdated instructions and products or tasks come out wrong.
+      mitigation: Give each document an identifier, version and status, keep only the current version at the points of use and notify recipients of a new version promptly.
+    sv:
+      title: Arbete utförs efter en inaktuell instruktion eller ritning
+      description: Gamla utskrifter och kopior finns kvar där arbetet utförs efter att en ny version godkänts, och mottagarna får inte veta om ändringen. Personalen följer inaktuella instruktioner och produkter eller uppgifter blir fel.
+      mitigation: Ge varje dokument identitet, version och status, ha bara den gällande versionen där den används och meddela mottagarna om en ny version i tid.
+  - id: DCDC-R02
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [classification, handling]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.12", "ISO/IEC 27001:2022 A.5.14"]
+    mitigated_by: [DCDC-09, DCDC-10, DCDC-11]
+    attack: [T1213, T1567]
+    en:
+      title: Sensitive document handled as if it were public
+      description: A document without a classification label is shared by e-mail, stored in a public folder or uploaded to an unapproved service. Personal data or security-sensitive information reaches people who should not have it.
+      mitigation: Label every document with its classification, define handling rules per level and keep security-classified documents only in approved systems.
+    sv:
+      title: Känsligt dokument hanteras som om det vore offentligt
+      description: Ett dokument utan klassningsmärkning delas via e-post, sparas i en öppen mapp eller laddas upp till en tjänst som inte är godkänd. Personuppgifter eller säkerhetskänslig information når personer som inte borde ha dem.
+      mitigation: Märk varje dokument med dess klassning, fastställ hanteringsregler per nivå och ha säkerhetsskyddsklassade dokument bara i godkända system.
+  - id: DCDC-R03
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [technical-file, ce-marking]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Regulation (EU) 2023/1230 Annex IV", "Decision No 768/2008/EC Annex I Art. R2(3)"]
+    mitigated_by: [DCDC-12, DCDC-13, DCDC-14, DCDC-15]
+    en:
+      title: Technical file missing when the authority asks for it
+      description: The technical documentation and declaration of conformity were never compiled, are incomplete or were discarded too early. The product cannot be shown to conform and may be withdrawn from the market.
+      mitigation: Compile the technical file and a complete declaration of conformity before placing the product on the market and keep them for ten years.
+    sv:
+      title: Den tekniska dokumentationen saknas när myndigheten begär den
+      description: Den tekniska dokumentationen och försäkran om överensstämmelse sammanställdes aldrig, är ofullständiga eller kastades för tidigt. Det går inte att visa att produkten uppfyller kraven och den kan dras tillbaka från marknaden.
+      mitigation: Sammanställ den tekniska dokumentationen och en fullständig försäkran om överensstämmelse innan produkten släpps ut på marknaden och spara dem i tio år.
+  - id: DCDC-R04
+    category: compliance
+    likelihood: 2
+    impact: 3
+    tags: [retention, disposal]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 15489-1:2016"]
+    mitigated_by: [DCDC-07, DCDC-08, DCDC-18]
+    en:
+      title: Records destroyed too early or kept for ever
+      description: There is no retention schedule per document type. Records needed for audits or disputes are destroyed, while others with personal data are kept long after their purpose has ended.
+      mitigation: Set a retention schedule per document type, dispose of documents when the period ends and keep original entries visible when records are corrected.
+    sv:
+      title: Dokument förstörs för tidigt eller sparas för alltid
+      description: Det finns ingen bevarandeplan per dokumenttyp. Handlingar som behövs vid revisioner eller tvister förstörs, medan andra med personuppgifter sparas långt efter att syftet har upphört.
+      mitigation: Fastställ en bevarandeplan per dokumenttyp, gallra dokument när tiden har gått ut och låt ursprungliga uppgifter synas när handlingar rättas.

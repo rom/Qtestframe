@@ -780,3 +780,49 @@ tests:
           expected: Passet slutar inom planerad tid plus 10 %.
         - action: Läs mediantid, mål och antal frågor för varje modul om säkerhetsmedvetenhet.
           expected: Varje modul är högst 10 minuter och har 1 mål och minst 3 frågor.
+risks:
+  - id: EDTM-R01
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [outdated-material, releases]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9001:2026 §7.5.2"]
+    mitigated_by: [EDTM-02, EDTM-03, EDTM-14]
+    en:
+      title: Staff trained on an earlier version of the system
+      description: Course material is not updated after releases and has no owner. New staff learn steps that no longer exist and make mistakes in their first weeks.
+      mitigation: Update material within 20 working days of a release, give each package an owner with a yearly review and feed evaluation results back into the material.
+    sv:
+      title: Personalen utbildas på en tidigare version av systemet
+      description: Kursmaterialet uppdateras inte efter releaser och saknar ägare. Ny personal lär sig steg som inte längre finns och gör fel de första veckorna.
+      mitigation: Uppdatera materialet inom 20 arbetsdagar efter en release, ge varje paket en ägare med årlig granskning och låt utvärderingar leda till ändringar i materialet.
+  - id: EDTM-R02
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [accessibility, e-learning]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "WCAG 2.2 conformance level AA", "WCAG 2.2 SC 1.2.2"]
+    mitigated_by: [EDTM-05, EDTM-06, EDTM-07, EDTM-08]
+    en:
+      title: Employees with disabilities cannot complete mandatory training
+      description: E-learning cannot be operated by keyboard, videos have no captions and quizzes have fixed time limits. Some employees cannot pass required courses and the organisation discriminates against them.
+      mitigation: Make e-learning conform to WCAG 2.2 level AA, caption and describe videos and make time limits in assessments adjustable.
+    sv:
+      title: Medarbetare med funktionsnedsättning kan inte genomföra obligatorisk utbildning
+      description: E-utbildningen kan inte användas med tangentbord, filmer saknar undertexter och kunskapstester har fasta tidsgränser. Vissa medarbetare kan inte klara obligatoriska kurser och organisationen diskriminerar dem.
+      mitigation: Låt e-utbildningar uppfylla WCAG 2.2 nivå AA, texta och syntolka filmer och gör tidsgränser i kunskapstester justerbara.
+  - id: EDTM-R03
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [evaluation, effectiveness]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Kirkpatrick four-level training evaluation model", "ISO 10015:2019"]
+    mitigated_by: [EDTM-11, EDTM-12, EDTM-16]
+    en:
+      title: Training passed but the skills are not used in practice
+      description: "Courses are judged only by participants' satisfaction. Nobody checks whether people apply what they learned, and lessons from incidents never reach the scenarios."
+      mitigation: Assess learning with a pass mark, follow up applied skills after three months and build new scenarios from major operational incidents.
+    sv:
+      title: Utbildningen är godkänd men kunskaperna används inte i praktiken
+      description: Kurser bedöms bara efter deltagarnas nöjdhet. Ingen kontrollerar om de använder det de lärt sig, och lärdomar från incidenter når aldrig scenarierna.
+      mitigation: Bedöm lärandet med en godkändgräns, följ upp tillämpade färdigheter efter tre månader och bygg nya scenarier från större driftincidenter.
