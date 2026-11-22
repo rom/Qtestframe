@@ -256,7 +256,8 @@ func TestImpactPerformance(t *testing.T) {
 	if n == 5000 && len(imp.Requirements) < 1364 {
 		t.Fatal(len(imp.Requirements))
 	}
-	if !pg && total > 300*time.Millisecond {
+	// coverage instrumentation (scripts/coverage.sh) distorts the timing
+	if !pg && testing.CoverMode() == "" && total > 300*time.Millisecond {
 		t.Fatalf("impact analysis of depth 5 took %v", total)
 	}
 }
