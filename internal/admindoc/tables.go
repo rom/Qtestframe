@@ -14,7 +14,7 @@ import (
 )
 
 var roleText = map[string]text{
-	rbac.RoleViewer: {"Viewer", "Läsare"}, rbac.RoleReviewer: {"Reviewer", "Granskare"}, rbac.RoleTester: {"Tester", "Testare"},
+	rbac.RoleViewer: {"Viewer", "Läsare"}, rbac.RoleReviewer: {"Reviewer", "Granskare"}, rbac.RoleSME: {"SME", "Ämnesexpert"}, rbac.RoleTester: {"Tester", "Testare"},
 	rbac.RoleTestLead: {"Test lead", "Testledare"}, rbac.RoleManager: {"Manager", "Ansvarig"}, rbac.RoleAdmin: {"Admin", "Administratör"},
 }
 

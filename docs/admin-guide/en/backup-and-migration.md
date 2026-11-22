@@ -144,6 +144,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 49 | `0049_risk_attack.sql` |
 | 50 | `0050_project_creator.sql` |
 | 51 | `0051_frameworks.sql` |
+| 52 | `0052_multiple_roles.sql` |
 
 <!-- END GENERATED: migrations -->
 

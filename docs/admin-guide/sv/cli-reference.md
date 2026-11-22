@@ -66,7 +66,7 @@ Ger en användare en roll i en organisation, eller ändrar den. Rollen är en in
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
 | `--email` | `string` | user e-mail |
-| `--role` | `string` | role (default "viewer") |
+| `--role` | `string` | role, or several roles separated by commas (e.g. sme,tester) (default "viewer") |
 | `--tenant` | `string` | tenant slug |
 
 ### `qtestframe seed-demo`
