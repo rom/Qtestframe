@@ -1239,7 +1239,7 @@ const sv: Messages = {
     reqsOff: 'Ett testfall kan bara exekveras när alla krav det verifierar har någon av statusarna ovan.',
     evidenceTitle: 'Kravstatus',
     statusFollowsEvidence: 'Kravstatus följer testutfallen',
-    evidenceOn: 'Ett implementerat krav blir Verifierat när alla dess länkade testfall har godkänts och ingen länk är misstänkt, och går tillbaka till Implementerat när ett testfall underkänns eller en länk blir misstänkt. Krav utan testfall ändras aldrig.',
+    evidenceOn: 'Ett implementerat krav blir Verifierat när det är verifierat: varje kriterium har godkända belägg (testfall, teststeg eller verifieringsposter), ingen länk är misstänkt och varje krav som förfinar det är verifierat. Det går tillbaka till Implementerat när det inte längre gäller. Krav utan belägg eller underkrav ändras aldrig.',
     evidenceOff: 'Kravstatus ändras bara av människor.',
     depsTitle: 'Beroenden mellan testfall',
     allowUnmetDependencies: 'Tillåt att testfall startas innan deras förutsättningar har godkänts',

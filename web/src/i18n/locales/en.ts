@@ -1237,7 +1237,7 @@ const en = {
     reqsOff: 'A test can only be executed when every requirement it verifies has one of the statuses above.',
     evidenceTitle: 'Requirement status',
     statusFollowsEvidence: 'Requirement status follows test results',
-    evidenceOn: 'An implemented requirement becomes Verified when all its linked tests have passed and no link is suspect, and goes back to Implemented when a test fails or a link becomes suspect. Requirements without tests are never changed.',
+    evidenceOn: 'An implemented requirement becomes Verified when it is verified: every criterion has passing evidence (tests, test steps or verification records), no link is suspect and every requirement that refines it is verified. It goes back to Implemented when that no longer holds. Requirements without evidence or children are never changed.',
     evidenceOff: 'Requirement statuses are only changed by people.',
     depsTitle: 'Test dependencies',
     allowUnmetDependencies: 'Allow starting tests before their prerequisites have passed',

@@ -288,6 +288,15 @@ async function discover(request) {
     { name: 'baselines', path: `${p}/baselines` },
     { name: 'releases', path: `${p}/releases` },
     { name: 'risks', path: `${p}/risks`, wait: '.heat' },
+    // verification correlations: overview tabs, the requirement's verification tab and its dialogs, criterion rows of the matrix
+    { name: 'verification', path: `${p}/verification`, wait: '.ver-counts' },
+    { name: 'verification-elements', path: `${p}/verification?tab=elements`, wait: '.ver-counts' },
+    { name: 'verification-inconsistent', path: `${p}/verification?tab=inconsistent`, wait: '.ver-counts' },
+    { name: 'element-dialog', path: `${p}/verification?tab=elements`, open: 'button.add-element', wait: '.p-dialog form' },
+    { name: 'requirement-verification', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-verified)', wait: '.verification-panel .ver-summary' },
+    { name: 'verification-record-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: ['.p-drawer [role="tab"]:has(.pi-verified)', '.verification-panel h3 button:has(.pi-plus)'], wait: '.p-dialog form' },
+    { name: 'link-criteria-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: ['.p-drawer [role="tab"]:has(.pi-verified)', '.verification-panel button:has(.pi-sliders-h)'], wait: '.p-dialog .map-row' },
+    { name: 'traceability-criteria', path: `${p}/traceability?view=matrix`, open: '#tcrit', wait: 'tr.crit-row' },
     { name: 'defects', path: `${p}/defects` },
     // with a selected row (bulk toolbar); only when the project has defects / risks
     hasDefects && { name: 'defects-bulk', path: `${p}/defects`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },

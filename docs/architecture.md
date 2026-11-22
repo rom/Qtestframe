@@ -93,6 +93,7 @@ pair.
 | `internal/rbac` | Permissions, built-in roles (`admin`, `manager`, `test_lead`, `tester`, `viewer`) with defaults, and `Set`: a tenant's roles after its changes and custom roles (ADR 0014). |
 | `internal/mention`, `internal/tagsuggest` | @mention handles and the people directory; tag suggestions from title and description. |
 | `internal/query` | Lexer, parser and evaluator of the filter/search language; matched-field and term extraction for highlighting. |
+| `internal/verification` | Whether requirements are verified, and why: evidence per evaluation criterion (tests, test steps, verification records), plain links for compatibility or strict criterion coverage, the roll-up along `refines` (parent/child) with inconsistencies, and coverage per system element. Pure functions over data the store loads (`Store.ProjectVerification`, `Store.RequirementVerification`, `Store.IsVerified`). |
 | `internal/reqlang` | RFC 2119 / RFC 8174 keyword detection, obligation level, requirement lint rules and score. |
 | `internal/export` | Format-neutral `Dataset` rendered as CSV (ZIP for several sections), XLSX (`excelize`), PDF (`go-pdf/fpdf`) and DOCX (hand-written OOXML). |
 | `internal/runner` | Executes automated test scripts with timeout and output cap; optional re-exec through `qtestframe sandbox-exec` (rlimits, no_new_privs, Landlock, seccomp). |

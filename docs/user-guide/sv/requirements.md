@@ -131,7 +131,7 @@ Under **Utvärderingskriterier** anger du hur uppfyllelsen bedöms. Varje kriter
 | **Demonstration** | funktionen visas för en granskare |
 | **Granskning** | en formell granskning |
 
-Välj **Lägg till kriterium** för att lägga till ett; använd pilarna för att ändra ordningen och papperskorgen för att ta bort. När du sparar ersätts listan. När du länkar ett testfall kan du välja vilket kriterium det verifierar under **Kriterium för nya länkar**.
+Välj **Lägg till kriterium** för att lägga till ett; använd pilarna för att ändra ordningen och papperskorgen för att ta bort. När du sparar ersätts listan. När du länkar ett testfall kan du välja vilket kriterium det verifierar under **Kriterium för nya länkar**. Fliken **Verifiering** visar beläggen för varje kriterium, kopplar testfall (och teststeg) till kriterier och registrerar inspektioner, analyser, demonstrationer och granskningar; ett krav är verifierat först när varje kriterium har godkända belägg (se [Verifiering](traceability-and-coverage.md#verifiering)).
 
 ## Länkade testfall
 

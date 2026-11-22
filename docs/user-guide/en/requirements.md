@@ -114,7 +114,7 @@ Under **Evaluation criteria** you state how fulfilment is judged. Each criterion
 | **Demonstration** | showing the function to a reviewer |
 | **Review** | a formal review |
 
-Select **Add criterion** to add one; use the arrows to reorder and the bin to remove one. Saving replaces the list. When you link a test, you can choose the criterion it verifies in **Criterion for new links**.
+Select **Add criterion** to add one; use the arrows to reorder and the bin to remove one. Saving replaces the list. When you link a test, you can choose the criterion it verifies in **Criterion for new links**. The **Verification** tab shows the evidence of every criterion, maps tests (and test steps) to criteria and records inspections, analyses, demonstrations and reviews; a requirement is verified only when every criterion has passing evidence (see [Verification](traceability-and-coverage.md#verification)).
 
 ## Linked tests
 

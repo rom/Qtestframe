@@ -218,7 +218,7 @@ function deleteElement(c: ElementCoverage) {
     <section v-else-if="tab === 'elements'" class="card" :aria-busy="loading">
       <div class="row" style="justify-content: space-between; flex-wrap: wrap; gap: 8px">
         <h2 class="plain-heading">{{ t('verificationView.elements') }}</h2>
-        <Button v-if="canWrite" size="small" icon="pi pi-plus" :label="t('verificationView.addElement')" @click="openElement(null)" />
+        <Button v-if="canWrite" size="small" icon="pi pi-plus" class="add-element" :label="t('verificationView.addElement')" @click="openElement(null)" />
       </div>
       <p class="small muted" style="margin-top: 0">{{ t('verificationView.elementsHint') }}</p>
       <p v-if="!coverage.length" class="muted">{{ t('verificationView.noElements') }}</p>
