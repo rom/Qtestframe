@@ -328,7 +328,7 @@ const openConflicts = computed(() => conflicts.value.length)
       <h3 :id="`${id}-c-${c.id}`" class="plain-heading" style="margin: 0 0 4px">
         <RouterLink :to="{ name: 'requirements', query: { item: c.requirement_id } }" class="mono">{{ c.requirement_key }}</RouterLink>
         {{ c.title }}
-        <span class="muted">↔ {{ sourceName(c.system) }}</span>
+        <span class="muted">↔ {{ sourceName(c.system) }}</span>{{ ' ' }}
         <a v-if="c.external_url" :href="c.external_url" target="_blank" rel="noopener noreferrer" class="mono">{{ c.external_id }}</a>
         <span v-else class="mono">{{ c.external_id }}</span>
       </h3>
@@ -474,7 +474,7 @@ const openConflicts = computed(() => conflicts.value.length)
         </div>
         <div v-if="form.importNew" class="field" style="max-width: 420px">
           <label :id="`${id}-folder-label`" :for="`${id}-folder`">{{ t('reqSync.folder') }}</label>
-          <Select v-model="form.folderId" :input-id="`${id}-folder`" :aria-labelledby="`${id}-folder-label`" :options="folderOptions" option-label="label" option-value="value" filter />
+          <Select v-model="form.folderId" :input-id="`${id}-folder`" :aria-labelledby="`${id}-folder-label`" :options="folderOptions" option-label="label" option-value="value" :placeholder="t('reqSync.noFolder')" filter />
         </div>
       </fieldset>
 
@@ -489,7 +489,7 @@ const openConflicts = computed(() => conflicts.value.length)
           <div class="form-grid">
             <div class="field">
               <label :id="`${id}-pfolder-label`" :for="`${id}-pfolder`">{{ t('reqSync.pushFolder') }}</label>
-              <Select v-model="form.pushFolderId" :input-id="`${id}-pfolder`" :aria-labelledby="`${id}-pfolder-label`" :options="folderOptions" option-label="label" option-value="value" filter />
+              <Select v-model="form.pushFolderId" :input-id="`${id}-pfolder`" :aria-labelledby="`${id}-pfolder-label`" :options="folderOptions" option-label="label" option-value="value" :placeholder="t('reqSync.noFolder')" filter />
             </div>
             <div class="field">
               <label :for="`${id}-ptag`">{{ t('reqSync.pushTag') }}</label>
