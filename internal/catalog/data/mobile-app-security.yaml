@@ -731,8 +731,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [device-loss, local-storage]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1409 (stored application data)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-312 (cleartext storage of sensitive information)"]
     mitigated_by: [MOBSEC-01, MOBSEC-02, MOBSEC-06, MOBSEC-05]
+    attack: [T1409]
     en:
       title: Sensitive data read from a lost or shared phone
       description: The app keeps sensitive data in device backups, in the system log or visible in the app switcher. Whoever gets hold of the phone or its backup reads the data.
@@ -746,8 +747,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [reverse-engineering, secrets]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-798 (use of hard-coded credentials)", "CWE-489 (active debug code)", "MITRE ATT&CK T1577 (compromise application executable)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-798 (use of hard-coded credentials)", "CWE-489 (active debug code)"]
     mitigated_by: [MOBSEC-09, MOBSEC-12, MOBSEC-11]
+    attack: [T1552.001]
     en:
       title: App package reverse engineered to extract secrets
       description: An attacker unpacks the published app, finds embedded keys or debug features and builds a modified client. The keys are misused against the back end and the modified app bypasses client checks.
@@ -761,8 +763,9 @@ risks:
     likelihood: 3
     impact: 3
     tags: [deep-link, web-view]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-939 (improper authorization in handler for custom URL scheme)", "CWE-749 (exposed dangerous method or function)", "MITRE ATT&CK T1635.001 (URI hijacking)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-939 (improper authorization in handler for custom URL scheme)", "CWE-749 (exposed dangerous method or function)"]
     mitigated_by: [MOBSEC-07, MOBSEC-08, MOBSEC-03]
+    attack: [T1635.001, T1638]
     en:
       title: Malicious link or web page drives the app
       description: Another app or a web page opens a deep link, an exported component or a web view with a native bridge. The app performs actions or reveals data without the user's intent.
@@ -771,3 +774,35 @@ risks:
       title: Skadlig länk eller webbsida styr appen
       description: En annan app eller en webbsida öppnar en djuplänk, en exporterad komponent eller en webbvy med en inbyggd brygga. Appen utför åtgärder eller röjer uppgifter utan att användaren avsett det.
       mitigation: Validera inmatningen till djuplänkar och exporterade komponenter, låt webbvyer bara ladda eget innehåll utan brygga mot andra ursprung och stäng av okrypterad trafik.
+  - id: MOBSEC-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [webview, native-bridge]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS-PLATFORM-2", "OWASP MASVS-PLATFORM-1"]
+    mitigated_by: [MOBSEC-08, MOBSEC-07]
+    attack: [T1635.001, T1658]
+    en:
+      title: Web content inside the app calls native functions
+      description: A web view loads external pages and exposes a native bridge, or exported components accept any input. A malicious page or app reads tokens, files or the camera through the app.
+      mitigation: Load only own content in web views, expose no native bridge to other origins and validate input to deep links and exported components.
+    sv:
+      title: Webbinnehåll i appen anropar inbyggda funktioner
+      description: En webbvy laddar externa sidor och exponerar en inbyggd brygga, eller exporterade komponenter tar emot vilken indata som helst. En skadlig sida eller app läser token, filer eller kameran via appen.
+      mitigation: Ladda bara eget innehåll i webbvyer, exponera ingen inbyggd brygga mot andra ursprung och validera indata till djuplänkar och exporterade komponenter.
+  - id: MOBSEC-R05
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [sdks, permissions]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS-PRIVACY-3", "OWASP MASVS-PRIVACY-1"]
+    mitigated_by: [MOBSEC-14, MOBSEC-13]
+    attack: [T1430]
+    en:
+      title: Third-party SDKs in the app collect more data than disclosed
+      description: Analytics and advertising SDKs read location, contacts or device identifiers through permissions the app asked for. The privacy label and notice are wrong and the store can remove the app.
+      mitigation: Keep an inventory of SDKs and the data they collect and request no device permission without a documented need.
+    sv:
+      title: "SDK:er från tredje part i appen samlar in mer data än som redovisats"
+      description: "SDK:er för analys och annonsering läser position, kontakter eller enhetsidentiteter genom behörigheter som appen har begärt. Integritetsetiketten och informationen blir fel och butiken kan ta bort appen."
+      mitigation: "För en förteckning över SDK:er och de data de samlar in och begär ingen behörighet på enheten utan ett dokumenterat behov."

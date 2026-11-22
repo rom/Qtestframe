@@ -63,8 +63,11 @@ risks:                          # optional: typical risks of the area
     likelihood: 5               # typical likelihood 1–5 (the project risk scale)
     impact: 4                   # typical impact 1–5; likelihood × impact gives the level as for project risks
     tags: [credential-stuffing]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK T1110.004 (credential stuffing)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-307 (improper restriction of excessive authentication attempts)"]
     mitigated_by: [AUTH-02, AUTH-07, SLOG-06]   # at least one catalogue requirement (any area) that mitigates it
+    attack: [T1110.003, T1110.004]  # MITRE ATT&CK techniques (Enterprise, ICS, Mobile) of data/attack.yaml; see "MITRE ATT&CK"
+    atlas: []                   # MITRE ATLAS techniques (AML.Tnnnn) of data/atlas.yaml, for attacks on AI systems
+    attack_exempt: false        # true only for a security risk that no adversary technique describes
     tests: []                   # optional: catalogue tests that check the risk directly
     en:
       title: Accounts taken over with leaked passwords   # short, no final full stop
@@ -94,10 +97,62 @@ project risk.
   management standard of the domain (ISO 31000, ISO/IEC 27005, ISO/IEC
   23894, ISO 14971, ISO 26262-3, ISO 12100, IEC 62443-3-2, EU AI Act
   Art. 9, GDPR Art. 35), threat catalogues (OWASP Top 10, ENISA Threat
-  Landscape) and the CWE weaknesses and ATT&CK techniques of the
-  mitigating requirements. Every ref must match a source of the registry.
+  Landscape) and the CWE weaknesses of the mitigating requirements. Every
+  ref must match a source of the registry. ATT&CK and ATLAS techniques go
+  in `attack` and `atlas`, not in `refs` (checked).
+- **3 to 8 risks per area** (checked): the typical ones, not every
+  conceivable failure.
 - **Both languages complete** (checked): title, description and mitigation
   in English and Swedish; no full stop at the end of the title.
+
+## MITRE ATT&CK
+
+`data/attack.yaml` is the list of the MITRE ATT&CK tactics, techniques,
+sub-techniques and mitigations of the Enterprise, ICS and Mobile matrices
+(id, name, matrix, tactics, url), without revoked or deprecated objects.
+It is generated from the ATT&CK STIX bundles; never edit it by hand:
+
+```sh
+go run ./internal/catalog/cmd/attackgen -out internal/catalog/data/attack.yaml \
+    enterprise-attack.json ics-attack.json mobile-attack.json
+```
+
+`data/atlas.yaml` has the same format for the MITRE ATLAS techniques that
+risks use (a curated subset, kept by hand: add a technique with its id,
+name and tactics exactly as on atlas.mitre.org before a risk lists it).
+After a new ATT&CK release, regenerate the list and run the tests: every
+id that was revoked or deprecated fails where a risk or a ref uses it.
+
+A catalogue risk lists the adversary techniques that realise it:
+
+- **`attack`**: ATT&CK techniques and sub-techniques (`T1110.004`,
+  `T0886` for ICS, `T1409` for Mobile). Prefer the most specific
+  sub-technique; list a parent only when no sub-technique fits, never a
+  parent together with one of its sub-techniques (checked). Typically 1–3.
+- **`atlas`**: ATLAS techniques (`AML.T0051.001`) for attacks on AI
+  systems, models and their data (prompt injection, poisoning, model
+  theft). An AI risk can list both.
+- **Who needs a mapping** (checked): a risk of category `security` lists at
+  least one technique in `attack` or `atlas`, unless `attack_exempt: true`
+  says that no adversary technique describes it (a lost access card, a
+  repeated incident). Risks of the categories `safety`, `environmental`,
+  `quality`, `project` and `compliance` are hazards, failures or
+  obligations, not attacks: they list none. Risks of the other categories
+  (`privacy`, `ai`, `availability`, `data`, `supply-chain`, `operational`)
+  list techniques when an adversary causes them (a data breach, a
+  denial-of-service attack, a poisoned dependency) and none when they come
+  from failure or error (an outage, a lost backup, a model that drifts).
+- **Ids are checked** against the lists: unknown, revoked and deprecated ids
+  fail, an ATT&CK id in `atlas` or the reverse fails, and so does an
+  ATT&CK technique in `refs`. The ATT&CK ids in the `refs` of requirements
+  and tests (`MITRE ATT&CK T1110.001 (password guessing)`,
+  `MITRE ATT&CK M1032 (…)`) must also be in the list.
+
+The catalogue shows the techniques of a risk with names, tactics and links,
+filters risks by technique and tactic, and the ATT&CK coverage page counts
+per tactic the risks that list one of its techniques and the requirements
+that cite one or mitigate such a risk. A risk added to a project keeps its
+techniques (the project risk's `attack` list).
 
 ## Writing rules
 

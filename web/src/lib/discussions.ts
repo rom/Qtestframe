@@ -98,7 +98,7 @@ export function threadTarget(t: Pick<DiscussionThread, 'root'>): RouteTarget {
     case 'run':
       return { name: 'run', params: { ...params, runId: id }, query: { tab: 'discussion' } }
     case 'review':
-      return { name: 'reviews', params: {}, query: { review: id } }
+      return { name: 'myWork', params: {}, query: { view: 'reviews', review: id } }
   }
   return { name: 'dashboard', params }
 }

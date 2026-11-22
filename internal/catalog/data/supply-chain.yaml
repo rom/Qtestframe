@@ -778,8 +778,9 @@ risks:
     likelihood: 4
     impact: 4
     tags: [vulnerable-dependency, sbom]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A06", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A06", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)"]
     mitigated_by: [SUP-01, SUP-02, SUP-03, SUP-04, SUP-09]
+    attack: [T1190, T1195.001]
     en:
       title: Known vulnerability in a dependency exploited
       description: A library with a published vulnerability stays in the product because nobody knows it is used or the fix is postponed. Attackers exploit it with public tools soon after disclosure.
@@ -793,8 +794,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [malicious-package, typosquatting]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-506 (embedded malicious code)", "CWE-427 (uncontrolled search path element)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-506 (embedded malicious code)", "CWE-427 (uncontrolled search path element)"]
     mitigated_by: [SUP-13, SUP-14, SUP-15, SUP-11, SUP-07]
+    attack: [T1195.001]
     en:
       title: Malicious package pulled into the build
       description: A compromised new version, a look-alike name or a public package with an internal name is installed during the build. Its install script or code steals secrets or plants a back door in the product.
@@ -808,8 +810,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [build-integrity, pipeline]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)", "MITRE ATT&CK M1045 (code signing)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK M1045 (code signing)"]
     mitigated_by: [SUP-08, SUP-05, SUP-12, SUP-16, SUP-06]
+    attack: [T1195.002]
     en:
       title: Release artefact tampered with between build and delivery
       description: A release is built on a developer machine or a pipeline step is replaced, and customers install a modified artefact. The compromise spreads to every customer through a trusted update.
@@ -818,3 +821,50 @@ risks:
       title: Leveransartefakt manipuleras mellan bygge och leverans
       description: En leverans byggs på en utvecklares dator eller ett steg i pipelinen byts ut, och kunderna installerar en ändrad artefakt. Intrånget sprids till alla kunder genom en betrodd uppdatering.
       mitigation: Bygg leveranser bara i pipelinen, signera artefakter och deras byggursprung, lås beroendeversioner och lås tredjepartssteg i pipelinen via incheckningens hash.
+  - id: SUP-R04
+    category: supply-chain
+    likelihood: 3
+    impact: 5
+    tags: [dependency-confusion, typosquatting]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-427 (uncontrolled search path element)"]
+    mitigated_by: [SUP-13, SUP-11, SUP-14, SUP-15]
+    attack: [T1195.001]
+    en:
+      title: Public package with an internal name pulled into the build
+      description: An attacker publishes a package with the same name as an internal one, or a name one letter off from a popular one. The build fetches it and runs its install script.
+      mitigation: Resolve internal package names only from the internal registry, fetch packages through a mirror, let new versions wait before use and turn off install scripts.
+    sv:
+      title: Publikt paket med ett internt namn dras in i bygget
+      description: En angripare publicerar ett paket med samma namn som ett internt, eller ett namn som skiljer sig en bokstav från ett populärt. Bygget hämtar det och kör dess installationsskript.
+      mitigation: Lös interna paketnamn bara från det interna registret, hämta paket via en spegel, låt nya versioner vänta före användning och stäng av installationsskript.
+  - id: SUP-R05
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [ci-actions, build-pipeline]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OpenSSF Scorecard", "SLSA v1.0 Build L2"]
+    mitigated_by: [SUP-16, SUP-08, SUP-12]
+    attack: [T1195.002, T1677]
+    en:
+      title: Compromised third-party build step injects code into releases
+      description: The pipeline uses third-party steps by a moving tag. The tag is moved to a malicious version that changes the build output or steals its credentials.
+      mitigation: Pin third-party pipeline steps by commit hash, build releases only in the pipeline and sign the build provenance of each release.
+    sv:
+      title: Kapat externt byggsteg för in kod i releaser
+      description: Byggkedjan använder externa steg via en rörlig tagg. Taggen flyttas till en skadlig version som ändrar byggresultatet eller stjäl dess inloggningsuppgifter.
+      mitigation: Lås externa byggsteg med commit-hash, bygg releaser bara i byggkedjan och signera byggets ursprungsintyg för varje release.
+  - id: SUP-R06
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [end-of-life, sbom]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A06", "OWASP ASVS 5.0 V15.1.2 (software bill of materials)"]
+    mitigated_by: [SUP-09, SUP-01, SUP-02]
+    en:
+      title: Product built on components nobody maintains any more
+      description: Components reach end of life and stop receiving fixes, and without a bill of materials nobody knows where they are used. The next vulnerability in them cannot be fixed.
+      mitigation: Use no end-of-life components, keep a software bill of materials for each release and scan dependencies on every build.
+    sv:
+      title: Produkten bygger på komponenter som ingen längre underhåller
+      description: Komponenter når slutet av sin livslängd och får inga fler rättningar, och utan en materialförteckning vet ingen var de används. Nästa sårbarhet i dem kan inte åtgärdas.
+      mitigation: Använd inga komponenter som nått slutet av sin livslängd, ha en programvarumaterialförteckning för varje release och skanna beroenden vid varje bygge.

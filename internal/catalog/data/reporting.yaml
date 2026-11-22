@@ -683,3 +683,50 @@ tests:
           expected: Applikationen svarar medan rapporten körs.
         - action: Vänta på aviseringen och följ dess länk.
           expected: Den färdiga rapporten öppnas.
+risks:
+  - id: RPT-R01
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [scheduled-reports, permissions]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V8.2.2 (data-specific access)", "OWASP Top 10 2021 A01"]
+    mitigated_by: [RPT-07, RPT-12]
+    attack: [T1213]
+    en:
+      title: Scheduled report sends data to people who may not see it
+      description: "A scheduled report is built with its creator's rights and mailed to a distribution list. Recipients receive figures and names from projects they have no access to."
+      mitigation: "Build scheduled reports with each recipient's permissions and control who may share report definitions."
+    sv:
+      title: Schemalagd rapport skickar data till personer som inte får se dem
+      description: En schemalagd rapport tas fram med skaparens behörigheter och skickas till en sändlista. Mottagarna får siffror och namn från projekt som de saknar åtkomst till.
+      mitigation: Ta fram schemalagda rapporter med varje mottagares behörigheter och styr vem som får dela rapportdefinitioner.
+  - id: RPT-R02
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [accuracy, decisions]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25012:2008 consistency", "ISO/IEC 25012:2008 currentness"]
+    mitigated_by: [RPT-03, RPT-09, RPT-04]
+    en:
+      title: Decisions taken on wrong or outdated figures
+      description: A report counts items differently from the lists it summarises or shows data from an old cache without saying so. Management decides on figures that do not match reality.
+      mitigation: Keep report figures consistent with the source data, show the time of the data on each report and let users drill down from figures to items.
+    sv:
+      title: Beslut fattas på felaktiga eller inaktuella siffror
+      description: En rapport räknar objekt på annat sätt än de listor den sammanfattar eller visar data från en gammal cache utan att säga det. Ledningen beslutar på siffror som inte stämmer med verkligheten.
+      mitigation: Håll rapportsiffror konsekventa med källdata, visa tidpunkten för data på varje rapport och låt användare gå från siffror till objekt.
+  - id: RPT-R03
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [performance, heavy-queries]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 time behaviour"]
+    mitigated_by: [RPT-14, RPT-08]
+    en:
+      title: Heavy reports slow the system down for everyone
+      description: "Large reports run in the request and lock the database for minutes. Other users' pages time out every time someone opens the monthly report."
+      mitigation: Run long reports in the background and keep normal reports within the agreed generation time.
+    sv:
+      title: Tunga rapporter gör systemet långsamt för alla
+      description: Stora rapporter körs i anropet och låser databasen i flera minuter. Andra användares sidor får tidsgräns varje gång någon öppnar månadsrapporten.
+      mitigation: Kör långa rapporter i bakgrunden och håll vanliga rapporter inom den överenskomna tiden för att ta fram dem.

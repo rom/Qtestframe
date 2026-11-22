@@ -1200,3 +1200,34 @@ risks:
       title: Batch tillverkas med fel recept eller otillförlitliga register
       description: Ett styrrecept byggs från ett grundrecept som inte är frisläppt, utgånget material doseras eller batchprotokollet har luckor. Batchen måste kasseras eller, värre, en felaktig produkt släpps ut.
       mitigation: Skapa styrrecept bara från frisläppta grundrecept som godkänts med två underskrifter, för ett fullständigt elektroniskt batchprotokoll med granskningslogg enligt ALCOA+ och spärra dosering av utgånget material.
+  - id: CHEM-R04
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [safety-system, network-zones]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 61511-1:2016 §11", "IEC 62443-3-2"]
+    mitigated_by: [CHEM-05, CHEM-17, ICS-16]
+    attack: [T0880, T0886]
+    en:
+      title: Attacker reaches the safety instrumented system through batch control
+      description: Batch control has write access to the safety system and remote access to the process network is not controlled. An intruder disables a safety function from an engineering workstation.
+      mitigation: Give batch control no write access to the safety system, separate it from basic control and control remote access to the zoned process network.
+    sv:
+      title: Angripare når säkerhetssystemet via satsstyrningen
+      description: Satsstyrningen har skrivåtkomst till säkerhetssystemet och fjärråtkomsten till processnätet är inte kontrollerad. En inkräktare kopplar bort en säkerhetsfunktion från en ingenjörsstation.
+      mitigation: Ge satsstyrningen ingen skrivåtkomst till säkerhetssystemet, separera det från basstyrningen och kontrollera fjärråtkomsten till det zonindelade processnätet.
+  - id: CHEM-R05
+    category: safety
+    likelihood: 3
+    impact: 5
+    tags: [management-of-change, permit-to-work]
+    refs: ["IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "IEC 61511-1:2016 §17", "HSE HSG250"]
+    mitigated_by: [CHEM-10, CHEM-15, CHEM-19]
+    en:
+      title: Process change or maintenance work bypasses the hazard review
+      description: A setpoint, interlock or piece of equipment is changed without management of change, or work starts without isolation. A hazard nobody assessed leads to a release or explosion.
+      mitigation: Require management of change before activation, link permits to work to equipment isolation and track proof test due dates of safety functions.
+    sv:
+      title: Processändring eller underhållsarbete passerar förbi riskbedömningen
+      description: Ett börvärde, en förregling eller en utrustning ändras utan ändringshantering, eller arbete påbörjas utan frånskiljning. En risk som ingen bedömt leder till ett utsläpp eller en explosion.
+      mitigation: Kräv ändringshantering före aktivering, koppla arbetstillstånd till frånskiljning av utrustning och följ förfallodatum för provning av säkerhetsfunktioner.

@@ -653,6 +653,7 @@ risks:
     tags: [iot, device-keys]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GSMA IoT Security Guidelines", "LoRaWAN L2 1.0.4 Specification (security)"]
     mitigated_by: [CMIOT-03, CMIOT-04, CMIOT-09, CMIOT-11]
+    attack: [T1078.001, T1210]
     en:
       title: IoT devices impersonated or used as a way in
       description: Devices share a root key, are personalised by hand or reach the internet directly. One extracted key lets an attacker fake measurements from all devices or use them to reach the network.
@@ -676,3 +677,34 @@ risks:
       title: Mätvärden från installerade enheter slutar komma fram
       description: Enheterna monteras där täckningen är svag, är beroende av en enda gateway eller tömmer sina batterier i förtid. Luckor i data upptäcks inte förrän någon behöver värdena.
       mitigation: Mät täckningen vid varje installationspunkt, se till att varje enhet hörs av två gatewayer, kräv en leveransgrad på 99 %, ställ in energisparläge för 10 års batteritid och larma när en enhet missar 3 rapporteringsintervall.
+  - id: CMIOT-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [shared-keys, lorawan]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "LoRaWAN L2 1.0.4 Specification (security)", "ETSI EN 303 645 provision 5.5-1"]
+    mitigated_by: [CMIOT-04, CMIOT-03, CMIOT-11]
+    attack: [T1552.004, T1557]
+    en:
+      title: One extracted key exposes the whole device fleet
+      description: All devices share a root key or use fixed activation keys. A key read from one device in the field lets an attacker decrypt and forge messages from every device.
+      mitigation: Give every device its own keys and certificate, activate devices over the air and protect messages with TLS per device.
+    sv:
+      title: En utläst nyckel röjer hela enhetsflottan
+      description: Alla enheter delar en rotnyckel eller använder fasta aktiveringsnycklar. En nyckel som läses ut ur en enhet i fält låter en angripare dekryptera och förfalska meddelanden från alla enheter.
+      mitigation: Ge varje enhet egna nycklar och ett eget certifikat, aktivera enheter över luften och skydda meddelanden med TLS per enhet.
+  - id: CMIOT-R04
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [data-budget, firmware-updates]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GSMA IoT Security Guidelines", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)"]
+    mitigated_by: [CMIOT-14, CMIOT-15, CMIOT-10]
+    en:
+      title: Devices stranded by data costs, operator change or missing updates
+      description: A firmware fault makes devices send far more data than planned, the operator contract ends or updates cannot reach devices. Thousands of installed devices must be visited on site.
+      mitigation: "Alert on each device's data budget, use eSIMs whose operator profile can be changed remotely and deliver firmware updates over the air."
+    sv:
+      title: Enheter blir strandsatta av datakostnader, operatörsbyte eller uteblivna uppdateringar
+      description: Ett fel i den inbyggda programvaran får enheter att skicka mycket mer data än planerat, operatörsavtalet upphör eller uppdateringar når inte enheterna. Tusentals installerade enheter måste besökas på plats.
+      mitigation: Larma på varje enhets databudget, använd eSIM vars operatörsprofil kan bytas på distans och leverera uppdateringar över luften.

@@ -844,3 +844,49 @@ tests:
         - action: Skicka en begäran om en tillgänglig version av en namngiven manual genom kanalen för synpunkter.
           expected: Ett användbart alternativ levereras inom 10 arbetsdagar.
           data: "Begär en version som fungerar med skärmläsare av operatörsmanualen"
+risks:
+  - id: DCUM-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [safety-notices, misuse]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "IEC/IEEE 82079-1:2019 §7.11 (safety-related information)", "IEC/IEEE 82079-1:2019 §7 (content of information for use)"]
+    mitigated_by: [DCUM-05, DCUM-02, DCUM-04]
+    en:
+      title: User harmed by following an unclear or incomplete manual
+      description: The manual does not cover an operating mode, mixes several actions in one step or hides warnings in running text. The user performs a hazardous step without knowing the consequence.
+      mitigation: Cover each operating mode, write numbered steps with one action each and give safety notices a signal word and the consequence.
+    sv:
+      title: Användare skadas av att följa en otydlig eller ofullständig manual
+      description: Manualen täcker inte ett driftläge, blandar flera handlingar i ett steg eller gömmer varningar i löptext. Användaren utför ett farligt moment utan att känna till följden.
+      mitigation: Täck varje driftläge, skriv numrerade steg med en handling vardera och ge säkerhetsmeddelanden ett signalord och följden.
+  - id: DCUM-R02
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [language, translation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Regulation (EU) 2023/1230 Annex III §1.7.4", "ISO 17100:2015"]
+    mitigated_by: [DCUM-07, DCUM-08, DCUM-09]
+    en:
+      title: Manual not available in the language of the users or badly translated
+      description: The product is delivered with instructions only in English, or with a machine translation nobody checked. It may not be sold as it is, and users misunderstand instructions.
+      mitigation: Deliver manuals in Swedish and English, have each translation revised by a second person and write in plain language with defined terms.
+    sv:
+      title: Manualen finns inte på användarnas språk eller är dåligt översatt
+      description: Produkten levereras med instruktioner bara på engelska, eller med en maskinöversättning som ingen har granskat. Den får inte säljas i det skicket och användare missförstår instruktionerna.
+      mitigation: Leverera manualer på svenska och engelska, låt en andra person granska varje översättning och skriv på klarspråk med definierade termer.
+  - id: DCUM-R03
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [accessibility, pdf]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 14289-1:2014 (PDF/UA-1)", "Directive (EU) 2016/2102 Art. 7(1) (accessibility statement and feedback mechanism)"]
+    mitigated_by: [DCUM-10, DCUM-19, DCUM-20, DCUM-11]
+    en:
+      title: Manuals cannot be read with assistive technology
+      description: Manuals are published as untagged scanned PDF without alternative text. Blind and partially sighted users cannot read them and an accessible alternative takes months.
+      mitigation: Publish manuals as tagged PDF conforming to PDF/UA and as accessible web pages, and deliver an accessible alternative within 10 working days of a request.
+    sv:
+      title: Manualer kan inte läsas med hjälpmedel
+      description: Manualer publiceras som otaggade skannade PDF-filer utan alternativtext. Blinda och synsvaga användare kan inte läsa dem och ett tillgängligt alternativ tar månader.
+      mitigation: Publicera manualer som taggade PDF-filer enligt PDF/UA och som tillgängliga webbsidor, och leverera ett tillgängligt alternativ inom 10 arbetsdagar efter en begäran.

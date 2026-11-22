@@ -848,3 +848,34 @@ risks:
       title: Samma incidenter kommer tillbaka
       description: Incidenter åtgärdas en i taget utan grundorsaksanalys, och servicedesken saknar kända fel och tillfälliga lösningar. Användarna störs gång på gång och supportkostnaderna växer.
       mitigation: Registrera varje incident med prioritet och konfigurationsobjekt, analysera grundorsaker till större och återkommande incidenter, ge servicedesken kända fel och kunskapsartiklar och skapa ärenden från kritiska övervakningshändelser.
+  - id: SVSM-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [security-incidents, service-desk]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 20000-1:2018 §8.7.3 (information security management)"]
+    mitigated_by: [SVSM-16, INC-01]
+    attack: [T1566]
+    en:
+      title: Security incident handled as an ordinary service request
+      description: A user reports a strange e-mail or a locked account to the service desk, which resets the password and closes the ticket. The intrusion behind it continues for weeks.
+      mitigation: Pass suspected security incidents to the security function within an hour and train the service desk to recognise them.
+    sv:
+      title: Säkerhetsincident hanteras som ett vanligt serviceärende
+      description: En användare anmäler ett konstigt e-postmeddelande eller ett låst konto till servicedesken, som återställer lösenordet och stänger ärendet. Intrånget bakom fortsätter i veckor.
+      mitigation: För vidare misstänkta säkerhetsincidenter till säkerhetsfunktionen inom en timme och utbilda servicedesken i att känna igen dem.
+  - id: SVSM-R04
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [cmdb, impact-analysis]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 20000-1:2018 §8.2.6", "ITIL 4 Monitoring and event management"]
+    mitigated_by: [SVSM-11, SVSM-18, SVSM-01]
+    en:
+      title: Wrong configuration data hides the impact of incidents and changes
+      description: The configuration database is out of date and monitoring events never become tickets. Incidents are routed to the wrong team and change impact is underestimated.
+      mitigation: Keep the configuration database correct, create incident tickets from critical monitoring events and record each incident with its configuration item.
+    sv:
+      title: Felaktiga konfigurationsdata döljer påverkan av incidenter och ändringar
+      description: Konfigurationsdatabasen är inaktuell och övervakningshändelser blir aldrig ärenden. Incidenter skickas till fel team och påverkan av ändringar underskattas.
+      mitigation: Håll konfigurationsdatabasen korrekt, skapa incidentärenden från kritiska övervakningshändelser och registrera varje incident med dess konfigurationsobjekt.

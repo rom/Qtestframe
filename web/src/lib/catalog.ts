@@ -4,6 +4,7 @@
 // once per language and filters here, so typing in the search field stays
 // instant with several hundred items.
 import { anyOf } from './query'
+import { hasTechnique, type AttackTechnique } from './attack'
 
 export type CatalogKind = 'requirement' | 'test' | 'risk'
 export type CatalogLang = 'en' | 'sv'
@@ -147,6 +148,10 @@ export interface CatalogRisk extends CatalogBase {
   /** catalogue tests that check it directly */
   tests: string[]
   mitigation: string
+  /** MITRE ATT&CK and ATLAS technique ids, and the tactic ids they serve */
+  attack?: string[]
+  atlas?: string[]
+  tactics?: string[]
 }
 
 export type CatalogItem = CatalogRequirement | CatalogTest | CatalogRisk
@@ -211,6 +216,8 @@ export interface CatalogTestDetail extends CatalogTest {
 export interface CatalogRiskDetail extends CatalogRisk {
   area_name: string
   ref_targets?: CatalogRefTarget[]
+  /** the techniques of attack and atlas with names, tactics and links */
+  techniques?: AttackTechnique[]
   mitigating_requirements: CatalogLinked[]
   linked_tests: CatalogLinked[]
 }
@@ -244,6 +251,8 @@ export interface CatalogImportResult {
 
 export const isRequirement = (x: CatalogItem): x is CatalogRequirement => 'obligation' in x
 export const isRisk = (x: CatalogItem): x is CatalogRisk => 'mitigated_by' in x
+/** The ATT&CK and ATLAS technique ids of a risk. */
+export const riskTechniques = (x: CatalogRisk): string[] => [...(x.attack ?? []), ...(x.atlas ?? [])]
 
 /** The ids at the other end of an item's catalogue links (tests of a requirement, requirements of a test or risk). */
 export const linkedIds = (x: CatalogItem): string[] => (isRequirement(x) ? x.tests : isRisk(x) ? x.mitigated_by : x.requirements)
@@ -275,7 +284,7 @@ export function searchScore(item: CatalogItem, words: readonly string[]): number
     [item.refs.join(' ').toLowerCase(), 4],
     [item.description.toLowerCase(), 3],
     [linkedIds(item).join(' ').toLowerCase(), 2],
-    ...(isRisk(item) ? ([[item.mitigation.toLowerCase(), 1]] as [string, number][]) : []),
+    ...(isRisk(item) ? ([[item.mitigation.toLowerCase(), 1], [riskTechniques(item).join(' ').toLowerCase(), 4]] as [string, number][]) : []),
   ]
   let total = words.length > 1 && fields[0][0].includes(words.join(' ')) ? 50 : 0
   const id = item.id.toLowerCase()
@@ -312,6 +321,9 @@ export interface CatalogFilters {
   /** risks: categories and levels */
   categories?: string[]
   levels?: string[]
+  /** risks: ATT&CK tactic ids and technique ids (a technique includes its sub-techniques) */
+  tactics?: string[]
+  techniques?: string[]
   hideInProject: boolean
   /** catalogue type ("" = every type) */
   catalogue?: string
@@ -320,12 +332,12 @@ export interface CatalogFilters {
 }
 
 export function emptyFilters(): CatalogFilters {
-  return { node: 'all', q: '', types: [], obligations: [], priorities: [], tags: [], executions: [], categories: [], levels: [], hideInProject: false, catalogue: '', sources: [] }
+  return { node: 'all', q: '', types: [], obligations: [], priorities: [], tags: [], executions: [], categories: [], levels: [], tactics: [], techniques: [], hideInProject: false, catalogue: '', sources: [] }
 }
 
 /** Number of filters set besides the tree node and the search. */
 export function activeFilters(f: CatalogFilters): number {
-  return [f.types, f.obligations, f.priorities, f.tags, f.executions, f.categories ?? [], f.levels ?? []].filter((x) => x.length).length + (f.hideInProject ? 1 : 0)
+  return [f.types, f.obligations, f.priorities, f.tags, f.executions, f.categories ?? [], f.levels ?? [], f.tactics ?? [], f.techniques ?? []].filter((x) => x.length).length + (f.hideInProject ? 1 : 0)
 }
 
 export function matchesNode(item: CatalogItem, node: NodeKey): boolean {
@@ -356,7 +368,15 @@ export function matchesFields(item: CatalogItem, f: CatalogFilters, inProject: R
   if (f.catalogue && (item.catalogue ?? 'software') !== f.catalogue) return false
   if (f.sources?.length && !itemSources(item, reqById).some((s) => f.sources!.includes(s))) return false
   if (f.tags.length && !item.tags.some((t) => f.tags.includes(t))) return false
-  if (isRisk(item)) return okAny(f.categories ?? [], item.category) && okAny(f.levels ?? [], item.level)
+  if (isRisk(item)) {
+    const techs = riskTechniques(item)
+    return (
+      okAny(f.categories ?? [], item.category) &&
+      okAny(f.levels ?? [], item.level) &&
+      (!f.tactics?.length || (item.tactics ?? []).some((x) => f.tactics!.includes(x))) &&
+      (!f.techniques?.length || f.techniques.some((x) => hasTechnique(techs, x)))
+    )
+  }
   if (!okAny(f.priorities, item.priority ?? '')) return false
   if (isRequirement(item)) return okAny(f.types, item.type) && okAny(f.obligations, item.obligation)
   return okAny(f.executions, item.execution)

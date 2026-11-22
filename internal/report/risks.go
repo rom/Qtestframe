@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/rom/qtestframe/internal/catalog"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 )
@@ -192,7 +193,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 
 	register := export.Section{Name: "register", Title: l.t("Risk register"),
 		Columns: l.cols("Key", "Title", "Category", "Owner", "Likelihood", "Impact", "Score", "Level", "Status", "Mitigation", "Requirements", "Mitigation state", "Updated",
-			"Residual likelihood", "Residual impact", "Residual score", "Residual level", "Residual from", "Residual justification", "Above threshold", "Accepted by", "Review date", "Review owner")}
+			"Residual likelihood", "Residual impact", "Residual score", "Residual level", "Residual from", "Residual justification", "Above threshold", "Accepted by", "Review date", "Review owner", "ATT&CK techniques")}
 	above := export.Section{Name: "above_threshold", Title: l.t("Risks above the acceptance threshold after mitigation"),
 		Columns: l.cols("Key", "Title", "Score", "Level", "Residual score", "Residual level", "Residual from", "Status", "Owner", "Accepted by")}
 	aboveOpen, aboveAccepted, reviewDue := 0, 0, 0
@@ -210,7 +211,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 			l.enum(EnumRiskLevel, k.Level), l.enum(EnumRiskStatus, k.Status), k.Mitigation, keysOf(k.RequirementIDs),
 			l.enum(EnumMitigation, MitigationState(k.RequirementIDs, coverage)), ts(k.UpdatedAt),
 			itoa(rl), itoa(ri), itoa(k.ResidualScore), l.enum(EnumRiskLevel, k.ResidualLevel), l.enum(EnumResidualSource, k.ResidualSource),
-			k.ResidualJustification, l.yesNo(k.AboveThreshold), accepted, k.ReviewDate, k.ReviewOwner})
+			k.ResidualJustification, l.yesNo(k.AboveThreshold), accepted, k.ReviewDate, k.ReviewOwner, strings.Join(k.Attack, ", ")})
 		if k.ReviewDue {
 			reviewDue++
 		}
@@ -282,6 +283,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 		}
 	}
 
+	attack, mapped := attackSection(l, risks)
 	summary := l.kpiSection("summary", "Key figures",
 		kv{"Risks", itoa(len(risks))},
 		kv{"Open risks (identified or mitigating)", itoa(open)},
@@ -301,6 +303,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 		kv{"Risks above the threshold after mitigation, not accepted", itoa(aboveOpen)},
 		kv{"Risks above the threshold after mitigation, accepted", itoa(aboveAccepted)},
 		kv{"Risks due for review", itoa(reviewDue)},
+		kv{"Risks with ATT&CK techniques", itoa(mapped)},
 	)
 	return &export.Dataset{Sections: []export.Section{
 		summary,
@@ -314,5 +317,51 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 		trace,
 		untested,
 		due,
+		attack,
 	}}, nil
+}
+
+// attackSection lists the MITRE ATT&CK and ATLAS techniques of the risks
+// (catalog/data/attack.yaml) with their tactics and the risks that list
+// them, most open risks first; mapped counts the risks with a technique.
+func attackSection(l loc, risks []model.Risk) (export.Section, int) {
+	sec := export.Section{Name: "attack", Title: l.t("MITRE ATT&CK techniques of the risks"),
+		Columns: l.cols("Technique", "Name", "Matrix", "Tactics", "Risks", "Open risks", "Link")}
+	byTech, open := map[string][]string{}, map[string]int{}
+	var order []string
+	mapped := 0
+	for _, k := range risks {
+		if len(k.Attack) > 0 {
+			mapped++
+		}
+		for _, id := range k.Attack {
+			if _, ok := byTech[id]; !ok {
+				order = append(order, id)
+			}
+			byTech[id] = append(byTech[id], k.Key)
+			if riskOpen(k.Status) {
+				open[id]++
+			}
+		}
+	}
+	sort.SliceStable(order, func(i, j int) bool {
+		if open[order[i]] != open[order[j]] {
+			return open[order[i]] > open[order[j]]
+		}
+		return order[i] < order[j]
+	})
+	c, _ := catalog.Default()
+	for _, id := range order {
+		name, matrix, url, tactics := "", "", "", []string{}
+		if c != nil {
+			if ts, ok := c.SummarizeTechnique(id); ok {
+				name, matrix, url = ts.Name, ts.Matrix, ts.URL
+				for _, ta := range ts.Tactics {
+					tactics = append(tactics, ta.Name)
+				}
+			}
+		}
+		sec.Rows = append(sec.Rows, []string{id, name, matrix, strings.Join(tactics, ", "), strings.Join(byTech[id], ", "), itoa(open[id]), url})
+	}
+	return sec, mapped
 }

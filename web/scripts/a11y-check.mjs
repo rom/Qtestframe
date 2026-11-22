@@ -217,6 +217,7 @@ async function discover(request) {
   const generatedDoc = documents.find((d) => (d.tags ?? []).includes('generated'))
   const hasWebhooks = items(await api(request, 'GET', `/projects/${pid}/webhooks`).catch(() => [])).length > 0
   const hasRequested = items(await api(request, 'GET', '/reviews?requested_by=me').catch(() => [])).length > 0
+  const hasToReview = items(await api(request, 'GET', '/reviews?reviewer=me&status=pending').catch(() => [])).length > 0
   const hasNotifications = items(await api(request, 'GET', '/notifications').catch(() => [])).length > 0
   // a requirement that breaks a traceability rule (seed-demo has rules)
   const ruleReport = await api(request, 'GET', `/projects/${pid}/trace-rules/evaluate`).catch(() => null)
@@ -324,6 +325,10 @@ async function discover(request) {
     // catalogue risks: the tab, a risk preview with its mitigating requirements, the import dialog with the risk options
     { name: 'catalog-risks', path: `${p}/catalog?tab=risks&lang=sv`, wait: '.cat-list li, .list-pane .empty' },
     { name: 'catalog-risk-preview', path: `${p}/catalog?tab=risks&item=AUTH-R01&lang=en`, wait: '#cp-title' },
+    // MITRE ATT&CK: the risk filters, the coverage page (matrix and table) and a risk dialog with techniques
+    { name: 'catalog-risks-attack', path: `${p}/catalog?tab=risks&attack=T1110&lang=en`, wait: '.cat-list li, .list-pane .empty' },
+    { name: 'catalog-attack', path: `${p}/catalog/attack`, wait: '.atk-matrix' },
+    { name: 'catalog-attack-ics', path: `${p}/catalog/attack?matrix=ics`, wait: '.atk-matrix' },
     { name: 'catalog-risk-import-dialog', path: `${p}/catalog?tab=risks`, open: ['.cat-list li .p-checkbox', '.catalog-bar button:has(.pi-plus)'], wait: '.p-dialog #ci-include-reqs' },
     hasTags && { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
@@ -363,6 +368,7 @@ async function discover(request) {
     { name: 'traceability-criteria', path: `${p}/traceability?view=matrix`, open: '#tcrit', wait: 'tr.crit-row' },
     // waivers, residual risk and the Statement of Applicability (seed: an approved waiver, a deviation draft, SoA decisions)
     { name: 'risks-residual', path: `${p}/risks`, open: '.heat-card .p-selectbutton .p-togglebutton:nth-child(2)', wait: '.heat' },
+    hasRisks && { name: 'risk-dialog-attack', path: `${p}/risks?q=`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog #risk-attack' },
     hasRisks && { name: 'risk-dialog-residual', path: `${p}/risks`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog fieldset.residual' },
     hasRisks && { name: 'risk-accept-dialog', path: `${p}/risks`, open: ['.p-datatable-tbody tr:first-child .link-button', '.p-dialog fieldset.residual button:has(.pi-pen-to-square)'], wait: '.p-dialog .esign' },
     { name: 'waivers', path: `${p}/waivers`, wait: '.p-datatable-tbody tr' },
@@ -387,7 +393,7 @@ async function discover(request) {
     // with a selected row (bulk toolbar); only when the project has defects / risks
     hasDefects && { name: 'defects-bulk', path: `${p}/defects`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     hasNotifications && { name: 'notifications-bulk', path: '/notifications', open: '.list li .p-checkbox', wait: '.bulkbar' },
-    hasRequested && { name: 'reviews-bulk', path: '/reviews', open: ['.page-header .actions .p-selectbutton:first-child .p-togglebutton:nth-child(2)', '.p-datatable-tbody .p-checkbox'], wait: '.bulkbar' },
+    hasRequested && { name: 'my-work-reviews-bulk', path: '/my-work?view=reviews&side=requested', open: '.review-requests .p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     hasWebhooks && { name: 'webhooks-bulk', path: `${p}/settings?tab=project`, open: 'section.webhooks .p-datatable-tbody .p-checkbox', wait: 'section.webhooks .bulkbar' },
     // chat notifications: the channel list (seeded), the new-channel dialog, editing a seeded channel, its delivery log
     { name: 'chat-channels', path: `${p}/settings?tab=project`, wait: 'section.chats .p-datatable-tbody tr' },
@@ -509,7 +515,11 @@ async function discover(request) {
     linkReq && { name: 'requirement-links', path: `${p}/requirements?item=${linkReq.id}`, open: ['.p-drawer [role="tab"]:has(.pi-link)', '.item-links .p-checkbox'], wait: '.item-links .p-button-danger' },
     { name: 'bulk-review', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-verified)', wait: '.p-dialog .preview' },
     { name: 'notifications', path: '/notifications' },
-    { name: 'reviews', path: '/reviews' },
+    // the reviews view of My work (what was "My reviews"): to review, requested by me, in review status; a review opened from a row
+    { name: 'my-work-reviews', path: '/my-work?view=reviews', wait: '.review-requests .p-datatable' },
+    { name: 'my-work-reviews-all', path: '/my-work?view=reviews&status=all', wait: '.review-requests .p-datatable' },
+    { name: 'my-work-reviews-in-review', path: '/my-work?view=reviews&side=in_review', wait: 'section.in-review' },
+    hasToReview && { name: 'my-work-review-dialog', path: '/my-work', open: '.p-datatable-tbody .row-review', wait: '.p-dialog .checklist' },
     // the personal work list (My work) across projects, filtered by project and reason; the dashboard widget
     { name: 'my-work', path: '/my-work', wait: '.p-datatable-tbody tr' },
     { name: 'my-work-filtered', path: `/my-work?project=${pid}&reason=overdue`, wait: '.p-datatable' },

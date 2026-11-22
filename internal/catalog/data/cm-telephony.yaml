@@ -808,6 +808,7 @@ risks:
     tags: [toll-fraud, voicemail]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "RFC 3711"]
     mitigated_by: [CMTEL-09, CMTEL-10, CMTEL-16, CMTEL-08]
+    attack: [T1078.001, T1040, T1496]
     en:
       title: Phone system abused for toll fraud or eavesdropping
       description: Attackers guess voicemail PINs or misuse extensions to call premium-rate numbers abroad, or listen to unencrypted calls. The bill reaches large sums over a weekend.
@@ -816,3 +817,49 @@ risks:
       title: Telefonisystemet missbrukas för samtalsbedrägeri eller avlyssning
       description: Angripare gissar röstbrevlådans kod eller missbrukar anknytningar för att ringa betalnummer utomlands, eller avlyssnar okrypterade samtal. Fakturan når stora belopp under en helg.
       mitigation: Tillåt utlands- och betalsamtal bara för anknytningar med behörighet, larma vid höga samtalskostnader, kräv koder till röstbrevlådan med minst 6 siffror utan standardkod och kryptera signalering och media.
+  - id: CMTEL-R03
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [call-records, recording]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 5(1)(e)", "Directive 2002/58/EC Art. 5(1) (confidentiality of communications)"]
+    mitigated_by: [CMTEL-12, CMTEL-13]
+    en:
+      title: Calls recorded or call records kept without a legal basis
+      description: Calls are recorded without telling the caller, and call records are kept for years. The organisation breaks data protection and communications confidentiality rules.
+      mitigation: Tell callers before a call is recorded and erase call records after the set period.
+    sv:
+      title: Samtal spelas in eller samtalsloggar sparas utan rättslig grund
+      description: Samtal spelas in utan att den som ringer får veta det och samtalsloggar sparas i flera år. Organisationen bryter mot dataskyddsreglerna och reglerna om konfidentiell kommunikation.
+      mitigation: Informera den som ringer innan ett samtal spelas in och radera samtalsloggar efter den fastställda tiden.
+  - id: CMTEL-R04
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [analogue-lines, lift-alarms]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive 2014/33/EU Annex I §4.5 (two-way communication with a rescue service)", "ISO/IEC 27001:2022 A.8.14"]
+    mitigated_by: [CMTEL-15, CMTEL-04]
+    en:
+      title: Lift and alarm lines stop working when analogue lines are shut down
+      description: Lift emergency phones and alarm transmitters still use analogue lines that the operator switches off, or a site loses its call server. A person trapped in a lift cannot call for help.
+      mitigation: Keep an inventory and migration plan for analogue alarm and lift lines and keep emergency calls working when a site is cut off from the call server.
+    sv:
+      title: Hiss- och larmlinjer slutar fungera när analoga linjer stängs
+      description: Nödtelefoner i hissar och larmsändare använder fortfarande analoga linjer som operatören stänger av, eller en anläggning förlorar sin samtalsserver. En person som sitter fast i en hiss kan inte larma.
+      mitigation: För en förteckning och migreringsplan för analoga larm- och hisslinjer och håll nödsamtal fungerande när en anläggning förlorar kontakten med samtalsservern.
+  - id: CMTEL-R05
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [voicemail, eavesdropping]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "RFC 3711"]
+    mitigated_by: [CMTEL-16, CMTEL-08]
+    attack: [T1110.001, T1040]
+    en:
+      title: Voicemail and calls accessed by outsiders
+      description: Voicemail boxes keep default or short PINs and calls travel unencrypted over the network. Messages are listened to and calls recorded by anyone with access to the network.
+      mitigation: Require voicemail PINs of at least six digits with no default and encrypt signalling and media.
+    sv:
+      title: Röstbrevlådor och samtal nås av utomstående
+      description: Röstbrevlådor har kvar standardkoder eller korta koder och samtal går okrypterade över nätet. Meddelanden avlyssnas och samtal spelas in av alla som har åtkomst till nätet.
+      mitigation: Kräv koder till röstbrevlådan på minst sex siffror utan standardkod och kryptera signalering och media.

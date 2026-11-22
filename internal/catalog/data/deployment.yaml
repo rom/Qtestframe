@@ -878,3 +878,34 @@ risks:
       title: Leveransen fungerar i test men fallerar i produktion
       description: Miljöerna skiljer sig, byggen görs per miljö eller produktionen ändras för hand. Fel visar sig först i produktion och ändringar kan inte spåras.
       mitigation: Använd en byggartefakt för alla miljöer, håll konfigurationen utanför koden, låt testmiljön motsvara produktionen, hantera infrastrukturen som kod och låt en annan person godkänna driftsättning i produktion.
+  - id: DEP-R04
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [pipeline, unauthorised-deployment]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.32 (change management)"]
+    mitigated_by: [DEP-16, DEP-13, DEP-01]
+    attack: [T1677, T1195.002]
+    en:
+      title: Malicious change deployed to production without a second pair of eyes
+      description: One developer can push and deploy alone, and deployments are not recorded. An insider or a stolen developer account deploys a backdoor straight to production.
+      mitigation: Require another person to approve production deployments, deploy only through the automated pipeline and record every deployment.
+    sv:
+      title: Skadlig ändring driftsätts i produktion utan ett andra par ögon
+      description: En utvecklare kan pusha och driftsätta ensam och driftsättningar registreras inte. En insider eller ett stulet utvecklarkonto driftsätter en bakdörr direkt i produktion.
+      mitigation: Kräv att en annan person godkänner driftsättning i produktion, driftsätt bara via den automatiserade kedjan och registrera varje driftsättning.
+  - id: DEP-R05
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [canary, rollout]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Google SRE workbook ch. 16 (Canarying Releases)", "Google SRE book ch. 8 (Release Engineering)"]
+    mitigated_by: [DEP-14, DEP-04, DEP-05]
+    en:
+      title: Faulty release reaches every user before anyone notices
+      description: New versions go to all instances at once without a smoke test. A fault that shows only under real traffic affects every user and the rollback is manual.
+      mitigation: Release to a canary first, run a smoke test with automatic rollback and upgrade without failed requests.
+    sv:
+      title: Felaktig release når alla användare innan någon märker det
+      description: Nya versioner går ut till alla instanser samtidigt utan rökprov. Ett fel som bara visar sig under verklig trafik drabbar alla användare och återställningen är manuell.
+      mitigation: Släpp först till en kanariegrupp, kör ett rökprov med automatisk återställning och uppgradera utan misslyckade anrop.

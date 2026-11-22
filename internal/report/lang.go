@@ -130,6 +130,7 @@ const (
 	EnumRiskLevel   = "risk_level"
 	EnumRiskStatus  = "risk_status"
 	EnumMitigation  = "mitigation_state"
+	EnumRelation    = "relation"
 	obligationUnset = "unspecified"
 )
 
@@ -206,10 +207,14 @@ var enums = map[string]map[string]map[string]string{
 		EnumObligation: {"must": "MUST", "must_not": "MUST NOT", "shall": "SHALL", "shall_not": "SHALL NOT", "should": "SHOULD",
 			"should_not": "SHOULD NOT", "may": "MAY", "optional": "OPTIONAL", "will": "WILL", "describe": "DESCRIBE", obligationUnset: "Unspecified"},
 		EnumScope: {"requirement": "Requirements", "test": "Tests", "risk": "Risks"},
+		EnumRelation: {"refines": "refines", "depends_on": "depends on", "provides": "provides", "derived_from": "derived from",
+			"conflicts_with": "conflicts with", "duplicates": "duplicates", "relates_to": "relates to"},
 		EnumMitigation: {MitigationNone: "No requirements", MitigationUntested: "Untested", MitigationPartly: "Partly tested",
 			MitigationTested: "Tested, not all passed", MitigationVerified: "Verified"},
 	},
 	Swedish: {
+		EnumRelation: {"refines": "förfinar", "depends_on": "beror på", "provides": "tillhandahåller", "derived_from": "härlett från",
+			"conflicts_with": "står i konflikt med", "duplicates": "duplicerar", "relates_to": "relaterar till"},
 		EnumStatus: {"draft": "Utkast", "review": "Granskning", "approved": "Godkänt", "implemented": "Implementerat", "verified": "Verifierat",
 			"rejected": "Avvisat", "obsolete": "Inaktuellt", "ready": "Klart", "deprecated": "Utfasat", "planned": "Planerad",
 			"in_progress": "Pågår", "completed": "Slutförd", "aborted": "Avbruten"},
@@ -415,5 +420,12 @@ var texts = map[string]map[string]string{
 		"Open risks with verified mitigation":        "Öppna risker med verifierad åtgärd",
 		"Share of open risks verified":               "Andel verifierade öppna risker",
 		"Open risks by mitigation state":             "Öppna risker per åtgärdsstatus",
+		"ATT&CK techniques":                          "ATT&CK-tekniker",
+		"MITRE ATT&CK techniques of the risks":       "MITRE ATT&CK-tekniker för riskerna",
+		"Technique":                                  "Teknik",
+		"Tactics":                                    "Taktiker",
+		"Matrix":                                     "Matris",
+		"Open risks":                                 "Öppna risker",
+		"Risks with ATT&CK techniques":               "Risker med ATT&CK-tekniker",
 	},
 }

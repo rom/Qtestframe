@@ -962,3 +962,33 @@ risks:
       title: Verkliga larm dränks i brus
       description: Många larm går utan att någon åtgärd behövs, så jourpersonalen börjar ignorera dem. Det enda larm som är viktigt kvitteras och glöms.
       mitigation: Granska larm som ger mycket brus varje månad, håll obegränsade värden borta från etiketter på mätvärden och länka en driftinstruktion i varje larm.
+  - id: OBS-R04
+    category: operational
+    likelihood: 3
+    impact: 4
+    tags: [queues, silent-backlog]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ITIL 4 Monitoring and event management", "Google SRE book ch. 6 (Monitoring Distributed Systems)"]
+    mitigated_by: [OBS-19, OBS-15]
+    en:
+      title: Work piles up unseen in queues
+      description: A consumer stops or slows down and messages wait for hours, or telemetry itself stops. Orders, notifications or payments are delayed and nobody is alerted.
+      mitigation: Alert on old messages in queues and alert when telemetry stops arriving.
+    sv:
+      title: Arbete hopar sig osynligt i köer
+      description: En konsument stannar eller blir långsam och meddelanden väntar i timmar, eller telemetrin själv slutar komma. Beställningar, aviseringar eller betalningar försenas och ingen larmas.
+      mitigation: Larma om gamla meddelanden i köer och larma när telemetrin slutar komma in.
+  - id: OBS-R05
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [logs, personal-data]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V16.2.5 (sensitive data in logs)"]
+    mitigated_by: [OBS-03, OBS-12]
+    en:
+      title: Monitoring data turns into an unprotected copy of personal data
+      description: Request logs and traces include identity numbers, e-mail addresses and query contents, and are kept indefinitely in a tool many people can read.
+      mitigation: Keep secrets and identity numbers out of logs and delete old application logs.
+    sv:
+      title: Övervakningsdata blir en oskyddad kopia av personuppgifter
+      description: Anropsloggar och spårningar innehåller personnummer, e-postadresser och frågeinnehåll och sparas utan tidsgräns i ett verktyg som många kan läsa.
+      mitigation: Håll hemligheter och personnummer borta från loggar och radera gamla applikationsloggar.

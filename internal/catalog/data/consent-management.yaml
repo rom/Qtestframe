@@ -767,3 +767,33 @@ risks:
       title: Barns uppgifter behandlas utan skydd
       description: Barn registrerar sig utan föräldrars samtycke och får offentliga profiler, profilering eller delning av plats. Barnen utsätts för kontakter och spårning som de inte kan bedöma.
       mitigation: Begär föräldrars samtycke för barn under 13 år och bekräfta det via en separat kanal, ge barnkonton varken profilering, offentlig profil eller plats och skriv en integritetsinformation som barn förstår.
+  - id: CONS-R04
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [server-side-tracking, consent-bypass]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ePrivacy Directive 2002/58/EC Art. 5(3)", "GDPR Art. 21(5)"]
+    mitigated_by: [CONS-09, CONS-08, CONS-03]
+    en:
+      title: Tracking continues on the server after the visitor refused
+      description: The banner blocks tracking in the browser, but the server forwards events to advertising partners anyway, and opt-out signals are ignored. Visitors are tracked against their stated choice.
+      mitigation: Forward no tracking data from the server without consent, treat browser opt-out signals as a refusal and keep an inventory of every tracking technology.
+    sv:
+      title: Spårningen fortsätter på servern trots att besökaren tackat nej
+      description: Bannern stoppar spårning i webbläsaren, men servern skickar ändå händelser vidare till annonspartner och avböjandesignaler ignoreras. Besökare spåras mot sitt uttalade val.
+      mitigation: Skicka inga spårningsdata från servern utan samtycke, behandla webbläsarens avböjandesignal som ett nej och för en förteckning över varje spårningsteknik.
+  - id: CONS-R05
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [marketing, double-opt-in]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ePrivacy Directive 2002/58/EC Art. 13"]
+    mitigated_by: [CONS-10, PRIV-17]
+    en:
+      title: Marketing sent to people who never agreed to it
+      description: Addresses are added to the newsletter without confirmation and objections take weeks to take effect. Recipients complain, mail providers block the sender and the regulator gets involved.
+      mitigation: Confirm marketing subscriptions and stop direct marketing within 24 hours of an objection.
+    sv:
+      title: Marknadsföring skickas till personer som aldrig gått med på det
+      description: Adresser läggs till i nyhetsbrevet utan bekräftelse och invändningar tar veckor att verkställa. Mottagare klagar, e-postleverantörer blockerar avsändaren och tillsynsmyndigheten kopplas in.
+      mitigation: Bekräfta prenumerationer på marknadsföring och stoppa direktmarknadsföring inom 24 timmar efter en invändning.

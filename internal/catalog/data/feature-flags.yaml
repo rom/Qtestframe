@@ -737,3 +737,66 @@ tests:
           expected: Matrisen har ett jobb för på och ett för av för varje listad flagga.
         - action: Öppna körningen för den senast sammanslagna ändringen.
           expected: Båda jobben gick igenom för varje flagga.
+risks:
+  - id: FLAG-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [authorization, hidden-features]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V8.3.1 (authorization at a trusted service layer)", "CWE-602 (client-side enforcement of server-side security)"]
+    mitigated_by: [FLAG-11, ACC-03]
+    attack: [T1190]
+    en:
+      title: Function hidden by a flag still reachable on the server
+      description: A feature is hidden from the interface by a flag but its endpoints answer anyone who calls them. An attacker uses an unfinished or paid feature that was never meant to be available.
+      mitigation: "Check every flag that hides a function on the server as well, together with the user's permissions."
+    sv:
+      title: Funktion som döljs av en flagga kan fortfarande nås på servern
+      description: En funktion döljs i gränssnittet av en flagga men dess ändpunkter svarar alla som anropar dem. En angripare använder en ofärdig eller betald funktion som aldrig var tänkt att vara tillgänglig.
+      mitigation: Kontrollera varje flagga som döljer en funktion även på servern, tillsammans med användarens behörigheter.
+  - id: FLAG-R02
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [rollout, kill-switch]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Google SRE Workbook ch. 16 (canarying releases)", "Martin Fowler: Feature Toggles (ops toggles)"]
+    mitigated_by: [FLAG-06, FLAG-07, FLAG-05, FLAG-04]
+    en:
+      title: Feature switched on for everyone breaks the service
+      description: A new feature is enabled for all users at once and fails under real load, or the flag service is down and features take unsafe values. The fault cannot be switched off without a new deployment.
+      mitigation: Roll features out gradually, give features that call external services a kill switch, define safe defaults and let flag changes take effect without a deployment.
+    sv:
+      title: Funktion som slås på för alla slår ut tjänsten
+      description: En ny funktion slås på för alla användare samtidigt och fallerar under verklig last, eller flaggtjänsten ligger nere och funktionerna får osäkra värden. Felet kan inte stängas av utan en ny driftsättning.
+      mitigation: Rulla ut funktioner stegvis, ge funktioner som anropar externa tjänster en nödbrytare, definiera säkra standardvärden och låt flaggändringar gälla utan driftsättning.
+  - id: FLAG-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [toggle-debt, testing]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Martin Fowler: Feature Toggles (managing toggle debt)", "Martin Fowler: Feature Toggles (testing toggled features)"]
+    mitigated_by: [FLAG-09, FLAG-12, FLAG-15]
+    en:
+      title: Forgotten flags make behaviour unpredictable
+      description: Flags stay in the code long after rollout, nobody knows who owns them and combinations are never tested. A change in one flag switches on old code paths and causes faults that are hard to reproduce.
+      mitigation: Give every flag an owner, purpose and removal date, remove release flags after rollout and test with flags both on and off.
+    sv:
+      title: Bortglömda flaggor gör beteendet oförutsägbart
+      description: Flaggor ligger kvar i koden långt efter utrullningen, ingen vet vem som äger dem och kombinationerna testas aldrig. En ändring av en flagga slår på gamla kodvägar och orsakar fel som är svåra att återskapa.
+      mitigation: Ge varje flagga en ägare, ett syfte och ett slutdatum, ta bort releaseflaggor efter utrullningen och testa med flaggor både på och av.
+  - id: FLAG-R04
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [configuration, secrets]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V13.4 (unintended information leakage)", "ISO/IEC 27001:2022 A.8.9 (configuration management)"]
+    mitigated_by: [FLAG-03, FLAG-02, FLAG-08]
+    attack: [T1552.001, T1685]
+    en:
+      title: Configuration change weakens security unnoticed
+      description: Someone changes the configuration to turn off a security control, or the effective configuration shows secrets in clear text. Without review and records the change is found only after an incident.
+      mitigation: Version and review every configuration change, record flag changes and mask secrets in the effective configuration.
+    sv:
+      title: Konfigurationsändring försvagar säkerheten utan att någon märker det
+      description: Någon ändrar konfigurationen så att en säkerhetskontroll stängs av, eller den gällande konfigurationen visar hemligheter i klartext. Utan granskning och loggning upptäcks ändringen först efter en incident.
+      mitigation: Versionshantera och granska varje konfigurationsändring, logga flaggändringar och maskera hemligheter i den gällande konfigurationen.

@@ -34,10 +34,12 @@ func sampleDocData() *DocData {
 			{ID: "r1", Key: "P-REQ-1", Title: "Pay by card", FolderID: ptrS("f2"), Description: "The system MUST accept card payments.\n\nIt SHOULD accept wallets; it may be slow.",
 				Rationale: "Most customers pay by card.", Type: "functional", Priority: "high", Obligation: "must", Status: "approved", Source: "Customer",
 				Owner: "po@example.com", Tags: []string{"pay"}, CategoryIDs: []string{"c1"}, Version: 3, FolderPath: "Checkout / Payment",
-				Criteria:     []model.EvaluationCriterion{{Description: "Visa is accepted", Method: "test", Threshold: "2 s"}},
-				RelationRefs: []model.ItemRef{{Kind: "requirement", Key: "P-REQ-2"}, {Kind: "test", Key: "P-TC-1"}}},
+				Criteria: []model.EvaluationCriterion{{Description: "Visa is accepted", Method: "test", Threshold: "2 s"}},
+				RelationRefs: []model.ItemRef{{Type: "depends_on", Direction: "outgoing", Kind: "requirement", ID: "r2", Key: "P-REQ-2", Title: "Receipt"},
+					{Type: "refines", Direction: "outgoing", Kind: "requirement", ID: "rz", Key: "P-REQ-77", Title: "Outside"}, {Type: "verifies", Direction: "incoming", Kind: "test", Key: "P-TC-1"}}},
 			{ID: "r2", Key: "P-REQ-2", Title: "Receipt", FolderID: ptrS("f1"), Description: "Systemet SKA skicka ett kvitto.", Type: "security", Obligation: "shall", Status: "draft", CategoryIDs: []string{"c2"}},
-			{ID: "r3", Key: "P-REQ-10", Title: "Loose", Description: "No keyword here.", Type: "", Status: "review", Source: "Standard"},
+			{ID: "r3", Key: "P-REQ-10", Title: "Loose", Description: "No keyword here.", Type: "", Status: "review", Source: "Standard",
+				RelationRefs: []model.ItemRef{{Type: "conflicts_with", Direction: "outgoing", Kind: "requirement", ID: "r1", Key: "P-REQ-1"}}},
 		},
 		Tests: []model.TestCase{
 			{ID: "t1", Key: "P-TC-1", Title: "Card payment", FolderID: ptrS("tf"), Description: "Pay with a test card.", Preconditions: "A cart with one item.",
@@ -104,7 +106,10 @@ func TestRequirementsSpec(t *testing.T) {
 		"**Verified by:** P-TC-1 (Passed)", "**Related requirements:** P-REQ-2", "**Categories:** Level: System", "**Rationale:** Most customers pay by card.",
 		"| 1 | Visa is accepted | Test | 2 s |", "**Source:** Customer",
 		"## Appendix A. Traceability matrix", "| P-REQ-1 | Pay by card | MUST | P-TC-1 (Passed) |", "1 requirement has no test.",
-		"## Appendix B. Glossary and references", "ISO/IEC/IEEE 29148:2018", "| Customer | Source of 1 requirement |",
+		"## Appendix B. Dependency graph", "**Figure B.1. Requirement relations**", "](data:image/svg+xml;base64,",
+		"| P-REQ-1 Pay by card | depends on | P-REQ-2 Receipt | B.1 |", "| P-REQ-1 Pay by card | refines | P-REQ-77 Outside (not in this specification) | |",
+		"| P-REQ-10 Loose | conflicts with | P-REQ-1 Pay by card | B.1 |",
+		"## Appendix C. Glossary and references", "ISO/IEC/IEEE 29148:2018", "| Customer | Source of 1 requirement |",
 	} {
 		if !strings.Contains(md, want) {
 			t.Errorf("missing %q in\n%s", want, md)
@@ -123,7 +128,7 @@ func TestRequirementsSpec(t *testing.T) {
 
 	// fields can be left out; no appendices
 	f := false
-	doc, err = BuildDocument(DocRequirementsSpec, sampleDocData(), DocOptions{Fields: []string{"description"}, Traceability: &f, Glossary: &f, Title: "SRS", Version: "7"})
+	doc, err = BuildDocument(DocRequirementsSpec, sampleDocData(), DocOptions{Fields: []string{"description"}, Traceability: &f, Glossary: &f, DependencyGraph: &f, Title: "SRS", Version: "7"})
 	if err != nil {
 		t.Fatal(err)
 	}

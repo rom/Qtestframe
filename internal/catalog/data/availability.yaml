@@ -868,3 +868,34 @@ risks:
       title: Planerat arbete eller ett beroende bryter tillgänglighetsmålet
       description: Underhåll görs under kontorstid utan förvarning, eller ett kritiskt beroende har lägre tillgänglighet än tjänsten utlovar. Tillgänglighetsmålet missas och vite måste betalas.
       mitigation: Meddela planerade avbrott, begränsa deras längd, gör underhåll utanför kontorstid i skrivskyddat läge och dokumentera de kritiska beroendenas tillgänglighet.
+  - id: AVL-R04
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [status-page, communication]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ITIL 4 Service continuity management", "ITIL 4 Incident management"]
+    mitigated_by: [AVL-11, AVL-10, AVL-02]
+    en:
+      title: Status page goes down together with the service
+      description: The status page runs on the same infrastructure as production. During a major outage it is unreachable too, and customers flood support without knowing what is happening.
+      mitigation: Host the status page independently of production, update it during incidents and probe availability from outside.
+    sv:
+      title: Statussidan går ned tillsammans med tjänsten
+      description: Statussidan körs i samma infrastruktur som produktionen. Under ett större avbrott går den inte heller att nå, och kunderna översvämmar supporten utan att veta vad som händer.
+      mitigation: Driva statussidan oberoende av produktionen, uppdatera den under incidenter och mät tillgängligheten utifrån.
+  - id: AVL-R05
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [ddos, flooding]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62443-3-3 SR 7.1", "CWE-400 (uncontrolled resource consumption)"]
+    mitigated_by: [CMSEC-08, SCAL-09, RES-14]
+    attack: [T1498, T1499.002]
+    en:
+      title: Service knocked out by a denial-of-service attack
+      description: A flood of traffic or requests saturates the connection or the servers. Customers cannot reach the service for hours, often at the moment it matters most.
+      mitigation: Mitigate denial-of-service attacks within minutes, rate limit clients and reject excess load instead of queuing it.
+    sv:
+      title: Tjänsten slås ut av en överbelastningsattack
+      description: En flod av trafik eller anrop mättar förbindelsen eller servrarna. Kunderna når inte tjänsten på flera timmar, ofta just när den behövs som mest.
+      mitigation: Hantera överbelastningsattacker inom några minuter, begränsa klienters anropstakt och avvisa överskottslast i stället för att köa den.

@@ -839,3 +839,66 @@ tests:
           expected: En förloppsindikator för uppladdningen förblir synlig.
         - action: Vänta tills uppladdningen är klar.
           expected: Ett meddelande rapporterar resultatet och filen är bifogad objektet.
+risks:
+  - id: FILE-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [malware, upload]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V5.4.3 (malware scan)", "CWE-434 (unrestricted upload of file with dangerous type)"]
+    mitigated_by: [FILE-03, FILE-04, FILE-06]
+    attack: [T1204.002, T1080]
+    en:
+      title: Attachment carries malware to colleagues
+      description: A user attaches an infected document or a file whose type does not match its name. Colleagues open it from a trusted system and their computers are infected.
+      mitigation: Check the file type from its content, scan every file for malware before it is offered and serve attachments as downloads, not inline.
+    sv:
+      title: Bilaga sprider skadlig kod till kollegor
+      description: En användare bifogar ett infekterat dokument eller en fil vars typ inte stämmer med namnet. Kollegor öppnar den från ett betrott system och deras datorer infekteras.
+      mitigation: Kontrollera filtypen från innehållet, sök igenom varje fil efter skadlig kod innan den erbjuds och leverera bilagor som nedladdningar, inte inbäddade.
+  - id: FILE-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [access-control, idor]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V8.2.2 (data-specific access)", "CWE-639 (authorization bypass through user-controlled key)"]
+    mitigated_by: [FILE-05, ACC-01]
+    attack: [T1530]
+    en:
+      title: Attachments downloaded by guessing their address
+      description: "Download addresses are predictable or not checked against the user's rights. Anyone who learns or guesses an address downloads files from projects they have no access to."
+      mitigation: "Check the user's permission on the owning item at every download and use addresses that cannot be guessed."
+    sv:
+      title: Bilagor laddas ned genom att adressen gissas
+      description: Nedladdningsadresserna är förutsägbara eller kontrolleras inte mot användarens behörighet. Den som får veta eller gissar en adress laddar ned filer från projekt som hen saknar åtkomst till.
+      mitigation: Kontrollera användarens behörighet till det ägande objektet vid varje nedladdning och använd adresser som inte går att gissa.
+  - id: FILE-R03
+    category: data
+    likelihood: 2
+    impact: 3
+    tags: [versions, integrity]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9001:2026 §7.5.3", "ISO/IEC 25010:2023 integrity"]
+    mitigated_by: [FILE-09, FILE-08, FILE-15]
+    en:
+      title: Wrong or overwritten version of a document used
+      description: Two people upload new versions of the same attachment and the earlier one is lost, or a file is changed without anyone noticing. Work continues on an outdated or altered document.
+      mitigation: Keep earlier versions, show a checksum for each file and let a user check out an attachment while editing it.
+    sv:
+      title: Fel eller överskriven version av ett dokument används
+      description: Två personer laddar upp nya versioner av samma bilaga och den tidigare försvinner, eller en fil ändras utan att någon märker det. Arbetet fortsätter på ett inaktuellt eller ändrat dokument.
+      mitigation: Behåll tidigare versioner, visa en kontrollsumma för varje fil och låt en användare checka ut en bilaga medan den redigeras.
+  - id: FILE-R04
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [retention, deletion]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.8.10", "GDPR Art. 5(1)(e)"]
+    mitigated_by: [FILE-13, RET-01]
+    en:
+      title: Attachments with personal data remain after their item is deleted
+      description: Files are stored separately from the items they belong to and are left behind when an item is deleted. Personal data is kept longer than allowed and turns up in later exports.
+      mitigation: Remove attachments together with their item and include them in retention and erasure.
+    sv:
+      title: Bilagor med personuppgifter finns kvar när objektet tas bort
+      description: Filer lagras skilt från de objekt de hör till och blir kvar när ett objekt tas bort. Personuppgifter sparas längre än tillåtet och dyker upp i senare exporter.
+      mitigation: Ta bort bilagor tillsammans med objektet och omfatta dem av gallring och radering.

@@ -1026,8 +1026,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [cyber-hygiene, supplier]
-    refs: ["Cybersäkerhetslag (2025:1506) 2 kap. 3 §", "Directive (EU) 2022/2555 (NIS2) Art. 21", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK T1486 (data encrypted for impact)"]
+    refs: ["Cybersäkerhetslag (2025:1506) 2 kap. 3 §", "Directive (EU) 2022/2555 (NIS2) Art. 21"]
     mitigated_by: [CSL-05, CSL-08, CSL-12, CSL-13, CSL-15]
+    attack: [T1566, T1486]
     en:
       title: Basic cyber hygiene gaps lead to a serious incident
       description: Without a risk analysis, supplier security, multi-factor authentication, tested restores and staff training, a common phishing or ransomware attack succeeds. Essential services are interrupted.
@@ -1036,3 +1037,35 @@ risks:
       title: Brister i grundläggande cyberhygien leder till en allvarlig incident
       description: Utan riskanalys, leverantörssäkerhet, flerfaktorsautentisering, testade återställningar och utbildad personal lyckas en vanlig nätfiske- eller ransomwareattack. Samhällsviktiga tjänster avbryts.
       mitigation: Analysera riskerna för nätverks- och informationssystemen, bedöm kritiska IKT-leverantörer, kräv flerfaktorsautentisering för administratörer och fjärråtkomst, testa återställning var 6:e månad och utbilda all personal i cyberhygien.
+  - id: CSL-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [asset-inventory, mfa]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(i)", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)"]
+    mitigated_by: [CSL-11, CSL-12, CSL-18]
+    attack: [T1078, T1133]
+    en:
+      title: Forgotten system with a single password exposed to the internet
+      description: The asset inventory is out of date and remote access to some systems lacks multi-factor authentication. Attackers find the forgotten system, sign in with a stolen password and gain a foothold.
+      mitigation: Reconcile the asset inventory every three months, require multi-factor authentication for administrators and remote access and remove access on the last working day.
+    sv:
+      title: Bortglömt system med bara lösenord exponeras mot internet
+      description: Tillgångsförteckningen är inaktuell och fjärråtkomsten till vissa system saknar flerfaktorsautentisering. Angripare hittar det bortglömda systemet, loggar in med ett stulet lösenord och får fotfäste.
+      mitigation: Stäm av tillgångsförteckningen var tredje månad, kräv flerfaktorsautentisering för administratörer och fjärråtkomst och ta bort åtkomst den sista arbetsdagen.
+  - id: CSL-R05
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [ict-suppliers, contract-terms]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(d), Art. 21(3)"]
+    mitigated_by: [CSL-08, SVOUT-01]
+    attack: [T1199]
+    en:
+      title: Critical ICT supplier becomes the way in
+      description: "Suppliers with access to the network were never assessed and their contracts set no security terms. A breach at a supplier spreads to the entity's systems."
+      mitigation: Assess the security of critical ICT suppliers and include security terms and an audit right in their contracts.
+    sv:
+      title: Kritisk IKT-leverantör blir vägen in
+      description: Leverantörer med åtkomst till nätet har aldrig bedömts och deras avtal saknar säkerhetsvillkor. Ett intrång hos en leverantör sprids till verksamhetens system.
+      mitigation: Bedöm säkerheten hos kritiska IKT-leverantörer och för in säkerhetsvillkor och revisionsrätt i deras avtal.

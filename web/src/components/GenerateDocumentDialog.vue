@@ -202,7 +202,12 @@ async function generate() {
             <Checkbox v-model="form.discussions" :input-id="`${id}-discussions`" binary />
             <label :for="`${id}-discussions`">{{ t('documents.generate.discussions') }}</label>
           </span>
+          <span v-if="isSpec" class="row nowrap">
+            <Checkbox v-model="form.dependencyGraph" :input-id="`${id}-depgraph`" binary :aria-describedby="`${id}-depgraph-help`" />
+            <label :for="`${id}-depgraph`">{{ t('documents.generate.dependencyGraph') }}</label>
+          </span>
         </div>
+        <small v-if="isSpec" :id="`${id}-depgraph-help`" class="muted">{{ t('documents.generate.dependencyGraphHelp') }}</small>
       </fieldset>
 
       <Message v-if="showProblems && problems.length" severity="error" :closable="false">

@@ -1365,3 +1365,49 @@ tests:
           expected: Villkoren innehåller informationen eller länkar till den.
         - action: Läs informationen.
           expected: Den redogör för tjänstens tillgänglighetsfunktioner, anger vilka krav den uppfyller och ger en kontakt för synpunkter.
+risks:
+  - id: A11Y-R01
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [wcag, public-sector]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive (EU) 2016/2102", "Lag (2018:1937) om tillgänglighet till digital offentlig service"]
+    mitigated_by: [A11Y-16, A11Y-17]
+    en:
+      title: Public service found inaccessible by the supervisory authority
+      description: "A public body's service fails WCAG level AA or has no accessibility statement. The supervisory authority orders corrections, and people with disabilities cannot use the service meanwhile."
+      mitigation: Meet WCAG 2.2 level AA, test with assistive technology before each release and publish and maintain an accessibility statement.
+    sv:
+      title: Tillsynsmyndigheten bedömer att en offentlig tjänst inte är tillgänglig
+      description: En offentlig aktörs tjänst uppfyller inte WCAG nivå AA eller saknar tillgänglighetsredogörelse. Tillsynsmyndigheten förelägger om rättelse, och personer med funktionsnedsättning kan inte använda tjänsten under tiden.
+      mitigation: Uppfyll WCAG 2.2 nivå AA, testa med hjälpmedel före varje release och publicera och underhåll en tillgänglighetsredogörelse.
+  - id: A11Y-R02
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [eaa, consumer-services]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive (EU) 2019/882 (EAA) Art. 13(2) (information on how services meet the accessibility requirements)"]
+    mitigated_by: [A11Y-29, A11Y-16]
+    en:
+      title: Consumer service breaks the European Accessibility Act
+      description: An e-commerce or banking service sold to consumers is not accessible and gives no information on how it meets the requirements. Market surveillance can stop the service and customers with disabilities are excluded.
+      mitigation: Make consumer services meet the accessibility requirements and publish how they do so in the general terms or a similar place.
+    sv:
+      title: Konsumenttjänst bryter mot tillgänglighetsdirektivet
+      description: En e-handels- eller banktjänst som säljs till konsumenter är inte tillgänglig och saknar information om hur den uppfyller kraven. Marknadskontrollen kan stoppa tjänsten och kunder med funktionsnedsättning stängs ute.
+      mitigation: Se till att konsumenttjänster uppfyller tillgänglighetskraven och redovisa hur de gör det i de allmänna villkoren eller på liknande ställe.
+  - id: A11Y-R03
+    category: quality
+    likelihood: 4
+    impact: 3
+    tags: [keyboard, screen-reader]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "WCAG 2.2 SC 2.1.1", "WCAG 2.2 SC 4.1.2"]
+    mitigated_by: [A11Y-01, A11Y-02, A11Y-27, A11Y-12]
+    en:
+      title: Users of keyboards and screen readers stuck in a core task
+      description: A custom control can only be used with a mouse, traps the keyboard focus or does not tell a screen reader its state. The user cannot finish the task and must ask someone else for help.
+      mitigation: Make every function keyboard operable without traps, give custom controls a name, role and state, and announce status messages.
+    sv:
+      title: Användare av tangentbord och skärmläsare fastnar i en central uppgift
+      description: En egen kontroll kan bara användas med mus, fångar tangentbordsfokus eller berättar inte sitt tillstånd för en skärmläsare. Användaren kan inte slutföra uppgiften och måste be någon annan om hjälp.
+      mitigation: Gör varje funktion användbar med tangentbord utan fällor, ge egna kontroller namn, roll och tillstånd och läs upp statusmeddelanden.

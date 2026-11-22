@@ -700,3 +700,80 @@ tests:
           expected: Inskicket bekräftas.
         - action: Sök efter inskicket i diariet samma dag.
           expected: Det är registrerat med datum för mottagandet, diarienummer, avsändare och en kort beskrivning.
+risks:
+  - id: EGOV-R01
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [eid, identity-fraud]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Regulation (EU) No 910/2014 Art. 8 (assurance levels of electronic identification schemes)", "Regulation (EU) No 910/2014 Art. 6 (mutual recognition)"]
+    mitigated_by: [EGOV-04, EGOV-02, EGOV-01]
+    attack: [T1078, T1606.002]
+    en:
+      title: "Case filed in another citizen's name"
+      description: "A procedure accepts a weak or forged electronic identification, or a lower assurance level than the decision needs. Someone applies, signs or collects a decision in another person's name."
+      mitigation: Require the assurance level each procedure needs, accept only notified eID schemes and wallets, and validate every identity assertion fully.
+    sv:
+      title: Ärende lämnas in i en annan medborgares namn
+      description: En e-tjänst godtar en svag eller förfalskad e-legitimering, eller en lägre tillitsnivå än beslutet kräver. Någon ansöker, skriver under eller hämtar ut ett beslut i en annan persons namn.
+      mitigation: Kräv den tillitsnivå som varje e-tjänst behöver, godta bara anmälda e-legitimationer och plånböcker och validera varje identitetsintyg fullständigt.
+  - id: EGOV-R02
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [data-minimisation, wallet]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Regulation (EU) No 910/2014 (eIDAS, as amended by Regulation (EU) 2024/1183) Art. 5b(3) (wallet-relying parties request only registered data)", "GDPR Art. 5(1)(c)"]
+    mitigated_by: [EGOV-03, EGOV-07]
+    en:
+      title: More personal data collected than the procedure needs
+      description: "The service asks the wallet or the evidence exchange for every available attribute, or fetches evidence without the user's request. The authority processes data it has no legal basis for, and the citizen loses control of it."
+      mitigation: "Request only the registered attributes needed for the procedure and fetch evidence only at the user's explicit request after a preview."
+    sv:
+      title: Fler personuppgifter samlas in än ärendet kräver
+      description: Tjänsten begär alla tillgängliga attribut från plånboken eller hämtar bevis via utbytet utan användarens begäran. Myndigheten behandlar uppgifter som den saknar rättslig grund för och medborgaren förlorar kontrollen över dem.
+      mitigation: Begär bara de registrerade attribut som ärendet behöver och hämta bevis endast på användarens uttryckliga begäran efter en förhandsvisning.
+  - id: EGOV-R03
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [records, public-access]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)", "Regulation (EU) 2018/1724 (SDG) Art. 6(2)(b) (automatic acknowledgement of receipt)"]
+    mitigated_by: [EGOV-13, EGOV-12]
+    en:
+      title: Submissions lost or not registered as official documents
+      description: An application arrives but is neither acknowledged nor registered. The applicant cannot prove it was sent, deadlines are missed and the authority breaks its duty to register official documents.
+      mitigation: Acknowledge every submission with a case number and register it as an official document when it arrives.
+    sv:
+      title: Inkomna handlingar försvinner eller registreras inte som allmänna handlingar
+      description: En ansökan kommer in men bekräftas inte och registreras inte. Sökanden kan inte visa att den skickades, frister missas och myndigheten bryter mot registreringsskyldigheten.
+      mitigation: Bekräfta varje inlämning med ett ärendenummer och registrera den som allmän handling när den kommer in.
+  - id: EGOV-R04
+    category: compliance
+    likelihood: 2
+    impact: 4
+    tags: [decisions, appeal]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Förvaltningslag (2017:900) 32 § (motivering av beslut)"]
+    mitigated_by: [EGOV-09, EGOV-05]
+    en:
+      title: Automated decision cannot be understood or appealed
+      description: A decision is sent without reasons or information on how to appeal, or its signature cannot be validated. Citizens cannot exercise their rights and the decision may be overturned.
+      mitigation: Send every decision with its reasons and appeal information and sign it so that the signature can be validated.
+    sv:
+      title: Automatiserat beslut går inte att förstå eller överklaga
+      description: Ett beslut skickas utan motivering eller information om hur det överklagas, eller underskriften går inte att validera. Medborgare kan inte ta tillvara sina rättigheter och beslutet kan upphävas.
+      mitigation: Skicka varje beslut med motivering och överklagandehänvisning och skriv under det så att underskriften kan valideras.
+  - id: EGOV-R05
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [cross-border, accessibility]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Regulation (EU) 2018/1724 (SDG) Art. 13(2)(b) (cross-border access to online procedures)", "Regulation (EU) 2018/1724 (SDG) Art. 6(2) (procedures offered fully online)"]
+    mitigated_by: [EGOV-08, EGOV-06, EGOV-10]
+    en:
+      title: Residents of other countries cannot complete the procedure online
+      description: Forms assume national identity numbers, addresses and names, or a step can only be done on paper. Foreign users give up or must travel, which the Single Digital Gateway rules out.
+      mitigation: Design forms for foreign names, addresses and identifiers, offer every step online including payment and collect feedback on each procedure page.
+    sv:
+      title: Personer från andra länder kan inte slutföra ärendet digitalt
+      description: Formulären förutsätter svenska personnummer, adresser och namn, eller ett steg kan bara göras på papper. Utländska användare ger upp eller måste resa, vilket förordningen om den gemensamma digitala ingången inte tillåter.
+      mitigation: Utforma formulär för utländska namn, adresser och identiteter, erbjud varje steg digitalt inklusive betalning och samla in återkoppling på varje sida för ett förfarande.

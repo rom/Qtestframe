@@ -667,3 +667,18 @@ risks:
       title: Trycksatt anordning används utan krävd bedömning eller kontroll
       description: Kategorin bestäms inte, fel modul för bedömning av överensstämmelse används eller återkommande kontroller missas. Anordningen används i strid med reglerna och fel förblir oupptäckta.
       mitigation: För ett register över trycksatta anordningar med deras klassning, bestäm kategorin innan konstruktionen börjar, använd den modul som motsvarar kategorin, kontrollera före första användning och med fastställda intervall och märk dataskylten.
+  - id: EQPED-R04
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [overpressure, safety-valve]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 4126-1:2013 (safety valves)", "Directive 2014/68/EU (PED) Annex I §7.3 (pressure limiting devices)"]
+    mitigated_by: [EQPED-08, EQPED-07, EQPED-06]
+    en:
+      title: Overpressure not relieved because the safety valve is wrong
+      description: The safety valve is set too high or sized for a smaller load than the worst case. A blocked outlet or runaway heating raises the pressure beyond what the vessel can hold.
+      mitigation: Set safety valves at or below the maximum allowable pressure and size them for the full relief load, limit pressure surges and calculate strength at the design conditions.
+    sv:
+      title: Övertryck avlastas inte eftersom säkerhetsventilen är fel
+      description: Säkerhetsventilen är inställd för högt eller dimensionerad för en mindre last än det värsta fallet. Ett blockerat utlopp eller okontrollerad uppvärmning höjer trycket över det kärlet tål.
+      mitigation: Ställ in säkerhetsventiler på eller under högsta tillåtna tryck och dimensionera dem för hela avlastningsflödet, begränsa tryckstötar och beräkna hållfastheten vid konstruktionsvillkoren.

@@ -138,8 +138,16 @@ type Risk struct {
 	// MitigatedBy are the catalogue requirements (any area) that mitigate it.
 	MitigatedBy []string `yaml:"mitigated_by" json:"mitigated_by"`
 	// Tests are catalogue tests that check the risk directly (optional).
-	Tests []string            `yaml:"tests" json:"tests"`
-	Text  map[string]RiskText `yaml:",inline" json:"text"`
+	Tests []string `yaml:"tests" json:"tests"`
+	// Attack are the MITRE ATT&CK techniques and sub-techniques
+	// (Enterprise, ICS, Mobile) an adversary uses to realise the risk, and
+	// Atlas the MITRE ATLAS techniques of an attack on an AI system
+	// (data/attack.yaml, data/atlas.yaml). AttackExempt marks a security
+	// risk no adversary technique describes (FORMAT.md, "MITRE ATT&CK").
+	Attack       []string            `yaml:"attack" json:"attack"`
+	Atlas        []string            `yaml:"atlas" json:"atlas"`
+	AttackExempt bool                `yaml:"attack_exempt" json:"attack_exempt,omitempty"`
+	Text         map[string]RiskText `yaml:",inline" json:"text"`
 	// Sources are the ids of the sources its refs cite (derived).
 	Sources []string `yaml:"-" json:"sources"`
 }
@@ -198,9 +206,19 @@ type Catalog struct {
 	// (sources.yaml).
 	SourceKinds []SourceKind
 	Sources     []Source
+	// Matrices, Tactics, Techniques and Mitigations are the MITRE ATT&CK
+	// and ATLAS list (attack.yaml, atlas.yaml).
+	Matrices    []AttackMatrix
+	Tactics     []AttackTactic
+	Techniques  []AttackTechnique
+	Mitigations []AttackMitigation
 
 	sourceByID map[string]*Source
 	refSource  map[string]string // ref → source id ("" none)
+	matrixByID map[string]*AttackMatrix
+	tacticByID map[string]*AttackTactic
+	techByID   map[string]*AttackTechnique
+	mitByID    map[string]*AttackMitigation
 }
 
 var (
@@ -259,6 +277,14 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 			for _, x := range k.Catalogues {
 				kinds[x.ID] = true
 			}
+			continue
+		}
+		if strings.HasSuffix(n, "/attack.yaml") || strings.HasSuffix(n, "/atlas.yaml") {
+			var f attackFile
+			if err := strictYAML(b, &f); err != nil {
+				return nil, fmt.Errorf("%s: %w", n, err)
+			}
+			c.addAttack(f)
 			continue
 		}
 		if strings.HasSuffix(n, "/sources.yaml") {
@@ -418,6 +444,18 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 		}
 	}
 	c.loadSources(bad)
+	c.loadAttack(bad)
+	for _, a := range c.Areas {
+		for _, r := range a.Requirements {
+			c.checkAttackRefs(r.ID, r.Refs, bad)
+		}
+		for _, t := range a.Tests {
+			c.checkAttackRefs(t.ID, t.Refs, bad)
+		}
+		for i := range a.Risks {
+			c.checkRiskAttack(&a.Risks[i], bad)
+		}
+	}
 	if len(errs) > 0 {
 		sort.Strings(errs)
 		return nil, fmt.Errorf("catalogue: %d problem(s):\n  %s", len(errs), strings.Join(errs, "\n  "))

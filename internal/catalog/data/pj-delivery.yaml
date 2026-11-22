@@ -796,3 +796,33 @@ risks:
       title: Leverans godkänns som inte uppfyller avtalet
       description: Kraven i upphandlingen saknar verifieringsmetod, godkännandeproven improviseras och godkännandet undertecknas utan att avvikelser listas. Kunden betalar för något som inte fungerar som avtalat.
       mitigation: Ge varje krav i upphandlingen en verifieringsmetod, skriv in leveranser, milstolpar och godkännandeförfarande i avtalet, kom överens om testplanen för godkännandet i förväg, underteckna godkännandet med öppna avvikelser och tidsfrister och följ upp leverantören varje månad.
+  - id: PJDEL-R03
+    category: compliance
+    likelihood: 2
+    impact: 4
+    tags: [conflict-of-interest, procurement]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive 2014/24/EU Art. 24 (conflicts of interest)"]
+    mitigated_by: [PJDEL-14, PJDEL-02, PJDEL-13]
+    en:
+      title: "Evaluator's conflict of interest invalidates the award"
+      description: An evaluator has ties to a tenderer, or one tenderer received more information from the market consultation. The award is challenged, the procurement is redone and the delivery is delayed by months.
+      mitigation: Collect a conflict of interest declaration from each evaluator, share market consultation records with every tenderer and publish award criteria and weights in advance.
+    sv:
+      title: Utvärderares jäv ogiltigförklarar tilldelningen
+      description: En utvärderare har kopplingar till en anbudsgivare, eller en anbudsgivare fick mer information i marknadsdialogen. Tilldelningen överprövas, upphandlingen görs om och leveransen försenas i månader.
+      mitigation: Hämta in en jävsdeklaration från varje utvärderare, dela dokumentationen från marknadsdialogen med alla anbudsgivare och publicera tilldelningskriterier och vikter i förväg.
+  - id: PJDEL-R04
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [supplier-performance, contract]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9001:2026 §8.4.2", "ISO/IEC 27001:2022 A.5.19"]
+    mitigated_by: [PJDEL-03, PJDEL-05, PJDEL-04]
+    en:
+      title: Supplier cannot deliver what was contracted
+      description: The supplier was not assessed before signing and is followed up only when deadlines are missed. Capacity, competence or financial problems surface too late to act.
+      mitigation: Assess suppliers before signing, write deliverables, milestones and acceptance into the contract and follow up each month against agreed measures.
+    sv:
+      title: Leverantören kan inte leverera det som avtalats
+      description: Leverantören bedömdes inte före avtalet och följs upp först när tidplaner missas. Problem med kapacitet, kompetens eller ekonomi visar sig för sent för att åtgärda.
+      mitigation: Bedöm leverantörer före avtal, skriv in leveranser, milstolpar och godkännande i avtalet och följ upp varje månad mot överenskomna mått.

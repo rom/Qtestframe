@@ -9242,6 +9242,10 @@ paths:
                     include_discussions:
                       type: boolean
                       description: add an appendix with the discussions of the items
+                    dependency_graph:
+                      type: boolean
+                      default: true
+                      description: 'requirements specification: add the dependency graph appendix (the relations between the requirements as figures and as a table; left out without relations)'
                     lang:
                       type: string
                       enum:
@@ -12344,7 +12348,7 @@ paths:
       summary: List my work
       operationId: getMyWork
       description: |-
-        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `waiver_approval`, `risk_acceptance`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
+        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, review requests they asked for that are pending or came back with changes requested, their requirements and tests in review, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `review_returned`, `awaiting_review`, `in_review`, `waiver_approval`, `risk_acceptance`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","waiting","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
 
         **Permission:** any authenticated user; the handler checks: signed in, and the permissions of each row's project.
       x-permission: authenticated
@@ -13698,6 +13702,94 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/catalog/attack:
+    get:
+      tags:
+      - Catalogue
+      summary: MITRE ATT&CK coverage of the catalogue
+      operationId: getCatalogAttack
+      description: |-
+        `{matrices:[{id, name, version, url, risks, tactics:[{id, name, url, risks, requirements, techniques:[{id, name, url, risks, requirements}]}]}]}`: per matrix (enterprise, ics, mobile, atlas) and tactic, in matrix order, the catalogue risks that list one of its techniques, the requirements that cite one in their refs or mitigate such a risk, and the techniques used (a technique counts its sub-techniques), in the catalogue types of `catalogue`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/catalogCatalogue'
+      responses:
+        '200':
+          description: The coverage per matrix and tactic
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matrices:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/attack/techniques:
+    get:
+      tags:
+      - Catalogue
+      summary: List MITRE ATT&CK and ATLAS techniques
+      operationId: getCatalogAttackTechniques
+      description: |-
+        `{matrices:[{id, name, version, url}], tactics:[{id, name, matrix, url}], items:[AttackTechnique]}`: the techniques and sub-techniques of the ATT&CK Enterprise, ICS and Mobile matrices (no revoked or deprecated ids) and of MITRE ATLAS, the valid values of a risk's `attack`. `q` matches the id or the name
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: q
+        in: query
+        required: false
+        description: part of the id or the name
+        schema:
+          type: string
+      - name: matrix
+        in: query
+        required: false
+        description: matrices (enterprise, ics, mobile, atlas), comma-separated
+        schema:
+          type: string
+      - name: tactic
+        in: query
+        required: false
+        description: tactic ids (TA0006, AML.TA0005), comma-separated
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The techniques
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matrices:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  tactics:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AttackTechnique'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/catalog/risks:
     get:
       tags:
@@ -13705,7 +13797,7 @@ paths:
       summary: List catalogue risks
       operationId: getCatalogRisks
       description: |-
-        `{"items":[CatalogRisk]}` in `lang`: the typical risks of the areas with category, typical likelihood and impact (1–5), level, suggested mitigation and the catalogue requirements that mitigate them (`mitigated_by`). Filters as for the requirements, plus `category` and `level` (low, medium, high, critical), comma-separated; `source` matches risks that cite a source or are mitigated by a requirement that cites it. `q` also searches the mitigation and the ids of the mitigating requirements
+        `{"items":[CatalogRisk]}` in `lang`: the typical risks of the areas with category, typical likelihood and impact (1–5), level, suggested mitigation and the catalogue requirements that mitigate them (`mitigated_by`). Filters as for the requirements, plus `category` and `level` (low, medium, high, critical), comma-separated; `source` matches risks that cite a source or are mitigated by a requirement that cites it; `attack` matches risks that list one of the techniques or one of its sub-techniques, `tactic` risks with a technique of one of the tactics. `q` also searches the mitigation, the ids of the mitigating requirements and the technique ids and names
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -13725,6 +13817,18 @@ paths:
         in: query
         required: false
         description: risk levels of the typical likelihood × impact (low, medium, high, critical), comma-separated
+        schema:
+          type: string
+      - name: attack
+        in: query
+        required: false
+        description: MITRE ATT&CK or ATLAS technique ids (T1110 also matches T1110.004), comma-separated
+        schema:
+          type: string
+      - name: tactic
+        in: query
+        required: false
+        description: tactic ids (TA0006, AML.TA0005), comma-separated
         schema:
           type: string
       - $ref: '#/components/parameters/catalogCatalogue'
@@ -13767,7 +13871,7 @@ paths:
       summary: Get a catalogue risk
       operationId: getCatalogRisksById
       description: |-
-        A risk in `lang`: `CatalogRisk` plus `{area_name, ref_targets:[{ref, source?, name?, url?}], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[{id, area, title, in_project?}], in_project?}`
+        A risk in `lang`: `CatalogRisk` plus `{area_name, ref_targets:[{ref, source?, name?, url?}], techniques:[AttackTechnique], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[{id, area, title, in_project?}], in_project?}`
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -19489,6 +19593,21 @@ components:
           description: catalogue tests that check the risk directly
           items:
             type: string
+        attack:
+          type: array
+          description: MITRE ATT&CK technique ids (Enterprise, ICS, Mobile)
+          items:
+            type: string
+        atlas:
+          type: array
+          description: MITRE ATLAS technique ids
+          items:
+            type: string
+        tactics:
+          type: array
+          description: the tactic ids of its techniques
+          items:
+            type: string
         title:
           type: string
         description:
@@ -21197,9 +21316,44 @@ components:
           writeOnly: true
         has_token:
           type: boolean
+    AttackTechnique:
+      type: object
+      properties:
+        id:
+          type: string
+          description: T1110.004, T0886, AML.T0051
+        name:
+          type: string
+          description: a sub-technique with its parent's name (Brute Force, Credential Stuffing)
+        matrix:
+          type: string
+          enum:
+          - enterprise
+          - ics
+          - mobile
+          - atlas
+        tactics:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              url:
+                type: string
+        url:
+          type: string
+          description: its page on attack.mitre.org or atlas.mitre.org
     Risk:
       type: object
       properties:
+        attack:
+          type: array
+          description: MITRE ATT&CK and ATLAS technique ids (validated against GET /catalog/attack/techniques; copied from the catalogue risk on import)
+          items:
+            type: string
         catalog_ref:
           type: string
           description: the catalogue risk it was copied from ('' = none)
@@ -21310,7 +21464,7 @@ components:
           type: array
           items:
             type: string
-          description: owner, assigned, review_requested, waiver_approval, risk_acceptance, risk_review, overdue, suspect, stale, blocked
+          description: owner, assigned, review_requested, review_returned, awaiting_review, in_review, waiver_approval, risk_acceptance, risk_review, mentioned, overdue, suspect, stale, blocked
         detail:
           type: string
           description: The run of an execution, the requester of a review or waiver, the residual level of a risk to accept.
@@ -21326,11 +21480,25 @@ components:
           type: array
           items:
             type: string
+        review_ids:
+          type: array
+          items:
+            type: string
+          description: Pending review requests of the item waiting for the caller's decision (GET/PATCH /reviews/{id}).
+        requested_review_ids:
+          type: array
+          items:
+            type: string
+          description: Review requests of the item the caller asked for that are pending or came back with changes requested.
     WorkSummary:
       type: object
       properties:
         count:
           type: integer
+          description: Rows that need the caller (the badge); rows that only wait for others are not counted.
+        waiting:
+          type: integer
+          description: Rows whose only reasons are awaiting_review or in_review.
         overdue:
           type: integer
         by_reason:

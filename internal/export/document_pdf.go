@@ -92,7 +92,13 @@ func writeDocPDF(w io.Writer, doc *Document) error {
 			}
 			p.headingText(b)
 		case BlockParagraph:
-			if b.caption() && pdf.GetY()+20 > p.bottom() {
+			need := 20.0
+			if i+1 < len(doc.Blocks) && doc.Blocks[i+1].Kind == BlockFigure && doc.Blocks[i+1].Figure != nil {
+				// a figure's caption stays with the figure
+				f := doc.Blocks[i+1].Figure
+				need = 10 + f.Height*figureScale(f, p.usable, p.bottom()-p.top()-10)
+			}
+			if b.caption() && pdf.GetY()+need > p.bottom() && !p.fresh() {
 				pdf.AddPage() // a caption stays with what follows
 			}
 			p.paragraph(b)
@@ -102,6 +108,8 @@ func writeDocPDF(w io.Writer, doc *Document) error {
 			p.fields(b)
 		case BlockList:
 			p.list(b)
+		case BlockFigure:
+			p.figure(b)
 		case BlockPageBreak:
 			p.newPage()
 		case BlockTOC:
@@ -292,6 +300,24 @@ func (p *docPDF) table(b Block) {
 		}
 	}
 	pdf.Ln(3)
+}
+
+// figure draws a figure block centred, shrunk to the page when it is
+// larger; it starts a new page when it does not fit below.
+func (p *docPDF) figure(b Block) {
+	f := b.Figure
+	if f == nil || f.Width <= 0 || f.Height <= 0 {
+		return
+	}
+	pdf := p.pdf
+	k := figureScale(f, p.usable, p.bottom()-p.top()-10) // room for its caption
+	h := f.Height * k
+	if pdf.GetY()+h > p.bottom() {
+		pdf.AddPage()
+	}
+	y := pdf.GetY()
+	p.pdfFigure(f, docPDFMargin+(p.usable-f.Width*k)/2, y, k)
+	pdf.SetXY(docPDFMargin, y+h+3)
 }
 
 func (p *docPDF) fields(b Block) {

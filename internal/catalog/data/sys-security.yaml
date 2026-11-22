@@ -887,8 +887,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [system-of-systems, defence-in-depth]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK T1210 (exploitation of remote services)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "ISO/IEC 27005:2022 §7 (risk assessment process)"]
     mitigated_by: [SYSEC-01, SYSEC-02, SYSEC-03, SYSEC-04, SYSEC-05]
+    attack: [T1210]
     en:
       title: One weak subsystem compromises the whole system
       description: Subsystems from different suppliers trust each other fully and critical assets sit behind a single control. An attacker who breaks one subsystem reaches the most critical functions.
@@ -919,6 +920,7 @@ risks:
     tags: [integration-testing, vulnerabilities]
     refs: ["IEC 62443-3-3 SR 7.6", "CWE-1395 (dependency on vulnerable third-party component)"]
     mitigated_by: [SYSEC-10, SYSEC-13, SYSEC-16, SYSEC-09, SYSEC-18]
+    attack: [T1190, T1210]
     en:
       title: Integrated system goes live with unknown weaknesses
       description: Each supplier tested its own part, but nobody tested the whole or tracks vulnerabilities across all components. Weaknesses in the integration and old components remain.
@@ -927,3 +929,35 @@ risks:
       title: Det integrerade systemet tas i drift med okända svagheter
       description: Varje leverantör testade sin egen del, men ingen testade helheten eller följer sårbarheterna i alla komponenter. Svagheter i integrationen och gamla komponenter finns kvar.
       mitigation: Fördela säkerhetskraven på delsystem och leverantörer, penetrationstesta det integrerade systemet före godkännandet, bevaka hela systemets materialförteckning efter sårbarheter, kontrollera härdningsbaslinjerna varje månad och utlös varje detekteringsregel en gång om året.
+  - id: SYSEC-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [decommissioning, credentials]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)"]
+    mitigated_by: [SYSEC-20, SYSEC-16]
+    attack: [T1078, T1552.001]
+    en:
+      title: Decommissioned component still holds valid credentials and data
+      description: A retired server or device is removed without revoking its certificates and service accounts or sanitising its storage. Whoever gets hold of it gains access to the live system.
+      mitigation: Revoke credentials and sanitise data at decommissioning and check each component against its hardening baseline every month.
+    sv:
+      title: Avvecklad komponent har kvar giltiga inloggningsuppgifter och data
+      description: En avvecklad server eller enhet tas bort utan att dess certifikat och tjänstekonton återkallas eller lagringen rensas. Den som kommer över den får åtkomst till det levande systemet.
+      mitigation: Återkalla inloggningsuppgifter och rensa data vid avveckling och kontrollera varje komponent mot sin härdningsbaslinje varje månad.
+  - id: SYSEC-R05
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [defence-in-depth, critical-assets]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-160 Vol. 1 Rev. 1 (systems security engineering)", "IEC 62443-3-3 SR 1.2"]
+    mitigated_by: [SYSEC-04, SYSEC-05, SYSEC-06]
+    attack: [T1210, T1021]
+    en:
+      title: One bypassed control is all that protects a critical asset
+      description: Components trust each other without authentication and a single firewall rule protects the most critical asset. When that one control fails, the attacker has free access.
+      mitigation: Put at least two independent controls in front of each critical asset, authenticate components mutually and give components the least privilege.
+    sv:
+      title: En kringgången kontroll är det enda som skyddar en kritisk tillgång
+      description: Komponenterna litar på varandra utan autentisering och en enda brandväggsregel skyddar den mest kritiska tillgången. När den enda kontrollen fallerar har angriparen fri åtkomst.
+      mitigation: Placera minst två oberoende kontroller framför varje kritisk tillgång, autentisera komponenter ömsesidigt och ge komponenter minsta möjliga behörighet.

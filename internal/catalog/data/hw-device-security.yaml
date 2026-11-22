@@ -911,8 +911,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [firmware, secure-boot]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 5.7-1", "CWE-1326 (missing immutable root of trust in hardware)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1542.001 (system firmware)", "MITRE ATT&CK T1601.002 (downgrade system image)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 5.7-1", "CWE-1326 (missing immutable root of trust in hardware)", "CWE-494 (download of code without integrity check)"]
     mitigated_by: [HWSEC-01, HWSEC-02, HWSEC-05, HWSEC-06, HWSEC-15]
+    attack: [T1542.001, T1601.002]
     en:
       title: Malicious firmware installed on the device
       description: The device boots unsigned code or accepts an old vulnerable firmware image. An attacker installs persistent malware that survives resets and cannot be detected from outside.
@@ -926,8 +927,9 @@ risks:
     likelihood: 4
     impact: 4
     tags: [default-password, botnet]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 5.1-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1392 (use of default credentials)", "MITRE ATT&CK T1078.001 (default accounts)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 5.1-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1392 (use of default credentials)"]
     mitigated_by: [HWSEC-07, HWSEC-10, HWSEC-04, HWSEC-20]
+    attack: [T1078.001]
     en:
       title: Devices taken over in bulk over the network
       description: Devices ship with the same default password or with undocumented services open. They are found by scanners and recruited into botnets within hours of being connected.
@@ -941,8 +943,9 @@ risks:
     likelihood: 2
     impact: 4
     tags: [physical-attack, key-extraction]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1191 (on-chip debug and test interface with improper access control)", "CWE-922 (insecure storage of sensitive information)", "MITRE ATT&CK T1552.004 (private keys)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1191 (on-chip debug and test interface with improper access control)", "CWE-922 (insecure storage of sensitive information)"]
     mitigated_by: [HWSEC-03, HWSEC-08, HWSEC-09, HWSEC-19, HWSEC-17]
+    attack: [T1552.004]
     en:
       title: Keys and data extracted from a device in hand
       description: An attacker with physical access opens the enclosure, uses a debug port or reads the external flash. Keys and data are extracted and may let the attacker impersonate or attack other devices.
@@ -958,6 +961,7 @@ risks:
     tags: [resale, decommissioning]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 6-1", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)"]
     mitigated_by: [HWSEC-13, HWSEC-12, HWSEC-11]
+    attack: [T1005]
     en:
       title: User data left on a sold or discarded device
       description: A device is resold, returned or discarded with the previous owner's data and credentials still on it. The next owner reads them or uses them to access the owner's services.
@@ -966,3 +970,35 @@ risks:
       title: Användardata finns kvar på en såld eller kasserad enhet
       description: En enhet säljs vidare, returneras eller kasseras med föregående ägares data och inloggningsuppgifter kvar. Nästa ägare läser dem eller använder dem för att nå ägarens tjänster.
       mitigation: Radera användardata och inloggningsuppgifter vid fabriksåterställning, ange supportperioden vid köp och publicera en programvaruförteckning för varje firmwareversion.
+  - id: HWSEC-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [debug-ports, physical-access]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "CWE-1191 (on-chip debug and test interface with improper access control)"]
+    mitigated_by: [HWSEC-03, HWSEC-04, HWSEC-09]
+    attack: [T1200, T1542.001]
+    en:
+      title: Device taken over through an open debug or serial port
+      description: "Production units leave the debug port unlocked or offer a shell on the serial console. Anyone who opens the enclosure reads the firmware and changes the device's behaviour."
+      mitigation: Lock debug ports on production units, require authentication on the serial console and detect enclosure opening.
+    sv:
+      title: Enheten tas över via en öppen felsöknings- eller seriell port
+      description: Produktionsenheter har felsökningsporten olåst eller erbjuder ett skal på seriekonsolen. Den som öppnar höljet läser ut den inbyggda programvaran och ändrar enhetens beteende.
+      mitigation: Lås felsökningsportar på produktionsenheter, kräv autentisering på seriekonsolen och upptäck när höljet öppnas.
+  - id: HWSEC-R06
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [network-services, attack-surface]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §8"]
+    mitigated_by: [HWSEC-10, HWSEC-20, HWSEC-12]
+    attack: [T1190, T1210]
+    en:
+      title: Undocumented network service on the device exploited at scale
+      description: The device ships with a debugging or legacy service listening on the network, and security updates arrive late or for a fee. A flaw in the service is exploited in every unit online.
+      mitigation: Open only documented network services in the delivered state, publish security updates within 30 days free of charge and state the support period at purchase.
+    sv:
+      title: Odokumenterad nättjänst i enheten utnyttjas i stor skala
+      description: Enheten levereras med en felsöknings- eller äldre tjänst som lyssnar på nätet, och säkerhetsuppdateringar kommer sent eller mot betalning. En brist i tjänsten utnyttjas i alla enheter som är uppkopplade.
+      mitigation: Öppna bara dokumenterade nättjänster i leveransläget, publicera säkerhetsuppdateringar inom 30 dagar utan kostnad och ange supportperioden vid köpet.

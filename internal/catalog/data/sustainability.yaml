@@ -785,3 +785,49 @@ tests:
           expected: Varje uppgift slutförs utan fel eller saknade funktioner.
         - action: Jämför tiderna.
           expected: Ingen uppgift tar mer än dubbla tiden mot den aktuella enheten.
+risks:
+  - id: GRN-R01
+    category: environmental
+    likelihood: 4
+    impact: 2
+    tags: [idle-resources, energy]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "AWS Well-Architected Framework, Sustainability Pillar SUS02 (align resources to demand)", "AWS Well-Architected Framework, Sustainability Pillar SUS02"]
+    mitigated_by: [GRN-04, GRN-03, GRN-15]
+    en:
+      title: Idle servers waste energy around the clock
+      description: Test environments run at night and weekends, production is sized for the peak all year and CPUs mostly idle. Energy use and emissions are far higher than the work requires.
+      mitigation: Shut test environments down outside working hours, scale production in at low load and keep average utilisation at a reasonable level.
+    sv:
+      title: Servrar på tomgång slösar energi dygnet runt
+      description: Testmiljöer körs nätter och helger, produktionen är dimensionerad för toppen hela året och processorerna går mest på tomgång. Energianvändning och utsläpp är långt högre än arbetet kräver.
+      mitigation: Stäng av testmiljöer utanför arbetstid, skala ned produktionen vid låg last och håll den genomsnittliga utnyttjandegraden på en rimlig nivå.
+  - id: GRN-R02
+    category: environmental
+    likelihood: 3
+    impact: 2
+    tags: [page-weight, devices]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "W3C Web Sustainability Guidelines (WSG) 1.0 §3 (UX design)", "W3C Web Sustainability Guidelines (WSG) 1.0 §4 (web development)"]
+    mitigated_by: [GRN-05, GRN-06, GRN-16]
+    en:
+      title: Heavy pages force users to replace working devices
+      description: Pages grow with every release through large images, scripts and video. Older phones and computers become too slow and are replaced early, and each visit uses more data and energy.
+      mitigation: Keep page weight within a budget, serve images in modern formats at display size and keep the service usable on devices several years old.
+    sv:
+      title: Tunga sidor tvingar användare att byta fungerande enheter
+      description: Sidorna växer med varje release genom stora bilder, skript och filmer. Äldre telefoner och datorer blir för långsamma och byts ut i förtid, och varje besök använder mer data och energi.
+      mitigation: Håll sidvikten inom en budget, leverera bilder i moderna format i visningsstorlek och håll tjänsten användbar på enheter som är flera år gamla.
+  - id: GRN-R03
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [emissions-reporting, csrd]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 21031:2024 (Software Carbon Intensity specification)", "GHG Protocol Scope 3 Standard, category 1 (purchased goods and services)"]
+    mitigated_by: [GRN-01, GRN-02]
+    en:
+      title: Emissions of the digital service cannot be reported
+      description: "Energy use and emissions of the service are not measured. Customers' and the organisation's own sustainability reports have gaps, and claims about the service cannot be backed up."
+      mitigation: Report energy use and emissions monthly and track carbon intensity per transaction from release to release.
+    sv:
+      title: Utsläppen från den digitala tjänsten kan inte rapporteras
+      description: Tjänstens energianvändning och utsläpp mäts inte. Kundernas och organisationens egna hållbarhetsrapporter får luckor och påståenden om tjänsten kan inte styrkas.
+      mitigation: Rapportera energianvändning och utsläpp varje månad och följ koldioxidintensiteten per transaktion från release till release.

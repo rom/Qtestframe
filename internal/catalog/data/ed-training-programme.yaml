@@ -826,3 +826,64 @@ tests:
           expected: Varje lag har 2.
         - action: Läs dokumentationen av varje övning.
           expected: Den anger rutinen och den uppmätta tiden.
+risks:
+  - id: EDTP-R01
+    category: operational
+    likelihood: 3
+    impact: 4
+    tags: [go-live, end-users]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9001:2026 §7.2", "ISO 10015:2019"]
+    mitigated_by: [EDTP-05, EDTP-01, EDTP-14]
+    en:
+      title: System goes live before its users are trained
+      description: Training is planned too late, without an analysis of what each role needs. On the first days users cannot do their work, workarounds spread and support is overwhelmed.
+      mitigation: Analyse the training needs of each role, train end users before go-live and train on changes before they are released.
+    sv:
+      title: Systemet tas i drift innan användarna är utbildade
+      description: Utbildningen planeras för sent, utan en analys av vad varje roll behöver. De första dagarna kan användarna inte utföra sitt arbete, nödlösningar sprids och supporten överbelastas.
+      mitigation: Analysera utbildningsbehovet för varje roll, utbilda slutanvändare före driftstart och utbilda på ändringar innan de släpps.
+  - id: EDTP-R02
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [operators, emergencies]
+    refs: ["IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "IEC 61511-1:2016 §5.2.2.2 (competence)", "ISO 22301:2019 §8.5 (exercise programme)"]
+    mitigated_by: [EDTP-07, EDTP-17, EDTP-18, EDTP-20]
+    en:
+      title: Operators unprepared for an abnormal situation or emergency
+      description: Operators have practised only normal operation and never in a simulator or drill. When an emergency occurs they act too late or wrongly and the situation escalates.
+      mitigation: Train operators in abnormal situations, require supervised shifts before they work alone and hold yearly simulator sessions and regular drills of emergency procedures.
+    sv:
+      title: Operatörer är oförberedda på en onormal situation eller nödsituation
+      description: Operatörerna har bara övat normal drift och aldrig i simulator eller övning. När en nödsituation inträffar agerar de för sent eller fel och situationen förvärras.
+      mitigation: Utbilda operatörer i onormala situationer, kräv handledda pass innan de arbetar ensamma och genomför årliga simulatorpass och regelbundna övningar av nödrutiner.
+  - id: EDTP-R03
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [training-environment, personal-data]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.31", "ISO/IEC 27001:2022 A.8.33"]
+    mitigated_by: [EDTP-10, PRIV-03]
+    en:
+      title: Real personal data exposed in training sessions
+      description: Training uses a copy of production with real customer and patient records. Trainees, external trainers and screen recordings see personal data without any need.
+      mitigation: Run training in a separate environment with fictitious or masked data.
+    sv:
+      title: Verkliga personuppgifter exponeras vid utbildningstillfällen
+      description: Utbildningen använder en kopia av produktionen med verkliga kund- och patientuppgifter. Deltagare, externa utbildare och skärminspelningar ser personuppgifter utan något behov.
+      mitigation: Genomför utbildning i en separat miljö med fiktiva eller maskerade data.
+  - id: EDTP-R04
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [onboarding, refreshers]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9001:2026 §7.2", "ISO 10015:2019"]
+    mitigated_by: [EDTP-13, EDTP-15, EDTP-16]
+    en:
+      title: Skills fade or newcomers learn by trial and error
+      description: There are no refresher intervals or onboarding programme. Rarely used procedures are forgotten and new employees pick up bad habits from whoever is nearby.
+      mitigation: Set refresher intervals per role, give newcomers an onboarding programme within the first weeks and a named mentor.
+    sv:
+      title: Kunskaper falnar eller nyanställda lär sig genom att pröva sig fram
+      description: Det finns inga intervall för repetition och inget introduktionsprogram. Rutiner som sällan används glöms bort och nyanställda tar efter dåliga vanor från den som råkar finnas i närheten.
+      mitigation: Fastställ repetitionsintervall per roll, ge nyanställda ett introduktionsprogram under de första veckorna och en namngiven mentor.

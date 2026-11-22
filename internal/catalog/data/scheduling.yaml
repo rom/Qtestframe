@@ -781,3 +781,49 @@ tests:
           expected: Exakt en körningspost skrivs strax efter starten.
         - action: Vänta till 13.05.
           expected: En körningspost för 13.00 skrivs och inga fler körningar i efterhand sker.
+risks:
+  - id: SCHED-R01
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [double-booking, resources]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 functional correctness"]
+    mitigated_by: [SCHED-06, SCHED-15, SCHED-13]
+    en:
+      title: Resource booked twice or above its capacity
+      description: Two people book the same room, vehicle or expert at the same time, or more participants are booked than there are places. The conflict is found on the day and work stops.
+      mitigation: Prevent double booking of resources, limit bookings by capacity and show free and busy times when planning.
+    sv:
+      title: Resurs bokas dubbelt eller över sin kapacitet
+      description: Två personer bokar samma rum, fordon eller expert samtidigt, eller fler deltagare bokas än det finns platser. Konflikten upptäcks samma dag och arbetet stannar.
+      mitigation: Förhindra dubbelbokning av resurser, begränsa bokningar efter kapacitet och visa lediga och upptagna tider vid planering.
+  - id: SCHED-R02
+    category: operational
+    likelihood: 3
+    impact: 4
+    tags: [jobs, downtime]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 recoverability", "ISO/IEC 25010:2023 time behaviour"]
+    mitigated_by: [SCHED-16, SCHED-12]
+    en:
+      title: Planned jobs silently skipped after downtime
+      description: The server is down when a nightly job should run, and the run is never made up. Invoices, reminders or retention jobs are missed without anyone noticing.
+      mitigation: Start planned jobs on time and run missed jobs after downtime according to a defined rule.
+    sv:
+      title: Planerade jobb hoppas tyst över efter ett avbrott
+      description: Servern ligger nere när ett nattligt jobb skulle köras och körningen tas aldrig igen. Fakturor, påminnelser eller gallringsjobb uteblir utan att någon märker det.
+      mitigation: Starta planerade jobb i tid och kör missade jobb efter ett avbrott enligt en fastställd regel.
+  - id: SCHED-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [recurrence, time-zone]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "RFC 5545 §3.8.4.4", "IANA Time Zone Database"]
+    mitigated_by: [SCHED-03, SCHED-11, SCHED-02, SCHED-05]
+    en:
+      title: Changes to recurring events reach participants wrong
+      description: Moving one meeting moves the whole series, or participants in other time zones see the wrong time and receive no update. People miss meetings or turn up at the wrong hour.
+      mitigation: "Let users change one occurrence, the following ones or the whole series, show times in each viewer's time zone and send updates as calendar messages."
+    sv:
+      title: Ändringar av återkommande händelser når deltagarna fel
+      description: Att flytta ett möte flyttar hela serien, eller deltagare i andra tidszoner ser fel tid och får ingen uppdatering. Personer missar möten eller kommer vid fel tidpunkt.
+      mitigation: Låt användare ändra en förekomst, de följande eller hela serien, visa tider i varje betraktares tidszon och skicka uppdateringar som kalendermeddelanden.

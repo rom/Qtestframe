@@ -280,9 +280,6 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
           <i class="pi pi-inbox" aria-hidden="true" /><span class="label">{{ t('nav.myWork') }}</span>
           <span v-if="work.count" class="nav-badge" :class="{ overdue: work.summary.overdue }">{{ badgeText(work.count) }}<span class="sr-only"> {{ t('nav.myWorkItems', work.count) }}</span></span>
         </RouterLink>
-        <RouterLink class="nav-item" :to="{ name: 'reviews' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.reviews') : ''">
-          <i class="pi pi-eye" aria-hidden="true" /><span class="label">{{ t('nav.reviews') }}</span>
-        </RouterLink>
         <template v-if="inProject">
           <div class="section project-section" :title="proj.project?.name"><ProjectIcon :icon="proj.project?.icon" :project-key="proj.project?.key" :color="proj.project?.color" :size="18" /><span class="ellipsis">{{ proj.project?.key }} · {{ proj.project?.name }}</span></div>
           <RouterLink

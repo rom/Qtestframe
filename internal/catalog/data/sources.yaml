@@ -2233,6 +2233,9 @@ sources:
     name: {en: "MITRE ATLAS adversarial threat landscape for AI systems", sv: "MITRE ATLAS, hotlandskap för AI-system"}
     match: ["MITRE ATLAS"]
     url: https://atlas.mitre.org/
+    ref_links:
+      - {regex: '^MITRE ATLAS (AML\.TA\d{4})\b', label: 'MITRE ATLAS $1', url: 'https://atlas.mitre.org/tactics/$1'}
+      - {regex: '^MITRE ATLAS (AML\.T\d{4}(?:\.\d{3})?)\b', label: 'MITRE ATLAS $1', url: 'https://atlas.mitre.org/techniques/$1'}
   - id: iso-15288
     kind: standard
     jurisdiction: international

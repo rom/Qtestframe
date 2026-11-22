@@ -1,0 +1,61 @@
+# MITRE ATLAS (Adversarial Threat Landscape for Artificial-Intelligence
+# Systems): the tactics and techniques that catalogue risks list in atlas:.
+# A curated subset, kept by hand (FORMAT.md, "MITRE ATT&CK"): add a
+# technique here, with its id, name and tactics exactly as on
+# atlas.mitre.org, before a risk uses it. Never add a deprecated id.
+matrices:
+  - {id: atlas, name: "ATLAS", version: "5", url: https://atlas.mitre.org/matrices/ATLAS}
+tactics:
+  - {id: AML.TA0002, name: "Reconnaissance", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0002}
+  - {id: AML.TA0003, name: "Resource Development", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0003}
+  - {id: AML.TA0004, name: "Initial Access", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0004}
+  - {id: AML.TA0000, name: "AI Model Access", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0000}
+  - {id: AML.TA0005, name: "Execution", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0005}
+  - {id: AML.TA0006, name: "Persistence", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0006}
+  - {id: AML.TA0012, name: "Privilege Escalation", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0012}
+  - {id: AML.TA0007, name: "Defense Evasion", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0007}
+  - {id: AML.TA0013, name: "Credential Access", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0013}
+  - {id: AML.TA0008, name: "Discovery", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0008}
+  - {id: AML.TA0009, name: "Collection", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0009}
+  - {id: AML.TA0001, name: "AI Attack Staging", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0001}
+  - {id: AML.TA0010, name: "Exfiltration", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0010}
+  - {id: AML.TA0011, name: "Impact", matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0011}
+techniques:
+  - {id: AML.T0010, name: "AI Supply Chain Compromise", matrix: atlas, tactics: [AML.TA0004], url: https://atlas.mitre.org/techniques/AML.T0010}
+  - {id: AML.T0010.001, name: "AI Software", matrix: atlas, tactics: [AML.TA0004], url: https://atlas.mitre.org/techniques/AML.T0010.001}
+  - {id: AML.T0010.002, name: "Data", matrix: atlas, tactics: [AML.TA0004], url: https://atlas.mitre.org/techniques/AML.T0010.002}
+  - {id: AML.T0010.003, name: "Model", matrix: atlas, tactics: [AML.TA0004], url: https://atlas.mitre.org/techniques/AML.T0010.003}
+  - {id: AML.T0011, name: "User Execution", matrix: atlas, tactics: [AML.TA0005], url: https://atlas.mitre.org/techniques/AML.T0011}
+  - {id: AML.T0011.000, name: "Unsafe AI Artifacts", matrix: atlas, tactics: [AML.TA0005], url: https://atlas.mitre.org/techniques/AML.T0011.000}
+  - {id: AML.T0015, name: "Evade AI Model", matrix: atlas, tactics: [AML.TA0004, AML.TA0007, AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0015}
+  - {id: AML.T0018, name: "Manipulate AI Model", matrix: atlas, tactics: [AML.TA0006, AML.TA0001], url: https://atlas.mitre.org/techniques/AML.T0018}
+  - {id: AML.T0018.000, name: "Poison AI Model", matrix: atlas, tactics: [AML.TA0006, AML.TA0001], url: https://atlas.mitre.org/techniques/AML.T0018.000}
+  - {id: AML.T0019, name: "Publish Poisoned Datasets", matrix: atlas, tactics: [AML.TA0003], url: https://atlas.mitre.org/techniques/AML.T0019}
+  - {id: AML.T0020, name: "Poison Training Data", matrix: atlas, tactics: [AML.TA0003, AML.TA0006], url: https://atlas.mitre.org/techniques/AML.T0020}
+  - {id: AML.T0024, name: "Exfiltration via AI Inference API", matrix: atlas, tactics: [AML.TA0010], url: https://atlas.mitre.org/techniques/AML.T0024}
+  - {id: AML.T0024.000, name: "Infer Training Data Membership", matrix: atlas, tactics: [AML.TA0010], url: https://atlas.mitre.org/techniques/AML.T0024.000}
+  - {id: AML.T0024.001, name: "Invert AI Model", matrix: atlas, tactics: [AML.TA0010], url: https://atlas.mitre.org/techniques/AML.T0024.001}
+  - {id: AML.T0024.002, name: "Extract AI Model", matrix: atlas, tactics: [AML.TA0010], url: https://atlas.mitre.org/techniques/AML.T0024.002}
+  - {id: AML.T0029, name: "Denial of AI Service", matrix: atlas, tactics: [AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0029}
+  - {id: AML.T0031, name: "Erode AI Model Integrity", matrix: atlas, tactics: [AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0031}
+  - {id: AML.T0034, name: "Cost Harvesting", matrix: atlas, tactics: [AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0034}
+  - {id: AML.T0040, name: "AI Model Inference API Access", matrix: atlas, tactics: [AML.TA0000], url: https://atlas.mitre.org/techniques/AML.T0040}
+  - {id: AML.T0043, name: "Craft Adversarial Data", matrix: atlas, tactics: [AML.TA0001], url: https://atlas.mitre.org/techniques/AML.T0043}
+  - {id: AML.T0046, name: "Spamming AI System with Chaff Data", matrix: atlas, tactics: [AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0046}
+  - {id: AML.T0048, name: "External Harms", matrix: atlas, tactics: [AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0048}
+  - {id: AML.T0048.000, name: "Financial Harm", matrix: atlas, tactics: [AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0048.000}
+  - {id: AML.T0048.001, name: "Reputational Harm", matrix: atlas, tactics: [AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0048.001}
+  - {id: AML.T0048.003, name: "User Harm", matrix: atlas, tactics: [AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0048.003}
+  - {id: AML.T0051, name: "LLM Prompt Injection", matrix: atlas, tactics: [AML.TA0005], url: https://atlas.mitre.org/techniques/AML.T0051}
+  - {id: AML.T0051.000, name: "Direct", matrix: atlas, tactics: [AML.TA0005], url: https://atlas.mitre.org/techniques/AML.T0051.000}
+  - {id: AML.T0051.001, name: "Indirect", matrix: atlas, tactics: [AML.TA0005], url: https://atlas.mitre.org/techniques/AML.T0051.001}
+  - {id: AML.T0053, name: "AI Agent Tool Invocation", matrix: atlas, tactics: [AML.TA0005, AML.TA0012], url: https://atlas.mitre.org/techniques/AML.T0053}
+  - {id: AML.T0054, name: "LLM Jailbreak", matrix: atlas, tactics: [AML.TA0012, AML.TA0007], url: https://atlas.mitre.org/techniques/AML.T0054}
+  - {id: AML.T0056, name: "Extract LLM System Prompt", matrix: atlas, tactics: [AML.TA0010], url: https://atlas.mitre.org/techniques/AML.T0056}
+  - {id: AML.T0057, name: "LLM Data Leakage", matrix: atlas, tactics: [AML.TA0010], url: https://atlas.mitre.org/techniques/AML.T0057}
+  - {id: AML.T0058, name: "Publish Poisoned Models", matrix: atlas, tactics: [AML.TA0003], url: https://atlas.mitre.org/techniques/AML.T0058}
+  - {id: AML.T0059, name: "Erode Dataset Integrity", matrix: atlas, tactics: [AML.TA0011], url: https://atlas.mitre.org/techniques/AML.T0059}
+  - {id: AML.T0060, name: "Publish Hallucinated Entities", matrix: atlas, tactics: [AML.TA0003], url: https://atlas.mitre.org/techniques/AML.T0060}
+  - {id: AML.T0062, name: "Discover LLM Hallucinations", matrix: atlas, tactics: [AML.TA0008], url: https://atlas.mitre.org/techniques/AML.T0062}
+  - {id: AML.T0070, name: "RAG Poisoning", matrix: atlas, tactics: [AML.TA0006], url: https://atlas.mitre.org/techniques/AML.T0070}
+mitigations: []

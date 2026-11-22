@@ -11,8 +11,8 @@ import (
 
 // Document is a format-neutral text document such as a requirements
 // specification or a test plan: a title page, then a sequence of blocks
-// (headings, paragraphs, tables, key/value tables, lists, page breaks and
-// the place of the table of contents). WriteDocument renders it as PDF,
+// (headings, paragraphs, tables, key/value tables, lists, figures, page
+// breaks and the place of the table of contents). WriteDocument renders it as PDF,
 // DOCX or Markdown.
 //
 // Headings carry their final text (numbering is up to the caller). The
@@ -62,6 +62,8 @@ const (
 	BlockPageBreak
 	// BlockTOC is where the table of contents goes.
 	BlockTOC
+	// BlockFigure: a vector drawing (Figure), as wide as the page at most.
+	BlockFigure
 )
 
 // Span is a run of paragraph text with optional emphasis.
@@ -84,6 +86,7 @@ type Block struct {
 	Widths  []float64
 	Fields  []Item
 	Items   []string
+	Figure  *Figure
 }
 
 // Heading returns a heading block.
@@ -316,6 +319,10 @@ func writeDocMarkdown(w io.Writer, doc *Document) error {
 				items[j] = Item{Value: it}
 			}
 			m.List(items...)
+		case BlockFigure:
+			if b.Figure != nil {
+				m.block(markdownFigure(b.Figure))
+			}
 		case BlockTOC:
 			if len(entries) == 0 {
 				continue

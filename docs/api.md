@@ -1119,8 +1119,10 @@ selects the items that comply with them.
 | GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], mitigates_risks:[{id, area, title, in_project?}]` |
 | GET | `/catalog/tests?lang=&area=&group=&catalogue=&source=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, catalogue, priority, execution, tags, refs, sources, requirements, steps (count), title, description, in_project?}]}`; `source` matches tests that cite a source or verify a requirement citing it; `q` also searches the steps and the ids of the verified requirements |
 | GET | `/catalog/tests/{id}?lang=&project_id=` | test.read | the summary plus `area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}]` |
-| GET | `/catalog/risks?lang=&area=&group=&catalogue=&source=&q=&category=&level=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, category, category_name, likelihood, impact, score, level, tags, refs, sources, mitigated_by, tests, title, description, mitigation, in_project?}]}` – the typical risks of the areas: the threat or hazard and its consequence (`description`), a typical likelihood and impact on the project scale 1–5 with their level, and a suggested `mitigation`. `category`: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental; `level`: low, medium, high, critical; `source` matches risks that cite a source or are mitigated by a requirement citing it; `q` also searches the mitigation and the mitigating requirement ids |
-| GET | `/catalog/risks/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, ref_targets, mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[…]` |
+| GET | `/catalog/risks?lang=&area=&group=&catalogue=&source=&q=&category=&level=&tag=&attack=&tactic=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, category, category_name, likelihood, impact, score, level, tags, refs, sources, mitigated_by, tests, attack, atlas, tactics, title, description, mitigation, in_project?}]}` – the typical risks of the areas: the threat or hazard and its consequence (`description`), a typical likelihood and impact on the project scale 1–5 with their level, and a suggested `mitigation`. `category`: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental; `level`: low, medium, high, critical; `source` matches risks that cite a source or are mitigated by a requirement citing it; `attack` (MITRE ATT&CK or ATLAS technique ids, comma-separated) matches risks that list one of them or one of its sub-techniques (`T1110` matches `T1110.004`), `tactic` (tactic ids such as `TA0006`, `AML.TA0005`) risks with a technique of one of the tactics; `attack`, `atlas` and `tactics` are the risk's ATT&CK techniques, ATLAS techniques and the tactics they serve; `q` also searches the mitigation, the mitigating requirement ids and the technique ids and names |
+| GET | `/catalog/risks/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, ref_targets, techniques:[{id, name, matrix, tactics:[{id, name, url}], url}], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[…]`; `techniques` are those of `attack` and `atlas` with names (a sub-technique with its parent's: `Brute Force: Credential Stuffing`) and links to attack.mitre.org or atlas.mitre.org |
+| GET | `/catalog/attack/techniques?q=&matrix=&tactic=` | project.read | `{matrices:[{id, name, version, url}], tactics:[{id, name, matrix, url}], items:[{id, name, matrix, tactics:[{id, name, url}], url}]}` – the MITRE ATT&CK techniques and sub-techniques of the Enterprise, ICS and Mobile matrices (no revoked or deprecated ids) and the MITRE ATLAS techniques: the valid values of a risk's `attack`. `q` matches the id or the name, `matrix` (`enterprise`, `ics`, `mobile`, `atlas`) and `tactic` narrow the list |
+| GET | `/catalog/attack?catalogue=` | requirement.read | `{matrices:[{id, name, version, url, risks, tactics:[{id, name, url, risks, requirements, techniques:[{id, name, url, risks, requirements}]}]}]}` – the ATT&CK coverage of the catalogue: per matrix and tactic (in matrix order) the catalogue risks that list one of its techniques, the requirements that cite one in their refs or mitigate such a risk, and the techniques used (a technique counts its sub-techniques); `risks` of a matrix counts each risk once |
 | GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}, "risks": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
 | POST | `/projects/{pid}/catalog/import` | project.read + see below | copies catalogue items into the project, see below |
 
@@ -2487,8 +2489,16 @@ Reading needs `requirement.read`, changing `requirement.write`.
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/risks` | `[Risk]`, highest score first |
-| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...]}` (likelihood and impact default to 3); `catalog_ref` is kept only when it names a catalogue risk (an undone import created again) |
-| GET / PATCH / DELETE | `/risks/{id}` | |
+| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...],"attack":[...]}` (likelihood and impact default to 3); `catalog_ref` is kept only when it names a catalogue risk (an undone import created again) |
+| GET / PATCH / DELETE | `/risks/{id}` | PATCH takes the fields of POST except `requirement_ids` |
+
+`attack` lists the MITRE ATT&CK and ATLAS technique ids of a risk
+(`["T1110.004", "T0886", "AML.T0051"]`, at most 30): ids are trimmed and
+upper-cased, duplicates dropped, and each must be in the technique list of
+`GET /catalog/attack/techniques` (400 otherwise, e.g. for a revoked or
+deprecated id). A catalogue import copies the catalogue risk's `attack` and
+`atlas` into it. The field is in exports, project archives and backups
+(column `risks.attack`, a JSON list).
 | POST | `/projects/{pid}/risks/bulk` | `{"ids":[...], "set": {"status"?, "owner"?, "category"?, "likelihood"?, "impact"?}, "add_requirement_ids"?, "remove_requirement_ids"?}` → `{"updated": n}`; every risk is validated before any is saved |
 | DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
@@ -2683,11 +2693,15 @@ can see (project sharing and the permissions there apply to every row).
 | Method | Path | Permission | Notes |
 |---|---|---|---|
 | GET | `/my-work?project=&source=&reason=` | signed in | `{"items":[WorkItem],"total":n,"summary":WorkSummary,"sources":[...]}`; `project` is a project id or key, `source` comma-separated source names, `reason` keeps the rows with that reason |
-| GET | `/my-work/count?project=&source=` | signed in | `WorkSummary`: `{"count","overdue","by_reason","by_kind","by_project"}` (the badge in the navigation, the dashboard widget) |
+| GET | `/my-work/count?project=&source=` | signed in | `WorkSummary`: `{"count","waiting","overdue","by_reason","by_kind","by_project"}` (the badge in the navigation, the dashboard widget); `count` is the rows that need the caller, `waiting` the rows whose only reasons are `awaiting_review` or `in_review` (listed, not in `count`) |
 
 `WorkItem`: `{kind, id, entity_type, entity_id, run_id?, key, title,
 status, project_id, project_key, project_name, reasons, detail?, due?,
-overdue, updated_at, sources}`. Rows of the same item (`kind` + `id`) are
+overdue, updated_at, sources, review_ids?, requested_review_ids?}`
+(`review_ids`: the pending review requests of the item waiting for the
+caller's decision, which the client opens from the row;
+`requested_review_ids`: the caller's own requests of the item still pending
+or returned). Rows of the same item (`kind` + `id`) are
 merged and their reasons joined; overdue rows come first, then by due
 date, then the most recently changed. Sources and reasons:
 
@@ -2698,7 +2712,9 @@ date, then the most recently changed. Sources and reasons:
 | | risks whose review the caller owns, due within 7 days | `risk_review` (`due` = review date) |
 | `defects` | open defects (open, in progress) assigned to the caller | `assigned` |
 | `executions` | executions assigned to the caller, not run or in progress, in planned or running runs (`run_id`, `detail` = run name) | `assigned` |
-| `reviews` | pending review requests to the caller (the row is the item to review; `due` = the review's due date) | `review_requested` |
+| `reviews` | pending review requests to the caller (the row is the item to review; `due` = the review's due date, `review_ids` = the requests) | `review_requested` |
+| `requested_reviews` | review requests the caller asked for: pending ones, and the latest request of a reviewer that came back with changes requested while the item has not changed since (`detail` = the reviewer, `requested_review_ids`) | `awaiting_review` (waiting, not counted), `review_returned` |
+| `in_review` | requirements and tests in status review that the caller owns, wrote or was asked to review (as `GET /reviews/in-review`, without the items listed only for the caller's review permission) | `in_review` (waiting, not counted) |
 | `waivers` | requested waivers the caller may decide and has not signed (one of its approvers, or holds `waiver.approve` when it names none; never the requester) | `waiver_approval` |
 | `risk_acceptance` | mitigated or accepted risks above the acceptance threshold without a valid acceptance signature, for holders of `waiver.approve` | `risk_acceptance` |
 | `cycles` | tests of planned or active test cycles assigned to the caller without a final result (a test in one of the cycle's runs is the row of its execution; `detail` = cycle, `due` = its end date) | `assigned` |
@@ -2817,10 +2833,20 @@ format, file name, item counts and duration).
     "fields": ["description", "tests"], // default: all but "results"
     "traceability": true, "glossary": true,
     "include_discussions": false,       // appendix with the items' discussions
+    "dependency_graph": true,           // specification: dependency graph appendix (default true)
     "lang": "sv"                        // default: the user's language
   }
 }
 ```
+
+`dependency_graph` (requirements specification only, default `true`)
+adds an appendix with the relations between the requirements of the
+specification: layered graphs as vector figures (drawn in PDF, SVG in
+Markdown, SVG with a PNG fallback in DOCX) of at most 24 requirements each
+(connected groups packed together, larger groups split by top-level
+folder, references to the other figures), a legend of the relation types
+and statuses, and a table of every relation as text. It is left out when
+the requirements have no relations.
 
 → `201` with the `File` (`kind: document`). Its name defaults to
 `<KEY>-requirements-specification-v<version>.<ext>` or
@@ -3493,7 +3519,11 @@ variants the item applies to) and `applicability` (`all` | `selected`), see
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Risk fields (`GET /projects/{pid}/risks?q=`): `id,
 key, title, description, category, likelihood, impact, score, level, status,
-mitigation, owner, review_owner, review_date, created_by`.
+mitigation, owner, review_owner, review_date, created_by, catalog, catalog_area`
+(alias `area`), `attack` (aliases `technique`, `atlas`: the technique ids
+and names, so `attack:T1110` also finds `T1110.004` and
+`attack:"credential stuffing"` works) and `tactic` (the ids and names of
+the tactics of the techniques: `tactic:TA0006`, `tactic:"initial access"`).
 
 Owners and assignees: `owner:me` (also `owner=me`, `owner!=me`) and
 `assignee:me` (defects, executions) match the items of the caller, however

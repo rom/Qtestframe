@@ -131,6 +131,24 @@ func TestGenerateRequirementsSpec(t *testing.T) {
 	a.m("POST", "/api/v1/roles", map[string]any{"name": "noexport", "permissions": []string{"project.read", "requirement.read", "requirement.write"}}, 201)
 	e.member("ne@example.com", "noexport")
 	e.login("ne@example.com").m("POST", path, map[string]any{"kind": "requirements_spec"}, 403)
+	if strings.Contains(md, "Dependency graph") {
+		t.Error("no dependency graph without relations")
+	}
+	// the dependency graph appendix (default on), and the option
+	reqs := items(a.m("GET", "/api/v1/projects/"+pid+"/requirements?q=title:Receipt", nil, 200))
+	a.m("POST", "/api/v1/requirements/"+reqs[0]["id"].(string)+"/relations", map[string]any{"target_id": r1["id"], "type": "depends_on"}, 201)
+	g := a.m("POST", path, map[string]any{"kind": "requirements_spec", "format": "md"}, 201)
+	md = a.fileContent(g["id"].(string))
+	for _, want := range []string{"## Appendix B. Dependency graph", "**Figure B.1. Requirement relations**", "](data:image/svg+xml;base64,",
+		"| GEN-REQ-3 Receipt | depends on | GEN-REQ-1 Pay by card | B.1 |"} {
+		if !strings.Contains(md, want) {
+			t.Errorf("missing %q in\n%s", want, md)
+		}
+	}
+	g = a.m("POST", path, map[string]any{"kind": "requirements_spec", "format": "md", "options": map[string]any{"dependency_graph": false}}, 201)
+	if md = a.fileContent(g["id"].(string)); strings.Contains(md, "Dependency graph") {
+		t.Error("dependency_graph false leaves the appendix out")
+	}
 }
 
 func TestGenerateTestPlanAndBaseline(t *testing.T) {

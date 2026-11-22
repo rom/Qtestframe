@@ -768,3 +768,34 @@ risks:
       title: Raderade uppgifter kommer tillbaka från säkerhetskopior eller gamla medier
       description: Uppgifter som raderats på begäran återställs med en gammal säkerhetskopia, eller diskar återanvänds eller kasseras utan sanering. Raderingen upphävs och uppgifterna röjs.
       mitigation: Låt säkerhetskopior löpa ut efter 35 dagar, tillämpa raderingar igen efter en återställning, sanera lagringsmedier före återanvändning eller kassering och gör anonymiserade uppgifter omöjliga att koppla tillbaka.
+  - id: RET-R04
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [logs, caches]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 5(1)(e)", "GDPR Art. 17"]
+    mitigated_by: [RET-12, RET-04, RET-13]
+    en:
+      title: Deleted personal data survives in logs, caches and the trash
+      description: A record is deleted in the database, but copies remain in debug logs, search indexes, caches and the trash for months. A later request for access or erasure cannot be answered truthfully.
+      mitigation: Let deletion reach indexes, caches and replicas, delete application and debug logs after 30 days and purge the trash after 30 days.
+    sv:
+      title: Raderade personuppgifter finns kvar i loggar, cachar och papperskorgen
+      description: En post raderas i databasen, men kopior finns kvar i felsökningsloggar, sökindex, cachar och papperskorgen i månader. En senare begäran om registerutdrag eller radering kan inte besvaras sanningsenligt.
+      mitigation: Låt raderingen nå index, cachar och repliker, radera applikations- och felsökningsloggar efter 30 dagar och töm papperskorgen efter 30 dagar.
+  - id: RET-R05
+    category: privacy
+    likelihood: 2
+    impact: 4
+    tags: [anonymisation, re-identification]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Recital 26"]
+    mitigated_by: [RET-09, PRIV-14]
+    attack: [T1213]
+    en:
+      title: Anonymised data turns out to identify people
+      description: Data kept after the retention period as anonymous still contains rare combinations of age, postcode and dates. Combined with other sources, individuals are identified.
+      mitigation: Anonymise so that data cannot be linked to a person, test that with the data at hand, and pseudonymise analytics data.
+    sv:
+      title: Anonymiserade data visar sig identifiera personer
+      description: Data som sparas efter bevarandetiden som anonyma innehåller fortfarande ovanliga kombinationer av ålder, postnummer och datum. Tillsammans med andra källor identifieras enskilda personer.
+      mitigation: Anonymisera så att data inte kan kopplas till en person, pröva det på de aktuella uppgifterna och pseudonymisera analysdata.

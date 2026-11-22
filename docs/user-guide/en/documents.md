@@ -36,7 +36,7 @@ The maximum size is 25 MB per file unless your administrator configured another 
 
 Qtestframe can write two complete documents for you and save them in the archive:
 
-- a **requirements specification**, modelled on ISO/IEC/IEEE 29148: title page, document control with the revision history, contents, an introduction (purpose, the project description as scope, and the meaning of the key words MUST, SHOULD and MAY), the requirements grouped by folder, category or type, a traceability matrix and a glossary with references;
+- a **requirements specification**, modelled on ISO/IEC/IEEE 29148: title page, document control with the revision history, contents, an introduction (purpose, the project description as scope, and the meaning of the key words MUST, SHOULD and MAY), the requirements grouped by folder, category or type, a traceability matrix, a [dependency graph](#dependency-graph-appendix) of the relations between the requirements and a glossary with references;
 - a **test plan** with its **test specification**, modelled on ISO/IEC/IEEE 29119-3: the features to be tested (the requirements the tests verify), the test approach with entry criteria (the [execution rules](runs.md#when-can-a-test-be-executed) of your organisation) and exit criteria (those of your [releases](releases-and-risks.md)), the test environment (configurations and the environments of the runs), roles, the schedule (releases and runs), then every test with its steps, and a coverage appendix with the requirements that have no test.
 
 1. Select **Create document** and choose **Requirements specification** or **Test plan**. (The **Reports** page has the same two documents under **Documents**.)
@@ -48,10 +48,19 @@ Qtestframe can write two complete documents for you and save them in the archive
    - **Filter**: a [query](search-and-filters.md) on the requirements (specification) or the tests (test plan), for example `status:approved` or `folder:Checkout`.
    - **Include rejected and obsolete requirements** (and, for a test plan, deprecated tests). They are left out by default.
    - **Group the requirements by** folder, category (one dimension) or type (specification only; a test plan is always grouped by folder).
-   - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report. **Discussions of the items** adds an appendix with the [discussion](discussions.md) threads of the requirements or tests (removed comments are left out; resolved threads are marked).
+   - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report. **Discussions of the items** adds an appendix with the [discussion](discussions.md) threads of the requirements or tests (removed comments are left out; resolved threads are marked). **Dependency graph of the requirements** (specification only, on by default) adds the [dependency graph appendix](#dependency-graph-appendix).
 3. Select **Create**. A progress bar shows while the document is being written; a project with thousands of requirements takes a few seconds.
 
 The new document appears at the top of the archive, highlighted, with **Open** (PDF) and **Download**. It is a *document* with the tags `generated`, `requirements-specification` or `test-plan` and the version (for example `v2.0`); the earlier versions of the same kind make up its revision history. Obligation keywords in requirement texts (MUST, SHALL, SKA …) are printed in bold.
+
+### Dependency graph appendix
+
+The dependency graph appendix of a requirements specification draws the [relations](requirements.md#relations) between its requirements (*refines*, *depends on*, *provides*, *derived from*, *conflicts with*, *duplicates*, *relates to*), laid out like the app's [dependency graph](traceability-and-coverage.md#dependency-graphs): requirements that build on others to the right of (or below) what they build on, an arrow from a requirement to the one it refines, depends on, provides for or is derived from, and lines without an arrow for relations without a direction. Each relation type has its own colour and line pattern, each box shows the key, the status (also as the colour on its left) and the shortened title, and every figure has a legend.
+
+- The figures are vector graphics in every format: drawn directly in PDF, as SVG in Markdown, and in Word as SVG with a picture for word processors that cannot show SVG. Zoom in as far as you need.
+- Only requirements with relations are drawn. A large specification gets several figures of at most 24 requirements: connected groups of requirements are put together, and a group too large for one figure is divided by top-level folder (and then into parts). A requirement related to one in another figure is drawn as a grey reference to that figure.
+- After the figures, a table lists every relation as text ("REQ-1 depends on REQ-3"), with the figures the two requirements are in; relations to requirements that are not in the specification are listed there too. Screen readers and text search use the table; each figure also has a text description.
+- Without any relations the appendix is left out.
 
 Creating documents needs the right to export, to read requirements (and tests for a test plan) and to upload documents (**Tester** or **Manager**).
 

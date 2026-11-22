@@ -756,3 +756,66 @@ tests:
           expected: Varje uppgift har minst 2, annars gäller nästa steg.
         - action: Läs utbildningsplanen för varje uppgift med färre än 2.
           expected: Den namnger en deltagare och ett datum.
+risks:
+  - id: EDTR-R01
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [phishing, awareness]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.6.3"]
+    mitigated_by: [EDTR-08, EDTR-10, EDTR-14, EDTR-15]
+    attack: [T1566, T1204.001]
+    en:
+      title: Staff fall for phishing because awareness training is missing
+      description: Employees are never trained or tested in recognising phishing. A convincing message gets them to open a link or attachment and the attacker gains a foothold.
+      mitigation: Give security awareness training at start and yearly, run regular phishing simulations, follow up with targeted training and measure how many report simulated messages.
+    sv:
+      title: Personal går på nätfiske eftersom säkerhetsutbildning saknas
+      description: Medarbetare utbildas eller testas aldrig i att känna igen nätfiske. Ett trovärdigt meddelande får dem att öppna en länk eller bilaga och angriparen får fotfäste.
+      mitigation: Ge säkerhetsutbildning vid start och varje år, genomför regelbundna nätfiskeövningar, följ upp med riktad utbildning och mät hur många som rapporterar övningsmeddelanden.
+  - id: EDTR-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [privileged-roles, competence]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-2-1:2024 (security awareness and training)"]
+    mitigated_by: [EDTR-05, EDTR-12, EDTR-13]
+    attack: [T1078.003]
+    en:
+      title: Privileged access given to people without the required training
+      description: Administrator rights and contractor access are granted before any security training is recorded. Untrained people make dangerous configuration changes or are easy targets for attackers.
+      mitigation: Grant role access only after the training for the role is recorded and give privileged roles and contractors role-based security training first.
+    sv:
+      title: Privilegierad åtkomst ges till personer utan den utbildning som krävs
+      description: Administratörsbehörighet och åtkomst för konsulter ges innan någon säkerhetsutbildning har registrerats. Outbildade personer gör farliga konfigurationsändringar eller blir lätta mål för angripare.
+      mitigation: Ge åtkomst till en roll först när utbildningen för rollen är registrerad och ge privilegierade roller och konsulter rollbaserad säkerhetsutbildning först.
+  - id: EDTR-R03
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [audit, records]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9001:2026 §7.2"]
+    mitigated_by: [EDTR-01, EDTR-04, EDTR-07, EDTR-16]
+    en:
+      title: Competence cannot be shown in an audit
+      description: Training records are scattered, certificates are not verified and expired competences are not noticed. An audit finds people doing tasks they are not qualified for.
+      mitigation: Keep a training record per person, report completion per role, warn before a competence expires and check external certificates with the issuer.
+    sv:
+      title: Kompetens kan inte visas vid en revision
+      description: Utbildningsregistren är utspridda, intyg kontrolleras inte och utgångna behörigheter uppmärksammas inte. En revision visar att personer utför uppgifter som de saknar behörighet för.
+      mitigation: För ett utbildningsregister per person, rapportera genomförande per roll, varna innan en behörighet går ut och kontrollera externa intyg hos utfärdaren.
+  - id: EDTR-R04
+    category: operational
+    likelihood: 3
+    impact: 4
+    tags: [key-person, critical-tasks]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 22301:2019 §8.3", "ISO 9001:2026 §7.2"]
+    mitigated_by: [EDTR-17, EDTR-03]
+    en:
+      title: Critical task depends on a single qualified person
+      description: Only one person is trained for a critical task. When that person is ill, on holiday or leaves, the task cannot be performed and operations stop.
+      mitigation: Keep a competence matrix per role and make sure at least two qualified persons are available for each critical task.
+    sv:
+      title: Kritisk uppgift är beroende av en enda behörig person
+      description: Bara en person är utbildad för en kritisk uppgift. När den personen är sjuk, på semester eller slutar kan uppgiften inte utföras och verksamheten stannar.
+      mitigation: För en kompetensmatris per roll och se till att minst två behöriga personer finns för varje kritisk uppgift.

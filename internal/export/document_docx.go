@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+// Namespaces of pictures (DrawingML) in documents.
+const (
+	nsWP   = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+	nsA    = "http://schemas.openxmlformats.org/drawingml/2006/main"
+	nsPic  = "http://schemas.openxmlformats.org/drawingml/2006/picture"
+	nsASVG = "http://schemas.microsoft.com/office/drawing/2016/SVG/main"
+)
+
 // Documents are portrait A4 with 2 cm margins (twips).
 const (
 	docDocxPageW   = 11906
@@ -21,16 +29,61 @@ const (
 const docDocxContentTypes = xmlHeader + `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
 	`<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
 	`<Default Extension="xml" ContentType="application/xml"/>` +
+	`<Default Extension="png" ContentType="image/png"/>` +
+	`<Default Extension="svg" ContentType="image/svg+xml"/>` +
 	`<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
 	`<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>` +
 	`<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>` +
 	`<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>` +
 	`</Types>`
 
-const docDocxDocRels = xmlHeader + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-	`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
-	`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>` +
-	`</Relationships>`
+// docDocxDocRels are the relationships of the document part: styles,
+// footer and the images of n figures (rIdP<i> PNG, rIdS<i> SVG).
+func docDocxDocRels(n int) string {
+	var b strings.Builder
+	b.WriteString(xmlHeader + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+		`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
+		`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>`)
+	for i := 1; i <= n; i++ {
+		fmt.Fprintf(&b, `<Relationship Id="rIdP%d" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/figure%d.png"/>`, i, i)
+		fmt.Fprintf(&b, `<Relationship Id="rIdS%d" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/figure%d.svg"/>`, i, i)
+	}
+	b.WriteString(`</Relationships>`)
+	return b.String()
+}
+
+// Figures in DOCX: at most the content width and most of the page height
+// (points), the PNG fallback rendered at docDocxFigureDPI.
+const (
+	docDocxFigureMaxW = float64(docDocxContent) / 20
+	docDocxFigureMaxH = float64(docDocxPageH-2*docDocxMargin)/20 - 90
+	docDocxFigureDPI  = 192.0
+	emuPerPoint       = 12700
+)
+
+// docxFigure writes figure n (1-based) as an inline picture: the PNG with
+// the SVG as its Office 2016 vector extension.
+func docxFigure(b *strings.Builder, f *Figure, n int) {
+	k := min(1, docDocxFigureMaxW/f.Width, docDocxFigureMaxH/f.Height)
+	cx, cy := int(f.Width*k*emuPerPoint), int(f.Height*k*emuPerPoint)
+	name := esc(f.Title)
+	desc := esc(f.Desc)
+	fmt.Fprintf(b, `<w:p><w:pPr><w:keepLines/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">`+
+		`<wp:extent cx="%d" cy="%d"/><wp:docPr id="%d" name="%s" descr="%s"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>`+
+		`<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic>`+
+		`<pic:nvPicPr><pic:cNvPr id="%d" name="figure%d.png" descr="%s"/><pic:cNvPicPr/></pic:nvPicPr>`+
+		`<pic:blipFill><a:blip r:embed="rIdP%d"><a:extLst><a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}"><asvg:svgBlip r:embed="rIdS%d"/></a:ext></a:extLst></a:blip><a:stretch><a:fillRect/></a:stretch></pic:blipFill>`+
+		`<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="%d" cy="%d"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>`+
+		`</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`,
+		cx, cy, n, name, desc, n, n, desc, n, n, cx, cy)
+}
+
+// docxFigureScale is the PNG resolution of f (pixels per point) at its
+// size in the document.
+func docxFigureScale(f *Figure) float64 {
+	k := min(1, docDocxFigureMaxW/f.Width, docDocxFigureMaxH/f.Height)
+	return k * docDocxFigureDPI / 72
+}
 
 // docDocxExtraStyles are the styles documents add to the report styles:
 // further heading levels, the item heading (not in the table of contents),
@@ -185,10 +238,16 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 	part := func(name string) (io.Writer, error) {
 		return zw.CreateHeader(&zip.FileHeader{Name: name, Method: zip.Deflate, Modified: mod})
 	}
+	var figures []*Figure
+	for _, blk := range doc.Blocks {
+		if blk.Kind == BlockFigure && blk.Figure != nil && blk.Figure.Width > 0 && blk.Figure.Height > 0 {
+			figures = append(figures, blk.Figure)
+		}
+	}
 	for _, p := range []struct{ name, body string }{
 		{"[Content_Types].xml", docDocxContentTypes},
 		{"_rels/.rels", docxRootRels},
-		{"word/_rels/document.xml.rels", docDocxDocRels},
+		{"word/_rels/document.xml.rels", docDocxDocRels(len(figures))},
 		{"word/styles.xml", docDocxStyles(ds.label("docLang"))},
 		{"word/footer1.xml", docDocxFooter(ds)},
 		{"docProps/core.xml", docDocxCore(doc)},
@@ -213,7 +272,7 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 		return err
 	}
 	b.WriteString(xmlHeader)
-	b.WriteString(`<w:document xmlns:w="` + nsW + `" xmlns:r="` + nsR + `"><w:body>`)
+	b.WriteString(`<w:document xmlns:w="` + nsW + `" xmlns:r="` + nsR + `" xmlns:wp="` + nsWP + `" xmlns:a="` + nsA + `" xmlns:pic="` + nsPic + `" xmlns:asvg="` + nsASVG + `"><w:body>`)
 	// title page
 	b.WriteString(`<w:p><w:pPr><w:spacing w:before="3600"/></w:pPr></w:p>`)
 	docxPara(&b, "Title", doc.Title)
@@ -227,6 +286,7 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 	docxPageBreak(&b)
 
 	entries, _ := doc.toc()
+	fig := 0
 	inTOC := map[int]bool{}
 	for _, e := range entries {
 		inTOC[e.block] = true
@@ -252,8 +312,12 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 			if strings.TrimSpace(blk.plain()) == "" {
 				continue
 			}
+			keep := blk.caption() && i+1 < len(doc.Blocks) && doc.Blocks[i+1].Kind == BlockFigure // a caption stays with its figure
 			for _, para := range splitParagraphs(blk.spans()) {
 				b.WriteString("<w:p>")
+				if keep {
+					b.WriteString(`<w:pPr><w:keepNext/></w:pPr>`)
+				}
 				docxSpans(&b, para)
 				b.WriteString("</w:p>")
 			}
@@ -271,6 +335,11 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 				if strings.TrimSpace(it) != "" {
 					docxPara(&b, "ListBullet", "•\t"+it)
 				}
+			}
+		case BlockFigure:
+			if blk.Figure != nil && blk.Figure.Width > 0 && blk.Figure.Height > 0 {
+				fig++
+				docxFigure(&b, blk.Figure, fig)
 			}
 		case BlockPageBreak:
 			docxPageBreak(&b)
@@ -297,6 +366,24 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 	}
 	if err := bw.Flush(); err != nil {
 		return err
+	}
+	for i, f := range figures {
+		img, err := f.PNG(docxFigureScale(f))
+		if err != nil {
+			return err
+		}
+		for _, m := range []struct {
+			ext  string
+			body []byte
+		}{{"png", img}, {"svg", f.SVG()}} {
+			w, err := part(fmt.Sprintf("word/media/figure%d.%s", i+1, m.ext))
+			if err != nil {
+				return err
+			}
+			if _, err := w.Write(m.body); err != nil {
+				return err
+			}
+		}
 	}
 	return zw.Close()
 }

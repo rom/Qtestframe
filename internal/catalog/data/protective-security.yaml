@@ -916,6 +916,7 @@ risks:
     tags: [classified-information, need-to-know]
     refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "CWE-863 (incorrect authorization)"]
     mitigated_by: [SAKS-04, SAKS-05, SAKS-06, SAKS-07, SAKS-08]
+    attack: [T1078, T1213]
     en:
       title: Classified information read by someone without clearance or need to know
       description: Access is granted on role alone, a clearance has ended without access being removed or access is not logged and reviewed. Information that affects national security is disclosed.
@@ -929,8 +930,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [exfiltration, removable-media]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "MITRE ATT&CK T1052.001 (exfiltration over USB)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
     mitigated_by: [SAKS-09, SAKS-11, SAKS-12, SAKS-16, SAKS-17]
+    attack: [T1052.001, T1048]
     en:
       title: Classified data leaves the protected system
       description: The classified system is connected to other networks, data is copied to unregistered media or printouts and exports are not registered. Classified data leaves without trace.
@@ -954,3 +956,35 @@ risks:
       title: Säkerhetskänslig verksamhet exponeras genom en upphandling eller ett nytt system
       description: Ett system tas i bruk eller en leverantör anlitas utan säkerhetsskyddsanalys, godkännande eller säkerhetsskyddsavtal. Säkerhetskänslig verksamhet exponeras för aktörer som inte får ha åtkomst.
       mitigation: Grunda kraven på säkerhetsskyddsanalysen, godkänn klassificerade system skriftligen före användning, låt leverantörer arbeta bara under säkerhetsskyddsavtal, gör en säkerhetsskyddsbedömning före utkontraktering eller upphandling och rapportera incidenter inom 24 timmar.
+  - id: SAKS-R04
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [clearance, insider]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)", "Säkerhetsskyddslag (2018:585) 2 kap. 1 § (kontroll av säkerhetsskyddet)"]
+    mitigated_by: [SAKS-06, SAKS-07, SAKS-08]
+    attack: [T1078, T1213]
+    en:
+      title: Person whose clearance has ended keeps reading classified records
+      description: A security clearance is withdrawn or a person changes role, but access remains for days and nobody reviews the access log. Classified information is read by someone no longer trusted with it.
+      mitigation: End access within an hour when a clearance ends, log each access to classified records and review the access log every week.
+    sv:
+      title: Person vars säkerhetsprövning har upphört fortsätter läsa säkerhetsskyddsklassade uppgifter
+      description: En placering i säkerhetsklass upphör eller en person byter roll, men åtkomsten finns kvar i flera dagar och ingen granskar åtkomstloggen. Säkerhetsskyddsklassade uppgifter läses av någon som inte längre har förtroendet.
+      mitigation: Avsluta åtkomsten inom en timme när en säkerhetsprövning upphör, logga varje åtkomst till säkerhetsskyddsklassade uppgifter och granska åtkomstloggen varje vecka.
+  - id: SAKS-R05
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [suppliers, outsourcing]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Säkerhetsskyddslag (2018:585) 4 kap. 1 § (säkerhetsskyddsavtal)", "Säkerhetsskyddslag (2018:585) 4 kap. 7–8 §§ (särskild säkerhetsskyddsbedömning och lämplighetsprövning)"]
+    mitigated_by: [SAKS-14, SAKS-15]
+    attack: [T1199]
+    en:
+      title: Supplier staff work on classified systems without a protective security agreement
+      description: "An IT supplier is given access to a classified system as part of an ordinary contract. Its staff are not cleared and the supplier's own systems become a way to the information."
+      mitigation: Let suppliers work on classified systems only under a protective security agreement and assess protective security before outsourcing or procurement.
+    sv:
+      title: Leverantörspersonal arbetar i säkerhetsskyddsklassade system utan säkerhetsskyddsavtal
+      description: En IT-leverantör får åtkomst till ett säkerhetsskyddsklassat system inom ett vanligt avtal. Personalen är inte säkerhetsprövad och leverantörens egna system blir en väg till informationen.
+      mitigation: Låt leverantörer arbeta i säkerhetsskyddsklassade system bara med ett säkerhetsskyddsavtal och gör en säkerhetsskyddsbedömning före utkontraktering eller upphandling.

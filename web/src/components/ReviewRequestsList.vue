@@ -1,10 +1,11 @@
 <script setup lang="ts">
-// Review requests across projects: the ones sent to the signed-in user, and
-// the ones they asked for, with bulk actions for each.
-import ItemRef from '../components/ItemRef.vue'
+// Review requests across projects (the reviews view of My work): the ones
+// sent to the signed-in user, or the ones they asked for, pending or all,
+// with bulk actions for each. Opening a request to decide it is the
+// parent's (it owns the review dialog): the list emits "work".
+import ItemRef from './ItemRef.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import Column from 'primevue/column'
@@ -12,11 +13,8 @@ import DataTable from 'primevue/datatable'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
-import SelectButton from 'primevue/selectbutton'
 import Tag from 'primevue/tag'
 import Textarea from 'primevue/textarea'
-import ReviewDialog from '@/components/ReviewDialog.vue'
-import InReviewList from '@/components/InReviewList.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { isoDay, notificationTarget, overdue, reviewSeverity } from '@/lib/notifications'
 import { formatDate } from '@/lib/format'
@@ -24,32 +22,22 @@ import { useNotify } from '@/composables/notify'
 import { useNotificationsStore } from '@/stores/notifications'
 import type { ReviewRequest } from '@/lib/types'
 
+const props = defineProps<{ side: 'mine' | 'requested'; status: 'pending' | 'all' }>()
+const emit = defineEmits<{ work: [review: ReviewRequest]; changed: [] }>()
 const { t } = useI18n()
 const notify = useNotify()
 const notifications = useNotificationsStore()
-const side = ref<'mine' | 'requested'>('mine')
-const sides = computed(() => [
-  { label: t('reviews.toReview'), value: 'mine' },
-  { label: t('reviews.requestedByMe'), value: 'requested' },
-])
-const status = ref<'pending' | ''>('pending')
-const statuses = computed(() => [
-  { label: t('reviews.filterPending'), value: 'pending' },
-  { label: t('reviews.filterAll'), value: '' },
-])
 const list = ref<ReviewRequest[]>([])
 const loading = ref(false)
 const error = ref('')
-const current = ref<ReviewRequest | null>(null)
-const working = ref(false)
 const today = isoDay()
-const inReview = ref<InstanceType<typeof InReviewList> | null>(null)
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    const params = side.value === 'mine' ? { reviewer: 'me', status: status.value } : { requested_by: 'me', status: status.value }
+    const status = props.status === 'all' ? '' : 'pending'
+    const params = props.side === 'mine' ? { reviewer: 'me', status } : { requested_by: 'me', status }
     list.value = asItems(await api.get<{ items: ReviewRequest[] }>('/reviews', params))
   } catch (e) {
     error.value = errorMessage(e)
@@ -58,28 +46,16 @@ async function load() {
   }
 }
 onMounted(load)
-watch([status, side], () => {
-  selection.value = []
-  void load()
-})
+watch(
+  () => [props.status, props.side],
+  () => {
+    selection.value = []
+    void load()
+  },
+)
+defineExpose({ load })
 
-function work(r: ReviewRequest) {
-  current.value = r
-  working.value = true
-}
-// ?review=<id> (from a discussion or a notification) opens that request
-const route = useRoute()
-async function openFromRoute() {
-  const id = typeof route.query.review === 'string' ? route.query.review : ''
-  if (!id) return
-  try {
-    work(await api.get<ReviewRequest>(`/reviews/${id}`))
-  } catch (e) {
-    notify.fail(e)
-  }
-}
-onMounted(openFromRoute)
-watch(() => route.query.review, openFromRoute)
+const work = (r: ReviewRequest) => emit('work', r)
 function itemRoute(r: ReviewRequest) {
   return notificationTarget({ project_id: r.project_id, entity_type: r.entity_type, entity_id: r.entity_id })!
 }
@@ -126,7 +102,7 @@ async function apply() {
     )
     if (action === 'approve' || action === 'request_changes') void notifications.load()
     await load()
-    void inReview.value?.load()
+    emit('changed')
   } catch (e) {
     notify.fail(e)
   } finally {
@@ -136,17 +112,7 @@ async function apply() {
 </script>
 
 <template>
-  <section>
-    <div class="page-header">
-      <div>
-        <h1>{{ t('titles.reviews') }}</h1>
-        <div class="sub">{{ side === 'mine' ? t('reviews.intro') : t('reviews.introRequested') }}</div>
-      </div>
-      <div class="actions">
-        <SelectButton v-model="side" :options="sides" option-label="label" option-value="value" :allow-empty="false" :aria-label="t('reviews.side')" />
-        <SelectButton v-model="status" :options="statuses" option-label="label" option-value="value" :allow-empty="false" :aria-label="t('reviews.filter')" />
-      </div>
-    </div>
+  <section class="review-requests">
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <div class="card">
       <div v-if="selection.length" class="bulkbar" role="toolbar" :aria-label="t('reviews.bulk.toolbar')">
@@ -192,12 +158,10 @@ async function apply() {
           </template>
         </Column>
         <template #empty>
-          <div class="empty">{{ side === 'requested' ? t('reviews.noneRequested') : status === 'pending' ? t('reviews.nonePending') : t('reviews.noneAtAll') }}</div>
+          <div class="empty">{{ side === 'requested' ? (status === 'pending' ? t('reviews.nonePendingRequested') : t('reviews.noneRequested')) : status === 'pending' ? t('reviews.nonePending') : t('reviews.noneAtAll') }}</div>
         </template>
       </DataTable>
     </div>
-    <InReviewList v-if="side === 'mine'" ref="inReview" />
-    <ReviewDialog v-model:visible="working" :review="current" @saved="() => (load(), inReview?.load())" />
 
     <Dialog :visible="!!dialog" modal :header="dialog ? t(`reviews.bulk.header.${dialog}`, { n: pendingSel.length }, pendingSel.length) : ''" :style="{ width: 'min(500px, 96vw)' }" @update:visible="(v: boolean) => !v && (dialog = null)">
       <div class="form">

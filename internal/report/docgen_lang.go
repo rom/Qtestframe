@@ -4,6 +4,32 @@ package report
 // The key-word paragraph follows the Swedish convention of SIS standards:
 // SKA, BÖR and FÅR, with the English BCP 14 key words they correspond to.
 var docTexts = map[string]string{
+	// dependency graph appendix (depgraph.go)
+	"Dependency graph": "Beroendegraf",
+	"The figures show the relations between the {n} requirement of this specification that has relations.":              "Figurerna visar relationerna mellan det {n} krav i specifikationen som har relationer.",
+	"The figures show the relations between the {n} requirements of this specification that have relations.":            "Figurerna visar relationerna mellan de {n} krav i specifikationen som har relationer.",
+	"No two requirements of this specification are related; the relations to requirements outside it are listed below.": "Inga krav i specifikationen är relaterade till varandra; relationerna till krav utanför den listas nedan.",
+	"Requirements that build on others are drawn to the right of (or below) what they build on. An arrow points from a requirement to the one it refines, depends on, provides for or is derived from; lines without an arrow are relations without a direction. The colour on the left of each box is the status of the requirement.": "Krav som bygger på andra ritas till höger om (eller under) det de bygger på. En pil pekar från ett krav till det krav det förfinar, beror på, tillhandahåller något åt eller är härlett från; linjer utan pil är relationer utan riktning. Färgen till vänster i varje ruta är kravets status.",
+	"The graph is divided into {n} figures of at most {max} requirements; a requirement related to one in another figure is drawn as a grey reference to that figure.":                                                                                                                                                                 "Grafen är uppdelad i {n} figurer med högst {max} krav; ett krav som är relaterat till ett krav i en annan figur ritas som en grå hänvisning till den figuren.",
+	"{n} requirement without relations in this specification is not drawn.":   "{n} krav utan relationer i specifikationen är inte ritat.",
+	"{n} requirements without relations in this specification are not drawn.": "{n} krav utan relationer i specifikationen är inte ritade.",
+	"Table {table} lists every relation as text.":                             "Tabell {table} listar alla relationer som text.",
+	"Requirement relations":                         "Kravrelationer",
+	"Requirement relations in {folder}":             "Kravrelationer i {folder}",
+	"Requirement relations without folder":          "Kravrelationer utan mapp",
+	"part {n} of {total}":                           "del {n} av {total}",
+	"Figure {n}. {title}":                           "Figur {n}. {title}",
+	"Table {n}. Relations between the requirements": "Tabell {n}. Relationer mellan kraven",
+	"Relation":                  "Relation",
+	"Related requirement":       "Relaterat krav",
+	"Figure":                    "Figur",
+	"not in this specification": "inte i denna specifikation",
+	"{n} related requirement":   "{n} relaterat krav",
+	"{n} related requirements":  "{n} relaterade krav",
+	"Figure {n}":                "Figur {n}",
+	"see Figure {n}":            "se figur {n}",
+	"Relations":                 "Relationer",
+	"Diagram of the relations between {n} requirements: {keys}. Table {table} lists the relations as text.": "Diagram över relationerna mellan {n} krav: {keys}. Tabell {table} listar relationerna som text.",
 	// titles and document control
 	"Requirements specification":  "Kravspecifikation",
 	"Test plan":                   "Testplan",

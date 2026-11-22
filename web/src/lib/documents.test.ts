@@ -13,7 +13,7 @@ describe('generated documents', () => {
     expect(generateDocBody(f)).toEqual({
       kind: 'requirements_spec',
       format: 'pdf',
-      options: { fields: defaultDocFields('requirements_spec'), include_inactive: false, traceability: true, glossary: true, lang: 'sv', group_by: 'folder' },
+      options: { fields: defaultDocFields('requirements_spec'), include_inactive: false, traceability: true, glossary: true, lang: 'sv', group_by: 'folder', dependency_graph: true },
     })
     const body = generateDocBody({ ...f, title: ' SRS ', version: '2.0', author: '', query: 'status:approved', baselineId: 'b1', groupBy: 'category', dimension: 'Level', format: 'md', fields: ['results', 'description'] })
     expect(body.format).toBe('md')
@@ -25,6 +25,18 @@ describe('generated documents', () => {
     expect(generateDocBody({ ...f, groupBy: 'category' }).options).not.toHaveProperty('dimension')
     expect(generateDocBody(f).options).not.toHaveProperty('include_discussions')
     expect(generateDocBody({ ...f, discussions: true }).options.include_discussions).toBe(true)
+  })
+
+  it('adds the dependency graph appendix to a specification by default', () => {
+    const f = blankDocForm('requirements_spec', 'en')
+    expect(f.dependencyGraph).toBe(true)
+    expect(generateDocBody(f).options.dependency_graph).toBe(true)
+    expect(generateDocBody({ ...f, dependencyGraph: false }).options.dependency_graph).toBe(false)
+    // a test plan has none
+    expect(generateDocBody(blankDocForm('test_plan', 'en')).options).not.toHaveProperty('dependency_graph')
+    // switching the kind keeps the choice
+    const off = { ...f, dependencyGraph: false }
+    expect(switchDocKind(switchDocKind(off, 'test_plan'), 'requirements_spec').dependencyGraph).toBe(false)
   })
 
   it('switches the kind with its own fields and without the filter', () => {

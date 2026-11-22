@@ -411,7 +411,7 @@ func (c *Catalog) resolveRefs() {
 			}
 		}
 		for _, k := range a.Risks {
-			for _, ref := range k.Refs {
+			for _, ref := range k.allRefs() {
 				c.refSource[ref] = c.RefSource(ref)
 			}
 		}
@@ -423,8 +423,22 @@ func (c *Catalog) resolveRefs() {
 		t.Sources = c.SourcesOfRefs(t.Refs)
 	}
 	for _, k := range c.Risks {
-		k.Sources = c.SourcesOfRefs(k.Refs)
+		k.Sources = c.SourcesOfRefs(k.allRefs())
 	}
+}
+
+// allRefs are the refs of the risk with its ATT&CK and ATLAS techniques
+// as refs ("MITRE ATT&CK T1110.004"), so that the sources count and link
+// them.
+func (k *Risk) allRefs() []string {
+	out := append([]string{}, k.Refs...)
+	for _, id := range k.Attack {
+		out = append(out, "MITRE ATT&CK "+id)
+	}
+	for _, id := range k.Atlas {
+		out = append(out, "MITRE ATLAS "+id)
+	}
+	return out
 }
 
 // RefProblems lists the refs that match no source or several: every ref

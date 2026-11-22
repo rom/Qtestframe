@@ -949,6 +949,7 @@ risks:
     tags: [ot-security, procurement]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "IEC 62443-2-4:2023 SP.07 (remote access)"]
     mitigated_by: [EQACC-18, EQACC-19, EQACC-16]
+    attack: [T0822, T1694.001]
     en:
       title: New equipment opens a security hole in the plant network
       description: Equipment is bought without security requirements and connected with default settings and old firmware. It becomes the easiest way into the plant network.

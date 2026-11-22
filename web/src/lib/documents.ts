@@ -44,6 +44,8 @@ export interface DocForm {
   glossary: boolean
   /** appendix with the discussions of the items */
   discussions: boolean
+  /** appendix with the relations between the requirements as graphs and a table (requirements specification) */
+  dependencyGraph: boolean
   lang: string
 }
 
@@ -63,6 +65,7 @@ export function blankDocForm(kind: DocKind, lang: string): DocForm {
     traceability: true,
     glossary: true,
     discussions: false,
+    dependencyGraph: true,
     lang,
   }
 }
@@ -90,6 +93,7 @@ export function generateDocBody(form: DocForm) {
   if (form.kind === 'requirements_spec') {
     options.group_by = form.groupBy
     if (form.groupBy === 'category' && form.dimension) options.dimension = form.dimension
+    options.dependency_graph = form.dependencyGraph
   }
   return { kind: form.kind, format: form.format, options }
 }
