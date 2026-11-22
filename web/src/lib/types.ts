@@ -50,6 +50,8 @@ export interface Preferences {
   // --- obligation keyword highlighting ---
   /** do not highlight obligation keywords in requirement texts (default: highlight) */
   hide_obligation_highlight?: boolean
+  /** live updates and presence turned off for this user */
+  live_updates_off?: boolean
   /** autocomplete in free-text fields: '' = on | history | project | off (lib/suggest.ts) */
   autocomplete?: string
 }

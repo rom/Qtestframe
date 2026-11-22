@@ -92,6 +92,8 @@ tags:
   description: The personal work list across projects
 - name: Notifications and webhooks
   description: In-app notifications, webhooks and chat channels
+- name: Live updates
+  description: Server-Sent Events stream of changes made by others, and presence (who is viewing or editing an item)
 - name: Files
   description: Files, attachments, documents, avatars
 - name: Reports and export
@@ -1339,7 +1341,7 @@ paths:
       summary: Meta
       operationId: getMeta
       description: |-
-        enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"` and `"version"`
+        enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"live_updates"` (the event stream and presence are on, `live.enabled`) and `"version"`
 
         **Permission:** any authenticated user; the handler checks: any.
       x-permission: authenticated
@@ -1355,6 +1357,124 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/events/stream:
+    get:
+      tags:
+      - Live updates
+      summary: Event stream
+      operationId: getEventsStream
+      description: |-
+        A Server-Sent Events stream (`text/event-stream`) of the changes in the caller's organisation that the caller may see: every event is checked against the caller's access to its project and the read permission of its entity type. Events carry no titles or content, only `{"id","kind","type","entity_id","parent_id","project_id","version","action","actor_id","actor_name","time"}`; clients reload what they show through the regular API.
+
+        Event names: `hello` (`{"heartbeat_ms","presence_ttl_ms","user_id"}`), `change` (an item was created, changed or deleted; `type` is `requirement`, `test`, `run`, `execution` (with the run as `parent_id`), `cycle`, `exploratory_session`, `defect`, `risk`, `release` or `project`; `version` for requirements and tests), `notification` (new notifications for the caller: reload the bell), `presence` (`{"presence":{"user_id","name","avatar","state"}}`, state `viewing`, `editing` or `left`), `reset` (events were missed: reload what is shown) and `bye` (`{"reason":"shutdown"|"unauthorized"}`, the stream ends). Comment lines (`: ping`) are heartbeats.
+
+        Resume after a disconnection with the `Last-Event-ID` header (sent by `EventSource` itself) or `?last_event_id=`: the events missed are replayed from a small buffer, or `reset` is sent when the last event is no longer kept. A GET, so no CSRF token is needed; session cookie or `Authorization: Bearer`. 404 `live_disabled` when `live.enabled` is off; 503 `live_unavailable` (with `Retry-After`) beyond `live.max_connections` or `live.max_connections_per_user`. The stream re-authenticates every minute and ends when the session or token is revoked.
+
+        **Permission:** any authenticated user; the handler checks: a member of the organisation; each event is filtered by project access and read permission.
+      x-permission: authenticated
+      parameters:
+      - name: last_event_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Resume after this event (like the `Last-Event-ID` header).
+      responses:
+        '200':
+          description: The event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/presence:
+    get:
+      tags:
+      - Live updates
+      summary: Who is on an item
+      operationId: getPresence
+      description: |-
+        `?entity_type=&entity_id=` → `{"others":[{"user_id","name","avatar","state"}]}`: who else is viewing or editing the item now (in memory, expires after `live.presence_ttl` without heartbeat). 404 for items the caller may not see.
+
+        **Permission:** any authenticated user; the handler checks: the read permission of the item.
+      x-permission: authenticated
+      parameters:
+      - name: entity_type
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [requirement, test, run, execution, cycle, exploratory_session, defect, risk, release]
+      - name: entity_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The others on the item
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Live updates
+      summary: Presence heartbeat
+      operationId: postPresence
+      description: |-
+        `{"entity_type","entity_id","state":"viewing"|"editing"|"left"}` records that the caller is on an item (send it every 20 s while the item is open, `left` when it is closed) → `{"others":[...],"ttl_ms"}`. Changes (someone arrives, starts editing or leaves) are sent as `presence` events on the stream to those who may see the item. Presence is shared between server instances on PostgreSQL.
+
+        **Permission:** any authenticated user; the handler checks: the read permission of the item.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entity_type:
+                  type: string
+                entity_id:
+                  type: string
+                state:
+                  type: string
+                  enum: [viewing, editing, left]
+      responses:
+        '200':
+          description: The others on the item
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Error'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/rbac:

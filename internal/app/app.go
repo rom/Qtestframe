@@ -743,6 +743,10 @@ func cmdServe(args []string, env Env) error {
 	srv.StartJobs(ctx)
 	// automated tests (web tests, "Run automated tests") run in the background
 	srv.StartScriptJobs(ctx)
+	// live updates: the cross-instance bus (PostgreSQL) and presence expiry;
+	// open event streams never become idle, so shutdown ends them
+	srv.StartLive(ctx)
+	hs.RegisterOnShutdown(srv.StopLive)
 	errc := make(chan error, 1)
 	go func() { errc <- hs.Serve(ln) }()
 	log.Info("qtestframe listening", "addr", ln.Addr().String(), "tls", tlsOn, "version", Version, "db", cfg.Database.Driver)

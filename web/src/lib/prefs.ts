@@ -29,6 +29,7 @@ export function normalizePrefs(raw: Partial<Preferences> | null | undefined): Pr
   if (typeof p.create_linked_test === 'boolean') out.create_linked_test = p.create_linked_test
   // --- obligation keyword highlighting ---
   if (p.hide_obligation_highlight === true) out.hide_obligation_highlight = true
+  if (p.live_updates_off === true) out.live_updates_off = true
   if (p.autocomplete && (AUTOCOMPLETE_MODES as readonly string[]).includes(p.autocomplete)) out.autocomplete = p.autocomplete
   return out
 }
@@ -47,6 +48,7 @@ const KEYS: (keyof Preferences)[] = [
   // --- obligation keyword highlighting ---
   'hide_obligation_highlight',
   'autocomplete',
+  'live_updates_off',
 ]
 
 /**

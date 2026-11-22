@@ -283,6 +283,7 @@ func (s *Server) audit(ctx context.Context, p *Principal, action, entity, id, de
 		s.Log.Warn("audit write failed", "err", err)
 	}
 	s.Log.Info("audit", "tenant", e.TenantID, "user", e.UserEmail, "action", action, "entity", entity, "id", id)
+	s.publishChange(ctx, p, action, entity, id)
 }
 
 // ---------------------------------------------------------------- sessions
