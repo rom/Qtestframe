@@ -138,6 +138,8 @@ export const QUERY_HELP: QueryHelpEntry[] = [
   { example: 'dimension:"Polarity/Negative"', meaning: 'Category as Dimension/Name', id: 'dimension' },
   { example: 'has:criteria   (or field:*)', meaning: 'Field not empty', id: 'has' },
   { example: '(a OR b) AND c', meaning: 'Grouping', id: 'group' },
+  { example: 'cf.supplier:"Acme"  cf.mass>2', meaning: 'Custom field (by its key)', id: 'custom' },
+  { example: 'sort:-cf.mass  sort:title', meaning: 'Sort the result (- for descending)', id: 'sort' },
 ]
 
 export const QUERY_OPERATORS: QueryHelpEntry[] = [

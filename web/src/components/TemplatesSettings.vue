@@ -142,7 +142,7 @@ function remove(x: ItemTemplate) {
 </script>
 
 <template>
-  <section class="card" style="max-width: 980px" :aria-labelledby="`${base}-h`">
+  <section class="card tpl-settings" style="max-width: 980px" :aria-labelledby="`${base}-h`">
     <div class="row" style="margin-bottom: 8px">
       <h2 :id="`${base}-h`" class="plain-heading" style="margin: 0">{{ t('templates.title') }}</h2>
       <span class="grow" />
@@ -178,7 +178,7 @@ function remove(x: ItemTemplate) {
   </section>
 
   <Dialog v-model:visible="dialog" modal :header="draft.id ? t('templates.editTitle') : t('templates.newTitle')" :style="{ width: 'min(760px, 96vw)' }">
-    <form class="grid" style="gap: 12px" @submit.prevent="save">
+    <form class="grid tpl-form" style="gap: 12px" @submit.prevent="save">
       <Message v-if="dialogError" severity="error" :closable="false">{{ dialogError }}</Message>
       <div class="tpl-grid">
         <div class="field">

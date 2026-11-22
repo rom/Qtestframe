@@ -92,6 +92,7 @@ pair.
 | `internal/model` | Domain types shared by store, API and export; JSON tags define the REST contract; enumerations (statuses, obligation levels, evaluation methods, ...). |
 | `internal/rbac` | Permissions, built-in roles (`admin`, `manager`, `test_lead`, `tester`, `viewer`) with defaults, and `Set`: a tenant's roles after its changes and custom roles (ADR 0014). |
 | `internal/mention`, `internal/tagsuggest` | @mention handles and the people directory; tag suggestions from title and description. |
+| `internal/customfield` | Custom field definitions and values (types, validation, defaults, text forms for exports and imports) and the built-in item templates per project type, in English and Swedish. |
 | `internal/query` | Lexer, parser and evaluator of the filter/search language; matched-field and term extraction for highlighting. |
 | `internal/reqlang` | RFC 2119 / RFC 8174 keyword detection, obligation level, requirement lint rules and score. |
 | `internal/export` | Format-neutral `Dataset` rendered as CSV (ZIP for several sections), XLSX (`excelize`), PDF (`go-pdf/fpdf`) and DOCX (hand-written OOXML). |

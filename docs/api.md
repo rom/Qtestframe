@@ -721,6 +721,87 @@ the caller's open review requests for the chosen items,
 `requirement.review` / `test.review` and a `requirement.updated` /
 `test.updated` webhook; the call is audited as `…bulk_review`.
 
+## Custom fields and templates
+
+Projects define their own fields for requirements, tests, defects, risks and
+runs (`internal/customfield`, `internal/store/customfields.go`). Reading needs
+`project.read`; changing a project's definitions, templates and default
+templates `project.update`; the organisation's field sets and templates per
+project type `settings.manage`.
+
+### Definitions
+
+| Method | Path | Body / notes |
+|---|---|---|
+| GET | `/projects/{pid}/custom-fields` | `?entity_type=requirement\|test\|defect\|risk\|run` → `[CustomField]` in order |
+| POST | `/projects/{pid}/custom-fields` | `{entity_type, label, key?, type, unit?, options?, required?, default?, help?, position?, show_in_list?}` → 201 CustomField |
+| GET | `/custom-fields/{id}` | one definition |
+| GET | `/custom-fields/{id}/usage` | `{id, key, items}`: items with a value |
+| PATCH | `/custom-fields/{id}` | label, type (only while no item has a value, else 409), unit, options, required, default, help, position, show_in_list; `key` and `entity_type` never change |
+| DELETE | `/custom-fields/{id}?confirm=true` | without `confirm` → **409** `{code: "confirmation_required", usage}`; with it the definition is deleted, the values are removed from the items and kept in the field archive → `CustomFieldArchive` |
+| GET | `/projects/{pid}/custom-fields/archive` | `?values=true` → `[CustomFieldArchive]` `{id, entity_type, field_key, label, definition, values?: [{id, key, value}], item_count, deleted_by, deleted_at}` |
+| POST | `/projects/{pid}/custom-fields/apply-set` | `{project_type?}` (default the project's type) copies the organisation's field set; keys the project has are skipped → `{project_type, added, skipped}` (`"<entity>.<key>"`) |
+| GET | `/field-sets` | `?project_type=` → the organisation's field sets `[CustomField]` with `project_type` |
+| POST | `/field-sets/{type}/fields` | as a project field; new projects of the type get a copy when they are created (`POST /projects`) |
+| PATCH / DELETE | `/field-sets/fields/{id}` | projects keep the copies they have |
+
+* `type`: `text` (≤ 1000 characters), `long_text` (≤ 100 000), `number`
+  (with optional `unit`), `date` (`YYYY-MM-DD`), `single_select`,
+  `multi_select` (`options`, 1–200, case-insensitive on input, stored in the
+  option's spelling and order), `checkbox`, `user` (the e-mail of a member of
+  the organisation), `url` (absolute http(s)).
+* `key`: `^[a-z][a-z0-9_]{0,39}$`, derived from the label when omitted
+  ("Mass (kg)" → `mass_kg`), unique per project and item kind; at most 100
+  definitions per item kind.
+
+### Values
+
+Items carry `custom_fields`, an object of key → value (string, number,
+boolean or array of strings). It is stored as one JSON column per item table
+(read with the item, no joins) and validated on every save against the
+definitions:
+
+* create: defaults apply to fields the request does not name; required
+  fields must have a value (runs created without `custom_fields`, e.g. by a
+  JUnit import, and imported requirements get the defaults without the
+  required check);
+* `PATCH` (and the batch endpoint of the spreadsheet view) **merges**
+  `custom_fields`: named keys are set, `null` removes a value, other values
+  stay. A required value cannot be removed; an item that never had it can
+  still be saved;
+* an unknown key, a value of the wrong type, an option that does not exist
+  or a user who is not a member → 400. A stored value that no longer fits
+  (an option was removed) is kept until it is changed.
+
+Custom fields are in history snapshots (`changed_fields` lists
+`custom_fields.<key>`), baselines and their comparison, restore (values of
+fields the project still has), the trash, project archives and backups.
+
+### Templates
+
+| Method | Path | Body / notes |
+|---|---|---|
+| GET | `/projects/{pid}/templates` | `?kind=requirement\|test&lang=en\|sv` → `{items: [ItemTemplate], defaults: {requirement?, test?}}`: the project's templates, the organisation's for the project type and the built-in ones (`source`: `project`, `organisation`, `builtin`); `default` marks the project default |
+| POST | `/projects/{pid}/templates` | `{kind, name, description?, content}` → 201 ItemTemplate; at most 100 per kind |
+| PATCH / DELETE | `/templates/{id}` | `content` is replaced as a whole; deleting clears a default naming it |
+| PUT | `/projects/{pid}/templates/default` | `{kind, template_id}` (`""` clears) → `{defaults}`; the template must be the project's, the organisation's for its type or a built-in one of its type |
+| GET | `/template-sets` | `?project_type=&kind=&lang=` → the organisation's templates and the built-in ones |
+| POST | `/template-sets/{type}/templates` | as a project template |
+| PATCH / DELETE | `/template-sets/templates/{id}` | |
+
+`content`: `{title, description, priority, status, tags, obligation, type,
+source, rationale, criteria: [{description, method, threshold}],
+preconditions, expected_result, execution_type, estimated_minutes, steps:
+[{action, expected, data}], custom_fields}`; enumerations are checked,
+requirement-only fields are dropped from test templates and the other way
+round. Built-in templates (ids `builtin:<type>:<name>`, English and
+Swedish): general (requirement with acceptance criteria, manual test),
+software (user story, measurable non-functional requirement, API test),
+hardware (design requirement with tolerance, IEC 60068 environmental test,
+EMC test), system (interface requirement, integration test) and business
+(business rule, acceptance test). The client applies a template to the new
+item's form; the item is then created as usual.
+
 ## Test cases
 
 Reading needs `test.read`, writing `test.write`.
@@ -2209,6 +2290,8 @@ spreadsheet view saves an edit, a paste or a fill-down with one call):
   document (`application/xml`), `reqifz` a ZIP (`application/zip`) with the
   document `<KEY>.reqif` and the requirements' attachments below
   `files/<requirement key>/`.
+* `requirements`, `tests` and `runs` end with one column per custom field of
+  the kind (`Label` or `Label (unit)`, the value in its re-importable form).
 * `tests` has the columns `Parameters` and `Data rows` (count); `test_data`
   lists the data table, one line per row and parameter (`Test`, `Row`,
   `Row name`, `Parameter`, `Value`); `runs` has `Configuration` and
@@ -2280,7 +2363,9 @@ as the standard prescribes); XHTML values use the prefix `xhtml:` bound to
   `Type`, `Priority`, `Status`, `Source`, `Rationale`, `Owner`, `Tags`,
   `Categories` (`Dimension/Value`, comma separated), `Acceptance criteria`
   (XHTML list of `method: text (threshold: …)`), `Version`,
-  `ReqIF.ForeignCreatedBy`, `ReqIF.ForeignCreatedOn` and, in `.reqifz`,
+  `ReqIF.ForeignCreatedBy`, `ReqIF.ForeignCreatedOn`, one attribute per
+  requirement custom field (`LONG-NAME` the label, REAL, BOOLEAN, DATE,
+  ENUMERATION with the options, else STRING) and, in `.reqifz`,
   `Attachments` (`<xhtml:object data="files/…">` per file). The
   description is converted from Markdown (paragraphs, line breaks, lists,
   headings, code blocks, bold, italics, code, links and images; images of
@@ -2355,6 +2440,19 @@ last_result, created_by, created_at, updated_at, flaky (true/false),
 flakiness (alias flips), catalog`.
 
 Run fields: `id, name, description, status, environment (alias env), build,
-created_by, created_at`. Execution fields: `id, key, title, status, assignee,
+created_by, created_at`. Risk fields (`GET /projects/{pid}/risks?q=`): `id,
+key, title, description, category, likelihood, impact, score, level, status,
+mitigation, owner, created_by`.
+
+Custom fields: every list with custom fields (requirements, tests, runs,
+defects, risks) accepts `cf.<key>` with every operator (`cf.supplier:"Acme"`,
+`cf.mass>2`, `has:cf.mass`); numbers compare numerically, checkboxes are
+`true`/`false`, multi-select fields have one value per option. A key the
+project does not have matches nothing.
+
+Sorting: `sort:<field>`, `sort:-<field>` or `sort:<field>:desc` (any field
+of the schema, `cf.<key>` included) orders the result of the list endpoints;
+several sort terms apply in order, numbers sort numerically, items without a
+value come last. Sort terms combine with AND only (inside `OR` or `NOT` → 400). Execution fields: `id, key, title, status, assignee,
 executed_by, notes, output`. Further aliases: `tags`, `categories`, `desc`,
 `criterion` (requirements); `steps`, `language`, `result` (tests).

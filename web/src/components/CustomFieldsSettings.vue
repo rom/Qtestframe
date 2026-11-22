@@ -234,7 +234,7 @@ async function loadArchive() {
 </script>
 
 <template>
-  <section class="card" style="max-width: 980px" :aria-labelledby="`${base}-h`">
+  <section class="card cf-settings" style="max-width: 980px" :aria-labelledby="`${base}-h`">
     <div class="row" style="margin-bottom: 8px">
       <h2 :id="`${base}-h`" class="plain-heading" style="margin: 0">{{ t('customFields.title') }}</h2>
       <span class="grow" />
@@ -300,7 +300,7 @@ async function loadArchive() {
   </section>
 
   <Dialog v-model:visible="dialog" modal :header="draft.id ? t('customFields.editTitle') : t('customFields.newTitle')" :style="{ width: 'min(560px, 96vw)' }">
-    <form class="grid" style="gap: 12px" @submit.prevent="save">
+    <form class="grid cf-form" style="gap: 12px" @submit.prevent="save">
       <Message v-if="dialogError" severity="error" :closable="false">{{ dialogError }}</Message>
       <div class="field">
         <label :for="`${base}-label`">{{ t('customFields.label') }}</label>

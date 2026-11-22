@@ -3,6 +3,8 @@
 // choose a file, check the preview and the column mapping, set the options
 // and import. The server parses the file; nothing is stored before Import.
 import { computed, nextTick, ref, watch } from 'vue'
+import { useProjectStore } from '@/stores/project'
+import { cfField, fieldLabel } from '@/lib/customFields'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
@@ -82,6 +84,10 @@ watch(visible, (v) => {
 const fieldOptions = computed(() => [
   { label: t('reqImport.field.ignore'), value: '' },
   ...IMPORT_FIELDS.map((f) => ({ label: t(`reqImport.field.${f}`), value: f })),
+  // the project's custom fields (cf.<key>)
+  ...useProjectStore()
+    .customFieldsFor('requirement')
+    .map((f) => ({ label: fieldLabel(f), value: cfField(f.key) })),
 ])
 const statusOptions = computed(() =>
   enumOptions(

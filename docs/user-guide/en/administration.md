@@ -10,6 +10,7 @@
 | **Provisioning (SCIM)** | Admins |
 | **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
 | **Audit log** | Manager and up |
+| **Field sets** (custom fields and templates per project type) | Admins and Test leads |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
 | **Backup** | Super admins |
@@ -155,6 +156,10 @@ What a rule forbids is refused by the server, also for API clients and CI import
 - on the run page, a **Readiness** column and a summary show which executions cannot be started yet;
 - in the execution runner, a red box lists the reasons, with links to the test, requirement or prerequisite, and **Pass**, **Fail** and **Run script** are disabled. You can still mark the test **Blocked** or **Skipped**, assign it and write notes;
 - when a rule is relaxed, the same reasons appear as an amber warning, and the test can be executed.
+
+## Field sets and templates
+
+*(Admin and Test lead, or any role with `settings.manage`)* **Administration → Field sets** keeps, per **project type**, the [custom fields](requirements.md#custom-fields) a new project of that type gets and the organisation's [templates](requirements.md#templates) for new requirements and tests. Changing a field set does not change existing projects: they keep their own copies and can apply the set again under **Categories & settings → Custom fields → Apply field set** (fields they already have are skipped). Organisation templates are offered in every project of the type, next to the built-in ones. Everyone in the organisation can read the field sets.
 
 ## Test configurations
 
