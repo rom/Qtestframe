@@ -1,7 +1,9 @@
 package rbac
 
 import (
+	"slices"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -167,7 +169,7 @@ func TestOverlayAndSet(t *testing.T) {
 	if s.Rank(RoleAdmin) <= s.Rank(RoleManager) || s.Rank("nobody") != 0 || s.Rank(RoleTester) != 2 {
 		t.Error("rank")
 	}
-	if len(s.Matrix()) != 7 || !Role(s[RoleTester]).Editable() || s[RoleAdmin].Editable() {
+	if len(s.Matrix()) != 8 || !Role(s[RoleTester]).Editable() || s[RoleAdmin].Editable() {
 		t.Error("matrix/editable")
 	}
 }
@@ -203,5 +205,59 @@ func TestReviewer(t *testing.T) {
 	}
 	if !Can(RoleManager, RequirementRev) || !Can(RoleTestLead, TestReview) || Can(RoleTestLead, RequirementRev) || Can(RoleTester, TestReview) {
 		t.Error("review permissions of the other roles")
+	}
+}
+
+func TestSME(t *testing.T) {
+	for p, want := range map[Permission]bool{
+		ProjectRead: true, RequirementRd: true, RequirementWr: true, RequirementRev: true, CommentCreate: true,
+		TestRead: true, RunRead: true, Export: true,
+		TestWrite: false, TestReview: false, RunWrite: false, RunExecute: false, CyclePlan: false, WaiverApprove: false,
+		ProjectUpdate: false, ProjectDelete: false, ProjectCreate: false, SettingsManage: false, MemberManage: false, TokenManage: false, ScriptExecute: false,
+	} {
+		if Can(RoleSME, p) != want {
+			t.Errorf("sme %s = %v", p, !want)
+		}
+	}
+	if !IsBuiltin(RoleSME) || Rank(RoleSME) <= Rank(RoleViewer) {
+		t.Error("sme rank")
+	}
+}
+
+func TestMultipleRoles(t *testing.T) {
+	got := NormalizeRoles([]string{"tester", " auditor", "sme", "", "admin", "tester", "aaa"})
+	want := []string{"admin", "tester", "sme", "aaa", "auditor"}
+	if strings.Join(got, ",") != strings.Join(want, ",") || Primary(got) != "admin" || Primary(nil) != "" {
+		t.Fatalf("NormalizeRoles = %v", got)
+	}
+	if len(NormalizeRoles(nil)) != 0 || !HasRole(got, "sme") || HasRole(got, "viewer") {
+		t.Error("HasRole")
+	}
+	// the union of the permissions of the held roles
+	u := PermissionsOfAll([]string{RoleSME, RoleTester})
+	for _, p := range []Permission{RequirementWr, RequirementRev, RunExecute, TestWrite, CommentCreate} {
+		if !slices.Contains(u, string(p)) {
+			t.Errorf("union lacks %s", p)
+		}
+	}
+	if slices.Contains(u, string(CyclePlan)) || len(PermissionsOfAll(nil)) != 0 || len(PermissionsOfAll([]string{"nobody"})) != 0 {
+		t.Error("union too wide")
+	}
+	s := Builtins()
+	if ok, bad := s.ValidAll([]string{"sme", "nobody"}); ok || bad != "nobody" {
+		t.Error("ValidAll unknown")
+	}
+	if ok, _ := s.ValidAll(nil); ok {
+		t.Error("ValidAll empty")
+	}
+	if ok, _ := s.ValidAll([]string{"sme", "tester"}); !ok {
+		t.Error("ValidAll")
+	}
+	added, removed := Diff([]string{"viewer", "tester"}, []string{"tester", "sme"})
+	if strings.Join(added, ",") != "sme" || strings.Join(removed, ",") != "viewer" {
+		t.Errorf("Diff %v %v", added, removed)
+	}
+	if d := DescribeChange([]string{"viewer"}, []string{"sme", "tester"}); d != "+tester +sme −viewer" || DescribeChange([]string{"a"}, []string{"a"}) != "" {
+		t.Errorf("DescribeChange %q", d)
 	}
 }

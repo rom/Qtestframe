@@ -562,42 +562,44 @@ construction.
 
 ## 12. RBAC matrix
 
-Defaults from `internal/rbac/rbac.go`. Each user has one role per tenant.
+Defaults from `internal/rbac/rbac.go`. Each member holds one or more roles
+per tenant and gets the union of their permissions.
 Every tenant can change the permissions of all built-in roles except
 `admin` and create its own roles (table `roles`, [ADR 0014](adr/0014-tenant-configurable-roles.md));
 `GET /api/v1/roles` and `GET /api/v1/rbac` return the effective matrix.
 Inside a project, a **project role** (project sharing, table
-`project_members`, migration 0024) replaces the project permissions
+`project_members`, migrations 0024 and 0052; a member can hold several
+project roles, whose permissions add up) replaces the project permissions
 (`project.read/update/delete`, `requirement.*`, `test.*`, `run.*`,
-`script.execute`, `export`) of the organisation role, and a restricted
+`script.execute`, `export`) of the organisation roles, and a restricted
 project is invisible to non-members; see
 [api.md](api.md#project-sharing-per-project-access) and
 [security.md §4](security.md#4-authorization-and-tenant-isolation).
 
-| Permission | viewer | reviewer | tester | test_lead | manager | admin | Used by |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|---|
-| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | projects, dashboard, folders/categories (read), links, traceability, search, graph, tags |
-| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | requirement list/get/links, people, tag suggestions |
-| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | test list/get/links/dependencies, readiness |
-| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | runs, executions |
-| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | `GET /members` |
-| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | project export |
-| `test.review` | | ✔ | | ✔ | ✔ | ✔ | set a test to `ready` (PATCH, bulk, create, restore) |
-| `requirement.review` | | ✔ | | | ✔ | ✔ | set a requirement to `approved`/`rejected` (PATCH, bulk, create, restore) |
-| `test.write` | | | ✔ | ✔ | ✔ | ✔ | tests, test folders/categories, trace links, test dependencies |
-| `run.write` | | | ✔ | ✔ | ✔ | ✔ | create/update/delete runs, add tests |
-| `run.execute` | | | ✔ | ✔ | ✔ | ✔ | record results, step evidence, CI import |
-| `token.manage` | | | ✔ | ✔ | ✔ | ✔ | own API tokens |
-| `script.execute` | | | | ✔ | ✔ | ✔ | server-side script runner |
-| `audit.read` | | | | ✔ | ✔ | ✔ | audit log |
-| `settings.manage` | | | | ✔ | ✔ | ✔ | `PUT /settings` (test execution settings) |
-| `requirement.write` | | | | | ✔ | ✔ | requirements, requirement folders/categories |
-| `project.create` | | | | | ✔ | ✔ | create projects |
-| `project.update` | | | | | ✔ | ✔ | rename project, all categories |
-| `project.delete` | | | | | | ✔ | delete projects |
-| `member.manage` | | | | | | ✔ | add/change/remove members |
-| `role.manage` | | | | | | ✔ | create, change, reset and delete roles |
-| `tenant.manage` | | | | | | ✔ | rename own tenant |
+| Permission | viewer | reviewer | sme | tester | test_lead | manager | admin | Used by |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|---|
+| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | projects, dashboard, folders/categories (read), links, traceability, search, graph, tags |
+| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | requirement list/get/links, people, tag suggestions |
+| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | test list/get/links/dependencies, readiness |
+| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | runs, executions |
+| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | `GET /members` |
+| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | project export |
+| `test.review` | | ✔ | | | ✔ | ✔ | ✔ | set a test to `ready` (PATCH, bulk, create, restore) |
+| `requirement.review` | | ✔ | ✔ | | | ✔ | ✔ | set a requirement to `approved`/`rejected` (PATCH, bulk, create, restore) |
+| `test.write` | | | | ✔ | ✔ | ✔ | ✔ | tests, test folders/categories, trace links, test dependencies |
+| `run.write` | | | | ✔ | ✔ | ✔ | ✔ | create/update/delete runs, add tests |
+| `run.execute` | | | | ✔ | ✔ | ✔ | ✔ | record results, step evidence, CI import |
+| `token.manage` | | | | ✔ | ✔ | ✔ | ✔ | own API tokens |
+| `script.execute` | | | | | ✔ | ✔ | ✔ | server-side script runner |
+| `audit.read` | | | | | ✔ | ✔ | ✔ | audit log |
+| `settings.manage` | | | | | ✔ | ✔ | ✔ | `PUT /settings` (test execution settings) |
+| `requirement.write` | | | ✔ | | | ✔ | ✔ | requirements, requirement folders/categories |
+| `project.create` | | | | | | ✔ | ✔ | create projects |
+| `project.update` | | | | | | ✔ | ✔ | rename project, all categories |
+| `project.delete` | | | | | | | ✔ | delete projects |
+| `member.manage` | | | | | | | ✔ | add/change/remove members |
+| `role.manage` | | | | | | | ✔ | create, change, reset and delete roles |
+| `tenant.manage` | | | | | | | ✔ | rename own tenant |
 
 Additional rules:
 

@@ -39,14 +39,14 @@ func (s *Server) keepSharing(ctx context.Context, p *Principal, projectID, fromI
 		}
 	}
 	mode, err := s.Store.ProjectAccessMode(ctx, p.TenantID(), projectID)
-	if err != nil || mode != model.ProjectAccessRestricted || p.adminUser() || p.memberRole == "" {
+	if err != nil || mode != model.ProjectAccessRestricted || p.adminUser() || len(p.memberRoles) == 0 {
 		return err
 	}
 	g, err := s.Store.ProjectGrantOf(ctx, p.TenantID(), projectID, p.User.ID)
-	if err != nil || g.UserRole != "" {
+	if err != nil || len(g.UserRoles) > 0 {
 		return err
 	}
-	_, err = s.Store.SetProjectMember(ctx, p.TenantID(), projectID, store.MemberUser, p.User.ID, p.memberRole, p.User.Email)
+	_, err = s.Store.SetProjectMemberRoles(ctx, p.TenantID(), projectID, store.MemberUser, p.User.ID, p.memberRoles, p.User.Email)
 	return err
 }
 
@@ -132,12 +132,12 @@ func (s *Server) handlePutProjectAccess(w http.ResponseWriter, r *http.Request, 
 		s.fail(w, r, err)
 		return
 	}
-	if req.Access == model.ProjectAccessRestricted && !p.adminUser() && p.access != nil && p.access.Source == "organisation" && p.memberRole != "" {
-		if _, err := s.Store.SetProjectMember(ctx, p.TenantID(), pr.ID, store.MemberUser, p.User.ID, p.memberRole, p.User.Email); err != nil {
+	if req.Access == model.ProjectAccessRestricted && !p.adminUser() && p.access != nil && p.access.Source == "organisation" && len(p.memberRoles) > 0 {
+		if _, err := s.Store.SetProjectMemberRoles(ctx, p.TenantID(), pr.ID, store.MemberUser, p.User.ID, p.memberRoles, p.User.Email); err != nil {
 			s.fail(w, r, err)
 			return
 		}
-		s.audit(ctx, p, "project.member.add", "project", pr.ID, p.User.Email+" as "+p.memberRole+" (restricting the project)")
+		s.audit(ctx, p, "project.member.add", "project", pr.ID, p.User.Email+" as "+rolesText(p.memberRoles)+" (restricting the project)")
 	}
 	if req.Access != pr.Access {
 		s.audit(ctx, p, "project.access", "project", pr.ID, pr.Key+": "+pr.Access+" → "+req.Access)
@@ -169,12 +169,13 @@ func (s *Server) handleListProjectMembers(w http.ResponseWriter, r *http.Request
 
 // memberCandidate is a user or group that can be added to a project.
 type memberCandidate struct {
-	Type    string `json:"type"`
-	ID      string `json:"id"`
-	Email   string `json:"email,omitempty"`
-	Name    string `json:"display_name,omitempty"`
-	Avatar  string `json:"avatar,omitempty"`
-	OrgRole string `json:"org_role,omitempty"`
+	Type     string   `json:"type"`
+	ID       string   `json:"id"`
+	Email    string   `json:"email,omitempty"`
+	Name     string   `json:"display_name,omitempty"`
+	Avatar   string   `json:"avatar,omitempty"`
+	OrgRole  string   `json:"org_role,omitempty"`
+	OrgRoles []string `json:"org_roles,omitempty"`
 }
 
 // handleProjectMemberCandidates: GET /projects/{pid}/members/candidates?q=
@@ -215,7 +216,7 @@ func (s *Server) handleProjectMemberCandidates(w http.ResponseWriter, r *http.Re
 	}
 	for _, m := range ms {
 		if !in[store.MemberUser+":"+m.UserID] && match(m.Email, m.Name) {
-			out = append(out, memberCandidate{Type: store.MemberUser, ID: m.UserID, Email: m.Email, Name: m.Name, Avatar: m.Avatar, OrgRole: m.Role})
+			out = append(out, memberCandidate{Type: store.MemberUser, ID: m.UserID, Email: m.Email, Name: m.Name, Avatar: m.Avatar, OrgRole: m.Role, OrgRoles: m.Roles})
 		}
 	}
 	gs, err := s.Store.ListSCIMGroups(ctx, p.TenantID())
@@ -235,10 +236,11 @@ func (s *Server) handleProjectMemberCandidates(w http.ResponseWriter, r *http.Re
 }
 
 type memberReq struct {
-	UserID  string `json:"user_id"`
-	Email   string `json:"email"`
-	GroupID string `json:"group_id"`
-	Role    string `json:"role"`
+	UserID  string   `json:"user_id"`
+	Email   string   `json:"email"`
+	GroupID string   `json:"group_id"`
+	Role    string   `json:"role"`
+	Roles   []string `json:"roles"`
 }
 
 // resolveMember finds the user (by id or e-mail; an existing member of
@@ -269,19 +271,45 @@ func (s *Server) resolveMember(ctx context.Context, p *Principal, req memberReq)
 	return "", "", "", badRequest("user_id, email or group_id is required")
 }
 
-func (s *Server) checkProjectGrant(p *Principal, role string) error {
-	if !p.roles.Valid(role) {
-		return badRequest("invalid role %q", role)
+// checkProjectGrant checks that the caller may give (or take) each of the
+// roles in the project.
+func (s *Server) checkProjectGrant(p *Principal, roles ...string) error {
+	if len(roles) == 0 {
+		return badRequest("at least one role is required")
 	}
-	if !s.mayGrant(p, role) {
-		return fmt.Errorf("%w: the role %s has project permissions you do not hold in this project", errForbidden, role)
+	for _, role := range roles {
+		if !p.roles.Valid(role) {
+			return badRequest("invalid role %q", role)
+		}
+		if !s.mayGrant(p, role) {
+			return fmt.Errorf("%w: the role %s has project permissions you do not hold in this project", errForbidden, role)
+		}
+	}
+	return nil
+}
+
+// checkProjectChange checks a change of a member's project roles: the
+// caller must be able to give every added role and to take every removed
+// one (roles the member keeps are not checked).
+func (s *Server) checkProjectChange(p *Principal, before, after []string) error {
+	if len(after) == 0 {
+		return badRequest("at least one role is required")
+	}
+	added, removed := rbac.Diff(before, after)
+	for _, rs := range [][]string{added, removed} {
+		if len(rs) == 0 {
+			continue
+		}
+		if err := s.checkProjectGrant(p, rs...); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 // handleAddProjectMember: POST /projects/{pid}/members {"user_id" |
-// "email" | "group_id", "role"} adds a member (or changes the role of one)
-// and notifies an added user.
+// "email" | "group_id", "roles" (or "role")} adds a member (or changes the
+// roles of one) and notifies an added user.
 func (s *Server) handleAddProjectMember(w http.ResponseWriter, r *http.Request, p *Principal) {
 	pr, ok := s.project(w, r, p)
 	if !ok {
@@ -293,7 +321,8 @@ func (s *Server) handleAddProjectMember(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	ctx := r.Context()
-	if err := s.checkProjectGrant(p, req.Role); err != nil {
+	roles := requestedRoles(req.Role, req.Roles)
+	if err := s.checkProjectGrant(p, roles...); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -302,16 +331,24 @@ func (s *Server) handleAddProjectMember(w http.ResponseWriter, r *http.Request, 
 		s.fail(w, r, err)
 		return
 	}
-	created, err := s.Store.SetProjectMember(ctx, p.TenantID(), pr.ID, typ, id, req.Role, p.User.Email)
+	before, _ := s.Store.GetProjectMember(ctx, p.TenantID(), pr.ID, typ, id)
+	if before != nil {
+		if err := s.checkProjectChange(p, before.Roles, roles); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
+	created, err := s.Store.SetProjectMemberRoles(ctx, p.TenantID(), pr.ID, typ, id, roles, p.User.Email)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	if created {
-		s.audit(ctx, p, "project.member.add", "project", pr.ID, typ+" "+label+" as "+req.Role)
-		s.notifyShared(ctx, p, pr, typ, id, req.Role)
-	} else {
-		s.audit(ctx, p, "project.member.role", "project", pr.ID, typ+" "+label+" → "+req.Role)
+	switch {
+	case created:
+		s.audit(ctx, p, "project.member.add", "project", pr.ID, typ+" "+label+" as "+rolesText(roles))
+		s.notifyShared(ctx, p, pr, typ, id, roles)
+	case before != nil && rbac.DescribeChange(before.Roles, roles) != "":
+		s.audit(ctx, p, "project.member.role", "project", pr.ID, typ+" "+label+": "+rbac.DescribeChange(before.Roles, roles)+" → "+rolesText(roles))
 	}
 	m, err := s.Store.GetProjectMember(ctx, p.TenantID(), pr.ID, typ, id)
 	if err != nil {
@@ -327,7 +364,7 @@ func (s *Server) handleAddProjectMember(w http.ResponseWriter, r *http.Request, 
 
 // notifyShared tells a user (or the users of a group) that a project was
 // shared with them (in the app; by e-mail per their preferences).
-func (s *Server) notifyShared(ctx context.Context, p *Principal, pr *model.Project, typ, id, role string) {
+func (s *Server) notifyShared(ctx context.Context, p *Principal, pr *model.Project, typ, id string, roles []string) {
 	users := []string{id}
 	if typ == store.MemberGroup {
 		g, err := s.Store.GetSCIMGroup(ctx, p.TenantID(), id)
@@ -338,7 +375,15 @@ func (s *Server) notifyShared(ctx context.Context, p *Principal, pr *model.Proje
 	}
 	users = slices.DeleteFunc(slices.Clone(users), func(u string) bool { return u == p.User.ID })
 	s.notifyUsers(ctx, p, users, model.Notification{ProjectID: pr.ID, Event: "project.shared",
-		Title: pr.Key + " " + pr.Name, Body: "role: " + role, EntityType: "project", EntityID: pr.ID})
+		Title: pr.Key + " " + pr.Name, Body: rolesBody(roles), EntityType: "project", EntityID: pr.ID})
+}
+
+// rolesBody is the body of a "project shared" notification.
+func rolesBody(roles []string) string {
+	if len(roles) == 1 {
+		return "role: " + roles[0]
+	}
+	return "roles: " + rolesText(roles)
 }
 
 // projectMember loads {mid} (a user or group id) of the {pid} project.
@@ -362,7 +407,8 @@ func memberLabel(m *model.ProjectMember) string {
 	return m.Type + " " + m.Name
 }
 
-// handleUpdateProjectMember: PATCH /projects/{pid}/members/{mid} {"role"}.
+// handleUpdateProjectMember: PATCH /projects/{pid}/members/{mid}
+// {"roles"} (or {"role"}) gives a member exactly these project roles.
 func (s *Server) handleUpdateProjectMember(w http.ResponseWriter, r *http.Request, p *Principal) {
 	pr, ok := s.project(w, r, p)
 	if !ok {
@@ -373,28 +419,30 @@ func (s *Server) handleUpdateProjectMember(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	var req struct {
-		Role string `json:"role"`
+		Role  string   `json:"role"`
+		Roles []string `json:"roles"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	ctx := r.Context()
-	if err := s.checkProjectGrant(p, req.Role); err != nil {
+	roles := requestedRoles(req.Role, req.Roles)
+	if err := s.checkProjectGrant(p, roles...); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	// nobody takes a role from someone they could not have given it to
-	if err := s.checkProjectGrant(p, m.Role); err != nil {
+	if err := s.checkProjectChange(p, m.Roles, roles); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	if _, err := s.Store.SetProjectMember(ctx, p.TenantID(), pr.ID, m.Type, m.ID, req.Role, p.User.Email); err != nil {
+	if _, err := s.Store.SetProjectMemberRoles(ctx, p.TenantID(), pr.ID, m.Type, m.ID, roles, p.User.Email); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	if req.Role != m.Role {
-		s.audit(ctx, p, "project.member.role", "project", pr.ID, memberLabel(m)+": "+m.Role+" → "+req.Role)
+	if change := rbac.DescribeChange(m.Roles, roles); change != "" {
+		s.audit(ctx, p, "project.member.role", "project", pr.ID, memberLabel(m)+": "+change+" → "+rolesText(roles))
 	}
 	out, err := s.Store.GetProjectMember(ctx, p.TenantID(), pr.ID, m.Type, m.ID)
 	if err != nil {
@@ -422,7 +470,7 @@ func (s *Server) handleRemoveProjectMember(w http.ResponseWriter, r *http.Reques
 			writeError(w, http.StatusForbidden, "forbidden", "permission project.update required")
 			return
 		}
-		if err := s.checkProjectGrant(p, m.Role); err != nil {
+		if err := s.checkProjectGrant(p, m.Roles...); err != nil {
 			s.fail(w, r, err)
 			return
 		}
@@ -431,24 +479,27 @@ func (s *Server) handleRemoveProjectMember(w http.ResponseWriter, r *http.Reques
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(ctx, p, "project.member.remove", "project", pr.ID, memberLabel(m)+" ("+m.Role+")")
+	s.audit(ctx, p, "project.member.remove", "project", pr.ID, memberLabel(m)+" ("+rolesText(m.Roles)+")")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 type bulkProjectMember struct {
-	ID     string `json:"id"`
-	Type   string `json:"type"`
-	Label  string `json:"label"`
-	Role   string `json:"role,omitempty"`
-	Reason string `json:"reason,omitempty"`
+	ID     string   `json:"id"`
+	Type   string   `json:"type"`
+	Label  string   `json:"label"`
+	Role   string   `json:"role,omitempty"`
+	Roles  []string `json:"roles,omitempty"`
+	Reason string   `json:"reason,omitempty"`
 }
 
 // handleBulkProjectMembers: POST /projects/{pid}/members/bulk {"ids":
-// [user or group ids], "action": "role"|"remove", "role"?} changes the role
-// of, or removes, several project members at once (all or nothing).
-// Members who are not in the project ("not_found"), already have the role
-// ("unchanged") or have a role the caller could not give ("forbidden") are
-// skipped.
+// [user or group ids], "action": "role"|"add_role"|"remove_role"|"remove",
+// "roles"? (or "role")} gives several project members exactly the roles,
+// adds roles to them, takes roles from them or removes them (all or
+// nothing). Members who are not in the project ("not_found"), whose roles
+// would not change ("unchanged"), who would be left without a role
+// ("last_role") or whose change the caller could not make ("forbidden")
+// are skipped.
 func (s *Server) handleBulkProjectMembers(w http.ResponseWriter, r *http.Request, p *Principal) {
 	pr, ok := s.project(w, r, p)
 	if !ok {
@@ -458,6 +509,7 @@ func (s *Server) handleBulkProjectMembers(w http.ResponseWriter, r *http.Request
 		IDs    []string `json:"ids"`
 		Action string   `json:"action"`
 		Role   string   `json:"role"`
+		Roles  []string `json:"roles"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -468,15 +520,16 @@ func (s *Server) handleBulkProjectMembers(w http.ResponseWriter, r *http.Request
 		s.fail(w, r, err)
 		return
 	}
-	switch req.Action {
-	case "role":
-		if err := s.checkProjectGrant(p, req.Role); err != nil {
+	given := requestedRoles(req.Role, req.Roles)
+	switch {
+	case bulkRoleAction(req.Action):
+		if err := s.checkProjectGrant(p, given...); err != nil {
 			s.fail(w, r, err)
 			return
 		}
-	case "remove":
+	case req.Action == "remove":
 	default:
-		s.fail(w, r, badRequest("action must be role or remove"))
+		s.fail(w, r, badRequest("action must be role, add_role, remove_role or remove"))
 		return
 	}
 	ctx := r.Context()
@@ -496,30 +549,38 @@ func (s *Server) handleBulkProjectMembers(w http.ResponseWriter, r *http.Request
 			skipped = append(skipped, bulkProjectMember{ID: id, Reason: "not_found"})
 			continue
 		}
-		item := bulkProjectMember{ID: m.ID, Type: m.Type, Label: strings.TrimPrefix(memberLabel(m), m.Type+" "), Role: m.Role}
+		item := bulkProjectMember{ID: m.ID, Type: m.Type, Label: strings.TrimPrefix(memberLabel(m), m.Type+" "), Role: m.Role, Roles: m.Roles}
+		var next []string
+		if req.Action != "remove" {
+			next = applyRoleAction(req.Action, m.Roles, given)
+		}
 		switch {
-		case req.Action == "role" && m.Role == req.Role:
+		case req.Action != "remove" && slices.Equal(next, m.Roles):
 			item.Reason = "unchanged"
-			skipped = append(skipped, item)
-			continue
-		case !(req.Action == "remove" && m.ID == p.User.ID) && s.checkProjectGrant(p, m.Role) != nil:
+		case req.Action != "remove" && len(next) == 0:
+			item.Reason = "last_role"
+		case req.Action == "remove" && m.ID != p.User.ID && s.checkProjectGrant(p, m.Roles...) != nil:
 			item.Reason = "forbidden"
+		case req.Action != "remove" && s.checkProjectChange(p, m.Roles, next) != nil:
+			item.Reason = "forbidden"
+		}
+		if item.Reason != "" {
 			skipped = append(skipped, item)
 			continue
 		}
-		if req.Action == "role" {
-			if _, err := s.Store.SetProjectMember(ctx, p.TenantID(), pr.ID, m.Type, m.ID, req.Role, p.User.Email); err != nil {
+		if req.Action != "remove" {
+			if _, err := s.Store.SetProjectMemberRoles(ctx, p.TenantID(), pr.ID, m.Type, m.ID, next, p.User.Email); err != nil {
 				s.fail(w, r, err)
 				return
 			}
-			s.audit(ctx, p, "project.member.role", "project", pr.ID, memberLabel(m)+": "+m.Role+" → "+req.Role+" (bulk)")
-			item.Role = req.Role
+			s.audit(ctx, p, "project.member.role", "project", pr.ID, memberLabel(m)+": "+rbac.DescribeChange(m.Roles, next)+" → "+rolesText(next)+" (bulk)")
+			item.Roles, item.Role = next, rbac.Primary(next)
 		} else {
 			if err := s.Store.RemoveProjectMember(ctx, p.TenantID(), pr.ID, m.Type, m.ID); err != nil {
 				s.fail(w, r, err)
 				return
 			}
-			s.audit(ctx, p, "project.member.remove", "project", pr.ID, memberLabel(m)+" ("+m.Role+", bulk)")
+			s.audit(ctx, p, "project.member.remove", "project", pr.ID, memberLabel(m)+" ("+rolesText(m.Roles)+", bulk)")
 		}
 		changed = append(changed, item)
 	}

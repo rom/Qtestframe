@@ -53,9 +53,9 @@ func activated(u *model.User) bool {
 
 // invite creates an invitation of user u to the tenant of p and e-mails
 // it after the commit.
-func (s *Server) invite(ctx context.Context, p *Principal, u *model.User, role string, sso bool) (*model.Invitation, error) {
+func (s *Server) invite(ctx context.Context, p *Principal, u *model.User, roles []string, sso bool) (*model.Invitation, error) {
 	tok := auth.RandomToken(32)
-	inv := &model.Invitation{TenantID: p.TenantID(), UserID: u.ID, Email: u.Email, Role: role, TokenHash: auth.HashToken(tok), SSO: sso,
+	inv := &model.Invitation{TenantID: p.TenantID(), UserID: u.ID, Email: u.Email, Roles: roles, TokenHash: auth.HashToken(tok), SSO: sso,
 		InvitedBy: p.User.Email, ExpiresAt: s.Store.Now().Add(InvitationTTL)}
 	if err := s.Store.CreateInvitation(ctx, inv); err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (s *Server) sendInvitation(ctx context.Context, p *Principal, u *model.User
 		how = tr(lang, "invite.sso", mailDate(lang, inv.ExpiresAt))
 	}
 	c := mailContent{Lang: mailLang(lang), Title: tr(lang, "invite.subject", tenant),
-		Intro:  []string{tr(lang, "invite.intro", inviter(p), tenant, roleLabel(lang, inv.Role)), how},
+		Intro:  []string{tr(lang, "invite.intro", inviter(p), tenant, rolesLabel(lang, inv.Roles)), how},
 		Action: &mailLink{Text: tr(lang, "invite.action"), URL: s.baseURL() + "/invite/" + url.PathEscape(tok)},
 		After:  []string{tr(lang, "invite.ignore")}}
 	m := s.message([]mail.Address{{Email: u.Email}}, c.Title, c)
@@ -92,11 +92,11 @@ func (s *Server) sendInvitation(ctx context.Context, p *Principal, u *model.User
 }
 
 // sendAddedNotice tells an existing user that they were added to a tenant.
-func (s *Server) sendAddedNotice(ctx context.Context, p *Principal, u *model.User, role string) {
+func (s *Server) sendAddedNotice(ctx context.Context, p *Principal, u *model.User, roles []string) {
 	lang := u.Preferences.Language
 	tenant := p.Tenant.Name
 	c := mailContent{Lang: mailLang(lang), Title: tr(lang, "added.subject", tenant),
-		Intro:  []string{tr(lang, "added.intro", inviter(p), tenant, roleLabel(lang, role))},
+		Intro:  []string{tr(lang, "added.intro", inviter(p), tenant, rolesLabel(lang, roles))},
 		Action: &mailLink{Text: tr(lang, "added.action"), URL: s.baseURL() + "/"}}
 	s.sendMail(ctx, s.message([]mail.Address{userAddress(u)}, c.Title, c), nil)
 }
@@ -105,7 +105,8 @@ func (s *Server) sendAddedNotice(ctx context.Context, p *Principal, u *model.Use
 func roleLabel(lang, role string) string {
 	labels := map[string][2]string{
 		"admin": {"administrator", "administratör"}, "manager": {"manager", "förvaltare"}, "test_lead": {"test lead", "testledare"},
-		"tester": {"tester", "testare"}, "reviewer": {"reviewer", "granskare"}, "viewer": {"viewer", "läsare"},
+		"tester": {"tester", "testare"}, "sme": {"subject matter expert", "ämnesexpert"},
+		"reviewer": {"reviewer", "granskare"}, "viewer": {"viewer", "läsare"},
 	}
 	if l, ok := labels[role]; ok {
 		if mailLang(lang) == "sv" {
@@ -114,6 +115,23 @@ func roleLabel(lang, role string) string {
 		return l[0]
 	}
 	return role
+}
+
+// rolesLabel names several roles in an e-mail: "tester and subject matter
+// expert", "a, b and c".
+func rolesLabel(lang string, roles []string) string {
+	ls := make([]string, len(roles))
+	for i, r := range roles {
+		ls[i] = roleLabel(lang, r)
+	}
+	if len(ls) < 2 {
+		return strings.Join(ls, "")
+	}
+	and := " and "
+	if mailLang(lang) == "sv" {
+		and = " och "
+	}
+	return strings.Join(ls[:len(ls)-1], ", ") + and + ls[len(ls)-1]
 }
 
 // memberUser loads the member {uid} of the caller's tenant.
@@ -154,7 +172,7 @@ func (s *Server) handleResendInvitation(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	sso := old != nil && old.SSO
-	inv, err := s.invite(ctx, p, u, m.Role, sso)
+	inv, err := s.invite(ctx, p, u, m.Roles, sso)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -239,7 +257,7 @@ func (s *Server) handleGetInvitation(w http.ResponseWriter, r *http.Request) {
 		name = "" // the default; let the person choose
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"email": u.Email, "display_name": name, "tenant_name": t.Name, "role": inv.Role, "invited_by": inv.InvitedBy,
+		"email": u.Email, "display_name": name, "tenant_name": t.Name, "role": inv.Role, "roles": inv.Roles, "invited_by": inv.InvitedBy,
 		"expires_at": inv.ExpiresAt, "sso": inv.SSO, "local": s.conf().Auth.Local, "password_min_length": minPassword(s.conf()),
 	})
 }

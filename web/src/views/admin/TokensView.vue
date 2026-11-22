@@ -4,7 +4,6 @@ import { computed, onMounted, ref } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
-import Select from 'primevue/select'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
@@ -12,13 +11,14 @@ import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { formatDate, formatDateTime, relativeTime } from '@/lib/format'
-import { grantableRoles, rolesWithin } from '@/lib/permissions'
+import { grantableRoles, rolesOf, rolesWithin } from '@/lib/permissions'
+import RolePicker from '@/components/RolePicker.vue'
 import { useRolesStore } from '@/stores/roles'
 import type { APIToken } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
-import { enumLabel, enumOptions } from '@/i18n/labels'
+import { enumLabel } from '@/i18n/labels'
 
 const auth = useAuthStore()
 const notify = useNotify()
@@ -28,8 +28,8 @@ const loading = ref(false)
 const rolesStore = useRolesStore()
 void rolesStore.ensure()
 /** roles whose permissions the user holds (custom roles included); built-in ranks until loaded */
-const roles = computed(() =>
-  enumOptions('role', rolesStore.roles.length ? rolesWithin(rolesStore.roles, auth.me?.permissions ?? [], auth.isSuperAdmin) : grantableRoles(auth.me?.role ?? '', auth.isSuperAdmin)),
+const roleNames = computed(() =>
+  rolesStore.roles.length ? rolesWithin(rolesStore.roles, auth.me?.permissions ?? [], auth.isSuperAdmin) : grantableRoles(rolesOf(auth.me), auth.isSuperAdmin),
 )
 
 async function load() {
@@ -45,12 +45,18 @@ async function load() {
 onMounted(load)
 
 const dialog = ref(false)
-const form = ref({ name: '', role: 'tester', expires_days: 90 as number | null })
+const form = ref({ name: '', roles: ['tester'], expires_days: 90 as number | null })
 const formError = ref('')
 const busy = ref(false)
 const created = ref<string | null>(null)
+/** a new token gets the user's own roles (those it may have), else the weakest role offered */
+function defaultRoles(): string[] {
+  const mine = rolesOf(auth.me).filter((r) => roleNames.value.includes(r))
+  if (mine.length) return mine
+  return roleNames.value.includes('tester') ? ['tester'] : roleNames.value.slice(-1)
+}
 function openCreate() {
-  form.value = { name: '', role: roles.value.some((r) => r.value === 'tester') ? 'tester' : roles.value[roles.value.length - 1]?.value ?? 'viewer', expires_days: 90 }
+  form.value = { name: '', roles: defaultRoles(), expires_days: 90 }
   formError.value = ''
   created.value = null
   dialog.value = true
@@ -61,7 +67,7 @@ async function create() {
   try {
     const res = await api.post<{ token: string; item: APIToken }>('/tokens', {
       name: form.value.name.trim(),
-      role: form.value.role,
+      roles: form.value.roles,
       ...(form.value.expires_days ? { expires_days: form.value.expires_days } : {}),
     })
     created.value = res.token
@@ -105,7 +111,10 @@ const expired = (t: APIToken) => !!t.expires_at && new Date(t.expires_at).getTim
     <DataTable v-stack :value="tokens" data-key="id" :loading="loading" :aria-busy="loading" sort-field="created_at" :sort-order="-1">
       <Column field="name" :header="t('common.name')" sortable body-class="stack-main" />
       <Column field="prefix" :header="t('admin.token')" style="width: 160px"><template #body="{ data }"><span class="mono">{{ data.prefix }}…</span></template></Column>
-      <Column field="role" :header="t('common.role')" sortable style="width: 140px"><template #body="{ data }"><Tag :value="enumLabel('role', data.role)" severity="secondary" /></template></Column>
+      <Column field="role" :header="t('common.roles')" sortable style="width: 180px"
+        ><template #body="{ data }"
+          ><span class="row wrap" style="gap: 4px"><Tag v-for="r in rolesOf(data)" :key="r" :value="enumLabel('role', r)" severity="secondary" /></span></template
+      ></Column>
       <Column field="created_at" :header="t('common.created')" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
       <Column field="expires_at" :header="t('admin.expires')" sortable style="width: 140px">
         <template #body="{ data }">
@@ -134,11 +143,11 @@ const expired = (t: APIToken) => !!t.expires_at && new Date(t.expires_at).getTim
     <form v-else class="grid" style="gap: 12px" @submit.prevent="create">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
       <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="form.name" :placeholder="t('admin.tokenNamePlaceholder')" autofocus required /></div>
-      <div v-field class="field">
-        <label>{{ t('common.role') }}</label>
-        <HelpTip id="token.role" :label="t('common.role')" />
-        <Select v-model="form.role" :options="roles" option-label="label" option-value="value" />
-        <small class="muted">{{ t('admin.tokenRoleHint') }}</small>
+      <div class="field">
+        <label id="tok-roles-label" for="tok-roles">{{ t('common.roles') }}</label>
+        <HelpTip id="token.role" :label="t('common.roles')" />
+        <RolePicker v-model="form.roles" input-id="tok-roles" :options="roleNames" aria-labelledby="tok-roles-label" aria-describedby="tok-roles-hint" />
+        <small id="tok-roles-hint" class="muted">{{ t('admin.tokenRoleHint') }}</small>
       </div>
       <div v-field class="field">
         <label>{{ t('admin.expiresAfter') }}</label>

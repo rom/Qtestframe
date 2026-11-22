@@ -67,7 +67,7 @@ func TestSCIMMoreAttributeForms(t *testing.T) {
 	sc.want("PATCH", "/Groups/"+g, patch(map[string]any{"op": "add", "path": "members", "value": map[string]any{"value": id}},
 		map[string]any{"op": "replace", "path": "schemas", "value": []string{scimGroupSchema}}), 200)
 	sc.want("PATCH", "/Groups/"+g, patch(map[string]any{"op": "remove", "path": "members", "value": []any{map[string]any{"value": id}}}), 200)
-	if (&scimError{Detail: "d"}).Error() != "d" || describeUser("x", true, "") != "x (no role)" {
+	if (&scimError{Detail: "d"}).Error() != "d" || describeUser("x", true, nil) != "x (no role)" || describeUser("x", true, []string{"sme", "tester"}) != "x as sme, tester" {
 		t.Fatal("helpers")
 	}
 	evs := admin.m("GET", "/api/v1/scim/events?limit=3", nil, 200)

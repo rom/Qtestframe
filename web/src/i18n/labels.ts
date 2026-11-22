@@ -34,6 +34,11 @@ export function enumLabel(group: EnumGroup, value: string | null | undefined): s
   return humanize(value)
 }
 
+/** Translated labels of several roles, joined by ", " ("Tester, Subject matter expert"). */
+export function rolesLabel(roles: readonly string[] | null | undefined): string {
+  return (roles ?? []).map((r) => enumLabel('role', r)).join(', ')
+}
+
 /** Select options for enum values with translated labels. */
 export function enumOptions(group: EnumGroup, values: readonly string[] | null | undefined): { label: string; value: string }[] {
   return options(values, (v) => enumLabel(group, v))

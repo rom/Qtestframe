@@ -26,10 +26,10 @@ import (
 //   - organisation administrators (the admin role; super administrators)
 //     keep their organisation permissions in every project;
 //   - a project member gets the project-scoped permissions of the project
-//     role instead of those of the organisation role, in both modes, so a
-//     project role can raise or lower a user's rights in one project. A
-//     direct (user) membership wins over group memberships; several groups
-//     give the union of their roles;
+//     roles (the union of the roles of the membership) instead of those of
+//     the organisation roles, in both modes, so project roles can raise or
+//     lower a user's rights in one project. A direct (user) membership wins
+//     over group memberships; several groups give the union of their roles;
 //   - anyone else gets the organisation role in an organisation-wide project
 //     and no access (404) to a restricted one.
 //
@@ -59,7 +59,7 @@ func (p *Principal) adminUser() bool {
 	if p.User.SuperAdmin {
 		return true
 	}
-	return p.memberRole == rbac.RoleAdmin
+	return rbac.HasRole(p.memberRoles, rbac.RoleAdmin)
 }
 
 // orgPermissions returns the organisation-level effective permissions.
@@ -70,7 +70,7 @@ func (p *Principal) orgPermissions() []string {
 	if p.orgPerms != nil {
 		return p.orgPerms
 	}
-	return rbac.PermissionsOf(p.Role)
+	return rbac.PermissionsOfAll(p.roleList())
 }
 
 // accessOf computes the caller's access to a project from its mode and the
@@ -85,16 +85,12 @@ func (p *Principal) accessOf(mode string, g store.ProjectGrant) *model.ProjectAc
 	case p.adminUser():
 		acc = &model.ProjectAccessInfo{Source: "admin", Permissions: append([]string{}, org...)}
 	case g.Member():
-		var granted []string
-		acc = &model.ProjectAccessInfo{Source: "member", Role: g.UserRole}
-		if g.UserRole != "" {
-			granted = p.roles.PermissionsOf(g.UserRole)
-		} else {
-			acc.Source, acc.Role = "group", strings.Join(g.GroupRoles, ", ")
-			for _, r := range g.GroupRoles {
-				granted = append(granted, p.roles.PermissionsOf(r)...)
-			}
+		acc = &model.ProjectAccessInfo{Source: "member", Roles: g.UserRoles}
+		if len(g.UserRoles) == 0 {
+			acc.Source, acc.Roles = "group", g.GroupRoles
 		}
+		acc.Role = strings.Join(acc.Roles, ", ")
+		granted := p.roles.PermissionsOfAll(acc.Roles)
 		acc.Permissions = mergeProjectPerms(granted, org, p.tokenPerms, p.Token != nil)
 	case mode == model.ProjectAccessOrganisation:
 		acc = &model.ProjectAccessInfo{Source: "organisation", Permissions: append([]string{}, org...)}
@@ -269,8 +265,8 @@ func (s *Server) membersIn(ctx context.Context, tenantID, projectID string) (map
 	tenant := &model.Tenant{ID: tenantID}
 	out := map[string]*model.ProjectAccessInfo{}
 	for _, m := range ms {
-		perms := set.PermissionsOf(m.Role)
-		p := &Principal{User: &model.User{ID: m.UserID}, Tenant: tenant, Role: m.Role, memberRole: m.Role, roles: set, perms: perms, orgPerms: perms}
+		perms := set.PermissionsOfAll(m.Roles)
+		p := &Principal{User: &model.User{ID: m.UserID}, Tenant: tenant, Role: m.Role, Roles: m.Roles, memberRoles: m.Roles, roles: set, perms: perms, orgPerms: perms}
 		if acc := p.accessOf(mode, grants[m.UserID]); acc != nil {
 			out[m.UserID] = acc
 		}
@@ -293,13 +289,13 @@ func (s *Server) principalFor(ctx context.Context, tenantID, userID string) (*Pr
 	}
 	p := &Principal{User: u, Tenant: t}
 	if m, err := s.Store.GetMembership(ctx, tenantID, userID); err == nil {
-		p.Role = m.Role
+		p.setRoles(m.Roles)
 	} else if u.SuperAdmin {
-		p.Role = rbac.RoleAdmin
+		p.setRoles([]string{rbac.RoleAdmin})
 	} else {
 		return nil, errors.New("no longer a member of the organisation")
 	}
-	if err := s.resolvePerms(ctx, p, ""); err != nil {
+	if err := s.resolvePerms(ctx, p, nil); err != nil {
 		return nil, err
 	}
 	return p, nil

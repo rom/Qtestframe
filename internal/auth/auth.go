@@ -206,6 +206,24 @@ type Identity struct {
 	ACR string
 }
 
+// MapRoles returns every role granted by groups through mapping that valid
+// accepts (a user in several mapped groups holds all their roles), in
+// first-seen order; def alone when no group maps to a valid role.
+func MapRoles(groups []string, mapping map[string]string, def string, valid func(string) bool) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, g := range groups {
+		if r, ok := mapping[g]; ok && valid(r) && !seen[r] {
+			seen[r] = true
+			out = append(out, r)
+		}
+	}
+	if len(out) == 0 {
+		return []string{def}
+	}
+	return out
+}
+
 // MapRole returns the most privileged role granted by groups through
 // mapping, falling back to def. rank orders roles by privilege.
 func MapRole(groups []string, mapping map[string]string, def string, rank func(string) int) string {

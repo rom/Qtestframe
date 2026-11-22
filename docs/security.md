@@ -309,12 +309,13 @@ Implemented in `internal/auth/totp.go` (algorithms), `internal/api/mfa.go`
    it is bound to another provider the login fails. Otherwise create the
    user only if `auto_provision: true`.
 2. Disabled users are rejected.
-3. With `default_tenant` set, the role is the highest-ranked role that
+3. With `default_tenant` set, the roles are every role that
    `role_mapping` assigns to one of the user's groups (`groups_claim` /
-   `groups_attr`), else `default_role` (an invalid value falls back to
-   `viewer`). A membership is created if missing and `auto_provision` is
-   on; if `role_mapping` is configured, an existing membership is updated to
-   the mapped role at every login (the IdP is authoritative).
+   `groups_attr`; a user in several mapped groups holds several roles),
+   else `default_role` (an invalid value falls back to `viewer`). A
+   membership is created if missing and `auto_provision` is on; if
+   `role_mapping` is configured, an existing membership is updated to the
+   mapped roles at every login (the IdP is authoritative).
 
 Because accounts are linked by e-mail, only connect IdPs whose e-mail
 addresses are verified and controlled by your organisation.
@@ -342,7 +343,10 @@ OIDC/SAML login neither creates nor changes that membership, so
   deactivation only removes the membership, sessions and API tokens in the
   token's tenant. The tenant always keeps one admin (409). Treat the token
   like an admin password and map only groups you control to privileged
-  roles; unmapped groups grant nothing beyond the default role.
+  roles; unmapped groups grant nothing beyond the default role. A user in
+  several mapped groups holds all their roles (the union of their
+  permissions); the read-only `roles` attribute of a SCIM user shows them,
+  and roles an identity provider pushes in it are ignored.
 * **Linking.** Provisioned accounts have no password (`auth_provider`
   `scim`), so they can only sign in through OIDC/SAML, which links them by
   e-mail like any just-in-time account. Provision only addresses your
@@ -357,23 +361,51 @@ OIDC/SAML login neither creates nor changes that membership, so
 
 ## 4. Authorization and tenant isolation
 
-* Every user has exactly **one role per tenant**; a global **super admin**
-  flag grants every permission in every tenant plus user/tenant management
-  (for session logins only; API tokens are limited to their role). A super
-  admin without membership in the current tenant acts as `admin` there.
+* Every member holds **one or more roles per tenant** (`memberships.roles`,
+  migration 0052); the effective permissions are the **union** of the
+  permissions of the held roles, so several roles can only add rights,
+  never take any away. Holding `admin` among one's roles makes a member an
+  organisation administrator. The first role of the normalised set (admin
+  first, then the built-in roles from most to least privileged, then custom
+  roles alphabetically) is kept in `memberships.role` as the *primary* role
+  for older clients, so a set holding admin always has admin as its primary
+  role. A global **super admin** flag grants every permission in every
+  tenant plus user/tenant management (for session logins only; API tokens
+  are limited to their roles). A super admin without membership in the
+  current tenant acts as `admin` there.
 * Roles and permissions (`internal/rbac/rbac.go`; defaults below, the
   tenant's effective matrix is served at `GET /api/v1/roles`):
 
-| Permission | viewer | reviewer | tester | test_lead | manager | admin |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| project/requirement/test/run read, member.read, export | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| test.review | | ✔ | | ✔ | ✔ | ✔ |
-| requirement.review | | ✔ | | | ✔ | ✔ |
-| comment.create | | ✔ | ✔ | ✔ | ✔ | ✔ |
-| test.write, run.write, run.execute, token.manage | | | ✔ | ✔ | ✔ | ✔ |
-| cycle.plan, script.execute, audit.read, settings.manage | | | | ✔ | ✔ | ✔ |
-| requirement.write, waiver.approve, project.create, project.update | | | | | ✔ | ✔ |
-| project.delete, member.manage, role.manage, tenant.manage | | | | | | ✔ |
+| Permission | viewer | reviewer | sme | tester | test_lead | manager | admin |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| project/requirement/test/run read, member.read, export | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| test.review | | ✔ | | | ✔ | ✔ | ✔ |
+| requirement.review | | ✔ | ✔ | | | ✔ | ✔ |
+| comment.create | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| requirement.write | | | ✔ | | | ✔ | ✔ |
+| test.write, run.write, run.execute, token.manage | | | | ✔ | ✔ | ✔ | ✔ |
+| cycle.plan, script.execute, audit.read, settings.manage | | | | | ✔ | ✔ | ✔ |
+| waiver.approve, project.create, project.update | | | | | | ✔ | ✔ |
+| project.delete, member.manage, role.manage, tenant.manage | | | | | | | ✔ |
+
+* **Subject matter expert (`sme`)** – a domain expert who takes part in
+  writing the requirements of their field. It creates and edits
+  requirements (`requirement.write`: the text, acceptance criteria,
+  rationale, sources, relations, trace and item links and attachments),
+  takes part in requirement reviews (`requirement.review`) and discussions
+  (`comment.create`), and reads tests, runs, defects and risks for
+  context. It deliberately has no `test.*` write or review rights, no run
+  or cycle rights (`run.write`, `run.execute`, `cycle.plan`), no
+  `waiver.approve` (accepting deviations is a management decision), no
+  project, settings, member or role administration, and no API tokens
+  (`token.manage`; give the tester role as well to someone who also
+  automates). Evidence on executions is recorded by testers
+  (`run.execute`); an SME attaches supporting documents to the
+  requirements themselves. `requirement.write` plus `requirement.review`
+  lets an SME approve requirements, also their own: where separation of
+  duties matters, remove `requirement.review` from the role in the matrix
+  or rely on review requests with several reviewers. Combined with other
+  roles (e.g. `sme` + `tester`) a member holds the union of both.
 
 * **Separation of duties:** approving requirements and marking tests
   ready (review decisions) need `requirement.review` / `test.review`, so
@@ -389,12 +421,18 @@ OIDC/SAML login neither creates nor changes that membership, so
   holders of `role.manage` change the permissions of the built-in roles
   except `admin` and create custom roles. Escalation is prevented: a role
   or API token can only receive permissions the caller holds; `admin`
-  always keeps every permission; API tokens get the intersection of their
-  role and the user's current role on every request. Role changes are
-  audited.
+  always keeps every permission; API tokens hold a set of roles too and get
+  the intersection of the union of their roles' permissions and the union
+  of the user's current roles' permissions on every request. Role changes
+  are audited; a change of a member's roles is logged with the added and
+  removed roles (`member.role`, `project.member.role`: `+sme −viewer →
+  tester, sme`).
 * Full matrix with the endpoints using each permission:
   [design.md §12](design.md#12-rbac-matrix). Guards: a tenant keeps at
-  least one admin; a super admin cannot demote or disable themselves.
+  least one member holding the admin role (changing a set of roles is
+  refused with 409 when it would drop admin from the last member holding
+  it, also in bulk, by SCIM and on re-adding a member); a super admin
+  cannot demote or disable themselves.
 * **Tenant isolation**: the tenant is derived from the session's *current
   tenant* (switch with `POST /auth/switch-tenant`, membership re-checked) or
   from the API token, never from the request. Store entry points take the
@@ -407,18 +445,22 @@ OIDC/SAML login neither creates nor changes that membership, so
 * **Per-project access (project sharing)**: a project is organisation-wide
   (`access = organisation`, the default and the behaviour of earlier
   versions) or restricted (`access = restricted`). Project members are
-  users or SCIM groups with a project role (`project_members`, migration
-  0024). Effective permissions in a project: organisation administrators
-  (and super admins) keep theirs; a project member gets the
-  *project-scoped* permissions of the project role in place of the
-  organisation role's (`project.read/update/delete`, `requirement.*`,
-  `test.*`, `run.*`, `script.execute`, `export`), in both modes; others get
-  their organisation role in an organisation-wide project and **no access
-  (404, indistinguishable from a missing project)** to a restricted one.
-  Organisation-level permissions always come from the organisation role,
-  and an API token is capped by its own role inside a project as well.
-  Nobody can give or take a project role with project permissions they do
-  not hold there (no escalation through sharing); changes are audited.
+  users or SCIM groups with one or more project roles (`project_members`,
+  migrations 0024 and 0052). Effective permissions in a project:
+  organisation administrators (and super admins) keep theirs; a project
+  member gets the *project-scoped* permissions of the union of their
+  project roles in place of the organisation roles' (`project.read/update/delete`,
+  `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`,
+  `script.execute`, `export`, `comment.create`), in both modes – a direct
+  membership wins over group memberships, several groups give the union
+  of their roles; others get their organisation roles in an
+  organisation-wide project and **no access (404, indistinguishable from a
+  missing project)** to a restricted one. Organisation-level permissions
+  always come from the organisation roles, and an API token is capped by
+  its own roles inside a project as well. Nobody can give or take a project
+  role with project permissions they do not hold there (no escalation
+  through sharing: a change checks every added and every removed role, a
+  removal every role of the member); changes are audited.
 * **Where it is enforced:** centrally, in `authed`
   (`internal/api/authn.go`, `access.go`): before the route permission is
   checked, the request's project is resolved – `{pid}`, or the project of

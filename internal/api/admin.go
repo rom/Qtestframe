@@ -316,31 +316,34 @@ func (s *Server) handleListMembers(w http.ResponseWriter, r *http.Request, p *Pr
 		if inv, ok := invs[m.UserID]; ok {
 			out[i].Invitation = s.viewInvitation(&inv)
 		}
-		out[i].MFARequired = (server != nil && (server.Requires("") || server.Requires(m.Role))) || (tenant != nil && tenant.Requires(m.Role))
+		out[i].MFARequired = (server != nil && (server.Requires("") || server.RequiresAny(m.Roles))) || (tenant != nil && tenant.RequiresAny(m.Roles))
 	}
 	writeJSON(w, http.StatusOK, listOf(out))
 }
 
-// handleAddMember: POST /members {"email", "role", "display_name"?,
-// "password"?, "invite"?, "sso"?}. With "invite", a person without an
-// account (or who never used it) gets an invitation e-mail instead of an
-// initial password; an existing user is told by e-mail that they were
-// added.
+// handleAddMember: POST /members {"email", "roles" (or "role"),
+// "display_name"?, "password"?, "invite"?, "sso"?}. With "invite", a
+// person without an account (or who never used it) gets an invitation
+// e-mail instead of an initial password; an existing user is told by
+// e-mail that they were added. Adding someone who is already a member
+// gives them the requested roles.
 func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Principal) {
 	var req struct {
-		Email       string `json:"email"`
-		Role        string `json:"role"`
-		DisplayName string `json:"display_name"`
-		Password    string `json:"password"`
-		Invite      bool   `json:"invite"`
-		SSO         bool   `json:"sso"`
+		Email       string   `json:"email"`
+		Role        string   `json:"role"`
+		Roles       []string `json:"roles"`
+		DisplayName string   `json:"display_name"`
+		Password    string   `json:"password"`
+		Invite      bool     `json:"invite"`
+		SSO         bool     `json:"sso"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	if ok, err := s.validRole(r.Context(), p.TenantID(), req.Role); err != nil || !ok {
-		s.fail(w, r, errOr(err, badRequest("invalid role %q", req.Role)))
+	roles := requestedRoles(req.Role, req.Roles)
+	if err := s.validRoles(r.Context(), p.TenantID(), roles); err != nil {
+		s.fail(w, r, err)
 		return
 	}
 	if req.Invite && !s.emailOn() {
@@ -375,11 +378,14 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Prin
 	if s.scimManaged(w, r, p, u.ID) {
 		return
 	}
-	if err := s.Store.SetMembership(ctx, p.TenantID(), u.ID, req.Role); err != nil {
+	if _, err := s.Store.GetMembership(ctx, p.TenantID(), u.ID); err == nil && !s.lastAdminGuard(w, r, p, u.ID, roles) {
+		return
+	}
+	if err := s.Store.SetMembershipRoles(ctx, p.TenantID(), u.ID, roles); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(ctx, p, "member.add", "user", u.ID, u.Email+" as "+req.Role)
+	s.audit(ctx, p, "member.add", "user", u.ID, u.Email+" as "+rolesText(roles))
 	m, err := s.Store.GetMembership(ctx, p.TenantID(), u.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -389,27 +395,31 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Prin
 	out := memberView{Membership: *m}
 	if req.Invite {
 		if activated(u) {
-			s.sendAddedNotice(ctx, p, u, req.Role)
+			s.sendAddedNotice(ctx, p, u, roles)
 		} else {
-			inv, err := s.invite(ctx, p, u, req.Role, req.SSO)
+			inv, err := s.invite(ctx, p, u, roles, req.SSO)
 			if err != nil {
 				s.fail(w, r, err)
 				return
 			}
-			s.audit(ctx, p, "invitation.send", "user", u.ID, u.Email+" as "+req.Role)
+			s.audit(ctx, p, "invitation.send", "user", u.ID, u.Email+" as "+rolesText(roles))
 			out.Invitation = s.viewInvitation(inv)
 		}
 	}
 	writeJSON(w, http.StatusCreated, out)
 }
 
-func (s *Server) lastAdminGuard(w http.ResponseWriter, r *http.Request, p *Principal, uid string) bool {
+// lastAdminGuard answers 409 and returns false when giving the member uid
+// the roles next (none: removing the member) would leave the tenant
+// without an admin: the member holds admin, next does not, and nobody else
+// holds admin.
+func (s *Server) lastAdminGuard(w http.ResponseWriter, r *http.Request, p *Principal, uid string, next []string) bool {
 	m, err := s.Store.GetMembership(r.Context(), p.TenantID(), uid)
 	if err != nil {
 		s.fail(w, r, err)
 		return false
 	}
-	if m.Role == rbac.RoleAdmin {
+	if rbac.HasRole(m.Roles, rbac.RoleAdmin) && !rbac.HasRole(next, rbac.RoleAdmin) {
 		n, err := s.Store.CountTenantAdmins(r.Context(), p.TenantID())
 		if err != nil {
 			s.fail(w, r, err)
@@ -438,29 +448,43 @@ func (s *Server) scimManaged(w http.ResponseWriter, r *http.Request, p *Principa
 	return managed
 }
 
+// handleUpdateMember: PATCH /members/{uid} {"roles"} (or {"role"}) gives a
+// member exactly these roles.
 func (s *Server) handleUpdateMember(w http.ResponseWriter, r *http.Request, p *Principal) {
-	var req struct{ Role string }
+	var req struct {
+		Role  string   `json:"role"`
+		Roles []string `json:"roles"`
+	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	if ok, err := s.validRole(r.Context(), p.TenantID(), req.Role); err != nil || !ok {
-		s.fail(w, r, errOr(err, badRequest("invalid role %q", req.Role)))
+	ctx := r.Context()
+	roles := requestedRoles(req.Role, req.Roles)
+	if err := s.validRoles(ctx, p.TenantID(), roles); err != nil {
+		s.fail(w, r, err)
 		return
 	}
 	uid := r.PathValue("uid")
 	if s.scimManaged(w, r, p, uid) {
 		return
 	}
-	if req.Role != rbac.RoleAdmin && !s.lastAdminGuard(w, r, p, uid) {
-		return
-	}
-	if err := s.Store.SetMembership(r.Context(), p.TenantID(), uid, req.Role); err != nil {
+	before, err := s.Store.GetMembership(ctx, p.TenantID(), uid)
+	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(r.Context(), p, "member.role", "user", uid, req.Role)
-	m, err := s.Store.GetMembership(r.Context(), p.TenantID(), uid)
+	if !s.lastAdminGuard(w, r, p, uid, roles) {
+		return
+	}
+	if err := s.Store.SetMembershipRoles(ctx, p.TenantID(), uid, roles); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if change := rbac.DescribeChange(before.Roles, roles); change != "" {
+		s.audit(ctx, p, "member.role", "user", uid, change+" → "+rolesText(roles))
+	}
+	m, err := s.Store.GetMembership(ctx, p.TenantID(), uid)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -473,7 +497,7 @@ func (s *Server) handleRemoveMember(w http.ResponseWriter, r *http.Request, p *P
 	if s.scimManaged(w, r, p, uid) {
 		return
 	}
-	if !s.lastAdminGuard(w, r, p, uid) {
+	if !s.lastAdminGuard(w, r, p, uid, nil) {
 		return
 	}
 	if err := s.Store.RemoveMembership(r.Context(), p.TenantID(), uid); err != nil {
@@ -501,9 +525,10 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request, p *Pr
 		return
 	}
 	var req struct {
-		Name        string `json:"name"`
-		Role        string `json:"role"`
-		ExpiresDays int    `json:"expires_days"`
+		Name        string   `json:"name"`
+		Role        string   `json:"role"`
+		Roles       []string `json:"roles"`
+		ExpiresDays int      `json:"expires_days"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -513,20 +538,22 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request, p *Pr
 		s.fail(w, r, badRequest("token name is required"))
 		return
 	}
-	if req.Role == "" {
-		req.Role = p.Role
+	// a token without roles gets all of the caller's roles
+	roles := requestedRoles(req.Role, req.Roles)
+	if len(roles) == 0 {
+		roles = p.roleList()
 	}
 	set, err := s.Store.RoleSet(r.Context(), p.TenantID())
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	if !set.Valid(req.Role) || !rbac.Subset(set.PermissionsOf(req.Role), p.Permissions()) {
-		s.fail(w, r, badRequest("role must be valid and not exceed your own permissions"))
+	if ok, _ := set.ValidAll(roles); !ok || !rbac.Subset(set.PermissionsOfAll(roles), p.Permissions()) {
+		s.fail(w, r, badRequest("roles must be valid and not exceed your own permissions"))
 		return
 	}
 	tok, prefix := auth.NewAPIToken()
-	t := &model.APIToken{TenantID: p.TenantID(), UserID: p.User.ID, Name: strings.TrimSpace(req.Name), Role: req.Role,
+	t := &model.APIToken{TenantID: p.TenantID(), UserID: p.User.ID, Name: strings.TrimSpace(req.Name), Roles: roles,
 		Hash: auth.HashToken(tok), Prefix: prefix, ExpiresAt: s.Store.ExpiryIn(req.ExpiresDays)}
 	if err := s.Store.CreateToken(r.Context(), t); err != nil {
 		s.fail(w, r, err)

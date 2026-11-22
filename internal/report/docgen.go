@@ -1274,6 +1274,7 @@ func (g *docGen) testPlan() {
 		{l.t("Manager"), l.t("Owns the requirements, plans releases and decides whether the exit criteria are met.")},
 		{l.t("Test lead"), l.t("Plans the testing, creates test runs, sets the execution rules and follows up the results.")},
 		{l.t("Tester"), l.t("Designs and maintains test cases, executes them in test runs and records results, evidence and defects.")},
+		{l.t("Subject matter expert"), l.t("Writes, refines and reviews the requirements of their field of expertise and discusses them.")},
 		{l.t("Reviewer"), l.t("Reviews and approves requirements and test cases, and signs baselines.")},
 		{l.t("Viewer"), l.t("Follows the progress and reads requirements, test cases and results.")},
 		{l.t("Admin"), l.t("Manages the project, its members and settings.")},
@@ -1285,7 +1286,7 @@ func (g *docGen) testPlan() {
 			if name == "" {
 				name = m.Email
 			}
-			rows = append(rows, []string{name, m.Email, g.roleLabel(m.Role)})
+			rows = append(rows, []string{name, m.Email, g.rolesLabel(m.Roles, m.Role)})
 		}
 		g.add(g.label("Project members"))
 		g.add(export.Table([]string{l.t("Name"), l.t("E-mail"), l.t("Role")}, rows, 2, 2.4, 1.2))
@@ -1326,12 +1327,27 @@ func (g *docGen) roleLabel(role string) string {
 		return g.l.t("Test lead")
 	case "tester":
 		return g.l.t("Tester")
+	case "sme":
+		return g.l.t("Subject matter expert")
 	case "reviewer":
 		return g.l.t("Reviewer")
 	case "viewer":
 		return g.l.t("Viewer")
 	}
 	return humanize(role)
+}
+
+// rolesLabel names a member's roles ("Tester, Subject matter expert");
+// role is used when roles is empty.
+func (g *docGen) rolesLabel(roles []string, role string) string {
+	if len(roles) == 0 {
+		return g.roleLabel(role)
+	}
+	ls := make([]string, len(roles))
+	for i, r := range roles {
+		ls[i] = g.roleLabel(r)
+	}
+	return strings.Join(ls, ", ")
 }
 
 // enforced adds the note for a readiness rule the organisation does not

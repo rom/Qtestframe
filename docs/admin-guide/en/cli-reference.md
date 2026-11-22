@@ -66,7 +66,7 @@ Gives a user a role in an organisation, or changes it. The role is a built-in ro
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
 | `--email` | `string` | user e-mail |
-| `--role` | `string` | role (default "viewer") |
+| `--role` | `string` | role, or several roles separated by commas (e.g. sme,tester) (default "viewer") |
 | `--tenant` | `string` | tenant slug |
 
 ### `qtestframe seed-demo`

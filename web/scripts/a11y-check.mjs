@@ -559,6 +559,7 @@ async function discover(request) {
     { name: 'login-mfa-recovery', path: '/login?mfa=1', anon: true, mfa: true, open: '.mfa-login button.link-button', wait: '#mfa-code.recovery' },
     { name: 'backup', path: '/admin/backup' },
     { name: 'tokens', path: '/admin/tokens' },
+    { name: 'tokens-create', path: '/admin/tokens', open: 'button:has(.pi-plus)', wait: '.p-dialog .role-picker' },
     { name: 'provisioning', path: '/admin/provisioning', wait: '#h-scim-events' },
     { name: 'provisioning-token-dialog', path: '/admin/provisioning', open: 'section:has(#h-scim-tokens) .filterbar button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'audit', path: '/admin/audit' },

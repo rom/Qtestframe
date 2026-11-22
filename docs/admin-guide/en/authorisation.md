@@ -2,8 +2,9 @@
 
 ## The model
 
-- Every user has **one role per organisation** in which they are a member; without a membership a user sees nothing of an organisation.
-- A role is a named set of **permissions**. Six roles are built in: Admin, Manager, Test lead, Tester, Reviewer and Viewer.
+- Every member holds **one or more roles per organisation**; without a membership a user sees nothing of an organisation. Someone who both writes requirements and tests holds, for example, *Subject matter expert* and *Tester*.
+- A role is a named set of **permissions**; a member with several roles has the **union** of their permissions (roles only add rights). Seven roles are built in: Admin, Manager, Test lead, Tester, Subject matter expert (SME), Reviewer and Viewer.
+- Holding Admin among one's roles makes a member an organisation administrator. Older API clients see one `role`, the *primary* role: the strongest built-in role of the member (Admin whenever the member holds it).
 - **Super administrator** is a flag of the user account, set with `qtestframe user create --super-admin` or under **Administration → Users**. A super administrator holds every permission in every organisation (and acts as admin in an organisation without being a member), and alone may manage organisations and users, back up and restore, and change the system settings. This applies to signed-in sessions only: API tokens never carry it.
 - Permissions are checked by the server on every request; the web client only hides what you may not do. An object of another organisation, or of a project you may not see, answers `404`, so its existence is not revealed.
 
@@ -13,35 +14,47 @@ These are the permissions of the built-in roles until an organisation changes th
 
 <!-- BEGIN GENERATED: permissions (make admin-guide-ref) -->
 
-| Permission | Viewer | Reviewer | Tester | Test lead | Manager | Admin |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `project.create` |  |  |  |  | ✔ | ✔ |
-| `project.update` |  |  |  |  | ✔ | ✔ |
-| `project.delete` |  |  |  |  |  | ✔ |
-| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `requirement.write` |  |  |  |  | ✔ | ✔ |
-| `requirement.review` |  | ✔ |  |  | ✔ | ✔ |
-| `waiver.approve` |  |  |  |  | ✔ | ✔ |
-| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `test.write` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `test.review` |  | ✔ |  | ✔ | ✔ | ✔ |
-| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `run.write` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `run.execute` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan` |  |  |  | ✔ | ✔ | ✔ |
-| `script.execute` |  |  |  | ✔ | ✔ | ✔ |
-| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `audit.read` |  |  |  | ✔ | ✔ | ✔ |
-| `token.manage` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `member.manage` |  |  |  |  |  | ✔ |
-| `role.manage` |  |  |  |  |  | ✔ |
-| `settings.manage` |  |  |  | ✔ | ✔ | ✔ |
-| `tenant.manage` |  |  |  |  |  | ✔ |
+| Permission | Viewer | Reviewer | SME | Tester | Test lead | Manager | Admin |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `project.create` |  |  |  |  |  | ✔ | ✔ |
+| `project.update` |  |  |  |  |  | ✔ | ✔ |
+| `project.delete` |  |  |  |  |  |  | ✔ |
+| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `requirement.write` |  |  | ✔ |  |  | ✔ | ✔ |
+| `requirement.review` |  | ✔ | ✔ |  |  | ✔ | ✔ |
+| `waiver.approve` |  |  |  |  |  | ✔ | ✔ |
+| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `test.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `test.review` |  | ✔ |  |  | ✔ | ✔ | ✔ |
+| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `run.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `run.execute` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `cycle.plan` |  |  |  |  | ✔ | ✔ | ✔ |
+| `script.execute` |  |  |  |  | ✔ | ✔ | ✔ |
+| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `audit.read` |  |  |  |  | ✔ | ✔ | ✔ |
+| `token.manage` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `member.manage` |  |  |  |  |  |  | ✔ |
+| `role.manage` |  |  |  |  |  |  | ✔ |
+| `settings.manage` |  |  |  |  | ✔ | ✔ | ✔ |
+| `tenant.manage` |  |  |  |  |  |  | ✔ |
 
 <!-- END GENERATED: permissions -->
+
+### The subject matter expert
+
+The **Subject matter expert** (`sme`) is a domain expert who takes part in writing the requirements of their field – a clinician, a safety engineer, a lawyer. The role:
+
+- creates and edits requirements (`requirement.write`): text, acceptance criteria, rationale, sources, relations, trace and item links and attachments;
+- takes part in requirement reviews (`requirement.review`) and discussions (`comment.create`);
+- reads tests, runs, defects and risks for context, and exports and reports (`export`).
+
+It deliberately does **not** write or review tests, create or execute runs, plan cycles, approve waivers or accept residual risks, change project settings, sharing or members, or create API tokens. Evidence on test executions is recorded by testers; an SME attaches supporting documents to the requirements themselves. Give a second role to someone who also does more, e.g. *Subject matter expert* + *Tester*.
+
+Because the role both writes and reviews requirements, an SME can approve their own requirements. Where separation of duties matters, remove `requirement.review` from the role in the matrix (or give it only to separate reviewers).
 
 What the permissions allow:
 
@@ -68,24 +81,26 @@ Grant `script.execute` only to people you would let run code on the server: scri
 Holders of `role.manage` (Admin by default) change the permissions of every built-in role except Admin and create **custom roles** under **Administration → Role matrix** ([user guide](../../user-guide/en/administration.md#change-roles-and-create-your-own)). The rules that keep this safe:
 
 - Nobody can grant a permission they do not hold themselves – not to a role, not to an API token, not through project sharing.
-- Admin always keeps every permission, and an organisation always keeps at least one admin (the last one cannot be demoted or removed, also not through SCIM).
-- A custom role has a technical name of 2–32 characters (`a-z`, `0-9`, `_`, starting with a letter), which is what `member add --role`, `role_mapping` and SCIM group mappings use. It can be deleted once no member or token uses it.
-- A built-in role whose permissions differ from the defaults is marked *changed* and can be reset. Changes are audited.
+- Admin always keeps every permission, and an organisation always keeps at least one member holding Admin: the last one cannot lose the role or be removed – not in the member list, not in bulk, not through SCIM. Admin may be held together with other roles.
+- A custom role has a technical name of 2–32 characters (`a-z`, `0-9`, `_`, starting with a letter), which is what `member add --role` (several roles separated by commas: `--role sme,tester`), `role_mapping` and SCIM group mappings use. It can be deleted once no member, project member or token holds it, also among other roles.
+- A built-in role whose permissions differ from the defaults is marked *changed* and can be reset. Changes are audited, and a change of a member's roles is logged with the roles added and taken away (`+sme −viewer`).
+- API tokens hold roles too (by default all roles of their owner) and never get more than their owner's current roles allow.
+- With single sign-on (`role_mapping`) and SCIM, a user in several mapped groups holds the roles of all of them.
 
 The effective matrix of an organisation is served at `GET /api/v1/roles`.
 
 ## Restricted and shared projects
 
-A project is either **organisation-wide** (the default: every member sees it with their organisation role) or **restricted** (only its project members see it). Project members are users or SCIM groups with a **project role**, which replaces the organisation role inside that project, upwards or downwards. Users with `project.update` in the project manage this under **Share** ([user guide](../../user-guide/en/administration.md#project-sharing)).
+A project is either **organisation-wide** (the default: every member sees it with their organisation role) or **restricted** (only its project members see it). Project members are users or SCIM groups with one or more **project roles**, which replace the organisation roles inside that project, upwards or downwards. Users with `project.update` in the project manage this under **Share** ([user guide](../../user-guide/en/administration.md#project-sharing)).
 
 | Who | Permissions inside a project |
 |---|---|
 | organisation admins and super administrators | their own, always – they see every project |
-| a project member (directly or through a group; the direct membership wins, groups add up) | the project-scoped permissions of the project role |
-| any other member, organisation-wide project | the organisation role |
+| a project member (directly or through a group; the direct membership wins, groups add up) | the project-scoped permissions of the project roles (added up) |
+| any other member, organisation-wide project | the organisation roles |
 | any other member, restricted project | none: the project answers `404` |
 
-Only **project-scoped** permissions come from the project role (`project.read`, `project.update`, `project.delete`, `requirement.*`, `test.*`, `run.*`, `script.execute`, `export`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation role, and an API token is capped by its own role inside a project as well.
+Only **project-scoped** permissions come from the project roles (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation roles, and an API token is capped by its own roles inside a project as well.
 
 What restriction does **not** hide, so plan accordingly:
 

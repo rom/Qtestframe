@@ -1,15 +1,20 @@
 // Package rbac implements role based access control for tenant members.
 //
-// Every user has exactly one role per tenant. A role is a named set of
-// permissions. Six roles are built in (admin, manager, test lead, tester,
-// reviewer, viewer); each tenant can change the permissions of every built-in role
-// except admin, and create its own roles (see Set). Super administrators (a
-// global user flag) implicitly hold all permissions in every tenant.
+// A user holds one or more roles per tenant (and, as a project member, one
+// or more project roles); the effective permissions are the union of the
+// permissions of the held roles (see Set.PermissionsOfAll). A role is a
+// named set of permissions. Seven roles are built in (admin, manager, test
+// lead, tester, subject matter expert, reviewer, viewer); each tenant can
+// change the permissions of every built-in role except admin, and create
+// its own roles (see Set). Holding admin among one's roles makes a user an
+// organisation administrator. Super administrators (a global user flag)
+// implicitly hold all permissions in every tenant.
 package rbac
 
 import (
 	"regexp"
 	"sort"
+	"strings"
 )
 
 // Permission is an action on a resource class.
@@ -68,12 +73,15 @@ const (
 	RoleManager  = "manager"
 	RoleTestLead = "test_lead"
 	RoleTester   = "tester"
+	// RoleSME is the subject matter expert: a domain expert who writes and
+	// reviews requirements (see docs/security.md, "Subject matter expert").
+	RoleSME      = "sme"
 	RoleReviewer = "reviewer"
 	RoleViewer   = "viewer"
 )
 
 // Roles lists the built-in roles from most to least privileged.
-var Roles = []string{RoleAdmin, RoleManager, RoleTestLead, RoleTester, RoleReviewer, RoleViewer}
+var Roles = []string{RoleAdmin, RoleManager, RoleTestLead, RoleTester, RoleSME, RoleReviewer, RoleViewer}
 
 var readPerms = []Permission{ProjectRead, RequirementRd, TestRead, RunRead, MemberRead, Export}
 
@@ -86,6 +94,13 @@ func with(extra ...Permission) []Permission {
 var defaults = map[string][]Permission{
 	RoleViewer:   with(),
 	RoleReviewer: with(RequirementRev, TestReview, CommentCreate),
+	// The subject matter expert takes part in writing requirements: it
+	// creates and edits them (text, criteria, rationale, sources, relations,
+	// trace and item links, attachments), reviews them and discusses them,
+	// and reads everything else in the project for context. It does not
+	// write tests, execute or plan runs and cycles, approve waivers, change
+	// project settings or members, or create API tokens.
+	RoleSME:      with(RequirementWr, RequirementRev, CommentCreate),
 	RoleTester:   with(RunExecute, RunWrite, TestWrite, TokenManage, CommentCreate),
 	RoleTestLead: with(RunExecute, RunWrite, CyclePlan, TestWrite, TestReview, ScriptExecute, AuditRead, TokenManage, SettingsManage, CommentCreate),
 	RoleManager: with(RunExecute, RunWrite, CyclePlan, TestWrite, TestReview, RequirementWr, RequirementRev, WaiverApprove, ProjectCreate, CommentCreate,
@@ -216,6 +231,89 @@ func equal(a, b []string) bool {
 	return true
 }
 
+// NormalizeRoles trims, de-duplicates and orders a list of role names:
+// admin first, then the other built-in roles from most to least
+// privileged, then custom roles alphabetically. Empty names are dropped.
+// The first role of the result is the primary role (the one older clients
+// see as "role"); a list holding admin always has admin as its primary
+// role.
+func NormalizeRoles(roles []string) []string {
+	seen := map[string]bool{}
+	builtin, custom := []string{}, []string{}
+	for _, r := range roles {
+		r = strings.TrimSpace(r)
+		if r == "" || seen[r] {
+			continue
+		}
+		seen[r] = true
+		if IsBuiltin(r) {
+			builtin = append(builtin, r)
+		} else {
+			custom = append(custom, r)
+		}
+	}
+	sort.SliceStable(builtin, func(i, j int) bool { return builtinOrder[builtin[i]] < builtinOrder[builtin[j]] })
+	sort.Strings(custom)
+	return append(builtin, custom...)
+}
+
+var builtinOrder = func() map[string]int {
+	m := map[string]int{}
+	for i, r := range Roles {
+		m[r] = i
+	}
+	return m
+}()
+
+// Primary returns the primary role of a normalised role list ("" when
+// empty).
+func Primary(roles []string) string {
+	if len(roles) == 0 {
+		return ""
+	}
+	return roles[0]
+}
+
+// HasRole reports whether role is in roles.
+func HasRole(roles []string, role string) bool {
+	for _, r := range roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}
+
+// Diff returns the roles of b that are not in a (added) and those of a
+// that are not in b (removed), both in NormalizeRoles order.
+func Diff(a, b []string) (added, removed []string) {
+	for _, r := range NormalizeRoles(b) {
+		if !HasRole(a, r) {
+			added = append(added, r)
+		}
+	}
+	for _, r := range NormalizeRoles(a) {
+		if !HasRole(b, r) {
+			removed = append(removed, r)
+		}
+	}
+	return added, removed
+}
+
+// DescribeChange describes a change of role sets for the audit log:
+// "+sme −viewer" ("" when nothing changed).
+func DescribeChange(before, after []string) string {
+	added, removed := Diff(before, after)
+	var parts []string
+	for _, r := range added {
+		parts = append(parts, "+"+r)
+	}
+	for _, r := range removed {
+		parts = append(parts, "−"+r)
+	}
+	return strings.Join(parts, " ")
+}
+
 // Valid reports whether role exists in the set.
 func (s Set) Valid(role string) bool {
 	_, ok := s[role]
@@ -235,6 +333,32 @@ func (s Set) Can(role string, p Permission) bool {
 // PermissionsOf returns the sorted permissions of a role (empty if unknown).
 func (s Set) PermissionsOf(role string) []string {
 	return append([]string{}, s[role].Permissions...)
+}
+
+// ValidAll reports whether the list is not empty and every role exists in
+// the set; it returns the first unknown role.
+func (s Set) ValidAll(roles []string) (bool, string) {
+	if len(roles) == 0 {
+		return false, ""
+	}
+	for _, r := range roles {
+		if !s.Valid(r) {
+			return false, r
+		}
+	}
+	return true, ""
+}
+
+// PermissionsOfAll returns the union of the permissions of several roles
+// (sorted; unknown roles add nothing).
+func (s Set) PermissionsOfAll(roles []string) []string {
+	var ps []Permission
+	for _, r := range roles {
+		for _, q := range s[r].Permissions {
+			ps = append(ps, Permission(q))
+		}
+	}
+	return sortedStrings(ps)
 }
 
 // Rank orders roles by privilege: admin highest, then by the number of
@@ -332,6 +456,10 @@ func Can(role string, p Permission) bool { return builtins.Can(role, p) }
 
 // PermissionsOf returns the default permissions of a built-in role.
 func PermissionsOf(role string) []string { return builtins.PermissionsOf(role) }
+
+// PermissionsOfAll returns the union of the default permissions of
+// built-in roles.
+func PermissionsOfAll(roles []string) []string { return builtins.PermissionsOfAll(roles) }
 
 // AllPermissions returns every permission (used for super admins).
 func AllPermissions() []string { return sortedStrings(AllPermissionList) }

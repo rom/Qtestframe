@@ -22,7 +22,8 @@ type Invitation struct {
 	TenantID  string    `json:"tenant_id"`
 	UserID    string    `json:"user_id"`
 	Email     string    `json:"email"`
-	Role      string    `json:"role"`
+	Role      string    `json:"role"` // primary role of Roles (deprecated)
+	Roles     []string  `json:"roles"`
 	TokenHash string    `json:"-"`
 	SSO       bool      `json:"sso"`
 	InvitedBy string    `json:"invited_by"`

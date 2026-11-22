@@ -66,10 +66,11 @@ func reportReadPerms(job reportJob) []rbac.Permission {
 
 // reportRecipient is a member who can get reports.
 type reportRecipient struct {
-	UserID      string `json:"user_id"`
-	Email       string `json:"email"`
-	DisplayName string `json:"display_name"`
-	Role        string `json:"role"`
+	UserID      string   `json:"user_id"`
+	Email       string   `json:"email"`
+	DisplayName string   `json:"display_name"`
+	Role        string   `json:"role"`
+	Roles       []string `json:"roles"`
 }
 
 // readers returns the members of the tenant holding perms, by user ID.
@@ -87,7 +88,7 @@ func (s *Server) readers(ctx context.Context, tenantID, projectID string, perms 
 			ok = ok && slices.Contains(acc.Permissions, string(perm))
 		}
 		if ok {
-			out[m.UserID] = reportRecipient{UserID: m.UserID, Email: m.Email, DisplayName: m.Name, Role: m.Role}
+			out[m.UserID] = reportRecipient{UserID: m.UserID, Email: m.Email, DisplayName: m.Name, Role: m.Role, Roles: m.Roles}
 		}
 	}
 	return out, nil
