@@ -149,8 +149,8 @@ type Jira struct {
 func NewJira() *Jira {
 	return &Jira{Issues: map[string]map[string]any{}, PageSize: 2, Comments: map[string][]map[string]any{},
 		Workflow: map[string]string{"To Do": "new", "In Progress": "indeterminate", "Done": "done"},
-		Names:  map[string]string{"summary": "Summary", "description": "Description", "priority": "Priority", "labels": "Labels", "status": "Status", "issuetype": "Issue Type"},
-		Schema: map[string]map[string]string{"labels": {"type": "array", "items": "string"}, "description": {"type": "string"}}}
+		Names:    map[string]string{"summary": "Summary", "description": "Description", "priority": "Priority", "labels": "Labels", "status": "Status", "issuetype": "Issue Type"},
+		Schema:   map[string]map[string]string{"labels": {"type": "array", "items": "string"}, "description": {"type": "string"}}}
 }
 
 func (f *Jira) authorized(r *http.Request) bool {

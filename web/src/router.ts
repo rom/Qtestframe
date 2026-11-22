@@ -54,6 +54,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'traceability', name: 'traceability', component: () => import('./views/TraceabilityView.vue') },
           { path: 'verification', name: 'verification', component: () => import('./views/VerificationView.vue'), meta: { perm: P.requirementRead } },
           { path: 'variants', name: 'variants', component: () => import('./views/VariantsView.vue'), meta: { perm: P.requirementRead } },
+          { path: 'tracker-sync', name: 'trackerSync', component: () => import('./views/TrackerSyncView.vue'), meta: { perm: P.requirementRead } },
           { path: 'code', name: 'code', component: () => import('./views/CodeView.vue'), meta: { perm: P.projectRead } },
           { path: 'graph', name: 'graph', component: () => import('./views/GraphView.vue') },
           { path: 'impact', name: 'impact', component: () => import('./views/ImpactView.vue'), meta: { perm: P.requirementRead } },

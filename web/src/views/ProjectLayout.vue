@@ -66,6 +66,7 @@ const tabs = computed(() => [
   { to: 'verification', icon: 'pi pi-verified', label: t('nav.verification') },
   { to: 'variants', icon: 'pi pi-clone', label: t('variants.nav') },
   { to: 'code', icon: 'pi pi-code', label: t('code.nav') },
+  { to: 'trackerSync', icon: 'pi pi-arrow-right-arrow-left', label: t('nav.trackerSync') },
   { to: 'analytics', icon: 'pi pi-chart-bar', label: t('nav.analytics') },
   { to: 'duplicates', icon: 'pi pi-copy', label: t('nav.duplicates') },
   { to: 'soa', icon: 'pi pi-table', label: t('nav.soa') },
