@@ -265,6 +265,12 @@ async function discover(request) {
     { name: 'dashboard-trends', path: `${p}/dashboard?tab=trends`, wait: 'canvas, .empty' },
     { name: 'dashboard-quality', path: `${p}/dashboard?tab=quality`, wait: 'canvas, .empty' },
     { name: 'dashboard-quality-metrics', path: `${p}/dashboard?tab=quality`, wait: 'section.quality .qkpis' },
+    // customisable dashboards: the seeded shared dashboard, edit mode, the add and settings dialogs, the home dashboard
+    { name: 'dashboard-shared', path: `${p}/dashboard`, open: '[role="tab"]:has-text("Release health")', wait: '.widget-saved_query table, .widget-saved_query .empty' },
+    { name: 'dashboard-edit', path: `${p}/dashboard`, open: 'button[data-test="customise"]', wait: '.dash-grid.editing .handle' },
+    { name: 'dashboard-add-widget', path: `${p}/dashboard`, open: ['button[data-test="customise"]', 'button[data-test="add-widget"]'], wait: '.p-dialog .widget-types' },
+    { name: 'dashboard-widget-settings', path: `${p}/dashboard`, open: ['button[data-test="customise"]', '.widget-coverage .widget-tools button:has(.pi-cog)'], wait: '.p-dialog form' },
+    { name: 'home-dashboard', path: '/home', wait: '.dash-grid .widget' },
     { name: 'requirements', path: `${p}/requirements` },
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
     { name: 'tests', path: `${p}/tests` },

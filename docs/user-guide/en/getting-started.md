@@ -118,7 +118,7 @@ Preferences are stored with your account and applied on every device. Change the
 |---|---|
 | **Language** | English or Swedish; *Browser default* follows the browser. |
 | **Theme** | Colour theme. *Follow the operating system* switches between light and dark with your system setting. |
-| **Start page** | What you see after signing in: the project list, the last opened project, a default project or search. |
+| **Start page** | What you see after signing in: the project list, the last opened project, a default project, search or your [home dashboard](traceability-and-coverage.md#customising-dashboards). |
 | **Default project** | The project opened when the start page is *Default project*. |
 | **Default organisation** | The organisation selected at sign-in when you do not name one. |
 | **Rows per table page** | 10, 25, 50 or 100 rows in tables. |

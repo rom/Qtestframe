@@ -6,7 +6,7 @@
 // picks the widget up and drops it, Escape puts it back. Every change is
 // announced. Widgets report when they come near the screen ("visible"), so
 // their data loads lazily.
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Directive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import { GRID_COLS, applyKey, cellAt, gridRows, moveItem, readingOrder, resizeItem, type KeyMode } from '@/lib/dashboardGrid'
@@ -25,6 +25,29 @@ const emit = defineEmits<{
   remove: [w: DashboardWidget]
 }>()
 const { t } = useI18n()
+
+/** A widget body that scrolls can be focused (and scrolled with the keyboard). */
+type Watched = HTMLElement & { _scrollWatch?: { ro?: ResizeObserver; mo?: MutationObserver } }
+const vScrollFocus: Directive<Watched> = {
+  mounted(el) {
+    const check = () => {
+      const scrolls = el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1
+      if (scrolls) el.setAttribute('tabindex', '0')
+      else el.removeAttribute('tabindex')
+    }
+    el._scrollWatch = {
+      ro: typeof ResizeObserver !== 'undefined' ? new ResizeObserver(check) : undefined,
+      mo: typeof MutationObserver !== 'undefined' ? new MutationObserver(check) : undefined,
+    }
+    el._scrollWatch.ro?.observe(el)
+    el._scrollWatch.mo?.observe(el, { childList: true, subtree: true })
+    check()
+  },
+  unmounted(el) {
+    el._scrollWatch?.ro?.disconnect()
+    el._scrollWatch?.mo?.disconnect()
+  },
+}
 
 const ROW_PX = 80
 const GAP_PX = 16
@@ -235,7 +258,7 @@ defineExpose({ reset })
           <Button icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('dashboards.removeNamed', { title: titleOf(w) })" v-tooltip="t('dashboards.remove')" @click="emit('remove', w)" />
         </div>
       </header>
-      <div class="widget-body" :inert="editing || undefined"><slot :item="w" /></div>
+      <div v-scroll-focus class="widget-body" :inert="editing || undefined"><slot :item="w" /></div>
       <button
         v-if="editing"
         type="button"
@@ -302,6 +325,10 @@ defineExpose({ reset })
   display: flex;
   align-items: center;
   gap: 2px;
+}
+.widget-body:focus-visible {
+  outline: 2px solid var(--qtf-focus);
+  outline-offset: 2px;
 }
 .widget-body {
   flex: 1;

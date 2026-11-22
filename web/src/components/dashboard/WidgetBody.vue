@@ -362,7 +362,7 @@ const frameworkRoute = computed(() => ({ name: 'catalog-attack', params: { proje
 
   <template v-else-if="d !== null || type === 'release_progress'">
     <ul v-if="type === 'key_figures'" class="kpis plain-list" :aria-label="t('dashboard.kpis')">
-      <li v-for="k in kpis" :key="k.label" class="card kpi">
+      <li v-for="k in kpis" :key="k.label" class="kpi kpi-cell">
         <div class="icon" aria-hidden="true" :style="{ background: k.color + '1f', color: k.color }"><i :class="k.icon" /></div>
         <div class="kpi-text">
           <div class="value">{{ k.value }}</div>
@@ -773,7 +773,10 @@ const frameworkRoute = computed(() => ({ name: 'catalog-attack', params: { proje
 .toolbar { gap: 8px; flex-wrap: wrap; }
 .pick-select { min-width: 160px; max-width: 100%; }
 .widget-msg { margin: 0; }
-.kpis { margin: 0; }
+.kpis { margin: 0; gap: 10px; }
+.kpi-cell { border: 1px solid var(--qtf-border); border-radius: 8px; padding: 8px 10px; }
+.kpi-cell .icon { width: 36px; height: 36px; font-size: 16px; }
+.kpi-cell .value { font-size: 20px; }
 .recent-run { display: block; }
 .flaky-list { display: grid; gap: 0; }
 .flaky-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--qtf-border); }
