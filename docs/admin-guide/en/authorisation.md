@@ -30,6 +30,7 @@ These are the permissions of the built-in roles until an organisation changes th
 | `run.write` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  | ✔ | ✔ | ✔ |
+| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `audit.read` |  |  |  | ✔ | ✔ | ✔ |
 | `token.manage` |  |  | ✔ | ✔ | ✔ | ✔ |

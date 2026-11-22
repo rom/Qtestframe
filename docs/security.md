@@ -369,6 +369,7 @@ OIDC/SAML login neither creates nor changes that membership, so
 | project/requirement/test/run read, member.read, export | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | test.review | | ✔ | | ✔ | ✔ | ✔ |
 | requirement.review | | ✔ | | | ✔ | ✔ |
+| comment.create | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | test.write, run.write, run.execute, token.manage | | | ✔ | ✔ | ✔ | ✔ |
 | script.execute, audit.read, settings.manage | | | | ✔ | ✔ | ✔ |
 | requirement.write, waiver.approve, project.create, project.update | | | | | ✔ | ✔ |

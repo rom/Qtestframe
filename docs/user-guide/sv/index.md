@@ -26,6 +26,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Spårbarhet och täckning](traceability-and-coverage.md) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
 | [Varianter och kod](variants-and-code.md) | Varianter och tillämplighet, täckning per variant, incheckningar, merge requests, byggen och regressionsurvalet |
 | [Baslinjer](baselines.md) | Frysa en release och jämföra versioner |
+| [Diskussioner](discussions.md) | Kommentarstrådar på objekt med Markdown, @omnämnanden, reaktioner och lösta trådar, och projektets sida Diskussioner |
 | [Sökning och filter](search-and-filters.md) | Frågespråket med många exempel |
 | [Rapporter och export](reports-and-export.md) | Standardrapporter, den egna rapportbyggaren, exportformat och dokumentarkivet |
 | [Dokument](documents.md) | Projektets dokumentarkiv: uppladdning, förhandsvisning och länkar |

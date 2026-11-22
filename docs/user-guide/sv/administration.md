@@ -26,7 +26,7 @@ Varje organisation börjar med sex inbyggda roller. Som standard kan varje roll 
 | Roll | Kan dessutom (standard) |
 |---|---|
 | **Läsare** | läsa alla projekt, krav, testfall, körningar, dokument och medlemslistan; söka; exportera och ta fram rapporter |
-| **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet |
+| **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet; skriva i [diskussioner](discussions.md) (*comment.create*, som alla roller nedan utom Läsare) |
 | **Testare** | skriva och länka testfall, hantera testmappar och testfallskategorier, skapa och redigera körningar, registrera utfall, importera utfall från CI, ladda upp bilagor till testfall, körningar och exekveringar, skapa egna API-nycklar |
 | **Testledare** | markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
 | **Ansvarig** | godkänna och avvisa krav (*requirement.review*), skriva krav och kravmappar, skapa och redigera projekt, alla kategorier och [spårbarhetsreglerna](traceability-and-coverage.md#spårbarhetsregler), skapa baslinjer |
@@ -40,6 +40,7 @@ Standardmatrisen med behörigheter:
 | `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.review` | | ✔ | | ✔ | ✔ | ✔ |
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
+| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
 | `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
 | `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |

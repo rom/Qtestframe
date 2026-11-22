@@ -45,7 +45,7 @@ Projekt kan skicka signerade händelser till andra system. Användare med `proje
 | defect | `defect.created`, `defect.updated`, `defect.status`, `defect.assigned`, `defect.regression` |
 | risk | `risk.created`, `risk.updated` |
 | release | `release.created`, `release.updated`, `release.released` |
-| comment | `comment.created` |
+| comment | `comment.created`, `comment.mentioned`, `comment.resolved` |
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |

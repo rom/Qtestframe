@@ -191,7 +191,7 @@ Ett instabilt testfall döljer verkliga fel och kostar tid i omkörningar: hitta
 
 ## Kommentarer och versionshistorik
 
-**Kommentarer** och **Versionshistorik** fungerar precis som för [krav](requirements.md#kommentarer). När du återställer en version av ett testfall återställs fälten och stegen som en ny version; stegen får nya id:n och anrop till borttagna testfall tas bort. Om någon annan sparar ett testfall medan du redigerar det kan du jämföra och välja i stället för att skriva över den andras ändringar, se [När någon annan har sparat först](requirements.md#när-någon-annan-har-sparat-först).
+Fliken **Diskussion** och **Versionshistorik** fungerar precis som för [krav](requirements.md#diskussion) (se [Diskussioner](discussions.md)). När du återställer en version av ett testfall återställs fälten och stegen som en ny version; stegen får nya id:n och anrop till borttagna testfall tas bort. Om någon annan sparar ett testfall medan du redigerar det kan du jämföra och välja i stället för att skriva över den andras ändringar, se [När någon annan har sparat först](requirements.md#när-någon-annan-har-sparat-först).
 
 ## Länkar
 

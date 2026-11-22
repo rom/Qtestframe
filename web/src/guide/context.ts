@@ -21,6 +21,7 @@ const BY_ROUTE: Record<string, string> = {
   reports: 'reports-and-export',
   waivers: 'waivers-and-soa',
   soa: 'waivers-and-soa',
+  discussions: 'discussions',
   documents: 'documents',
   search: 'search-and-filters',
   profile: 'getting-started',

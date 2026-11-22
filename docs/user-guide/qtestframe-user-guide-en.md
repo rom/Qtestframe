@@ -26,6 +26,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Traceability and coverage](#traceability-and-coverage) | The traceability matrix, how coverage is calculated, the dashboard |
 | [Variants and code](#variants-and-code) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
 | [Baselines](#baselines) | Freezing a release and comparing versions |
+| [Discussions](#discussions) | Threaded comments on items with Markdown, @mentions, reactions, resolving, and the project's Discussions page |
 | [Search and filters](#search-and-filters) | The query language with many examples |
 | [Reports and export](#reports-and-export) | Standard reports, the custom report builder, export formats and the document archive |
 | [Documents](#documents-1) | The project's document archive: uploads, previews and links |
@@ -614,9 +615,9 @@ A mention is written as `@handle`: for users the part of the e-mail address befo
 
 To find everything that mentions someone, filter with `mention:anna.berg` (or `mention:@anna.berg`).
 
-## Comments
+## Discussion
 
-The **Comments** tab is a discussion thread on the requirement. Write in the field and select **Comment** (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Everyone who can read the requirement can read and write comments. You can edit and delete your own comments; administrators can delete any comment. The number of comments is shown on the tab and in the **Comments** column.
+The **Discussion** tab holds the requirement's [discussion](#discussions): threads of comments in Markdown, with replies, @mentions, reactions and **Resolve**. The number on the tab is the number of open threads; the **Comments** column counts the comments. Everyone who can read the requirement can read the discussion; writing in it needs `comment.create` (every role except Viewer). You can edit and remove your own comments; moderators can remove any comment.
 
 ## When someone else saved first
 
@@ -1076,7 +1077,7 @@ A flaky test hides real failures and wastes time on reruns: find the cause (timi
 
 ## Comments and history
 
-**Comments** and **History** work exactly as for [requirements](#comments). Restoring a test version restores its fields and steps as a new version; steps get new IDs and calls to deleted tests are dropped. If someone else saves a test while you edit it, you can compare and choose instead of overwriting their changes, see [When someone else saved first](#when-someone-else-saved-first).
+The **Discussion** tab and **History** work exactly as for [requirements](#discussion) (see [Discussions](#discussions)). Restoring a test version restores its fields and steps as a new version; steps get new IDs and calls to deleted tests are dropped. If someone else saves a test while you edit it, you can compare and choose instead of overwriting their changes, see [When someone else saved first](#when-someone-else-saved-first).
 
 ## Links
 
@@ -1849,6 +1850,7 @@ You get a notification when someone else:
 
 - assigns a requirement (owner), an execution or a defect to you,
 - mentions you with `@handle` in a description, a comment or execution notes,
+- replies in or resolves a [discussion](#discussions) thread you wrote in, or starts a thread on an item you own or a review you take part in,
 - asks you to review something, or finishes a review you asked for,
 - changes the status of a defect assigned to you.
 
@@ -1933,6 +1935,95 @@ Under **Categories & settings**, project administrators (permission to change th
 Deliveries are not retried and redirects are not followed.
 
 Tick webhooks in the list to **Turn on** or **Turn off** several at once, **Add events** or **Remove events** (each webhook must keep at least one event, otherwise nothing is changed), **Send test** to all of them (the result of each is listed), or **Delete** them. Changes other than deleting can be undone with the undo button.
+
+# Discussions
+
+Every requirement, test, defect, risk, test run and review request has a **discussion**: threads of comments where you ask questions, agree on changes and mention colleagues. A thread stays open until someone resolves it, so open questions do not get lost.
+
+## Where to find a discussion
+
+- **Requirements and tests**: the **Discussion** tab of the editor. The number on the tab is the number of open (unresolved) threads.
+- **Test runs**: the **Discussion** tab of the run, next to the executions, files and links.
+- **Defects and risks**: below the form when you open a defect or a risk.
+- **Review requests**: in the review dialog, below the checklist and the review comment. The reviewer, the person who asked for the review and everyone who can read the reviewed item take part.
+- **All threads of a project**: the project's **Discussions** page (see [The Discussions page](#the-discussions-page)).
+
+## Write a comment
+
+Type in the field at the bottom and select **Start thread** (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Each new comment written there starts a thread. To answer in a thread, select **Reply** below it. Replies are one level deep: a reply to a reply goes to the same thread.
+
+Comments are written in **Markdown**:
+
+| You type | You get |
+|---|---|
+| `**bold**`, `*italic*`, `~~struck~~` | **bold**, *italic*, ~~struck~~ |
+| `` `code` `` and blocks between ```` ``` ```` lines | code |
+| lines starting with `-` or `1.` | lists |
+| `> text` | a quote |
+| `[text](https://example.com)` or a bare address | a link (opens in a new tab) |
+| `SHOP-REQ-12`, `SHOP-TC-3`, `SHOP-BUG-4` | a link to that item |
+
+HTML typed into a comment is shown as text, and images are not shown, so a comment cannot load anything from other sites.
+
+## Mention people
+
+Type `@` and a list of the project's people appears, as in the other text fields (see [Mention people](requirements.md#mention-people)). Use the arrow keys and <kbd>Enter</kbd> or <kbd>Tab</kbd> to insert someone. Mentioned members get a notification, and an e-mail if they chose to get notifications by e-mail (see [Notifications](reviews-and-notifications.md#notifications)). Nobody hears about a project they cannot see.
+
+Who else is told:
+
+- the people who wrote in a thread, about new replies and when the thread is resolved;
+- the owner of the item (a requirement's owner, a defect's assignee, a risk's owner, the reviewer and the requester of a review request), about a new thread.
+
+Everybody is told once per comment, and never about their own comments.
+
+## Edit, remove, react
+
+- **Edit** (pencil) changes your own comment; it is then marked *(edited)*. People you mention in the new text are notified.
+- **Delete** (bin) removes your own comment. It stays in its thread as *This comment was removed*, so the replies still make sense; its text is gone. A **moderator** (someone who may change the project's settings, `project.update`, or manage members) can remove anybody's comment; the audit log records it as moderated.
+- **Add reaction** (smiley) adds a thumbs up, thumbs down, heart, hooray, *looking* or *done*. Select a reaction under a comment to add or take back yours.
+
+## Resolve and reopen
+
+When a question is answered, select **Resolve** below the thread. Resolved threads are folded away: turn on **Show resolved** to see them, marked *Resolved* (point at the mark to see who resolved it and when). **Reopen** opens a thread again. Anybody who can write in the discussion can resolve and reopen threads.
+
+## The Discussions page
+
+The project's **Discussions** page lists the threads of all its items, the latest activity first: the item (with its kind), who started the thread and how, the number of replies and who wrote last. Select an item to open it with its discussion.
+
+Narrow the list with:
+
+- **Open**, **Resolved** or **All** threads;
+- **All threads**, **I took part** (threads you wrote in) or **Mention me**;
+- the kind of item (requirements, tests, defects, risks, test runs, review requests);
+- **Search the comments** for a word in any comment of the thread.
+
+The filters are part of the page address, so you can bookmark *Open threads that mention me*.
+
+## Find items with open discussions
+
+In the requirement and test lists, filter with:
+
+- `has:open-discussion`: items with at least one unresolved thread (`open_discussions>2` for more than two);
+- `mentions:me`: items that mention you, in their texts or in their discussion; `mention:anna.berg` for someone else.
+
+See [Search and filters](search-and-filters.md).
+
+## Permissions
+
+| To | You need |
+|---|---|
+| read a discussion | the read permission of the item (for example `requirement.read`, `run.read`) |
+| comment, reply, edit your comments, resolve, reopen and react | `comment.create` (every role except **Viewer** by default) |
+| remove your own comments | `comment.create` |
+| remove anybody's comment | `project.update` in the project, or `member.manage` |
+
+`comment.create` is a project permission: a project role can grant or withhold it in one project. Every comment, edit, removal, resolution and reopening is recorded in the audit log (`comment.create`, `comment.update`, `comment.delete`, `comment.resolve`, `comment.reopen`).
+
+## Discussions elsewhere
+
+- **Generated documents**: tick **Discussions of the items** under *Appendices* when you generate a requirements specification or a test plan to add an appendix with the threads of its requirements or tests (see [Create a requirements specification or a test plan](documents.md#create-a-requirements-specification-or-a-test-plan)).
+- **Saved projects, backups and the trash**: discussions are part of a saved project and of a backup, and a deleted requirement or test comes back from the trash with its discussion. Deleting a defect, a risk or a run deletes its discussion.
+- **Webhooks**: the events `comment.created`, `comment.mentioned` and `comment.resolved` send new comments, mentions and resolved threads to other systems.
 
 # Traceability and coverage
 
@@ -2545,11 +2636,11 @@ Keywords and field names are case-insensitive. Values with spaces need quotes: `
 
 ### Requirements
 
-`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (the folder path, e.g. `Checkout / Payment`), `category` (`categories`, value names), `dimension` (`Dimension/Name`), `coverage`, `linked` (keys of linked tests), `related`, `parent`, `child` (keys of related, parent and child requirements), `comments`, `mention` (`mentions`: [@handles](#mention-people) in owner, title, description, rationale and source), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: description, method and threshold), `risk` (the highest level of the open [risks](#risk-levels) it addresses: `risk:high`), `defects` (number of open defects on it or its tests: `defects>0`), `catalog` (the [catalogue](#catalogue) entry it was copied from: `catalog:AUTH-01`, `has:catalog`), `verification` (`verified`: the [verification](#verification) state, `verification:failed`), `element` (`elements`: a [system element](#system-elements) it is allocated to, or one above it: `element:"Power unit"`), `variant` (`variants`: the [variants](#variants-and-code) it applies to: `variant:"EU model"`), `applicability` (`all` or `selected`).
+`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (the folder path, e.g. `Checkout / Payment`), `category` (`categories`, value names), `dimension` (`Dimension/Name`), `coverage`, `linked` (keys of linked tests), `related`, `parent`, `child` (keys of related, parent and child requirements), `comments`, `open_discussions` (`open-discussion`: unresolved threads, `has:open-discussion`), `mention` (`mentions`: [@handles](#mention-people) in owner, title, description, rationale and source, and the people mentioned in its discussion; `mentions:me` for yourself), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: description, method and threshold), `risk` (the highest level of the open [risks](#risk-levels) it addresses: `risk:high`), `defects` (number of open defects on it or its tests: `defects>0`), `catalog` (the [catalogue](#catalogue) entry it was copied from: `catalog:AUTH-01`, `has:catalog`), `verification` (`verified`: the [verification](#verification) state, `verification:failed`), `element` (`elements`: a [system element](#system-elements) it is allocated to, or one above it: `element:"Power unit"`), `variant` (`variants`: the [variants](#variants-and-code) it applies to: `variant:"EU model"`), `applicability` (`all` or `selected`).
 
 ### Tests
 
-`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `mention` (@handles in the texts and steps), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from), `variant` (`variants`: the variants it applies to), `applicability` (`all` or `selected`).
+`id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`: action, expected result and data of all steps), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category`, `dimension`, `linked` (keys of linked requirements), `last_result` (`result`), `defect` (`defects`), `calls` (keys of called tests), `depends_on` (`depends`: keys of prerequisite tests), `comments`, `open_discussions` (`open-discussion`: unresolved threads, `has:open-discussion`), `mention` (@handles in the texts and steps, and the people mentioned in its discussion; `mentions:me` for yourself), `version`, `created_by`, `created_at`, `updated_at`, `flaky` (`true` for [flaky tests](#flaky-tests): `flaky:true`), `flakiness` (`flips`: the number of pass/fail flips among the last results: `flakiness>=3`), `catalog` (the catalogue entry it was copied from), `variant` (`variants`: the variants it applies to), `applicability` (`all` or `selected`).
 
 ### Runs and executions
 
@@ -2944,7 +3035,7 @@ Qtestframe can write two complete documents for you and save them in the archive
    - **Filter**: a [query](#search-and-filters) on the requirements (specification) or the tests (test plan), for example `status:approved` or `folder:Checkout`.
    - **Include rejected and obsolete requirements** (and, for a test plan, deprecated tests). They are left out by default.
    - **Group the requirements by** folder, category (one dimension) or type (specification only; a test plan is always grouped by folder).
-   - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report.
+   - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report. **Discussions of the items** adds an appendix with the [discussion](#discussions) threads of the requirements or tests (removed comments are left out; resolved threads are marked).
 3. Select **Create**. A progress bar shows while the document is being written; a project with thousands of requirements takes a few seconds.
 
 The new document appears at the top of the archive, highlighted, with **Open** (PDF) and **Download**. It is a *document* with the tags `generated`, `requirements-specification` or `test-plan` and the version (for example `v2.0`); the earlier versions of the same kind make up its revision history. Obligation keywords in requirement texts (MUST, SHALL, SKA …) are printed in bold.
@@ -3010,11 +3101,11 @@ Every organisation starts with six built-in roles. By default each role in the t
 | Role | Can additionally (default) |
 |---|---|
 | **Viewer** | read all projects, requirements, tests, runs, documents and the member list; search; export and generate reports |
-| **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content |
+| **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content; write in [discussions](#discussions) (*comment.create*, as all roles below except Viewer) |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
 | **Test lead** | mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
 | **Manager** | approve and reject requirements (*requirement.review*), write requirements and requirement folders, create and edit projects, all categories and the [traceability rules](#traceability-rules), create baselines |
-| **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, delete any comment |
+| **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, remove any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
 
 The default matrix of permissions:
@@ -3024,6 +3115,7 @@ The default matrix of permissions:
 | `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.review` | | ✔ | | ✔ | ✔ | ✔ |
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
+| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
 | `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
 | `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
@@ -3567,7 +3659,7 @@ It gets a **new key** in the target project (for example `SHOP-REQ-7` becomes `C
 
 ### Who can see my comments?
 
-Everyone who can read the item, which means every member of the organisation with access to the project, whatever their role. Comments are not visible to other organisations. You can edit and delete your own comments; admins can delete any comment. Comments are deleted together with their item.
+Everyone who can read the item, which means every member of the organisation with access to the project, whatever their role. Comments are not visible to other organisations. You can edit and remove your own comments; moderators (who may change the project's settings) can remove any comment, which then shows as removed. Comments are deleted together with their item. See [Discussions](#discussions).
 
 ### What does "auto-generated" mean on a test?
 
