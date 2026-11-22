@@ -14,7 +14,11 @@ import { api, ApiError, asItems } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { shortHash } from '@/lib/notifications'
 import { formatDateTime, formatFullDateTime } from '@/lib/format'
+import SignExtras from './SignExtras.vue'
+import ESignaturesPanel from './ESignaturesPanel.vue'
+import { browserTimeZone, meaningLabel, signErrorKey } from '@/lib/erecords'
 import { useAuthStore } from '@/stores/auth'
+import { useERecordsStore } from '@/stores/erecords'
 import { useNotify } from '@/composables/notify'
 import type { Signoff } from '@/lib/types'
 
@@ -32,7 +36,14 @@ const busy = ref(false)
 const error = ref('')
 
 const canSign = computed(() => auth.can(P.requirementReview) || auth.can(P.testReview))
-const meanings = computed(() => ['authored', 'reviewed', 'approved', 'released'].map((m) => ({ label: t(`signoff.meaning.${m}`), value: m })))
+// electronic-records mode: the organisation's meanings and the second factor (SignExtras)
+const er = useERecordsStore()
+const mfaCode = ref('')
+const meanings = computed(() =>
+  er.enabled ? er.meanings.map((m) => ({ label: meaningLabel(t, m), value: m })) : ['authored', 'reviewed', 'approved', 'released'].map((m) => ({ label: t(`signoff.meaning.${m}`), value: m })),
+)
+const label = (m: string) => (['authored', 'reviewed', 'approved', 'released'].includes(m) ? t(`signoff.meaning.${m}`) : meaningLabel(t, m))
+const needsMfa = computed(() => er.enabled && !!auth.user?.mfa_enabled)
 const needsPassword = computed(() => (auth.user?.auth_provider ?? 'local') === 'local')
 
 async function load() {
@@ -47,7 +58,8 @@ onMounted(load)
 watch(() => props.baselineId, load)
 
 function openSign() {
-  meaning.value = 'approved'
+  meaning.value = er.enabled ? (er.meanings.includes('approved') ? 'approved' : (er.meanings[0] ?? '')) : 'approved'
+  mfaCode.value = ''
   comment.value = ''
   password.value = ''
   error.value = ''
@@ -58,16 +70,24 @@ async function sign() {
   busy.value = true
   error.value = ''
   try {
-    await api.post(`/baselines/${props.baselineId}/signoffs`, { meaning: meaning.value, comment: comment.value, password: password.value })
+    await api.post(`/baselines/${props.baselineId}/signoffs`, {
+      meaning: meaning.value,
+      comment: comment.value,
+      password: password.value,
+      mfa_code: mfaCode.value.trim(),
+      time_zone: browserTimeZone(),
+    })
     notify.ok(t('signoff.signed'))
     signing.value = false
     await load()
   } catch (e) {
     if (e instanceof ApiError && (e.code === 'reauth_failed' || e.code === 'reauth_required')) error.value = t(`signoff.${e.code}`)
+    else if (e instanceof ApiError && signErrorKey(e.code)) error.value = t(signErrorKey(e.code))
     else notify.fail(e)
   } finally {
     busy.value = false
     password.value = ''
+    mfaCode.value = ''
   }
 }
 </script>
@@ -81,7 +101,7 @@ async function sign() {
     <p v-if="!list.length" class="small muted">{{ t('signoff.none') }}</p>
     <ul v-else class="list">
       <li v-for="s in list" :key="s.id" class="row">
-        <Tag :value="t(`signoff.meaning.${s.meaning}`)" severity="secondary" />
+        <Tag :value="label(s.meaning)" severity="secondary" />
         <span class="grow small">
           <b>{{ s.user_name || s.user_email }}</b>
           <span class="muted" :title="formatFullDateTime(s.signed_at)"> · {{ formatDateTime(s.signed_at) }}</span>
@@ -92,6 +112,7 @@ async function sign() {
         <Tag v-else :value="t('signoff.invalid')" severity="danger" icon="pi pi-exclamation-triangle" />
       </li>
     </ul>
+    <ESignaturesPanel entity-type="baseline" :entity-id="baselineId" :stamp="list.length" />
     <Dialog v-model:visible="signing" modal :header="t('signoff.dialogTitle')" :style="{ width: 'min(480px, 96vw)' }">
       <p class="small">{{ t('signoff.explain') }}</p>
       <div class="form">
@@ -104,11 +125,12 @@ async function sign() {
           <Password v-model="password" input-id="so-pw" :feedback="false" toggle-mask fluid autocomplete="current-password" @keydown.enter="sign" />
         </template>
         <p v-else class="small muted">{{ t('signoff.ssoHint') }}</p>
+        <SignExtras v-model:mfa-code="mfaCode" id-prefix="so" :with-meaning="false" />
         <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
       </div>
       <template #footer>
         <Button :label="t('common.cancel')" severity="secondary" text @click="signing = false" />
-        <Button :label="t('signoff.confirm')" icon="pi pi-check" :disabled="needsPassword && !password" :loading="busy" @click="sign" />
+        <Button :label="t('signoff.confirm')" icon="pi pi-check" :disabled="(needsPassword && !password) || !meaning || (needsMfa && mfaCode.trim().length < 6)" :loading="busy" @click="sign" />
       </template>
     </Dialog>
   </div>

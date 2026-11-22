@@ -11,7 +11,10 @@ import Message from 'primevue/message'
 import Password from 'primevue/password'
 import SelectButton from 'primevue/selectbutton'
 import Textarea from 'primevue/textarea'
+import SignExtras from './SignExtras.vue'
+import { browserTimeZone } from '@/lib/erecords'
 import { useAuthStore } from '@/stores/auth'
+import { useERecordsStore } from '@/stores/erecords'
 
 const props = defineProps<{
   header: string
@@ -25,13 +28,17 @@ const props = defineProps<{
   error?: string
 }>()
 const visible = defineModel<boolean>('visible', { required: true })
-const emit = defineEmits<{ sign: [value: { decision: string; comment: string; password: string }] }>()
+const emit = defineEmits<{ sign: [value: { decision: string; comment: string; password: string; meaning?: string; mfa_code?: string; time_zone?: string }] }>()
 const { t } = useI18n()
 const auth = useAuthStore()
 const needsPassword = computed(() => (auth.user?.auth_provider ?? 'local') === 'local')
 const decision = ref('approve')
 const comment = ref('')
 const password = ref('')
+// electronic-records mode (SignExtras)
+const er = useERecordsStore()
+const meaning = ref('')
+const mfaCode = ref('')
 const decisionOptions = computed(() => [
   { label: t('esign.approve'), value: 'approve' },
   { label: t('esign.reject'), value: 'reject' },
@@ -41,19 +48,27 @@ watch(visible, (v) => {
     decision.value = 'approve'
     comment.value = ''
     password.value = ''
+    mfaCode.value = ''
+    meaning.value = er.meanings.length === 1 ? er.meanings[0] : ''
   }
 })
 watch(
   () => props.busy,
   (b) => {
-    if (!b) password.value = ''
+    if (!b) password.value = mfaCode.value = ''
   },
 )
 const needComment = computed(() => props.commentRequired === 'always' || (props.commentRequired === 'reject' && decision.value === 'reject'))
-const canSign = computed(() => (!needsPassword.value || !!password.value) && (!needComment.value || comment.value.trim().length >= 3))
+const canSign = computed(
+  () =>
+    (!needsPassword.value || !!password.value) &&
+    (!needComment.value || comment.value.trim().length >= 3) &&
+    (!er.enabled || (!!meaning.value && (!auth.user?.mfa_enabled || mfaCode.value.trim().length >= 6))),
+)
 function sign() {
   if (!canSign.value || props.busy) return
-  emit('sign', { decision: props.decisions ? decision.value : 'approve', comment: comment.value.trim(), password: password.value })
+  const extra = er.enabled ? { meaning: meaning.value, mfa_code: mfaCode.value.trim(), time_zone: browserTimeZone() } : {}
+  emit('sign', { decision: props.decisions ? decision.value : 'approve', comment: comment.value.trim(), password: password.value, ...extra })
 }
 </script>
 
@@ -72,6 +87,7 @@ function sign() {
         <Password v-model="password" input-id="esign-pw" :feedback="false" toggle-mask fluid autocomplete="current-password" />
       </template>
       <p v-else class="small muted">{{ t('esign.ssoHint') }}</p>
+      <SignExtras v-model:meaning="meaning" v-model:mfa-code="mfaCode" id-prefix="esign" />
       <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
       <div class="row" style="justify-content: flex-end">
         <Button type="button" :label="t('common.cancel')" severity="secondary" text @click="visible = false" />

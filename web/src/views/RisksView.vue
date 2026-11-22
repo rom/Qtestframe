@@ -2,6 +2,7 @@
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
 import DiscussionPanel from '@/components/DiscussionPanel.vue'
+import ESignaturesPanel from '@/components/ESignaturesPanel.vue'
 import ItemRef from '../components/ItemRef.vue'
 import { customCellText, customColumns } from '@/lib/customColumns'
 import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
@@ -28,6 +29,7 @@ import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { atResidual, filterRisks, heatGrid, levelCounts, levelRank, riskLevel, riskLevelSeverity, riskScore, riskStatusSeverity, RISK_LEVELS, RISK_SCALE, RISK_STATUSES, type HeatCell } from '@/lib/risks'
 import ESignDialog from '@/components/ESignDialog.vue'
+import { signErrorKey } from '@/lib/erecords'
 import SelectButton from 'primevue/selectbutton'
 import { formatDate, formatDateTime } from '@/lib/format'
 import type { Requirement, Risk } from '@/lib/types'
@@ -306,19 +308,19 @@ const residualInvalid = computed(() => (form.value.residual_likelihood === 0) !=
 const acceptOpen = ref(false)
 const acceptBusy = ref(false)
 const acceptError = ref('')
-async function acceptRisk(v: { comment: string; password: string }) {
+async function acceptRisk(v: { comment: string; password: string; meaning?: string; mfa_code?: string; time_zone?: string }) {
   if (!editing.value) return
   acceptBusy.value = true
   acceptError.value = ''
   try {
-    const r = await api.post<Risk>(`/risks/${editing.value.id}/accept`, { comment: v.comment, password: v.password })
+    const r = await api.post<Risk>(`/risks/${editing.value.id}/accept`, { comment: v.comment, password: v.password, meaning: v.meaning, mfa_code: v.mfa_code, time_zone: v.time_zone })
     editing.value = r
     form.value.status = r.status
     acceptOpen.value = false
     notify.ok(t('residual.accepted'), r.key)
     await load()
   } catch (e) {
-    if (e instanceof ApiError && (e.code === 'reauth_failed' || e.code === 'reauth_required')) acceptError.value = t(`esign.${e.code}`)
+    if (e instanceof ApiError && signErrorKey(e.code)) acceptError.value = t(signErrorKey(e.code))
     else acceptError.value = errorMessage(e)
   } finally {
     acceptBusy.value = false
@@ -726,6 +728,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <span v-if="editing.review_due" class="small"><Tag :value="t('residual.reviewDue', { date: formatDate(editing.review_date) })" severity="warn" icon="pi pi-calendar" /></span>
           <Button v-if="canApprove && editing.status !== 'closed'" :label="t('residual.accept')" icon="pi pi-pen-to-square" size="small" outlined @click="(acceptError = ''), (acceptOpen = true)" />
         </div>
+        <ESignaturesPanel v-if="editing" entity-type="risk" :entity-id="editing.id" :stamp="editing.accepted_at ?? ''" />
       </fieldset>
       <div>
         <div class="section-title" style="margin-top: 4px">

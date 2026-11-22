@@ -2,6 +2,7 @@
 import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import ESignaturesPanel from '@/components/ESignaturesPanel.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
@@ -546,6 +547,7 @@ const scriptPlaceholder = computed(() => {
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><DiscussionPanel entity="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (commentCount = n)" @open="(n) => (openDiscussions = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
+  <ESignaturesPanel entity-type="test" :entity-id="item.id" :stamp="item.version" />
   <HistoryPanel
     entity="test"
     :entity-id="item.id"

@@ -17,8 +17,10 @@ import Checkbox from 'primevue/checkbox'
 import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import ItemRef from '@/components/ItemRef.vue'
+import ESignaturesPanel from '@/components/ESignaturesPanel.vue'
 import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
 import ESignDialog from '@/components/ESignDialog.vue'
+import { signErrorKey } from '@/lib/erecords'
 import VariantMultiSelect from '@/components/VariantMultiSelect.vue'
 import { useVariants } from '@/composables/variants'
 import HelpLink from '@/guide/HelpLink.vue'
@@ -184,7 +186,7 @@ function openSign() {
   signError.value = ''
   signOpen.value = true
 }
-async function sign(v: { decision: string; comment: string; password: string }) {
+async function sign(v: { decision: string; comment: string; password: string; meaning?: string; mfa_code?: string; time_zone?: string }) {
   if (!detail.value) return
   signBusy.value = true
   signError.value = ''
@@ -194,7 +196,7 @@ async function sign(v: { decision: string; comment: string; password: string }) 
     signOpen.value = false
     notify.ok(v.decision === 'reject' ? t('waivers.rejectedNote') : t('waivers.signedNote'), w.key)
   } catch (e) {
-    if (e instanceof ApiError && (e.code === 'reauth_failed' || e.code === 'reauth_required')) signError.value = t(`esign.${e.code}`)
+    if (e instanceof ApiError && signErrorKey(e.code)) signError.value = t(signErrorKey(e.code))
     else signError.value = errorMessage(e)
   } finally {
     signBusy.value = false
@@ -436,6 +438,7 @@ async function save() {
         </li>
       </ul>
       <Message v-if="detail.status === 'requested' && canApprove && block && block !== 'not_requested'" severity="info" :closable="false">{{ t(`waivers.block.${block}`) }}</Message>
+      <ESignaturesPanel entity-type="waiver" :entity-id="detail.id" :stamp="detail.approvals.length + detail.status" />
     </template>
     <template #footer>
       <template v-if="detail">

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 // Audit trail: date range, user/action/entity filters, free query, paging,
-// CSV and Markdown export and a detail drawer per entry.
+// CSV and Markdown export and a detail drawer per entry; "Verify audit
+// trail" checks the hash chain (OK or the first broken link) and "Export
+// with hashes" downloads the whole chain for external archiving.
 import { computed, onMounted, ref } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -20,6 +22,7 @@ import type { AuditEntry } from '@/lib/types'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useI18n } from 'vue-i18n'
+import { short, utcStamp, type AuditVerification } from '@/lib/erecords'
 
 const prefs = usePrefsStore()
 const notify = useNotify()
@@ -76,6 +79,32 @@ async function exportAs(format: 'csv' | 'md') {
   }
 }
 
+// ---------- the hash chain ----------
+const verifying = ref(false)
+const verification = ref<AuditVerification | null>(null)
+async function verifyChain() {
+  verifying.value = true
+  try {
+    verification.value = await api.post<AuditVerification>('/audit/verify')
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    verifying.value = false
+  }
+}
+const archiving = ref(false)
+async function archive(format: 'json' | 'csv') {
+  archiving.value = true
+  try {
+    const name = await api.download('/audit/archive', { format }, `audit-trail.${format}`)
+    notify.ok(t('audit.exported'), name)
+  } catch (e) {
+    notify.fail(e, t('audit.exportFailed'))
+  } finally {
+    archiving.value = false
+  }
+}
+
 const detail = ref<AuditEntry | null>(null)
 const drawer = ref(false)
 function show(e: AuditEntry) {
@@ -86,6 +115,27 @@ const details = computed(() => prettyDetails(detail.value?.details))
 </script>
 
 <template>
+  <div class="card chain-card">
+    <div class="row" style="gap: 8px; flex-wrap: wrap">
+      <span class="grow"><b><i class="pi pi-link" aria-hidden="true" /> {{ t('audit.chain.title') }}</b> <span class="small muted">{{ t('audit.chain.intro') }}</span></span>
+      <Button :label="t('audit.chain.verify')" icon="pi pi-verified" :loading="verifying" @click="verifyChain" />
+      <Button :label="t('audit.chain.exportJson')" icon="pi pi-download" severity="secondary" outlined :loading="archiving" @click="archive('json')" />
+      <Button :label="t('audit.chain.exportCsv')" icon="pi pi-file" severity="secondary" outlined :loading="archiving" @click="archive('csv')" />
+    </div>
+    <div aria-live="polite">
+      <Message v-if="verification?.ok" severity="success" :closable="false" class="chain-result">
+        <div><b>{{ t('audit.chain.ok') }}</b> {{ t('audit.chain.okDetail', { n: verification.entries, cp: verification.checkpoints, seq: verification.last_seq, hash: short(verification.last_hash) }) }}</div>
+        <div class="small">{{ t('audit.chain.verifiedAt', { at: utcStamp(verification.verified_at), ms: verification.duration_ms }) }}</div>
+        <div v-if="!verification.key_protected" class="small">{{ t('audit.chain.keyPlain') }}</div>
+      </Message>
+      <Message v-else-if="verification && verification.broken" severity="error" :closable="false" class="chain-result">
+        <div><b>{{ t('audit.chain.broken', { seq: verification.broken.seq }) }}</b> · {{ t(`audit.chain.problem.${verification.broken.problem}`) }}</div>
+        <div class="small">{{ verification.broken.message }}</div>
+        <div v-if="verification.broken.entry_id" class="small mono">{{ t('audit.entryId') }}: {{ verification.broken.entry_id }}</div>
+        <div class="small">{{ t('audit.chain.brokenHint', { n: verification.entries }) }}</div>
+      </Message>
+    </div>
+  </div>
   <div class="card">
     <form class="audit-filters" @submit.prevent="load">
       <div v-field class="field">
@@ -115,6 +165,7 @@ const details = computed(() => prettyDetails(detail.value?.details))
     </form>
     <Message v-if="entries.length >= limit" severity="info" :closable="false" style="margin-bottom: 8px">{{ t('audit.limitReached', { limit }) }}</Message>
     <DataTable v-stack :value="entries" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" :rows-per-page-options="prefs.rowsPerPage" size="small" sort-field="created_at" :sort-order="-1">
+      <Column field="seq" :header="t('audit.chain.seq')" sortable style="width: 70px"><template #body="{ data }"><span class="small mono">{{ data.seq || '—' }}</span></template></Column>
       <Column field="created_at" :header="t('common.time')" sortable style="width: 160px"><template #body="{ data }"><span class="small" :title="formatFullDateTime(data.created_at)">{{ formatDateTime(data.created_at) }}</span></template></Column>
       <Column field="user_email" :header="t('common.user')" sortable style="width: 220px">
         <template #body="{ data }"><span class="row nowrap small" style="gap: 6px; min-width: 0"><UserAvatar v-if="data.user_email" :avatar="data.user_avatar" :user-id="data.user_id" :email="data.user_email" :name="data.user_name || data.user_email" :size="24" /><span class="ellipsis" :title="data.user_email">{{ data.user_email || t('common.system') }}</span></span></template>
@@ -137,6 +188,10 @@ const details = computed(() => prettyDetails(detail.value?.details))
       <dt class="small muted">{{ t('admin.entity') }}</dt><dd>{{ detail.entity_type || '—' }}</dd>
       <dt class="small muted">{{ t('admin.entityId') }}</dt><dd class="mono small" style="word-break: break-all">{{ detail.entity_id || '—' }}</dd>
       <dt class="small muted">{{ t('audit.entryId') }}</dt><dd class="mono small" style="word-break: break-all">{{ detail.id }}</dd>
+      <template v-if="detail.reason"><dt class="small muted">{{ t('audit.reason') }}</dt><dd>{{ detail.reason }}</dd></template>
+      <dt class="small muted">{{ t('audit.chain.seq') }}</dt><dd class="mono small">{{ detail.seq || t('audit.chain.pending') }}</dd>
+      <template v-if="detail.hash"><dt class="small muted">{{ t('audit.chain.hash') }}</dt><dd class="mono small" style="word-break: break-all">{{ detail.hash }}</dd></template>
+      <template v-if="detail.prev_hash"><dt class="small muted">{{ t('audit.chain.prevHash') }}</dt><dd class="mono small" style="word-break: break-all">{{ detail.prev_hash }}</dd></template>
     </dl>
     <div v-if="detail" class="section-title">{{ t('admin.detailsCol') }}</div>
     <pre v-if="detail && details.text" class="console" tabindex="0" :aria-label="t('admin.detailsCol')">{{ details.text }}</pre>
@@ -145,6 +200,12 @@ const details = computed(() => prettyDetails(detail.value?.details))
 </template>
 
 <style scoped>
+.chain-card {
+  margin-bottom: 12px;
+}
+.chain-result {
+  margin-top: 8px;
+}
 .audit-filters {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));

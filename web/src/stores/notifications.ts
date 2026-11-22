@@ -8,9 +8,9 @@ const POLL_MS = 60_000
 export const useNotificationsStore = defineStore('notifications', {
   state: () => ({ items: [] as AppNotification[], unread: 0, timer: 0 as ReturnType<typeof setInterval> | 0 }),
   actions: {
-    async load(unreadOnly = false) {
+    async load(unreadOnly = false, background = false) {
       try {
-        const res = await api.get<{ items: AppNotification[]; unread: number }>('/notifications', unreadOnly ? { unread: 1 } : undefined)
+        const res = await api.get<{ items: AppNotification[]; unread: number }>('/notifications', unreadOnly ? { unread: 1 } : undefined, { background })
         this.items = res.items ?? []
         this.unread = res.unread ?? 0
       } catch {
@@ -39,7 +39,7 @@ export const useNotificationsStore = defineStore('notifications', {
     start() {
       if (this.timer) return
       void this.load()
-      this.timer = setInterval(() => void this.load(), POLL_MS)
+      this.timer = setInterval(() => void this.load(false, true), POLL_MS)
     },
     stop() {
       if (this.timer) clearInterval(this.timer)

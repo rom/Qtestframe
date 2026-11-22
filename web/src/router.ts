@@ -92,6 +92,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'field-sets', name: 'fieldSets', component: () => import('./views/admin/FieldSetsView.vue') },
           { path: 'execution', name: 'executionSettings', component: () => import('./views/admin/ExecutionSettingsView.vue'), meta: { perm: P.settingsManage } },
           { path: 'mfa', name: 'mfaPolicy', component: () => import('./views/admin/MfaPolicyView.vue'), meta: { perm: P.tenantManage } },
+          { path: 'erecords', name: 'erecords', component: () => import('./views/admin/ERecordsView.vue'), meta: { perm: P.auditRead } },
           { path: 'backup', name: 'backup', component: () => import('./views/admin/BackupView.vue'), meta: { superAdmin: true } },
           // runtime server configuration (OIDC, syslog, SMTP, security, runner); links the MFA page (route mfaPolicy)
           { path: 'system', name: 'systemSettings', component: () => import('./views/admin/SystemSettingsView.vue'), meta: { superAdmin: true } },
