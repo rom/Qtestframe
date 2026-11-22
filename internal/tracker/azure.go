@@ -89,6 +89,7 @@ type azureField struct {
 
 type azureWorkItem struct {
 	ID        int            `json:"id"`
+	Rev       int            `json:"rev"`
 	Fields    map[string]any `json:"fields"`
 	Relations []struct {
 		Rel        string         `json:"rel"`
@@ -140,6 +141,11 @@ func (a *Azure) Search(ctx context.Context, wiql string, max int) (*SourceResult
 	if len(ids) > max {
 		ids, res.Truncated = ids[:max], true
 	}
+	return a.read(ctx, ids, res)
+}
+
+// read reads work items by ID (with the project's fields) into res.
+func (a *Azure) read(ctx context.Context, ids []int, res *SourceResult) (*SourceResult, error) {
 	var fl struct {
 		Value []azureField `json:"value"`
 	}
@@ -226,6 +232,9 @@ func (a *Azure) item(w *azureWorkItem, fields map[string]azureField) SourceItem 
 		}
 	}
 	it.Type = it.Values["System.WorkItemType"]
+	if w.Rev > 0 {
+		it.Version = strconv.Itoa(w.Rev)
+	}
 	for _, r := range w.Relations {
 		i := strings.LastIndex(strings.ToLower(r.URL), "/workitems/")
 		if i < 0 {

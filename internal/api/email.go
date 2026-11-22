@@ -319,6 +319,10 @@ func (s *Server) RunJobs(ctx context.Context) {
 	if _, err := s.RunCIJobs(ctx); err != nil {
 		s.Log.Warn("ci job", "err", err)
 	}
+	// scheduled two-way syncs with Jira and Azure DevOps
+	if _, err := s.RunReqSyncJobs(ctx); err != nil {
+		s.Log.Warn("requirement sync job", "err", err)
+	}
 	// scheduled cycle starts and recurring cycles (also without e-mail)
 	if _, err := s.RunCycleJobs(ctx); err != nil {
 		s.Log.Warn("test cycle job", "err", err)

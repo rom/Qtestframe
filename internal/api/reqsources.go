@@ -124,7 +124,12 @@ type importSource struct {
 }
 
 func (s *Server) importSource(r *http.Request, p *Principal, projectID, system string) (*importSource, error) {
-	src, err := s.Store.ImportSources(r.Context(), p.TenantID(), projectID)
+	return s.importSourceCtx(r.Context(), p, projectID, system)
+}
+
+// importSourceCtx is importSource outside a request (the sync jobs).
+func (s *Server) importSourceCtx(ctx context.Context, p *Principal, projectID, system string) (*importSource, error) {
+	src, err := s.Store.ImportSources(ctx, p.TenantID(), projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +140,7 @@ func (s *Server) importSource(r *http.Request, p *Principal, projectID, system s
 			out.jira = &model.DefectTracker{Type: "jira", URL: src.Jira.URL, User: src.Jira.User, Token: src.Jira.Token}
 			return out, nil
 		}
-		t, err := s.Store.DefectTracker(r.Context(), p.TenantID(), projectID)
+		t, err := s.Store.DefectTracker(ctx, p.TenantID(), projectID)
 		if err != nil {
 			return nil, err
 		}

@@ -252,6 +252,12 @@ func retryAfter(res *http.Response) (time.Duration, bool) {
 }
 
 func do(ctx context.Context, hc *http.Client, method, url string, body any, auth func(*http.Request), out any) error {
+	return doContent(ctx, hc, method, url, "application/json", body, auth, out)
+}
+
+// doContent is do with the content type of the body (Azure DevOps takes
+// application/json-patch+json for work item changes).
+func doContent(ctx context.Context, hc *http.Client, method, url, contentType string, body any, auth func(*http.Request), out any) error {
 	var payload []byte
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -261,7 +267,7 @@ func do(ctx context.Context, hc *http.Client, method, url string, body any, auth
 		payload = b
 	}
 	for attempt := 1; ; attempt++ {
-		wait, err := doOnce(ctx, hc, method, url, payload, body != nil, auth, out)
+		wait, err := doOnce(ctx, hc, method, url, contentType, payload, body != nil, auth, out)
 		var te *Error
 		if wait < 0 || !errors.As(err, &te) {
 			return err
@@ -277,7 +283,7 @@ func do(ctx context.Context, hc *http.Client, method, url string, body any, auth
 }
 
 // doOnce sends one request; wait >= 0 when the tracker limited the rate.
-func doOnce(ctx context.Context, hc *http.Client, method, url string, payload []byte, hasBody bool, auth func(*http.Request), out any) (time.Duration, error) {
+func doOnce(ctx context.Context, hc *http.Client, method, url, contentType string, payload []byte, hasBody bool, auth func(*http.Request), out any) (time.Duration, error) {
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 	var rd io.Reader
@@ -290,7 +296,7 @@ func doOnce(ctx context.Context, hc *http.Client, method, url string, payload []
 	}
 	req.Header.Set("Accept", "application/json")
 	if hasBody {
-		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Type", contentType)
 	}
 	req.Header.Set("User-Agent", "qtestframe")
 	auth(req)
