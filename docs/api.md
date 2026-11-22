@@ -1680,8 +1680,41 @@ variant and reports their coverage (`coverage`, `linked_tests`) or result
 and reports that filter requirements or tests. `GET
 /releases/{id}/status?variant=` evaluates a release for one variant (its
 scope requirements that apply, their tests that apply and the results that
-count; the report has `variant`); releasing still evaluates all variants.
-Generated documents take `options.variant`.
+count; the report has `variant`). Generated documents take
+`options.variant`. Runs have the query field `variant` (the name of the
+variant a run tests; none for variant-neutral runs), e.g. `variant:US`.
+
+**History and baselines.** A change of an item's applicability is a
+revision (action `applicability`, changed field `applicability`) in its
+history; the snapshot's `applicability` holds `variant_ids`, the
+variants' names at the time and `expression` (`null`: all variants). The
+audit entry `requirement.applicability` / `test.applicability` reads
+`KEY: before → after`. Restoring a revision or restoring from a baseline
+restores the applicability the snapshot records (snapshots from before it
+was recorded leave it as it is; deleted variants are left out); a baseline
+item whose content is unchanged but whose applicability differs is
+restored too. Baselines snapshot the applicability and `compare` reports
+`applicability` among the changed fields. The trash keeps it with a
+deleted item; project archives and backups contain `item_applicability`.
+
+**Release gates per variant.** A release with `variant_ids` (the
+variants it targets) is evaluated for each of them (`GET
+/releases/{id}/status` → `variants: [{variant, go, criteria, summary}]`),
+with the rules above: per variant only its applicable scope requirements,
+their applicable tests and the results of runs for the variant, an
+ancestor or no variant (variant-neutral runs count for every variant), in
+the variant's configurations. The release is a go only when every
+targeted variant is (marking it released needs that go or an override);
+the combined `criteria` are met when met in every variant, `state` is
+`pass`, `waived` (met thanks to waivers or accepted risks) or `fail`,
+and blocking items name their `variants`. A waiver with `variant_ids`
+accepts its requirements only in those variants (and the variants below
+them); a release evaluated without a variant counts only waivers for every
+variant. The release readiness report adds the table "Exit criteria per
+variant". Deleting a variant removes it from the releases that target it;
+waivers limited to it then cover no variant (deleting never widens a
+waiver). Projects without variants, and releases without `variant_ids`,
+are evaluated as before.
 
 ## Code and builds
 

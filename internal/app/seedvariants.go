@@ -19,7 +19,8 @@ func seedVariantsAndCode(ctx context.Context, st *store.Store, tenantID string, 
 		}
 		return v, st.CreateVariant(ctx, tenantID, v)
 	}
-	if _, err := variant("Retail banking", "product", nil, map[string]string{"segment": "retail"}); err != nil {
+	retail, err := variant("Retail banking", "product", nil, map[string]string{"segment": "retail"})
+	if err != nil {
 		return err
 	}
 	business, err := variant("Business banking", "product", nil, map[string]string{"segment": "business"})
@@ -42,6 +43,19 @@ func seedVariantsAndCode(ctx context.Context, st *store.Store, tenantID string, 
 			return err
 		}
 		if _, err := st.SetApplicability(ctx, tenantID, p.ID, model.KindRequirement, []string{reqs[5].ID}, &model.Applicability{Expression: "segment:retail"}, "seed"); err != nil {
+			return err
+		}
+		// the changes are in the requirements' history
+		for _, r := range []*model.Requirement{reqs[2], reqs[5]} {
+			cur, err := st.GetRequirement(ctx, tenantID, r.ID)
+			if err != nil {
+				return err
+			}
+			if err := st.AddRevision(ctx, tenantID, model.KindRequirement, cur.ID, cur.Version, "applicability", "seed", store.SnapshotRequirement(cur)); err != nil {
+				return err
+			}
+		}
+		if err := seedVariantRelease(ctx, st, tenantID, p, reqs, testIDs, retail, business); err != nil {
 			return err
 		}
 	}
@@ -113,4 +127,43 @@ func seedVariantsAndCode(ctx context.Context, st *store.Store, tenantID string, 
 		}
 	}
 	return nil
+}
+
+// seedVariantRelease adds release 1.5 for both products: gated per variant,
+// with a smoke run for every variant and a waiver for single sign-on that
+// holds for business banking only.
+func seedVariantRelease(ctx context.Context, st *store.Store, tenantID string, p *model.Project, reqs []*model.Requirement, testIDs []string, retail, business *model.Variant) error {
+	rel := &model.Release{ProjectID: p.ID, Name: "1.5", Version: "1.5.0", Status: "planned", Description: "Retail and business banking, released together.",
+		TargetDate: st.Now().AddDate(0, 2, 0).Format(time.DateOnly), VariantIDs: []string{retail.ID, business.ID}, CreatedBy: "seed"}
+	if err := st.CreateRelease(ctx, tenantID, rel); err != nil {
+		return err
+	}
+	if _, _, err := st.SetReleaseRequirements(ctx, tenantID, rel.ID, []string{reqs[0].ID, reqs[1].ID, reqs[2].ID, reqs[5].ID}, nil); err != nil {
+		return err
+	}
+	n := min(2, len(testIDs))
+	run := &model.TestRun{ProjectID: p.ID, Name: "1.5 smoke", Environment: "staging", CreatedBy: "seed", ReleaseID: &rel.ID}
+	if err := st.CreateRun(ctx, tenantID, run, testIDs[:n]); err != nil {
+		return err
+	}
+	es, err := st.ListExecutions(ctx, tenantID, run.ID)
+	if err != nil {
+		return err
+	}
+	passed := model.ResultPassed
+	for _, e := range es {
+		if _, err := st.UpdateExecution(ctx, tenantID, e.ID, "seed", store.ExecutionUpdate{Status: &passed}); err != nil {
+			return err
+		}
+	}
+	w := &model.Waiver{ProjectID: p.ID, Type: "waiver", Title: "Business banking 1.5 without single sign-on", ReleaseID: &rel.ID,
+		RequirementIDs: []string{reqs[2].ID}, VariantIDs: []string{business.ID}, Justification: "Business customers keep password login until their identity providers are connected.",
+		Compensating: "Account lockout after repeated failures.", RequestedBy: "seed@example.com", Status: "requested", CreatedBy: "seed"}
+	if err := st.CreateWaiver(ctx, tenantID, w); err != nil {
+		return err
+	}
+	if err := st.SignWaiver(ctx, tenantID, &model.WaiverApproval{WaiverID: w.ID, UserID: "seed", UserEmail: "ciso@example.com", UserName: "CISO (demo)", Decision: "approve", Comment: "Business banking only."}); err != nil {
+		return err
+	}
+	return st.SetWaiverStatus(ctx, tenantID, w.ID, []string{"requested"}, "approved", "ciso@example.com", "Business banking only.")
 }

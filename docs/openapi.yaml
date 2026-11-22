@@ -2407,7 +2407,7 @@ paths:
       summary: Set applicability of several items
       operationId: putProjectsByPidApplicability
       description: |-
-        `{item_type: requirement|test, item_ids: [...], variant_ids: [...], expression: ""}` → `{updated, applicability}`; needs `requirement.write` or `test.write` for the item type. Empty list and expression: all variants
+        `{item_type: requirement|test, item_ids: [...], variant_ids: [...], expression: ""}` → `{updated, applicability, previous: [{item_id, variant_ids, expression}]}` (`previous`: what each item applied to before, to undo the change); needs `requirement.write` or `test.write` for the item type. Empty list and expression: all variants. Each item whose applicability changes gets a revision (action `applicability`) in its history
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -4976,7 +4976,7 @@ paths:
       summary: Create a waiver or deviation
       operationId: postProjectsByPidWaivers
       description: |-
-        `{"type": "waiver"|"deviation", "title", "release_id" (null: the whole project), "requirement_ids", "justification", "compensating", "conditions", "risk_id", "new_risk": {"title", "likelihood", "impact"} (creates a risk for the requirements and links it), "approvers": [e-mail], "expires_on": "YYYY-MM-DD", "submit": false}` → 201 the waiver (key PROJ-WVR-n), a draft or with `submit` requested (needs requirements, a justification and, for a deviation, compensating measures; the approvers are notified).
+        `{"type": "waiver"|"deviation", "title", "release_id" (null: the whole project), "requirement_ids", "variant_ids" (ids or names: limits the waiver to these variants, each with the variants below it; [] every variant — in a release gated per variant it then accepts only in them), "justification", "compensating", "conditions", "risk_id", "new_risk": {"title", "likelihood", "impact"} (creates a risk for the requirements and links it), "approvers": [e-mail], "expires_on": "YYYY-MM-DD", "submit": false}` → 201 the waiver (key PROJ-WVR-n), a draft or with `submit` requested (needs requirements, a justification and, for a deviation, compensating measures; the approvers are notified).
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
@@ -9325,7 +9325,7 @@ paths:
       summary: Create release
       operationId: postProjectsByPidReleases
       description: |-
-        `{"name","version","description","status","target_date":"YYYY-MM-DD","exit_criteria":[ExitCriterion]}`; without `exit_criteria` the defaults are used
+        `{"name","version","description","status","target_date":"YYYY-MM-DD","exit_criteria":[ExitCriterion],"variant_ids":[ids or names]}` (`variant_ids`: the variants the release targets; its exit criteria are then evaluated per variant); without `exit_criteria` the defaults are used
 
         **Permission:** `project.update`.
       x-permission: project.update
@@ -9444,7 +9444,7 @@ paths:
       summary: Update release
       operationId: patchReleasesById
       description: |-
-        any of the fields above, plus `release_note`, `override`. Setting `status` to `released` needs a go; without it 409 `{"code":"no_go","status":ReleaseStatusReport}` unless `override: true` and a `release_note`. Releasing sets `released_at`/`released_by` and creates the baseline "Release <name>" of the scope and its tests
+        any of the fields above (including `variant_ids`: the variants the release targets, ids or names; `[]` none), plus `release_note`, `override`. Setting `status` to `released` needs a go; without it 409 `{"code":"no_go","status":ReleaseStatusReport}` unless `override: true` and a `release_note`. Releasing sets `released_at`/`released_by` and creates the baseline "Release <name>" of the scope and its tests
 
         **Permission:** `project.update`.
       x-permission: project.update
@@ -9534,7 +9534,7 @@ paths:
       summary: Release status
       operationId: getReleasesByIdStatus
       description: |-
-        `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, actual, total, items:[{kind,id,key,title,note}], available}], summary}`
+        `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, state, actual, total, items:[{kind,id,key,title,note,variants}], waived, accepted, available}], summary, waivers, variant, variants}`. `state`: pass | waived | fail. `?variant=<id or name>`: the readiness for that variant. Without it, a release with `variant_ids` is evaluated per targeted variant: `variants: [{variant: {id, name}, go, criteria, summary}]`, `go` only when every variant's is, and `criteria` combine the variants (met when met in every variant; `items[].variants` names the variants an item blocks in); `summary.variants`, `summary.variants_go`. Per variant only the release's requirements and tests that apply to it count, with the results of runs for the variant (or one of its ancestors) and of variant-neutral runs, in the configurations it is tested in; a waiver limited to variants accepts only in them
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -18181,6 +18181,21 @@ components:
           type: string
         release_note:
           type: string
+        variant_ids:
+          type: array
+          description: the variants the release targets (the exit criteria are evaluated for each); empty for none
+          items:
+            type: string
+        variants:
+          type: array
+          description: names of the targeted variants (derived)
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
         created_by:
           type: string
         created_at:
