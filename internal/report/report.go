@@ -137,6 +137,8 @@ type Data struct {
 	Waivers      []model.Waiver
 	Release      *ReleaseReport
 	SoADecisions map[string]model.SoADecision
+	// Cycle: the evaluated test cycle of the cycle report (nil: none).
+	Cycle *CycleData
 	// Quality: the computed quality metrics (quality metrics report).
 	Quality *analytics.QualityReport
 	// Query is the filter applied by the caller (shown in the subtitle).

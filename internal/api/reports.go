@@ -206,6 +206,11 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 	if err := s.waiverReportData(r, p, pr, id, params, d); err != nil {
 		return nil, err
 	}
+	if id == report.CycleReportID {
+		if d.Cycle, err = s.cycleReportData(ctx, p, pr, strings.TrimSpace(params["cycle_id"])); err != nil {
+			return nil, err
+		}
+	}
 	if id == report.Verification {
 		if d.Verification, err = s.verificationData(ctx, p, pc, d.Requirements); err != nil {
 			return nil, err

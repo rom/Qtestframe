@@ -38,6 +38,9 @@ const (
 	RunRead       Permission = "run.read"
 	RunWrite      Permission = "run.write"
 	RunExecute    Permission = "run.execute"
+	// CyclePlan creates and plans test cycles: their tests, testers,
+	// estimates, runs and recurring schedules.
+	CyclePlan     Permission = "cycle.plan"
 	ScriptExecute Permission = "script.execute"
 	Export        Permission = "export"
 	AuditRead     Permission = "audit.read"
@@ -50,7 +53,7 @@ var AllPermissionList = []Permission{
 	ProjectRead, ProjectCreate, ProjectUpdate, ProjectDelete,
 	RequirementRd, RequirementWr, RequirementRev, WaiverApprove,
 	TestRead, TestWrite, TestReview,
-	RunRead, RunWrite, RunExecute, ScriptExecute,
+	RunRead, RunWrite, RunExecute, CyclePlan, ScriptExecute,
 	Export, AuditRead, TokenManage,
 	MemberRead, MemberManage, RoleManage, SettingsManage, TenantManage,
 }
@@ -80,8 +83,8 @@ var defaults = map[string][]Permission{
 	RoleViewer:   with(),
 	RoleReviewer: with(RequirementRev, TestReview),
 	RoleTester:   with(RunExecute, RunWrite, TestWrite, TokenManage),
-	RoleTestLead: with(RunExecute, RunWrite, TestWrite, TestReview, ScriptExecute, AuditRead, TokenManage, SettingsManage),
-	RoleManager: with(RunExecute, RunWrite, TestWrite, TestReview, RequirementWr, RequirementRev, WaiverApprove, ProjectCreate,
+	RoleTestLead: with(RunExecute, RunWrite, CyclePlan, TestWrite, TestReview, ScriptExecute, AuditRead, TokenManage, SettingsManage),
+	RoleManager: with(RunExecute, RunWrite, CyclePlan, TestWrite, TestReview, RequirementWr, RequirementRev, WaiverApprove, ProjectCreate,
 		ProjectUpdate, ScriptExecute, AuditRead, TokenManage, SettingsManage),
 	RoleAdmin: append([]Permission{}, AllPermissionList...),
 }

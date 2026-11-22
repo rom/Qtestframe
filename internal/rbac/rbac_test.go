@@ -28,6 +28,8 @@ func TestCan(t *testing.T) {
 		{RoleViewer, TestWrite, false},
 		{RoleViewer, Export, true},
 		{RoleTester, RunExecute, true},
+		{RoleTester, CyclePlan, false},
+		{RoleTestLead, CyclePlan, true},
 		{RoleTester, TokenManage, true},
 		{RoleTester, ScriptExecute, false},
 		{RoleTester, RequirementWr, false},
@@ -82,7 +84,7 @@ func TestAllPermissions(t *testing.T) {
 	all := AllPermissions()
 	want := []Permission{TenantManage, MemberRead, MemberManage, ProjectRead, ProjectCreate,
 		ProjectUpdate, ProjectDelete, RequirementRd, RequirementWr, TestRead, TestWrite,
-		RunRead, RunWrite, RunExecute, ScriptExecute, Export, AuditRead, TokenManage, RoleManage, SettingsManage, RequirementRev, TestReview, WaiverApprove}
+		RunRead, RunWrite, RunExecute, ScriptExecute, Export, AuditRead, TokenManage, RoleManage, SettingsManage, RequirementRev, TestReview, WaiverApprove, CyclePlan}
 	if len(all) != len(want) {
 		t.Fatalf("AllPermissions has %d entries, want %d: %v", len(all), len(want), all)
 	}

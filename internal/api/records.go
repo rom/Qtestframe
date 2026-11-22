@@ -29,17 +29,23 @@ var (
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
-			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability"},
+			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability", "cycle"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
 			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness",
-			"elements": "element", "variants": "variant"},
+			"elements": "element", "variants": "variant", "cycles": "cycle"},
 		Prefixes: customFieldPrefix,
 	}
 	runSchema = &query.Schema{
-		Fields:   []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration"},
+		Fields:   []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration", "cycle"},
 		Aliases:  map[string]string{"env": "environment", "config": "configuration", "configurations": "configuration"},
 		Prefixes: customFieldPrefix,
+	}
+	// cycleSchema filters test cycles (GET /projects/{pid}/cycles?q=).
+	cycleSchema = &query.Schema{
+		Fields: []string{"id", "name", "goal", "description", "status", "owner", "release", "variant", "build", "environment", "configuration",
+			"start", "end", "created_by", "created_at", "planned", "executed", "progress", "passed", "failed", "blocked", "unassigned", "test", "assignee"},
+		Aliases: map[string]string{"env": "environment", "config": "configuration", "start_date": "start", "end_date": "end", "tests": "test", "tester": "assignee"},
 	}
 	executionSchema = &query.Schema{
 		Fields:  []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id", "defect", "mention", "configuration"},
@@ -106,6 +112,8 @@ type projectContext struct {
 	variants *store.VariantSet
 	applic   map[string]*model.Applicability
 	vcov     *store.VariantCoverage
+	// test id → names of the cycles planning it (query field cycle)
+	cycles map[string][]string
 }
 
 // verification returns the verification of the project's requirements
@@ -230,6 +238,9 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 			return nil, err
 		}
 		return verification.Compute(*in), nil
+	}
+	if pc.cycles, err = s.Store.CycleNamesByTest(ctx, tenantID, p.ID); err != nil {
+		return nil, err
 	}
 	pc.prereqKeys = map[string][]string{}
 	for _, d := range pc.deps {
@@ -400,6 +411,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"element":       pc.elementTerms(t.ElementIDs),
 		"variant":       pc.variantNames(t.ID),
 		"applicability": {pc.applicabilityKind(t.ID)},
+		"cycle":         pc.cycles[t.ID],
 	})
 }
 
@@ -409,7 +421,7 @@ func runRecord(r *model.TestRun) query.MapRecord {
 		cfgs = append(cfgs, c.Name)
 	}
 	return withCustom(r.CustomFields, query.MapRecord{"id": {r.ID}, "name": {r.Name}, "description": {r.Description}, "status": {r.Status},
-		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}, "configuration": cfgs})
+		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}, "configuration": cfgs, "cycle": {r.CycleName}})
 }
 
 func executionRecord(e *model.Execution) query.MapRecord {

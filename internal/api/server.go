@@ -332,6 +332,7 @@ func (s *Server) routes() {
 	s.routesRoles(h)
 	s.routesDependencies(h)
 	s.routesReleases(h)
+	s.routesCycles(h)
 	s.routesMetrics(h)
 	s.routesDefects(h)
 	s.routesRequirementIssues(h)

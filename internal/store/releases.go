@@ -73,6 +73,12 @@ func validateRelease(r *model.Release) error {
 		if c.Type == "residual_risk" && !ValidRiskThreshold(c.Level) {
 			return Invalidf("the level of residual_risk must be one of %s (or empty for the project's threshold)", strings.Join(model.RiskLevels, ", "))
 		}
+		if c.Type == "cycle_executed" && strings.TrimSpace(c.CycleID) == "" {
+			return Invalidf("cycle_executed needs a cycle_id")
+		}
+		if c.Type != "cycle_executed" {
+			c.CycleID = ""
+		}
 		if c.Type == "trace_rules" {
 			if c.Level == "" {
 				c.Level = "error"
@@ -86,7 +92,22 @@ func validateRelease(r *model.Release) error {
 }
 
 func percentCriterion(t string) bool {
-	return t == "coverage" || t == "passed" || t == "executed" || t == "approved"
+	return t == "coverage" || t == "passed" || t == "executed" || t == "approved" || t == "cycle_executed"
+}
+
+// checkCriteriaCycles verifies that the cycles exit criteria refer to
+// belong to the project.
+func checkCriteriaCycles(ctx context.Context, c conn, tenantID, projectID string, criteria []model.ExitCriterion) error {
+	for _, cr := range criteria {
+		if cr.CycleID == "" {
+			continue
+		}
+		var pid string
+		if err := c.row(ctx, `SELECT project_id FROM test_cycles WHERE id = ? AND tenant_id = ?`, cr.CycleID, tenantID).Scan(&pid); err != nil || pid != projectID {
+			return Invalidf("cycle %q of an exit criterion not found in the project", cr.CycleID)
+		}
+	}
+	return nil
 }
 
 // checkRelease verifies that a release belongs to the project.
@@ -115,6 +136,9 @@ func (s *Store) CreateRelease(ctx context.Context, tenantID string, r *model.Rel
 	if _, err := s.GetProject(ctx, tenantID, r.ProjectID); err != nil {
 		return err
 	}
+	if err := checkCriteriaCycles(ctx, s.c(ctx), tenantID, r.ProjectID, r.ExitCriteria); err != nil {
+		return err
+	}
 	r.ID = newID()
 	r.CreatedAt = s.now()
 	r.UpdatedAt = r.CreatedAt
@@ -128,6 +152,9 @@ func (s *Store) CreateRelease(ctx context.Context, tenantID string, r *model.Rel
 // when and by whom.
 func (s *Store) UpdateRelease(ctx context.Context, tenantID string, r *model.Release, user string) error {
 	if err := validateRelease(r); err != nil {
+		return err
+	}
+	if err := checkCriteriaCycles(ctx, s.c(ctx), tenantID, r.ProjectID, r.ExitCriteria); err != nil {
 		return err
 	}
 	r.UpdatedAt = s.now()
@@ -324,6 +351,9 @@ type ReleaseData struct {
 	// above a threshold ("" = the project's): those not accepted and those
 	// accepted with a valid sign-off (nil when unknown).
 	ResidualRisks func(threshold string) (open, accepted []ReleaseItem)
+	// Cycles returns the plan of a test cycle (ok false when the cycle
+	// does not exist; nil when unknown).
+	Cycles func(id string) (plan []model.TestCycleTest, ok bool)
 }
 
 // ReleaseItem is something a criterion refers to.
@@ -554,6 +584,30 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 			}
 			bad := d.RuleViolations(c.Level)
 			out = append(out, CriterionResult{ExitCriterion: c, Met: len(bad) == 0, Actual: float64(len(bad)), Items: limitItems(bad), Available: true})
+		case "cycle_executed":
+			var plan []model.TestCycleTest
+			ok := false
+			if d.Cycles != nil {
+				plan, ok = d.Cycles(c.CycleID)
+			}
+			if !ok {
+				out = append(out, CriterionResult{ExitCriterion: c, Met: false, Items: []ReleaseItem{}, Available: false})
+				continue
+			}
+			done := 0
+			var miss []ReleaseItem
+			for _, x := range plan {
+				if x.Executed() {
+					done++
+				} else {
+					note := x.Status
+					if x.ConfigurationName != "" {
+						note = x.ConfigurationName + ", " + note
+					}
+					miss = append(miss, ReleaseItem{Kind: model.KindTest, ID: x.TestCaseID, Key: x.TestKey, Title: x.TestTitle, Note: note})
+				}
+			}
+			out = append(out, pctResult(c, done, len(plan), miss))
 		case "risks_mitigated":
 			if d.OpenRisks == nil {
 				out = append(out, CriterionResult{ExitCriterion: c, Met: true})
@@ -797,6 +851,14 @@ func (s *Store) ReleaseStatusForVariant(ctx context.Context, tenantID, id, varia
 	}
 	d.ResidualRisks = func(threshold string) (open, accepted []ReleaseItem) {
 		return residualAbove(projectRisks, scope, EffectiveThreshold(threshold, projectThreshold))
+	}
+	d.Cycles = func(cycleID string) ([]model.TestCycleTest, bool) {
+		var pid string
+		if err := s.c(ctx).row(ctx, `SELECT project_id FROM test_cycles WHERE id = ? AND tenant_id = ?`, cycleID, tenantID).Scan(&pid); err != nil || pid != rel.ProjectID {
+			return nil, false
+		}
+		plan, err := s.CycleTests(ctx, tenantID, cycleID)
+		return plan, err == nil
 	}
 	releaseThreshold := ""
 	for _, c := range rel.ExitCriteria {

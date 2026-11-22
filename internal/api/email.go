@@ -301,6 +301,10 @@ func (s *Server) RunJobs(ctx context.Context) {
 	if _, err := s.RunWaiverExpiry(ctx); err != nil {
 		s.Log.Warn("waiver expiry job", "err", err)
 	}
+	// scheduled cycle starts and recurring cycles (also without e-mail)
+	if _, err := s.RunCycleJobs(ctx); err != nil {
+		s.Log.Warn("test cycle job", "err", err)
+	}
 	if !s.emailOn() {
 		return
 	}

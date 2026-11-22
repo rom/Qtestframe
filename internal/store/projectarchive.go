@@ -105,6 +105,10 @@ var projectArchiveTables = []archiveTable{
 	{"trace_links", ofProject},
 	{"variants", ofProject},
 	{"builds", ofProject},
+	// test cycles before the runs they created
+	{"test_cycles", ofProject},
+	{"test_cycle_tests", `cycle_id IN (SELECT id FROM test_cycles WHERE project_id = ?)`},
+	{"test_cycle_schedules", ofProject},
 	{"test_runs", ofProject},
 	{"run_configurations", inRuns},
 	{"test_executions", inRuns},
@@ -220,6 +224,10 @@ var mustMapColumns = map[string]string{
 // when loading, so a hand-made archive cannot bring them in either).
 func sanitizeArchiveRow(table string, row map[string]any) {
 	switch table {
+	case "test_cycle_schedules":
+		// a loaded project does not create cycles until someone enables it
+		row["enabled"] = false
+		row["next_run_at"] = nil
 	case "webhooks":
 		// the secret is write-only; a loaded webhook stays off until an
 		// administrator sets a new secret and enables it
