@@ -1,0 +1,29 @@
+{{- /* Go testing: KEY_test.go; the key is in the test function name. */ -}}
+package {{.Package}}
+
+import "testing"
+
+// Test{{.Ident}}{{if .Camel}}_{{.Camel}}{{end}}: {{comment "go" .Display}}
+func Test{{.Ident}}{{if .Camel}}_{{.Camel}}{{end}}(t *testing.T) {
+	t.Skip("qtestframe stub: not implemented")
+{{- if .Parametrised}}
+	rows := []struct {
+		name string
+{{- range .Params}}
+		{{.Ident}} string
+{{- end}}
+	}{
+{{- range .DRows}}
+		{name: {{gostr .Name}}{{range $i, $v := .Values}}, {{(index $.Params $i).Ident}}: {{gostr $v}}{{end}}},
+{{- end}}
+	}
+	for _, row := range rows {
+		t.Run(row.name, func(t *testing.T) {
+			_ = row
+{{todo "go" "\t\t\t// " .Test}}
+		})
+	}
+{{- else}}
+{{todo "go" "\t// " .Test}}
+{{- end}}
+}

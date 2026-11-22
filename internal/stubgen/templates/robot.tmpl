@@ -1,0 +1,26 @@
+{{- /* Robot Framework: KEY.robot; the key is in the test name and a tag. */ -}}
+*** Settings ***
+Documentation       {{robot .Display}}
+
+*** Test Cases ***
+{{- if .Parametrised}}
+{{- range .DRows}}
+{{robot (print $.Display " [" .Name "]")}}
+    [Tags]    {{robot $.Key}}    qtestframe-stub
+    {{robot (print $.Key " Steps")}}{{range .Values}}    {{robot .}}{{end}}
+{{end}}
+*** Keywords ***
+{{robot (print .Key " Steps")}}
+    [Documentation]    {{if .Requirements}}Requirements: {{robot (join .Requirements ", ")}}{{else}}{{robot .Display}}{{end}}
+    [Arguments]{{range .Params}}    ${ {{- .Ident -}} }{{end}}
+{{todo "robot" "    # " .Test}}
+    Skip    qtestframe stub: not implemented
+{{- else}}
+{{robot .Display}}
+{{- if .Requirements}}
+    [Documentation]    Requirements: {{robot (join .Requirements ", ")}}
+{{- end}}
+    [Tags]    {{robot .Key}}    qtestframe-stub
+{{todo "robot" "    # " .Test}}
+    Skip    qtestframe stub: not implemented
+{{- end}}

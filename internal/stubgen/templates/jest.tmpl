@@ -1,0 +1,21 @@
+{{- /* Jest and Vitest: KEY.test.ts; the key is in the test name. */ -}}
+{{- if eq .FW.ID "vitest"}}
+import { test } from 'vitest';
+{{- else}}
+import { test } from '@jest/globals';
+{{- end}}
+{{if .Parametrised}}
+test.skip.each([
+{{- range .DRows}}
+  { name: {{js .Name}}{{range $i, $v := .Values}}, {{(index $.Params $i).Ident}}: {{js $v}}{{end}} },
+{{- end}}
+])({{js (print .Display " [$name]")}}, (row) => {
+  // qtestframe stub: not implemented (remove .skip when it is)
+{{todo "typescript" "  // " .Test}}
+});
+{{- else}}
+test.skip({{js .Display}}, () => {
+  // qtestframe stub: not implemented (remove .skip when it is)
+{{todo "typescript" "  // " .Test}}
+});
+{{- end}}

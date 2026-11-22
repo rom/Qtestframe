@@ -1,0 +1,20 @@
+{{- /* pytest: test_KEY.py; the key is in the function name. */ -}}
+import pytest
+
+
+@pytest.mark.skip(reason="qtestframe stub: not implemented")
+{{- if .Parametrised}}
+@pytest.mark.parametrize(
+    {{py (join (idents .Params) ",")}},
+    [
+{{- range .DRows}}
+        pytest.param({{range .Values}}{{py .}}, {{end}}id={{py .Name}}),
+{{- end}}
+    ],
+)
+def test_{{.Ident}}{{if .Snake}}_{{.Snake}}{{end}}({{join (idents .Params) ", "}}):
+{{- else}}
+def test_{{.Ident}}{{if .Snake}}_{{.Snake}}{{end}}():
+{{- end}}
+    """{{pydoc .Display}}"""
+{{todo "python" "    # " .Test}}
