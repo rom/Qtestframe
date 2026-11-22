@@ -167,6 +167,7 @@ func (s *Server) authed(fn handlerFunc, perms ...string) http.Handler {
 
 func (s *Server) principal(r *http.Request) (*Principal, error) {
 	ctx := r.Context()
+	basicTokenAuth(r) // OSLC clients: an API token as the Basic password (oslc.go)
 	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
 		tok := strings.TrimSpace(strings.TrimPrefix(h, "Bearer "))
 		if !auth.IsAPIToken(tok) {

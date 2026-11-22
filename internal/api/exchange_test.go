@@ -68,8 +68,6 @@ func rowOf(t *testing.T, f *excelize.File, sheet, key string) string {
 	return ""
 }
 
-
-
 func summaryOf(m map[string]any) map[string]any { return m["summary"].(map[string]any) }
 
 func rowsOf(m map[string]any) []map[string]any {

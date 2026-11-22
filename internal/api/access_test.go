@@ -151,7 +151,7 @@ func TestProjectAccessRouteWalk(t *testing.T) {
 	}
 	// lists across projects leave the project out
 	for _, c := range []*client{m, bt} {
-		for _, p := range []string{"/api/v1/projects", "/api/v1/search?q=secret", "/api/v1/reviews?requested_by=me", "/api/v1/reviews/in-review", "/api/v1/notifications", "/api/v1/catalog/requirements?project_id=" + fx.pid} {
+		for _, p := range []string{"/api/v1/projects", "/api/v1/search?q=secret", "/api/v1/reviews?requested_by=me", "/api/v1/reviews/in-review", "/api/v1/notifications", "/api/v1/catalog/requirements?project_id=" + fx.pid, "/api/v1/oslc/catalog"} {
 			res := c.raw("GET", p, nil)
 			body, _ := io.ReadAll(res.Body)
 			res.Body.Close()

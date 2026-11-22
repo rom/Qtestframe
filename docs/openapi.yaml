@@ -82,6 +82,8 @@ tags:
   description: Reports, export (CSV, XLSX, PDF, DOCX, Markdown, ReqIF) and search
 - name: Import
   description: Requirement import
+- name: OSLC
+  description: Read-only OSLC RM 2.0 / QM 2.0 provider (RDF/XML, Turtle, JSON-LD)
 - name: Catalogue
   description: Built-in catalogue of standard requirements and tests, and copying them into a project
 - name: Operations
@@ -165,6 +167,283 @@ paths:
             application/yaml:
               schema:
                 type: string
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/catalog:
+    get:
+      tags:
+      - OSLC
+      summary: OSLC service provider catalog
+      operationId: getOslcCatalog
+      description: |-
+        oslc:ServiceProviderCatalog with one oslc:ServiceProvider per project the caller may read (restricted projects only for their members).
+
+        **Permission:** authenticated.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - OSLC
+      summary: OSLC service provider
+      operationId: getOslcProjectsByPid
+      description: |-
+        oslc:ServiceProvider of a project: an RM service (query capability for oslc_rm:Requirement) and a QM service (oslc_qm:TestCase), each when the caller may read the kind.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/requirements:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - OSLC
+      summary: OSLC requirement query
+      operationId: getOslcProjectsByPidRequirements
+      description: |-
+        Query capability: the requirements as rdfs:member of the query base with their properties, and an oslc:ResponseInfo (oslc:totalCount, oslc:nextPage). oslc.select and oslc.orderBy are ignored.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: oslc.where
+        in: query
+        schema:
+          type: string
+        description: 'e.g. dcterms:identifier="SHOP-REQ-12" or dcterms:modified>"2026-01-01T00:00:00Z"^^xsd:dateTime; properties dcterms:identifier, dcterms:title, dcterms:modified, dcterms:created; operators = != < > <= >= in [..], joined by and'
+      - name: oslc.prefix
+        in: query
+        schema:
+          type: string
+      - name: oslc.pageSize
+        in: query
+        schema:
+          type: integer
+      - name: page
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/requirements/{item}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: item
+      in: path
+      required: true
+      schema:
+        type: string
+      description: id or key of the item
+    get:
+      tags:
+      - OSLC
+      summary: OSLC requirement
+      operationId: getOslcProjectsByPidRequirementsByItem
+      description: |-
+        oslc_rm:Requirement: dcterms identifier, title, description, created, modified, creator, subject (tags); oslc_rm:validatedBy (tests), relations as qtf:<type> and the nearest OSLC RM property; status, obligation, type, priority as qtf: properties. ETag is the version.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/tests:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - OSLC
+      summary: OSLC test case query
+      operationId: getOslcProjectsByPidTests
+      description: |-
+        Query capability for oslc_qm:TestCase (as for requirements).
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      parameters:
+      - name: oslc.where
+        in: query
+        schema:
+          type: string
+        description: 'e.g. dcterms:identifier="SHOP-REQ-12" or dcterms:modified>"2026-01-01T00:00:00Z"^^xsd:dateTime; properties dcterms:identifier, dcterms:title, dcterms:modified, dcterms:created; operators = != < > <= >= in [..], joined by and'
+      - name: oslc.prefix
+        in: query
+        schema:
+          type: string
+      - name: oslc.pageSize
+        in: query
+        schema:
+          type: integer
+      - name: page
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/projects/{pid}/tests/{item}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: item
+      in: path
+      required: true
+      schema:
+        type: string
+      description: id or key of the item
+    get:
+      tags:
+      - OSLC
+      summary: OSLC test case
+      operationId: getOslcProjectsByPidTestsByItem
+      description: |-
+        oslc_qm:TestCase with oslc_qm:validatesRequirement.
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/oslc/rootservices:
+    get:
+      tags:
+      - OSLC
+      summary: OSLC root services
+      operationId: getOslcRootservices
+      description: |-
+        Discovery document (Jazz rootservices): points RM and QM clients to the catalog. Holds no data.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: RDF (by the Accept header; RDF/XML by default)
+          content:
+            application/rdf+xml:
+              schema:
+                type: string
+            text/turtle:
+              schema:
+                type: string
+            application/ld+json:
+              schema:
+                type: object
         default:
           $ref: '#/components/responses/Error'
   /api/v1/auth/providers:
@@ -5145,6 +5424,191 @@ paths:
                     type: integer
         '401':
           $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/reqif/apply:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Apply a ReqIF import
+      operationId: postProjectsByPidExchangeReqifApply
+      description: |-
+        Parses and compares the file again (same fields as the preview) and saves the confirmed rows in one transaction through the regular create and update handlers (history, audit, suspect links). Conflicts are skipped unless `overwrite_conflicts`; `exclude` (JSON array of row indexes) leaves rows out. Records the IDENTIFIERs of the objects and relations (`external_refs`) for the next re-import, adds the relations of the document and removes relations imported before that the document no longer has. → `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, references_saved, items:[{index, location, id, key, title, action, version}], skipped_rows:[{index, location, title, reason}]}`; audited as `requirement.import`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReqIFExchangeUpload'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/reqif/preview:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Preview a ReqIF import
+      operationId: postProjectsByPidExchangeReqifPreview
+      description: |-
+        Reads a ReqIF 1.x document (.reqif or .reqifz, e.g. from IBM DOORS, DOORS Next or Siemens Polarion) and compares it with the project; nothing is stored. Objects already imported (by IDENTIFIER) or exported from this project are updates. → the diff (as for the Excel preview) plus `{title, tool, qtestframe, attributes:[{name, type, values, objects, sample, object_types, field, guess}], targets:[{key, label, type}], relation_types:{name: type}, relations:{add, remove, keep, changes:[…]}, folders, skipped, errors, previous, target_folder}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReqIFExchangeUpload'
+      responses:
+        '200':
+          description: The diff; nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeDiff'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/xlsx:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: Export a round-trip workbook
+      operationId: getProjectsByPidExchangeXlsx
+      description: |-
+        Excel workbook for editing and importing back: sheet Requirements or Tests with ID, Key and Version columns and one column per field (relations and links as keys), a Steps sheet for tests, instructions and a hidden sheet with the column keys. Query: `kind` (requirement | test), `q`, `folder_id`, `recursive`. Audited as `project.export`.
+
+        **Permission:** `export` (and the read permission of the kind).
+      x-permission: export
+      parameters:
+      - name: kind
+        in: query
+        schema:
+          type: string
+          enum: [requirement, test]
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: folder_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The workbook
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/xlsx/apply:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Apply an edited workbook
+      operationId: postProjectsByPidExchangeXlsxApply
+      description: |-
+        Compares the workbook again and saves the confirmed rows in one transaction (all or nothing) through the regular create and update handlers: history, audit, suspect links, notifications. Rows with errors are skipped, conflicts too unless `overwrite_conflicts`; `create=false` skips new rows; `exclude` is a JSON array of row indexes. A save that races with the import answers 409 `stale`. → `{created, updated, unchanged, skipped, folders_created, relations_added, relations_removed, links_added, links_removed, items:[…], skipped_rows:[…]}`; audited as `requirement.import` / `test.import`
+
+        **Permission:** `project.read` (and the write permission of the kind; the review permission to set a review status).
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExchangeUpload'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeResult'
+        '409':
+          description: An item was saved by someone else during the import (code `stale`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exchange/xlsx/preview:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Preview an edited workbook
+      operationId: postProjectsByPidExchangeXlsxPreview
+      description: |-
+        Compares a round-trip workbook with the stored items; nothing is stored. Rows with an ID (or a known Key) are updates, rows without are new; a row whose Version differs from the stored one and whose values differ is a conflict. → `{kind, file, summary:{new, changed, unchanged, conflicts, errors}, rows:[{index, row, location, status, id, key, title, base_version, version, changes:[{field, label, cell, old, new}], errors:[{field, label, cell, message}], warnings}], columns:[Field], ignored:[header], warnings}`
+
+        **Permission:** `project.read` (and the write permission of the kind).
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExchangeUpload'
+      responses:
+        '200':
+          description: The diff; nothing is stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeDiff'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/export/view:
@@ -13026,6 +13490,130 @@ components:
           type: array
           items:
             type: string
+    ExchangeUpload:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: A round-trip workbook (.xlsx), at most 20 MB
+        kind:
+          type: string
+          enum: [requirement, test]
+          description: Default from the workbook
+        overwrite_conflicts:
+          type: boolean
+        create:
+          type: boolean
+        exclude:
+          type: string
+          description: JSON array of row indexes
+    ReqIFExchangeUpload:
+      type: object
+      required:
+      - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: .reqif or .reqifz, at most 20 MB
+        mapping:
+          type: string
+          description: JSON object attribute long name → field key, heading, external_id, version or "" (ignored)
+        folder_id:
+          type: string
+          description: The folder the hierarchy goes below
+        hierarchy:
+          type: boolean
+          description: Heading objects become folders (default true)
+        overwrite_conflicts:
+          type: boolean
+        exclude:
+          type: string
+          description: JSON array of row indexes
+    ExchangeDiff:
+      type: object
+      properties:
+        kind:
+          type: string
+        summary:
+          type: object
+          properties:
+            new:
+              type: integer
+            changed:
+              type: integer
+            unchanged:
+              type: integer
+            conflicts:
+              type: integer
+            errors:
+              type: integer
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              location:
+                type: string
+              status:
+                type: string
+                enum: [new, changed, unchanged, conflict, error]
+              id:
+                type: string
+              key:
+                type: string
+              title:
+                type: string
+              changes:
+                type: array
+                items:
+                  type: object
+              errors:
+                type: array
+                items:
+                  type: object
+        columns:
+          type: array
+          items:
+            type: object
+        warnings:
+          type: array
+          items:
+            type: string
+    ExchangeResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        unchanged:
+          type: integer
+        skipped:
+          type: integer
+        folders_created:
+          type: integer
+        relations_added:
+          type: integer
+        relations_removed:
+          type: integer
+        links_added:
+          type: integer
+        links_removed:
+          type: integer
+        items:
+          type: array
+          items:
+            type: object
+        skipped_rows:
+          type: array
+          items:
+            type: object
     ImportUpload:
       type: object
       required:
