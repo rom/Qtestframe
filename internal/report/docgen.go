@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/customfield"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/reqlang"
@@ -41,9 +42,9 @@ var DocGroupings = []string{GroupByFolder, GroupByCategory, GroupByType}
 // Document fields: what is shown of each requirement and test.
 var (
 	RequirementDocFields = []string{"description", "rationale", "criteria", "type", "priority", "obligation", "status", "source",
-		"owner", "tags", "categories", "relations", "tests", "results", "version"}
+		"owner", "tags", "categories", "relations", "tests", "results", "version", "custom_fields"}
 	TestDocFields = []string{"description", "preconditions", "steps", "expected", "priority", "execution_type", "status",
-		"estimate", "tags", "categories", "dependencies", "requirements", "data", "results", "version"}
+		"estimate", "tags", "categories", "dependencies", "requirements", "data", "results", "version", "custom_fields"}
 )
 
 // DefaultDocFields are the fields shown when none are chosen: all but the
@@ -183,6 +184,9 @@ type DocData struct {
 	Signoffs  []model.Signoff
 	Revisions []Revision
 	Now       time.Time
+	// CustomFields are the project's custom field definitions per item
+	// kind (requirement, test), shown with the "custom_fields" field.
+	CustomFields map[string][]model.CustomField
 }
 
 // DocTitle is the default title of a document of kind in lang.
@@ -919,6 +923,7 @@ func (g *docGen) requirement(rq *model.Requirement, level int) {
 	add("source", "Source", src)
 	add("owner", "Owner", rq.Owner)
 	add("tags", "Tags", strings.Join(rq.Tags, ", "))
+	fs = append(fs, g.customItems(model.KindRequirement, rq.CustomFields)...)
 	if o.has("categories") {
 		fs = append(fs, export.Item{Label: l.t("Categories"), Value: g.categoryNames(rq.CategoryIDs)})
 	}
@@ -1398,6 +1403,7 @@ func (g *docGen) test(t *model.TestCase, level int) {
 		add("estimate", "Estimated time", g.f("{n} min", "n", strconv.Itoa(t.EstimatedMin)))
 	}
 	add("tags", "Tags", strings.Join(t.Tags, ", "))
+	fs = append(fs, g.customItems(model.KindTest, t.CustomFields)...)
 	if o.has("categories") {
 		fs = append(fs, export.Item{Label: l.t("Categories"), Value: g.categoryNames(t.CategoryIDs)})
 	}
@@ -1503,4 +1509,19 @@ func (g *docGen) coverage(in, out []*model.Requirement) {
 		rows = append(rows, []string{rq.Key, rq.Title, g.enum(EnumStatus, rq.Status), g.enum(EnumObligation, obl)})
 	}
 	g.add(export.Table([]string{l.t("Key"), l.t("Title"), l.t("Status"), l.t("Obligation")}, rows, 1.3, 3.6, 1.2, 1.4))
+}
+
+// customItems are the custom field values of an item (fields without a
+// value are left out) when the document shows custom fields.
+func (g *docGen) customItems(kind string, values model.CustomValues) []export.Item {
+	if !g.o.has("custom_fields") || len(values) == 0 {
+		return nil
+	}
+	var out []export.Item
+	for _, f := range g.d.CustomFields[kind] {
+		if v, ok := values[f.Key]; ok {
+			out = append(out, export.Item{Label: f.Label, Value: customfield.Text(&f, v, g.l.lang)})
+		}
+	}
+	return out
 }

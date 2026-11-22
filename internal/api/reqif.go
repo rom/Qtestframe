@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/customfield"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 )
@@ -48,6 +49,14 @@ func (s *Server) exportReqIF(w http.ResponseWriter, r *http.Request, p *Principa
 	if strings.TrimSpace(expr) != "" {
 		doc.Comment += "; filter: " + strings.TrimSpace(expr)
 	}
+	cfDefs, err := s.Store.ListCustomFields(ctx, p.TenantID(), pr.ID, model.KindRequirement)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	for _, f := range cfDefs {
+		doc.CustomFields = append(doc.CustomFields, export.ReqIFCustomField{Key: f.Key, Name: customfield.Column(&f), Type: f.Type, Options: f.Options})
+	}
 
 	// Folders: all requirement folders, or with a filter only those that
 	// contain an exported requirement (directly or below).
@@ -88,6 +97,12 @@ func (s *Server) exportReqIF(w http.ResponseWriter, r *http.Request, p *Principa
 			CreatedBy: rq.CreatedBy, Tags: rq.Tags, Categories: cats, Version: rq.Version, CreatedAt: rq.CreatedAt, UpdatedAt: rq.UpdatedAt}
 		if rq.FolderID != nil {
 			x.FolderID = *rq.FolderID
+		}
+		if len(rq.CustomFields) > 0 {
+			x.Custom = map[string][]string{}
+			for k, v := range rq.CustomFields {
+				x.Custom[k] = customfield.Strings(v)
+			}
 		}
 		for _, c := range rq.Criteria {
 			x.Criteria = append(x.Criteria, export.ReqIFCriterion{Description: c.Description, Method: c.Method, Threshold: c.Threshold})

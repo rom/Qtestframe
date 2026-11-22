@@ -462,6 +462,12 @@ func isMember(ctx context.Context, c conn, tenantID, email string) bool {
 	return n > 0
 }
 
+// IsMemberEmail reports whether an e-mail address belongs to a member of
+// the organisation (the values of user fields).
+func (s *Store) IsMemberEmail(ctx context.Context, tenantID, email string) bool {
+	return isMember(ctx, s.c(ctx), tenantID, email)
+}
+
 // checkCustom validates an item's custom values against the definitions
 // of its project and kind (old: the stored values on update, nil on create).
 func checkCustom(ctx context.Context, c conn, tenantID, projectID, entity string, values, old model.CustomValues, create bool) (model.CustomValues, error) {
@@ -513,4 +519,17 @@ func (s *Store) checkItemCustom(ctx context.Context, tenantID, entity, id string
 		return nil, mapErr(err, entity)
 	}
 	return checkCustom(ctx, c, tenantID, projectID, entity, values, decodeCustom(old), false)
+}
+
+type lenientKey struct{}
+
+// lenientCustomFields marks ctx so that new items need not fill required
+// custom fields (imports; defaults still apply).
+func lenientCustomFields(ctx context.Context) context.Context {
+	return context.WithValue(ctx, lenientKey{}, true)
+}
+
+func isLenientCustom(ctx context.Context) bool {
+	v, _ := ctx.Value(lenientKey{}).(bool)
+	return v
 }

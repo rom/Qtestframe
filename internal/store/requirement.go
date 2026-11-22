@@ -113,7 +113,7 @@ func (s *Store) CreateRequirement(ctx context.Context, tenantID string, r *model
 // insertRequirement allocates the key of a validated requirement and
 // inserts it with its categories and criteria.
 func insertRequirement(ctx context.Context, c conn, tenantID string, r *model.Requirement) error {
-	custom, err := checkCustom(ctx, c, tenantID, r.ProjectID, model.KindRequirement, r.CustomFields, nil, true)
+	custom, err := checkCustomOpt(ctx, c, tenantID, r.ProjectID, model.KindRequirement, r.CustomFields, nil, true, isLenientCustom(ctx))
 	if err != nil {
 		return err
 	}

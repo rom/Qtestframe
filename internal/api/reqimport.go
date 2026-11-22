@@ -39,12 +39,16 @@ func formBool(r *http.Request, name string, def bool) bool {
 }
 
 // parseImportUpload reads the upload and parses it with the form options.
-func (s *Server) parseImportUpload(w http.ResponseWriter, r *http.Request) (*reqimport.Result, *upload, error) {
+func (s *Server) parseImportUpload(w http.ResponseWriter, r *http.Request, p *Principal, pr *model.Project) (*reqimport.Result, *upload, error) {
 	up, err := readUpload(w, r, "file", maxImportBytes)
 	if err != nil {
 		return nil, nil, err
 	}
-	opt := reqimport.Options{Format: r.FormValue("format"), Sheet: r.FormValue("sheet"), MaxCandidates: maxImportCandidates}
+	defs, err := s.Store.ListCustomFields(r.Context(), p.TenantID(), pr.ID, model.KindRequirement)
+	if err != nil {
+		return nil, nil, err
+	}
+	opt := reqimport.Options{Format: r.FormValue("format"), Sheet: r.FormValue("sheet"), MaxCandidates: maxImportCandidates, CustomFields: defs}
 	if m := strings.TrimSpace(r.FormValue("mapping")); m != "" && m != "null" {
 		if err := json.Unmarshal([]byte(m), &opt.Mapping); err != nil {
 			return nil, nil, badRequest("mapping must be a JSON object of column header → field: %v", err)
@@ -140,7 +144,7 @@ func (s *Server) handleImportPreview(w http.ResponseWriter, r *http.Request, p *
 	if !ok {
 		return
 	}
-	res, _, err := s.parseImportUpload(w, r)
+	res, _, err := s.parseImportUpload(w, r, p, pr)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -156,7 +160,13 @@ func (s *Server) handleImportPreview(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 	dups := markDuplicates(existing, res.Candidates)
-	writeJSON(w, http.StatusOK, importPreview{Result: res, Fields: reqimport.Fields, Total: len(res.Candidates), Duplicates: dups, TargetFolder: rootPath})
+	fields := append([]string(nil), reqimport.Fields...)
+	if defs, err := s.Store.ListCustomFields(r.Context(), p.TenantID(), pr.ID, model.KindRequirement); err == nil {
+		for _, d := range defs {
+			fields = append(fields, reqimport.CustomPrefix+d.Key)
+		}
+	}
+	writeJSON(w, http.StatusOK, importPreview{Result: res, Fields: fields, Total: len(res.Candidates), Duplicates: dups, TargetFolder: rootPath})
 }
 
 type importedItem struct {
@@ -195,7 +205,7 @@ func (s *Server) handleImportRequirements(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
-	res, up, err := s.parseImportUpload(w, r)
+	res, up, err := s.parseImportUpload(w, r, p, pr)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -262,6 +272,7 @@ func (s *Server) handleImportRequirements(w http.ResponseWriter, r *http.Request
 		if rq.Status == "" {
 			rq.Status = status
 		}
+		rq.CustomFields = s.importCustom(r, p, pr, c, &out.Warnings)
 		for _, cr := range c.Criteria {
 			rq.Criteria = append(rq.Criteria, model.EvaluationCriterion{Description: cr.Description, Method: cr.Method, Threshold: cr.Threshold})
 		}

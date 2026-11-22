@@ -252,6 +252,13 @@ func parseReqIFDoc(data []byte, opt Options, res *Result) error {
 				cd.Folder = joinFolder(folder, text)
 			case FieldCriteria:
 				rw.criteria = joinText(rw.criteria, text)
+			default:
+				if k, ok := strings.CutPrefix(colField[name], CustomPrefix); ok {
+					if cd.CustomFields == nil {
+						cd.CustomFields = map[string]string{}
+					}
+					cd.CustomFields[k] = joinText(cd.CustomFields[k], text)
+				}
 			}
 		}
 		if chapter != "" && cd.Description == "" {

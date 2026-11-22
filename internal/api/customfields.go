@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"slices"
 	"sort"
@@ -10,6 +11,7 @@ import (
 	"github.com/rom/qtestframe/internal/customfield"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
+	"github.com/rom/qtestframe/internal/reqimport"
 )
 
 // Custom fields and item templates (customfield, store/customfields.go,
@@ -531,4 +533,86 @@ func (s *Server) applyFieldSetOnCreate(r *http.Request, p *Principal, pr *model.
 	if len(added) > 0 {
 		s.audit(r.Context(), p, "field_set.apply", "project", pr.ID, pr.Type+": "+strconv.Itoa(len(added))+" fields added")
 	}
+}
+
+// restorableCustom returns the custom values an item gets when it is
+// restored to an older version: the old values of the fields the project
+// still has (values that no longer fit a field are left out), and the
+// current values of keys the project has no field for.
+func (s *Server) restorableCustom(ctx context.Context, p *Principal, projectID, entity string, old, cur model.CustomValues) model.CustomValues {
+	defs, err := s.Store.ListCustomFields(ctx, p.TenantID(), projectID, entity)
+	if err != nil {
+		return cur
+	}
+	out := model.CustomValues{}
+	known := map[string]bool{}
+	for i := range defs {
+		f := &defs[i]
+		known[f.Key] = true
+		if v, ok := old[f.Key]; ok {
+			if n, err := customfield.Normalize(f, v); err == nil && n != nil {
+				out[f.Key] = n
+			}
+		}
+	}
+	for k, v := range cur {
+		if !known[k] {
+			out[k] = v
+		}
+	}
+	return out
+}
+
+// customColumns are the export column headers of custom fields: "Label"
+// or "Label (unit)".
+func customColumns(defs []model.CustomField) []string {
+	out := make([]string, len(defs))
+	for i := range defs {
+		out[i] = customfield.Column(&defs[i])
+	}
+	return out
+}
+
+// customCells are an item's values for customColumns, in the re-importable
+// text form (numbers without the unit, true/false, options comma
+// separated).
+func customCells(defs []model.CustomField, values model.CustomValues) []string {
+	out := make([]string, len(defs))
+	for i := range defs {
+		out[i] = customfield.Plain(values[defs[i].Key])
+	}
+	return out
+}
+
+// importCustom converts the custom field texts of an import candidate;
+// values that do not fit their field are left out with a warning.
+func (s *Server) importCustom(r *http.Request, p *Principal, pr *model.Project, c reqimport.Candidate, warnings *[]string) model.CustomValues {
+	if len(c.CustomFields) == 0 {
+		return nil
+	}
+	defs, err := s.Store.ListCustomFields(r.Context(), p.TenantID(), pr.ID, model.KindRequirement)
+	if err != nil {
+		return nil
+	}
+	out := model.CustomValues{}
+	for i := range defs {
+		f := &defs[i]
+		text, ok := c.CustomFields[f.Key]
+		if !ok {
+			continue
+		}
+		v, err := customfield.Parse(f, text)
+		if err != nil {
+			*warnings = append(*warnings, c.Location+": "+strings.TrimPrefix(err.Error(), customfield.ErrInvalid.Error()+": ")+"; value not imported")
+			continue
+		}
+		if e, isUser := v.(string); isUser && f.Type == model.FieldUser && !s.Store.IsMemberEmail(r.Context(), p.TenantID(), e) {
+			*warnings = append(*warnings, c.Location+": "+f.Key+": "+e+" is not a member of the organisation; value not imported")
+			continue
+		}
+		if v != nil {
+			out[f.Key] = v
+		}
+	}
+	return out
 }

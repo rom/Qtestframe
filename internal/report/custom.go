@@ -35,7 +35,14 @@ type CustomConfig struct {
 	IncludeSummary bool     `json:"include_summary"`
 	Title          string   `json:"title"`
 	RunID          string   `json:"run_id"`
+	// CustomLabels are the column headers of the project's custom fields
+	// (cf.<key> → label), set by the caller before BuildCustom.
+	CustomLabels map[string]string `json:"-"`
 }
+
+// CustomFieldPrefix starts the column id of a custom field (cf.<key>);
+// requirements, tests and runs accept any such column.
+const CustomFieldPrefix = "cf."
 
 // Field is a column of a custom report.
 type Field struct {
@@ -95,6 +102,11 @@ func Fields(entity string) []Field {
 }
 
 func field(entity, id string) (Field, bool) {
+	if k, ok := strings.CutPrefix(id, CustomFieldPrefix); ok && k != "" && entity != EntityExecution {
+		if _, known := fields[entity]; known {
+			return Field{ID: id, Label: id}, true
+		}
+	}
 	for _, fl := range fields[entity] {
 		if fl.ID == id {
 			return fl, true
@@ -234,6 +246,9 @@ func BuildCustom(c CustomConfig, recs []query.MapRecord, subtitle string, now ti
 	for i, id := range c.Columns {
 		cols[i], _ = field(c.Entity, id)
 		header[i] = l.t(cols[i].Label)
+		if lb, ok := c.CustomLabels[id]; ok {
+			header[i] = lb
+		}
 	}
 	recs = l.localize(c.Entity, recs)
 	if c.SortBy != "" {
