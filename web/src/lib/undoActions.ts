@@ -104,7 +104,7 @@ export function addedItemsEntry(label: string, projectId: string, requirementIds
   let trashTest = ''
   const trash = async (kind: 'requirements' | 'tests', ids: string[]) =>
     ids.length ? ((await api.del<{ trash_id?: string }>(`/projects/${projectId}/${kind}/bulk`, { ids }))?.trash_id ?? '') : ''
-  const riskFields = ['title', 'description', 'category', 'likelihood', 'impact', 'status', 'mitigation', 'owner', 'requirement_ids', 'catalog_ref']
+  const riskFields = ['title', 'description', 'category', 'likelihood', 'impact', 'status', 'mitigation', 'owner', 'requirement_ids', 'catalog_ref', 'attack']
   return {
     label,
     undo: async () => {

@@ -16,7 +16,7 @@ import { enumLabel } from '@/i18n/labels'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ kind: CatalogKind; id: string; lang: string; projectId: string }>()
-const emit = defineEmits<{ open: [kind: CatalogKind, id: string] }>()
+const emit = defineEmits<{ open: [kind: CatalogKind, id: string]; technique: [id: string] }>()
 const { t } = useI18n()
 
 const req = ref<CatalogRequirementDetail | null>(null)
@@ -83,6 +83,21 @@ const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key)
       <template v-if="risk">
         <h3>{{ t('catalog.risk.mitigation') }}</h3>
         <p class="text">{{ risk.mitigation }}</p>
+      </template>
+
+      <template v-if="risk?.techniques?.length">
+        <h3 id="cp-attack">{{ t('attack.techniques') }}</h3>
+        <ul class="cp-list" aria-labelledby="cp-attack">
+          <li v-for="x in risk.techniques" :key="x.id">
+            <a :href="x.url" target="_blank" rel="noopener noreferrer"
+              ><span class="key">{{ x.id }}</span> {{ x.name }} <i class="pi pi-external-link cp-ext" aria-hidden="true" /><span class="sr-only"> ({{ t('links.newTab') }})</span></a
+            >
+            <div class="small muted">
+              {{ t(`attack.matrix.${x.matrix}`) }} · {{ x.tactics.map((ta) => ta.name).join(', ') }} ·
+              <button type="button" class="linklike cp-filter" @click="emit('technique', x.id)">{{ t('attack.showRisks') }}</button>
+            </div>
+          </li>
+        </ul>
       </template>
 
       <template v-if="req">
@@ -177,4 +192,5 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.03em; color: 
 .linklike:hover .key, .linklike:focus-visible .key, .linklike:hover .cp-link-title, .linklike:focus-visible .cp-link-title { text-decoration: underline; }
 .cp-tag { font-weight: 500; }
 .cp-ext { font-size: 0.75em; }
+.cp-filter { text-decoration: underline; }
 </style>

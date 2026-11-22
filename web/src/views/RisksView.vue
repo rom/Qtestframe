@@ -39,6 +39,7 @@ import SuggestInput from '@/components/SuggestInput.vue'
 import MentionInput from '@/components/MentionInput.vue'
 import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
+import { loadTechniques, techniqueUrl, type TechniqueList } from '@/lib/attack'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -273,6 +274,7 @@ interface Form {
   review_date: string
   review_owner: string
   custom_fields: CustomValues
+  attack: string[]
 }
 const blank = (): Form => ({
   title: '',
@@ -291,6 +293,7 @@ const blank = (): Form => ({
   review_date: '',
   review_owner: '',
   custom_fields: defaultValues(proj.customFieldsFor('risk')),
+  attack: [],
 })
 const residualScale = (label: (n: number) => string) => [{ label: t('residual.notAssessed'), value: 0 }, ...RISK_SCALE.map((n) => ({ label: `${n} – ${label(n)}`, value: n }))]
 const formResidualLevel = computed(() => (form.value.residual_likelihood && form.value.residual_impact ? riskLevel(form.value.residual_likelihood, form.value.residual_impact) : ''))
@@ -335,6 +338,21 @@ async function withdrawAcceptance() {
 const dialog = ref(false)
 const editing = ref<Risk | null>(null)
 const form = ref<Form>(blank())
+// MITRE ATT&CK and ATLAS techniques: chosen from the catalogue's list
+const attackList = ref<TechniqueList | null>(null)
+const attackById = computed(() => new Map((attackList.value?.items ?? []).map((x) => [x.id, x])))
+watch(dialog, (open) => {
+  if (open && !attackList.value) loadTechniques().then((l) => (attackList.value = l), () => (attackList.value = null))
+})
+const attackOptions = computed(() => {
+  const opts = (attackList.value?.items ?? []).map((x) => ({ label: `${x.id} ${x.name}`, value: x.id }))
+  // ids no longer in the list stay visible so that they can be removed
+  for (const id of form.value.attack) if (attackList.value && !attackById.value.has(id)) opts.unshift({ label: id, value: id })
+  return opts
+})
+const unknownAttack = computed(() => (attackList.value ? form.value.attack.filter((id) => !attackById.value.has(id)) : []))
+const formTactics = computed(() => [...new Set(form.value.attack.flatMap((id) => attackById.value.get(id)?.tactics.map((x) => x.name) ?? []))])
+
 const formError = ref('')
 const busy = ref(false)
 const picker = ref(false)
@@ -367,6 +385,7 @@ function openEdit(r: Risk) {
     review_date: r.review_date ?? '',
     review_owner: r.review_owner ?? '',
     custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues,
+    attack: [...(r.attack ?? [])],
   }
   formError.value = ''
   dialog.value = true
@@ -555,6 +574,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <template #body="{ data }">
             <button type="button" class="link-button" style="font-weight: 600" :aria-label="t('risksView.openRisk', { key: data.key, title: data.title })" @click.stop="openEdit(data as Risk)">{{ data.title }}</button>
             <div v-if="data.category || data.catalog_ref" class="small muted">{{ data.category }}<template v-if="data.catalog_ref"><template v-if="data.category"> · </template><span :title="t('risksView.fromCatalogue')">{{ data.catalog_ref }}</span></template></div>
+            <div v-if="data.attack?.length" class="small muted mono" :title="t('attack.techniques')">{{ data.attack.join(' ') }}</div>
           </template>
         </Column>
         <Column field="likelihood" :header="t('risksView.likelihood')" sortable style="width: 110px"><template #body="{ data }"><span :title="likelihoodLabel(data.likelihood)">{{ data.likelihood }}</span></template></Column>
@@ -631,6 +651,31 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         </div>
         <div v-field class="field"><label for="risk-owner">{{ t('common.owner') }}</label><MentionInput id="risk-owner" v-model="form.owner" suggest="risk.owner" :project-id="proj.pid" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" /></div>
         <div v-field class="field"><label for="risk-category">{{ t('common.category') }}</label><InputText id="risk-category" v-model="form.category" :placeholder="t('risksView.categoryPlaceholder')" :disabled="!canWrite" /></div>
+        <div v-field class="field full">
+          <label for="risk-attack">{{ t('attack.techniques') }}</label>
+          <MultiSelect
+            v-model="form.attack"
+            input-id="risk-attack"
+            :options="attackOptions"
+            option-label="label"
+            option-value="value"
+            filter
+            display="chip"
+            :virtual-scroller-options="{ itemSize: 36 }"
+            :loading="dialog && !attackList"
+            :placeholder="t('attack.choose')"
+            :disabled="!canWrite"
+            :aria-describedby="'risk-attack-hint'"
+            fluid
+          />
+          <small id="risk-attack-hint" class="muted">
+            {{ formTactics.length ? t('attack.tacticsOf', { tactics: formTactics.join(', ') }) : t('attack.hint') }}
+            <template v-for="id in form.attack.filter((x) => attackById.has(x))" :key="id">
+              · <a :href="techniqueUrl(id)" target="_blank" rel="noopener noreferrer">{{ id }}<span class="sr-only"> ({{ t('links.newTab') }})</span></a>
+            </template>
+          </small>
+          <Message v-if="unknownAttack.length" severity="warn" :closable="false" class="small">{{ t('attack.unknown', { ids: unknownAttack.join(', ') }) }}</Message>
+        </div>
         <div v-field class="field full"><label for="risk-desc">{{ t('common.description') }}</label><Textarea id="risk-desc" v-model="form.description" rows="2" auto-resize :disabled="!canWrite" /></div>
         <div v-field class="field full"><label for="risk-mitigation">{{ t('risksView.mitigation') }}</label><SuggestInput id="risk-mitigation" v-model="form.mitigation" field="risk.mitigation" :project-id="proj.pid" multiline rows="3" auto-resize :placeholder="t('risksView.mitigationPlaceholder')" :disabled="!canWrite" /></div>
       </div>

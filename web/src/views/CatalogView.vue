@@ -54,6 +54,7 @@ import {
 import { addedItemsEntry, recordUndo } from '@/lib/undoActions'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { riskLevelSeverity, RISK_LEVELS } from '@/lib/risks'
+import { loadTechniques, type TechniqueList } from '@/lib/attack'
 import { P } from '@/lib/permissions'
 import { enumLabel, enumOptions } from '@/i18n/labels'
 import { useAuthStore } from '@/stores/auth'
@@ -77,7 +78,9 @@ const canReadTests = computed(() => auth.can(P.testRead))
 const canWriteReqs = computed(() => auth.can(P.requirementWrite))
 const canWriteTests = computed(() => auth.can(P.testWrite))
 
-const kind = ref<CatalogKind>(route.query.tab === 'tests' || !canReadReqs.value ? 'test' : route.query.tab === 'risks' ? 'risk' : 'requirement')
+const kind = ref<CatalogKind>(
+  route.query.tab === 'tests' || !canReadReqs.value ? 'test' : route.query.tab === 'risks' || route.query.attack || route.query.tactic ? 'risk' : 'requirement',
+)
 const lang = ref<string>(route.query.lang === 'sv' || route.query.lang === 'en' ? String(route.query.lang) : String(locale.value).startsWith('sv') ? 'sv' : 'en')
 
 const overview = ref<CatalogOverview | null>(null)
@@ -186,7 +189,13 @@ const riskById = computed(() => new Map(risks.value.map((r) => [r.id, r])))
 const filters = ref<Record<CatalogKind, CatalogFilters>>({
   requirement: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '' },
   test: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '' },
-  risk: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '' },
+  risk: {
+    ...emptyFilters(),
+    node: typeof route.query.node === 'string' ? route.query.node : 'all',
+    q: typeof route.query.q === 'string' ? route.query.q : '',
+    tactics: queryList(route.query.tactic),
+    techniques: queryList(route.query.attack),
+  },
 })
 const f = computed(() => filters.value[kind.value])
 // the tab's filters with the catalogue type and the sources (shared by both tabs)
@@ -225,6 +234,37 @@ const categoryOptions = computed(() =>
   (overview.value?.risk_categories ?? []).filter((c) => risks.value.some((k) => k.category === c.id)).map((c) => ({ label: c.name, value: c.id })),
 )
 const levelOptions = computed(() => [...RISK_LEVELS].reverse().map((v) => ({ label: t(`risksView.level.${v}`), value: v })))
+
+// ---------- MITRE ATT&CK (risks) ----------
+const attackList = ref<TechniqueList | null>(null)
+watch(
+  kind,
+  (k) => {
+    if (k === 'risk' && !attackList.value) loadTechniques().then((l) => (attackList.value = l), () => (attackList.value = null))
+  },
+  { immediate: true },
+)
+const matrixName = (m: string) => t(`attack.matrix.${m}`)
+/** The tactics served by the risks' techniques. */
+const tacticOptions = computed(() => {
+  const used = new Set(risks.value.flatMap((k) => k.tactics ?? []))
+  return (attackList.value?.tactics ?? []).filter((x) => used.has(x.id)).map((x) => ({ label: `${x.name} · ${matrixName(x.matrix ?? '')}`, value: x.id }))
+})
+/** The techniques the risks list, with the parents of their sub-techniques. */
+const techniqueOptions = computed(() => {
+  const used = new Set<string>()
+  for (const k of risks.value)
+    for (const id of [...(k.attack ?? []), ...(k.atlas ?? [])]) {
+      used.add(id)
+      const i = id.lastIndexOf('.')
+      if (i > 0 && /\.\d{3}$/.test(id)) used.add(id.slice(0, i))
+    }
+  return (attackList.value?.items ?? []).filter((x) => used.has(x.id)).map((x) => ({ label: `${x.id} ${x.name}`, value: x.id }))
+})
+function filterTechnique(id: string) {
+  kind.value = 'risk'
+  filters.value.risk.techniques = [id]
+}
 const tagOpts = computed(() => tagOptions(items.value).map((x) => ({ label: x, value: x })))
 const kindOptions = computed(() => [
   ...(canReadReqs.value ? [{ label: `${t('catalog.requirements')} (${reqs.value.length})`, value: 'requirement' }] : []),
@@ -328,7 +368,7 @@ function openLinked(k: CatalogKind, id: string) {
 watch(kind, (k) => {
   if (previewKind.value !== k) previewId.value = ''
 })
-watch([kind, previewId, lang, () => f.value.node, () => f.value.q, catalogue, sourceIds], () => {
+watch([kind, previewId, lang, () => f.value.node, () => f.value.q, catalogue, sourceIds, () => filters.value.risk.tactics, () => filters.value.risk.techniques], () => {
   router.replace({
     query: {
       ...route.query,
@@ -339,6 +379,8 @@ watch([kind, previewId, lang, () => f.value.node, () => f.value.q, catalogue, so
       q: f.value.q || undefined,
       catalogue: catalogue.value || (catalogueChosen ? '' : undefined),
       source: sourceIds.value.length ? sourceIds.value.join(',') : undefined,
+      tactic: kind.value === 'risk' && filters.value.risk.tactics?.length ? filters.value.risk.tactics.join(',') : undefined,
+      attack: kind.value === 'risk' && filters.value.risk.techniques?.length ? filters.value.risk.techniques.join(',') : undefined,
     },
   })
 })
@@ -399,6 +441,9 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
       </div>
       <div class="actions">
         <HelpLink page="catalogue" />
+        <RouterLink v-if="canReadReqs" class="p-button p-button-sm p-button-outlined p-button-secondary" :to="{ name: 'catalog-attack', params: { projectId: proj.pid } }">
+          <i class="pi pi-th-large" aria-hidden="true" />&nbsp;{{ t('attack.coverage.open') }}
+        </RouterLink>
         <span class="row nowrap" style="gap: 6px">
           <label for="cat-type" class="small">{{ t('catalog.types.label') }}</label>
           <Select v-model="catalogueSel" input-id="cat-type" :options="catalogueOptions" option-label="label" option-value="value" class="cat-type" />
@@ -530,6 +575,8 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
           <template v-else-if="kind === 'risk'">
             <MultiSelect v-model="f.categories" :options="categoryOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterCategory')" :aria-label="t('catalog.filterCategory')" :max-selected-labels="2" show-clear />
             <MultiSelect v-model="f.levels" :options="levelOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterLevel')" :aria-label="t('catalog.filterLevel')" :max-selected-labels="2" show-clear />
+            <MultiSelect v-model="f.tactics" :options="tacticOptions" option-label="label" option-value="value" filter :placeholder="t('attack.filterTactic')" :aria-label="t('attack.filterTactic')" :max-selected-labels="1" show-clear />
+            <MultiSelect v-model="f.techniques" :options="techniqueOptions" option-label="label" option-value="value" filter :placeholder="t('attack.filterTechnique')" :aria-label="t('attack.filterTechnique')" :max-selected-labels="1" show-clear />
           </template>
           <MultiSelect v-else v-model="f.executions" :options="executionOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterExecution')" :aria-label="t('catalog.filterExecution')" show-clear />
           <MultiSelect v-if="kind !== 'risk'" v-model="f.priorities" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterPriority')" :aria-label="t('catalog.filterPriority')" :max-selected-labels="2" show-clear />
@@ -585,6 +632,7 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
                   <Tag :value="t(`risksView.level.${it.level}`)" :severity="riskLevelSeverity(it.level)" />
                   <span class="small muted">{{ it.category_name }} · {{ t('catalog.risk.score', { likelihood: it.likelihood, impact: it.impact, score: it.score }) }}</span>
                   <span class="small muted"><i class="pi pi-list-check" aria-hidden="true" /> {{ t('catalog.mitigatingRequirements', { n: it.mitigated_by.length }, it.mitigated_by.length) }}</span>
+                  <span v-if="it.attack?.length || it.atlas?.length" class="small muted mono">{{ [...(it.attack ?? []), ...(it.atlas ?? [])].join(' ') }}</span>
                 </template>
                 <template v-else>
                   <StatusTag :value="it.priority" kind="priority" />
@@ -608,7 +656,7 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
       </section>
 
       <aside v-if="!narrow" class="card preview-pane" :aria-label="t('catalog.preview')">
-        <CatalogPreview v-if="previewId" :kind="previewKind" :id="previewId" :lang="lang" :project-id="proj.pid" @open="openLinked" />
+        <CatalogPreview v-if="previewId" :kind="previewKind" :id="previewId" :lang="lang" :project-id="proj.pid" @open="openLinked" @technique="filterTechnique" />
         <div v-else class="empty">
           <i class="pi pi-eye" aria-hidden="true" />
           <div>{{ t('catalog.previewHint') }}</div>
@@ -644,7 +692,7 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
       </Tree>
     </Drawer>
     <Drawer v-if="narrow" v-model:visible="previewOpen" position="right" :header="t('catalog.preview')" block-scroll class="catalog-preview-drawer">
-      <CatalogPreview v-if="previewId" :kind="previewKind" :id="previewId" :lang="lang" :project-id="proj.pid" @open="openLinked" />
+      <CatalogPreview v-if="previewId" :kind="previewKind" :id="previewId" :lang="lang" :project-id="proj.pid" @open="openLinked" @technique="filterTechnique" />
     </Drawer>
 
     <CatalogSourcePicker v-if="sourceData" v-model:visible="pickerOpen" :sources="sourceData.sources" :kinds="sourceData.kinds" :selected="sourceIds" @apply="(ids) => (sourceIds = ids)" />
