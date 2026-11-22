@@ -70,7 +70,7 @@ func (s *Store) CreateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 	k.CreatedAt = s.now()
 	k.UpdatedAt = k.CreatedAt
 	return s.tx(ctx, func(c conn) error {
-		custom, err := checkCustom(ctx, c, tenantID, k.ProjectID, model.KindRisk, k.CustomFields, nil, true)
+		custom, err := checkCustomOpt(ctx, c, tenantID, k.ProjectID, model.KindRisk, k.CustomFields, nil, true, isLenientCustom(ctx))
 		if err != nil {
 			return err
 		}

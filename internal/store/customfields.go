@@ -523,8 +523,14 @@ func (s *Store) checkItemCustom(ctx context.Context, tenantID, entity, id string
 
 type lenientKey struct{}
 
-// lenientCustomFields marks ctx so that new items need not fill required
-// custom fields (imports; defaults still apply).
+// LenientCustomFields marks ctx so that new items need not fill required
+// custom fields: items created by the system (imports, copies, the linked
+// test of a requirement, catalogue items, issues from a tracker); the
+// defaults still apply and every given value is still checked.
+func LenientCustomFields(ctx context.Context) context.Context {
+	return lenientCustomFields(ctx)
+}
+
 func lenientCustomFields(ctx context.Context) context.Context {
 	return context.WithValue(ctx, lenientKey{}, true)
 }

@@ -190,7 +190,8 @@ func (s *Server) createLinkedTest(ctx context.Context, p *Principal, rq *model.R
 	if len(t.Steps) == 0 {
 		t.Steps = []model.TestStep{{Action: "Verify that the requirement is fulfilled: " + rq.Title, Expected: rq.Description}}
 	}
-	if err := s.Store.CreateTest(ctx, p.TenantID(), t); err != nil {
+	// the linked test gets the defaults of the test custom fields
+	if err := s.Store.CreateTest(store.LenientCustomFields(ctx), p.TenantID(), t); err != nil {
 		return nil, err
 	}
 	link := &model.TraceLink{RequirementID: rq.ID, TestCaseID: t.ID}

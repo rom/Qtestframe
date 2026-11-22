@@ -92,7 +92,7 @@ func (s *Store) CreateTest(ctx context.Context, tenantID string, t *model.TestCa
 		if err := s.checkFolder(ctx, c, tenantID, t.ProjectID, model.KindTest, t.FolderID); err != nil {
 			return err
 		}
-		custom, err := checkCustom(ctx, c, tenantID, t.ProjectID, model.KindTest, t.CustomFields, nil, true)
+		custom, err := checkCustomOpt(ctx, c, tenantID, t.ProjectID, model.KindTest, t.CustomFields, nil, true, isLenientCustom(ctx))
 		if err != nil {
 			return err
 		}
@@ -380,7 +380,7 @@ func (s *Store) CopyTest(ctx context.Context, tenantID, id, userID string) (*mod
 	for i := range t.Steps {
 		t.Steps[i].ID = ""
 	}
-	if err := s.CreateTest(ctx, tenantID, t); err != nil {
+	if err := s.CreateTest(LenientCustomFields(ctx), tenantID, t); err != nil {
 		return nil, err
 	}
 	return t, nil

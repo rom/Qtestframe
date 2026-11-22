@@ -147,6 +147,14 @@ func TestCustomFieldsEndToEnd(t *testing.T) {
 	if up["key"] != "supplier" || up["entity_type"] != "requirement" || up["label"] != "Vendor" {
 		t.Fatal(up)
 	}
+	// options are kept unless given, and replaced when given
+	cid := items(a.m("GET", pp+"/custom-fields?entity_type=requirement", nil, 200))[1]["id"].(string)
+	if c := a.m("PATCH", "/api/v1/custom-fields/"+cid, map[string]any{"position": 9}, 200); len(c["options"].([]any)) != 3 {
+		t.Fatal(c)
+	}
+	if c := a.m("PATCH", "/api/v1/custom-fields/"+cid, map[string]any{"options": []string{"zinc", "none"}}, 200); len(c["options"].([]any)) != 2 {
+		t.Fatal(c)
+	}
 	// type change only while no item has a value
 	a.m("PATCH", "/api/v1/custom-fields/"+sid, map[string]any{"type": "number"}, 409)
 
@@ -182,6 +190,14 @@ func TestCustomFieldsEndToEnd(t *testing.T) {
 	if l := items(a.m("GET", pp+"/runs?q=cf.lab:lab.example", nil, 200)); len(l) != 1 {
 		t.Fatal(l)
 	}
+	// a required test field: users must fill it, items the system creates need not
+	a.m("POST", pp+"/custom-fields", map[string]any{"entity_type": "test", "label": "Bench", "type": "text", "required": true}, 201)
+	a.m("POST", pp+"/tests", map[string]any{"title": "No bench"}, 400)
+	lr := a.m("POST", pp+"/requirements", map[string]any{"title": "With a linked test", "create_test": true}, 201)
+	if lr["linked_test"] == nil {
+		t.Fatal(lr)
+	}
+	a.m("POST", "/api/v1/tests/"+tc["id"].(string)+"/copy", map[string]any{}, 201)
 }
 
 func TestFieldSetsAndTemplates(t *testing.T) {

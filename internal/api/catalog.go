@@ -641,7 +641,7 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 			s.fail(w, r, err)
 			return
 		}
-		if err := s.Store.CreateRequirement(ctx, p.TenantID(), m); err != nil {
+		if err := s.Store.CreateRequirement(store.LenientCustomFields(ctx), p.TenantID(), m); err != nil {
 			s.fail(w, r, fmt.Errorf("%s: %w", rq.ID, err))
 			return
 		}
@@ -659,7 +659,7 @@ func (s *Server) handleCatalogImport(w http.ResponseWriter, r *http.Request, p *
 			s.fail(w, r, err)
 			return
 		}
-		if err := s.Store.CreateTest(ctx, p.TenantID(), m); err != nil {
+		if err := s.Store.CreateTest(store.LenientCustomFields(ctx), p.TenantID(), m); err != nil {
 			s.fail(w, r, fmt.Errorf("%s: %w", t.ID, err))
 			return
 		}

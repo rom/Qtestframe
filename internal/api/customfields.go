@@ -164,14 +164,15 @@ func (s *Server) handleUpdateCustomField(w http.ResponseWriter, r *http.Request,
 		s.fail(w, r, err)
 		return
 	}
+	// options are replaced as a whole when given
+	old := f.Options
 	f.Options = nil
-	old := *f
 	if err := jsonMerge(body, f); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	if f.Options == nil {
-		f.Options = old.Options
+		f.Options = old
 	}
 	if err := s.Store.UpdateCustomField(r.Context(), p.TenantID(), f); err != nil {
 		s.fail(w, r, err)

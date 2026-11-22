@@ -89,7 +89,7 @@ func (s *Store) CreateDefect(ctx context.Context, tenantID string, d *model.Defe
 		d.ResolvedAt = &t
 	}
 	return s.tx(ctx, func(c conn) error {
-		custom, err := checkCustom(ctx, c, tenantID, d.ProjectID, model.KindDefect, d.CustomFields, nil, true)
+		custom, err := checkCustomOpt(ctx, c, tenantID, d.ProjectID, model.KindDefect, d.CustomFields, nil, true, isLenientCustom(ctx))
 		if err != nil {
 			return err
 		}

@@ -635,7 +635,7 @@ func (s *Store) CopyRequirement(ctx context.Context, tenantID, id, title, userID
 	for i := range rq.Criteria {
 		rq.Criteria[i].ID, rq.Criteria[i].RequirementID = "", ""
 	}
-	if err := s.CreateRequirement(ctx, tenantID, rq); err != nil {
+	if err := s.CreateRequirement(LenientCustomFields(ctx), tenantID, rq); err != nil {
 		return nil, err
 	}
 	return rq, nil

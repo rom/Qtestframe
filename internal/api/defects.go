@@ -520,7 +520,7 @@ func (s *Server) handleImportDefect(w http.ResponseWriter, r *http.Request, p *P
 	}
 	d := &model.Defect{ProjectID: pr.ID, Title: is.Title, Status: is.Mapped, Severity: req.Severity, CreatedBy: p.User.Email, Links: req.Links}
 	applyIssue(d, t, is)
-	if err := s.Store.CreateDefect(r.Context(), p.TenantID(), d); err != nil {
+	if err := s.Store.CreateDefect(store.LenientCustomFields(r.Context()), p.TenantID(), d); err != nil {
 		s.fail(w, r, err)
 		return
 	}
