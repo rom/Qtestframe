@@ -449,6 +449,9 @@ type ProjectImport struct {
 	// DryRun checks the archive and counts the rows, but saves nothing; a
 	// key that is taken is reported (KeyTaken) instead of failing.
 	DryRun bool
+	// CreatedBy is the user id of who loads the archive: the new project's
+	// creator (the archive's creator may have no account here).
+	CreatedBy string
 }
 
 // ProjectImportResult is the outcome of ImportProject.
@@ -609,6 +612,7 @@ func (s *Store) ImportProject(ctx context.Context, tenantID string, r io.ReaderA
 			if t.name == "projects" {
 				im.project = func(row map[string]any) {
 					row["key"], row["name"], row["created_at"], row["updated_at"] = rowKey, name, now.Format(time.RFC3339Nano), now.Format(time.RFC3339Nano)
+					row["created_by"] = opt.CreatedBy
 				}
 			}
 			var buffered []restoreRow

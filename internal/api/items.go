@@ -153,6 +153,10 @@ func (s *Server) handleCreateRequirement(w http.ResponseWriter, r *http.Request,
 	if rq.Obligation == "" {
 		rq.Obligation = reqlang.DetectObligation(rq.Title + "\n" + rq.Description)
 	}
+	if err := s.checkFrameworkIDs(&rq.D3fend, &rq.Emb3d, false); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	ctx := r.Context()
 	if err := s.Store.CreateRequirement(ctx, p.TenantID(), &rq); err != nil {
 		s.fail(w, r, err)
@@ -340,6 +344,12 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 	rq.ID, rq.ProjectID, rq.Key = id, project, key
 	if !authorizeChange(w, p, model.KindRequirement, onlyKeys(keys, "status"), oldStatus, rq.Status) {
 		return
+	}
+	if keys["d3fend"] || keys["emb3d"] {
+		if err := s.checkFrameworkIDs(&rq.D3fend, &rq.Emb3d, false); err != nil {
+			s.fail(w, r, err)
+			return
+		}
 	}
 	if keys["owner"] && rq.Owner != oldOwner {
 		if err := s.normalizeOwner(ctx, p, rq.ProjectID, &rq.Owner); err != nil {
@@ -629,6 +639,10 @@ func (s *Server) handleCreateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
+	if err := s.checkFrameworkIDs(&t.D3fend, &t.Emb3d, false); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	if err := s.Store.CreateTest(r.Context(), p.TenantID(), &t); err != nil {
 		s.fail(w, r, err)
 		return
@@ -705,6 +719,12 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 	t.ID, t.ProjectID, t.Key = id, project, key
 	if !authorizeChange(w, p, model.KindTest, onlyKeys(keys, "status"), oldStatus, t.Status) {
 		return
+	}
+	if keys["d3fend"] || keys["emb3d"] {
+		if err := s.checkFrameworkIDs(&t.D3fend, &t.Emb3d, false); err != nil {
+			s.fail(w, r, err)
+			return
+		}
 	}
 	if keys["owner"] && t.Owner != oldOwner {
 		if err := s.normalizeOwner(ctx, p, t.ProjectID, &t.Owner); err != nil {

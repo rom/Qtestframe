@@ -99,6 +99,10 @@ If you do not want the box, turn it off in your profile: **Hide the live require
 | **Folder** | Where it is filed. |
 | **Categories** | Values of the project's requirement category dimensions, for example *Area / Security*. |
 | **Tags** | Free keywords; type a tag and press <kbd>Enter</kbd>, or select one of the **Suggested tags** below the field. Suggestions come from the title and description: tags the project already uses that the text mentions come first (a solid border), then abbreviations such as *GDPR* and words of the title or words used more than once (a dashed border). Every tag gets a colour of its own, the same everywhere (tables, the tag cloud, documents), so equal tags are easy to spot. |
+| **MITRE D3FEND techniques** | The defensive techniques the requirement implements, chosen from the [MITRE D3FEND](catalogue.md#mitre-d3fend-and-emb3d) list (type *D3-MFA* or part of a name). Requirements from the catalogue bring them along. In queries `d3fend:D3-AA` finds the requirements with the technique or one of its sub-techniques (*D3-MFA*), `d3fend:harden` those with a hardening technique. |
+| **MITRE EMB3D mitigations and threats** | For embedded devices: the [MITRE EMB3D](catalogue.md#mitre-d3fend-and-emb3d) mitigations (*MID-026*) the requirement implements and threats (*TID-201*) it addresses. `emb3d:TID-201` also finds the requirements that list a mitigation of the threat. |
+
+Only ids of the lists can be saved; an id the framework no longer has is flagged and must be removed. Tests have the same two fields for the techniques, mitigations and threats they verify. Both are in exports (columns **D3FEND** and **EMB3D**), project archives, backups and, with the field **MITRE D3FEND and EMB3D**, generated documents.
 
 The header of the editor shows the ID, the **version** (for example *v3*), the coverage and who changed it last. The version increases with every change.
 

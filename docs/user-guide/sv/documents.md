@@ -48,10 +48,15 @@ Qtestframe kan skriva två kompletta dokument åt dig och spara dem i arkivet:
    - **Filter**: en [fråga](search-and-filters.md) på kraven (specifikation) eller testfallen (testplan), till exempel `status:approved` eller `folder:Kassa`.
    - **Ta med avvisade och inaktuella krav** (och, för en testplan, utfasade testfall). De utelämnas som standard.
    - **Gruppera kraven efter** mapp, kategori (en dimension) eller typ (bara specifikation; en testplan grupperas alltid efter mapp).
+   - **Varje krav på en ny sida** (bara specifikation, påslaget som standard): i PDF och Word börjar varje krav överst på en sida. En mapp- eller grupprubrik direkt före ett krav (med mappens beskrivning) flyttas med till den nya sidan, så att en rubrik aldrig blir ensam längst ned på en sida och ingen sida blir tom. Stäng av för kompakt utskrift: kraven följer då direkt på varandra. Se [Sidlayout](#sidlayout).
    - Vilka **fält** som visas för varje krav eller testfall, och vilka **bilagor**. *Senaste utfall* är avstängt som standard: en specifikation beskriver, den rapporterar inte. **Diskussioner om objekten** lägger till en bilaga med trådarna i kravens eller testfallens [diskussioner](discussions.md) (borttagna kommentarer utelämnas; lösta trådar är markerade). **Beroendegraf över kraven** (bara specifikation, påslaget som standard) lägger till [bilagan Beroendegraf](#bilagan-beroendegraf).
 3. Välj **Skapa**. En förloppsindikator visas medan dokumentet skrivs; ett projekt med tusentals krav tar några sekunder.
 
 Det nya dokumentet visas överst i arkivet, markerat, med **Öppna** (PDF) och **Ladda ner**. Det är ett *dokument* med taggarna `generated`, `requirements-specification` eller `test-plan` och versionen (till exempel `v2.0`); de tidigare versionerna av samma typ utgör dess revisionshistorik. Nyckelord i kravtexterna (MUST, SHALL, SKA …) skrivs i fetstil.
+
+### Sidlayout
+
+I PDF och Word delas ett krav eller testfall aldrig på två sidor när det får plats på en: om det inte får plats på resten av sidan börjar det på nästa, tillsammans med mapprubrikerna direkt före. Bara ett objekt som är längre än en sida fortsätter på nästa sida. I en specifikation med **Varje krav på en ny sida** börjar ändå varje krav på en ny sida. Word håller ihop objekten med styckeinställningarna *håll ihop med nästa* och *sidbrytning före*, så att layouten stämmer även när du redigerar filen. Markdown har inga sidor och ser likadan ut i båda fallen.
 
 ### Bilagan Beroendegraf
 

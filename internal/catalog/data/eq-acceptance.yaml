@@ -355,6 +355,7 @@ requirements:
     tags: [data-sanitisation, storage-media, decommissioning]
     refs: ["NIST SP 800-88 Rev. 2", "ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)"]
     tests: [EQACC-T10]
+    d3fend: [D3-DKE]
     en:
       title: Storage media sanitised with a certificate
       description: Before decommissioned equipment leaves the site, each storage medium in it (controller memory cards, industrial PCs, operator panels) MUST be sanitised by a method that matches the sensitivity of its data, and a certificate MUST record the medium, the method, the person and the date.
@@ -423,6 +424,7 @@ requirements:
     tags: [hardening, firmware, it-equipment]
     refs: ["ISO/IEC 27001:2022 A.8.9", "ISO/IEC 27001:2022 A.8.8"]
     tests: [EQACC-T11]
+    d3fend: [D3-PH]
     en:
       title: Equipment hardened and on supported firmware before connection
       description: Before delivered equipment is connected to a production network, the contractor MUST show that it runs firmware within the maker's support, has default passwords changed and has services not listed in the hardening baseline disabled.

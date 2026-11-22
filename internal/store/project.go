@@ -15,13 +15,21 @@ var projectKeyRe = regexp.MustCompile(`^[A-Z][A-Z0-9]{1,15}$`)
 
 // ---------------------------------------------------------------- projects
 
-const projectCols = `id, tenant_id, key, name, description, defect_url_template, icon, color, requirement_sources, type, tech_context, access, created_at, updated_at`
+// projectSelect reads projects with the creator's name and e-mail (empty
+// when the creator is unknown or has no account any more).
+const projectSelect = `SELECT p.id, p.tenant_id, p.key, p.name, p.description, p.defect_url_template, p.icon, p.color, p.requirement_sources, p.type, p.tech_context, p.access,
+	p.created_at, p.updated_at, p.created_by, COALESCE(u.display_name, ''), COALESCE(u.email, '')
+	FROM projects p LEFT JOIN users u ON u.id = p.created_by AND p.created_by <> ''`
 
 func scanProject(r interface{ Scan(...any) error }) (*model.Project, error) {
 	var p model.Project
 	var sources string
-	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.Icon, &p.Color, &sources, &p.Type, &p.TechContext, &p.Access, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.Icon, &p.Color, &sources, &p.Type, &p.TechContext, &p.Access, &p.CreatedAt, &p.UpdatedAt,
+		&p.CreatedBy, &p.CreatedByName, &p.CreatedByEmail); err != nil {
 		return nil, err
+	}
+	if p.CreatedByName == "" {
+		p.CreatedByName = p.CreatedByEmail
 	}
 	p.RequirementSources = decodeTags(sources)
 	p.CustomSources = len(p.RequirementSources) > 0
@@ -99,7 +107,7 @@ func equalStrings(a, b []string) bool {
 }
 
 // CreateProject inserts a project; when seed is true default categories
-// are created.
+// are created. p.CreatedBy is the user id of the creator ("" unknown).
 func (s *Store) CreateProject(ctx context.Context, tenantID string, p *model.Project, seed bool) error {
 	p.Key = strings.ToUpper(strings.TrimSpace(p.Key))
 	if !projectKeyRe.MatchString(p.Key) {
@@ -118,8 +126,8 @@ func (s *Store) CreateProject(ctx context.Context, tenantID string, p *model.Pro
 	p.CreatedAt = s.now()
 	p.UpdatedAt = p.CreatedAt
 	return s.tx(ctx, func(c conn) error {
-		_, err := c.exec(ctx, `INSERT INTO projects (id, tenant_id, key, name, description, color, requirement_sources, type, tech_context, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			p.ID, p.TenantID, p.Key, p.Name, p.Description, p.Color, storedSources(p), p.Type, p.TechContext, p.CreatedAt, p.UpdatedAt)
+		_, err := c.exec(ctx, `INSERT INTO projects (id, tenant_id, key, name, description, color, requirement_sources, type, tech_context, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			p.ID, p.TenantID, p.Key, p.Name, p.Description, p.Color, storedSources(p), p.Type, p.TechContext, p.CreatedBy, p.CreatedAt, p.UpdatedAt)
 		if err != nil {
 			return mapErr(err, "project key")
 		}
@@ -166,13 +174,13 @@ var DefaultCategories = []DefaultCategory{
 
 // GetProject returns a project of the tenant.
 func (s *Store) GetProject(ctx context.Context, tenantID, id string) (*model.Project, error) {
-	p, err := scanProject(s.c(ctx).row(ctx, `SELECT `+projectCols+` FROM projects WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	p, err := scanProject(s.c(ctx).row(ctx, projectSelect+` WHERE p.id = ? AND p.tenant_id = ?`, id, tenantID))
 	return p, mapErr(err, "project")
 }
 
 // ListProjects returns all projects of a tenant.
 func (s *Store) ListProjects(ctx context.Context, tenantID string) ([]model.Project, error) {
-	rows, err := s.c(ctx).query(ctx, `SELECT `+projectCols+` FROM projects WHERE tenant_id = ? ORDER BY name`, tenantID)
+	rows, err := s.c(ctx).query(ctx, projectSelect+` WHERE p.tenant_id = ? ORDER BY p.name`, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -211,6 +219,13 @@ func (s *Store) UpdateProject(ctx context.Context, tenantID string, p *model.Pro
 	}
 	effectiveSources(p)
 	return nil
+}
+
+// SetProjectCreatorIfUnknown records who started a project when that is
+// not known yet (the demo seed creates projects before the accounts exist).
+func (s *Store) SetProjectCreatorIfUnknown(ctx context.Context, tenantID, projectID, userID string) error {
+	_, err := s.c(ctx).exec(ctx, `UPDATE projects SET created_by = ? WHERE id = ? AND tenant_id = ? AND created_by = ''`, userID, projectID, tenantID)
+	return err
 }
 
 // effectiveSources sets the source list as the API shows it after a save.

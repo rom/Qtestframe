@@ -38,6 +38,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import StatusTag from './StatusTag.vue'
 import TagsInput from './TagsInput.vue'
+import FrameworkPicker from './FrameworkPicker.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
 import TestDependenciesPanel from './TestDependenciesPanel.vue'
@@ -137,6 +138,8 @@ function blank() {
     estimated_minutes: 0 as number | null,
     owner: '',
     tags: [] as string[],
+    d3fend: [] as string[],
+    emb3d: [] as string[],
     category_ids: [] as string[],
     folder_id: (props.folderId ?? null) as string | null,
     steps: [] as StepRow[],
@@ -201,6 +204,8 @@ async function load() {
       estimated_minutes: t.estimated_minutes,
       owner: t.owner ?? '',
       tags: [...(t.tags ?? [])],
+      d3fend: [...(t.d3fend ?? [])],
+      emb3d: [...(t.emb3d ?? [])],
       category_ids: [...(t.category_ids ?? [])],
       folder_id: t.folder_id,
       steps: [...(t.steps ?? [])]
@@ -623,6 +628,14 @@ const scriptPlaceholder = computed(() => {
         <label>{{ t('common.tags') }}</label>
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
         <TagSuggestions v-model="form.tags" :project-id="projectId" :title="form.title" :description="tagText" :disabled="!canWrite" />
+      </div>
+      <div v-field class="field">
+        <label for="test-d3fend">{{ t('frameworks.d3fend.label') }}</label>
+        <FrameworkPicker v-model="form.d3fend" kind="d3fend" input-id="test-d3fend" :disabled="!canWrite" />
+      </div>
+      <div v-field class="field">
+        <label for="test-emb3d">{{ t('frameworks.emb3d.label') }}</label>
+        <FrameworkPicker v-model="form.emb3d" kind="emb3d" input-id="test-emb3d" :disabled="!canWrite" />
       </div>
     </div>
     <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('test')" :disabled="!canWrite" :project-id="projectId" />

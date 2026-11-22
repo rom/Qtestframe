@@ -179,6 +179,7 @@ requirements:
     tags: [sip, tls, srtp, encryption]
     refs: ["RFC 3261", "RFC 3711", "ISO/IEC 27001:2022 A.8.24"]
     tests: [CMTEL-T05]
+    d3fend: [D3-MENCR]
     en:
       title: Signalling over TLS and media over SRTP
       description: The telephony system MUST carry SIP signalling between phones, call servers and gateways over TLS 1.2 or later and the speech over SRTP.
@@ -363,6 +364,7 @@ requirements:
     tags: [voicemail, pin, toll-fraud]
     refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)"]
     tests: [CMTEL-T11]
+    d3fend: [D3-CDP]
     en:
       title: Voicemail PINs of at least 6 digits and no default PIN
       description: The voicemail system MUST require a PIN of at least 6 digits that is not the extension number, a repeated or sequential digit series or the initial PIN, and lock the mailbox after 5 wrong attempts.

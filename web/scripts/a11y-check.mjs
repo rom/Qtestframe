@@ -181,6 +181,8 @@ async function discover(request) {
   const tests = items(await api(request, 'GET', `/projects/${pid}/tests`))
   // a requirement with a similar one (seed: "Password sign-in" and "Password login")
   const simReq = reqs.find((r) => r.title === 'Password sign-in')
+  // a requirement with MITRE D3FEND and EMB3D mappings (seed: catalogue EMBS-26)
+  const fwReq = reqs.find((r) => (r.d3fend ?? []).length || (r.emb3d ?? []).length)
   const manual = new Set(tests.filter((t) => t.execution_type === 'manual').map((t) => t.id))
   const ex = execs.find((e) => manual.has(e.test_case_id)) ?? execs[0]
   // a run with an execution that is not ready (its readiness cell opens a popover)
@@ -251,7 +253,11 @@ async function discover(request) {
   const cycle = items(await api(request, 'GET', `/projects/${pid}/cycles`).catch(() => [])).find((c) => c.status === 'active')
   const p = `/p/${pid}`
   const routes = [
-    { name: 'projects', path: '/projects' },
+    { name: 'projects', path: '/projects', wait: '.project-cards .pc-meta' },
+    // the table layout: "Started by" column
+    { name: 'projects-table', path: '/projects', open: '.page-header .p-selectbutton .p-togglebutton:nth-child(2)', wait: '.p-datatable-tbody tr' },
+    // who started the project and when (project settings)
+    { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '.project-started-line time' },
     // save / load / duplicate a project (project archives)
     { name: 'project-load-dialog', path: '/projects', open: '.page-header .actions button:has(.pi-upload)', wait: '.p-dialog #project-load-form' },
     { name: 'project-duplicate-dialog', path: '/projects', open: '.project-cards li:first-child button:has(.pi-copy)', wait: '.p-dialog #project-duplicate-form' },
@@ -329,6 +335,14 @@ async function discover(request) {
     { name: 'catalog-risks-attack', path: `${p}/catalog?tab=risks&attack=T1110&lang=en`, wait: '.cat-list li, .list-pane .empty' },
     { name: 'catalog-attack', path: `${p}/catalog/attack`, wait: '.atk-matrix' },
     { name: 'catalog-attack-ics', path: `${p}/catalog/attack?matrix=ics`, wait: '.atk-matrix' },
+    // MITRE D3FEND and EMB3D: the framework tabs of the coverage page, previews with techniques, threats and defenses, the filters and the pickers
+    { name: 'catalog-frameworks-d3fend', path: `${p}/catalog/frameworks?framework=d3fend`, wait: '.fw-matrix' },
+    { name: 'catalog-frameworks-emb3d', path: `${p}/catalog/frameworks?framework=emb3d&lang=sv`, wait: '.emb-threats' },
+    { name: 'catalog-preview-frameworks', path: `${p}/catalog?item=HWSEC-01&catalogue=hardware&lang=en`, wait: '#cp-d3fend' },
+    { name: 'catalog-risk-preview-defenses', path: `${p}/catalog?tab=risks&item=EMBS-R03&lang=sv`, wait: '#cp-defenses' },
+    { name: 'catalog-emb3d-filter', path: `${p}/catalog?emb3d=TID-201&lang=en`, wait: '.cat-list li, .list-pane .empty' },
+    fwReq && { name: 'requirement-editor-frameworks', path: `${p}/requirements?item=${fwReq.id}`, wait: '.p-drawer #req-d3fend' },
+    hasRisks && { name: 'risk-dialog-emb3d', path: `${p}/risks?q=`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog #risk-emb3d' },
     { name: 'catalog-risk-import-dialog', path: `${p}/catalog?tab=risks`, open: ['.cat-list li .p-checkbox', '.catalog-bar button:has(.pi-plus)'], wait: '.p-dialog #ci-include-reqs' },
     hasTags && { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
@@ -794,6 +808,8 @@ async function main() {
           // every route starts in the list layout unless its address asks for the spreadsheet
           localStorage.removeItem('qtf.layout.requirement')
           localStorage.removeItem('qtf.layout.test')
+          // and the project list in cards (projects-table switches to the table)
+          localStorage.removeItem('qtf.projects.layout')
         }
         const pages = [{ name: 'login', path: '/login', anon: true }, ...routes].filter((r) => !ONLY.length || ONLY.includes(r.name))
         const ctx = await browser.newContext({ ...opts, storageState: state })

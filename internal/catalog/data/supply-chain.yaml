@@ -14,6 +14,7 @@ requirements:
     tags: [sbom, dependency-inventory]
     refs: ["OWASP ASVS 5.0 V15.1.2 (software bill of materials)", "NIST SP 800-218 PS.3.2", "ISO/IEC 27001:2022 A.5.9", "CycloneDX 1.5", "SPDX 2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T01]
+    d3fend: [D3-SWI]
     en:
       title: Software bill of materials for each release
       description: The system MUST be released with a software bill of materials in CycloneDX or SPDX format that lists every direct and transitive dependency with its version.
@@ -36,6 +37,7 @@ requirements:
     tags: [vulnerability-scanning, ci]
     refs: ["OWASP Top 10 2021 A06", "NIST SP 800-218 RV.1.1", "ISO/IEC 27001:2022 A.8.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "IEC 62443-4-1 SVV-3", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T02]
+    d3fend: [D3-AVE]
     en:
       title: Dependency vulnerability scan on every build
       description: The system MUST be built by a pipeline that scans all dependencies for known vulnerabilities and stops the build on a critical or high finding that has a fixed version.
@@ -58,6 +60,7 @@ requirements:
     tags: [patching, critical-vulnerabilities]
     refs: ["PCI DSS v4.0.1 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     tests: [SUP-T03]
+    d3fend: [D3-SU]
     en:
       title: Critical vulnerabilities fixed within 7 days
       description: The system MUST have a fix for a critical vulnerability in one of its components deployed to production within 7 days after the fix is published.
@@ -80,6 +83,7 @@ requirements:
     tags: [patching, high-vulnerabilities]
     refs: ["PCI DSS v4.0.1 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)"]
     tests: [SUP-T03]
+    d3fend: [D3-SU]
     en:
       title: High vulnerabilities fixed within 30 days
       description: The system MUST have a fix for a high-severity vulnerability in one of its components deployed to production within 30 days after the fix is published.

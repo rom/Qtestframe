@@ -14,6 +14,7 @@ requirements:
     tags: [zones-and-conduits, segmentation, architecture]
     refs: ["IEC 62443-3-2:2020 ZCR 3", "IEC 62443-3-3:2013 SR 5.1", "NIST SP 800-82r3 §5", "MITRE ATT&CK M0930 (network segmentation)"]
     tests: [ICS-T01, ICS-T02]
+    d3fend: [D3-NI]
     en:
       title: Every asset belongs to a documented zone
       description: The control system architecture MUST assign each component to exactly one security zone and MUST route each data flow between zones through a documented conduit that names the permitted protocols, ports and directions.
@@ -38,6 +39,7 @@ requirements:
     tags: [segmentation, dmz, firewall]
     refs: ["IEC 62443-3-3:2013 SR 5.1", "IEC 62443-3-3:2013 SR 5.2", "NIST SP 800-82r3 §5", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
     tests: [ICS-T01]
+    d3fend: [D3-NTF]
     en:
       title: No direct traffic from the enterprise network to the control zone
       description: The zone boundary MUST NOT forward traffic that starts in the enterprise network and ends in a control zone, so that each such exchange passes through a server in the industrial demilitarised zone.
@@ -82,6 +84,7 @@ requirements:
     tags: [asset-inventory, plc, rtu, hmi]
     refs: ["IEC 62443-3-3:2013 SR 7.8", "IEC 62443-4-2:2019 CR 7.8", "IEC 62443-2-1:2024", "NIST SP 800-82r3 §6"]
     tests: [ICS-T02]
+    d3fend: [D3-AI]
     en:
       title: Inventory of controllers, RTUs and HMIs
       description: The system MUST keep an inventory of each PLC, RTU, HMI, engineering workstation and network device with its zone, location, model, firmware version and owner, and MUST report a device not in the inventory within 24 hours after it first communicates.
@@ -106,6 +109,8 @@ requirements:
     tags: [remote-access, mfa, jump-host]
     refs: ["IEC 62443-3-3:2013 SR 1.13", "IEC 62443-3-3:2013 SR 1.1 RE 2", "IEC 62443-2-4:2023 SP.07 (remote access)", "NIST SP 800-82r3 §6", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T0822 (external remote services)", "MITRE ATT&CK M0932 (multi-factor authentication)"]
     tests: [ICS-T03]
+    d3fend: [D3-MFA]
+    emb3d: [MID-045]
     en:
       title: Remote access only through a jump host with multi-factor authentication
       description: Remote access to a control zone MUST go through a jump host in the industrial demilitarised zone that requires multi-factor authentication and an approved access request, and that ends the session after 8 hours.
@@ -154,6 +159,8 @@ requirements:
     tags: [opc-ua, protocol-security, integrity]
     refs: ["IEC 62541-2 (OPC UA security model)", "IEC 62443-3-3:2013 SR 3.1 RE 1", "IEC 62443-4-2:2019 CR 3.1", "IEC 62443-3-3:2013 SR 1.2", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1692.001 (unauthorized command message)", "MITRE ATT&CK T0830 (adversary-in-the-middle)"]
     tests: [ICS-T04]
+    d3fend: [D3-MAN]
+    emb3d: [MID-034]
     en:
       title: Industrial protocols authenticated and integrity protected
       description: Each OPC UA server in the control system MUST offer only endpoints with the security mode Sign or SignAndEncrypt and a current security policy, and MUST reject a client certificate that is not in its trust list.
@@ -246,6 +253,7 @@ requirements:
     tags: [patch-management, vendor-approval, test-bench]
     refs: ["IEC 62443-2-4:2023 SP.11 (patch management)", "IEC TR 62443-2-3:2015", "IEC 62443-4-1:2018 SUM-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II", "MITRE ATT&CK M0951 (update software)"]
     tests: [ICS-T08]
+    d3fend: [D3-SU]
     en:
       title: Patches approved by the vendor and tested before installation
       description: A security update for a control system component MUST be installed in production only after the component vendor has approved it for the installed version and after it has passed a test on a test bench with the same versions, and the update record MUST name the approval and the test result.
@@ -370,6 +378,7 @@ requirements:
     tags: [sis, functional-safety, separation]
     refs: ["IEC 61511-1:2016 §11.2", "IEC 61511-1:2016 §8.2.4", "IEC 61508-1:2010", "IEC 62443-3-3:2013 SR 5.1", "MITRE ATT&CK T0880 (loss of safety)", "MITRE ATT&CK M0930 (network segmentation)"]
     tests: [ICS-T13]
+    d3fend: [D3-NI]
     en:
       title: Safety instrumented system separated from basic control
       description: The safety instrumented system MUST be in its own zone, separate from the basic process control system, and MUST accept writes from outside its zone only through a documented interface that is enabled by a physical key switch at the safety controller.
@@ -444,6 +453,7 @@ requirements:
     tags: [application-allowlisting, hmi, malware]
     refs: ["IEC 62443-3-3 SR 3.2", "IEC 62443-4-2 CR 3.2", "NIST SP 800-82r3 (application allowlisting)", "MITRE ATT&CK T0863 (user execution)", "MITRE ATT&CK M0938 (execution prevention)"]
     tests: [ICS-T16]
+    d3fend: [D3-EAL]
     en:
       title: Only approved programs on HMIs and engineering stations
       description: HMIs and engineering workstations MUST run only programs on an approved list and block every other executable.
@@ -468,6 +478,8 @@ requirements:
     tags: [removable-media, usb, control-stations]
     refs: ["IEC 62443-3-3 SR 2.3", "NIST SP 800-82r3 (removable media)", "MITRE ATT&CK T0847 (replication through removable media)", "MITRE ATT&CK M0934 (limit hardware installation)"]
     tests: [ICS-T17]
+    d3fend: [D3-IOPR]
+    emb3d: [MID-056]
     en:
       title: Removable media blocked at control stations
       description: Control stations MUST block USB storage devices and other removable media, leaving a scanning station as the only route for files into the control zone.
@@ -492,6 +504,8 @@ requirements:
     tags: [least-functionality, hardening, services]
     refs: ["IEC 62443-3-3 SR 7.7", "IEC 62443-4-2 CR 7.7", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0942 (disable or remove feature or program)"]
     tests: [ICS-T18]
+    d3fend: [D3-PH]
+    emb3d: [MID-016]
     en:
       title: Unused ports and services disabled
       description: Each controller, HMI and server in the control zone MUST have every network port, service and protocol that is not on its documented list disabled.
@@ -516,6 +530,8 @@ requirements:
     tags: [firmware, integrity, signatures]
     refs: ["IEC 62443-4-2 CR 3.10", "IEC 62443-3-3 SR 3.4", "CWE-494 (download of code without integrity check)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1693.001 (system firmware)", "MITRE ATT&CK T1693.002 (module firmware)"]
     tests: [ICS-T19]
+    d3fend: [D3-FV]
+    emb3d: [MID-026]
     en:
       title: Firmware integrity checked before installation
       description: Controllers MUST verify the vendor's digital signature on a firmware or logic package and refuse a package that fails the check.
@@ -539,6 +555,7 @@ tests:
     execution: manual
     tags: [segmentation, firewall]
     refs: ["IEC 62443-3-3:2013 SR 5.1", "MITRE ATT&CK M0930 (network segmentation)", "MITRE ATT&CK T0886 (remote services)"]
+    d3fend: [D3-NTF]
     en:
       title: Traffic between enterprise network and control zone is blocked
       description: Tries to reach control zone devices from the office network and compares observed inter-zone traffic with the conduit register.
@@ -599,6 +616,7 @@ tests:
     execution: manual
     tags: [remote-access, mfa, session-recording]
     refs: ["IEC 62443-3-3:2013 SR 1.13", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T0822 (external remote services)", "MITRE ATT&CK M0932 (multi-factor authentication)"]
+    d3fend: [D3-MFA]
     en:
       title: Remote access through the jump host
       description: Tries remote access with and without an approved request and multi-factor authentication, and replays the recording.
@@ -633,6 +651,7 @@ tests:
     execution: automated
     tags: [opc-ua, protocol-security]
     refs: ["IEC 62541-2", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1692.001 (unauthorized command message)", "MITRE ATT&CK T0830 (adversary-in-the-middle)"]
+    emb3d: [MID-034]
     en:
       title: OPC UA server rejects unsecured and untrusted clients
       description: A script connects to each OPC UA server with different security modes and certificates.
@@ -997,6 +1016,7 @@ tests:
     execution: manual
     tags: [application-allowlisting, hmi]
     refs: ["IEC 62443-3-3 SR 3.2", "MITRE ATT&CK T0863 (user execution)", "MITRE ATT&CK M0938 (execution prevention)"]
+    d3fend: [D3-EAL]
     en:
       title: Unlisted program blocked on an HMI
       description: Tries to start a program that is not on the allowlist of a test HMI.
@@ -1029,6 +1049,8 @@ tests:
     execution: manual
     tags: [removable-media, usb]
     refs: ["IEC 62443-3-3 SR 2.3", "MITRE ATT&CK T0847 (replication through removable media)", "MITRE ATT&CK M0934 (limit hardware installation)"]
+    d3fend: [D3-IOPR]
+    emb3d: [MID-056]
     en:
       title: USB storage at an operator station
       description: Plugs a USB storage device into an operator station and then uses the scanning station.
@@ -1057,6 +1079,7 @@ tests:
     execution: manual
     tags: [least-functionality, hardening]
     refs: ["IEC 62443-3-3 SR 7.7", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0942 (disable or remove feature or program)"]
+    emb3d: [MID-016]
     en:
       title: Port scan of control zone devices
       description: Scans the devices of the control zone and compares with their documented lists.
@@ -1085,6 +1108,8 @@ tests:
     execution: manual
     tags: [firmware, integrity]
     refs: ["IEC 62443-4-2 CR 3.10", "CWE-494 (download of code without integrity check)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1693.001 (system firmware)", "MITRE ATT&CK T1693.002 (module firmware)"]
+    d3fend: [D3-FV]
+    emb3d: [MID-026]
     en:
       title: Tampered firmware refused
       description: Loads an altered and an original firmware package into a test controller.
@@ -1149,6 +1174,7 @@ risks:
     refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 61508-1:2010 §7.4 (hazard and risk analysis)"]
     mitigated_by: [ICS-13, ICS-16, ICS-07, ICS-22]
     attack: [T0889, T0880, T1692.001]
+    emb3d: [TID-301, TID-406]
     en:
       title: Controller logic or safety system manipulated
       description: Unauthorised commands or a modified program are loaded into a controller, or the safety instrumented system shares a network with basic control. The process runs outside its safe limits and can injure people.
@@ -1196,6 +1222,7 @@ risks:
     refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 2.3", "IEC 62443-3-3 SR 3.2"]
     mitigated_by: [ICS-20, ICS-19, ICS-21]
     attack: [T0847, T0863]
+    emb3d: [TID-111]
     en:
       title: Malware carried into the control system on a USB stick
       description: A technician copies files to an HMI or engineering station from a USB stick. Malware on the stick spreads in the control network, which has no other way in from outside.

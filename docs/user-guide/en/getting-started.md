@@ -34,7 +34,7 @@ The language buttons at the top of the sign-in page switch between English and S
 
 The dark bar on the left is the main navigation:
 
-- **Workspace:** **Projects** (all projects of the current organisation) and **Search** (search across projects).
+- **Workspace:** **Projects** (all projects of the current organisation) and **Search** (search across projects). Each project card shows when the project was started and by whom: who created it, or loaded or duplicated it from a [project file](reports-and-export.md). The creator is left out when it is not known (projects from the demo data or the command line, and projects older than this information). The table view has the same as columns, and **Categories & settings → Project** shows it too.
 - **The open project:** once you open a project, its key and name appear with its sections: **Dashboard**, **Requirements**, **Tests**, **Operations** (test runs), **Traceability**, **Analytics**, **Dependency graph**, **Test flow**, **AI prompts** (software projects), **Tags**, **Baselines**, **Categories & settings**, **Export** and, where available, **Documents** and **Reports**.
 - **Administration**, if your role allows it.
 

@@ -28,20 +28,30 @@ type docPDF struct {
 	// bookmark level of the previous heading (outline levels may only
 	// grow one at a time)
 	lastBookmark int
+	// scratch lays out blocks off the page to measure them (keepTogether)
+	scratch  *docPDF
+	measured int
 }
 
-func writeDocPDF(w io.Writer, doc *Document) error {
+// newDocPDF returns a writer of doc on a new PDF (no pages yet).
+func newDocPDF(doc *Document) *docPDF {
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(docPDFMargin, docPDFMargin, docPDFMargin)
 	pdf.SetAutoPageBreak(false, docPDFMargin)
-	pdf.AliasNbPages("{nb}")
 	pageW, pageH := pdf.GetPageSize()
-	p := &docPDF{
+	return &docPDF{
 		pdfWriter:    &pdfWriter{pdf: pdf, tr: pdf.UnicodeTranslatorFromDescriptor(""), pageH: pageH, usable: pageW - 2*docPDFMargin, margin: docPDFMargin},
 		doc:          doc,
 		ds:           doc.dataset(),
 		lastBookmark: -1,
 	}
+}
+
+func writeDocPDF(w io.Writer, doc *Document) error {
+	p := newDocPDF(doc)
+	pdf := p.pdf
+	pdf.AliasNbPages("{nb}")
+	pageW, _ := pdf.GetPageSize()
 	pdf.SetTitle(doc.Title, true)
 	pdf.SetSubject(doc.Subtitle, true)
 	if doc.Author != "" {
@@ -77,41 +87,19 @@ func writeDocPDF(w io.Writer, doc *Document) error {
 	for _, e := range entries {
 		links[e.block] = pdf.AddLink()
 	}
+	kept := 0 // blocks before this one were checked to stay together
 	for i, b := range doc.Blocks {
 		switch b.Kind {
 		case BlockHeading:
-			// keep a run of headings together with the text after them
-			extra := 0.0
-			for j := i + 1; j < len(doc.Blocks) && doc.Blocks[j].Kind == BlockHeading; j++ {
-				extra += 12
+			if i >= kept {
+				kept = p.keepTogether(i)
 			}
-			p.heading(b, extra)
+			p.heading(i, b)
 			if id, ok := links[i]; ok {
 				pdf.SetLink(id, pdf.GetY(), pdf.PageNo())
 				pages[i] = pdf.PageNo()
 			}
 			p.headingText(b)
-		case BlockParagraph:
-			need := 20.0
-			if i+1 < len(doc.Blocks) && doc.Blocks[i+1].Kind == BlockFigure && doc.Blocks[i+1].Figure != nil {
-				// a figure's caption stays with the figure
-				f := doc.Blocks[i+1].Figure
-				need = 10 + f.Height*figureScale(f, p.usable, p.bottom()-p.top()-10)
-			}
-			if b.caption() && pdf.GetY()+need > p.bottom() && !p.fresh() {
-				pdf.AddPage() // a caption stays with what follows
-			}
-			p.paragraph(b)
-		case BlockTable:
-			p.table(b)
-		case BlockFields:
-			p.fields(b)
-		case BlockList:
-			p.list(b)
-		case BlockFigure:
-			p.figure(b)
-		case BlockPageBreak:
-			p.newPage()
 		case BlockTOC:
 			if len(entries) == 0 {
 				continue
@@ -122,6 +110,8 @@ func writeDocPDF(w io.Writer, doc *Document) error {
 				pdf.AddPage()
 			}
 			pdf.AddPage()
+		default:
+			p.block(i, b)
 		}
 	}
 	if tocPages > 0 {
@@ -134,6 +124,78 @@ func writeDocPDF(w io.Writer, doc *Document) error {
 	}
 	return pdf.Output(w)
 }
+
+// block draws block i (b) of the document, but not the table of contents.
+func (p *docPDF) block(i int, b Block) {
+	pdf := p.pdf
+	doc := p.doc
+	switch b.Kind {
+	case BlockHeading:
+		p.heading(i, b)
+		p.headingText(b)
+	case BlockParagraph:
+		need := 20.0
+		if i+1 < len(doc.Blocks) && doc.Blocks[i+1].Kind == BlockFigure && doc.Blocks[i+1].Figure != nil {
+			// a figure's caption stays with the figure
+			f := doc.Blocks[i+1].Figure
+			need = 10 + f.Height*figureScale(f, p.usable, p.bottom()-p.top()-10)
+		}
+		if b.caption() && pdf.GetY()+need > p.bottom() && !p.fresh() {
+			pdf.AddPage() // a caption stays with what follows
+		}
+		p.paragraph(b)
+	case BlockTable:
+		p.table(b)
+	case BlockFields:
+		p.fields(b)
+	case BlockList:
+		p.list(b)
+	case BlockFigure:
+		p.figure(b)
+	case BlockPageBreak:
+		p.newPage()
+	}
+}
+
+// keepTogether starts a new page before block i when the unit of blocks
+// that should stay on one page (Document.keepUnit) does not fit on the rest
+// of this page but fits on an empty one; a unit longer than a page flows.
+// It returns the end of the unit (i when there is none).
+func (p *docPDF) keepTogether(i int) int {
+	end := p.doc.keepUnit(i)
+	if end <= i || p.fresh() || p.doc.Blocks[i].NewPage {
+		return end
+	}
+	h, ok := p.measure(p.doc.Blocks[i:end])
+	if ok && p.pdf.GetY()+headingGap(p.doc.Blocks[i])+h > p.bottom() {
+		p.pdf.AddPage()
+	}
+	return end
+}
+
+// measure lays blocks out at the top of an empty page and returns their
+// height; false when they do not fit on one page.
+func (p *docPDF) measure(blocks []Block) (float64, bool) {
+	if p.scratch == nil || p.measured >= 200 {
+		// a fresh scratch PDF now and then: it keeps every page in memory
+		p.scratch, p.measured = newDocPDF(&Document{}), 0
+	}
+	s := p.scratch
+	p.measured++
+	s.doc = &Document{Blocks: blocks}
+	s.pdf.AddPage()
+	page := s.pdf.PageNo()
+	for j, b := range blocks {
+		s.block(j, b)
+	}
+	if s.pdf.Error() != nil || s.pdf.PageNo() != page {
+		return 0, false
+	}
+	return s.pdf.GetY() - s.top(), true
+}
+
+// headingGap is the space above a heading that is not at the top of a page.
+func headingGap(b Block) float64 { return []float64{5, 4, 3, 2, 2, 2}[clampLevel(b.Level)-1] }
 
 func (p *docPDF) top() float64 { return docPDFMargin }
 
@@ -172,16 +234,25 @@ func (p *docPDF) titlePage() {
 	pdf.AddPage()
 }
 
-// heading moves to where heading b goes (a new page when it would end up
-// without the text that follows) and adds its bookmark.
-func (p *docPDF) heading(b Block, extra float64) {
+// heading moves to where heading i (b) goes (a new page when it asks for
+// one, or when it would end up without the text that follows) and adds its
+// bookmark.
+func (p *docPDF) heading(i int, b Block) {
 	pdf := p.pdf
 	l := clampLevel(b.Level)
+	if b.NewPage {
+		p.newPage()
+	}
+	// keep a run of headings together with the text after them
+	extra := 0.0
+	for j := i + 1; j < len(p.doc.Blocks) && p.doc.Blocks[j].Kind == BlockHeading; j++ {
+		extra += 12
+	}
 	if pdf.GetY()+28+extra > p.bottom() {
 		pdf.AddPage()
 	}
 	if !p.fresh() {
-		pdf.Ln([]float64{5, 4, 3, 2, 2, 2}[l-1])
+		pdf.Ln(headingGap(b))
 	}
 	bl := min(l-1, p.lastBookmark+1)
 	pdf.Bookmark(p.text(oneLine(b.Text)), bl, -1)

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import HelpTip from '@/guide/HelpTip.vue'
+import ProjectStarted from '@/components/ProjectStarted.vue'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Tabs from 'primevue/tabs'
@@ -400,6 +401,7 @@ function deleteProject() {
         <div class="card" style="max-width: 640px">
           <div class="grid" style="gap: 12px">
             <div v-field class="field"><label>{{ t('common.key') }}</label><InputText :model-value="proj.project?.key" disabled /></div>
+            <p v-if="proj.project" class="small muted project-started-line"><ProjectStarted :project="proj.project" icon /></p>
             <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="pform.name" :disabled="!auth.can(P.projectUpdate)" /></div>
             <div v-field class="field"><label>{{ t('common.description') }}</label><Textarea v-model="pform.description" rows="3" auto-resize :disabled="!auth.can(P.projectUpdate)" /></div>
             <div v-field class="field">

@@ -365,6 +365,7 @@ requirements:
     tags: [decommissioning, sanitisation]
     refs: ["ISO/IEC 27001:2022 A.7.14", "ISO/IEC 27001:2022 A.8.10", "NIST SP 800-88 Rev. 2"]
     tests: [GVLC-T10]
+    d3fend: [D3-DKE]
     en:
       title: Storage media sanitised with a certificate
       description: Each storage medium of a decommissioned system MUST be sanitised or destroyed before it leaves the organisation's control, with a certificate per medium.
@@ -409,6 +410,7 @@ requirements:
     tags: [decommissioning, access]
     refs: ["ISO/IEC 27001:2022 A.5.18"]
     tests: [GVLC-T11]
+    d3fend: [D3-CR]
     en:
       title: Accounts and certificates revoked within 5 working days
       description: The accounts, keys and certificates of a decommissioned system MUST be revoked within 5 working days after its shutdown.

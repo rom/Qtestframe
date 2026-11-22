@@ -366,6 +366,18 @@ func cmdSeedDemo(args []string, env Env) error {
 	if err != nil {
 		return err
 	}
+	// the administrator started the demo projects (they existed before the
+	// account did)
+	if admin, err := st.GetUserByEmail(env.Ctx, cfg.Bootstrap.AdminEmail); err == nil {
+		for _, x := range []*model.Project{p, sp} {
+			if x == nil {
+				continue
+			}
+			if err := st.SetProjectCreatorIfUnknown(env.Ctx, t.ID, x.ID, admin.ID); err != nil {
+				return err
+			}
+		}
+	}
 	if sp != nil {
 		fmt.Fprintf(env.Stdout, "seeded restricted project %s: shared with %s (viewer); %s is not a member (password of both: %s)\n",
 			sp.Key, DemoMemberEmail, DemoOutsiderEmail, DemoUserPassword)

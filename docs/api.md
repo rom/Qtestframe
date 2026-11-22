@@ -215,7 +215,7 @@ default):
 
 | Method | Path | Permission |
 |---|---|---|
-| GET | `/projects` | signed in – the projects the caller may read (see [Project sharing](#project-sharing-per-project-access)), each with `access` and `my_access` |
+| GET | `/projects` | signed in – the projects the caller may read (see [Project sharing](#project-sharing-per-project-access)), each with `access` and `my_access`, and who started it and when: `created_at`, `created_by` (user id), `created_by_name` (display name, else e-mail) and `created_by_email` – the creator fields are `""` when unknown (seeded projects, the command line, projects older than this field without a `project.create` audit entry) or when the account no longer exists |
 | POST | `/projects` | project.create – `{"key","name","description","color"?,"type"?,"tech_context"?,"seed_categories":true}` |
 | GET | `/projects/{pid}` | project.read |
 | PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
@@ -555,6 +555,19 @@ missing permission). Decisions are audited as `requirement.review` /
 | POST | `/projects/{pid}/requirements/review` | bulk review, see below |
 | GET | `/requirements/{id}/links` | `[TraceLink]` with test keys |
 | POST | `/reqlang/analyze` | `{"text", "language"?}` → `Analysis` (below). `language` is a pack code from `/meta` `analysis_languages` (`en`, `sv`); empty or `auto` detects it from the text; anything else → 400 |
+
+Requirements and tests carry two MITRE mappings, both lists of ids:
+`d3fend` (the MITRE D3FEND defensive techniques the requirement implements
+or the test verifies, `["D3-MFA", "D3-BA"]`) and `emb3d` (the MITRE EMB3D
+mitigations `MID-nnn` and threats `TID-nnn` they address on an embedded
+device). POST and PATCH trim and upper-case the ids, drop duplicates and
+check them against `GET /catalog/d3fend` and `GET /catalog/emb3d` (400 for
+an unknown id; at most 20 each). A catalogue import copies them from the
+catalogue item; they are in the history, the exports (columns `D3FEND` and
+`EMB3D`), project archives and backups (columns `requirements.d3fend`,
+`requirements.emb3d`, `test_cases.d3fend`, `test_cases.emb3d`, JSON
+lists), and the generated documents show them with names (field
+`frameworks`).
 
 `Analysis`:
 ```json
@@ -1115,14 +1128,18 @@ selects the items that comply with them.
 |---|---|---|---|
 | GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, risks, areas:[{id, prefix, group, name, description, requirements, tests, risks}]}], requirements, tests, risks, requirement_tags:[{tag, count}], test_tags:[…], risk_tags:[…], risk_categories:[{id, name}], catalogues:[{id, name, description, areas, requirements, tests, risks}]}` – groups in display order with item counts; `catalogues` are the catalogue types that have areas |
 | GET | `/catalog/sources?lang=&catalogue=&all=` | project.read | `{lang, kinds:[{id, name}], sources:[{id, kind, jurisdiction?, short?, name, url?, requirements, tests, risks, catalogues:[id]}]}` – the reference sources grouped by kind (law, directive, standard, practice, guideline). `requirements` cite the source, `tests` cite it or verify such a requirement (what adding them brings), `risks` cite it, counted in the catalogue types of `catalogue`; sources nothing cites are left out unless `all=true` |
-| GET | `/catalog/requirements?lang=&area=&group=&catalogue=&source=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, type, obligation, priority, tags, refs, sources, tests, risks, title, description, in_project?}]}`. `source`: requirements whose refs cite one of the sources. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
-| GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], mitigates_risks:[{id, area, title, in_project?}]` |
-| GET | `/catalog/tests?lang=&area=&group=&catalogue=&source=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, catalogue, priority, execution, tags, refs, sources, requirements, steps (count), title, description, in_project?}]}`; `source` matches tests that cite a source or verify a requirement citing it; `q` also searches the steps and the ids of the verified requirements |
-| GET | `/catalog/tests/{id}?lang=&project_id=` | test.read | the summary plus `area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}]` |
-| GET | `/catalog/risks?lang=&area=&group=&catalogue=&source=&q=&category=&level=&tag=&attack=&tactic=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, category, category_name, likelihood, impact, score, level, tags, refs, sources, mitigated_by, tests, attack, atlas, tactics, title, description, mitigation, in_project?}]}` – the typical risks of the areas: the threat or hazard and its consequence (`description`), a typical likelihood and impact on the project scale 1–5 with their level, and a suggested `mitigation`. `category`: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental; `level`: low, medium, high, critical; `source` matches risks that cite a source or are mitigated by a requirement citing it; `attack` (MITRE ATT&CK or ATLAS technique ids, comma-separated) matches risks that list one of them or one of its sub-techniques (`T1110` matches `T1110.004`), `tactic` (tactic ids such as `TA0006`, `AML.TA0005`) risks with a technique of one of the tactics; `attack`, `atlas` and `tactics` are the risk's ATT&CK techniques, ATLAS techniques and the tactics they serve; `q` also searches the mitigation, the mitigating requirement ids and the technique ids and names |
-| GET | `/catalog/risks/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, ref_targets, techniques:[{id, name, matrix, tactics:[{id, name, url}], url}], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[…]`; `techniques` are those of `attack` and `atlas` with names (a sub-technique with its parent's: `Brute Force: Credential Stuffing`) and links to attack.mitre.org or atlas.mitre.org |
+| GET | `/catalog/requirements?lang=&area=&group=&catalogue=&source=&q=&type=&obligation=&priority=&tag=&d3fend=&emb3d=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, type, obligation, priority, tags, refs, sources, tests, risks, d3fend, emb3d, title, description, in_project?}]}`. `d3fend` (D3FEND technique ids or tactic names, comma-separated) matches requirements that list one of them or one of its sub-techniques; `emb3d` (EMB3D ids or threat categories) those that list one of them or a mitigation of a listed threat (`TID-201` matches a requirement with `MID-002`). `source`: requirements whose refs cite one of the sources. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
+| GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], mitigates_risks:[{id, area, title, in_project?}], d3fend_techniques:[{id, name, tactic, parent?, parent_name?, url, attack}], emb3d_items:[{id, kind, name, category?, maturity?, url}]` |
+| GET | `/catalog/tests?lang=&area=&group=&catalogue=&source=&q=&priority=&tag=&execution=&d3fend=&emb3d=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, catalogue, priority, execution, tags, refs, sources, requirements, steps (count), d3fend, emb3d, title, description, in_project?}]}`; `d3fend` and `emb3d` as for requirements; `source` matches tests that cite a source or verify a requirement citing it; `q` also searches the steps and the ids of the verified requirements |
+| GET | `/catalog/tests/{id}?lang=&project_id=` | test.read | the summary plus `area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}], d3fend_techniques, emb3d_items` (as for requirements) |
+| GET | `/catalog/risks?lang=&area=&group=&catalogue=&source=&q=&category=&level=&tag=&attack=&tactic=&d3fend=&emb3d=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, category, category_name, likelihood, impact, score, level, tags, refs, sources, mitigated_by, tests, attack, atlas, tactics, emb3d, title, description, mitigation, in_project?}]}` – the typical risks of the areas: the threat or hazard and its consequence (`description`), a typical likelihood and impact on the project scale 1–5 with their level, and a suggested `mitigation`. `category`: security, privacy, safety, availability, data, compliance, supply-chain, ai, operational, quality, project, environmental; `level`: low, medium, high, critical; `source` matches risks that cite a source or are mitigated by a requirement citing it; `attack` (MITRE ATT&CK or ATLAS technique ids, comma-separated) matches risks that list one of them or one of its sub-techniques (`T1110` matches `T1110.004`), `tactic` (tactic ids such as `TA0006`, `AML.TA0005`) risks with a technique of one of the tactics; `attack`, `atlas` and `tactics` are the risk's ATT&CK techniques, ATLAS techniques and the tactics they serve; `emb3d` its MITRE EMB3D threats, matched by the `emb3d` filter (ids or threat categories); `d3fend` (D3FEND technique ids or tactics) matches risks with an ATT&CK technique that one of them counters; `q` also searches the mitigation, the mitigating requirement ids and the technique ids and names |
+| GET | `/catalog/risks/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, ref_targets, techniques:[{id, name, matrix, tactics:[{id, name, url}], url}], mitigating_requirements:[{id, area, title, in_project?}], linked_tests:[…]`; `techniques` are those of `attack` and `atlas` with names (a sub-technique with its parent's: `Brute Force: Credential Stuffing`) and links to attack.mitre.org or atlas.mitre.org; `emb3d_items` the EMB3D threats with names and links; `defenses:[{technique:{id, name, matrix, tactics, url}, d3fend:[{id, name, tactic, url, …}], requirements:[{id, title, d3fend:[…], mitigates}], covered}]` per ATT&CK technique of `attack` the D3FEND techniques that counter it (by D3FEND's inference through digital artifacts) and the catalogue requirements that list one, the risk's own mitigating requirements first (`mitigates`) and then at most 8 others; `covered` is true when a mitigating requirement counters the technique, else the technique is a coverage gap |
 | GET | `/catalog/attack/techniques?q=&matrix=&tactic=` | project.read | `{matrices:[{id, name, version, url}], tactics:[{id, name, matrix, url}], items:[{id, name, matrix, tactics:[{id, name, url}], url}]}` – the MITRE ATT&CK techniques and sub-techniques of the Enterprise, ICS and Mobile matrices (no revoked or deprecated ids) and the MITRE ATLAS techniques: the valid values of a risk's `attack`. `q` matches the id or the name, `matrix` (`enterprise`, `ics`, `mobile`, `atlas`) and `tactic` narrow the list |
 | GET | `/catalog/attack?catalogue=` | requirement.read | `{matrices:[{id, name, version, url, risks, tactics:[{id, name, url, risks, requirements, techniques:[{id, name, url, risks, requirements}]}]}]}` – the ATT&CK coverage of the catalogue: per matrix and tactic (in matrix order) the catalogue risks that list one of its techniques, the requirements that cite one in their refs or mitigate such a risk, and the techniques used (a technique counts its sub-techniques); `risks` of a matrix counts each risk once |
+| GET | `/catalog/d3fend?q=&tactic=` | project.read | `{version, release, url, tactics:[{id, name, url}], items:[{id, name, tactic, parent?, parent_name?, url, attack}]}` – the MITRE D3FEND defensive techniques (`data/d3fend.yaml`, generated from the D3FEND ontology): the valid values of the `d3fend` list of a requirement or test. `attack` counts the ATT&CK techniques it counters; `q` matches the id or the name, `tactic` (Model, Harden, Detect, Isolate, Deceive, Evict, Restore) narrows the list |
+| GET | `/catalog/d3fend/coverage?catalogue=` | requirement.read | `{version, url, risks, covered, gaps, tactics:[{id, name, url, requirements, tests, used, total, techniques:[{id, name, parent?, url, requirements, tests}]}]}` – per D3FEND tactic the techniques that catalogue requirements and tests list (a technique counts its sub-techniques), `used` of `total`; `risks` counts the catalogue risks with ATT&CK techniques, `covered` those whose every technique a mitigating requirement counters, `gaps` the ATT&CK techniques of risks that none counters |
+| GET | `/catalog/emb3d?q=&kind=&category=` | project.read | `{version, url, categories, properties:[{id, name, category, parent?}], items:[{id, kind, name, category?, maturity?, url}]}` – the MITRE EMB3D threats (`TID-nnn`, `kind` threat) and mitigations (`MID-nnn`, `kind` mitigation) and the device properties (`data/emb3d.yaml`, generated from the EMB3D STIX bundle): the valid values of an `emb3d` list (a risk takes threats only). `kind` (threat, mitigation), `category` (hardware, system software, application software, networking; threats) and `q` (id or name) narrow the list |
+| GET | `/catalog/emb3d/coverage?catalogue=` | requirement.read | `{version, url, mitigations, categories:[{id, risks, requirements, tests, addressed, total, threats:[{id, name, url, risks, requirements, tests}]}]}` – per EMB3D threat category every threat with the catalogue risks that list it and the requirements and tests that list it or one of its mitigations; `addressed` counts the threats a requirement addresses (the others are gaps), `mitigations` the EMB3D mitigations listed by an item |
 | GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}, "risks": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
 | POST | `/projects/{pid}/catalog/import` | project.read + see below | copies catalogue items into the project, see below |
 
@@ -2489,7 +2506,7 @@ Reading needs `requirement.read`, changing `requirement.write`.
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/risks` | `[Risk]`, highest score first |
-| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...],"attack":[...]}` (likelihood and impact default to 3); `catalog_ref` is kept only when it names a catalogue risk (an undone import created again) |
+| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...],"attack":[...],"emb3d":[...]}` (likelihood and impact default to 3); `catalog_ref` is kept only when it names a catalogue risk (an undone import created again) |
 | GET / PATCH / DELETE | `/risks/{id}` | PATCH takes the fields of POST except `requirement_ids` |
 
 `attack` lists the MITRE ATT&CK and ATLAS technique ids of a risk
@@ -2499,6 +2516,12 @@ upper-cased, duplicates dropped, and each must be in the technique list of
 deprecated id). A catalogue import copies the catalogue risk's `attack` and
 `atlas` into it. The field is in exports, project archives and backups
 (column `risks.attack`, a JSON list).
+
+`emb3d` lists the MITRE EMB3D threats that realise the risk on an embedded
+device (`["TID-201", "TID-327"]`, at most 20): trimmed, upper-cased, without
+duplicates and each a threat of `GET /catalog/emb3d?kind=threat` (400
+otherwise; a mitigation `MID-nnn` is rejected). A catalogue import copies
+the catalogue risk's `emb3d`; column `risks.emb3d`.
 | POST | `/projects/{pid}/risks/bulk` | `{"ids":[...], "set": {"status"?, "owner"?, "category"?, "likelihood"?, "impact"?}, "add_requirement_ids"?, "remove_requirement_ids"?}` → `{"updated": n}`; every risk is validated before any is saved |
 | DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
@@ -2834,6 +2857,7 @@ format, file name, item counts and duration).
     "traceability": true, "glossary": true,
     "include_discussions": false,       // appendix with the items' discussions
     "dependency_graph": true,           // specification: dependency graph appendix (default true)
+    "new_page_per_requirement": true,   // specification: every requirement starts a new page (default true)
     "lang": "sv"                        // default: the user's language
   }
 }
@@ -2847,6 +2871,17 @@ Markdown, SVG with a PNG fallback in DOCX) of at most 24 requirements each
 folder, references to the other figures), a legend of the relation types
 and statuses, and a table of every relation as text. It is left out when
 the requirements have no relations.
+
+`new_page_per_requirement` (requirements specification only, default
+`true`) starts every requirement at the top of a new page in PDF and DOCX
+(DOCX: `pageBreakBefore` on its heading). A folder or group heading (and
+the folder description) right before a requirement moves to the new page
+with it, so no heading is left alone at the bottom of a page and no page
+stays blank. `false` prints compactly: requirements follow one another.
+Either way, and for the tests of a test plan, an item that fits on one
+page is not split across two: it moves to the next page with the headings
+right before it (DOCX: keep with next); an item longer than a page flows.
+Markdown has no pages and is the same either way.
 
 → `201` with the `File` (`kind: document`). Its name defaults to
 `<KEY>-requirements-specification-v<version>.<ext>` or
@@ -3505,6 +3540,12 @@ updated_at, criteria, catalog` (the [catalogue](#catalogue) id it was copied fro
 and `verification` (alias `verified`: `verified`, `partial`, `failed`, `pending`,
 `none`) and `element` (alias `elements`: the name or path of a system element
 the requirement is allocated to, or of one above it, e.g. `element:"Power unit"`).
+Requirements and tests also have `d3fend` (aliases `defend`, `defense`: the
+D3FEND technique ids, names and tactics with those of the parent techniques,
+so `d3fend:D3-AA` also finds `D3-MFA`, `d3fend:harden` every hardening
+technique and `d3fend:"bootloader authentication"` works) and `emb3d` (the
+EMB3D ids and names plus the threats a listed mitigation addresses and
+their categories: `emb3d:TID-201` finds an item with `MID-002`).
 
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of
@@ -3523,7 +3564,9 @@ mitigation, owner, review_owner, review_date, created_by, catalog, catalog_area`
 (alias `area`), `attack` (aliases `technique`, `atlas`: the technique ids
 and names, so `attack:T1110` also finds `T1110.004` and
 `attack:"credential stuffing"` works) and `tactic` (the ids and names of
-the tactics of the techniques: `tactic:TA0006`, `tactic:"initial access"`).
+the tactics of the techniques: `tactic:TA0006`, `tactic:"initial access"`)
+and `emb3d` (alias `threat`: the EMB3D threat ids, names and categories,
+`emb3d:TID-101`, `emb3d:hardware`).
 
 Owners and assignees: `owner:me` (also `owner=me`, `owner!=me`) and
 `assignee:me` (defects, executions) match the items of the caller, however

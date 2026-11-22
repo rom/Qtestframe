@@ -20,23 +20,23 @@ var (
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
 			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk", "catalog",
-			"open_discussions", "blocked", "stale", "suspect_relations", "verification", "element", "variant", "applicability"},
+			"open_discussions", "blocked", "stale", "suspect_relations", "verification", "element", "variant", "applicability", "d3fend", "emb3d"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
 			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention",
 			"open-discussion": "open_discussions", "open-discussions": "open_discussions", "open_discussion": "open_discussions",
-			"verified": "verification", "elements": "element", "variants": "variant"},
+			"verified": "verification", "elements": "element", "variants": "variant", "defend": "d3fend", "defense": "d3fend"},
 		Prefixes: customFieldPrefix,
 	}
 	testSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "owner", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention", "open_discussions",
-			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability", "cycle"},
+			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability", "cycle", "d3fend", "emb3d"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
 			"open-discussion": "open_discussions", "open-discussions": "open_discussions", "open_discussion": "open_discussions",
 			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness",
-			"elements": "element", "variants": "variant", "cycles": "cycle"},
+			"elements": "element", "variants": "variant", "cycles": "cycle", "defend": "d3fend", "defense": "d3fend"},
 		Prefixes: customFieldPrefix,
 	}
 	runSchema = &query.Schema{
@@ -387,6 +387,8 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"element":           pc.elementTerms(r.ElementIDs),
 		"variant":           pc.variantNames(r.ID),
 		"applicability":     {pc.applicabilityKind(r.ID)},
+		"d3fend":            d3fendValues(r.D3fend),
+		"emb3d":             emb3dValues(r.Emb3d),
 	})
 }
 
@@ -501,6 +503,8 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"variant":          pc.variantNames(t.ID),
 		"applicability":    {pc.applicabilityKind(t.ID)},
 		"cycle":            pc.cycles[t.ID],
+		"d3fend":           d3fendValues(t.D3fend),
+		"emb3d":            emb3dValues(t.Emb3d),
 	})
 }
 

@@ -56,8 +56,8 @@ var customFieldPrefix = []string{"cf."}
 
 // riskSchema: the query fields of risks.
 var riskSchema = &query.Schema{
-	Fields:   []string{"id", "key", "title", "description", "category", "likelihood", "impact", "score", "level", "status", "mitigation", "owner", "review_owner", "review_date", "created_by", "catalog", "catalog_area", "attack", "tactic"},
-	Aliases:  map[string]string{"area": "catalog_area", "technique": "attack", "atlas": "attack"},
+	Fields:   []string{"id", "key", "title", "description", "category", "likelihood", "impact", "score", "level", "status", "mitigation", "owner", "review_owner", "review_date", "created_by", "catalog", "catalog_area", "attack", "tactic", "emb3d"},
+	Aliases:  map[string]string{"area": "catalog_area", "technique": "attack", "atlas": "attack", "threat": "emb3d"},
 	Prefixes: customFieldPrefix,
 }
 
@@ -66,7 +66,7 @@ func riskRecord(k *model.Risk) query.MapRecord {
 		"category": {k.Category}, "likelihood": {strconv.Itoa(k.Likelihood)}, "impact": {strconv.Itoa(k.Impact)}, "score": {strconv.Itoa(k.Score)},
 		"level": {k.Level}, "status": {k.Status}, "mitigation": {k.Mitigation}, "owner": {k.Owner},
 		"review_owner": {k.ReviewOwner}, "review_date": {k.ReviewDate}, "created_by": {k.CreatedBy},
-		"catalog": {k.CatalogRef}, "catalog_area": {k.CatalogArea}, "attack": attackValues(k.Attack), "tactic": tacticValues(k.Attack)})
+		"catalog": {k.CatalogRef}, "catalog_area": {k.CatalogArea}, "attack": attackValues(k.Attack), "tactic": tacticValues(k.Attack), "emb3d": emb3dValues(k.Emb3d)})
 }
 
 // attackValues are the technique ids of a risk with their names, so that

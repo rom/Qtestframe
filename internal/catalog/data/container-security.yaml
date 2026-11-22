@@ -15,6 +15,7 @@ requirements:
     tags: [non-root, pod-security, runtime-user]
     refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "Kubernetes Pod Security Standards (restricted)", "CIS Kubernetes Benchmark (pod security)", "ISO/IEC 27001:2022 A.8.9", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)"]
     tests: [CNSEC-T01]
+    d3fend: [D3-ACH]
     en:
       title: Containers run as a non-root user
       description: The system MUST run each application container as a user with a non-zero user id and set runAsNonRoot, so that the platform refuses to start it as root.
@@ -37,6 +38,7 @@ requirements:
     tags: [admission-control, privileged, host-namespaces]
     refs: ["Kubernetes Pod Security Standards (restricted)", "NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (pod security)", "IEC 62443-3-3 SR 7.6", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)", "MITRE ATT&CK T1610 (deploy container)"]
     tests: [CNSEC-T02]
+    d3fend: [D3-ACH]
     en:
       title: Restricted pod security enforced at admission
       description: The cluster MUST reject at admission every workload in an application namespace that asks for privileged mode, host network, host PID, host IPC, host path volumes or privilege escalation.
@@ -59,6 +61,7 @@ requirements:
     tags: [read-only-filesystem, immutability]
     refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (general policies)", "ISO/IEC 27001:2022 A.8.9", "MITRE ATT&CK T1105 (ingress tool transfer)", "MITRE ATT&CK M1022 (restrict file and directory permissions)"]
     tests: [CNSEC-T03]
+    d3fend: [D3-LFP]
     en:
       title: Read-only root file system
       description: The system SHOULD run each application container with a read-only root file system and give it write access only to listed volumes for temporary and data files.
@@ -81,6 +84,7 @@ requirements:
     tags: [linux-capabilities, seccomp, least-privilege]
     refs: ["Kubernetes Pod Security Standards (restricted)", "NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (pod security)", "ISO/IEC 27001:2022 A.8.2", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1611 (escape to host)", "MITRE ATT&CK T1068 (exploitation for privilege escalation)"]
     tests: [CNSEC-T04]
+    d3fend: [D3-SCF]
     en:
       title: All capabilities dropped and a seccomp profile applied
       description: The system MUST start each application container with all Linux capabilities dropped, adding back only capabilities listed with a reason, and with the runtime's default seccomp profile or a stricter one.
@@ -125,6 +129,7 @@ requirements:
     tags: [image-provenance, registry, digest]
     refs: ["NIST SP 800-190 §4.2 (registry countermeasures)", "NIST SP 800-190 §4.1 (image countermeasures)", "SLSA v1.0", "ISO/IEC 27001:2022 A.8.32", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1525 (implant internal image)", "MITRE ATT&CK T1610 (deploy container)"]
     tests: [CNSEC-T06]
+    d3fend: [D3-EAL]
     en:
       title: Images only from the approved registry and by digest
       description: The cluster MUST admit workloads only when each container image comes from the organisation's approved registry and is referenced by its sha256 digest.
@@ -169,6 +174,7 @@ requirements:
     tags: [api-server, cluster-access, authentication]
     refs: ["CIS Kubernetes Benchmark (control plane components)", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.20", "IEC 62443-3-3 SR 1.1", "CWE-306 (missing authentication for critical function)", "MITRE ATT&CK T1609 (container administration command)", "MITRE ATT&CK T1133 (external remote services)"]
     tests: [CNSEC-T08]
+    d3fend: [D3-NAM]
     en:
       title: Cluster API reachable only through single sign-on from listed networks
       description: The Kubernetes API server MUST refuse anonymous requests, accept users only through the organisation's single sign-on, and be reachable only from listed administration networks.
@@ -191,6 +197,7 @@ requirements:
     tags: [rbac, service-accounts, least-privilege]
     refs: ["CIS Kubernetes Benchmark (RBAC and service accounts)", "Kubernetes RBAC Good Practices", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.2", "CWE-250 (execution with unnecessary privileges)", "MITRE ATT&CK T1552.007 (container API)", "MITRE ATT&CK T1098.006 (additional container cluster roles)"]
     tests: [CNSEC-T09]
+    d3fend: [D3-UAP]
     en:
       title: No cluster-admin for workloads and no automatic service account tokens
       description: The cluster MUST NOT bind the cluster-admin role or wildcard permissions to a workload service account, or mount a service account token into a pod that has not declared a need for API access.
@@ -235,6 +242,7 @@ requirements:
     tags: [runtime-detection, alerting]
     refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "MITRE ATT&CK Containers Matrix", "ISO/IEC 27001:2022 A.8.16", "MITRE ATT&CK T1609 (container administration command)", "MITRE ATT&CK T1059.004 (Unix shell)"]
     tests: [CNSEC-T11]
+    d3fend: [D3-PA]
     en:
       title: Alert on unexpected processes in a container
       description: The system SHOULD alert the security on-call within 5 minutes when a shell or a process not in the workload's expected list starts in a production container.
@@ -283,6 +291,7 @@ requirements:
     tags: [supported-versions, patching, nodes]
     refs: ["Kubernetes Version Skew Policy", "NIST SP 800-190 §4.5 (host OS countermeasures)", "ISO/IEC 27001:2022 A.8.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "CWE-1104 (use of unmaintained third-party components)", "MITRE ATT&CK T1611 (escape to host)"]
     tests: [CNSEC-T13]
+    d3fend: [D3-SU]
     en:
       title: Cluster on a supported version with patched nodes
       description: The operator MUST keep each cluster on a Kubernetes minor version that still receives patches from its maintainer, and apply node operating system security updates within 30 days of release.

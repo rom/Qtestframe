@@ -234,6 +234,7 @@ requirements:
     tags: [media-sanitisation, decommissioning]
     refs: ["NIST SP 800-88 Rev. 2", "ISO/IEC 27001:2022 A.7.14", "ISO/IEC 27040:2024", "GDPR Art. 32(1)(b)", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)", "CWE-226 (sensitive information in resource not removed before reuse)"]
     tests: [RET-T11]
+    d3fend: [D3-DKE]
     en:
       title: Storage media sanitised before reuse or disposal
       description: The operator MUST purge or destroy each storage device that has held the system's data before it is reused outside the system, returned or disposed of, and keep a certificate of sanitisation for each device.

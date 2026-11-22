@@ -46,7 +46,11 @@ type BlockKind int
 // Block kinds.
 const (
 	// BlockHeading: Text at Level 1–6. NoTOC keeps it out of the table of
-	// contents (e.g. one heading per requirement).
+	// contents (e.g. one heading per requirement). NewPage starts it on a
+	// new page (PDF, DOCX; not when the page is still empty). KeepTogether
+	// marks the heading of an item: it and the blocks up to the next
+	// heading stay on one page when they fit on one, together with the
+	// headings (and their one paragraph each) right before it.
 	BlockHeading BlockKind = iota
 	// BlockParagraph: Text, or Spans for mixed emphasis. Blank lines
 	// separate paragraphs, single line breaks are kept.
@@ -75,18 +79,20 @@ type Span struct {
 
 // Block is one element of a document.
 type Block struct {
-	Kind    BlockKind
-	Level   int
-	Text    string
-	Spans   []Span
-	NoTOC   bool
-	Italic  bool // the whole paragraph is emphasised (notes, placeholders)
-	Columns []string
-	Rows    [][]string
-	Widths  []float64
-	Fields  []Item
-	Items   []string
-	Figure  *Figure
+	Kind         BlockKind
+	Level        int
+	Text         string
+	Spans        []Span
+	NoTOC        bool
+	NewPage      bool // heading: starts a new page
+	KeepTogether bool // heading: its item stays on one page (see BlockHeading)
+	Italic       bool // the whole paragraph is emphasised (notes, placeholders)
+	Columns      []string
+	Rows         [][]string
+	Widths       []float64
+	Fields       []Item
+	Items        []string
+	Figure       *Figure
 }
 
 // Heading returns a heading block.
@@ -172,6 +178,34 @@ func (doc *Document) toc() (entries []tocEntry, has bool) {
 }
 
 func clampLevel(l int) int { return min(max(l, 1), 6) }
+
+// keepUnit returns the end (exclusive) of the blocks that start at block i
+// and stay on one page: a run of headings (each with at most one paragraph
+// after it, such as a folder description) that ends with a KeepTogether
+// heading, plus the item's blocks up to the next heading. It returns i when
+// block i starts no such unit. A NewPage heading inside the run ends it (the
+// unit starts there).
+func (doc *Document) keepUnit(i int) int {
+	bs := doc.Blocks
+	for j := i; j < len(bs); j++ {
+		b := bs[j]
+		switch {
+		case b.Kind == BlockHeading && j > i && b.NewPage:
+			return i
+		case b.Kind == BlockHeading && b.KeepTogether:
+			end := j + 1
+			for end < len(bs) && bs[end].Kind != BlockHeading && bs[end].Kind != BlockPageBreak && bs[end].Kind != BlockTOC {
+				end++
+			}
+			return end
+		case b.Kind == BlockHeading:
+		case b.Kind == BlockParagraph && j > i && bs[j-1].Kind == BlockHeading && !b.caption():
+		default:
+			return i
+		}
+	}
+	return i
+}
 
 // spans returns the spans of a paragraph block.
 func (b Block) spans() []Span {

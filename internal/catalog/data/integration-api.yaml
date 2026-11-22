@@ -286,6 +286,7 @@ requirements:
     tags: [webhooks, signature]
     refs: ["RFC 2104", "Standard Webhooks specification 1.0", "OWASP ASVS 5.0 V4.1.5 (per-message signatures)", "ISO/IEC 27001:2022 A.5.14", "IEC 62443-3-3 SR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)"]
     tests: [API-T07]
+    d3fend: [D3-MAN]
     en:
       title: Signed webhook requests
       description: The system MUST sign each webhook request with an HMAC-SHA256 signature over a timestamp and the request body, using a secret unique to the endpoint.

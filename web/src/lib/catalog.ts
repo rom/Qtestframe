@@ -5,6 +5,7 @@
 // instant with several hundred items.
 import { anyOf } from './query'
 import { hasTechnique, type AttackTechnique } from './attack'
+import type { D3fendTechnique, Emb3dItem, RiskDefense } from './frameworks'
 
 export type CatalogKind = 'requirement' | 'test' | 'risk'
 export type CatalogLang = 'en' | 'sv'
@@ -113,6 +114,8 @@ interface CatalogBase {
   title: string
   description: string
   in_project?: InProjectItem[]
+  /** MITRE EMB3D threats and mitigations (risks: threats) */
+  emb3d?: string[]
 }
 
 export interface CatalogRequirement extends CatalogBase {
@@ -122,6 +125,8 @@ export interface CatalogRequirement extends CatalogBase {
   tests: string[]
   /** catalogue risks it mitigates */
   risks?: string[]
+  /** MITRE D3FEND defensive techniques it implements */
+  d3fend?: string[]
 }
 
 export interface CatalogTest extends CatalogBase {
@@ -130,6 +135,8 @@ export interface CatalogTest extends CatalogBase {
   requirements: string[]
   /** number of steps */
   steps: number
+  /** MITRE D3FEND techniques whose implementation it verifies */
+  d3fend?: string[]
 }
 
 /** A typical risk of an area with the catalogue requirements that mitigate it. */
@@ -202,6 +209,8 @@ export interface CatalogRequirementDetail extends CatalogRequirement {
   ref_targets?: CatalogRefTarget[]
   linked_tests: CatalogLinked[]
   mitigates_risks?: CatalogLinked[]
+  d3fend_techniques?: D3fendTechnique[]
+  emb3d_items?: Emb3dItem[]
 }
 
 export interface CatalogTestDetail extends CatalogTest {
@@ -211,6 +220,8 @@ export interface CatalogTestDetail extends CatalogTest {
   step_list: CatalogStep[]
   ref_targets?: CatalogRefTarget[]
   linked_requirements: CatalogLinked[]
+  d3fend_techniques?: D3fendTechnique[]
+  emb3d_items?: Emb3dItem[]
 }
 
 export interface CatalogRiskDetail extends CatalogRisk {
@@ -220,6 +231,9 @@ export interface CatalogRiskDetail extends CatalogRisk {
   techniques?: AttackTechnique[]
   mitigating_requirements: CatalogLinked[]
   linked_tests: CatalogLinked[]
+  emb3d_items?: Emb3dItem[]
+  /** per ATT&CK technique, the D3FEND techniques that counter it and the requirements implementing them */
+  defenses?: RiskDefense[]
 }
 
 /** GET /projects/{pid}/catalog */
@@ -285,6 +299,7 @@ export function searchScore(item: CatalogItem, words: readonly string[]): number
     [item.description.toLowerCase(), 3],
     [linkedIds(item).join(' ').toLowerCase(), 2],
     ...(isRisk(item) ? ([[item.mitigation.toLowerCase(), 1], [riskTechniques(item).join(' ').toLowerCase(), 4]] as [string, number][]) : []),
+    [[...(isRisk(item) ? [] : (item.d3fend ?? [])), ...(item.emb3d ?? [])].join(' ').toLowerCase(), 4],
   ]
   let total = words.length > 1 && fields[0][0].includes(words.join(' ')) ? 50 : 0
   const id = item.id.toLowerCase()
@@ -324,6 +339,9 @@ export interface CatalogFilters {
   /** risks: ATT&CK tactic ids and technique ids (a technique includes its sub-techniques) */
   tactics?: string[]
   techniques?: string[]
+  /** requirements and tests: D3FEND technique ids; every kind: EMB3D ids */
+  d3fend?: string[]
+  emb3d?: string[]
   hideInProject: boolean
   /** catalogue type ("" = every type) */
   catalogue?: string
@@ -332,12 +350,12 @@ export interface CatalogFilters {
 }
 
 export function emptyFilters(): CatalogFilters {
-  return { node: 'all', q: '', types: [], obligations: [], priorities: [], tags: [], executions: [], categories: [], levels: [], tactics: [], techniques: [], hideInProject: false, catalogue: '', sources: [] }
+  return { node: 'all', q: '', types: [], obligations: [], priorities: [], tags: [], executions: [], categories: [], levels: [], tactics: [], techniques: [], d3fend: [], emb3d: [], hideInProject: false, catalogue: '', sources: [] }
 }
 
 /** Number of filters set besides the tree node and the search. */
 export function activeFilters(f: CatalogFilters): number {
-  return [f.types, f.obligations, f.priorities, f.tags, f.executions, f.categories ?? [], f.levels ?? [], f.tactics ?? [], f.techniques ?? []].filter((x) => x.length).length + (f.hideInProject ? 1 : 0)
+  return [f.types, f.obligations, f.priorities, f.tags, f.executions, f.categories ?? [], f.levels ?? [], f.tactics ?? [], f.techniques ?? [], f.d3fend ?? [], f.emb3d ?? []].filter((x) => x.length).length + (f.hideInProject ? 1 : 0)
 }
 
 export function matchesNode(item: CatalogItem, node: NodeKey): boolean {
@@ -368,6 +386,8 @@ export function matchesFields(item: CatalogItem, f: CatalogFilters, inProject: R
   if (f.catalogue && (item.catalogue ?? 'software') !== f.catalogue) return false
   if (f.sources?.length && !itemSources(item, reqById).some((s) => f.sources!.includes(s))) return false
   if (f.tags.length && !item.tags.some((t) => f.tags.includes(t))) return false
+  if (f.emb3d?.length && !(item.emb3d ?? []).some((x) => f.emb3d!.includes(x))) return false
+  if (f.d3fend?.length && (isRisk(item) || !(item.d3fend ?? []).some((x) => f.d3fend!.includes(x)))) return false
   if (isRisk(item)) {
     const techs = riskTechniques(item)
     return (

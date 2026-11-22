@@ -67,7 +67,11 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, err)
 		return
 	}
-	pr := &model.Project{Key: req.Key, Name: req.Name, Description: req.Description, Color: req.Color, Type: req.Type, TechContext: req.TechContext}
+	pr := &model.Project{Key: req.Key, Name: req.Name, Description: req.Description, Color: req.Color, Type: req.Type, TechContext: req.TechContext,
+		CreatedBy: p.User.ID, CreatedByName: p.User.DisplayName, CreatedByEmail: p.User.Email}
+	if pr.CreatedByName == "" {
+		pr.CreatedByName = pr.CreatedByEmail
+	}
 	seed := req.SeedCategories == nil || *req.SeedCategories
 	if err := s.Store.CreateProject(r.Context(), p.TenantID(), pr, seed); err != nil {
 		s.fail(w, r, err)

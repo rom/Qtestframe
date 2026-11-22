@@ -136,8 +136,12 @@ func (s *Server) handleCreateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 	k := &model.Risk{ProjectID: pr.ID, Title: req.Title, Description: req.Description, Category: req.Category, Likelihood: req.Likelihood,
 		Impact: req.Impact, Status: req.Status, Mitigation: req.Mitigation, Owner: req.Owner, CreatedBy: p.User.Email, RequirementIDs: req.RequirementIDs,
 		ResidualLikelihood: req.ResidualLikelihood, ResidualImpact: req.ResidualImpact, ResidualManual: req.ResidualManual, ResidualJustification: req.ResidualJustification,
-		ReviewDate: req.ReviewDate, ReviewOwner: req.ReviewOwner, CustomFields: req.CustomFields, Attack: req.Attack}
+		ReviewDate: req.ReviewDate, ReviewOwner: req.ReviewOwner, CustomFields: req.CustomFields, Attack: req.Attack, Emb3d: req.Emb3d}
 	if err := s.checkTechniques(k); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if err := s.checkFrameworkIDs(nil, &k.Emb3d, true); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -198,7 +202,7 @@ func (s *Server) handleUpdateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 	for name, dst := range map[string]any{"title": &k.Title, "description": &k.Description, "category": &k.Category, "status": &k.Status,
 		"mitigation": &k.Mitigation, "owner": &k.Owner, "likelihood": &k.Likelihood, "impact": &k.Impact,
 		"residual_likelihood": &k.ResidualLikelihood, "residual_impact": &k.ResidualImpact, "residual_manual": &k.ResidualManual,
-		"residual_justification": &k.ResidualJustification, "review_date": &k.ReviewDate, "review_owner": &k.ReviewOwner, "attack": &k.Attack} {
+		"residual_justification": &k.ResidualJustification, "review_date": &k.ReviewDate, "review_owner": &k.ReviewOwner, "attack": &k.Attack, "emb3d": &k.Emb3d} {
 		if v, ok := raw[name]; ok {
 			if err := json.Unmarshal(v, dst); err != nil {
 				s.fail(w, r, badRequest("invalid %s: %v", name, err))
@@ -207,6 +211,10 @@ func (s *Server) handleUpdateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 		}
 	}
 	if err := s.checkTechniques(k); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if err := s.checkFrameworkIDs(nil, &k.Emb3d, true); err != nil {
 		s.fail(w, r, err)
 		return
 	}

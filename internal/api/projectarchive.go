@@ -63,7 +63,7 @@ func (s *Server) handleLoadProject(w http.ResponseWriter, r *http.Request, p *Pr
 		s.fail(w, r, badRequest("exactly one file in field \"archive\" required"))
 		return
 	}
-	opt := store.ProjectImport{Key: r.FormValue("key"), Name: r.FormValue("name")}
+	opt := store.ProjectImport{Key: r.FormValue("key"), Name: r.FormValue("name"), CreatedBy: p.User.ID}
 	if v := r.FormValue("dry_run"); v != "" {
 		dry, err := strconv.ParseBool(v)
 		if err != nil {
@@ -134,7 +134,7 @@ func (s *Server) handleDuplicateProject(w http.ResponseWriter, r *http.Request, 
 		s.fail(w, r, err)
 		return
 	}
-	res, err := s.Store.ImportProject(ctx, p.TenantID(), tmp, size, store.ProjectImport{Key: req.Key, Name: req.Name})
+	res, err := s.Store.ImportProject(ctx, p.TenantID(), tmp, size, store.ProjectImport{Key: req.Key, Name: req.Name, CreatedBy: p.User.ID})
 	if err != nil {
 		s.fail(w, r, err)
 		return

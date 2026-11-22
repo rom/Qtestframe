@@ -151,18 +151,45 @@ func docxSpans(b *strings.Builder, spans []Span) {
 	}
 }
 
-// docxGridTable writes a table with the given column widths (twips).
-func docxGridTable(b *strings.Builder, columns []string, rows [][]string, colW []int, header, label bool) {
+// docxKeep is how a block keeps with what follows (Word's "keep with
+// next"): not at all, entirely, or all but its last line (the last block of
+// a unit that stays on one page).
+type docxKeep int
+
+const (
+	keepNone docxKeep = iota
+	keepAll
+	keepButLast
+)
+
+// pPr is the paragraph properties of a paragraph kept with the next one.
+func (k docxKeep) pPr() string {
+	if k == keepNone {
+		return ""
+	}
+	return `<w:pPr><w:keepNext/></w:pPr>`
+}
+
+// docxGridTable writes a table with the given column widths (twips); keep
+// keeps its rows (and the paragraph after it) with what follows.
+func docxGridTable(b *strings.Builder, columns []string, rows [][]string, colW []int, header, label bool, keep docxKeep) {
 	n := len(colW)
 	b.WriteString(`<w:tbl><w:tblPr><w:tblStyle w:val="QTable"/><w:tblW w:w="5000" w:type="pct"/><w:tblLayout w:type="fixed"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="1" w:noVBand="1"/></w:tblPr><w:tblGrid>`)
 	for _, w := range colW {
 		fmt.Fprintf(b, `<w:gridCol w:w="%d"/>`, w)
 	}
 	b.WriteString("</w:tblGrid>")
-	row := func(cells []string, head bool) {
+	row := func(cells []string, head, keepNext bool) {
 		b.WriteString("<w:tr>")
-		if head {
+		switch {
+		case head:
 			b.WriteString(`<w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>`)
+		case keep != keepNone:
+			b.WriteString(`<w:trPr><w:cantSplit/></w:trPr>`)
+		}
+		ppr := ""
+		if keepNext {
+			ppr = `<w:pPr><w:keepNext/></w:pPr>`
 		}
 		for i := 0; i < n; i++ {
 			fmt.Fprintf(b, `<w:tc><w:tcPr><w:tcW w:w="%d" w:type="dxa"/>`, colW[i])
@@ -172,19 +199,24 @@ func docxGridTable(b *strings.Builder, columns []string, rows [][]string, colW [
 			case label && i == 0:
 				b.WriteString(`<w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>`)
 			}
-			b.WriteString("</w:tcPr><w:p>")
+			b.WriteString("</w:tcPr><w:p>" + ppr)
 			docxRuns(b, cell(cells, i), head || (label && i == 0))
 			b.WriteString("</w:p></w:tc>")
 		}
 		b.WriteString("</w:tr>")
 	}
 	if header {
-		row(columns, true)
+		row(columns, true, keep != keepNone || len(rows) > 0)
 	}
-	for _, r := range rows {
-		row(r, false)
+	for i, r := range rows {
+		row(r, false, keep == keepAll || (keep == keepButLast && i < len(rows)-1))
 	}
-	b.WriteString("</w:tbl><w:p/>") // a table must not be followed directly by another or end the body
+	// a table must not be followed directly by another or end the body
+	if keep == keepAll {
+		b.WriteString(`</w:tbl><w:p><w:pPr><w:keepNext/><w:spacing w:after="0"/></w:pPr></w:p>`)
+		return
+	}
+	b.WriteString("</w:tbl><w:p/>")
 }
 
 // docxWidths turns relative widths into twips (equal widths when none or
@@ -282,7 +314,7 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 	b.WriteString(`<w:p><w:pPr><w:spacing w:before="480"/></w:pPr></w:p>`)
 	tf := append([]Item{}, doc.TitleFields...)
 	tf = append(tf, Item{Label: ds.label("generated"), Value: generatedAt(ds).Format("2006-01-02 15:04 MST")})
-	docDocxFields(&b, tf)
+	docDocxFields(&b, tf, keepNone)
 	docxPageBreak(&b)
 
 	entries, _ := doc.toc()
@@ -291,7 +323,18 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 	for _, e := range entries {
 		inTOC[e.block] = true
 	}
+	keepEnd := 0 // blocks before keepEnd stay on one page with the unit's last block
 	for i, blk := range doc.Blocks {
+		keep := keepNone
+		if blk.Kind == BlockHeading && i >= keepEnd {
+			keepEnd = doc.keepUnit(i)
+		}
+		switch {
+		case i < keepEnd-1:
+			keep = keepAll
+		case i == keepEnd-1:
+			keep = keepButLast
+		}
 		switch blk.Kind {
 		case BlockHeading:
 			l := clampLevel(blk.Level)
@@ -299,7 +342,11 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 			if blk.NoTOC {
 				style = "ItemHeading"
 			}
-			b.WriteString(`<w:p><w:pPr><w:pStyle w:val="` + style + `"/></w:pPr>`)
+			brk := ""
+			if blk.NewPage {
+				brk = `<w:pageBreakBefore/>`
+			}
+			b.WriteString(`<w:p><w:pPr><w:pStyle w:val="` + style + `"/>` + brk + `</w:pPr>`)
 			if inTOC[i] {
 				fmt.Fprintf(&b, `<w:bookmarkStart w:id="%d" w:name="_Toc%d"/>`, i, i)
 			}
@@ -312,11 +359,14 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 			if strings.TrimSpace(blk.plain()) == "" {
 				continue
 			}
-			keep := blk.caption() && i+1 < len(doc.Blocks) && doc.Blocks[i+1].Kind == BlockFigure // a caption stays with its figure
-			for _, para := range splitParagraphs(blk.spans()) {
+			if blk.caption() && i+1 < len(doc.Blocks) && doc.Blocks[i+1].Kind == BlockFigure {
+				keep = keepAll // a caption stays with its figure
+			}
+			paras := splitParagraphs(blk.spans())
+			for j, para := range paras {
 				b.WriteString("<w:p>")
-				if keep {
-					b.WriteString(`<w:pPr><w:keepNext/></w:pPr>`)
+				if keep == keepAll || (keep == keepButLast && j < len(paras)-1) {
+					b.WriteString(keep.pPr())
 				}
 				docxSpans(&b, para)
 				b.WriteString("</w:p>")
@@ -327,14 +377,24 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 				continue
 			}
 			n := width(Section{Columns: blk.Columns, Rows: blk.Rows})
-			docxGridTable(&b, blk.Columns, blk.Rows, docxWidths(blk.Widths, n), true, false)
+			docxGridTable(&b, blk.Columns, blk.Rows, docxWidths(blk.Widths, n), true, false, keep)
 		case BlockFields:
-			docDocxFields(&b, blk.fieldItems())
+			docDocxFields(&b, blk.fieldItems(), keep)
 		case BlockList:
+			var items []string
 			for _, it := range blk.Items {
 				if strings.TrimSpace(it) != "" {
-					docxPara(&b, "ListBullet", "•\t"+it)
+					items = append(items, it)
 				}
+			}
+			for j, it := range items {
+				if keep == keepAll || (keep == keepButLast && j < len(items)-1) {
+					b.WriteString(`<w:p><w:pPr><w:pStyle w:val="ListBullet"/><w:keepNext/></w:pPr>`)
+					docxRuns(&b, "•\t"+it, false)
+					b.WriteString("</w:p>")
+					continue
+				}
+				docxPara(&b, "ListBullet", "•\t"+it)
 			}
 		case BlockFigure:
 			if blk.Figure != nil && blk.Figure.Width > 0 && blk.Figure.Height > 0 {
@@ -394,7 +454,7 @@ func docxSpansPara(b *strings.Builder, spans []Span) {
 	b.WriteString("</w:p>")
 }
 
-func docDocxFields(b *strings.Builder, items []Item) {
+func docDocxFields(b *strings.Builder, items []Item, keep docxKeep) {
 	if len(items) == 0 {
 		return
 	}
@@ -402,7 +462,7 @@ func docDocxFields(b *strings.Builder, items []Item) {
 	for i, it := range items {
 		rows[i] = []string{it.Label, it.Value}
 	}
-	docxGridTable(b, nil, rows, []int{docDocxLabelW, docDocxContent - docDocxLabelW}, false, true)
+	docxGridTable(b, nil, rows, []int{docDocxLabelW, docDocxContent - docDocxLabelW}, false, true, keep)
 }
 
 // splitParagraphs splits spans at blank lines into paragraphs.

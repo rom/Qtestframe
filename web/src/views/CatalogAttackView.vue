@@ -1,4 +1,8 @@
 <script setup lang="ts">
+// Framework coverage of the catalogue, with a tab per framework: MITRE
+// ATT&CK (below), MITRE D3FEND (D3fendCoverage) and MITRE EMB3D
+// (Emb3dCoverage); ?framework= chooses the tab.
+//
 // MITRE ATT&CK coverage of the catalogue (GET /catalog/attack): per matrix
 // (Enterprise, ICS, Mobile, ATLAS) the tactics with the number of catalogue
 // risks that list one of their techniques and of the requirements that cite
@@ -12,6 +16,8 @@ import Select from 'primevue/select'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import HelpLink from '@/guide/HelpLink.vue'
+import D3fendCoverage from '@/components/D3fendCoverage.vue'
+import Emb3dCoverage from '@/components/Emb3dCoverage.vue'
 import { api, errorMessage } from '@/lib/api'
 import type { CoverageMatrix } from '@/lib/attack'
 import type { CatalogOverview } from '@/lib/catalog'
@@ -27,6 +33,10 @@ const matrices = ref<CoverageMatrix[]>([])
 const kinds = ref<{ label: string; value: string }[]>([])
 const catalogue = ref<string>(typeof route.query.catalogue === 'string' ? route.query.catalogue : '')
 const matrix = ref<string>(typeof route.query.matrix === 'string' ? route.query.matrix : 'enterprise')
+const FRAMEWORKS = ['attack', 'd3fend', 'emb3d'] as const
+type Framework = (typeof FRAMEWORKS)[number]
+const framework = ref<Framework>(FRAMEWORKS.includes(route.query.framework as Framework) ? (route.query.framework as Framework) : 'attack')
+const frameworkOptions = computed(() => FRAMEWORKS.map((f) => ({ label: t(`frameworks.coverage.tab.${f}`), value: f })))
 const loading = ref(false)
 const error = ref('')
 
@@ -52,7 +62,9 @@ async function loadKinds() {
 }
 onMounted(() => Promise.all([load(), loadKinds()]))
 watch(catalogue, load)
-watch([matrix, catalogue], () => router.replace({ query: { ...route.query, matrix: matrix.value, catalogue: catalogue.value || undefined } }))
+watch([matrix, catalogue, framework], () =>
+  router.replace({ query: { ...route.query, framework: framework.value === 'attack' ? undefined : framework.value, matrix: framework.value === 'attack' ? matrix.value : undefined, catalogue: catalogue.value || undefined } }),
+)
 
 const matrixOptions = computed(() => matrices.value.map((m) => ({ label: `${t(`attack.matrix.${m.id}`)} (${m.risks})`, value: m.id })))
 const current = computed(() => matrices.value.find((m) => m.id === matrix.value) ?? matrices.value[0])
@@ -70,11 +82,11 @@ const totals = computed(() => {
   <div class="attack-page">
     <div class="page-header">
       <div>
-        <h1 id="attack-title" tabindex="-1">{{ t('attack.coverage.title') }}</h1>
-        <div class="sub">{{ t('attack.coverage.intro') }}</div>
+        <h1 id="attack-title" tabindex="-1">{{ t('frameworks.coverage.title') }}</h1>
+        <div class="sub">{{ t(`frameworks.coverage.intro.${framework}`) }}</div>
       </div>
       <div class="actions">
-        <HelpLink page="catalogue" anchor="mitre-attck" />
+        <HelpLink page="catalogue" :anchor="framework === 'attack' ? 'mitre-attck' : { en: 'mitre-d3fend-and-emb3d', sv: 'mitre-d3fend-och-emb3d' }" />
         <RouterLink class="p-button p-button-sm p-button-outlined p-button-secondary" :to="{ name: 'catalog', params: { projectId: proj.pid }, query: { tab: 'risks' } }">
           <i class="pi pi-arrow-left" aria-hidden="true" />&nbsp;{{ t('attack.coverage.back') }}
         </RouterLink>
@@ -85,6 +97,12 @@ const totals = computed(() => {
       </div>
     </div>
 
+    <div class="row matrix-row">
+      <SelectButton v-model="framework" :options="frameworkOptions" option-label="label" option-value="value" :allow-empty="false" :aria-label="t('frameworks.coverage.framework')" />
+    </div>
+    <D3fendCoverage v-if="framework === 'd3fend'" :catalogue="catalogue" />
+    <Emb3dCoverage v-else-if="framework === 'emb3d'" :catalogue="catalogue" />
+    <template v-else>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <div v-if="loading && !matrices.length" class="empty"><ProgressSpinner style="width: 32px; height: 32px" :aria-label="t('common.loading')" /></div>
 
@@ -148,6 +166,7 @@ const totals = computed(() => {
           </div>
         </div>
       </section>
+    </template>
     </template>
   </div>
 </template>

@@ -17,6 +17,8 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import Message from 'primevue/message'
 import ProjectIcon from '@/components/ProjectIcon.vue'
+import ProjectStarted from '@/components/ProjectStarted.vue'
+import { projectCreator } from '@/lib/projectCreator'
 import ProjectLoadDialog from '@/components/ProjectLoadDialog.vue'
 import ProjectDuplicateDialog from '@/components/ProjectDuplicateDialog.vue'
 import SharingDialog from '@/components/SharingDialog.vue'
@@ -226,6 +228,7 @@ function loadedDetail(p: Project, res: ProjectLoadResult) {
         </div>
       </div>
       <div class="muted pc-desc">{{ p.description || t('common.noDescription') }}</div>
+      <ProjectStarted :project="p" icon class="small muted pc-meta" />
       <div class="pc-foot">
         <span class="small muted pc-updated">{{ t('projects.updatedAgo', { time: relativeTime(p.updated_at || p.created_at) }) }}</span>
         <div class="pc-actions" @click.stop>
@@ -245,7 +248,10 @@ function loadedDetail(p: Project, res: ProjectLoadResult) {
         <template #body="{ data }"><span class="row nowrap" style="min-width: 0"><ProjectIcon :icon="data.icon" :project-key="data.key" :color="data.color" :size="24" /><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink><i v-if="isRestricted(data)" class="pi pi-lock muted small" v-tooltip="t('sharing.restrictedTip')" tabindex="0" role="img" :aria-label="t('sharing.restrictedTip')" /></span></template>
       </Column>
       <Column field="description" :header="t('common.description')" />
-      <Column field="created_at" :header="t('common.created')" sortable><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
+      <Column field="created_at" :header="t('common.created')" sortable><template #body="{ data }"><time :datetime="data.created_at" style="white-space: nowrap">{{ formatDate(data.created_at) }}</time></template></Column>
+      <Column field="created_by_name" :header="t('projects.startedBy')" sortable>
+        <template #body="{ data }"><span v-if="projectCreator(data)" :title="data.created_by_email && data.created_by_email !== projectCreator(data)?.name ? data.created_by_email : undefined">{{ projectCreator(data)?.name }}</span><span v-else class="muted">{{ t('projects.creatorUnknown') }}</span></template>
+      </Column>
       <Column header="" style="width: 180px">
         <template #body="{ data }">
           <div class="row nowrap" @click.stop>

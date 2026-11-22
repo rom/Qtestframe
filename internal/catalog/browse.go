@@ -135,12 +135,20 @@ func (c *Catalog) OrderedAreas() []*Area {
 // only: Attack selects the risks that list one of the ATT&CK or ATLAS
 // techniques (or a sub-technique of one), Tactic those with a technique
 // of one of the tactics (TA0006, AML.TA0005).
+//
+// D3fend selects requirements and tests that list one of the D3FEND
+// techniques (or a sub-technique of one; a tactic name such as "harden"
+// selects its techniques), and risks with an ATT&CK technique that one of
+// them counters. Emb3d selects items that list one of the EMB3D threats or
+// mitigations, or a mitigation of a listed threat (a threat category such
+// as "hardware" selects its threats).
 type Filter struct {
 	Area, Group, Type, Obligation, Priority, Tag, Execution string
 	Catalogue                                               string
 	Source                                                  string
 	Category, Level                                         string
 	Attack, Tactic                                          string
+	D3fend, Emb3d                                           string
 	Q                                                       string
 }
 
@@ -158,7 +166,10 @@ type ReqSummary struct {
 	Sources    []string `json:"sources"`
 	Tests      []string `json:"tests"`
 	// Risks are the catalogue risks it mitigates.
-	Risks       []string `json:"risks"`
+	Risks []string `json:"risks"`
+	// D3fend and Emb3d are its D3FEND techniques and EMB3D ids.
+	D3fend      []string `json:"d3fend"`
+	Emb3d       []string `json:"emb3d"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 }
@@ -182,9 +193,11 @@ type RiskSummary struct {
 	Tests        []string `json:"tests"`
 	// Attack and Atlas are the ATT&CK and ATLAS technique ids, Tactics the
 	// tactic ids they serve.
-	Attack      []string `json:"attack"`
-	Atlas       []string `json:"atlas"`
-	Tactics     []string `json:"tactics"`
+	Attack  []string `json:"attack"`
+	Atlas   []string `json:"atlas"`
+	Tactics []string `json:"tactics"`
+	// Emb3d are its EMB3D threats.
+	Emb3d       []string `json:"emb3d"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Mitigation  string   `json:"mitigation"`
@@ -203,6 +216,8 @@ type TestSummary struct {
 	Sources      []string `json:"sources"`
 	Requirements []string `json:"requirements"`
 	Steps        int      `json:"steps"`
+	D3fend       []string `json:"d3fend"`
+	Emb3d        []string `json:"emb3d"`
 	Title        string   `json:"title"`
 	Description  string   `json:"description"`
 }
@@ -222,7 +237,8 @@ func (c *Catalog) SummarizeRequirement(r *Requirement, lang string) ReqSummary {
 		g, k = a.Group, a.Catalogue
 	}
 	return ReqSummary{ID: r.ID, Area: r.Area, Group: g, Catalogue: k, Type: r.Type, Obligation: r.Obligation, Priority: r.Priority,
-		Tags: nonNil(r.Tags), Refs: nonNil(r.Refs), Sources: nonNil(r.Sources), Tests: nonNil(r.Tests), Risks: nonNil(c.RisksOf[r.ID]), Title: x.Title, Description: x.Description}
+		Tags: nonNil(r.Tags), Refs: nonNil(r.Refs), Sources: nonNil(r.Sources), Tests: nonNil(r.Tests), Risks: nonNil(c.RisksOf[r.ID]),
+		D3fend: nonNil(r.D3fend), Emb3d: nonNil(r.Emb3d), Title: x.Title, Description: x.Description}
 }
 
 // SummarizeRisk returns k in lang.
@@ -239,7 +255,7 @@ func (c *Catalog) SummarizeRisk(k *Risk, lang string) RiskSummary {
 	return RiskSummary{ID: k.ID, Area: k.Area, Group: g, Catalogue: kind, Category: k.Category, CategoryName: cat,
 		Likelihood: k.Likelihood, Impact: k.Impact, Score: k.Likelihood * k.Impact, Level: k.Level(),
 		Tags: nonNil(k.Tags), Refs: nonNil(k.Refs), Sources: nonNil(k.Sources), MitigatedBy: nonNil(k.MitigatedBy), Tests: nonNil(k.Tests),
-		Attack: nonNil(k.Attack), Atlas: nonNil(k.Atlas), Tactics: nonNil(c.TacticsOf(k.Techniques())),
+		Attack: nonNil(k.Attack), Atlas: nonNil(k.Atlas), Tactics: nonNil(c.TacticsOf(k.Techniques())), Emb3d: nonNil(k.Emb3d),
 		Title: x.Title, Description: x.Description, Mitigation: x.Mitigation}
 }
 
@@ -264,7 +280,7 @@ func (c *Catalog) riskSources(k *Risk) []string {
 func (c *Catalog) FindRisks(f Filter, lang string) []RiskSummary {
 	lang = Lang(lang)
 	areas, groups, kinds, cats, levels, tags, sources := set(f.Area), set(f.Group), set(f.Catalogue), set(f.Category), set(f.Level), set(f.Tag), set(f.Source)
-	techs, tactics := set(f.Attack), set(f.Tactic)
+	techs, tactics, d3, emb := set(f.Attack), set(f.Tactic), set(f.D3fend), set(f.Emb3d)
 	terms := Terms(f.Q)
 	type hit struct {
 		s     RiskSummary
@@ -283,11 +299,14 @@ func (c *Catalog) FindRisks(f Filter, lang string) []RiskSummary {
 			if (techs != nil && !c.techniqueMatches(k.Techniques(), techs)) || (tactics != nil && !acceptsAny(tactics, c.TacticsOf(k.Techniques()))) {
 				continue
 			}
+			if (d3 != nil && !c.riskCounteredBy(k, d3)) || (emb != nil && !c.emb3dMatches(k.Emb3d, emb)) {
+				continue
+			}
 			x := k.Localized(lang)
 			sc := score(k.ID, terms, []field{
 				{lower(x.Title), 10}, {lower(k.ID), 8}, {lower(k.Tags...), 6}, {lower(k.Refs...), 4},
 				{lower(x.Description), 3}, {lower(k.MitigatedBy...), 2}, {lower(x.Mitigation), 1},
-				{lower(c.techniqueTerms(k)...), 4},
+				{lower(c.techniqueTerms(k)...), 4}, {lower(c.frameworkTerms(nil, k.Emb3d)...), 4},
 			})
 			if sc > 0 {
 				hits = append(hits, hit{c.SummarizeRisk(k, lang), sc})
@@ -312,7 +331,8 @@ func (c *Catalog) SummarizeTest(t *Test, lang string) TestSummary {
 		g, k = a.Group, a.Catalogue
 	}
 	return TestSummary{ID: t.ID, Area: t.Area, Group: g, Catalogue: k, Priority: t.Priority, Execution: t.Execution,
-		Tags: nonNil(t.Tags), Refs: nonNil(t.Refs), Sources: nonNil(t.Sources), Requirements: nonNil(t.Requirements), Steps: len(x.Steps), Title: x.Title, Description: x.Description}
+		Tags: nonNil(t.Tags), Refs: nonNil(t.Refs), Sources: nonNil(t.Sources), Requirements: nonNil(t.Requirements), Steps: len(x.Steps),
+		D3fend: nonNil(t.D3fend), Emb3d: nonNil(t.Emb3d), Title: x.Title, Description: x.Description}
 }
 
 // set parses a comma-separated filter value (nil = any).
@@ -404,7 +424,7 @@ func lower(ss ...string) string { return strings.ToLower(strings.Join(ss, " ")) 
 func (c *Catalog) FindRequirements(f Filter, lang string) []ReqSummary {
 	lang = Lang(lang)
 	areas, groups, types, obl, prio, tags := set(f.Area), set(f.Group), set(f.Type), set(f.Obligation), set(f.Priority), set(f.Tag)
-	kinds, sources := set(f.Catalogue), set(f.Source)
+	kinds, sources, d3, emb := set(f.Catalogue), set(f.Source), set(f.D3fend), set(f.Emb3d)
 	terms := Terms(f.Q)
 	type hit struct {
 		s     ReqSummary
@@ -417,13 +437,14 @@ func (c *Catalog) FindRequirements(f Filter, lang string) []ReqSummary {
 		}
 		for i := range a.Requirements {
 			r := &a.Requirements[i]
-			if !accepts(types, r.Type) || !accepts(obl, r.Obligation) || !accepts(prio, r.Priority) || !acceptsAny(tags, r.Tags) || !acceptsAny(sources, r.Sources) {
+			if !accepts(types, r.Type) || !accepts(obl, r.Obligation) || !accepts(prio, r.Priority) || !acceptsAny(tags, r.Tags) || !acceptsAny(sources, r.Sources) ||
+				(d3 != nil && !c.d3fendMatches(r.D3fend, d3)) || (emb != nil && !c.emb3dMatches(r.Emb3d, emb)) {
 				continue
 			}
 			x := r.Localized(lang)
 			sc := score(r.ID, terms, []field{
 				{lower(x.Title), 10}, {lower(r.ID), 8}, {lower(r.Tags...), 6}, {lower(r.Refs...), 4},
-				{lower(x.Description), 3}, {lower(x.Rationale), 1},
+				{lower(x.Description), 3}, {lower(x.Rationale), 1}, {lower(c.frameworkTerms(r.D3fend, r.Emb3d)...), 4},
 			})
 			if sc > 0 {
 				hits = append(hits, hit{c.SummarizeRequirement(r, lang), sc})
@@ -445,7 +466,7 @@ func (c *Catalog) FindRequirements(f Filter, lang string) []ReqSummary {
 func (c *Catalog) FindTests(f Filter, lang string) []TestSummary {
 	lang = Lang(lang)
 	areas, groups, prio, tags, exec := set(f.Area), set(f.Group), set(f.Priority), set(f.Tag), set(f.Execution)
-	kinds, sources := set(f.Catalogue), set(f.Source)
+	kinds, sources, d3, emb := set(f.Catalogue), set(f.Source), set(f.D3fend), set(f.Emb3d)
 	terms := Terms(f.Q)
 	type hit struct {
 		s     TestSummary
@@ -458,7 +479,8 @@ func (c *Catalog) FindTests(f Filter, lang string) []TestSummary {
 		}
 		for i := range a.Tests {
 			t := &a.Tests[i]
-			if !accepts(prio, t.Priority) || !accepts(exec, t.Execution) || !acceptsAny(tags, t.Tags) || (sources != nil && !acceptsAny(sources, c.testSources(t))) {
+			if !accepts(prio, t.Priority) || !accepts(exec, t.Execution) || !acceptsAny(tags, t.Tags) || (sources != nil && !acceptsAny(sources, c.testSources(t))) ||
+				(d3 != nil && !c.d3fendMatches(t.D3fend, d3)) || (emb != nil && !c.emb3dMatches(t.Emb3d, emb)) {
 				continue
 			}
 			x := t.Localized(lang)
@@ -469,7 +491,7 @@ func (c *Catalog) FindTests(f Filter, lang string) []TestSummary {
 			sc := score(t.ID, terms, []field{
 				{lower(x.Title), 10}, {lower(t.ID), 8}, {lower(t.Tags...), 6}, {lower(t.Refs...), 4},
 				{lower(x.Description), 3}, {lower(x.Expected, x.Preconditions), 2}, {lower(steps...), 1},
-				{lower(t.Requirements...), 2},
+				{lower(t.Requirements...), 2}, {lower(c.frameworkTerms(t.D3fend, t.Emb3d)...), 4},
 			})
 			if sc > 0 {
 				hits = append(hits, hit{c.SummarizeTest(t, lang), sc})

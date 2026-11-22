@@ -182,6 +182,7 @@ requirements:
     tags: [encryption, backup, key-management]
     refs: ["ISO/IEC 27001:2022 A.8.24 (use of cryptography)", "OWASP ASVS 5.0 V11.3.2 (approved ciphers and modes)", "ISO/IEC 27040:2024", "GDPR Art. 32(1)(a)"]
     tests: [BCK-T06]
+    d3fend: [D3-FE]
     en:
       title: Encrypted backups
       description: The system MUST encrypt every backup with AES-256 using a key that is stored outside the backup storage.

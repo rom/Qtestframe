@@ -31,6 +31,10 @@ func (s *Server) routesCatalog(h routeFunc) {
 	h("GET /api/v1/catalog/risks/{id}", s.handleCatalogRisk, "requirement.read")
 	h("GET /api/v1/catalog/attack", s.handleCatalogAttack, "requirement.read")
 	h("GET /api/v1/catalog/attack/techniques", s.handleCatalogTechniques, "project.read")
+	h("GET /api/v1/catalog/d3fend", s.handleCatalogD3fend, "project.read")
+	h("GET /api/v1/catalog/d3fend/coverage", s.handleCatalogD3fendCoverage, "requirement.read")
+	h("GET /api/v1/catalog/emb3d", s.handleCatalogEmb3d, "project.read")
+	h("GET /api/v1/catalog/emb3d/coverage", s.handleCatalogEmb3dCoverage, "requirement.read")
 	h("GET /api/v1/projects/{pid}/catalog", s.handleProjectCatalog, "project.read")
 	// write of each kind imported: see handleCatalogImport
 	h("POST /api/v1/projects/{pid}/catalog/import", s.impactAware(s.handleCatalogImport, true), "project.read")
@@ -81,7 +85,7 @@ func catalogFilter(r *http.Request) catalog.Filter {
 	return catalog.Filter{Area: q.Get("area"), Group: q.Get("group"), Type: q.Get("type"), Obligation: q.Get("obligation"),
 		Priority: q.Get("priority"), Tag: q.Get("tag"), Execution: q.Get("execution"),
 		Catalogue: q.Get("catalogue"), Source: q.Get("source"), Category: q.Get("category"), Level: q.Get("level"),
-		Attack: q.Get("attack"), Tactic: q.Get("tactic"), Q: q.Get("q")}
+		Attack: q.Get("attack"), Tactic: q.Get("tactic"), D3fend: q.Get("d3fend"), Emb3d: q.Get("emb3d"), Q: q.Get("q")}
 }
 
 // handleCatalogSources: GET /catalog/sources?lang=&catalogue=&all= — the
@@ -220,6 +224,12 @@ type catalogRiskDetail struct {
 	// Techniques are the ATT&CK and ATLAS techniques of attack and atlas
 	// with names, tactics and links.
 	Techniques []catalog.TechniqueSummary `json:"techniques"`
+	// Emb3dItems are the EMB3D threats of emb3d with names and links;
+	// Defenses, per ATT&CK technique, the D3FEND techniques that counter it
+	// and the catalogue requirements that implement one (a technique no
+	// mitigating requirement counters is a gap).
+	Emb3dItems []catalog.Emb3dSummary `json:"emb3d_items"`
+	Defenses   []catalog.RiskDefense  `json:"defenses"`
 	// MitigatingRequirements are the catalogue requirements of mitigated_by,
 	// LinkedTests the tests listed on the risk.
 	MitigatingRequirements []catalogLinked     `json:"mitigating_requirements"`
@@ -256,7 +266,8 @@ func (s *Server) handleCatalogRisk(w http.ResponseWriter, r *http.Request, p *Pr
 		}
 	}
 	out := catalogRiskDetail{RiskSummary: c.SummarizeRisk(k, lang), AreaName: areaName(c, k.Area, lang), RefTargets: c.RefTargets(k.Refs, lang),
-		Techniques:             c.TechniqueSummaries(k.Techniques()),
+		Techniques: c.TechniqueSummaries(k.Techniques()),
+		Emb3dItems: c.Emb3dSummaries(k.Emb3d), Defenses: c.RiskDefenses(k, lang),
 		MitigatingRequirements: []catalogLinked{}, LinkedTests: []catalogLinked{}, InProject: risks[k.ID]}
 	for _, id := range k.MitigatedBy {
 		if rq := c.Requirements[id]; rq != nil {
@@ -303,6 +314,10 @@ type catalogReqDetail struct {
 	// MitigatesRisks are the catalogue risks it mitigates.
 	MitigatesRisks []catalogLinked     `json:"mitigates_risks"`
 	InProject      []store.CatalogItem `json:"in_project,omitempty"`
+	// D3fendTechniques and Emb3dItems are its D3FEND techniques and
+	// EMB3D threats and mitigations with names and links.
+	D3fendTechniques []catalog.D3fendSummary `json:"d3fend_techniques"`
+	Emb3dItems       []catalog.Emb3dSummary  `json:"emb3d_items"`
 }
 
 type catalogTestDetail struct {
@@ -316,6 +331,10 @@ type catalogTestDetail struct {
 	// LinkedRequirements are the catalogue requirements it verifies.
 	LinkedRequirements []catalogLinked     `json:"linked_requirements"`
 	InProject          []store.CatalogItem `json:"in_project,omitempty"`
+	// D3fendTechniques and Emb3dItems are its D3FEND techniques and
+	// EMB3D threats and mitigations with names and links.
+	D3fendTechniques []catalog.D3fendSummary `json:"d3fend_techniques"`
+	Emb3dItems       []catalog.Emb3dSummary  `json:"emb3d_items"`
 }
 
 func areaName(c *catalog.Catalog, id, lang string) string {
@@ -356,7 +375,8 @@ func (s *Server) handleCatalogRequirement(w http.ResponseWriter, r *http.Request
 	}
 	x := rq.Localized(lang)
 	out := catalogReqDetail{ReqSummary: c.SummarizeRequirement(rq, lang), AreaName: areaName(c, rq.Area, lang), Rationale: x.Rationale,
-		Criteria: x.Criteria, RefTargets: c.RefTargets(rq.Refs, lang), LinkedTests: []catalogLinked{}, MitigatesRisks: []catalogLinked{}, InProject: reqs[rq.ID]}
+		Criteria: x.Criteria, RefTargets: c.RefTargets(rq.Refs, lang), LinkedTests: []catalogLinked{}, MitigatesRisks: []catalogLinked{}, InProject: reqs[rq.ID],
+		D3fendTechniques: c.D3fendSummaries(rq.D3fend), Emb3dItems: c.Emb3dSummaries(rq.Emb3d)}
 	for _, id := range rq.Tests {
 		if t := c.Tests[id]; t != nil {
 			out.LinkedTests = append(out.LinkedTests, catalogLinked{ID: id, Area: t.Area, Title: t.Localized(lang).Title, InProject: tests[id]})
@@ -394,7 +414,8 @@ func (s *Server) handleCatalogTest(w http.ResponseWriter, r *http.Request, p *Pr
 	}
 	x := t.Localized(lang)
 	out := catalogTestDetail{TestSummary: c.SummarizeTest(t, lang), AreaName: areaName(c, t.Area, lang), Preconditions: x.Preconditions,
-		Expected: x.Expected, StepList: x.Steps, RefTargets: c.RefTargets(t.Refs, lang), LinkedRequirements: []catalogLinked{}, InProject: tests[t.ID]}
+		Expected: x.Expected, StepList: x.Steps, RefTargets: c.RefTargets(t.Refs, lang), LinkedRequirements: []catalogLinked{}, InProject: tests[t.ID],
+		D3fendTechniques: c.D3fendSummaries(t.D3fend), Emb3dItems: c.Emb3dSummaries(t.Emb3d)}
 	for _, id := range t.Requirements {
 		if rq := c.Requirements[id]; rq != nil {
 			out.LinkedRequirements = append(out.LinkedRequirements, catalogLinked{ID: id, Area: rq.Area, Title: rq.Localized(lang).Title, InProject: reqs[id]})
@@ -518,7 +539,7 @@ func catalogRisk(k *catalog.Risk, lang, status string) *model.Risk {
 		cat = rc.Name.Get(lang)
 	}
 	return &model.Risk{Title: x.Title, Description: x.Description, Mitigation: x.Mitigation, Category: cat,
-		Likelihood: k.Likelihood, Impact: k.Impact, Status: status, CatalogRef: k.ID, Attack: k.Techniques()}
+		Likelihood: k.Likelihood, Impact: k.Impact, Status: status, CatalogRef: k.ID, Attack: k.Techniques(), Emb3d: append([]string{}, k.Emb3d...)}
 }
 
 // folderResolver finds or creates folders by name path below a root.
@@ -622,7 +643,7 @@ func catalogRequirement(rq *catalog.Requirement, lang, status, source string) *m
 	x := rq.Localized(lang)
 	out := &model.Requirement{Title: x.Title, Description: x.Description, Obligation: rq.Obligation, Type: rq.Type,
 		Priority: rq.Priority, Status: status, Source: source, Rationale: x.Rationale, Tags: append([]string{}, rq.Tags...),
-		CatalogRef: rq.ID}
+		CatalogRef: rq.ID, D3fend: append([]string{}, rq.D3fend...), Emb3d: append([]string{}, rq.Emb3d...)}
 	for _, cr := range x.Criteria {
 		out.Criteria = append(out.Criteria, model.EvaluationCriterion{Description: cr.Text, Method: cr.Method, Threshold: cr.Threshold})
 	}
@@ -634,7 +655,7 @@ func catalogTest(t *catalog.Test, lang, status string) *model.TestCase {
 	x := t.Localized(lang)
 	out := &model.TestCase{Title: x.Title, Description: x.Description, Preconditions: x.Preconditions, ExpectedResult: x.Expected,
 		ExecutionType: t.Execution, Priority: t.Priority, Status: status, Tags: append([]string{}, t.Tags...), CatalogRef: t.ID,
-		Steps: []model.TestStep{}}
+		D3fend: append([]string{}, t.D3fend...), Emb3d: append([]string{}, t.Emb3d...), Steps: []model.TestStep{}}
 	for _, st := range x.Steps {
 		out.Steps = append(out.Steps, model.TestStep{Action: st.Action, Expected: st.Expected, Data: st.Data})
 	}

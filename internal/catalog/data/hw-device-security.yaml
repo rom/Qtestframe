@@ -15,6 +15,8 @@ requirements:
     tags: [secure-boot, chain-of-trust, firmware]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "NIST SP 800-193 (platform firmware resiliency)", "CWE-1326 (missing immutable root of trust in hardware)", "MITRE ATT&CK T1542.001 (system firmware)", "MITRE ATT&CK T1542.003 (bootkit)"]
     tests: [HWSEC-T01]
+    d3fend: [D3-BA]
+    emb3d: [MID-002]
     en:
       title: Secure boot verifies each stage of the boot chain
       description: The device MUST verify the signature of the bootloader, the operating system and the application firmware against a public key anchored in immutable hardware before running each stage, and MUST refuse to run a stage whose signature does not verify.
@@ -37,6 +39,7 @@ requirements:
     tags: [anti-rollback, firmware, version]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "CWE-1328 (security version number mutable to older versions)", "MITRE ATT&CK T1601.002 (downgrade system image)"]
     tests: [HWSEC-T01]
+    emb3d: [MID-030]
     en:
       title: Rollback to firmware with a known vulnerability is refused
       description: The device MUST keep a security version counter in one-time programmable or replay-protected storage and MUST refuse to boot or install a firmware image whose security version is lower than the counter.
@@ -59,6 +62,8 @@ requirements:
     tags: [debug-port, jtag, swd, production]
     refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "ETSI EN 303 645 provision 5.6-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "CWE-1191 (on-chip debug and test interface with improper access control)", "CWE-1244 (internal asset exposed to unsafe debug access level or state)"]
     tests: [HWSEC-T02]
+    d3fend: [D3-IOPR]
+    emb3d: [MID-057]
     en:
       title: Debug ports locked on production units
       description: On each production unit, the JTAG and SWD debug interfaces MUST be permanently disabled or locked so that they only open after a challenge-response authentication with a device-unique key held by the manufacturer.
@@ -83,6 +88,8 @@ requirements:
     tags: [serial-console, uart, shell]
     refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 ACM)", "CWE-306 (missing authentication for critical function)"]
     tests: [HWSEC-T02]
+    d3fend: [D3-AA]
+    emb3d: [MID-018, MID-039]
     en:
       title: No unauthenticated shell on the serial console
       description: The serial console of a production unit MUST NOT give access to a command shell, a boot loader prompt or a memory dump function without prior authentication with a device-unique credential.
@@ -105,6 +112,8 @@ requirements:
     tags: [firmware-update, signature, integrity]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "IEC 62443-4-2 CR 3.10 (support for updates)", "CWE-494 (download of code without integrity check)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1542.001 (system firmware)"]
     tests: [HWSEC-T03]
+    d3fend: [D3-FV]
+    emb3d: [MID-026]
     en:
       title: Firmware updates verified before installation
       description: The device MUST verify the signature and integrity of a firmware update package before writing any part of it to the active boot storage, and MUST reject a package that fails verification while leaving the running firmware unchanged.
@@ -151,6 +160,8 @@ requirements:
     tags: [default-password, credentials, provisioning]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(b)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "ETSI EN 303 645 provision 5.1-1", "CWE-1392 (use of default credentials)", "CWE-798 (use of hard-coded credentials)", "MITRE ATT&CK T1078.001 (default accounts)"]
     tests: [HWSEC-T04]
+    d3fend: [D3-CDP]
+    emb3d: [MID-043, MID-033]
     en:
       title: No universal default password
       description: The device MUST NOT ship with a password, key or other credential that is the same on more than one unit or that can be derived from public information such as the serial number or MAC address.
@@ -175,6 +186,7 @@ requirements:
     tags: [key-storage, secure-element, confidentiality]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)", "CWE-922 (insecure storage of sensitive information)", "MITRE ATT&CK T1552.004 (private keys)"]
     tests: [HWSEC-T05]
+    emb3d: [MID-028]
     en:
       title: Private keys in hardware-protected storage
       description: The device MUST keep its private keys and long-term secrets in a secure element or a hardware-isolated key store that performs the cryptographic operations internally, so that the keys cannot be read out through software, the debug port or a dump of the external flash.
@@ -197,6 +209,7 @@ requirements:
     tags: [tamper-detection, enclosure, physical-security]
     refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)", "CWE-1263 (improper physical access control)"]
     tests: [HWSEC-T06]
+    d3fend: [D3-PEH]
     en:
       title: Detection of enclosure opening
       description: A device installed in unattended locations MAY detect the opening of its enclosure with a switch or sensor, log the event with a timestamp and report it to the management system at the next connection.
@@ -219,6 +232,8 @@ requirements:
     tags: [attack-surface, network-services, secure-by-default]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)", "CWE-912 (hidden functionality)", "MITRE ATT&CK M1042 (disable or remove feature or program)"]
     tests: [HWSEC-T07]
+    d3fend: [D3-PH]
+    emb3d: [MID-016, MID-079]
     en:
       title: Only documented network services open in the delivered state
       description: In the delivered state, the device MUST listen only on the network ports and services listed in its security documentation, and MUST keep each further service disabled until an administrator enables it.
@@ -243,6 +258,7 @@ requirements:
     tags: [sbom, firmware, components]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CycloneDX 1.6", "CWE-1395 (dependency on vulnerable third-party component)"]
     tests: [HWSEC-T08]
+    d3fend: [D3-SWI]
     en:
       title: Software bill of materials for each firmware release
       description: The manufacturer MUST produce a machine-readable software bill of materials for each firmware release that lists at least the top-level components with name, supplier, version and a unique identifier.
@@ -289,6 +305,8 @@ requirements:
     tags: [factory-reset, data-deletion, decommissioning]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)", "Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)", "CWE-226 (sensitive information in resource not removed before reuse)"]
     tests: [HWSEC-T09]
+    d3fend: [D3-DKE]
+    emb3d: [MID-025]
     en:
       title: Factory reset erases user data and credentials
       description: A factory reset MUST erase each item of user data, each user credential and each network configuration from the device's storage so that it cannot be recovered by reading the storage, while keeping the device identity and the firmware.
@@ -311,6 +329,7 @@ requirements:
     tags: [random-numbers, trng, cryptography]
     refs: ["Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)", "NIST SP 800-90B (entropy sources)", "CWE-331 (insufficient entropy)"]
     tests: [HWSEC-T10]
+    emb3d: [MID-048, MID-047]
     en:
       title: Health-tested hardware entropy source
       description: The device SHOULD seed its cryptographic random number generator from a hardware entropy source that runs the start-up and continuous health tests of NIST SP 800-90B and stops key generation when a test fails.
@@ -333,6 +352,7 @@ requirements:
     tags: [firmware, fallback, boot]
     refs: ["NIST SP 800-193 (platform firmware resiliency)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     tests: [HWSEC-T11]
+    d3fend: [D3-RS]
     en:
       title: Automatic return to the previous firmware after a failed start
       description: The device MUST start the previous firmware image when a newly installed image fails its start-up health check or does not confirm a successful start within 5 minutes.
@@ -357,6 +377,8 @@ requirements:
     tags: [firmware, memory-protection, exploit-mitigation]
     refs: ["IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "CWE-121 (stack-based buffer overflow)", "MITRE ATT&CK M1050 (exploit protection)"]
     tests: [HWSEC-T12]
+    d3fend: [D3-PSEP]
+    emb3d: [MID-004]
     en:
       title: Stack and data memory not executable
       description: The firmware MUST configure the memory protection unit so that stack, heap and other writable data regions are not executable and code regions are not writable at run time.
@@ -379,6 +401,8 @@ requirements:
     tags: [device-identity, certificate, provisioning]
     refs: ["IEC 62443-4-2 CR 1.2", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1394 (use of default cryptographic key)"]
     tests: [HWSEC-T13]
+    d3fend: [D3-CBAN]
+    emb3d: [MID-033]
     en:
       title: Unique device identity certificate from production
       description: Each device MUST leave production with a unique key pair generated inside the device and a certificate for it signed by the manufacturer's device certification authority.
@@ -401,6 +425,7 @@ requirements:
     tags: [provisioning, private-keys, production]
     refs: ["IEC 62443-4-1 SM-8", "CWE-532 (insertion of sensitive information into log file)", "MITRE ATT&CK T1552.004 (private keys)"]
     tests: [HWSEC-T13]
+    emb3d: [MID-028]
     en:
       title: No device private key leaves the device in production
       description: The production test station MUST NOT read, store or log the private key of a device that it provisions.
@@ -423,6 +448,8 @@ requirements:
     tags: [external-flash, encryption, confidentiality]
     refs: ["IEC 62443-4-2 CR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-311 (missing encryption of sensitive data)", "CWE-1394 (use of default cryptographic key)"]
     tests: [HWSEC-T14]
+    d3fend: [D3-DENCR]
+    emb3d: [MID-054]
     en:
       title: Data in external flash encrypted with a device-unique key
       description: The device MUST encrypt configuration, credentials and user data stored in external flash memory with a key that is unique to the device and stored only in protected internal storage.
@@ -445,6 +472,8 @@ requirements:
     tags: [security-updates, support, free-of-charge]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §8", "MITRE ATT&CK M1051 (update software)"]
     tests: [HWSEC-T15]
+    d3fend: [D3-SU]
+    emb3d: [TID-210]
     en:
       title: Security updates published within 30 days and free of charge
       description: The manufacturer MUST publish a firmware update that fixes each actively exploited or critical vulnerability within 30 days of confirming it, free of charge to each user within the support period.
@@ -468,6 +497,8 @@ tests:
     execution: manual
     tags: [secure-boot, anti-rollback]
     refs: ["IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "CWE-1326 (missing immutable root of trust in hardware)", "MITRE ATT&CK T1542.001 (system firmware)", "MITRE ATT&CK T1542.003 (bootkit)", "CWE-1328 (security version number mutable to older versions)", "MITRE ATT&CK T1601.002 (downgrade system image)"]
+    d3fend: [D3-BA]
+    emb3d: [MID-002, MID-026, MID-030]
     en:
       title: Tampered, foreign-signed and older images are refused
       description: Tries to boot and install modified, foreign-signed and older firmware images on a production unit.
@@ -498,6 +529,8 @@ tests:
     execution: manual
     tags: [debug-port, serial-console]
     refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "CWE-1191 (on-chip debug and test interface with improper access control)", "CWE-1244 (internal asset exposed to unsafe debug access level or state)", "CWE-306 (missing authentication for critical function)"]
+    d3fend: [D3-IOPR]
+    emb3d: [MID-057, MID-039]
     en:
       title: Debug port and serial console on a production unit
       description: Connects a debug probe and a serial adapter to a production unit and checks the lock records of a lot.
@@ -530,6 +563,7 @@ tests:
     execution: automated
     tags: [firmware-update, fail-safe]
     refs: ["IEC 62443-4-2 CR 3.10 (support for updates)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)", "CWE-494 (download of code without integrity check)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1542.001 (system firmware)"]
+    emb3d: [MID-026]
     en:
       title: Update verification and power loss during update
       description: A test rig offers bad update packages and cuts power at 10 points of a good update.
@@ -560,6 +594,8 @@ tests:
     execution: manual
     tags: [default-password]
     refs: ["ETSI EN 303 645 provision 5.1-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1392 (use of default credentials)", "CWE-798 (use of hard-coded credentials)", "MITRE ATT&CK T1078.001 (default accounts)"]
+    d3fend: [D3-CDP]
+    emb3d: [MID-043]
     en:
       title: Initial credentials are unique and not derivable
       description: Collects the initial credentials of 20 units from 2 lots and tries the listed derivation methods.
@@ -588,6 +624,7 @@ tests:
     execution: manual
     tags: [key-storage]
     refs: ["Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)", "CWE-922 (insecure storage of sensitive information)", "MITRE ATT&CK T1552.004 (private keys)"]
+    emb3d: [MID-028]
     en:
       title: No private key material in flash or memory dumps
       description: Dumps the external flash and the memory of a unit provisioned with a known test key and searches for it.
@@ -644,6 +681,7 @@ tests:
     execution: automated
     tags: [attack-surface, port-scan]
     refs: ["ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)", "CWE-912 (hidden functionality)", "MITRE ATT&CK M1042 (disable or remove feature or program)"]
+    emb3d: [MID-079, MID-016]
     en:
       title: Port scan of a factory-reset unit
       description: A script scans all TCP and UDP ports of a factory-reset unit and compares the result with the documentation.
@@ -700,6 +738,8 @@ tests:
     execution: manual
     tags: [factory-reset]
     refs: ["Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)", "CWE-226 (sensitive information in resource not removed before reuse)"]
+    d3fend: [D3-DKE]
+    emb3d: [MID-025]
     en:
       title: Factory reset leaves no recoverable user data
       description: Loads a unit with known test data, resets it and searches a raw dump of its storage.
@@ -732,6 +772,7 @@ tests:
     execution: manual
     tags: [random-numbers]
     refs: ["NIST SP 800-90B (entropy sources)", "CWE-331 (insufficient entropy)"]
+    emb3d: [MID-048]
     en:
       title: Entropy assessment and health test failure
       description: Collects raw samples from the entropy source, estimates their min-entropy and forces a health test failure.
@@ -758,6 +799,7 @@ tests:
     execution: manual
     tags: [firmware, fallback]
     refs: ["NIST SP 800-193 (platform firmware resiliency)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
+    d3fend: [D3-RS]
     en:
       title: Failed start of a new firmware image
       description: Installs a firmware image that fails its health check and checks the automatic return to the previous image.
@@ -788,6 +830,8 @@ tests:
     execution: automated
     tags: [memory-protection]
     refs: ["IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "CWE-121 (stack-based buffer overflow)", "MITRE ATT&CK M1050 (exploit protection)"]
+    d3fend: [D3-PSEP]
+    emb3d: [MID-004]
     en:
       title: Execution from the stack and writes to code memory
       description: A test build tries to execute code from the stack and to write to a code region, and the script checks that both cause a fault.
@@ -818,6 +862,7 @@ tests:
     execution: manual
     tags: [provisioning, device-identity]
     refs: ["IEC 62443-4-2 CR 1.2", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "IEC 62443-4-1 SM-8", "CWE-1394 (use of default cryptographic key)", "CWE-532 (insertion of sensitive information into log file)", "MITRE ATT&CK T1552.004 (private keys)"]
+    emb3d: [MID-033]
     en:
       title: Device certificates and key handling at the production station
       description: Checks the identity certificates of produced devices and the key handling of the production test station.
@@ -848,6 +893,8 @@ tests:
     execution: manual
     tags: [external-flash, encryption]
     refs: ["IEC 62443-4-2 CR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "CWE-311 (missing encryption of sensitive data)", "CWE-1394 (use of default cryptographic key)"]
+    d3fend: [D3-DENCR]
+    emb3d: [MID-054]
     en:
       title: Raw dump of the external flash
       description: Reads the external flash of a configured device and checks that secrets and user data are encrypted with a device-unique key.
@@ -880,6 +927,7 @@ tests:
     execution: manual
     tags: [security-updates]
     refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §8", "MITRE ATT&CK M1051 (update software)"]
+    emb3d: [TID-210]
     en:
       title: Time from confirmed vulnerability to free update
       description: Compares the confirmation date of each critical or exploited vulnerability with the publication date of its fix.
@@ -914,6 +962,7 @@ risks:
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 5.7-1", "CWE-1326 (missing immutable root of trust in hardware)", "CWE-494 (download of code without integrity check)"]
     mitigated_by: [HWSEC-01, HWSEC-02, HWSEC-05, HWSEC-06, HWSEC-15]
     attack: [T1542.001, T1601.002]
+    emb3d: [TID-201, TID-211, TID-213, TID-216]
     en:
       title: Malicious firmware installed on the device
       description: The device boots unsigned code or accepts an old vulnerable firmware image. An attacker installs persistent malware that survives resets and cannot be detected from outside.
@@ -930,6 +979,7 @@ risks:
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 5.1-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "CWE-1392 (use of default credentials)"]
     mitigated_by: [HWSEC-07, HWSEC-10, HWSEC-04, HWSEC-20]
     attack: [T1078.001]
+    emb3d: [TID-311, TID-310]
     en:
       title: Devices taken over in bulk over the network
       description: Devices ship with the same default password or with undocumented services open. They are found by scanners and recruited into botnets within hours of being connected.
@@ -946,6 +996,7 @@ risks:
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1191 (on-chip debug and test interface with improper access control)", "CWE-922 (insecure storage of sensitive information)"]
     mitigated_by: [HWSEC-03, HWSEC-08, HWSEC-09, HWSEC-19, HWSEC-17]
     attack: [T1552.004]
+    emb3d: [TID-115, TID-108, TID-214]
     en:
       title: Keys and data extracted from a device in hand
       description: An attacker with physical access opens the enclosure, uses a debug port or reads the external flash. Keys and data are extracted and may let the attacker impersonate or attack other devices.
@@ -962,6 +1013,7 @@ risks:
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI EN 303 645 provision 6-1", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)"]
     mitigated_by: [HWSEC-13, HWSEC-12, HWSEC-11]
     attack: [T1005]
+    emb3d: [TID-108]
     en:
       title: User data left on a sold or discarded device
       description: A device is resold, returned or discarded with the previous owner's data and credentials still on it. The next owner reads them or uses them to access the owner's services.
@@ -978,6 +1030,7 @@ risks:
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "CWE-1191 (on-chip debug and test interface with improper access control)"]
     mitigated_by: [HWSEC-03, HWSEC-04, HWSEC-09]
     attack: [T1200, T1542.001]
+    emb3d: [TID-119, TID-116, TID-224]
     en:
       title: Device taken over through an open debug or serial port
       description: "Production units leave the debug port unlocked or offer a shell on the serial console. Anyone who opens the enclosure reads the firmware and changes the device's behaviour."
@@ -994,6 +1047,7 @@ risks:
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §8"]
     mitigated_by: [HWSEC-10, HWSEC-20, HWSEC-12]
     attack: [T1190, T1210]
+    emb3d: [TID-310, TID-401]
     en:
       title: Undocumented network service on the device exploited at scale
       description: The device ships with a debugging or legacy service listening on the network, and security updates arrive late or for a fee. A flaw in the service is exploited in every unit online.

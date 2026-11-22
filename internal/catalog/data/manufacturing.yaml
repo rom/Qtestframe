@@ -200,6 +200,8 @@ requirements:
     tags: [opc-ua, machine-connectivity, encryption, certificates]
     refs: ["IEC 62541-2", "IEC 62541-4", "IEC 62443-3-3 SR 3.1"]
     tests: [MFG-T08]
+    d3fend: [D3-MAN, D3-MENCR]
+    emb3d: [MID-034, MID-035]
     en:
       title: OPC UA connections signed and encrypted
       description: The OPC UA client and server components of the system MUST use the security mode SignAndEncrypt with the policy Basic256Sha256 or a stronger one, and MUST reject a connection with security mode None or with a certificate that is not in the trust list.
@@ -222,6 +224,8 @@ requirements:
     tags: [mqtt, tls, iot, machine-connectivity]
     refs: ["OASIS MQTT Version 5.0 §5", "IEC 62443-4-2 CR 1.2", "ETSI EN 303 645 provision 5.5-1"]
     tests: [MFG-T09]
+    d3fend: [D3-CBAN, D3-MENCR]
+    emb3d: [MID-034, MID-035]
     en:
       title: MQTT only over TLS with per-device identity
       description: The MQTT broker of the system MUST accept connections only over TLS 1.2 or later with a client certificate or credentials unique to each device, and MUST limit each device to publishing in its own topic tree.
@@ -360,6 +364,7 @@ requirements:
     tags: [ot-security, iec-62443, zones, patching]
     refs: ["IEC 62443-3-2", "IEC 62443-3-3 SR 5.1", "IEC 62443-3-2:2020 ZCR 3"]
     tests: [MFG-T15]
+    d3fend: [D3-NI]
     en:
       title: Shop-floor network segmented into zones
       description: The production network MUST be divided into security zones per line or cell with conduits that allow only the listed protocols and addresses, and the office network MUST reach the machines only through a demilitarised zone.

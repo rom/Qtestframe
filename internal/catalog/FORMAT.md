@@ -22,6 +22,8 @@ requirements:
     tags: [password, login]     # lower case, a-z 0-9 and "-"
     refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)"]   # standards it is based on: cited, never copied
     tests: [AUTH-T01, AUTH-T02] # at least one catalogue test that verifies it (same or other area)
+    d3fend: [D3-SPP]            # optional: MITRE D3FEND defensive techniques it implements (data/d3fend.yaml); see "MITRE D3FEND and EMB3D"
+    emb3d: []                   # optional: MITRE EMB3D mitigations (MID-nnn) and threats (TID-nnn) it addresses (data/emb3d.yaml)
     en:
       title: Minimum password length          # short, no final full stop
       description: The system MUST reject a new password shorter than 12 characters.
@@ -44,6 +46,8 @@ tests:
     execution: manual           # manual | automated (automated: the steps describe what a script checks)
     tags: [password]
     refs: []
+    d3fend: [D3-SPP]            # optional: the D3FEND techniques whose implementation the steps verify
+    emb3d: []                   # optional: the EMB3D mitigations and threats the steps check
     en:
       title: Password shorter than the minimum is rejected
       description: Checks the minimum password length when a password is set.
@@ -68,6 +72,7 @@ risks:                          # optional: typical risks of the area
     attack: [T1110.003, T1110.004]  # MITRE ATT&CK techniques (Enterprise, ICS, Mobile) of data/attack.yaml; see "MITRE ATT&CK"
     atlas: []                   # MITRE ATLAS techniques (AML.Tnnnn) of data/atlas.yaml, for attacks on AI systems
     attack_exempt: false        # true only for a security risk that no adversary technique describes
+    emb3d: []                   # MITRE EMB3D threats (TID-nnn) that realise the risk on an embedded device
     tests: []                   # optional: catalogue tests that check the risk directly
     en:
       title: Accounts taken over with leaked passwords   # short, no final full stop
@@ -153,6 +158,64 @@ filters risks by technique and tactic, and the ATT&CK coverage page counts
 per tactic the risks that list one of its techniques and the requirements
 that cite one or mitigate such a risk. A risk added to a project keeps its
 techniques (the project risk's `attack` list).
+
+## MITRE D3FEND and EMB3D
+
+`data/d3fend.yaml` is the list of the [MITRE D3FEND](https://d3fend.mitre.org/)
+defensive tactics and techniques (id `D3-MFA`, name, tactic Model, Harden,
+Detect, Isolate, Deceive, Evict or Restore, parent technique, link) with,
+for each technique, the ATT&CK techniques it counters as D3FEND infers them
+through the digital artifacts both act on (only ids of `attack.yaml`).
+`data/emb3d.yaml` is the list of the [MITRE EMB3D](https://emb3d.mitre.org/)
+device properties (`PID-nn`), threats (`TID-nnn`, with category, the
+properties that expose a device and the mitigations) and mitigations
+(`MID-nnn`, with maturity). Both are generated; never edit them by hand:
+
+```sh
+go run ./internal/catalog/cmd/d3fendgen -ontology d3fend.json -api api \
+    -attack internal/catalog/data/attack.yaml -out internal/catalog/data/d3fend.yaml
+go run ./internal/catalog/cmd/emb3dgen -out internal/catalog/data/emb3d.yaml emb3d-stix-2.0.1.json
+```
+
+(`d3fend.json` is `https://d3fend.mitre.org/ontologies/d3fend.json`, `api/`
+holds the technique pages of the D3FEND API, see the comment of
+`d3fendgen`; the EMB3D bundle is `assets/emb3d-stix-<version>.json` of the
+EMB3D repository.) Regenerate `d3fend.yaml` after `attack.yaml`.
+
+- **`d3fend`** (requirements and tests): the defensive techniques the
+  requirement implements or whose implementation the test verifies.
+  Precision over recall: list a technique only when the item clearly *is*
+  that technique (*Minimum password length* → `D3-SPP` Strong Password
+  Policy; *Secure boot verifies each stage* → `D3-BA` Bootloader
+  Authentication; *Debug ports locked* → `D3-IOPR` IO Port Restriction), not
+  one it merely supports. Prefer the most specific technique; never a
+  parent together with one of its sub-techniques (checked). Typically 1,
+  at most 8 (checked). Organisational items (training, contracts, reviews)
+  list none.
+- **`emb3d`** (requirements, tests and risks): for items about embedded
+  devices (the hardware catalogue, industrial control, IoT and OT areas).
+  Requirements and tests list the EMB3D **mitigations** (`MID-026` Secure
+  Firmware Update) they implement or check and, where no mitigation fits,
+  the **threats** (`TID-210` Device Vulnerabilities Unpatchable) they
+  address; risks list the **threats** that realise them (a mitigation in
+  a risk fails). Risks of the categories that list no ATT&CK technique
+  (safety, environmental, quality, project, compliance) list no threat
+  either (checked). The area `embedded-security` is mapped throughout: every
+  risk lists threats and most requirements an EMB3D id (checked by the
+  tests).
+- **Ids are checked** against the lists: unknown and duplicate ids fail.
+  D3FEND and EMB3D ids go in these fields, never in `refs` (a ref that
+  starts with `MITRE D3FEND` or `MITRE EMB3D` fails).
+
+The catalogue shows the techniques, mitigations and threats with names and
+links, filters by them (`d3fend=`, `emb3d=`; a threat also finds the items
+with one of its mitigations), and shows for a risk its **defenses**: per
+ATT&CK technique the D3FEND techniques that counter it and the
+requirements that list one, a technique no mitigating requirement counters
+being a gap. The framework coverage page has a D3FEND tab (techniques per
+tactic, risks fully countered) and an EMB3D tab (threats per category with
+the risks, requirements and tests that address them). Imported items keep
+their `d3fend` and `emb3d` lists.
 
 ## Writing rules
 

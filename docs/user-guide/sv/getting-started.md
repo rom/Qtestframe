@@ -34,7 +34,7 @@ Språkknapparna högst upp på inloggningssidan växlar mellan engelska och sven
 
 Det mörka fältet till vänster är huvudnavigeringen:
 
-- **Arbetsyta:** **Projekt** (alla projekt i den aktuella organisationen) och **Sök** (sökning i alla projekt).
+- **Arbetsyta:** **Projekt** (alla projekt i den aktuella organisationen) och **Sök** (sökning i alla projekt). Varje projektkort visar när projektet startades och av vem: den som skapade det, eller läste in eller kopierade det från en [projektfil](reports-and-export.md). Vem som startade projektet utelämnas när det inte är känt (projekt från demodata eller kommandoraden, och projekt som är äldre än den här uppgiften). Tabellvyn har samma uppgifter som kolumner, och **Kategorier & inställningar → Projekt** visar dem också.
 - **Det öppna projektet:** när du öppnar ett projekt visas dess nyckel och namn med projektets delar: **Översikt**, **Krav**, **Testfall**, **Testkörningar**, **Spårbarhet**, **Analys**, **Beroendegraf**, **Testflöde**, **AI-prompter** (mjukvaruprojekt), **Taggar**, **Baslinjer**, **Kategorier & inställningar**, **Export** och, där de finns, **Dokument** och **Rapporter**.
 - **Administration**, om din roll tillåter det.
 

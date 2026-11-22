@@ -13,8 +13,8 @@ export type DocGrouping = (typeof DOC_GROUPINGS)[number]
 
 /** Fields of each requirement / test (internal/report RequirementDocFields, TestDocFields). */
 export const DOC_FIELDS: Record<DocKind, readonly string[]> = {
-  requirements_spec: ['description', 'rationale', 'criteria', 'type', 'priority', 'obligation', 'status', 'source', 'owner', 'tags', 'categories', 'relations', 'tests', 'results', 'version', 'custom_fields'],
-  test_plan: ['description', 'preconditions', 'steps', 'expected', 'priority', 'execution_type', 'status', 'estimate', 'tags', 'categories', 'dependencies', 'requirements', 'data', 'results', 'version', 'custom_fields'],
+  requirements_spec: ['description', 'rationale', 'criteria', 'type', 'priority', 'obligation', 'status', 'source', 'owner', 'tags', 'frameworks', 'categories', 'relations', 'tests', 'results', 'version', 'custom_fields'],
+  test_plan: ['description', 'preconditions', 'steps', 'expected', 'priority', 'execution_type', 'status', 'estimate', 'tags', 'frameworks', 'categories', 'dependencies', 'requirements', 'data', 'results', 'version', 'custom_fields'],
 }
 
 /** Every field key of both kinds (for the message catalogue check). */
@@ -46,6 +46,8 @@ export interface DocForm {
   discussions: boolean
   /** appendix with the relations between the requirements as graphs and a table (requirements specification) */
   dependencyGraph: boolean
+  /** every requirement starts a new page (requirements specification; off: compact printing) */
+  newPagePerRequirement: boolean
   lang: string
 }
 
@@ -66,6 +68,7 @@ export function blankDocForm(kind: DocKind, lang: string): DocForm {
     glossary: true,
     discussions: false,
     dependencyGraph: true,
+    newPagePerRequirement: true,
     lang,
   }
 }
@@ -94,6 +97,7 @@ export function generateDocBody(form: DocForm) {
     options.group_by = form.groupBy
     if (form.groupBy === 'category' && form.dimension) options.dimension = form.dimension
     options.dependency_graph = form.dependencyGraph
+    options.new_page_per_requirement = form.newPagePerRequirement
   }
   return { kind: form.kind, format: form.format, options }
 }

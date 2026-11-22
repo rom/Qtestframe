@@ -41,6 +41,7 @@ import Tag from 'primevue/tag'
 import Checkbox from 'primevue/checkbox'
 import StatusTag from './StatusTag.vue'
 import TagsInput from './TagsInput.vue'
+import FrameworkPicker from './FrameworkPicker.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
 import DiscussionPanel from './DiscussionPanel.vue'
@@ -139,6 +140,8 @@ function blank() {
     rationale: '',
     owner: '',
     tags: [] as string[],
+    d3fend: [] as string[],
+    emb3d: [] as string[],
     category_ids: [] as string[],
     folder_id: (props.folderId ?? null) as string | null,
     criteria: [] as CriterionRow[],
@@ -282,6 +285,8 @@ async function load() {
       rationale: r.rationale,
       owner: r.owner,
       tags: [...(r.tags ?? [])],
+      d3fend: [...(r.d3fend ?? [])],
+      emb3d: [...(r.emb3d ?? [])],
       category_ids: [...(r.category_ids ?? [])],
       folder_id: r.folder_id,
       custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues,
@@ -845,6 +850,14 @@ function criterionLabel(id: string | null) {
         <HelpTip id="req.tags" :label="t('common.tags')" />
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
         <TagSuggestions v-model="form.tags" :project-id="projectId" :title="form.title" :description="form.description" :disabled="!canWrite" />
+      </div>
+      <div v-field class="field">
+        <label for="req-d3fend">{{ t('frameworks.d3fend.label') }}</label>
+        <FrameworkPicker v-model="form.d3fend" kind="d3fend" input-id="req-d3fend" :disabled="!canWrite" />
+      </div>
+      <div v-field class="field">
+        <label for="req-emb3d">{{ t('frameworks.emb3d.label') }}</label>
+        <FrameworkPicker v-model="form.emb3d" kind="emb3d" input-id="req-emb3d" :disabled="!canWrite" />
       </div>
     </div>
     <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('requirement')" :disabled="!canWrite" :project-id="projectId" />

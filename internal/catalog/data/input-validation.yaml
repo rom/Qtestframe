@@ -162,6 +162,7 @@ requirements:
     tags: [file-upload]
     refs: ["OWASP ASVS 5.0 V5.2.1 (file size)", "OWASP ASVS 5.0 V5.2.2 (file extension and content)", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-434 (unrestricted upload of file with dangerous type)", "CWE-770 (allocation of resources without limits or throttling)"]
     tests: [INP-T07]
+    d3fend: [D3-FFV]
     en:
       title: Uploaded files are checked by type and size
       description: The system MUST reject an uploaded file that is larger than 10 MB or whose content does not match a file type on the allowlist.
@@ -236,6 +237,7 @@ requirements:
     tags: [ssrf, outbound-requests]
     refs: ["OWASP ASVS 5.0 V1.3.6 (server-side request forgery)", "OWASP Top 10 2021 A10", "OWASP Server-Side Request Forgery Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "CWE-918 (server-side request forgery)", "MITRE ATT&CK T1552.005 (cloud instance metadata API)"]
     tests: [INP-T10]
+    d3fend: [D3-OTF]
     en:
       title: Protection against server-side request forgery
       description: The system MUST refuse to fetch a user-supplied URL that resolves to a loopback, private, link-local or cloud metadata address.
@@ -374,6 +376,7 @@ requirements:
     tags: [unicode, normalisation, identifiers, spoofing]
     refs: ["Unicode Standard Annex #15", "Unicode Technical Standard #39", "OWASP Input Validation Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "CWE-1007 (insufficient visual distinction of homoglyphs)", "CWE-180 (validate before canonicalize)", "MITRE ATT&CK T1036.010 (masquerade account name)"]
     tests: [INP-T16]
+    d3fend: [D3-HD]
     en:
       title: Identifiers normalised and checked for look-alikes
       description: The system SHOULD normalise user names and organisation names to Unicode NFKC before it validates and stores them, and refuse a new name whose skeleton matches an existing one.
