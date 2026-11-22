@@ -6,6 +6,7 @@ describe('CI posting form', () => {
     const f = ciForm({ provider: 'gitlab', api_url: 'https://gl/api/v4', project: 'g/p', post_status: true, post_note: false, release_id: 'r1', conditions: ['must', 'no_failed'] })
     expect(f).toEqual({ enabled: true, api_url: 'https://gl/api/v4', project: 'g/p', post_status: true, post_note: false, release_id: 'r1', conditions: 'must, no_failed', token: '' })
     expect(ciForm(null)).toMatchObject({ enabled: false, post_status: true, post_note: true, conditions: '' })
+    expect(ciForm({ provider: '', post_status: false, post_note: false })).toMatchObject({ post_status: true, post_note: true })
   })
 
   it('builds the request: token only when given or cleared', () => {

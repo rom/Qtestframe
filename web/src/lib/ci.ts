@@ -73,8 +73,9 @@ export function ciForm(ci: Partial<CISettings> | null | undefined): CIForm {
     enabled: ci?.provider === 'gitlab',
     api_url: ci?.api_url ?? '',
     project: ci?.project ?? '',
-    post_status: ci?.post_status ?? true,
-    post_note: ci?.post_note ?? true,
+    // turned off: both are proposed when posting is turned on
+    post_status: ci?.provider ? !!ci.post_status : true,
+    post_note: ci?.provider ? !!ci.post_note : true,
     release_id: ci?.release_id ?? '',
     conditions: (ci?.conditions ?? []).join(', '),
     token: '',
