@@ -1,0 +1,173 @@
+# Säkerhetskopiering, återställning och migrering
+
+## Vad som ska säkerhetskopieras
+
+| Vad | Var | Hur |
+|---|---|---|
+| **data** | databasen | `qtestframe backup` (logisk, rekommenderas), eller en säkerhetskopia av själva databasen |
+| **nyckeln till de lagrade hemligheterna** | nyckelfilen (`qtestframe-secrets.key`), `QTF_SECRETS_KEY`, HSM-nyckeln; en TPM kan inte säkerhetskopieras | separat – **aldrig på samma ställe som databasens säkerhetskopior** |
+| konfigurationen | `/etc/qtestframe` (konfiguration, hemlighetsfiler, TLS- och SAML-nycklar) | er konfigurationshantering eller en krypterad säkerhetskopia |
+
+Uppladdade filer (bilagor, dokument, rapporter, avatarer) lagras i databasen, så en säkerhetskopia av databasen innehåller dem. Körningens arbetskatalog är tillfälligt utrymme.
+
+En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna; en säkerhetskopia tillsammans med nyckeln ger allt till den som har båda. Kryptera säkerhetskopior och förvara dem utanför värden.
+
+## Vad en säkerhetskopia innehåller
+
+`qtestframe backup` skriver en **logisk säkerhetskopia**: en ZIP-fil med `manifest.json` (formatversion, schemaversion, tidpunkt, Qtestframe-version, databasdrivrutin, antal rader per tabell) och en fil `<tabell>.jsonl` per tabell, ett JSON-objekt per rad. Tider, booleska värden och binärdata skrivs oberoende av databas, så en säkerhetskopia från SQLite kan återställas i PostgreSQL och tvärtom. Den innehåller **alla organisationer**: användare och lösenordshashar, medlemskap, projekt med alla objekt, historik och filer, händelseloggen, API- och SCIM-nycklar (som hashar), MFA-inställningarna, systeminställningarna och de omslutna datakrypteringsnycklarna. Säkerhetskopian är en konsistent ögonblicksbild (en läsande transaktion).
+
+<!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
+
+**I en säkerhetskopia** (60 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `system_settings`, `secret_keys`.
+
+**Inte i en säkerhetskopia:** `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `suggest_history`.
+
+<!-- END GENERATED: backup-tables -->
+
+En återställning loggar alltså ut alla (sessioner), tar bort påbörjade MFA-inloggningar och ihågkomna enheter, tömmer varje användares **historik för autokomplettering** (en personlig bekvämlighet som medvetet inte säkerhetskopieras), och glömmer köade bakgrundsjobb. **Nyckeln** till de lagrade hemligheterna finns aldrig i en säkerhetskopia: de lagrade hemligheterna (TOTP-hemligheter, webhook-hemligheter, ärendesystemtoken, hemliga testvariabler, systeminställningarnas SMTP-lösenord och OIDC-klienthemligheter) förblir **krypterade** i den, tillsammans med sina omslutna datanycklar (`secret_keys`).
+
+En säkerhetskopiering vägrar köra medan databasen har en tabell som den inte känner till (ett skydd under utvecklingen).
+
+## Ta en säkerhetskopia
+
+```sh
+sudo -u qtestframe qtestframe backup --config /etc/qtestframe/config.yaml --out /var/backups/qtestframe/qtf-$(date +%F).zip
+```
+
+Den kan köras medan servern kör. Filen skrivs under ett tillfälligt namn och byter namn när den är klar, och säkerhetskopieringen granskas (`admin.backup`). Superadministratörer kan också ladda ned en under **Administration → Säkerhetskopiering** (`GET /api/v1/admin/backup`); en nedladdning via webbläsaren begränsas av `server.write_timeout`, så använd kommandoraden för stora installationer. Med SQLite är servern upptagen medan en säkerhetskopia strömmas.
+
+En daglig timer:
+
+```ini
+# /etc/systemd/system/qtestframe-backup.service
+[Service]
+Type=oneshot
+User=qtestframe
+ExecStart=/bin/sh -c '/usr/bin/qtestframe backup --config /etc/qtestframe/config.yaml --out /var/backups/qtestframe/qtf-$(date +%%F).zip'
+
+# /etc/systemd/system/qtestframe-backup.timer
+[Timer]
+OnCalendar=daily
+Persistent=true
+[Install]
+WantedBy=timers.target
+```
+
+Katalogen måste finnas och vara skrivbar för `qtestframe`. Kopiera filerna till en annan värd (restic, borg) och ta bort gamla.
+
+## Återställning
+
+En återställning **ersätter alla data** i installationen med säkerhetskopian, i **en transaktion**: varje tabell töms och fylls på nytt, så antingen återställs allt eller så ändras ingenting.
+
+```sh
+sudo systemctl stop qtestframe
+sudo -u qtestframe qtestframe restore --config /etc/qtestframe/config.yaml --in /var/backups/qtestframe/qtf-2026-11-19.zip --yes
+sudo systemctl start qtestframe
+```
+
+Kommandot skriver ut antalet rader per tabell och granskas (`admin.restore`). Superadministratörer kan också återställa under **Administration → Säkerhetskopiering** (`POST /api/v1/admin/restore`, bekräftas genom att skriva `RESTORE`); uppladdningen begränsas av `server.read_timeout`, så använd kommandoraden för stora säkerhetskopior. Stoppa servern för en återställning på kommandoraden: en server som kör behåller sina nycklar och cachade data från före återställningen.
+
+En återställning avvisas, utan att något ändras, när:
+
+- säkerhetskopians **schemaversion** skiljer sig från databasens. Återställ med den Qtestframe-version som gjorde säkerhetskopian (manifestet anger den) och uppgradera sedan; eller uppgradera den gamla installationen först och säkerhetskopiera igen;
+- serverns **nyckel inte kan låsa upp** säkerhetskopians datanycklar (`the backup's encrypted secrets cannot be decrypted with this server's key`). Konfigurera nyckeln som säkerhetskopian gjordes med – samma nyckelfil eller `QTF_SECRETS_KEY`, samma TPM, samma HSM-nyckel – eller se [katastrofåterställning](security.md#katastrofåterställning-för-tpm-förseglade-nycklar);
+- arkivet är skadat eller ofullständigt, eller större än 4 GiB okomprimerat.
+
+Säkerhetskopians systeminställningar gäller direkt. Efter en återställning: kontrollera `qtestframe secrets status` och logga in.
+
+Använd historiken i webbklienten för att återställa ett enskilt objekt; för att flytta ett projekt, se nedan.
+
+## Uppgradering
+
+1. Läs versionsnyteterna.
+2. Ta en säkerhetskopia och kontrollera att ni har nyckeln.
+3. Installera den nya programfilen (`sudo scripts/install.sh --binary bin/qtestframe` behåller konfigurationen och installerar om enhet och policyer), eller hämta eller bygg den nya avbilden.
+4. Starta om: `sudo systemctl restart qtestframe`. Enhetens `ExecStartPre` kör `qtestframe migrate`, och `serve` migrerar också, innan den nya versionen besvarar begäranden. I compose körs tjänsten `migrate` först.
+5. Kontrollera `journalctl -u qtestframe -b` (`applied database migrations count=…`) och `curl -fsk https://localhost:8443/readyz`.
+6. Jämför `deploy/config.example.yaml` med er konfiguration för nya inställningar; `check-config` avvisar nycklar som inte längre finns.
+
+Med PostgreSQL och flera serverprocesser: **uppgradera alla samtidigt** – kör migreringen en gång och starta sedan den nya versionen överallt. En äldre version kan inte läsa det en nyare har skrivit.
+
+## Migreringar
+
+Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddade i programfilen (`internal/db/migrations`). Var och en tillämpas en gång, i en egen transaktion, och registreras i `schema_migrations`; det högsta numret är den *schemaversion* som säkerhetskopior anger.
+
+<!-- BEGIN GENERATED: migrations (make admin-guide-ref) -->
+
+| Version | Migrering |
+|---|---|
+| 1 | `0001_init.sql` |
+| 2 | `0002_history_relations_baselines.sql` |
+| 3 | `0003_files_reports_logins.sql` |
+| 4 | `0004_roles_settings_dependencies.sql` |
+| 5 | `0005_project_color_sources.sql` |
+| 6 | `0006_trash.sql` |
+| 7 | `0007_project_type.sql` |
+| 8 | `0008_item_links.sql` |
+| 9 | `0009_suspect_links.sql` |
+| 10 | `0010_releases.sql` |
+| 11 | `0011_defects.sql` |
+| 12 | `0012_risks.sql` |
+| 13 | `0013_notifications.sql` |
+| 14 | `0014_reviews.sql` |
+| 15 | `0015_email.sql` |
+| 16 | `0016_configurations.sql` |
+| 17 | `0017_trace_rules.sql` |
+| 18 | `0018_metrics.sql` |
+| 19 | `0019_scim.sql` |
+| 20 | `0020_catalog.sql` |
+| 21 | `0021_report_language.sql` |
+| 22 | `0022_folder_color.sql` |
+| 23 | `0023_web_tests.sql` |
+| 24 | `0024_project_access.sql` |
+| 25 | `0025_mfa.sql` |
+| 26 | `0026_system_settings.sql` |
+| 27 | `0027_secret_keys.sql` |
+| 28 | `0028_item_link_issues.sql` |
+| 29 | `0029_suggest_history.sql` |
+
+<!-- END GENERATED: migrations -->
+
+## Nedgradering
+
+Migreringar går bara framåt. För att gå tillbaka till en tidigare version: återställ säkerhetskopian som togs före uppgraderingen **med den tidigare programfilen**; data som skrivits sedan dess går förlorade. Starta inte en äldre programfil mot en databas som en nyare har migrerat.
+
+Versioner från före krypteringen av lagrade hemligheter (schemaversion under 27) läser krypterade värden som felaktiga hemligheter. Innan ni går tillbaka till en sådan utan säkerhetskopia, kör
+
+```sh
+qtestframe secrets decrypt --yes --config /etc/qtestframe/config.yaml
+```
+
+som lagrar alla hemligheter i klartext igen (en senare start av en aktuell version krypterar dem på nytt).
+
+## Flytt mellan SQLite och PostgreSQL
+
+Den logiska säkerhetskopian är sättet att flytta, åt båda hållen:
+
+1. Säkerhetskopiera den gamla installationen: `qtestframe backup --config gammal.yaml --out flytt.zip`.
+2. Förbered den nya konfigurationen med det andra avsnittet `database` och **samma nyckel** för de lagrade hemligheterna: kopiera nyckelfilen och peka `secrets.local.key_file` på den (standardplatsen skiljer sig: bredvid en SQLite-databas, annars `$STATE_DIRECTORY` eller `/var/lib/qtestframe`), eller sätt samma `QTF_SECRETS_KEY`.
+3. Skapa det tomma schemat: `qtestframe migrate --config ny.yaml` (samma version av Qtestframe).
+4. Återställ: `qtestframe restore --config ny.yaml --in flytt.zip --yes`.
+5. Starta servern med `ny.yaml` och kontrollera den.
+
+För PostgreSQL: skapa först en egen roll och databas, till exempel:
+
+```sql
+CREATE ROLE qtestframe LOGIN PASSWORD 'byt-mig';
+CREATE DATABASE qtestframe OWNER qtestframe ENCODING 'UTF8' TEMPLATE template0;
+```
+
+och anslut med TLS (`sslmode=verify-full`). Detaljer, `pg_hba.conf` och klientcertifikat finns i [docs/operations.md](https://github.com/rom/Qtestframe/blob/rom/docs/operations.md#4-database-sqlite-or-postgresql) (på engelska).
+
+## Säkerhetskopior av själva databasen
+
+De fungerar också, men är knutna till ett databassystem:
+
+- **SQLite:** en kopia under drift med `sqlite3 /var/lib/qtestframe/qtestframe.db ".backup '/var/backups/qtestframe/qtf.db'"` (eller `VACUUM INTO`). Kopiera aldrig bara `.db`-filen medan servern kör; utan `sqlite3`, stoppa tjänsten och kopiera `qtestframe.db*`. För att återställa: stoppa tjänsten, lägg kopian på plats, ta bort filerna `-wal` och `-shm` och starta (en äldre kopia migreras framåt).
+- **PostgreSQL:** `pg_dump -Fc` och `pg_restore`, eller WAL-arkivering (pgBackRest, Barman) för återställning till valfri tidpunkt.
+
+Båda innehåller samma krypterade hemligheter och kräver samma nyckel.
+
+## Flytta ett enskilt projekt
+
+För att flytta eller kopiera **ett** projekt i stället för installationen: använd **Spara projekt** (kräver `project.update` och `export`) och **Läs in projekt** på målservern (kräver `project.create`). Projektet får nya id:n och en nyckel som användaren väljer. Arkiv med ett äldre schema kan läsas in i en nyare server, inte tvärtom. Hemligheter (webhook-hemligheter, ärendesystemtoken) finns inte i arkivet och måste anges igen; inlästa webhooks är avstängda.

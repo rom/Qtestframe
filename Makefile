@@ -7,9 +7,13 @@ COVERAGE_FLOOR ?= 85
 GUIDE_OUT ?= dist/user-guide
 GUIDE_LANGS ?=
 GUIDE_ARGS = --out $(GUIDE_OUT) $(if $(GUIDE_LANGS),--lang $(GUIDE_LANGS))
+# administrator guide export (docs/admin-guide): output folder
+ADMIN_GUIDE_OUT ?= dist/admin-guide
+ADMIN_GUIDE_ARGS = --guide admin --out $(ADMIN_GUIDE_OUT) $(if $(GUIDE_LANGS),--lang $(GUIDE_LANGS))
 
 .PHONY: all build web web-deps go go-pkcs11 test-pkcs11 test-tpm test test-go test-web coverage coverage-go coverage-web \
-        lint vet fmt run dev clean release certs-dev guide guide-md guide-pdf guide-docs refs-docs
+        lint vet fmt run dev clean release certs-dev guide guide-md guide-pdf guide-docs refs-docs \
+        admin-guide admin-guide-md admin-guide-pdf admin-guide-docs admin-guide-ref
 
 all: build
 
@@ -101,6 +105,29 @@ guide-docs: web/node_modules/.package-lock.json
 # of date. Then refresh the single-file guides (guide-docs).
 refs-docs:
 	go run ./internal/catalog/cmd/refsdoc -dir docs/user-guide
+
+# The administrator guide (docs/admin-guide) the same way, in
+# $(ADMIN_GUIDE_OUT): qtestframe-admin-guide-<lang>.md and .pdf.
+admin-guide: admin-guide-pdf
+
+admin-guide-md: web/node_modules/.package-lock.json
+	node web/scripts/guide-export.mjs --no-pdf $(ADMIN_GUIDE_ARGS)
+
+admin-guide-pdf: web/node_modules/.package-lock.json
+	node web/scripts/guide-export.mjs $(ADMIN_GUIDE_ARGS)
+
+# the single-file Markdown administrator guides kept in the repository
+# (docs/admin-guide/qtestframe-admin-guide-<lang>.md); CI checks them
+admin-guide-docs: web/node_modules/.package-lock.json
+	node web/scripts/guide-export.mjs --guide admin --no-pdf --out docs/admin-guide
+
+# the parts of the administrator guide generated from the code
+# (configuration and environment reference, system settings, permission
+# matrix, hardening lists, webhook events, backup tables, migrations,
+# command line); go test ./internal/admindoc fails when they are out of
+# date. Then refresh the single-file guides (admin-guide-docs).
+admin-guide-ref:
+	go run ./internal/admindoc/cmd/admindoc
 
 web/node_modules/.package-lock.json: web/package-lock.json
 	cd web && npm ci
