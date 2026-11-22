@@ -34,7 +34,7 @@ const maxExchangeBytes = 20 << 20
 
 func (s *Server) routesExchange(h routeFunc) {
 	h("GET /api/v1/projects/{pid}/exchange/xlsx", s.handleExchangeExport, "export")
-	h("POST /api/v1/projects/{pid}/exchange/xlsx/preview", s.handleExchangeXLSXPreview, "project.read")       // write of the kind: see exchange.go
+	h("POST /api/v1/projects/{pid}/exchange/xlsx/preview", s.handleExchangeXLSXPreview, "project.read")                  // write of the kind: see exchange.go
 	h("POST /api/v1/projects/{pid}/exchange/xlsx/apply", s.impactAware(s.handleExchangeXLSXApply, true), "project.read") // write of the kind
 	h("POST /api/v1/projects/{pid}/exchange/reqif/preview", s.handleReqIFPreview, "requirement.write")
 	h("POST /api/v1/projects/{pid}/exchange/reqif/apply", s.impactAware(s.handleReqIFApply, true), "requirement.write")

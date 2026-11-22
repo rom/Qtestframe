@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useUndoStore } from '@/stores/undo'
 import { useProjectStore } from '@/stores/project'
+import { impactGateFor } from '@/composables/impact'
+import type { ImpactDryRun } from '@/lib/correlations'
 import { entry, recordUndo } from '@/lib/undoActions'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
@@ -97,7 +99,10 @@ function restore() {
       try {
         const current = revisions.value[0]
         const p = path.value
-        const item = await api.post(`${p}/restore`, { revision_id: r.id })
+        // what restoring the version affects: preview, then the chosen handling (impact gate)
+        const params = await impactGateFor(useProjectStore().pid, (q) => api.post<ImpactDryRun>(`${p}/restore`, { revision_id: r.id }, { params: q }))
+        if (!params) return
+        const item = await api.post(`${p}/restore`, { revision_id: r.id }, { params })
         if (current && current.id !== r.id) {
           const key = (item as { key?: string } | undefined)?.key ?? ''
           recordUndo(entry(t('undo.a.restoreVersion', { version: r.version, key }), () => api.post(`${p}/restore`, { revision_id: current.id }), () => api.post(`${p}/restore`, { revision_id: r.id })))

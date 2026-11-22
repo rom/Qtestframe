@@ -6,6 +6,7 @@ import Message from 'primevue/message'
 import ProjectIcon from '@/components/ProjectIcon.vue'
 import Button from 'primevue/button'
 import SharingDialog from '@/components/SharingDialog.vue'
+import ImpactGateHost from '@/components/ImpactGateHost.vue'
 import { canShare, isRestricted } from '@/lib/sharing'
 import { useAuthStore } from '@/stores/auth'
 import { useProjectStore } from '@/stores/project'
@@ -65,6 +66,7 @@ const tabs = computed(() => [
   { to: 'analytics', icon: 'pi pi-chart-bar', label: t('nav.analytics') },
   { to: 'soa', icon: 'pi pi-table', label: t('nav.soa') },
   { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
+  { to: 'impact', icon: 'pi pi-bullseye', label: t('nav.impact') },
   { to: 'flow', icon: 'pi pi-share-alt', label: t('nav.flow') },
   ...(isSoftware(proj.project) ? [{ to: 'prompts', icon: 'pi pi-sparkles', label: t('nav.prompts') }] : []),
   { to: 'catalog', icon: 'pi pi-book', label: t('nav.catalog') },
@@ -106,5 +108,6 @@ const isRunsChild = computed(() => route.name === 'run' || route.name === 'execu
       </RouterLink>
     </nav>
     <RouterView :key="projectId" />
+    <ImpactGateHost />
   </template>
 </template>

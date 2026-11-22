@@ -154,8 +154,7 @@ type BaselineImpact struct {
 	Baseline string `json:"baseline"`
 	// Changes: the items whose substance changed since the baseline.
 	Changes []BaselineImpactChange `json:"changes"`
-	// Totals: distinct items affected, by kind (requirements, tests,
-	// issues, documents, results).
+	// Totals: distinct items affected, by kind (model.ImpactSections).
 	Totals map[string]int `json:"totals"`
 }
 
@@ -205,16 +204,16 @@ func (s *Server) handleBaselineImpact(w http.ResponseWriter, r *http.Request, p 
 		}
 		s.redactImpact(p, imp)
 		out.Changes = append(out.Changes, BaselineImpactChange{BaselineChange: c, Impact: imp})
-		for kind, list := range map[string][]model.ImpactItem{"requirements": imp.Requirements, "tests": imp.Tests, "issues": imp.Issues, "documents": imp.Documents, "results": imp.Results} {
+		for kind, list := range imp.Lists() {
 			if seen[kind] == nil {
 				seen[kind] = map[string]bool{}
 			}
-			for _, it := range list {
+			for _, it := range *list {
 				seen[kind][it.ID] = true
 			}
 		}
 	}
-	for _, kind := range []string{"requirements", "tests", "issues", "documents", "results"} {
+	for _, kind := range model.ImpactSections {
 		out.Totals[kind] = len(seen[kind])
 	}
 	sort.SliceStable(out.Changes, func(i, j int) bool { return out.Changes[i].Impact.Total > out.Changes[j].Impact.Total })

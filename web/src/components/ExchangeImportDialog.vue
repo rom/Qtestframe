@@ -17,6 +17,8 @@ import FileDropZone from './FileDropZone.vue'
 import FolderPickerDialog from './FolderPickerDialog.vue'
 import HelpLink from '@/guide/HelpLink.vue'
 import { upload } from '@/lib/upload'
+import { impactGateFor } from '@/composables/impact'
+import type { ImpactDryRun } from '@/lib/correlations'
 import { api, errorMessage } from '@/lib/api'
 import { folderPath } from '@/lib/tree'
 import { uid } from '@/lib/a11y'
@@ -181,7 +183,12 @@ async function save() {
   busy.value = true
   error.value = ''
   try {
-    const res = await upload<ExchangeResult>(`/projects/${props.projectId}/exchange/${props.mode}/apply`, file.value, { fields: fields(true) })
+    const path = `/projects/${props.projectId}/exchange/${props.mode}/apply`
+    // the impact of the updates first (impact gate)
+    const f = file.value
+    const gate = await impactGateFor(props.projectId, (q) => upload<ImpactDryRun>(`${path}?dry_run=${q.dry_run}`, f, { fields: fields(true) }))
+    if (!gate) return
+    const res = await upload<ExchangeResult>(`${path}?impact=${gate.impact}`, f, { fields: fields(true) })
     result.value = res
     emit('imported', res)
     await nextTick()

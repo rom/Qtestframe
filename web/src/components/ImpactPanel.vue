@@ -139,6 +139,9 @@ async function confirm(r?: Relation) {
       <h3 class="impact-heading">{{ kind === 'test' ? t('correlations.ifTestChanges') : t('correlations.ifRequirementChanges') }}</h3>
       <p class="muted small">{{ kind === 'test' ? t('correlations.ifTestChangesHint') : t('correlations.ifRequirementChangesHint') }}</p>
       <ImpactList :impact="impact" :project-id="projectId" :heading-level="4" />
+      <RouterLink :to="{ name: 'impact', params: { projectId }, query: { items: `${kind}:${itemId}` } }" class="small">
+        <i class="pi pi-bullseye" aria-hidden="true" /> {{ t('correlations.openAnalysis') }}
+      </RouterLink>
     </section>
 
     <section v-if="kind === 'test'">
