@@ -30,6 +30,8 @@ export function notificationTarget(n: Pick<AppNotification, 'project_id' | 'enti
       return { name: 'reviews', query: { review: n.entity_id } }
     case 'chat_channel':
       return { name: 'settings', params }
+    case 'cycle':
+      return { name: 'cycle', params: { ...params, cycleId: n.entity_id } }
   }
   return { name: 'dashboard', params }
 }

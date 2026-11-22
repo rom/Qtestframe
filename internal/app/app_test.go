@@ -330,6 +330,21 @@ func TestSeedDemo(t *testing.T) {
 		t.Errorf("grant %+v %v", g, err)
 	}
 	ps = slices.DeleteFunc(ps, func(p model.Project) bool { return p.Key == "VAULT" })
+	// test cycles: closed, active (half executed, with a burndown), planned
+	for _, pr := range ps {
+		cycles, err := st.ListCycles(context.Background(), tn.ID, pr.ID)
+		if err != nil || len(cycles) != 3 || cycles[0].Name != "Sprint 14 regression" || cycles[0].Progress.Executed == 0 ||
+			cycles[0].Progress.Executed == cycles[0].Progress.Planned || cycles[1].ScheduledStartAt == nil || cycles[2].Progress.Executed != cycles[2].Progress.Planned {
+			t.Fatalf("cycles of %s: %+v %v", pr.Key, cycles, err)
+		}
+		rep, err := st.CycleReport(context.Background(), tn.ID, cycles[0].ID)
+		if err != nil || len(rep.Testers) < 2 || len(rep.Burndown) != 14 || *rep.Burndown[0].Remaining == *rep.Burndown[9].Remaining {
+			t.Fatalf("cycle report %+v %v", rep, err)
+		}
+		if work, err := st.AssignedCycleTests(context.Background(), tn.ID, dana.ID); err != nil || len(work) == 0 {
+			t.Fatalf("dana's work %v %v", work, err)
+		}
+	}
 	// the web test against the server itself
 	set, err := st.WebTestSettings(context.Background(), tn.ID, ps[0].ID)
 	if err != nil || len(set.Variables) != 1 {

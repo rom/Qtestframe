@@ -682,8 +682,11 @@ type TestRun struct {
 	// belong to.
 	VariantID *string `json:"variant_id"`
 	BuildID   *string `json:"build_id"`
+	// CycleID: the test cycle that created the run (read-only).
+	CycleID *string `json:"cycle_id"`
 	// Derived.
 	Summary     map[string]int `json:"summary,omitempty"`
+	CycleName   string         `json:"cycle_name,omitempty"`
 	ReleaseName string         `json:"release_name,omitempty"`
 	VariantName string         `json:"variant_name,omitempty"`
 	BuildLabel  string         `json:"build_label,omitempty"`
@@ -1151,6 +1154,7 @@ var ExitCriterionTypes = []string{
 	"trace_rules",         // the enabled traceability rules pass on the scope (level error: errors only, warning: also warnings)
 	"residual_risk",       // no risk linked to scope requirements has a residual level above the threshold (the level; default the project's) unless the risk is accepted
 	"no_blocking_defects", // no scope requirement is blocked by an open defect (the project's severity rules)
+	"cycle_executed",      // % of the planned tests of a test cycle (CycleID) with a final result (default 100: fully executed)
 }
 
 // ExitCriterion is one condition a release must meet.
@@ -1163,6 +1167,8 @@ type ExitCriterion struct {
 	// for residual_risk the risk acceptance threshold of the release (""
 	// = the project's).
 	Level string `json:"level,omitempty"`
+	// CycleID: the test cycle of cycle_executed.
+	CycleID string `json:"cycle_id,omitempty"`
 }
 
 // Release is a version of the product with its scope and exit criteria.

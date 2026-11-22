@@ -47,7 +47,7 @@ import {
   type ReportFormat,
   type ReportTemplate,
 } from '@/lib/reports'
-import type { FileInfo, Release, ReportDefinition, TestRun } from '@/lib/types'
+import type { FileInfo, Release, ReportDefinition, TestCycle, TestRun } from '@/lib/types'
 import { DOC_KINDS } from '@/lib/documents'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
@@ -96,6 +96,8 @@ async function loadRuns() {
 // ---------- releases (release readiness) and SoA sources ----------
 const releaseList = ref<Release[]>([])
 const releaseOptions = computed(() => [{ label: t('reports.releaseDefault'), value: '' }, ...releaseList.value.map((r) => ({ label: r.version ? `${r.name} (${r.version})` : r.name, value: r.id }))])
+const cycleList = ref<TestCycle[]>([])
+const cycleOptions = computed(() => [{ label: t('reports.cycleDefault'), value: '' }, ...cycleList.value.map((c) => ({ label: c.name, value: c.id }))])
 const soaSources = ref<SoASource[]>([])
 const soaSourceOptions = computed(() => soaSources.value.map((s) => ({ label: s.title, value: s.id })))
 // exploratory sessions (session report)
@@ -111,6 +113,11 @@ async function loadReleaseAndSources() {
     releaseList.value = asItems(await api.get<{ items: Release[] }>(`/projects/${proj.pid}/releases`))
   } catch {
     releaseList.value = []
+  }
+  try {
+    cycleList.value = asItems(await api.get<{ items: TestCycle[] }>(`/projects/${proj.pid}/cycles`))
+  } catch {
+    cycleList.value = []
   }
   try {
     soaSources.value = asItems(await api.get<{ items: SoASource[] }>(`/projects/${proj.pid}/soa/sources`))
@@ -442,6 +449,10 @@ onMounted(() => {
               <template v-else-if="p.name === 'session_id'">
                 <label :for="`tpl-xs-${tpl.id}`">{{ t('reports.session') }}</label>
                 <Select v-model="cards[tpl.id].params.session_id" :input-id="`tpl-xs-${tpl.id}`" :options="sessionOptions" option-label="label" option-value="value" filter :placeholder="t('reports.sessionDefault')" />
+              </template>
+              <template v-else-if="p.name === 'cycle_id'">
+                <label :for="`tpl-cyc-${tpl.id}`">{{ t('reports.cycle') }}</label>
+                <Select v-model="cards[tpl.id].params.cycle_id" :input-id="`tpl-cyc-${tpl.id}`" :options="cycleOptions" option-label="label" option-value="value" filter :placeholder="t('reports.cycleDefault')" />
               </template>
               <template v-else-if="p.name === 'source'">
                 <label :for="`tpl-soa-${tpl.id}`">{{ t('reports.soaSource') }}</label>

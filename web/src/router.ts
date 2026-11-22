@@ -43,6 +43,8 @@ const routes: RouteRecordRaw[] = [
           },
           { path: 'exploratory', name: 'exploratory', component: () => import('./views/ExploratoryView.vue'), meta: { perm: P.runRead } },
           { path: 'exploratory/:sessionId', name: 'exploratorySession', component: () => import('./views/ExploratorySessionView.vue'), props: true, meta: { perm: P.runRead } },
+          { path: 'cycles', name: 'cycles', component: () => import('./views/CyclesView.vue'), meta: { perm: P.runRead } },
+          { path: 'cycles/:cycleId', name: 'cycle', component: () => import('./views/CycleDetailView.vue'), props: true, meta: { perm: P.runRead } },
           { path: 'releases', name: 'releases', component: () => import('./views/ReleasesView.vue'), meta: { perm: P.projectRead } },
           { path: 'defects', name: 'defects', component: () => import('./views/DefectsView.vue'), meta: { perm: P.projectRead } },
           { path: 'discussions', name: 'discussions', component: () => import('./views/DiscussionsView.vue'), meta: { perm: P.projectRead } },

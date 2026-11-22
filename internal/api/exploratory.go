@@ -140,9 +140,9 @@ func (s *Server) exploratoryRevision(ctx context.Context, p *Principal, x *model
 	}
 }
 
-// checkTester verifies that a tester is a member who may run sessions in
+// checkSessionTester verifies that a tester is a member who may run sessions in
 // the project.
-func (s *Server) checkTester(ctx context.Context, p *Principal, projectID, email string) error {
+func (s *Server) checkSessionTester(ctx context.Context, p *Principal, projectID, email string) error {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if email == "" || strings.EqualFold(email, p.User.Email) {
 		return nil
@@ -167,7 +167,7 @@ func (s *Server) handleCreateExploratory(w http.ResponseWriter, r *http.Request,
 	x := &model.ExploratorySession{ProjectID: pr.ID, CreatedBy: p.User.Email, Tester: p.User.Email}
 	b.apply(x)
 	ctx := r.Context()
-	if err := s.checkTester(ctx, p, pr.ID, x.Tester); err != nil {
+	if err := s.checkSessionTester(ctx, p, pr.ID, x.Tester); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -209,7 +209,7 @@ func (s *Server) handleUpdateExploratory(w http.ResponseWriter, r *http.Request,
 	oldTester := x.Tester
 	b.apply(x)
 	if !strings.EqualFold(oldTester, strings.TrimSpace(x.Tester)) {
-		if err := s.checkTester(ctx, p, x.ProjectID, x.Tester); err != nil {
+		if err := s.checkSessionTester(ctx, p, x.ProjectID, x.Tester); err != nil {
 			s.fail(w, r, err)
 			return
 		}

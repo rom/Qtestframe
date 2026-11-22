@@ -375,7 +375,11 @@ func cmdSeedDemo(args []string, env Env) error {
 		return err
 	}
 	// discussions by the demo users (seeddiscussions.go)
-	return SeedDemoDiscussions(env.Ctx, st, t.ID, p)
+	if err := SeedDemoDiscussions(env.Ctx, st, t.ID, p); err != nil {
+		return err
+	}
+	// test cycles with the demo users as testers (after the bootstrap too)
+	return SeedDemoCycles(env.Ctx, st, t.ID, p)
 }
 
 // cmdBackup writes a logical, database-agnostic backup (see

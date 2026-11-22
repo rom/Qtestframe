@@ -11,6 +11,7 @@ export const GUIDE_PAGES = [
   'catalogue',
   'runs',
   'exploratory-testing',
+  'test-cycles',
   'releases-and-risks',
   'waivers-and-soa',
   'defects',

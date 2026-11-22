@@ -46,7 +46,7 @@ import {
   RELEASE_STATUSES,
 } from '@/lib/releases'
 import { RISK_LEVELS, riskLevelSeverity } from '@/lib/risks'
-import type { Baseline, CriterionResult, ExitCriterion, Release, ReleaseStatusReport, Requirement, TestRun } from '@/lib/types'
+import type { Baseline, CriterionResult, ExitCriterion, Release, ReleaseStatusReport, Requirement, TestCycle, TestRun } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { usePrefsStore } from '@/stores/prefs'
@@ -73,7 +73,17 @@ const panel = (value: string) => ({ role: 'tabpanel', id: `${tabsId}_tabpanel_${
 const statusLabel = (s: string) => t(`releasesView.status.${s}`)
 const statusSeverity = (s: string) => ({ planned: 'secondary', active: 'info', released: 'success', cancelled: 'contrast' })[s] ?? 'secondary'
 const levelLabel = (kind: 'severity' | 'riskLevel', v: string) => t(kind === 'severity' ? `releasesView.severity.${v}` : `risksView.level.${v}`)
-const describe = (c: ExitCriterion) => criterionText(c, t, levelLabel)
+const cycles = ref<TestCycle[]>([])
+const cycleOptions = computed(() => cycles.value.map((c) => ({ label: c.name, value: c.id })))
+const cycleName = (cid: string) => cycles.value.find((c) => c.id === cid)?.name ?? ''
+async function loadCycles() {
+  try {
+    cycles.value = asItems(await api.get<{ items: TestCycle[] }>(`/projects/${proj.pid}/cycles`))
+  } catch {
+    cycles.value = [] // without run.read there are no cycles to choose from
+  }
+}
+const describe = (c: ExitCriterion) => criterionText(c, t, levelLabel, cycleName)
 
 // ---------- list ----------
 const releases = ref<Release[]>([])
@@ -224,7 +234,7 @@ async function loadRuns() {
     runs.value = []
   }
 }
-onMounted(() => Promise.all([load(), loadRequirements(), loadRuns(), variants.load()]))
+onMounted(() => Promise.all([load(), loadRequirements(), loadRuns(), variants.load(), loadCycles()]))
 
 // ---------- selected release ----------
 type TabName = 'status' | 'scope' | 'runs' | 'criteria'
@@ -819,6 +829,19 @@ function itemNote(c: CriterionResult, note?: string) {
             @update:model-value="touch"
           />
           <span v-else class="crit-param small muted">{{ t('releasesView.noParameter') }}</span>
+          <Select
+            v-if="c.type === 'cycle_executed'"
+            v-model="c.cycle_id"
+            :options="cycleOptions"
+            option-label="label"
+            option-value="value"
+            filter
+            class="crit-param"
+            :disabled="!canWrite"
+            :placeholder="t('releasesView.chooseCycle')"
+            :aria-label="t('releasesView.cycleN', { n: i + 1 })"
+            @update:model-value="touch"
+          />
           <span class="small muted crit-desc">{{ describe(c) }}</span>
           <Button v-if="canWrite" icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('releasesView.removeCriterionN', { n: i + 1 })" v-tooltip="t('common.remove')" @click="removeCriterion(i)" />
         </div>

@@ -54,6 +54,8 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	a.m("POST", pp+"/configurations", map[string]any{"name": "Chrome"}, 201)
 	a.m("POST", pp+"/variants", map[string]any{"name": "EU model"}, 201)
 	a.m("POST", pp+"/builds", map[string]any{"external_id": "ci-1"}, 201)
+	cyc := a.m("POST", pp+"/cycles", map[string]any{"name": "Secret cycle"}, 201)["id"].(string)
+	a.m("POST", pp+"/cycle-schedules", map[string]any{"name_pattern": "Secret {date}", "template_cycle_id": cyc, "frequency": "daily"}, 201)
 	a.m("POST", pp+"/custom-fields", map[string]any{"entity_type": "requirement", "label": "Supplier", "type": "text"}, 201)
 	a.m("POST", pp+"/templates", map[string]any{"kind": "requirement", "name": "Secret template"}, 201)
 	def := a.m("POST", pp+"/reports/definitions", map[string]any{"name": "Status", "config": map[string]any{"entity": "test", "columns": []string{"key"}}}, 201)["id"].(string)
@@ -94,6 +96,7 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"exploratory-sessions": `SELECT id FROM exploratory_sessions WHERE project_id = ?`,
 		"variants":             `SELECT id FROM variants WHERE project_id = ?`, "builds": `SELECT id FROM builds WHERE project_id = ?`,
 		"custom-fields": `SELECT id FROM custom_fields WHERE project_id = ?`, "templates": `SELECT id FROM item_templates WHERE project_id = ?`,
+		"cycles": `SELECT id FROM test_cycles WHERE project_id = ?`, "cycle-schedules": `SELECT id FROM test_cycle_schedules WHERE project_id = ?`,
 	}
 	for res, sql := range q {
 		var id string

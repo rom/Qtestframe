@@ -25,6 +25,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Utforskande test](#utforskande-test) | Sessionsbaserad utforskande testning: uppdrag, sessionens tidtagning, typade anteckningar med kortkommandon, defekter från anteckningar, utvärderingar, mått och sessionsrapporten |
 | [Undantag, restrisk och SoA](#undantag-restrisk-och-uttalande-om-tillämplighet) | Undantag och avvikelser med signerade godkännanden, restrisk och dess acceptans, uttalandet om tillämplighet (ISO/IEC 27001 bilaga A) |
 | [Spårbarhet och täckning](#spårbarhet-och-täckning) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
+| [Testcykler](#testcykler) | Planera testcykler: testfall, testare och uppskattningar, körningarna en cykel skapar, framsteg, nedbränning, arbetsbelastning, återkommande cykler |
 | [Varianter och kod](#varianter-och-kod) | Varianter och tillämplighet, täckning per variant, incheckningar, merge requests, byggen och regressionsurvalet |
 | [Baslinjer](#baslinjer) | Frysa en release och jämföra versioner |
 | [Diskussioner](#diskussioner) | Kommentarstrådar på objekt med Markdown, @omnämnanden, reaktioner och lösta trådar, och projektets sida Diskussioner |
@@ -1592,6 +1593,114 @@ Ovanför listan visar **Mått** antal sessioner, sessionstimmar, buggar (buggant
 
 **Historik** listar sessionens versioner: när den planerades, ändrades, stoppades, utvärderades och öppnades igen, med de ändrade fälten. Varje åtgärd (planering, tidtagning, anteckningar, defekter, utvärdering) registreras i organisationens händelselogg. Sessioner, deras omfattning och anteckningar ingår i projektarkivet (**Spara projekt**) och i säkerhetskopian.
 
+# Testcykler
+
+En **testcykel** planerar testningen för ett mål, till exempel *Regression sprint 14* eller *Acceptanstest release 2.1*. Den anger vilka testfall som ska köras (dess **plan**), i vilka konfigurationer, av vem och hur lång tid de bör ta. När cykeln startar skapar den sin [testkörning](#testkörningar-och-exekvering) och följer sedan resultaten: planerade mot utförda, godkända, underkända och blockerade, uppskattad mot faktisk tid, en nedbränning och arbetsbelastningen för varje testare.
+
+Välj **Testcykler** i projektets sidofält.
+
+| Uppgift | Roll (behörighet) |
+|---|---|
+| Se cykler, deras plan och framsteg | alla roller som ser körningar (`run.read`) |
+| Skapa och ändra cykler, planera testfall, tilldela testare, starta och avsluta cykler, återkommande cykler | **Testledare**, **Ansvarig**, **Administratör** (`cycle.plan`) |
+| Skapa cykelns körningar | även `run.write` |
+| Utföra de planerade testfallen | **Testare** och högre (`run.execute`), i cykelns körning som vanligt |
+
+## Skapa en cykel
+
+Välj **Ny cykel** och ange:
+
+- ett **namn**, unikt i projektet, och gärna ett **mål**;
+- **ägaren**, oftast testledaren (du själv som standard);
+- **startdatum** och **slutdatum**; de avgränsar också nedbränningen;
+- valfritt den **release**, **variant** och det **bygge** som cykeln testar, och dess **miljö**. Cykelns körningar får dem, så att resultaten räknas för den releasen och varianten;
+- de **konfigurationer** som ska testas. Varje planerat testfall utförs då en gång per konfiguration, och varje konfiguration kan ha en egen testare;
+- valfritt en tid då cykeln **startar automatiskt**: då startar den av sig själv och dess körning skapas;
+- eller välj **Kopiera en tidigare cykel**: den nya cykeln får den cykelns plan, testare, uppskattningar, release, variant och konfigurationer. Det är det snabbaste sättet att få nästa sprints regression.
+
+En ny cykel är **Planerad**.
+
+## Planera testfall
+
+Välj **Planera testfall** på fliken **Plan** och välj hur testfallen ska läggas till:
+
+| Genom | Vad som läggs till |
+|---|---|
+| **Urval** | testfallen du väljer i testfallsväljaren |
+| **Fråga** | alla testfall som matchar en [fråga](#sökning-och-filter), till exempel `tag:regression priority:high` |
+| **Mapp** | testfallen i en mapp, och om du vill i mapparna under den |
+| **Regressionsurval** | testfallen som verifierar ändrade krav (och om du vill kraven som beror på, förfinar eller härleds från dem) med deras förutsättningar, som [regressionsurvalet](#varianter-och-kod) på sidan Kod; för cykelns variant |
+| **Tidigare cykel** | en annan cykels plan med testare, uppskattningar och konfigurationer |
+
+Du kan välja en **testare** och en **uppskattning** för testfallen du lägger till, och konfigurationerna (utan val planeras ett testfall i alla cykelns konfigurationer). Testfall som redan är planerade i en konfiguration hoppas över.
+
+**Uppskattningar.** Utan en egen uppskattning får ett planerat testfall testfallets **Uppskattade minuter** (ett fält i testfallet), annars medeltiden för dess tidigare exekveringar med ett utfall. Ändra uppskattningar och testare senare genom att markera rader i planen och välja **Tilldela** eller **Ange uppskattning**; **Ta bort** tar rader ur planen (utfall som redan är registrerade finns kvar i körningen).
+
+Planen visar varje rad med konfiguration, testare, uppskattning, det senaste utfallet i cykelns körningar (välj det för att öppna exekveringen) och den faktiska tiden.
+
+## Köra cykeln
+
+Välj **Starta cykeln**. Cykeln blir **Pågår** och skapar sin körning: en exekvering per planerat testfall och konfiguration, tilldelad testaren, med cykelns release, variant, bygge och miljö. Testarna får en avisering och utför som vanligt i [exekveringsvyn](#testkörningar-och-exekvering). Byter du testare i planen ändras också de exekveringar som ännu saknar utfall.
+
+Testfall som planeras efter starten finns inte i någon körning ännu; knappen **Skapa körning för n nya testfall** skapar ytterligare en körning av cykeln för dem. **Avsluta cykeln** avslutar den; **Öppna igen** gör den pågående igen.
+
+Ett planerat testfall räknas som **utfört** när det har ett slutligt utfall (godkänt, underkänt, blockerat eller överhoppat) i någon av cykelns körningar. Har ett testfall körts flera gånger räknas det senaste slutliga utfallet.
+
+## Tavla per testare
+
+Fliken **Tavla per testare** har en kolumn per testare (och en för testfall som ingen är tilldelad) med de öppna testfallen, uppskattad tid kvar och de utförda testfallen hopfällda. Välj ett testfall för att öppna dess exekvering.
+
+## Framsteg
+
+Nyckeltalen överst visar de planerade testfallen (och hur många som saknar testare), andelen utförda, utfallen, den uppskattade tiden med tiden kvar, och den faktiska tiden för de utförda testfallen mot deras uppskattningar.
+
+Fliken **Framsteg** har:
+
+- **nedbränningen**: per dag från startdatum till slutdatum de planerade testfall (eller den uppskattade tid) som inte var utförda vid dagens slut, mot den **ideala** linjen från hela planen den första dagen till ingenting den sista. Texten ovanför anger hur långt efter eller före den ideala linjen cykeln ligger i dag. Testfall som planerats senare syns från den dag de lades till;
+- **arbetsbelastningen per testare**: planerade, utförda (per utfall) och öppna testfall per testare, med uppskattad tid, tid kvar och faktisk tid.
+
+## Återkommande cykler
+
+På fliken **Återkommande** i cykellistan skapar en **återkommande cykel** en ny cykel enligt ett schema – dagligen, varje vecka på en veckodag eller varje månad på en dag, vid en tid i en tidszon, som [schemalagda rapporter via e-post](#rapporter-och-export). Varje ny cykel får:
+
+- sitt **namn** från ett mönster: `{date}` blir startdatumet och `{n}` cykelns nummer, till exempel *Nattlig regression {date}*;
+- fälten, planen, testarna och uppskattningarna från en **mallcykel**, och/eller testfallen som matchar en **fråga**;
+- dagens datum som startdatum och den **längd** du anger;
+- med **Starta varje ny cykel direkt** sin körning med en gång.
+
+Cyklerna skapas som den återkommande cykelns **ägare**, som fortfarande måste få planera cykler i projektet. **Skapa nästa cykel nu** (spelaknappen) skapar en direkt. En återkommande cykel vars senaste körning misslyckades visar felet.
+
+## Tidslinje
+
+Fliken **Tidslinje** visar cyklerna med datum som staplar på en gemensam tidsaxel, färgade efter status.
+
+## Filtrera cykler
+
+Filterfältet i cykellistan tar [frågespråket](#sökning-och-filter) med dessa fält:
+
+| Fält | Matchar |
+|---|---|
+| `name`, `goal`, `description`, `environment` | cykelns text |
+| `status` | `planned`, `active`, `closed` |
+| `owner`, `assignee` | ägaren, någon testare (e-post eller namn) |
+| `release`, `variant`, `build`, `configuration` | det cykeln testar |
+| `start`, `end` | datumen, t.ex. `start>=2027-03-01` |
+| `planned`, `executed`, `passed`, `failed`, `blocked`, `unassigned` | antal, t.ex. `failed>0` |
+| `progress` | procent utförda, t.ex. `progress<50` |
+| `test` | nyckeln till ett planerat testfall |
+
+I testfallslistan hittar `cycle:"Sprint 14"` testfallen som är planerade i en cykel; i körningslistan hittar `cycle:` en cykels körningar.
+
+## Releaser och rapporter
+
+En release kan vänta på en cykel: utgångskriteriet **Testcykel genomförd** (se [utgångskriterier](#utgångskriterier)) är uppfyllt när minst tröskeln – 100 % som standard – av cykelns planerade testfall har ett utfall.
+
+**Testcykelrapporten** på sidan [Rapporter](#rapporter-och-export) visar en cykels nyckeltal, arbetsbelastningen per testare, nedbränningen och hela planen med utfall, som PDF, Word, Excel, CSV eller Markdown.
+
+## Historik och granskningslogg
+
+Fliken **Historik** listar cykelns versioner – fälten och planen – med vem som ändrade vad. Att skapa, ändra, planera och ta bort cykler och återkommande cykler registreras i granskningsloggen. Cykler och återkommande cykler ingår i projektarkiv och säkerhetskopior; i ett inläst projekt är de återkommande cyklerna avstängda tills någon slår på dem.
+
 # Releaser och risker
 
 En **release** är en version av produkten som du planerar, testar och levererar, till exempel *Vår 2027* eller *2.1.0*. Den samlar de krav som ska levereras (releasens **omfattning**), de testkörningar som testar den och de **utgångskriterier** som avgör om den får släppas. **Riskregistret** listar vad som kan gå fel, hur sannolikt det är, hur allvarlig konsekvensen blir och vilka krav som hanterar varje risk. Öppna risker påverkar direkt en releases utgångskriterier.
@@ -1653,6 +1762,7 @@ Fliken **Utgångskriterier** listar de villkor som releasen måste uppfylla. Vä
 | Spårbarhetsregler | inget krav i omfattningen och inget testfall som är länkat till ett sådant bryter mot en påslagen [spårbarhetsregel](#spårbarhetsregler) med den valda allvarligheten; statusfliken listar objekten med reglerna de bryter mot | bara fel, eller fel och varningar |
 | Inga blockerande defekter | inget krav i omfattningen [blockeras av en öppen defekt](#blockerande-defekter) enligt projektets regler för allvarlighetsgrad; ett inaktuellt godkänt utfall räknas inte för **Klarade testfall** och **Obligatoriska krav klarade** | — |
 | Restrisk | ingen risk kopplad till omfattningen som inte är stängd har en [restnivå](#restrisk) över gränsen, om inte accepteringen är signerad | projektets gräns för riskacceptans, eller en nivå |
+| Testcykel genomförd | minst tröskeln av de planerade testfallen i den valda [testcykeln](#testcykler) har ett utfall i cykelns körningar; 100 % betyder att cykeln är helt genomförd | tröskel i % och testcykeln |
 
 En release utan utgångskriterier är alltid go.
 
@@ -3069,6 +3179,7 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 | **Efterlevnad** | efterlevnad av lagar, standarder och bästa praxis: per källa, per avsnitt, de katalogkrav som saknas och de krav som inte är uppfyllda (se [Efterlevnad av lagar och standarder](#efterlevnad-av-lagar-och-standarder)) | valfria lagar, standarder och bästa praxis (standard: de som projektet använder) |
 | **Uttalande om tillämplighet** | varje åtgärd i en standard med tillämplighet, motivering, införande, ägare, krav och belägg (se [Uttalande om tillämplighet](#uttalande-om-tillämplighet)) | standarden (standard: ISO/IEC 27001:2022 bilaga A) |
 | **Releaseberedskap** | en release: go / no-go, varje utgångskriterium med vad som stoppar det och vad ett [undantag](#undantag-och-avvikelser) eller en signerad risk accepterar, gällande undantag och riskerna över acceptansgränsen | releasen (standard: den aktuella) |
+| **Testcykelrapport** | en [testcykel](#testcykler): planerade mot utförda, godkända, underkända och blockerade testfall, uppskattad mot faktisk tid, arbetsbelastningen per testare, nedbränningen och planen med varje utfall | cykeln (standard: den aktuella) |
 | **Kvalitetsmått** | kravens föränderlighet, defekttäthet, läckta defekter, testeffektivitet, resultatens ålder, granskningstid, tid till rättning och kravkvalitet, med trender (se [Kvalitetsmått](#kvalitetsmått)) | valfri historik i dagar (30, 90, 180 eller 365) och efter hur många dagar ett resultat är inaktuellt |
 | **Utforskande testsession** | en [utforskande session](#utforskande-test): uppdrag och omfattning, sessionstid, utvärderingen med täckning, tidsfördelning och utfall, alla anteckningar och skapade defekter | sessionen (standard: den senast utvärderade) |
 | **Utforskande test** | alla utforskande sessioner: nyckeltal, sessioner och buggar per sessionstimme per område och testare, genomsnittlig tidsfördelning och varje session med sitt utfall | – |
@@ -3405,7 +3516,7 @@ Varje organisation börjar med sex inbyggda roller. Som standard kan varje roll 
 | **Läsare** | läsa alla projekt, krav, testfall, körningar, dokument och medlemslistan; söka; exportera och ta fram rapporter |
 | **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet; skriva i [diskussioner](#diskussioner) (*comment.create*, som alla roller nedan utom Läsare) |
 | **Testare** | skriva och länka testfall, hantera testmappar och testfallskategorier, skapa och redigera körningar, registrera utfall, importera utfall från CI, ladda upp bilagor till testfall, körningar och exekveringar, skapa egna API-nycklar |
-| **Testledare** | markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
+| **Testledare** | planera [testcykler](#testcykler) (*cycle.plan*), markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
 | **Ansvarig** | godkänna och avvisa krav (*requirement.review*), skriva krav och kravmappar, skapa och redigera projekt, alla kategorier och [spårbarhetsreglerna](#spårbarhetsregler), skapa baslinjer |
 | **Administratör** | allt: ta bort projekt, hantera medlemmar och roller, byta namn på organisationen, återställa medlemmars lösenord, ta bort alla kommentarer |
 | **Superadministratör** | allt i alla organisationer; hantera organisationer och användare; säkerhetskopiering och återställning |
@@ -3419,7 +3530,7 @@ Standardmatrisen med behörigheter:
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
 | `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
-| `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
 | `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
 

@@ -43,12 +43,14 @@ func init() {
 	enums[Swedish][EnumResidualSource] = map[string]string{model.ResidualInherent: "Ursprunglig (åtgärden ej verifierad)", model.ResidualVerified: "Verifierad åtgärd", model.ResidualManual: "Angiven för hand"}
 	enums[Swedish][EnumCriterion] = map[string]string{"coverage": "Täckning", "passed": "Godkända krav", "mandatory_passed": "MUST-krav godkända",
 		"executed": "Utförda exekveringar", "no_failed": "Inga underkända testfall", "approved": "Godkända krav (status)", "no_suspect": "Inga misstänkta länkar",
-		"no_open_defects": "Inga öppna defekter", "risks_mitigated": "Risker åtgärdade", "trace_rules": "Spårbarhetsregler", "residual_risk": "Restrisk inom gränsen"}
+		"no_open_defects": "Inga öppna defekter", "risks_mitigated": "Risker åtgärdade", "trace_rules": "Spårbarhetsregler", "residual_risk": "Restrisk inom gränsen",
+		"no_blocking_defects": "Inga blockerande defekter", "cycle_executed": "Testcykel genomförd"}
 }
 
 var criterionNames = map[string]string{"coverage": "Coverage", "passed": "Requirements passed", "mandatory_passed": "MUST requirements passed",
 	"executed": "Executions done", "no_failed": "No failed tests", "approved": "Requirements approved", "no_suspect": "No suspect links",
-	"no_open_defects": "No open defects", "risks_mitigated": "Risks mitigated", "trace_rules": "Traceability rules", "residual_risk": "Residual risk within threshold"}
+	"no_open_defects": "No open defects", "risks_mitigated": "Risks mitigated", "trace_rules": "Traceability rules", "residual_risk": "Residual risk within threshold",
+	"no_blocking_defects": "No blocking defects", "cycle_executed": "Test cycle executed"}
 
 // waiverTexts are the Swedish texts of waivers, residual risk and the SoA.
 var waiverTexts = map[string]string{
@@ -326,7 +328,7 @@ func buildReleaseReadiness(d *Data, _ map[string]string) (*export.Dataset, error
 			met = l.t("Not evaluated")
 		}
 		actual := strconv.FormatFloat(c.Actual, 'f', -1, 64)
-		if c.Type == "coverage" || c.Type == "passed" || c.Type == "executed" || c.Type == "approved" {
+		if c.Type == "coverage" || c.Type == "passed" || c.Type == "executed" || c.Type == "approved" || c.Type == "cycle_executed" {
 			actual += "%"
 		}
 		crit.Rows = append(crit.Rows, []string{l.enum(EnumCriterion, c.Type), lim, actual, met, refKeys(c.Items), refKeys(append(append([]ReleaseRef{}, c.Waived...), c.Accepted...))})

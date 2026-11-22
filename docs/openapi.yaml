@@ -72,6 +72,8 @@ tags:
   description: Baselines and electronic sign-offs
 - name: Releases
   description: Releases and exit criteria
+- name: Cycles
+  description: Test cycles, their plan, progress and recurring schedules
 - name: Defects
   description: Defects and the issue tracker (Jira, GitHub or GitLab)
 - name: Requirement issues
@@ -17845,6 +17847,499 @@ paths:
           "$ref": "#/components/responses/NotFound"
         default:
           "$ref": "#/components/responses/Error"
+  /api/v1/projects/{pid}/cycles:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Cycles
+      summary: Test cycles
+      operationId: getProjectsByPidCycles
+      description: |-
+        The test cycles of the project (active first, then planned and closed; by start date) with their progress `{planned, executed, passed, failed, blocked, skipped, not_run, not_in_run, unassigned, estimated_minutes, remaining_minutes, actual_ms, percent_executed, percent_passed}` and `run_ids`. `?q=` filters with the query language (fields `name`, `goal`, `status`, `owner`, `release`, `variant`, `build`, `environment`, `configuration`, `start`, `end`, `planned`, `executed`, `progress`, `passed`, `failed`, `blocked`, `unassigned`, `test`, `assignee`, `created_by`, `created_at`).
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Cycles
+      summary: Create a test cycle
+      operationId: postProjectsByPidCycles
+      description: |-
+        `{name, goal?, description?, owner_id? (default: the caller), release_id?, variant_id? (id or name), build_id?, environment?, configuration_ids?, start_date?, end_date? (YYYY-MM-DD), scheduled_start_at? (RFC 3339: the cycle starts by itself), copy_from? (a cycle whose plan, testers, estimates, release, variant, build and configurations are copied)}`. A new cycle is planned.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Cycles
+      summary: Test cycle
+      operationId: getCyclesById
+      description: |-
+        A cycle with `run_ids` and `progress`.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Cycles
+      summary: Update a test cycle
+      operationId: patchCyclesById
+      description: |-
+        The fields of the create request (all optional), `status` (planned, active, closed) and `clear_scheduled_start`. Starting a planned cycle (status active) creates its run of the planned tests, assigned to their testers, with the cycle's release, variant, build and configurations.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Cycles
+      summary: Delete a test cycle
+      operationId: deleteCyclesById
+      description: |-
+        Deletes the cycle and its plan; its runs stay (without cycle).
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/tests:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Cycles
+      summary: Plan of a test cycle
+      operationId: getCyclesByIdTests
+      description: |-
+        The planned tests (one row per test and configuration) with `assignee_id`, `estimate_minutes` and, from the cycle's runs, the latest `execution_id`, `run_id`, `status`, `executed_by`, `finished_at`, `duration_ms`. `?assignee=<user id>|none` keeps one tester's rows.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Cycles
+      summary: Plan tests
+      operationId: postCyclesByIdTests
+      description: |-
+        Adds tests: `test_ids`, `tests` (`[{test_id, configuration_id?, assignee_id?, estimate_minutes?}]`), `query`, `folder_id` (+ `recursive`, default true), `regression` (the body of POST /projects/{pid}/regression) or `copy_from` (another cycle's plan); `assignee_id`, `estimate_minutes` and `configuration_ids` apply to the tests given by id, query, folder or regression. Without `configuration_ids` a test is planned in every configuration of the cycle. The default estimate is the test's estimate, else the average duration of its past executions. Query, folder and regression need test.read too. → `{added, cycle}`
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Cycles
+      summary: Change planned tests
+      operationId: patchCyclesByIdTests
+      description: |-
+        `{ids: [row ids] | all: true, assignee_id?, estimate_minutes?}`; a new tester is also set on the rows' executions without a final result. → `{updated}`
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Cycles
+      summary: Remove planned tests
+      operationId: deleteCyclesByIdTests
+      description: |-
+        `{ids: [row ids]}` → `{removed}` (their executions stay in the runs).
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/runs:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Cycles
+      summary: Create the cycle's next run
+      operationId: postCyclesByIdRuns
+      description: |-
+        Creates a run of the planned tests that no run of the cycle contains yet (needs run.write too); a planned cycle becomes active. 400 when every planned test is in a run, 409 for a closed cycle.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/progress:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Cycles
+      summary: Test cycle progress
+      operationId: getCyclesByIdProgress
+      description: |-
+        `{cycle, testers: [{assignee_id, planned, executed, passed, failed, blocked, estimated_minutes, remaining_minutes, actual_ms}], burndown: [{day, remaining, remaining_minutes, ideal, ideal_minutes}]}`: the burndown runs from the start date to the end date (else today); remaining is null after today; the ideal line goes from the whole plan to 0.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/history:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Cycles
+      summary: Test cycle history
+      operationId: getCyclesByIdHistory
+      description: |-
+        The revisions of the cycle (its fields and plan), newest first.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/cycle-schedules:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Cycles
+      summary: Recurring test cycles
+      operationId: getProjectsByPidCycleSchedules
+      description: |-
+        The schedules that create test cycles.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Cycles
+      summary: Create a recurring test cycle
+      operationId: postProjectsByPidCycleSchedules
+      description: |-
+        `{name_pattern ({date}, {n}), template_cycle_id? and/or query?, owner_id? (default: the caller), frequency (daily, weekly, monthly), weekday (0–6), day_of_month (1–28), time (HH:MM), timezone, duration_days (1–366), auto_start, enabled}`. On the schedule a cycle is created from the template's plan and the tests matching the query, as the owner (who must hold cycle.plan); with auto_start it starts.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycle-schedules/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Cycles
+      summary: Update a recurring test cycle
+      operationId: patchCycleSchedulesById
+      description: |-
+        The fields of the create request (all optional); the next run is computed again.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Cycles
+      summary: Delete a recurring test cycle
+      operationId: deleteCycleSchedulesById
+      description: |-
+        The cycles it created stay.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycle-schedules/{id}/run:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Cycles
+      summary: Create the next cycle now
+      operationId: postCycleSchedulesByIdRun
+      description: |-
+        Creates a cycle from the schedule now (the schedule keeps its next run) and returns it.
+
+        **Permission:** `cycle.plan`.
+      x-permission: cycle.plan
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:

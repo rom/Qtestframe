@@ -23,6 +23,7 @@ describe('notificationTarget', () => {
   const n = (entity_type: string) => ({ project_id: 'p1', entity_type, entity_id: 'x' })
   it('leads to the item', () => {
     expect(notificationTarget(n('requirement'))).toEqual({ name: 'requirements', params: { projectId: 'p1' }, query: { item: 'x' } })
+    expect(notificationTarget(n('cycle'))).toEqual({ name: 'cycle', params: { projectId: 'p1', cycleId: 'x' } })
     expect(notificationTarget(n('test'))?.name).toBe('tests')
     expect(notificationTarget(n('defect'))?.name).toBe('defects')
     expect(notificationTarget(n('waiver'))).toEqual({ name: 'waivers', params: { projectId: 'p1' }, query: { waiver: 'x' } })

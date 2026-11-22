@@ -29,6 +29,7 @@ These are the permissions of the built-in roles until an organisation changes th
 | `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `run.write` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  | ✔ | ✔ | ✔ | ✔ |
+| `cycle.plan` |  |  |  | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  | ✔ | ✔ | ✔ |
 | `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |

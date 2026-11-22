@@ -49,7 +49,7 @@ var projectScoped = map[string]bool{
 	string(rbac.ProjectRead): true, string(rbac.ProjectUpdate): true, string(rbac.ProjectDelete): true,
 	string(rbac.RequirementRd): true, string(rbac.RequirementWr): true, string(rbac.RequirementRev): true, string(rbac.WaiverApprove): true,
 	string(rbac.TestRead): true, string(rbac.TestWrite): true, string(rbac.TestReview): true,
-	string(rbac.RunRead): true, string(rbac.RunWrite): true, string(rbac.RunExecute): true,
+	string(rbac.RunRead): true, string(rbac.RunWrite): true, string(rbac.RunExecute): true, string(rbac.CyclePlan): true,
 	string(rbac.ScriptExecute): true, string(rbac.Export): true, string(rbac.CommentCreate): true,
 }
 
@@ -339,6 +339,8 @@ var resourceProjects = map[string]string{
 	"configurations":        `SELECT project_id FROM configurations WHERE id = ? AND tenant_id = ?`,
 	"variants":              `SELECT project_id FROM variants WHERE id = ? AND tenant_id = ?`,
 	"builds":                `SELECT project_id FROM builds WHERE id = ? AND tenant_id = ?`,
+	"cycles":                `SELECT project_id FROM test_cycles WHERE id = ? AND tenant_id = ?`,
+	"cycle-schedules":       `SELECT project_id FROM test_cycle_schedules WHERE id = ? AND tenant_id = ?`,
 	"test-dependencies":     `SELECT project_id FROM test_dependencies WHERE id = ? AND tenant_id = ?`,
 	"reports/definitions":   `SELECT project_id FROM report_definitions WHERE id = ? AND tenant_id = ?`,
 	"reports/subscriptions": `SELECT project_id FROM report_subscriptions WHERE id = ? AND tenant_id = ?`,

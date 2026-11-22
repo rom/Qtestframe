@@ -33,7 +33,7 @@ const BackupFormatVersion = 1
 var BackupTables = []string{
 	"tenants", "users", "memberships", "api_tokens", "projects", "configurations", "releases", "folders", "categories",
 	"requirements", "requirement_categories", "evaluation_criteria", "test_cases", "test_steps",
-	"test_case_categories", "trace_links", "variants", "builds", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
+	"test_case_categories", "trace_links", "variants", "builds", "test_cycles", "test_cycle_tests", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
 	"audit_log", "revisions", "requirement_relations", "baselines", "baseline_items", "comments",
 	"files", "file_blobs", "attachments", "report_definitions", "login_events", "roles", "test_dependencies",
 	"trash", "item_links", "release_requirements", "defects", "defect_links", "risks", "risk_requirements", "notifications", "webhooks", "review_requests", "baseline_signoffs",
@@ -63,6 +63,9 @@ var BackupTables = []string{
 	"exploratory_sessions", "exploratory_scope", "exploratory_notes",
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available
+	// test cycles (0041); test_cycles and test_cycle_tests come before
+	// test_runs above
+	"test_cycle_schedules",
 	"secret_keys",
 	// chat notification channels (0045)
 	"chat_channels",
@@ -98,6 +101,7 @@ var boolColumns = map[string]bool{
 	"verification_settings.exploratory_evidence": true, "custom_fields.required": true, "custom_fields.show_in_list": true,
 	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
 	"chat_channels.enabled": true, "chat_channels.restricted_content": true,
+	"test_cycle_schedules.auto_start": true, "test_cycle_schedules.enabled": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

@@ -34,7 +34,9 @@ describe('trace rules criterion', () => {
 
 describe('criterion parameters', () => {
   it('knows what each type takes', () => {
-    expect(CRITERION_TYPES.map(criterionParam)).toEqual(['threshold', 'threshold', 'none', 'threshold', 'none', 'threshold', 'none', 'severity', 'riskLevel', 'ruleSeverity', 'riskLevel', 'none'])
+    expect(CRITERION_TYPES.map(criterionParam)).toEqual(['threshold', 'threshold', 'none', 'threshold', 'none', 'threshold', 'none', 'severity', 'riskLevel', 'ruleSeverity', 'riskLevel', 'none', 'threshold'])
+    expect(newCriterion('cycle_executed')).toEqual({ type: 'cycle_executed', threshold: 100, cycle_id: '' })
+    expect(cleanCriteria([{ type: 'cycle_executed', threshold: 0, cycle_id: 'c1', level: 'x' }])).toEqual([{ type: 'cycle_executed', threshold: 100, cycle_id: 'c1' }])
     // residual_risk: no level = the project's risk acceptance threshold
     expect(newCriterion('residual_risk')).toEqual({ type: 'residual_risk' })
   })
@@ -76,6 +78,8 @@ describe('criterion text and values', () => {
     expect(percent(92.54)).toBe('92.5 %')
     expect(percent(undefined)).toBe('0 %')
     expect(criterionText({ type: 'coverage', threshold: 95 }, t, level)).toBe('releasesView.criterion.coverage.withThreshold {"threshold":"95 %"}')
+    expect(criterionText({ type: 'cycle_executed', threshold: 100, cycle_id: 'c1' }, t, level, (id) => (id === 'c1' ? 'Sprint' : ''))).toContain('"cycle":"Sprint"')
+    expect(criterionText({ type: 'cycle_executed' }, t, level)).toContain('"cycle":"…"')
     expect(criterionText({ type: 'passed' }, t, level)).toContain('100 %')
     expect(criterionText({ type: 'no_open_defects', level: 'major' }, t, level)).toBe('releasesView.criterion.no_open_defects.withLevel {"level":"severity:major"}')
     expect(criterionText({ type: 'risks_mitigated', level: 'high' }, t, level)).toContain('riskLevel:high')
