@@ -25,11 +25,11 @@ const (
 
 // Status of a control in the organisation (ComplianceControl.Status).
 const (
-	ctlMet          = "met"            // provided and in effect
-	ctlNotSet       = "not_configured" // the tool can, the settings do not
-	ctlProcedural   = "procedural"     // for the customer's procedures
-	ctlNeedsAttn    = "attention"      // in effect but with a finding
-	
+	ctlMet        = "met"            // provided and in effect
+	ctlNotSet     = "not_configured" // the tool can, the settings do not
+	ctlProcedural = "procedural"     // for the customer's procedures
+	ctlNeedsAttn  = "attention"      // in effect but with a finding
+
 )
 
 // ComplianceControl is one row of the report.
@@ -135,7 +135,7 @@ func (s *Server) complianceReport(r *http.Request, p *Principal) (*ComplianceRep
 	}
 	rep.Controls = []ComplianceControl{
 		{ID: "validation", References: []string{"Part 11 §11.10(a)", "Annex 11 §4"}, Title: "Validation of the system", Provider: ctlCustomer, Status: ctlProcedural,
-			Tool: "Automated test suites, release notes and this documentation support the customer's validation.",
+			Tool:     "Automated test suites, release notes and this documentation support the customer's validation.",
 			Customer: "Validate the installed version for the intended use (requirements, risk assessment, IQ/OQ/PQ) and re-validate after upgrades."},
 		{ID: "copies", References: []string{"Part 11 §11.10(b)", "Annex 11 §8"}, Title: "Accurate and complete copies of records", Provider: ctlTool, Status: ctlMet,
 			Tool:     "Exports of items, reports and generated documents (PDF, Word, CSV, ReqIF); the audit trail exports with sequence numbers and hashes (JSON, CSV).",
@@ -178,7 +178,7 @@ func (s *Server) complianceReport(r *http.Request, p *Principal) (*ComplianceRep
 				fmt.Sprint(st.SSOReauthMinutes) + " minutes of signing in at the identity provider.",
 			Customer: "Decide whether single sign-on accounts may sign; require multi-factor authentication where the risk calls for it.", Evidence: []string{modeEvidence}},
 		{ID: "passwords", References: []string{"Part 11 §11.300", "Annex 11 §12"}, Title: "Controls for identification codes and passwords", Provider: ctlShared, Status: ctlMet,
-			Tool: fmt.Sprintf("Password rules, rate-limited sign-in, multi-factor authentication with policies, session expiry and, in electronic-records mode, an inactivity timeout of %d minutes.", st.IdleTimeoutMinutes),
+			Tool:     fmt.Sprintf("Password rules, rate-limited sign-in, multi-factor authentication with policies, session expiry and, in electronic-records mode, an inactivity timeout of %d minutes.", st.IdleTimeoutMinutes),
 			Customer: "Password ageing and loss management (or the identity provider's), periodic checks of accounts, reporting of misuse.",
 			Evidence: []string{"Multi-factor policy: " + mode, fmt.Sprintf("%d of %d members use a second factor", mfaUsers, len(members))}},
 		{ID: "continuity", References: []string{"Annex 11 §16"}, Title: "Business continuity", Provider: ctlCustomer, Status: ctlProcedural,

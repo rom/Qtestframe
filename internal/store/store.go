@@ -65,7 +65,9 @@ func (s *Store) SetClock(f func() time.Time) { s.now = f }
 
 // WithClock returns a store over the same database with another time
 // source (e.g. to record backdated demo data).
-func (s *Store) WithClock(f func() time.Time) *Store { return &Store{DB: s.DB, now: f, keys: s.keys, sealer: s.sealer} }
+func (s *Store) WithClock(f func() time.Time) *Store {
+	return &Store{DB: s.DB, now: f, keys: s.keys, sealer: s.sealer}
+}
 
 // Now returns the current time of the store's clock.
 func (s *Store) Now() time.Time { return s.now() }
