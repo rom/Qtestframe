@@ -2166,11 +2166,13 @@ are per project.
 
 | Method | Path | Permission | Description |
 |---|---|---|---|
-| GET | `/projects/{pid}/correlation-settings` | project.read | `{relation_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` |
+| GET | `/projects/{pid}/correlation-settings` | project.read | `{relation_impact, relation_modes, impact_depth, impact_rules, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` |
 | PUT | `/projects/{pid}/correlation-settings` | project.update | partial update; `relation_impact` is replaced as a whole |
 | GET | `/requirements/{id}/impact` | requirement.read | what a change of the requirement's substance makes suspect, out of date, outdated or stale |
 | GET | `/tests/{id}/impact` | test.read | the same for a test |
 | GET | `/baselines/{id}/impact` | requirement.read | the impact of every change of substance since the baseline, with totals |
+| POST | `/projects/{pid}/impact` | requirement.read | impact analysis: `{items: [{kind, id}], baseline_id?, depth?}` → the combined transitive impact |
+| GET | `/projects/{pid}/impact/export` | requirement.read | the same as CSV or PDF (`?items=kind:id,…&baseline=&depth=&format=csv|pdf&lang=`) |
 | POST | `/relations/{id}/confirm` | requirement.write | clears the suspect mark of a relation → `{confirmed}` |
 | POST | `/requirements/{id}/relations/confirm` | requirement.write | confirms all suspect relations of a requirement |
 | POST | `/item-links/{id}/issue/confirm` | requirement.write | the tracker issue is still right: clears `issue.outdated_since` |
@@ -2227,6 +2229,35 @@ results are left out. `GET /baselines/{id}/impact` returns
 `{baseline, changes: [{entity_type, entity_id, key, title, from_version, to_version, changed_fields, impact}], totals: {requirements, tests, issues, documents, results}}`
 for the items whose substance changed since the baseline (largest impact
 first; totals count distinct items).
+
+**Transitive impact.** The change travels on from what it reaches, breadth
+first and cycle safe, up to `impact_depth` steps (1–10, default 3; `?depth=`
+on the impact endpoints). Depth counts the steps between requirements,
+tests and risks; trace links attach evidence without counting as a step
+and are not followed further, and the defects, variants, code changes and
+runs of a reached item are attached the same way, so depth 1 is the
+one-level impact above. Besides relations (`relation_impact`, with
+`relation_modes` `suspect` | `review`), `impact_rules` (`{direction, mode}`)
+govern `verifies`, `calls` (shared steps), `test_depends_on`, `item_link`,
+`risk`, `defect`, `variant` and `code`; only `verifies` can mark suspect,
+the others recommend a review. The mode of an item is the weakest on its
+path. Every item has `depth`, `mode`, `path` (`[{kind, id, key, edge,
+direction}]` from the changed item) and `owner`; the impact has `roots`,
+`depth`, `suspect`, `review`, `by_kind`, `by_depth` and the further lists
+`risks`, `defects`, `links` (runs), `variants`, `code`. A status change only
+recommends reviews.
+
+**Dry run and choice.** Every endpoint that changes requirements or tests
+(`PATCH /requirements/{id}`, `PATCH /tests/{id}`, the `bulk` and `batch`
+endpoints, `exchange/{xlsx,reqif}/apply`, `requirements/import`,
+`catalog/import`, `POST /requirements/{id}/restore`, `POST /tests/{id}/restore`,
+`POST /baselines/{id}/restore`) takes `?dry_run=impact` — the change runs in
+a transaction, the answer is `{dry_run: "impact", status, impact}` and
+everything is rolled back — and `?impact=suspect|notify|skip`: `suspect`
+(default) marks what the rules mark and notifies the owners of the items
+recommended for review (event `impact.review`); `notify` marks nothing and
+notifies every affected owner; `skip` marks nothing and notifies nobody.
+A bulk change applies the combined impact once, before it commits.
 
 **Result staleness.** A result is stale when it is older than
 `stale_after_days`, or (with `stale_on_change`) when its test or a

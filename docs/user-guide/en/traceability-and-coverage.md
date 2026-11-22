@@ -112,9 +112,33 @@ A change of a requirement rarely stays with that requirement. When the **substan
 
 A change of a test's title, description, preconditions, steps, expected result, script or execution type makes its links suspect and its latest result stale.
 
+### A change travels on
+
+What a change makes suspect can in turn change, so the impact travels on: when A changes, B (which refines A) becomes suspect, then C (which refines B), and so on, up to the project's **impact depth** (3 by default, at most 10; see [How far a change travels](#how-far-a-change-travels)). Every item is reached once, along the shortest way, even when the relations form a cycle, and the dialogs show the **path** to it: *A → refined by → B → refined by → C → verified by → T-12*.
+
+Besides the requirement relations and the tests, a change reaches, as **Review recommended**:
+
+- the **risks** a changed requirement addresses (and, from a risk, the other requirements that address it);
+- the **open defects** of an affected requirement or test;
+- requirements and tests connected by **item links**, and linked runs;
+- tests that **call** a changed test as shared steps or **depend** on it;
+- the **variants** an affected item applies to (when chosen explicitly) and the **code changes** (commits, merge requests) that refer to it.
+
+These are not marked; their owners can be notified. A test that changes affects the requirements it verifies, not what lies beyond them. A change of the **status** alone (for example in a bulk status change) only recommends reviews. Tracker issues, documents and results belong to the changed item itself.
+
 ### Before you save
 
-When you save a change of substance and something would be marked, a dialog lists everything that becomes suspect, out of date, outdated or stale. Select **Save and mark** to save, or **Cancel** to go back to the editor. Items that are already marked are shown as such and are not counted again.
+Every change goes through the same preview: saving a requirement or test, a **bulk edit** or **bulk status change** in the list, an **Excel** or **ReqIF** round-trip import, **restoring a version** from the history and **restoring items from a baseline**. When something would be affected, a dialog shows it as a tree grouped by type and depth, with the counts by type and by depth, and for each item whether it **Becomes suspect** or only **Review recommended**, and the path along which the change reaches it. Choose what to do:
+
+| Choice | What happens |
+|---|---|
+| **Mark suspect** (the default) | Marks what the project's rules mark suspect, flags the tracker issues out of date and notifies the owners of the items recommended for review |
+| **Notify owners only** | Marks nothing; the owners (requirement and risk owners, defect assignees, test authors) get one notification each, listing their affected items |
+| **Skip** | Marks nothing and notifies nobody. Results recorded before the change still go stale and documents still become outdated: those follow from the change itself |
+
+Select **Save** to save with your choice, or **Cancel** to change nothing. Items that are already marked are shown as such and are not counted again.
+
+Through the API, every changing endpoint takes `?dry_run=impact` (the change is made in a transaction, its impact returned and everything rolled back) and `?impact=suspect|notify|skip`.
 
 ### The Impact tab
 
@@ -123,15 +147,19 @@ The **Impact** tab of a requirement or test shows the same list at any time, und
 - **Blocking defects**: the open defects that block it or warn about it (see [Blocking defects](#blocking-defects));
 - **Suspect now**: its suspect relations, with **Confirm** for each (and **Confirm all**), and the linked tests whose result is stale.
 
-The badges next to the requirement's key (**Blocked by 1 defect**, **1 stale result**, **1 suspect relation**) open the tab. For a test, the tab also shows its **Regression history** (see [Defects](defects.md#regressions)).
+The badges next to the requirement's key (**Blocked by 1 defect**, **1 stale result**, **1 suspect relation**) open the tab. For a test, the tab also shows its **Regression history** (see [Defects](defects.md#regressions)). **Impact analysis** opens the item in the [impact analysis](#impact-analysis).
 
 ### The impact of a baseline
 
 In **Baselines**, compare a baseline with the current state and select **Impact**. The dialog lists every requirement and test whose substance changed since the baseline, the largest impact first, with the totals of the items affected. Open an item to see what its change makes suspect, out of date, outdated or stale.
 
+### Impact analysis
+
+**Impact analysis** (in the project's sections) shows the impact of one or more items, or of everything that changed since a baseline, without changing anything. Select **Requirements** or **Tests** to pick items, or choose a baseline under **Changes since a baseline**, set the **Impact depth** and select **Analyse**. The result shows the counts by type and depth and either a **Graph** (the changed items on the left, every affected item to the right of the item it is reached from; dashed: review recommended) or a **Table** with the type, depth, effect, owner and path of every item. **CSV** and **PDF** export the analysis. The address of the page keeps the choice, so you can send an analysis as a link.
+
 ### Along which relations
 
-**Categories & settings → Change impact** decides, per relation type, which requirement becomes suspect when the one at the other end changes:
+**Categories & settings → Change impact** decides, per relation type, which requirement becomes suspect when the one at the other end changes, and whether it becomes **suspect** or only gets a **review recommended**:
 
 | Setting | Meaning |
 |---|---|
@@ -140,7 +168,15 @@ In **Baselines**, compare a baseline with the current state and select **Impact*
 | **Both directions** | either end changing makes the other suspect |
 | **Off** | changes do not travel along this type (the default for the other types) |
 
+The mode next to each type (**Becomes suspect** or **Review recommended**) applies to everything reached through it: an item is suspect only when every step on its path marks suspect.
+
 **Mark the tracker issues of a changed requirement out of date** can be turned off.
+
+### How far a change travels
+
+**Impact depth** (1 to 10, default 3) is the number of steps between requirements, tests and risks a change travels. Depth 1 is the direct impact only: the requirements related to the changed one and the tests of both. The verifying tests of an affected requirement and the defects, variants and code changes of an affected item do not count as a step.
+
+**Other connections** turns the other kinds of connection on or off: trace links (they can mark suspect or only recommend a review), shared steps, test dependencies, item links, risks, defects, variants and code changes (these only recommend a review).
 
 ## Stale results
 

@@ -8,9 +8,11 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { impactSections, type ChangeImpact, type ImpactItem } from '@/lib/correlations'
 import { relationText } from '@/i18n/labels'
+import { useImpactLabels } from '@/composables/impact'
 
 const props = defineProps<{ impact: ChangeImpact | null; projectId: string; headingLevel?: 3 | 4 }>()
 const { t } = useI18n()
+const { pathOf } = useImpactLabels()
 const sections = computed(() => impactSections(props.impact))
 const tag = computed(() => `h${props.headingLevel ?? 3}`)
 
@@ -23,10 +25,16 @@ function route(it: ImpactItem) {
       return { name: 'tests', params: { projectId: props.projectId }, query: { item: it.test_id || it.id } }
     case 'document':
       return { name: 'documents', params: { projectId: props.projectId } }
+    case 'risk':
+      return { name: 'risks', params: { projectId: props.projectId } }
+    case 'defect':
+      return { name: 'defects', params: { projectId: props.projectId }, query: { item: it.id } }
   }
   return undefined
 }
 function note(it: ImpactItem): string {
+  // reached in more than one step: the path
+  if ((it.path?.length ?? 0) > 2) return t('correlations.reachedVia', { path: pathOf(it.path) })
   if (it.kind === 'requirement' && it.relation) {
     return it.relation === 'verifies' ? t('correlations.viaVerifies') : t('correlations.viaRelation', { relation: relationText(it.relation, it.direction) })
   }
@@ -53,6 +61,7 @@ function note(it: ImpactItem): string {
           <span class="row small nowrap" style="gap: 6px">
             <span v-if="note(it)" class="muted">{{ note(it) }}</span>
             <StatusTag v-if="it.kind === 'result' && it.result" :value="it.result" kind="result" />
+            <span v-if="it.mode === 'review' && !it.already" class="impact-mode impact-mode-review">{{ t('correlations.mode.review') }}</span>
             <span v-if="it.already" class="impact-already">
               <i class="pi pi-check-circle" aria-hidden="true" /> {{ t(`correlations.already.${s.section}`) }}
             </span>

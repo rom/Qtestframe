@@ -97,7 +97,8 @@ func TestSeedDemoHistory(t *testing.T) {
 	if err != nil || len(blocks) == 0 {
 		t.Fatalf("blocks %v %v", blocks, err)
 	}
-	if n, err := st.SuspectRelationCounts(ctx, ten.ID, p.ID); err != nil || len(n) != 1 {
+	// two suspect relations: the change travels transitively (two refinement steps)
+	if n, err := st.SuspectRelationCounts(ctx, ten.ID, p.ID); err != nil || len(n) != 2 {
 		t.Fatalf("suspect relations %v %v", n, err)
 	}
 	if x, err := st.LoadStaleIndex(ctx, ten.ID, p.ID); err != nil || len(x.StaleTests()) == 0 {

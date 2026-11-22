@@ -52,6 +52,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'variants', name: 'variants', component: () => import('./views/VariantsView.vue'), meta: { perm: P.requirementRead } },
           { path: 'code', name: 'code', component: () => import('./views/CodeView.vue'), meta: { perm: P.projectRead } },
           { path: 'graph', name: 'graph', component: () => import('./views/GraphView.vue') },
+          { path: 'impact', name: 'impact', component: () => import('./views/ImpactView.vue'), meta: { perm: P.requirementRead } },
           { path: 'analytics', name: 'analytics', component: () => import('./views/AnalyticsView.vue'), meta: { perm: P.requirementRead } },
           { path: 'prompts', name: 'prompts', component: () => import('./views/PromptsView.vue') },
           { path: 'flow', name: 'flow', component: () => import('./views/FlowView.vue'), meta: { perm: P.testRead } },

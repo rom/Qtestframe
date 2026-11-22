@@ -28,7 +28,7 @@ func (s *Server) routesCatalog(h routeFunc) {
 	h("GET /api/v1/catalog/tests/{id}", s.handleCatalogTest, "test.read")
 	h("GET /api/v1/projects/{pid}/catalog", s.handleProjectCatalog, "project.read")
 	// write of each kind imported: see handleCatalogImport
-	h("POST /api/v1/projects/{pid}/catalog/import", s.atomic(s.handleCatalogImport), "project.read")
+	h("POST /api/v1/projects/{pid}/catalog/import", s.impactAware(s.handleCatalogImport, true), "project.read")
 }
 
 // catalogue returns the catalogue served (Server.Catalog, else the built-in one).

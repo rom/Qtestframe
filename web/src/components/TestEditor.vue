@@ -6,7 +6,7 @@ import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
 import StaleBadge from './StaleBadge.vue'
-import { contentChanges, needsImpactConfirm, type ChangeImpact } from '@/lib/correlations'
+import { contentChanges, needsImpactConfirm, type ChangeImpact, type ImpactChoice } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
@@ -403,11 +403,11 @@ async function save() {
   impactFields.value = changed
   impactOpen.value = true
 }
-async function confirmImpact() {
-  await doSave()
+async function confirmImpact(choice: ImpactChoice) {
+  await doSave(choice)
   impactOpen.value = false
 }
-async function doSave() {
+async function doSave(choice?: ImpactChoice) {
   saving.value = true
   error.value = ''
   const body = bodyOf(form.value)
@@ -415,7 +415,7 @@ async function doSave() {
   try {
     const saved = isNew.value
       ? await api.post<TestCase>(`/projects/${props.projectId}/tests`, body)
-      : await api.patch<TestCase>(`/tests/${props.itemId}`, body, { ifMatch: item.value?.version })
+      : await api.patch<TestCase>(`/tests/${props.itemId}`, body, { ifMatch: item.value?.version, params: choice ? { impact: choice } : undefined })
     notify.ok(isNew.value ? t('tests.created') : t('tests.saved'), saved?.key)
     if (saved?.id) {
       if (isNew.value) recordUndo(createdEntry(t('undo.a.create', { key: saved.key }), delTest(saved.id)))

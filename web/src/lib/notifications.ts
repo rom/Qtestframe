@@ -42,6 +42,7 @@ export function notificationIcon(event: string): string {
   if (event === 'project.shared') return 'pi pi-share-alt'
   if (event === 'comment.created') return 'pi pi-comments'
   if (event === 'comment.resolved') return 'pi pi-check-circle'
+  if (event === 'impact.review') return 'pi pi-sitemap'
   if (group === 'waiver') return action === 'requested' ? 'pi pi-pen-to-square' : action === 'approved' ? 'pi pi-verified' : 'pi pi-ban'
   return 'pi pi-bell'
 }

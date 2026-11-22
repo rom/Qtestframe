@@ -203,6 +203,7 @@ func eventLabel(lang, event string) string {
 		"waiver.revoked":   {"Waiver revoked", "Undantag återkallat"},
 		"waiver.expired":   {"Waiver expired", "Undantag har gått ut"},
 		"project.shared":   {"A project was shared with you", "Ett projekt har delats med dig"},
+		"impact.review":    {"A change affects your items: review recommended", "En ändring påverkar dina poster: granskning rekommenderas"},
 	}
 	l, ok := labels[event]
 	if !ok {

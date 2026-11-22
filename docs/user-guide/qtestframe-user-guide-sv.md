@@ -2184,9 +2184,33 @@ En ändring av ett krav stannar sällan hos det kravet. När **innehållet** i e
 
 En ändring av ett testfalls titel, beskrivning, förutsättningar, steg, förväntade resultat, skript eller körningstyp gör dess länkar misstänkta och dess senaste utfall inaktuellt.
 
+### En ändring sprids vidare
+
+Det som en ändring gör misstänkt kan i sin tur ändras, så påverkan sprids vidare: när A ändras blir B (som förfinar A) misstänkt, sedan C (som förfinar B) och så vidare, upp till projektets **påverkansdjup** (3 som standard, högst 10; se [Hur långt en ändring sprids](#hur-långt-en-ändring-sprids)). Varje post nås en gång, längs den kortaste vägen, även när relationerna bildar en cykel, och dialogerna visar **vägen** dit: *A → förfinas av → B → förfinas av → C → verifieras av → T-12*.
+
+Utöver kravrelationerna och testfallen når en ändring, som **Granskning rekommenderas**:
+
+- **riskerna** som ett ändrat krav hanterar (och, från en risk, de andra krav som hanterar den);
+- de **öppna defekterna** för ett påverkat krav eller testfall;
+- krav och testfall som är kopplade med **länkar**, och länkade körningar;
+- testfall som **anropar** ett ändrat testfall som delade steg eller **beror på** det;
+- **varianterna** som en påverkad post gäller (när de är valda uttryckligen) och **kodändringarna** (commits, merge requests) som hänvisar till den.
+
+De markeras inte; deras ägare kan aviseras. Ett testfall som ändras påverkar kraven som det verifierar, inte det som ligger bortom dem. En ändring av bara **statusen** (till exempel i en statusändring för flera) rekommenderar bara granskningar. Ärenden, dokument och utfall hör till den ändrade posten själv.
+
 ### Innan du sparar
 
-När du sparar en ändring av innehållet och något skulle markeras visar en dialog allt som blir misstänkt eller inaktuellt. Välj **Spara och markera** för att spara, eller **Avbryt** för att gå tillbaka till redigeringen. Objekt som redan är markerade visas som sådana och räknas inte igen.
+Varje ändring går igenom samma förhandsgranskning: när du sparar ett krav eller testfall, gör en **massredigering** eller **statusändring för flera** i listan, en **Excel**- eller **ReqIF**-import, **återställer en version** från historiken eller **återställer poster från en baslinje**. När något skulle påverkas visar en dialog det som ett träd grupperat per typ och djup, med antalen per typ och per djup, och för varje post om den **Blir misstänkt** eller bara **Granskning rekommenderas**, och vägen som ändringen når den längs. Välj vad som ska göras:
+
+| Val | Vad som händer |
+|---|---|
+| **Markera misstänkt** (standard) | Markerar det som projektets regler markerar misstänkt, markerar ärendena som inaktuella och aviserar ägarna till posterna som rekommenderas för granskning |
+| **Avisera bara ägarna** | Markerar ingenting; ägarna (kravens och riskernas ägare, defekternas tilldelade, testfallens författare) får en avisering var med sina påverkade poster |
+| **Hoppa över** | Markerar ingenting och aviserar ingen. Utfall som registrerats före ändringen blir ändå inaktuella och dokument blir ändå inaktuella: det följer av själva ändringen |
+
+Välj **Spara** för att spara med ditt val, eller **Avbryt** för att inte ändra något. Poster som redan är markerade visas som sådana och räknas inte igen.
+
+Via API:t tar varje ändrande anrop `?dry_run=impact` (ändringen görs i en transaktion, dess påverkan returneras och allt rullas tillbaka) och `?impact=suspect|notify|skip`.
 
 ### Fliken Påverkan
 
@@ -2195,15 +2219,19 @@ Fliken **Påverkan** för ett krav eller testfall visar samma lista när som hel
 - **Blockerande defekter**: de öppna defekter som blockerar det eller varnar för det (se [Blockerande defekter](#blockerande-defekter));
 - **Misstänkt nu**: dess misstänkta relationer, med **Bekräfta** för var och en (och **Bekräfta alla**), och de länkade testfall vars utfall är inaktuellt.
 
-Märkena bredvid kravets nyckel (**Blockeras av 1 defekt**, **1 inaktuellt utfall**, **1 misstänkt relation**) öppnar fliken. För ett testfall visar fliken också dess **Regressionshistorik** (se [Defekter](#regressioner)).
+Märkena bredvid kravets nyckel (**Blockeras av 1 defekt**, **1 inaktuellt utfall**, **1 misstänkt relation**) öppnar fliken. För ett testfall visar fliken också dess **Regressionshistorik** (se [Defekter](#regressioner)). **Påverkansanalys** öppnar posten i [påverkansanalysen](#påverkansanalys).
 
 ### Påverkan sedan en baslinje
 
 Under **Baslinjer**, jämför en baslinje med nuläget och välj **Påverkan**. Dialogen listar varje krav och testfall vars innehåll ändrats sedan baslinjen, med störst påverkan först, och summan av de objekt som påverkas. Öppna ett objekt för att se vad dess ändring gör misstänkt eller inaktuellt.
 
+### Påverkansanalys
+
+**Påverkansanalys** (bland projektets avsnitt) visar påverkan av en eller flera poster, eller av allt som ändrats sedan en baslinje, utan att ändra något. Välj **Krav** eller **Testfall** för att välja poster, eller välj en baslinje under **Ändringar sedan en baslinje**, ange **Påverkansdjup** och välj **Analysera**. Resultatet visar antalen per typ och djup och antingen en **Graf** (de ändrade posterna till vänster, varje påverkad post till höger om posten den nås från; streckad: granskning rekommenderas) eller en **Tabell** med typ, djup, effekt, ägare och väg för varje post. **CSV** och **PDF** exporterar analysen. Sidans adress behåller valet, så du kan skicka en analys som en länk.
+
 ### Genom vilka relationer
 
-**Kategorier & inställningar → Ändringspåverkan** avgör, per relationstyp, vilket krav som blir misstänkt när kravet i andra änden ändras:
+**Kategorier & inställningar → Ändringspåverkan** avgör, per relationstyp, vilket krav som blir misstänkt när kravet i andra änden ändras, och om det blir **misstänkt** eller bara får en **rekommenderad granskning**:
 
 | Inställning | Betydelse |
 |---|---|
@@ -2212,7 +2240,15 @@ Under **Baslinjer**, jämför en baslinje med nuläget och välj **Påverkan**. 
 | **Båda riktningarna** | en ändring i endera änden gör den andra misstänkt |
 | **Av** | ändringar sprids inte genom typen (standard för övriga typer) |
 
+Läget bredvid varje typ (**Blir misstänkt** eller **Granskning rekommenderas**) gäller allt som nås genom den: en post är misstänkt bara när varje steg på vägen markerar misstänkt.
+
 **Markera ärendena för ett ändrat krav som inaktuella** kan stängas av.
+
+### Hur långt en ändring sprids
+
+**Påverkansdjup** (1 till 10, standard 3) är antalet steg mellan krav, testfall och risker som en ändring sprids. Djup 1 är bara den direkta påverkan: kraven som är relaterade till det ändrade och testfallen för båda. De verifierande testfallen för ett påverkat krav och defekter, varianter och kodändringar för en påverkad post räknas inte som ett steg.
+
+**Andra kopplingar** slår på eller av de andra slagen av koppling: spårlänkar (de kan markera misstänkt eller bara rekommendera granskning), delade steg, testberoenden, länkar, risker, defekter, varianter och kodändringar (de rekommenderar bara granskning).
 
 ## Inaktuella utfall
 

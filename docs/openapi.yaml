@@ -2679,6 +2679,9 @@ paths:
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -2750,6 +2753,9 @@ paths:
 
         **Permission:** `requirement.read` (write or review per item).
       x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -2920,6 +2926,8 @@ paths:
         **Permission:** `requirement.read`.
       x-permission: requirement.read
       parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
@@ -3142,6 +3150,68 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/impact:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Traceability
+      summary: Impact analysis
+      operationId: postProjectsByPidImpact
+      description: |-
+        `{"items": [{"kind": "requirement"|"test", "id"}], "baseline_id"?, "depth"?: 1-10}` → the combined transitive change impact of the items and/or of the changes since the baseline (changes of substance; status-only changes only recommend reviews), same shape as `GET /requirements/{id}/impact` with `roots` the analysed items
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/impact/export:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: Export an impact analysis
+      operationId: getProjectsByPidImpactExport
+      description: |-
+        the impact analysis as a file: `?items=kind:id,kind:id`, `?baseline=`, `?depth=`, `?format=csv|pdf` (default csv), `?lang=en|sv`; a summary per kind and one row per affected item with its depth, effect, owner and path
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: The file
+          content:
+            text/csv: {}
+            application/pdf: {}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/impact:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -3151,7 +3221,7 @@ paths:
       summary: Change impact of a requirement
       operationId: getRequirementsByIdImpact
       description: |-
-        what a change of the requirement's substance (title, description, obligation, criteria) makes suspect, out of date, outdated or stale: `{kind, id, key, title, requirements, tests, issues, documents, results, total}`. `requirements`: the requirements related to it along the relation types the project's `relation_impact` names (with `relation`, `direction`); `tests`: the tests verifying it and those requirements (`via`: the related requirement); `issues`: its tracker issues (when `flag_issues`); `documents`: the generated documents containing it; `results`: the latest results of its tests that go stale (when `stale_on_change`). `already` marks items that are suspect, out of date or stale already; `total` counts the others. Without `test.read` the tests and results are left out
+        what a change of the requirement's substance (title, description, obligation, criteria) makes suspect, out of date, outdated or stale, or recommends for review, transitively up to the project's `impact_depth` (or `?depth=` 1–10): `{kind, id, key, title, roots, depth, requirements, tests, risks, defects, links, issues, documents, results, variants, code, total, suspect, review, by_kind, by_depth}`. Every item has `depth`, `mode` (`suspect` | `review`), `path` (`[{kind, id, key, edge, direction}]` from the changed item) and `owner`; depth 1 is the one-level analysis described here. `requirements`: the requirements related to it along the relation types the project's `relation_impact` names (with `relation`, `direction`); `tests`: the tests verifying it and those requirements (`via`: the related requirement); `issues`: its tracker issues (when `flag_issues`); `documents`: the generated documents containing it; `results`: the latest results of its tests that go stale (when `stale_on_change`). `already` marks items that are suspect, out of date or stale already; `total` counts the others. Without `test.read` the tests and results are left out
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -3183,6 +3253,9 @@ paths:
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -4424,6 +4497,9 @@ paths:
 
         **Permission:** `requirement.read` checked by the router; requirement.read, plus write permission for each item's kind.
       x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -4608,6 +4684,9 @@ paths:
 
         **Permission:** `test.read`.
       x-permission: test.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -4679,6 +4758,9 @@ paths:
 
         **Permission:** `test.read` (write or review per item).
       x-permission: test.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -4789,6 +4871,8 @@ paths:
         **Permission:** `test.read`.
       x-permission: test.read
       parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
@@ -5805,6 +5889,9 @@ paths:
 
         **Permission:** `test.write`.
       x-permission: test.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: false
         content:
@@ -7135,6 +7222,9 @@ paths:
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -7246,6 +7336,9 @@ paths:
 
         **Permission:** `project.read` (and the write permission of the kind; the review permission to set a review status).
       x-permission: project.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -12400,6 +12493,9 @@ paths:
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -12708,6 +12804,9 @@ paths:
 
         **Permission:** `project.read`, plus `requirement.write` for requirements and `test.write` for tests and links (`requirement.review` / `test.review` for a review decision status).
       x-permission: project.read
+      parameters:
+      - $ref: '#/components/parameters/DryRunImpact'
+      - $ref: '#/components/parameters/ImpactChoice'
       requestBody:
         required: true
         content:
@@ -13910,7 +14009,7 @@ paths:
       summary: Get correlation settings
       operationId: getProjectsByPidCorrelationSettings
       description: |-
-        the project's change and defect correlation settings `{relation_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
+        the project's change and defect correlation settings `{relation_impact, relation_modes, impact_depth, impact_rules, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -13935,7 +14034,7 @@ paths:
       summary: Save correlation settings
       operationId: putProjectsByPidCorrelationSettings
       description: |-
-        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off` → the settings as GET returns them
+        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `relation_modes` (relation type → `suspect` | `review`); `impact_depth` 1–10 (default 3); `impact_rules` (`verifies`, `calls`, `test_depends_on`, `item_link`, `risk`, `defect`, `variant`, `code` → `{direction, mode}`; only `verifies` can mark `suspect`); `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off` → the settings as GET returns them
 
         **Permission:** `project.update`.
       x-permission: project.update
@@ -16712,6 +16811,22 @@ components:
       description: filter expression (see the query language in docs/api.md)
       schema:
         type: string
+    DryRunImpact:
+      name: dry_run
+      in: query
+      required: false
+      description: '`impact`: run the change in a transaction, answer `{dry_run: "impact", status, impact}` with the combined change impact of the items whose substance or status it changes (same shape as `GET /requirements/{id}/impact`, with `roots`) and roll everything back — nothing is saved. (The boolean `dry_run` of the requirement import keeps its meaning.)'
+      schema:
+        type: string
+        enum: [impact]
+    ImpactChoice:
+      name: impact
+      in: query
+      required: false
+      description: 'what saving does with the change impact: `suspect` (default) marks what the project''s rules mark suspect and notifies the owners of the items only recommended for review; `notify` marks nothing and notifies the owners of every affected item; `skip` marks nothing and notifies nobody (results recorded before still go stale, documents still become outdated). A status change only recommends reviews: its owners are notified with `notify` only.'
+      schema:
+        type: string
+        enum: [suspect, notify, skip]
     IfMatch:
       name: If-Match
       in: header

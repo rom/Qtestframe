@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { impactGateFor } from '@/composables/impact'
+import type { ImpactDryRun } from '@/lib/correlations'
 import StaleBadge from './StaleBadge.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import { useUndoStore } from '@/stores/undo'
@@ -394,8 +396,12 @@ async function bulkSet(set: Record<string, unknown>) {
     return { id, old }
   })
   const bulkPath = `/projects/${pid.value}/${plural.value}/bulk`
+  // a change of status or substance: preview its impact first (impact gate)
+  const gated = 'status' in set || 'obligation' in set || 'execution_type' in set
+  const params = gated ? await impactGateFor(pid.value, (q) => api.post<ImpactDryRun>(bulkPath, { ids, set }, { params: q })) : {}
+  if (!params) return
   try {
-    await api.post(bulkPath, { ids, set })
+    await api.post(bulkPath, { ids, set }, { params })
     recordUndo(
       entry(
         t('undo.a.bulk', { n: ids.length }),

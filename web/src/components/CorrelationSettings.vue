@@ -10,7 +10,21 @@ import InputNumber from 'primevue/inputnumber'
 import Message from 'primevue/message'
 import Select from 'primevue/select'
 import { api, errorMessage } from '@/lib/api'
-import { IMPACT_DIRECTIONS, REGRESSION_ACTIONS, RELATION_TYPES, SEVERITIES, setSeverityLevel, severityLevel, withDefaults, type CorrelationSettings } from '@/lib/correlations'
+import {
+  DEFAULT_IMPACT_RULES,
+  IMPACT_DIRECTIONS,
+  IMPACT_EDGE_KINDS,
+  IMPACT_MODES,
+  MARKABLE_EDGES,
+  MAX_IMPACT_DEPTH,
+  REGRESSION_ACTIONS,
+  RELATION_TYPES,
+  SEVERITIES,
+  setSeverityLevel,
+  severityLevel,
+  withDefaults,
+  type CorrelationSettings,
+} from '@/lib/correlations'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 
@@ -48,6 +62,22 @@ const dirty = computed(() => !!saved.value && JSON.stringify(payload.value) !== 
 const directionOptions = computed(() => IMPACT_DIRECTIONS.map((d) => ({ value: d, label: t(`correlations.direction.${d}`) })))
 const levelOptions = computed(() => ['block', 'warn', 'none'].map((l) => ({ value: l, label: t(`correlations.level.${l}`) })))
 const actionOptions = computed(() => REGRESSION_ACTIONS.map((a) => ({ value: a, label: t(`correlations.action.${a}`) })))
+const modeOptions = computed(() => IMPACT_MODES.map((m) => ({ value: m, label: t(`correlations.mode.${m}`) })))
+/** a rule as one choice: off, recommend a review, or (trace links) mark suspect */
+function ruleValue(edge: string): string {
+  const r = form.value.impact_rules[edge]
+  return !r || r.direction === 'off' ? 'off' : r.mode
+}
+function ruleOptions(edge: string) {
+  const values = MARKABLE_EDGES.includes(edge) ? ['suspect', 'review', 'off'] : ['review', 'off']
+  return values.map((v) => ({ value: v, label: t(`correlations.ruleValue.${v}`) }))
+}
+function setRule(edge: string, v: string) {
+  const def = DEFAULT_IMPACT_RULES[edge]?.direction ?? 'both'
+  const cur = form.value.impact_rules[edge]
+  const direction = v === 'off' ? 'off' : cur && cur.direction !== 'off' ? cur.direction : def
+  form.value = { ...form.value, impact_rules: { ...form.value.impact_rules, [edge]: { direction, mode: v === 'suspect' ? 'suspect' : 'review' } } }
+}
 function setLevel(sev: string, level: 'block' | 'warn' | 'none') {
   form.value = setSeverityLevel(form.value, sev, level)
 }
@@ -75,15 +105,51 @@ async function save() {
       <fieldset class="plain-fieldset">
         <legend class="field-legend">{{ t('correlations.impactLegend') }}</legend>
         <p class="small muted" style="margin: 0 0 8px">{{ t('correlations.impactHint') }}</p>
-        <div class="corr-grid">
+        <div class="corr-grid corr-grid-3">
           <template v-for="rt in RELATION_TYPES" :key="rt">
             <label :for="`corr-rel-${rt}`" class="small">{{ t(`correlations.relationType.${rt}`) }}</label>
             <Select :input-id="`corr-rel-${rt}`" v-model="form.relation_impact[rt]" :options="directionOptions" option-label="label" option-value="value" :disabled="!canEdit" />
+            <Select
+              v-model="form.relation_modes[rt]"
+              :options="modeOptions"
+              option-label="label"
+              option-value="value"
+              :disabled="!canEdit || form.relation_impact[rt] === 'off'"
+              :aria-label="t('correlations.relationMode', { relation: t(`correlations.relationType.${rt}`) })"
+            />
           </template>
         </div>
         <div class="row" style="margin-top: 10px">
           <Checkbox v-model="form.flag_issues" binary input-id="corr-issues" :disabled="!canEdit" />
           <label for="corr-issues">{{ t('correlations.flagIssues') }}</label>
+        </div>
+      </fieldset>
+
+      <fieldset class="plain-fieldset">
+        <legend class="field-legend">{{ t('correlations.depthLegend') }}</legend>
+        <p class="small muted" style="margin: 0 0 8px">{{ t('correlations.depthHint') }}</p>
+        <div class="row" style="gap: 8px">
+          <label for="corr-depth">{{ t('correlations.depthField') }}</label>
+          <InputNumber v-model="form.impact_depth" :min="1" :max="MAX_IMPACT_DEPTH" input-id="corr-depth" show-buttons :disabled="!canEdit" style="width: 120px" />
+        </div>
+      </fieldset>
+
+      <fieldset class="plain-fieldset">
+        <legend class="field-legend">{{ t('correlations.rulesLegend') }}</legend>
+        <p class="small muted" style="margin: 0 0 8px">{{ t('correlations.rulesHint') }}</p>
+        <div class="corr-grid">
+          <template v-for="edge in IMPACT_EDGE_KINDS" :key="edge">
+            <label :for="`corr-rule-${edge}`" class="small">{{ t(`correlations.edgeName.${edge}`) }}</label>
+            <Select
+              :input-id="`corr-rule-${edge}`"
+              :model-value="ruleValue(edge)"
+              :options="ruleOptions(edge)"
+              option-label="label"
+              option-value="value"
+              :disabled="!canEdit"
+              @update:model-value="(v: string) => setRule(edge, v)"
+            />
+          </template>
         </div>
       </fieldset>
 
@@ -149,8 +215,12 @@ async function save() {
   gap: 6px 12px;
   align-items: center;
 }
+.corr-grid-3 {
+  grid-template-columns: minmax(120px, max-content) minmax(0, 260px) minmax(0, 220px);
+}
 @media (max-width: 480px) {
-  .corr-grid {
+  .corr-grid,
+  .corr-grid-3 {
     grid-template-columns: 1fr;
   }
 }

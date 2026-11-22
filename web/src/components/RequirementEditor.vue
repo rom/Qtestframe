@@ -16,7 +16,7 @@ import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
 import StaleBadge from './StaleBadge.vue'
-import { contentChanges, needsImpactConfirm, type ChangeImpact } from '@/lib/correlations'
+import { contentChanges, needsImpactConfirm, type ChangeImpact, type ImpactChoice } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
 import AutoComplete from 'primevue/autocomplete'
@@ -527,11 +527,11 @@ async function save() {
   impactFields.value = changed
   impactOpen.value = true
 }
-async function confirmImpact() {
-  await doSave()
+async function confirmImpact(choice: ImpactChoice) {
+  await doSave(choice)
   impactOpen.value = false
 }
-async function doSave() {
+async function doSave(choice?: ImpactChoice) {
   saving.value = true
   error.value = ''
   const body = bodyOf(form.value)
@@ -539,7 +539,7 @@ async function doSave() {
   try {
     const saved = isNew.value
       ? await api.post<Requirement & { linked_test?: TestCase }>(`/projects/${props.projectId}/requirements`, { ...body, create_test: createTest.value })
-      : await api.patch<Requirement>(`/requirements/${props.itemId}`, body, { ifMatch: item.value?.version })
+      : await api.patch<Requirement>(`/requirements/${props.itemId}`, body, { ifMatch: item.value?.version, params: choice ? { impact: choice } : undefined })
     const linked = isNew.value ? (saved as Requirement & { linked_test?: TestCase })?.linked_test : undefined
     notify.ok(
       isNew.value ? t('requirements.created') : t('requirements.saved'),

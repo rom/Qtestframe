@@ -24,7 +24,7 @@ const (
 
 func (s *Server) routesReqImport(h routeFunc) {
 	h("POST /api/v1/projects/{pid}/requirements/import/preview", s.handleImportPreview, "requirement.write")
-	h("POST /api/v1/projects/{pid}/requirements/import", s.handleImportRequirements, "requirement.write")
+	h("POST /api/v1/projects/{pid}/requirements/import", s.impactAware(s.handleImportRequirements, false), "requirement.write")
 }
 
 // formBool reads a boolean multipart form value.

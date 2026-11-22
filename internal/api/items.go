@@ -483,10 +483,17 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 		}
 		// owners before the change: a new owner is told (notify.go)
 		owners := map[string]string{}
+		// the change impact of a change of substance (obligation, execution
+		// type) or status: snapshots before, compared after (impact.go)
+		impact := req.Set.Status != nil || req.Set.Obligation != nil || req.Set.ExecutionType != nil
+		before := map[string]json.RawMessage{}
 		for _, id := range uniqStrings(req.IDs) {
 			s.ensureInitialRevision(r.Context(), p, kind, id)
 			if req.Set.Owner != nil {
 				owners[id] = s.ownerNow(r.Context(), p, kind, id)
+			}
+			if impact {
+				before[id] = s.snapshotOf(r.Context(), p, kind, id)
 			}
 		}
 		n, err := s.Store.BulkUpdateItems(r.Context(), p.TenantID(), kind, pr.ID, req.IDs, req.Set)
@@ -498,6 +505,9 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 			s.record(r.Context(), p, kind, id, "bulk_update")
 			if req.Set.Owner != nil && *req.Set.Owner != "" && owners[id] != *req.Set.Owner {
 				s.ownerAssigned(r, p, kind, pr.ID, id)
+			}
+			if b := before[id]; b != nil {
+				s.afterContentChange(r.Context(), p, kind, id, snapshotKey(b), pr.ID, b)
 			}
 		}
 		s.audit(r.Context(), p, kind+".bulk_update", kind, strings.Join(req.IDs, ","), "")
