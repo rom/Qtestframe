@@ -71,7 +71,8 @@ const routes: RouteRecordRaw[] = [
         ],
       },
       { path: 'notifications', name: 'notifications', component: () => import('./views/NotificationsView.vue') },
-      { path: 'reviews', name: 'reviews', component: () => import('./views/ReviewsView.vue') },
+      // the former "My reviews" page: now the reviews view of My work (?review=<id> kept)
+      { path: 'reviews', name: 'reviews', redirect: (to) => ({ name: 'myWork', query: { ...to.query, view: 'reviews' } }) },
       { path: 'my-work', name: 'myWork', component: () => import('./views/MyWorkView.vue') },
       { path: 'search', name: 'search', component: () => import('./views/SearchView.vue') },
       { path: 'go/:key', name: 'go', component: () => import('./views/GoView.vue') },

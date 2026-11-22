@@ -2683,11 +2683,15 @@ can see (project sharing and the permissions there apply to every row).
 | Method | Path | Permission | Notes |
 |---|---|---|---|
 | GET | `/my-work?project=&source=&reason=` | signed in | `{"items":[WorkItem],"total":n,"summary":WorkSummary,"sources":[...]}`; `project` is a project id or key, `source` comma-separated source names, `reason` keeps the rows with that reason |
-| GET | `/my-work/count?project=&source=` | signed in | `WorkSummary`: `{"count","overdue","by_reason","by_kind","by_project"}` (the badge in the navigation, the dashboard widget) |
+| GET | `/my-work/count?project=&source=` | signed in | `WorkSummary`: `{"count","waiting","overdue","by_reason","by_kind","by_project"}` (the badge in the navigation, the dashboard widget); `count` is the rows that need the caller, `waiting` the rows whose only reasons are `awaiting_review` or `in_review` (listed, not in `count`) |
 
 `WorkItem`: `{kind, id, entity_type, entity_id, run_id?, key, title,
 status, project_id, project_key, project_name, reasons, detail?, due?,
-overdue, updated_at, sources}`. Rows of the same item (`kind` + `id`) are
+overdue, updated_at, sources, review_ids?, requested_review_ids?}`
+(`review_ids`: the pending review requests of the item waiting for the
+caller's decision, which the client opens from the row;
+`requested_review_ids`: the caller's own requests of the item still pending
+or returned). Rows of the same item (`kind` + `id`) are
 merged and their reasons joined; overdue rows come first, then by due
 date, then the most recently changed. Sources and reasons:
 
@@ -2698,7 +2702,9 @@ date, then the most recently changed. Sources and reasons:
 | | risks whose review the caller owns, due within 7 days | `risk_review` (`due` = review date) |
 | `defects` | open defects (open, in progress) assigned to the caller | `assigned` |
 | `executions` | executions assigned to the caller, not run or in progress, in planned or running runs (`run_id`, `detail` = run name) | `assigned` |
-| `reviews` | pending review requests to the caller (the row is the item to review; `due` = the review's due date) | `review_requested` |
+| `reviews` | pending review requests to the caller (the row is the item to review; `due` = the review's due date, `review_ids` = the requests) | `review_requested` |
+| `requested_reviews` | review requests the caller asked for: pending ones, and the latest request of a reviewer that came back with changes requested while the item has not changed since (`detail` = the reviewer, `requested_review_ids`) | `awaiting_review` (waiting, not counted), `review_returned` |
+| `in_review` | requirements and tests in status review that the caller owns, wrote or was asked to review (as `GET /reviews/in-review`, without the items listed only for the caller's review permission) | `in_review` (waiting, not counted) |
 | `waivers` | requested waivers the caller may decide and has not signed (one of its approvers, or holds `waiver.approve` when it names none; never the requester) | `waiver_approval` |
 | `risk_acceptance` | mitigated or accepted risks above the acceptance threshold without a valid acceptance signature, for holders of `waiver.approve` | `risk_acceptance` |
 | `cycles` | tests of planned or active test cycles assigned to the caller without a final result (a test in one of the cycle's runs is the row of its execution; `detail` = cycle, `due` = its end date) | `assigned` |

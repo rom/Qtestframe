@@ -4,22 +4,35 @@ Qtestframe tells you when something needs your attention, lets you ask colleague
 
 ## My work
 
-**My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see. The badge next to it shows how many items are waiting; it turns red when some of them are overdue. Each row links to the item and says why it is there:
+**My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see, including your reviews. The badge next to it shows how many items need you; it turns red when some of them are overdue. Each row links to the item and says why it is there. An item is listed once, with all its reasons: a requirement you own that someone asked you to review is one row with **Owner** and **Review requested**.
 
 | Reason | The item is listed because |
 |---|---|
 | **Owner** | you own a requirement in draft, review, approved or implemented, a test in draft or review, or an open risk (identified or mitigating) |
 | **Assigned** | an open defect or a test execution that has not been run yet (in a planned or running run) is assigned to you |
-| **Review requested** | someone asked you to review a requirement or a test |
+| **Review requested** | someone asked you to review a requirement or a test. Choose **Review** on the row to open the review right there (see [Do a review](#do-a-review)) |
+| **Changes requested** | a reviewer you asked requested changes, and you have not changed the item since. Changing the item, or asking that reviewer again, removes the reason |
+| **Awaiting review** | a review you asked for is still pending (waiting for someone else) |
+| **In review** | a requirement or test with status **Review** that you own, wrote or were asked to review (waiting for someone else unless you are the reviewer) |
 | **Approval** | a requested waiver or deviation waits for your signature: you are one of its approvers, or it names none and you may approve waivers. Your own requests are not listed. |
 | **Risk acceptance** | a mitigated or accepted risk is above the project's acceptance threshold and has no valid acceptance signature, and you may sign it |
 | **Risk review** | you own the next review of a risk and it is due within a week |
 | **Overdue** | its due date has passed: a review request's due date or a risk's review date |
 | **Suspect**, **Stale results**, **Blocked** | a requirement or test you own became suspect (something linked or related changed), has stale test results, or is blocked by an open defect — also when it is otherwise finished |
 
-Overdue items come first, then by due date, then the most recently changed. Choose a project to see only its items, or a reason to see only those rows. The project dashboard shows the same list for the project in the **My work** widget, with the number of items per reason; select a reason to open the filtered list.
+Rows that only wait for someone else (**Awaiting review**, **In review**) are listed but not counted in the badge; the line above the list says how many are waiting for others. Overdue items come first, then by due date, then the most recently changed. Choose a project to see only its items, or a reason to see only those rows. The project dashboard shows the same list for the project in the **My work** widget, with the number of items per reason; select a reason to open the filtered list.
 
 The work list is computed when you open it; finishing the work (approving the review, closing the defect, running the test, changing the status) removes the row.
+
+### Reviews in My work
+
+Switch **My work** from **All work** to **Reviews** for everything about reviews in one place (the number is how many reviews wait for you):
+
+- **To review**: the review requests sent to you. Choose **Review** to open one.
+- **Requested by me**: the review requests you sent, with who reviews and what they decided.
+- **In review status**: the requirements and tests in review that concern you (see [Items in review status](#items-in-review-status)).
+
+**Pending** shows the open requests, **All** also the decided and cancelled ones. Links to a review request (in a notification, a discussion or an older bookmark to **My reviews**) open it here.
 
 ## Notifications
 
@@ -59,7 +72,7 @@ Each reviewer gets a separate request and a notification. A person who already h
 
 ## Do a review
 
-**My reviews** in the side bar lists the requests sent to you; overdue ones are highlighted. Choose **Review** to open one:
+The requests sent to you are in **My work**: as rows with the reason **Review requested**, and under **Reviews → To review**, where overdue ones are highlighted. Choose **Review** to open one. The dialog links to the item (**Open** and its key) if you want to read it in full first:
 
 - Tick each checklist point. A point that does not apply needs a short note instead.
 - Write a comment.
@@ -70,7 +83,7 @@ If the item changes after the request was sent, the review is marked "changed si
 
 ### Items in review status
 
-Below the requests, **In review status** lists the requirements and tests whose status is **Review** and that concern you, in all projects, even when nobody sent you a request. **Why you see it** tells you how each one concerns you:
+**My work → Reviews → In review status** lists the requirements and tests whose status is **Review** and that concern you, in all projects, even when nobody sent you a request. **Why you see it** tells you how each one concerns you:
 
 - **you own it**: the requirement's **Owner** names you (your name, e-mail or @handle);
 - **you wrote it**: you created the requirement or test;
@@ -85,7 +98,7 @@ A review request records a decision; it does not change the item's status. Holde
 
 ## Many review requests at once
 
-**My reviews** has two tabs: **To review** (requests sent to you) and **Requested by me** (requests you sent). Tick requests in either list for a toolbar; only pending requests are changed.
+In **My work → Reviews**, **To review** lists the requests sent to you and **Requested by me** the requests you sent. Tick requests in either list for a toolbar; only pending requests are changed.
 
 - **To review**: **Approve** several at once (with a comment, and after confirming that the checklists are not ticked; each review records that it was approved in bulk), or **Request changes** with one comment for all of them. The people who asked are notified.
 - **Requested by me**: **Remind** the reviewers (they get a new notification, with your message), set the **Due date** (empty removes it), or **Cancel** the requests.

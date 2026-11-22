@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"slices"
@@ -515,16 +516,30 @@ type inReviewItem struct {
 // wrote it, were asked to review it, or may review items of its kind. Items
 // waiting longest come first.
 func (s *Server) handleInReview(w http.ResponseWriter, r *http.Request, p *Principal) {
-	ctx := r.Context()
-	items, err := s.Store.ListInReview(ctx, p.TenantID())
+	vis, err := s.visibleProjects(r.Context(), p)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	pending, err := s.Store.ListReviewRequests(ctx, p.TenantID(), store.ReviewFilter{ReviewerID: p.User.ID, Status: "pending"})
+	out, err := s.inReviewFor(r.Context(), p, vis)
 	if err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	writeJSON(w, http.StatusOK, listOf(out))
+}
+
+// inReviewFor lists the requirements and tests in status "review" that
+// concern the caller, in the projects of vis (GET /reviews/in-review and
+// the in_review source of My work).
+func (s *Server) inReviewFor(ctx context.Context, p *Principal, vis map[string]*model.ProjectAccessInfo) ([]inReviewItem, error) {
+	items, err := s.Store.ListInReview(ctx, p.TenantID())
+	if err != nil {
+		return nil, err
+	}
+	pending, err := s.Store.ListReviewRequests(ctx, p.TenantID(), store.ReviewFilter{ReviewerID: p.User.ID, Status: "pending"})
+	if err != nil {
+		return nil, err
 	}
 	requested := map[string]string{}
 	for _, rq := range pending {
@@ -534,11 +549,6 @@ func (s *Server) handleInReview(w http.ResponseWriter, r *http.Request, p *Princ
 	isMe := func(name string) bool {
 		name = strings.ToLower(strings.TrimSpace(name))
 		return name != "" && (people[name] == p.User.ID || name == strings.ToLower(p.User.Email))
-	}
-	vis, err := s.visibleProjects(ctx, p)
-	if err != nil {
-		s.fail(w, r, err)
-		return
 	}
 	out := []inReviewItem{}
 	for _, it := range items {
@@ -562,5 +572,5 @@ func (s *Server) handleInReview(w http.ResponseWriter, r *http.Request, p *Princ
 			out = append(out, x)
 		}
 	}
-	writeJSON(w, http.StatusOK, listOf(out))
+	return out, nil
 }

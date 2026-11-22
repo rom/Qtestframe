@@ -4,22 +4,35 @@ Qtestframe säger till när något behöver din uppmärksamhet, låter dig be ko
 
 ## Mitt arbete
 
-**Mitt arbete** i huvudnavigeringen (under **Projekt** och **Sök**) är din personliga arbetslista: allt som väntar på dig, i alla projekt som du ser. Siffran bredvid visar hur många poster som väntar; den blir röd när några av dem är försenade. Varje rad länkar till posten och visar varför den finns med:
+**Mitt arbete** i huvudnavigeringen (under **Projekt** och **Sök**) är din personliga arbetslista: allt som väntar på dig, i alla projekt som du ser, även dina granskningar. Siffran bredvid visar hur många poster som behöver dig; den blir röd när några av dem är försenade. Varje rad länkar till posten och visar varför den finns med. En post visas en gång, med alla sina orsaker: ett krav som du äger och som någon har bett dig granska är en rad med **Ägare** och **Granskning begärd**.
 
 | Orsak | Posten finns med eftersom |
 |---|---|
 | **Ägare** | du äger ett krav med status utkast, granskning, godkänt eller implementerat, ett testfall med status utkast eller granskning, eller en öppen risk (identifierad eller under åtgärd) |
 | **Tilldelad** | en öppen defekt eller en testexekvering som inte har körts än (i en planerad eller pågående körning) är tilldelad dig |
-| **Granskning begärd** | någon har bett dig granska ett krav eller ett testfall |
+| **Granskning begärd** | någon har bett dig granska ett krav eller ett testfall. Välj **Granska** på raden för att öppna granskningen direkt (se [Granska](#granska)) |
+| **Ändringar begärda** | en granskare som du frågade har begärt ändringar, och du har inte ändrat posten sedan dess. När du ändrar posten, eller frågar granskaren igen, försvinner orsaken |
+| **Väntar på granskning** | en granskning som du har begärt väntar fortfarande (på någon annan) |
+| **Under granskning** | ett krav eller testfall med status **Granskning** som du äger, skrev eller har ombetts granska (väntar på någon annan om du inte själv är granskare) |
 | **Godkännande** | ett begärt undantag eller en avvikelse väntar på din signatur: du är en av godkännarna, eller inga godkännare anges och du får godkänna undantag. Dina egna begäranden visas inte. |
 | **Riskaccept** | en åtgärdad eller accepterad risk ligger över projektets acceptansnivå och saknar en giltig signerad accept, och du får signera den |
 | **Riskgenomgång** | du äger nästa genomgång av en risk och den infaller inom en vecka |
 | **Försenad** | förfallodatumet har passerat: en granskningsförfrågans förfallodatum eller en risks genomgångsdatum |
 | **Misstänkt**, **Inaktuella resultat**, **Blockerad** | ett krav eller testfall som du äger har blivit misstänkt (något länkat eller relaterat har ändrats), har inaktuella testresultat eller blockeras av en öppen defekt — även när det annars är klart |
 
-Försenade poster kommer först, sedan efter förfallodatum, sedan de senast ändrade. Välj ett projekt för att bara se dess poster, eller en orsak för att bara se de raderna. Projektets översikt visar samma lista för projektet i widgeten **Mitt arbete**, med antalet poster per orsak; välj en orsak för att öppna den filtrerade listan.
+Rader som bara väntar på någon annan (**Väntar på granskning**, **Under granskning**) visas men räknas inte i siffran; raden ovanför listan anger hur många som väntar på andra. Försenade poster kommer först, sedan efter förfallodatum, sedan de senast ändrade. Välj ett projekt för att bara se dess poster, eller en orsak för att bara se de raderna. Projektets översikt visar samma lista för projektet i widgeten **Mitt arbete**, med antalet poster per orsak; välj en orsak för att öppna den filtrerade listan.
 
 Arbetslistan beräknas när du öppnar den; när arbetet är gjort (granskningen godkänd, defekten stängd, testet kört, statusen ändrad) försvinner raden.
+
+### Granskningar i Mitt arbete
+
+Växla **Mitt arbete** från **Allt arbete** till **Granskningar** för att se allt om granskningar på ett ställe (siffran är hur många granskningar som väntar på dig):
+
+- **Att granska**: granskningsförfrågningarna till dig. Välj **Granska** för att öppna en.
+- **Begärda av mig**: förfrågningarna som du har skickat, med vem som granskar och vad de beslutade.
+- **Status Granskning**: de krav och testfall med status Granskning som berör dig (se [Poster med status Granskning](#poster-med-status-granskning)).
+
+**Väntande** visar de öppna förfrågningarna, **Alla** även de beslutade och avbrutna. Länkar till en granskningsförfrågan (i en notis, en diskussion eller ett äldre bokmärke till **Mina granskningar**) öppnar den här.
 
 ## Notiser
 
@@ -59,7 +72,7 @@ Varje granskare får en egen förfrågan och en notis. Den som redan har en öpp
 
 ## Granska
 
-**Mina granskningar** i sidofältet visar förfrågningarna till dig; försenade är markerade. Välj **Granska** för att öppna en:
+Förfrågningarna till dig finns i **Mitt arbete**: som rader med orsaken **Granskning begärd**, och under **Granskningar → Att granska**, där försenade är markerade. Välj **Granska** för att öppna en. Dialogen länkar till posten (**Öppna** och dess nyckel) om du vill läsa den i sin helhet först:
 
 - Bocka för varje punkt i checklistan. En punkt som inte gäller behöver i stället en kort anteckning.
 - Skriv en kommentar.
@@ -70,7 +83,7 @@ Om posten ändras efter att förfrågan skickades markeras granskningen "ändrad
 
 ### Poster med status Granskning
 
-Under förfrågningarna visar **Status Granskning** de krav och testfall som har status **Granskning** och som berör dig, i alla projekt, även när ingen har skickat en förfrågan till dig. **Varför du ser det** anger hur de berör dig:
+**Mitt arbete → Granskningar → Status Granskning** visar de krav och testfall som har status **Granskning** och som berör dig, i alla projekt, även när ingen har skickat en förfrågan till dig. **Varför du ser det** anger hur de berör dig:
 
 - **du äger det**: kravets **Ägare** anger dig (ditt namn, din e-postadress eller ditt @namn);
 - **du skrev det**: du skapade kravet eller testfallet;
@@ -85,7 +98,7 @@ En granskningsförfrågan sparar ett beslut; den ändrar inte postens status. De
 
 ## Många granskningsförfrågningar på en gång
 
-**Mina granskningar** har två flikar: **Att granska** (förfrågningar till dig) och **Begärda av mig** (förfrågningar du har skickat). Kryssa i förfrågningar i någon av listorna för att få ett verktygsfält; bara väntande förfrågningar ändras.
+I **Mitt arbete → Granskningar** visar **Att granska** förfrågningarna till dig och **Begärda av mig** förfrågningarna du har skickat. Kryssa i förfrågningar i någon av listorna för att få ett verktygsfält; bara väntande förfrågningar ändras.
 
 - **Att granska**: **Godkänn** flera på en gång (med en kommentar, och efter att du bekräftat att checklistorna inte bockas för; varje granskning sparar att den godkändes i en massgranskning), eller **Begär ändringar** med en kommentar för alla. De som frågade får en notis.
 - **Begärda av mig**: **Påminn** granskarna (de får en ny notis, med ditt meddelande), ange **Klart senast** (tomt tar bort datumet), eller **Avbryt** förfrågningarna.

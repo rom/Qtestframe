@@ -64,7 +64,7 @@ type WorkItem struct {
 	ProjectKey  string `json:"project_key"`
 	ProjectName string `json:"project_name"`
 	// Reasons: why the row is there (owner, assigned, review_requested,
-	// waiver_approval, risk_acceptance, risk_review, overdue, suspect,
+	// review_returned, awaiting_review, in_review, waiver_approval, risk_acceptance, risk_review, overdue, suspect,
 	// stale, blocked, ...); Detail: extra text (the run of an execution,
 	// the requester of a review).
 	Reasons []string `json:"reasons"`
@@ -75,6 +75,38 @@ type WorkItem struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	// Sources that contributed the row.
 	Sources []string `json:"sources"`
+	// ReviewIDs: the pending review requests of the item waiting for the
+	// caller's decision (the client opens them from the row);
+	// RequestedReviewIDs: review requests of the item the caller asked for
+	// that are still pending or came back with changes requested.
+	ReviewIDs          []string `json:"review_ids,omitempty"`
+	RequestedReviewIDs []string `json:"requested_review_ids,omitempty"`
+}
+
+// waitingReasons are the reasons of rows that wait for someone else (a
+// review the caller asked for, an item of theirs in review): they are
+// listed but not counted as work in the badge unless the row has another
+// reason too.
+var waitingReasons = []string{"awaiting_review", "in_review"}
+
+// waitingOnly reports whether every reason of a row is a waiting reason.
+func waitingOnly(it *WorkItem) bool {
+	for _, r := range it.Reasons {
+		if !slices.Contains(waitingReasons, r) {
+			return false
+		}
+	}
+	return len(it.Reasons) > 0
+}
+
+// appendNew appends the values of add that are not in list yet.
+func appendNew(list []string, add ...string) []string {
+	for _, v := range add {
+		if !slices.Contains(list, v) {
+			list = append(list, v)
+		}
+	}
+	return list
 }
 
 // WorkContext is what a source works with.
@@ -195,13 +227,12 @@ func (s *Server) workList(ctx context.Context, p *Principal, project string, onl
 				rows[k], order = &it, append(order, k)
 				continue
 			}
-			for _, r := range it.Reasons {
-				if !slices.Contains(cur.Reasons, r) {
-					cur.Reasons = append(cur.Reasons, r)
-				}
-			}
-			if !slices.Contains(cur.Sources, src.name) {
-				cur.Sources = append(cur.Sources, src.name)
+			cur.Reasons = appendNew(cur.Reasons, it.Reasons...)
+			cur.Sources = appendNew(cur.Sources, src.name)
+			cur.ReviewIDs = appendNew(cur.ReviewIDs, it.ReviewIDs...)
+			cur.RequestedReviewIDs = appendNew(cur.RequestedReviewIDs, it.RequestedReviewIDs...)
+			if cur.Status == "" {
+				cur.Status = it.Status
 			}
 			if it.Due != "" && (cur.Due == "" || it.Due < cur.Due) {
 				cur.Due = it.Due
@@ -247,7 +278,10 @@ func sortWork(list []WorkItem) {
 
 // workSummary counts the rows of a work list.
 type workSummary struct {
+	// Count: rows that need the caller (the badge); Waiting: rows that only
+	// wait for others (awaiting_review, in_review), not in Count.
 	Count   int `json:"count"`
+	Waiting int `json:"waiting"`
 	Overdue int `json:"overdue"`
 	// ByReason / ByKind / ByProject: rows per reason, kind and project id.
 	ByReason  map[string]int `json:"by_reason"`
@@ -256,8 +290,13 @@ type workSummary struct {
 }
 
 func summarizeWork(list []WorkItem) workSummary {
-	out := workSummary{Count: len(list), ByReason: map[string]int{}, ByKind: map[string]int{}, ByProject: map[string]int{}}
+	out := workSummary{ByReason: map[string]int{}, ByKind: map[string]int{}, ByProject: map[string]int{}}
 	for _, it := range list {
+		if waitingOnly(&it) {
+			out.Waiting++
+		} else {
+			out.Count++
+		}
 		if it.Overdue {
 			out.Overdue++
 		}
@@ -464,7 +503,9 @@ func sourceExecutions(ctx context.Context, w *WorkContext) ([]WorkItem, error) {
 	return out, nil
 }
 
-// sourceReviews: review requests waiting for the caller's decision.
+// sourceReviews: review requests waiting for the caller's decision. The
+// row is the item to review (it merges with an owner row of the item); the
+// request ids are on the row so the client can open the review.
 func sourceReviews(ctx context.Context, w *WorkContext) ([]WorkItem, error) {
 	list, err := w.Server.Store.ListReviewRequests(ctx, w.Principal.TenantID(), store.ReviewFilter{ReviewerID: w.Principal.User.ID, Status: "pending"})
 	if err != nil {
@@ -476,7 +517,7 @@ func sourceReviews(ctx context.Context, w *WorkContext) ([]WorkItem, error) {
 			continue
 		}
 		out = append(out, WorkItem{Kind: v.EntityType, ID: v.EntityID, EntityType: v.EntityType, EntityID: v.EntityID, Key: v.EntityKey, Title: v.EntityTitle,
-			ProjectID: v.ProjectID, UpdatedAt: v.CreatedAt, Reasons: []string{"review_requested"}, Due: v.DueDate, Detail: v.RequestedBy})
+			ProjectID: v.ProjectID, UpdatedAt: v.CreatedAt, Reasons: []string{"review_requested"}, Due: v.DueDate, Detail: v.RequestedBy, ReviewIDs: []string{v.ID}})
 	}
 	return out, nil
 }

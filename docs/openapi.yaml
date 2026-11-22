@@ -12348,7 +12348,7 @@ paths:
       summary: List my work
       operationId: getMyWork
       description: |-
-        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `waiver_approval`, `risk_acceptance`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
+        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, review requests they asked for that are pending or came back with changes requested, their requirements and tests in review, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `review_returned`, `awaiting_review`, `in_review`, `waiver_approval`, `risk_acceptance`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","waiting","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
 
         **Permission:** any authenticated user; the handler checks: signed in, and the permissions of each row's project.
       x-permission: authenticated
@@ -21314,7 +21314,7 @@ components:
           type: array
           items:
             type: string
-          description: owner, assigned, review_requested, waiver_approval, risk_acceptance, risk_review, overdue, suspect, stale, blocked
+          description: owner, assigned, review_requested, review_returned, awaiting_review, in_review, waiver_approval, risk_acceptance, risk_review, mentioned, overdue, suspect, stale, blocked
         detail:
           type: string
           description: The run of an execution, the requester of a review or waiver, the residual level of a risk to accept.
@@ -21330,11 +21330,25 @@ components:
           type: array
           items:
             type: string
+        review_ids:
+          type: array
+          items:
+            type: string
+          description: Pending review requests of the item waiting for the caller's decision (GET/PATCH /reviews/{id}).
+        requested_review_ids:
+          type: array
+          items:
+            type: string
+          description: Review requests of the item the caller asked for that are pending or came back with changes requested.
     WorkSummary:
       type: object
       properties:
         count:
           type: integer
+          description: Rows that need the caller (the badge); rows that only wait for others are not counted.
+        waiting:
+          type: integer
+          description: Rows whose only reasons are awaiting_review or in_review.
         overdue:
           type: integer
         by_reason:

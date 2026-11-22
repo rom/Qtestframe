@@ -27,7 +27,7 @@ export function notificationTarget(n: Pick<AppNotification, 'project_id' | 'enti
     case 'run':
       return { name: 'run', params: { ...params, runId: n.entity_id }, query: { tab: 'discussion' } }
     case 'review':
-      return { name: 'reviews', query: { review: n.entity_id } }
+      return { name: 'myWork', query: { view: 'reviews', review: n.entity_id } }
     case 'chat_channel':
       return { name: 'settings', params }
     case 'cycle':

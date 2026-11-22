@@ -1,5 +1,5 @@
 // Requirements and tests in status "review" that concern the signed-in
-// user (GET /reviews/in-review), shown under My reviews.
+// user (GET /reviews/in-review), shown under My work → Reviews.
 
 export interface InReviewItem {
   entity_type: 'requirement' | 'test' | string

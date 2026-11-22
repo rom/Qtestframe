@@ -217,6 +217,7 @@ async function discover(request) {
   const generatedDoc = documents.find((d) => (d.tags ?? []).includes('generated'))
   const hasWebhooks = items(await api(request, 'GET', `/projects/${pid}/webhooks`).catch(() => [])).length > 0
   const hasRequested = items(await api(request, 'GET', '/reviews?requested_by=me').catch(() => [])).length > 0
+  const hasToReview = items(await api(request, 'GET', '/reviews?reviewer=me&status=pending').catch(() => [])).length > 0
   const hasNotifications = items(await api(request, 'GET', '/notifications').catch(() => [])).length > 0
   // a requirement that breaks a traceability rule (seed-demo has rules)
   const ruleReport = await api(request, 'GET', `/projects/${pid}/trace-rules/evaluate`).catch(() => null)
@@ -387,7 +388,7 @@ async function discover(request) {
     // with a selected row (bulk toolbar); only when the project has defects / risks
     hasDefects && { name: 'defects-bulk', path: `${p}/defects`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     hasNotifications && { name: 'notifications-bulk', path: '/notifications', open: '.list li .p-checkbox', wait: '.bulkbar' },
-    hasRequested && { name: 'reviews-bulk', path: '/reviews', open: ['.page-header .actions .p-selectbutton:first-child .p-togglebutton:nth-child(2)', '.p-datatable-tbody .p-checkbox'], wait: '.bulkbar' },
+    hasRequested && { name: 'my-work-reviews-bulk', path: '/my-work?view=reviews&side=requested', open: '.review-requests .p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     hasWebhooks && { name: 'webhooks-bulk', path: `${p}/settings?tab=project`, open: 'section.webhooks .p-datatable-tbody .p-checkbox', wait: 'section.webhooks .bulkbar' },
     // chat notifications: the channel list (seeded), the new-channel dialog, editing a seeded channel, its delivery log
     { name: 'chat-channels', path: `${p}/settings?tab=project`, wait: 'section.chats .p-datatable-tbody tr' },
@@ -509,7 +510,11 @@ async function discover(request) {
     linkReq && { name: 'requirement-links', path: `${p}/requirements?item=${linkReq.id}`, open: ['.p-drawer [role="tab"]:has(.pi-link)', '.item-links .p-checkbox'], wait: '.item-links .p-button-danger' },
     { name: 'bulk-review', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-verified)', wait: '.p-dialog .preview' },
     { name: 'notifications', path: '/notifications' },
-    { name: 'reviews', path: '/reviews' },
+    // the reviews view of My work (what was "My reviews"): to review, requested by me, in review status; a review opened from a row
+    { name: 'my-work-reviews', path: '/my-work?view=reviews', wait: '.review-requests .p-datatable' },
+    { name: 'my-work-reviews-all', path: '/my-work?view=reviews&status=all', wait: '.review-requests .p-datatable' },
+    { name: 'my-work-reviews-in-review', path: '/my-work?view=reviews&side=in_review', wait: 'section.in-review' },
+    hasToReview && { name: 'my-work-review-dialog', path: '/my-work', open: '.p-datatable-tbody .row-review', wait: '.p-dialog .checklist' },
     // the personal work list (My work) across projects, filtered by project and reason; the dashboard widget
     { name: 'my-work', path: '/my-work', wait: '.p-datatable-tbody tr' },
     { name: 'my-work-filtered', path: `/my-work?project=${pid}&reason=overdue`, wait: '.p-datatable' },
