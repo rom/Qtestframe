@@ -162,6 +162,10 @@ var projectArchiveTables = []archiveTable{
 	{"exploratory_sessions", ofProject},
 	{"exploratory_scope", `session_id IN (SELECT id FROM exploratory_sessions WHERE project_id = ?)`},
 	{"exploratory_notes", `session_id IN (SELECT id FROM exploratory_sessions WHERE project_id = ?)`},
+	// the project's dashboards (personal ones load for accounts that
+	// exist here) and its default dashboard
+	{"dashboards", ofProject},
+	{"dashboard_defaults", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},

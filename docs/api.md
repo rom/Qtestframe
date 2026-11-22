@@ -517,6 +517,78 @@ assigned to it. `activity` covers the last 30 days (UTC, today included):
 `changes` are new revisions of requirements and tests, `executions` the
 executions finished, `defects` the defects reported.
 
+### Dashboards
+
+Dashboards are layouts of widgets on a grid of 12 columns. A project has
+shared dashboards (everyone who may read the project sees them; changed by
+`project.update`) and each user's personal ones; every user also has a
+personal cross-project home dashboard. Until an administrator changes them,
+a project has the built-in layouts `overview`, `trends` and `quality` – the
+former fixed dashboard – so nothing changes for existing projects.
+
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/projects/{pid}/dashboards` | project.read – `{items: [Dashboard], default_id, can_manage}` |
+| POST | `/projects/{pid}/dashboards` | project.read (shared: project.update) – `{name, shared?, widgets?, source_id?}` or an export → 201 Dashboard |
+| GET | `/projects/{pid}/dashboards/{did}` | project.read – Dashboard (`{did}`: an id or a built-in key) |
+| PUT | `/projects/{pid}/dashboards/{did}` | owner of a personal one, project.update for a shared one – `{name?, widgets?}` |
+| DELETE | `/projects/{pid}/dashboards/{did}` | as PUT – 204 (a built-in layout: 400) |
+| POST | `/projects/{pid}/dashboards/{did}/reset` | as PUT – back to the default layout |
+| PUT | `/projects/{pid}/dashboards/default` | project.update – `{dashboard_id}` the dashboard the project opens with (`""`: the overview) |
+| GET, PUT, DELETE | `/dashboards/home` | signed in – the caller's home dashboard (DELETE resets it) |
+| GET | `/dashboards/widgets` | signed in – the widget registry `{items: [{type, project, home, w, h}]}` |
+| POST | `/dashboards/data` | signed in – the data of many widgets, each with the permissions of its data |
+
+A Dashboard is
+
+```json
+{"id": "…", "project_id": "…", "owner_id": "", "name": "Release health",
+ "builtin": "", "source_id": "", "shared": true, "stored": true,
+ "default": false, "editable": true,
+ "widgets": [{"id": "w1", "type": "saved_query", "title": "Open MUST",
+              "x": 0, "y": 0, "w": 6, "h": 4,
+              "settings": {"entity": "requirements", "query": "obligation:must coverage:none", "display": "table"}}]}
+```
+
+`x` (0–11) and `w` (1–12) keep a widget within the columns, `h` is 1–24
+rows; a dashboard has at most 60 widgets. Changing a built-in layout (PUT
+`/dashboards/overview`) stores the shared dashboard that replaces it
+(`builtin: "overview"`); resetting that one removes it again. Resetting a
+copy gives it the layout it was copied from. An export is the Dashboard
+with `"format": "qtestframe-dashboard", "version": 1`; POST takes it back
+(import).
+
+**Widget types.** `key_figures`, `coverage`, `execution_results`,
+`active_runs`, `recent_runs`, `breakdown` (`settings.dimension`:
+`requirement_status`, `requirement_obligation`, `test_status`,
+`test_execution_type`, `run_status`, `review_state`, `risk_level`,
+`risk_status`, `risk_mitigation`, `defect_severity`, `defect_status`),
+`test_types`, `verification_status`, `test_results_trend` and
+`defects_per_week` (`range`: 30, 90, 365), `recent_activity`,
+`flaky_tests`, `coverage_by_group`, `risk_heat`, `defect_age`,
+`trace_rules`, `correlations`, `release_progress`, `release_readiness`
+(`release_id`, `variant`), `release_burnup` (`release_id`),
+`cycle_burndown` (`cycle_id`; without one: the active, else planned, else
+newest one), `quality_metrics` and `consistency` (they load their own
+data), `my_work`, `discussions` (`status`, `filter`, `limit`),
+`saved_query` (`entity`: requirements, tests, defects, risks, runs;
+`query` in the query language; `display`: table or count; `limit`),
+`traceability_gaps` (requirements without tests, tests without
+requirements), `exploratory_metrics`, `framework_coverage` (`framework`:
+attack, d3fend, emb3d) and `note` (`text`, Markdown). Common settings are
+`chart` (bar, hbar, doughnut, table where it applies) and, on the
+home dashboard, `project_id`.
+
+**Widget data.** `POST /dashboards/data` takes `{widgets: [{id, type,
+project_id?, settings?}]}` and answers `{results: {id: {data} | {data:
+null, error: {status, code, error}}}}`. Each widget reads the API's own GET
+endpoints as the caller (in process, with the same permission checks), so a
+widget shows only what its viewer may see there: a saved query of
+requirements needs `requirement.read`, a project the viewer may not see
+answers 404. Within one request every endpoint is read once, so the many
+widgets fed by `/dashboard` and `/dashboard/insights` cost one computation
+each. The client asks only for the widgets on screen and batches them.
+
 ## Folders (groups) and categories
 
 Reading needs `project.read`. Writing folders needs `requirement.write` or

@@ -69,6 +69,8 @@ var BackupTables = []string{
 	"secret_keys",
 	// chat notification channels (0045)
 	"chat_channels",
+	// customisable dashboards and the default of a project (0059)
+	"dashboards", "dashboard_defaults",
 }
 
 // tables that exist but are deliberately not part of a backup.
