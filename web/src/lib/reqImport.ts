@@ -18,6 +18,8 @@ export const IMPORT_FIELDS = [
   'tags',
   'folder',
   'criteria',
+  'd3fend',
+  'emb3d',
 ] as const
 export type ImportField = (typeof IMPORT_FIELDS)[number]
 

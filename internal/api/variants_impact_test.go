@@ -24,7 +24,9 @@ func TestApplicabilityChangeImpact(t *testing.T) {
 	if set["applicability_impact"] != "review" {
 		t.Fatal(set["applicability_impact"])
 	}
-	suspectLinks := func(id string) float64 { return a.m("GET", "/api/v1/requirements/"+id, nil, 200)["suspect_links"].(float64) }
+	suspectLinks := func(id string) float64 {
+		return a.m("GET", "/api/v1/requirements/"+id, nil, 200)["suspect_links"].(float64)
+	}
 
 	// the preview
 	dry := a.m("PUT", "/api/v1/requirements/"+f.r1+"/applicability?dry_run=impact", map[string]any{"variant_ids": []string{f.eu}}, 200)

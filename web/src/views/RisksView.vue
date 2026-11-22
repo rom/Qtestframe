@@ -28,6 +28,7 @@ import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { atResidual, filterRisks, heatGrid, levelCounts, levelRank, riskLevel, riskLevelSeverity, riskScore, riskStatusSeverity, RISK_LEVELS, RISK_SCALE, RISK_STATUSES, type HeatCell } from '@/lib/risks'
 import ESignDialog from '@/components/ESignDialog.vue'
+import RiskImportDialog from '@/components/RiskImportDialog.vue'
 import SelectButton from 'primevue/selectbutton'
 import { formatDate, formatDateTime } from '@/lib/format'
 import type { Requirement, Risk } from '@/lib/types'
@@ -54,6 +55,7 @@ const { t, locale } = useI18n()
 const listedCols = computed(() => customColumns(useProjectStore().customFieldsFor('risk').filter((f) => f.show_in_list)))
 const cellOf = (row: { custom_fields?: Record<string, unknown> }, field: string) => customCellText(useProjectStore().customFieldsFor('risk'), row, field, [t('common.yes'), t('common.no')])
 const canWrite = computed(() => auth.can(P.requirementWrite))
+const importOpen = ref(false)
 const canApprove = computed(() => auth.can(P.waiverApprove))
 const canSetThreshold = computed(() => auth.can(P.projectUpdate))
 
@@ -469,6 +471,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
     <div class="actions">
       <HelpLink page="releases-and-risks" />
       <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
+      <Button v-if="canWrite" :label="t('riskImport.open')" icon="pi pi-file-import" severity="secondary" outlined @click="importOpen = true" />
       <Button v-if="canWrite" :label="t('risksView.new')" icon="pi pi-plus" @click="openCreate" />
     </div>
   </div>
@@ -769,6 +772,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
     </template>
   </Dialog>
   <ItemPickerDialog v-model:visible="picker" kind="requirement" :project-id="proj.pid" :exclude="form.requirement_ids" :header="t('risksView.linkRequirements')" :confirm-label="t('common.link')" @pick="addLinked" />
+  <RiskImportDialog v-if="proj.pid" v-model:visible="importOpen" :project-id="proj.pid" @imported="load" />
   <ESignDialog
     v-model:visible="acceptOpen"
     :header="t('residual.acceptHeader', { key: editing?.key ?? '' })"

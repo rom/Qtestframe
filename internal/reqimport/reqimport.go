@@ -71,6 +71,11 @@ type Candidate struct {
 	Folder         string      `json:"folder"` // "A/B", relative to the import root
 	Criteria       []Criterion `json:"criteria"`
 	ExternalID     string      `json:"external_id"`
+	// D3fend and Emb3d are the MITRE D3FEND techniques and EMB3D threats
+	// and mitigations of D3FEND and EMB3D columns (known ids only; the
+	// unknown ones are named in Warnings).
+	D3fend []string `json:"d3fend,omitempty"`
+	Emb3d  []string `json:"emb3d,omitempty"`
 	// CustomFields are the texts of custom field columns by field key
 	// (mapped to cf.<key>); the importer converts and checks them.
 	CustomFields map[string]string `json:"custom_fields,omitempty"`
