@@ -527,7 +527,7 @@ var keyDocs = map[string]text{
 	},
 	"ai.features.summarize_run": {
 		"Offer *Summarise failures* on the run page (a summary and defect drafts).",
-		"Erbjud *Sammanfatta fel* på körningssidan (en sammanfattning och utkast till fel).",
+		"Erbjud *Sammanfatta fel* på körningssidan (en sammanfattning och utkast till defekter).",
 	},
 	"ai.features.suggest_mappings": {
 		"Offer *Suggest mappings* (ATT&CK, D3FEND, EMB3D, CWE) for requirements and risks, checked against the embedded lists.",

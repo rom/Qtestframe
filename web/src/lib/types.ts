@@ -1115,6 +1115,8 @@ export interface TenantSettings {
   allow_unmet_dependencies: boolean
   /** true turns off "requirement status follows test results" */
   manual_verification?: boolean
+  /** the optional AI assistance is on for the organisation */
+  ai_enabled?: boolean
 }
 
 // ---------------------------------------------------------------- releases

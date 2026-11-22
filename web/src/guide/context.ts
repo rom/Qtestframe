@@ -19,6 +19,7 @@ const BY_ROUTE: Record<string, string> = {
   graph: 'traceability-and-coverage',
   impact: 'traceability-and-coverage',
   duplicates: 'duplicates-and-conflicts',
+  aiSettings: 'ai-assistance',
   catalog: 'catalogue',
   tags: 'search-and-filters',
   baselines: 'baselines',

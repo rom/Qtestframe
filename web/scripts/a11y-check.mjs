@@ -228,6 +228,12 @@ async function discover(request) {
   const hasDefinitions = items(await api(request, 'GET', `/projects/${pid}/reports/definitions`).catch(() => [])).length > 0
   // the first catalogue requirement, for the preview
   const catalogReq = items(await api(request, 'GET', '/catalog/requirements').catch(() => []))[0]
+  // AI assistance: the Assist buttons are shown in every project of an organisation that turned it on
+  // (seed-demo); its dialog only opens when a service is configured (ai in the configuration file)
+  const aiStatus = await api(request, 'GET', `/projects/${pid}/ai`).catch(() => null)
+  const aiOrg = aiStatus?.organisation_enabled === true
+  const aiOn = aiStatus?.available === true
+  const failedRun = runs.find((r) => (r.summary?.failed ?? 0) + (r.summary?.blocked ?? 0) > 0)
   // web tests (Playwright): a run with background jobs and the execution of a web test
   let jobsRun = null
   for (const r of runs) {
@@ -369,6 +375,12 @@ async function discover(request) {
     { name: 'risks-area', path: `${p}/risks?area=authentication`, wait: '.heat' },
     { name: 'requirement-mitigates-risks', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.requirement-risks button:has(.pi-plus)', wait: '.requirement-risks .add-row' },
     // duplicates and conflicts: the review page (requirements, tests, dismissed), the merge dialog, the similar panel of the editor
+    // AI assistance: the Assist menus (requirement editor, run page), the dialog, the project and organisation settings
+    aiOrg && { name: 'assist-menu-requirement', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer button:has(.pi-sparkles)', wait: '.assist-menu' },
+    aiOrg && failedRun && { name: 'assist-menu-run', path: `${p}/runs/${failedRun.id}`, open: '.page-header .actions button:has(.pi-sparkles)', wait: '.assist-menu' },
+    aiOn && { name: 'assist-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: ['.p-drawer button:has(.pi-sparkles)', '.assist-menu .assist-action:not([disabled])'], wait: '.p-dialog .assist .p-message, .p-dialog .assist .assist-card' },
+    { name: 'settings-project-ai', path: `${p}/settings?tab=project`, wait: 'h2:has(.pi-sparkles)' },
+    { name: 'ai-settings', path: '/admin/ai', wait: '#ai-org-on' },
     { name: 'duplicates', path: `${p}/duplicates`, wait: '.dup-section' },
     { name: 'duplicates-tests', path: `${p}/duplicates?kind=test`, wait: '.dup-section' },
     { name: 'duplicates-dismissed', path: `${p}/duplicates`, open: '.dup-switch .p-toggleswitch', wait: '.dup-section' },
@@ -572,6 +584,7 @@ async function discover(request) {
     { name: 'system-settings', path: '/admin/system', wait: '.sys-field' },
     { name: 'system-settings-security', path: '/admin/system?section=security', wait: '.sys-field' },
     { name: 'system-settings-similarity', path: '/admin/system?section=similarity', wait: '.sys-field' },
+    { name: 'system-settings-ai', path: '/admin/system?section=ai', wait: '.sys-field' },
     { name: 'system-settings-oidc', path: '/admin/system?section=oidc', wait: '.sys-section .row' },
     { name: 'system-settings-oidc-dialog', path: '/admin/system?section=oidc', open: '.sys-section button:has(.pi-plus)', wait: '.p-dialog #oidc-provider-form' },
     { name: 'system-settings-logging', path: '/admin/system?section=logging', wait: '.sys-field' },

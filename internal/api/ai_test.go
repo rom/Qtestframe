@@ -285,6 +285,12 @@ func TestAIFeatures(t *testing.T) {
 	if strings.Join(got, ",") != "emb3d:TID-201,attack:T1110" {
 		t.Fatal(got)
 	}
+	// a risk not saved yet
+	res = a.m("POST", "/api/v1/projects/"+pid+"/ai/suggest-mappings", map[string]any{"kind": "risk", "title": "Brute force", "description": "Guessing"}, 200)
+	if res["result"].(map[string]any)["kind"] != "risk" {
+		t.Fatal(res)
+	}
+	a.m("POST", "/api/v1/projects/"+pid+"/ai/suggest-mappings", map[string]any{"kind": "risk", "title": " "}, 400)
 	// another project's risk
 	other := a.project("OTH")
 	a.m("POST", "/api/v1/projects/"+other+"/ai/suggest-mappings", map[string]any{"risk_id": risk["id"]}, 400)
@@ -333,7 +339,7 @@ func TestAIFeatures(t *testing.T) {
 			t.Fatal(d)
 		}
 	}
-	if n != 8 {
+	if n != 9 {
 		t.Fatalf("%d audit entries", n)
 	}
 	_ = e

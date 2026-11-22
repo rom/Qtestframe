@@ -19788,7 +19788,7 @@ paths:
       summary: Suggest framework mappings for a requirement or risk
       operationId: postProjectsByPidAISuggestMappings
       description: |-
-        `{requirement_id | risk_id, title, description, lang}` → `{meta, result: {kind, mappings: [{framework, id, name, reason}], dropped: [{framework, id}]}}`. Requirements: `d3fend` (D3FEND techniques), `emb3d` (EMB3D mitigations and threats), `cwe` (CWE weaknesses the catalogue refers to; accepted as tags `CWE-n`). Risks: `attack` (ATT&CK and ATLAS techniques) and `emb3d` (threats). Every id is checked against the embedded lists: unknown ids are returned in `dropped`, ids already mapped are left out. Streaming, errors and audit as for `draft-tests`.
+        `{requirement_id | risk_id, kind (`risk` for a risk not saved yet), title, description, lang}` → `{meta, result: {kind, mappings: [{framework, id, name, reason}], dropped: [{framework, id}]}}`. Requirements: `d3fend` (D3FEND techniques), `emb3d` (EMB3D mitigations and threats), `cwe` (CWE weaknesses the catalogue refers to; accepted as tags `CWE-n`). Risks: `attack` (ATT&CK and ATLAS techniques) and `emb3d` (threats). Every id is checked against the embedded lists: unknown ids are returned in `dropped`, ids already mapped are left out. Streaming, errors and audit as for `draft-tests`.
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
@@ -20133,6 +20133,9 @@ components:
           type: string
         run_id:
           type: string
+        kind:
+          type: string
+          enum: [requirement, risk]
         title:
           type: string
         description:

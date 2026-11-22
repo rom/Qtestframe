@@ -28,6 +28,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Spårbarhet och täckning](traceability-and-coverage.md) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
 | [Testcykler](test-cycles.md) | Planera testcykler: testfall, testare och uppskattningar, körningarna en cykel skapar, framsteg, nedbränning, arbetsbelastning, återkommande cykler |
 | [Dubbletter och konflikter](duplicates-and-conflicts.md) | Liknande krav medan du skriver, misstänkt dubblerade krav och testfall, möjligen motstridiga krav, sammanslagning, gränsvärden |
+| [AI-assistans](ai-assistance.md) | Valfria AI-förslag: utkast till tester, bättre kravformuleringar, acceptanskriterier, ramverksmappningar, sammanfattningar av körningar med utkast till defekter; vad som skickas, och att slå på och av |
 | [Varianter och kod](variants-and-code.md) | Varianter och tillämplighet, täckning per variant, incheckningar, merge requests, byggen och regressionsurvalet |
 | [CI/CD](ci-cd.md) | Pipelinemallar för GitLab och GitHub, uppladdning av resultat, kvalitetsgrinden, commit-statusar och anteckningar i merge requests, testurval och underpipelines |
 | [Baslinjer](baselines.md) | Frysa en release och jämföra versioner |

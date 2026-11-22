@@ -390,6 +390,8 @@ type aiRequest struct {
 	RequirementID string `json:"requirement_id"`
 	RiskID        string `json:"risk_id"`
 	RunID         string `json:"run_id"`
+	// Kind "risk" with risk_id empty: suggest mappings for a risk not saved yet.
+	Kind string `json:"kind"`
 	// The editor's current (maybe unsaved) text; empty: the stored one.
 	Title       *string        `json:"title"`
 	Description *string        `json:"description"`
@@ -815,6 +817,12 @@ func (s *Server) handleAIMappings(w http.ResponseWriter, r *http.Request, p *Pri
 		data.Extra = strings.TrimSpace(k.Category + "\n" + k.Mitigation)
 		data.Mapped[fwAttack], data.Mapped[fwEmb3d] = append([]string{}, k.Attack...), append([]string{}, k.Emb3d...)
 		items, frameworks = []string{k.ID}, []string{fwAttack, fwEmb3d}
+	case req.Kind == "risk":
+		if req.Title == nil || strings.TrimSpace(*req.Title) == "" {
+			s.fail(w, r, badRequest("the risk has no text"))
+			return
+		}
+		data.Kind, frameworks = "risk", []string{fwAttack, fwEmb3d}
 	default:
 		d, ids, err := s.aiRequirement(ctx, p, pr.ID, req, false)
 		if err != nil {

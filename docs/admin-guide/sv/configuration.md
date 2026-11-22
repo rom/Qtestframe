@@ -305,7 +305,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `ai.rate_limit` | heltal | `30` | — | Högsta antal AI-förfrågningar per användare och timme. |
 | `ai.features.draft_tests` | bool | `true` | — | Erbjud *Utkast till tester* i kravredigeraren (och utkast till ett test från ett länkat krav i testredigeraren). |
 | `ai.features.improve_requirement` | bool | `true` | — | Erbjud *Förbättra krav* (en omskrivning för kravkontrollerna, visad som skillnad). |
-| `ai.features.summarize_run` | bool | `true` | — | Erbjud *Sammanfatta fel* på körningssidan (en sammanfattning och utkast till fel). |
+| `ai.features.summarize_run` | bool | `true` | — | Erbjud *Sammanfatta fel* på körningssidan (en sammanfattning och utkast till defekter). |
 | `ai.features.suggest_mappings` | bool | `true` | — | Erbjud *Föreslå mappningar* (ATT&CK, D3FEND, EMB3D, CWE) för krav och risker, kontrollerade mot de inbyggda listorna. |
 | `ai.features.suggest_criteria` | bool | `true` | — | Erbjud *Föreslå acceptanskriterier* i kravredigeraren. |
 | `ai.price_input` | text | — | — | Valfritt pris per miljon indata-token (valfri valuta), för att visa en uppskattad kostnad med varje svar. |

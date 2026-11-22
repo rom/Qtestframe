@@ -147,7 +147,7 @@ Vektorerna lagras i tabellen `similarity_embeddings` per objekt, modell och text
 
 ## AI-assistans
 
-Qtestframe kan be en språkmodelltjänst om **förslag** som användarna granskar innan något sparas: utkast till tester för ett krav, en förbättrad formulering av ett krav, en sammanfattning av en underkänd körning med utkast till fel, ramverksmappningar (ATT&CK, D3FEND, EMB3D, CWE) och acceptanskriterier (se användarhandboken, *AI-assistans*). Den är **av som standard** och kräver tre brytare:
+Qtestframe kan be en språkmodelltjänst om **förslag** som användarna granskar innan något sparas: utkast till tester för ett krav, en förbättrad formulering av ett krav, en sammanfattning av en underkänd körning med utkast till defekter, ramverksmappningar (ATT&CK, D3FEND, EMB3D, CWE) och acceptanskriterier (se användarhandboken, *AI-assistans*). Den är **av som standard** och kräver tre brytare:
 
 1. **Administration → Systeminställningar → AI-assistans** (eller `ai` i [konfigurationsfilen](configuration.md#referens)): tjänsten och `ai.enabled`.
 2. **Administration → AI-assistans**: organisationens brytare (`settings.manage`).
@@ -172,7 +172,7 @@ Qtestframe kan be en språkmodelltjänst om **förslag** som användarna granska
 |---|---|
 | Utkast till tester, Föreslå acceptanskriterier | kravets nyckel, titel, beskrivning, typ, förpliktelse, motivering och acceptanskriterier (redigerarens aktuella text) |
 | Förbättra krav | detsamma, och fynden från kravkontrollerna |
-| Sammanfatta fel | körningens namn, status, miljö och bygge; nyckel, titel, anteckningar, felutskrift (de sista 3000 tecknen) och underkända steg för upp till 40 underkända eller blockerade utföranden; nyckel, titel, status och allvarlighetsgrad för felen som är länkade till körningen |
+| Sammanfatta fel | körningens namn, status, miljö och bygge; nyckel, titel, anteckningar, felutskrift (de sista 3000 tecknen) och underkända steg för upp till 40 underkända eller blockerade utföranden; nyckel, titel, status och allvarlighetsgrad för defekterna som är länkade till körningen |
 | Föreslå mappningar | nyckel, titel, beskrivning (risker: kategori och åtgärd) och de id som redan är mappade |
 
 Användarna ser en upplysning om att texten skickas innan de börjar. Använd en tjänst som drivs av er organisation eller som ni har ett avtal med som täcker dessa data (lagring, träning, plats). En lokal server (Ollama, vLLM) håller allt i ert nätverk.
