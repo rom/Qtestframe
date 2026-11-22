@@ -18,12 +18,16 @@ const DemoUserPassword = "Demo-user-1234"
 const (
 	DemoMemberEmail   = "dana@example.com"
 	DemoOutsiderEmail = "erik@example.com"
+	// DemoSMEEmail is Sara, a subject matter expert who also tests: she
+	// holds the roles sme and tester in the organisation, and sme and
+	// reviewer in the restricted project.
+	DemoSMEEmail = "sara@example.com"
 )
 
 // demoUser returns the user with email, creating it (with
 // DemoUserPassword) when missing, and makes it a member of the tenant
-// (keeping an existing membership's role).
-func demoUser(ctx context.Context, st *store.Store, tenantID, email, name, role string) (*model.User, error) {
+// with roles (keeping an existing membership's roles).
+func demoUser(ctx context.Context, st *store.Store, tenantID, email, name string, roles ...string) (*model.User, error) {
 	u, err := st.GetUserByEmail(ctx, email)
 	if errors.Is(err, store.ErrNotFound) {
 		hash, herr := auth.HashPassword(DemoUserPassword)
@@ -37,7 +41,7 @@ func demoUser(ctx context.Context, st *store.Store, tenantID, email, name, role 
 		return nil, err
 	}
 	if _, err := st.GetMembership(ctx, tenantID, u.ID); errors.Is(err, store.ErrNotFound) {
-		err = st.SetMembership(ctx, tenantID, u.ID, role)
+		err = st.SetMembershipRoles(ctx, tenantID, u.ID, roles)
 		if err != nil {
 			return nil, err
 		}
@@ -58,6 +62,10 @@ func SeedDemoSharing(ctx context.Context, st *store.Store, tenantID string) (*mo
 		return nil, err
 	}
 	if _, err := demoUser(ctx, st, tenantID, DemoOutsiderEmail, "Erik Berg", rbac.RoleTester); err != nil {
+		return nil, err
+	}
+	sara, err := demoUser(ctx, st, tenantID, DemoSMEEmail, "Sara Ek", rbac.RoleSME, rbac.RoleTester)
+	if err != nil {
 		return nil, err
 	}
 	ps, err := st.ListProjects(ctx, tenantID)
@@ -99,6 +107,11 @@ func SeedDemoSharing(ctx context.Context, st *store.Store, tenantID string) (*mo
 		return nil, err
 	}
 	if _, err := st.SetProjectMember(ctx, tenantID, p.ID, store.MemberUser, dana.ID, rbac.RoleViewer, "seed"); err != nil {
+		return nil, err
+	}
+	// Sara writes and reviews the vault's requirements but does not test
+	// there: her project roles replace her organisation roles
+	if _, err := st.SetProjectMemberRoles(ctx, tenantID, p.ID, store.MemberUser, sara.ID, []string{rbac.RoleSME, rbac.RoleReviewer}, "seed"); err != nil {
 		return nil, err
 	}
 	p.Access = model.ProjectAccessRestricted

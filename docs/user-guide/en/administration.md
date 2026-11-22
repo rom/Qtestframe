@@ -18,34 +18,38 @@
 
 ## Organisations and roles
 
-An **organisation** (tenant) is an isolated workspace: its projects, members, tokens and audit log are invisible to other organisations. A person has one user account for the whole installation and can be a **member** of several organisations, with **one role in each**.
+An **organisation** (tenant) is an isolated workspace: its projects, members, tokens and audit log are invisible to other organisations. A person has one user account for the whole installation and can be a **member** of several organisations, with **one or more roles in each**.
 
 ### Roles and permissions
 
-Every organisation starts with six built-in roles. By default each role in the table can do everything the role above it can, except **Reviewer**, which sits beside Tester:
+Every organisation starts with seven built-in roles. By default each role in the table can do everything the role above it can, except **Reviewer** and **Subject matter expert**, which sit beside Tester:
 
 | Role | Can additionally (default) |
 |---|---|
 | **Viewer** | read all projects, requirements, tests, runs, documents and the member list; search; export and generate reports |
 | **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content; write in [discussions](discussions.md) (*comment.create*, as all roles below except Viewer) |
+| **Subject matter expert** | take part in writing requirements: create and edit requirements with their criteria, rationale, sources, relations, links and attachments (*requirement.write*); review requirements (*requirement.review*) and discuss them; read tests, runs, defects and risks. No tests, runs, cycles, waivers, settings or members |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
 | **Test lead** | plan [test cycles](test-cycles.md) (*cycle.plan*), mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
 | **Manager** | approve and reject requirements (*requirement.review*), write requirements and requirement folders, create and edit projects, all categories and the [traceability rules](traceability-and-coverage.md#traceability-rules), create baselines |
 | **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, remove any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
 
+**Several roles.** A member can hold several roles at once – for example *Subject matter expert* and *Tester* for someone who writes requirements in their field and also tests. They then have the permissions of all their roles together; roles only add rights. Holding **Admin** among them makes them an administrator of the organisation.
+
 The default matrix of permissions:
 
-| Permission | Viewer | Reviewer | Tester | Test lead | Manager | Admin |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `test.review` | | ✔ | | ✔ | ✔ | ✔ |
-| `requirement.review` | | ✔ | | | ✔ | ✔ |
-| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
-| `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
-| `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
+| Permission | Viewer | Reviewer | Subject matter expert | Tester | Test lead | Manager | Admin |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `test.review` | | ✔ | | | ✔ | ✔ | ✔ |
+| `requirement.review` | | ✔ | ✔ | | | ✔ | ✔ |
+| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `requirement.write` | | | ✔ | | | ✔ | ✔ |
+| `test.write`, `run.write`, `run.execute`, `token.manage` | | | | ✔ | ✔ | ✔ | ✔ |
+| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
+| `waiver.approve`, `project.create`, `project.update` | | | | | | ✔ | ✔ |
+| `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | | ✔ |
 
 **Waivers and risk acceptance.** Approving, rejecting and revoking [waivers and deviations](waivers-and-soa.md) and signing the acceptance of a residual risk need `waiver.approve` (a project permission, so a project role can grant it in one project). Every decision is an electronic signature (password, or a recent single sign-on) and is recorded in the audit log; the requester of a waiver cannot decide it. Grant `waiver.approve` only to people who may accept not meeting requirements.
 
@@ -74,12 +78,12 @@ Buttons for actions you may not perform are hidden. If you are missing a button 
 
 ![The members page with roles and the Add member button](../images/en-admin-members.png)
 
-- **Add member** *(Admin)*: enter the **E-mail** and choose the **Role**. If the person already has an account, they are added with that role. If the e-mail is unknown, a local account is created: when the server can send e-mail, leave **Send an invitation by e-mail** on (see [Invite by e-mail](#invite-by-e-mail)); otherwise give a **Display name** and an **Initial password**, and tell the person to change it after the first sign-in.
-- **Change a role** *(Admin)*: pick another role in the member's row. It applies immediately, also to the person's API tokens.
+- **Add member** *(Admin)*: enter the **E-mail** and choose one or more **Roles**. If the person already has an account, they are added with those roles. If the e-mail is unknown, a local account is created: when the server can send e-mail, leave **Send an invitation by e-mail** on (see [Invite by e-mail](#invite-by-e-mail)); otherwise give a **Display name** and an **Initial password**, and tell the person to change it after the first sign-in.
+- **Change the roles** *(Admin)*: open the roles in the member's row and tick or untick roles; each role is shown as a chip, and a member always keeps at least one role. It applies immediately, also to the person's API tokens. The organisation always keeps at least one member with the **Admin** role.
 - **Remove** *(Admin)*: removes the membership; the account itself remains.
-- **Several members at once** *(Admin)*: tick members (or the box in the header for all shown), then choose a role under **Set role** or select **Remove**, and confirm. Your own membership is left as it is, as are members who already have the role; the message says which were skipped. Both can be undone (removed members are added back with their old roles).
+- **Several members at once** *(Admin)*: tick members (or the box in the header for all shown), then choose a role under **Set role** (they get exactly that role), **Add role** or **Remove role** (the other roles stay), or select **Remove**, and confirm. Your own membership is left as it is, as are members whose roles would not change or who would be left without a role; the message says which were skipped. Both can be undone (removed members are added back with their old roles).
 - An organisation must keep at least **one admin**: the last admin cannot be demoted or removed, and a change of several members that would leave no admin is refused as a whole.
-- Members marked **SCIM** are [provisioned by your identity provider](#provisioning-with-scim): their role follows their groups there, so their role cannot be changed and they cannot be removed here (a change of several members skips them).
+- Members marked **SCIM** are [provisioned by your identity provider](#provisioning-with-scim): their roles follow their groups there, so their roles cannot be changed and they cannot be removed here (a change of several members skips them).
 
 ### Invite by e-mail
 
@@ -126,14 +130,14 @@ Open it with **Share** in the project header (or the share button of a project o
 - **Everyone in the organisation** (the default): every member sees the project with their organisation role. Project members get their project role instead.
 - **Restricted to project members**: only the project members (and the organisation's admins) see the project. For everyone else it does not exist: it is missing from the project list, search, reviews and notifications, and links to it show *not found*. Restricted projects show a lock (🔒) in the project list and the header.
 
-**Project members** are people of the organisation or groups from your [identity provider (SCIM)](#provisioning-with-scim), each with a **project role**: any role of the organisation, also your own. Inside the project the project role **replaces** the organisation role, so it can raise or lower someone's rights there: a Tester of the organisation can be Manager in one project, a Manager only Viewer in another. A person's own membership wins over a group's; several groups add up. Admins of the organisation always have full access to every project.
+**Project members** are people of the organisation or groups from your [identity provider (SCIM)](#provisioning-with-scim), each with one or more **project roles**: any roles of the organisation, also your own. Inside the project the project roles **replace** the organisation roles, so it can raise or lower someone's rights there: a Tester of the organisation can be Manager in one project, a Manager only Viewer in another. A person's own membership wins over a group's; several groups add up. Admins of the organisation always have full access to every project.
 
-- **Add**: search for a person or group by name or e-mail, choose the project role and select **Add**. Only members of the organisation can be added (add new people under [Members](#members) first). The person gets a notification (and an e-mail if they want e-mail notifications).
-- **Change a role**: pick another role in the member's row.
-- **Remove** removes someone from the project; members can also leave a project themselves. **Several members at once**: tick them, then choose **Set project role** or **Remove**.
+- **Add**: search for a person or group by name or e-mail, choose the project roles and select **Add**. Only members of the organisation can be added (add new people under [Members](#members) first). The person gets a notification (and an e-mail if they want e-mail notifications).
+- **Change the roles**: tick or untick roles in the member's row. Roles you may not give are shown but cannot be removed.
+- **Remove** removes someone from the project; members can also leave a project themselves. **Several members at once**: tick them, then choose **Set project role**, **Add project role**, **Remove project role** or **Remove**.
 - You can only give, change or remove roles whose project permissions you have in the project yourself, so nobody can give more than they have.
-- When you restrict a project that you see through your organisation role, you are added as a project member with that role, so you do not lock yourself out.
-- Organisation-wide permissions – members, roles, API tokens, the audit log, creating projects – always follow the organisation role. API tokens never exceed their own role, also in a project.
+- When you restrict a project that you see through your organisation roles, you are added as a project member with those roles, so you do not lock yourself out.
+- Organisation-wide permissions – members, roles, API tokens, the audit log, creating projects – always follow the organisation roles. API tokens never exceed their own roles, also in a project.
 
 Every change of the access or the members is recorded in the [audit log](#audit-log). Removing someone from the organisation removes their project memberships too. A duplicated project keeps the members of the original.
 
@@ -230,11 +234,11 @@ API tokens let scripts and CI pipelines use the REST API without a password, for
 
 1. Open **Administration → API tokens** and select **New token** *(Tester)*.
 2. Enter a **Name** that says where it is used, for example *GitLab CI*.
-3. Choose the **Role**. A token can never have a higher role than you.
+3. Choose the **Roles** (by default all of yours). A token can never have more permissions than you.
 4. Optionally set **Expires after (days)**; empty means it never expires.
 5. Select **Create** and **copy the token now**: it starts with `qtf_` and is shown only once.
 
-Use it as a bearer token: `Authorization: Bearer qtf_…`. A token belongs to one organisation, and on every request it is limited to the role you currently have there: if your role is lowered, so is the token's. Tokens cannot create tokens. **Revoke** a token as soon as it is no longer needed or may have leaked; clients using it lose access immediately. The list shows when each token was **Last used**.
+Use it as a bearer token: `Authorization: Bearer qtf_…`. A token belongs to one organisation, and on every request it is limited to the roles you currently have there: if you lose a role, so does the token. Tokens cannot create tokens. **Revoke** a token as soon as it is no longer needed or may have leaked; clients using it lose access immediately. The list shows when each token was **Last used**.
 
 ## Provisioning with SCIM
 
@@ -244,7 +248,7 @@ How it works:
 
 - **Users.** A provisioned user is matched by e-mail address. New users get an account **without a password**: they sign in with the organisation's single sign-on (OpenID Connect or SAML), which links the account at the first sign-in. An existing account with the same e-mail (for example a member you added by hand) is taken over.
 - **Deactivation.** When the provider deactivates a user, the membership is removed and the person's sessions and API tokens in this organisation end at once. When the provider activates the user again, the membership comes back with the role from the groups. Deleting the user in the provider removes the membership; the account itself remains.
-- **Roles from groups.** The provider can also push groups. Under **Roles of provisioned members** you choose for each group the role its members get, or **Not mapped**. A member in several mapped groups gets the most privileged of their roles. Members without a mapped group get the **Default role** (*Viewer* unless you change it), or nothing with **No access**.
+- **Roles from groups.** The provider can also push groups. Under **Roles of provisioned members** you choose for each group the role its members get, or **Not mapped**. A member in several mapped groups gets the roles of all of them. Members without a mapped group get the **Default role** (*Viewer* unless you change it), or nothing with **No access**.
 - **Protected rules.** SCIM never makes anyone a super admin or removes that status, and the organisation always keeps one admin: a change that would remove the last admin is refused. The e-mail and name of a person who also belongs to other organisations are not changed by this organisation's provider.
 - **Members list.** Provisioned members are marked **SCIM** in **Administration → Members**. Change their role through their groups in the provider (or the group mapping here); their role cannot be changed and they cannot be removed by hand, because the next synchronisation would undo it.
 

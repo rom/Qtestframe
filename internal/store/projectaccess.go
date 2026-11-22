@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/rbac"
 )
 
 // ---------------------------------------------------------------- project access
@@ -44,37 +45,38 @@ func (s *Store) ProjectAccessMode(ctx context.Context, tenantID, projectID strin
 }
 
 // ProjectGrant is what the project memberships give one user in one
-// project: the role of a direct membership and the roles of the SCIM
-// groups (of the user) that are project members.
+// project: the roles of a direct membership and the union of the roles of
+// the SCIM groups (of the user) that are project members.
 type ProjectGrant struct {
-	UserRole   string
+	UserRoles  []string
 	GroupRoles []string
 }
 
 // Member reports whether the grant makes the user a project member.
-func (g ProjectGrant) Member() bool { return g.UserRole != "" || len(g.GroupRoles) > 0 }
+func (g ProjectGrant) Member() bool { return len(g.UserRoles) > 0 || len(g.GroupRoles) > 0 }
 
-// grantRows reads (project_id, member_type, role) rows into grants.
+// grantRows reads (project_id, member_type, role, roles) rows into grants.
 func grantRows(rows *sql.Rows) (map[string]ProjectGrant, error) {
 	defer rows.Close()
 	out := map[string]ProjectGrant{}
 	for rows.Next() {
-		var pid, typ, role string
-		if err := rows.Scan(&pid, &typ, &role); err != nil {
+		var pid, typ, role, roles string
+		if err := rows.Scan(&pid, &typ, &role, &roles); err != nil {
 			return nil, err
 		}
 		g := out[pid]
+		rs := decodeRoles(roles, role)
 		if typ == MemberUser {
-			g.UserRole = role
+			g.UserRoles = rs
 		} else {
-			g.GroupRoles = append(g.GroupRoles, role)
+			g.GroupRoles = rbac.NormalizeRoles(append(g.GroupRoles, rs...))
 		}
 		out[pid] = g
 	}
 	return out, rows.Err()
 }
 
-const grantSQL = `SELECT project_id, member_type, role FROM project_members WHERE tenant_id = ? AND (
+const grantSQL = `SELECT project_id, member_type, role, roles FROM project_members WHERE tenant_id = ? AND (
 	(member_type = 'user' AND member_id = ?) OR
 	(member_type = 'group' AND member_id IN (SELECT group_id FROM scim_group_members WHERE tenant_id = ? AND user_id = ?)))`
 
@@ -101,9 +103,9 @@ func (s *Store) ProjectGrantOf(ctx context.Context, tenantID, projectID, userID 
 // ProjectUserGrants returns the grant of every user with one in a project
 // (directly or through SCIM groups), by user id.
 func (s *Store) ProjectUserGrants(ctx context.Context, tenantID, projectID string) (map[string]ProjectGrant, error) {
-	rows, err := s.c(ctx).query(ctx, `SELECT member_id, 'user', role FROM project_members WHERE tenant_id = ? AND project_id = ? AND member_type = 'user'
+	rows, err := s.c(ctx).query(ctx, `SELECT member_id, 'user', role, roles FROM project_members WHERE tenant_id = ? AND project_id = ? AND member_type = 'user'
 		UNION ALL
-		SELECT gm.user_id, 'group', pm.role FROM project_members pm JOIN scim_group_members gm ON gm.group_id = pm.member_id AND gm.tenant_id = pm.tenant_id
+		SELECT gm.user_id, 'group', pm.role, pm.roles FROM project_members pm JOIN scim_group_members gm ON gm.group_id = pm.member_id AND gm.tenant_id = pm.tenant_id
 		WHERE pm.tenant_id = ? AND pm.project_id = ? AND pm.member_type = 'group'`, tenantID, projectID, tenantID, projectID)
 	if err != nil {
 		return nil, err
@@ -142,8 +144,8 @@ func (s *Store) ProjectAccessModes(ctx context.Context, tenantID string) (map[st
 	return out, rows.Err()
 }
 
-const projectMemberSelect = `SELECT pm.project_id, pm.member_type, pm.member_id, pm.role, pm.added_by, pm.created_at, pm.updated_at,
-	COALESCE(u.email, ''), COALESCE(u.display_name, g.display_name, ''), COALESCE(u.avatar, ''), COALESCE(m.role, '')
+const projectMemberSelect = `SELECT pm.project_id, pm.member_type, pm.member_id, pm.role, pm.roles, pm.added_by, pm.created_at, pm.updated_at,
+	COALESCE(u.email, ''), COALESCE(u.display_name, g.display_name, ''), COALESCE(u.avatar, ''), COALESCE(m.role, ''), COALESCE(m.roles, '[]')
 	FROM project_members pm
 	LEFT JOIN users u ON pm.member_type = 'user' AND u.id = pm.member_id
 	LEFT JOIN memberships m ON pm.member_type = 'user' AND m.tenant_id = pm.tenant_id AND m.user_id = pm.member_id
@@ -151,8 +153,13 @@ const projectMemberSelect = `SELECT pm.project_id, pm.member_type, pm.member_id,
 
 func scanProjectMember(r interface{ Scan(...any) error }) (*model.ProjectMember, error) {
 	var m model.ProjectMember
-	if err := r.Scan(&m.ProjectID, &m.Type, &m.ID, &m.Role, &m.AddedBy, &m.CreatedAt, &m.UpdatedAt, &m.Email, &m.Name, &m.Avatar, &m.OrgRole); err != nil {
+	var roles, orgRoles string
+	if err := r.Scan(&m.ProjectID, &m.Type, &m.ID, &m.Role, &roles, &m.AddedBy, &m.CreatedAt, &m.UpdatedAt, &m.Email, &m.Name, &m.Avatar, &m.OrgRole, &orgRoles); err != nil {
 		return nil, err
+	}
+	m.Roles = decodeRoles(roles, m.Role)
+	if m.Type == MemberUser {
+		m.OrgRoles = decodeRoles(orgRoles, m.OrgRole)
 	}
 	return &m, nil
 }
@@ -182,16 +189,27 @@ func (s *Store) GetProjectMember(ctx context.Context, tenantID, projectID, typ, 
 	return m, mapErr(err, "project member")
 }
 
-// SetProjectMember adds a member to a project or changes its role; it
-// reports whether the member was added. A user must be a member of the
-// tenant, a group one of its SCIM groups.
+// SetProjectMember adds a member with one role to a project or changes its
+// roles to that one; see SetProjectMemberRoles.
 func (s *Store) SetProjectMember(ctx context.Context, tenantID, projectID, typ, id, role, addedBy string) (bool, error) {
 	role = strings.TrimSpace(role)
 	if role == "" {
 		return false, Invalidf("role is required")
 	}
+	return s.SetProjectMemberRoles(ctx, tenantID, projectID, typ, id, []string{role}, addedBy)
+}
+
+// SetProjectMemberRoles adds a member to a project or changes its roles
+// (at least one); it reports whether the member was added. A user must be
+// a member of the tenant, a group one of its SCIM groups.
+func (s *Store) SetProjectMemberRoles(ctx context.Context, tenantID, projectID, typ, id string, roles []string, addedBy string) (bool, error) {
+	rs, raw, err := normRoles(roles)
+	if err != nil {
+		return false, err
+	}
+	role := rbac.Primary(rs)
 	created := false
-	err := s.tx(ctx, func(c conn) error {
+	err = s.tx(ctx, func(c conn) error {
 		var n int
 		switch typ {
 		case MemberUser:
@@ -218,8 +236,8 @@ func (s *Store) SetProjectMember(ctx context.Context, tenantID, projectID, typ, 
 			return mapErr(sql.ErrNoRows, "project")
 		}
 		now := s.now()
-		res, err := c.exec(ctx, `UPDATE project_members SET role = ?, updated_at = ? WHERE tenant_id = ? AND project_id = ? AND member_type = ? AND member_id = ?`,
-			role, now, tenantID, projectID, typ, id)
+		res, err := c.exec(ctx, `UPDATE project_members SET role = ?, roles = ?, updated_at = ? WHERE tenant_id = ? AND project_id = ? AND member_type = ? AND member_id = ?`,
+			role, raw, now, tenantID, projectID, typ, id)
 		if err != nil {
 			return err
 		}
@@ -227,8 +245,8 @@ func (s *Store) SetProjectMember(ctx context.Context, tenantID, projectID, typ, 
 			return nil
 		}
 		created = true
-		_, err = c.exec(ctx, `INSERT INTO project_members (tenant_id, project_id, member_type, member_id, role, added_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-			tenantID, projectID, typ, id, role, addedBy, now, now)
+		_, err = c.exec(ctx, `INSERT INTO project_members (tenant_id, project_id, member_type, member_id, role, roles, added_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			tenantID, projectID, typ, id, role, raw, addedBy, now, now)
 		return mapErr(err, "project member")
 	})
 	return created, err
@@ -250,8 +268,8 @@ func (s *Store) RemoveProjectMember(ctx context.Context, tenantID, projectID, ty
 // (duplicating a project keeps its sharing).
 func (s *Store) CopyProjectMembers(ctx context.Context, tenantID, fromID, toID, addedBy string) error {
 	now := s.now()
-	_, err := s.c(ctx).exec(ctx, `INSERT INTO project_members (tenant_id, project_id, member_type, member_id, role, added_by, created_at, updated_at)
-		SELECT tenant_id, ?, member_type, member_id, role, ?, ?, ? FROM project_members WHERE tenant_id = ? AND project_id = ?`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO project_members (tenant_id, project_id, member_type, member_id, role, roles, added_by, created_at, updated_at)
+		SELECT tenant_id, ?, member_type, member_id, role, roles, ?, ?, ? FROM project_members WHERE tenant_id = ? AND project_id = ?`,
 		toID, addedBy, now, now, tenantID, fromID)
 	return err
 }

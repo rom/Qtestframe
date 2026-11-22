@@ -24,7 +24,7 @@ import { useNotify } from '@/composables/notify'
 import { formatDate, formatDateTime, formatDateTimePref, formatFullDateTime, getFormatLocale, relativeTime } from '@/lib/format'
 import { browserTimeZone, normalizePrefs, preferencesPatch, timeZones } from '@/lib/prefs'
 import { deviceIcon, parseUserAgent, type UserAgentInfo } from '@/lib/useragent'
-import { P } from '@/lib/permissions'
+import { P, permissionsOfRoles, rolesOf } from '@/lib/permissions'
 import type { LoginEvent, Me, Preferences, Project, RbacInfo, SessionInfo } from '@/lib/types'
 import { useI18n } from 'vue-i18n'
 import { chooseLocal, LANGUAGES, LANGUAGE_NAMES, type Lang } from '@/i18n'
@@ -228,9 +228,9 @@ async function loadRbac() {
     rbac.value = null
   }
 }
-function permsFor(tenantId: string, role: string): string[] {
+function permsFor(tenantId: string, roles: string[]): string[] {
   if (tenantId === auth.tenant?.id && auth.me?.permissions?.length) return auth.me.permissions
-  return rbac.value?.matrix?.[role] ?? []
+  return permissionsOfRoles(rbac.value?.matrix, roles)
 }
 
 // ---------- password ----------
@@ -428,10 +428,10 @@ onMounted(() => {
           <span v-if="m.tenant_slug" class="mono small muted">{{ m.tenant_slug }}</span>
           <Tag v-if="m.tenant_id === auth.tenant?.id" :value="t('profile.current')" severity="info" />
           <span class="grow" />
-          <Tag :value="enumLabel('role', m.role)" severity="secondary" />
+          <Tag v-for="r in rolesOf(m)" :key="r" :value="enumLabel('role', r)" severity="secondary" />
         </div>
         <div style="margin-top: 4px">
-          <span v-for="p in permsFor(m.tenant_id, m.role)" :key="p" class="perm-chip">{{ p }}</span>
+          <span v-for="p in permsFor(m.tenant_id, rolesOf(m))" :key="p" class="perm-chip">{{ p }}</span>
         </div>
       </div>
     </section>

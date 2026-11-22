@@ -316,6 +316,9 @@ async function discover(request) {
     { name: 'test-code', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-code)', wait: '.code-panel' },
     { name: 'applicability-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer .applicability button:has(.pi-pencil)', wait: '.p-dialog' },
     { name: 'code-settings', path: `${p}/settings?tab=project`, wait: '#h-code-settings' },
+    // CI/CD: the CI setup panel (templates) and the server-side posting to GitLab with its log
+    { name: 'ci-setup', path: `${p}/settings?tab=project`, wait: '.ci-setup pre.ci-template' },
+    { name: 'ci-posting', path: `${p}/settings?tab=project`, wait: '.ci-posting .ci-deliveries li' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
     // the requirement and test catalogue: both tabs, a selection, the preview, the import dialog, the areas drawer
@@ -559,6 +562,7 @@ async function discover(request) {
     { name: 'login-mfa-recovery', path: '/login?mfa=1', anon: true, mfa: true, open: '.mfa-login button.link-button', wait: '#mfa-code.recovery' },
     { name: 'backup', path: '/admin/backup' },
     { name: 'tokens', path: '/admin/tokens' },
+    { name: 'tokens-create', path: '/admin/tokens', open: 'button:has(.pi-plus)', wait: '.p-dialog .role-picker' },
     { name: 'provisioning', path: '/admin/provisioning', wait: '#h-scim-events' },
     { name: 'provisioning-token-dialog', path: '/admin/provisioning', open: 'section:has(#h-scim-tokens) .filterbar button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'audit', path: '/admin/audit' },

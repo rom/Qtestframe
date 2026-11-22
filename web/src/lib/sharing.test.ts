@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { can, PROJECT_PERMISSIONS } from './permissions'
-import { canInProject, canShare, filterMembers, includesSelf, isRestricted, memberName, sortMembers } from './sharing'
+import { canInProject, canShare, filterMembers, includesSelf, isRestricted, lockedRoles, mayManageMember, memberName, sortMembers } from './sharing'
 import type { Me, ProjectAccess, ProjectMember } from './types'
 
 const me = (permissions: string[], superAdmin = false) => ({ user: { id: 'u1', super_admin: superAdmin }, permissions }) as unknown as Me
@@ -51,6 +51,19 @@ describe('members', () => {
     expect(filterMembers(list, ' ')).toHaveLength(3)
     expect(sortMembers(list).map((m) => m.id)).toEqual(['a', 'b', 'g'])
     expect(sortMembers([list[0], list[0]]).map((m) => m.id)).toEqual(['g', 'g'])
+  })
+  it('filters by any of several roles and their labels', () => {
+    const multi = [member({ id: 's', email: 'sara@x.se', role: 'tester', roles: ['tester', 'sme'] }), member({ id: 'v', email: 'v@x.se' })]
+    expect(filterMembers(multi, 'sme').map((m) => m.id)).toEqual(['s'])
+    expect(filterMembers(multi, 'expert', (r) => (r === 'sme' ? 'Subject matter expert' : r)).map((m) => m.id)).toEqual(['s'])
+  })
+  it('knows which members the caller may manage', () => {
+    const sara = member({ role: 'tester', roles: ['tester', 'sme'] })
+    expect(mayManageMember(sara, ['tester', 'sme', 'viewer'])).toBe(true)
+    expect(mayManageMember(sara, ['sme', 'viewer'])).toBe(false)
+    expect(lockedRoles(sara, ['sme', 'viewer'])).toEqual(['tester'])
+    expect(mayManageMember(member({ role: 'viewer' }), ['viewer'])).toBe(true)
+    expect(mayManageMember(member({ role: '' }), ['viewer'])).toBe(false)
   })
   it('notices oneself in a selection', () => {
     expect(includesSelf(['a', 'u1'], 'u1')).toBe(true)

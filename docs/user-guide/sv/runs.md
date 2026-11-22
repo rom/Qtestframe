@@ -186,7 +186,7 @@ Hitta defekter med frågor: `defect:JIRA-*` i körningens filter hittar exekveri
 
 ## Importera utfall från CI
 
-Automatiserade pipelines (GitLab CI, GitHub Actions, Jenkins …) kan rapportera utfall till en körning per testnyckel.
+Automatiserade pipelines (GitLab CI, GitHub Actions, Jenkins …) kan rapportera utfall till en körning per testnyckel. Färdiga pipelinemallar, kvalitetsgrinden, commit-statusar i GitLab och testurval beskrivs i [CI/CD](ci-cd.md).
 
 1. Skapa en API-nyckel: **Administration → API-nycklar → Ny API-nyckel**, roll **Testare** eller högre (se [API-nycklar](administration.md#api-nycklar)). Kopiera nyckeln; den visas bara en gång och börjar med `qtf_`.
 2. Öppna körningen och välj **CI-import**. Dialogen visar slutpunkten med körningens id och ett färdigt kommando.

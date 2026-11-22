@@ -811,8 +811,9 @@ API tokens are for scripts and CI pipelines (`Authorization: Bearer qtf_…`). M
 
 ## The model
 
-- Every user has **one role per organisation** in which they are a member; without a membership a user sees nothing of an organisation.
-- A role is a named set of **permissions**. Six roles are built in: Admin, Manager, Test lead, Tester, Reviewer and Viewer.
+- Every member holds **one or more roles per organisation**; without a membership a user sees nothing of an organisation. Someone who both writes requirements and tests holds, for example, *Subject matter expert* and *Tester*.
+- A role is a named set of **permissions**; a member with several roles has the **union** of their permissions (roles only add rights). Seven roles are built in: Admin, Manager, Test lead, Tester, Subject matter expert (SME), Reviewer and Viewer.
+- Holding Admin among one's roles makes a member an organisation administrator. Older API clients see one `role`, the *primary* role: the strongest built-in role of the member (Admin whenever the member holds it).
 - **Super administrator** is a flag of the user account, set with `qtestframe user create --super-admin` or under **Administration → Users**. A super administrator holds every permission in every organisation (and acts as admin in an organisation without being a member), and alone may manage organisations and users, back up and restore, and change the system settings. This applies to signed-in sessions only: API tokens never carry it.
 - Permissions are checked by the server on every request; the web client only hides what you may not do. An object of another organisation, or of a project you may not see, answers `404`, so its existence is not revealed.
 
@@ -822,35 +823,47 @@ These are the permissions of the built-in roles until an organisation changes th
 
 <!-- BEGIN GENERATED: permissions (make admin-guide-ref) -->
 
-| Permission | Viewer | Reviewer | Tester | Test lead | Manager | Admin |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `project.create` |  |  |  |  | ✔ | ✔ |
-| `project.update` |  |  |  |  | ✔ | ✔ |
-| `project.delete` |  |  |  |  |  | ✔ |
-| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `requirement.write` |  |  |  |  | ✔ | ✔ |
-| `requirement.review` |  | ✔ |  |  | ✔ | ✔ |
-| `waiver.approve` |  |  |  |  | ✔ | ✔ |
-| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `test.write` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `test.review` |  | ✔ |  | ✔ | ✔ | ✔ |
-| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `run.write` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `run.execute` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan` |  |  |  | ✔ | ✔ | ✔ |
-| `script.execute` |  |  |  | ✔ | ✔ | ✔ |
-| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `audit.read` |  |  |  | ✔ | ✔ | ✔ |
-| `token.manage` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `member.manage` |  |  |  |  |  | ✔ |
-| `role.manage` |  |  |  |  |  | ✔ |
-| `settings.manage` |  |  |  | ✔ | ✔ | ✔ |
-| `tenant.manage` |  |  |  |  |  | ✔ |
+| Permission | Viewer | Reviewer | SME | Tester | Test lead | Manager | Admin |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `project.create` |  |  |  |  |  | ✔ | ✔ |
+| `project.update` |  |  |  |  |  | ✔ | ✔ |
+| `project.delete` |  |  |  |  |  |  | ✔ |
+| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `requirement.write` |  |  | ✔ |  |  | ✔ | ✔ |
+| `requirement.review` |  | ✔ | ✔ |  |  | ✔ | ✔ |
+| `waiver.approve` |  |  |  |  |  | ✔ | ✔ |
+| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `test.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `test.review` |  | ✔ |  |  | ✔ | ✔ | ✔ |
+| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `run.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `run.execute` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `cycle.plan` |  |  |  |  | ✔ | ✔ | ✔ |
+| `script.execute` |  |  |  |  | ✔ | ✔ | ✔ |
+| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `audit.read` |  |  |  |  | ✔ | ✔ | ✔ |
+| `token.manage` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `member.manage` |  |  |  |  |  |  | ✔ |
+| `role.manage` |  |  |  |  |  |  | ✔ |
+| `settings.manage` |  |  |  |  | ✔ | ✔ | ✔ |
+| `tenant.manage` |  |  |  |  |  |  | ✔ |
 
 <!-- END GENERATED: permissions -->
+
+### The subject matter expert
+
+The **Subject matter expert** (`sme`) is a domain expert who takes part in writing the requirements of their field – a clinician, a safety engineer, a lawyer. The role:
+
+- creates and edits requirements (`requirement.write`): text, acceptance criteria, rationale, sources, relations, trace and item links and attachments;
+- takes part in requirement reviews (`requirement.review`) and discussions (`comment.create`);
+- reads tests, runs, defects and risks for context, and exports and reports (`export`).
+
+It deliberately does **not** write or review tests, create or execute runs, plan cycles, approve waivers or accept residual risks, change project settings, sharing or members, or create API tokens. Evidence on test executions is recorded by testers; an SME attaches supporting documents to the requirements themselves. Give a second role to someone who also does more, e.g. *Subject matter expert* + *Tester*.
+
+Because the role both writes and reviews requirements, an SME can approve their own requirements. Where separation of duties matters, remove `requirement.review` from the role in the matrix (or give it only to separate reviewers).
 
 What the permissions allow:
 
@@ -877,24 +890,26 @@ Grant `script.execute` only to people you would let run code on the server: scri
 Holders of `role.manage` (Admin by default) change the permissions of every built-in role except Admin and create **custom roles** under **Administration → Role matrix** ([user guide](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/en/administration.md#change-roles-and-create-your-own)). The rules that keep this safe:
 
 - Nobody can grant a permission they do not hold themselves – not to a role, not to an API token, not through project sharing.
-- Admin always keeps every permission, and an organisation always keeps at least one admin (the last one cannot be demoted or removed, also not through SCIM).
-- A custom role has a technical name of 2–32 characters (`a-z`, `0-9`, `_`, starting with a letter), which is what `member add --role`, `role_mapping` and SCIM group mappings use. It can be deleted once no member or token uses it.
-- A built-in role whose permissions differ from the defaults is marked *changed* and can be reset. Changes are audited.
+- Admin always keeps every permission, and an organisation always keeps at least one member holding Admin: the last one cannot lose the role or be removed – not in the member list, not in bulk, not through SCIM. Admin may be held together with other roles.
+- A custom role has a technical name of 2–32 characters (`a-z`, `0-9`, `_`, starting with a letter), which is what `member add --role` (several roles separated by commas: `--role sme,tester`), `role_mapping` and SCIM group mappings use. It can be deleted once no member, project member or token holds it, also among other roles.
+- A built-in role whose permissions differ from the defaults is marked *changed* and can be reset. Changes are audited, and a change of a member's roles is logged with the roles added and taken away (`+sme −viewer`).
+- API tokens hold roles too (by default all roles of their owner) and never get more than their owner's current roles allow.
+- With single sign-on (`role_mapping`) and SCIM, a user in several mapped groups holds the roles of all of them.
 
 The effective matrix of an organisation is served at `GET /api/v1/roles`.
 
 ## Restricted and shared projects
 
-A project is either **organisation-wide** (the default: every member sees it with their organisation role) or **restricted** (only its project members see it). Project members are users or SCIM groups with a **project role**, which replaces the organisation role inside that project, upwards or downwards. Users with `project.update` in the project manage this under **Share** ([user guide](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/en/administration.md#project-sharing)).
+A project is either **organisation-wide** (the default: every member sees it with their organisation role) or **restricted** (only its project members see it). Project members are users or SCIM groups with one or more **project roles**, which replace the organisation roles inside that project, upwards or downwards. Users with `project.update` in the project manage this under **Share** ([user guide](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/en/administration.md#project-sharing)).
 
 | Who | Permissions inside a project |
 |---|---|
 | organisation admins and super administrators | their own, always – they see every project |
-| a project member (directly or through a group; the direct membership wins, groups add up) | the project-scoped permissions of the project role |
-| any other member, organisation-wide project | the organisation role |
+| a project member (directly or through a group; the direct membership wins, groups add up) | the project-scoped permissions of the project roles (added up) |
+| any other member, organisation-wide project | the organisation roles |
 | any other member, restricted project | none: the project answers `404` |
 
-Only **project-scoped** permissions come from the project role (`project.read`, `project.update`, `project.delete`, `requirement.*`, `test.*`, `run.*`, `script.execute`, `export`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation role, and an API token is capped by its own role inside a project as well.
+Only **project-scoped** permissions come from the project roles (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation roles, and an API token is capped by its own roles inside a project as well.
 
 What restriction does **not** hide, so plan accordingly:
 
@@ -1435,6 +1450,16 @@ Users with `requirement.write` import requirements from a Jira JQL query or an A
 
 Jira is searched with `POST /rest/api/2/search/jql` (Jira Cloud) and, when that does not exist, `POST /rest/api/2/search` (Server and Data Center); Azure DevOps with the WIQL, fields and work items endpoints of REST API 7.1. At most 1,000 items are read per import. The import only reads; it is audited as `requirement.import`, the connection changes as `import_sources.update`. Tokens are encrypted with the server's secret keys (they are re-encrypted by key rotation), never returned, and left out of project archives. The import is reached through the server's outbound proxy (`HTTPS_PROXY`, `NO_PROXY`) like the trackers; allow the hosts above in a firewall.
 
+## CI/CD pipelines (GitLab, GitHub Actions)
+
+Pipelines talk to the server with the `qtestframe` command (`report`, `gate`, `select`; [command line reference](#command-line-reference)) and an API token. Nothing needs to be configured on the server; what each part needs:
+
+- **API token.** Create a dedicated CI user, make it a member with the **tester** role in the projects it reports to (tester holds `run.execute` for uploads, `run.write` for `--create-run` and `test.write` for `--create-missing`), and create its token with the role *tester* under **Administration → API tokens**. A token never gets more than its user's current role. Store it as a masked CI/CD variable `QTF_TOKEN`. There are no finer token scopes than roles; a custom role with only `project.read`, `test.read`, `run.read`, `run.execute` and `run.write` is the narrowest that runs every command.
+- **The binary.** The jobs need an image with the static `qtestframe` binary (`QTF_CLI_IMAGE`); the server image is distroless, so copy the binary into your CI image (`COPY --from=qtestframe:<version> /usr/bin/qtestframe /usr/local/bin/`).
+- **Templates.** `examples/ci/` holds `.gitlab-ci.yml` templates (with and without test selection), a CI/CD component and a GitHub Actions workflow; the same, with the server URL and project key filled in, are in **Settings → Project → CI setup** and at the public `GET /api/v1/ci/templates/{name}` (for `include: remote:`; they contain no secrets).
+- **Commit statuses and merge request notes from the pipeline** need a GitLab token in `QTF_GITLAB_TOKEN`: a project access token with the role **Developer** (commit statuses need Developer; notes Reporter) and the scope `api`. GitLab does not accept the job token `CI_JOB_TOKEN` for `POST /projects/:id/statuses/:sha` or merge request notes at the time of writing (its fine-grained job token permissions do not cover them); the command falls back to it and prints a warning when GitLab refuses it. In GitHub Actions the workflow's `GITHUB_TOKEN` with `statuses: write` and `pull-requests: write` is enough (`QTF_GITHUB_TOKEN`).
+- **Server-side posting.** Instead, a project can let the server post: **Settings → Project → Results back to GitLab** stores the GitLab API URL, project and a project access token (encrypted like the other secrets, write-only, re-encrypted by `qtestframe secrets`, left out of project archives). When results with `?commit=` arrive, a row is added to the `ci_deliveries` outbox and posted in the background: `qtestframe/tests` (and `qtestframe/gate` with a release or conditions) and a merge request note that is updated, not repeated. Failed posts are retried by the minute job with exponential backoff (1, 2, 4, … minutes, up to 6 attempts; HTTP 429 waits as long as GitLab asks); a refused token or project (other 4xx) is not retried. The last 50 posts per project are shown in the settings; `ci_deliveries` is not backed up. The server needs outbound HTTPS to the GitLab instance.
+
 ## Script and web test runner
 
 The runner executes the scripts of automated tests (`sh`, `bash`, `python`, `javascript`) and web tests (Playwright) on the server. It is **off by default**; read [the sandbox section](#the-script-and-web-test-sandbox) before turning it on. Its settings apply after a restart.
@@ -1713,7 +1738,7 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 **In a backup** (94 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
 
-**Not in a backup:** `chat_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1837,6 +1862,8 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 49 | `0049_risk_attack.sql` |
 | 50 | `0050_project_creator.sql` |
 | 51 | `0051_frameworks.sql` |
+| 52 | `0052_multiple_roles.sql` |
+| 53 | `0053_ci_integration.sql` |
 
 <!-- END GENERATED: migrations -->
 
@@ -1983,7 +2010,7 @@ Other common tasks:
 
 # Command line reference
 
-`qtestframe` is the server and the administration tool. Every command except `report`, `version`, `secrets generate-key` and `healthcheck --url` reads the configuration (`--config FILE`, default `$QTF_CONFIG`, then the built-in defaults and `QTF_*` variables). The commands that open the database migrate it first.
+`qtestframe` is the server and the administration tool. Every command except `report`, `gate`, `select`, `version`, `secrets generate-key` and `healthcheck --url` reads the configuration (`--config FILE`, default `$QTF_CONFIG`, then the built-in defaults and `QTF_*` variables). The commands that open the database migrate it first.
 
 ```text
 qtestframe <command> [flags]
@@ -1992,7 +2019,7 @@ qtestframe <command> -h         # the flags of a command
 ```
 
 - Run administration commands **as the service user** (`sudo -u qtestframe …`), so files such as a new key file get the right owner.
-- Exit status: `0` on success (also for `-h`), `1` on an error (printed as `error: …`), `2` for an unknown command.
+- Exit status: `0` on success (also for `-h`), `1` on an error (printed as `error: …`), `2` for an unknown command. `gate`: `0` the gate passed, `1` it failed, `2` it could not be evaluated.
 - Flags take one or two dashes (`-config` and `--config`). Passwords are only read from standard input.
 - `qtestframe sandbox-exec` is internal: the server starts it to sandbox scripts. Do not call it yourself.
 
@@ -2049,7 +2076,7 @@ Gives a user a role in an organisation, or changes it. The role is a built-in ro
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
 | `--email` | `string` | user e-mail |
-| `--role` | `string` | role (default "viewer") |
+| `--role` | `string` | role, or several roles separated by commas (e.g. sme,tester) (default "viewer") |
 | `--tenant` | `string` | tenant slug |
 
 ### `qtestframe seed-demo`
@@ -2140,23 +2167,98 @@ Requests `/healthz` of the local server (URL from `server.listen`, `https` with 
 
 ### `qtestframe report`
 
-Uploads JUnit XML or JSON results of a CI job to a run on a server, through the REST API with an API token. Further arguments are report files (`*.json` as JSON, others as JUnit XML).
+Uploads JUnit XML or JSON results of a CI job to a run on a server, through the REST API with an API token. Further arguments are report files (`*.json` as JSON, others as JUnit XML). In GitLab CI, GitHub Actions and Jenkins the pipeline is recorded as the build of the results (`--ci none` turns that off); `--post-status` and `--post-comment` post the commit status `qtestframe/tests` and a merge request note.
 
 | Flag | Value | Meaning |
 |---|---|---|
-| `--build` | `string` | build of a run created with --create-run |
+| `--branch` | `string` | branch of the build (default from the CI variables) |
+| `--build` | `string` | build of a run created with --create-run (default the CI pipeline number) |
+| `--build-id` | `string` | CI build id, unique in the project (default from the CI variables) |
+| `--build-number` | `string` | CI build number (default from the CI variables) |
+| `--ci` | `string` | record the CI build (pipeline id and number, commit, branch, merge request) of the results: auto (from the CI variables) or none (default "auto") |
+| `--code-host` | `string` | where to post: auto (from the CI variables), gitlab or github (default "auto") |
+| `--commit` | `string` | commit SHA of the build (default from the CI variables) |
 | `--configuration` | `string` | configuration (name or id) the results were obtained in; added to the run when it does not target it yet (default $QTF_CONFIGURATION) |
 | `--create-missing` | — | create draft automated tests for JUnit test cases without a test key (needs test.write) |
 | `--create-run` | — | create the run named by --run when the project has none |
 | `--environment` | `string` | environment of a run created with --create-run |
 | `--fail-on-unknown` | — | exit with an error when results match no test (unknown keys or test cases without a key) |
+| `--gitlab-comment` | — | same as --post-comment |
+| `--gitlab-status` | — | same as --post-status |
 | `--json` | `value` | results in the JSON import format {"results":[...]} (file or glob; repeatable) |
 | `--junit` | `value` | JUnit XML report (file or glob; repeatable) |
-| `--project` | `string` | project key, e.g. SHOP (needed with --run) |
+| `--merge-request` | `string` | merge / pull request of the build (default from the CI variables) |
+| `--pipeline-url` | `string` | pipeline URL of the build (default from the CI variables) |
+| `--post-comment` | — | add or update a merge / pull request note with the summary (default $QTF_POST_COMMENT) |
+| `--post-status` | — | post a commit status to the code host (default $QTF_POST_STATUS) |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
 | `--run` | `string` | name of the test run to report into |
 | `--run-id` | `string` | id of the test run to report into |
 | `--token` | `string` | API token (default $QTF_TOKEN) |
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+
+### `qtestframe gate`
+
+Checks the quality gate of a CI pipeline on a server: the exit criteria of a release (`--release`, optionally `--variant`) or the conditions of `--require` (`must`, `no_failed`, `no_stale`, `no_blocking_defects`, `coverage>=80`, `no_open_defects:major`, `cycle_executed:NAME>=90`, …) on the results of a run (`--run`) or build (`--build`). Prints a summary with the failing items and links; `--format junit|markdown|json --output FILE` also writes a report for the pipeline. Exit code 0 when the gate passes, 1 when it fails, 2 when it cannot be evaluated. `--post-status` and `--post-comment` post a commit status and a merge request note (GitLab or GitHub, see the user guide page CI/CD).
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--build` | `string` | build (CI id or number) whose runs' results are checked |
+| `--code-host` | `string` | where to post: auto (from the CI variables), gitlab or github (default "auto") |
+| `--commit` | `string` | commit of the change (default from the CI variables) |
+| `--format` | `string` | output: text, json, junit or markdown (default "text") |
+| `--gitlab-comment` | — | same as --post-comment |
+| `--gitlab-status` | — | same as --post-status |
+| `--merge-request` | `string` | merge / pull request of the change (default from the CI variables) |
+| `--output` | `string` | write the output to this file (the text summary still goes to the log) |
+| `--post-comment` | — | add or update a merge / pull request note with the summary (default $QTF_POST_COMMENT) |
+| `--post-status` | — | post a commit status to the code host (default $QTF_POST_STATUS) |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--release` | `string` | release (name, version or id) whose exit criteria are checked |
+| `--require` | `value` | condition, e.g. coverage>=80, must, no_failed, no_stale, no_blocking_defects, no_open_defects:major, cycle_executed:NAME>=90 (repeatable, or comma-separated); replaces the release's exit criteria |
+| `--run` | `string` | run (name or id) whose results are checked |
+| `--run-id` | `string` | id of the run whose results are checked |
+| `--scope` | `string` | requirements of a gate without --release: all (default), affected (those the merge request / commit refers to) or a query |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+| `--variant` | `string` | evaluate for this variant (name or id) only |
+
+### `qtestframe select`
+
+Prints the tests a CI pipeline runs for a change: the requirements and tests that the change's commits (from git, `--since`, or `--commits`), merge request, changed files (with the path map `qtestframe-map.yml`) and commit messages refer to, the regression selection and the tests with the `--tag` tags. `--format` gives test keys, a test runner filter (`pytest`, `go`, `playwright`, `maven`), JSON or a GitLab child pipeline (`gitlab-child-pipeline`); `--create-run` creates a run of the selection.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--all` | — | select every test |
+| `--cli-image` | `string` | image with the qtestframe binary for the child pipeline's report job (default $QTF_CLI_IMAGE) |
+| `--commits` | `value` | commit SHAs of the change (repeatable or comma-separated; instead of git) |
+| `--create-run` | — | create a run of the selected tests (results of report --run-id land in it) |
+| `--environment` | `string` | environment of the created run |
+| `--fallback` | `string` | when the change is unknown (no commits, files or keys): none (select nothing) or all (default "none") |
+| `--files` | `value` | changed files (repeatable or comma-separated; instead of git) |
+| `--format` | `string` | output: keys, pytest, go, playwright, maven, json, gitlab-child-pipeline (default "keys") |
+| `--gate-release` | `string` | release whose exit criteria the child pipeline's gate checks |
+| `--gate-require` | `value` | condition of the child pipeline's gate (repeatable) |
+| `--git` | — | read the commits (messages) and changed files with git (default true) |
+| `--head` | `string` | the revision of the change (default $CI_COMMIT_SHA, else HEAD) |
+| `--image` | `value` | image of a runner's job in the child pipeline, RUNNER=IMAGE (repeatable) |
+| `--include-manual` | — | select manual tests too |
+| `--include-related` | — | add requirements that depend on, refine or derive from a changed one |
+| `--job` | `value` | test command of a runner's job in the child pipeline, RUNNER=COMMAND (repeatable) |
+| `--map` | `string` | path map: changed files → tests, tags, requirements (default qtestframe-map.yml when it exists) |
+| `--merge-request` | `string` | merge / pull request number (default from the CI variables) |
+| `--no-gate` | — | no gate in the child pipeline |
+| `--output` | `string` | write the output to this file |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--release` | `string` | release (name, version or id) of the created run |
+| `--requirement` | `value` | changed requirement (key or id; repeatable) |
+| `--run` | `string` | name of the run to create (default $QTF_RUN) |
+| `--since` | `string` | compare with this git revision (default: the merge request's diff base, else the commit before the push) |
+| `--since-build` | `string` | also the commits after this build (CI id or number) |
+| `--tag` | `value` | always run the tests with this tag (repeatable) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+| `--variant` | `string` | only tests that apply to this variant |
 
 ### `qtestframe version`
 
@@ -2183,7 +2285,16 @@ qtestframe secrets rewrap --config config.new.yaml --from-config config.yaml
 # CI: report JUnit results into a run, creating it when missing
 QTF_URL=https://qtf.example.com QTF_TOKEN=qtf_… \
   qtestframe report --project SHOP --run "Nightly $BUILD" --create-run --build "$BUILD" --junit 'reports/*.xml'
+
+# CI: the quality gate of the pipeline's run, as JUnit for the pipeline
+qtestframe gate --project SHOP --run "Nightly $BUILD" --release 1.0 --format junit --output qtf-gate.xml
+
+# CI: the tests of a merge request as a pytest filter, or as a child pipeline
+pytest -k "$(qtestframe select --project SHOP --format pytest)"
+qtestframe select --project SHOP --format gitlab-child-pipeline --create-run --run "MR $CI_MERGE_REQUEST_IID" --output child.yml
 ```
+
+Ready-made pipeline definitions are in `examples/ci/` and in the app (**Settings → Project → CI setup**); see the user guide page *CI/CD*.
 
 # Features added later
 
@@ -2209,3 +2320,7 @@ and checked against the code):
 Exploratory test sessions (migration 0040) need no configuration. They use the run permissions: `run.read` to see sessions, `run.write` to plan, change and delete them and to debrief or stop someone else's session, `run.execute` to run one's own session (timer, notes, defects from notes, debrief). The session timer is kept in the database (`exploratory_sessions.running_since`, `elapsed_seconds`), so a restart of the server does not lose session time; a session left running keeps counting until someone pauses or stops it.
 
 The tables `exploratory_sessions`, `exploratory_scope` and `exploratory_notes` are part of the backup and of project archives; screenshots are ordinary attachments (`files`, `attachments`) and count against `files.max_upload_mb`. Whether debriefed sessions are verification evidence is a project setting (`verification_settings.exploratory_evidence`, off by default), changed by someone with `project.update`. Every action is written to the audit log with actions `exploratory.*`.
+
+## CI/CD integration
+
+The quality gate, the test selection and the pipeline templates (migration 0053) need no configuration; the server-side posting of GitLab commit statuses and merge request notes is a project setting with an encrypted token and a background outbox (`ci_deliveries`, retried by the minute job, not backed up). Tokens, roles, the job token's limits and outgoing connections are described in [E-mail, webhooks and integrations](#e-mail-webhooks-and-integrations); changes of the settings are audited as `project.ci_settings`.

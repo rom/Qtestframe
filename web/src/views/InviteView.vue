@@ -14,7 +14,7 @@ import { formatDateTime } from '@/lib/format'
 import { useAuthStore } from '@/stores/auth'
 import { useProjectStore } from '@/stores/project'
 import { useNotify } from '@/composables/notify'
-import { enumLabel } from '@/i18n/labels'
+import { rolesLabel } from '@/i18n/labels'
 import { useI18n } from 'vue-i18n'
 
 interface Invitation {
@@ -22,6 +22,7 @@ interface Invitation {
   display_name: string
   tenant_name: string
   role: string
+  roles?: string[]
   invited_by: string
   expires_at: string
   sso: boolean
@@ -109,7 +110,7 @@ async function signOut() {
         </template>
         <template v-else-if="inv">
           <h1 style="margin: 0 0 4px; font-size: 1.5em"><i class="pi pi-envelope" aria-hidden="true" /> {{ t('email.accept.title', { tenant: inv.tenant_name }) }}</h1>
-          <p class="muted" style="margin: 0 0 6px">{{ t('email.accept.intro', { inviter: inv.invited_by, tenant: inv.tenant_name, role: enumLabel('role', inv.role) }) }}</p>
+          <p class="muted" style="margin: 0 0 6px">{{ t('email.accept.intro', { inviter: inv.invited_by, tenant: inv.tenant_name, role: rolesLabel(inv.roles?.length ? inv.roles : [inv.role]) }) }}</p>
           <p class="small muted" style="margin: 0 0 16px">{{ t('email.accept.expires', { date: formatDateTime(inv.expires_at) }) }}</p>
           <Message v-if="auth.me" severity="info" :closable="false" style="margin-bottom: 14px">
             {{ t('email.accept.signedInAs', { email: auth.me.user.email }) }}

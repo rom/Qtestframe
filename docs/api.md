@@ -21,7 +21,7 @@ is unreachable); all other paths serve the web client.
   exempt.
 * **Tenant** – the session has a *current tenant*; all project data is scoped
   to it. Switch with `POST /auth/switch-tenant`. Bearer tokens are bound to
-  one tenant; their role is capped at the user's current role.
+  one tenant; their roles are capped at the user's current roles.
 * **Language** – the API itself is English (error messages, export
   headers); the web client translates its own texts.
 * **Errors** – non-2xx responses have the body
@@ -79,7 +79,8 @@ is unreachable); all other paths serve the web client.
 {
   "user": User,
   "tenant": Tenant | null,
-  "role": "admin|manager|test_lead|tester|reviewer|viewer|<custom>|",
+  "role": "admin|manager|test_lead|tester|sme|reviewer|viewer|<custom>|",
+  "roles": ["tester", "sme"],
   "permissions": ["project.read", ...],
   "memberships": [Membership],
   "csrf_token": "...",
@@ -90,7 +91,20 @@ is unreachable); all other paths serve the web client.
 `User` and `Membership` carry `"mfa_enabled"` (a confirmed second factor);
 in `GET /users` and `GET /members` it is filled for every row, and members
 also have `"mfa_required"` (the server or tenant policy requires MFA for
-their role here).
+one of their roles here).
+
+**Several roles.** A member holds one or more roles in an organisation
+(and, as a project member, one or more project roles); the effective
+permissions are the **union** of the permissions of the held roles.
+Memberships, project members, invitations and API tokens carry
+`"roles": [...]` (admin first, then the built-in roles from most to least
+privileged, then custom roles alphabetically) and, for older clients,
+`"role"`: the first of them, the *primary* role (deprecated). Requests
+accept `"roles": [...]` or, as before, `"role": "..."` (one role);
+`roles` wins when both are given, and a member keeps at least one role
+(400 for an empty list). Holding `admin` among one's roles makes a member
+an organisation administrator (`role` is then always `admin`), and the
+last member holding `admin` cannot lose it (409). `Me` has `roles` too.
 
 ## Multi-factor authentication
 
@@ -174,22 +188,22 @@ are `mfa.enable`, `mfa.disable`, `mfa.recovery_codes`,
 | POST | `/users` | super admin | `{"email","display_name","password","super_admin"}` |
 | PATCH | `/users/{id}` | super admin | `{"display_name","disabled","super_admin","password"}`; disabling or setting a password ends the user's sessions; you cannot demote or disable yourself (409) |
 | GET | `/members` | member.read | members of current tenant; `"scim": true` marks members provisioned by SCIM, whose role and membership only the identity provider changes (`PATCH`, `DELETE` and `POST /members` answer 409 `scim_managed` for them); a member with an open e-mail invitation has `"invitation": {id, sent_at, expires_at, sso, expired, invited_by}` |
-| POST | `/members` | member.manage | `{"email","role","display_name"?,"password"?,"invite"?,"sso"?}` – creates the local user if it does not exist. With `"invite": true` (needs e-mail, see [E-mail](#e-mail)) a person without a used account gets an invitation e-mail instead of an initial password (`password` must then be empty), and the answer has `invitation`; an existing account only gets an e-mail that it was added. `"sso": true` invites to sign in with single sign-on |
+| POST | `/members` | member.manage | `{"email","roles" (or "role"),"display_name"?,"password"?,"invite"?,"sso"?}` – creates the local user if it does not exist. With `"invite": true` (needs e-mail, see [E-mail](#e-mail)) a person without a used account gets an invitation e-mail instead of an initial password (`password` must then be empty), and the answer has `invitation`; an existing account only gets an e-mail that it was added. `"sso": true` invites to sign in with single sign-on |
 | POST | `/members/{user_id}/invitation` | member.manage | sends a new invitation link (the old link stops working) → invitation; 409 when the person already uses the account |
 | DELETE | `/members/{user_id}/invitation` | member.manage | revokes the open invitation → `{"revoked": true, "removed": bool}`; a person who never used the account is also removed from the tenant |
-| PATCH | `/members/{user_id}` | member.manage | `{"role"}`; the last admin cannot be demoted (409) |
+| PATCH | `/members/{user_id}` | member.manage | `{"roles": [...]}` (or `{"role"}`): exactly these roles; the last member holding admin cannot lose it (409). Audited `member.role` with the added and removed roles (`+sme −viewer → tester, sme`) |
 | DELETE | `/members/{user_id}` | member.manage | the last admin cannot be removed (409) |
-| POST | `/members/bulk` | member.manage | `{"user_ids":[...], "action": "role"\|"remove", "role"?}` (max 1000, all or nothing) → `{"changed":[{user_id, email, role}], "skipped":[{user_id, email, role, reason}]}`; reasons `self` (your own membership is never changed in bulk), `not_found`, `scim` (provisioned by SCIM), `unchanged`. A change that would leave no admin is refused (409). For a removal, `role` is the role the member had |
+| POST | `/members/bulk` | member.manage | `{"user_ids":[...], "action": "role"\|"add_role"\|"remove_role"\|"remove", "roles"? (or "role")}` (max 1000, all or nothing): `role` gives exactly the roles, `add_role` adds them, `remove_role` takes them away → `{"changed":[{user_id, email, role, roles}], "skipped":[{user_id, email, role, roles, reason}]}`; reasons `self` (your own membership is never changed in bulk), `not_found`, `scim` (provisioned by SCIM), `unchanged`, `last_role` (the member would have no role left). A change that would leave no admin is refused (409). For a removal, `roles` are the roles the member had |
 | GET | `/rbac` | any | `{"roles":[...],"matrix":{role:[perm]},"permissions":[...]}` – the effective matrix of the current tenant |
 | GET | `/roles` | any member | `{"items":[Role],"permissions":[...]}`; Role = `{name, label?, description?, permissions, builtin, customized?, editable, deletable, members, tokens}` |
 | POST | `/roles` | role.manage | `{"name","label","description"?,"permissions":[...]}` → 201 Role; `name` is 2–32 of `a-z0-9_` starting with a letter; 409 when it exists |
 | PUT | `/roles/{name}` | role.manage | `{"label"?,"description"?,"permissions"?}`; `admin` cannot be changed (400) |
 | POST | `/roles/{name}/reset` | role.manage | built-in roles only: back to the default permissions → 204 |
-| DELETE | `/roles/{name}` | role.manage | custom roles only; 409 while members or API tokens use it |
+| DELETE | `/roles/{name}` | role.manage | custom roles only; 409 while members, project members or API tokens hold it (among other roles too) |
 | GET | `/settings` | any member | `TenantSettings` (below) |
 | PUT | `/settings` | settings.manage | `TenantSettings` → the stored settings |
 | GET | `/tokens` | token.manage | own tokens in tenant |
-| POST | `/tokens` | token.manage | `{"name","role","expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; role defaults to the own role, and its permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its role's and the user's current role's permissions) |
+| POST | `/tokens` | token.manage | `{"name","roles" (or "role"),"expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; the roles default to all of the creator's own roles, and their permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its roles' permissions and those of the user's current roles) |
 | DELETE | `/tokens/{id}` | token.manage | |
 | GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user |
 | GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"email_enabled"`, `"email_digest_hour"` (UTC) and `"version"` |
@@ -243,7 +257,7 @@ in prompts.
 `access` is `organisation` or `restricted` (see below); `my_access`
 (`GET /projects`, `GET /projects/{pid}`, `POST /projects`) is the caller's
 access to the project: `{"source": "admin"|"member"|"group"|"organisation",
-"role", "permissions": [...], "can_share": bool}` – `permissions` are the
+"roles": [...], "role" (the roles joined by ", ", deprecated), "permissions": [...], "can_share": bool}` – `permissions` are the
 effective permissions in the project, which clients use to show or hide
 actions inside it.
 
@@ -256,16 +270,17 @@ organisation's administrators see it; everyone else gets **404** for the
 project and for every resource in it, also when addressed by its own id,
 e.g. `/requirements/{id}`, `/runs/{id}`, `/executions/{id}`, `/files/{id}`).
 
-A project member is a user of the organisation or a SCIM group, with a
-**project role** – any role of the organisation (built-in or custom). The
-effective permissions of a caller in a project:
+A project member is a user of the organisation or a SCIM group, with one
+or more **project roles** – any roles of the organisation (built-in or
+custom). The effective permissions of a caller in a project:
 
 * organisation administrators (role `admin`) and super administrators keep
   their organisation permissions in every project;
-* a project member gets the project permissions of the project role
+* a project member gets the project permissions of the project roles (the
+  union of the roles of the membership)
   (`project.*` except `project.create`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`,
-  `script.execute`, `export`) **instead of** those of the organisation role
-  – in organisation-wide projects too, so a project role raises or lowers a
+  `script.execute`, `export`, `comment.create`) **instead of** those of the
+  organisation roles – in organisation-wide projects too, so project roles raise or lower a
   user's rights in one project. A direct membership wins over group
   memberships; several groups give the union of their roles;
 * anyone else has their organisation role in an organisation-wide project
@@ -273,8 +288,8 @@ effective permissions of a caller in a project:
 
 Organisation-level permissions (`member.*`, `role.manage`,
 `settings.manage`, `tenant.manage`, `token.manage`, `audit.read`,
-`project.create`) always come from the organisation role. An API token
-never exceeds its own role, inside a project too. Lists across projects
+`project.create`) always come from the organisation roles. An API token
+never exceeds its own roles, inside a project too. Lists across projects
 (`/projects`, `/search`, `/reviews`, `/reviews/in-review`,
 `/notifications`, the catalogue's `?project_id=`) leave out what the caller
 may not see; moving folders or items into another project needs write
@@ -285,16 +300,18 @@ requests only reach people who may see the project.
 |---|---|---|
 | GET | `/projects/{pid}/access` | project.read – `{"access", "members": n, "my_access", "grantable_roles": [...]}` |
 | PUT | `/projects/{pid}/access` | project.update – `{"access": "organisation"\|"restricted"}`; restricting keeps the caller in the project (a caller who is neither an administrator nor a member becomes a member with their organisation role) |
-| GET | `/projects/{pid}/members` | project.read – `ProjectMember`: `{"type": "user"\|"group", "id", "role", "email", "display_name", "avatar", "org_role", "added_by", "created_at", "updated_at"}` |
+| GET | `/projects/{pid}/members` | project.read – `ProjectMember`: `{"type": "user"\|"group", "id", "roles", "role", "email", "display_name", "avatar", "org_roles", "org_role", "added_by", "created_at", "updated_at"}` (`role` and `org_role` are the primary roles, deprecated) |
 | GET | `/projects/{pid}/members/candidates` | project.update – `?q=`: organisation members and SCIM groups that are not project members yet (at most 50) |
-| POST | `/projects/{pid}/members` | project.update – `{"user_id" \| "email" \| "group_id", "role"}` → 201 (200 when the member existed: the role is changed); the user must already be a member of the organisation (400 otherwise) |
-| PATCH | `/projects/{pid}/members/{mid}` | project.update – `{"role"}` |
+| POST | `/projects/{pid}/members` | project.update – `{"user_id" \| "email" \| "group_id", "roles" (or "role")}` → 201 (200 when the member existed: the roles are changed); the user must already be a member of the organisation (400 otherwise) |
+| PATCH | `/projects/{pid}/members/{mid}` | project.update – `{"roles": [...]}` (or `{"role"}`): exactly these project roles |
 | DELETE | `/projects/{pid}/members/{mid}` | project.update, or the member themselves (leaving) → 204 |
-| POST | `/projects/{pid}/members/bulk` | project.update – `{"ids": [...], "action": "role"\|"remove", "role"?}`, all or nothing → `{"changed": [...], "skipped": [{"id","label","reason": "not_found"\|"unchanged"\|"forbidden"}]}` |
+| POST | `/projects/{pid}/members/bulk` | project.update – `{"ids": [...], "action": "role"\|"add_role"\|"remove_role"\|"remove", "roles"? (or "role")}`, all or nothing → `{"changed": [...], "skipped": [{"id","label","reason": "not_found"\|"unchanged"\|"last_role"\|"forbidden"}]}` |
 
 Nobody can give, take or remove a project role whose project permissions
 they do not hold in the project themselves (403; administrators may give
-any role). An added user is notified (`project.shared`, in the app and by
+any role): changing a member's roles checks the added and the removed
+roles, removing a member checks all of their roles. The audit entry of a
+change lists the added and removed roles. An added user is notified (`project.shared`, in the app and by
 e-mail per their preferences). Changes are audited: `project.access`,
 `project.member.add`, `project.member.role`, `project.member.remove`.
 Removing someone from the organisation or deleting a SCIM group removes
@@ -1837,7 +1854,7 @@ are recorded when results are uploaded for them.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/projects/{pid}/code-settings` | project.read | `{"has_secret", "gitlab_url", "github_url", "updated_by", "updated_at"}` |
+| GET | `/projects/{pid}/code-settings` | project.read | `{"has_secret", "gitlab_url", "github_url", "updated_by", "updated_at", "ci", "has_ci_token"}` (`ci`: see [CI/CD](#cicd)) |
 | PUT | `/projects/{pid}/code-settings` | project.update | `{"secret"?: "16–200 characters", "clear_secret"?: true}`; an empty secret keeps the stored one. The secret is write-only and stored encrypted |
 | POST | `/hooks/gitlab/{pid}` | none (public) | GitLab push and merge request events; `X-Gitlab-Token` must equal the secret |
 | POST | `/hooks/github/{pid}` | none (public) | GitHub `push`, `pull_request` and `ping` events (`X-GitHub-Event`); `X-Hub-Signature-256` must be `sha256=` + the hex HMAC-SHA256 of the body with the secret |
@@ -1876,7 +1893,8 @@ created_at}], builds}`.
 /runs/{id}/results` take `?build_id=` (the CI's build id, unique per
 project), `?build_number=`, `?commit=` (hex SHA), `?branch=` and
 `?pipeline_url=`: the build is created or updated and the run is
-associated with it (`build_id`, `build_label`; the run's `build` text is
+associated with it (`?merge_request=` names the merge request of the
+results for the [CI posting](#cicd)) (`build_id`, `build_label`; the run's `build` text is
 set when empty); the answer has `build`. `?variant=` makes the run a run
 for that variant. `Build`: `{id, project_id, external_id, number,
 commit_sha, branch, pipeline_url, created_by, created_at, updated_at, runs,
@@ -1901,6 +1919,92 @@ ref, type}]}`.
 `store.CoverageFunc(requirementID, tests, results)` (default
 `store.CoverageOf`); `VariantCoverage` and `BuildIndex` hand it only the
 tests and results that count for the variant or build.
+
+## CI/CD
+
+What a CI/CD pipeline uses (the `qtestframe report`, `gate` and `select`
+commands): the quality gate, the test selection of a change, the
+pipeline templates and the commit statuses and merge request notes the
+server posts to GitLab. API tokens are limited by their role; a CI user
+with the role `tester` can call all of them.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET, POST | `/projects/{pid}/gate` | project.read | the quality gate, see below; the results of a run or build also need run.read |
+| POST | `/projects/{pid}/ci/select` | test.read | the tests of a change, see below; `create_run` needs run.write |
+| GET | `/projects/{pid}/ci/setup` | project.read | `{server_url, project_key, project_id, token_role, variables: [{name, value?, masked, required, description}], templates: [{name, kind: gitlab\|gitlab-selection\|gitlab-component\|github, file, url, content}]}`: the CI setup panel, with the server URL and project key filled in |
+| GET | `/ci/templates/{name}` | none (public) | a template (`gitlab-ci.yml`, `gitlab-ci-selection.yml`, `gitlab-component.yml`, `github-actions.yml`) as `text/yaml` with the server URL filled in; `?project=KEY`, `?download=true`. For GitLab's `include: remote:`; templates contain no secrets |
+| PUT | `/projects/{pid}/ci-settings` | project.update | `{"ci": {provider: ""\|gitlab, api_url, project, post_status, post_note, release_id, conditions: [...]}, "ci_token"?, "clear_ci_token"?}` → the code settings. The token is write-only and stored encrypted; empty keeps it. Audited as `project.ci_settings` |
+| GET | `/projects/{pid}/ci/deliveries` | project.update | `{items: [CIDelivery], total}` newest first; `?limit=` |
+
+**Quality gate.** Body (POST) or query parameters (GET): `{"release"?:
+"<id, name or version>", "variant"?, "run"?: "<id or name>", "build"?:
+"<id, CI id or number>", "require"?: ["must", "coverage>=80", ...],
+"scope"?: "all|affected|<query>", "commit"?, "merge_request"?,
+"summary_only"?: false}`. With a release, its exit criteria (or
+`require`) are evaluated on its scope and its runs, per targeted variant
+as in `GET /releases/{id}/status`; without one, `require` (default
+`mandatory_passed, no_failed, no_stale, no_blocking_defects`) on every
+requirement of the project that is not rejected or obsolete, or on the
+`scope`: `affected` (the requirements the commit and merge request are
+linked to, also through their tests) or a [query](#query-language). `run`
+and `build` restrict the results (with a release: its runs in the build).
+Conditions are `TYPE[:ARG][>=PERCENT]` with the exit criterion types
+above and the aliases `must`, `blocking`, `stale`, `failed`, `defects`,
+`suspect`, `cycle`, `risks`, `rules`, `residual`; `ARG` is the level
+(severity) or the cycle (id or name) of `cycle_executed`. Waivers count as
+in the release status (without a release only project-wide waivers).
+`summary_only` skips the gate (`pass`: no failed or blocked result).
+Answer `GateReport`:
+
+```json
+{"pass": false, "verdict": "fail", "project": {"id", "key", "name"},
+ "release": {"id", "name", "url"}, "variant": {...}, "run": {"id", "name", "url"}, "build": {"id", "name", "url"},
+ "scope": "release|all|affected|<query>", "scope_size": 12, "commit": "…", "merge_request": "5", "url": "…",
+ "conditions": [{"type", "threshold", "level", "cycle_id", "label": "coverage >= 80%", "state": "pass|waived|fail",
+   "met", "actual", "total", "available", "items": [{"kind", "id", "key", "title", "note", "url", "variants"}], "waived": [...]}],
+ "variants": [{"name", "pass"}], "results": {"total", "passed", "failed", "blocked", "skipped", "not_run", "in_progress"},
+ "failures": [Item], "affected": {"requirements": [{"id", "key", "title", "url", "result": "passed|failed|not_run|none", "tests"}],
+   "covered", "passed", "total"}, "waivers": [Item], "summary": {...}}
+```
+
+**Test selection.** The [regression selection](#code-and-builds)'s
+request plus `commits` (SHAs, or prefixes of at least 7 characters, of
+stored commits), `merge_request` (the number of a stored merge / pull
+request), `keys` (requirement and test keys, full or short, e.g. from
+commit messages), `tags` (tests with one of them are always selected),
+`all`, `include_manual`, `create_run` with `run` (name), `build`,
+`environment`, `release_id` (id, name or version) and
+`configuration_ids`. These fields are also accepted by
+`POST /projects/{pid}/regression`, whose answer then lists unknown keys
+in `unknown`. Answer: `{"project", "tests": [{"id", "key", "title",
+"execution_type", "tags", "runner", "identifier", "last_result",
+"reasons": [{kind: requirement|change|related|verifies|prerequisite|key|tag|all, ref, type}]}],
+"manual": [...], "requirements", "changes": [{"id", "key": "!5", "name",
+"url"}], "unknown": [keys], "variant", "run"}`. `tests` are the automated
+tests (all with `include_manual`), `manual` the others. `runner` is the
+test's `runner:<name>` tag, else `playwright` / `pytest` from the script
+language, else `default`; `identifier` is the key with underscores
+(`SHOP_TC_12`), as automated tests name it. A run is created only when
+tests are selected.
+
+**Server-side posting.** With `ci.provider` `gitlab`, a token and
+`post_status` or `post_note`, every result upload (`POST /runs/{id}/junit`,
+`POST /runs/{id}/results`) with `?commit=` (or a build with a commit)
+queues a `CIDelivery` once it is recorded; a waiting one for the same
+run, commit and merge request takes the new results along. It is posted
+in the background as the uploading user: the commit status
+`qtestframe/tests` (failed when a test failed or is blocked), with a
+release or conditions also `qtestframe/gate`, both with the run's page as
+`target_url`, and a merge request note (the upload's `?merge_request=`,
+else the open merge request of the build's branch from the webhooks)
+that is found again by the hidden marker `<!-- qtestframe:ci-summary:KEY -->`
+and updated. Failed attempts are retried by the minute job after 1, 2, 4,
+8 and 16 minutes (HTTP 429: as long as GitLab asks); other HTTP 4xx are
+final. `CIDelivery`: `{id, project_id, run_id, build_id, commit_sha,
+merge_request, status: queued|sending|retry|sent|failed, attempts,
+status_code, error, outcome, created_by, created_at, next_attempt_at,
+sent_at}`; the 50 newest finished ones are kept per project.
 
 ## Dependency graph and tags
 
@@ -2146,6 +2250,7 @@ Exit criterion types (`threshold` in percent, default 100):
 | `no_blocking_defects` | no scope requirement is blocked by an open defect under the project's severity rules (see [change and defect correlations](#change-and-defect-correlations)); a default of new releases |
 | `residual_risk` | no risk (not closed) linked to a scope requirement has a residual level above `level` (the release's risk acceptance threshold; default the project's, see [Risks](#risks)) unless its "accept risk" sign-off is valid; accepted risks are listed in `accepted` |
 | `cycle_executed` | at least `threshold` % of the planned tests of the [test cycle](#test-cycles) `cycle_id` (of the release's project) have a final result in the cycle's runs (default 100: "fully executed"); `items` lists the tests not yet executed |
+| `no_stale` | no test whose latest result in the release's runs is a pass that is stale (see [change and defect correlations](#change-and-defect-correlations)); a failed test is left to `no_failed`, a test of only waived requirements is `waived` |
 
 **Waivers.** An approved, unexpired [waiver](#waivers-and-deviations) for
 the release or for the whole project makes the criteria treat its
@@ -3081,10 +3186,12 @@ and sessions do not work for `/scim/v2`. Responses are
   membership. `DELETE /Users/{id}` removes the membership and the
   provisioning record (the account stays).
 * **Groups → roles.** Groups pushed by the provider are mapped to roles by
-  a tenant admin (`PATCH /api/v1/scim/groups/{id}`). An active user gets the
-  most privileged role of their mapped groups (admin first, then by number
-  of permissions), else the tenant's default role (`default_role`, `""` =
-  no membership). Membership and role are recomputed on every user or group
+  a tenant admin (`PATCH /api/v1/scim/groups/{id}`). An active user holds
+  the roles of all their mapped groups (a user in several groups holds
+  several roles), else the tenant's default role (`default_role`, `""` =
+  no membership). The read-only User attribute `roles`
+  (`[{"value", "primary"}]`) lists them; roles pushed in it are ignored.
+  Membership and roles are recomputed on every user or group
   change and when the mapping changes.
 * SCIM never changes `super_admin` and never leaves a tenant without an
   admin (409). The e-mail and display name of a user who also belongs to

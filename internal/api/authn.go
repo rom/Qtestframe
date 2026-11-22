@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -26,20 +27,24 @@ const (
 
 // Principal is the authenticated caller.
 type Principal struct {
-	User    *model.User
-	Tenant  *model.Tenant
+	User   *model.User
+	Tenant *model.Tenant
+	// Roles are the caller's roles in Tenant (an API token's: its roles
+	// that the user still holds the permissions of) and Role the primary
+	// one (the first).
 	Role    string
+	Roles   []string
 	Session *model.Session
 	Token   *model.APIToken
 	// perms are the effective permissions in Tenant, resolved from the
 	// tenant's role set (see resolvePerms); nil means the built-in defaults
-	// of Role. Inside a project they are the permissions there (see
+	// of Roles. Inside a project they are the permissions there (see
 	// access.go: scope).
 	perms []string
-	// roles is the tenant's role set; memberRole the user's organisation
-	// role (also for API tokens, whose Role is the token's).
-	roles      rbac.Set
-	memberRole string
+	// roles is the tenant's role set; memberRoles the user's organisation
+	// roles (also for API tokens, whose Roles are the token's).
+	roles       rbac.Set
+	memberRoles []string
 	// orgPerms are the organisation-level permissions (perms before a
 	// project scoped them); tokenPerms the permissions of an API token's role.
 	orgPerms   []string
@@ -58,7 +63,7 @@ func (p *Principal) Can(perm rbac.Permission) bool {
 		return false
 	}
 	if p.perms == nil {
-		return rbac.Can(p.Role, perm)
+		return slices.Contains(rbac.PermissionsOfAll(p.roleList()), string(perm))
 	}
 	for _, q := range p.perms {
 		if q == string(perm) {
@@ -77,15 +82,30 @@ func (p *Principal) Permissions() []string {
 		return []string{}
 	}
 	if p.perms == nil {
-		return rbac.PermissionsOf(p.Role)
+		return rbac.PermissionsOfAll(p.roleList())
 	}
 	return append([]string{}, p.perms...)
 }
 
+// roleList returns Roles, or [Role] for a principal built with Role only.
+func (p *Principal) roleList() []string {
+	if len(p.Roles) == 0 && p.Role != "" {
+		return []string{p.Role}
+	}
+	return p.Roles
+}
+
+// setRoles sets the principal's roles and primary role.
+func (p *Principal) setRoles(roles []string) {
+	p.Roles = rbac.NormalizeRoles(roles)
+	p.Role = rbac.Primary(p.Roles)
+}
+
 // resolvePerms loads the tenant's roles and sets the principal's effective
-// permissions. An API token gets the permissions of its role that the
-// user's current role also has.
-func (s *Server) resolvePerms(ctx context.Context, p *Principal, memberRole string) error {
+// permissions: the union of the permissions of its roles. An API token
+// gets the permissions of its roles that the user's current roles also
+// have.
+func (s *Server) resolvePerms(ctx context.Context, p *Principal, memberRoles []string) error {
 	if p.Tenant == nil {
 		return nil
 	}
@@ -93,18 +113,19 @@ func (s *Server) resolvePerms(ctx context.Context, p *Principal, memberRole stri
 	if err != nil {
 		return err
 	}
-	perms := set.PermissionsOf(p.Role)
+	p.setRoles(p.roleList())
+	perms := set.PermissionsOfAll(p.Roles)
 	p.roles = set
 	if p.Token == nil {
-		p.memberRole = p.Role
+		p.memberRoles = p.Roles
 	} else {
-		p.memberRole = memberRole
+		p.memberRoles = rbac.NormalizeRoles(memberRoles)
 		p.tokenPerms = append([]string{}, perms...)
 	}
-	if p.Token != nil && memberRole != "" {
-		mine := set.PermissionsOf(memberRole)
+	if p.Token != nil && len(memberRoles) > 0 {
+		mine := set.PermissionsOfAll(memberRoles)
 		if !rbac.Subset(perms, mine) {
-			p.Role = memberRole // the token's role exceeds the user's current one
+			p.setRoles(memberRoles) // the token's roles exceed the user's current ones
 		}
 		perms = rbac.Intersect(perms, mine)
 	}
@@ -190,12 +211,12 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 		if err != nil && !u.SuperAdmin {
 			return nil, err
 		}
-		p := &Principal{User: u, Tenant: ten, Role: t.Role, Token: t}
-		memberRole := ""
+		p := &Principal{User: u, Tenant: ten, Role: t.Role, Roles: t.Roles, Token: t}
+		var memberRoles []string
 		if m != nil {
-			memberRole = m.Role
+			memberRoles = m.Roles
 		}
-		if err := s.resolvePerms(ctx, p, memberRole); err != nil {
+		if err := s.resolvePerms(ctx, p, memberRoles); err != nil {
 			return nil, err
 		}
 		return p, nil
@@ -219,13 +240,15 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 	if sess.TenantID != "" {
 		if t, err := s.Store.GetTenant(ctx, sess.TenantID); err == nil {
 			if m, err := s.Store.GetMembership(ctx, t.ID, u.ID); err == nil {
-				p.Tenant, p.Role = t, m.Role
+				p.Tenant = t
+				p.setRoles(m.Roles)
 			} else if u.SuperAdmin {
-				p.Tenant, p.Role = t, rbac.RoleAdmin
+				p.Tenant = t
+				p.setRoles([]string{rbac.RoleAdmin})
 			}
 		}
 	}
-	if err := s.resolvePerms(ctx, p, ""); err != nil {
+	if err := s.resolvePerms(ctx, p, nil); err != nil {
 		return nil, err
 	}
 	return p, nil
@@ -316,6 +339,7 @@ type meResponse struct {
 	User        *model.User        `json:"user"`
 	Tenant      *model.Tenant      `json:"tenant"`
 	Role        string             `json:"role"`
+	Roles       []string           `json:"roles"`
 	Permissions []string           `json:"permissions"`
 	Memberships []model.Membership `json:"memberships"`
 	CSRFToken   string             `json:"csrf_token"`
@@ -332,7 +356,7 @@ func (s *Server) me(ctx context.Context, p *Principal) (*meResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	res := &meResponse{User: p.User, Tenant: p.Tenant, Role: p.Role, Permissions: p.Permissions(), Memberships: ms}
+	res := &meResponse{User: p.User, Tenant: p.Tenant, Role: p.Role, Roles: append([]string{}, p.roleList()...), Permissions: p.Permissions(), Memberships: ms}
 	if p.Session != nil {
 		res.CSRFToken = p.Session.CSRF
 		if err := s.loginInfo(ctx, p, res); err != nil {
@@ -524,11 +548,11 @@ func (s *Server) principalFromSession(r *http.Request, u *model.User, sess *mode
 	}
 	p.Tenant = t
 	if m, err := s.Store.GetMembership(r.Context(), t.ID, u.ID); err == nil {
-		p.Role = m.Role
+		p.setRoles(m.Roles)
 	} else if u.SuperAdmin {
-		p.Role = rbac.RoleAdmin
+		p.setRoles([]string{rbac.RoleAdmin})
 	}
-	if err := s.resolvePerms(r.Context(), p, ""); err != nil {
+	if err := s.resolvePerms(r.Context(), p, nil); err != nil {
 		return nil, err
 	}
 	return p, nil
@@ -565,11 +589,11 @@ func (s *Server) handleSwitchTenant(w http.ResponseWriter, r *http.Request, p *P
 		s.fail(w, r, err)
 		return
 	}
-	role := ""
+	var roles []string
 	if m, err := s.Store.GetMembership(ctx, t.ID, p.User.ID); err == nil {
-		role = m.Role
+		roles = m.Roles
 	} else if p.User.SuperAdmin {
-		role = rbac.RoleAdmin
+		roles = []string{rbac.RoleAdmin}
 	} else {
 		writeError(w, http.StatusForbidden, "forbidden", "not a member of tenant")
 		return
@@ -578,7 +602,12 @@ func (s *Server) handleSwitchTenant(w http.ResponseWriter, r *http.Request, p *P
 		s.fail(w, r, err)
 		return
 	}
-	p.Tenant, p.Role = t, role
+	p.Tenant = t
+	p.setRoles(roles)
+	if err := s.resolvePerms(ctx, p, nil); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	s.handleMe(w, r, p)
 }
 
@@ -839,8 +868,8 @@ func (s *Server) provision(ctx context.Context, id *auth.Identity, prov provisio
 		if !set.Valid(def) {
 			def = rbac.RoleViewer
 		}
-		// roles the tenant does not have (e.g. a deleted custom role) rank 0
-		role := auth.MapRole(id.Groups, prov.RoleMapping, def, set.Rank)
+		// every mapped role the tenant has (a deleted custom role is ignored)
+		roles := rbac.NormalizeRoles(auth.MapRoles(id.Groups, prov.RoleMapping, def, set.Valid))
 		existing, err := s.Store.GetMembership(ctx, t.ID, u.ID)
 		managed, serr := s.Store.IsSCIMUser(ctx, t.ID, u.ID)
 		if serr != nil {
@@ -851,10 +880,10 @@ func (s *Server) provision(ctx context.Context, id *auth.Identity, prov provisio
 			// SCIM provisioning owns this membership (and its absence)
 			err = nil
 		case err != nil && prov.AutoProvision:
-			err = s.Store.SetMembership(ctx, t.ID, u.ID, role)
-		case err == nil && len(prov.RoleMapping) > 0 && existing.Role != role:
+			err = s.Store.SetMembershipRoles(ctx, t.ID, u.ID, roles)
+		case err == nil && len(prov.RoleMapping) > 0 && !slices.Equal(existing.Roles, roles):
 			// group mapping is authoritative when configured
-			err = s.Store.SetMembership(ctx, t.ID, u.ID, role)
+			err = s.Store.SetMembershipRoles(ctx, t.ID, u.ID, roles)
 		default:
 			err = nil
 		}

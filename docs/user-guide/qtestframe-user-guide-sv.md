@@ -29,6 +29,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Testcykler](#testcykler) | Planera testcykler: testfall, testare och uppskattningar, körningarna en cykel skapar, framsteg, nedbränning, arbetsbelastning, återkommande cykler |
 | [Dubbletter och konflikter](#dubbletter-och-konflikter) | Liknande krav medan du skriver, misstänkt dubblerade krav och testfall, möjligen motstridiga krav, sammanslagning, gränsvärden |
 | [Varianter och kod](#varianter-och-kod) | Varianter och tillämplighet, täckning per variant, incheckningar, merge requests, byggen och regressionsurvalet |
+| [CI/CD](#cicd) | Pipelinemallar för GitLab och GitHub, uppladdning av resultat, kvalitetsgrinden, commit-statusar och anteckningar i merge requests, testurval och underpipelines |
 | [Baslinjer](#baslinjer) | Frysa en release och jämföra versioner |
 | [Diskussioner](#diskussioner) | Kommentarstrådar på objekt med Markdown, @omnämnanden, reaktioner och lösta trådar, och projektets sida Diskussioner |
 | [Sökning och filter](#sökning-och-filter) | Frågespråket med många exempel |
@@ -1434,7 +1435,7 @@ Hitta defekter med frågor: `defect:JIRA-*` i körningens filter hittar exekveri
 
 ## Importera utfall från CI
 
-Automatiserade pipelines (GitLab CI, GitHub Actions, Jenkins …) kan rapportera utfall till en körning per testnyckel.
+Automatiserade pipelines (GitLab CI, GitHub Actions, Jenkins …) kan rapportera utfall till en körning per testnyckel. Färdiga pipelinemallar, kvalitetsgrinden, commit-statusar i GitLab och testurval beskrivs i [CI/CD](#cicd).
 
 1. Skapa en API-nyckel: **Administration → API-nycklar → Ny API-nyckel**, roll **Testare** eller högre (se [API-nycklar](#api-nycklar)). Kopiera nyckeln; den visas bara en gång och börjar med `qtf_`.
 2. Öppna körningen och välj **CI-import**. Dialogen visar slutpunkten med körningens id och ett färdigt kommando.
@@ -2994,7 +2995,7 @@ Ett **bygge** är ett bygge i CI som testresultat laddats upp för. CI anger det
 POST /api/v1/runs/{run}/junit?build_id=4711&build_number=1.4.41&commit=3f2c9e1&branch=main&pipeline_url=https://ci.example.org/p/4711&variant=EU-modell
 ```
 
-`build_id` är CI:s eget id (unikt per projekt); `build_number`, `commit`, `branch` och `pipeline_url` är valfria, och `variant` gör körningen till en körning för den varianten. Körningen kopplas sedan till bygget.
+`qtestframe report` skickar dem själv i GitLab CI, GitHub Actions och Jenkins (se [CI/CD](#cicd)). `build_id` är CI:s eget id (unikt per projekt); `build_number`, `commit`, `branch` och `pipeline_url` är valfria, och `variant` gör körningen till en körning för den varianten. Körningen kopplas sedan till bygget.
 
 - **Verifierat i bygge**: fliken **Kod** för ett krav visar det senaste bygget där alla länkade testfall godkändes, och de byggen där dess testfall kördes med täckningen i varje.
 - **Byggen** för ett testfall: fliken **Kod** för ett testfall visar byggena det kördes i, nyast först, med resultatet i varje.
@@ -3011,6 +3012,175 @@ Välj **Kod → Regressionsurval** för att hitta testfallen som ska köras efte
 - **Ta med testfall som är förutsättningar**: testfallen som de valda testfallen beror på.
 
 **Föreslå testfall** visar testfallen och varför vart och ett är med. Utfasade testfall lämnas utanför. **Skapa körning** gör en körning av dem (för den valda varianten), med byggets namn när du utgår från ett bygge. CI kan göra samma sak med `POST /api/v1/projects/{pid}/regression/run`.
+
+# CI/CD
+
+Qtestframe samarbetar med din **CI/CD-pipeline** (i första hand GitLab CI/CD, men också GitHub Actions och andra CI-system): pipelinen laddar upp sina automatiserade testresultat, en **kvalitetsgrind** avgör om ändringen får gå vidare, resultatet kommer tillbaka till GitLab som en **commit-status** och en **anteckning i merge requesten**, och **testurvalet** kör bara de testfall en ändring behöver. Allt görs med kommandot `qtestframe` i pipelinens jobb och en API-nyckel; servern behöver ingen extra konfiguration.
+
+Sidan bygger på [testkörningar och CI-importen](#testkörningar-och-exekvering), [releaser och deras slutkriterier](#releaser-och-risker) och [kodlänkar, byggen och regressionsurvalet](#kodlänkar).
+
+## Koppla en pipeline
+
+Öppna **Inställningar → Projekt** och bläddra ned till **CI-uppsättning**. Där visas, för det här projektet och den här servern:
+
+1. **En API-nyckel.** Skapa en med rollen **testare** under **Administration → API-nycklar**, helst för en egen CI-användare som är medlem i projektet med rollen testare. En nyckel får aldrig mer än användarens egen roll. Se [API-nycklar](#api-nycklar).
+2. **CI/CD-variablerna** att lägga in i GitLab under *Settings → CI/CD → Variables*:
+
+   | Variabel | Värde |
+   |---|---|
+   | `QTF_URL` | serverns adress (redan ifylld i mallarna) |
+   | `QTF_PROJECT` | projektnyckeln (redan ifylld i mallarna) |
+   | `QTF_TOKEN` | API-nyckeln; markera den som **masked** (och **protected** om bara skyddade grenar rapporterar) |
+   | `QTF_CLI_IMAGE` | en containeravbildning som innehåller programmet `qtestframe` |
+   | `QTF_GITLAB_TOKEN` | valfri: en projektåtkomsttoken i GitLab med rollen *Developer* och behörigheten `api`, för commit-statusar och anteckningar från pipelinen (masked) |
+   | `QTF_RELEASE` | valfri: den release vars slutkriterier är grinden |
+
+3. **En mall.** Välj en och **Kopiera** eller **Ladda ned** den:
+   - **GitLab**: dina egna testjobb skriver JUnit XML till `qtf-results/`; ett sista jobb laddar upp den och kontrollerar grinden.
+   - **GitLab med testurval**: ett första jobb väljer ändringens testfall och startar en genererad underpipeline som kör dem (se [Testurval](#testurval)).
+   - **GitLab-komponent**: samma sak som en [CI/CD-komponent](https://docs.gitlab.com/ee/ci/components/) med indata, för ett komponentprojekt.
+   - **GitHub Actions**: ett arbetsflöde som gör detsamma.
+
+   I stället för att kopiera kan en `.gitlab-ci.yml` inkludera mallen från servern: `include: - remote: 'https://<server>/api/v1/ci/templates/gitlab-ci.yml'`. Samma filer finns i källkoden under `examples/ci/`.
+
+Alla som kan läsa projektet ser CI-uppsättningen; nycklar och tokens visas aldrig där.
+
+## Namnge automatiserade testfall efter nyckeln
+
+Qtestframe kopplar ett automatiserat resultat till ett testfall genom dess **testnyckel**, till exempel `SHOP-TC-12`. Lägg in nyckeln i testet:
+
+- i **testnamnet** eller **klassnamnet** i JUnit-rapporten, till exempel `test_SHOP_TC_12_checkout` eller `SHOP-TC-12 kassa`. Understreck står för bindestreck, eftersom de flesta språk inte tillåter bindestreck i namn; nyckeln måste skrivas ut helt och med versaler (`ShopTc12` känns inte igen);
+- eller som en **egenskap** (property) på testfallet: `qtestframe.key`, `test_key` eller `qtestframe`.
+
+Samma identifierare är det testurvalet filtrerar på (`SHOP_TC_12`). Resultat utan nyckel kan skapa automatiserade testfall i utkast med `--create-missing` (se [körningar](#testkörningar-och-exekvering)). För att dela upp testfallen på jobben i en genererad underpipeline taggar du dem `runner:pytest`, `runner:go`, `runner:playwright` eller `runner:maven` (eller ett eget namn); utan en sådan tagg hamnar testfall med skriptspråket *playwright* i `playwright` och *python* i `pytest`, övriga i `default`.
+
+## Ladda upp resultat
+
+```
+qtestframe report --run "Pipeline $CI_PIPELINE_IID" --create-run --junit 'qtf-results/*.xml'
+```
+
+I GitLab CI, GitHub Actions och Jenkins läser kommandot CI-variablerna och registrerar pipelinen som resultatens **bygge**: dess id och nummer, commit, gren, pipelinens adress och merge requesten. Kravet visar då *verifierat i bygge* (se [Byggen](#byggen)). Vilket som helst av dem kan ersättas med `--build-id`, `--build-number`, `--commit`, `--branch`, `--pipeline-url` och `--merge-request`, eller stängas av med `--ci none`. `QTF_URL`, `QTF_TOKEN` och `QTF_PROJECT` är standardvärden för `--url`, `--token` och `--project`.
+
+## Kvalitetsgrind
+
+`qtestframe gate` kontrollerar om resultaten är tillräckligt bra, skriver i jobbloggen en sammanfattning av det som inte uppfylls (med länkar) och avslutar med slutkod **0** när grinden passeras, **1** när den inte gör det och **2** när den inte kan utvärderas (fel nyckel, okänd release). Ett jobb som misslyckas stoppar pipelinen.
+
+```
+qtestframe gate --run "Pipeline $CI_PIPELINE_IID" --release 1.0 --format junit --output qtf-gate.xml
+```
+
+**Vad som kontrolleras:**
+
+- Med `--release`: releasens [slutkriterier](#releaser-och-risker) på dess omfattning, som på releasens flik *Status*. En release som riktar sig till varianter kontrolleras för varje variant (`--variant` kontrollerar en).
+- Utan release: villkoren i `--require` på projektets krav (alla utom avvisade och utgångna). Utan `--require` är de: alla MUST/SHALL-krav godkända, inga underkända testfall, inga inaktuella resultat och inget krav blockerat av en defekt.
+- `--require` ersätter också releasens kriterier. Det kan upprepas och tar kommaseparerade listor.
+- `--run` (namn eller id) eller `--build` (CI-id eller nummer) begränsar resultaten till den körningen eller till byggets körningar; med en release till dess körningar i bygget.
+- `--scope affected` kontrollerar bara de krav som merge requesten eller commiten hänvisar till (från [kodlänkarna](#kodlänkar)); en [fråga](#sökning-och-filter) som `--scope "tag:kassa"` kontrollerar de krav den hittar.
+
+**Villkor** (`TYP[:ARGUMENT][>=PROCENT]`):
+
+| Villkor | Uppfyllt när |
+|---|---|
+| `must` (`mandatory_passed`) | varje MUST- och SHALL-krav har alla sina testfall godkända |
+| `no_failed` | inget testfall är underkänt eller blockerat |
+| `no_stale` | inget testfall har bara ett inaktuellt godkänt utfall (se [inaktualitet](#ändringspåverkan-inaktualitet-och-defekter)) |
+| `no_blocking_defects` (`blocking`) | inget krav blockeras av en öppen defekt |
+| `coverage>=80` | minst 80 % av kraven har testfall |
+| `passed>=95` | minst 95 % av kraven har alla sina testfall godkända |
+| `executed>=100` | varje exekvering i körningarna har ett utfall |
+| `approved>=90` | minst 90 % av kraven är godkända, implementerade eller verifierade |
+| `no_suspect` | inga misstänkta spårlänkar |
+| `no_open_defects:major` | ingen öppen defekt med allvarlighet major eller högre är länkad |
+| `risks_mitigated:high`, `residual_risk:medium` | releasernas riskvillkor |
+| `trace_rules` (`trace_rules:warning`) | [spårbarhetsreglerna](#spårbarhet-och-täckning) uppfylls |
+| `cycle_executed:"Sprint 3">=90` | 90 % av testcykelns planerade testfall har ett utfall |
+
+**Undantag** (waivers) räknas som i releasestatusen: ett godkänt undantag för releasen, eller för hela projektet, accepterar sina krav, och sammanfattningen visar dem som *undantagna*.
+
+**Utdata.** `--format text` (standard) skriver sammanfattningen; `json`, `junit` (ett testfall per villkor, så att GitLabs testrapport visar grinden) och `markdown` (även för GitHubs jobbsammanfattning) skrivs till filen i `--output`, och sammanfattningen skrivs ändå. Samma kontroll finns som `POST /api/v1/projects/{pid}/gate` (se API-beskrivningen).
+
+## Resultat tillbaka i GitLab
+
+Resultatet av en pipeline kan synas där utvecklarna tittar:
+
+- en **commit-status** på commiten: `qtestframe/tests` (misslyckad när ett testfall är underkänt eller blockerat) och `qtestframe/gate` (grindens utslag), med en länk till körningen eller releasen och en kort sammanfattning;
+- en **anteckning i merge requesten** med resultaten, täckningen av ändringens krav, de underkända testfallen och grindens utslag. Qtestframe håller **en** anteckning per projekt och merge request och uppdaterar den vid varje uppladdning (den hittar sin egen anteckning genom en dold markör), så att merge requesten inte fylls av upprepningar.
+
+Det finns två sätt, och du behöver bara ett.
+
+### Från pipelinen
+
+Lägg till `--post-status` och `--post-comment` till `qtestframe report` och `qtestframe gate`, eller sätt CI/CD-variablerna `QTF_POST_STATUS` och `QTF_POST_COMMENT` till `true` (det gör mallarna). Kommandot läser `CI_API_V4_URL`, `CI_PROJECT_ID`, `CI_COMMIT_SHA` och `CI_MERGE_REQUEST_IID` och autentiserar med `QTF_GITLAB_TOKEN`: en projektåtkomsttoken med rollen **Developer** (commit-statusar kräver Developer) och behörigheten `api`, sparad som en maskerad variabel.
+
+Jobbets egen token (`CI_JOB_TOKEN`) prövas när det inte finns någon `QTF_GITLAB_TOKEN`, men GitLab godtar den i dag inte för commit-statusar och anteckningar i merge requests; jobbloggen säger det då. En misslyckad rapport är en varning och får inte jobbet att misslyckas.
+
+### Från servern
+
+Med rollen **Manager** öppnar du **Inställningar → Projekt → Resultat tillbaka till GitLab**:
+
+1. Kryssa i **Skicka commit-statusar och anteckningar i merge requests till GitLab**.
+2. Ange **GitLabs API-adress** (tom för gitlab.com), **GitLab-projektet** (dess numeriska id eller `grupp/projekt`) och en **åtkomsttoken** (en projektåtkomsttoken med rollen Developer och behörigheten `api`). Token lagras krypterad och visas aldrig igen.
+3. Välj vad som ska skickas och, för `qtestframe/gate`, en **release för grinden** eller **villkor för grinden** (till exempel `must, no_failed`). Utan något av dem skickas bara `qtestframe/tests`.
+
+Från och med då skickar servern statusen och anteckningen i bakgrunden när resultat kommer in med en commit (som `qtestframe report` skickar dem i en pipeline). När GitLab inte svarar försöker den igen efter 1, 2, 4, 8 och 16 minuter; en token som GitLab avvisar försöks inte igen. **Senaste rapporter** i samma kort visar vad som skickades, eller varför inte. Merge requesten är den som pipelinen anger, annars grenens öppna merge request (från [webhookarna](#webhookar)).
+
+## Testurval
+
+`qtestframe select` svarar på frågan "vilka testfall behöver den här ändringen?":
+
+```
+pytest -k "$(qtestframe select --format pytest)"
+```
+
+Det samlar in **ändringen**: i en pipeline för en merge request commitarna mellan `CI_MERGE_REQUEST_DIFF_BASE_SHA` och `CI_COMMIT_SHA` (med `git log`), filerna de ändrar (`git diff`) och merge requesten; annars commitarna sedan `--since REV`, eller `--commits` och `--files` angivna för hand. Sedan väljer det:
+
+- de krav och testfall som commitarna och merge requesten är länkade till ([kodlänkar](#kodlänkar)), och nycklarna som nämns i commit-meddelandena (`SHOP-REQ-4`, `REQ-4`, `TC-7`);
+- testfallen i en **sökvägskarta**: en fil `qtestframe-map.yml` i förrådet som kopplar filmönster till testfall, taggar och krav (ett exempel finns i `examples/ci/qtestframe-map.yml`):
+
+  ```yaml
+  - paths: ["src/cart/**", "api/cart.go"]
+    tests: [SHOP-TC-3]
+    tags: [cart]
+  - paths: ["src/payment/"]
+    requirements: [SHOP-REQ-4]
+  ```
+
+- [regressionsurvalet](#regressionsurval) av dem: testfallen som verifierar kraven, krav med `--include-related` och förutsättande testfall;
+- testfallen med en tagg som anges med `--tag` (till exempel `--tag always-run` för röktester);
+- med `--variant` bara det som gäller varianten.
+
+Bara **automatiserade** testfall väljs (manuella räknas i loggen; `--include-manual` tar med dem). När ändringen är okänd (inga commits, filer, nycklar eller merge request) väljs bara de taggade testfallen, om inte `--fallback all`. Okända nycklar listas.
+
+**Utdata** (`--format`):
+
+| Format | Utdata | Användning |
+|---|---|---|
+| `keys` | en nyckel per rad | egna skript |
+| `pytest` | `SHOP_TC_3 or SHOP_TC_7` | `pytest -k "…"` |
+| `go` | `(SHOP_TC_3\|SHOP_TC_7)([^0-9]\|$)` | `go test -run '…'` |
+| `playwright` | `(SHOP[-_]TC[-_]3\|…)(?![0-9])` | `npx playwright test --grep '…'` |
+| `maven` | `*SHOP_TC_3*,*SHOP_TC_7*` | `mvn test -Dtest='…'` (träffar också `SHOP_TC_31`; hellre fler än färre) |
+| `json` | urvalet med skälen | |
+| `gitlab-child-pipeline` | en underpipeline | se nedan |
+
+Ett tomt urval skriver ingenting: kör då inte testerna, eftersom ett tomt filter väljer alla testfall i de flesta testkörare.
+
+**En genererad underpipeline.** `--format gitlab-child-pipeline --output qtestframe-pipeline.yml` skriver en pipeline med ett jobb per testkörargrupp, vart och ett med de valda testfallen i `$QTF_TESTS` och sitt filter i `$QTF_FILTER`, och ett sista jobb som kör `qtestframe report` och `qtestframe gate` även när testfall misslyckades. Ett föräldrajobb sparar filen som en artefakt och startar den med `trigger: include: - artifact: qtestframe-pipeline.yml`; mallen *GitLab med testurval* gör det. Ange varje testkörares avbildning och kommando med `--image pytest=python:3.13` och `--job pytest='pytest -k "$QTF_FILTER" --junitxml="$QTF_RESULTS/pytest.xml"'`; standardvärdena använder pytest, gotestsum, Playwright och Maven. `--create-run --run NAMN` skapar urvalets körning först, så att resultaten hamnar i den; `--gate-release` och `--gate-require` ställer in grinden i slutet.
+
+Urvalet finns också som `POST /api/v1/projects/{pid}/ci/select`.
+
+## GitHub Actions och andra CI-system
+
+- **GitHub Actions**: mallen använder arbetsflödets `GITHUB_TOKEN` (med `statuses: write` och `pull-requests: write`) som `QTF_GITHUB_TOKEN`; `--post-status` och `--post-comment` skickar då en commit-status och en kommentar i pull requesten som hålls aktuell. `--format markdown --output "$GITHUB_STEP_SUMMARY"` visar grinden i jobbsammanfattningen.
+- **Jenkins** och andra: `qtestframe report` läser Jenkins variabler (`BUILD_TAG`, `BUILD_NUMBER`, `GIT_COMMIT`, `BRANCH_NAME`, `CHANGE_ID`); på andra ställen sätter du `QTF_BUILD_ID`, `QTF_BUILD_NUMBER`, `QTF_COMMIT`, `QTF_BRANCH`, `QTF_MERGE_REQUEST` eller anger flaggorna. `gate` och `select` fungerar överallt; att skicka statusar fungerar för GitLab och GitHub.
+
+## Begränsningar
+
+- GitLabs jobbtoken (`CI_JOB_TOKEN`) kan inte skicka commit-statusar eller anteckningar i merge requests: använd en projektåtkomsttoken, eller låt servern skicka.
+- Servern skickar bara till GitLab; statusar i GitHub kommer från pipelinen.
+- Testurvalet är aldrig bättre än länkarna: commits och merge requests blir kända genom [webhookarna](#webhookar) eller nycklarna i commit-meddelandena, och filer bara genom sökvägskartan.
+- API-nycklar begränsas av roller, inte av finare behörigheter: ge CI-användaren rollen testare, eller en egen roll med bara `project.read`, `test.read`, `run.read`, `run.execute` och `run.write`.
 
 # Baslinjer
 
@@ -3739,34 +3909,38 @@ Filerna lagras i Qtestframes databas, inte på en separat filserver. Det betyder
 
 ## Organisationer och roller
 
-En **organisation** är en isolerad arbetsyta: dess projekt, medlemmar, API-nycklar och händelselogg är osynliga för andra organisationer. En person har ett användarkonto för hela installationen och kan vara **medlem** i flera organisationer, med **en roll i var och en**.
+En **organisation** är en isolerad arbetsyta: dess projekt, medlemmar, API-nycklar och händelselogg är osynliga för andra organisationer. En person har ett användarkonto för hela installationen och kan vara **medlem** i flera organisationer, med **en eller flera roller i var och en**.
 
 ### Roller och behörigheter
 
-Varje organisation börjar med sex inbyggda roller. Som standard kan varje roll i tabellen allt som rollen ovanför kan, utom **Granskare**, som står vid sidan av Testare:
+Varje organisation börjar med sju inbyggda roller. Som standard kan varje roll i tabellen allt som rollen ovanför kan, utom **Granskare** och **Ämnesexpert**, som står vid sidan av Testare:
 
 | Roll | Kan dessutom (standard) |
 |---|---|
 | **Läsare** | läsa alla projekt, krav, testfall, körningar, dokument och medlemslistan; söka; exportera och ta fram rapporter |
 | **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet; skriva i [diskussioner](#diskussioner) (*comment.create*, som alla roller nedan utom Läsare) |
+| **Ämnesexpert** | delta i att skriva krav: skapa och redigera krav med kriterier, motivering, källor, relationer, länkar och bilagor (*requirement.write*); granska krav (*requirement.review*) och diskutera dem; läsa testfall, körningar, defekter och risker. Inga testfall, körningar, cykler, undantag, inställningar eller medlemmar |
 | **Testare** | skriva och länka testfall, hantera testmappar och testfallskategorier, skapa och redigera körningar, registrera utfall, importera utfall från CI, ladda upp bilagor till testfall, körningar och exekveringar, skapa egna API-nycklar |
 | **Testledare** | planera [testcykler](#testcykler) (*cycle.plan*), markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
 | **Ansvarig** | godkänna och avvisa krav (*requirement.review*), skriva krav och kravmappar, skapa och redigera projekt, alla kategorier och [spårbarhetsreglerna](#spårbarhetsregler), skapa baslinjer |
 | **Administratör** | allt: ta bort projekt, hantera medlemmar och roller, byta namn på organisationen, återställa medlemmars lösenord, ta bort alla kommentarer |
 | **Superadministratör** | allt i alla organisationer; hantera organisationer och användare; säkerhetskopiering och återställning |
 
+**Flera roller.** En medlem kan ha flera roller samtidigt – till exempel *Ämnesexpert* och *Testare* för den som skriver krav inom sitt område och även testar. Hen har då alla rollernas behörigheter tillsammans; roller lägger bara till rättigheter. Den som har **Administratör** bland sina roller är administratör för organisationen.
+
 Standardmatrisen med behörigheter:
 
-| Behörighet | Läsare | Granskare | Testare | Testledare | Ansvarig | Administratör |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `test.review` | | ✔ | | ✔ | ✔ | ✔ |
-| `requirement.review` | | ✔ | | | ✔ | ✔ |
-| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
-| `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
-| `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
+| Behörighet | Läsare | Granskare | Ämnesexpert | Testare | Testledare | Ansvarig | Administratör |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `test.review` | | ✔ | | | ✔ | ✔ | ✔ |
+| `requirement.review` | | ✔ | ✔ | | | ✔ | ✔ |
+| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `requirement.write` | | | ✔ | | | ✔ | ✔ |
+| `test.write`, `run.write`, `run.execute`, `token.manage` | | | | ✔ | ✔ | ✔ | ✔ |
+| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
+| `waiver.approve`, `project.create`, `project.update` | | | | | | ✔ | ✔ |
+| `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | | ✔ |
 
 **Undantag och riskacceptans.** Att godkänna, avslå och återkalla [undantag och avvikelser](#undantag-restrisk-och-uttalande-om-tillämplighet) och att signera acceptansen av en restrisk kräver `waiver.approve` (en projektbehörighet, så en projektroll kan ge den i ett enskilt projekt). Varje beslut är en elektronisk signatur (lösenord, eller en nyligen gjord enkel inloggning) och registreras i händelseloggen; den som begärt ett undantag kan inte besluta om det. Ge `waiver.approve` bara till personer som får acceptera att krav inte uppfylls.
 
@@ -3795,12 +3969,12 @@ Knappar för åtgärder som du inte får utföra döljs. Om du saknar en knapp s
 
 ![Medlemssidan med roller och knappen Lägg till medlem](images/sv-admin-members.png)
 
-- **Lägg till medlem** *(Administratör)*: ange **E-post** och välj **Roll**. Om personen redan har ett konto läggs hon eller han till med den rollen. Om e-postadressen är okänd skapas ett lokalt konto: när servern kan skicka e-post låter du **Skicka en inbjudan med e-post** vara påslaget (se [Bjuda in med e-post](#bjuda-in-med-e-post)); annars anger du ett **Visningsnamn** och ett **Första lösenord**, och ber personen att byta det efter första inloggningen.
-- **Ändra roll** *(Administratör)*: välj en annan roll på medlemmens rad. Ändringen gäller direkt, även för personens API-nycklar.
+- **Lägg till medlem** *(Administratör)*: ange **E-post** och välj en eller flera **Roller**. Om personen redan har ett konto läggs hon eller han till med de rollerna. Om e-postadressen är okänd skapas ett lokalt konto: när servern kan skicka e-post låter du **Skicka en inbjudan med e-post** vara påslaget (se [Bjuda in med e-post](#bjuda-in-med-e-post)); annars anger du ett **Visningsnamn** och ett **Första lösenord**, och ber personen att byta det efter första inloggningen.
+- **Ändra roller** *(Administratör)*: öppna rollerna på medlemmens rad och kryssa i eller ur roller; varje roll visas som en bricka, och en medlem har alltid minst en roll. Ändringen gäller direkt, även för personens API-nycklar. Organisationen har alltid minst en medlem med rollen **Administratör**.
 - **Ta bort** *(Administratör)*: tar bort medlemskapet; själva kontot finns kvar.
-- **Flera medlemmar på en gång** *(Administratör)*: kryssa i medlemmar (eller rutan i rubriken för alla visade), välj sedan en roll under **Ange roll** eller välj **Ta bort**, och bekräfta. Ditt eget medlemskap lämnas som det är, liksom medlemmar som redan har rollen; meddelandet visar vilka som hoppades över. Båda kan ångras (borttagna medlemmar läggs tillbaka med sina tidigare roller).
+- **Flera medlemmar på en gång** *(Administratör)*: kryssa i medlemmar (eller rutan i rubriken för alla visade), välj sedan en roll under **Ange roll** (de får exakt den rollen), **Lägg till roll** eller **Ta bort roll** (övriga roller finns kvar), eller välj **Ta bort**, och bekräfta. Ditt eget medlemskap lämnas som det är, liksom medlemmar vars roller inte skulle ändras eller som skulle stå utan roll; meddelandet visar vilka som hoppades över. Båda kan ångras (borttagna medlemmar läggs tillbaka med sina tidigare roller).
 - En organisation måste ha minst **en administratör**: den sista administratören kan inte nedgraderas eller tas bort, och en ändring av flera medlemmar som skulle lämna organisationen utan administratör avvisas i sin helhet.
-- Medlemmar märkta **SCIM** [provisioneras av er identitetsleverantör](#provisionering-med-scim): deras roll följer grupperna där, så rollen kan inte ändras och de kan inte tas bort här (en ändring av flera medlemmar hoppar över dem).
+- Medlemmar märkta **SCIM** [provisioneras av er identitetsleverantör](#provisionering-med-scim): deras roller följer grupperna där, så rollerna kan inte ändras och de kan inte tas bort här (en ändring av flera medlemmar hoppar över dem).
 
 ### Bjuda in med e-post
 
@@ -3847,14 +4021,14 @@ Normalt ser alla medlemmar i organisationen alla projekt, med sin organisationsr
 - **Alla i organisationen** (standard): alla medlemmar ser projektet med sin organisationsroll. Projektmedlemmar får i stället sin projektroll.
 - **Begränsat till projektmedlemmar**: bara projektmedlemmarna (och organisationens administratörer) ser projektet. För alla andra finns det inte: det saknas i projektlistan, sökningen, granskningar och notiser, och länkar till det visar *hittades inte*. Begränsade projekt visas med ett lås (🔒) i projektlistan och sidhuvudet.
 
-**Projektmedlemmar** är personer i organisationen eller grupper från din [identitetsleverantör (SCIM)](#provisionering-med-scim), var och en med en **projektroll**: vilken roll som helst i organisationen, även egna. I projektet **ersätter** projektrollen organisationsrollen, så den kan höja eller sänka någons rättigheter där: en Testare i organisationen kan vara Ansvarig i ett projekt, en Ansvarig bara Läsare i ett annat. En persons eget medlemskap går före en grupps; flera grupper läggs ihop. Organisationens administratörer har alltid full åtkomst till alla projekt.
+**Projektmedlemmar** är personer i organisationen eller grupper från din [identitetsleverantör (SCIM)](#provisionering-med-scim), var och en med en eller flera **projektroller**: vilka roller som helst i organisationen, även egna. I projektet **ersätter** projektrollerna organisationsrollerna, så den kan höja eller sänka någons rättigheter där: en Testare i organisationen kan vara Ansvarig i ett projekt, en Ansvarig bara Läsare i ett annat. En persons eget medlemskap går före en grupps; flera grupper läggs ihop. Organisationens administratörer har alltid full åtkomst till alla projekt.
 
-- **Lägg till**: sök efter en person eller grupp på namn eller e-post, välj projektroll och välj **Lägg till**. Bara medlemmar i organisationen kan läggas till (lägg först till nya personer under [Medlemmar](#medlemmar)). Personen får en notis (och ett e-postmeddelande om hen vill ha notiser via e-post).
-- **Ändra en roll**: välj en annan roll i medlemmens rad.
-- **Ta bort** tar bort någon från projektet; medlemmar kan också själva lämna ett projekt. **Flera medlemmar på en gång**: markera dem och välj sedan **Sätt projektroll** eller **Ta bort**.
+- **Lägg till**: sök efter en person eller grupp på namn eller e-post, välj projektroller och välj **Lägg till**. Bara medlemmar i organisationen kan läggas till (lägg först till nya personer under [Medlemmar](#medlemmar)). Personen får en notis (och ett e-postmeddelande om hen vill ha notiser via e-post).
+- **Ändra roller**: kryssa i eller ur roller i medlemmens rad. Roller som du inte får ge visas men kan inte tas bort.
+- **Ta bort** tar bort någon från projektet; medlemmar kan också själva lämna ett projekt. **Flera medlemmar på en gång**: markera dem och välj sedan **Sätt projektroll**, **Lägg till projektroll**, **Ta bort projektroll** eller **Ta bort**.
 - Du kan bara ge, ändra eller ta bort roller vars projektbehörigheter du själv har i projektet, så ingen kan ge mer än hen har.
-- När du begränsar ett projekt som du ser genom din organisationsroll läggs du till som projektmedlem med den rollen, så att du inte stänger ute dig själv.
-- Behörigheter för hela organisationen – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – följer alltid organisationsrollen. API-nycklar går aldrig utöver sin egen roll, inte heller i ett projekt.
+- När du begränsar ett projekt som du ser genom dina organisationsroller läggs du till som projektmedlem med de rollerna, så att du inte stänger ute dig själv.
+- Behörigheter för hela organisationen – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – följer alltid organisationsrollerna. API-nycklar går aldrig utöver sina egna roller, inte heller i ett projekt.
 
 Varje ändring av åtkomsten eller medlemmarna registreras i [händelseloggen](#händelselogg). Tar du bort någon från organisationen tas även hens projektmedlemskap bort. Ett duplicerat projekt behåller originalets medlemmar.
 
@@ -3951,11 +4125,11 @@ Med API-nycklar kan skript och CI-pipelines använda REST-API:et utan lösenord,
 
 1. Öppna **Administration → API-nycklar** och välj **Ny API-nyckel** *(Testare)*.
 2. Ange ett **Namn** som säger var den används, till exempel *GitLab CI*.
-3. Välj **Roll**. En API-nyckel kan aldrig ha högre roll än du.
+3. Välj **Roller** (som standard alla dina). En API-nyckel kan aldrig ha fler behörigheter än du.
 4. Ange eventuellt **Upphör efter (dagar)**; tomt betyder att den aldrig upphör.
 5. Välj **Skapa** och **kopiera nyckeln nu**: den börjar med `qtf_` och visas bara en gång.
 
-Använd den som bearer-token: `Authorization: Bearer qtf_…`. En nyckel hör till en organisation och begränsas vid varje anrop till den roll du har där just då: om din roll sänks, sänks även nyckelns. API-nycklar kan inte skapa nya nycklar. **Återkalla** en nyckel så snart den inte längre behövs eller kan ha läckt; klienter som använder den förlorar åtkomsten direkt. Listan visar när varje nyckel **Senast användes**.
+Använd den som bearer-token: `Authorization: Bearer qtf_…`. En nyckel hör till en organisation och begränsas vid varje anrop till de roller du har där just då: om du förlorar en roll gör nyckeln det också. API-nycklar kan inte skapa nya nycklar. **Återkalla** en nyckel så snart den inte längre behövs eller kan ha läckt; klienter som använder den förlorar åtkomsten direkt. Listan visar när varje nyckel **Senast användes**.
 
 ## Provisionering med SCIM
 
@@ -3965,7 +4139,7 @@ Så fungerar det:
 
 - **Användare.** En provisionerad användare matchas på e-postadress. Nya användare får ett konto **utan lösenord**: de loggar in med organisationens enkla inloggning (OpenID Connect eller SAML), som kopplar ihop kontot vid första inloggningen. Ett befintligt konto med samma e-postadress (till exempel en medlem som du har lagt till för hand) tas över.
 - **Inaktivering.** När leverantören inaktiverar en användare tas medlemskapet bort, och personens sessioner och API-nycklar i den här organisationen upphör direkt. När leverantören aktiverar användaren igen kommer medlemskapet tillbaka med rollen från grupperna. Tar leverantören bort användaren försvinner medlemskapet; själva kontot finns kvar.
-- **Roller från grupper.** Leverantören kan också skicka över grupper. Under **Roller för provisionerade medlemmar** väljer du för varje grupp vilken roll dess medlemmar får, eller **Ingen roll**. En medlem i flera kopplade grupper får den mest behöriga av rollerna. Medlemmar utan kopplad grupp får **Standardrollen** (*Läsare* om du inte ändrar den), eller ingenting med **Ingen åtkomst**.
+- **Roller från grupper.** Leverantören kan också skicka över grupper. Under **Roller för provisionerade medlemmar** väljer du för varje grupp vilken roll dess medlemmar får, eller **Ingen roll**. En medlem i flera kopplade grupper får rollerna för alla. Medlemmar utan kopplad grupp får **Standardrollen** (*Läsare* om du inte ändrar den), eller ingenting med **Ingen åtkomst**.
 - **Skyddade regler.** SCIM gör aldrig någon till superadministratör och tar aldrig bort den statusen, och organisationen har alltid kvar en administratör: en ändring som skulle ta bort den sista administratören avvisas. E-postadress och namn för en person som även hör till andra organisationer ändras inte av den här organisationens leverantör.
 - **Medlemslistan.** Provisionerade medlemmar är märkta **SCIM** under **Administration → Medlemmar**. Ändra deras roll via grupperna hos leverantören (eller gruppkopplingen här); rollen kan inte ändras och de kan inte tas bort för hand, eftersom nästa synkronisering skulle ångra det.
 

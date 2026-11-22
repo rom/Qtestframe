@@ -811,8 +811,9 @@ API-nycklar är för skript och CI-flöden (`Authorization: Bearer qtf_…`). Me
 
 ## Modellen
 
-- Varje användare har **en roll per organisation** där hen är medlem; utan medlemskap ser en användare ingenting av en organisation.
-- En roll är en namngiven mängd **behörigheter**. Sex roller är inbyggda: Administratör, Ansvarig, Testledare, Testare, Granskare och Läsare.
+- Varje medlem har **en eller flera roller per organisation**; utan medlemskap ser en användare ingenting av en organisation. Den som både skriver krav och testar har till exempel *Ämnesexpert* och *Testare*.
+- En roll är en namngiven mängd **behörigheter**; en medlem med flera roller har **unionen** av deras behörigheter (roller lägger bara till rättigheter). Sju roller är inbyggda: Administratör, Ansvarig, Testledare, Testare, Ämnesexpert, Granskare och Läsare.
+- Den som har Administratör bland sina roller är organisationsadministratör. Äldre API-klienter ser en `role`, den *primära* rollen: medlemmens starkaste inbyggda roll (alltid Administratör när medlemmen har den).
 - **Superadministratör** är en flagga på användarkontot, som sätts med `qtestframe user create --super-admin` eller under **Administration → Användare**. En superadministratör har alla behörigheter i alla organisationer (och agerar som administratör i en organisation utan att vara medlem), och är ensam om att hantera organisationer och användare, säkerhetskopiera och återställa, och ändra systeminställningarna. Det gäller bara inloggade sessioner: API-nycklar har det aldrig.
 - Servern kontrollerar behörigheterna vid varje begäran; webbklienten döljer bara det man inte får göra. Ett objekt i en annan organisation, eller i ett projekt man inte får se, svarar `404`, så att dess existens inte avslöjas.
 
@@ -822,35 +823,47 @@ Det här är de inbyggda rollernas behörigheter tills en organisation ändrar d
 
 <!-- BEGIN GENERATED: permissions (make admin-guide-ref) -->
 
-| Behörighet | Läsare | Granskare | Testare | Testledare | Ansvarig | Administratör |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `project.create` |  |  |  |  | ✔ | ✔ |
-| `project.update` |  |  |  |  | ✔ | ✔ |
-| `project.delete` |  |  |  |  |  | ✔ |
-| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `requirement.write` |  |  |  |  | ✔ | ✔ |
-| `requirement.review` |  | ✔ |  |  | ✔ | ✔ |
-| `waiver.approve` |  |  |  |  | ✔ | ✔ |
-| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `test.write` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `test.review` |  | ✔ |  | ✔ | ✔ | ✔ |
-| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `run.write` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `run.execute` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan` |  |  |  | ✔ | ✔ | ✔ |
-| `script.execute` |  |  |  | ✔ | ✔ | ✔ |
-| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `audit.read` |  |  |  | ✔ | ✔ | ✔ |
-| `token.manage` |  |  | ✔ | ✔ | ✔ | ✔ |
-| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `member.manage` |  |  |  |  |  | ✔ |
-| `role.manage` |  |  |  |  |  | ✔ |
-| `settings.manage` |  |  |  | ✔ | ✔ | ✔ |
-| `tenant.manage` |  |  |  |  |  | ✔ |
+| Behörighet | Läsare | Granskare | Ämnesexpert | Testare | Testledare | Ansvarig | Administratör |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `project.create` |  |  |  |  |  | ✔ | ✔ |
+| `project.update` |  |  |  |  |  | ✔ | ✔ |
+| `project.delete` |  |  |  |  |  |  | ✔ |
+| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `requirement.write` |  |  | ✔ |  |  | ✔ | ✔ |
+| `requirement.review` |  | ✔ | ✔ |  |  | ✔ | ✔ |
+| `waiver.approve` |  |  |  |  |  | ✔ | ✔ |
+| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `test.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `test.review` |  | ✔ |  |  | ✔ | ✔ | ✔ |
+| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `run.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `run.execute` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `cycle.plan` |  |  |  |  | ✔ | ✔ | ✔ |
+| `script.execute` |  |  |  |  | ✔ | ✔ | ✔ |
+| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `audit.read` |  |  |  |  | ✔ | ✔ | ✔ |
+| `token.manage` |  |  |  | ✔ | ✔ | ✔ | ✔ |
+| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `member.manage` |  |  |  |  |  |  | ✔ |
+| `role.manage` |  |  |  |  |  |  | ✔ |
+| `settings.manage` |  |  |  |  | ✔ | ✔ | ✔ |
+| `tenant.manage` |  |  |  |  |  |  | ✔ |
 
 <!-- END GENERATED: permissions -->
+
+### Ämnesexperten
+
+**Ämnesexpert** (`sme`, subject matter expert) är en domänexpert som deltar i att skriva kraven inom sitt område – en kliniker, en säkerhetsingenjör, en jurist. Rollen:
+
+- skapar och redigerar krav (`requirement.write`): text, acceptanskriterier, motivering, källor, relationer, spårnings- och objektlänkar och bilagor;
+- deltar i kravgranskningar (`requirement.review`) och diskussioner (`comment.create`);
+- läser tester, körningar, defekter och risker som underlag, och exporterar och tar fram rapporter (`export`).
+
+Den skriver och granskar medvetet **inte** tester, skapar eller kör inte testkörningar, planerar inte cykler, godkänner inte undantag eller restrisker, ändrar inte projektinställningar, delning eller medlemmar och skapar inga API-nycklar. Belägg för testkörningar registreras av testare; en ämnesexpert bifogar underlag till själva kraven. Ge en andra roll till den som gör mer, t.ex. *Ämnesexpert* + *Testare*.
+
+Eftersom rollen både skriver och granskar krav kan en ämnesexpert godkänna sina egna krav. Där åtskild behörighet är viktig tar du bort `requirement.review` från rollen i matrisen (eller ger den bara till separata granskare).
 
 Vad behörigheterna tillåter:
 
@@ -877,24 +890,26 @@ Ge `script.execute` bara till personer som ni skulle låta köra kod på servern
 Den som har `role.manage` (Administratör som standard) ändrar behörigheterna för alla inbyggda roller utom Administratör och skapar **egna roller** under **Administration → Rollmatris** ([användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/administration.md#%C3%A4ndra-roller-och-skapa-egna)). Reglerna som gör det säkert:
 
 - Ingen kan ge en behörighet som hen inte själv har – inte till en roll, inte till en API-nyckel, inte via projektdelning.
-- Administratör behåller alltid alla behörigheter, och en organisation har alltid minst en administratör (den sista kan inte nedgraderas eller tas bort, inte heller via SCIM).
-- En egen roll har ett tekniskt namn på 2–32 tecken (`a-z`, `0-9`, `_`, börjar med en bokstav), som är vad `member add --role`, `role_mapping` och SCIM-gruppmappningar använder. Den kan tas bort när ingen medlem eller nyckel använder den.
-- En inbyggd roll vars behörigheter skiljer sig från standarden markeras *ändrad* och kan återställas. Ändringar granskas.
+- Administratör behåller alltid alla behörigheter, och en organisation har alltid minst en medlem med rollen Administratör: den sista kan inte förlora rollen eller tas bort – inte i medlemslistan, inte i grupp, inte via SCIM. Administratör kan kombineras med andra roller.
+- En egen roll har ett tekniskt namn på 2–32 tecken (`a-z`, `0-9`, `_`, börjar med en bokstav), som är vad `member add --role` (flera roller kommaseparerade: `--role sme,tester`), `role_mapping` och SCIM-gruppmappningar använder. Den kan tas bort när ingen medlem, projektmedlem eller nyckel har den, inte heller bland andra roller.
+- En inbyggd roll vars behörigheter skiljer sig från standarden markeras *ändrad* och kan återställas. Ändringar loggas, och en ändring av en medlems roller loggas med de roller som lagts till och tagits bort (`+sme −viewer`).
+- API-nycklar har också roller (som standard alla ägarens roller) och får aldrig mer än ägarens nuvarande roller tillåter.
+- Med single sign-on (`role_mapping`) och SCIM får en användare i flera mappade grupper rollerna för alla.
 
 En organisations gällande matris finns på `GET /api/v1/roles`.
 
 ## Begränsade och delade projekt
 
-Ett projekt är antingen **organisationsgemensamt** (standard: alla medlemmar ser det med sin organisationsroll) eller **begränsat** (bara dess projektmedlemmar ser det). Projektmedlemmar är användare eller SCIM-grupper med en **projektroll**, som ersätter organisationsrollen i projektet, uppåt eller nedåt. Användare med `project.update` i projektet hanterar detta under **Dela** ([användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/administration.md#delning-av-projekt)).
+Ett projekt är antingen **organisationsgemensamt** (standard: alla medlemmar ser det med sin organisationsroll) eller **begränsat** (bara dess projektmedlemmar ser det). Projektmedlemmar är användare eller SCIM-grupper med en eller flera **projektroller**, som ersätter organisationsrollerna i projektet, uppåt eller nedåt. Användare med `project.update` i projektet hanterar detta under **Dela** ([användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/administration.md#delning-av-projekt)).
 
 | Vem | Behörigheter i ett projekt |
 |---|---|
 | organisationsadministratörer och superadministratörer | sina egna, alltid – de ser alla projekt |
-| en projektmedlem (direkt eller via en grupp; det direkta medlemskapet vinner, grupper läggs ihop) | projektrollens projektbehörigheter |
-| övriga medlemmar, organisationsgemensamt projekt | organisationsrollen |
+| en projektmedlem (direkt eller via en grupp; det direkta medlemskapet vinner, grupper läggs ihop) | projektrollernas projektbehörigheter (sammanlagda) |
+| övriga medlemmar, organisationsgemensamt projekt | organisationsrollerna |
 | övriga medlemmar, begränsat projekt | inga: projektet svarar `404` |
 
-Bara **projektbehörigheter** kommer från projektrollen (`project.read`, `project.update`, `project.delete`, `requirement.*`, `test.*`, `run.*`, `script.execute`, `export`). Behörigheter på organisationsnivå – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – kommer alltid från organisationsrollen, och en API-nyckel begränsas av sin egen roll även i ett projekt.
+Bara **projektbehörigheter** kommer från projektrollerna (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Behörigheter på organisationsnivå – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – kommer alltid från organisationsrollerna, och en API-nyckel begränsas av sina egna roller även i ett projekt.
 
 Vad en begränsning **inte** döljer, så planera för det:
 
@@ -1435,6 +1450,16 @@ Användare med `requirement.write` importerar krav från en JQL-fråga i Jira el
 
 Jira söks med `POST /rest/api/2/search/jql` (Jira Cloud) och, när den inte finns, `POST /rest/api/2/search` (Server och Data Center); Azure DevOps med slutpunkterna för WIQL, fält och arbetsobjekt i REST API 7.1. Högst 1 000 objekt läses per import. Importen läser bara; den granskas som `requirement.import`, ändringar av anslutningen som `import_sources.update`. Token krypteras med serverns hemliga nycklar (de krypteras om vid nyckelrotation), returneras aldrig och utelämnas ur projektarkiv. Importen når källorna via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) som ärendehanterarna; tillåt adresserna ovan i en brandvägg.
 
+## CI/CD-pipelines (GitLab, GitHub Actions)
+
+Pipelines pratar med servern med kommandot `qtestframe` (`report`, `gate`, `select`; [kommandoradsreferensen](#kommandoradsreferens)) och en API-nyckel. Inget behöver ställas in på servern; det här behöver varje del:
+
+- **API-nyckel.** Skapa en egen CI-användare, gör den till medlem med rollen **tester** i projekten den rapporterar till (tester har `run.execute` för uppladdningar, `run.write` för `--create-run` och `test.write` för `--create-missing`), och skapa dess API-nyckel med rollen *tester* under **Administration → API-nycklar**. En nyckel får aldrig mer än användarens aktuella roll. Spara den som en maskerad CI/CD-variabel `QTF_TOKEN`. Det finns inga finare behörigheter för API-nycklar än roller; en egen roll med bara `project.read`, `test.read`, `run.read`, `run.execute` och `run.write` är den snävaste som kör alla kommandon.
+- **Programmet.** Jobben behöver en avbildning med det statiska programmet `qtestframe` (`QTF_CLI_IMAGE`); serverns avbildning är distroless, så kopiera programmet till din CI-avbildning (`COPY --from=qtestframe:<version> /usr/bin/qtestframe /usr/local/bin/`).
+- **Mallar.** `examples/ci/` innehåller mallar för `.gitlab-ci.yml` (med och utan testurval), en CI/CD-komponent och ett arbetsflöde för GitHub Actions; samma mallar, med serverns adress och projektnyckeln ifyllda, finns under **Inställningar → Projekt → CI-uppsättning** och på den publika `GET /api/v1/ci/templates/{name}` (för `include: remote:`; de innehåller inga hemligheter).
+- **Commit-statusar och anteckningar i merge requests från pipelinen** behöver en GitLab-token i `QTF_GITLAB_TOKEN`: en projektåtkomsttoken med rollen **Developer** (commit-statusar kräver Developer, anteckningar Reporter) och behörigheten `api`. GitLab godtar när detta skrivs inte jobbtoken `CI_JOB_TOKEN` för `POST /projects/:id/statuses/:sha` eller anteckningar i merge requests (dess finkorniga behörigheter för jobbtoken täcker dem inte); kommandot faller tillbaka på den och skriver en varning när GitLab avvisar den. I GitHub Actions räcker arbetsflödets `GITHUB_TOKEN` med `statuses: write` och `pull-requests: write` (`QTF_GITHUB_TOKEN`).
+- **Rapporter från servern.** Ett projekt kan i stället låta servern skicka: **Inställningar → Projekt → Resultat tillbaka till GitLab** sparar GitLabs API-adress, projektet och en projektåtkomsttoken (krypterad som de andra hemligheterna, bara skrivbar, omkrypteras av `qtestframe secrets`, utelämnas ur projektarkiv). När resultat med `?commit=` kommer in läggs en rad i utkorgen `ci_deliveries` och skickas i bakgrunden: `qtestframe/tests` (och `qtestframe/gate` med en release eller villkor) och en anteckning i merge requesten som uppdateras i stället för att upprepas. Misslyckade försök görs om av minutjobbet med exponentiell väntan (1, 2, 4, … minuter, högst 6 försök; vid HTTP 429 väntar den så länge GitLab ber om); en avvisad token eller ett avvisat projekt (övriga 4xx) försöks inte igen. De 50 senaste rapporterna per projekt visas i inställningarna; `ci_deliveries` säkerhetskopieras inte. Servern behöver utgående HTTPS till GitLab-instansen.
+
 ## Körning av skript och webbtester
 
 Körningen utför skripten i automatiska tester (`sh`, `bash`, `python`, `javascript`) och webbtester (Playwright) på servern. Den är **av som standard**; läs [avsnittet om sandlådan](#sandlådan-för-skript-och-webbtester) innan den slås på. Inställningarna gäller efter en omstart.
@@ -1713,7 +1738,7 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 **I en säkerhetskopia** (94 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
 
-**Inte i en säkerhetskopia:** `chat_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1837,6 +1862,8 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 49 | `0049_risk_attack.sql` |
 | 50 | `0050_project_creator.sql` |
 | 51 | `0051_frameworks.sql` |
+| 52 | `0052_multiple_roles.sql` |
+| 53 | `0053_ci_integration.sql` |
 
 <!-- END GENERATED: migrations -->
 
@@ -1983,7 +2010,7 @@ Andra vanliga uppgifter:
 
 # Kommandoradsreferens
 
-`qtestframe` är både servern och administrationsverktyget. Alla kommandon utom `report`, `version`, `secrets generate-key` och `healthcheck --url` läser konfigurationen (`--config FIL`, standard `$QTF_CONFIG`, sedan de inbyggda standardvärdena och `QTF_*`-variabler). De kommandon som öppnar databasen migrerar den först.
+`qtestframe` är både servern och administrationsverktyget. Alla kommandon utom `report`, `gate`, `select`, `version`, `secrets generate-key` och `healthcheck --url` läser konfigurationen (`--config FIL`, standard `$QTF_CONFIG`, sedan de inbyggda standardvärdena och `QTF_*`-variabler). De kommandon som öppnar databasen migrerar den först.
 
 ```text
 qtestframe <kommando> [flaggor]
@@ -1992,7 +2019,7 @@ qtestframe <kommando> -h        # ett kommandos flaggor
 ```
 
 - Kör administrationskommandon **som tjänsteanvändaren** (`sudo -u qtestframe …`), så att filer som en ny nyckelfil får rätt ägare.
-- Avslutningskod: `0` vid framgång (även för `-h`), `1` vid fel (skrivs som `error: …`), `2` för ett okänt kommando.
+- Avslutningskod: `0` vid framgång (även för `-h`), `1` vid fel (skrivs som `error: …`), `2` för ett okänt kommando. `gate`: `0` grinden passerades, `1` den passerades inte, `2` den kunde inte utvärderas.
 - Flaggor kan skrivas med ett eller två bindestreck (`-config` och `--config`). Lösenord läses bara från standard input.
 - `qtestframe sandbox-exec` är internt: servern startar det för att sandlåda skript. Anropa det inte själv.
 
@@ -2049,7 +2076,7 @@ Ger en användare en roll i en organisation, eller ändrar den. Rollen är en in
 |---|---|---|
 | `--config` | `string` | configuration file (default $QTF_CONFIG) |
 | `--email` | `string` | user e-mail |
-| `--role` | `string` | role (default "viewer") |
+| `--role` | `string` | role, or several roles separated by commas (e.g. sme,tester) (default "viewer") |
 | `--tenant` | `string` | tenant slug |
 
 ### `qtestframe seed-demo`
@@ -2140,23 +2167,98 @@ Begär `/healthz` från den lokala servern (adress från `server.listen`, `https
 
 ### `qtestframe report`
 
-Laddar upp JUnit XML- eller JSON-resultat från ett CI-jobb till en körning på en server, via REST-API:t med en API-nyckel. Fler argument är rapportfiler (`*.json` som JSON, övriga som JUnit XML).
+Laddar upp JUnit XML- eller JSON-resultat från ett CI-jobb till en körning på en server, via REST-API:t med en API-nyckel. Fler argument är rapportfiler (`*.json` som JSON, övriga som JUnit XML). I GitLab CI, GitHub Actions och Jenkins registreras pipelinen som resultatens bygge (`--ci none` stänger av det); `--post-status` och `--post-comment` skickar commit-statusen `qtestframe/tests` och en anteckning i merge requesten.
 
 | Flagga | Värde | Betydelse |
 |---|---|---|
-| `--build` | `string` | build of a run created with --create-run |
+| `--branch` | `string` | branch of the build (default from the CI variables) |
+| `--build` | `string` | build of a run created with --create-run (default the CI pipeline number) |
+| `--build-id` | `string` | CI build id, unique in the project (default from the CI variables) |
+| `--build-number` | `string` | CI build number (default from the CI variables) |
+| `--ci` | `string` | record the CI build (pipeline id and number, commit, branch, merge request) of the results: auto (from the CI variables) or none (default "auto") |
+| `--code-host` | `string` | where to post: auto (from the CI variables), gitlab or github (default "auto") |
+| `--commit` | `string` | commit SHA of the build (default from the CI variables) |
 | `--configuration` | `string` | configuration (name or id) the results were obtained in; added to the run when it does not target it yet (default $QTF_CONFIGURATION) |
 | `--create-missing` | — | create draft automated tests for JUnit test cases without a test key (needs test.write) |
 | `--create-run` | — | create the run named by --run when the project has none |
 | `--environment` | `string` | environment of a run created with --create-run |
 | `--fail-on-unknown` | — | exit with an error when results match no test (unknown keys or test cases without a key) |
+| `--gitlab-comment` | — | same as --post-comment |
+| `--gitlab-status` | — | same as --post-status |
 | `--json` | `value` | results in the JSON import format {"results":[...]} (file or glob; repeatable) |
 | `--junit` | `value` | JUnit XML report (file or glob; repeatable) |
-| `--project` | `string` | project key, e.g. SHOP (needed with --run) |
+| `--merge-request` | `string` | merge / pull request of the build (default from the CI variables) |
+| `--pipeline-url` | `string` | pipeline URL of the build (default from the CI variables) |
+| `--post-comment` | — | add or update a merge / pull request note with the summary (default $QTF_POST_COMMENT) |
+| `--post-status` | — | post a commit status to the code host (default $QTF_POST_STATUS) |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
 | `--run` | `string` | name of the test run to report into |
 | `--run-id` | `string` | id of the test run to report into |
 | `--token` | `string` | API token (default $QTF_TOKEN) |
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+
+### `qtestframe gate`
+
+Kontrollerar kvalitetsgrinden för en CI-pipeline på en server: slutkriterierna för en release (`--release`, valfritt `--variant`) eller villkoren i `--require` (`must`, `no_failed`, `no_stale`, `no_blocking_defects`, `coverage>=80`, `no_open_defects:major`, `cycle_executed:NAMN>=90`, …) på resultaten i en körning (`--run`) eller ett bygge (`--build`). Skriver en sammanfattning med det som inte uppfylls och länkar; `--format junit|markdown|json --output FIL` skriver också en rapport för pipelinen. Slutkod 0 när grinden passeras, 1 när den inte gör det, 2 när den inte kan utvärderas. `--post-status` och `--post-comment` skickar en commit-status och en anteckning i merge requesten (GitLab eller GitHub, se sidan CI/CD i användarhandboken).
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--build` | `string` | build (CI id or number) whose runs' results are checked |
+| `--code-host` | `string` | where to post: auto (from the CI variables), gitlab or github (default "auto") |
+| `--commit` | `string` | commit of the change (default from the CI variables) |
+| `--format` | `string` | output: text, json, junit or markdown (default "text") |
+| `--gitlab-comment` | — | same as --post-comment |
+| `--gitlab-status` | — | same as --post-status |
+| `--merge-request` | `string` | merge / pull request of the change (default from the CI variables) |
+| `--output` | `string` | write the output to this file (the text summary still goes to the log) |
+| `--post-comment` | — | add or update a merge / pull request note with the summary (default $QTF_POST_COMMENT) |
+| `--post-status` | — | post a commit status to the code host (default $QTF_POST_STATUS) |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--release` | `string` | release (name, version or id) whose exit criteria are checked |
+| `--require` | `value` | condition, e.g. coverage>=80, must, no_failed, no_stale, no_blocking_defects, no_open_defects:major, cycle_executed:NAME>=90 (repeatable, or comma-separated); replaces the release's exit criteria |
+| `--run` | `string` | run (name or id) whose results are checked |
+| `--run-id` | `string` | id of the run whose results are checked |
+| `--scope` | `string` | requirements of a gate without --release: all (default), affected (those the merge request / commit refers to) or a query |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+| `--variant` | `string` | evaluate for this variant (name or id) only |
+
+### `qtestframe select`
+
+Skriver de testfall en CI-pipeline kör för en ändring: de krav och testfall som ändringens commits (från git, `--since` eller `--commits`), merge request, ändrade filer (med sökvägskartan `qtestframe-map.yml`) och commit-meddelanden hänvisar till, regressionsurvalet och testfallen med taggarna i `--tag`. `--format` ger testnycklar, ett filter för testköraren (`pytest`, `go`, `playwright`, `maven`), JSON eller en underpipeline för GitLab (`gitlab-child-pipeline`); `--create-run` skapar en körning av urvalet.
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--all` | — | select every test |
+| `--cli-image` | `string` | image with the qtestframe binary for the child pipeline's report job (default $QTF_CLI_IMAGE) |
+| `--commits` | `value` | commit SHAs of the change (repeatable or comma-separated; instead of git) |
+| `--create-run` | — | create a run of the selected tests (results of report --run-id land in it) |
+| `--environment` | `string` | environment of the created run |
+| `--fallback` | `string` | when the change is unknown (no commits, files or keys): none (select nothing) or all (default "none") |
+| `--files` | `value` | changed files (repeatable or comma-separated; instead of git) |
+| `--format` | `string` | output: keys, pytest, go, playwright, maven, json, gitlab-child-pipeline (default "keys") |
+| `--gate-release` | `string` | release whose exit criteria the child pipeline's gate checks |
+| `--gate-require` | `value` | condition of the child pipeline's gate (repeatable) |
+| `--git` | — | read the commits (messages) and changed files with git (default true) |
+| `--head` | `string` | the revision of the change (default $CI_COMMIT_SHA, else HEAD) |
+| `--image` | `value` | image of a runner's job in the child pipeline, RUNNER=IMAGE (repeatable) |
+| `--include-manual` | — | select manual tests too |
+| `--include-related` | — | add requirements that depend on, refine or derive from a changed one |
+| `--job` | `value` | test command of a runner's job in the child pipeline, RUNNER=COMMAND (repeatable) |
+| `--map` | `string` | path map: changed files → tests, tags, requirements (default qtestframe-map.yml when it exists) |
+| `--merge-request` | `string` | merge / pull request number (default from the CI variables) |
+| `--no-gate` | — | no gate in the child pipeline |
+| `--output` | `string` | write the output to this file |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--release` | `string` | release (name, version or id) of the created run |
+| `--requirement` | `value` | changed requirement (key or id; repeatable) |
+| `--run` | `string` | name of the run to create (default $QTF_RUN) |
+| `--since` | `string` | compare with this git revision (default: the merge request's diff base, else the commit before the push) |
+| `--since-build` | `string` | also the commits after this build (CI id or number) |
+| `--tag` | `value` | always run the tests with this tag (repeatable) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+| `--variant` | `string` | only tests that apply to this variant |
 
 ### `qtestframe version`
 
@@ -2183,7 +2285,16 @@ qtestframe secrets rewrap --config config.new.yaml --from-config config.yaml
 # CI: rapportera JUnit-resultat till en körning, som skapas om den saknas
 QTF_URL=https://qtf.example.com QTF_TOKEN=qtf_… \
   qtestframe report --project SHOP --run "Nightly $BUILD" --create-run --build "$BUILD" --junit 'reports/*.xml'
+
+# CI: kvalitetsgrinden för pipelinens körning, som JUnit för pipelinen
+qtestframe gate --project SHOP --run "Nightly $BUILD" --release 1.0 --format junit --output qtf-gate.xml
+
+# CI: en merge requests testfall som pytest-filter, eller som underpipeline
+pytest -k "$(qtestframe select --project SHOP --format pytest)"
+qtestframe select --project SHOP --format gitlab-child-pipeline --create-run --run "MR $CI_MERGE_REQUEST_IID" --output child.yml
 ```
+
+Färdiga pipelinedefinitioner finns i `examples/ci/` och i appen (**Inställningar → Projekt → CI-uppsättning**); se sidan *CI/CD* i användarhandboken.
 
 # Funktioner som lagts till senare
 
@@ -2209,3 +2320,7 @@ docs/user-guide/<lang>/administration.md och kontrollerat mot koden):
 Utforskande testsessioner (migrering 0040) behöver ingen konfiguration. De använder behörigheterna för testkörningar: `run.read` för att se sessioner, `run.write` för att planera, ändra och ta bort dem och för att utvärdera eller stoppa någon annans session, `run.execute` för att genomföra sin egen session (tidtagning, anteckningar, defekter från anteckningar, utvärdering). Sessionens tidtagning hålls i databasen (`exploratory_sessions.running_since`, `elapsed_seconds`), så en omstart av servern tappar ingen sessionstid; en session som lämnas igång fortsätter att räkna tills någon pausar eller stoppar den.
 
 Tabellerna `exploratory_sessions`, `exploratory_scope` och `exploratory_notes` ingår i säkerhetskopian och i projektarkiv; skärmbilder är vanliga bilagor (`files`, `attachments`) och räknas mot `files.max_upload_mb`. Om utvärderade sessioner är verifieringsbevis är en projektinställning (`verification_settings.exploratory_evidence`, avstängd som standard) som ändras av någon med `project.update`. Varje åtgärd skrivs till händelseloggen med åtgärderna `exploratory.*`.
+
+## CI/CD-integration
+
+Kvalitetsgrinden, testurvalet och pipelinemallarna (migrering 0053) behöver ingen konfiguration; serverns rapporter av commit-statusar och anteckningar i merge requests till GitLab är en projektinställning med en krypterad token och en utkorg i bakgrunden (`ci_deliveries`, som minutjobbet försöker igen, och som inte säkerhetskopieras). Tokens, roller, jobbtokens begränsningar och utgående anslutningar beskrivs i [E-post, webhooks och integrationer](#e-post-webhooks-och-integrationer); ändringar av inställningarna loggas som `project.ci_settings`.

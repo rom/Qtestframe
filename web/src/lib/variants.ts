@@ -130,10 +130,13 @@ export interface CodeSettings {
   github_url?: string
   updated_by?: string
   updated_at?: string
+  /** server-side posting of commit statuses and notes (lib/ci.ts) */
+  ci?: import('./ci').CISettings
+  has_ci_token?: boolean
 }
 
 export interface RegressionReason {
-  kind: 'requirement' | 'change' | 'related' | 'verifies' | 'prerequisite'
+  kind: 'requirement' | 'change' | 'related' | 'verifies' | 'prerequisite' | 'key' | 'tag' | 'all'
   ref?: string
   type?: string
 }

@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/rom/qtestframe/internal/model"
@@ -71,7 +72,7 @@ func TestProjectAccessStore(t *testing.T) {
 		t.Fatal(ms, err)
 	}
 	gr, err := st.ProjectGrantOf(ctx, ten.ID, p.ID, u.ID)
-	if err != nil || gr.UserRole != "manager" || len(gr.GroupRoles) != 1 || !gr.Member() {
+	if err != nil || strings.Join(gr.UserRoles, ",") != "manager" || len(gr.GroupRoles) != 1 || !gr.Member() {
 		t.Fatal(gr, err)
 	}
 	all, err := st.ProjectGrants(ctx, ten.ID, u.ID)
@@ -79,7 +80,7 @@ func TestProjectAccessStore(t *testing.T) {
 		t.Fatal(all, err)
 	}
 	users, err := st.ProjectUserGrants(ctx, ten.ID, p.ID)
-	if err != nil || users[u.ID].UserRole != "manager" || len(users[u.ID].GroupRoles) != 1 {
+	if err != nil || strings.Join(users[u.ID].UserRoles, ",") != "manager" || len(users[u.ID].GroupRoles) != 1 {
 		t.Fatal(users, err)
 	}
 	ids, err := st.TenantProjectIDs(ctx, ten.ID)

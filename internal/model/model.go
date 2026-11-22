@@ -268,15 +268,19 @@ type SessionInfo struct {
 
 // Membership binds a user to a tenant with a role.
 type Membership struct {
-	TenantID   string    `json:"tenant_id"`
-	TenantSlug string    `json:"tenant_slug,omitempty"`
-	TenantName string    `json:"tenant_name,omitempty"`
-	UserID     string    `json:"user_id"`
-	Email      string    `json:"email,omitempty"`
-	Name       string    `json:"display_name,omitempty"`
-	Avatar     string    `json:"avatar,omitempty"`
-	Role       string    `json:"role"`
-	CreatedAt  time.Time `json:"created_at"`
+	TenantID   string `json:"tenant_id"`
+	TenantSlug string `json:"tenant_slug,omitempty"`
+	TenantName string `json:"tenant_name,omitempty"`
+	UserID     string `json:"user_id"`
+	Email      string `json:"email,omitempty"`
+	Name       string `json:"display_name,omitempty"`
+	Avatar     string `json:"avatar,omitempty"`
+	// Role is the primary role (the first of Roles; deprecated, kept for
+	// older clients). Roles are all roles of the member (rbac.NormalizeRoles
+	// order); the permissions are the union of theirs.
+	Role      string    `json:"role"`
+	Roles     []string  `json:"roles"`
+	CreatedAt time.Time `json:"created_at"`
 	// SCIM is set when the identity provider manages the membership
 	// (SCIM provisioning); its role follows the provider's groups.
 	SCIM bool `json:"scim,omitempty"`
@@ -302,11 +306,14 @@ type Session struct {
 
 // APIToken allows non-interactive (CI) access.
 type APIToken struct {
-	ID        string     `json:"id"`
-	TenantID  string     `json:"tenant_id"`
-	UserID    string     `json:"user_id"`
-	Name      string     `json:"name"`
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+	UserID   string `json:"user_id"`
+	Name     string `json:"name"`
+	// Role is the primary role of Roles (deprecated); the token holds the
+	// permissions of its roles that the user also holds.
 	Role      string     `json:"role"`
+	Roles     []string   `json:"roles"`
 	Hash      string     `json:"-"`
 	Prefix    string     `json:"prefix"`
 	CreatedAt time.Time  `json:"created_at"`
@@ -365,12 +372,15 @@ const (
 // ProjectAccessInfo is a caller's access to a project.
 type ProjectAccessInfo struct {
 	// Source is "admin" (organisation administrator), "member" (a project
-	// member: Role is the project role), "group" (through a SCIM group:
-	// Role lists the groups' roles) or "organisation" (the organisation
-	// role of an organisation-wide project).
+	// member: Roles are the project roles), "group" (through SCIM groups:
+	// Roles are the union of the groups' roles) or "organisation" (the
+	// organisation roles of an organisation-wide project).
 	Source string `json:"source"`
-	// Role is the project role ("" for admin and organisation).
+	// Role lists the project roles separated by ", " (deprecated: read
+	// Roles); "" for admin and organisation.
 	Role string `json:"role,omitempty"`
+	// Roles are the project roles (empty for admin and organisation).
+	Roles []string `json:"roles,omitempty"`
 	// Permissions are the effective permissions in the project.
 	Permissions []string `json:"permissions"`
 	// CanShare reports whether the caller may change the project's access
@@ -384,13 +394,17 @@ type ProjectMember struct {
 	// Type is "user" or "group".
 	Type string `json:"type"`
 	// ID is the user id or the SCIM group id.
-	ID     string `json:"id"`
-	Role   string `json:"role"`
-	Email  string `json:"email,omitempty"`
-	Name   string `json:"display_name,omitempty"`
-	Avatar string `json:"avatar,omitempty"`
-	// OrgRole is the user's organisation role ("" for groups).
+	ID string `json:"id"`
+	// Role is the primary project role (the first of Roles; deprecated).
+	Role   string   `json:"role"`
+	Roles  []string `json:"roles"`
+	Email  string   `json:"email,omitempty"`
+	Name   string   `json:"display_name,omitempty"`
+	Avatar string   `json:"avatar,omitempty"`
+	// OrgRole is the user's primary organisation role and OrgRoles all of
+	// them (empty for groups).
 	OrgRole   string    `json:"org_role,omitempty"`
+	OrgRoles  []string  `json:"org_roles,omitempty"`
 	AddedBy   string    `json:"added_by,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -1178,6 +1192,7 @@ var ExitCriterionTypes = []string{
 	"residual_risk",       // no risk linked to scope requirements has a residual level above the threshold (the level; default the project's) unless the risk is accepted
 	"no_blocking_defects", // no scope requirement is blocked by an open defect (the project's severity rules)
 	"cycle_executed",      // % of the planned tests of a test cycle (CycleID) with a final result (default 100: fully executed)
+	"no_stale",            // no test of the scope or the runs has only a stale pass (see staleness)
 }
 
 // ExitCriterion is one condition a release must meet.
@@ -1621,6 +1636,20 @@ func (p *MFAPolicy) Requires(role string) bool {
 			if r == role {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+// RequiresAny reports whether the policy requires MFA for any of a
+// member's roles.
+func (p *MFAPolicy) RequiresAny(roles []string) bool {
+	if p.Mode == MFAAll {
+		return true
+	}
+	for _, r := range roles {
+		if p.Requires(r) {
+			return true
 		}
 	}
 	return false

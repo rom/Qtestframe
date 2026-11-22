@@ -23,6 +23,8 @@ import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
 import DefectTrackerSettings from '@/components/DefectTrackerSettings.vue'
 import ImportSourcesSettings from '@/components/ImportSourcesSettings.vue'
 import CodeSettings from '@/components/CodeSettings.vue'
+import CIPostingSettings from '@/components/CIPostingSettings.vue'
+import CISetupPanel from '@/components/CISetupPanel.vue'
 import WebhooksCard from '@/components/WebhooksCard.vue'
 import ChatChannelsCard from '@/components/ChatChannelsCard.vue'
 import VerificationSettingsCard from '@/components/VerificationSettingsCard.vue'
@@ -453,6 +455,8 @@ function deleteProject() {
         <DefectTrackerSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <ImportSourcesSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <CodeSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
+        <CIPostingSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
+        <CISetupPanel v-if="proj.pid" :project-id="proj.pid" />
         <WebhooksCard v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <ChatChannelsCard v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <section v-if="canSave || auth.can(P.projectCreate)" class="card project-archive" style="max-width: 640px; margin-top: 16px" aria-labelledby="h-archive">

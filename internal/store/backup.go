@@ -79,6 +79,8 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "
 	"suggest_history": true,
 	// queue and log of chat posts (the channels are backed up)
 	"chat_deliveries": true,
+	// queue and log of CI status posts (0053; the settings are backed up)
+	"ci_deliveries": true,
 	// vectors of the embeddings service: a cache, computed again
 	"similarity_embeddings": true}
 

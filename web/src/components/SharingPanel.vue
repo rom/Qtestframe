@@ -16,9 +16,11 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { filterMembers, includesSelf, memberName, sortMembers } from '@/lib/sharing'
+import { filterMembers, includesSelf, lockedRoles, mayManageMember, memberName, sortMembers } from '@/lib/sharing'
+import { diffRoles, rolesOf } from '@/lib/permissions'
 import type { MemberCandidate, Project, ProjectAccessMode, ProjectMember, ProjectSharing } from '@/lib/types'
-import { enumLabel, enumOptions } from '@/i18n/labels'
+import { enumLabel, enumOptions, rolesLabel } from '@/i18n/labels'
+import RolePicker from '@/components/RolePicker.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRolesStore } from '@/stores/roles'
 import { useNotify } from '@/composables/notify'
@@ -37,9 +39,10 @@ const loading = ref(false)
 const error = ref('')
 const filter = ref('')
 const canEdit = computed(() => !!sharing.value?.my_access?.can_share || !!auth.user?.super_admin)
-const grantable = computed(() => enumOptions('role', sharing.value?.grantable_roles ?? []))
-const mayGive = (role: string) => (sharing.value?.grantable_roles ?? []).includes(role)
-const shown = computed(() => sortMembers(filterMembers(members.value, filter.value)))
+const grantableNames = computed(() => sharing.value?.grantable_roles ?? [])
+const grantable = computed(() => enumOptions('role', grantableNames.value))
+const mayManage = (m: ProjectMember) => mayManageMember(m, grantableNames.value)
+const shown = computed(() => sortMembers(filterMembers(members.value, filter.value, (r) => enumLabel('role', r))))
 const uid = `share-${Math.random().toString(36).slice(2, 8)}`
 
 async function load() {
@@ -94,7 +97,7 @@ async function setMode(mode: ProjectAccessMode) {
 // ---------- add a member ----------
 const pick = ref<MemberCandidate | string | null>(null)
 const suggestions = ref<MemberCandidate[]>([])
-const addRole = ref('viewer')
+const addRoles = ref<string[]>(['viewer'])
 const adding = ref(false)
 async function complete(ev: { query: string }) {
   try {
@@ -105,20 +108,21 @@ async function complete(ev: { query: string }) {
   }
 }
 const candidateLabel = (c: MemberCandidate) => (c.type === 'group' ? `${c.display_name} (${t('sharing.group')})` : c.display_name ? `${c.display_name} <${c.email}>` : (c.email ?? c.id))
-watch(grantable, (g) => {
-  if (g.length && !g.some((o) => o.value === addRole.value)) addRole.value = g[g.length - 1].value
+watch(grantableNames, (g) => {
+  const keep = addRoles.value.filter((r) => g.includes(r))
+  if (g.length && keep.length !== addRoles.value.length) addRoles.value = keep.length ? keep : [g[g.length - 1]]
 })
 async function add() {
   const c = pick.value
   if (!c) return
-  const body: Record<string, string> = { role: addRole.value }
+  const body: Record<string, string | string[]> = { roles: addRoles.value }
   if (typeof c === 'string') body.email = c.trim()
   else if (c.type === 'group') body.group_id = c.id
   else body.user_id = c.id
   adding.value = true
   try {
     const m = await api.post<ProjectMember>(`/projects/${props.project.id}/members`, body)
-    notify.ok(t('sharing.added'), `${memberName(m)}: ${enumLabel('role', m.role)}`)
+    notify.ok(t('sharing.added'), `${memberName(m)}: ${rolesLabel(rolesOf(m))}`)
     pick.value = null
     await reloadMembers()
   } catch (e) {
@@ -136,13 +140,17 @@ async function reloadMembers() {
 }
 
 // ---------- change and remove ----------
-async function setRole(m: ProjectMember, role: string) {
+async function setRoles(m: ProjectMember, next: string[]) {
+  const before = rolesOf(m)
   try {
-    await api.patch(`/projects/${props.project.id}/members/${m.id}`, { role })
-    m.role = role
-    notify.ok(t('sharing.roleChanged'), `${memberName(m)}: ${enumLabel('role', role)}`)
+    const res = await api.patch<ProjectMember>(`/projects/${props.project.id}/members/${m.id}`, { roles: next })
+    m.roles = res?.roles ?? next
+    m.role = res?.role ?? next[0]
+    const { added, removed } = diffRoles(before, next)
+    notify.ok(t('sharing.rolesChanged'), `${memberName(m)}: ${[...added.map((r) => '+' + enumLabel('role', r)), ...removed.map((r) => '−' + enumLabel('role', r))].join(' ')}`)
   } catch (e) {
     notify.fail(e)
+    m.roles = before
   }
 }
 function remove(m: ProjectMember) {
@@ -171,9 +179,12 @@ interface BulkItem {
 }
 const selection = ref<ProjectMember[]>([])
 const bulkRole = ref<string | null>(null)
+const bulkAddRole = ref<string | null>(null)
+const bulkRemoveRole = ref<string | null>(null)
 const bulkBusy = ref(false)
 watch(members, (l) => (selection.value = selection.value.filter((m) => l.some((x) => x.id === m.id))))
-const reasonText = (r?: string) => (r === 'unchanged' ? t('sharing.reason.unchanged') : r === 'forbidden' ? t('sharing.reason.forbidden') : t('sharing.reason.notFound'))
+const reasonText = (r?: string) =>
+  r === 'unchanged' ? t('sharing.reason.unchanged') : r === 'forbidden' ? t('sharing.reason.forbidden') : r === 'last_role' ? t('sharing.reason.lastRole') : t('sharing.reason.notFound')
 async function bulk(body: Record<string, unknown>, done: (n: number) => string) {
   bulkBusy.value = true
   try {
@@ -187,14 +198,19 @@ async function bulk(body: Record<string, unknown>, done: (n: number) => string) 
   } finally {
     bulkBusy.value = false
     bulkRole.value = null
+    bulkAddRole.value = null
+    bulkRemoveRole.value = null
   }
 }
-function bulkSetRole(role: string | null) {
+function bulkSetRole(role: string | null, action: 'role' | 'add_role' | 'remove_role' = 'role') {
   if (!role) return
   const n = selection.value.length
+  const label = enumLabel('role', role)
+  const confirmKey = { role: 'sharing.confirmBulkRole', add_role: 'sharing.confirmBulkAddRole', remove_role: 'sharing.confirmBulkRemoveRole' }[action]
+  const doneKey = { role: 'sharing.bulkRoleSet', add_role: 'sharing.bulkRoleAdded', remove_role: 'sharing.bulkRoleRemoved' }[action]
   notify.confirmDanger(
-    t('sharing.confirmBulkRole', { n, role: enumLabel('role', role) }, n),
-    () => bulk({ action: 'role', role }, (k) => t('sharing.bulkRoleSet', { n: k, role: enumLabel('role', role) }, k)),
+    t(confirmKey, { n, role: label }, n),
+    () => bulk({ action, roles: [role] }, (k) => t(doneKey, { n: k, role: label }, k)),
     t('sharing.bulkRoleHeader'),
     t('sharing.bulkRoleAction'),
   )
@@ -217,8 +233,8 @@ const sourceText = computed(() => {
   if (!a) return ''
   if (a.source === 'admin') return t('sharing.youAdmin')
   if (a.source === 'organisation') return t('sharing.youOrganisation')
-  if (a.source === 'group') return t('sharing.youGroup', { role: a.role ?? '' })
-  return t('sharing.youMember', { role: enumLabel('role', a.role) })
+  if (a.source === 'group') return t('sharing.youGroup', { role: rolesLabel(rolesOf(a)) })
+  return t('sharing.youMember', { role: rolesLabel(rolesOf(a)) })
 })
 </script>
 
@@ -260,7 +276,7 @@ const sourceText = computed(() => {
             </span>
           </template>
         </AutoComplete>
-        <Select v-model="addRole" :options="grantable" option-label="label" option-value="value" :aria-label="t('sharing.roleToGive')" style="min-width: 150px" />
+        <div class="add-roles"><RolePicker v-model="addRoles" :options="grantableNames" :aria-label="t('sharing.rolesToGive')" /></div>
         <Button type="submit" :label="t('sharing.add')" icon="pi pi-user-plus" :loading="adding" :disabled="!pick" />
       </form>
       <div class="filterbar" style="margin-top: 8px">
@@ -268,7 +284,9 @@ const sourceText = computed(() => {
       </div>
       <div v-if="canEdit && selection.length" class="bulkbar" role="toolbar" :aria-label="t('sharing.bulkToolbar')">
         <b>{{ t('common.selected', { count: selection.length }) }}</b>
-        <Select v-model="bulkRole" :options="grantable" option-label="label" option-value="value" :placeholder="t('sharing.bulkSetRole')" :aria-label="t('sharing.bulkSetRole')" size="small" style="min-width: 150px" :disabled="bulkBusy" @update:model-value="bulkSetRole" />
+        <Select v-model="bulkRole" :options="grantable" option-label="label" option-value="value" :placeholder="t('sharing.bulkSetRole')" :aria-label="t('sharing.bulkSetRole')" size="small" style="min-width: 150px" :disabled="bulkBusy" @update:model-value="(r: string | null) => bulkSetRole(r, 'role')" />
+        <Select v-model="bulkAddRole" :options="grantable" option-label="label" option-value="value" :placeholder="t('sharing.bulkAddRole')" :aria-label="t('sharing.bulkAddRole')" size="small" style="min-width: 150px" :disabled="bulkBusy" @update:model-value="(r: string | null) => bulkSetRole(r, 'add_role')" />
+        <Select v-model="bulkRemoveRole" :options="grantable" option-label="label" option-value="value" :placeholder="t('sharing.bulkRemoveRole')" :aria-label="t('sharing.bulkRemoveRole')" size="small" style="min-width: 150px" :disabled="bulkBusy" @update:model-value="(r: string | null) => bulkSetRole(r, 'remove_role')" />
         <Button :label="t('common.remove')" icon="pi pi-user-minus" size="small" severity="danger" outlined :disabled="bulkBusy" @click="bulkRemove" />
         <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
       </div>
@@ -291,29 +309,27 @@ const sourceText = computed(() => {
             </span>
           </template>
         </Column>
-        <Column :header="t('sharing.orgRole')" style="width: 140px">
-          <template #body="{ data }">{{ data.type === 'user' ? enumLabel('role', data.org_role) : '–' }}</template>
+        <Column :header="t('sharing.orgRoles')" style="width: 160px">
+          <template #body="{ data }">{{ data.type === 'user' ? rolesLabel(data.org_roles?.length ? data.org_roles : data.org_role ? [data.org_role] : []) : '–' }}</template>
         </Column>
-        <Column :header="t('sharing.projectRole')" style="width: 190px">
+        <Column :header="t('sharing.projectRoles')" style="width: 240px">
           <template #body="{ data }">
-            <Select
-              v-if="canEdit && mayGive(data.role)"
-              :model-value="data.role"
-              :options="grantable"
-              option-label="label"
-              option-value="value"
+            <RolePicker
+              v-if="canEdit"
+              :model-value="rolesOf(data)"
+              :options="grantableNames"
+              :locked="lockedRoles(data, grantableNames)"
               size="small"
-              class="w-full"
-              :aria-label="t('sharing.roleOf', { member: memberName(data) })"
-              @update:model-value="(r: string) => setRole(data, r)"
+              :aria-label="t('sharing.rolesOf', { member: memberName(data) })"
+              @change="(r: string[]) => setRoles(data, r)"
             />
-            <Tag v-else :value="enumLabel('role', data.role)" severity="secondary" />
+            <span v-else class="row wrap" style="gap: 4px"><Tag v-for="r in rolesOf(data)" :key="r" :value="enumLabel('role', r)" severity="secondary" /></span>
           </template>
         </Column>
         <Column style="width: 56px">
           <template #body="{ data }">
             <Button
-              v-if="(canEdit && mayGive(data.role)) || data.id === auth.user?.id"
+              v-if="(canEdit && mayManage(data)) || data.id === auth.user?.id"
               icon="pi pi-user-minus"
               text
               rounded
@@ -362,6 +378,10 @@ const sourceText = computed(() => {
 }
 .add-member .grow {
   min-width: 220px;
+}
+.add-roles {
+  min-width: 180px;
+  max-width: 100%;
 }
 .group-icon {
   display: inline-flex;

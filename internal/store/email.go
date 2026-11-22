@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/rbac"
 )
 
 // ---------------------------------------------------------------- notification mails
@@ -102,14 +103,16 @@ func (s *Store) SetJobLastRun(ctx context.Context, name string, at time.Time) er
 
 // ---------------------------------------------------------------- invitations
 
-const invitationCols = `id, tenant_id, user_id, email, role, token_hash, sso, invited_by, created_at, sent_at, expires_at, accepted_at, revoked_at`
+const invitationCols = `id, tenant_id, user_id, email, role, roles, token_hash, sso, invited_by, created_at, sent_at, expires_at, accepted_at, revoked_at`
 
 func scanInvitation(r interface{ Scan(...any) error }) (*model.Invitation, error) {
 	var i model.Invitation
 	var acc, rev sql.NullTime
-	if err := r.Scan(&i.ID, &i.TenantID, &i.UserID, &i.Email, &i.Role, &i.TokenHash, &i.SSO, &i.InvitedBy, &i.CreatedAt, &i.SentAt, &i.ExpiresAt, &acc, &rev); err != nil {
+	var roles string
+	if err := r.Scan(&i.ID, &i.TenantID, &i.UserID, &i.Email, &i.Role, &roles, &i.TokenHash, &i.SSO, &i.InvitedBy, &i.CreatedAt, &i.SentAt, &i.ExpiresAt, &acc, &rev); err != nil {
 		return nil, err
 	}
+	i.Roles = decodeRoles(roles, i.Role)
 	i.CreatedAt, i.SentAt, i.ExpiresAt = i.CreatedAt.UTC(), i.SentAt.UTC(), i.ExpiresAt.UTC()
 	i.AcceptedAt, i.RevokedAt = timePtr(acc), timePtr(rev)
 	return &i, nil
@@ -118,6 +121,14 @@ func scanInvitation(r interface{ Scan(...any) error }) (*model.Invitation, error
 // CreateInvitation stores an invitation; earlier open invitations of the
 // same user in the tenant are revoked.
 func (s *Store) CreateInvitation(ctx context.Context, i *model.Invitation) error {
+	if len(i.Roles) == 0 && i.Role != "" {
+		i.Roles = []string{i.Role}
+	}
+	rs, raw, err := normRoles(i.Roles)
+	if err != nil {
+		return err
+	}
+	i.Roles, i.Role = rs, rbac.Primary(rs)
 	return s.tx(ctx, func(c conn) error {
 		now := s.now()
 		if _, err := c.exec(ctx, `UPDATE invitations SET revoked_at = ?, token_hash = '' WHERE tenant_id = ? AND user_id = ? AND accepted_at IS NULL AND revoked_at IS NULL`, now, i.TenantID, i.UserID); err != nil {
@@ -125,8 +136,8 @@ func (s *Store) CreateInvitation(ctx context.Context, i *model.Invitation) error
 		}
 		i.ID, i.CreatedAt, i.SentAt = newID(), now, now
 		i.Email = NormalizeEmail(i.Email)
-		_, err := c.exec(ctx, `INSERT INTO invitations (`+invitationCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			i.ID, i.TenantID, i.UserID, i.Email, i.Role, i.TokenHash, i.SSO, i.InvitedBy, i.CreatedAt, i.SentAt, i.ExpiresAt.UTC(), nil, nil)
+		_, err := c.exec(ctx, `INSERT INTO invitations (`+invitationCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			i.ID, i.TenantID, i.UserID, i.Email, i.Role, raw, i.TokenHash, i.SSO, i.InvitedBy, i.CreatedAt, i.SentAt, i.ExpiresAt.UTC(), nil, nil)
 		return mapErr(err, "invitation")
 	})
 }
