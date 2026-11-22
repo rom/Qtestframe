@@ -206,7 +206,7 @@ function nodeName(id: string) {
   <div class="grid impact-view" style="gap: 16px">
     <div class="row" style="align-items: baseline">
       <h1 style="margin: 0">{{ t('correlations.viewTitle') }}</h1>
-      <HelpLink page="traceability-and-coverage" :anchor="{ en: 'impact-analysis', sv: 'paverkansanalys' }" />
+      <HelpLink page="traceability-and-coverage" :anchor="{ en: 'impact-analysis', sv: 'påverkansanalys' }" />
     </div>
     <p class="muted small" style="margin: 0">{{ t('correlations.viewIntro') }}</p>
 
@@ -224,8 +224,8 @@ function nodeName(id: string) {
       </ul>
       <div class="row" style="flex-wrap: wrap; gap: 12px; align-items: flex-end">
         <div class="field" style="min-width: 220px">
-          <label for="impact-baseline">{{ t('correlations.baseline') }}</label>
-          <Select input-id="impact-baseline" v-model="baseline" :options="baselineOptions" option-label="name" option-value="id" />
+          <label id="impact-baseline-label" for="impact-baseline">{{ t('correlations.baseline') }}</label>
+          <Select input-id="impact-baseline" aria-labelledby="impact-baseline-label" v-model="baseline" :options="baselineOptions" option-label="name" option-value="id" />
         </div>
         <div class="field" style="width: 130px">
           <label for="impact-depth">{{ t('correlations.depthField') }}</label>
@@ -283,7 +283,9 @@ function nodeName(id: string) {
               </path>
             </g>
             <g v-for="n in layout.nodes" :key="n.id">
-              <a :href="href(n.id)" class="impact-node" :class="[`impact-node-${byId.get(n.id)?.mode}`]" :aria-label="nodeName(n.id)">
+              <!-- the description stays outside the link: its name is exactly its visible text -->
+              <desc :id="`idesc-${n.id.replace(':', '-')}`">{{ nodeName(n.id) }}</desc>
+              <a :href="href(n.id)" class="impact-node" :class="[`impact-node-${byId.get(n.id)?.mode}`]" :aria-describedby="`idesc-${n.id.replace(':', '-')}`">
                 <rect :x="n.x" :y="n.y" :width="W" :height="H" rx="8" class="node-box" :stroke-dasharray="byId.get(n.id)?.mode === 'review' ? '6 4' : undefined" />
                 <text :x="n.x + 10" :y="n.y + 19" class="node-key">{{ byId.get(n.id)?.key }}</text>
                 <text :x="n.x + W - 8" :y="n.y + 19" class="node-kind" text-anchor="end">{{ short(kindLabel(byId.get(n.id)?.kind ?? ''), 16) }}</text>

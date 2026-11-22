@@ -243,42 +243,6 @@ func ImpactedRelations(rels []model.Relation, reqID string, set *model.Correlati
 	return out
 }
 
-// MarkRelationsSuspect marks the relations along which a change of a
-// requirement travels suspect (relations already suspect keep their date
-// and reason) and returns the impacted relations that were newly marked.
-func (s *Store) MarkRelationsSuspect(ctx context.Context, tenantID, reqID, reason string) ([]ImpactedRelation, error) {
-	r, err := s.GetRequirement(ctx, tenantID, reqID)
-	if err != nil {
-		return nil, err
-	}
-	set, err := s.CorrelationSettings(ctx, tenantID, r.ProjectID)
-	if err != nil {
-		return nil, err
-	}
-	rels, err := s.ListRelations(ctx, tenantID, r.ProjectID, reqID)
-	if err != nil {
-		return nil, err
-	}
-	if len(reason) > 500 {
-		reason = reason[:500]
-	}
-	var out []ImpactedRelation
-	for _, ir := range ImpactedRelations(rels, reqID, set) {
-		if ir.Relation.SuspectSince != nil {
-			continue
-		}
-		res, err := s.c(ctx).exec(ctx, `UPDATE requirement_relations SET suspect_since = ?, suspect_reason = ?, suspect_end = ? WHERE id = ? AND tenant_id = ? AND suspect_since IS NULL`,
-			s.now(), reason, ir.End, ir.Relation.ID, tenantID)
-		if err != nil {
-			return out, err
-		}
-		if n, _ := res.RowsAffected(); n > 0 {
-			out = append(out, ir)
-		}
-	}
-	return out, nil
-}
-
 // ConfirmRelations clears the suspect mark of relations: by ID, or all
 // suspect relations of a requirement. Returns the confirmed relations.
 func (s *Store) ConfirmRelations(ctx context.Context, tenantID string, ids []string, reqID string) ([]model.Relation, error) {
@@ -334,22 +298,6 @@ func (s *Store) SuspectRelationCounts(ctx context.Context, tenantID, projectID s
 }
 
 // ---------------------------------------------------------------- tracker issues
-
-// MarkIssuesOutdated flags the tracker issues of a requirement out of date
-// (issues already flagged keep their date and reason) and returns how
-// many were newly flagged.
-func (s *Store) MarkIssuesOutdated(ctx context.Context, tenantID, reqID, reason string) (int, error) {
-	if len(reason) > 500 {
-		reason = reason[:500]
-	}
-	res, err := s.c(ctx).exec(ctx, `UPDATE item_links SET issue_outdated_since = ?, issue_outdated_reason = ? WHERE tenant_id = ? AND source_type = ? AND source_id = ?
-		AND target_type = 'url' AND issue_key <> '' AND issue_outdated_since IS NULL`, s.now(), reason, tenantID, model.KindRequirement, reqID)
-	if err != nil {
-		return 0, err
-	}
-	n, _ := res.RowsAffected()
-	return int(n), nil
-}
 
 // ClearIssueOutdated clears the out-of-date flag of an issue link (the
 // issue was updated from its requirement, or someone confirmed it).

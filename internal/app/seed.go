@@ -183,7 +183,7 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	for _, rel := range []struct {
 		src, dst int
 		typ      string
-	}{{1, 0, "depends_on"}, {2, 0, "provides"}, {3, 0, "depends_on"}, {4, 3, "refines"}, {6, 7, "derived_from"}} {
+	}{{1, 0, "depends_on"}, {2, 0, "provides"}, {3, 0, "depends_on"}, {4, 3, "refines"}, {5, 4, "refines"}, {6, 7, "derived_from"}} {
 		if rel.src >= len(reqs) || rel.dst >= len(reqs) {
 			continue
 		}
@@ -266,7 +266,7 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	// change impact, stale results, blocking defects and a regression (seedcorrelations.go)
 	var changed *model.Requirement
 	if len(reqs) > 4 {
-		changed = reqs[3] // reqs[4] refines it
+		changed = reqs[3] // reqs[4] refines it, reqs[5] refines reqs[4] (transitive impact)
 	}
 	if err := seedCorrelations(ctx, st, tenantID, run, changed); err != nil {
 		return nil, err

@@ -358,6 +358,10 @@ async function discover(request) {
     linkedReq && { name: 'requirement-impact', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
     { name: 'test-impact', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
     linkedReq && { name: 'impact-confirm-dialog', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer form input[required]', keys: ['End', 'X', 'Enter'], wait: '.impact-confirm-dialog' },
+    // transitive impact analysis: graph and table of a requirement's impact, the impact since a baseline
+    linkedReq && { name: 'impact-analysis', path: `${p}/impact?items=requirement:${linkedReq.id}`, wait: '.impact-node, .impact-view section.card + section.card' },
+    linkedReq && { name: 'impact-analysis-table', path: `${p}/impact?items=requirement:${linkedReq.id}`, open: '.impact-view .p-selectbutton .p-togglebutton:nth-child(2)', wait: '.impact-table, .impact-view p.muted' },
+    firstBaseline && { name: 'impact-analysis-baseline', path: `${p}/impact?baseline=${firstBaseline.id}`, wait: '.impact-view h2' },
     firstBaseline && { name: 'baseline-impact-dialog', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, open: '.filterbar button:has(.pi-share-alt)', wait: '.baseline-impact-dialog .row' },
     regressedDefect && { name: 'defect-regressions', path: `${p}/defects?item=${regressedDefect.id}`, wait: '#defect-regressions-h' },
     // custom fields and item templates: the settings tabs, their dialogs, the picker of a new item, the field sets

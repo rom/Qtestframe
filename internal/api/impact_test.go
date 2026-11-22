@@ -4,6 +4,8 @@ import (
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/rom/qtestframe/internal/model"
 )
 
 // impactFixture extends the correlation fixture: D refines B (two steps
@@ -174,6 +176,28 @@ func TestTransitiveImpactAPI(t *testing.T) {
 		t.Fatal(b)
 	}
 
+	// the spreadsheet batch and restoring a version: previews too
+	bt := a.m("POST", "/api/v1/projects/"+f.pid+"/requirements/batch?dry_run=impact", map[string]any{"items": []any{
+		map[string]any{"id": f.ra, "set": map[string]any{"description": "The system MUST log in, batch."}},
+		map[string]any{"id": f.rb, "set": map[string]any{"title": "log in with a password, batch"}},
+	}}, 200)
+	if roots := bt["impact"].(map[string]any)["roots"].([]any); len(roots) != 2 {
+		t.Fatal(bt)
+	}
+	if a := f.req(f.ra); strings.Contains(a["description"].(string), "batch") {
+		t.Fatal("dry run saved")
+	}
+	hist := items(a.m("GET", "/api/v1/requirements/"+f.ra+"/history", nil, 200))
+	rv := a.m("POST", "/api/v1/requirements/"+f.ra+"/restore?dry_run=impact", map[string]any{"revision_id": hist[len(hist)-1]["id"]}, 200)
+	if rv["dry_run"] != "impact" || len(rv["impact"].(map[string]any)["roots"].([]any)) != 1 {
+		t.Fatal(rv)
+	}
+	// a change without impact: an empty impact
+	none := a.m("PATCH", "/api/v1/requirements/"+f.rc+"?dry_run=impact", map[string]any{"priority": "high"}, 200)
+	if ni := none["impact"].(map[string]any); ni["total"].(float64) != 0 || len(ni["roots"].([]any)) != 0 {
+		t.Fatal(none)
+	}
+
 	// settings
 	sp := "/api/v1/projects/" + f.pid + "/correlation-settings"
 	got := a.m("PUT", sp, map[string]any{"impact_depth": 1, "relation_modes": map[string]any{"refines": "review"}, "impact_rules": map[string]any{"risk": map[string]any{"direction": "off", "mode": "review"}}}, 200)
@@ -192,5 +216,20 @@ func TestTransitiveImpactAPI(t *testing.T) {
 	v := e.login("reader@example.com")
 	if vi := v.m("GET", "/api/v1/requirements/"+f.ra+"/impact", nil, 200); vi["tests"] == nil {
 		t.Fatal(vi)
+	}
+}
+
+func TestMergeImpact(t *testing.T) {
+	a, b := emptyImpact(), emptyImpact()
+	a.Requirements = append(a.Requirements, model.ImpactItem{Kind: "requirement", ID: "1", Depth: 1, Mode: model.ModeSuspect})
+	a.Depth, a.Key = 2, "A"
+	b.Risks = append(b.Risks, model.ImpactItem{Kind: "risk", ID: "2", Depth: 1, Mode: model.ModeReview})
+	b.Depth = 3
+	if got := mergeImpact(nil, a); got != a {
+		t.Fatal("nil")
+	}
+	m := mergeImpact(a, b)
+	if m.Total != 2 || m.Suspect != 1 || m.Review != 1 || m.Depth != 3 || m.Key != "" || m.ByDepth["1"] != 2 {
+		t.Fatal(m)
 	}
 }
