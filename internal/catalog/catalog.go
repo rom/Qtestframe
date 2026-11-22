@@ -70,15 +70,21 @@ type ReqText struct {
 
 // Requirement is a standard requirement.
 type Requirement struct {
-	ID         string             `yaml:"id" json:"id"`
-	Area       string             `yaml:"-" json:"area"`
-	Type       string             `yaml:"type" json:"type"`
-	Obligation string             `yaml:"obligation" json:"obligation"`
-	Priority   string             `yaml:"priority" json:"priority"`
-	Tags       []string           `yaml:"tags" json:"tags"`
-	Refs       []string           `yaml:"refs" json:"refs"`
-	Tests      []string           `yaml:"tests" json:"tests"`
-	Text       map[string]ReqText `yaml:",inline" json:"text"`
+	ID         string   `yaml:"id" json:"id"`
+	Area       string   `yaml:"-" json:"area"`
+	Type       string   `yaml:"type" json:"type"`
+	Obligation string   `yaml:"obligation" json:"obligation"`
+	Priority   string   `yaml:"priority" json:"priority"`
+	Tags       []string `yaml:"tags" json:"tags"`
+	Refs       []string `yaml:"refs" json:"refs"`
+	Tests      []string `yaml:"tests" json:"tests"`
+	// D3fend are the MITRE D3FEND defensive techniques the requirement
+	// implements (data/d3fend.yaml), Emb3d the MITRE EMB3D mitigations
+	// (MID-nnn) and threats (TID-nnn) it addresses (data/emb3d.yaml); see
+	// FORMAT.md, "MITRE D3FEND and EMB3D".
+	D3fend []string           `yaml:"d3fend" json:"d3fend"`
+	Emb3d  []string           `yaml:"emb3d" json:"emb3d"`
+	Text   map[string]ReqText `yaml:",inline" json:"text"`
 	// Sources are the ids of the sources its refs cite (derived).
 	Sources []string `yaml:"-" json:"sources"`
 }
@@ -101,13 +107,17 @@ type TestText struct {
 
 // Test is a standard test.
 type Test struct {
-	ID        string              `yaml:"id" json:"id"`
-	Area      string              `yaml:"-" json:"area"`
-	Priority  string              `yaml:"priority" json:"priority"`
-	Execution string              `yaml:"execution" json:"execution"`
-	Tags      []string            `yaml:"tags" json:"tags"`
-	Refs      []string            `yaml:"refs" json:"refs"`
-	Text      map[string]TestText `yaml:",inline" json:"text"`
+	ID        string   `yaml:"id" json:"id"`
+	Area      string   `yaml:"-" json:"area"`
+	Priority  string   `yaml:"priority" json:"priority"`
+	Execution string   `yaml:"execution" json:"execution"`
+	Tags      []string `yaml:"tags" json:"tags"`
+	Refs      []string `yaml:"refs" json:"refs"`
+	// D3fend are the D3FEND techniques whose implementation the test
+	// verifies, Emb3d the EMB3D mitigations and threats it checks.
+	D3fend []string            `yaml:"d3fend" json:"d3fend"`
+	Emb3d  []string            `yaml:"emb3d" json:"emb3d"`
+	Text   map[string]TestText `yaml:",inline" json:"text"`
 	// Requirements are the catalogue requirements this test verifies
 	// (derived from the requirements' tests lists).
 	Requirements []string `yaml:"-" json:"requirements"`
@@ -144,10 +154,13 @@ type Risk struct {
 	// Atlas the MITRE ATLAS techniques of an attack on an AI system
 	// (data/attack.yaml, data/atlas.yaml). AttackExempt marks a security
 	// risk no adversary technique describes (FORMAT.md, "MITRE ATT&CK").
-	Attack       []string            `yaml:"attack" json:"attack"`
-	Atlas        []string            `yaml:"atlas" json:"atlas"`
-	AttackExempt bool                `yaml:"attack_exempt" json:"attack_exempt,omitempty"`
-	Text         map[string]RiskText `yaml:",inline" json:"text"`
+	Attack       []string `yaml:"attack" json:"attack"`
+	Atlas        []string `yaml:"atlas" json:"atlas"`
+	AttackExempt bool     `yaml:"attack_exempt" json:"attack_exempt,omitempty"`
+	// Emb3d are the MITRE EMB3D threats (TID-nnn) that realise the risk on
+	// an embedded device (data/emb3d.yaml).
+	Emb3d []string            `yaml:"emb3d" json:"emb3d"`
+	Text  map[string]RiskText `yaml:",inline" json:"text"`
 	// Sources are the ids of the sources its refs cite (derived).
 	Sources []string `yaml:"-" json:"sources"`
 }
@@ -212,6 +225,10 @@ type Catalog struct {
 	Tactics     []AttackTactic
 	Techniques  []AttackTechnique
 	Mitigations []AttackMitigation
+	// D3fend and Emb3d are the MITRE D3FEND and EMB3D lists (d3fend.yaml,
+	// emb3d.yaml).
+	D3fend D3fendList
+	Emb3d  Emb3dList
 
 	sourceByID map[string]*Source
 	refSource  map[string]string // ref → source id ("" none)
@@ -219,6 +236,12 @@ type Catalog struct {
 	tacticByID map[string]*AttackTactic
 	techByID   map[string]*AttackTechnique
 	mitByID    map[string]*AttackMitigation
+	d3Tactic   map[string]*D3fendTactic
+	d3ByID     map[string]*D3fendTechnique
+	d3ByAttack map[string][]string // ATT&CK id → D3FEND techniques that counter it
+	embThreat  map[string]*Emb3dThreat
+	embMit     map[string]*Emb3dMitigation
+	embProp    map[string]*Emb3dProperty
 }
 
 var (
@@ -285,6 +308,18 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 				return nil, fmt.Errorf("%s: %w", n, err)
 			}
 			c.addAttack(f)
+			continue
+		}
+		if strings.HasSuffix(n, "/d3fend.yaml") {
+			if err := strictYAML(b, &c.D3fend); err != nil {
+				return nil, fmt.Errorf("%s: %w", n, err)
+			}
+			continue
+		}
+		if strings.HasSuffix(n, "/emb3d.yaml") {
+			if err := strictYAML(b, &c.Emb3d); err != nil {
+				return nil, fmt.Errorf("%s: %w", n, err)
+			}
 			continue
 		}
 		if strings.HasSuffix(n, "/sources.yaml") {
@@ -445,6 +480,8 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 	}
 	c.loadSources(bad)
 	c.loadAttack(bad)
+	c.loadFrameworks(bad)
+	c.checkFrameworks(bad)
 	for _, a := range c.Areas {
 		for _, r := range a.Requirements {
 			c.checkAttackRefs(r.ID, r.Refs, bad)
