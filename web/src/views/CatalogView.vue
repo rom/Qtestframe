@@ -332,6 +332,7 @@ async function onImported(res: CatalogImportResult) {
   await Promise.all([loadInProject(), res.folders_created ? Promise.all([proj.loadFolders('requirement'), proj.loadFolders('test')]) : Promise.resolve()])
   void nextTick(() => document.getElementById('catalog-result')?.focus())
 }
+const similarCreated = computed(() => (result.value?.requirements ?? []).filter((r) => r.similar?.length).length)
 const canUndoResult = computed(() => undoId.value !== null && undoStore.next?.id === undoId.value && !undoStore.busy)
 async function undoImport() {
   if (undoId.value === null) return
@@ -373,6 +374,10 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
         <b>{{ t('catalog.result.title') }}</b> –
         {{ resultSummary(result) }}
         <span v-if="result.skipped.length" class="muted"> · {{ t('catalog.result.skipped', { n: result.skipped.length }, result.skipped.length) }}</span>
+        <span v-if="similarCreated" class="muted">
+          · {{ t('catalog.result.similar', { n: similarCreated }, similarCreated) }}
+          <RouterLink :to="{ name: 'duplicates', params: { projectId: proj.pid } }">{{ t('catalog.result.review') }}</RouterLink>
+        </span>
       </div>
       <div class="row" style="gap: 8px; flex-wrap: wrap">
         <RouterLink v-if="result.requirements.length" class="p-button p-button-sm p-button-outlined" :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { q: reqQuery } }">

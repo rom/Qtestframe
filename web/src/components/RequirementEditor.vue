@@ -27,6 +27,7 @@ import TraceRuleViolations from './TraceRuleViolations.vue'
 import { P } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
+import SimilarItemsPanel from './SimilarItemsPanel.vue'
 import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
@@ -717,6 +718,15 @@ function criterionLabel(id: string | null) {
       />
       <ObligationHelp v-if="canWrite" :id="obligationHelpId" :open="isNew || obligationHelpOpen" />
     </div>
+    <SimilarItemsPanel
+      v-if="canWrite"
+      kind="requirement"
+      :project-id="projectId"
+      :title="form.title"
+      :description="form.description"
+      :details="form.criteria.map((c) => c.description)"
+      :exclude-id="item?.id"
+    />
 
     <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis" role="region" :aria-label="t('analysis.title')" :aria-busy="analyzing">
       <div class="row" style="justify-content: space-between; margin-bottom: 8px">

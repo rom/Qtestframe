@@ -12,7 +12,7 @@ test('a suspected duplicate is marked as duplicate from the analytics', async ({
   await page.goto(`/p/${project.id}/analytics`)
   const section = page.locator('section.consistency')
   await expect(section.getByRole('heading', { name: 'Consistency checks' })).toBeVisible()
-  await expect(section).toContainText('9 built-in checks are not part of the project rules yet')
+  await expect(section).toContainText('11 built-in checks are not part of the project rules yet')
   const dup = section.locator('li.check', { hasText: 'Suspected duplicate requirements' })
   await expect(dup).toContainText('1 violation')
   await dup.getByRole('button', { name: /Show 1 violation/ }).click()

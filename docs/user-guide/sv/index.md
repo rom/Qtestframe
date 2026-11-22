@@ -24,6 +24,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Testkörningar och exekvering](runs.md) | Körningar, exekveringsvyn och dess kortkommandon, defekter, CI-import med API-nycklar, bilagor |
 | [Undantag, restrisk och SoA](waivers-and-soa.md) | Undantag och avvikelser med signerade godkännanden, restrisk och dess acceptans, uttalandet om tillämplighet (ISO/IEC 27001 bilaga A) |
 | [Spårbarhet och täckning](traceability-and-coverage.md) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
+| [Dubbletter och konflikter](duplicates-and-conflicts.md) | Liknande krav medan du skriver, misstänkt dubblerade krav och testfall, möjligen motstridiga krav, sammanslagning, gränsvärden |
 | [Varianter och kod](variants-and-code.md) | Varianter och tillämplighet, täckning per variant, incheckningar, merge requests, byggen och regressionsurvalet |
 | [Baslinjer](baselines.md) | Frysa en release och jämföra versioner |
 | [Sökning och filter](search-and-filters.md) | Frågespråket med många exempel |

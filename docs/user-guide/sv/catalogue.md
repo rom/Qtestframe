@@ -54,7 +54,8 @@ Välj en rad för att se hela texten till höger (på en mobil öppnas den som e
    - **Källa för kraven**: de angivna standarderna (standard) eller en av projektets källor.
    - **Lägg även till testfallen som verifierar de valda kraven** (på som standard).
    - **Lägg till kopior av poster som redan finns i projektet**: av som standard, så att poster som projektet redan har hoppas över.
-4. Sammanfattningen visar hur många krav och testfall som läggs till och hur många som hoppas över. Välj **Lägg till**.
+4. Sammanfattningen visar hur många krav och testfall som läggs till och hur många som hoppas över. När några av de valda kraven säger samma sak som krav som projektet redan har (skrivna för hand eller från en annan katalogpost) listas de med det mest lika projektkravet och dess likhet, och **Hoppa över kraven som liknar befintliga** hoppar över dem (orsak *similar*). Se [Dubbletter och konflikter](duplicates-and-conflicts.md).
+5. Välj **Lägg till**.
 
 Högst 500 poster kan läggas till åt gången. Importen sker helt eller inte alls: om något misslyckas läggs ingenting till.
 
@@ -62,7 +63,7 @@ Qtestframe skapar kraven och testfallen som om du hade skrivit dem, med en förs
 
 ## Efteråt
 
-En ruta överst på sidan sammanfattar vad som lades till. **Öppna de tillagda kraven** och **Öppna de tillagda testfallen** öppnar listorna filtrerade på de nya posterna. **Ångra** (eller Ctrl+Z) flyttar dem till papperskorgen; gör om tar tillbaka dem med sina länkar. Mappar som importen skapade finns kvar.
+En ruta överst på sidan sammanfattar vad som lades till, och hur många av de tillagda kraven som liknar krav som projektet hade, med en länk till **Granska dubbletter**. **Öppna de tillagda kraven** och **Öppna de tillagda testfallen** öppnar listorna filtrerade på de nya posterna. **Ångra** (eller Ctrl+Z) flyttar dem till papperskorgen; gör om tar tillbaka dem med sina länkar. Mappar som importen skapade finns kvar.
 
 De tillagda posterna är vanliga poster i projektet: anpassa texterna och värdena till ert system. Redigeraren visar **Från katalogen: AUTH-01 · …** med standarderna, och **Visa i katalogen** öppnar originalposten. Ursprunget behålls när du redigerar, kopierar, flyttar eller återställer posten. I filter hittar `catalog:AUTH-01` posterna som kopierats från en katalogpost, `catalog:AUTH-*` ett områdes poster och `has:catalog` alla poster från katalogen (se [Sökning och filter](search-and-filters.md)).
 

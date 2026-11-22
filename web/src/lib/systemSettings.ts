@@ -111,11 +111,11 @@ export interface TestResult {
 }
 
 /** Sections of the view in order; "mfa" links to the MFA page. */
-export const SECTIONS = ['general', 'security', 'oidc', 'logging', 'email', 'runner', 'retention', 'mfa'] as const
+export const SECTIONS = ['general', 'security', 'oidc', 'logging', 'email', 'runner', 'similarity', 'retention', 'mfa'] as const
 export type SectionId = (typeof SECTIONS)[number]
 
 /** Sections with a test button (POST /admin/settings/test/<kind>). */
-export const TESTABLE: Partial<Record<SectionId, 'syslog' | 'email'>> = { logging: 'syslog', email: 'email' }
+export const TESTABLE: Partial<Record<SectionId, 'syslog' | 'email' | 'embeddings'>> = { logging: 'syslog', email: 'email', similarity: 'embeddings' }
 
 /** The id of a setting in the message catalogue ("logging.level" → "logging_level"). */
 export function fieldId(key: string): string {

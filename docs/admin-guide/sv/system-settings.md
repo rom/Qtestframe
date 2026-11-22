@@ -93,6 +93,11 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Körning av skript och webbtester | `runner.web.trace` | `on_failure`, `always`, `off` | efter omstart |
 | Körning av skript och webbtester | `runner.web.video` | `off`, `on_failure`, `always` | efter omstart |
 | Körning av skript och webbtester | `runner.web.playwright_dir` | text | visas bara (filen) |
+| Likhet (dubbletter) | `similarity.embeddings.enabled` | på/av | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.url` | text | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.model` | text | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.api_key` | hemlighet (skrivskyddad läsning) | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.timeout` | 1s–5m | direkt |
 
 <!-- END GENERATED: system-settings -->
 
@@ -105,6 +110,24 @@ Vad varje nyckel betyder står i [konfigurationsreferensen](configuration.md#ref
 - **Syslog över TLS** använder `ca_file`, `cert_file` och `key_file` från filen; de är läsbara efter låsningen eftersom de läggs till bland Landlocks skrivskyddade sökvägar vid start. En Unix-socket som inte var konfigurerad vid start kan nekas av Landlock; använd `udp`, `tcp` eller `tls`, eller starta om.
 - **Hemligheter** som anges på sidan (SMTP-lösenordet, OIDC-klienthemligheter) kan bara skrivas, lagras [krypterade](security.md#kryptering-av-lagrade-hemligheter), loggas aldrig och visas aldrig igen.
 - **Testknapparna** (*Testa anslutningen* för OIDC-discovery, *Skicka testmeddelande* för syslog, *Skicka testmejl*) får servern att ansluta till en adress som superadministratören anger. Filtrera serverns utgående trafik om den når interna tjänster.
+
+## Tjänst för inbäddningar för liknande objekt
+
+Misstänkt dubblerade krav och testfall, panelen *Liknande krav* i redigerarna och varningen vid import från katalogen jämför objekt på servern som standard: TF-IDF över projektet med ordstammar, stoppord och synonymer för svenska och engelska (se användarguiden, *Dubbletter och konflikter*). Ingenting skickas någonstans.
+
+Om man vill kan en **OpenAI-kompatibel embeddings-slutpunkt** beräkna likheten i stället: **Administration → Systeminställningar → Likhet (dubbletter)**, eller `similarity.embeddings` i [konfigurationsfilen](configuration.md#referens).
+
+| Inställning | Betydelse |
+|---|---|
+| `similarity.embeddings.enabled` | av som standard |
+| `similarity.embeddings.url` | slutpunkten, t.ex. `https://llm.example.com/v1/embeddings`; den får `POST {"model": …, "input": [texter]}` och svarar `{"data": [{"index": i, "embedding": [tal]}]}` |
+| `similarity.embeddings.model` | skickas som `model` (tom: tjänstens standard) |
+| `similarity.embeddings.api_key` | skickas som `Authorization: Bearer …`; kan bara skrivas, lagras [krypterad](security.md#kryptering-av-lagrade-hemligheter); i filen bara som `api_key_file` |
+| `similarity.embeddings.timeout` | längsta väntan (standard 30 s) |
+
+**Integritet.** När den är på **skickas titel, beskrivning och acceptanskriterier för krav och titel, beskrivning, förutsättningar och steg för testfall till tjänsten**, för alla projekt i alla organisationer på servern, när likhetskontrollerna körs eller någon skriver i en redigerare (texten som skrivs skickas också). Använd en tjänst som drivs av er organisation eller som ni har avtal med; låt den annars vara av.
+
+Vektorerna lagras i tabellen `similarity_embeddings` per objekt, modell och text (ett ändrat objekt skickas igen, ett oförändrat inte). Den är en cache: den ingår inte i säkerhetskopior eller projektarkiv och fylls på nytt efter en återställning. Byts modellen beräknas alla vektorer om. **Testa tjänsten** på sidan skickar en kort exempelmening och visar vektorns storlek. När tjänsten misslyckas eller inte svarar loggar servern en varning och använder den lokala likheten, så kontrollerna slutar aldrig fungera. Konfliktsökningen (motsatta förpliktelser, gränsvärden, uteslutande värden) körs alltid på servern. Kontrollernas gränsvärden gäller även tjänstens cosinuslikhet; tjänster skiljer sig, så granska de misstänkta dubbletterna när den har slagits på och justera gränsen för dubblettkontrollerna vid behov.
 
 ## Granskning och export
 

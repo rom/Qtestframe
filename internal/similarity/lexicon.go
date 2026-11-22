@@ -33,11 +33,11 @@ ha en ett man sig sin sitt sina dess deras vi ni han hon de dem vår er efter in
 // concepts map phrases (one or more words, lower case) to a concept. A
 // concept is a token of its own ("#login") and replaces the phrase.
 var concepts = map[string][]string{
-	"login":    {"log in", "log on", "logon", "login", "logins", "sign in", "signin", "sign on", "signon", "logga in", "logga på", "inloggning", "inloggningen", "inloggningar", "loggar in", "loggat in", "logged in", "logging in", "logs in", "signed in", "signing in", "signs in"},
+	"login":    {"log in", "log on", "logon", "login", "logins", "sign in", "signin", "sign on", "signon", "logga in", "logga på", "inloggning", "inloggningen", "inloggningar", "loggar in", "loggat in", "logged in", "logging in", "logs in", "signed in", "signing in", "signs in", "authenticate", "authenticates", "authenticated", "authentication", "autentisera", "autentiserar", "autentiseras", "autentisering"},
 	"logout":   {"log out", "log off", "logout", "logoff", "sign out", "signout", "logga ut", "utloggning", "utloggningen", "loggar ut", "logged out", "logging out", "logs out", "signed out", "signs out"},
 	"signup":   {"sign up", "signup", "register", "registers", "registered", "registration", "enrol", "enroll", "enrolment", "enrollment", "registrera", "registrerar", "registrering", "registreringen", "skapa konto"},
 	"user":     {"user", "users", "end user", "end users", "enduser", "användare", "användaren", "användarna", "användares", "brukare", "brukaren", "brukarna", "slutanvändare", "slutanvändaren"},
-	"password": {"password", "passwords", "passphrase", "passphrases", "pwd", "passcode", "lösenord", "lösenordet", "lösenorden", "lösen", "passerord"},
+	"password": {"password", "passwords", "passphrase", "passphrases", "pwd", "passcode", "lösenord", "lösenordet", "lösenorden", "lösen", "passerord", "credential", "credentials", "inloggningsuppgifter"},
 	"email":    {"email", "emails", "e mail", "e mails", "mail address", "email address", "e mail address", "e post", "epost", "e postadress", "e postadressen", "epostadress", "mejl", "mejladress", "mail", "mails"},
 	"mfa":      {"mfa", "2fa", "two factor", "two factor authentication", "multi factor", "multifactor", "multi factor authentication", "tvåfaktor", "tvåfaktorsautentisering", "flerfaktorsautentisering", "tvåstegsverifiering"},
 	"delete":   {"delete", "deletes", "deleted", "deleting", "deletion", "remove", "removes", "removed", "removing", "removal", "erase", "erases", "erased", "radera", "raderar", "raderas", "raderad", "raderade", "ta bort", "tar bort", "tas bort", "borttagning", "borttagen"},

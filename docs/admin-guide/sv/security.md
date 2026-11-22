@@ -98,7 +98,7 @@ Servern måste kunna läsa vissa hemligheter tillbaka, så de kan inte hashas. D
 | signeringshemligheter för webhooks | `webhooks.secret` |
 | token för ärendesystem (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | värden för hemliga webbtestvariabler | `projects.web_tests` |
-| SMTP-lösenord och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
+| SMTP-lösenord, nyckeln till tjänsten för inbäddningar och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
 
 Lösenord (bcrypt), API- och SCIM-nycklar, sessioner, inbjudningar, ihågkomna enheter och återställningskoder lagras som hashar och behöver ingen nyckel. Hemligheter i konfigurationsfilen, `*_file`-inställningar och `QTF_*`-variabler lagras aldrig i databasen.
 
@@ -228,7 +228,7 @@ Andra gränser: JSON-innehåll högst 8 MiB, huvuden 1 MiB, `ReadHeaderTimeout` 
 
 ## Utgående anslutningar
 
-Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
+Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. När den valfria [tjänsten för inbäddningar](system-settings.md#tjänst-för-inbäddningar-för-liknande-objekt) är på skickar servern texten i krav och testfall till den. Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
 
 ## Checklista
 

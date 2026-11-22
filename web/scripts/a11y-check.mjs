@@ -179,6 +179,8 @@ async function discover(request) {
   const execs = run ? items(await api(request, 'GET', `/runs/${run.id}/executions`)) : []
   // prefer a manual execution with steps for the runner
   const tests = items(await api(request, 'GET', `/projects/${pid}/tests`))
+  // a requirement with a similar one (seed: "Password sign-in" and "Password login")
+  const simReq = reqs.find((r) => r.title === 'Password sign-in')
   const manual = new Set(tests.filter((t) => t.execution_type === 'manual').map((t) => t.id))
   const ex = execs.find((e) => manual.has(e.test_case_id)) ?? execs[0]
   // a run with an execution that is not ready (its readiness cell opens a popover)
@@ -317,6 +319,12 @@ async function discover(request) {
     { name: 'baselines', path: `${p}/baselines` },
     { name: 'releases', path: `${p}/releases` },
     { name: 'risks', path: `${p}/risks`, wait: '.heat' },
+    // duplicates and conflicts: the review page (requirements, tests, dismissed), the merge dialog, the similar panel of the editor
+    { name: 'duplicates', path: `${p}/duplicates`, wait: '.dup-section' },
+    { name: 'duplicates-tests', path: `${p}/duplicates?kind=test`, wait: '.dup-section' },
+    { name: 'duplicates-dismissed', path: `${p}/duplicates`, open: '.dup-switch .p-toggleswitch', wait: '.dup-section' },
+    { name: 'duplicates-merge-dialog', path: `${p}/duplicates`, open: '.pair-actions button:has(.pi-arrow-right-arrow-left)', wait: '.p-dialog .survivor' },
+    simReq && { name: 'requirement-similar', path: `${p}/requirements?item=${simReq.id}`, wait: '.similar-panel' },
     // verification correlations: overview tabs, the requirement's verification tab and its dialogs, criterion rows of the matrix
     { name: 'verification', path: `${p}/verification`, wait: '.ver-counts' },
     { name: 'verification-elements', path: `${p}/verification?tab=elements`, wait: '.ver-counts' },
@@ -453,6 +461,7 @@ async function discover(request) {
     // system settings (super admins): every section, the OIDC provider dialog
     { name: 'system-settings', path: '/admin/system', wait: '.sys-field' },
     { name: 'system-settings-security', path: '/admin/system?section=security', wait: '.sys-field' },
+    { name: 'system-settings-similarity', path: '/admin/system?section=similarity', wait: '.sys-field' },
     { name: 'system-settings-oidc', path: '/admin/system?section=oidc', wait: '.sys-section .row' },
     { name: 'system-settings-oidc-dialog', path: '/admin/system?section=oidc', open: '.sys-section button:has(.pi-plus)', wait: '.p-dialog #oidc-provider-form' },
     { name: 'system-settings-logging', path: '/admin/system?section=logging', wait: '.sys-field' },

@@ -179,7 +179,7 @@ func envReference(lang string) (string, error) {
 var sectionText = map[string]text{
 	"general": {"General", "Allmänt"}, "security": {"Security", "Säkerhet"}, "oidc": {"Single sign-on (OIDC)", "Enkel inloggning (OIDC)"},
 	"logging": {"Logging and syslog", "Loggning och syslog"}, "email": {"E-mail (SMTP)", "E-post (SMTP)"},
-	"runner": {"Script and web test runner", "Körning av skript och webbtester"}, "retention": {"Retention and backups", "Gallring och säkerhetskopior"},
+	"runner": {"Script and web test runner", "Körning av skript och webbtester"}, "similarity": {"Similarity (duplicates)", "Likhet (dubbletter)"}, "retention": {"Retention and backups", "Gallring och säkerhetskopior"},
 }
 
 var applyText = map[settings.Apply]text{

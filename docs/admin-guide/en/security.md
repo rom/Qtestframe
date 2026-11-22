@@ -98,7 +98,7 @@ The server must read some secrets back, so it cannot hash them. These are stored
 | webhook signing secrets | `webhooks.secret` |
 | defect tracker tokens (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | values of secret web test variables | `projects.web_tests` |
-| SMTP password and OIDC client secrets entered in the web client | `system_settings` |
+| SMTP password, OIDC client secrets and the key of the embeddings service entered in the web client | `system_settings` |
 
 Passwords (bcrypt), API and SCIM tokens, sessions, invitations, remembered devices and recovery codes are stored as hashes and need no key. Secrets of the configuration file, `*_file` options and `QTF_*` variables are never stored in the database.
 
@@ -228,7 +228,7 @@ Other limits: JSON bodies at most 8 MiB, headers 1 MiB, `ReadHeaderTimeout` 10 s
 
 ## Outgoing connections
 
-Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
+Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. When the optional [embeddings service](system-settings.md#embeddings-service-for-similar-items) is on, the server sends the text of requirements and tests to it. Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
 
 ## Checklist
 

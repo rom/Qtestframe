@@ -3,7 +3,7 @@
 // internal/tracerules).
 import type { RouteLocationRaw } from 'vue-router'
 import type { TraceRule, TraceRuleFields, TraceRuleResult, TraceViolation } from './types'
-import { builtinScope, isBuiltin, itemRoute, violationLine } from './consistency'
+import { builtinScope, isBuiltin, itemRoute, THRESHOLD_DEFAULTS, violationLine } from './consistency'
 
 export const TRACE_RULE_KINDS = ['verified_by', 'verifies', 'relation', 'item_link'] as const
 export const TRACE_RULE_SEVERITIES = ['error', 'warning'] as const
@@ -117,7 +117,7 @@ export function cleanRule(d: TraceRuleFields): TraceRuleFields {
       kind: d.kind,
       min: 1,
     }
-    if (d.kind === 'duplicate_suspect') out.threshold = Math.min(1, Math.max(0.5, Number(d.threshold) || 0.9))
+    if (d.kind in THRESHOLD_DEFAULTS) out.threshold = Math.min(1, Math.max(0.5, Number(d.threshold) || THRESHOLD_DEFAULTS[d.kind]))
     if (d.kind === 'unmitigated_risk') out.level = d.level || 'high'
     return out
   }
