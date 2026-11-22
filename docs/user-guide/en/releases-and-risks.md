@@ -57,8 +57,11 @@ The **Exit criteria** tab lists the conditions the release must meet. Select **A
 | No open defects | no open defect of at least the chosen severity is linked to a scope requirement or its tests | minimum severity |
 | Risks mitigated | every risk of at least the chosen level that a scope requirement addresses is mitigated, accepted or closed | minimum risk level |
 | Traceability rules | no requirement in scope and no test linked to one breaks an enabled [traceability rule](traceability-and-coverage.md#traceability-rules) of the chosen severity; the status tab lists the items with the rules they break | errors only, or errors and warnings |
+| Residual risk | no risk linked to the scope that is not closed has a [residual level](waivers-and-soa.md#residual-risk) above the threshold, unless its acceptance is signed | the project's risk acceptance threshold, or a level |
 
 A release without exit criteria is always a go.
+
+An approved [waiver](waivers-and-soa.md#waivers-and-deviations) for the release or for the whole project makes the criteria accept its requirements: they are listed under each criterion as *waived* instead of blocking it. The **Status** tab also lists the waivers in force and the risks of the scope above the risk acceptance threshold.
 
 ## Go / no-go
 

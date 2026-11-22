@@ -196,6 +196,7 @@ async function discover(request) {
   const hasDefects = items(await api(request, 'GET', `/projects/${pid}/defects`)).length > 0
   const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
   const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
+  const hasWaivers = items(await api(request, 'GET', `/projects/${pid}/waivers`)).length > 0
   const hasBaselines = items(await api(request, 'GET', `/projects/${pid}/baselines`)).length > 0
   const firstBaseline = hasBaselines ? items(await api(request, 'GET', `/projects/${pid}/baselines`))[0] : null
   const documents = items(await api(request, 'GET', `/projects/${pid}/documents`))
@@ -288,6 +289,16 @@ async function discover(request) {
     { name: 'baselines', path: `${p}/baselines` },
     { name: 'releases', path: `${p}/releases` },
     { name: 'risks', path: `${p}/risks`, wait: '.heat' },
+    // waivers, residual risk and the Statement of Applicability (seed: an approved waiver, a deviation draft, SoA decisions)
+    { name: 'risks-residual', path: `${p}/risks`, open: '.heat-card .p-selectbutton .p-togglebutton:nth-child(2)', wait: '.heat' },
+    hasRisks && { name: 'risk-dialog-residual', path: `${p}/risks`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog fieldset.residual' },
+    hasRisks && { name: 'risk-accept-dialog', path: `${p}/risks`, open: ['.p-datatable-tbody tr:first-child .link-button', '.p-dialog fieldset.residual button:has(.pi-pen-to-square)'], wait: '.p-dialog .esign' },
+    { name: 'waivers', path: `${p}/waivers`, wait: '.p-datatable-tbody tr' },
+    { name: 'waiver-new-dialog', path: `${p}/waivers`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #wv-title' },
+    hasWaivers && { name: 'waiver-detail', path: `${p}/waivers`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog .wv-fields' },
+    { name: 'soa', path: `${p}/soa`, wait: '[role="grid"] [role="gridcell"]' },
+    { name: 'soa-control', path: `${p}/soa`, open: '.sheet-body [role="gridcell"][aria-colindex="2"]', keys: ['Control+Enter'], wait: '.p-dialog' },
+    hasReleases && { name: 'release-waivers', path: `${p}/releases`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.rel-waivers' },
     { name: 'defects', path: `${p}/defects` },
     // with a selected row (bulk toolbar); only when the project has defects / risks
     hasDefects && { name: 'defects-bulk', path: `${p}/defects`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },

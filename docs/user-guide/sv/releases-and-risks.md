@@ -57,8 +57,11 @@ Fliken **Utgångskriterier** listar de villkor som releasen måste uppfylla. Vä
 | Inga öppna defekter | ingen öppen defekt med minst den valda allvarlighetsgraden är länkad till ett krav i omfattningen eller dess testfall | lägsta allvarlighetsgrad |
 | Risker hanterade | varje risk på minst den valda nivån som ett krav i omfattningen hanterar är åtgärdad, accepterad eller stängd | lägsta risknivå |
 | Spårbarhetsregler | inget krav i omfattningen och inget testfall som är länkat till ett sådant bryter mot en påslagen [spårbarhetsregel](traceability-and-coverage.md#spårbarhetsregler) med den valda allvarligheten; statusfliken listar objekten med reglerna de bryter mot | bara fel, eller fel och varningar |
+| Restrisk | ingen risk kopplad till omfattningen som inte är stängd har en [restnivå](waivers-and-soa.md#restrisk) över gränsen, om inte accepteringen är signerad | projektets gräns för riskacceptans, eller en nivå |
 
 En release utan utgångskriterier är alltid go.
+
+Ett godkänt [undantag](waivers-and-soa.md#undantag-och-avvikelser) för releasen eller för hela projektet gör att kriterierna accepterar dess krav: de listas under varje kriterium som *undantagna* i stället för att stoppa det. Fliken **Status** listar också gällande undantag och de risker i omfattningen som ligger över gränsen för riskacceptans.
 
 ## Go eller no-go
 

@@ -94,6 +94,7 @@ pair.
 | `internal/mention`, `internal/tagsuggest` | @mention handles and the people directory; tag suggestions from title and description. |
 | `internal/query` | Lexer, parser and evaluator of the filter/search language; matched-field and term extraction for highlighting. |
 | `internal/reqlang` | RFC 2119 / RFC 8174 keyword detection, obligation level, requirement lint rules and score. |
+| `internal/soa` | Statement of Applicability: the controls of a reference source (shipped lists in `data/*.yaml`, ISO/IEC 27001:2022 Annex A; otherwise the clause groups of the catalogue refs), joined with the project's applicability decisions and the implementation status derived from the requirements and their test results. |
 | `internal/export` | Format-neutral `Dataset` rendered as CSV (ZIP for several sections), XLSX (`excelize`), PDF (`go-pdf/fpdf`) and DOCX (hand-written OOXML). |
 | `internal/runner` | Executes automated test scripts with timeout and output cap; optional re-exec through `qtestframe sandbox-exec` (rlimits, no_new_privs, Landlock, seccomp). |
 | `internal/hardening` | In-process Linux hardening: `PR_SET_NO_NEW_PRIVS`, capability dropping, Landlock (`go-landlock`), seccomp deny-list (`go-seccomp-bpf`), rlimits; no-ops on other platforms. |

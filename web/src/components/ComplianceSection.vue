@@ -276,6 +276,7 @@ const toggleOpen = (id: string) => {
 .st-failing { background: var(--p-red-500, #ef4444); }
 .st-blocked { background: var(--p-amber-500, #f59e0b); }
 .st-untested { background: var(--p-slate-400, #94a3b8); }
+.st-waived { background: repeating-linear-gradient(45deg, var(--p-slate-500, #64748b) 0 4px, var(--p-slate-300, #cbd5e1) 4px 8px); }
 .st-missing { background: repeating-linear-gradient(45deg, var(--qtf-border), var(--qtf-border) 3px, transparent 3px, transparent 6px); }
 .cmp-tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; align-items: start; }
 .cmp-table th.mono { white-space: nowrap; }

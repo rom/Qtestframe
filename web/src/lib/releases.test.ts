@@ -34,7 +34,9 @@ describe('trace rules criterion', () => {
 
 describe('criterion parameters', () => {
   it('knows what each type takes', () => {
-    expect(CRITERION_TYPES.map(criterionParam)).toEqual(['threshold', 'threshold', 'none', 'threshold', 'none', 'threshold', 'none', 'severity', 'riskLevel', 'ruleSeverity'])
+    expect(CRITERION_TYPES.map(criterionParam)).toEqual(['threshold', 'threshold', 'none', 'threshold', 'none', 'threshold', 'none', 'severity', 'riskLevel', 'ruleSeverity', 'riskLevel'])
+    // residual_risk: no level = the project's risk acceptance threshold
+    expect(newCriterion('residual_risk')).toEqual({ type: 'residual_risk' })
   })
   it('creates criteria with defaults', () => {
     expect(newCriterion('passed')).toEqual({ type: 'passed', threshold: 100 })

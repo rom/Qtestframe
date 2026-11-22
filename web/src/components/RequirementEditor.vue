@@ -8,6 +8,7 @@ import MentionText from './MentionText.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
+import RequirementWaivers from './RequirementWaivers.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
@@ -796,6 +797,7 @@ function criterionLabel(id: string | null) {
     </div>
 
     <RequirementRisks v-if="item" :requirement-id="item.id" :project-id="projectId" />
+    <RequirementWaivers v-if="item" :requirement-id="item.id" :project-id="projectId" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />

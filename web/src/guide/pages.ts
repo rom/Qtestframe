@@ -11,6 +11,7 @@ export const GUIDE_PAGES = [
   'catalogue',
   'runs',
   'releases-and-risks',
+  'waivers-and-soa',
   'defects',
   'reviews-and-notifications',
   'traceability-and-coverage',

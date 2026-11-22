@@ -996,6 +996,10 @@ export interface CriterionResult extends ExitCriterion {
   total: number
   items: ReleaseItem[] | null
   available: boolean
+  /** items accepted by a waiver (note: the waiver keys) */
+  waived?: ReleaseItem[] | null
+  /** risks above the threshold with a valid "accept risk" sign-off (residual_risk) */
+  accepted?: ReleaseItem[] | null
 }
 
 export interface ReleaseStatusReport {
@@ -1003,6 +1007,11 @@ export interface ReleaseStatusReport {
   go: boolean
   criteria: CriterionResult[]
   summary: Record<string, number>
+  /** waivers in force for the release (lib/waivers Waiver) */
+  waivers?: import('./waivers').Waiver[]
+  risk_threshold?: string
+  /** risks of the scope whose residual level is above the threshold (note: level, ", accepted") */
+  residual_risks?: ReleaseItem[]
 }
 
 // ---------------------------------------------------------------- defects
@@ -1090,6 +1099,25 @@ export interface Risk {
   requirement_ids: string[]
   covered: number
   verified: number
+  /** residual risk after mitigation (0 = not assessed; see lib/risks residualPoint) */
+  residual_likelihood?: number
+  residual_impact?: number
+  residual_manual?: boolean
+  residual_justification?: string
+  review_date?: string
+  review_owner?: string
+  accepted_by?: string
+  accepted_name?: string
+  accepted_at?: string | null
+  acceptance_comment?: string
+  /** derived: the residual score and level in effect, and where they come from (inherent, verified, manual) */
+  residual_score?: number
+  residual_level?: string
+  residual_source?: string
+  threshold?: string
+  above_threshold?: boolean
+  acceptance_valid?: boolean
+  review_due?: boolean
 }
 
 // ---------------------------------------------------------------- notifications

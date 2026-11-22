@@ -446,16 +446,10 @@ func Build(in Input) (*Statement, error) {
 	if err != nil {
 		return nil, err
 	}
-	infos, err := Sources(c, lang)
-	if err != nil {
-		return nil, err
-	}
 	st := &Statement{Rows: []Row{}, URL: m.src.URL}
 	st.Source = SourceInfo{ID: m.src.ID, Kind: m.src.Kind, Short: m.src.Short, Name: m.src.Name.Get(lang), Title: m.src.Name.Get(lang), Shipped: m.list != nil, Controls: len(controls)}
-	for _, x := range infos {
-		if x.ID == in.SourceID {
-			st.Source.Title = x.Title
-		}
+	if m.list != nil {
+		st.Source.Title = m.list.Title.Get(lang)
 	}
 	// the controls of a ref list of the source
 	controlsOf := func(refs []string) []string {
