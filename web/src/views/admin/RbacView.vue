@@ -69,6 +69,8 @@ const perms = computed(() => {
 const mine = computed(() => new Set(auth.me?.permissions ?? []))
 const desc = (p: string) => (te(`rbac.perm.${permissionKey(p)}`) ? t(`rbac.perm.${permissionKey(p)}`) : '')
 const label = (r: RoleInfo) => (r.builtin ? enumLabel('role', r.name) : r.label || r.name)
+/** the organisation's description of a role, else the built-in one */
+const roleDesc = (r: RoleInfo) => r.description || (r.builtin && te(`rbac.roleDesc.${r.name}`) ? t(`rbac.roleDesc.${r.name}`) : '')
 const current = (r: RoleInfo) => edits[r.name] ?? r.permissions
 const has = (r: RoleInfo, p: string) => current(r).includes(p)
 const changed = computed(() => Object.keys(edits))
@@ -233,7 +235,7 @@ async function submit() {
                     />
                   </span>
                 </div>
-                <div v-if="r.description" class="small muted role-desc">{{ r.description }}</div>
+                <div v-if="roleDesc(r)" class="small muted role-desc">{{ roleDesc(r) }}</div>
               </th>
             </tr>
           </thead>
@@ -263,7 +265,7 @@ async function submit() {
           </tbody>
         </table>
       </div>
-      <p class="small muted">{{ t('rbac.adminNote') }} {{ t('rbac.superAdminNote') }}</p>
+      <p class="small muted">{{ t('rbac.unionNote') }} {{ t('rbac.adminNote') }} {{ t('rbac.superAdminNote') }}</p>
     </template>
 
     <Dialog v-model:visible="dialog" modal :header="editing ? t('rbac.editRole', { role: editing.label || editing.name }) : t('rbac.newRole')" :style="{ width: 'min(480px, 96vw)' }">

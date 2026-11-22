@@ -14,8 +14,10 @@ package api
 //     membership; active=false removes it and ends the user's sessions and
 //     API tokens in the tenant; active=true restores it.
 //   - Groups map to roles: tenant admins give each pushed group a role (or
-//     none). An active user gets the most privileged role of their mapped
-//     groups, else the tenant's default role ("" = no access).
+//     none). An active user holds the roles of all their mapped groups
+//     (several groups give several roles), else the tenant's default role
+//     ("" = no access). The read-only "roles" attribute of a user lists
+//     them; roles pushed in it are ignored (map groups instead).
 //   - SCIM never changes super-admin status and never leaves a tenant
 //     without an admin; the user's global profile (e-mail) is only changed
 //     when the user belongs to this tenant alone.
@@ -29,6 +31,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -368,7 +371,11 @@ func scimGet(r *http.Request, res map[string]any) *scimResult {
 
 // ---------------------------------------------------------------- users
 
-func (s *Server) scimUserResource(c *scimCaller, u *model.SCIMUser, groups []model.SCIMGroup) map[string]any {
+func (s *Server) scimUserResource(c *scimCaller, u *model.SCIMUser, groups []model.SCIMGroup, roles []string) map[string]any {
+	rl := []any{}
+	for i, r := range roles {
+		rl = append(rl, map[string]any{"value": r, "primary": i == 0})
+	}
 	gl := []any{}
 	for _, g := range groups {
 		gl = append(gl, map[string]any{"value": g.ID, "display": g.DisplayName, "$ref": c.base + "/Groups/" + g.ID, "type": "direct"})
@@ -396,6 +403,7 @@ func (s *Server) scimUserResource(c *scimCaller, u *model.SCIMUser, groups []mod
 		"emails":      []any{map[string]any{"value": u.Email, "type": "work", "primary": true}},
 		"active":      u.Active,
 		"groups":      gl,
+		"roles":       rl,
 		"meta":        scimMeta("User", c.base+"/Users/"+u.UserID, u.CreatedAt, u.UpdatedAt),
 	}
 	if u.ExternalID != "" {
@@ -413,7 +421,11 @@ func (s *Server) scimLoadUser(ctx context.Context, c *scimCaller, id string) (*m
 	if err != nil {
 		return nil, nil, err
 	}
-	return u, s.scimUserResource(c, u, groups), nil
+	var roles []string
+	if m, err := s.Store.GetMembership(ctx, c.Tenant.ID, id); err == nil {
+		roles = m.Roles
+	}
+	return u, s.scimUserResource(c, u, groups, roles), nil
 }
 
 func (s *Server) scimListUsers(r *http.Request, c *scimCaller) (*scimResult, error) {
@@ -432,9 +444,17 @@ func (s *Server) scimListUsers(r *http.Request, c *scimCaller) (*scimResult, err
 			byUser[m] = append(byUser[m], g)
 		}
 	}
+	ms, err := s.Store.ListTenantMembers(ctx, c.Tenant.ID)
+	if err != nil {
+		return nil, err
+	}
+	roles := map[string][]string{}
+	for _, m := range ms {
+		roles[m.UserID] = m.Roles
+	}
 	all := make([]map[string]any, 0, len(users))
 	for i := range users {
-		all = append(all, s.scimUserResource(c, &users[i], byUser[users[i].UserID]))
+		all = append(all, s.scimUserResource(c, &users[i], byUser[users[i].UserID], roles[users[i].UserID]))
 	}
 	return scimList(r, all)
 }
@@ -651,14 +671,14 @@ func (s *Server) scimCreateUser(r *http.Request, c *scimCaller) (*scimResult, er
 	return out, nil
 }
 
-func describeUser(email string, active bool, role string) string {
+func describeUser(email string, active bool, roles []string) string {
 	switch {
 	case !active:
 		return email + " (inactive)"
-	case role == "":
+	case len(roles) == 0:
 		return email + " (no role)"
 	}
-	return email + " as " + role
+	return email + " as " + strings.Join(roles, ", ")
 }
 
 // applyProfile stores the e-mail and display name of st on u. Users who
@@ -965,7 +985,7 @@ func (s *Server) scimDeleteUser(r *http.Request, c *scimCaller) (*scimResult, er
 	if err != nil {
 		return nil, err
 	}
-	if err := s.guardLastAdmin(ctx, c.Tenant.ID, su.UserID, ""); err != nil {
+	if err := s.guardLastAdmin(ctx, c.Tenant.ID, su.UserID, nil); err != nil {
 		return nil, err
 	}
 	if err := s.Store.RemoveTenantAccess(ctx, c.Tenant.ID, su.UserID); err != nil {
@@ -980,40 +1000,41 @@ func (s *Server) scimDeleteUser(r *http.Request, c *scimCaller) (*scimResult, er
 
 // ---------------------------------------------------------------- role sync
 
-// scimRole returns the role a provisioned, active user should have: the
-// most privileged role of the user's mapped groups, else the default role
-// ("" = no access). Roles the tenant no longer has are ignored.
-func (s *Server) scimRole(ctx context.Context, tenantID, userID string) (string, error) {
+// scimRoles returns the roles a provisioned, active user should have: the
+// roles of all the user's mapped groups (a user in several groups holds
+// all their roles), else the default role (none = no access). Roles the
+// tenant no longer has are ignored.
+func (s *Server) scimRoles(ctx context.Context, tenantID, userID string) ([]string, error) {
 	set, err := s.Store.RoleSet(ctx, tenantID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	groups, err := s.Store.SCIMUserGroups(ctx, tenantID, userID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	best := ""
+	var roles []string
 	for _, g := range groups {
-		if g.Role != "" && set.Valid(g.Role) && (best == "" || set.Rank(g.Role) > set.Rank(best)) {
-			best = g.Role
+		if g.Role != "" && set.Valid(g.Role) {
+			roles = append(roles, g.Role)
 		}
 	}
-	if best != "" {
-		return best, nil
+	if len(roles) > 0 {
+		return rbac.NormalizeRoles(roles), nil
 	}
 	cfg, err := s.Store.SCIMSettings(ctx, tenantID)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if set.Valid(cfg.DefaultRole) {
-		return cfg.DefaultRole, nil
+		return []string{cfg.DefaultRole}, nil
 	}
-	return "", nil
+	return nil, nil
 }
 
-// guardLastAdmin fails when giving the user role newRole ("" = no
+// guardLastAdmin fails when giving the user the roles newRoles (none = no
 // membership) would leave the tenant without an admin.
-func (s *Server) guardLastAdmin(ctx context.Context, tenantID, userID, newRole string) error {
+func (s *Server) guardLastAdmin(ctx context.Context, tenantID, userID string, newRoles []string) error {
 	m, err := s.Store.GetMembership(ctx, tenantID, userID)
 	if errors.Is(err, store.ErrNotFound) {
 		return nil
@@ -1021,7 +1042,7 @@ func (s *Server) guardLastAdmin(ctx context.Context, tenantID, userID, newRole s
 	if err != nil {
 		return err
 	}
-	if m.Role != rbac.RoleAdmin || newRole == rbac.RoleAdmin {
+	if !rbac.HasRole(m.Roles, rbac.RoleAdmin) || rbac.HasRole(newRoles, rbac.RoleAdmin) {
 		return nil
 	}
 	n, err := s.Store.CountTenantAdmins(ctx, tenantID)
@@ -1035,41 +1056,41 @@ func (s *Server) guardLastAdmin(ctx context.Context, tenantID, userID, newRole s
 }
 
 // scimSync brings the membership of a provisioned user in line with the
-// user's state and groups and returns the role ("" = none). Inactive users
-// lose the membership, their sessions in the tenant and their API tokens
-// there.
-func (s *Server) scimSync(ctx context.Context, tenantID, userID string) (string, error) {
+// user's state and groups and returns the roles (none = no membership).
+// Inactive users lose the membership, their sessions in the tenant and
+// their API tokens there.
+func (s *Server) scimSync(ctx context.Context, tenantID, userID string) ([]string, error) {
 	su, err := s.Store.GetSCIMUser(ctx, tenantID, userID)
 	if errors.Is(err, store.ErrNotFound) {
-		return "", nil
+		return nil, nil
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	role := ""
+	var roles []string
 	if su.Active {
-		if role, err = s.scimRole(ctx, tenantID, userID); err != nil {
-			return "", err
+		if roles, err = s.scimRoles(ctx, tenantID, userID); err != nil {
+			return nil, err
 		}
 	}
 	cur, err := s.Store.GetMembership(ctx, tenantID, userID)
 	if err != nil && !errors.Is(err, store.ErrNotFound) {
-		return "", err
+		return nil, err
 	}
-	if cur != nil && cur.Role == role {
-		return role, nil
+	if cur != nil && slices.Equal(cur.Roles, roles) {
+		return roles, nil
 	}
-	if err := s.guardLastAdmin(ctx, tenantID, userID, role); err != nil {
-		return "", err
+	if err := s.guardLastAdmin(ctx, tenantID, userID, roles); err != nil {
+		return nil, err
 	}
-	if role == "" {
+	if len(roles) == 0 {
 		if err := s.Store.RemoveTenantAccess(ctx, tenantID, userID); err != nil {
-			return "", err
+			return nil, err
 		}
-	} else if err := s.Store.SetMembership(ctx, tenantID, userID, role); err != nil {
-		return "", err
+	} else if err := s.Store.SetMembershipRoles(ctx, tenantID, userID, roles); err != nil {
+		return nil, err
 	}
-	return role, s.Store.TouchSCIMUser(ctx, tenantID, userID)
+	return roles, s.Store.TouchSCIMUser(ctx, tenantID, userID)
 }
 
 // scimSyncAll syncs several users (deduplicated).
@@ -1525,7 +1546,10 @@ func scimSchemaList(base string) []map[string]any {
 				scimAttr("type", "string", false, false, "readWrite", "none"),
 				scimAttr("primary", "boolean", false, false, "readWrite", "none")),
 			scimAttr("active", "boolean", false, false, "readWrite", "none"),
-			scimAttr("groups", "complex", true, false, "readOnly", "none", ref()...)),
+			scimAttr("groups", "complex", true, false, "readOnly", "none", ref()...),
+			scimAttr("roles", "complex", true, false, "readOnly", "none",
+				scimAttr("value", "string", false, false, "readOnly", "none"),
+				scimAttr("primary", "boolean", false, false, "readOnly", "none"))),
 		schema(scimGroupSchema, "Group", "Group",
 			scimAttr("displayName", "string", false, true, "readWrite", "server"),
 			scimAttr("externalId", "string", false, false, "readWrite", "none"),

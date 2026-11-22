@@ -72,7 +72,10 @@ export interface Membership {
   user_id: string
   email?: string
   display_name?: string
+  /** primary role (the first of roles; deprecated) */
   role: string
+  /** all roles of the member: the permissions are their union */
+  roles?: string[]
   created_at: string
   /** avatar of the member (when the server includes it) */
   avatar?: string
@@ -130,6 +133,7 @@ export interface ReportRecipient {
   email: string
   display_name: string
   role: string
+  roles?: string[]
 }
 
 /** The sign-in before the current one (Me.previous_login). */
@@ -144,6 +148,8 @@ export interface Me {
   user: User
   tenant: Tenant | null
   role: string
+  /** the caller's roles in the tenant (role is the first) */
+  roles?: string[]
   permissions: string[]
   memberships: Membership[]
   csrf_token: string
@@ -228,6 +234,7 @@ export interface APIToken {
   user_id: string
   name: string
   role: string
+  roles?: string[]
   prefix: string
   created_at: string
   expires_at?: string | null
@@ -272,8 +279,10 @@ export type ProjectAccessMode = 'organisation' | 'restricted'
 export interface ProjectAccess {
   /** admin (organisation administrator), member, group or organisation (the organisation role) */
   source: 'admin' | 'member' | 'group' | 'organisation'
-  /** the project role (member) or the groups' roles (group) */
+  /** the project roles (member) or the groups' roles (group), joined by ", " (deprecated: roles) */
   role?: string
+  /** the project roles (member) or the union of the groups' roles (group) */
+  roles?: string[]
   /** effective permissions in the project */
   permissions: string[]
   can_share: boolean
@@ -284,11 +293,14 @@ export interface ProjectMember {
   project_id: string
   type: 'user' | 'group'
   id: string
+  /** primary project role (the first of roles; deprecated) */
   role: string
+  roles?: string[]
   email?: string
   display_name?: string
   avatar?: string
   org_role?: string
+  org_roles?: string[]
   added_by?: string
   created_at: string
   updated_at: string
@@ -310,6 +322,7 @@ export interface MemberCandidate {
   display_name?: string
   avatar?: string
   org_role?: string
+  org_roles?: string[]
 }
 
 export type ItemKind = 'requirement' | 'test'

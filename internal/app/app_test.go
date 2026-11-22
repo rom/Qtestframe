@@ -288,7 +288,7 @@ func TestUserTenantMember(t *testing.T) {
 func TestSeedDemo(t *testing.T) {
 	cfg := writeConfig(t, "")
 	r := run(t, "", "seed-demo", "--config", cfg)
-	shared := "seeded restricted project VAULT: shared with dana@example.com (viewer); erik@example.com is not a member (password of both: Demo-user-1234)\n"
+	shared := "seeded restricted project VAULT: shared with dana@example.com (viewer) and sara@example.com (sme, reviewer; sme and tester in the organisation); erik@example.com is not a member (password of all: Demo-user-1234)\n"
 	if r.code != 0 || r.stdout != "seeded demo project DEMO in tenant default\n"+shared {
 		t.Fatalf("seed 1: %+v", r)
 	}
@@ -326,8 +326,20 @@ func TestSeedDemo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if g, err := st.ProjectGrantOf(context.Background(), tn.ID, vault.ID, dana.ID); err != nil || g.UserRole != "viewer" {
+	if g, err := st.ProjectGrantOf(context.Background(), tn.ID, vault.ID, dana.ID); err != nil || strings.Join(g.UserRoles, ",") != "viewer" {
 		t.Errorf("grant %+v %v", g, err)
+	}
+	// Sara, the subject matter expert: several roles in the organisation
+	// and in the restricted project
+	sara, err := st.GetUserByEmail(context.Background(), DemoSMEEmail)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m, err := st.GetMembership(context.Background(), tn.ID, sara.ID); err != nil || strings.Join(m.Roles, ",") != "tester,sme" || m.Role != "tester" {
+		t.Errorf("sara %+v %v", m, err)
+	}
+	if g, err := st.ProjectGrantOf(context.Background(), tn.ID, vault.ID, sara.ID); err != nil || strings.Join(g.UserRoles, ",") != "sme,reviewer" {
+		t.Errorf("sara grant %+v %v", g, err)
 	}
 	ps = slices.DeleteFunc(ps, func(p model.Project) bool { return p.Key == "VAULT" })
 	// test cycles: closed, active (half executed, with a burndown), planned

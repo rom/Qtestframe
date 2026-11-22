@@ -18,15 +18,16 @@ import TempPasswordDialog from '@/components/TempPasswordDialog.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { invitationState } from '@/lib/email'
-import { P } from '@/lib/permissions'
+import { P, diffRoles, rolesOf } from '@/lib/permissions'
 import type { Membership } from '@/lib/types'
+import RolePicker from '@/components/RolePicker.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRolesStore } from '@/stores/roles'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useI18n } from 'vue-i18n'
-import { enumLabel, enumOptions } from '@/i18n/labels'
+import { enumLabel, enumOptions, rolesLabel } from '@/i18n/labels'
 import { entry, recordUndo } from '@/lib/undoActions'
 import { useUndoStore } from '@/stores/undo'
 const prefs = usePrefsStore()
@@ -43,10 +44,11 @@ const canManage = computed(() => auth.can(P.memberManage))
 /** some members are provisioned by SCIM (their role and membership are managed by the identity provider) */
 const hasScim = computed(() => members.value.some((m) => m.scim))
 const rolesStore = useRolesStore()
-const roles = computed(() => enumOptions('role', rolesStore.roles.length ? rolesStore.roles.map((r) => r.name) : (rbac.value?.roles ?? meta.meta.roles)))
+const roleNames = computed(() => (rolesStore.roles.length ? rolesStore.roles.map((r) => r.name) : (rbac.value?.roles ?? meta.meta.roles ?? [])))
+const roles = computed(() => enumOptions('role', roleNames.value))
 const filtered = computed(() => {
   const f = filter.value.trim().toLowerCase()
-  return f ? members.value.filter((m) => `${m.email} ${m.display_name} ${m.role}`.toLowerCase().includes(f)) : members.value
+  return f ? members.value.filter((m) => `${m.email} ${m.display_name} ${rolesOf(m).join(' ')} ${rolesLabel(rolesOf(m))}`.toLowerCase().includes(f)) : members.value
 })
 
 async function load() {
@@ -70,13 +72,17 @@ onMounted(async () => {
   }
 })
 
-async function setRole(m: Membership, role: string) {
+async function setRoles(m: Membership, next: string[]) {
+  const before = rolesOf(m)
   try {
-    await api.patch(`/members/${m.user_id}`, { role })
-    m.role = role
-    notify.ok(t('admin.roleChanged'), `${m.email}: ${enumLabel('role', role)}`)
+    const res = await api.patch<Membership>(`/members/${m.user_id}`, { roles: next })
+    m.roles = res?.roles ?? next
+    m.role = res?.role ?? next[0]
+    const { added, removed } = diffRoles(before, next)
+    notify.ok(t('admin.rolesChanged'), `${m.email}: ${[...added.map((r) => '+' + enumLabel('role', r)), ...removed.map((r) => '−' + enumLabel('role', r))].join(' ')}`)
   } catch (e) {
     notify.fail(e)
+    m.roles = before
   }
 }
 function remove(m: Membership) {
@@ -95,14 +101,19 @@ interface BulkMember {
   user_id: string
   email?: string
   role?: string
+  roles?: string[]
   reason?: string
 }
+/** bulk role actions: give exactly the role, add it, take it away */
+type BulkRoleAction = 'role' | 'add_role' | 'remove_role'
 interface BulkResult {
   changed: BulkMember[]
   skipped: BulkMember[]
 }
 const selection = ref<Membership[]>([])
 const bulkRole = ref<string | null>(null)
+const bulkAddRole = ref<string | null>(null)
+const bulkRemoveRole = ref<string | null>(null)
 const bulkBusy = ref(false)
 const undoStore = useUndoStore()
 watch(
@@ -120,24 +131,27 @@ function report(res: BulkResult, done: string) {
 }
 const post = (body: Record<string, unknown>) => api.post<BulkResult>('/members/bulk', body)
 
-function bulkSetRole(role: string | null) {
+function bulkSetRole(role: string | null, action: BulkRoleAction = 'role') {
   if (!role) return
   const chosen = [...selection.value]
   const n = chosen.length
+  const label0 = enumLabel('role', role)
+  const confirmKey = { role: 'admin.bulk.confirmRole', add_role: 'admin.bulk.confirmAddRole', remove_role: 'admin.bulk.confirmRemoveRole' }[action]
+  const doneKey = { role: 'admin.bulk.roleSet', add_role: 'admin.bulk.roleAdded', remove_role: 'admin.bulk.roleRemoved' }[action]
   notify.confirmDanger(
-    t('admin.bulk.confirmRole', { n, role: enumLabel('role', role) }, n),
+    t(confirmKey, { n, role: label0 }, n),
     async () => {
       bulkBusy.value = true
       try {
-        const before = new Map(chosen.map((m) => [m.user_id, m.role]))
-        const res = await post({ user_ids: chosen.map((m) => m.user_id), action: 'role', role })
-        const label = t('admin.bulk.roleSet', { n: res.changed.length, role: enumLabel('role', role) }, res.changed.length)
+        const before = new Map(chosen.map((m) => [m.user_id, rolesOf(m)]))
+        const res = await post({ user_ids: chosen.map((m) => m.user_id), action, roles: [role] })
+        const label = t(doneKey, { n: res.changed.length, role: label0 }, res.changed.length)
         report(res, label)
         if (res.changed.length) {
-          // back to the old roles, one request per old role
+          // back to the old roles, one request per old set of roles
           const byOld = new Map<string, string[]>()
           for (const c of res.changed) {
-            const old = before.get(c.user_id) ?? ''
+            const old = JSON.stringify(before.get(c.user_id) ?? [])
             byOld.set(old, [...(byOld.get(old) ?? []), c.user_id])
           }
           const ids = res.changed.map((c) => c.user_id)
@@ -145,9 +159,9 @@ function bulkSetRole(role: string | null) {
             entry(
               label,
               async () => {
-                for (const [old, list] of byOld) await post({ user_ids: list, action: 'role', role: old })
+                for (const [old, list] of byOld) await post({ user_ids: list, action: 'role', roles: JSON.parse(old) as string[] })
               },
-              () => post({ user_ids: ids, action: 'role', role }),
+              () => post({ user_ids: ids, action, roles: [role] }),
             ),
           )
         }
@@ -158,6 +172,8 @@ function bulkSetRole(role: string | null) {
       } finally {
         bulkBusy.value = false
         bulkRole.value = null
+        bulkAddRole.value = null
+        bulkRemoveRole.value = null
       }
     },
     t('admin.bulk.roleHeader'),
@@ -177,12 +193,12 @@ function bulkRemove() {
         const label = t('admin.bulk.removed', { n: res.changed.length }, res.changed.length)
         report(res, label)
         if (res.changed.length) {
-          const gone = res.changed.map((c) => ({ email: c.email ?? '', role: c.role ?? 'viewer', user_id: c.user_id }))
+          const gone = res.changed.map((c) => ({ email: c.email ?? '', roles: rolesOf(c).length ? rolesOf(c) : ['viewer'], user_id: c.user_id }))
           recordUndo(
             entry(
               label,
               async () => {
-                for (const m of gone) await api.post('/members', { email: m.email, role: m.role })
+                for (const m of gone) await api.post('/members', { email: m.email, roles: m.roles })
               },
               () => post({ user_ids: gone.map((m) => m.user_id), action: 'remove' }),
             ),
@@ -203,7 +219,7 @@ function bulkRemove() {
 
 const dialog = ref(false)
 const emailEnabled = computed(() => !!meta.meta.email_enabled)
-const blankForm = () => ({ email: '', display_name: '', role: 'tester', password: '', invite: emailEnabled.value, sso: false })
+const blankForm = () => ({ email: '', display_name: '', roles: ['tester'], password: '', invite: emailEnabled.value, sso: false })
 const form = ref(blankForm())
 const formError = ref('')
 const busy = ref(false)
@@ -219,7 +235,7 @@ async function add() {
   try {
     const res = await api.post<Membership>('/members', {
       email: form.value.email.trim(),
-      role: form.value.role,
+      roles: form.value.roles,
       ...(form.value.display_name ? { display_name: form.value.display_name } : {}),
       ...(!invite && form.value.password ? { password: form.value.password } : {}),
       ...(invite ? { invite: true, sso: form.value.sso } : {}),
@@ -348,7 +364,31 @@ function resetPassword(m: Membership) {
         size="small"
         style="min-width: 160px"
         :disabled="bulkBusy"
-        @update:model-value="bulkSetRole"
+        @update:model-value="(r: string | null) => bulkSetRole(r, 'role')"
+      />
+      <Select
+        v-model="bulkAddRole"
+        :options="roles"
+        option-label="label"
+        option-value="value"
+        :placeholder="t('admin.bulk.addRole')"
+        :aria-label="t('admin.bulk.addRole')"
+        size="small"
+        style="min-width: 160px"
+        :disabled="bulkBusy"
+        @update:model-value="(r: string | null) => bulkSetRole(r, 'add_role')"
+      />
+      <Select
+        v-model="bulkRemoveRole"
+        :options="roles"
+        option-label="label"
+        option-value="value"
+        :placeholder="t('admin.bulk.removeRole')"
+        :aria-label="t('admin.bulk.removeRole')"
+        size="small"
+        style="min-width: 160px"
+        :disabled="bulkBusy"
+        @update:model-value="(r: string | null) => bulkSetRole(r, 'remove_role')"
       />
       <Button :label="t('common.remove')" icon="pi pi-user-minus" size="small" severity="danger" outlined :disabled="bulkBusy" @click="bulkRemove" />
       <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
@@ -369,20 +409,19 @@ function resetPassword(m: Membership) {
             /></span></template>
       </Column>
       <Column field="display_name" :header="t('common.name')" sortable />
-      <Column field="role" :header="t('common.role')" sortable style="width: 200px">
+      <Column field="role" :header="t('common.roles')" sortable style="width: 260px">
         <template #body="{ data }">
-          <Select
+          <RolePicker
             v-if="canManage && data.user_id !== auth.user?.id && !data.scim"
-            :model-value="data.role"
-            :options="roles"
-            option-label="label"
-            option-value="value"
+            :model-value="rolesOf(data)"
+            :options="roleNames"
             size="small"
-            class="w-full"
-            :aria-label="t('admin.roleOf', { user: data.email })"
-            @update:model-value="(r: string) => setRole(data, r)"
+            :aria-label="t('admin.rolesOf', { user: data.email })"
+            @change="(r: string[]) => setRoles(data, r)"
           />
-          <Tag v-else :value="enumLabel('role', data.role)" severity="secondary" />
+          <span v-else class="row wrap" style="gap: 4px">
+            <Tag v-for="r in rolesOf(data)" :key="r" :value="enumLabel('role', r)" severity="secondary" />
+          </span>
         </template>
       </Column>
       <Column field="mfa_enabled" :header="t('mfa.column')" sortable style="width: 120px">
@@ -411,7 +450,11 @@ function resetPassword(m: Membership) {
     <form class="grid" style="gap: 12px" @submit.prevent="add">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
       <div v-field class="field"><label>{{ t('common.email') }}</label><InputText v-model="form.email" type="email" required autofocus /></div>
-      <div v-field class="field"><label>{{ t('common.role') }}</label><HelpTip id="member.role" :label="t('common.role')" /><Select v-model="form.role" :options="roles" option-label="label" option-value="value" /></div>
+      <div class="field">
+        <label id="mb-roles-label" for="mb-roles">{{ t('common.roles') }}</label><HelpTip id="member.role" :label="t('common.roles')" />
+        <RolePicker v-model="form.roles" input-id="mb-roles" :options="roleNames" aria-labelledby="mb-roles-label" aria-describedby="mb-roles-hint" />
+        <small id="mb-roles-hint" class="muted">{{ t('roles.unionHint') }}</small>
+      </div>
       <div v-field class="field"><label>{{ t('admin.displayNameNew') }}</label><InputText v-model="form.display_name" /></div>
       <template v-if="emailEnabled">
         <label class="row nowrap small" for="mb-invite"><ToggleSwitch v-model="form.invite" input-id="mb-invite" aria-describedby="mb-invite-hint" /> {{ t('email.invite.toggle') }}</label>

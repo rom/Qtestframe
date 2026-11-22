@@ -1,5 +1,5 @@
 // Pure helpers for project sharing (per-project access, internal/api/access.go).
-import { can } from './permissions'
+import { can, rolesOf } from './permissions'
 import type { Me, MemberCandidate, Project, ProjectMember } from './types'
 
 /** Whether the user holds perm in a project of a list (its my_access), e.g. on the projects page. */
@@ -22,11 +22,29 @@ export function memberName(m: Pick<ProjectMember | MemberCandidate, 'display_nam
   return m.display_name || m.email || m.id
 }
 
-/** Members matching a filter text (e-mail, name or role). */
-export function filterMembers<T extends Pick<ProjectMember, 'display_name' | 'email' | 'role'>>(list: T[], text: string): T[] {
+/** Members matching a filter text (e-mail, name or one of the roles; label gives a role's display name). */
+export function filterMembers<T extends Pick<ProjectMember, 'display_name' | 'email' | 'role' | 'roles'>>(list: T[], text: string, label: (role: string) => string = (r) => r): T[] {
   const f = text.trim().toLowerCase()
   if (!f) return list
-  return list.filter((m) => `${m.email ?? ''} ${m.display_name ?? ''} ${m.role}`.toLowerCase().includes(f))
+  return list.filter((m) => {
+    const roles = rolesOf(m)
+    return `${m.email ?? ''} ${m.display_name ?? ''} ${roles.join(' ')} ${roles.map(label).join(' ')}`.toLowerCase().includes(f)
+  })
+}
+
+/**
+ * Whether the caller may change or remove a project member: every role the
+ * member holds is one the caller may give (internal/api/sharing.go
+ * checkProjectGrant).
+ */
+export function mayManageMember(m: Pick<ProjectMember, 'role' | 'roles'>, grantable: readonly string[]): boolean {
+  const roles = rolesOf(m)
+  return roles.length > 0 && roles.every((r) => grantable.includes(r))
+}
+
+/** Roles of a member the caller may not give (shown locked in the role picker). */
+export function lockedRoles(m: Pick<ProjectMember, 'role' | 'roles'>, grantable: readonly string[]): string[] {
+  return rolesOf(m).filter((r) => !grantable.includes(r))
 }
 
 /** Sort order: users before groups, then by name. */

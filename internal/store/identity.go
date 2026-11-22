@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/rbac"
 )
 
 // ---------------------------------------------------------------- tenants
@@ -227,29 +228,42 @@ func (s *Store) CountUsers(ctx context.Context) (int, error) {
 
 // ---------------------------------------------------------------- memberships
 
-// SetMembership creates or updates a membership.
+// SetMembership creates or updates a membership with one role.
 func (s *Store) SetMembership(ctx context.Context, tenantID, userID, role string) error {
+	return s.SetMembershipRoles(ctx, tenantID, userID, []string{role})
+}
+
+// SetMembershipRoles creates or updates a membership with a set of roles
+// (at least one).
+func (s *Store) SetMembershipRoles(ctx context.Context, tenantID, userID string, roles []string) error {
+	rs, raw, err := normRoles(roles)
+	if err != nil {
+		return err
+	}
+	role := rbac.Primary(rs)
 	return s.tx(ctx, func(c conn) error {
-		res, err := c.exec(ctx, `UPDATE memberships SET role = ? WHERE tenant_id = ? AND user_id = ?`, role, tenantID, userID)
+		res, err := c.exec(ctx, `UPDATE memberships SET role = ?, roles = ? WHERE tenant_id = ? AND user_id = ?`, role, raw, tenantID, userID)
 		if err != nil {
 			return err
 		}
 		if n, _ := res.RowsAffected(); n > 0 {
 			return nil
 		}
-		_, err = c.exec(ctx, `INSERT INTO memberships (tenant_id, user_id, role, created_at) VALUES (?, ?, ?, ?)`, tenantID, userID, role, s.now())
+		_, err = c.exec(ctx, `INSERT INTO memberships (tenant_id, user_id, role, roles, created_at) VALUES (?, ?, ?, ?, ?)`, tenantID, userID, role, raw, s.now())
 		return mapErr(err, "membership")
 	})
 }
 
-// GetMembership returns the role of a user in a tenant.
+// GetMembership returns the roles of a user in a tenant.
 func (s *Store) GetMembership(ctx context.Context, tenantID, userID string) (*model.Membership, error) {
 	var m model.Membership
-	err := s.c(ctx).row(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, m.role, m.created_at FROM memberships m JOIN tenants t ON t.id = m.tenant_id WHERE m.tenant_id = ? AND m.user_id = ?`, tenantID, userID).
-		Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Role, &m.CreatedAt)
+	var roles string
+	err := s.c(ctx).row(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, m.role, m.roles, m.created_at FROM memberships m JOIN tenants t ON t.id = m.tenant_id WHERE m.tenant_id = ? AND m.user_id = ?`, tenantID, userID).
+		Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Role, &roles, &m.CreatedAt)
 	if err != nil {
 		return nil, mapErr(err, "membership")
 	}
+	m.Roles = decodeRoles(roles, m.Role)
 	return &m, nil
 }
 
@@ -286,15 +300,16 @@ func (s *Store) ListTenantMembers(ctx context.Context, tenantID string) ([]model
 	return s.listMemberships(ctx, `WHERE m.tenant_id = ? ORDER BY u.email`, tenantID)
 }
 
-// CountTenantAdmins returns the number of admins in a tenant.
+// CountTenantAdmins returns the number of members of a tenant who hold the
+// admin role (among other roles or alone).
 func (s *Store) CountTenantAdmins(ctx context.Context, tenantID string) (int, error) {
 	var n int
-	err := s.c(ctx).row(ctx, `SELECT COUNT(*) FROM memberships WHERE tenant_id = ? AND role = 'admin'`, tenantID).Scan(&n)
+	err := s.c(ctx).row(ctx, `SELECT COUNT(*) FROM memberships WHERE tenant_id = ? AND `+hasRoleSQL(""), tenantID, rbac.RoleAdmin, likeRole(rbac.RoleAdmin)).Scan(&n)
 	return n, err
 }
 
 func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]model.Membership, error) {
-	rows, err := s.c(ctx).query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.created_at,
+	rows, err := s.c(ctx).query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.roles, m.created_at,
 		CASE WHEN su.user_id IS NULL THEN 0 ELSE 1 END, CASE WHEN mf.enabled_at IS NULL THEN 0 ELSE 1 END
 		FROM memberships m JOIN tenants t ON t.id = m.tenant_id JOIN users u ON u.id = m.user_id
 		LEFT JOIN scim_users su ON su.tenant_id = m.tenant_id AND su.user_id = m.user_id
@@ -307,9 +322,11 @@ func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]m
 	for rows.Next() {
 		var m model.Membership
 		var scim, mfa int
-		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &m.CreatedAt, &scim, &mfa); err != nil {
+		var roles string
+		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &roles, &m.CreatedAt, &scim, &mfa); err != nil {
 			return nil, err
 		}
+		m.Roles = decodeRoles(roles, m.Role)
 		m.SCIM, m.MFAEnabled = scim == 1, mfa == 1
 		out = append(out, m)
 	}
@@ -433,21 +450,31 @@ func (s *Store) PurgeExpiredSessions(ctx context.Context) (int64, error) {
 
 // CreateToken stores an API token (hash computed by caller).
 func (s *Store) CreateToken(ctx context.Context, t *model.APIToken) error {
+	if len(t.Roles) == 0 && t.Role != "" {
+		t.Roles = []string{t.Role}
+	}
+	rs, raw, err := normRoles(t.Roles)
+	if err != nil {
+		return err
+	}
+	t.Roles, t.Role = rs, rbac.Primary(rs)
 	t.ID = newID()
 	t.CreatedAt = s.now()
-	_, err := s.c(ctx).exec(ctx, `INSERT INTO api_tokens (id, tenant_id, user_id, name, role, hash, prefix, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.ID, t.TenantID, t.UserID, t.Name, t.Role, t.Hash, t.Prefix, t.CreatedAt, nullTime(t.ExpiresAt))
+	_, err = s.c(ctx).exec(ctx, `INSERT INTO api_tokens (id, tenant_id, user_id, name, role, roles, hash, prefix, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.TenantID, t.UserID, t.Name, t.Role, raw, t.Hash, t.Prefix, t.CreatedAt, nullTime(t.ExpiresAt))
 	return mapErr(err, "token")
 }
 
-const tokenCols = `id, tenant_id, user_id, name, role, hash, prefix, created_at, expires_at, last_used`
+const tokenCols = `id, tenant_id, user_id, name, role, roles, hash, prefix, created_at, expires_at, last_used`
 
 func scanToken(r interface{ Scan(...any) error }) (*model.APIToken, error) {
 	var t model.APIToken
 	var exp, used sql.NullTime
-	if err := r.Scan(&t.ID, &t.TenantID, &t.UserID, &t.Name, &t.Role, &t.Hash, &t.Prefix, &t.CreatedAt, &exp, &used); err != nil {
+	var roles string
+	if err := r.Scan(&t.ID, &t.TenantID, &t.UserID, &t.Name, &t.Role, &roles, &t.Hash, &t.Prefix, &t.CreatedAt, &exp, &used); err != nil {
 		return nil, err
 	}
+	t.Roles = decodeRoles(roles, t.Role)
 	t.ExpiresAt, t.LastUsed = timePtr(exp), timePtr(used)
 	return &t, nil
 }

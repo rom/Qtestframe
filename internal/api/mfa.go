@@ -98,8 +98,10 @@ func (s *Server) mfaRequirementFor(ctx context.Context, u *model.User, ms []mode
 		consider(server, model.MFASuperAdminRole)
 	}
 	for _, m := range ms {
-		consider(server, m.Role)
-		consider(pols[m.TenantID], m.Role)
+		for _, role := range m.Roles {
+			consider(server, role)
+			consider(pols[m.TenantID], role)
+		}
 	}
 	return req, nil
 }

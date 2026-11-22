@@ -32,7 +32,58 @@ export const P = {
 export type Permission = (typeof P)[keyof typeof P]
 
 /** Roles from most to least privileged (rbac.Roles). */
-export const ROLES = ['admin', 'manager', 'test_lead', 'tester', 'reviewer', 'viewer'] as const
+export const ROLES = ['admin', 'manager', 'test_lead', 'tester', 'sme', 'reviewer', 'viewer'] as const
+
+/**
+ * Normalises a role set like rbac.NormalizeRoles: drops empty names and
+ * duplicates, puts admin and the other built-in roles first (most
+ * privileged first), then custom roles alphabetically. The first role is
+ * the primary role.
+ */
+export function normalizeRoles(roles: readonly (string | null | undefined)[] | null | undefined): string[] {
+  const seen = new Set<string>()
+  const builtin: string[] = []
+  const custom: string[] = []
+  for (const raw of roles ?? []) {
+    const r = (raw ?? '').trim()
+    if (!r || seen.has(r)) continue
+    seen.add(r)
+    if ((ROLES as readonly string[]).includes(r)) builtin.push(r)
+    else custom.push(r)
+  }
+  builtin.sort((a, b) => roleRank(b) - roleRank(a))
+  custom.sort()
+  return [...builtin, ...custom]
+}
+
+/** The roles of a member, membership, token or invitation: `roles`, or the single `role` of older servers. */
+export function rolesOf(x: { role?: string | null; roles?: readonly string[] | null } | null | undefined): string[] {
+  if (!x) return []
+  if (x.roles && x.roles.length) return normalizeRoles(x.roles)
+  return x.role ? [x.role] : []
+}
+
+/** Whether two role sets hold the same roles (in any order). */
+export function sameRoles(a: readonly string[], b: readonly string[]): boolean {
+  const x = normalizeRoles(a)
+  const y = normalizeRoles(b)
+  return x.length === y.length && x.every((r, i) => r === y[i])
+}
+
+/** Roles added to and removed from a set. */
+export function diffRoles(before: readonly string[], after: readonly string[]): { added: string[]; removed: string[] } {
+  return {
+    added: normalizeRoles(after).filter((r) => !before.includes(r)),
+    removed: normalizeRoles(before).filter((r) => !after.includes(r)),
+  }
+}
+
+/** Union of the permissions of several roles of a role matrix (sorted). */
+export function permissionsOfRoles(matrix: Record<string, readonly string[] | null> | null | undefined, roles: readonly string[]): string[] {
+  const out = new Set<string>()
+  for (const r of roles) for (const p of matrix?.[r] ?? []) out.add(p)
+  return [...out].sort()
+}
 
 /**
  * Whether the current user holds a permission. Super admins hold every
@@ -90,10 +141,11 @@ export function rolesWithin(roles: readonly { name: string; permissions: readonl
   return roles.filter((r) => superAdmin || (r.permissions ?? []).every((p) => have.has(p))).map((r) => r.name)
 }
 
-/** Roles that may be granted by someone holding `role` (built-in roles only; see rolesWithin). */
-export function grantableRoles(role: string, superAdmin = false): string[] {
+/** Roles that may be granted by someone holding `role` (or several roles: the strongest counts; built-in roles only; see rolesWithin). */
+export function grantableRoles(role: string | readonly string[], superAdmin = false): string[] {
   if (superAdmin) return [...ROLES]
-  const r = roleRank(role)
+  const held = typeof role === 'string' ? [role] : role
+  const r = Math.max(0, ...held.map(roleRank))
   return ROLES.filter((x) => roleRank(x) <= r)
 }
 

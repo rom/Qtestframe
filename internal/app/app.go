@@ -57,7 +57,8 @@ Usage:
   qtestframe migrate     [--config FILE]          apply database migrations
   qtestframe user create [--config FILE] --email E [--name N] [--password-stdin] [--super-admin]
   qtestframe tenant create [--config FILE] --slug S --name N
-  qtestframe member add  [--config FILE] --tenant SLUG --email E --role admin|manager|test_lead|tester|reviewer|viewer
+  qtestframe member add  [--config FILE] --tenant SLUG --email E --role ROLE[,ROLE...]
+                         (admin|manager|test_lead|tester|sme|reviewer|viewer or a custom role)
   qtestframe seed-demo   [--config FILE] [--tenant SLUG]
   qtestframe backup      [--config FILE] --out FILE.zip
                                                   write a logical backup of all data
@@ -298,7 +299,7 @@ func cmdMemberAdd(args []string, env Env) error {
 	fs, cfgPath := newFlags("member add", env)
 	tenant := fs.String("tenant", "", "tenant slug")
 	email := fs.String("email", "", "user e-mail")
-	role := fs.String("role", rbac.RoleViewer, "role")
+	role := fs.String("role", rbac.RoleViewer, "role, or several roles separated by commas (e.g. sme,tester)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -315,17 +316,18 @@ func cmdMemberAdd(args []string, env Env) error {
 	if err != nil {
 		return err
 	}
-	if !set.Valid(*role) {
-		return fmt.Errorf("invalid role %q (roles: %s)", *role, strings.Join(set.Names(), ", "))
+	roles := rbac.NormalizeRoles(strings.Split(*role, ","))
+	if ok, bad := set.ValidAll(roles); !ok {
+		return fmt.Errorf("invalid role %q (roles: %s)", bad, strings.Join(set.Names(), ", "))
 	}
 	u, err := st.GetUserByEmail(env.Ctx, *email)
 	if err != nil {
 		return err
 	}
-	if err := st.SetMembership(env.Ctx, t.ID, u.ID, *role); err != nil {
+	if err := st.SetMembershipRoles(env.Ctx, t.ID, u.ID, roles); err != nil {
 		return err
 	}
-	fmt.Fprintf(env.Stdout, "%s is now %s in %s\n", u.Email, *role, t.Slug)
+	fmt.Fprintf(env.Stdout, "%s is now %s in %s\n", u.Email, strings.Join(roles, ", "), t.Slug)
 	return nil
 }
 
@@ -379,8 +381,8 @@ func cmdSeedDemo(args []string, env Env) error {
 		}
 	}
 	if sp != nil {
-		fmt.Fprintf(env.Stdout, "seeded restricted project %s: shared with %s (viewer); %s is not a member (password of both: %s)\n",
-			sp.Key, DemoMemberEmail, DemoOutsiderEmail, DemoUserPassword)
+		fmt.Fprintf(env.Stdout, "seeded restricted project %s: shared with %s (viewer) and %s (sme, reviewer; sme and tester in the organisation); %s is not a member (password of all: %s)\n",
+			sp.Key, DemoMemberEmail, DemoSMEEmail, DemoOutsiderEmail, DemoUserPassword)
 	}
 	// owners and assignments for "My work" (the users exist now)
 	if err := SeedDemoWorkList(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {

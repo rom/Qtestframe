@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { can, canAny, grantableRoles, P, roleRank } from './permissions'
+import { can, canAny, diffRoles, grantableRoles, normalizeRoles, P, permissionsOfRoles, roleRank, rolesOf, sameRoles } from './permissions'
 import type { Me } from './types'
 
 function me(perms: string[], superAdmin = false, role = 'tester'): Me {
@@ -42,15 +42,41 @@ describe('can', () => {
 
 describe('roles', () => {
   it('ranks roles', () => {
-    expect(roleRank('admin')).toBe(6)
-    expect(roleRank('test_lead')).toBe(4)
+    expect(roleRank('admin')).toBe(7)
+    expect(roleRank('test_lead')).toBe(5)
+    expect(roleRank('sme')).toBe(3)
     expect(roleRank('viewer')).toBe(1)
     expect(roleRank('nobody')).toBe(0)
   })
   it('grantable roles never exceed own role', () => {
-    expect(grantableRoles('tester')).toEqual(['tester', 'reviewer', 'viewer'])
-    expect(grantableRoles('viewer', true)).toEqual(['admin', 'manager', 'test_lead', 'tester', 'reviewer', 'viewer'])
+    expect(grantableRoles('tester')).toEqual(['tester', 'sme', 'reviewer', 'viewer'])
+    expect(grantableRoles('viewer', true)).toEqual(['admin', 'manager', 'test_lead', 'tester', 'sme', 'reviewer', 'viewer'])
     expect(grantableRoles('')).toEqual([])
+    // several roles: the strongest counts
+    expect(grantableRoles(['viewer', 'sme'])).toEqual(['sme', 'reviewer', 'viewer'])
+    expect(grantableRoles([])).toEqual([])
+  })
+  it('normalises role sets like rbac.NormalizeRoles', () => {
+    expect(normalizeRoles(['tester', ' auditor', 'sme', '', 'admin', 'tester', 'aaa', null])).toEqual(['admin', 'tester', 'sme', 'aaa', 'auditor'])
+    expect(normalizeRoles(undefined)).toEqual([])
+  })
+  it('reads the roles of members of old and new servers', () => {
+    expect(rolesOf({ role: 'tester' })).toEqual(['tester'])
+    expect(rolesOf({ role: 'tester', roles: ['sme', 'tester'] })).toEqual(['tester', 'sme'])
+    expect(rolesOf({ role: 'tester', roles: [] })).toEqual(['tester'])
+    expect(rolesOf({ role: '' })).toEqual([])
+    expect(rolesOf(null)).toEqual([])
+  })
+  it('compares and diffs role sets', () => {
+    expect(sameRoles(['sme', 'tester'], ['tester', 'sme'])).toBe(true)
+    expect(sameRoles(['sme'], ['sme', 'viewer'])).toBe(false)
+    expect(diffRoles(['viewer', 'tester'], ['tester', 'sme'])).toEqual({ added: ['sme'], removed: ['viewer'] })
+  })
+  it('unions the permissions of several roles', () => {
+    const matrix = { sme: ['requirement.write', 'project.read'], tester: ['run.execute', 'project.read'] }
+    expect(permissionsOfRoles(matrix, ['sme', 'tester'])).toEqual(['project.read', 'requirement.write', 'run.execute'])
+    expect(permissionsOfRoles(matrix, ['nobody'])).toEqual([])
+    expect(permissionsOfRoles(null, ['sme'])).toEqual([])
   })
   it('lists roles within the own permissions', async () => {
     const { rolesWithin } = await import('./permissions')

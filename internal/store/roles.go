@@ -106,32 +106,54 @@ func (s *Store) ResetRole(ctx context.Context, tenantID, name string) error {
 	return err
 }
 
-// RoleUsage counts the members and API tokens of a tenant per role.
+// RoleUsage counts the members and API tokens of a tenant per role (a
+// member with several roles counts for each of them).
 func (s *Store) RoleUsage(ctx context.Context, tenantID string) (members, tokens map[string]int, err error) {
 	members, tokens = map[string]int{}, map[string]int{}
 	for _, q := range []struct {
 		sql string
 		out map[string]int
 	}{
-		{`SELECT role, COUNT(*) FROM memberships WHERE tenant_id = ? GROUP BY role`, members},
-		{`SELECT role, COUNT(*) FROM api_tokens WHERE tenant_id = ? GROUP BY role`, tokens},
+		{`SELECT role, roles, COUNT(*) FROM memberships WHERE tenant_id = ? GROUP BY role, roles`, members},
+		{`SELECT role, roles, COUNT(*) FROM api_tokens WHERE tenant_id = ? GROUP BY role, roles`, tokens},
 	} {
 		rows, err := s.c(ctx).query(ctx, q.sql, tenantID)
 		if err != nil {
 			return nil, nil, err
 		}
 		for rows.Next() {
-			var role string
+			var role, roles string
 			var n int
-			if err := rows.Scan(&role, &n); err != nil {
+			if err := rows.Scan(&role, &roles, &n); err != nil {
 				rows.Close()
 				return nil, nil, err
 			}
-			q.out[role] = n
+			for _, r := range decodeRoles(roles, role) {
+				q.out[r] += n
+			}
 		}
 		rows.Close()
 	}
 	return members, tokens, nil
+}
+
+// RoleHolders returns the user ids of the tenant members who hold a role
+// (among their organisation roles).
+func (s *Store) RoleHolders(ctx context.Context, tenantID, role string) ([]string, error) {
+	rows, err := s.c(ctx).query(ctx, `SELECT user_id FROM memberships WHERE tenant_id = ? AND `+hasRoleSQL("")+` ORDER BY user_id`, tenantID, role, likeRole(role))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
 }
 
 // DeleteRole deletes a custom role that no member or API token uses.
@@ -141,8 +163,9 @@ func (s *Store) DeleteRole(ctx context.Context, tenantID, name string) error {
 	}
 	return s.tx(ctx, func(c conn) error {
 		var n int
-		if err := c.row(ctx, `SELECT (SELECT COUNT(*) FROM memberships WHERE tenant_id = ? AND role = ?) + (SELECT COUNT(*) FROM api_tokens WHERE tenant_id = ? AND role = ?) + (SELECT COUNT(*) FROM project_members WHERE tenant_id = ? AND role = ?)`,
-			tenantID, name, tenantID, name, tenantID, name).Scan(&n); err != nil {
+		like := likeRole(name)
+		if err := c.row(ctx, `SELECT (SELECT COUNT(*) FROM memberships WHERE tenant_id = ? AND `+hasRoleSQL("")+`) + (SELECT COUNT(*) FROM api_tokens WHERE tenant_id = ? AND `+hasRoleSQL("")+`) + (SELECT COUNT(*) FROM project_members WHERE tenant_id = ? AND `+hasRoleSQL("")+`)`,
+			tenantID, name, like, tenantID, name, like, tenantID, name, like).Scan(&n); err != nil {
 			return err
 		}
 		if n > 0 {

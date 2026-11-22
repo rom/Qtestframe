@@ -25,10 +25,10 @@ import SuggestInput from '@/components/SuggestInput.vue'
 import { rememberValues } from '@/lib/suggest'
 import { useNotify } from '@/composables/notify'
 import { api, asItems } from '@/lib/api'
-import { P } from '@/lib/permissions'
+import { P, rolesOf } from '@/lib/permissions'
 import { useI18n } from 'vue-i18n'
 import { chooseLocal, currentLang, LANGUAGES, LANGUAGE_NAMES, type Lang } from '@/i18n'
-import { enumLabel } from '@/i18n/labels'
+import { rolesLabel } from '@/i18n/labels'
 import type { Tenant } from '@/lib/types'
 import { useRolesStore } from '@/stores/roles'
 import { useWorkListStore } from '@/stores/worklist'
@@ -129,11 +129,11 @@ function trapTab(e: KeyboardEvent) {
 }
 
 const tenantOptions = computed(() => {
-  const map = new Map<string, { label: string; value: string; role?: string }>()
+  const map = new Map<string, { label: string; value: string; roles: string[] }>()
   for (const m of auth.me?.memberships ?? []) {
-    map.set(m.tenant_id, { label: m.tenant_name || m.tenant_slug || m.tenant_id, value: m.tenant_id, role: m.role })
+    map.set(m.tenant_id, { label: m.tenant_name || m.tenant_slug || m.tenant_id, value: m.tenant_id, roles: rolesOf(m) })
   }
-  for (const t of allTenants.value) if (!map.has(t.id)) map.set(t.id, { label: t.name, value: t.id, role: 'super_admin' })
+  for (const t of allTenants.value) if (!map.has(t.id)) map.set(t.id, { label: t.name, value: t.id, roles: ['super_admin'] })
   return [...map.values()]
 })
 
@@ -237,7 +237,7 @@ function doSearch() {
   searchOpen.value = false
 }
 const userName = computed(() => auth.user?.display_name || auth.user?.email || '')
-const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumLabel('role', auth.me?.role)) + (auth.tenant ? ' · ' + auth.tenant.name : ''))
+const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : rolesLabel(rolesOf(auth.me))) + (auth.tenant ? ' · ' + auth.tenant.name : ''))
 </script>
 
 <template>
@@ -344,7 +344,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
             </template>
             <template #option="{ option }">
               <div class="row nowrap" style="justify-content: space-between; width: 100%">
-                <span>{{ option.label }}</span><span class="muted small">{{ enumLabel('role', option.role) }}</span>
+                <span>{{ option.label }}</span><span class="muted small">{{ rolesLabel(option.roles) }}</span>
               </div>
             </template>
           </Select>
