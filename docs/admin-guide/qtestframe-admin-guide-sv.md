@@ -1835,6 +1835,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 46 | `0046_variant_gates.sql` |
 | 47 | `0047_risk_catalog.sql` |
 | 49 | `0049_risk_attack.sql` |
+| 51 | `0051_frameworks.sql` |
 
 <!-- END GENERATED: migrations -->
 

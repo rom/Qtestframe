@@ -55,6 +55,7 @@ import { addedItemsEntry, recordUndo } from '@/lib/undoActions'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { riskLevelSeverity, RISK_LEVELS } from '@/lib/risks'
 import { loadTechniques, type TechniqueList } from '@/lib/attack'
+import { loadD3fend, loadEmb3d, frameworkLabel, type D3fendList, type Emb3dList } from '@/lib/frameworks'
 import { P } from '@/lib/permissions'
 import { enumLabel, enumOptions } from '@/i18n/labels'
 import { useAuthStore } from '@/stores/auth'
@@ -187,14 +188,21 @@ const riskById = computed(() => new Map(risks.value.map((r) => [r.id, r])))
 
 // ---------- filters (per tab) ----------
 const filters = ref<Record<CatalogKind, CatalogFilters>>({
-  requirement: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '' },
-  test: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '' },
+  requirement: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '',
+    d3fend: queryList(route.query.d3fend),
+    emb3d: queryList(route.query.emb3d),
+  },
+  test: { ...emptyFilters(), node: typeof route.query.node === 'string' ? route.query.node : 'all', q: typeof route.query.q === 'string' ? route.query.q : '',
+    d3fend: queryList(route.query.d3fend),
+    emb3d: queryList(route.query.emb3d),
+  },
   risk: {
     ...emptyFilters(),
     node: typeof route.query.node === 'string' ? route.query.node : 'all',
     q: typeof route.query.q === 'string' ? route.query.q : '',
     tactics: queryList(route.query.tactic),
     techniques: queryList(route.query.attack),
+    emb3d: queryList(route.query.emb3d),
   },
 })
 const f = computed(() => filters.value[kind.value])
@@ -264,6 +272,24 @@ const techniqueOptions = computed(() => {
 function filterTechnique(id: string) {
   kind.value = 'risk'
   filters.value.risk.techniques = [id]
+}
+// ---------- MITRE D3FEND and EMB3D ----------
+const d3List = ref<D3fendList | null>(null)
+const embList = ref<Emb3dList | null>(null)
+onMounted(() => {
+  loadD3fend().then((l) => (d3List.value = l), () => (d3List.value = null))
+  loadEmb3d().then((l) => (embList.value = l), () => (embList.value = null))
+})
+const d3ById = computed(() => new Map((d3List.value?.items ?? []).map((x) => [x.id, x])))
+const embById = computed(() => new Map((embList.value?.items ?? []).map((x) => [x.id, x])))
+/** The options of a framework filter: the ids the tab's items list, with names. */
+function usedOptions(ids: Iterable<string>, known: ReadonlyMap<string, { name: string }>) {
+  return [...new Set(ids)].sort().map((id) => ({ label: frameworkLabel(id, known), value: id }))
+}
+const d3fendOptions = computed(() => usedOptions((kind.value === 'test' ? tests.value : reqs.value).flatMap((x) => x.d3fend ?? []), d3ById.value))
+const emb3dOptions = computed(() => usedOptions(items.value.flatMap((x) => x.emb3d ?? []), embById.value))
+function filterFramework(fw: 'd3fend' | 'emb3d', id: string) {
+  filters.value[kind.value][fw] = [id]
 }
 const tagOpts = computed(() => tagOptions(items.value).map((x) => ({ label: x, value: x })))
 const kindOptions = computed(() => [
@@ -368,7 +394,7 @@ function openLinked(k: CatalogKind, id: string) {
 watch(kind, (k) => {
   if (previewKind.value !== k) previewId.value = ''
 })
-watch([kind, previewId, lang, () => f.value.node, () => f.value.q, catalogue, sourceIds, () => filters.value.risk.tactics, () => filters.value.risk.techniques], () => {
+watch([kind, previewId, lang, () => f.value.node, () => f.value.q, catalogue, sourceIds, () => filters.value.risk.tactics, () => filters.value.risk.techniques, () => f.value.d3fend, () => f.value.emb3d], () => {
   router.replace({
     query: {
       ...route.query,
@@ -381,6 +407,8 @@ watch([kind, previewId, lang, () => f.value.node, () => f.value.q, catalogue, so
       source: sourceIds.value.length ? sourceIds.value.join(',') : undefined,
       tactic: kind.value === 'risk' && filters.value.risk.tactics?.length ? filters.value.risk.tactics.join(',') : undefined,
       attack: kind.value === 'risk' && filters.value.risk.techniques?.length ? filters.value.risk.techniques.join(',') : undefined,
+      d3fend: kind.value !== 'risk' && f.value.d3fend?.length ? f.value.d3fend.join(',') : undefined,
+      emb3d: f.value.emb3d?.length ? f.value.emb3d.join(',') : undefined,
     },
   })
 })
@@ -442,7 +470,7 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
       <div class="actions">
         <HelpLink page="catalogue" />
         <RouterLink v-if="canReadReqs" class="p-button p-button-sm p-button-outlined p-button-secondary" :to="{ name: 'catalog-attack', params: { projectId: proj.pid } }">
-          <i class="pi pi-th-large" aria-hidden="true" />&nbsp;{{ t('attack.coverage.open') }}
+          <i class="pi pi-th-large" aria-hidden="true" />&nbsp;{{ t('frameworks.coverage.open') }}
         </RouterLink>
         <span class="row nowrap" style="gap: 6px">
           <label for="cat-type" class="small">{{ t('catalog.types.label') }}</label>
@@ -580,6 +608,8 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
           </template>
           <MultiSelect v-else v-model="f.executions" :options="executionOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterExecution')" :aria-label="t('catalog.filterExecution')" show-clear />
           <MultiSelect v-if="kind !== 'risk'" v-model="f.priorities" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('catalog.filterPriority')" :aria-label="t('catalog.filterPriority')" :max-selected-labels="2" show-clear />
+          <MultiSelect v-if="kind !== 'risk' && d3fendOptions.length" v-model="f.d3fend" :options="d3fendOptions" option-label="label" option-value="value" filter :placeholder="t('frameworks.d3fend.filter')" :aria-label="t('frameworks.d3fend.filter')" :max-selected-labels="1" show-clear />
+          <MultiSelect v-if="emb3dOptions.length" v-model="f.emb3d" :options="emb3dOptions" option-label="label" option-value="value" filter :placeholder="t('frameworks.emb3d.filter')" :aria-label="t('frameworks.emb3d.filter')" :max-selected-labels="1" show-clear />
           <MultiSelect v-model="f.tags" :options="tagOpts" option-label="label" option-value="value" filter :placeholder="t('catalog.filterTags')" :aria-label="t('catalog.filterTags')" :max-selected-labels="2" show-clear />
           <span class="row small nowrap">
             <ToggleSwitch v-model="f.hideInProject" input-id="cat-hide" />
@@ -656,7 +686,7 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
       </section>
 
       <aside v-if="!narrow" class="card preview-pane" :aria-label="t('catalog.preview')">
-        <CatalogPreview v-if="previewId" :kind="previewKind" :id="previewId" :lang="lang" :project-id="proj.pid" @open="openLinked" @technique="filterTechnique" />
+        <CatalogPreview v-if="previewId" :kind="previewKind" :id="previewId" :lang="lang" :project-id="proj.pid" @open="openLinked" @technique="filterTechnique" @framework="filterFramework" />
         <div v-else class="empty">
           <i class="pi pi-eye" aria-hidden="true" />
           <div>{{ t('catalog.previewHint') }}</div>
@@ -692,7 +722,7 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
       </Tree>
     </Drawer>
     <Drawer v-if="narrow" v-model:visible="previewOpen" position="right" :header="t('catalog.preview')" block-scroll class="catalog-preview-drawer">
-      <CatalogPreview v-if="previewId" :kind="previewKind" :id="previewId" :lang="lang" :project-id="proj.pid" @open="openLinked" @technique="filterTechnique" />
+      <CatalogPreview v-if="previewId" :kind="previewKind" :id="previewId" :lang="lang" :project-id="proj.pid" @open="openLinked" @technique="filterTechnique" @framework="filterFramework" />
     </Drawer>
 
     <CatalogSourcePicker v-if="sourceData" v-model:visible="pickerOpen" :sources="sourceData.sources" :kinds="sourceData.kinds" :selected="sourceIds" @apply="(ids) => (sourceIds = ids)" />

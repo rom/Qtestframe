@@ -16,7 +16,7 @@ import { enumLabel } from '@/i18n/labels'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ kind: CatalogKind; id: string; lang: string; projectId: string }>()
-const emit = defineEmits<{ open: [kind: CatalogKind, id: string]; technique: [id: string] }>()
+const emit = defineEmits<{ open: [kind: CatalogKind, id: string]; technique: [id: string]; framework: [kind: 'd3fend' | 'emb3d', id: string] }>()
 const { t } = useI18n()
 
 const req = ref<CatalogRequirementDetail | null>(null)
@@ -50,6 +50,11 @@ const linkedTitle = computed(() => (req.value ? t('catalog.verifyingTests') : ri
 // the cited standards, linked to their text where the source registry knows it
 const refs = computed(() => refLinks(item.value?.refs ?? [], item.value?.ref_targets))
 const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key).join(', ')
+// MITRE D3FEND and EMB3D
+const d3fend = computed(() => req.value?.d3fend_techniques ?? test.value?.d3fend_techniques ?? [])
+const emb3d = computed(() => item.value?.emb3d_items ?? [])
+const defenses = computed(() => risk.value?.defenses ?? [])
+const gaps = computed(() => defenses.value.filter((d) => !d.covered).length)
 </script>
 
 <template>
@@ -127,6 +132,57 @@ const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key)
         </ol>
         <h3>{{ t('catalog.expected') }}</h3>
         <p class="text">{{ test.expected }}</p>
+      </template>
+
+      <template v-if="d3fend.length">
+        <h3 id="cp-d3fend">{{ t('frameworks.d3fend.techniques') }}</h3>
+        <ul class="cp-list" aria-labelledby="cp-d3fend">
+          <li v-for="x in d3fend" :key="x.id">
+            <a :href="x.url" target="_blank" rel="noopener noreferrer"
+              ><span class="key">{{ x.id }}</span> {{ x.name }} <i class="pi pi-external-link cp-ext" aria-hidden="true" /><span class="sr-only"> ({{ t('links.newTab') }})</span></a
+            >
+            <div class="small muted">
+              {{ x.tactic }}<template v-if="x.parent_name"> · {{ x.parent_name }}</template> ·
+              <button type="button" class="linklike cp-filter" @click="emit('framework', 'd3fend', x.id)">{{ t('frameworks.showItems') }}</button>
+            </div>
+          </li>
+        </ul>
+      </template>
+
+      <template v-if="emb3d.length">
+        <h3 id="cp-emb3d">{{ risk ? t('frameworks.threats.label') : t('frameworks.emb3d.label') }}</h3>
+        <ul class="cp-list" aria-labelledby="cp-emb3d">
+          <li v-for="x in emb3d" :key="x.id">
+            <a :href="x.url" target="_blank" rel="noopener noreferrer"
+              ><span class="key">{{ x.id }}</span> {{ x.name }} <i class="pi pi-external-link cp-ext" aria-hidden="true" /><span class="sr-only"> ({{ t('links.newTab') }})</span></a
+            >
+            <div class="small muted">
+              {{ x.kind === 'threat' ? t('frameworks.emb3d.threat') + ' · ' + x.category : t('frameworks.emb3d.mitigation') }} ·
+              <button type="button" class="linklike cp-filter" @click="emit('framework', 'emb3d', x.id)">{{ t('frameworks.showItems') }}</button>
+            </div>
+          </li>
+        </ul>
+      </template>
+
+      <template v-if="defenses.length">
+        <h3 id="cp-defenses">{{ t('frameworks.defenses.title') }}</h3>
+        <p class="small muted">{{ gaps ? t('frameworks.defenses.gaps', { n: gaps }, gaps) : t('frameworks.defenses.allCovered') }}</p>
+        <ul class="cp-list cp-defenses" aria-labelledby="cp-defenses">
+          <li v-for="d in defenses" :key="d.technique.id">
+            <span class="key">{{ d.technique.id }}</span> {{ d.technique.name }}
+            <Tag :value="d.covered ? t('frameworks.defenses.covered') : t('frameworks.defenses.gap')" :severity="d.covered ? 'success' : 'warn'" class="small" />
+            <div v-if="d.d3fend.length" class="small muted">{{ t('frameworks.defenses.counteredBy', { list: d.d3fend.map((x) => x.id).join(', ') }) }}</div>
+            <div v-else class="small muted">{{ t('frameworks.defenses.noCounter') }}</div>
+            <ul v-if="d.requirements.length" class="cp-list">
+              <li v-for="r in d.requirements" :key="r.id">
+                <button type="button" class="linklike" @click="emit('open', 'requirement', r.id)">
+                  <span class="key">{{ r.id }}</span> <span class="cp-link-title">{{ r.title }}</span>
+                </button>
+                <span class="small muted"> · {{ r.d3fend.join(', ') }}<template v-if="r.mitigates"> · {{ t('frameworks.defenses.mitigating') }}</template></span>
+              </li>
+            </ul>
+          </li>
+        </ul>
       </template>
 
       <template v-if="item.refs.length">
