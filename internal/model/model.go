@@ -1017,6 +1017,9 @@ type Risk struct {
 	// CatalogArea that risk's catalogue area (derived by the API).
 	CatalogRef  string `json:"catalog_ref"`
 	CatalogArea string `json:"catalog_area,omitempty"`
+	// Attack are the MITRE ATT&CK and ATLAS technique ids of the risk
+	// (T1110.004, T0886, AML.T0051), checked against the catalogue's list.
+	Attack []string `json:"attack"`
 }
 
 // ResidualOf returns the residual likelihood, impact and source in effect

@@ -29,6 +29,8 @@ func (s *Server) routesCatalog(h routeFunc) {
 	h("GET /api/v1/catalog/tests/{id}", s.handleCatalogTest, "test.read")
 	h("GET /api/v1/catalog/risks", s.handleCatalogRisks, "requirement.read")
 	h("GET /api/v1/catalog/risks/{id}", s.handleCatalogRisk, "requirement.read")
+	h("GET /api/v1/catalog/attack", s.handleCatalogAttack, "requirement.read")
+	h("GET /api/v1/catalog/attack/techniques", s.handleCatalogTechniques, "project.read")
 	h("GET /api/v1/projects/{pid}/catalog", s.handleProjectCatalog, "project.read")
 	// write of each kind imported: see handleCatalogImport
 	h("POST /api/v1/projects/{pid}/catalog/import", s.impactAware(s.handleCatalogImport, true), "project.read")
@@ -78,7 +80,8 @@ func catalogFilter(r *http.Request) catalog.Filter {
 	q := r.URL.Query()
 	return catalog.Filter{Area: q.Get("area"), Group: q.Get("group"), Type: q.Get("type"), Obligation: q.Get("obligation"),
 		Priority: q.Get("priority"), Tag: q.Get("tag"), Execution: q.Get("execution"),
-		Catalogue: q.Get("catalogue"), Source: q.Get("source"), Category: q.Get("category"), Level: q.Get("level"), Q: q.Get("q")}
+		Catalogue: q.Get("catalogue"), Source: q.Get("source"), Category: q.Get("category"), Level: q.Get("level"),
+		Attack: q.Get("attack"), Tactic: q.Get("tactic"), Q: q.Get("q")}
 }
 
 // handleCatalogSources: GET /catalog/sources?lang=&catalogue=&all= — the
@@ -188,7 +191,7 @@ type catalogRiskItem struct {
 	InProject []store.CatalogItem `json:"in_project,omitempty"`
 }
 
-// handleCatalogRisks: GET /catalog/risks?area=&group=&catalogue=&category=&level=&tag=&source=&q=&lang=&project_id=&not_in_project=
+// handleCatalogRisks: GET /catalog/risks?area=&group=&catalogue=&category=&level=&tag=&source=&attack=&tactic=&q=&lang=&project_id=&not_in_project=
 func (s *Server) handleCatalogRisks(w http.ResponseWriter, r *http.Request, p *Principal) {
 	c, lang, ok := s.catalogRead(w, r)
 	if !ok {
@@ -214,6 +217,9 @@ type catalogRiskDetail struct {
 	catalog.RiskSummary
 	AreaName   string              `json:"area_name"`
 	RefTargets []catalog.RefTarget `json:"ref_targets"`
+	// Techniques are the ATT&CK and ATLAS techniques of attack and atlas
+	// with names, tactics and links.
+	Techniques []catalog.TechniqueSummary `json:"techniques"`
 	// MitigatingRequirements are the catalogue requirements of mitigated_by,
 	// LinkedTests the tests listed on the risk.
 	MitigatingRequirements []catalogLinked     `json:"mitigating_requirements"`
@@ -250,6 +256,7 @@ func (s *Server) handleCatalogRisk(w http.ResponseWriter, r *http.Request, p *Pr
 		}
 	}
 	out := catalogRiskDetail{RiskSummary: c.SummarizeRisk(k, lang), AreaName: areaName(c, k.Area, lang), RefTargets: c.RefTargets(k.Refs, lang),
+		Techniques:             c.TechniqueSummaries(k.Techniques()),
 		MitigatingRequirements: []catalogLinked{}, LinkedTests: []catalogLinked{}, InProject: risks[k.ID]}
 	for _, id := range k.MitigatedBy {
 		if rq := c.Requirements[id]; rq != nil {
@@ -511,7 +518,7 @@ func catalogRisk(k *catalog.Risk, lang, status string) *model.Risk {
 		cat = rc.Name.Get(lang)
 	}
 	return &model.Risk{Title: x.Title, Description: x.Description, Mitigation: x.Mitigation, Category: cat,
-		Likelihood: k.Likelihood, Impact: k.Impact, Status: status, CatalogRef: k.ID}
+		Likelihood: k.Likelihood, Impact: k.Impact, Status: status, CatalogRef: k.ID, Attack: k.Techniques()}
 }
 
 // folderResolver finds or creates folders by name path below a root.

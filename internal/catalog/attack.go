@@ -3,6 +3,7 @@ package catalog
 import (
 	"regexp"
 	"slices"
+	"sort"
 	"strings"
 )
 
@@ -86,8 +87,18 @@ func (c *Catalog) addAttack(f attackFile) {
 	c.Mitigations = append(c.Mitigations, f.Mitigations...)
 }
 
-// loadAttack checks the technique list and indexes it.
+// loadAttack checks the technique list and indexes it. The matrices are
+// in file order with ATLAS last (atlas.yaml sorts before attack.yaml).
 func (c *Catalog) loadAttack(bad func(string, ...any)) {
+	last := func(m string) int {
+		if m == AtlasMatrix {
+			return 1
+		}
+		return 0
+	}
+	sort.SliceStable(c.Matrices, func(i, j int) bool { return last(c.Matrices[i].ID) < last(c.Matrices[j].ID) })
+	sort.SliceStable(c.Tactics, func(i, j int) bool { return last(c.Tactics[i].Matrix) < last(c.Tactics[j].Matrix) })
+	sort.SliceStable(c.Techniques, func(i, j int) bool { return last(c.Techniques[i].Matrix) < last(c.Techniques[j].Matrix) })
 	c.matrixByID, c.tacticByID, c.techByID, c.mitByID = map[string]*AttackMatrix{}, map[string]*AttackTactic{}, map[string]*AttackTechnique{}, map[string]*AttackMitigation{}
 	for i := range c.Matrices {
 		m := &c.Matrices[i]

@@ -415,5 +415,12 @@ var texts = map[string]map[string]string{
 		"Open risks with verified mitigation":        "Öppna risker med verifierad åtgärd",
 		"Share of open risks verified":               "Andel verifierade öppna risker",
 		"Open risks by mitigation state":             "Öppna risker per åtgärdsstatus",
+		"ATT&CK techniques":                          "ATT&CK-tekniker",
+		"MITRE ATT&CK techniques of the risks":       "MITRE ATT&CK-tekniker för riskerna",
+		"Technique":                                  "Teknik",
+		"Tactics":                                    "Taktiker",
+		"Matrix":                                     "Matris",
+		"Open risks":                                 "Öppna risker",
+		"Risks with ATT&CK techniques":               "Risker med ATT&CK-tekniker",
 	},
 }

@@ -18,7 +18,8 @@ func sampleRisks() []model.Risk {
 		{ID: "k3", Key: "P-RISK-3", Title: "Outage", Likelihood: 2, Impact: 2, Status: "mitigated", UpdatedAt: t0},
 		{ID: "k4", Key: "P-RISK-4", Title: "Typo", Likelihood: 1, Impact: 1, Status: "closed", UpdatedAt: old},
 		{ID: "k5", Key: "P-RISK-5", Title: "Unowned", Likelihood: 3, Impact: 4, Status: "identified", UpdatedAt: t0},
-		{ID: "k6", Key: "P-RISK-6", Title: "Wrong password accepted", Likelihood: 4, Impact: 4, Status: "identified", RequirementIDs: []string{"r1"}, UpdatedAt: t0},
+		{ID: "k6", Key: "P-RISK-6", Title: "Wrong password accepted", Likelihood: 4, Impact: 4, Status: "identified", RequirementIDs: []string{"r1"}, UpdatedAt: t0,
+			Attack: []string{"T1110.004", "T1078"}},
 	}
 }
 
@@ -96,13 +97,21 @@ func TestRiskReport(t *testing.T) {
 	if len(due.Rows) != 1 || due.Rows[0][0] != "P-RISK-1" || due.Rows[0][6] != "100" {
 		t.Fatal(due.Rows)
 	}
+	atk := section(t, ds, "attack")
+	if len(atk.Rows) != 2 || atk.Rows[0][0] != "T1078" || atk.Rows[0][1] != "Valid Accounts" || atk.Rows[1][1] != "Brute Force: Credential Stuffing" ||
+		atk.Rows[1][3] != "Credential Access" || atk.Rows[1][4] != "P-RISK-6" || atk.Rows[1][5] != "1" || !strings.HasPrefix(atk.Rows[1][6], "https://attack.mitre.org/") {
+		t.Fatal(atk.Rows)
+	}
+	if metric(t, sum, "Risks with ATT&CK techniques") != "1" || reg.Rows[1][23] != "T1110.004, T1078" {
+		t.Fatal(reg.Rows[1])
+	}
 	renderAll(t, ds)
 
 	// no risks: every section is still there
 	d := sampleData()
 	d.Risks = nil
 	ds, err = Build(Risks, d, nil)
-	if err != nil || len(ds.Sections) != 11 || metric(t, section(t, ds, "summary"), "Share of open risks verified") != "–" {
+	if err != nil || len(ds.Sections) != 12 || metric(t, section(t, ds, "summary"), "Share of open risks verified") != "–" {
 		t.Fatal(err, names(ds))
 	}
 }

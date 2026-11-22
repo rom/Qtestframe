@@ -14,21 +14,22 @@ import (
 
 const riskCols = `id, project_id, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at,
 	residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner,
-	accepted_by, accepted_name, accepted_at, acceptance_comment, acceptance_hash, custom_fields, catalog_ref`
+	accepted_by, accepted_name, accepted_at, acceptance_comment, acceptance_hash, custom_fields, catalog_ref, attack`
 
 func scanRisk(r interface{ Scan(...any) error }) (*model.Risk, error) {
 	var k model.Risk
 	var manual int
 	var acc sql.NullTime
-	var custom string
+	var custom, attack string
 	if err := r.Scan(&k.ID, &k.ProjectID, &k.Key, &k.Title, &k.Description, &k.Category, &k.Likelihood, &k.Impact, &k.Status, &k.Mitigation, &k.Owner, &k.CreatedBy, &k.CreatedAt, &k.UpdatedAt,
 		&k.ResidualLikelihood, &k.ResidualImpact, &manual, &k.ResidualJustification, &k.ReviewDate, &k.ReviewOwner,
-		&k.AcceptedBy, &k.AcceptedName, &acc, &k.AcceptanceComment, &k.AcceptanceHash, &custom, &k.CatalogRef); err != nil {
+		&k.AcceptedBy, &k.AcceptedName, &acc, &k.AcceptanceComment, &k.AcceptanceHash, &custom, &k.CatalogRef, &attack); err != nil {
 		return nil, err
 	}
 	k.ResidualManual = manual != 0
 	k.AcceptedAt = timePtr(acc)
 	k.CustomFields = decodeCustom(custom)
+	k.Attack = decodeTags(attack)
 	k.Score = k.Likelihood * k.Impact
 	k.Level = model.RiskLevel(k.Likelihood, k.Impact)
 	// until decorated: the inherent score
@@ -65,7 +66,27 @@ func validateRisk(k *model.Risk) error {
 		return Invalidf("status must be one of %s", strings.Join(model.RiskStatuses, ", "))
 	}
 	k.Category = strings.TrimSpace(k.Category)
+	k.Attack = cleanTechniques(k.Attack)
+	if len(k.Attack) > MaxRiskTechniques {
+		return Invalidf("a risk lists at most %d ATT&CK techniques", MaxRiskTechniques)
+	}
 	return validateResidual(k)
+}
+
+// MaxRiskTechniques bounds the ATT&CK and ATLAS techniques of a risk.
+const MaxRiskTechniques = 30
+
+// cleanTechniques trims technique ids to upper case and drops empty and
+// duplicate ones (the API checks them against the catalogue's list).
+func cleanTechniques(ids []string) []string {
+	out := make([]string, 0, len(ids))
+	for _, id := range ids {
+		id = strings.ToUpper(strings.TrimSpace(id))
+		if id != "" && !slices.Contains(out, id) {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 // CreateRisk adds a risk with a new key (PROJ-RISK-n) and its requirements.
@@ -91,9 +112,9 @@ func (s *Store) CreateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 		}
 		k.Key = key
 		if _, err := c.exec(ctx, `INSERT INTO risks (id, tenant_id, project_id, seq, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at,
-			residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner, custom_fields, catalog_ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner, custom_fields, catalog_ref, attack) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			k.ID, tenantID, k.ProjectID, seq, k.Key, k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.CreatedBy, k.CreatedAt, k.UpdatedAt,
-			k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields), k.CatalogRef); err != nil {
+			k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields), k.CatalogRef, encodeTags(k.Attack)); err != nil {
 			return mapErr(err, "risk")
 		}
 		return setRiskRequirements(ctx, c, tenantID, k.ProjectID, k.ID, k.RequirementIDs, nil)
@@ -112,9 +133,9 @@ func (s *Store) UpdateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 	}
 	k.CustomFields = custom
 	res, err := s.c(ctx).exec(ctx, `UPDATE risks SET title = ?, description = ?, category = ?, likelihood = ?, impact = ?, status = ?, mitigation = ?, owner = ?, updated_at = ?,
-		residual_likelihood = ?, residual_impact = ?, residual_manual = ?, residual_justification = ?, review_date = ?, review_owner = ?, custom_fields = ? WHERE id = ? AND tenant_id = ?`,
+		residual_likelihood = ?, residual_impact = ?, residual_manual = ?, residual_justification = ?, review_date = ?, review_owner = ?, custom_fields = ?, attack = ? WHERE id = ? AND tenant_id = ?`,
 		k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.UpdatedAt,
-		k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields), k.ID, tenantID)
+		k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, encodeCustom(k.CustomFields), encodeTags(k.Attack), k.ID, tenantID)
 	if err != nil {
 		return err
 	}
