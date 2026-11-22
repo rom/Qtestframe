@@ -10,7 +10,6 @@ import (
 	"github.com/rom/qtestframe/internal/store"
 )
 
-
 func TestVariantSetApplies(t *testing.T) {
 	vs := store.NewVariantSet([]model.Variant{
 		{ID: "us", Name: "US", Kind: "market", Attributes: map[string]string{"region": "US", "voltage": "110V"}, Position: 2},
