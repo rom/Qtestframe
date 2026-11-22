@@ -819,6 +819,7 @@ These are the permissions of the built-in roles until an organisation changes th
 | `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `requirement.write` |  |  |  |  | ✔ | ✔ |
 | `requirement.review` |  | ✔ |  |  | ✔ | ✔ |
+| `waiver.approve` |  |  |  |  | ✔ | ✔ |
 | `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `test.review` |  | ✔ |  | ✔ | ✔ | ✔ |
@@ -1308,6 +1309,7 @@ Projects can send signed events to other systems. Users with `project.update` se
 | comment | `comment.created` |
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
+| waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -1501,7 +1503,7 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**In a backup** (70 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `secret_keys`.
+**In a backup** (74 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `secret_keys`.
 
 **Not in a backup:** `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `suggest_history`.
 
@@ -1610,6 +1612,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 29 | `0029_suggest_history.sql` |
 | 30 | `0030_verification.sql` |
 | 31 | `0031_change_defect_correlations.sql` |
+| 32 | `0032_waivers_residual_soa.sql` |
 | 35 | `0035_external_refs.sql` |
 
 <!-- END GENERATED: migrations -->

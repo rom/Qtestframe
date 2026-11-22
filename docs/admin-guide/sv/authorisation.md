@@ -22,6 +22,7 @@ Det här är de inbyggda rollernas behörigheter tills en organisation ändrar d
 | `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `requirement.write` |  |  |  |  | ✔ | ✔ |
 | `requirement.review` |  | ✔ |  |  | ✔ | ✔ |
+| `waiver.approve` |  |  |  |  | ✔ | ✔ |
 | `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `test.review` |  | ✔ |  | ✔ | ✔ | ✔ |

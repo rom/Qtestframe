@@ -48,6 +48,7 @@ Projects can send signed events to other systems. Users with `project.update` se
 | comment | `comment.created` |
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
+| waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
 
 <!-- END GENERATED: webhook-events -->
 

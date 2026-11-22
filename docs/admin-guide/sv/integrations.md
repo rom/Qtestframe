@@ -48,6 +48,7 @@ Projekt kan skicka signerade händelser till andra system. Användare med `proje
 | comment | `comment.created` |
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
+| waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
 
 <!-- END GENERATED: webhook-events -->
 

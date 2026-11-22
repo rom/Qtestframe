@@ -22,6 +22,7 @@ These are the permissions of the built-in roles until an organisation changes th
 | `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `requirement.write` |  |  |  |  | ✔ | ✔ |
 | `requirement.review` |  | ✔ |  |  | ✔ | ✔ |
+| `waiver.approve` |  |  |  |  | ✔ | ✔ |
 | `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `test.review` |  | ✔ |  | ✔ | ✔ | ✔ |
