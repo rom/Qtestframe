@@ -827,3 +827,49 @@ tests:
           data: "TZ=Europe/Stockholm, LANG=sv_SE.UTF-8"
         - action: Jämför de två exporterna.
           expected: Filerna är identiska.
+risks:
+  - id: CMP-R01
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [api, breaking-change]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Semantic Versioning 2.0.0", "RFC 8594 (The Sunset HTTP Header Field)"]
+    mitigated_by: [CMP-08, CMP-09, CMP-10, CMP-16]
+    en:
+      title: Client integrations break after an upgrade
+      description: "A minor release renames a field, adds a value clients do not expect or drops an old API version without notice. Customers' integrations stop and data stops flowing between systems."
+      mitigation: Make no breaking changes within a major API version, tolerate unknown fields and values on both sides and announce the end of an old version well in advance.
+    sv:
+      title: Kunders integrationer slutar fungera efter en uppgradering
+      description: En mindre release byter namn på ett fält, lägger till ett värde som klienter inte väntar sig eller tar bort en gammal API-version utan förvarning. Kundernas integrationer stannar och data slutar flöda mellan systemen.
+      mitigation: "Gör inga bakåtinkompatibla ändringar inom en huvudversion av API:et, tolerera okända fält och värden i båda riktningar och meddela slutet för en gammal version i god tid."
+  - id: CMP-R02
+    category: data
+    likelihood: 2
+    impact: 4
+    tags: [time-zone, locale]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 8601-1:2019", "RFC 3629 (UTF-8)"]
+    mitigated_by: [CMP-17, CMP-13]
+    en:
+      title: "Data changed by the host's locale or time zone"
+      description: The server runs with another locale or time zone than in test. Dates shift by a day, decimal separators are misread and characters outside ASCII are damaged.
+      mitigation: Make behaviour independent of the host locale and time zone and use UTF-8 throughout.
+    sv:
+      title: Data ändras av värdens språkinställning eller tidszon
+      description: Servern körs med en annan språkinställning eller tidszon än i test. Datum förskjuts en dag, decimaltecken tolkas fel och tecken utanför ASCII förstörs.
+      mitigation: Gör beteendet oberoende av värdens språkinställning och tidszon och använd UTF-8 genomgående.
+  - id: CMP-R03
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [platforms, end-of-life]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 adaptability"]
+    mitigated_by: [CMP-15, CMP-04, CMP-01]
+    en:
+      title: Customers forced off supported platforms
+      description: A new release needs a newer database or browser than customers run, or stops working on the platform they were promised. Upgrades stall and customers stay on old, vulnerable versions.
+      mitigation: Support two major database versions and the listed browsers and server platforms, and announce platform changes in advance.
+    sv:
+      title: Kunder tvingas bort från plattformar som utlovats
+      description: En ny release kräver en nyare databas eller webbläsare än kunderna har, eller slutar fungera på den plattform som utlovats. Uppgraderingar skjuts upp och kunder blir kvar på gamla sårbara versioner.
+      mitigation: Stöd två huvudversioner av databasen och de angivna webbläsarna och serverplattformarna, och meddela plattformsändringar i förväg.

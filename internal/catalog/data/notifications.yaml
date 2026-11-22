@@ -731,3 +731,66 @@ tests:
           data: "inkommande webhook för en testkanal"
         - action: Ändra status på ett objekt.
           expected: Inom 1 minut visar kanalen objektet, den nya statusen och en länk till det.
+risks:
+  - id: NOTIF-R01
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [email, confidentiality]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V14.2.6 (minimum sensitive data)"]
+    mitigated_by: [NOTIF-11, MAILS-03]
+    attack: [T1114]
+    en:
+      title: Confidential content sent out in notification e-mails
+      description: "Notifications quote the changed text, comments or attachments. The content ends up in personal mailboxes, forwarded threads and mail servers outside the organisation's control."
+      mitigation: Send only a short notice with a link in e-mail and show the content after sign-in.
+    sv:
+      title: Konfidentiellt innehåll skickas ut i aviseringar via e-post
+      description: Aviseringar citerar den ändrade texten, kommentarer eller bilagor. Innehållet hamnar i privata brevlådor, vidarebefordrade trådar och e-postservrar utanför organisationens kontroll.
+      mitigation: Skicka bara en kort avisering med en länk via e-post och visa innehållet efter inloggning.
+  - id: NOTIF-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [phishing, security-notices]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-63B-4 §4.6 (account notifications)"]
+    mitigated_by: [NOTIF-12, MAILS-01]
+    attack: [T1098]
+    en:
+      title: Account takeover goes unnoticed because security notices are switched off
+      description: A user has turned off e-mail notifications, so no one is told when the password, e-mail address or second factor changes. An attacker who took over the account keeps it unnoticed.
+      mitigation: "Always send security notices about changes to sign-in details, whatever the user's notification preferences."
+    sv:
+      title: Kontokapning upptäcks inte eftersom säkerhetsmeddelanden är avstängda
+      description: En användare har stängt av aviseringar via e-post, så ingen får veta när lösenord, e-postadress eller andra faktor ändras. En angripare som tagit över kontot behåller det obemärkt.
+      mitigation: Skicka alltid säkerhetsmeddelanden om ändrade inloggningsuppgifter, oavsett användarens inställningar för aviseringar.
+  - id: NOTIF-R03
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [alert-fatigue, email-delivery]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9241-110:2020 suitability for the user's tasks", "RFC 5321 §4.2.1"]
+    mitigated_by: [NOTIF-14, NOTIF-07, NOTIF-10]
+    en:
+      title: Important notifications drowned or blocked as spam
+      description: Every small change sends a message and failed addresses are retried forever. Users filter the messages away, the sending domain is marked as spam and important notices no longer arrive.
+      mitigation: Combine repeated changes, offer a daily digest and stop sending to addresses that fail permanently.
+    sv:
+      title: Viktiga aviseringar drunknar eller stoppas som skräppost
+      description: Varje liten ändring skickar ett meddelande och felaktiga adresser försöks igen i all evighet. Användare filtrerar bort meddelandena, avsändardomänen klassas som skräppost och viktiga meddelanden når inte längre fram.
+      mitigation: Slå ihop upprepade ändringar, erbjud en daglig sammanfattning och sluta skicka till adresser som misslyckas permanent.
+  - id: NOTIF-R04
+    category: compliance
+    likelihood: 2
+    impact: 3
+    tags: [unsubscribe, e-privacy]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive 2002/58/EC Art. 13"]
+    mitigated_by: [NOTIF-08, NOTIF-05]
+    en:
+      title: Messages sent that recipients cannot opt out of
+      description: Notification e-mails have no working unsubscribe and preferences cannot be set per event. Recipients complain to the regulator and mail providers block the sender.
+      mitigation: Offer one-click unsubscribe in every notification e-mail and preferences per event type and channel.
+    sv:
+      title: Meddelanden skickas som mottagarna inte kan tacka nej till
+      description: Aviseringar via e-post saknar fungerande avregistrering och inställningar kan inte göras per händelse. Mottagare klagar hos tillsynsmyndigheten och e-postleverantörer blockerar avsändaren.
+      mitigation: Erbjud avregistrering med ett klick i varje avisering via e-post och inställningar per händelsetyp och kanal.

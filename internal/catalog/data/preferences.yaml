@@ -775,3 +775,49 @@ tests:
           expected: Varje förhållande är minst 7:1.
         - action: Mät kanterna på knappar och inmatningsfält.
           expected: Varje förhållande är minst 4,5:1.
+risks:
+  - id: PREF-R01
+    category: availability
+    likelihood: 2
+    impact: 3
+    tags: [stored-preferences, fault-tolerance]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 fault tolerance"]
+    mitigated_by: [PREF-12, PREF-04]
+    en:
+      title: Stored preference makes the application unusable for a user
+      description: A saved view or preference refers to a removed column or an invalid value. The page fails to load for that user and support must clean the data by hand.
+      mitigation: Fall back to the default when a stored preference is invalid and let users reset their preferences.
+    sv:
+      title: Sparad inställning gör programmet oanvändbart för en användare
+      description: En sparad vy eller inställning hänvisar till en borttagen kolumn eller ett ogiltigt värde. Sidan laddas inte för den användaren och supporten måste rensa data för hand.
+      mitigation: Använd standardvärdet när en sparad inställning är ogiltig och låt användare återställa sina inställningar.
+  - id: PREF-R02
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [accessibility, shortcuts]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "WCAG 2.2 SC 2.1.4", "WCAG 2.2 SC 1.4.4"]
+    mitigated_by: [PREF-10, PREF-11, PREF-16]
+    en:
+      title: Users with disabilities cannot adapt the interface
+      description: Single-key shortcuts are triggered by speech input, and text size, motion and contrast cannot be adjusted. Some users make unintended changes and others cannot work at all.
+      mitigation: Let users turn off single-key shortcuts and set text size, reduced motion and a high-contrast theme.
+    sv:
+      title: Användare med funktionsnedsättning kan inte anpassa gränssnittet
+      description: Kortkommandon med en tangent utlöses av röststyrning, och textstorlek, rörelse och kontrast kan inte justeras. Vissa användare gör oavsiktliga ändringar och andra kan inte arbeta alls.
+      mitigation: Låt användare stänga av kortkommandon med en tangent och ställa in textstorlek, minskad rörelse och ett tema med hög kontrast.
+  - id: PREF-R03
+    category: compliance
+    likelihood: 2
+    impact: 3
+    tags: [organisation-defaults, locked-settings]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 interaction capability"]
+    mitigated_by: [PREF-09, PREF-08]
+    en:
+      title: Users override settings the organisation must enforce
+      description: Every preference can be changed by each user, including those the organisation has to set uniformly, such as formats in official documents. Output becomes inconsistent and policies are not followed.
+      mitigation: Let administrators set organisation-wide defaults and lock the preferences that must be the same for everyone.
+    sv:
+      title: Användare ändrar inställningar som organisationen måste styra
+      description: Varje inställning kan ändras av varje användare, även sådana som organisationen måste sätta lika för alla, till exempel format i officiella dokument. Resultatet blir inkonsekvent och riktlinjer följs inte.
+      mitigation: Låt administratörer sätta standardvärden för hela organisationen och låsa de inställningar som måste vara lika för alla.

@@ -1111,3 +1111,49 @@ tests:
         - action: Mata in ett värde med punkt som decimaltecken som den svenska användaren.
           expected: Inmatningen avvisas med ett meddelande som visar det förväntade formatet.
           data: "1.234,5"
+risks:
+  - id: I18N-R01
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [time-zone, daylight-saving]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IANA Time Zone Database", "RFC 5545 §3.3.10"]
+    mitigated_by: [I18N-05, I18N-06, SCHED-02]
+    en:
+      title: Deadlines and schedules shift by an hour or a day
+      description: Times are stored in local time or without a time zone. At daylight saving changes or for users in another time zone, deadlines, reminders and jobs happen at the wrong time.
+      mitigation: "Store times in UTC, show them in the user's time zone and keep local times of recurring schedules across daylight saving changes."
+    sv:
+      title: Tidsfrister och scheman förskjuts en timme eller ett dygn
+      description: Tider lagras i lokal tid eller utan tidszon. Vid sommartidsomställningar eller för användare i en annan tidszon inträffar frister, påminnelser och jobb vid fel tid.
+      mitigation: Lagra tider i UTC, visa dem i användarens tidszon och behåll lokal tid för återkommande scheman över sommartidsomställningar.
+  - id: I18N-R02
+    category: data
+    likelihood: 3
+    impact: 3
+    tags: [unicode, names]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Unicode UAX #15 Normalization Forms", "W3C Personal names around the world"]
+    mitigated_by: [I18N-07, I18N-08, I18N-18]
+    en:
+      title: Names and text damaged or duplicates not found
+      description: Characters outside one alphabet are lost, names are forced into a fixed format and the same name in different Unicode forms is treated as two. Records are wrong and duplicates go unnoticed.
+      mitigation: Use UTF-8 throughout, normalise text before comparison and accept names and addresses in international formats.
+    sv:
+      title: Namn och text förstörs eller dubbletter hittas inte
+      description: Tecken utanför ett alfabet försvinner, namn tvingas in i ett fast format och samma namn i olika Unicode-former behandlas som två. Poster blir fel och dubbletter upptäcks inte.
+      mitigation: Använd UTF-8 genomgående, normalisera text före jämförelse och godta namn och adresser i internationella format.
+  - id: I18N-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [translations, numbers]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 maintainability", "Unicode CLDR number formats"]
+    mitigated_by: [I18N-17, I18N-16, I18N-24, I18N-04]
+    en:
+      title: Missing translations and misread numbers in another language
+      description: New texts ship without translation and numbers entered with a decimal comma are read as thousands. Users in that language misunderstand the interface and enter wrong amounts.
+      mitigation: "Fail the build on missing interface translations, mark fallbacks and read and format numbers by the user's locale."
+    sv:
+      title: Saknade översättningar och feltolkade tal på ett annat språk
+      description: Nya texter levereras utan översättning och tal med decimalkomma tolkas som tusental. Användare på det språket missförstår gränssnittet och anger fel belopp.
+      mitigation: Låt bygget misslyckas när översättningar saknas, markera reservtexter och läs och formatera tal efter användarens språkinställning.

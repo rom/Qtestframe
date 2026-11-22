@@ -967,3 +967,50 @@ tests:
           data: "50 objekt med uppdateringar under dagen"
         - action: Öppna plattformens batteristatistik efter 24 timmar.
           expected: Appens andel är högst 1 % av batteriet.
+risks:
+  - id: MOB-R01
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [push-notifications, lock-screen]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS-PLATFORM"]
+    mitigated_by: [MOB-09, MOB-08]
+    en:
+      title: Confidential content shown on a locked phone
+      description: Push notifications contain names, messages or case details. They appear on the lock screen and on paired watches where anyone nearby can read them.
+      mitigation: Send push notifications without confidential content and show the details only after the user opens the app.
+    sv:
+      title: Konfidentiellt innehåll visas på en låst telefon
+      description: Pushnotiser innehåller namn, meddelanden eller ärendeuppgifter. De visas på låsskärmen och på kopplade klockor där vem som helst i närheten kan läsa dem.
+      mitigation: Skicka pushnotiser utan konfidentiellt innehåll och visa detaljerna först när användaren öppnar appen.
+  - id: MOB-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [old-app-versions, updates]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS-CODE-2"]
+    mitigated_by: [MOB-17, MOB-01]
+    attack: [T1664, T1658]
+    en:
+      title: Users keep an old app version with a known vulnerability
+      description: The fix is released but nothing makes users update and old operating system versions stay supported. Vulnerable versions stay in use for months.
+      mitigation: Prompt users to update when their version is below the minimum and support only operating system versions that still receive security updates.
+    sv:
+      title: Användare behåller en gammal appversion med en känd sårbarhet
+      description: Rättningen släpps men inget får användarna att uppdatera och gamla versioner av operativsystemet stöds fortfarande. Sårbara versioner används i månader.
+      mitigation: Uppmana användare att uppdatera när deras version är lägre än minimiversionen och stöd bara versioner av operativsystemet som fortfarande får säkerhetsuppdateringar.
+  - id: MOB-R03
+    category: data
+    likelihood: 3
+    impact: 3
+    tags: [offline, conflicts]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 functional correctness", "ISO/IEC 25010:2023 fault tolerance"]
+    mitigated_by: [MOB-05, MOB-06, MOB-07]
+    en:
+      title: Work done in the field lost after reconnection
+      description: Changes made without a connection are not synchronised or conflict silently with changes from others. Inspections and reports made on site disappear.
+      mitigation: Synchronise offline changes after reconnection, show conflicts to the user and make the offline state visible.
+    sv:
+      title: Arbete som gjorts i fält försvinner efter återanslutning
+      description: Ändringar som gjorts utan anslutning synkroniseras inte eller krockar tyst med andras ändringar. Inspektioner och rapporter som gjorts på plats försvinner.
+      mitigation: Synkronisera ändringar som gjorts offline efter återanslutning, visa konflikter för användaren och gör offlineläget synligt.

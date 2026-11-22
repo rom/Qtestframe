@@ -668,3 +668,50 @@ tests:
           expected: De 5 ändringarna finns kvar i listan.
         - action: Anslut igen.
           expected: De 5 ändringarna tillämpas på servern.
+risks:
+  - id: SYNC-R01
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [conflicts, synchronisation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 integrity"]
+    mitigated_by: [SYNC-06, SYNC-07, SYNC-08, SYNC-04]
+    en:
+      title: Offline edits overwrite newer changes on the server
+      description: "A user works offline for days and synchronises. Changes are applied by device clock or as whole items, and colleagues' newer edits are silently lost."
+      mitigation: Merge edits field by field, detect conflicts with server versions instead of clocks and apply queued changes once and in order.
+    sv:
+      title: Ändringar som gjorts offline skriver över nyare ändringar på servern
+      description: En användare arbetar offline i flera dagar och synkroniserar. Ändringarna tillämpas efter enhetens klocka eller som hela objekt, och kollegors nyare ändringar försvinner utan förvarning.
+      mitigation: Slå ihop ändringar fält för fält, upptäck konflikter med serverns versioner i stället för klockor och tillämpa köade ändringar en gång och i ordning.
+  - id: SYNC-R02
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [lost-device, local-storage]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS-STORAGE"]
+    mitigated_by: [SYNC-10, MOBSEC-01]
+    attack: [T1409]
+    en:
+      title: Local copy of data remains on a device after access is revoked
+      description: A user leaves the organisation or loses a laptop, but the offline copy of projects stays in the browser or app. Whoever has the device reads the data without any sign-in.
+      mitigation: Remove local copies when access is revoked and protect stored data on the device.
+    sv:
+      title: Lokal kopia av data finns kvar på en enhet när åtkomsten har dragits in
+      description: En användare slutar eller tappar bort en dator, men offlinekopian av projekten finns kvar i webbläsaren eller appen. Den som har enheten läser data utan att logga in.
+      mitigation: Ta bort lokala kopior när åtkomsten dras in och skydda lagrade data på enheten.
+  - id: SYNC-R03
+    category: data
+    likelihood: 2
+    impact: 4
+    tags: [pending-changes, upgrade]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 recoverability"]
+    mitigated_by: [SYNC-12, SYNC-11, SYNC-03]
+    en:
+      title: Pending offline work lost in an upgrade or an interrupted sync
+      description: The client is upgraded or synchronisation breaks off while changes wait in the queue. The queue is dropped and hours of field work disappear without warning.
+      mitigation: Keep pending changes across upgrades, resume interrupted synchronisation and show the user what is still waiting.
+    sv:
+      title: Väntande offlinearbete försvinner vid en uppgradering eller avbruten synkronisering
+      description: Klienten uppgraderas eller synkroniseringen bryts medan ändringar väntar i kön. Kön kastas och timmar av fältarbete försvinner utan förvarning.
+      mitigation: Behåll väntande ändringar vid uppgraderingar, återuppta avbruten synkronisering och visa användaren vad som fortfarande väntar.

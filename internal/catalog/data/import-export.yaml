@@ -711,3 +711,66 @@ tests:
         - action: Exportera till CSV och Excel och titta på huvudraderna eller dokumentegenskaperna.
           expected: Samma tre värden finns i båda.
           data: "dokumentegenskaper i Excel"
+risks:
+  - id: IMEX-R01
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [csv-injection, export]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1236 (CSV injection)"]
+    mitigated_by: [IMEX-11]
+    attack: [T1204.002]
+    en:
+      title: "Exported spreadsheet runs an attacker's formula"
+      description: A user enters a value that starts with a formula character. When a colleague opens the export in a spreadsheet the formula runs and can fetch content or leak data.
+      mitigation: Neutralise values that start with formula characters in every CSV and spreadsheet export.
+    sv:
+      title: Exporterat kalkylblad kör en angripares formel
+      description: En användare anger ett värde som börjar med ett formeltecken. När en kollega öppnar exporten i ett kalkylprogram körs formeln och kan hämta innehåll eller läcka data.
+      mitigation: Neutralisera värden som börjar med formeltecken i varje export till CSV och kalkylblad.
+  - id: IMEX-R02
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [import, validation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25012:2008 accuracy", "ISO/IEC 25010:2023 integrity"]
+    mitigated_by: [IMEX-02, IMEX-03, IMEX-12]
+    en:
+      title: Faulty import corrupts existing data
+      description: A file with shifted columns, a wrong encoding or invalid rows is imported and half of it is written. Existing items are overwritten with wrong values and nobody knows which rows to fix.
+      mitigation: Validate the whole file and show a report before anything is written, never write a partial import without consent and return the rejected rows as a file.
+    sv:
+      title: Felaktig import förstör befintliga data
+      description: En fil med förskjutna kolumner, fel teckenkodning eller ogiltiga rader importeras och hälften skrivs. Befintliga objekt skrivs över med fel värden och ingen vet vilka rader som ska rättas.
+      mitigation: Validera hela filen och visa en rapport innan något skrivs, skriv aldrig en delvis import utan samtycke och lämna tillbaka de avvisade raderna som en fil.
+  - id: IMEX-R03
+    category: supply-chain
+    likelihood: 2
+    impact: 4
+    tags: [lock-in, portability]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 20", "ISO/IEC 19941:2017"]
+    mitigated_by: [IMEX-07, IMEX-10, IMEX-15]
+    en:
+      title: Organisation cannot leave the service with its data
+      description: The export lacks some data, loses relations or uses an undocumented format. Moving to another system becomes so costly that the organisation stays against its will.
+      mitigation: Offer an export of all organisation data in documented formats with a format version, and verify that an export can be imported again without loss.
+    sv:
+      title: Organisationen kan inte lämna tjänsten med sina data
+      description: Exporten saknar vissa data, tappar samband eller använder ett odokumenterat format. Att byta system blir så dyrt att organisationen stannar mot sin vilja.
+      mitigation: Erbjud export av alla organisationens data i dokumenterade format med formatversion och kontrollera att en export kan importeras igen utan förlust.
+  - id: IMEX-R04
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [export, data-leak]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GDPR Art. 32(1)(a)", "CWE-359 (exposure of private personal information)"]
+    mitigated_by: [IMEX-08, ACC-01, SLOG-01]
+    attack: [T1567]
+    en:
+      title: Bulk export used to take data out of the organisation
+      description: A user with broad read rights exports complete lists of customers or personal data before leaving. The copy is outside every control of the organisation.
+      mitigation: Limit exports to what the user may read, record every export in the audit log and alert on unusually large exports.
+    sv:
+      title: Massexport används för att föra ut data ur organisationen
+      description: En användare med breda läsbehörigheter exporterar fullständiga listor över kunder eller personuppgifter innan hen slutar. Kopian hamnar utanför organisationens alla kontroller.
+      mitigation: Begränsa exporter till det användaren får läsa, logga varje export i granskningsloggen och larma vid ovanligt stora exporter.
