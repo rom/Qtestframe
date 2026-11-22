@@ -80,7 +80,7 @@ const totals = computed(() => {
         </RouterLink>
         <span v-if="kinds.length" class="row nowrap" style="gap: 6px">
           <label for="atk-type" class="small">{{ t('catalog.types.label') }}</label>
-          <Select v-model="catalogue" input-id="atk-type" :options="kinds" option-label="label" option-value="value" />
+          <Select v-model="catalogue" input-id="atk-type" :options="kinds" option-label="label" option-value="value" :aria-label="t('catalog.types.label')" />
         </span>
       </div>
     </div>
@@ -115,7 +115,7 @@ const totals = computed(() => {
                   <a :href="ta.url" target="_blank" rel="noopener noreferrer"><span class="key">{{ ta.id }}</span> {{ ta.name }}<span class="sr-only"> ({{ t('links.newTab') }})</span></a>
                 </th>
                 <td class="num">
-                  <RouterLink v-if="ta.risks" :to="riskLink({ tactic: ta.id })" :aria-label="t('attack.coverage.showTactic', { n: ta.risks, tactic: ta.name }, ta.risks)">{{ ta.risks }}</RouterLink>
+                  <RouterLink v-if="ta.risks" :to="riskLink({ tactic: ta.id })">{{ ta.risks }}<span class="sr-only">: {{ t('attack.coverage.showTactic', { n: ta.risks, tactic: ta.name }, ta.risks) }}</span></RouterLink>
                   <template v-else>0</template>
                 </td>
                 <td class="num">{{ ta.requirements }}</td>
@@ -170,10 +170,11 @@ const totals = computed(() => {
 .atk-cell { display: flex; flex-direction: column; gap: 1px; padding: 5px 7px; border-radius: 6px; border: 1px solid var(--qtf-border); color: inherit; text-decoration: none; font-size: 12px; }
 .atk-cell:hover, .atk-cell:focus-visible { border-color: var(--p-primary-color); }
 .atk-cell .atk-name { overflow-wrap: anywhere; }
-.atk-cell.s1 { background: color-mix(in srgb, var(--p-primary-color) 8%, transparent); }
-.atk-cell.s2 { background: color-mix(in srgb, var(--p-primary-color) 15%, transparent); }
-.atk-cell.s3 { background: color-mix(in srgb, var(--p-primary-color) 22%, transparent); }
-.atk-cell.s4 { background: color-mix(in srgb, var(--p-primary-color) 30%, transparent); border-left: 4px solid var(--p-primary-color); }
+.atk-cell .key { color: inherit; font-weight: 650; }
+.atk-cell.s1 { background: color-mix(in srgb, var(--p-primary-color) 6%, transparent); }
+.atk-cell.s2 { background: color-mix(in srgb, var(--p-primary-color) 10%, transparent); border-left: 2px solid var(--p-primary-color); }
+.atk-cell.s3 { background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); border-left: 3px solid var(--p-primary-color); }
+.atk-cell.s4 { background: color-mix(in srgb, var(--p-primary-color) 18%, transparent); border-left: 5px solid var(--p-primary-color); }
 .atk-none { padding: 4px; }
 tr.muted th a, tr.muted td { color: var(--qtf-muted); }
 </style>

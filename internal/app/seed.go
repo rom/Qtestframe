@@ -251,7 +251,7 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 		return nil, err
 	}
 	if err := st.CreateRisk(ctx, tenantID, &model.Risk{ProjectID: p.ID, Title: "Credential stuffing takes over accounts", Category: "security",
-		Likelihood: 4, Impact: 5, Owner: "security team", CreatedBy: "seed"}); err != nil {
+		Likelihood: 4, Impact: 5, Owner: "security team", CreatedBy: "seed", Attack: []string{"T1110.004", "T1078"}}); err != nil {
 		return nil, err
 	}
 	run := &model.TestRun{ProjectID: p.ID, Name: "Sprint 12 regression", Environment: "staging", Build: "1.4.0-rc1", CreatedBy: "seed"}

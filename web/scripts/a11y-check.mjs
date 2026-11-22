@@ -324,6 +324,10 @@ async function discover(request) {
     // catalogue risks: the tab, a risk preview with its mitigating requirements, the import dialog with the risk options
     { name: 'catalog-risks', path: `${p}/catalog?tab=risks&lang=sv`, wait: '.cat-list li, .list-pane .empty' },
     { name: 'catalog-risk-preview', path: `${p}/catalog?tab=risks&item=AUTH-R01&lang=en`, wait: '#cp-title' },
+    // MITRE ATT&CK: the risk filters, the coverage page (matrix and table) and a risk dialog with techniques
+    { name: 'catalog-risks-attack', path: `${p}/catalog?tab=risks&attack=T1110&lang=en`, wait: '.cat-list li, .list-pane .empty' },
+    { name: 'catalog-attack', path: `${p}/catalog/attack`, wait: '.atk-matrix' },
+    { name: 'catalog-attack-ics', path: `${p}/catalog/attack?matrix=ics`, wait: '.atk-matrix' },
     { name: 'catalog-risk-import-dialog', path: `${p}/catalog?tab=risks`, open: ['.cat-list li .p-checkbox', '.catalog-bar button:has(.pi-plus)'], wait: '.p-dialog #ci-include-reqs' },
     hasTags && { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
@@ -363,6 +367,7 @@ async function discover(request) {
     { name: 'traceability-criteria', path: `${p}/traceability?view=matrix`, open: '#tcrit', wait: 'tr.crit-row' },
     // waivers, residual risk and the Statement of Applicability (seed: an approved waiver, a deviation draft, SoA decisions)
     { name: 'risks-residual', path: `${p}/risks`, open: '.heat-card .p-selectbutton .p-togglebutton:nth-child(2)', wait: '.heat' },
+    hasRisks && { name: 'risk-dialog-attack', path: `${p}/risks?q=`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog #risk-attack' },
     hasRisks && { name: 'risk-dialog-residual', path: `${p}/risks`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog fieldset.residual' },
     hasRisks && { name: 'risk-accept-dialog', path: `${p}/risks`, open: ['.p-datatable-tbody tr:first-child .link-button', '.p-dialog fieldset.residual button:has(.pi-pen-to-square)'], wait: '.p-dialog .esign' },
     { name: 'waivers', path: `${p}/waivers`, wait: '.p-datatable-tbody tr' },
