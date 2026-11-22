@@ -818,7 +818,7 @@ func fetchFrameworkCoverage(c *widgetCall) (any, error) {
 		}
 		var v struct {
 			Categories []struct {
-				ID              string
+				ID               string
 				Addressed, Total int
 			} `json:"categories"`
 		}

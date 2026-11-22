@@ -172,7 +172,9 @@ func (s *Server) findDashboard(r *http.Request, p *Principal, pid string) (*mode
 	return nil, notFoundDashboard()
 }
 
-func notFoundDashboard() error { return &apiErr{http.StatusNotFound, "not_found", "dashboard not found"} }
+func notFoundDashboard() error {
+	return &apiErr{http.StatusNotFound, "not_found", "dashboard not found"}
+}
 
 func (s *Server) handleListDashboards(w http.ResponseWriter, r *http.Request, p *Principal) {
 	pr, ok := s.project(w, r, p)
