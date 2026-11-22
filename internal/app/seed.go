@@ -243,6 +243,14 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedCoverageTests(ctx, st, tenantID, p.ID, reqs, tf, tf3, tf4); err != nil {
 		return nil, err
 	}
+	// change impact, stale results, blocking defects and a regression (seedcorrelations.go)
+	var changed *model.Requirement
+	if len(reqs) > 4 {
+		changed = reqs[3] // reqs[4] refines it
+	}
+	if err := seedCorrelations(ctx, st, tenantID, run, changed); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

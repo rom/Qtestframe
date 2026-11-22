@@ -91,6 +91,21 @@ func TestSeedDemoHistory(t *testing.T) {
 	if err != nil || len(fl) == 0 {
 		t.Fatalf("flaky %v %v", fl, err)
 	}
+	// change and defect correlations: a regression, blocked requirements, a suspect relation, stale results
+	set, _ := st.CorrelationSettings(ctx, ten.ID, p.ID)
+	blocks, err := st.DefectBlocks(ctx, ten.ID, p.ID, set)
+	if err != nil || len(blocks) == 0 {
+		t.Fatalf("blocks %v %v", blocks, err)
+	}
+	if n, err := st.SuspectRelationCounts(ctx, ten.ID, p.ID); err != nil || len(n) != 1 {
+		t.Fatalf("suspect relations %v %v", n, err)
+	}
+	if x, err := st.LoadStaleIndex(ctx, ten.ID, p.ID); err != nil || len(x.StaleTests()) == 0 {
+		t.Fatalf("stale %v", err)
+	}
+	if rc, err := st.RegressionCounts(ctx, ten.ID, p.ID); err != nil || len(rc) == 0 {
+		t.Fatalf("regressions %v %v", rc, err)
+	}
 	if _, err := st.RecordSnapshot(ctx, ten.ID, p.ID, false); err != nil {
 		t.Fatal(err)
 	}
