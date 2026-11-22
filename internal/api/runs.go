@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -55,6 +56,8 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		ReleaseID   *string  `json:"release_id"`
 		// ConfigurationIDs: the configurations the run targets.
 		ConfigurationIDs []string `json:"configuration_ids"`
+		// CustomFields: values of the project's run custom fields.
+		CustomFields model.CustomValues `json:"custom_fields"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -89,7 +92,7 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		}
 	}
 	run := &model.TestRun{ProjectID: pr.ID, Name: req.Name, Description: req.Description,
-		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email, ReleaseID: req.ReleaseID}
+		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email, ReleaseID: req.ReleaseID, CustomFields: req.CustomFields}
 	for _, id := range req.ConfigurationIDs {
 		run.Configurations = append(run.Configurations, model.ConfigurationRef{ID: id})
 	}
@@ -133,8 +136,14 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		// ConfigurationIDs replaces the configurations the run targets
 		// (see PUT /runs/{id}/configurations).
 		ConfigurationIDs *[]string `json:"configuration_ids"`
+		// CustomFields are merged into the run's values (null removes one).
+		CustomFields json.RawMessage `json:"custom_fields"`
 	}
 	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if err := mergeCustom(req.CustomFields, &run.CustomFields); err != nil {
 		s.fail(w, r, err)
 		return
 	}

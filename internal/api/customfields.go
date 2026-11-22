@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"slices"
 	"sort"
@@ -615,4 +616,19 @@ func (s *Server) importCustom(r *http.Request, p *Principal, pr *model.Project, 
 		}
 	}
 	return out
+}
+
+// mergeCustom merges a custom_fields JSON object of a PATCH into an item's
+// values (null removes a value; validated when the item is saved).
+func mergeCustom(raw json.RawMessage, dst *model.CustomValues) error {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil
+	}
+	if *dst == nil {
+		*dst = model.CustomValues{}
+	}
+	if err := json.Unmarshal(raw, dst); err != nil {
+		return badRequest("custom_fields must be an object of field key → value: %v", err)
+	}
+	return nil
 }

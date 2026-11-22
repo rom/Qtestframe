@@ -98,7 +98,7 @@ func (s *Server) handleCreateDefect(w http.ResponseWriter, r *http.Request, p *P
 		return
 	}
 	d := &model.Defect{ProjectID: pr.ID, Title: req.Title, Description: req.Description, Status: req.Status, Severity: req.Severity,
-		Priority: req.Priority, Assignee: req.Assignee, ExternalKey: req.ExternalKey, ExternalURL: req.ExternalURL, CreatedBy: p.User.Email, Links: req.Links}
+		Priority: req.Priority, Assignee: req.Assignee, ExternalKey: req.ExternalKey, ExternalURL: req.ExternalURL, CreatedBy: p.User.Email, Links: req.Links, CustomFields: req.CustomFields}
 	if err := s.Store.CreateDefect(r.Context(), p.TenantID(), d); err != nil {
 		s.fail(w, r, err)
 		return
@@ -135,8 +135,19 @@ func (s *Server) handleUpdateDefect(w http.ResponseWriter, r *http.Request, p *P
 		s.fail(w, r, err)
 		return
 	}
+	var all map[string]json.RawMessage
+	if err := json.Unmarshal(body, &all); err != nil {
+		s.fail(w, r, badRequest("invalid JSON: %v", err))
+		return
+	}
+	if err := mergeCustom(all["custom_fields"], &d.CustomFields); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	delete(all, "custom_fields")
+	rest, _ := json.Marshal(all)
 	var raw map[string]*string
-	if err := json.Unmarshal(body, &raw); err != nil {
+	if err := json.Unmarshal(rest, &raw); err != nil {
 		s.fail(w, r, badRequest("invalid JSON: %v", err))
 		return
 	}

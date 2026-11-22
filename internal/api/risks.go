@@ -63,7 +63,7 @@ func (s *Server) handleCreateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	k := &model.Risk{ProjectID: pr.ID, Title: req.Title, Description: req.Description, Category: req.Category, Likelihood: req.Likelihood,
-		Impact: req.Impact, Status: req.Status, Mitigation: req.Mitigation, Owner: req.Owner, CreatedBy: p.User.Email, RequirementIDs: req.RequirementIDs}
+		Impact: req.Impact, Status: req.Status, Mitigation: req.Mitigation, Owner: req.Owner, CreatedBy: p.User.Email, RequirementIDs: req.RequirementIDs, CustomFields: req.CustomFields}
 	if err := s.Store.CreateRisk(r.Context(), p.TenantID(), k); err != nil {
 		s.fail(w, r, err)
 		return
@@ -100,6 +100,10 @@ func (s *Server) handleUpdateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(body, &raw); err != nil {
 		s.fail(w, r, badRequest("invalid JSON: %v", err))
+		return
+	}
+	if err := mergeCustom(raw["custom_fields"], &k.CustomFields); err != nil {
+		s.fail(w, r, err)
 		return
 	}
 	for name, dst := range map[string]any{"title": &k.Title, "description": &k.Description, "category": &k.Category, "status": &k.Status,
