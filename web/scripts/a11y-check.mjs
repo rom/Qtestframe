@@ -319,6 +319,9 @@ async function discover(request) {
     // CI/CD: the CI setup panel (templates) and the server-side posting to GitLab with its log
     { name: 'ci-setup', path: `${p}/settings?tab=project`, wait: '.ci-setup pre.ci-template' },
     { name: 'ci-posting', path: `${p}/settings?tab=project`, wait: '.ci-posting .ci-deliveries li' },
+    // Generate test code: the dialog with the preview of the automated tests' stubs, and with the selection (bulk bar)
+    { name: 'test-stubs-dialog', path: `${p}/tests?q=${encodeURIComponent('execution_type:automated')}`, open: 'button.stubs-button', wait: '.stubs-dialog [data-testid="stubs-code"]' },
+    { name: 'test-stubs-dialog-selection', path: `${p}/tests`, open: ['.p-datatable-tbody tr:first-child .p-checkbox', '.bulkbar button:has(.pi-code)'], wait: '.stubs-dialog [data-testid="stubs-code"]' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
     // the requirement and test catalogue: both tabs, a selection, the preview, the import dialog, the areas drawer
