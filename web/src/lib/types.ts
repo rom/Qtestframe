@@ -562,6 +562,9 @@ export interface TestRun {
   variant_name?: string
   build_id?: string | null
   build_label?: string
+  /** the test cycle that created the run */
+  cycle_id?: string | null
+  cycle_name?: string
 }
 
 export interface StepResult {
@@ -1063,6 +1066,8 @@ export interface ExitCriterion {
   threshold?: number
   /** minimum severity (defects), risk level (risks) or rule severity (trace_rules: error | warning) */
   level?: string
+  /** the test cycle of cycle_executed */
+  cycle_id?: string
 }
 
 export interface Release {
@@ -1519,4 +1524,130 @@ export interface QualityReport {
   review_turnaround: QualityDurations & { pending: number; oldest_pending_days: number; trend: QualityPeriod[] }
   fix_time: QualityDurations & { open: number; by_severity: (QualityDurations & { severity: string })[]; trend: QualityPeriod[] }
   requirement_quality: { requirements: number; with_warnings: number; percent: number; by_rule: QualityCount[]; trend: QualityPeriod[]; items: QualityItem[] }
+}
+
+// ---------- test cycles (internal/model/cycles.go) ----------
+
+export interface CycleProgress {
+  planned: number
+  executed: number
+  passed: number
+  failed: number
+  blocked: number
+  skipped: number
+  in_progress: number
+  not_run: number
+  not_in_run: number
+  unassigned: number
+  estimated_minutes: number
+  remaining_minutes: number
+  actual_ms: number
+  estimated_minutes_executed: number
+  percent_executed: number
+  percent_passed: number
+}
+
+export interface TestCycle {
+  id: string
+  project_id: string
+  name: string
+  goal: string
+  description: string
+  /** planned | active | closed */
+  status: string
+  owner_id: string
+  release_id: string | null
+  variant_id: string | null
+  build_id: string | null
+  environment: string
+  configuration_ids: string[]
+  start_date: string
+  end_date: string
+  scheduled_start_at: string | null
+  schedule_id: string | null
+  version: number
+  started_at: string | null
+  closed_at: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+  release_name?: string
+  variant_name?: string
+  build_label?: string
+  run_ids: string[]
+  progress: CycleProgress
+}
+
+export interface TestCycleTest {
+  id: string
+  cycle_id: string
+  test_case_id: string
+  test_key: string
+  test_title: string
+  configuration_id: string | null
+  configuration_name?: string
+  assignee_id: string
+  estimate_minutes: number
+  position: number
+  added_by: string
+  added_at: string
+  execution_id: string | null
+  run_id: string | null
+  status: string
+  executed_by?: string
+  finished_at: string | null
+  duration_ms: number
+}
+
+export interface CycleTesterLoad {
+  assignee_id: string
+  planned: number
+  executed: number
+  passed: number
+  failed: number
+  blocked: number
+  estimated_minutes: number
+  remaining_minutes: number
+  actual_ms: number
+}
+
+export interface CycleBurndownPoint {
+  day: string
+  /** null after today */
+  remaining: number | null
+  remaining_minutes: number | null
+  ideal: number
+  ideal_minutes: number
+}
+
+export interface CycleReport {
+  cycle: TestCycle
+  testers: CycleTesterLoad[]
+  burndown: CycleBurndownPoint[]
+}
+
+export interface CycleSchedule {
+  id: string
+  project_id: string
+  name_pattern: string
+  template_cycle_id: string | null
+  template_name?: string
+  query: string
+  owner_id: string
+  frequency: 'daily' | 'weekly' | 'monthly' | string
+  weekday: number
+  day_of_month: number
+  time: string
+  timezone: string
+  duration_days: number
+  auto_start: boolean
+  enabled: boolean
+  runs: number
+  next_run_at: string | null
+  last_run_at: string | null
+  last_cycle_id: string | null
+  last_error: string
+  created_by: string
+  created_at: string
+  updated_at: string
 }

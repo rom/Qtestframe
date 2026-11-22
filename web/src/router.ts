@@ -41,6 +41,8 @@ const routes: RouteRecordRaw[] = [
             component: () => import('./views/ExecutionRunnerView.vue'),
             props: true,
           },
+          { path: 'cycles', name: 'cycles', component: () => import('./views/CyclesView.vue'), meta: { perm: P.runRead } },
+          { path: 'cycles/:cycleId', name: 'cycle', component: () => import('./views/CycleDetailView.vue'), props: true, meta: { perm: P.runRead } },
           { path: 'releases', name: 'releases', component: () => import('./views/ReleasesView.vue'), meta: { perm: P.projectRead } },
           { path: 'defects', name: 'defects', component: () => import('./views/DefectsView.vue'), meta: { perm: P.projectRead } },
           { path: 'risks', name: 'risks', component: () => import('./views/RisksView.vue'), meta: { perm: P.requirementRead } },

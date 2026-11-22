@@ -150,7 +150,7 @@ export const QUERY_OPERATORS: QueryHelpEntry[] = [
   { example: '>  >=  <  <=', meaning: 'numeric or date comparison', id: 'opCompare' },
 ]
 
-export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit' | 'defect', string[]> = {
+export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit' | 'defect' | 'cycle', string[]> = {
   requirement: [
     'key', 'title', 'description', 'obligation', 'type', 'priority', 'status', 'source', 'rationale', 'owner',
     'tag', 'version', 'folder', 'category', 'dimension', 'coverage', 'linked', 'created_by', 'created_at',
@@ -165,10 +165,15 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' |
     'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'version', 'mention', 'depends_on', 'suspect', 'flaky', 'flakiness', 'catalog', 'stale',
     'element',
     'variant', 'applicability',
+    'cycle',
   ],
-  run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at'],
+  run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at', 'cycle'],
   execution: ['key', 'title', 'status', 'assignee', 'executed_by', 'notes', 'output', 'defect', 'mention'],
   document: ['name', 'description', 'tag', 'kind', 'type', 'uploaded_by', 'created_at', 'size', 'linked'],
   audit: ['action', 'entity', 'entity_id', 'user', 'details', 'created_at'],
   defect: ['key', 'title', 'description', 'status', 'severity', 'priority', 'assignee', 'external', 'created_by', 'open', 'linked'],
+  cycle: [
+    'name', 'goal', 'description', 'status', 'owner', 'release', 'variant', 'build', 'environment', 'configuration', 'start', 'end',
+    'planned', 'executed', 'progress', 'passed', 'failed', 'blocked', 'unassigned', 'test', 'assignee', 'created_by', 'created_at',
+  ],
 }

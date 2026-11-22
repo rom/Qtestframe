@@ -21,6 +21,7 @@ export const P = {
   runRead: 'run.read',
   runWrite: 'run.write',
   runExecute: 'run.execute',
+  cyclePlan: 'cycle.plan',
   scriptExecute: 'script.execute',
   export: 'export',
   auditRead: 'audit.read',
@@ -61,6 +62,7 @@ export const PROJECT_PERMISSIONS: ReadonlySet<string> = new Set<string>([
   P.runRead,
   P.runWrite,
   P.runExecute,
+  P.cyclePlan,
   P.scriptExecute,
   P.export,
 ])

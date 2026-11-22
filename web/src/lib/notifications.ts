@@ -24,6 +24,8 @@ export function notificationTarget(n: Pick<AppNotification, 'project_id' | 'enti
       return { name: 'waivers', params, query: { waiver: n.entity_id } }
     case 'execution':
       return { name: 'runs', params }
+    case 'cycle':
+      return { name: 'cycle', params: { ...params, cycleId: n.entity_id } }
   }
   return { name: 'dashboard', params }
 }

@@ -17,9 +17,10 @@ export const CRITERION_TYPES = [
   'trace_rules',
   'residual_risk',
   'no_blocking_defects',
+  'cycle_executed',
 ] as const
 /** Criteria measured in percent of a total, with a threshold. */
-export const PERCENT_CRITERIA = ['coverage', 'passed', 'executed', 'approved'] as const
+export const PERCENT_CRITERIA = ['coverage', 'passed', 'executed', 'approved', 'cycle_executed'] as const
 /** Defect severities from most to least severe (no_open_defects level). */
 export const DEFECT_SEVERITIES = ['critical', 'major', 'minor', 'trivial'] as const
 /** The least a release note must have when releasing despite a no-go. */
@@ -42,7 +43,7 @@ export function criterionParam(type: string): CriterionParam {
 export function newCriterion(type: string): ExitCriterion {
   switch (criterionParam(type)) {
     case 'threshold':
-      return { type, threshold: 100 }
+      return type === 'cycle_executed' ? { type, threshold: 100, cycle_id: '' } : { type, threshold: 100 }
     case 'severity':
       return { type, level: 'major' }
     case 'riskLevel':
@@ -67,7 +68,9 @@ export function cleanCriteria(list: readonly ExitCriterion[]): ExitCriterion[] {
     switch (criterionParam(c.type)) {
       case 'threshold': {
         const n = Number(c.threshold)
-        return { type: c.type, threshold: Number.isFinite(n) && n > 0 ? Math.min(100, n) : 100 }
+        const out: ExitCriterion = { type: c.type, threshold: Number.isFinite(n) && n > 0 ? Math.min(100, n) : 100 }
+        if (c.type === 'cycle_executed') out.cycle_id = c.cycle_id ?? ''
+        return out
       }
       case 'severity':
       case 'riskLevel':
@@ -92,10 +95,11 @@ type T = (key: string, params?: Record<string, unknown>) => string
  * "No open defects of severity major or higher". level(kind, value)
  * translates a severity or risk level.
  */
-export function criterionText(c: ExitCriterion, t: T, level: (kind: 'severity' | 'riskLevel', value: string) => string): string {
+export function criterionText(c: ExitCriterion, t: T, level: (kind: 'severity' | 'riskLevel', value: string) => string, cycleName: (id: string) => string = () => ''): string {
   const base = `releasesView.criterion.${c.type}`
   switch (criterionParam(c.type)) {
     case 'threshold':
+      if (c.type === 'cycle_executed') return t(`${base}.withThreshold`, { threshold: percent(c.threshold || 100), cycle: cycleName(c.cycle_id ?? '') || '…' })
       return t(`${base}.withThreshold`, { threshold: percent(c.threshold || 100) })
     case 'severity':
     case 'riskLevel': {
