@@ -23,6 +23,7 @@ import TraceRuleViolations from './TraceRuleViolations.vue'
 import { P } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
+import SimilarItemsPanel from './SimilarItemsPanel.vue'
 import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, ref, watch } from 'vue'
@@ -577,6 +578,16 @@ const scriptPlaceholder = computed(() => {
         <label>{{ t('common.description') }}</label>
         <MentionInput v-model="form.description" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
       </div>
+      <SimilarItemsPanel
+        v-if="canWrite"
+        class="full"
+        kind="test"
+        :project-id="projectId"
+        :title="form.title"
+        :description="form.description"
+        :details="[form.preconditions, form.expected_result, ...form.steps.map((s) => `${s.action} ${s.expected}`)]"
+        :exclude-id="item?.id"
+      />
       <div v-field class="field full">
         <label>{{ t('tests.preconditions') }}</label>
         <HelpTip id="test.preconditions" :label="t('tests.preconditions')" />

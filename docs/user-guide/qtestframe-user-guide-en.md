@@ -26,6 +26,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Exploratory testing](#exploratory-testing) | Session-based exploratory testing: charters, the session timer, typed notes with keyboard shortcuts, defects from notes, debriefs, metrics and the session report |
 | [Waivers, residual risk and the SoA](#waivers-residual-risk-and-the-statement-of-applicability) | Waivers and deviations with signed approvals, residual risk and its acceptance, the Statement of Applicability (ISO/IEC 27001 Annex A) |
 | [Traceability and coverage](#traceability-and-coverage) | The traceability matrix, how coverage is calculated, the dashboard |
+| [Duplicates and conflicts](#duplicates-and-conflicts) | Similar requirements while writing, suspected duplicate requirements and tests, potentially conflicting requirements, merging, thresholds |
 | [Variants and code](#variants-and-code) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
 | [Baselines](#baselines) | Freezing a release and comparing versions |
 | [Discussions](#discussions) | Threaded comments on items with Markdown, @mentions, reactions, resolving, and the project's Discussions page |
@@ -1146,7 +1147,8 @@ Select a row to see the full text on the right (on a phone it opens as a panel):
    - **Source of the requirements**: the cited standards (default) or one of the project's sources.
    - **Also add the tests that verify the chosen requirements** (on by default).
    - **Add copies of items already in the project**: off by default, so items the project already has are skipped.
-4. The summary shows how many requirements and tests will be added and how many are skipped. Select **Add**.
+4. The summary shows how many requirements and tests will be added and how many are skipped. When some of the chosen requirements say the same thing as requirements the project already has (written by hand, or from another catalogue entry), it lists them with the most similar project requirement and its similarity, and **Leave out the requirements similar to existing ones** skips them (reason *similar*). See [Duplicates and conflicts](#duplicates-and-conflicts).
+5. Select **Add**.
 
 At most 500 items can be added at once. The import is all or nothing: if something fails, nothing is added.
 
@@ -1177,7 +1179,7 @@ Risks the project already has from the catalogue are skipped, like requirements 
 
 ## After adding
 
-A box at the top of the page sums up what was added. **Open the added requirements**, **Open the added tests** and **Open the added risks** open the lists filtered to the new items. **Undo** (or Ctrl+Z) moves them to the trash (risks are deleted); redo brings them back with their links. Folders that the import created stay.
+A box at the top of the page sums up what was added, and how many of the added requirements are similar to requirements the project had, with a link to **Review duplicates**. **Open the added requirements**, **Open the added tests** and **Open the added risks** open the lists filtered to the new items. **Undo** (or Ctrl+Z) moves them to the trash (risks are deleted); redo brings them back with their links. Folders that the import created stay.
 
 The added items are ordinary project items: edit the texts and values to fit your system. The editor shows **From the catalogue: AUTH-01 · …** with the cited standards, and **Show in the catalogue** opens the original entry. This origin is kept when you edit, copy, move or restore the item. In filters, `catalog:AUTH-01` finds the items copied from one entry, `catalog:AUTH-*` those of an area and `has:catalog` every item from the catalogue (see [Search and filters](#search-and-filters)). A risk from the catalogue shows its ID under its category in the register; the register can show the risks of one catalogue area.
 
@@ -2417,11 +2419,13 @@ Besides the rules you write, Qtestframe has **built-in checks** with a fixed con
 | MUST requirement in a release without passing evidence | a MUST or SHALL requirement in a planned or active release has no linked test that is not suspect and passed its latest execution |
 | High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or not every one of its requirements is verified (a risk whose requirements are all verified counts as mitigated) |
 | Regulatory requirement rejected without justification | a requirement added from a regulation of the [catalogue](#catalogue) (a law or directive) is rejected, and it has no comment and no rationale of its own |
-| Suspected duplicate requirements | two active requirements have nearly identical title and description (similarity of at least 0.9 by default) and no *duplicates* relation |
+| Suspected duplicate requirements | two active requirements say the same thing: their title, description and criteria are similar (at least 0.68 by default, synonyms and word forms in English and Swedish included) and they have no *duplicates* relation. See [Duplicates and conflicts](#duplicates-and-conflicts) |
+| Potentially conflicting requirements | two active requirements likely contradict each other: the same statement with opposite obligations (MUST and MUST NOT), thresholds on the same quantity that cannot both hold (≤ 2 s and ≥ 5 s) or different values of a mutually exclusive set (enabled and disabled), with a confidence of at least 0.6 by default, and they have no *conflicts with* relation |
+| Suspected duplicate tests | two active tests say the same thing (title, description, preconditions and steps) and are not linked as duplicates |
 
-A project gets them with **Add built-in checks** (on the rules or in **Analytics**): they are added as rules with the severity *warning*, so they show up in the release exit criterion [Traceability rules](#exit-criteria) only when it counts warnings, or after you raise a check to *error*. A built-in check is marked **Built-in**; you can rename it, change its severity, turn it off, narrow it with a query and, for the duplicate check, set the **Similarity threshold** (0.5 to 1) or, for the risk check, the **Least risk level**.
+A project gets them with **Add built-in checks** (on the rules or in **Analytics**): they are added as rules with the severity *warning*, so they show up in the release exit criterion [Traceability rules](#exit-criteria) only when it counts warnings, or after you raise a check to *error*. A built-in check is marked **Built-in**; you can rename it, change its severity, turn it off, narrow it with a query and, for the duplicate checks, set the **Similarity threshold** (0.5 to 1), for the conflict check the **Least confidence** (0.5 to 1) or, for the risk check, the **Least risk level**.
 
-Each violation names the other items involved (the conflicting requirement and the release, the obsolete parent, the failing prerequisite …), each a link, and offers a fix where one is obvious: **Remove relation**, **Unlink**, **Remove prerequisite**, **Remove from** the release, **Set obsolete**, **Record a justification**, **Link a mitigation**, and for a suspected duplicate **Mark as duplicate** (adds the *duplicates* relation) or **Not a problem** (the pair is not reported again). **Not a problem** also acknowledges a dependency on a deleted item.
+Each violation names the other items involved (the conflicting requirement and the release, the obsolete parent, the failing prerequisite …), each a link, and offers a fix where one is obvious: **Remove relation**, **Unlink**, **Remove prerequisite**, **Remove from** the release, **Set obsolete**, **Record a justification**, **Link a mitigation**, for a suspected duplicate **Mark as duplicate** (adds the *duplicates* relation; for tests an item link labelled *duplicates*), for a potential conflict **Mark as conflicting** (adds the *conflicts with* relation), and **Not a problem** (the pair is not reported again). [Duplicates and conflicts](#duplicates-and-conflicts) shows the evidence and can also merge duplicates. **Not a problem** also acknowledges a dependency on a deleted item.
 
 ## Change impact
 
@@ -2729,6 +2733,87 @@ For each source:
 - **Missing requirements** lists the gaps, MUST first: select one to open it in the catalogue, or **Add the missing from the catalogue** to open the catalogue with the source chosen. **Adopted but not fulfilled** lists the project's requirements that still fail or lack passing tests; select a key to open the requirement.
 
 The standard report **Compliance** (see [Reports and export](#reports-and-export)) contains the same figures, per source and clause, with the gaps. The analysis helps you plan and follow up; it is not a legal assessment.
+
+# Duplicates and conflicts
+
+Large requirement sets collect the same requirement twice (written by two people, imported from a customer document and from the [catalogue](#catalogue)) and requirements that contradict each other (*passwords at least 12 characters* and *at most 8*). Qtestframe looks for both: while you write, in the [built-in consistency checks](#built-in-consistency-checks) and on the **Duplicates & conflicts** page, where you decide what to do about each pair.
+
+Everything is computed on the Qtestframe server. No text leaves it unless an administrator has turned on an [embeddings service](#embeddings-service).
+
+## Similar requirements while writing
+
+When you create or edit a requirement, **Similar requirements** below the description shows the five most similar requirements of the project, each with its similarity in percent, a moment after you stop typing. A similarity at or above the project's duplicate threshold (68 % by default) is highlighted: the requirement probably exists already. Open it in a new tab, or keep writing if yours says something else.
+
+The test editor has the same panel, **Similar tests**, which compares the title, description, preconditions and steps.
+
+Rejected and obsolete requirements and deprecated tests are not compared. The panel only appears for people who may change the item.
+
+## How similarity is measured
+
+Two requirements are similar when they use the same important words, not when they look alike letter by letter:
+
+- **Normalisation and word forms.** Texts are compared in lower case without punctuation; words are reduced to their stem in English and Swedish (*users*, *user* → *user*; *användaren*, *användarna* → *använd*), so inflections do not matter.
+- **Stop words.** Words without meaning of their own (*the*, *shall*, *och*, *ska* …) are ignored. The obligation keywords are compared by the conflict detection instead.
+- **Synonyms and abbreviations** of the domain count as the same word, also across the two languages: *log in*, *sign in*, *logga in* and *inloggning*; *user*, *end user*, *användare* and *brukare*; *e-mail*, *e-post* and *mejl*; *2FA*, *two-factor* and *tvåfaktorsautentisering*; *delete*, *remove*, *radera* and *ta bort*, and more.
+- **Compounds.** Swedish compounds are split when a part is a known word (*användarkonto* = *användare* + *konto*), and pieces of four letters make *lösenordsbyte* and *byte av lösenord* similar.
+- **Rare words count more.** A word that appears in a few requirements of the project says more than one that appears in most of them (TF-IDF over the project).
+- **Field weights.** The title counts most, then the description, then the acceptance criteria (for tests: preconditions, steps and expected results).
+
+The result is a similarity from 0 to 1 (shown as a percentage). Texts that are the same apart from case and punctuation are 100 %.
+
+## Potential conflicts
+
+Two requirements **potentially conflict** when they talk about the same thing (they share enough of their important words) and:
+
+| Kind | Example |
+|---|---|
+| **Opposite obligation** | *The user MUST be able to export reports as PDF.* and *The user MUST NOT be able to export reports as PDF.* (also *SKA* and *FÅR INTE*, *must* and *must never*) |
+| **Thresholds** that cannot both hold | *respond within 2 seconds* and *respond in no less than 5 s*; *at least 12 characters* and *at most 8 characters*; *minst 12 tecken* and *högst 8 tecken*. Units are converted (2000 ms = 2 s, 15 minuters = 900 s), and a negative obligation turns the comparison round (*must not exceed 2 s* = at most 2 s) |
+| **Exclusive values** | *enabled* and *disabled* by default, *mandatory* and *optional*, *encrypted* and *unencrypted*, *public* and *private*, *automatic* and *manual*, *aktiverad* and *avstängd* … |
+
+Each conflict has a **confidence** from 0 to 1, higher when the two statements share more of their content. The obligation keywords are recognised as in the [language analysis](#requirements) (English and Swedish). A pair that conflicts is not also reported as a duplicate.
+
+## The Duplicates & conflicts page
+
+Open **Duplicates & conflicts** in the project sidebar. Choose **Requirements** or **Tests** at the top.
+
+- **Potential conflicts** (requirements) shows each pair with its kind, confidence and the decisive terms, and the sentence of each requirement with the **evidence highlighted**: the keywords, the thresholds or the exclusive values.
+- **Suspected duplicate requirements** (or tests) shows each pair with its similarity and the number of trace links of each item.
+
+**Similarity from** and **Conflict confidence from** change what is listed; they start at the project's thresholds (the built-in checks). **Show dismissed** lists the pairs you dismissed too, so you can show them again.
+
+For each pair you can:
+
+| Action | What happens |
+|---|---|
+| **A duplicates B** | adds the relation *A duplicates B* (for tests: an item link labelled *duplicates*). The pair is no longer suspected. |
+| **Merge…** | choose the item to **keep**; the other one is merged into it: its trace links, relations (tests: prerequisites) and item links move to the item you keep, it gets the status *Obsolete* (tests: *Deprecated*) and is marked as a duplicate of the kept item. Both get a comment that records the merge, and the status change appears in the history. Links the kept item already has are not doubled. |
+| **Mark as conflicting** | adds the relation *conflicts with*. From then on the check [Conflicting requirements in a release](#built-in-consistency-checks) watches the pair. |
+| **Not a duplicate** / **Not a conflict** | dismisses the finding: the pair is not shown again by the page or the built-in checks (it is remembered per pair and check, also in backups and project archives). **Show again** undoes it. |
+
+Marking and merging need permission to change requirements (`requirement.write`) or tests (`test.write`). Everyone who can read the items can open the page.
+
+## Built-in checks
+
+The page uses the same detection as three [built-in consistency checks](#built-in-consistency-checks): **Suspected duplicate requirements**, **Potentially conflicting requirements** and **Suspected duplicate tests**. A violation is reported on the newer item of the pair; its fixes are **Mark as duplicate**, **Mark as conflicting** and **Not a problem**.
+
+## Thresholds
+
+| Setting | Default | Where |
+|---|---|---|
+| Similarity of a suspected duplicate | 0.68 | the rule of the check (**Similarity threshold**, 0.5 to 1) |
+| Confidence of a potential conflict | 0.6 | the rule of the conflict check (**Least confidence**, 0.5 to 1) |
+| Least similarity shown while writing | 0.25 | fixed |
+
+The defaults were chosen on a labelled set of English and Swedish requirements (paraphrased duplicates, contradictions of each kind, and related requirements that are neither, such as *lock the account* and *unlock an account*): with them every labelled duplicate and conflict is found and no unrelated pair is reported. Raise the duplicate threshold to about 0.8 when the check reports requirements that only share a topic; lower it towards 0.6 to find paraphrases with fewer common words. Similarity depends on the project: a word that is rare in a small project counts more than in a large one.
+
+## Importing from the catalogue
+
+Before you add requirements from the [catalogue](#catalogue), the dialog warns about the chosen requirements that are similar to requirements the project already has and can leave them out. After adding, the result says how many new requirements are similar to existing ones.
+
+## Embeddings service
+
+An administrator can let an external **embeddings service** (an OpenAI-compatible `/v1/embeddings` endpoint) compute the similarity instead (**Administration → System settings → Similarity**; see the administrator guide). The page and the panel then say *Embeddings service*. The title, description and criteria or steps of requirements and tests are then **sent to that service**. Its vectors are cached per item version, so unchanged items are not sent again. The conflict detection always runs on the server. When the service fails, the local similarity is used.
 
 # Variants and code
 
@@ -3680,7 +3765,7 @@ Only members with the permission *script.execute* (by default **Test lead** and 
 
 ## Consistency checks
 
-Projects do not get the [built-in consistency checks](#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*) are part of backups and project archives.
+Projects do not get the [built-in consistency checks](#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*, *not a conflict*) are part of backups and project archives; the cached vectors of the optional embeddings service are not (see [Duplicates and conflicts](#duplicates-and-conflicts)).
 
 ## API tokens
 

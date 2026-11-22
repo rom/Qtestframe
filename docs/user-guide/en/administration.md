@@ -220,7 +220,7 @@ Only members with the permission *script.execute* (by default **Test lead** and 
 
 ## Consistency checks
 
-Projects do not get the [built-in consistency checks](traceability-and-coverage.md#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*) are part of backups and project archives.
+Projects do not get the [built-in consistency checks](traceability-and-coverage.md#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*, *not a conflict*) are part of backups and project archives; the cached vectors of the optional embeddings service are not (see [Duplicates and conflicts](duplicates-and-conflicts.md)).
 
 ## API tokens
 

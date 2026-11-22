@@ -227,6 +227,29 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := st.CreateRequirement(ctx, tenantID, dup); err != nil {
 		return nil, err
 	}
+	// Duplicates & conflicts: a requirement that says "Password login" in
+	// other words, two that contradict existing ones (a threshold and an
+	// opposite obligation) and a test that repeats "Login with valid
+	// credentials"
+	for _, x := range []struct {
+		folder                 *model.Folder
+		title, desc, typ, area string
+	}{
+		{rf, "Password sign-in", "Users SHALL log in with their e-mail address and password.", "functional", "Security"},
+		{rf2, "Transfer confirmation delay", "Transfers MUST be confirmed in no less than 5 seconds, so that the fraud checks can finish.", "performance", "Core"},
+		{rf2, "No statement export", "Users MUST NOT export account statements.", "security", "UI"},
+	} {
+		r := &model.Requirement{ProjectID: p.ID, FolderID: &x.folder.ID, Title: x.title, Description: x.desc, Obligation: reqlang.DetectObligation(x.desc),
+			Type: x.typ, Priority: "medium", Status: "draft", CategoryIDs: []string{cat("Area", x.area)}, CreatedBy: "seed", Tags: []string{strings.ToLower(x.area)}}
+		if err := st.CreateRequirement(ctx, tenantID, r); err != nil {
+			return nil, err
+		}
+	}
+	if err := st.CreateTest(ctx, tenantID, &model.TestCase{ProjectID: p.ID, FolderID: &tf.ID, Title: "Sign in with a valid password", ExecutionType: model.ExecManual,
+		Steps:  []model.TestStep{{Action: "Open the sign-in page", Expected: "Login form is shown"}, {Action: "Enter a valid email and password"}, {Action: "Press Sign in", Expected: "Dashboard is shown"}},
+		Status: "draft", CreatedBy: "seed", Tags: []string{model.ExecManual}}); err != nil {
+		return nil, err
+	}
 	if err := st.CreateRisk(ctx, tenantID, &model.Risk{ProjectID: p.ID, Title: "Credential stuffing takes over accounts", Category: "security",
 		Likelihood: 4, Impact: 5, Owner: "security team", CreatedBy: "seed"}); err != nil {
 		return nil, err

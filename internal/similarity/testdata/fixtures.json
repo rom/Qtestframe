@@ -1,0 +1,111 @@
+{
+  "comment": "Labelled requirements for the precision tests: pairs listed under duplicates say the same thing, pairs under conflicts contradict each other (with the kind). Every other pair of the same corpus is unrelated. Hard negatives (related topic, different statement) are deliberate.",
+  "corpora": [
+    {
+      "name": "en",
+      "docs": [
+        {"id": "login-1", "title": "User login", "description": "The user MUST be able to sign in with their e-mail address and password."},
+        {"id": "login-2", "title": "Log in with email", "description": "Users SHALL log in using their email address and a password."},
+        {"id": "logout", "title": "Log out", "description": "The user MUST be able to sign out from every page."},
+        {"id": "lock-1", "title": "Account lockout", "description": "The system SHALL lock the account after 5 failed login attempts."},
+        {"id": "lock-2", "title": "Lock account after failed attempts", "description": "After five unsuccessful sign-in attempts the user account MUST be locked."},
+        {"id": "unlock", "title": "Unlock by administrator", "description": "An administrator MUST be able to unlock a locked account."},
+        {"id": "pwlen-1", "title": "Password length", "description": "Passwords MUST be at least 12 characters long."},
+        {"id": "pwlen-2", "title": "Maximum password length", "description": "Passwords MUST be at most 8 characters."},
+        {"id": "pwreset", "title": "Password reset", "description": "The user MUST be able to reset a forgotten password by e-mail."},
+        {"id": "resp-1", "title": "Search response time", "description": "The search page MUST respond within 2 seconds."},
+        {"id": "resp-2", "title": "Slow search", "description": "The search page SHALL respond in no less than 5 s."},
+        {"id": "resp-3", "title": "Report generation time", "description": "Monthly reports SHOULD be generated within 10 minutes."},
+        {"id": "export-1", "title": "Export reports to PDF", "description": "The user MUST be able to export reports as PDF."},
+        {"id": "export-2", "title": "No PDF export", "description": "The user MUST NOT be able to export reports as PDF."},
+        {"id": "export-3", "title": "Export to CSV", "description": "Lists SHOULD be exportable to CSV files."},
+        {"id": "audit-1", "title": "Audit logging", "description": "Audit logging MUST be enabled by default."},
+        {"id": "audit-2", "title": "Audit logging default", "description": "Audit logging MUST be disabled by default."},
+        {"id": "audit-3", "title": "Audit log retention", "description": "Audit log entries SHALL be kept for 7 years."},
+        {"id": "mfa-1", "title": "Two-factor authentication", "description": "Administrators MUST use two-factor authentication.", "details": ["An administrator cannot sign in without a second factor."]},
+        {"id": "mfa-2", "title": "MFA for admins", "description": "Multi-factor authentication SHALL be mandatory for administrator accounts."},
+        {"id": "mfa-3", "title": "MFA optional for users", "description": "Multi-factor authentication MAY be offered to ordinary users."},
+        {"id": "backup-1", "title": "Nightly backup", "description": "The database SHALL be backed up every night."},
+        {"id": "backup-2", "title": "Backup encryption", "description": "Backups MUST be encrypted."},
+        {"id": "backup-3", "title": "Unencrypted backups", "description": "Backups MUST be unencrypted so that they can be restored anywhere."},
+        {"id": "session-1", "title": "Session timeout", "description": "A session MUST time out after at most 15 minutes of inactivity."},
+        {"id": "session-2", "title": "Long sessions", "description": "Sessions MUST stay active for at least 30 minutes without activity."},
+        {"id": "ui-1", "title": "Dark mode", "description": "The user interface SHOULD offer a dark colour scheme."},
+        {"id": "ui-2", "title": "Keyboard navigation", "description": "Every function of the UI MUST be reachable with the keyboard."},
+        {"id": "delete-1", "title": "Delete account", "description": "A user MUST be able to delete their own account."},
+        {"id": "delete-2", "title": "Remove own user account", "description": "Users SHALL be able to remove their account themselves."},
+        {"id": "pwstore-1", "title": "Password storage", "description": "Passwords MUST NOT be stored in plain text."},
+        {"id": "pwstore-2", "title": "Hashed passwords", "description": "Passwords MUST be stored as salted hashes."},
+        {"id": "api-1", "title": "API latency", "description": "The API MUST respond within 500 ms."},
+        {"id": "import-1", "title": "Nightly import", "description": "The nightly import MAY take at least 2 hours."}
+      ],
+      "duplicates": [
+        ["login-1", "login-2"],
+        ["lock-1", "lock-2"],
+        ["mfa-1", "mfa-2"],
+        ["delete-1", "delete-2"]
+      ],
+      "conflicts": [
+        ["pwlen-1", "pwlen-2", "threshold"],
+        ["resp-1", "resp-2", "threshold"],
+        ["export-1", "export-2", "obligation"],
+        ["audit-1", "audit-2", "exclusive"],
+        ["backup-2", "backup-3", "exclusive"],
+        ["session-1", "session-2", "threshold"]
+      ]
+    },
+    {
+      "name": "sv",
+      "docs": [
+        {"id": "login-1", "title": "Användarinloggning", "description": "Användaren ska kunna logga in med e-post och lösenord."},
+        {"id": "login-2", "title": "Inloggning", "description": "Brukaren ska logga in med sin e-postadress och sitt lösenord."},
+        {"id": "logout", "title": "Utloggning", "description": "Användaren ska kunna logga ut från alla sidor."},
+        {"id": "lock-1", "title": "Kontospärr", "description": "Systemet ska spärra kontot efter 5 misslyckade inloggningsförsök."},
+        {"id": "lock-2", "title": "Spärra konto efter misslyckade försök", "description": "Efter fem misslyckade försök att logga in ska användarkontot spärras."},
+        {"id": "unlock", "title": "Upplåsning av administratör", "description": "En administratör ska kunna låsa upp ett spärrat konto."},
+        {"id": "pwlen-1", "title": "Lösenordslängd", "description": "Lösenord ska vara minst 12 tecken."},
+        {"id": "pwlen-2", "title": "Korta lösenord", "description": "Lösenordet får vara högst 8 tecken långt."},
+        {"id": "pwreset", "title": "Återställ lösenord", "description": "Användaren ska kunna återställa ett glömt lösenord via e-post."},
+        {"id": "resp-1", "title": "Svarstid för sök", "description": "Söksidan ska svara inom 2 sekunder."},
+        {"id": "resp-2", "title": "Långsam sökning", "description": "Söksidan ska ha en svarstid på minst 5 sekunder."},
+        {"id": "resp-3", "title": "Rapportgenerering", "description": "Månadsrapporter bör tas fram inom 10 minuter."},
+        {"id": "export-1", "title": "Export av rapporter till PDF", "description": "Användaren ska kunna exportera rapporter som PDF."},
+        {"id": "export-2", "title": "Ingen PDF-export", "description": "Användaren får inte kunna exportera rapporter som PDF."},
+        {"id": "export-3", "title": "Export till CSV", "description": "Listor bör kunna exporteras till CSV-filer."},
+        {"id": "audit-1", "title": "Granskningslogg", "description": "Granskningsloggen ska vara aktiverad som standard."},
+        {"id": "audit-2", "title": "Granskningslogg som standard", "description": "Granskningsloggen ska vara avstängd som standard."},
+        {"id": "audit-3", "title": "Lagring av granskningslogg", "description": "Poster i granskningsloggen ska sparas i 7 år."},
+        {"id": "mfa-1", "title": "Tvåfaktorsautentisering", "description": "Administratörer ska använda tvåfaktorsautentisering."},
+        {"id": "mfa-2", "title": "MFA för administratörer", "description": "Flerfaktorsautentisering ska vara obligatorisk för administratörens konto."},
+        {"id": "mfa-3", "title": "Frivillig MFA", "description": "Vanliga användare får erbjudas flerfaktorsautentisering."},
+        {"id": "backup-1", "title": "Nattlig säkerhetskopia", "description": "Databasen ska säkerhetskopieras varje natt."},
+        {"id": "backup-2", "title": "Kryptering av säkerhetskopior", "description": "Säkerhetskopior ska vara krypterade."},
+        {"id": "backup-3", "title": "Okrypterade säkerhetskopior", "description": "Säkerhetskopior ska vara okrypterade så att de kan återställas var som helst."},
+        {"id": "session-1", "title": "Tidsgräns för session", "description": "En session ska avslutas efter högst 15 minuters inaktivitet."},
+        {"id": "session-2", "title": "Långa sessioner", "description": "En session ska vara aktiv i minst 30 minuter utan aktivitet."},
+        {"id": "ui-1", "title": "Mörkt läge", "description": "Gränssnittet bör erbjuda ett mörkt färgschema."},
+        {"id": "ui-2", "title": "Tangentbordsnavigering", "description": "Alla funktioner i gränssnittet ska nås med tangentbordet."},
+        {"id": "delete-1", "title": "Radera konto", "description": "En användare ska kunna radera sitt eget konto."},
+        {"id": "delete-2", "title": "Ta bort eget användarkonto", "description": "Brukare ska själva kunna ta bort sitt konto."},
+        {"id": "pwstore-1", "title": "Lagring av lösenord", "description": "Lösenord får inte lagras i klartext."},
+        {"id": "pwstore-2", "title": "Hashade lösenord", "description": "Lösenord ska lagras som saltade hashvärden."},
+        {"id": "api-1", "title": "API-svarstid", "description": "API:et ska svara inom 500 ms."},
+        {"id": "import-1", "title": "Nattlig import", "description": "Den nattliga importen får ta minst 2 timmar."}
+      ],
+      "duplicates": [
+        ["login-1", "login-2"],
+        ["lock-1", "lock-2"],
+        ["mfa-1", "mfa-2"],
+        ["delete-1", "delete-2"]
+      ],
+      "conflicts": [
+        ["pwlen-1", "pwlen-2", "threshold"],
+        ["resp-1", "resp-2", "threshold"],
+        ["export-1", "export-2", "obligation"],
+        ["audit-1", "audit-2", "exclusive"],
+        ["backup-2", "backup-3", "exclusive"],
+        ["session-1", "session-2", "threshold"]
+      ]
+    }
+  ]
+}

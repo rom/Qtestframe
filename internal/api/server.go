@@ -370,6 +370,8 @@ func (s *Server) routes() {
 	s.routesCustomFields(h)
 	// exploratory testing sessions (exploratory.go)
 	s.routesExploratory(h)
+	// similar requirements and tests, duplicates and conflicts (similarity.go)
+	s.routesSimilarity(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

@@ -54,7 +54,8 @@ Select a row to see the full text on the right (on a phone it opens as a panel):
    - **Source of the requirements**: the cited standards (default) or one of the project's sources.
    - **Also add the tests that verify the chosen requirements** (on by default).
    - **Add copies of items already in the project**: off by default, so items the project already has are skipped.
-4. The summary shows how many requirements and tests will be added and how many are skipped. Select **Add**.
+4. The summary shows how many requirements and tests will be added and how many are skipped. When some of the chosen requirements say the same thing as requirements the project already has (written by hand, or from another catalogue entry), it lists them with the most similar project requirement and its similarity, and **Leave out the requirements similar to existing ones** skips them (reason *similar*). See [Duplicates and conflicts](duplicates-and-conflicts.md).
+5. Select **Add**.
 
 At most 500 items can be added at once. The import is all or nothing: if something fails, nothing is added.
 
@@ -85,7 +86,7 @@ Risks the project already has from the catalogue are skipped, like requirements 
 
 ## After adding
 
-A box at the top of the page sums up what was added. **Open the added requirements**, **Open the added tests** and **Open the added risks** open the lists filtered to the new items. **Undo** (or Ctrl+Z) moves them to the trash (risks are deleted); redo brings them back with their links. Folders that the import created stay.
+A box at the top of the page sums up what was added, and how many of the added requirements are similar to requirements the project had, with a link to **Review duplicates**. **Open the added requirements**, **Open the added tests** and **Open the added risks** open the lists filtered to the new items. **Undo** (or Ctrl+Z) moves them to the trash (risks are deleted); redo brings them back with their links. Folders that the import created stay.
 
 The added items are ordinary project items: edit the texts and values to fit your system. The editor shows **From the catalogue: AUTH-01 · …** with the cited standards, and **Show in the catalogue** opens the original entry. This origin is kept when you edit, copy, move or restore the item. In filters, `catalog:AUTH-01` finds the items copied from one entry, `catalog:AUTH-*` those of an area and `has:catalog` every item from the catalogue (see [Search and filters](search-and-filters.md)). A risk from the catalogue shows its ID under its category in the register; the register can show the risks of one catalogue area.
 

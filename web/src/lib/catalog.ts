@@ -228,6 +228,8 @@ export interface CatalogCreated {
   title: string
   catalog_ref: string
   folder_id: string | null
+  /** requirements of the project the new one is similar to (suspected duplicates) */
+  similar?: { id: string; key: string; title: string; score: number }[]
 }
 
 export interface CatalogImportResult {
@@ -607,4 +609,11 @@ export function createdQuery(keys: readonly string[], max = 3500): string {
 /** "Catalogue id · standards" shown in the editors for an item's origin. */
 export function originText(ref: string, refs: readonly string[] | null | undefined): string {
   return [ref, ...(refs ?? [])].filter(Boolean).join(' · ')
+}
+
+/** A catalogue requirement similar to requirements of the project (POST /projects/{pid}/catalog/similar). */
+export interface CatalogSimilar {
+  catalog_ref: string
+  title: string
+  similar: { id: string; key: string; title: string; status: string; score: number }[]
 }

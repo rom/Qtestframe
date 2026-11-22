@@ -26,6 +26,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Undantag, restrisk och SoA](#undantag-restrisk-och-uttalande-om-tillämplighet) | Undantag och avvikelser med signerade godkännanden, restrisk och dess acceptans, uttalandet om tillämplighet (ISO/IEC 27001 bilaga A) |
 | [Spårbarhet och täckning](#spårbarhet-och-täckning) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
 | [Testcykler](#testcykler) | Planera testcykler: testfall, testare och uppskattningar, körningarna en cykel skapar, framsteg, nedbränning, arbetsbelastning, återkommande cykler |
+| [Dubbletter och konflikter](#dubbletter-och-konflikter) | Liknande krav medan du skriver, misstänkt dubblerade krav och testfall, möjligen motstridiga krav, sammanslagning, gränsvärden |
 | [Varianter och kod](#varianter-och-kod) | Varianter och tillämplighet, täckning per variant, incheckningar, merge requests, byggen och regressionsurvalet |
 | [Baslinjer](#baslinjer) | Frysa en release och jämföra versioner |
 | [Diskussioner](#diskussioner) | Kommentarstrådar på objekt med Markdown, @omnämnanden, reaktioner och lösta trådar, och projektets sida Diskussioner |
@@ -1165,7 +1166,8 @@ Välj en rad för att se hela texten till höger (på en mobil öppnas den som e
    - **Källa för kraven**: de angivna standarderna (standard) eller en av projektets källor.
    - **Lägg även till testfallen som verifierar de valda kraven** (på som standard).
    - **Lägg till kopior av poster som redan finns i projektet**: av som standard, så att poster som projektet redan har hoppas över.
-4. Sammanfattningen visar hur många krav och testfall som läggs till och hur många som hoppas över. Välj **Lägg till**.
+4. Sammanfattningen visar hur många krav och testfall som läggs till och hur många som hoppas över. När några av de valda kraven säger samma sak som krav som projektet redan har (skrivna för hand eller från en annan katalogpost) listas de med det mest lika projektkravet och dess likhet, och **Hoppa över kraven som liknar befintliga** hoppar över dem (orsak *similar*). Se [Dubbletter och konflikter](#dubbletter-och-konflikter).
+5. Välj **Lägg till**.
 
 Högst 500 poster kan läggas till åt gången. Importen sker helt eller inte alls: om något misslyckas läggs ingenting till.
 
@@ -1196,7 +1198,7 @@ Risker som projektet redan har från katalogen hoppas över, precis som krav och
 
 ## Efteråt
 
-En ruta överst på sidan sammanfattar vad som lades till. **Öppna de tillagda kraven**, **Öppna de tillagda testfallen** och **Öppna de tillagda riskerna** öppnar listorna filtrerade på de nya posterna. **Ångra** (eller Ctrl+Z) flyttar dem till papperskorgen (risker tas bort); gör om tar tillbaka dem med sina länkar. Mappar som importen skapade finns kvar.
+En ruta överst på sidan sammanfattar vad som lades till, och hur många av de tillagda kraven som liknar krav som projektet hade, med en länk till **Granska dubbletter**. **Öppna de tillagda kraven**, **Öppna de tillagda testfallen** och **Öppna de tillagda riskerna** öppnar listorna filtrerade på de nya posterna. **Ångra** (eller Ctrl+Z) flyttar dem till papperskorgen (risker tas bort); gör om tar tillbaka dem med sina länkar. Mappar som importen skapade finns kvar.
 
 De tillagda posterna är vanliga poster i projektet: anpassa texterna och värdena till ert system. Redigeraren visar **Från katalogen: AUTH-01 · …** med standarderna, och **Visa i katalogen** öppnar originalposten. Ursprunget behålls när du redigerar, kopierar, flyttar eller återställer posten. I filter hittar `catalog:AUTH-01` posterna som kopierats från en katalogpost, `catalog:AUTH-*` ett områdes poster och `has:catalog` alla poster från katalogen (se [Sökning och filter](#sökning-och-filter)). En risk från katalogen visar sitt ID under kategorin i registret; registret kan visa riskerna inom ett område i katalogen.
 
@@ -2438,11 +2440,13 @@ Utöver de regler du skriver har Qtestframe **inbyggda kontroller** med fasta vi
 | SKA-krav i en release utan godkänt belägg | ett MUST- eller SHALL-krav i en planerad eller aktiv release har inget länkat testfall som inte är misstänkt och som godkändes senast |
 | Hög risk utan verifierad åtgärd | en hög eller kritisk risk (inte stängd eller accepterad) saknar länkat krav, eller har krav som inte är verifierade (en risk vars krav alla är verifierade räknas som åtgärdad) |
 | Regelverkskrav avvisat utan motivering | ett krav som lagts till från ett regelverk i [katalogen](#katalog) (en lag eller ett direktiv) är avvisat och har ingen kommentar och ingen egen motivering |
-| Misstänkt dubblerade krav | två aktiva krav har nästan identisk titel och beskrivning (likhet minst 0,9 som standard) och ingen relation *dubblerar* |
+| Misstänkt dubblerade krav | två aktiva krav säger samma sak: titel, beskrivning och kriterier liknar varandra (minst 0,68 som standard, synonymer och böjningsformer på svenska och engelska inräknade) och de har ingen relation *dubblerar*. Se [Dubbletter och konflikter](#dubbletter-och-konflikter) |
+| Möjligen motstridiga krav | två aktiva krav motsäger troligen varandra: samma påstående med motsatta förpliktelser (SKA och FÅR INTE), gränsvärden för samma storhet som inte kan gälla samtidigt (≤ 2 s och ≥ 5 s) eller olika värden ur en uppsättning som utesluter varandra (aktiverad och avstängd), med en säkerhet på minst 0,6 som standard, och de har ingen relation *står i konflikt med* |
+| Misstänkt dubblerade testfall | två aktiva testfall säger samma sak (titel, beskrivning, förutsättningar och steg) och är inte länkade som dubbletter |
 
-Ett projekt får dem med **Lägg till inbyggda kontroller** (bland reglerna eller under **Analys**): de läggs till som regler med allvarligheten *varning*, så de syns i utgångskriteriet [Spårbarhetsregler](#utgångskriterier) först när det räknar varningar, eller när du höjer en kontroll till *fel*. En inbyggd kontroll är märkt **Inbyggd**; du kan byta namn, ändra allvarlighet, stänga av den, begränsa den med en fråga och, för dubblettkontrollen, ange **Likhetsgräns** (0,5 till 1) eller, för riskkontrollen, **Lägsta risknivå**.
+Ett projekt får dem med **Lägg till inbyggda kontroller** (bland reglerna eller under **Analys**): de läggs till som regler med allvarligheten *varning*, så de syns i utgångskriteriet [Spårbarhetsregler](#utgångskriterier) först när det räknar varningar, eller när du höjer en kontroll till *fel*. En inbyggd kontroll är märkt **Inbyggd**; du kan byta namn, ändra allvarlighet, stänga av den, begränsa den med en fråga och, för dubblettkontrollerna, ange **Likhetsgräns** (0,5 till 1), för konfliktkontrollen **Lägsta säkerhet** (0,5 till 1) eller, för riskkontrollen, **Lägsta risknivå**.
 
-Varje överträdelse visar de andra berörda objekten (det motstridiga kravet och releasen, den föråldrade föräldern, förutsättningen som underkändes …), var och en som länk, och föreslår en åtgärd där det finns en självklar: **Ta bort relationen**, **Ta bort länken**, **Ta bort förutsättningen**, **Ta bort från** releasen, **Markera som föråldrat**, **Registrera en motivering**, **Länka en åtgärd**, och för en misstänkt dubblett **Markera som dubblett** (lägger till relationen *dubblerar*) eller **Inget problem** (paret rapporteras inte igen). **Inget problem** kvitterar också ett beroende på ett borttaget objekt.
+Varje överträdelse visar de andra berörda objekten (det motstridiga kravet och releasen, den föråldrade föräldern, förutsättningen som underkändes …), var och en som länk, och föreslår en åtgärd där det finns en självklar: **Ta bort relationen**, **Ta bort länken**, **Ta bort förutsättningen**, **Ta bort från** releasen, **Markera som föråldrat**, **Registrera en motivering**, **Länka en åtgärd**, för en misstänkt dubblett **Markera som dubblett** (lägger till relationen *dubblerar*; för testfall en objektlänk med etiketten *duplicates*), för en möjlig konflikt **Markera som motstridiga** (lägger till relationen *står i konflikt med*) och **Inget problem** (paret rapporteras inte igen). [Dubbletter och konflikter](#dubbletter-och-konflikter) visar beläggen och kan också slå ihop dubbletter. **Inget problem** kvitterar också ett beroende på ett borttaget objekt.
 
 ## Ändringspåverkan
 
@@ -2750,6 +2754,87 @@ För varje källa:
 - **Saknade krav** listar luckorna, MUST först: välj ett för att öppna det i katalogen, eller **Lägg till det som saknas från katalogen** för att öppna katalogen med källan vald. **Infört men inte uppfyllt** listar projektets krav som fortfarande är underkända eller saknar godkända testfall; välj en nyckel för att öppna kravet.
 
 Standardrapporten **Efterlevnad** (se [Rapporter och export](#rapporter-och-export)) innehåller samma siffror, per källa och avsnitt, med luckorna. Analysen hjälper dig att planera och följa upp; den är ingen juridisk bedömning.
+
+# Dubbletter och konflikter
+
+I stora kravmängder hamnar samma krav ofta två gånger (skrivet av två personer, importerat både från ett kunddokument och från [katalogen](#katalog)), och en del krav motsäger varandra (*lösenord minst 12 tecken* och *högst 8*). Qtestframe letar efter båda: medan du skriver, i de [inbyggda konsistenskontrollerna](#inbyggda-konsistenskontroller) och på sidan **Dubbletter och konflikter**, där du bestämmer vad som ska göras med varje par.
+
+Allt beräknas på Qtestframe-servern. Ingen text lämnar den om inte en administratör har slagit på en [tjänst för inbäddningar](#tjänst-för-inbäddningar).
+
+## Liknande krav medan du skriver
+
+När du skapar eller redigerar ett krav visar **Liknande krav** under beskrivningen de fem krav i projektet som liknar det mest, vart och ett med likheten i procent, en stund efter att du slutat skriva. En likhet på eller över projektets dubblettgräns (68 % som standard) markeras: kravet finns troligen redan. Öppna det i en ny flik, eller fortsätt skriva om ditt säger något annat.
+
+Testfallsredigeraren har samma panel, **Liknande testfall**, som jämför titel, beskrivning, förutsättningar och steg.
+
+Avvisade och föråldrade krav och utfasade testfall jämförs inte. Panelen visas bara för den som får ändra objektet.
+
+## Hur likheten mäts
+
+Två krav liknar varandra när de använder samma viktiga ord, inte när de ser lika ut bokstav för bokstav:
+
+- **Normalisering och böjningsformer.** Texterna jämförs med små bokstäver och utan skiljetecken; orden förkortas till sin stam på svenska och engelska (*användaren*, *användarna* → *använd*; *users*, *user* → *user*), så böjningar spelar ingen roll.
+- **Stoppord.** Ord utan egen betydelse (*och*, *ska*, *the*, *shall* …) räknas inte. Förpliktelseorden jämförs i stället av konfliktsökningen.
+- **Synonymer och förkortningar** inom området räknas som samma ord, även mellan språken: *logga in*, *inloggning*, *log in* och *sign in*; *användare*, *brukare*, *user* och *end user*; *e-post*, *mejl* och *e-mail*; *2FA*, *tvåfaktorsautentisering* och *two-factor*; *radera*, *ta bort*, *delete* och *remove*, med flera.
+- **Sammansättningar.** Svenska sammansatta ord delas när en del är ett känt ord (*användarkonto* = *användare* + *konto*), och bitar om fyra bokstäver gör *lösenordsbyte* och *byte av lösenord* lika.
+- **Ovanliga ord väger tyngre.** Ett ord som finns i några få krav i projektet säger mer än ett som finns i de flesta (TF-IDF över projektet).
+- **Fältvikter.** Titeln väger mest, sedan beskrivningen och sist acceptanskriterierna (för testfall: förutsättningar, steg och förväntat resultat).
+
+Resultatet är en likhet från 0 till 1 (visas i procent). Texter som bara skiljer sig i versaler och skiljetecken är 100 %.
+
+## Möjliga konflikter
+
+Två krav är **möjligen motstridiga** när de handlar om samma sak (de har tillräckligt många viktiga ord gemensamt) och:
+
+| Slag | Exempel |
+|---|---|
+| **Motsatt förpliktelse** | *Användaren ska kunna exportera rapporter som PDF.* och *Användaren får inte kunna exportera rapporter som PDF.* (även *MUST* och *MUST NOT*, *ska* och *ska aldrig*) |
+| **Gränsvärden** som inte kan gälla samtidigt | *svara inom 2 sekunder* och *en svarstid på minst 5 sekunder*; *minst 12 tecken* och *högst 8 tecken*; *at least 12 characters* och *at most 8 characters*. Enheter räknas om (2000 ms = 2 s, 15 minuters = 900 s), och en negativ förpliktelse vänder jämförelsen (*får inte överstiga 2 s* = högst 2 s) |
+| **Uteslutande värden** | *aktiverad* och *avstängd* som standard, *obligatorisk* och *frivillig*, *krypterad* och *okrypterad*, *offentlig* och *privat*, *automatisk* och *manuell*, *enabled* och *disabled* … |
+
+Varje konflikt har en **säkerhet** från 0 till 1, högre när de två påståendena har mer innehåll gemensamt. Förpliktelseorden känns igen som i [språkanalysen](#krav) (svenska och engelska). Ett par som är motstridigt rapporteras inte också som dubblett.
+
+## Sidan Dubbletter och konflikter
+
+Öppna **Dubbletter och konflikter** i projektets sidomeny. Välj **Krav** eller **Testfall** överst.
+
+- **Möjliga konflikter** (krav) visar varje par med slag, säkerhet och de avgörande orden, och meningen i vart och ett av kraven med **beläggen markerade**: förpliktelseorden, gränsvärdena eller de uteslutande värdena.
+- **Misstänkt dubblerade krav** (eller testfall) visar varje par med likheten och antalet spårlänkar för varje objekt.
+
+**Likhet från** och **Säkerhet för konflikt från** ändrar vad som visas; de börjar på projektets gränser (de inbyggda kontrollerna). **Visa avfärdade** visar också paren du har avfärdat, så att du kan visa dem igen.
+
+För varje par kan du:
+
+| Åtgärd | Vad som händer |
+|---|---|
+| **A dubblerar B** | lägger till relationen *A dubblerar B* (för testfall: en objektlänk med etiketten *duplicates*). Paret är inte längre misstänkt. |
+| **Slå ihop…** | välj vilket objekt som ska **behållas**; det andra slås ihop med det: dess spårlänkar, relationer (testfall: förutsättningar) och objektlänkar flyttas till objektet du behåller, det får statusen *Inaktuellt* (testfall: *Utfasat*) och markeras som dubblett av det behållna objektet. Båda får en kommentar om sammanslagningen, och statusändringen syns i historiken. Länkar som det behållna objektet redan har dubbleras inte. |
+| **Markera som motstridiga** | lägger till relationen *står i konflikt med*. Därefter bevakas paret av kontrollen [Motstridiga krav i en release](#inbyggda-konsistenskontroller). |
+| **Ingen dubblett** / **Ingen konflikt** | avfärdar fyndet: paret visas inte igen på sidan eller i de inbyggda kontrollerna (det sparas per par och kontroll, även i säkerhetskopior och projektarkiv). **Visa igen** ångrar det. |
+
+Att markera och slå ihop kräver behörighet att ändra krav (`requirement.write`) eller testfall (`test.write`). Alla som kan läsa objekten kan öppna sidan.
+
+## Inbyggda kontroller
+
+Sidan använder samma sökning som tre [inbyggda konsistenskontroller](#inbyggda-konsistenskontroller): **Misstänkt dubblerade krav**, **Möjligen motstridiga krav** och **Misstänkt dubblerade testfall**. En överträdelse rapporteras på det nyare objektet i paret; åtgärderna är **Markera som dubblett**, **Markera som motstridiga** och **Inget problem**.
+
+## Gränsvärden
+
+| Inställning | Standard | Var |
+|---|---|---|
+| Likhet för en misstänkt dubblett | 0,68 | kontrollens regel (**Likhetsgräns**, 0,5 till 1) |
+| Säkerhet för en möjlig konflikt | 0,6 | konfliktkontrollens regel (**Lägsta säkerhet**, 0,5 till 1) |
+| Lägsta likhet som visas medan du skriver | 0,25 | fast |
+
+Standardvärdena valdes på en märkt uppsättning svenska och engelska krav (omformulerade dubbletter, motsägelser av varje slag och närliggande krav som är varken eller, som *spärra kontot* och *låsa upp ett konto*): med dem hittas varje märkt dubblett och konflikt, och inget orelaterat par rapporteras. Höj dubblettgränsen till omkring 0,8 när kontrollen rapporterar krav som bara har samma ämne; sänk den mot 0,6 för att hitta omformuleringar med färre gemensamma ord. Likheten beror på projektet: ett ord som är ovanligt i ett litet projekt väger tyngre än i ett stort.
+
+## Import från katalogen
+
+Innan du lägger till krav från [katalogen](#katalog) varnar dialogen för de valda krav som liknar krav som projektet redan har, och kan hoppa över dem. Efteråt visar resultatet hur många nya krav som liknar befintliga.
+
+## Tjänst för inbäddningar
+
+En administratör kan låta en extern **tjänst för inbäddningar** (en OpenAI-kompatibel slutpunkt `/v1/embeddings`) beräkna likheten i stället (**Administration → Systeminställningar → Likhet**; se administratörsguiden). Sidan och panelen visar då *Tjänst för inbäddningar*. Titel, beskrivning och kriterier eller steg för krav och testfall **skickas då till tjänsten**. Vektorerna cachas per objektversion, så oförändrade objekt skickas inte igen. Konfliktsökningen körs alltid på servern. När tjänsten inte svarar används den lokala likheten.
 
 # Varianter och kod
 
@@ -3707,7 +3792,7 @@ Bara medlemmar med behörigheten *script.execute* (som standard **Testledare** o
 
 ## Konsistenskontroller
 
-Projekt får inte de [inbyggda konsistenskontrollerna](#inbyggda-konsistenskontroller) som regler automatiskt: en förvaltare lägger till dem med **Lägg till inbyggda kontroller** (de börjar som varningar, så releasernas beredskap ändras inte). Avfärdade fynd (*ingen dubblett*) ingår i säkerhetskopior och projektarkiv.
+Projekt får inte de [inbyggda konsistenskontrollerna](#inbyggda-konsistenskontroller) som regler automatiskt: en förvaltare lägger till dem med **Lägg till inbyggda kontroller** (de börjar som varningar, så releasernas beredskap ändras inte). Avfärdade fynd (*ingen dubblett*, *ingen konflikt*) ingår i säkerhetskopior och projektarkiv; de cachade vektorerna från den valfria tjänsten för inbäddningar gör det inte (se [Dubbletter och konflikter](#dubbletter-och-konflikter)).
 
 ## API-nycklar
 

@@ -91,7 +91,7 @@ func TestBuiltinConsistencyChecks(t *testing.T) {
 	a.m("POST", "/api/v1/projects/"+pid+"/trace-rules/builtins", map[string]any{"kinds": []string{"nope"}}, 400)
 	a.m("POST", "/api/v1/projects/"+pid+"/trace-rules", map[string]any{"name": "Suspected duplicate requirements", "kind": "verifies"}, 201)
 	created := items(a.m("POST", "/api/v1/projects/"+pid+"/trace-rules/builtins", map[string]any{"kinds": []string{model.CheckDuplicateSuspect}}, 201))
-	if len(created) != 1 || created[0]["name"] != "Suspected duplicate requirements (2)" || created[0]["threshold"].(float64) != 0.9 || created[0]["severity"] != "warning" {
+	if len(created) != 1 || created[0]["name"] != "Suspected duplicate requirements (2)" || created[0]["threshold"].(float64) != 0.68 || created[0]["severity"] != "warning" {
 		t.Fatal(created)
 	}
 	created = items(a.m("POST", "/api/v1/projects/"+pid+"/trace-rules/builtins", nil, 201))

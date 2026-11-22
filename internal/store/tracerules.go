@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/similarity"
 )
 
 // Traceability rules of a project (see model.TraceRule). The selector and
@@ -127,10 +128,13 @@ func validateBuiltinRule(r *model.TraceRule) error {
 	r.Min = 1
 	o := model.TraceRuleOptions{}
 	switch r.Kind {
-	case model.CheckDuplicateSuspect:
+	case model.CheckDuplicateSuspect, model.CheckTestDuplicateSuspect, model.CheckPotentialConflict:
 		o.Threshold = r.Threshold
 		if o.Threshold == 0 {
 			o.Threshold = DefaultDuplicateThreshold
+			if r.Kind == model.CheckPotentialConflict {
+				o.Threshold = similarity.DefaultConflictConfidence
+			}
 		}
 		if o.Threshold < 0.5 || o.Threshold > 1 {
 			return Invalidf("threshold must be between 0.5 and 1")
@@ -149,8 +153,8 @@ func validateBuiltinRule(r *model.TraceRule) error {
 }
 
 // DefaultDuplicateThreshold is the similarity from which duplicate_suspect
-// reports two requirements.
-const DefaultDuplicateThreshold = 0.9
+// and test_duplicate_suspect report two items (internal/similarity).
+const DefaultDuplicateThreshold = similarity.DefaultDuplicateThreshold
 
 // CreateTraceRule adds a rule at the end of the project's rules.
 func (s *Store) CreateTraceRule(ctx context.Context, tenantID string, r *model.TraceRule) error {

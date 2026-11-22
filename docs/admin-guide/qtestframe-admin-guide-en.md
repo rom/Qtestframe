@@ -522,6 +522,16 @@ Every key of the file, its type, its default and the environment variable that s
 | `secrets.pkcs11.key_label` | string | `qtestframe-kek` | — | `CKA_LABEL` of the AES key that wraps the data keys; must be unique in the token. |
 | `secrets.pkcs11.generate_key` | bool | `false` | — | Create a non-extractable AES-256 key with `key_label` when the token has none. |
 
+### `similarity`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `similarity.embeddings.enabled` | bool | `false` | — | Use an embeddings service for the similarity of requirements and tests (suspected duplicates, the *Similar requirements* panel). Off by default: the similarity is then computed on the server. **When on, the title, description and criteria or steps of the items are sent to that service.** Also in **Administration → System settings**. |
+| `similarity.embeddings.url` | string | — | — | URL of an OpenAI-compatible embeddings endpoint, e.g. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, answer `{data: [{embedding}]}`). |
+| `similarity.embeddings.model` | string | — | — | Model sent as `model` (empty: the service's default). Vectors are cached per item version and model; changing the model computes them again. |
+| `similarity.embeddings.api_key_file` | string | — | — | File with the API key, sent as a bearer token (relative: in `$CREDENTIALS_DIRECTORY`). The key can also be stored in the system settings; it is never shown again. |
+| `similarity.embeddings.timeout` | duration | `30s` | — | Longest time to wait for the service. When it fails or times out, the local similarity is used. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -996,6 +1006,11 @@ The settings the page offers, generated from `internal/settings`:
 | Script and web test runner | `runner.web.trace` | `on_failure`, `always`, `off` | after a restart |
 | Script and web test runner | `runner.web.video` | `off`, `on_failure`, `always` | after a restart |
 | Script and web test runner | `runner.web.playwright_dir` | text | shown only (file) |
+| Similarity (duplicates) | `similarity.embeddings.enabled` | on/off | at once |
+| Similarity (duplicates) | `similarity.embeddings.url` | text | at once |
+| Similarity (duplicates) | `similarity.embeddings.model` | text | at once |
+| Similarity (duplicates) | `similarity.embeddings.api_key` | secret (write-only) | at once |
+| Similarity (duplicates) | `similarity.embeddings.timeout` | 1s–5m | at once |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1008,6 +1023,24 @@ What each key means is in the [configuration reference](#reference). Everything 
 - **Syslog over TLS** uses `ca_file`, `cert_file` and `key_file` from the file; they are readable after the lock-down because they are added to the Landlock read-only paths at start-up. A Unix socket that was not configured at start-up may be refused by Landlock; use `udp`, `tcp` or `tls`, or restart.
 - **Secrets** entered on the page (the SMTP password, OIDC client secrets) are write-only, stored [encrypted](#encryption-of-stored-secrets), never logged and never shown again.
 - **Test buttons** (*Test connection* for OIDC discovery, *Send test message* for syslog, *Send test e-mail*) make the server connect to an address the super administrator enters. Filter the server's egress if it can reach internal services.
+
+## Embeddings service for similar items
+
+Suspected duplicate requirements and tests, the *Similar requirements* panel of the editors and the catalogue import warning compare items on the server by default: TF-IDF over the project with stemming, stop words and synonyms for English and Swedish (see the user guide, *Duplicates and conflicts*). Nothing is sent anywhere.
+
+Optionally, an **OpenAI-compatible embeddings endpoint** computes the similarity instead: **Administration → System settings → Similarity (duplicates)**, or `similarity.embeddings` in the [configuration file](#reference).
+
+| Setting | Meaning |
+|---|---|
+| `similarity.embeddings.enabled` | off by default |
+| `similarity.embeddings.url` | the endpoint, e.g. `https://llm.example.com/v1/embeddings`; it receives `POST {"model": …, "input": [texts]}` and answers `{"data": [{"index": i, "embedding": [numbers]}]}` |
+| `similarity.embeddings.model` | sent as `model` (empty: the service's default) |
+| `similarity.embeddings.api_key` | sent as `Authorization: Bearer …`; write-only, stored [encrypted](#encryption-of-stored-secrets); in the file only as `api_key_file` |
+| `similarity.embeddings.timeout` | longest wait (default 30 s) |
+
+**Privacy.** When it is on, the **title, description and acceptance criteria of requirements and the title, description, preconditions and steps of tests are sent to that service**, of every project of every organisation on the server, whenever the similarity checks run or someone types in an editor (the text being written is sent too). Use a service run by your organisation or one you have an agreement with; leave it off otherwise.
+
+The vectors are stored in the table `similarity_embeddings` per item, model and text (a changed item is sent again, an unchanged one is not). It is a cache: it is not part of backups or project archives and is filled again after a restore. Changing the model computes every vector again. **Test the service** on the page sends one short example sentence and reports the vector size. When the service fails or times out, the server logs a warning and uses the local similarity, so the checks never stop working. The conflict detection (opposite obligations, thresholds, exclusive values) always runs on the server. The thresholds of the checks apply to the service's cosine similarity as well; services differ, so check the suspected duplicates after turning it on and adjust the threshold of the duplicate checks if needed.
 
 ## Audit and export
 
@@ -1115,7 +1148,7 @@ The server must read some secrets back, so it cannot hash them. These are stored
 | webhook signing secrets | `webhooks.secret` |
 | defect tracker tokens (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | values of secret web test variables | `projects.web_tests` |
-| SMTP password and OIDC client secrets entered in the web client | `system_settings` |
+| SMTP password, OIDC client secrets and the key of the embeddings service entered in the web client | `system_settings` |
 
 Passwords (bcrypt), API and SCIM tokens, sessions, invitations, remembered devices and recovery codes are stored as hashes and need no key. Secrets of the configuration file, `*_file` options and `QTF_*` variables are never stored in the database.
 
@@ -1245,7 +1278,7 @@ Other limits: JSON bodies at most 8 MiB, headers 1 MiB, `ReadHeaderTimeout` 10 s
 
 ## Outgoing connections
 
-Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
+Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. When the optional [embeddings service](#embeddings-service-for-similar-items) is on, the server sends the text of requirements and tests to it. Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
 
 ## Checklist
 
@@ -1568,7 +1601,7 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 **In a backup** (94 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
 
-**Not in a backup:** `chat_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `suggest_history`.
+**Not in a backup:** `chat_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1685,6 +1718,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 39 | `0039_discussions.sql` |
 | 40 | `0040_exploratory.sql` |
 | 41 | `0041_test_cycles.sql` |
+| 43 | `0043_similarity.sql` |
 | 45 | `0045_chat_channels.sql` |
 | 46 | `0046_variant_gates.sql` |
 | 47 | `0047_risk_catalog.sql` |

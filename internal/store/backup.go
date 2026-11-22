@@ -78,7 +78,9 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "
 	// personal autocomplete history: a convenience, not project data
 	"suggest_history": true,
 	// queue and log of chat posts (the channels are backed up)
-	"chat_deliveries": true}
+	"chat_deliveries": true,
+	// vectors of the embeddings service: a cache, computed again
+	"similarity_embeddings": true}
 
 // NotBackedUpTables returns the tables that exist but are deliberately not
 // part of a backup, sorted (for the administrator guide, see

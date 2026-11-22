@@ -2,7 +2,9 @@
 // Options of a catalogue import (POST /projects/{pid}/catalog/import):
 // language, target folders, subfolders, status, the verifying tests, the
 // risks and their mitigating requirements, and a summary of what will be
-// added.
+// added, with a warning about catalogue requirements similar to
+// requirements the project already has (POST /projects/{pid}/catalog/similar)
+// and the choice to leave them out.
 import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
@@ -11,7 +13,8 @@ import SelectButton from 'primevue/selectbutton'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Message from 'primevue/message'
 import { api } from '@/lib/api'
-import { importPlan, type CatalogImportResult, type CatalogRequirement, type CatalogRisk } from '@/lib/catalog'
+import { importPlan, type CatalogImportResult, type CatalogRequirement, type CatalogRisk, type CatalogSimilar } from '@/lib/catalog'
+import { percent } from '@/lib/similarity'
 import { buildTree, flatten } from '@/lib/tree'
 import type { Folder } from '@/lib/types'
 import { enumOptions } from '@/i18n/labels'
@@ -56,9 +59,26 @@ const includeRisks = ref(false)
 const riskStatus = ref('identified')
 const source = ref(NONE)
 const busy = ref(false)
+const skipSimilar = ref(false)
+const similar = ref<CatalogSimilar[]>([])
+let similarSeq = 0
+async function loadSimilar() {
+  const n = ++similarSeq
+  if (!visible.value || !props.requirementIds.length) {
+    similar.value = []
+    return
+  }
+  try {
+    const res = await api.post<{ items: CatalogSimilar[] }>(`/projects/${props.projectId}/catalog/similar`, { requirement_ids: props.requirementIds, lang: lang.value })
+    if (n === similarSeq) similar.value = res.items ?? []
+  } catch {
+    if (n === similarSeq) similar.value = [] // a warning only
+  }
+}
 watch(visible, (v) => {
   if (v) includeTests.value = props.canTests
 })
+watch([visible, lang, () => props.requirementIds], () => void loadSimilar(), { immediate: true })
 
 const folderOptions = (fs: Folder[]) => [
   { label: t('common.topLevel'), value: NONE },
@@ -120,6 +140,7 @@ async function submit() {
       add_copies: addCopies.value,
       ...(hasRisks.value ? { risk_ids: props.riskIds, include_requirements: includeRequirements.value, risk_status: riskStatus.value } : {}),
       ...(includeRisks.value && mitigatedRisks.value ? { include_risks: true } : {}),
+      skip_similar: skipSimilar.value && similar.value.length > 0,
       ...(source.value !== NONE ? { source: source.value } : {}),
     })
     visible.value = false
@@ -206,6 +227,22 @@ async function submit() {
           <li v-if="plan.risks.length || (plan.requirements.length && hasRisks)" class="muted">{{ t('catalog.dialog.riskLinks') }}</li>
         </ul>
         </div>
+        <div v-if="similar.length" class="ci-similar" role="group" aria-labelledby="ci-similar-h">
+          <Message severity="warn" :closable="false">
+            <span id="ci-similar-h">{{ t('catalog.dialog.similar', { n: similar.length }, similar.length) }}</span>
+          </Message>
+          <ul class="ci-similar-list">
+            <li v-for="s in similar.slice(0, 8)" :key="s.catalog_ref">
+              <span class="mono">{{ s.catalog_ref }}</span> {{ s.title }}
+              <span class="muted">→ {{ s.similar.map((x) => `${x.key} (${t('similar.score', { pct: percent(x.score) })})`).join(', ') }}</span>
+            </li>
+            <li v-if="similar.length > 8" class="muted">{{ t('traceRules.more', { n: similar.length - 8 }) }}</li>
+          </ul>
+          <div class="row switch-row">
+            <ToggleSwitch v-model="skipSimilar" input-id="ci-skip-similar" />
+            <label for="ci-skip-similar">{{ t('catalog.dialog.skipSimilar') }}</label>
+          </div>
+        </div>
         <Message v-if="!total" severity="warn" :closable="false">{{ t('catalog.dialog.nothing') }}</Message>
         <Message v-if="total > MAX" severity="error" :closable="false">{{ t('catalog.dialog.tooMany', { max: MAX }) }}</Message>
       </section>
@@ -224,4 +261,6 @@ async function submit() {
 .switch-row { gap: 8px; align-items: center; }
 .summary h3 { font-size: 14px; margin: 4px 0; }
 .summary ul { margin: 0 0 6px; padding-left: 18px; }
+.ci-similar { display: grid; gap: 4px; }
+.ci-similar-list { font-size: 13px; overflow-wrap: anywhere; }
 </style>

@@ -522,6 +522,16 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `secrets.pkcs11.key_label` | text | `qtestframe-kek` | — | `CKA_LABEL` för AES-nyckeln som omsluter datanycklarna; måste vara unik i tokenen. |
 | `secrets.pkcs11.generate_key` | bool | `false` | — | Skapa en icke-exporterbar AES-256-nyckel med `key_label` när tokenen saknar en. |
 
+### `similarity`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `similarity.embeddings.enabled` | bool | `false` | — | Använd en tjänst för inbäddningar (embeddings) för likheten mellan krav och tester (misstänkta dubbletter, panelen *Liknande krav*). Av som standard: likheten beräknas då på servern. **När den är på skickas rubrik, beskrivning och kriterier eller steg för objekten till tjänsten.** Finns även under **Administration → Systeminställningar**. |
+| `similarity.embeddings.url` | text | — | — | Adress till en OpenAI-kompatibel embeddings-slutpunkt, t.ex. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, svaret `{data: [{embedding}]}`). |
+| `similarity.embeddings.model` | text | — | — | Modell som skickas som `model` (tom: tjänstens standard). Vektorerna cachas per objektversion och modell; byts modellen beräknas de om. |
+| `similarity.embeddings.api_key_file` | text | — | — | Fil med API-nyckeln, som skickas som bearer-token (relativ: i `$CREDENTIALS_DIRECTORY`). Nyckeln kan också sparas i systeminställningarna; den visas aldrig igen. |
+| `similarity.embeddings.timeout` | tidslängd | `30s` | — | Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler
@@ -996,6 +1006,11 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Körning av skript och webbtester | `runner.web.trace` | `on_failure`, `always`, `off` | efter omstart |
 | Körning av skript och webbtester | `runner.web.video` | `off`, `on_failure`, `always` | efter omstart |
 | Körning av skript och webbtester | `runner.web.playwright_dir` | text | visas bara (filen) |
+| Likhet (dubbletter) | `similarity.embeddings.enabled` | på/av | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.url` | text | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.model` | text | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.api_key` | hemlighet (skrivskyddad läsning) | direkt |
+| Likhet (dubbletter) | `similarity.embeddings.timeout` | 1s–5m | direkt |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1008,6 +1023,24 @@ Vad varje nyckel betyder står i [konfigurationsreferensen](#referens). Allt ann
 - **Syslog över TLS** använder `ca_file`, `cert_file` och `key_file` från filen; de är läsbara efter låsningen eftersom de läggs till bland Landlocks skrivskyddade sökvägar vid start. En Unix-socket som inte var konfigurerad vid start kan nekas av Landlock; använd `udp`, `tcp` eller `tls`, eller starta om.
 - **Hemligheter** som anges på sidan (SMTP-lösenordet, OIDC-klienthemligheter) kan bara skrivas, lagras [krypterade](#kryptering-av-lagrade-hemligheter), loggas aldrig och visas aldrig igen.
 - **Testknapparna** (*Testa anslutningen* för OIDC-discovery, *Skicka testmeddelande* för syslog, *Skicka testmejl*) får servern att ansluta till en adress som superadministratören anger. Filtrera serverns utgående trafik om den når interna tjänster.
+
+## Tjänst för inbäddningar för liknande objekt
+
+Misstänkt dubblerade krav och testfall, panelen *Liknande krav* i redigerarna och varningen vid import från katalogen jämför objekt på servern som standard: TF-IDF över projektet med ordstammar, stoppord och synonymer för svenska och engelska (se användarguiden, *Dubbletter och konflikter*). Ingenting skickas någonstans.
+
+Om man vill kan en **OpenAI-kompatibel embeddings-slutpunkt** beräkna likheten i stället: **Administration → Systeminställningar → Likhet (dubbletter)**, eller `similarity.embeddings` i [konfigurationsfilen](#referens).
+
+| Inställning | Betydelse |
+|---|---|
+| `similarity.embeddings.enabled` | av som standard |
+| `similarity.embeddings.url` | slutpunkten, t.ex. `https://llm.example.com/v1/embeddings`; den får `POST {"model": …, "input": [texter]}` och svarar `{"data": [{"index": i, "embedding": [tal]}]}` |
+| `similarity.embeddings.model` | skickas som `model` (tom: tjänstens standard) |
+| `similarity.embeddings.api_key` | skickas som `Authorization: Bearer …`; kan bara skrivas, lagras [krypterad](#kryptering-av-lagrade-hemligheter); i filen bara som `api_key_file` |
+| `similarity.embeddings.timeout` | längsta väntan (standard 30 s) |
+
+**Integritet.** När den är på **skickas titel, beskrivning och acceptanskriterier för krav och titel, beskrivning, förutsättningar och steg för testfall till tjänsten**, för alla projekt i alla organisationer på servern, när likhetskontrollerna körs eller någon skriver i en redigerare (texten som skrivs skickas också). Använd en tjänst som drivs av er organisation eller som ni har avtal med; låt den annars vara av.
+
+Vektorerna lagras i tabellen `similarity_embeddings` per objekt, modell och text (ett ändrat objekt skickas igen, ett oförändrat inte). Den är en cache: den ingår inte i säkerhetskopior eller projektarkiv och fylls på nytt efter en återställning. Byts modellen beräknas alla vektorer om. **Testa tjänsten** på sidan skickar en kort exempelmening och visar vektorns storlek. När tjänsten misslyckas eller inte svarar loggar servern en varning och använder den lokala likheten, så kontrollerna slutar aldrig fungera. Konfliktsökningen (motsatta förpliktelser, gränsvärden, uteslutande värden) körs alltid på servern. Kontrollernas gränsvärden gäller även tjänstens cosinuslikhet; tjänster skiljer sig, så granska de misstänkta dubbletterna när den har slagits på och justera gränsen för dubblettkontrollerna vid behov.
 
 ## Granskning och export
 
@@ -1115,7 +1148,7 @@ Servern måste kunna läsa vissa hemligheter tillbaka, så de kan inte hashas. D
 | signeringshemligheter för webhooks | `webhooks.secret` |
 | token för ärendesystem (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | värden för hemliga webbtestvariabler | `projects.web_tests` |
-| SMTP-lösenord och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
+| SMTP-lösenord, nyckeln till tjänsten för inbäddningar och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
 
 Lösenord (bcrypt), API- och SCIM-nycklar, sessioner, inbjudningar, ihågkomna enheter och återställningskoder lagras som hashar och behöver ingen nyckel. Hemligheter i konfigurationsfilen, `*_file`-inställningar och `QTF_*`-variabler lagras aldrig i databasen.
 
@@ -1245,7 +1278,7 @@ Andra gränser: JSON-innehåll högst 8 MiB, huvuden 1 MiB, `ReadHeaderTimeout` 
 
 ## Utgående anslutningar
 
-Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
+Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. När den valfria [tjänsten för inbäddningar](#tjänst-för-inbäddningar-för-liknande-objekt) är på skickar servern texten i krav och testfall till den. Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
 
 ## Checklista
 
@@ -1568,7 +1601,7 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 **I en säkerhetskopia** (94 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
 
-**Inte i en säkerhetskopia:** `chat_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `suggest_history`.
+**Inte i en säkerhetskopia:** `chat_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1685,6 +1718,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 39 | `0039_discussions.sql` |
 | 40 | `0040_exploratory.sql` |
 | 41 | `0041_test_cycles.sql` |
+| 43 | `0043_similarity.sql` |
 | 45 | `0045_chat_channels.sql` |
 | 46 | `0046_variant_gates.sql` |
 | 47 | `0047_risk_catalog.sql` |

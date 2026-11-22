@@ -457,6 +457,26 @@ var keyDocs = map[string]text{
 		"Hour of the day (UTC, 0–23) when daily digests are sent.",
 		"Timme på dygnet (UTC, 0–23) då dagliga sammanfattningar skickas.",
 	},
+	"similarity.embeddings.enabled": {
+		"Use an embeddings service for the similarity of requirements and tests (suspected duplicates, the *Similar requirements* panel). Off by default: the similarity is then computed on the server. **When on, the title, description and criteria or steps of the items are sent to that service.** Also in **Administration → System settings**.",
+		"Använd en tjänst för inbäddningar (embeddings) för likheten mellan krav och tester (misstänkta dubbletter, panelen *Liknande krav*). Av som standard: likheten beräknas då på servern. **När den är på skickas rubrik, beskrivning och kriterier eller steg för objekten till tjänsten.** Finns även under **Administration → Systeminställningar**.",
+	},
+	"similarity.embeddings.url": {
+		"URL of an OpenAI-compatible embeddings endpoint, e.g. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, answer `{data: [{embedding}]}`).",
+		"Adress till en OpenAI-kompatibel embeddings-slutpunkt, t.ex. `https://llm.example.com/v1/embeddings` (`POST {model, input}`, svaret `{data: [{embedding}]}`).",
+	},
+	"similarity.embeddings.model": {
+		"Model sent as `model` (empty: the service's default). Vectors are cached per item version and model; changing the model computes them again.",
+		"Modell som skickas som `model` (tom: tjänstens standard). Vektorerna cachas per objektversion och modell; byts modellen beräknas de om.",
+	},
+	"similarity.embeddings.api_key_file": {
+		"File with the API key, sent as a bearer token (relative: in `$CREDENTIALS_DIRECTORY`). The key can also be stored in the system settings; it is never shown again.",
+		"Fil med API-nyckeln, som skickas som bearer-token (relativ: i `$CREDENTIALS_DIRECTORY`). Nyckeln kan också sparas i systeminställningarna; den visas aldrig igen.",
+	},
+	"similarity.embeddings.timeout": {
+		"Longest time to wait for the service. When it fails or times out, the local similarity is used.",
+		"Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten.",
+	},
 	"system_settings.locked": {
 		"Settings that cannot be changed in **Administration → System settings**: keys (`logging.level`), prefixes ending in `.*` (`email.*`) or `*`. Their stored overrides are ignored.",
 		"Inställningar som inte kan ändras under **Administration → Systeminställningar**: nycklar (`logging.level`), prefix som slutar med `.*` (`email.*`) eller `*`. Deras sparade värden ignoreras.",

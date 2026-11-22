@@ -18,6 +18,7 @@ export const GUIDE_PAGES = [
   'reviews-and-notifications',
   'discussions',
   'traceability-and-coverage',
+  'duplicates-and-conflicts',
   'variants-and-code',
   'baselines',
   'search-and-filters',

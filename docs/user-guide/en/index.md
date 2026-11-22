@@ -26,6 +26,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Exploratory testing](exploratory-testing.md) | Session-based exploratory testing: charters, the session timer, typed notes with keyboard shortcuts, defects from notes, debriefs, metrics and the session report |
 | [Waivers, residual risk and the SoA](waivers-and-soa.md) | Waivers and deviations with signed approvals, residual risk and its acceptance, the Statement of Applicability (ISO/IEC 27001 Annex A) |
 | [Traceability and coverage](traceability-and-coverage.md) | The traceability matrix, how coverage is calculated, the dashboard |
+| [Duplicates and conflicts](duplicates-and-conflicts.md) | Similar requirements while writing, suspected duplicate requirements and tests, potentially conflicting requirements, merging, thresholds |
 | [Variants and code](variants-and-code.md) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
 | [Baselines](baselines.md) | Freezing a release and comparing versions |
 | [Discussions](discussions.md) | Threaded comments on items with Markdown, @mentions, reactions, resolving, and the project's Discussions page |

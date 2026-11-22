@@ -14665,7 +14665,7 @@ paths:
       summary: Dismiss a consistency finding
       operationId: postProjectsByPidConsistencyDismissals
       description: |-
-        `{check: duplicate_suspect|unmet_dependency|broken_prerequisite, item_id, other_id}`: not a duplicate, or a dependency on a deleted item dealt with. Needs requirement.write (test.write for broken_prerequisite) in the project.
+        `{check: duplicate_suspect|potential_conflict|test_duplicate_suspect|unmet_dependency|broken_prerequisite, item_id, other_id}`: not a duplicate, not a conflict, or a dependency on a deleted item dealt with. Needs requirement.write (test.write for broken_prerequisite and test_duplicate_suspect) in the project.
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -14711,6 +14711,165 @@ paths:
       responses:
         '204':
           description: No content
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/consistency/review:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: Review suspected duplicates and potential conflicts
+      operationId: getProjectsByPidConsistencyReview
+      description: |-
+        `?kind=requirement|test&threshold=0.3–1&confidence=0.5–1&dismissed=true` → `{kind, engine: tfidf|embeddings, threshold, conflict_confidence, duplicates:[{a, b, score, dismissed}], conflicts:[{a, b, kind: obligation|threshold|exclusive, reason, confidence, similarity, note, evidence_a:{field, parts:[{text, mark}]}, evidence_b, dismissed}], dismissed, truncated}`. Pairs already marked (duplicates or conflicts_with relation; a `duplicates` item link between tests) are left out, dismissed ones unless `dismissed=true`. The thresholds default to the project's built-in checks. Needs the read permission of the kind.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: threshold
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: confidence
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: dismissed
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/consistency/merge:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Traceability
+      summary: Merge a duplicate into the item that survives
+      operationId: postProjectsByPidConsistencyMerge
+      description: |-
+        `{kind: requirement|test, survivor_id, duplicate_id}`: the duplicate's trace links, relations (requirements) or prerequisites (tests) and item links move to the survivor; the duplicate becomes obsolete (tests: deprecated) through the ordinary update and is marked as a duplicate (relation `duplicates`, or an item link labelled `duplicates` between tests); both get a comment. Atomic. → `{survivor, duplicate, moved:{links, relations, dependencies, item_links, dropped}}`. Needs the write permission of the kind.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/similar:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Requirements
+      summary: Similar requirements or tests
+      operationId: postProjectsByPidSimilar
+      description: |-
+        `{kind: requirement|test, title, description, details:[], exclude_id, limit (≤ 20, default 5), min}` → `{engine, threshold, items:[{id, kind, key, title, status, links, created_at, score}]}`: the active items most similar to a text being written (local TF-IDF over the project with stemming and synonyms for English and Swedish, or the configured embeddings service). Needs the read permission of the kind.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/catalog/similar:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Catalogue
+      summary: Catalogue requirements similar to the project's
+      operationId: postProjectsByPidCatalogSimilar
+      description: |-
+        `{requirement_ids, lang}` → `{items:[{catalog_ref, title, similar:[{id, key, title, status, score}]}]}`: the chosen catalogue requirements that are suspected duplicates of requirements the project has (warning before an import; `skip_similar` on the import leaves them out).
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '400':
           $ref: '#/components/responses/Error'
         '401':
@@ -16264,6 +16423,38 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/embeddings:
+    post:
+      tags:
+      - Administration
+      summary: Test the embeddings service with the settings
+      operationId: postAdminSettingsTestEmbeddings
+      description: |-
+        `{"values": {"similarity.embeddings.url": "…"}}` (optional unsaved values of the similarity section; the stored key is used unless one is given): sends one short text to the service and reports `{ok, message, error}` (the vector size). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

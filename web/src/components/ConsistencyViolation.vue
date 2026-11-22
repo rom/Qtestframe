@@ -27,7 +27,7 @@ const v = computed(() => props.violation)
 const line = computed(() => violationLine(v.value, t))
 const related = computed(() => v.value.related ?? [])
 const own = computed(() => itemFixes(v.value).filter((f) => auth.can(fixPermission(f))))
-const fixesOf = (r: TraceRelated) => relatedFixes(props.check, r).filter((f) => auth.can(fixPermission(f)))
+const fixesOf = (r: TraceRelated) => relatedFixes(props.check, r).filter((f) => auth.can(fixPermission(f, props.check)))
 const relText = (r: TraceRelated) => relatedLine(r, t, (s) => enumLabel('status', s))
 const fixLabel = (f: FixAction, r?: TraceRelated) => t(`consistency.fix.${f}`, { key: r?.key ?? v.value.key })
 
