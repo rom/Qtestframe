@@ -316,6 +316,9 @@ async function discover(request) {
     { name: 'test-code', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-code)', wait: '.code-panel' },
     { name: 'applicability-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer .applicability button:has(.pi-pencil)', wait: '.p-dialog' },
     { name: 'code-settings', path: `${p}/settings?tab=project`, wait: '#h-code-settings' },
+    // CI/CD: the CI setup panel (templates) and the server-side posting to GitLab with its log
+    { name: 'ci-setup', path: `${p}/settings?tab=project`, wait: '.ci-setup pre.ci-template' },
+    { name: 'ci-posting', path: `${p}/settings?tab=project`, wait: '.ci-posting .ci-deliveries li' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
     // the requirement and test catalogue: both tabs, a selection, the preview, the import dialog, the areas drawer

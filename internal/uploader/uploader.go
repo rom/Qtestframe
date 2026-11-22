@@ -25,7 +25,13 @@ type Client struct {
 	base  string
 	token string
 	hc    *http.Client
+	// Query is added to the result uploads (the CI build: build_id,
+	// build_number, commit, branch, pipeline_url, merge_request).
+	Query url.Values
 }
+
+// Base returns the server URL (without /api/v1).
+func (c *Client) Base() string { return strings.TrimSuffix(c.base, "/api/v1") }
 
 // New returns a client for baseURL (with or without a trailing /api/v1).
 func New(baseURL, token string, hc *http.Client) (*Client, error) {
@@ -193,6 +199,36 @@ type Summary struct {
 	Unmapped []string   `json:"unmapped"`
 	Rejected []Rejected `json:"rejected"`
 	Created  []Created  `json:"created"`
+	// Build the results were associated with (with a CI build).
+	Build *Build `json:"build,omitempty"`
+}
+
+// Build is the part of a CI build the uploader reports.
+type Build struct {
+	ID         string `json:"id"`
+	ExternalID string `json:"external_id"`
+	Number     string `json:"number"`
+}
+
+// BuildInfo is the CI build of uploaded results (see ci.Detect).
+type BuildInfo struct {
+	BuildID, BuildNumber, Commit, Branch, PipelineURL, MergeRequest string
+}
+
+// Query returns the upload parameters of the build (none when it has no
+// build id or number: the server needs one of them).
+func (b BuildInfo) Query() url.Values {
+	q := url.Values{}
+	if b.BuildID == "" && b.BuildNumber == "" {
+		return q
+	}
+	for k, v := range map[string]string{"build_id": b.BuildID, "build_number": b.BuildNumber, "commit": b.Commit, "branch": b.Branch,
+		"pipeline_url": b.PipelineURL, "merge_request": b.MergeRequest} {
+		if v != "" {
+			q.Set(k, v)
+		}
+	}
+	return q
 }
 
 func (s *Summary) add(o *Summary) {
@@ -201,6 +237,9 @@ func (s *Summary) add(o *Summary) {
 	s.Unmapped = append(s.Unmapped, o.Unmapped...)
 	s.Rejected = append(s.Rejected, o.Rejected...)
 	s.Created = append(s.Created, o.Created...)
+	if o.Build != nil {
+		s.Build = o.Build
+	}
 }
 
 // File is a report to upload.
@@ -233,6 +272,9 @@ func (c *Client) ImportJUnit(ctx context.Context, runID string, files []File, cr
 	if configuration != "" {
 		q.Set("configuration", configuration)
 	}
+	for k, v := range c.Query {
+		q[k] = v
+	}
 	path := "/runs/" + url.PathEscape(runID) + "/junit"
 	if len(q) > 0 {
 		path += "?" + q.Encode()
@@ -249,8 +291,15 @@ func (c *Client) ImportJUnit(ctx context.Context, runID string, files []File, cr
 func (c *Client) ImportJSON(ctx context.Context, runID string, results []json.RawMessage, configuration string) (*Summary, error) {
 	var s Summary
 	path := "/runs/" + url.PathEscape(runID) + "/results"
+	q := url.Values{}
+	for k, v := range c.Query {
+		q[k] = v
+	}
 	if configuration != "" {
-		path += "?" + url.Values{"configuration": {configuration}}.Encode()
+		q.Set("configuration", configuration)
+	}
+	if len(q) > 0 {
+		path += "?" + q.Encode()
 	}
 	err := c.sendJSON(ctx, http.MethodPost, path, map[string]any{"results": results}, &s)
 	if err != nil {
@@ -275,7 +324,9 @@ type Options struct {
 	JUnit, JSON   []string
 	CreateMissing bool
 	FailOnUnknown bool
-	HTTP          *http.Client
+	// CI: the build the results belong to (none when empty).
+	CI   BuildInfo
+	HTTP *http.Client
 	// Log receives progress messages (may be nil).
 	Log io.Writer
 }
@@ -328,6 +379,10 @@ func Report(ctx context.Context, o Options) (*Summary, error) {
 	c, err := New(o.URL, o.Token, o.HTTP)
 	if err != nil {
 		return nil, err
+	}
+	c.Query = o.CI.Query()
+	if o.Build == "" {
+		o.Build = o.CI.BuildNumber
 	}
 	runID := o.RunID
 	switch {
@@ -408,6 +463,9 @@ func ExpandFiles(patterns []string) ([]string, error) {
 // Print writes a short human-readable summary.
 func (s *Summary) Print(w io.Writer) {
 	fmt.Fprintf(w, "run %s: %d result(s) recorded\n", s.RunID, s.Updated)
+	if s.Build != nil {
+		fmt.Fprintf(w, "build %s\n", firstNonEmpty(s.Build.Number, s.Build.ExternalID))
+	}
 	if len(s.Created) > 0 {
 		fmt.Fprintf(w, "created %d test(s):\n", len(s.Created))
 		for _, c := range s.Created {
@@ -427,4 +485,13 @@ func (s *Summary) Print(w io.Writer) {
 			fmt.Fprintf(w, "  %s: %s\n", r.TestKey, r.Reason)
 		}
 	}
+}
+
+func firstNonEmpty(v ...string) string {
+	for _, x := range v {
+		if x != "" {
+			return x
+		}
+	}
+	return ""
 }

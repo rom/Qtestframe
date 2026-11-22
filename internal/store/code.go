@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -35,6 +36,8 @@ const (
 )
 
 func adCodeSecret(projectID string) string { return "code_settings.webhook_secret|" + projectID }
+
+func adCIToken(projectID string) string { return "code_settings.ci_token|" + projectID }
 
 // ---------------------------------------------------------------- keys
 
@@ -733,16 +736,17 @@ func (s *Store) ChangesSinceBuild(ctx context.Context, tenantID string, b *model
 
 // ---------------------------------------------------------------- settings
 
-// CodeSettings returns a project's code integration including the secret
-// (for the server's own use; the API masks it).
+// CodeSettings returns a project's code integration including the secrets
+// (for the server's own use; the API masks them).
 func (s *Store) CodeSettings(ctx context.Context, tenantID, projectID string) (*model.CodeSettings, error) {
 	if _, err := s.GetProject(ctx, tenantID, projectID); err != nil {
 		return nil, err
 	}
-	cs := &model.CodeSettings{}
-	var secret string
+	cs := &model.CodeSettings{CI: model.CISettings{Conditions: []string{}}}
+	var secret, ciToken, ciSettings string
 	var at time.Time
-	err := s.c(ctx).row(ctx, `SELECT webhook_secret, updated_by, updated_at FROM code_settings WHERE project_id = ? AND tenant_id = ?`, projectID, tenantID).Scan(&secret, &cs.UpdatedBy, &at)
+	err := s.c(ctx).row(ctx, `SELECT webhook_secret, ci_token, ci_settings, updated_by, updated_at FROM code_settings WHERE project_id = ? AND tenant_id = ?`, projectID, tenantID).
+		Scan(&secret, &ciToken, &ciSettings, &cs.UpdatedBy, &at)
 	if db.IsNoRows(err) {
 		return cs, nil
 	}
@@ -753,8 +757,48 @@ func (s *Store) CodeSettings(ctx context.Context, tenantID, projectID string) (*
 	if cs.Secret, err = s.unseal(ctx, secret, adCodeSecret(projectID)); err != nil {
 		return nil, fmt.Errorf("webhook secret: %w", err)
 	}
-	cs.HasSecret = cs.Secret != ""
+	if cs.CIToken, err = s.unseal(ctx, ciToken, adCIToken(projectID)); err != nil {
+		return nil, fmt.Errorf("CI token: %w", err)
+	}
+	if ciSettings != "" {
+		_ = json.Unmarshal([]byte(ciSettings), &cs.CI)
+	}
+	if cs.CI.Conditions == nil {
+		cs.CI.Conditions = []string{}
+	}
+	cs.HasSecret, cs.HasCIToken = cs.Secret != "", cs.CIToken != ""
 	return cs, nil
+}
+
+// writeCodeSettings stores all code settings of a project (secrets sealed).
+func (s *Store) writeCodeSettings(ctx context.Context, tenantID, projectID string, cs *model.CodeSettings, user string) error {
+	sealed, err := s.seal(cs.Secret, adCodeSecret(projectID))
+	if err != nil {
+		return err
+	}
+	token, err := s.seal(cs.CIToken, adCIToken(projectID))
+	if err != nil {
+		return err
+	}
+	ci, err := json.Marshal(cs.CI)
+	if err != nil {
+		return err
+	}
+	now := s.now()
+	err = s.tx(ctx, func(c conn) error {
+		if _, err := c.exec(ctx, `DELETE FROM code_settings WHERE project_id = ?`, projectID); err != nil {
+			return err
+		}
+		_, err := c.exec(ctx, `INSERT INTO code_settings (project_id, tenant_id, webhook_secret, ci_token, ci_settings, updated_by, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			projectID, tenantID, sealed, token, string(ci), user, now)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	cs.UpdatedBy, cs.UpdatedAt = user, &now
+	cs.HasSecret, cs.HasCIToken = cs.Secret != "", cs.CIToken != ""
+	return nil
 }
 
 // SaveCodeSettings sets ("" keeps it unless clear) the webhook secret of a project.
@@ -772,22 +816,84 @@ func (s *Store) SaveCodeSettings(ctx context.Context, tenantID, projectID, secre
 	case len(secret) < MinWebhookSecret || len(secret) > MaxWebhookSecret:
 		return nil, Invalidf("the webhook secret must have %d to %d characters", MinWebhookSecret, MaxWebhookSecret)
 	}
-	sealed, err := s.seal(secret, adCodeSecret(projectID))
-	if err != nil {
+	cur.Secret = secret
+	if err := s.writeCodeSettings(ctx, tenantID, projectID, cur, user); err != nil {
 		return nil, err
 	}
-	now := s.now()
-	err = s.tx(ctx, func(c conn) error {
-		if _, err := c.exec(ctx, `DELETE FROM code_settings WHERE project_id = ?`, projectID); err != nil {
-			return err
+	return cur, nil
+}
+
+// MaxCIToken bounds the length of a stored CI token.
+const MaxCIToken = 500
+
+// ValidateCISettings checks and normalises CI settings (the release must
+// belong to the project, see SaveCISettings).
+func ValidateCISettings(ci *model.CISettings) error {
+	ci.Provider = strings.TrimSpace(ci.Provider)
+	ci.APIURL = strings.TrimRight(strings.TrimSpace(ci.APIURL), "/")
+	ci.Project = strings.Trim(strings.TrimSpace(ci.Project), "/")
+	ci.ReleaseID = strings.TrimSpace(ci.ReleaseID)
+	if ci.Provider != "" && ci.Provider != model.CIProviderGitLab {
+		return Invalidf("the CI provider must be gitlab (or empty)")
+	}
+	if ci.APIURL != "" && (!validURL(ci.APIURL) || len(ci.APIURL) > MaxCodeURL) {
+		return Invalidf("api_url must be an http(s) URL such as https://gitlab.example.com/api/v4")
+	}
+	if ci.Provider != "" && ci.Project == "" {
+		return Invalidf("the GitLab project (numeric id or path) is required")
+	}
+	if len(ci.Project) > 200 {
+		return Invalidf("the project is at most 200 characters")
+	}
+	var conds []string
+	for _, c := range ci.Conditions {
+		if c = strings.TrimSpace(c); c != "" {
+			conds = append(conds, c)
 		}
-		_, err := c.exec(ctx, `INSERT INTO code_settings (project_id, tenant_id, webhook_secret, updated_by, updated_at) VALUES (?, ?, ?, ?, ?)`, projectID, tenantID, sealed, user, now)
+	}
+	if len(conds) > 30 {
+		return Invalidf("at most 30 gate conditions")
+	}
+	if _, err := ParseGateConditions(conds); err != nil {
 		return err
-	})
+	}
+	if conds == nil {
+		conds = []string{}
+	}
+	ci.Conditions = conds
+	return nil
+}
+
+// SaveCISettings sets the CI settings of a project and its CI token (""
+// keeps the stored one unless clearToken).
+func (s *Store) SaveCISettings(ctx context.Context, tenantID, projectID string, ci model.CISettings, token string, clearToken bool, user string) (*model.CodeSettings, error) {
+	cur, err := s.CodeSettings(ctx, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return &model.CodeSettings{Secret: secret, HasSecret: secret != "", UpdatedBy: user, UpdatedAt: &now}, nil
+	if err := ValidateCISettings(&ci); err != nil {
+		return nil, err
+	}
+	if ci.ReleaseID != "" {
+		if err := checkRelease(ctx, s.c(ctx), tenantID, projectID, &ci.ReleaseID); err != nil {
+			return nil, err
+		}
+	}
+	token = strings.TrimSpace(token)
+	switch {
+	case clearToken:
+		cur.CIToken = ""
+	case token == "":
+	case len(token) > MaxCIToken || strings.ContainsAny(token, " \t\r\n"):
+		return nil, Invalidf("the CI token must be one word of at most %d characters", MaxCIToken)
+	default:
+		cur.CIToken = token
+	}
+	cur.CI = ci
+	if err := s.writeCodeSettings(ctx, tenantID, projectID, cur, user); err != nil {
+		return nil, err
+	}
+	return cur, nil
 }
 
 // WebhookProject returns the tenant and webhook secret of a project for an

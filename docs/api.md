@@ -1854,7 +1854,7 @@ are recorded when results are uploaded for them.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/projects/{pid}/code-settings` | project.read | `{"has_secret", "gitlab_url", "github_url", "updated_by", "updated_at"}` |
+| GET | `/projects/{pid}/code-settings` | project.read | `{"has_secret", "gitlab_url", "github_url", "updated_by", "updated_at", "ci", "has_ci_token"}` (`ci`: see [CI/CD](#cicd)) |
 | PUT | `/projects/{pid}/code-settings` | project.update | `{"secret"?: "16–200 characters", "clear_secret"?: true}`; an empty secret keeps the stored one. The secret is write-only and stored encrypted |
 | POST | `/hooks/gitlab/{pid}` | none (public) | GitLab push and merge request events; `X-Gitlab-Token` must equal the secret |
 | POST | `/hooks/github/{pid}` | none (public) | GitHub `push`, `pull_request` and `ping` events (`X-GitHub-Event`); `X-Hub-Signature-256` must be `sha256=` + the hex HMAC-SHA256 of the body with the secret |
@@ -1893,7 +1893,8 @@ created_at}], builds}`.
 /runs/{id}/results` take `?build_id=` (the CI's build id, unique per
 project), `?build_number=`, `?commit=` (hex SHA), `?branch=` and
 `?pipeline_url=`: the build is created or updated and the run is
-associated with it (`build_id`, `build_label`; the run's `build` text is
+associated with it (`?merge_request=` names the merge request of the
+results for the [CI posting](#cicd)) (`build_id`, `build_label`; the run's `build` text is
 set when empty); the answer has `build`. `?variant=` makes the run a run
 for that variant. `Build`: `{id, project_id, external_id, number,
 commit_sha, branch, pipeline_url, created_by, created_at, updated_at, runs,
@@ -1918,6 +1919,92 @@ ref, type}]}`.
 `store.CoverageFunc(requirementID, tests, results)` (default
 `store.CoverageOf`); `VariantCoverage` and `BuildIndex` hand it only the
 tests and results that count for the variant or build.
+
+## CI/CD
+
+What a CI/CD pipeline uses (the `qtestframe report`, `gate` and `select`
+commands): the quality gate, the test selection of a change, the
+pipeline templates and the commit statuses and merge request notes the
+server posts to GitLab. API tokens are limited by their role; a CI user
+with the role `tester` can call all of them.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET, POST | `/projects/{pid}/gate` | project.read | the quality gate, see below; the results of a run or build also need run.read |
+| POST | `/projects/{pid}/ci/select` | test.read | the tests of a change, see below; `create_run` needs run.write |
+| GET | `/projects/{pid}/ci/setup` | project.read | `{server_url, project_key, project_id, token_role, variables: [{name, value?, masked, required, description}], templates: [{name, kind: gitlab\|gitlab-selection\|gitlab-component\|github, file, url, content}]}`: the CI setup panel, with the server URL and project key filled in |
+| GET | `/ci/templates/{name}` | none (public) | a template (`gitlab-ci.yml`, `gitlab-ci-selection.yml`, `gitlab-component.yml`, `github-actions.yml`) as `text/yaml` with the server URL filled in; `?project=KEY`, `?download=true`. For GitLab's `include: remote:`; templates contain no secrets |
+| PUT | `/projects/{pid}/ci-settings` | project.update | `{"ci": {provider: ""\|gitlab, api_url, project, post_status, post_note, release_id, conditions: [...]}, "ci_token"?, "clear_ci_token"?}` → the code settings. The token is write-only and stored encrypted; empty keeps it. Audited as `project.ci_settings` |
+| GET | `/projects/{pid}/ci/deliveries` | project.update | `{items: [CIDelivery], total}` newest first; `?limit=` |
+
+**Quality gate.** Body (POST) or query parameters (GET): `{"release"?:
+"<id, name or version>", "variant"?, "run"?: "<id or name>", "build"?:
+"<id, CI id or number>", "require"?: ["must", "coverage>=80", ...],
+"scope"?: "all|affected|<query>", "commit"?, "merge_request"?,
+"summary_only"?: false}`. With a release, its exit criteria (or
+`require`) are evaluated on its scope and its runs, per targeted variant
+as in `GET /releases/{id}/status`; without one, `require` (default
+`mandatory_passed, no_failed, no_stale, no_blocking_defects`) on every
+requirement of the project that is not rejected or obsolete, or on the
+`scope`: `affected` (the requirements the commit and merge request are
+linked to, also through their tests) or a [query](#query-language). `run`
+and `build` restrict the results (with a release: its runs in the build).
+Conditions are `TYPE[:ARG][>=PERCENT]` with the exit criterion types
+above and the aliases `must`, `blocking`, `stale`, `failed`, `defects`,
+`suspect`, `cycle`, `risks`, `rules`, `residual`; `ARG` is the level
+(severity) or the cycle (id or name) of `cycle_executed`. Waivers count as
+in the release status (without a release only project-wide waivers).
+`summary_only` skips the gate (`pass`: no failed or blocked result).
+Answer `GateReport`:
+
+```json
+{"pass": false, "verdict": "fail", "project": {"id", "key", "name"},
+ "release": {"id", "name", "url"}, "variant": {...}, "run": {"id", "name", "url"}, "build": {"id", "name", "url"},
+ "scope": "release|all|affected|<query>", "scope_size": 12, "commit": "…", "merge_request": "5", "url": "…",
+ "conditions": [{"type", "threshold", "level", "cycle_id", "label": "coverage >= 80%", "state": "pass|waived|fail",
+   "met", "actual", "total", "available", "items": [{"kind", "id", "key", "title", "note", "url", "variants"}], "waived": [...]}],
+ "variants": [{"name", "pass"}], "results": {"total", "passed", "failed", "blocked", "skipped", "not_run", "in_progress"},
+ "failures": [Item], "affected": {"requirements": [{"id", "key", "title", "url", "result": "passed|failed|not_run|none", "tests"}],
+   "covered", "passed", "total"}, "waivers": [Item], "summary": {...}}
+```
+
+**Test selection.** The [regression selection](#code-and-builds)'s
+request plus `commits` (SHAs, or prefixes of at least 7 characters, of
+stored commits), `merge_request` (the number of a stored merge / pull
+request), `keys` (requirement and test keys, full or short, e.g. from
+commit messages), `tags` (tests with one of them are always selected),
+`all`, `include_manual`, `create_run` with `run` (name), `build`,
+`environment`, `release_id` (id, name or version) and
+`configuration_ids`. These fields are also accepted by
+`POST /projects/{pid}/regression`, whose answer then lists unknown keys
+in `unknown`. Answer: `{"project", "tests": [{"id", "key", "title",
+"execution_type", "tags", "runner", "identifier", "last_result",
+"reasons": [{kind: requirement|change|related|verifies|prerequisite|key|tag|all, ref, type}]}],
+"manual": [...], "requirements", "changes": [{"id", "key": "!5", "name",
+"url"}], "unknown": [keys], "variant", "run"}`. `tests` are the automated
+tests (all with `include_manual`), `manual` the others. `runner` is the
+test's `runner:<name>` tag, else `playwright` / `pytest` from the script
+language, else `default`; `identifier` is the key with underscores
+(`SHOP_TC_12`), as automated tests name it. A run is created only when
+tests are selected.
+
+**Server-side posting.** With `ci.provider` `gitlab`, a token and
+`post_status` or `post_note`, every result upload (`POST /runs/{id}/junit`,
+`POST /runs/{id}/results`) with `?commit=` (or a build with a commit)
+queues a `CIDelivery` once it is recorded; a waiting one for the same
+run, commit and merge request takes the new results along. It is posted
+in the background as the uploading user: the commit status
+`qtestframe/tests` (failed when a test failed or is blocked), with a
+release or conditions also `qtestframe/gate`, both with the run's page as
+`target_url`, and a merge request note (the upload's `?merge_request=`,
+else the open merge request of the build's branch from the webhooks)
+that is found again by the hidden marker `<!-- qtestframe:ci-summary:KEY -->`
+and updated. Failed attempts are retried by the minute job after 1, 2, 4,
+8 and 16 minutes (HTTP 429: as long as GitLab asks); other HTTP 4xx are
+final. `CIDelivery`: `{id, project_id, run_id, build_id, commit_sha,
+merge_request, status: queued|sending|retry|sent|failed, attempts,
+status_code, error, outcome, created_by, created_at, next_attempt_at,
+sent_at}`; the 50 newest finished ones are kept per project.
 
 ## Dependency graph and tags
 
@@ -2163,6 +2250,7 @@ Exit criterion types (`threshold` in percent, default 100):
 | `no_blocking_defects` | no scope requirement is blocked by an open defect under the project's severity rules (see [change and defect correlations](#change-and-defect-correlations)); a default of new releases |
 | `residual_risk` | no risk (not closed) linked to a scope requirement has a residual level above `level` (the release's risk acceptance threshold; default the project's, see [Risks](#risks)) unless its "accept risk" sign-off is valid; accepted risks are listed in `accepted` |
 | `cycle_executed` | at least `threshold` % of the planned tests of the [test cycle](#test-cycles) `cycle_id` (of the release's project) have a final result in the cycle's runs (default 100: "fully executed"); `items` lists the tests not yet executed |
+| `no_stale` | no test whose latest result in the release's runs is a pass that is stale (see [change and defect correlations](#change-and-defect-correlations)); a failed test is left to `no_failed`, a test of only waived requirements is `waived` |
 
 **Waivers.** An approved, unexpired [waiver](#waivers-and-deviations) for
 the release or for the whole project makes the criteria treat its

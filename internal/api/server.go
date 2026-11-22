@@ -164,6 +164,8 @@ func (s *Server) routes() {
 	pub("GET /api/v1/auth/saml/{name}/metadata", s.handleSAMLMetadata)
 	// GitLab and GitHub webhooks (code.go): the signature or secret token is the credential
 	s.routesCodeHooks(pub)
+	// CI/CD pipeline templates (ci.go): no secrets in them
+	s.routesCIPublic(pub)
 	pub("GET /api/v1/auth/saml/{name}/login", s.handleSAMLLogin)
 	pub("POST /api/v1/auth/saml/{name}/acs", s.handleSAMLACS)
 	h("GET /api/v1/auth/me", s.handleMe)
@@ -356,6 +358,7 @@ func (s *Server) routes() {
 	// variants and applicability (variants.go), code and builds (code.go)
 	s.routesVariants(h)
 	s.routesCode(h)
+	s.routesCI(h)
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)

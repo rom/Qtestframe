@@ -1,0 +1,35 @@
+# Qtestframe in GitHub Actions (.github/workflows/qtestframe.yml): upload
+# the test results, post a commit status and a pull request comment, and
+# fail the workflow when the quality gate fails.
+#
+# Repository secret: QTF_TOKEN (Qtestframe API token with the role
+# "tester"). The workflow's own GITHUB_TOKEN posts the status and comment.
+name: tests
+on: [push, pull_request]
+permissions:
+  contents: read
+  statuses: write
+  pull-requests: write
+env:
+  QTF_URL: "__QTF_URL__"
+  QTF_PROJECT: "__QTF_PROJECT__"
+  QTF_TOKEN: ${{ secrets.QTF_TOKEN }}
+  QTF_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  QTF_RUN: "Workflow ${{ github.run_number }} (${{ github.head_ref || github.ref_name }})"
+  QTF_POST_STATUS: "true"
+  QTF_POST_COMMENT: "true"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run your tests (JUnit XML into qtf-results/)
+        run: mkdir -p qtf-results && echo "run your tests here"
+      - name: Install the qtestframe command
+        run: echo "put the qtestframe binary on the PATH here"
+      - name: Report to Qtestframe
+        if: always()
+        run: qtestframe report --run "$QTF_RUN" --create-run --junit 'qtf-results/*.xml'
+      - name: Quality gate
+        if: always()
+        run: qtestframe gate --run "$QTF_RUN" --format markdown --output "$GITHUB_STEP_SUMMARY"

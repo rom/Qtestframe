@@ -68,6 +68,8 @@ tags:
   description: Test runs, executions and result imports
 - name: Code and builds
   description: Commits, merge and pull requests, CI builds, webhooks and the regression selection
+- name: CI/CD
+  description: Quality gate, test selection, pipeline templates and commit statuses posted to GitLab
 - name: Baselines
   description: Baselines and electronic sign-offs
 - name: Releases
@@ -2538,7 +2540,7 @@ paths:
       summary: Get code integration
       operationId: getProjectsByPidCodeSettings
       description: |-
-        `{has_secret, gitlab_url, github_url, updated_by, updated_at}` — the webhook URLs to enter in GitLab and GitHub
+        `{has_secret, gitlab_url, github_url, updated_by, updated_at, ci, has_ci_token}` — the webhook URLs to enter in GitLab and GitHub, and the server-side CI posting (see `PUT /projects/{pid}/ci-settings`)
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -10227,7 +10229,7 @@ paths:
       summary: Regression selection
       operationId: postProjectsByPidRegression
       description: |-
-        `{requirement_ids?: [ids or keys], change_ids?: [...], since_build?: ref, variant?: ref, include_related?: false, include_prerequisites?: true}` → `{requirements, tests: [{id, key, title, last_result, reasons: [{kind, ref, type}]}], changes, variant, since_build}`
+        `{requirement_ids?: [ids or keys], change_ids?: [...], since_build?: ref, variant?: ref, include_related?: false, include_prerequisites?: true, commits?: [SHAs], merge_request?, keys?: [item keys], tags?: [always-run tags], all?}` → `{requirements, tests: [{id, key, title, last_result, reasons: [{kind, ref, type}]}], changes, variant, since_build, unknown}`
 
         **Permission:** `test.read`.
       x-permission: test.read
@@ -19287,6 +19289,268 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/gate:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - CI/CD
+      summary: Quality gate
+      operationId: getProjectsByPidGate
+      description: |-
+        The quality gate of a pipeline (`qtestframe gate`): the exit criteria of a release (optionally for one variant), or ad-hoc conditions, on the results of the release's runs, a run or a build. Body (POST) or query (GET): `{release?: id|name|version, variant?, run?: id|name, build?: id|CI id|number, require?: ["must", "coverage>=80", "no_failed", "no_stale", "no_blocking_defects", "no_open_defects:major", "cycle_executed:NAME>=90"], scope?: all|affected|<query> (without release), commit?, merge_request?, summary_only?}` → `GateReport {pass, verdict: pass|fail, project, release, variant, run, build, scope, scope_size, url, conditions: [{type, threshold, level, cycle_id, label, state: pass|waived|fail, met, actual, total, available, items: [{kind, id, key, title, note, url, variants}], waived}], variants: [{name, pass}], results: {total, passed, failed, blocked, skipped, not_run, in_progress}, failures, affected: {requirements: [{id, key, title, url, result, tests}], covered, passed, total}, waivers, summary}`. Without release and require the conditions are `mandatory_passed, no_failed, no_stale, no_blocking_defects` on every requirement that is not rejected or obsolete. Waivers count as in the release status; the results of a run or build also need `run.read`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: release
+        in: query
+        schema:
+          type: string
+      - name: variant
+        in: query
+        schema:
+          type: string
+      - name: run
+        in: query
+        schema:
+          type: string
+      - name: build
+        in: query
+        schema:
+          type: string
+      - name: require
+        in: query
+        description: repeatable condition
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+      - name: scope
+        in: query
+        schema:
+          type: string
+      - name: commit
+        in: query
+        schema:
+          type: string
+      - name: merge_request
+        in: query
+        schema:
+          type: string
+      - name: summary_only
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - CI/CD
+      summary: Quality gate
+      operationId: postProjectsByPidGate
+      description: |-
+        The quality gate of a pipeline (`qtestframe gate`): the exit criteria of a release (optionally for one variant), or ad-hoc conditions, on the results of the release's runs, a run or a build. Body (POST) or query (GET): `{release?: id|name|version, variant?, run?: id|name, build?: id|CI id|number, require?: ["must", "coverage>=80", "no_failed", "no_stale", "no_blocking_defects", "no_open_defects:major", "cycle_executed:NAME>=90"], scope?: all|affected|<query> (without release), commit?, merge_request?, summary_only?}` → `GateReport {pass, verdict: pass|fail, project, release, variant, run, build, scope, scope_size, url, conditions: [{type, threshold, level, cycle_id, label, state: pass|waived|fail, met, actual, total, available, items: [{kind, id, key, title, note, url, variants}], waived}], variants: [{name, pass}], results: {total, passed, failed, blocked, skipped, not_run, in_progress}, failures, affected: {requirements: [{id, key, title, url, result, tests}], covered, passed, total}, waivers, summary}`. Without release and require the conditions are `mandatory_passed, no_failed, no_stale, no_blocking_defects` on every requirement that is not rejected or obsolete. Waivers count as in the release status; the results of a run or build also need `run.read`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ci/select:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - CI/CD
+      summary: Test selection of a change
+      operationId: postProjectsByPidCiSelect
+      description: |-
+        The tests a pipeline runs for a change (`qtestframe select`): the regression selection's request (`requirement_ids`, `change_ids`, `since_build`, `variant`, `include_related`, `include_prerequisites`) plus `commits` (SHAs or prefixes of stored commits), `merge_request` (number of a stored merge / pull request), `keys` (requirement and test keys, e.g. from commit messages), `tags` (always-run tests), `all`, `include_manual`, `create_run` (needs `run.write`) with `run` (name), `build`, `environment`, `release_id` (id, name or version), `configuration_ids` → `{project, tests: [{id, key, title, execution_type, tags, runner, identifier, last_result, reasons}], manual, requirements, changes, unknown, variant, run}`; only automated tests unless `include_manual`. `runner` is the test's `runner:<name>` tag, else from its script language, else `default`; `identifier` is the key with underscores (SHOP_TC_12)
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ci/setup:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - CI/CD
+      summary: CI setup
+      operationId: getProjectsByPidCiSetup
+      description: |-
+        What the CI setup panel shows: `{server_url, project_key, project_id, token_role, variables: [{name, value, masked, required, description}], templates: [{name, kind, file, url, content}]}` with the server URL and project key filled in
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ci-settings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    put:
+      tags:
+      - CI/CD
+      summary: Set CI posting
+      operationId: putProjectsByPidCiSettings
+      description: |-
+        `{ci: {provider: ""|gitlab, api_url, project, post_status, post_note, release_id, conditions: [...]}, ci_token?, clear_ci_token?}` → the code settings (`ci`, `has_ci_token`). The token (a GitLab project access token with the api scope) is write-only and stored encrypted; an empty token keeps the stored one. With posting on, a result upload with `?commit=` (and `?merge_request=`) queues a commit status (`qtestframe/tests`, and `qtestframe/gate` with a release or conditions) and a merge request note that the server posts in the background with retries
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ci/deliveries:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - CI/CD
+      summary: CI status posts
+      operationId: getProjectsByPidCiDeliveries
+      description: |-
+        `{items: [CIDelivery {id, run_id, build_id, commit_sha, merge_request, status: queued|sending|retry|sent|failed, attempts, status_code, error, outcome, created_by, created_at, next_attempt_at, sent_at}], total}` newest first (the 50 newest finished ones are kept); `?limit=`
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/ci/templates/{name}:
+    parameters:
+    - name: name
+      in: path
+      required: true
+      description: gitlab-ci.yml, gitlab-ci-selection.yml, gitlab-component.yml or github-actions.yml
+      schema:
+        type: string
+    get:
+      tags:
+      - CI/CD
+      summary: Pipeline template
+      operationId: getCiTemplatesByName
+      description: |-
+        A ready-made pipeline definition with the server URL filled in (`?project=KEY` fills in the project key, `?download=true` downloads it), for GitLab's `include: remote:`. Templates contain no secrets
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      parameters:
+      - name: project
+        in: query
+        schema:
+          type: string
+      - name: download
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: The template
+          content:
+            text/yaml:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     sessionCookie:

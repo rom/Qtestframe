@@ -65,7 +65,7 @@ func (s *Server) hookURL(provider, projectID string) string {
 
 func (s *Server) codeSettingsView(projectID string, cs *model.CodeSettings) *model.CodeSettings {
 	out := *cs
-	out.Secret = ""
+	out.Secret, out.CIToken = "", ""
 	out.GitLabURL, out.GitHubURL = s.hookURL(model.ProviderGitLab, projectID), s.hookURL(model.ProviderGitHub, projectID)
 	return &out
 }
@@ -732,6 +732,19 @@ type regressionReq struct {
 	// IncludePrerequisites adds the prerequisites of the selected tests
 	// (default true).
 	IncludePrerequisites *bool `json:"include_prerequisites"`
+	// Commits: SHAs (or prefixes of at least 7 characters) of stored
+	// commits; MergeRequest: the number of a stored merge / pull request.
+	// Their requirements and tests changed.
+	Commits      []string `json:"commits"`
+	MergeRequest string   `json:"merge_request"`
+	// Keys: requirement and test keys (full or short) that changed, e.g.
+	// found in commit messages by qtestframe select; unknown keys are
+	// answered in unknown.
+	Keys []string `json:"keys"`
+	// Tags: tests with one of these tags are always selected.
+	Tags []string `json:"tags"`
+	// All selects every test (e.g. a pipeline of the default branch).
+	All bool `json:"all"`
 	// run (POST /regression/run)
 	Name             string   `json:"name"`
 	Description      string   `json:"description"`
@@ -765,6 +778,8 @@ type regressionSelection struct {
 	Changes      []model.CodeChange `json:"changes"`
 	Variant      *model.VariantRef  `json:"variant,omitempty"`
 	SinceBuild   *model.Build       `json:"since_build,omitempty"`
+	// Unknown: keys that match no requirement or test of the project.
+	Unknown []string `json:"unknown"`
 }
 
 func shortRef(c *model.CodeChange) string {
@@ -791,7 +806,7 @@ func (s *Server) regression(r *http.Request, p *Principal, pr *model.Project, in
 	if err != nil {
 		return nil, err
 	}
-	sel := &regressionSelection{Requirements: []regressionItem{}, Tests: []regressionItem{}, Changes: []model.CodeChange{}}
+	sel := &regressionSelection{Requirements: []regressionItem{}, Tests: []regressionItem{}, Changes: []model.CodeChange{}, Unknown: []string{}}
 	variant := ""
 	if strings.TrimSpace(in.Variant) != "" {
 		v := pc.variants.Find(in.Variant)
@@ -876,6 +891,27 @@ func (s *Server) regression(r *http.Request, p *Principal, pr *model.Project, in
 			sel.Changes = append(sel.Changes, *c)
 		}
 	}
+	addChanges := func(list []model.CodeChange) {
+		for _, c := range list {
+			if !slices.ContainsFunc(sel.Changes, func(x model.CodeChange) bool { return x.ID == c.ID }) {
+				sel.Changes = append(sel.Changes, c)
+			}
+		}
+	}
+	if len(in.Commits) > 0 {
+		list, err := s.Store.CodeChangesByRef(ctx, p.TenantID(), pr.ID, model.CodeCommit, in.Commits)
+		if err != nil {
+			return nil, err
+		}
+		addChanges(list)
+	}
+	if mr := strings.TrimSpace(in.MergeRequest); mr != "" {
+		list, err := s.Store.CodeChangesByRef(ctx, p.TenantID(), pr.ID, model.CodeMergeRequest, []string{mr})
+		if err != nil {
+			return nil, err
+		}
+		addChanges(list)
+	}
 	for i := range sel.Changes {
 		c := &sel.Changes[i]
 		why := regressionReason{Kind: "change", Ref: shortRef(c), Type: c.Kind}
@@ -884,6 +920,56 @@ func (s *Server) regression(r *http.Request, p *Principal, pr *model.Project, in
 				addReq(it.ItemID, why)
 			} else {
 				addTest(it.ItemID, why)
+			}
+		}
+	}
+	// keys (e.g. from commit messages) and always-run tags
+	if len(in.Keys) > 0 {
+		testByKey := map[string]*model.TestCase{}
+		for i := range tests {
+			testByKey[strings.ToUpper(tests[i].Key)] = &tests[i]
+		}
+		prefix := strings.ToUpper(pr.Key) + "-"
+		sel.Unknown = []string{}
+		for _, k := range in.Keys {
+			k = strings.ToUpper(strings.TrimSpace(k))
+			if k == "" {
+				continue
+			}
+			full := k
+			if !strings.HasPrefix(full, prefix) {
+				full = prefix + k
+			}
+			why := regressionReason{Kind: "key", Ref: k}
+			switch {
+			case reqByKey[k] != nil:
+				addReq(reqByKey[k].ID, why)
+			case reqByKey[full] != nil:
+				addReq(reqByKey[full].ID, why)
+			case testByKey[k] != nil:
+				addTest(testByKey[k].ID, why)
+			case testByKey[full] != nil:
+				addTest(testByKey[full].ID, why)
+			default:
+				if !slices.Contains(sel.Unknown, k) {
+					sel.Unknown = append(sel.Unknown, k)
+				}
+			}
+		}
+	}
+	if in.All {
+		for i := range tests {
+			addTest(tests[i].ID, regressionReason{Kind: "all"})
+		}
+	}
+	for _, tag := range in.Tags {
+		tag = strings.TrimSpace(tag)
+		if tag == "" {
+			continue
+		}
+		for i := range tests {
+			if slices.ContainsFunc(tests[i].Tags, func(x string) bool { return strings.EqualFold(x, tag) }) {
+				addTest(tests[i].ID, regressionReason{Kind: "tag", Ref: tag})
 			}
 		}
 	}

@@ -146,4 +146,67 @@ type CodeSettings struct {
 	GitHubURL string     `json:"github_url,omitempty"`
 	UpdatedBy string     `json:"updated_by,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+	// CI: what the server posts back to the code host when results of a
+	// pipeline arrive (migration 0053).
+	CI CISettings `json:"ci"`
+	// CIToken is write-only: the access token for the code host's API.
+	CIToken    string `json:"ci_token,omitempty"`
+	HasCIToken bool   `json:"has_ci_token"`
 }
+
+// CI providers the server can post statuses to.
+const CIProviderGitLab = "gitlab"
+
+// CISettings: the server posts a commit status (and a merge request note)
+// to the project's code host when results with a commit arrive.
+type CISettings struct {
+	// Provider: "" (off) | gitlab.
+	Provider string `json:"provider"`
+	// APIURL of the code host, e.g. https://gitlab.example.com/api/v4
+	// ("" gitlab.com).
+	APIURL string `json:"api_url"`
+	// Project: the GitLab project's numeric id or path (group/project).
+	Project string `json:"project"`
+	// PostStatus posts the commit statuses qtestframe/tests (and
+	// qtestframe/gate); PostNote a merge request note it keeps up to date.
+	PostStatus bool `json:"post_status"`
+	PostNote   bool `json:"post_note"`
+	// ReleaseID: the release whose exit criteria are the gate ("" the
+	// Conditions on the run's results).
+	ReleaseID string `json:"release_id"`
+	// Conditions of the gate without a release (the --require syntax of
+	// qtestframe gate; empty: the default conditions).
+	Conditions []string `json:"conditions"`
+}
+
+// Enabled reports whether statuses or notes are posted.
+func (c CISettings) Enabled() bool { return c.Provider != "" && (c.PostStatus || c.PostNote) }
+
+// CIDelivery is one post of results to the code host (a commit status and
+// possibly a merge request note).
+type CIDelivery struct {
+	ID           string     `json:"id"`
+	ProjectID    string     `json:"project_id"`
+	RunID        string     `json:"run_id"`
+	BuildID      string     `json:"build_id"`
+	CommitSHA    string     `json:"commit_sha"`
+	MergeRequest string     `json:"merge_request"`
+	Status       string     `json:"status"`
+	Attempts     int        `json:"attempts"`
+	StatusCode   int        `json:"status_code"`
+	Error        string     `json:"error"`
+	Outcome      string     `json:"outcome"`
+	CreatedBy    string     `json:"created_by"`
+	CreatedAt    time.Time  `json:"created_at"`
+	NextAttempt  *time.Time `json:"next_attempt_at,omitempty"`
+	SentAt       *time.Time `json:"sent_at,omitempty"`
+}
+
+// States of a CI delivery.
+const (
+	CIQueued  = "queued"
+	CISending = "sending"
+	CIRetry   = "retry"
+	CISent    = "sent"
+	CIFailed  = "failed"
+)

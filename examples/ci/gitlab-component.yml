@@ -1,0 +1,54 @@
+# Qtestframe as a GitLab CI/CD component: put this file in a component
+# project as templates/qtestframe.yml and include it with
+#   include:
+#     - component: $CI_SERVER_FQDN/<group>/<component project>/qtestframe@<version>
+#       inputs:
+#         project: SHOP
+#
+# CI/CD variables of the project using it: QTF_TOKEN (masked) and,
+# optionally, QTF_GITLAB_TOKEN (masked) for commit statuses and merge
+# request notes.
+spec:
+  inputs:
+    server_url:
+      default: "https://qtestframe.example.com"
+      description: Qtestframe server URL
+    project:
+      description: Qtestframe project key
+    run:
+      default: "Pipeline $CI_PIPELINE_IID ($CI_COMMIT_REF_NAME)"
+    results:
+      default: "qtf-results/*.xml"
+      description: JUnit XML reports of the pipeline's test jobs
+    release:
+      default: ""
+      description: release whose exit criteria are the gate (empty for the default conditions)
+    require:
+      default: ""
+      description: gate conditions, comma-separated (e.g. coverage>=80,no_failed)
+    image:
+      default: "$QTF_CLI_IMAGE"
+      description: image with the qtestframe binary
+    stage:
+      default: ".post"
+---
+qtestframe:
+  stage: $[[ inputs.stage ]]
+  image: $[[ inputs.image ]]
+  rules:
+    - when: always
+  variables:
+    QTF_URL: "$[[ inputs.server_url ]]"
+    QTF_PROJECT: "$[[ inputs.project ]]"
+    QTF_RUN: "$[[ inputs.run ]]"
+    QTF_RELEASE: "$[[ inputs.release ]]"
+    QTF_REQUIRE: "$[[ inputs.require ]]"
+    QTF_POST_STATUS: "true"
+    QTF_POST_COMMENT: "true"
+  script:
+    - qtestframe report --run "$QTF_RUN" --create-run --junit '$[[ inputs.results ]]'
+    - qtestframe gate --run "$QTF_RUN" ${QTF_RELEASE:+--release "$QTF_RELEASE"} ${QTF_REQUIRE:+--require "$QTF_REQUIRE"} --format junit --output qtf-gate.xml
+  artifacts:
+    when: always
+    reports:
+      junit: qtf-gate.xml

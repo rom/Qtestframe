@@ -18,6 +18,7 @@ export const CRITERION_TYPES = [
   'residual_risk',
   'no_blocking_defects',
   'cycle_executed',
+  'no_stale',
 ] as const
 /** Criteria measured in percent of a total, with a threshold. */
 export const PERCENT_CRITERIA = ['coverage', 'passed', 'executed', 'approved', 'cycle_executed'] as const

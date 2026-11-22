@@ -197,6 +197,7 @@ var ProjectArchiveExcluded = map[string]string{
 	"field_set_fields":      "organisation field sets (the project has its own copies)",
 	"org_item_templates":    "organisation templates",
 	"chat_deliveries":       "queue and log of chat posts",
+	"ci_deliveries":         "queue and log of CI status posts",
 	"similarity_embeddings": "cache of the embeddings service (computed again)",
 }
 

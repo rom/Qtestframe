@@ -70,9 +70,26 @@ Usage:
   qtestframe healthcheck [--config FILE] [--port N] [--url URL]
   qtestframe report      --url URL --token T (--project KEY --run NAME [--create-run] | --run-id ID)
                          (--junit FILE | --json FILE)... [FILE...] [--build B] [--environment E]
-                         [--create-missing] [--fail-on-unknown]
-                                                  upload automated test results to a server
-                                                  (QTF_URL and QTF_TOKEN are the defaults)
+                         [--create-missing] [--fail-on-unknown] [--ci auto|none]
+                         [--post-status] [--post-comment]
+                                                  upload automated test results to a server; in CI
+                                                  the pipeline is recorded as the build and a commit
+                                                  status / merge request note can be posted
+  qtestframe gate        --project KEY [--release R [--variant V]] [--run NAME|--run-id ID] [--build B]
+                         [--require COND]... [--scope all|affected|QUERY]
+                         [--format text|json|junit|markdown] [--output FILE]
+                         [--post-status] [--post-comment]
+                                                  check the quality gate: exit 0 pass, 1 fail, 2 error
+                                                  (COND: must, no_failed, no_stale, no_blocking_defects,
+                                                  coverage>=80, no_open_defects:major, cycle_executed:NAME …)
+  qtestframe select      --project KEY [--since REV] [--commits SHA,…] [--files F,…] [--map FILE]
+                         [--tag T]... [--requirement KEY]... [--create-run --run NAME]
+                         [--format keys|pytest|go|playwright|maven|json|gitlab-child-pipeline]
+                         [--output FILE] [--job RUNNER=CMD] [--image RUNNER=IMAGE]
+                                                  the tests to run for a change (merge request)
+                         report, gate and select read QTF_URL, QTF_TOKEN and QTF_PROJECT, and the
+                         GitLab CI / GitHub Actions variables; tokens for posting: QTF_GITLAB_TOKEN,
+                         QTF_GITHUB_TOKEN
   qtestframe version
 
 The configuration file is YAML (see deploy/config.example.yaml); unknown keys
@@ -115,6 +132,10 @@ func Run(args []string, env Env) int {
 		err = cmdCheckConfig(args[1:], env)
 	case "report":
 		err = cmdReport(args[1:], env)
+	case "gate":
+		err = cmdGate(args[1:], env)
+	case "select":
+		err = cmdSelect(args[1:], env)
 	case "sandbox-exec":
 		var c *runner.SandboxConfig
 		if c, err = runner.ParseSandboxArgs(args[1:], env.Stderr); err == nil {
@@ -131,6 +152,13 @@ func Run(args []string, env Env) int {
 	if err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
+		}
+		var ee *exitError
+		if errors.As(err, &ee) {
+			if ee.err != nil {
+				fmt.Fprintf(env.Stderr, "error: %v\n", ee.err)
+			}
+			return ee.code
 		}
 		fmt.Fprintf(env.Stderr, "error: %v\n", err)
 		return 1

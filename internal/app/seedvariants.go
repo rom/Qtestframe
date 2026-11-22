@@ -126,7 +126,27 @@ func seedVariantsAndCode(ctx context.Context, st *store.Store, tenantID string, 
 			return err
 		}
 	}
-	return nil
+	return seedCI(ctx, st, tenantID, p, regression, rc1)
+}
+
+// seedCI: the CI posting settings of the demo project (GitLab, without a
+// token: nothing is posted) and one earlier post in their log, so the CI
+// setup and "Results back to GitLab" show something.
+func seedCI(ctx context.Context, st *store.Store, tenantID string, p *model.Project, run *model.TestRun, b *model.Build) error {
+	ci := model.CISettings{Provider: model.CIProviderGitLab, APIURL: "https://gitlab.example.org/api/v4", Project: "banking/portal",
+		PostStatus: true, PostNote: true, Conditions: []string{"must", "no_failed", "no_blocking_defects"}}
+	if _, err := st.SaveCISettings(ctx, tenantID, p.ID, ci, "", false, "seed"); err != nil {
+		return err
+	}
+	id, _, err := st.AddCIDelivery(ctx, tenantID, &model.CIDelivery{ProjectID: p.ID, RunID: run.ID, BuildID: b.ID, CommitSHA: b.CommitSHA, MergeRequest: "42", CreatedBy: "seed"})
+	if err != nil {
+		return err
+	}
+	if _, err := st.ClaimCIDelivery(ctx, id, time.Minute); err != nil {
+		return err
+	}
+	return st.FinishCIDelivery(ctx, id, store.CIOutcome{OK: true, StatusCode: 200,
+		Outcome: "qtestframe/tests failed; qtestframe/gate failed; note !42 added"})
 }
 
 // seedVariantRelease adds release 1.5 for both products: gated per variant,

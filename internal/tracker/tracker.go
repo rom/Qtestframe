@@ -109,6 +109,8 @@ type Error struct {
 	Body   string
 	// RetryAfter is the wait the tracker asked for (429), if any.
 	RetryAfter time.Duration
+	// Service names the other side in the message ("" the tracker).
+	Service string
 }
 
 // hints explain the status codes users meet most.
@@ -122,7 +124,11 @@ var hints = map[int]string{
 }
 
 func (e *Error) Error() string {
-	s := fmt.Sprintf("the tracker answered %d", e.Status)
+	svc := e.Service
+	if svc == "" {
+		svc = "the tracker"
+	}
+	s := fmt.Sprintf("%s answered %d", svc, e.Status)
 	if h := hints[e.Status]; h != "" {
 		s += " (" + h + ")"
 	}
