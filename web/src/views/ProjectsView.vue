@@ -213,29 +213,29 @@ function loadedDetail(p: Project, res: ProjectLoadResult) {
     <Button v-if="!projects.length && auth.can(P.projectCreate)" :label="t('projects.createFirst')" icon="pi pi-plus" style="margin-top: 12px" @click="openCreate" />
   </div>
   <ul v-else-if="layout === 'cards'" class="project-cards plain-list" :aria-label="t('projects.title')">
-    <li v-for="p in filtered" :key="p.id" class="card clickable" style="display: flex; flex-direction: column; gap: 8px" @click="open(p)">
-      <div class="row nowrap">
+    <li v-for="p in filtered" :key="p.id" class="card clickable project-card" @click="open(p)">
+      <div class="pc-head">
         <ProjectIcon :icon="p.icon" :project-key="p.key" :color="p.color" :size="40" />
-        <div class="grow">
-          <RouterLink :to="{ name: 'dashboard', params: { projectId: p.id } }" class="project-link ellipsis" @click.stop>{{ p.name }}</RouterLink>
-          <div class="row nowrap" style="gap: 6px">
+        <div class="pc-title">
+          <RouterLink :to="{ name: 'dashboard', params: { projectId: p.id } }" class="project-link pc-name" :title="p.name" @click.stop>{{ p.name }}</RouterLink>
+          <div class="pc-badges">
             <span class="key">{{ p.key }}</span>
-            <span v-if="isRestricted(p)" class="type-badge small restricted-badge" v-tooltip="t('sharing.restrictedTip')"><i class="pi pi-lock" aria-hidden="true" />{{ t('sharing.restricted') }}</span>
             <span v-if="p.type && p.type !== 'general'" class="type-badge small"><i :class="PROJECT_TYPE_ICONS[p.type as ProjectType]" aria-hidden="true" />{{ t(`projectType.${p.type}`) }}</span>
+            <span v-if="isRestricted(p)" class="type-badge small restricted-badge" v-tooltip="t('sharing.restrictedTip')"><i class="pi pi-lock" aria-hidden="true" />{{ t('sharing.restricted') }}</span>
           </div>
         </div>
-        <div class="row nowrap" @click.stop>
-          <Button v-if="canSave(p)" icon="pi pi-download" text rounded severity="secondary" :loading="savingId === p.id" :aria-label="t('projectArchive.saveNamed', { name: p.name })" v-tooltip="t('projectArchive.save')" @click="saveArchive(p)" />
-          <Button v-if="canDuplicate(p)" icon="pi pi-copy" text rounded severity="secondary" :aria-label="t('projectArchive.duplicateNamed', { name: p.name })" v-tooltip="t('projectArchive.duplicate')" @click="openDuplicate(p)" />
-          <Button v-if="canShare(auth.me, p)" icon="pi pi-share-alt" text rounded severity="secondary" :aria-label="t('sharing.shareNamed', { name: p.name })" v-tooltip="t('sharing.share')" @click="openShare(p)" />
-          <Button v-if="canIn(p, P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: p.name })" v-tooltip="t('common.edit')" @click="openEdit(p)" />
-          <Button v-if="canIn(p, P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('projects.deleteNamed', { name: p.name })" v-tooltip="t('common.delete')" @click="remove(p)" />
+      </div>
+      <div class="muted pc-desc">{{ p.description || t('common.noDescription') }}</div>
+      <div class="pc-foot">
+        <span class="small muted pc-updated">{{ t('projects.updatedAgo', { time: relativeTime(p.updated_at || p.created_at) }) }}</span>
+        <div class="pc-actions" @click.stop>
+          <Button v-if="canSave(p)" icon="pi pi-download" text rounded size="small" severity="secondary" :loading="savingId === p.id" :aria-label="t('projectArchive.saveNamed', { name: p.name })" v-tooltip.top="t('projectArchive.save')" @click="saveArchive(p)" />
+          <Button v-if="canDuplicate(p)" icon="pi pi-copy" text rounded size="small" severity="secondary" :aria-label="t('projectArchive.duplicateNamed', { name: p.name })" v-tooltip.top="t('projectArchive.duplicate')" @click="openDuplicate(p)" />
+          <Button v-if="canShare(auth.me, p)" icon="pi pi-share-alt" text rounded size="small" severity="secondary" :aria-label="t('sharing.shareNamed', { name: p.name })" v-tooltip.top="t('sharing.share')" @click="openShare(p)" />
+          <Button v-if="canIn(p, P.projectUpdate)" icon="pi pi-pencil" text rounded size="small" severity="secondary" :aria-label="t('projects.editNamed', { name: p.name })" v-tooltip.top="t('common.edit')" @click="openEdit(p)" />
+          <Button v-if="canIn(p, P.projectDelete)" icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('projects.deleteNamed', { name: p.name })" v-tooltip.top="t('common.delete')" @click="remove(p)" />
         </div>
       </div>
-      <div class="muted" style="min-height: 38px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">
-        {{ p.description || t('common.noDescription') }}
-      </div>
-      <div class="small muted">{{ t('projects.updatedAgo', { time: relativeTime(p.updated_at || p.created_at) }) }}</div>
     </li>
   </ul>
   <div v-else class="card" style="padding: 0">

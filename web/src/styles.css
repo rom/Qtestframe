@@ -460,7 +460,18 @@ kbd { font-family: var(--qtf-mono); font-size: 11px; padding: 1px 6px; border-ra
 .plain-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .search-hit { display: block; padding: 10px 0; border-top: 1px solid var(--qtf-border); color: inherit; text-decoration: none; }
 .search-hit:hover { text-decoration: none; background: var(--qtf-hover); }
-.project-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); }
+.project-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); }
+/* Project card: name and badges get the full width (they wrap instead of
+   being overlapped by the action buttons, which sit in the footer). */
+.project-card { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.project-card .pc-head { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.project-card .pc-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
+.project-card .pc-name { font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.project-card .pc-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.project-card .pc-desc { line-height: 1.4; min-height: 2.8em; max-height: 2.8em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.project-card .pc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; margin-top: auto; border-top: 1px solid var(--p-content-border-color, var(--border)); padding-top: 6px; }
+.project-card .pc-updated { min-width: 0; }
+.project-card .pc-actions { display: flex; flex-wrap: wrap; gap: 0; margin-left: auto; }
 .project-link { font-weight: 650; color: var(--qtf-text); display: block; min-width: 0; }
 .project-link:hover { color: var(--p-primary-color); }
 html, body { overflow-x: clip; }
