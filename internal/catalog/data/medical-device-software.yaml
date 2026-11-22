@@ -731,6 +731,7 @@ risks:
     tags: [soup, third-party-software]
     refs: ["ISO 14971:2019 §5.4 (identification of hazards and hazardous situations)", "IEC 62304:2006+A1:2015 §8.1.2 (identify SOUP)", "CWE-1395 (dependency on vulnerable third-party component)"]
     mitigated_by: [MDSW-02, MDSW-08, SUP-02]
+    attack: [T1195.001]
     en:
       title: Third-party software in the device fails or is vulnerable
       description: A library or operating system component of unknown provenance has an anomaly or a vulnerability that affects the device. The manufacturer does not know it is affected.

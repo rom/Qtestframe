@@ -802,8 +802,9 @@ risks:
     likelihood: 4
     impact: 3
     tags: [spoofing, phishing]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024"]
     mitigated_by: [MAILS-01, MAILS-02, MAILS-03, MAILS-13, MAILS-14]
+    attack: [T1684.002, T1566]
     en:
       title: Phishing email sent in the organisation's name
       description: Attackers send email that appears to come from the system's own domain, asking users to sign in or pay. Users trust the sender and give away credentials or money.
@@ -817,8 +818,9 @@ risks:
     likelihood: 3
     impact: 3
     tags: [injection, email-content]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-93 (CRLF injection)", "CWE-79 (cross-site scripting)", "MITRE ATT&CK T1566.002 (spearphishing link)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-93 (CRLF injection)", "CWE-79 (cross-site scripting)"]
     mitigated_by: [MAILS-05, MAILS-06, MAILS-16]
+    attack: [T1566.002]
     en:
       title: System email abused to carry attacker content
       description: User input reaches email headers or HTML bodies unencoded, so attackers add recipients, scripts or links to their own sites. Messages from a trusted sender spread phishing or malware.
@@ -832,8 +834,9 @@ risks:
     likelihood: 3
     impact: 3
     tags: [confidentiality, email]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GDPR Art. 32(1)(a)", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1114 (email collection)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GDPR Art. 32(1)(a)", "CWE-312 (cleartext storage of sensitive information)"]
     mitigated_by: [MAILS-07, MAILS-04, MAILS-08]
+    attack: [T1114, T1557]
     en:
       title: Confidential content exposed in email
       description: Passwords, personal data or long-lived invitation links are sent in email. Messages are forwarded, stored in many mailboxes or read in transit, and the content reaches people it was not meant for.

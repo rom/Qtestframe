@@ -1145,6 +1145,7 @@ risks:
     tags: [shop-floor, ot-network]
     refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 5.1"]
     mitigated_by: [MFG-09, MFG-10, MFG-15, MFG-16, MFG-17]
+    attack: [T1486, T0828]
     en:
       title: Production stopped by an attack on the shop-floor network
       description: Machine connections are unauthenticated and the shop-floor network is flat. Malware or an attacker stops production or alters machine parameters.

@@ -1136,8 +1136,9 @@ risks:
     likelihood: 5
     impact: 4
     tags: [credential-stuffing, password]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "ENISA Threat Landscape 2024", "CWE-307 (improper restriction of excessive authentication attempts)", "MITRE ATT&CK T1110.004 (credential stuffing)", "MITRE ATT&CK T1110.003 (password spraying)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "ENISA Threat Landscape 2024", "CWE-307 (improper restriction of excessive authentication attempts)"]
     mitigated_by: [AUTH-02, AUTH-07, AUTH-09, SLOG-06]
+    attack: [T1110.003, T1110.004]
     en:
       title: Accounts taken over with leaked passwords
       description: Attackers try passwords leaked from other services, or a few common passwords on many accounts. Accounts whose users reuse passwords are taken over and their data and rights misused.
@@ -1151,8 +1152,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [phishing, mfa, administrator]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1111 (multi-factor authentication interception)", "MITRE ATT&CK T1598 (phishing for information)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-308 (use of single-factor authentication)"]
     mitigated_by: [AUTH-06, AUTH-18, AUTH-08, AUTH-19]
+    attack: [T1111, T1598.003]
     en:
       title: Administrator account phished
       description: An administrator enters the password and a one-time code on a fake sign-in page, or approves a code sent by SMS to an attacker. The attacker gets full control of the system.
@@ -1166,8 +1168,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [account-recovery, password-reset]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "CWE-640 (weak password recovery mechanism)", "MITRE ATT&CK T1098 (account manipulation)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "CWE-640 (weak password recovery mechanism)"]
     mitigated_by: [AUTH-11, AUTH-12, AUTH-13, AUTH-16, AUTH-20]
+    attack: [T1098]
     en:
       title: Account taken over through password recovery
       description: A reset link that never expires, can be reused or is protected only by guessable security questions lets an attacker set a new password. The real user is locked out and may not notice in time.
@@ -1181,8 +1184,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [password-storage, data-breach]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-916 (password hash with insufficient computational effort)", "CWE-257 (storing passwords in a recoverable format)", "MITRE ATT&CK T1110.002 (password cracking)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-916 (password hash with insufficient computational effort)", "CWE-257 (storing passwords in a recoverable format)"]
     mitigated_by: [AUTH-05, CRY-05]
+    attack: [T1110.002]
     en:
       title: Leaked password database cracked offline
       description: A copy of the user table leaks and the stored passwords are recovered because they are stored in a weak or reversible form. Users' passwords are exposed here and on every service where they reuse them.
@@ -1196,8 +1200,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [default-credentials, single-sign-on]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1392 (use of default credentials)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1078.001 (default accounts)", "MITRE ATT&CK T1606.002 (SAML tokens)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1392 (use of default credentials)", "CWE-347 (improper verification of cryptographic signature)"]
     mitigated_by: [AUTH-15, AUTH-14, AUTH-21]
+    attack: [T1078.001, T1606.002]
     en:
       title: Authentication bypassed with default or forged credentials
       description: An installation keeps a default password, or the system accepts single sign-on assertions without checking signature, audience and issuer. Anyone who knows the default or can forge an assertion signs in as any user.

@@ -1026,8 +1026,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [cyber-hygiene, supplier]
-    refs: ["Cybersäkerhetslag (2025:1506) 2 kap. 3 §", "Directive (EU) 2022/2555 (NIS2) Art. 21", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK T1486 (data encrypted for impact)"]
+    refs: ["Cybersäkerhetslag (2025:1506) 2 kap. 3 §", "Directive (EU) 2022/2555 (NIS2) Art. 21"]
     mitigated_by: [CSL-05, CSL-08, CSL-12, CSL-13, CSL-15]
+    attack: [T1566, T1486]
     en:
       title: Basic cyber hygiene gaps lead to a serious incident
       description: Without a risk analysis, supplier security, multi-factor authentication, tested restores and staff training, a common phishing or ransomware attack succeeds. Essential services are interrupted.

@@ -731,8 +731,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [device-loss, local-storage]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1409 (stored application data)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-312 (cleartext storage of sensitive information)"]
     mitigated_by: [MOBSEC-01, MOBSEC-02, MOBSEC-06, MOBSEC-05]
+    attack: [T1409]
     en:
       title: Sensitive data read from a lost or shared phone
       description: The app keeps sensitive data in device backups, in the system log or visible in the app switcher. Whoever gets hold of the phone or its backup reads the data.
@@ -746,8 +747,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [reverse-engineering, secrets]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-798 (use of hard-coded credentials)", "CWE-489 (active debug code)", "MITRE ATT&CK T1577 (compromise application executable)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-798 (use of hard-coded credentials)", "CWE-489 (active debug code)"]
     mitigated_by: [MOBSEC-09, MOBSEC-12, MOBSEC-11]
+    attack: [T1552.001]
     en:
       title: App package reverse engineered to extract secrets
       description: An attacker unpacks the published app, finds embedded keys or debug features and builds a modified client. The keys are misused against the back end and the modified app bypasses client checks.
@@ -761,8 +763,9 @@ risks:
     likelihood: 3
     impact: 3
     tags: [deep-link, web-view]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-939 (improper authorization in handler for custom URL scheme)", "CWE-749 (exposed dangerous method or function)", "MITRE ATT&CK T1635.001 (URI hijacking)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP MASVS", "CWE-939 (improper authorization in handler for custom URL scheme)", "CWE-749 (exposed dangerous method or function)"]
     mitigated_by: [MOBSEC-07, MOBSEC-08, MOBSEC-03]
+    attack: [T1635.001, T1638]
     en:
       title: Malicious link or web page drives the app
       description: Another app or a web page opens a deep link, an exported component or a web view with a native bridge. The app performs actions or reveals data without the user's intent.

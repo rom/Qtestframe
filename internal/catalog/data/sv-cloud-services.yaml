@@ -665,8 +665,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [managed-detection, soc]
-    refs: ["ISO/IEC 27035-2:2023", "MITRE ATT&CK T1685.002 (disable or modify cloud log)"]
+    refs: ["ISO/IEC 27035-2:2023"]
     mitigated_by: [SVCLD-10, SVCLD-11, SVCLD-12, SVCLD-13, SVCLD-14]
+    attack: [T1685.002]
     en:
       title: Managed detection service misses or mishandles an attack
       description: The security operations provider analyses alerts slowly, covers few attack techniques or responds without an agreed playbook. An intrusion goes unnoticed or a response causes an outage.

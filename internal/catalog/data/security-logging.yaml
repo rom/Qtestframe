@@ -852,8 +852,9 @@ risks:
     likelihood: 4
     impact: 4
     tags: [detection, monitoring]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A09", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK T1098 (account manipulation)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A09", "CWE-778 (insufficient logging)"]
     mitigated_by: [SLOG-01, SLOG-02, SLOG-06, SLOG-07, SLOG-12, SLOG-16]
+    attack: [T1078, T1098]
     en:
       title: Intrusion goes unnoticed for months
       description: Security events are not logged or no alert fires when accounts are misused or new administrators appear. The attacker works undisturbed and the damage grows until someone outside notices.
@@ -867,8 +868,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [log-tampering, forensics]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-117 (improper output neutralization for logs)", "MITRE ATT&CK T1070 (indicator removal)", "MITRE ATT&CK T1685 (disable or modify tools)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-117 (improper output neutralization for logs)"]
     mitigated_by: [SLOG-05, SLOG-04, SLOG-11, SLOG-08, SLOG-09]
+    attack: [T1070, T1685]
     en:
       title: Logs erased or forged to hide an attack
       description: An attacker deletes or alters log records, injects false lines or stops a log source. The investigation cannot tell what happened and evidence is lost.
@@ -884,6 +886,7 @@ risks:
     tags: [logs, personal-data]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GDPR Art. 32(1)(a)", "CWE-532 (insertion of sensitive information into log file)", "CWE-359 (exposure of private personal information)"]
     mitigated_by: [SLOG-03, SLOG-17, RET-12]
+    attack: [T1552.001]
     en:
       title: Secrets and personal data collected in logs
       description: Passwords, tokens and personal data are written to logs that many people and tools can read and that are kept for a long time. A leak of the logs exposes them.

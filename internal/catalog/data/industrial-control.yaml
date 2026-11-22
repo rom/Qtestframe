@@ -1114,8 +1114,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [ot, ransomware, segmentation]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "ENISA Threat Landscape 2024", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "ENISA Threat Landscape 2024", "MITRE ATT&CK M0930 (network segmentation)"]
     mitigated_by: [ICS-01, ICS-02, ICS-03, ICS-21]
+    attack: [T0886, T0866]
     en:
       title: Attack on the office network spreads to the control system
       description: Ransomware or an intruder on the enterprise network reaches controllers and HMIs because the networks are not separated. Production stops and the process may be driven into an unsafe state.
@@ -1129,8 +1130,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [remote-access, vendor]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 1.13", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T0822 (external remote services)", "MITRE ATT&CK M0932 (multi-factor authentication)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 1.13", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK M0932 (multi-factor authentication)"]
     mitigated_by: [ICS-05, ICS-06, ICS-18]
+    attack: [T0822]
     en:
       title: Remote maintenance access misused
       description: A vendor's remote connection uses a shared password and bypasses the security controls. An attacker who obtains it controls the process from outside.
@@ -1140,12 +1142,13 @@ risks:
       description: En leverantörs fjärranslutning använder ett delat lösenord och kringgår säkerhetsskydden. En angripare som får tag på den styr processen utifrån.
       mitigation: Tillåt fjärråtkomst bara via en hoppserver med flerfaktorsautentisering, spela in fjärrsessioner och övervaka säkerhetshändelser från styrsystemet centralt.
   - id: ICS-R03
-    category: safety
+    category: security
     likelihood: 2
     impact: 5
     tags: [logic-change, safety-system]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "MITRE ATT&CK T0889 (modify program)", "MITRE ATT&CK T0880 (loss of safety)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 61508-1:2010 §7.4 (hazard and risk analysis)"]
     mitigated_by: [ICS-13, ICS-16, ICS-07, ICS-22]
+    attack: [T0889, T0880, T1692.001]
     en:
       title: Controller logic or safety system manipulated
       description: Unauthorised commands or a modified program are loaded into a controller, or the safety instrumented system shares a network with basic control. The process runs outside its safe limits and can injure people.
@@ -1174,8 +1177,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [communication-loss, recovery]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "MITRE ATT&CK T0814 (denial of service)", "MITRE ATT&CK T0809 (data destruction)", "MITRE ATT&CK M0953 (data backup)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "MITRE ATT&CK M0953 (data backup)"]
     mitigated_by: [ICS-15, ICS-12, ICS-14, ICS-04]
+    attack: [T0814, T0809]
     en:
       title: Process cannot be controlled or restored after a disruption
       description: Network load or a communication loss leaves the controllers in an undefined state, and their configurations cannot be restored. Production stops for days.

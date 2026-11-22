@@ -811,6 +811,7 @@ risks:
     tags: [wireless, rogue-access-point]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27033-6:2016", "IEEE 802.1X-2020"]
     mitigated_by: [CMRAD-08, CMRAD-09, CMRAD-10, CMRAD-13]
+    attack: [T1669, T1557.004]
     en:
       title: Intruder joins or imitates the wireless network
       description: A weak or shared wireless key is cracked, or a rogue access point imitates the staff network. The attacker reaches internal systems or captures credentials.

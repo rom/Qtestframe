@@ -788,8 +788,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [web-shell, upload]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-434 (unrestricted upload of file with dangerous type)", "CWE-22 (path traversal)", "MITRE ATT&CK T1505.003 (web shell)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-434 (unrestricted upload of file with dangerous type)", "CWE-22 (path traversal)"]
     mitigated_by: [UPLS-01, UPLS-02, UPLS-05, UPLS-09, INP-08]
+    attack: [T1505.003]
     en:
       title: Uploaded file runs as code on the server
       description: An uploaded script is stored where the web server executes it, or an archive entry writes outside the target directory. The attacker gets a web shell and controls the server.
@@ -803,8 +804,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [malware, shared-files]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "MITRE ATT&CK T1204.002 (malicious file)", "MITRE ATT&CK T1080 (taint shared content)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024"]
     mitigated_by: [UPLS-03, UPLS-04, UPLS-13, UPLS-16, UPLS-14]
+    attack: [T1204.002, T1080]
     en:
       title: Malware spread to other users through shared files
       description: A user uploads an infected document that colleagues or customers download and open. Their computers are infected through a file they trust because it came from the system.
@@ -818,8 +820,9 @@ risks:
     likelihood: 3
     impact: 3
     tags: [zip-bomb, storage]
-    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "CWE-409 (improper handling of highly compressed data)", "CWE-400 (uncontrolled resource consumption)", "MITRE ATT&CK T1499.004 (application or system exploitation)"]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "CWE-409 (improper handling of highly compressed data)", "CWE-400 (uncontrolled resource consumption)"]
     mitigated_by: [UPLS-08, UPLS-15, INP-07]
+    attack: [T1499.003]
     en:
       title: Storage or processing exhausted by uploads
       description: A small archive unpacks to terabytes, or abandoned and oversized uploads fill the disk. Uploads, previews and other services stop working.

@@ -791,8 +791,9 @@ risks:
     likelihood: 3
     impact: 3
     tags: [noisy-neighbour, quota]
-    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "CWE-770 (allocation of resources without limits or throttling)", "MITRE ATT&CK T1499 (endpoint denial of service)"]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "CWE-770 (allocation of resources without limits or throttling)"]
     mitigated_by: [TEN-07, APIS-03]
+    attack: [T1499]
     en:
       title: One tenant's load degrades the service for all
       description: A single tenant runs heavy imports, reports or integrations that use the shared capacity. Every other tenant sees slow responses or time-outs.
@@ -806,8 +807,9 @@ risks:
     likelihood: 2
     impact: 4
     tags: [support-access, insider]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK T1199 (trusted relationship)", "MITRE ATT&CK T1078 (valid accounts)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)"]
     mitigated_by: [TEN-11, TEN-13, AUD-15]
+    attack: [T1199, T1078]
     en:
       title: Provider staff access tenant data without approval
       description: Support or operations staff of the provider open a tenant's data without the tenant knowing. Misuse or a compromised support account exposes customer data.

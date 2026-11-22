@@ -783,8 +783,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [provider-breach, trusted-relationship]
-    refs: ["ISO/IEC 27036-2:2022", "ISO/IEC 27001:2022 A.5.20", "MITRE ATT&CK T1199 (trusted relationship)"]
+    refs: ["ISO/IEC 27036-2:2022", "ISO/IEC 27001:2022 A.5.20"]
     mitigated_by: [SVOUT-01, SVOUT-02, SVOUT-07, SVOUT-08, SVOUT-17]
+    attack: [T1199]
     en:
       title: Breach at the provider reaches the customer's systems
       description: An outsourcing provider or its subcontractor is compromised, and its access is used against the customer. The customer has no audit right and learns late what happened.

@@ -687,8 +687,9 @@ risks:
     likelihood: 4
     impact: 4
     tags: [lateral-movement, network]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-207", "MITRE ATT&CK T1021 (remote services)", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-207", "MITRE ATT&CK M1030 (network segmentation)"]
     mitigated_by: [ZTA-01, ZTA-02, ZTA-03, ZTA-08]
+    attack: [T1021, T1210]
     en:
       title: Attacker moves freely once inside the network
       description: Internal services trust every connection from the internal network or VPN. A single compromised laptop or server gives access to everything behind the perimeter.
@@ -702,8 +703,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [administrator, unmanaged-device]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-207", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK T1098.004 (SSH authorized keys)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-207"]
     mitigated_by: [ZTA-06, ZTA-12, ZTA-11, ZTA-07]
+    attack: [T1078, T1098.004]
     en:
       title: Administration from an infected or unmanaged device
       description: An administrator signs in from a personal computer with malware, or uses a long-lived SSH key that has been copied. The attacker inherits the administrator's access.

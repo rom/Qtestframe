@@ -870,8 +870,10 @@ risks:
     likelihood: 4
     impact: 4
     tags: [prompt-injection, agents]
-    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM01 (prompt injection)", "OWASP Top 10 for LLM Applications 2025 LLM06 (excessive agency)", "CWE-1427 (prompt injection)", "MITRE ATT&CK T1698 (indirect prompt injection)"]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM01 (prompt injection)", "OWASP Top 10 for LLM Applications 2025 LLM06 (excessive agency)", "CWE-1427 (prompt injection)"]
     mitigated_by: [AIML-06, AIML-09, AIML-12]
+    attack: [T1698, T1699]
+    atlas: [AML.T0051.000, AML.T0051.001]
     en:
       title: Prompt injection makes the AI act against the user
       description: Instructions hidden in a document, email or web page are followed by the model, which then reveals data or triggers actions with the user's rights. The user never asked for what happens.
@@ -887,6 +889,7 @@ risks:
     tags: [data-leak, model-provider]
     refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM02 (sensitive information disclosure)", "GDPR Art. 28(1)", "CWE-359 (exposure of private personal information)"]
     mitigated_by: [AIML-04, AIML-14, AIML-07, AIML-16, AIML-13]
+    atlas: [AML.T0057]
     en:
       title: Personal or confidential data leaks through an AI feature
       description: Text sent to an external model contains personal data or secrets, is used to train the provider's models or is returned in answers to other users. The organisation loses control of the data.

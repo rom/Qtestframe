@@ -834,8 +834,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [session-hijacking, cookie]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "CWE-614 (sensitive cookie without Secure attribute)", "CWE-1004 (sensitive cookie without HttpOnly flag)", "MITRE ATT&CK T1539 (steal web session cookie)", "MITRE ATT&CK T1550.004 (web session cookie)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "CWE-614 (sensitive cookie without Secure attribute)", "CWE-1004 (sensitive cookie without HttpOnly flag)"]
     mitigated_by: [SESS-06, SESS-07, SESS-14, SESS-03, SESS-04]
+    attack: [T1539, T1550.004]
     en:
       title: Session hijacked with a stolen cookie
       description: A session token leaks from an unprotected cookie, a URL or a shared computer and is replayed by an attacker. The attacker acts as the user without knowing the password and without a second factor.
@@ -851,6 +852,7 @@ risks:
     tags: [csrf, session]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A01", "CWE-352 (cross-site request forgery)", "CWE-384 (session fixation)"]
     mitigated_by: [SESS-08, SESS-02, SESS-12]
+    attack: [T1204.001]
     en:
       title: Actions performed by a forged cross-site request
       description: A page on another site makes the signed-in user's browser send a request that changes data, or plants a session identifier before sign-in. The system accepts it as the user's own action.
@@ -864,8 +866,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [session-revocation, compromised-account]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1465 (improper session invalidation after user logout)", "CWE-1466 (improper session invalidation after authentication credential change)", "MITRE ATT&CK T1078 (valid accounts)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1465 (improper session invalidation after user logout)", "CWE-1466 (improper session invalidation after authentication credential change)"]
     mitigated_by: [SESS-05, SESS-10, SESS-13, SESS-09]
+    attack: [T1078, T1550.004]
     en:
       title: Attacker keeps a session after the account is secured
       description: The user changes the password or an administrator disables the account, but sessions already open stay valid. The attacker who took over the account keeps working.

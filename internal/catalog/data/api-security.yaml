@@ -866,8 +866,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [token-theft, api]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API2", "CWE-294 (authentication bypass by capture-replay)", "MITRE ATT&CK T1528 (steal application access token)", "MITRE ATT&CK T1550.001 (application access token)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API2", "CWE-294 (authentication bypass by capture-replay)"]
     mitigated_by: [APIS-04, APIS-12, APIS-13, APIS-11]
+    attack: [T1528, T1550.001]
     en:
       title: Stolen API token used to act as a client
       description: An access or refresh token leaks from a log, a device or a compromised client and the attacker calls the API as that client. Data is read or changed until the token expires or is revoked.
@@ -881,8 +882,9 @@ risks:
     likelihood: 4
     impact: 3
     tags: [denial-of-service, rate-limit]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API4 (unrestricted resource consumption)", "CWE-770 (allocation of resources without limits or throttling)", "MITRE ATT&CK T1499.003 (application exhaustion flood)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API4 (unrestricted resource consumption)", "CWE-770 (allocation of resources without limits or throttling)"]
     mitigated_by: [APIS-03, APIS-07, APIS-10, APIS-16]
+    attack: [T1499.003]
     en:
       title: API overloaded by one client
       description: A misbehaving or hostile client sends many requests, very large bodies or asks for huge pages. The service slows down or stops for every other client.
@@ -898,6 +900,7 @@ risks:
     tags: [mass-assignment, api]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API3", "CWE-915 (mass assignment)", "CWE-863 (incorrect authorization)"]
     mitigated_by: [APIS-09, APIS-05]
+    attack: [T1190, T1565.001]
     en:
       title: Protected fields changed through the API
       description: The API binds every field of a request to the stored object, so a client sets fields such as role, owner or price that it must not change. Users raise their own rights or alter business data.
@@ -913,6 +916,7 @@ risks:
     tags: [shadow-api, inventory]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API9", "CWE-912 (hidden functionality)", "MITRE ATT&CK M1042 (disable or remove feature or program)"]
     mitigated_by: [APIS-15, APIS-01, APIS-08]
+    attack: [T1190, T1595.003]
     en:
       title: Forgotten API endpoint left open
       description: An old version or a test endpoint stays reachable without the protection of the current API. Attackers find it and use it to bypass authentication or read internal details.

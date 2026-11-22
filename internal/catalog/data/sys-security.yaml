@@ -887,8 +887,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [system-of-systems, defence-in-depth]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK T1210 (exploitation of remote services)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "ISO/IEC 27005:2022 §7 (risk assessment process)"]
     mitigated_by: [SYSEC-01, SYSEC-02, SYSEC-03, SYSEC-04, SYSEC-05]
+    attack: [T1210]
     en:
       title: One weak subsystem compromises the whole system
       description: Subsystems from different suppliers trust each other fully and critical assets sit behind a single control. An attacker who breaks one subsystem reaches the most critical functions.
@@ -919,6 +920,7 @@ risks:
     tags: [integration-testing, vulnerabilities]
     refs: ["IEC 62443-3-3 SR 7.6", "CWE-1395 (dependency on vulnerable third-party component)"]
     mitigated_by: [SYSEC-10, SYSEC-13, SYSEC-16, SYSEC-09, SYSEC-18]
+    attack: [T1190, T1210]
     en:
       title: Integrated system goes live with unknown weaknesses
       description: Each supplier tested its own part, but nobody tested the whole or tracks vulnerabilities across all components. Weaknesses in the integration and old components remain.

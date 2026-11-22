@@ -778,8 +778,9 @@ risks:
     likelihood: 4
     impact: 4
     tags: [vulnerable-dependency, sbom]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A06", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A06", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)"]
     mitigated_by: [SUP-01, SUP-02, SUP-03, SUP-04, SUP-09]
+    attack: [T1190, T1195.001]
     en:
       title: Known vulnerability in a dependency exploited
       description: A library with a published vulnerability stays in the product because nobody knows it is used or the fix is postponed. Attackers exploit it with public tools soon after disclosure.
@@ -793,8 +794,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [malicious-package, typosquatting]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-506 (embedded malicious code)", "CWE-427 (uncontrolled search path element)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-506 (embedded malicious code)", "CWE-427 (uncontrolled search path element)"]
     mitigated_by: [SUP-13, SUP-14, SUP-15, SUP-11, SUP-07]
+    attack: [T1195.001]
     en:
       title: Malicious package pulled into the build
       description: A compromised new version, a look-alike name or a public package with an internal name is installed during the build. Its install script or code steals secrets or plants a back door in the product.
@@ -808,8 +810,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [build-integrity, pipeline]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)", "MITRE ATT&CK M1045 (code signing)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK M1045 (code signing)"]
     mitigated_by: [SUP-08, SUP-05, SUP-12, SUP-16, SUP-06]
+    attack: [T1195.002]
     en:
       title: Release artefact tampered with between build and delivery
       description: A release is built on a developer machine or a pipeline step is replaced, and customers install a modified artefact. The compromise spreads to every customer through a trusted update.

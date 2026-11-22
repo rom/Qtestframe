@@ -1112,8 +1112,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [grid, scada, sabotage]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "ISO/IEC 27019:2024", "MITRE ATT&CK T0886 (remote services)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "ISO/IEC 27019:2024"]
     mitigated_by: [ENRG-05, ENRG-06, ENRG-07, ENRG-16, ENRG-17]
+    attack: [T0886, T1692.001]
     en:
       title: Grid switching operated by an attacker
       description: An attacker sends forged telecontrol or protection messages, or uses a remote engineering connection to a substation. Breakers open, large areas lose power and equipment can be damaged.

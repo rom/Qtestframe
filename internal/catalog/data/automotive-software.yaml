@@ -684,6 +684,7 @@ risks:
     tags: [vehicle-cybersecurity, ota]
     refs: ["ISO/SAE 21434:2021 §15 (threat analysis and risk assessment methods)", "UN Regulation No. 155 §7.3.3 (vehicle type requirements: risk assessment)", "UN Regulation No. 156 §7.2.1.1 (authenticity and integrity of software updates)"]
     mitigated_by: [AUTOSW-06, AUTOSW-08, AUTOSW-07, AUTOSW-12]
+    attack: [T1210]
     en:
       title: Vehicle compromised through a connected interface
       description: An attacker reaches vehicle functions through a telematics unit, an app or a manipulated software update. Fleets can be tracked, disabled or controlled remotely.

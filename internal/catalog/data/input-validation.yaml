@@ -884,8 +884,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [injection, sql]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A03", "CWE-89 (SQL injection)", "CWE-78 (OS command injection)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A03", "CWE-89 (SQL injection)", "CWE-78 (OS command injection)"]
     mitigated_by: [INP-02, INP-03, INP-04, INP-13, INP-01]
+    attack: [T1190]
     en:
       title: Injection gives control of the database or server
       description: Input reaches a database query, shell command, directory filter or template without separation from the code. An attacker reads or deletes all data, or runs commands on the server.
@@ -899,8 +900,9 @@ risks:
     likelihood: 4
     impact: 4
     tags: [xss, session-theft]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A03", "CWE-79 (cross-site scripting)", "CWE-116 (improper encoding or escaping of output)", "MITRE ATT&CK T1059.007 (JavaScript)", "MITRE ATT&CK T1539 (steal web session cookie)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A03", "CWE-79 (cross-site scripting)", "CWE-116 (improper encoding or escaping of output)"]
     mitigated_by: [INP-05, INP-06, SESS-06]
+    attack: [T1059.007, T1539]
     en:
       title: Script injected into pages acts for the victim
       description: Text from one user is shown to others without encoding and runs as script in their browsers. The script reads data, performs actions in the victim's name or steals the session.
@@ -914,8 +916,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [ssrf, cloud-metadata]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A10", "CWE-918 (server-side request forgery)", "MITRE ATT&CK T1552.005 (cloud instance metadata API)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A10", "CWE-918 (server-side request forgery)"]
     mitigated_by: [INP-10, SECR-13]
+    attack: [T1552.005, T1190]
     en:
       title: Server tricked into calling internal services
       description: A feature that fetches a URL supplied by the user is pointed at internal addresses or the cloud metadata service. The attacker reads internal data or obtains the server's cloud credentials.
@@ -929,8 +932,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [deserialisation, xml]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A08", "CWE-502 (deserialization of untrusted data)", "CWE-611 (XML external entity reference)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A08", "CWE-502 (deserialization of untrusted data)", "CWE-611 (XML external entity reference)"]
     mitigated_by: [INP-09, INP-11, SDL-13]
+    attack: [T1190]
     en:
       title: Remote code execution through crafted data formats
       description: The system deserialises objects from untrusted input or lets its XML parser resolve external entities. A crafted message runs code, reads local files or exhausts memory.
@@ -944,8 +948,9 @@ risks:
     likelihood: 3
     impact: 3
     tags: [redos, denial-of-service]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1333 (inefficient regular expression complexity)", "CWE-776 (XML entity expansion)", "MITRE ATT&CK T1499.004 (application or system exploitation)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1333 (inefficient regular expression complexity)", "CWE-776 (XML entity expansion)"]
     mitigated_by: [INP-14, INP-11, APIS-07]
+    attack: [T1499.004]
     en:
       title: Crafted input stalls the service
       description: A short input makes a regular expression or an XML parser work for minutes. A few such requests occupy every worker and the service stops responding.

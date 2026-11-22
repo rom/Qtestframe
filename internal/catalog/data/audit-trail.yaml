@@ -888,7 +888,7 @@ risks:
     likelihood: 3
     impact: 4
     tags: [accountability, audit]
-    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "21 CFR Part 11 §11.10(e)", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1565.001 (stored data manipulation)"]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "21 CFR Part 11 §11.10(e)", "CWE-778 (insufficient logging)"]
     mitigated_by: [AUD-01, AUD-14, AUD-13, AUD-10]
     en:
       title: Changes cannot be traced to a person
@@ -903,8 +903,9 @@ risks:
     likelihood: 2
     impact: 4
     tags: [tampering, integrity]
-    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "21 CFR Part 11 §11.10(e)", "CWE-353 (missing support for integrity check)", "MITRE ATT&CK T1070 (indicator removal)"]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "21 CFR Part 11 §11.10(e)", "CWE-353 (missing support for integrity check)"]
     mitigated_by: [AUD-02, AUD-03, AUD-16, AUD-06]
+    attack: [T1070, T1565.001]
     en:
       title: Audit trail altered to cover up a change
       description: A privileged user or an attacker edits or deletes audit entries. The trail no longer shows what really happened and can no longer be used as evidence.

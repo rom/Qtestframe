@@ -653,6 +653,7 @@ risks:
     tags: [iot, device-keys]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GSMA IoT Security Guidelines", "LoRaWAN L2 1.0.4 Specification (security)"]
     mitigated_by: [CMIOT-03, CMIOT-04, CMIOT-09, CMIOT-11]
+    attack: [T1078.001, T1210]
     en:
       title: IoT devices impersonated or used as a way in
       description: Devices share a root key, are personalised by hand or reach the internet directly. One extracted key lets an attacker fake measurements from all devices or use them to reach the network.

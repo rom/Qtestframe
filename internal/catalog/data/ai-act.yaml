@@ -1275,6 +1275,7 @@ risks:
     tags: [robustness, adversarial]
     refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)", "EU AI Act (Regulation (EU) 2024/1689) Art. 15(5) (resilience against attempts to exploit vulnerabilities)", "MITRE ATLAS (adversarial threat landscape for AI systems)"]
     mitigated_by: [AIACT-15, AIACT-14, AIACT-16, AIACT-17, AIACT-09]
+    atlas: [AML.T0043, AML.T0015]
     en:
       title: AI system manipulated or degrading in the field
       description: Poisoned data or adversarial input changes the system's behaviour, or its accuracy drops after release without anyone noticing. Wrong outputs harm people until a serious incident reveals the problem.

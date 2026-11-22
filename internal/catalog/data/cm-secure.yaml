@@ -843,8 +843,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [segmentation, lateral-movement]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.22", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.22", "MITRE ATT&CK M1030 (network segmentation)"]
     mitigated_by: [CMSEC-01, CMSEC-02, CMSEC-03, CMSEC-07, CMSEC-12]
+    attack: [T1210, T1021]
     en:
       title: Flat network lets an attack spread everywhere
       description: All devices share one network or firewall rules allow everything that was once needed. Malware on one device reaches management interfaces and control networks.
@@ -858,8 +859,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [ddos]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "MITRE ATT&CK T1498 (network denial of service)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024"]
     mitigated_by: [CMSEC-08, CMSEC-17, CMSEC-09]
+    attack: [T1498]
     en:
       title: Denial-of-service attack floods the connection
       description: A volumetric attack fills the internet connection and every service behind it becomes unreachable. Without detection and mitigation the outage lasts hours.
@@ -873,8 +875,9 @@ risks:
     likelihood: 3
     impact: 3
     tags: [collaboration, eavesdropping]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK T1566.003 (spearphishing via service)", "MITRE ATT&CK T1125 (video capture)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)"]
     mitigated_by: [CMSEC-14, CMSEC-15, CMSEC-16, CMSEC-13]
+    attack: [T1566.003, T1125, T1123]
     en:
       title: Outsiders listen in or phish through collaboration tools
       description: Chat federates with any domain, meetings admit anyone and room video systems answer calls automatically. Outsiders join confidential meetings or send phishing messages that look internal.

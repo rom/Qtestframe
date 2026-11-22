@@ -862,6 +862,7 @@ risks:
     tags: [evidence, lessons-learned]
     refs: ["ISO/IEC 27035-2:2023", "ISO/IEC 27001:2022 A.5.28"]
     mitigated_by: [INC-08, INC-09, INC-10, INC-11, INC-14]
+    attack_exempt: true
     en:
       title: Same incident happens again
       description: Evidence is destroyed while cleaning up, no timeline is kept and no review follows. The root cause stays unknown and the incident repeats.

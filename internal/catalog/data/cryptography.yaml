@@ -846,8 +846,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [tls, adversary-in-the-middle]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-295 (improper certificate validation)", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1557 (adversary-in-the-middle)", "MITRE ATT&CK T1040 (network sniffing)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-295 (improper certificate validation)", "CWE-319 (cleartext transmission of sensitive information)"]
     mitigated_by: [CRY-01, CRY-02, CRY-03, CRY-04]
+    attack: [T1557, T1040]
     en:
       title: Traffic intercepted or altered in transit
       description: A connection uses an old protocol, plain text or a client that does not validate certificates. Someone on the network reads credentials and data or changes them on the way.
@@ -861,8 +862,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [key-management, encryption]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-522 (insufficiently protected credentials)", "CWE-324 (use of a key past its expiration date)", "MITRE ATT&CK T1552.004 (private keys)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-522 (insufficiently protected credentials)", "CWE-324 (use of a key past its expiration date)"]
     mitigated_by: [CRY-11, CRY-08, CRY-15, CRY-06]
+    attack: [T1552.004]
     en:
       title: Encryption keys stolen together with the data
       description: Data is encrypted, but the keys are stored next to it, used for many purposes and never rotated. One breach exposes all encrypted data, including copies taken earlier.
@@ -878,6 +880,7 @@ risks:
     tags: [post-quantum, harvest-now-decrypt-later]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST IR 8547", "CWE-327 (broken or risky cryptographic algorithm)", "CWE-326 (inadequate encryption strength)"]
     mitigated_by: [CRY-13, CRY-17, CRY-12, CRY-14, CRY-16]
+    attack: [T1040]
     en:
       title: Recorded traffic decrypted by a future quantum computer
       description: An adversary records encrypted traffic today and decrypts it once quantum computers break the key exchange. Data with a long confidentiality need, such as health or trade secrets, is exposed years later.
@@ -893,6 +896,7 @@ risks:
     tags: [randomness, weak-algorithm]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-338 (cryptographically weak PRNG)", "CWE-327 (broken or risky cryptographic algorithm)", "CWE-328 (use of weak hash)"]
     mitigated_by: [CRY-09, CRY-10, SESS-01]
+    attack: [T1606]
     en:
       title: Tokens or signatures broken because of weak cryptography
       description: Session tokens, reset codes or keys come from a predictable random generator, or data is protected with a broken hash or cipher. An attacker predicts tokens or forges protected values.

@@ -808,6 +808,7 @@ risks:
     tags: [toll-fraud, voicemail]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-63B-4 §3.1.1.2 (password verifiers)", "RFC 3711"]
     mitigated_by: [CMTEL-09, CMTEL-10, CMTEL-16, CMTEL-08]
+    attack: [T1078.001, T1040, T1496]
     en:
       title: Phone system abused for toll fraud or eavesdropping
       description: Attackers guess voicemail PINs or misuse extensions to call premium-rate numbers abroad, or listen to unencrypted calls. The bill reaches large sums over a weekend.

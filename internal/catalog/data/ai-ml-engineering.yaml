@@ -1121,6 +1121,8 @@ risks:
     tags: [rag, permissions]
     refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM08 (vector and embedding weaknesses)", "OWASP Top 10 for LLM Applications 2025 LLM07 (system prompt leakage)"]
     mitigated_by: [AIENG-17, AIENG-14, AIENG-13, AIENG-12]
+    attack: [T1213]
+    atlas: [AML.T0057]
     en:
       title: AI assistant reveals documents the user may not read
       description: The retrieval index ignores document permissions, or access rules are written into the system prompt where the model can leak or ignore them. Users read confidential documents through the assistant.
@@ -1136,6 +1138,7 @@ risks:
     tags: [cost, unbounded-consumption]
     refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM10 (unbounded consumption)", "CWE-770 (allocation of resources without limits or throttling)"]
     mitigated_by: [AIENG-16, APIS-03]
+    atlas: [AML.T0034]
     en:
       title: AI usage costs run out of control
       description: A user, a script or an attack sends long or many requests to a paid model. The bill grows by orders of magnitude and the service is throttled for everyone.

@@ -864,8 +864,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [ransomware, backup-deletion]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.13", "MITRE ATT&CK T1490 (inhibit system recovery)", "MITRE ATT&CK T1486 (data encrypted for impact)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.13"]
     mitigated_by: [BCK-07, BCK-06, BCK-08, BCK-16, BCK-17]
+    attack: [T1486, T1490]
     en:
       title: Ransomware encrypts data and destroys the backups
       description: An attacker with administrator rights deletes or encrypts the backups before encrypting production. No clean copy remains and the organisation must rebuild or pay.

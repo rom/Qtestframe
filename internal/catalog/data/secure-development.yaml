@@ -792,6 +792,7 @@ risks:
     tags: [design-flaw, threat-model]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A04", "NIST SP 800-218 PW.1"]
     mitigated_by: [SDL-01, SDL-02, SDL-03, SDL-09]
+    attack: [T1190]
     en:
       title: Security flaw designed into a new feature
       description: A feature is built without thinking about who could misuse it, so a trust boundary is crossed without checks. The flaw is found only after release, when changing the design is expensive.
@@ -807,6 +808,7 @@ risks:
     tags: [coding-error, testing]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-218 PW.7", "CWE Top 25 Most Dangerous Software Weaknesses", "MITRE ATT&CK M1016 (vulnerability scanning)"]
     mitigated_by: [SDL-04, SDL-05, SDL-06, SDL-13, SDL-16]
+    attack: [T1190]
     en:
       title: Common coding weakness reaches production
       description: Injection, broken access control or unsafe parsing slips through review and testing. It is found by an attacker before it is found by the team.
@@ -822,6 +824,7 @@ risks:
     tags: [vulnerability-backlog, regression]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-218 RV.2"]
     mitigated_by: [SDL-07, SDL-11, SDL-08, SDL-15]
+    attack: [T1190]
     en:
       title: Known security findings stay open or come back
       description: Findings from scans and tests pile up without deadlines, and fixed vulnerabilities reappear in later versions. The product carries known weaknesses that attackers can find in the same way.

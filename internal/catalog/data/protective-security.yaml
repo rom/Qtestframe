@@ -916,6 +916,7 @@ risks:
     tags: [classified-information, need-to-know]
     refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "CWE-863 (incorrect authorization)"]
     mitigated_by: [SAKS-04, SAKS-05, SAKS-06, SAKS-07, SAKS-08]
+    attack: [T1078, T1213]
     en:
       title: Classified information read by someone without clearance or need to know
       description: Access is granted on role alone, a clearance has ended without access being removed or access is not logged and reviewed. Information that affects national security is disclosed.
@@ -929,8 +930,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [exfiltration, removable-media]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "MITRE ATT&CK T1052.001 (exfiltration over USB)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1"]
     mitigated_by: [SAKS-09, SAKS-11, SAKS-12, SAKS-16, SAKS-17]
+    attack: [T1052.001, T1048]
     en:
       title: Classified data leaves the protected system
       description: The classified system is connected to other networks, data is copied to unregistered media or printouts and exports are not registered. Classified data leaves without trace.
