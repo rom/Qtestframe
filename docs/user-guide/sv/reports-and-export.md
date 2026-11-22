@@ -22,8 +22,8 @@ Välj **Export** i projektets sidopanel.
    | **XLSX** | En Excel-arbetsbok med bladet *Summary* och ett blad per del; fet rubrikrad, låst första rad, autofilter och lämpliga kolumnbredder. |
    | **CSV** | En `.csv`-fil för en del; ett `.zip`-arkiv med en CSV-fil per del när du väljer flera. UTF-8, kommaavgränsad. |
    | **Markdown** | En `.md`-fil med alla delar: en rubrik, projektet, filtret och tidpunkten och en tabell per del. Ren text som läses bra i en wiki, ett Git-förråd eller vilken textredigerare som helst; nycklar länkar till Qtestframe när serverns adress är inställd. |
-   | **ReqIF** | Kraven som en ReqIF 1.2-fil (`.reqif`) för kravverktyg som IBM DOORS, Polarion, Jama eller ProR. Se [ReqIF för kravverktyg](#reqif-för-kravverktyg). |
-   | **ReqIF (med bilagor)** | Ett `.reqifz`-arkiv: ReqIF-filen och kravens bilagor och bilder. |
+   | **ReqIF** | Kraven som en ReqIF 1.2-fil (`.reqif`) för kravverktyg som IBM DOORS, Polarion, Codebeamer, Jama eller ProR, om du vill med testfallen och deras spårlänkar, verifieringsposterna eller som en baslinje frös dem. Se [ReqIF för kravverktyg](#reqif-för-kravverktyg). |
+   | **ReqIF (med bilagor)** | Ett `.reqifz`-arkiv: ReqIF-filen och posternas bilagor och bilder. |
 
 2. Välj **Innehåll**:
 
@@ -37,7 +37,7 @@ Välj **Export** i projektets sidopanel.
 
    Kolumnrubrikerna i de exporterade filerna är på engelska.
 
-   ReqIF innehåller bara krav, så valet av innehåll används inte för det formatet.
+   Valet av innehåll används inte för ReqIF; formatet har egna val under **Innehåll i ReqIF** (testfall, verifieringsposter, en baslinje), se [Samverkan](interoperability.md#reqif-export).
 
 3. Ange eventuellt ett **Filter**. Det gäller krav om det är en giltig fråga för krav och testfall om det är en giltig fråga för testfall: `obligation=must` filtrerar bara krav, `type=automated` bara testfall, `folder:Kassa` båda.
 4. Välj **Ladda ned**. Filen namnges efter projektnyckeln och tidpunkten, till exempel `SHOP-20261119-143000.xlsx`.
@@ -231,7 +231,8 @@ ReqIF är formatet som IBM DOORS, DOORS Next, Siemens Polarion och de flesta kra
 Det här händer:
 
 - **Relationer** mellan de importerade kraven (länkmoduler i DOORS, länkroller i Polarion) blir kravrelationer. Typen tas från namnet: *refines*, *satisfies* och *has parent* blir *förfinar*, *derived from* blir *härledd från*, *depends on* och *requires* blir *beror på* och så vidare; övriga blir *relaterar till*.
-- **Formaterad text** (XHTML) blir vanlig text med sina radbrytningar och listor.
+- **Formaterad text** (XHTML) blir Markdown med sina stycken, listor, tabeller och betoningar; bilder och andra filer som är inbäddade i en `.reqifz` blir bilagor.
+- **Testfall, spårlänkar och mer.** Samma import läser testfall (med steg) och spårlänkarna mellan testfall och krav, översätter det andra verktygets objekt- och relationstyper och kan låta nästlade krav *förfina* sitt överordnade krav. Se [Samverkan](interoperability.md#reqif-import).
 - **En ny import** uppdaterar kraven som skapades av tidigare importer av samma dokument och lägger till nya. Ett krav som har ändrats i Qtestframe sedan förra importen visas som en konflikt när dokumentet har andra värden. Relationer som har tagits bort i det andra verktyget tas bort här också; relationer som du har skapat i Qtestframe finns kvar. En import tar aldrig bort krav.
 - Ett krav utan titel i dokumentet får de första orden i sin text när det skapas; senare importer behåller titeln du har gett det.
 - En ReqIF-fil som har **exporterats från samma projekt** (se [ovan](#reqif-för-kravverktyg)) matchas mot sina krav, så att du kan skicka en specifikation till en leverantör och importera deras redigerade version tillbaka med samma förhandsgranskning.
@@ -242,7 +243,7 @@ När bara en CSV- eller Excel-export finns använder du **Importera → Från en
 
 ### OSLC: länkar från ALM-verktyg
 
-OSLC (Open Services for Lifecycle Collaboration) låter andra verktyg hitta kraven och testfallen i Qtestframe och länka till dem. Qtestframe är en OSLC-leverantör med läsbehörighet för Requirements Management 2.0 och Quality Management 2.0. Ge verktyget adressen till katalogen, `<serverns adress>/api/v1/oslc/catalog` (eller upptäcktsdokumentet `/api/v1/oslc/rootservices`), och en [API-nyckel](administration.md#api-nycklar). Verktyget ser då de projekt du får läsa, kan söka krav och testfall på nyckel, titel eller ändringsdatum och visar dem med sina länkar (vilka tester som verifierar ett krav, vilka krav ett test verifierar, relationer). Urvalsdialoger i det andra verktyget och att skapa poster via OSLC stöds inte. Din administratör hittar detaljerna under [Administration](administration.md#oslc).
+Med OSLC (Open Services for Lifecycle Collaboration) kan andra verktyg hitta Qtestframes krav och testfall, länka till dem och skapa och ändra dem. Qtestframe är en OSLC-leverantör för Requirements Management 2.1 och Quality Management 2.1, med urvals- och skapafönster som andra verktyg visar för sina användare. Se [Samverkan](interoperability.md#oslc); din administratör kopplar in verktygen (administratörshandboken, *Koppla ihop med andra verktyg*).
 
 ## Vilket ska jag välja?
 

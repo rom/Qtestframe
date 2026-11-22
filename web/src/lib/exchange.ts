@@ -87,11 +87,40 @@ export interface ReqIFTarget {
 
 export interface ReqIFRelationChange {
   ref: string
+  /** a relation type, or 'verifies' for a trace link */
   type: string
   file_type: string
   source: string
   target: string
   action: 'add' | 'remove' | 'keep'
+  kind: 'relation' | 'link'
+}
+
+/** Object kinds of the SPEC-OBJECT-TYPE mapping. */
+export type ReqIFObjectKind = 'requirement' | 'test' | 'heading' | 'ignore'
+export const REQIF_OBJECT_KINDS: readonly ReqIFObjectKind[] = ['requirement', 'test', 'heading', 'ignore']
+
+export interface ReqIFObjectType {
+  name: string
+  objects: number
+  kind: ReqIFObjectKind
+  guess: ReqIFObjectKind
+}
+
+export interface ReqIFRelationType {
+  name: string
+  relations: number
+  /** a relation type, 'verifies' (trace link) or 'ignore' */
+  type: string
+  guess: string
+}
+
+export interface ReqIFFile {
+  object: string
+  ref: string
+  name: string
+  size: number
+  existing: boolean
 }
 
 export interface ReqIFPreview extends ExchangeDiff {
@@ -100,13 +129,24 @@ export interface ReqIFPreview extends ExchangeDiff {
   qtestframe: boolean
   attributes: ReqIFAttribute[]
   targets: ReqIFTarget[]
+  /** the test objects' diff (null without any) */
+  tests: ExchangeDiff | null
+  test_attributes: ReqIFAttribute[]
+  test_targets: ReqIFTarget[] | null
+  object_types: ReqIFObjectType[]
   relation_types: Record<string, string>
-  relations: { add: number; remove: number; keep: number; changes: ReqIFRelationChange[] }
+  relation_type_mapping: ReqIFRelationType[]
+  relation_targets: string[]
+  relations: { add: number; remove: number; keep: number; links: number; changes: ReqIFRelationChange[] }
   folders: number
+  test_folders: number
+  files: ReqIFFile[]
   skipped: string[]
   errors: string[]
   previous: number
   target_folder: string
+  test_target_folder: string
+  can_import_tests: boolean
 }
 
 export interface ExchangeResult {
@@ -120,6 +160,9 @@ export interface ExchangeResult {
   links_added: number
   links_removed: number
   references_saved?: number
+  files_attached?: number
+  /** the test rows' share of the totals (ReqIF) */
+  tests?: Omit<ExchangeResult, 'tests'> | null
   items: { index: number; location: string; id: string; key: string; title: string; action: 'created' | 'updated'; version: number }[]
   skipped_rows: { index: number; location: string; title: string; reason: 'error' | 'conflict' | 'excluded' | 'new' }[]
 }
@@ -188,17 +231,46 @@ export function changedAttrMapping(attrs: readonly ReqIFAttribute[], chosen: Rea
   return Object.keys(out).length ? out : undefined
 }
 
+/** Type mapping to send: only the types whose choice differs from the guess. */
+export function changedTypeMapping<T extends { name: string; guess: string }>(types: readonly T[], chosen: Readonly<Record<string, string>>): Record<string, string> | undefined {
+  const out: Record<string, string> = {}
+  for (const x of types) {
+    const want = chosen[x.name]
+    if (want && want !== x.guess) out[x.name] = want
+  }
+  return Object.keys(out).length ? out : undefined
+}
+
+/** Options of a ReqIF preview or apply beyond the attribute mapping. */
+export interface ReqIFOptions {
+  mapping?: Record<string, string>
+  testMapping?: Record<string, string>
+  objectTypes?: Record<string, string>
+  relationTypes?: Record<string, string>
+  folderId?: string | null
+  testFolderId?: string | null
+  hierarchy?: boolean
+  refines?: boolean
+  kind?: ExchangeKind
+}
+
 /** Multipart fields of a preview or apply request. */
 export function exchangeFields(
   mode: ExchangeMode,
-  opts: { mapping?: Record<string, string>; folderId?: string | null; hierarchy?: boolean; kind?: ExchangeKind },
-  apply?: { overwrite: boolean; create: boolean; excluded: Iterable<number> },
+  opts: ReqIFOptions,
+  apply?: { overwrite: boolean; create: boolean; excluded: Iterable<number>; excludedTests?: Iterable<number> },
 ): Record<string, string | undefined> {
   const f: Record<string, string | undefined> = {}
+  const json = (v?: Record<string, string>) => (v && Object.keys(v).length ? JSON.stringify(v) : undefined)
   if (mode === 'reqif') {
-    f.mapping = opts.mapping ? JSON.stringify(opts.mapping) : undefined
+    f.mapping = json(opts.mapping)
+    f.test_mapping = json(opts.testMapping)
+    f.object_types = json(opts.objectTypes)
+    f.relation_types = json(opts.relationTypes)
     f.folder_id = opts.folderId || undefined
+    f.test_folder_id = opts.testFolderId || undefined
     f.hierarchy = opts.hierarchy === false ? 'false' : undefined
+    f.refines = opts.refines ? 'true' : undefined
   } else {
     f.kind = opts.kind
   }
@@ -207,6 +279,8 @@ export function exchangeFields(
     f.create = String(apply.create)
     const ex = [...apply.excluded].sort((a, b) => a - b)
     if (ex.length) f.exclude = JSON.stringify(ex)
+    const et = [...(apply.excludedTests ?? [])].sort((a, b) => a - b)
+    if (et.length) f.exclude_tests = JSON.stringify(et)
   }
   return f
 }

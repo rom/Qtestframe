@@ -15,11 +15,12 @@ The people who *use* Qtestframe – including organisation administrators who ma
 7. [Runtime system settings](system-settings.md) – what super administrators can change in the web client, and what needs a restart.
 8. [Security](security.md) – TLS, hardening with Landlock and seccomp, encryption of stored secrets and the key providers, key rotation, disaster recovery, the audit log, security headers.
 9. [E-mail, webhooks and integrations](integrations.md) – SMTP, notifications, webhooks, Jira, GitHub and GitLab, the script and web test runner.
-10. [Logging and monitoring](logging-and-monitoring.md) – log formats, syslog, health endpoints.
-11. [Backup, restore and migration](backup-and-migration.md) – what a backup contains, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
-12. [Operations runbook](runbook.md) – routine tasks, capacity, troubleshooting, log messages.
-13. [Command line reference](cli-reference.md) – every `qtestframe` command and flag.
-14. [Features added later](features-added-later.md) – administration notes of newer features.
+10. [Connecting other tools](connecting-tools.md) – OSLC connections with IBM DOORS Next and ETM, Polarion and Codebeamer, dialogs in frames, ReqIF.
+11. [Logging and monitoring](logging-and-monitoring.md) – log formats, syslog, health endpoints.
+12. [Backup, restore and migration](backup-and-migration.md) – what a backup contains, restore, upgrades and downgrades, moving between SQLite and PostgreSQL.
+13. [Operations runbook](runbook.md) – routine tasks, capacity, troubleshooting, log messages.
+14. [Command line reference](cli-reference.md) – every `qtestframe` command and flag.
+15. [Features added later](features-added-later.md) – administration notes of newer features.
 
 ## Conventions
 

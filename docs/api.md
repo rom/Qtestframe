@@ -922,8 +922,8 @@ notifications are those of single saves.
 | GET | `/projects/{pid}/exchange/xlsx?kind=requirement\|test&q=&folder_id=` | `export` + read of the kind | the round-trip workbook; audited as `project.export` |
 | POST | `/projects/{pid}/exchange/xlsx/preview` | write of the kind | multipart `file` (+ `kind`) → diff |
 | POST | `/projects/{pid}/exchange/xlsx/apply` | write of the kind | + `overwrite_conflicts`, `create` (default true), `exclude` (JSON array of row indexes) → result; audited as `requirement.import` / `test.import` |
-| POST | `/projects/{pid}/exchange/reqif/preview` | `requirement.write` | multipart `file` (.reqif / .reqifz), `mapping`, `folder_id`, `hierarchy` → diff + attributes |
-| POST | `/projects/{pid}/exchange/reqif/apply` | `requirement.write` | + `overwrite_conflicts`, `exclude` → result; audited as `requirement.import` |
+| POST | `/projects/{pid}/exchange/reqif/preview` | `requirement.write` (+ `test.write` for test objects) | multipart `file` (.reqif / .reqifz), `mapping`, `test_mapping`, `object_types`, `relation_types`, `folder_id`, `test_folder_id`, `hierarchy`, `refines` → diff + mappings |
+| POST | `/projects/{pid}/exchange/reqif/apply` | `requirement.write` (+ `test.write`) | + `overwrite_conflicts`, `create`, `exclude`, `exclude_tests` → result; audited as `requirement.import` |
 
 **The workbook.** Sheet *Requirements* or *Tests*: `ID` (the item id: do
 not change it), `Key`, `Version` (the version exported: the base of the
@@ -968,39 +968,80 @@ skipped_rows:[{index, location, title, reason}]}` with `reason` `error`,
 between preview and apply, nothing is saved and the answer is 409 `stale`.
 
 **ReqIF import.** ReqIF 1.0–1.2 (`.reqif`, or `.reqifz` with one or more
-`.reqif` files), e.g. from IBM DOORS, DOORS Next or Siemens Polarion. Each
-`SPEC-OBJECT` becomes a requirement; its attributes (all
-`ATTRIBUTE-DEFINITION-*` types; XHTML as plain text, enumerations as their
-value names) map to fields by `mapping` (JSON: attribute long name → field
-key, `heading` (the chapter name: the object is a folder), `external_id`
-(recorded as `ID: <id>` in the source of new requirements), `version`, or
-`""` to ignore), guessed from the name (`ReqIF.Name`, `ReqIF.Text`,
-`ReqIF.ChapterName`, `ReqIF.ForeignID`, Polarion's `Title`, `Description`,
-`ID`, `Status`, `Severity`, `Assignee` …). With `hierarchy` (default true)
-heading objects (a chapter name and no text, or an object type named
-*Heading*/*Chapter*) become folders below `folder_id`, nested as in the
-`SPECIFICATION`; with several specifications each is a top folder. Objects
-without a title attribute get one from the first words of their text when
-they are created. `SPEC-RELATION`s between imported objects become
-relations; the type is mapped by name (`Refines`, *satisfies*, *parent* →
-`refines`; *derived* → `derived_from`; *depends*, *requires* →
-`depends_on`; *conflicts* → `conflicts_with`; *duplicates*; *provides*,
-*implements*; otherwise `relates_to`). The preview adds `{title, tool,
-qtestframe, attributes:[{name, type, values, objects, sample, object_types,
-field, guess}], targets:[{key, label, type}], relation_types, relations:{add,
-remove, keep, changes:[{ref, type, file_type, source, target, action}]},
-folders, skipped, errors, previous, target_folder}`.
+`.reqif` files), e.g. from IBM DOORS, DOORS Next, Siemens Polarion,
+Codebeamer or Qtestframe's own export.
 
-**Re-import.** The import keeps the `IDENTIFIER` of every imported object
-and relation and the version the import wrote (table `external_refs`).
-Importing the document again updates those requirements (`previous` counts
-them); a requirement edited here since the last import is a `conflict` when
-the document's values differ. Relations imported before that the document
-no longer has are removed; relations made in Qtestframe are kept.
-Requirements are never deleted. A document exported from the same project
-(`IDENTIFIER` `qtf-req-<id>`, see *ReqIF export*) matches its requirements
-directly, with its `Version` attribute as the base version, so the ReqIF
-export round-trips through the import.
+* *Object types.* Each `SPEC-OBJECT-TYPE` is mapped to `requirement`,
+  `test`, `heading` (the objects are folders) or `ignore` by
+  `object_types` (JSON: type long name → kind). The guess: the *Test case*
+  type of Qtestframe's export and other types with *test* in the name are
+  tests (without `test.write` they are left out, with a warning), *Verification
+  record* is ignored, everything else is a requirement.
+* *Attributes.* All `ATTRIBUTE-DEFINITION-*` types; XHTML becomes Markdown
+  (paragraphs, line breaks, lists, headings, tables as GFM tables, code,
+  bold, italics, links; `<object>` and `<img>` as images — the preview image
+  inside an OLE object stands for it), enumerations their value names.
+  `mapping` (requirement attributes) and `test_mapping` (attributes of test
+  types) are JSON objects attribute long name → field key (custom fields as
+  `cf:<key>`, matched by label like the built-in fields; enumerations map to
+  select fields by option name), `heading` (the chapter name: the object is
+  a folder), `external_id` (recorded as `ID: <id>` in the source of new
+  requirements), `version`, `steps` (tests: an XHTML table Action | Data |
+  Expected result | Calls, headers optional, or a list, one step per item)
+  or `""` to ignore; guessed from the name (`ReqIF.Name`, `ReqIF.Text`,
+  `ReqIF.ChapterName`, `ReqIF.ForeignID`, Polarion's `Title`,
+  `Description`, `ID`, `Status`, `Severity`, `Assignee`, *Steps*,
+  *Preconditions*, *Expected result* …).
+* *Hierarchy.* With `hierarchy` (default true) heading objects (a chapter
+  name and no text, an object type named *Heading*/*Chapter*, or a type
+  mapped to `heading`) become folders below `folder_id` (requirements) or
+  `test_folder_id` (tests), nested as in the `SPECIFICATION`; when several
+  specifications hold items of one kind each is a top folder. With
+  `refines` a requirement nested below another requirement (not a heading)
+  refines it.
+* *Relations.* `SPEC-RELATION`s between imported objects: between a test and
+  a requirement (either direction) a trace link, between requirements a
+  relation. `relation_types` (JSON: type long name → relation type,
+  `verifies` or `ignore`) overrides the guess (`Refines`, *satisfies*,
+  *parent* → `refines`; *derived* → `derived_from`; *depends*, *requires*
+  → `depends_on`; *conflicts* → `conflicts_with`; *duplicates*;
+  *provides*, *implements*; *verifies*, *validated by*, *tested by* →
+  `verifies`; otherwise `relates_to`). Relations between two tests are left
+  out.
+* *Embedded files.* Files of a `.reqifz` that the XHTML references
+  (`<object data="files/…">`, `<img src>`, links) become attachments of the
+  item, and the Markdown points to them. A file the item has already (same
+  name and content) is not added again.
+* Objects without a title attribute get one from the first words of their
+  text (tests also from their `LONG-NAME`) when they are created. A call
+  step to a test that is new in the same import is imported as a plain step
+  (import again to make it a call).
+
+The preview adds `{tests (the tests' diff, or null), title, tool,
+qtestframe, attributes, test_attributes:[{name, type, values, objects,
+sample, object_types, field, guess}], targets, test_targets:[{key, label,
+type}], object_types:[{name, objects, kind, guess}], relation_types:{name:
+type}, relation_type_mapping:[{name, relations, type, guess}],
+relation_targets, relations:{add, remove, keep, links, changes:[{ref, type,
+file_type, source, target, action, kind}]}, folders, test_folders,
+files:[{object, ref, name, size, existing}], skipped, errors, previous,
+target_folder, test_target_folder, can_import_tests}`. The apply result
+holds the totals of requirements and tests plus `tests` (the tests' share),
+`references_saved` and `files_attached`.
+
+**Re-import.** The import keeps the `IDENTIFIER` of every imported object,
+relation and trace link and the version the import wrote (table
+`external_refs`). Importing the document again updates those items
+(`previous` counts them); an item edited here since the last import is a
+`conflict` when the document's values differ. Relations and links imported
+before that the document no longer has are removed; those made in
+Qtestframe are kept. Items are never deleted. A document exported from the
+same project (`IDENTIFIER` `qtf-req-<id>` / `qtf-test-<id>`, see *ReqIF
+export*) matches its items directly, with its `Version` attribute as the
+base version, so the ReqIF export round-trips through the import: export a
+project with `include=tests`, import it into an empty project with the same
+custom fields, export that again, and the documents hold the same items,
+values, folders, relations and links (a test checks this).
 
 **Custom fields and other extra fields** take part through the field
 registry of `internal/interop` (`interop.Register`): an extension returns
@@ -2919,130 +2960,107 @@ spreadsheet view saves an edit, a paste or a fill-down with one call):
 
 ## OSLC
 
-A minimal, **read-only** OSLC provider for Requirements Management 2.0 and
-Quality Management 2.0, so that OSLC clients (IBM ELM / DOORS Next, Polarion,
-Codebeamer, custom tools) can discover, query and link to requirements and
-test cases. All paths are below `/api/v1/oslc/`.
+An OSLC provider for Requirements Management 2.1 and Quality Management 2.1,
+so that OSLC clients (IBM ELM / DOORS Next, Polarion, Codebeamer, custom
+tools) can discover, query, create, update, delete and link requirements and
+test cases. All paths are below `/api/v1/oslc/`. The administrator guide
+(*Connecting other tools*) shows how to connect DOORS Next, Polarion and
+Codebeamer.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/oslc/rootservices` | none | discovery (Jazz rootservices): `rmServiceProviders` and `qmServiceProviders` point to the catalog |
-| GET | `/oslc/catalog` | authenticated | `oslc:ServiceProviderCatalog`, one `oslc:ServiceProvider` per project the caller may read |
-| GET | `/oslc/projects/{pid}` | `project.read` | `oslc:ServiceProvider` with an RM and a QM `oslc:Service`, each with a `oslc:QueryCapability` (when the caller may read the kind) |
+| GET | `/oslc/rootservices` | none | Jazz-style discovery: `oslc_rm_v1:rmServiceProviders`, `oslc_qm_v1:qmServiceProviders` and `jd:oslcCatalogs` point to the catalog |
+| GET | `/oslc/catalog` | authenticated | `oslc:ServiceProviderCatalog`, one `oslc:ServiceProvider` (and a catalog) per project the caller may read |
+| GET | `/oslc/projects/{pid}/catalog` | `project.read` | the catalog of one project |
+| GET | `/oslc/projects/{pid}` | `project.read` | `oslc:ServiceProvider` with an RM and a QM `oslc:Service`: query capability, selection dialog and (with the write permission) creation factory and creation dialog |
+| GET | `/oslc/projects/{pid}/shapes/{requirement\|test}` | `project.read` | `oslc:ResourceShape` |
 | GET | `/oslc/projects/{pid}/requirements` | `requirement.read` | query capability for `oslc_rm:Requirement` |
-| GET | `/oslc/projects/{pid}/requirements/{item}` | `requirement.read` | one requirement, by id or key |
-| GET | `/oslc/projects/{pid}/tests` | `test.read` | query capability for `oslc_qm:TestCase` |
-| GET | `/oslc/projects/{pid}/tests/{item}` | `test.read` | one test case, by id or key |
+| POST | `/oslc/projects/{pid}/requirements` | `requirement.write` | creation factory → 201, `Location`, `ETag` |
+| GET | `/oslc/projects/{pid}/requirements/{item}` | `requirement.read` | one requirement, by id or key; `ETag` = version |
+| PUT | `/oslc/projects/{pid}/requirements/{item}` | `requirement.write` | update; `If-Match` → 412 when stale |
+| DELETE | `/oslc/projects/{pid}/requirements/{item}` | `requirement.write` | to the trash; `If-Match` optional → 204 |
+| … | `/oslc/projects/{pid}/tests`, `…/tests/{item}` | `test.read` / `test.write` | the same for `oslc_qm:TestCase` |
+| GET | `/oslc/projects/{pid}/dialogs/{requirement\|test}/{select\|create}` | none (the page uses the session) | delegated selection and creation dialogs (HTML) |
 
-**Formats.** By the `Accept` header: `application/rdf+xml` (default, also
-for `application/xml` and `*/*`), `text/turtle`, `application/ld+json`
-(also `application/json`). Responses carry `OSLC-Core-Version: 2.0`.
+**Formats.** Responses by the `Accept` header: `application/rdf+xml`
+(default, also for `application/xml` and `*/*`), `text/turtle`,
+`application/ld+json` (also `application/json`). Request bodies by
+`Content-Type`: Turtle, RDF/XML (`rdf:Description` or typed nodes,
+`rdf:parseType="Literal"` XHTML, `rdf:resource`) or JSON-LD (inline
+`@context`, `@graph`) and the OSLC 2.0 JSON format; others → 415.
+Responses carry `OSLC-Core-Version: 2.0`; errors in an RDF request are an
+`oslc:Error` (`oslc:statusCode`, `oslc:message`).
 
 **Resources.** Requirements: `dcterms:identifier` (key), `dcterms:title`,
 `dcterms:description`, `dcterms:created`, `dcterms:modified`,
 `dcterms:creator` (`foaf:Person`), `dcterms:subject` (tags),
-`oslc:shortTitle`, `oslc:serviceProvider`, `rdfs:seeAlso` (the web page),
-`oslc_rm:validatedBy` (tests), relations as `qtf:<type>` and the nearest
-OSLC property (`refines` → `oslc_rm:elaborates`, `depends_on` →
-`oslc_rm:constrainedBy`, `derived_from` → `oslc_rm:satisfies`, others
-`dcterms:relation`), and `qtf:status`, `qtf:obligation`, `qtf:type`,
-`qtf:priority`, `qtf:source`, `qtf:owner`, `qtf:version`, `qtf:folder`.
-Test cases: the dcterms properties, `oslc_qm:validatesRequirement`,
+`oslc:shortTitle`, `oslc:serviceProvider`, `oslc:instanceShape`,
+`rdfs:seeAlso` (the web page), `oslc_rm:validatedBy` (tests), relations as
+`qtf:<type>` on the source and the OSLC RM properties (`refines` →
+`oslc_rm:elaborates` / on the target `oslc_rm:elaboratedBy`, `depends_on`
+→ `oslc_rm:constrainedBy` / `oslc_rm:constrains`, `derived_from` →
+`oslc_rm:satisfies` / `oslc_rm:satisfiedBy`, `relates_to` →
+`dcterms:relation`), item links to URLs (`oslc_rm:implementedBy`,
+`trackedBy`, `affectedBy` … by their label, others `dcterms:references`),
+and `qtf:status`, `qtf:obligation`, `qtf:type`, `qtf:priority`,
+`qtf:source`, `qtf:rationale`, `qtf:owner`, `qtf:version`, `qtf:folder`.
+Test cases: the dcterms properties, `oslc_qm:validatesRequirement`, item
+links (`oslc_qm:testsChangeRequest`, `relatedChangeRequest` …),
 `qtf:status`, `qtf:priority`, `qtf:executionType`, `qtf:preconditions`,
-`qtf:expectedResult`, `qtf:version`, `qtf:folder`. The `qtf:` namespace is
-`<base_url>/api/v1/oslc/vocab#`. The `ETag` of a resource is its version.
+`qtf:expectedResult`, `qtf:estimatedMinutes`, `qtf:version`,
+`qtf:folder`. The `qtf:` namespace is `<base_url>/api/v1/oslc/vocab#`.
 
-**Queries.** `oslc.where` with `dcterms:identifier`, `dcterms:title`,
-`dcterms:modified` and `dcterms:created`; operators `= != < > <= >=` and
-`in [v1, v2]`, terms joined by `and`; values are quoted strings (a
-`^^xsd:dateTime` or `@lang` suffix is accepted), numbers or `<iri>`; dates
-compare as times. `oslc.prefix` declares further prefixes
-(`dc=<http://purl.org/dc/terms/>`). Results are the members of the query
-base (`rdfs:member`) with their properties and an `oslc:ResponseInfo`
-(`oslc:totalCount`, `oslc:nextPage`); `oslc.pageSize` (default 100, at
-most 1,000) and `page` page through them. Other properties, nested terms and
-`oslc.searchTerms` → 400; `oslc.select` and `oslc.orderBy` are ignored (all
-properties, key order).
+**Writes.** POST to the query base creates (`dcterms:title` required); PUT
+changes the properties the body carries and leaves the others;
+`oslc.properties=dcterms:title,oslc_rm:validatedBy` makes it a selective
+update, clearing the listed properties the body leaves out. Writable:
+`dcterms:title`, `dcterms:description` (an `rdf:XMLLiteral` is converted
+from XHTML to Markdown), `dcterms:subject`, the `qtf:` properties above
+(`qtf:folder`: a path, missing folders are created) and the link
+properties: `oslc_rm:validatedBy` / `oslc_qm:validatesRequirement` replace
+the trace links (needs `test.write`), the relation properties (both
+directions) replace the relations of their type, and values that are not
+resources of the project (a work item or requirement in another tool)
+become item links to their URL labelled with the property
+(`oslc_rm:implementedBy` …). With `If-Match` the ETag must be the current
+version (412 otherwise, as for a PATCH of the web client). Every save goes
+through the regular handlers: validation, review permissions, history,
+audit, suspect links, notifications. DELETE moves the item to the trash.
+
+**Queries.** `oslc.where` works on every property of the resources: terms
+joined by `and`, operators `= != < > <= >=` and `in [v1, v2]`, values
+quoted strings (a `^^xsd:dateTime` or `@lang` suffix is accepted), numbers
+or `<iri>`; dates compare as times; of several values one must match (`!=`:
+none may be equal). `oslc.select` limits the properties of the members
+(`*` all; nested selections select the property), `oslc.orderBy`
+(`+dcterms:title,-dcterms:modified`) sorts, `oslc.searchTerms` (`"brake"
+"stop"`) searches identifier, title and description. `oslc.prefix`
+declares further prefixes (`dc=<http://purl.org/dc/terms/>`). Results are
+the members of the query base (`rdfs:member`) with their properties and an
+`oslc:ResponseInfo` (`oslc:totalCount`, `oslc:nextPage`); `oslc.pageSize`
+(default 100, at most 1,000) and `page` page through them. Nested terms →
+400.
+
+**Delegated dialogs.** `…/dialogs/{kind}/select` lists the project's items
+with a search and check boxes, `…/create` a short form. They use the
+browser's Qtestframe session (without one they offer to sign in in another
+tab) and send `{"oslc:results": [{"oslc:label": "<key> <title>",
+"rdf:resource": "<resource URL>"}]}` by `postMessage` (`oslc-response:`
+prefix, to the opener or parent) or, with `#oslc-core-windowName-1.0`, by
+the windowName protocol. They may be framed by the origins of
+`server.frame_ancestors` (else the same origin only); English or Swedish by
+`lang` or `Accept-Language`.
 
 **Authentication.** An API token as `Authorization: Bearer <token>`, or —
 for clients that only offer Basic authentication — as the password of
 `Authorization: Basic` (any user name), on the OSLC paths only; a browser
-session works too. The token's role and the project access rules apply:
-restricted projects are listed and served only to their members (404
-otherwise).
+session works too (with the CSRF token for writes). The token's role and
+the project access rules apply: restricted projects are listed and served
+only to their members (404 otherwise).
 
-**Not supported:** creation factories and other writes, delegated UIs
-(selection and creation dialogs), resource previews (compact), resource
-shapes, OAuth 1.0a, TRS and the OSLC Configuration Management domain.
-
-## Export
-
-`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|md|reqif|reqifz&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
-(permission `export`)
-
-* `format` also accepts `excel`, `word` and `markdown`. `aspects` defaults to all;
-  unknown aspects are a 400. `q` is applied to requirements if it is a valid
-  requirement query and to tests if it is a valid test query.
-* CSV with more than one aspect is delivered as a ZIP of CSV files.
-* `md` is one [Markdown document](#markdown-documents) with every aspect.
-* `reqif` and `reqifz` export the (filtered) requirements as
-  [ReqIF 1.2](#reqif-export); `aspects` does not apply. `reqif` is the XML
-  document (`application/xml`), `reqifz` a ZIP (`application/zip`) with the
-  document `<KEY>.reqif` and the requirements' attachments below
-  `files/<requirement key>/`.
-* `requirements`, `tests` and `runs` end with one column per custom field of
-  the kind (`Label` or `Label (unit)`, the value in its re-importable form).
-* `tests` has the columns `Parameters` and `Data rows` (count); `test_data`
-  lists the data table, one line per row and parameter (`Test`, `Row`,
-  `Row name`, `Parameter`, `Value`); `runs` has `Configuration` and
-  `Iterations` per execution.
-* Response has `Content-Disposition: attachment;
-  filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`. Formula injection is
-  neutralised in CSV; see [design.md §11](design.md#11-export-formats).
-
-### Export a view
-
-`POST /projects/{pid}/export/view` (permission `export`) renders a table the
-client shows, such as the spreadsheet view of requirements or tests with its
-visible columns, their order, the sort and the filters, with the same
-writers as the project export:
-
-```json
-{"format": "xlsx", "name": "requirements", "title": "Requirements", "lang": "en",
- "filter": "status = draft", "columns": ["Key", "Title", "Status"],
- "rows": [["DEMO-1", "Login", "Draft"]]}
-```
-
-* `format` is `xlsx`, `csv`, `md`, `pdf` or `docx` (aliases as above);
-  `columns` 1–200 headers; each row at most as many cells as there are
-  columns; at most 2,000,000 cells. `lang` (`en`, `sv`) is the language of
-  the texts the writers add; `filter` is shown under the title in Markdown.
-* The file is `<KEY>-<name>-<YYYYMMDD-HHMMSS>.<ext>` (`name` reduced to
-  `a-z`, `0-9` and `-`). Formula injection is neutralised in CSV as in the
-  project export. Audited as `project.export`.
-
-### Markdown documents
-
-`format=md` (alias `markdown`; `text/markdown; charset=utf-8`, extension
-`.md`) is available wherever a file is generated from a table: the project
-export, every report template, custom and saved reports, report batches
-(a ZIP of `.md` files), e-mailed and scheduled reports and the audit log
-export. The document is GitHub-flavoured Markdown:
-
-* `# <title>`, then the subtitle (project, filter) and a list of metadata
-  (`**Generated:**` date, and where they apply the aspects, filter or date
-  range), then a contents list of the sections when there are several;
-* one `## <section>` per section with a GFM table; `|` is escaped as `\|`,
-  line breaks in a cell become `<br>`, Markdown and HTML characters are
-  backslash-escaped, so cell texts show literally;
-* cells that are http(s) URLs become links; when `server.base_url` is
-  configured, requirement, test case and defect keys of the project link
-  to `<base_url>/go/<key>`;
-* empty sections show *(no data)* / *(no rows)*. Reports have no charts,
-  so the document has no images.
-
-In reports the texts the document adds follow the report language
-(e.g. `**Skapad:**`, `Innehåll` in Swedish).
+**Not supported:** OAuth 1.0a (use API tokens), resource previews
+(compact), TRS, nested `oslc.where` terms and the OSLC Configuration
+Management domain.
 
 ### ReqIF export
 
@@ -3078,17 +3096,37 @@ as the standard prescribes); XHTML values use the prefix `xhtml:` bound to
 * Requirement relations between exported requirements are `SPEC-RELATION`s
   (source → target) with one `SPEC-RELATION-TYPE` per relation type
   (`Refines`, `Depends on`, …).
+* With `include=tests`: `SPEC-OBJECT-TYPE` *Test case* with
+  `ReqIF.ForeignID`, `ReqIF.Name`, `ReqIF.Text`, `Preconditions`, `Steps`
+  (an XHTML table Action | Data | Expected result | Calls), `Expected
+  result`, `Execution type`, `Priority`, `Status` (enumerations),
+  `Estimated minutes`, `Tags`, `Version`, created by / on, the test custom
+  fields and `Attachments`; a second `SPECIFICATION` holds the test folder
+  tree; trace links are `SPEC-RELATION`s of the type *Verifies* (test →
+  requirement, `qtf-link-<id>`). With a filter only the tests that verify
+  an exported requirement are included.
+* With `include=records`: `SPEC-OBJECT-TYPE` *Verification record*
+  (requirement, criterion, method, result, performed by / on, note, valid
+  until, validity, signed off by) in a third `SPECIFICATION`, each related
+  to its requirement by a *Verification record of* relation. The importer
+  ignores them.
+* `baseline=<id>`: the items as the baseline froze them (with their
+  custom fields, criteria and steps); folders, relations, links and records
+  are today's between those items. The title and comment name the
+  baseline.
 * `IDENTIFIER`s are derived from the database ids (`qtf-req-<id>`,
   `qtf-folder-<id>`, `qtf-rel-<id>`, …), so repeated exports keep them;
   `LONG-NAME` of a requirement is its key, of a heading the folder name;
   `LAST-CHANGE` is the item's last update.
 
-Importing the file again (`POST /projects/{pid}/requirements/import`)
-restores title, description (the importer reads the XHTML of a Qtestframe
-file back as Markdown), obligation, type, priority, status, source,
-rationale, owner, tags, criteria and folders; the key becomes the external
-ID (`ID: <key>` in the source). Relations, categories and attachments are
-not imported.
+The ReqIF import with re-import (`/projects/{pid}/exchange/reqif/…`, see
+*Exchange*) reads everything back except categories, records and the
+creation data: requirements and tests with their fields, custom fields,
+criteria, steps, folders, relations, trace links and attachments. The simple
+requirement import (`POST /projects/{pid}/requirements/import`) restores
+the requirements' title, description, obligation, type, priority, status,
+source, rationale, owner, tags, criteria and folders; the key becomes the
+external ID (`ID: <key>` in the source).
 
 ## OpenAPI description
 
