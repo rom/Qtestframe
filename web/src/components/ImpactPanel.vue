@@ -85,7 +85,7 @@ async function confirm(r?: Relation) {
       </h3>
       <p v-if="!blocks.length" class="muted small">{{ t('correlations.notBlocked') }}</p>
       <template v-else>
-        <Message v-if="counts.blocking" severity="error" :closable="false">{{ t('correlations.blockedBy', { n: counts.blocking }, counts.blocking) }}</Message>
+        <p v-if="counts.blocking" class="blocked-badge" style="margin: 0 0 6px"><i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blockedBy', { n: counts.blocking }, counts.blocking) }}</p>
         <ul class="plain-list">
           <li v-for="b in blocks" :key="b.defect_id" class="impact-row">
             <ItemRef :to="{ name: 'defects', params: { projectId }, query: { item: b.defect_id } }" :item-key="b.key" :title="b.title" title-class="ellipsis" grow />
