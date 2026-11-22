@@ -17,7 +17,8 @@ var (
 	requirementSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
-			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk", "catalog"},
+			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk", "catalog",
+			"blocked", "stale", "suspect_relations"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
 			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention"},
 	}
@@ -25,7 +26,7 @@ var (
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
-			"depends_on", "suspect", "flaky", "flakiness", "catalog"},
+			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
 			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness"},
@@ -74,6 +75,16 @@ type projectContext struct {
 	prereqKeys map[string][]string
 	// test id → flakiness score (pass/fail flips among the last results)
 	flaky map[string]int
+	// change and defect correlations (correlations.go): staleness of the
+	// latest results, open defects blocking requirements, suspect
+	// relations per requirement; cfgRaw: cfgResults with the stale passes
+	// (cfgResults has them as not run, so coverage does not count them)
+	stale       *store.StaleIndex
+	blocks      map[string][]model.DefectBlock
+	suspectRels map[string]int
+	cfgRaw      store.ConfigResults
+	// evidenceLast: last without the stale passes (see evidence)
+	evidenceLast map[string]string
 }
 
 func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Project) (*projectContext, error) {
@@ -110,7 +121,17 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 	if pc.flaky, err = s.Store.FlakyScores(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
-	if pc.cfgResults, err = s.Store.LastConfigResults(ctx, tenantID, p.ID); err != nil {
+	if pc.cfgRaw, err = s.Store.LastConfigResults(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.stale, err = s.Store.LoadStaleIndex(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	pc.cfgResults = pc.stale.FilterConfig(pc.cfgRaw)
+	if pc.blocks, err = s.Store.DefectBlocks(ctx, tenantID, p.ID, pc.stale.Settings()); err != nil {
+		return nil, err
+	}
+	if pc.suspectRels, err = s.Store.SuspectRelationCounts(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
 	if pc.openDefects, err = s.Store.OpenDefectCounts(ctx, tenantID, p.ID); err != nil {
@@ -201,6 +222,9 @@ func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.SuspectLinks = pc.suspect[r.ID]
 	r.OpenDefects = pc.openDefects[r.ID]
 	r.RiskLevel = pc.riskLevel[r.ID]
+	r.BlockingDefects, r.DefectWarnings = store.BlockCounts(pc.blocks[r.ID])
+	r.StaleResults = pc.stale.StaleCount(pc.r2t[r.ID])
+	r.SuspectRelations = pc.suspectRels[r.ID]
 }
 
 func (pc *projectContext) decorateTest(t *model.TestCase) {
@@ -216,6 +240,9 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 	t.SuspectLinks = pc.suspect[t.ID]
 	t.Flakiness = pc.flaky[t.ID]
 	t.Flaky = t.Flakiness >= store.FlakyMinFlips
+	if st := pc.stale.Test(t.ID); st.Stale {
+		t.Stale, t.StaleReason = true, st.Reason
+	}
 	refs := append([]model.ItemRef{}, pc.refs[t.ID]...)
 	seen := map[string]bool{}
 	for _, st := range t.Steps {
@@ -250,12 +277,15 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"linked": linkedKeys, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)},
 		"updated_at": {ts(r.UpdatedAt)}, "criteria": crit,
 		"related": pc.related[r.ID], "parent": pc.parents[r.ID], "child": pc.children[r.ID],
-		"comments": {strconv.Itoa(r.CommentCount)},
-		"suspect":  {strconv.Itoa(r.SuspectLinks)},
-		"defects":  {strconv.Itoa(r.OpenDefects)},
-		"risk":     {r.RiskLevel},
-		"catalog":  {r.CatalogRef},
-		"mention":  mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
+		"comments":          {strconv.Itoa(r.CommentCount)},
+		"suspect":           {strconv.Itoa(r.SuspectLinks)},
+		"defects":           {strconv.Itoa(r.OpenDefects)},
+		"risk":              {r.RiskLevel},
+		"catalog":           {r.CatalogRef},
+		"mention":           mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
+		"blocked":           {strconv.Itoa(r.BlockingDefects)},
+		"stale":             {strconv.Itoa(r.StaleResults)},
+		"suspect_relations": {strconv.Itoa(r.SuspectRelations)},
 	}
 }
 
@@ -293,6 +323,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"flaky":      {strconv.FormatBool(t.Flaky)},
 		"flakiness":  {strconv.Itoa(t.Flakiness)},
 		"catalog":    {t.CatalogRef},
+		"stale":      {strconv.FormatBool(t.Stale)},
 	}
 }
 
@@ -371,4 +402,13 @@ func truncateRunes(s string, n int) string {
 		return s
 	}
 	return string(r[:n])
+}
+
+// evidence returns the latest results that count as evidence: without the
+// stale passes (store/staleness.go).
+func (pc *projectContext) evidence() map[string]string {
+	if pc.evidenceLast == nil {
+		pc.evidenceLast = pc.stale.FilterLast(pc.last)
+	}
+	return pc.evidenceLast
 }

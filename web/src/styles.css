@@ -1164,3 +1164,24 @@ button.readiness-cell:focus-visible { outline: 2px solid var(--p-primary-color);
 :root[data-theme="high_contrast_light"] .card, :root[data-theme="high_contrast_light"] .p-datatable, :root[data-theme="high_contrast_light"] .p-dialog { border: 1px solid #000000; }
 :root[data-theme="high_contrast_light"] a { text-decoration: underline; }
 :root[data-theme="high_contrast_light"] :focus-visible { outline-width: 3px !important; }
+
+/* change and defect correlations: a requirement blocked by / warned about by open defects (text and icon, not only colour) */
+.blocked-badge,
+.warned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+.blocked-badge {
+  color: var(--p-red-700, #b91c1c);
+}
+.warned-badge {
+  color: var(--p-amber-700, #b45309);
+}
+.app-dark .blocked-badge {
+  color: var(--p-red-300, #fca5a5);
+}
+.app-dark .warned-badge {
+  color: var(--p-amber-300, #fcd34d);
+}

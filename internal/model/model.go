@@ -179,6 +179,10 @@ type FileInfo struct {
 	CreatedAt   time.Time  `json:"created_at"`
 	URL         string     `json:"url"` // download URL
 	Links       []FileLink `json:"links"`
+	// Outdated (generated documents): a requirement or test it contains
+	// changed after it was generated; OutdatedItems are their keys.
+	Outdated      bool     `json:"outdated,omitempty"`
+	OutdatedItems []string `json:"outdated_items,omitempty"`
 }
 
 // FileLink is an item a file is attached to.
@@ -458,6 +462,15 @@ type Requirement struct {
 	RiskLevel string `json:"risk_level,omitempty"`
 	// OpenDefects: open defects linked to it or to its tests.
 	OpenDefects int `json:"open_defects"`
+	// BlockingDefects / DefectWarnings: open defects that block it or warn
+	// about it under the project's severity rules (CorrelationSettings).
+	BlockingDefects int `json:"blocking_defects,omitempty"`
+	DefectWarnings  int `json:"defect_warnings,omitempty"`
+	// StaleResults: linked tests whose latest result is stale.
+	StaleResults int `json:"stale_results,omitempty"`
+	// SuspectRelations: its relations that are suspect because the
+	// requirement at the other end changed.
+	SuspectRelations int `json:"suspect_relations,omitempty"`
 	// RelationRefs lists the related items in both directions: requirement
 	// relations and the tests that verify it ("verifies", incoming).
 	RelationRefs  []ItemRef `json:"relations,omitempty"`
@@ -557,6 +570,10 @@ type TestCase struct {
 	// reaches the threshold (see store.FlakyWindow, store.FlakyMinFlips).
 	Flakiness int  `json:"flakiness,omitempty"`
 	Flaky     bool `json:"flaky,omitempty"`
+	// Stale: the latest result is stale (StaleReason: age, test_changed or
+	// requirement_changed) and does not count as passing evidence.
+	Stale       bool   `json:"stale,omitempty"`
+	StaleReason string `json:"stale_reason,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -716,6 +733,13 @@ type Relation struct {
 	TargetTitle string    `json:"target_title"`
 	// Direction relative to the requirement queried: outgoing | incoming.
 	Direction string `json:"direction,omitempty"`
+	// SuspectSince is set when the requirement at the other end changed
+	// and the change travels along the relation (CorrelationSettings);
+	// SuspectReason says what changed.
+	SuspectSince  *time.Time `json:"suspect_since"`
+	SuspectReason string     `json:"suspect_reason,omitempty"`
+	// SuspectEnd: the requirement that is suspect, source | target.
+	SuspectEnd string `json:"suspect_end,omitempty"`
 }
 
 // KindDefect and KindRisk name defects and risks (keys PROJ-BUG-n, PROJ-RISK-n).
@@ -878,6 +902,7 @@ var WebhookEvents = []string{
 	"defect.created", "defect.updated", "defect.status", "defect.assigned",
 	"risk.created", "risk.updated", "release.created", "release.updated", "release.released",
 	"comment.created", "review.requested", "review.completed", "baseline.signed",
+	"defect.regression",
 }
 
 // Webhook posts events of a project to a URL, signed with HMAC-SHA256.
@@ -964,16 +989,17 @@ var ReleaseStatuses = []string{"planned", "active", "released", "cancelled"}
 
 // ExitCriterionTypes are the kinds of exit criteria of a release.
 var ExitCriterionTypes = []string{
-	"coverage",         // % of scope requirements with at least one test
-	"passed",           // % of scope requirements whose tests all passed in the release's runs
-	"mandatory_passed", // every MUST/SHALL requirement in scope passed
-	"executed",         // % of the executions of the release's runs that have a result
-	"no_failed",        // no failed or blocked test in the release's runs
-	"approved",         // % of scope requirements approved, implemented or verified
-	"no_suspect",       // no suspect links in scope
-	"no_open_defects",  // no open defects (of at least the given severity) on the scope
-	"risks_mitigated",  // every risk of at least the given level linked to scope requirements is mitigated or accepted
-	"trace_rules",      // the enabled traceability rules pass on the scope (level error: errors only, warning: also warnings)
+	"coverage",            // % of scope requirements with at least one test
+	"passed",              // % of scope requirements whose tests all passed in the release's runs
+	"mandatory_passed",    // every MUST/SHALL requirement in scope passed
+	"executed",            // % of the executions of the release's runs that have a result
+	"no_failed",           // no failed or blocked test in the release's runs
+	"approved",            // % of scope requirements approved, implemented or verified
+	"no_suspect",          // no suspect links in scope
+	"no_open_defects",     // no open defects (of at least the given severity) on the scope
+	"risks_mitigated",     // every risk of at least the given level linked to scope requirements is mitigated or accepted
+	"trace_rules",         // the enabled traceability rules pass on the scope (level error: errors only, warning: also warnings)
+	"no_blocking_defects", // no scope requirement is blocked by an open defect (the project's severity rules)
 }
 
 // ExitCriterion is one condition a release must meet.
@@ -1015,6 +1041,7 @@ var DefaultExitCriteria = []ExitCriterion{
 	{Type: "passed", Threshold: 95},
 	{Type: "no_failed"},
 	{Type: "no_suspect"},
+	{Type: "no_blocking_defects"},
 }
 
 // ItemLinkSourceTypes are the items that can carry links.
@@ -1068,6 +1095,10 @@ type LinkedIssue struct {
 	SyncedAt *time.Time `json:"synced_at"`
 	// PassedAt: when the "all tests passed" comment was posted.
 	PassedAt *time.Time `json:"passed_at,omitempty"`
+	// OutdatedSince: the requirement changed after the issue was created or
+	// last updated from it; OutdatedReason says what changed.
+	OutdatedSince  *time.Time `json:"outdated_since,omitempty"`
+	OutdatedReason string     `json:"outdated_reason,omitempty"`
 }
 
 // TestDependency says that TestID may only be executed after DependsOnID

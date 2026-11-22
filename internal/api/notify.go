@@ -531,6 +531,10 @@ func (s *Server) afterExecutionChange(r *http.Request, p *Principal, before, aft
 	if run.Status == "completed" && runBefore != "completed" {
 		s.notifyEvent(r, p, run.ProjectID, "run.completed", map[string]any{"run": run})
 	}
+	// a test that verified a fixed defect fails again (correlations.go)
+	if after.Status == model.ResultFailed && before.Status != model.ResultFailed {
+		s.detectRegressions(r, p, after)
+	}
 }
 
 // ---------------------------------------------------------------- bulk

@@ -19,6 +19,7 @@ import SelectButton from 'primevue/selectbutton'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { readPref, writePref } from '@/stores/ui'
 import StatusTag from '@/components/StatusTag.vue'
+import StaleBadge from '@/components/StaleBadge.vue'
 import TraceRulesPanel from '@/components/TraceRulesPanel.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/lib/api'
@@ -83,9 +84,9 @@ function cellLabel(rKey: string, tKey: string) {
   return t('traceability.linkCell', { req: rKey, test: tKey })
 }
 /** spoken state of a matrix mark: the test's result, and suspect when it is */
-function markText(reqId: string, tc: { id: string; last_result: string }) {
+function markText(reqId: string, tc: { id: string; last_result: string; stale?: boolean }) {
   if (!isLinked(reqId, tc.id)) return ''
-  const res = enumLabel('result', traceMark(tc.last_result).result)
+  const res = enumLabel('result', traceMark(tc.last_result).result) + (tc.stale ? `, ${t('correlations.stale')}` : '')
   return isSuspect(reqId, tc.id) ? ` (${res}, ${t('suspect.label')})` : ` (${res})`
 }
 const markLegend = Object.keys(RESULT_ICONS).map((k) => ({ key: k, ...traceMark(k) }))
@@ -362,6 +363,8 @@ async function toggle(reqId: string, testId: string) {
         <ItemRef :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" :item-key="r.key" :title="r.title" title-class="trace-title" grow />
         <StatusTag :value="r.obligation" kind="obligation" empty="" />
         <StatusTag :value="r.coverage || 'none'" kind="coverage" />
+        <StaleBadge :stale="!!r.stale_results" />
+        <span v-if="r.blocked" class="blocked-badge small"><i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blocked') }}</span>
       </div>
       <div class="small muted" style="margin: 6px 0 4px">{{ t('traceability.linkedTests', linkedCols(r.id).length) }}</div>
       <div class="row" style="gap: 6px">
@@ -410,7 +413,7 @@ async function toggle(reqId: string, testId: string) {
             <span class="small muted">{{ t('traceability.size', { rows: rows.length, cols: cols.length }) }}</span>
           </th>
           <th scope="col" style="vertical-align: bottom; padding: 4px 8px" class="small">{{ t('traceability.coverage') }}</th>
-          <th v-for="tc in cols" :key="tc.id" scope="col" class="vert" :title="`${tc.key} — ${tc.title}${tc.last_result ? ' (' + enumLabel('result', tc.last_result) + ')' : ''}`">
+          <th v-for="tc in cols" :key="tc.id" scope="col" class="vert" :title="`${tc.key} — ${tc.title}${tc.last_result ? ' (' + enumLabel('result', tc.last_result) + (tc.stale ? ', ' + t('correlations.stale') : '') + ')' : ''}`">
             <div>
               <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: tc.id } }" style="color: inherit">{{ tc.key }}</RouterLink>
             </div>
@@ -426,7 +429,11 @@ async function toggle(reqId: string, testId: string) {
               <StatusTag :value="r.obligation" kind="obligation" empty="" />
             </div>
           </th>
-          <td style="padding: 2px 8px; text-align: center"><StatusTag :value="r.coverage || 'none'" kind="coverage" /></td>
+          <td style="padding: 2px 8px; text-align: center">
+            <StatusTag :value="r.coverage || 'none'" kind="coverage" />
+            <StaleBadge :stale="!!r.stale_results" />
+            <span v-if="r.blocked" class="blocked-badge small"><i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blocked') }}</span>
+          </td>
           <td
             v-for="tc in cols"
             :key="tc.id"

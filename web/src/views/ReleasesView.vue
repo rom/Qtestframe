@@ -479,6 +479,8 @@ function itemNote(c: CriterionResult, note?: string) {
   if (c.type === 'risks_mitigated') return t(`risksView.level.${note}`)
   if (c.type === 'no_open_defects') return t(`releasesView.severity.${note}`)
   if (c.type === 'trace_rules') return note // the names of the rules the item breaks
+  if (c.type === 'no_blocking_defects') return note // the blocking defect: key and severity
+  if (note === 'stale') return t('correlations.staleResult')
   if (note === 'none') return t('releasesView.noteNoTests')
   return c.type === 'approved' ? enumLabel('status', note) : enumLabel('result', note)
 }

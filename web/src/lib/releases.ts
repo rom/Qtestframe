@@ -15,6 +15,7 @@ export const CRITERION_TYPES = [
   'no_open_defects',
   'risks_mitigated',
   'trace_rules',
+  'no_blocking_defects',
 ] as const
 /** Criteria measured in percent of a total, with a threshold. */
 export const PERCENT_CRITERIA = ['coverage', 'passed', 'executed', 'approved'] as const

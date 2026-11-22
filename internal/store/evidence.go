@@ -157,6 +157,12 @@ func (s *Store) SyncEvidenceStatus(ctx context.Context, tenantID, projectID stri
 	if err != nil {
 		return nil, err
 	}
+	// stale results are no passing evidence (staleness.go)
+	stale, err := s.LoadStaleIndex(ctx, tenantID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	last = stale.FilterLast(last)
 	if reqIDs == nil {
 		for id := range tests {
 			reqIDs = append(reqIDs, id)
@@ -180,6 +186,9 @@ func (s *Store) SyncEvidenceStatus(ctx context.Context, tenantID, projectID stri
 		reason := "all linked tests passed"
 		if next == "implemented" {
 			reason = evidenceReason(tests[id], last, suspect[id])
+			if stale.StaleCount(tests[id]) > 0 {
+				reason += "; a linked test result is stale"
+			}
 		}
 		r.Version++
 		r.UpdatedAt = s.now()

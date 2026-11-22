@@ -167,6 +167,10 @@ Det en regel förbjuder avvisas av servern, även för API-klienter och CI-impor
 
 Kolumnen **Körningar** visar hur många körningar som gäller varje konfiguration. Att skapa konfigurationer kan ångras med ångraknappen.
 
+## Ändringspåverkan, inaktualitet och defekter
+
+*(Ansvarig och Administratör, eller en roll med `project.update`)* **Kategorier & inställningar → Ändringspåverkan** innehåller projektets regler för [ändringspåverkan](traceability-and-coverage.md#ändringspåverkan), [inaktuella utfall](traceability-and-coverage.md#inaktuella-utfall), [blockerande defekter](traceability-and-coverage.md#blockerande-defekter) och [regressioner](defects.md#regressioner). Alla som kan läsa projektet ser dem. Ändringar gäller från och med då: det som redan markerats förblir markerat.
+
 ## Webbtester
 
 [Webbtester](tests.md#webbtester-playwright) körs i en riktig webbläsare på servern. Serveradministratören slår på dem i konfigurationsfilen (`runner.web`, se nedan), och de ställs in per projekt under **Inställningar → Webbtester** *(Ansvarig; behörigheten project.update)*:

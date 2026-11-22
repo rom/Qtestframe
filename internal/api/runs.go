@@ -330,6 +330,12 @@ func (s *Server) recordResults(w http.ResponseWriter, r *http.Request, p *Princi
 		return
 	}
 	s.audit(r.Context(), p, action, "run", run.ID, fmt.Sprintf("%d updated, %d rejected", n, len(rejects)))
+	// imported failures may be regressions of fixed defects (once per execution)
+	if execs, err := s.Store.ListExecutions(r.Context(), p.TenantID(), run.ID); err == nil {
+		for i := range execs {
+			s.detectRegressions(r, p, &execs[i])
+		}
+	}
 	s.syncEvidence(r.Context(), p, run.ProjectID, nil)
 	if after, err := s.Store.GetRun(r.Context(), p.TenantID(), run.ID); err == nil && after.Status == "completed" && run.Status != "completed" {
 		s.notifyEvent(r, p, run.ProjectID, "run.completed", map[string]any{"run": after})

@@ -23,6 +23,8 @@ var derivedFields = map[string]bool{
 	"created_at": true, "created_by": true, "position": true,
 	// evidence and quality state, not content
 	"suspect_links": true, "risk_level": true, "open_defects": true,
+	"blocking_defects": true, "defect_warnings": true, "stale_results": true, "suspect_relations": true,
+	"stale": true, "stale_reason": true,
 }
 
 // SnapshotRequirement returns the JSON snapshot stored for a requirement.
@@ -31,6 +33,7 @@ func SnapshotRequirement(r *model.Requirement) json.RawMessage {
 	c.FolderPath, c.LinkedTests, c.Coverage, c.CommentCount, c.Relations = "", 0, "", 0, 0
 	c.RelationRefs, c.CriteriaCount = nil, 0
 	c.SuspectLinks, c.RiskLevel, c.OpenDefects = 0, "", 0
+	c.BlockingDefects, c.DefectWarnings, c.StaleResults, c.SuspectRelations = 0, 0, 0, 0
 	if c.Criteria == nil {
 		c.Criteria = []model.EvaluationCriterion{}
 	}
@@ -44,6 +47,7 @@ func SnapshotTest(t *model.TestCase) json.RawMessage {
 	c.FolderPath, c.LinkedReqs, c.LastResult, c.CommentCount, c.CalledBy = "", 0, "", 0, nil
 	c.RelationRefs, c.StepCount, c.Defects = nil, 0, nil
 	c.SuspectLinks = 0
+	c.Stale, c.StaleReason = false, ""
 	steps := make([]model.TestStep, len(c.Steps))
 	for i, st := range c.Steps {
 		st.CallTestKey, st.CallTestTitle = "", ""
@@ -171,14 +175,16 @@ func scanRevision(r interface{ Scan(...any) error }) (*model.Revision, error) {
 
 // ---------------------------------------------------------------- relations
 
-const relationSelect = `SELECT r.id, r.project_id, r.source_id, r.target_id, r.type, r.created_by, r.created_at, s.key, s.title, t.key, t.title
+const relationSelect = `SELECT r.id, r.project_id, r.source_id, r.target_id, r.type, r.created_by, r.created_at, s.key, s.title, t.key, t.title, r.suspect_since, r.suspect_reason, r.suspect_end
 	FROM requirement_relations r JOIN requirements s ON s.id = r.source_id JOIN requirements t ON t.id = r.target_id`
 
 func scanRelation(r interface{ Scan(...any) error }) (*model.Relation, error) {
 	var rel model.Relation
-	if err := r.Scan(&rel.ID, &rel.ProjectID, &rel.SourceID, &rel.TargetID, &rel.Type, &rel.CreatedBy, &rel.CreatedAt, &rel.SourceKey, &rel.SourceTitle, &rel.TargetKey, &rel.TargetTitle); err != nil {
+	var suspect sql.NullTime
+	if err := r.Scan(&rel.ID, &rel.ProjectID, &rel.SourceID, &rel.TargetID, &rel.Type, &rel.CreatedBy, &rel.CreatedAt, &rel.SourceKey, &rel.SourceTitle, &rel.TargetKey, &rel.TargetTitle, &suspect, &rel.SuspectReason, &rel.SuspectEnd); err != nil {
 		return nil, err
 	}
+	rel.SuspectSince = timePtr(suspect)
 	return &rel, nil
 }
 

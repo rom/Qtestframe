@@ -289,13 +289,18 @@ type ReleaseRequirement struct {
 	ID, Key, Title, Obligation, Status string
 	Tests                              []string
 	Suspect                            bool
+	// Blocking: open defects that block the requirement (DefectBlocks).
+	Blocking []model.DefectBlock
 }
 
 // ReleaseData is everything the exit criteria are evaluated on.
 type ReleaseData struct {
 	Requirements []ReleaseRequirement
-	// Results: test id → latest result in the release's runs.
+	// Results: test id → latest result in the release's runs (a stale
+	// pass is no result).
 	Results map[string]string
+	// Stale: tests whose latest pass in the release's runs is stale.
+	Stale map[string]bool
 	// Executions in the release's runs and how many have a result.
 	Executions, Executed int
 	// FailedTests: keys of tests whose latest result in the release failed or is blocked.
@@ -362,7 +367,11 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 			case model.ResultFailed, model.ResultBlocked:
 				return false, model.ResultFailed
 			default:
-				state = model.ResultNotRun
+				if d.Stale[t] && state == model.ResultPassed {
+					state = "stale"
+				} else {
+					state = model.ResultNotRun
+				}
 			}
 		}
 		return state == model.ResultPassed, state
@@ -436,6 +445,17 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 				}
 			}
 			out = append(out, CriterionResult{ExitCriterion: c, Met: len(miss) == 0, Actual: float64(len(miss)), Items: limitItems(miss), Available: true})
+		case "no_blocking_defects":
+			var miss []ReleaseItem
+			for _, r := range d.Requirements {
+				for _, b := range r.Blocking {
+					if b.Level == model.DefectBlocks {
+						miss = append(miss, reqItem(r, b.Key+" "+b.Severity))
+						break
+					}
+				}
+			}
+			out = append(out, CriterionResult{ExitCriterion: c, Met: len(miss) == 0, Actual: float64(len(miss)), Items: limitItems(miss), Available: true})
 		case "no_open_defects":
 			if d.OpenDefects == nil {
 				out = append(out, CriterionResult{ExitCriterion: c, Met: true})
@@ -502,7 +522,15 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 			}
 		}
 	}
-	d := ReleaseData{Results: map[string]string{}}
+	d := ReleaseData{Results: map[string]string{}, Stale: map[string]bool{}}
+	stale, err := s.LoadStaleIndex(ctx, tenantID, rel.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	blocks, err := s.DefectBlocks(ctx, tenantID, rel.ProjectID, stale.Settings())
+	if err != nil {
+		return nil, err
+	}
 	// latest result per test and configuration in the release's runs
 	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, t.key, t.title, e.configuration_id, e.status, e.finished_at, e.started_at, r.created_at FROM test_executions e
 		JOIN test_runs r ON r.id = e.run_id JOIN test_cases t ON t.id = e.test_case_id WHERE r.release_id = ? AND r.tenant_id = ?`, id, tenantID)
@@ -553,6 +581,11 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 			if r.status == model.ResultNotRun {
 				units[tid][cfg] = ""
 			}
+			// a stale pass is no evidence (staleness.go)
+			if r.status == model.ResultPassed && stale.Check(r.at, tid).Stale {
+				units[tid][cfg] = ""
+				d.Stale[tid] = true
+			}
 		}
 		// a test counts as passed only when it passed in every configuration
 		st := units.Combined(tid)
@@ -562,16 +595,20 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 		}
 	}
 	sort.Slice(d.FailedTests, func(i, j int) bool { return naturalLess(d.FailedTests[i].Key, d.FailedTests[j].Key) })
-	sum := map[string]int{"requirements": len(rel.RequirementIDs), "runs": rel.Runs, "executions": 0, "executed": 0, "covered": 0, "passed": 0, "failed": 0, "not_run": 0}
+	sum := map[string]int{"requirements": len(rel.RequirementIDs), "runs": rel.Runs, "executions": 0, "executed": 0, "covered": 0, "passed": 0, "failed": 0, "not_run": 0,
+		"blocked": 0, "stale": len(d.Stale)}
 	for _, rid := range rel.RequirementIDs {
 		r, err := s.GetRequirement(ctx, tenantID, rid)
 		if err != nil {
 			continue
 		}
-		rr := ReleaseRequirement{ID: r.ID, Key: r.Key, Title: r.Title, Obligation: r.Obligation, Status: r.Status, Tests: tests[r.ID], Suspect: suspect[r.ID]}
+		rr := ReleaseRequirement{ID: r.ID, Key: r.Key, Title: r.Title, Obligation: r.Obligation, Status: r.Status, Tests: tests[r.ID], Suspect: suspect[r.ID], Blocking: blocks[r.ID]}
 		d.Requirements = append(d.Requirements, rr)
 		if len(rr.Tests) > 0 {
 			sum["covered"]++
+		}
+		if n, _ := BlockCounts(rr.Blocking); n > 0 {
+			sum["blocked"]++
 		}
 		switch CoverageOf(rr.Tests, units) {
 		case model.ResultPassed:

@@ -9,6 +9,10 @@ import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
+import ImpactPanel from './ImpactPanel.vue'
+import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
+import StaleBadge from './StaleBadge.vue'
+import { contentChanges, needsImpactConfirm, type ChangeImpact } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
 import AutoComplete from 'primevue/autocomplete'
@@ -468,7 +472,28 @@ async function mergeMine() {
   }
 }
 
+// ---------- change impact: confirm before saving a change of substance ----------
+const impactOpen = ref(false)
+const impactPreview = ref<ChangeImpact | null>(null)
+const impactFields = ref<string[]>([])
 async function save() {
+  if (isNew.value || !loaded.value || !props.itemId) return doSave()
+  const changed = contentChanges('requirement', loaded.value, bodyOf(form.value) as Record<string, unknown>)
+  if (!changed.length) return doSave()
+  try {
+    impactPreview.value = await api.get<ChangeImpact>(`/requirements/${props.itemId}/impact`)
+  } catch {
+    return doSave() // the preview is a help; saving does not depend on it
+  }
+  if (!needsImpactConfirm(changed, impactPreview.value)) return doSave()
+  impactFields.value = changed
+  impactOpen.value = true
+}
+async function confirmImpact() {
+  await doSave()
+  impactOpen.value = false
+}
+async function doSave() {
   saving.value = true
   error.value = ''
   const body = bodyOf(form.value)
@@ -577,9 +602,11 @@ function criterionLabel(id: string | null) {
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
+      <Tab value="impact"><i class="pi pi-share-alt" aria-hidden="true" /> {{ t('correlations.tab') }}</Tab>
     </TabList>
   </Tabs>
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
+  <div v-if="item && tab === 'impact'" v-bind="panel('impact')"><ImpactPanel kind="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @changed="load" /></div>
   <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')">
     <RequirementIssuePanel :requirement-id="item.id" :can-write="canWrite" @changed="linksVersion++" />
@@ -602,6 +629,18 @@ function criterionLabel(id: string | null) {
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
       <Tag v-if="item" :value="t('common.versionShort', { version: item.version })" severity="secondary" />
       <StatusTag v-if="item?.coverage" :value="item.coverage" kind="coverage" />
+      <button v-if="item?.blocking_defects" type="button" class="blocked-badge link-button" @click="tab = 'impact'">
+        <i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blockedCount', { n: item.blocking_defects }, item.blocking_defects) }}
+      </button>
+      <button v-else-if="item?.defect_warnings" type="button" class="warned-badge link-button" @click="tab = 'impact'">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true" />{{ t('correlations.warnedCount', { n: item.defect_warnings }, item.defect_warnings) }}
+      </button>
+      <button v-if="item?.stale_results" type="button" class="stale-badge link-button" @click="tab = 'impact'">
+        <i class="pi pi-clock" aria-hidden="true" />{{ t('correlations.staleCount', { n: item.stale_results }, item.stale_results) }}
+      </button>
+      <button v-if="item?.suspect_relations" type="button" class="suspect link-button" @click="tab = 'impact'">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true" />{{ t('correlations.suspectRelations', { n: item.suspect_relations }, item.suspect_relations) }}
+      </button>
       <button v-if="item && openDefects" type="button" class="open-defects-badge" @click="tab = 'defects'">
         <i class="pi pi-exclamation-circle" aria-hidden="true" />{{ t('defectsView.openCount', { n: openDefects }, openDefects) }}
       </button>
@@ -790,6 +829,7 @@ function criterionLabel(id: string | null) {
         <span v-if="l.criterion_id" class="small muted">{{ criterionLabel(l.criterion_id) }}</span>
         <SuspectLink :link="l" :can-confirm="canLink" @confirmed="onSuspectConfirmed" />
         <StatusTag :value="testById.get(l.test_case_id)?.last_result" kind="result" empty="" />
+        <StaleBadge :stale="testById.get(l.test_case_id)?.stale" :reason="testById.get(l.test_case_id)?.stale_reason" />
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.test_case_key || testById.get(l.test_case_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>
       <ConfigurationCoverage v-if="links.length" :requirement-id="item.id" :project-id="projectId" :refresh="links.length" />
@@ -833,5 +873,6 @@ function criterionLabel(id: string | null) {
     />
   </form>
   </template>
+  <ImpactConfirmDialog v-model:visible="impactOpen" :impact="impactPreview" :project-id="projectId" :changed="impactFields" :saving="saving" @confirm="confirmImpact" />
   <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

@@ -34,7 +34,7 @@ describe('trace rules criterion', () => {
 
 describe('criterion parameters', () => {
   it('knows what each type takes', () => {
-    expect(CRITERION_TYPES.map(criterionParam)).toEqual(['threshold', 'threshold', 'none', 'threshold', 'none', 'threshold', 'none', 'severity', 'riskLevel', 'ruleSeverity'])
+    expect(CRITERION_TYPES.map(criterionParam)).toEqual(['threshold', 'threshold', 'none', 'threshold', 'none', 'threshold', 'none', 'severity', 'riskLevel', 'ruleSeverity', 'none'])
   })
   it('creates criteria with defaults', () => {
     expect(newCriterion('passed')).toEqual({ type: 'passed', threshold: 100 })

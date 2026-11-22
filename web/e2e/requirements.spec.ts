@@ -38,6 +38,10 @@ test('creates, finds, edits and undoes the edit of a requirement', async ({ page
   await expect(title).toHaveValue('Export to PDF')
   await title.fill('Export reports to PDF')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  // the title is substance: the link of the linked test becomes suspect, confirmed before saving
+  const impact = page.getByRole('dialog', { name: `Save the change of ${key}?` })
+  await expect(impact).toContainText('Tests whose links become suspect')
+  await impact.getByRole('button', { name: 'Save and mark' }).click()
   await expect(page.getByText('Requirement saved')).toBeVisible()
   await editor.getByRole('button', { name: 'Close', exact: true }).last().click()
   await expect(editor).toBeHidden()

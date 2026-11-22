@@ -13,6 +13,9 @@ func TestSuspectLinksAndEvidenceStatus(t *testing.T) {
 	a := e.login("admin@example.com")
 	pid := a.project("EVI")
 	a.m("PUT", "/api/v1/settings", map[string]any{"allow_unready_tests": true, "allow_unready_requirements": true}, 200)
+	// this test is about suspect links: results stay evidence after a change
+	// (staleness on change: correlations_test.go)
+	a.m("PUT", "/api/v1/projects/"+pid+"/correlation-settings", map[string]any{"stale_on_change": false}, 200)
 	rq := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "Login", "description": "The user MUST log in.", "status": "implemented", "create_test": false}, 201)
 	t1 := a.m("POST", "/api/v1/projects/"+pid+"/tests", map[string]any{"title": "Valid login", "status": "ready"}, 201)
 	t2 := a.m("POST", "/api/v1/projects/"+pid+"/tests", map[string]any{"title": "Wrong password", "status": "ready"}, 201)

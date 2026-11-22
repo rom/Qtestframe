@@ -3,6 +3,10 @@ import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
+import ImpactPanel from './ImpactPanel.vue'
+import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
+import StaleBadge from './StaleBadge.vue'
+import { contentChanges, needsImpactConfirm, type ChangeImpact } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
@@ -359,7 +363,28 @@ async function mergeMine() {
   }
 }
 
+// ---------- change impact: confirm before saving a change of substance ----------
+const impactOpen = ref(false)
+const impactPreview = ref<ChangeImpact | null>(null)
+const impactFields = ref<string[]>([])
 async function save() {
+  if (isNew.value || !loaded.value || !props.itemId) return doSave()
+  const changed = contentChanges('test', loaded.value, bodyOf(form.value) as Record<string, unknown>)
+  if (!changed.length) return doSave()
+  try {
+    impactPreview.value = await api.get<ChangeImpact>(`/tests/${props.itemId}/impact`)
+  } catch {
+    return doSave() // the preview is a help; saving does not depend on it
+  }
+  if (!needsImpactConfirm(changed, impactPreview.value)) return doSave()
+  impactFields.value = changed
+  impactOpen.value = true
+}
+async function confirmImpact() {
+  await doSave()
+  impactOpen.value = false
+}
+async function doSave() {
   saving.value = true
   error.value = ''
   const body = bodyOf(form.value)
@@ -480,10 +505,12 @@ const scriptPlaceholder = computed(() => {
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
+      <Tab value="impact"><i class="pi pi-share-alt" aria-hidden="true" /> {{ t('correlations.tab') }}</Tab>
     </TabList>
   </Tabs>
   <div v-if="item && tab === 'executions'" v-bind="panel('executions')"><TestExecutionsPanel :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" /></div>
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
+  <div v-if="item && tab === 'impact'" v-bind="panel('impact')"><ImpactPanel kind="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @changed="load" /></div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
@@ -502,6 +529,7 @@ const scriptPlaceholder = computed(() => {
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
       <Tag v-if="item?.version" :value="t('common.versionShort', { version: item.version })" severity="secondary" />
       <StatusTag v-if="item?.last_result" :value="item.last_result" kind="result" />
+      <StaleBadge :stale="item?.stale" :reason="item?.stale_reason" />
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
     </div>
     <CatalogOrigin v-if="item?.catalog_ref" kind="test" :catalog-ref="item.catalog_ref" :project-id="projectId" />
@@ -686,5 +714,6 @@ const scriptPlaceholder = computed(() => {
     />
   </form>
   </template>
+  <ImpactConfirmDialog v-model:visible="impactOpen" :impact="impactPreview" :project-id="projectId" :changed="impactFields" :saving="saving" @confirm="confirmImpact" />
   <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

@@ -57,6 +57,7 @@ The **Exit criteria** tab lists the conditions the release must meet. Select **A
 | No open defects | no open defect of at least the chosen severity is linked to a scope requirement or its tests | minimum severity |
 | Risks mitigated | every risk of at least the chosen level that a scope requirement addresses is mitigated, accepted or closed | minimum risk level |
 | Traceability rules | no requirement in scope and no test linked to one breaks an enabled [traceability rule](traceability-and-coverage.md#traceability-rules) of the chosen severity; the status tab lists the items with the rules they break | errors only, or errors and warnings |
+| No blocking defects | no requirement in scope is [blocked by an open defect](traceability-and-coverage.md#blocking-defects) under the project's severity rules; a stale pass does not count for **Passed** and **Mandatory passed** | — |
 
 A release without exit criteria is always a go.
 

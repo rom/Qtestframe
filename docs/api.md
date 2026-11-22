@@ -1482,6 +1482,7 @@ Exit criterion types (`threshold` in percent, default 100):
 | `no_open_defects` | no open defect of at least severity `level` (critical, major, minor, trivial) is linked to the scope |
 | `risks_mitigated` | no identified or mitigating risk of at least `level` (low, medium, high, critical) addresses a scope requirement |
 | `trace_rules` | no scope requirement and no test linked to one breaks an enabled [traceability rule](#traceability-rules) of severity `level` (`error`, the default: errors only; `warning`: errors and warnings). The items list each item once with the names of the rules it breaks as `note` |
+| `no_blocking_defects` | no scope requirement is blocked by an open defect under the project's severity rules (see [change and defect correlations](#change-and-defect-correlations)); a default of new releases |
 
 ## Defects
 
@@ -1596,6 +1597,119 @@ on the open issue; when the tests stop passing, the next pass comments
 again. Syncing runs on demand (there is no schedule). Like the defect push
 and sync, these calls save item by item rather than in one transaction.
 
+## Change and defect correlations
+
+How a change of a requirement or test travels to the items around it, when
+test results stop counting as evidence, which open defects block
+requirements, and what happens when a fixed defect comes back. The rules
+are per project.
+
+| Method | Path | Permission | Description |
+|---|---|---|---|
+| GET | `/projects/{pid}/correlation-settings` | project.read | `{relation_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` |
+| PUT | `/projects/{pid}/correlation-settings` | project.update | partial update; `relation_impact` is replaced as a whole |
+| GET | `/requirements/{id}/impact` | requirement.read | what a change of the requirement's substance makes suspect, out of date, outdated or stale |
+| GET | `/tests/{id}/impact` | test.read | the same for a test |
+| GET | `/baselines/{id}/impact` | requirement.read | the impact of every change of substance since the baseline, with totals |
+| POST | `/relations/{id}/confirm` | requirement.write | clears the suspect mark of a relation → `{confirmed}` |
+| POST | `/requirements/{id}/relations/confirm` | requirement.write | confirms all suspect relations of a requirement |
+| POST | `/item-links/{id}/issue/confirm` | requirement.write | the tracker issue is still right: clears `issue.outdated_since` |
+| GET | `/requirements/{id}/blocking-defects` | requirement.read | `{blocked, blocking, warnings, items: [{defect_id, key, title, severity, status, level, via}]}` |
+| GET | `/requirements/{id}/stale-results` | requirement.read | the latest results of its tests with their staleness |
+| GET | `/defects/{id}/regressions` | project.read | regression history of a defect |
+| GET | `/tests/{id}/regressions` | test.read | regression history of a test |
+
+**Settings.** The defaults: `relation_impact` `refines`, `derived_from` and
+`depends_on` `incoming`, the other types `off`; `flag_issues` true;
+`stale_after_days` 90 (0 turns the age rule off, at most 3650);
+`stale_on_change` true; `blocking_severities` `["critical", "major"]`,
+`warning_severities` `["minor"]` (a severity cannot be in both);
+`regression_action` `reopen` (or `new_defect`, `off`). Directions:
+`incoming` — when the target of a relation changes, its source becomes
+suspect (A `refines` B: B changed, A is suspect); `outgoing` — when the
+source changes, the target becomes suspect; `both`; `off`.
+
+**Change impact.** When the substance of a requirement changes (`title`,
+`description`, `obligation`, `criteria`; for a test `title`, `description`,
+`preconditions`, `steps`, `expected_result`, `script`, `execution_type`):
+
+- its own trace links become suspect, as before;
+- the relations along which the change travels become suspect
+  (`Relation.suspect_since`, `suspect_reason`, `suspect_end`: `source` |
+  `target`), and the trace links of the requirements at their other end —
+  their verifying tests — become suspect too (audit `relation.suspect`);
+- with `flag_issues`, its tracker issues are flagged out of date
+  (`ItemLink.issue.outdated_since`, `outdated_reason`) until the issue is
+  updated from the requirement (`PUT /requirements/{id}/issue`) or
+  confirmed;
+- the generated documents of the archive that contain it are outdated:
+  `GET /projects/{pid}/documents` returns `outdated: true` and
+  `outdated_items` (keys) for them. Generated documents remember the
+  requirements (specification) or tests (test plan) they contain;
+- results recorded before the change go stale (below).
+
+`GET /requirements/{id}/impact` previews this before a change is saved:
+
+```json
+{"kind": "requirement", "id": "…", "key": "SHOP-1", "title": "…",
+ "requirements": [{"kind": "requirement", "id": "…", "key": "SHOP-2", "relation": "refines", "direction": "incoming"}],
+ "tests": [{"kind": "test", "id": "…", "key": "SHOP-T-1", "requirement_id": "…"},
+           {"kind": "test", "id": "…", "key": "SHOP-T-2", "via": "SHOP-2", "already": true}],
+ "issues": [{"kind": "issue", "id": "<item link id>", "key": "group/shop#12", "url": "…"}],
+ "documents": [{"kind": "document", "id": "<file id>", "key": "SHOP-requirements-specification-v1.0.pdf"}],
+ "results": [{"kind": "result", "id": "…", "test_id": "…", "key": "SHOP-T-1", "result": "passed"}],
+ "total": 5}
+```
+
+`already` marks items that are suspect, out of date, outdated or stale
+already; `total` counts the others. Without `test.read` the tests and
+results are left out. `GET /baselines/{id}/impact` returns
+`{baseline, changes: [{entity_type, entity_id, key, title, from_version, to_version, changed_fields, impact}], totals: {requirements, tests, issues, documents, results}}`
+for the items whose substance changed since the baseline (largest impact
+first; totals count distinct items).
+
+**Result staleness.** A result is stale when it is older than
+`stale_after_days`, or (with `stale_on_change`) when its test or a
+requirement the test verifies changed in substance after it was recorded.
+A stale pass is no passing evidence: status follows evidence does not
+verify on it, coverage counts it as not run, the release exit criteria
+`passed` and `mandatory_passed` note it as `stale`, and the traceability
+rule option `passed` ignores it. Tests carry `stale` and `stale_reason`
+(`age`, `test_changed`, `requirement_changed`), requirements
+`stale_results` (linked tests with a stale latest result); the traceability
+matrix has `stale` per test and `stale_results` per requirement; reports
+mark stale results. Query fields: tests `stale` (`true`/`false`),
+requirements `stale` (count). Re-running the test makes a fresh result.
+
+**Blocking defects.** An open defect linked to a requirement, to a test
+verifying it or to an execution of such a test blocks the requirement when
+its severity is in `blocking_severities`, and warns about it when it is in
+`warning_severities`. Requirements carry `blocking_defects` and
+`defect_warnings`; query field `blocked` (count, e.g. `blocked>0`); the
+matrix has `blocked`; the dashboard `correlations: {blocked_requirements,
+warned_requirements, stale_results, suspect_relations}`. The exit criterion
+`no_blocking_defects` (in the defaults of new releases) fails while a scope
+requirement is blocked; the release status summary counts `blocked` and
+`stale`.
+
+**Regressions.** When an execution fails (manually, in bulk, by a script
+job or by imported results) and its test verified the fix of a defect — the
+defect is resolved or closed, is linked to the test or one of its
+executions, and the test passed in another execution after the defect was
+resolved and before this failure — the defect is reopened (`reopen`: status
+`open`, linked to the failing execution) or a regression defect is created
+(`new_defect`: "Regression: …", same severity, priority and assignee, linked
+to the test and the execution). Each defect and execution counts once. The
+regression is recorded, the webhooks get `defect.status` or
+`defect.created` and `defect.regression` (`{regression, defect}`), and the
+defect's assignee (else its author) gets a notification. History:
+
+```json
+{"items": [{"id": "…", "defect_id": "…", "defect_key": "SHOP-BUG-3", "regression_defect_id": null,
+  "test_case_id": "…", "test_key": "SHOP-T-1", "execution_id": "…", "run_id": "…", "run_name": "Nightly 14",
+  "action": "reopened", "previous_status": "resolved", "created_by": "anna@example.com", "created_at": "…"}]}
+```
+
 ## Risks
 
 Reading needs `requirement.read`, changing `requirement.write`.
@@ -1666,7 +1780,7 @@ secret>`, and body
 `run.created/updated/completed`, `execution.updated`,
 `defect.created/updated/status/assigned`, `risk.created/updated`,
 `release.created/updated/released`, `comment.created`,
-`review.requested/completed`, `baseline.signed`. Deliveries run in the
+`review.requested/completed`, `baseline.signed`, `defect.regression`. Deliveries run in the
 background with a 10 s timeout, are not retried and do not follow
 redirects; the latest outcome is stored as `last_status`, `last_error`.
 
@@ -2346,13 +2460,15 @@ semantics: [design.md §9](design.md#9-query-language).
 Requirement fields: `id, key, title, description, obligation, type, priority,
 status, source, rationale, owner, tag, version, folder, category, dimension
 (matches "Dimension/Name"), coverage, linked, created_by, created_at,
-updated_at, criteria, catalog` (the [catalogue](#catalogue) id it was copied from).
+updated_at, criteria, catalog` (the [catalogue](#catalogue) id it was copied from),
+`blocked`, `stale` and `suspect_relations` (counts, see
+[change and defect correlations](#change-and-defect-correlations)).
 
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of
 steps), priority, status, estimate, tag, folder, category, dimension, linked,
 last_result, created_by, created_at, updated_at, flaky (true/false),
-flakiness (alias flips), catalog`.
+flakiness (alias flips), catalog, stale` (true/false).
 
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Execution fields: `id, key, title, status, assignee,

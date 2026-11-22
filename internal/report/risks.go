@@ -199,7 +199,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 					continue
 				}
 				n++
-				trace.Rows = append(trace.Rows, []string{k.Key, lv, st, r.Key, r.Title, l.enum(EnumCoverage, r.Coverage), t.Key, t.Title, l.enum(EnumResult, lastResult(t))})
+				trace.Rows = append(trace.Rows, []string{k.Key, lv, st, r.Key, r.Title, l.enum(EnumCoverage, r.Coverage), t.Key, t.Title, l.resultText(t)})
 			}
 			if n == 0 {
 				noTests = append(noTests, r.Key)

@@ -163,20 +163,20 @@ func deref(p *string) string {
 }
 
 const itemLinkCols = `id, project_id, source_type, source_id, target_type, target_id, url, label, created_by, created_at,
-	issue_tracker, issue_key, issue_status, issue_state, issue_synced_at, issue_passed_at`
+	issue_tracker, issue_key, issue_status, issue_state, issue_synced_at, issue_passed_at, issue_outdated_since, issue_outdated_reason`
 
 func scanItemLink(r interface{ Scan(...any) error }) (*model.ItemLink, error) {
 	var l model.ItemLink
 	var target sql.NullString
 	var is model.LinkedIssue
-	var synced, passed sql.NullTime
+	var synced, passed, outdated sql.NullTime
 	if err := r.Scan(&l.ID, &l.ProjectID, &l.SourceType, &l.SourceID, &l.TargetType, &target, &l.URL, &l.Label, &l.CreatedBy, &l.CreatedAt,
-		&is.Tracker, &is.Key, &is.Status, &is.State, &synced, &passed); err != nil {
+		&is.Tracker, &is.Key, &is.Status, &is.State, &synced, &passed, &outdated, &is.OutdatedReason); err != nil {
 		return nil, err
 	}
 	l.TargetID = strPtr(target)
 	if is.Key != "" {
-		is.SyncedAt, is.PassedAt = timePtr(synced), timePtr(passed)
+		is.SyncedAt, is.PassedAt, is.OutdatedSince = timePtr(synced), timePtr(passed), timePtr(outdated)
 		l.Issue = &is
 	}
 	return &l, nil

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import StaleBadge from './StaleBadge.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import { useUndoStore } from '@/stores/undo'
 import { deletedEntry, entry, recordUndo } from '@/lib/undoActions'
@@ -709,9 +710,16 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <StatusTag v-if="c.field === 'obligation'" :value="data.obligation" kind="obligation" />
             <StatusTag v-else-if="c.field === 'status'" :value="data.status" />
             <StatusTag v-else-if="c.field === 'priority'" :value="data.priority" kind="priority" />
-            <StatusTag v-else-if="c.field === 'coverage'" :value="data.coverage" kind="coverage" />
+            <span v-else-if="c.field === 'coverage'" class="row nowrap" style="gap: 4px">
+              <StatusTag :value="data.coverage" kind="coverage" />
+              <StaleBadge :stale="!!data.stale_results" />
+              <span v-if="data.blocking_defects" class="blocked-badge small" :title="t('correlations.blockedCount', { n: data.blocking_defects }, data.blocking_defects)">
+                <i class="pi pi-ban" aria-hidden="true" />{{ t('correlations.blocked') }}<span class="sr-only">: {{ t('correlations.blockedCount', { n: data.blocking_defects }, data.blocking_defects) }}</span>
+              </span>
+            </span>
             <span v-else-if="c.field === 'last_result'" class="row nowrap" style="gap: 4px">
               <StatusTag :value="data.last_result" kind="result" />
+              <StaleBadge :stale="data.stale" :reason="data.stale_reason" />
               <span v-if="data.flaky" class="flaky-badge" :title="t('workspace.flakyHint', data.flakiness ?? 0)" :aria-label="t('workspace.flakyHint', data.flakiness ?? 0)">
                 <i class="pi pi-sync" aria-hidden="true" /> {{ t('workspace.flaky') }}
               </span>

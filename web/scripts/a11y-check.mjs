@@ -224,6 +224,15 @@ async function discover(request) {
   const webTest = tests.find((t) => t.script_language === 'playwright')
   const webRun = runs.find((r) => r.name === 'Web smoke')
   const webEx = webRun ? items(await api(request, 'GET', `/runs/${webRun.id}/executions`)).find((e) => e.test_case_id === webTest?.id) : null
+  // change and defect correlations: a defect with a regression (seed-demo reopens one), a requirement with linked tests
+  let regressedDefect = null
+  for (const d of items(await api(request, 'GET', `/projects/${pid}/defects`))) {
+    if (items(await api(request, 'GET', `/defects/${d.id}/regressions`).catch(() => [])).length) {
+      regressedDefect = d
+      break
+    }
+  }
+  const linkedReq = reqs.find((r) => r.linked_tests > 0) ?? reqs[0]
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -305,6 +314,13 @@ async function discover(request) {
     { name: 'settings', path: `${p}/settings` },
     { name: 'configurations', path: `${p}/settings?tab=configurations`, wait: '#h-configs' },
     { name: 'web-tests-settings', path: `${p}/settings?tab=webtests`, wait: '#h-web-tests' },
+    // change and defect correlations: settings, the Impact tabs, the confirmation before saving, a baseline's impact, regression history
+    { name: 'correlation-settings', path: `${p}/settings?tab=correlations`, wait: '#h-corr' },
+    linkedReq && { name: 'requirement-impact', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
+    { name: 'test-impact', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
+    linkedReq && { name: 'impact-confirm-dialog', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer form input[required]', keys: ['End', 'X', 'Enter'], wait: '.impact-confirm-dialog' },
+    firstBaseline && { name: 'baseline-impact-dialog', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, open: '.filterbar button:has(.pi-share-alt)', wait: '.baseline-impact-dialog .row' },
+    regressedDefect && { name: 'defect-regressions', path: `${p}/defects?item=${regressedDefect.id}`, wait: '#defect-regressions-h' },
     webTest && { name: 'web-test-editor', path: `${p}/tests?item=${webTest.id}`, wait: '.p-drawer' },
     webRun && webEx && { name: 'execute-web', path: `${p}/runs/${webRun.id}/exec/${webEx.id}`, wait: '.web-evidence' },
     jobsRun && { name: 'run-jobs', path: `${p}/runs/${jobsRun.id}`, open: '.run-jobs button[aria-controls="run-jobs-list"]', wait: '#run-jobs-list' },

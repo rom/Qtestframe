@@ -127,6 +127,20 @@ func (s *Server) handleGenerateDocument(w http.ResponseWriter, r *http.Request, 
 		s.fail(w, r, err)
 		return
 	}
+	// what the document contains: it is outdated once one of them changes (correlations.go)
+	var contents []store.DocumentItem
+	if kind == report.DocTestPlan {
+		for _, t := range d.Tests {
+			contents = append(contents, store.DocumentItem{EntityType: model.KindTest, EntityID: t.ID, Version: t.Version})
+		}
+	} else {
+		for _, q := range d.Requirements {
+			contents = append(contents, store.DocumentItem{EntityType: model.KindRequirement, EntityID: q.ID, Version: q.Version})
+		}
+	}
+	if err := s.Store.SetDocumentItems(r.Context(), fi.ID, contents); err != nil {
+		s.Log.Warn("document items", "err", err)
+	}
 	details := fmt.Sprintf("%s %s %s (%d requirements, %d tests, %s)", kind, f, fi.Name, len(d.Requirements), len(d.Tests), time.Since(start).Round(time.Millisecond))
 	if d.Baseline != nil {
 		details += " baseline " + d.Baseline.Name
