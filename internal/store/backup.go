@@ -69,6 +69,8 @@ var BackupTables = []string{
 	"secret_keys",
 	// chat notification channels (0045)
 	"chat_channels",
+	// change requests (0054)
+	"change_control_settings", "change_requests", "change_request_items", "change_request_signoffs", "change_request_events",
 }
 
 // tables that exist but are deliberately not part of a backup.

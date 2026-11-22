@@ -84,6 +84,8 @@ tags:
   description: Risks
 - name: Waivers
   description: Waivers and deviations with their electronically signed approvals
+- name: Change requests
+  description: Formal change control of requirements and tests, decided by the change control board with electronic signatures
 - name: Reviews
   description: Review requests
 - name: Discussions
@@ -107,6 +109,644 @@ tags:
 - name: Exploratory testing
   description: Session-based exploratory testing (charters, timer, notes, debriefs, metrics)
 paths:
+  /api/v1/change-requests/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Change requests
+      summary: Get a change request
+      operationId: getChangeRequestsById
+      description: |-
+        The change request with its items (`proposed` and `current` values of the proposed fields, `base_version`, `current_version`, `outdated`, `applied_version`), the impact snapshot of the assessment (`impact`, a ChangeImpact), signatures (`approvals`, `valid` while the signed content is unchanged), timeline (`events`) and `content_hash`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Change requests
+      summary: Change a draft change request
+      operationId: patchChangeRequestsById
+      description: |-
+        The fields of the create request (and `items` to add or replace proposals); only a draft can be changed (409: withdraw it first).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Change requests
+      summary: Delete a change request
+      operationId: deleteChangeRequestsById
+      description: |-
+        204; only a draft or rejected change request (409 otherwise).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/apply:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Apply an approved change request
+      operationId: postChangeRequestsByIdApply
+      description: |-
+        `{impact?: suspect|notify|skip}` (default the change request's impact_action): approved → implemented. The proposed values are saved atomically through the normal PATCH of each item (validation, permissions, revisions, history, audit) and the change impact is applied once; any failure saves nothing (the answer names the item). 409 `outdated` when an item changed since it was proposed.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/assess:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Assess a change request
+      operationId: postChangeRequestsByIdAssess
+      description: |-
+        `{notes?, effort?, review?}`: submitted or assessed → assessed; the impact is computed again and stored with the assessor's notes and effort estimate. `review: true` sends it to the board at once.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/close:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Close a change request
+      operationId: postChangeRequestsByIdClose
+      description: |-
+        `{create_baseline?, baseline_name?, comment?}`: verified, rejected or deferred → closed; a verified change request can create a baseline of the project (default the change request's `baseline_on_close`).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/decision:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Decide a change request (electronic signature)
+      operationId: postChangeRequestsByIdDecision
+      description: |-
+        `{"decision": "approve"|"reject"|"defer", "comment", "password"}`: an electronic signature of a board member over the content hash, with the project's signature meaning, given in the browser with the signer's password or a single sign-on less than 15 minutes old. Rejecting and deferring need a comment; the requester cannot decide their own change request; only board members (listed users, holders of listed roles; none listed: anyone with `change.approve`). Any rejection rejects, any deferral defers, approvals that meet the quorum (all, any or N) approve. 409 when an item changed since it was proposed.
+
+        **Permission:** `change.approve`.
+      x-permission: change.approve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/impact:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Change requests
+      summary: Change impact of a change request now
+      operationId: getChangeRequestsByIdImpact
+      description: |-
+        The transitive change impact of the proposed changes on the current graph (ChangeImpact with roots, items per kind, depth and path); the stored `impact` is the snapshot of the assessment.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/items:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Add items to a change request
+      operationId: postChangeRequestsByIdItems
+      description: |-
+        `{items: [{entity_type, entity_id, proposed, base_version?}]}` adds items to a draft or replaces the proposals of items it has; the base version is the item's current version unless given.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/items/{item}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: item
+      in: path
+      required: true
+      schema:
+        type: string
+      description: the item's id in the change request
+    delete:
+      tags:
+      - Change requests
+      summary: Remove an item from a change request
+      operationId: deleteChangeRequestsByIdItemsByItem
+      description: |-
+        Removes an item (its id) from a draft change request.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/review:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Send a change request to the board
+      operationId: postChangeRequestsByIdReview
+      description: |-
+        assessed → in_review; the board members (who hold `change.approve`) are notified. Event `change_request.review`.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/submit:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Submit a change request
+      operationId: postChangeRequestsByIdSubmit
+      description: |-
+        draft → submitted (400 without items or reason); the impact snapshot is computed and stored. Event `change_request.submitted`.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/verify:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Verify an implemented change request
+      operationId: postChangeRequestsByIdVerify
+      description: |-
+        `{comment?}`: implemented → verified.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/withdraw:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Withdraw a change request
+      operationId: postChangeRequestsByIdWithdraw
+      description: |-
+        `{comment?}`: submitted, assessed, in_review, rejected or deferred → draft, to change it (signatures of the earlier content stop counting).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/change-control:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Change requests
+      summary: Get the change control settings
+      operationId: getProjectsByPidChangeControl
+      description: |-
+        The project's change control: `{settings: {mode: off|warn|enforce, protected_statuses, lock_signed_baselines, board: {users, roles, quorum: all|any|N}, signature_meaning, baseline_on_close, updated_by, updated_at}, effective_statuses, default_statuses, modes, default_signature_meaning}`. Without settings change control is off.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Change requests
+      summary: Set the change control settings
+      operationId: putProjectsByPidChangeControl
+      description: |-
+        `{mode, protected_statuses, lock_signed_baselines, board: {users: [e-mail], roles: [role], quorum}, signature_meaning, baseline_on_close}`. With `enforce`, requirements and tests whose status is protected (empty: approved, implemented, verified, ready) or that are in a signed baseline (`lock_signed_baselines`) cannot be changed directly: PATCH, bulk edit, batch, exchange, restore and delete answer 409 `change_control` `{error, code, hint, kind, id, key, reasons, open_change_requests}`. An emergency override `?change_override=<justification>` (at least 10 characters, `change.approve`) saves the change and is audited (`change_control.override`). With `warn` the change is saved and the answer has the header `X-Change-Control: warn` (and `X-Change-Control-Reason`).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/change-requests:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Change requests
+      summary: List change requests
+      operationId: getProjectsByPidChangeRequests
+      description: |-
+        The change requests of the project, newest first, with their items (key, title, base and current version, `outdated`), signatures and linked defects and risks. Filters: `status`, `category`, `open=true` (not rejected, implemented, verified or closed), `item=<kind>:<id>` (those that change the item).
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Change requests
+      summary: Create a change request
+      operationId: postProjectsByPidChangeRequests
+      description: |-
+        `{title, reason, category: correction|enhancement|regulatory|defect_driven|risk_driven|other, priority, impact_action: suspect|notify|skip, links: {defect_ids, risk_ids, issues}, baseline_on_close, items: [{entity_type: requirement|test, entity_id, proposed: {field: value}, base_version?}], submit?}` → 201 the change request (key PROJ-CR-n, status draft; submitted with `submit: true`). `proposed` holds new field values as in a PATCH (requirements: title, description, obligation, type, priority, status, source, rationale, owner, tags, custom_fields; tests: title, description, preconditions, expected_result, execution_type, priority, status, estimated_minutes, owner, tags, custom_fields).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/change-requests/open-items:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Change requests
+      summary: Items with open change requests
+      operationId: getProjectsByPidChangeRequestsOpenItems
+      description: |-
+        `{items: {"<kind>:<id>": ["PROJ-CR-1", …]}}`: the requirements and tests of the project with open change requests, for badges.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/change-control:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Change requests
+      summary: Change control of a requirement
+      operationId: getRequirementsByIdChangeControl
+      description: |-
+        `{key, mode, protected, blocked, reasons, open_change_requests: [{id, key, title, status}], can_propose, can_override}`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/change-control:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Change requests
+      summary: Change control of a test
+      operationId: getTestsByIdChangeControl
+      description: |-
+        `{key, mode, protected, blocked, reasons, open_change_requests: [{id, key, title, status}], can_propose, can_override}`.
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /healthz:
     get:
       tags:
@@ -12358,7 +12998,7 @@ paths:
       summary: List my work
       operationId: getMyWork
       description: |-
-        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, review requests they asked for that are pending or came back with changes requested, their requirements and tests in review, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `review_returned`, `awaiting_review`, `in_review`, `waiver_approval`, `risk_acceptance`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","waiting","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
+        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, review requests they asked for that are pending or came back with changes requested, their requirements and tests in review, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `review_returned`, `awaiting_review`, `in_review`, `waiver_approval`, `risk_acceptance`, `change_approval`, `change_returned`, `change_approved`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","waiting","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
 
         **Permission:** any authenticated user; the handler checks: signed in, and the permissions of each row's project.
       x-permission: authenticated
@@ -12374,7 +13014,7 @@ paths:
         required: false
         schema:
           type: string
-        description: Comma-separated source names (owned, defects, executions, reviews, waivers, risk_acceptance).
+        description: Comma-separated source names (owned, defects, executions, reviews, waivers, risk_acceptance, change_requests, ...).
       - name: reason
         in: query
         required: false

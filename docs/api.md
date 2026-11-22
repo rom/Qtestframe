@@ -2756,6 +2756,110 @@ partly implemented. The compliance and `release` reports have a waiver
 section; the requirements specification marks waived requirements
 ("Waived by") and lists the waivers in an appendix.
 
+## Change requests
+
+Formal change control. A change request (key `PROJ-CR-n`) proposes new
+field values for requirements and tests, with a reason, a category
+(`correction`, `enhancement`, `regulatory`, `defect_driven`, `risk_driven`,
+`other`), a priority and links to defects, risks and tracker issues. Reading
+needs `requirement.read`; proposing, editing, submitting, assessing, sending
+to the board, applying, verifying and closing `change.create` (SME, Test
+lead, Manager and Admin by default); deciding `change.approve` (Test lead,
+Manager and Admin by default) and a seat on the project's change control
+board.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET / PUT | `/projects/{pid}/change-control` | settings (PUT: `project.update`): `{"mode": "off"\|"warn"\|"enforce", "protected_statuses": [status], "lock_signed_baselines": true, "board": {"users": [e-mail], "roles": [role], "quorum": "all"\|"any"\|"N"}, "signature_meaning", "baseline_on_close"}` |
+| GET | `/projects/{pid}/change-requests?status=&category=&open=true&item=kind:id` | `[ChangeRequest]`, newest first |
+| POST | `/projects/{pid}/change-requests` | `{"title", "reason", "category", "priority", "impact_action": "suspect"\|"notify"\|"skip", "links": {"defect_ids", "risk_ids", "issues"}, "baseline_on_close", "items": [{"entity_type", "entity_id", "proposed": {field: value}}], "submit"}` → 201 |
+| GET | `/projects/{pid}/change-requests/open-items` | `{"items": {"kind:id": [keys]}}`: items with open change requests |
+| GET / PATCH / DELETE | `/change-requests/{id}` | PATCH only for a draft; DELETE only a draft or rejected one |
+| POST / DELETE | `/change-requests/{id}/items`, `/change-requests/{id}/items/{item}` | add (or replace the proposal of) items of a draft; remove one |
+| GET | `/change-requests/{id}/impact` | the impact of the proposed changes now |
+| POST | `/change-requests/{id}/submit` | draft → submitted; stores the impact snapshot |
+| POST | `/change-requests/{id}/assess` | `{"notes", "effort", "review"}`: → assessed (impact computed again); `review: true` also sends it to the board |
+| POST | `/change-requests/{id}/review` | assessed → in_review; the board is notified |
+| POST | `/change-requests/{id}/withdraw` | back to draft (from submitted, assessed, in_review, rejected, deferred) |
+| POST | `/change-requests/{id}/decision` | (change.approve) `{"decision": "approve"\|"reject"\|"defer", "comment", "password"}` |
+| POST | `/change-requests/{id}/apply` | `{"impact"}`: approved → implemented |
+| POST | `/change-requests/{id}/verify` | implemented → verified |
+| POST | `/change-requests/{id}/close` | `{"create_baseline", "baseline_name", "comment"}`: verified, rejected or deferred → closed |
+| GET | `/requirements/{id}/change-control`, `/tests/{id}/change-control` | `{mode, protected, blocked, reasons, open_change_requests, can_propose, can_override}` |
+
+`ChangeRequest` = `{id, project_id, key, title, reason, category, priority,
+status, impact_action, impact (ChangeImpact or null), impact_notes, effort,
+assessed_by, assessed_at, links: {defect_ids, risk_ids, issues}, defects,
+risks, baseline_on_close, baseline_id, decided_by, decided_at,
+decision_comment, applied_by, applied_at, verified_by, verified_at,
+closed_by, closed_at, items: [{id, entity_type, entity_id, key, title,
+status, base_version, current_version, proposed, current, outdated,
+applied_version}], approvals: [{user_email, user_name, decision, meaning,
+comment, content_hash, signed_at, valid}], events: [{action, actor,
+comment, at}], content_hash, outdated, created_by, created_at,
+updated_at}`.
+
+**Proposed values.** `proposed` holds new values as in a PATCH:
+requirements `title`, `description`, `obligation`, `type`, `priority`,
+`status`, `source`, `rationale`, `owner`, `tags`, `custom_fields`; tests
+`title`, `description`, `preconditions`, `expected_result`,
+`execution_type`, `priority`, `status`, `estimated_minutes`, `owner`,
+`tags`, `custom_fields`. `base_version` is the item's version when it was
+proposed; an item whose version moved on is `outdated`, and the change
+request can then not be decided or applied (409 `outdated`) until it is
+withdrawn and proposed again.
+
+**Workflow.** `draft` → `submitted` (the [transitive change
+impact](#change-and-defect-correlations) of the proposed changes is stored as a snapshot,
+with every path) → `assessed` (the assessor adds notes and an effort
+estimate; the snapshot is taken again) → `in_review` → `approved`,
+`rejected` or `deferred` → (approved) `implemented` → `verified` →
+`closed`. A **decision** is an electronic signature over `content_hash`
+(the items, their proposals and base versions, title, reason, category
+and impact action), given in the browser with the signer's password or a
+recent single sign-on, recording the project's `signature_meaning`.
+The requester cannot decide their own change request. Board members are
+the listed users and the holders of the listed roles (none listed: anyone
+with `change.approve`). Any rejection rejects and any deferral defers
+(both need a comment); approvals meeting the quorum approve it: `all`
+(every listed user and a holder of each listed role), `any` (one) or a
+number. **Applying** saves the proposed values of every item atomically
+through the normal PATCH (validation, permissions, revisions, history,
+audit) and then applies the change impact once with the chosen action
+(`suspect`, `notify` or `skip`, as `?impact=`); if any item fails nothing
+is saved. Closing a verified change request can create a baseline. Each
+step is on the timeline (`events`) and in the audit log
+(`change_request.*`); webhook and chat events `change_request.submitted`,
+`.review`, `.approved`, `.rejected`, `.deferred`, `.implemented`,
+`.closed`; the board is notified when it is sent for review and the
+requester of the decision.
+
+**Change control.** With `mode` `enforce`, requirements and tests whose
+current status is one of `protected_statuses` (empty: approved,
+implemented, verified, ready) or that are in a baseline with a sign-off
+(`lock_signed_baselines`) cannot be changed directly: PATCH, bulk edits,
+the spreadsheet batch, the Excel and ReqIF exchange, restoring a version
+or a baseline and deleting answer 409 `{"code": "change_control", "error",
+"hint", "kind", "id", "key", "reasons", "open_change_requests"}`. Review
+decisions and the automatic status of evidence are not affected. An
+**emergency override** `?change_override=<justification>` (at least 10
+characters, `change.approve`) saves the change anyway and writes
+`change_control.override` to the audit log. With `warn` the change is
+saved and the answer has `X-Change-Control: warn` and
+`X-Change-Control-Reason`.
+
+**Elsewhere.** Requirements and tests carry `open_change_requests` (the
+keys of their open change requests); the query field `cr` (aliases
+`change_request`, `crs`) holds `open` and those keys, so `cr:open` or
+`has:cr` finds items with an open change request and `cr:PROJ-CR-3` the
+items of one. The work list source `change_requests` lists change
+requests waiting for the caller's signature (`change_approval`) and the
+caller's own that came back rejected or deferred (`change_returned`) or
+wait to be applied (`change_approved`). The report template
+`change_requests` (param `change_request`: a key or id; without it the
+register) has the proposed changes field by field, the impact, the
+signatures and the timeline.
+
 ## Reviews
 
 | Method | Path | Notes |
@@ -2845,6 +2949,7 @@ date, then the most recently changed. Sources and reasons:
 | `in_review` | requirements and tests in status review that the caller owns, wrote or was asked to review (as `GET /reviews/in-review`, without the items listed only for the caller's review permission) | `in_review` (waiting, not counted) |
 | `waivers` | requested waivers the caller may decide and has not signed (one of its approvers, or holds `waiver.approve` when it names none; never the requester) | `waiver_approval` |
 | `risk_acceptance` | mitigated or accepted risks above the acceptance threshold without a valid acceptance signature, for holders of `waiver.approve` | `risk_acceptance` |
+| `change_requests` | [change requests](#change-requests) in review the caller may decide as a board member and has not signed (never the requester); the caller's own change requests that came back rejected or deferred, or are approved and wait to be applied (`detail` = the requester) | `change_approval`, `change_returned`, `change_approved` |
 | `cycles` | tests of planned or active test cycles assigned to the caller without a final result (a test in one of the cycle's runs is the row of its execution; `detail` = cycle, `due` = its end date) | `assigned` |
 | `exploratory` | exploratory sessions the caller is the tester of, planned, running or paused | `assigned` |
 | `mentions` | items with an unresolved discussion thread that mentions the caller (`detail` = who wrote last); a requirement can also be an `owned` row, and the reasons are joined | `mentioned` |
@@ -3653,6 +3758,9 @@ so `d3fend:D3-AA` also finds `D3-MFA`, `d3fend:harden` every hardening
 technique and `d3fend:"bootloader authentication"` works) and `emb3d` (the
 EMB3D ids and names plus the threats a listed mitigation addresses and
 their categories: `emb3d:TID-201` finds an item with `MID-002`).
+Both also have `cr` (aliases `change_request`, `crs`): `open` and the keys
+of the item's open [change requests](#change-requests), so `cr:open` and
+`has:cr` find items with an open change request.
 
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of

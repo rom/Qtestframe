@@ -162,6 +162,12 @@ var projectArchiveTables = []archiveTable{
 	{"exploratory_sessions", ofProject},
 	{"exploratory_scope", `session_id IN (SELECT id FROM exploratory_sessions WHERE project_id = ?)`},
 	{"exploratory_notes", `session_id IN (SELECT id FROM exploratory_sessions WHERE project_id = ?)`},
+	// change requests (0054)
+	{"change_control_settings", ofProject},
+	{"change_requests", ofProject},
+	{"change_request_items", `cr_id IN (SELECT id FROM change_requests WHERE project_id = ?)`},
+	{"change_request_signoffs", `cr_id IN (SELECT id FROM change_requests WHERE project_id = ?)`},
+	{"change_request_events", `cr_id IN (SELECT id FROM change_requests WHERE project_id = ?)`},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},

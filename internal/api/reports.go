@@ -212,6 +212,17 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 	if err := s.waiverReportData(r, p, pr, id, params, d); err != nil {
 		return nil, err
 	}
+	if id == report.ChangeRequests {
+		if key := strings.TrimSpace(params["change_request"]); key != "" {
+			cr, err := s.Store.GetChangeRequestByKey(ctx, p.TenantID(), pr.ID, key)
+			if err != nil {
+				return nil, badRequest("change request %q not found in project %s", key, pr.Key)
+			}
+			d.ChangeRequests = []model.ChangeRequest{*cr}
+		} else if d.ChangeRequests, err = s.Store.ListChangeRequests(ctx, p.TenantID(), pr.ID, store.CRFilter{}); err != nil {
+			return nil, err
+		}
+	}
 	if id == report.CycleReportID {
 		if d.Cycle, err = s.cycleReportData(ctx, p, pr, strings.TrimSpace(params["cycle_id"])); err != nil {
 			return nil, err

@@ -20,8 +20,9 @@ var (
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
 			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk", "catalog",
-			"open_discussions", "blocked", "stale", "suspect_relations", "verification", "element", "variant", "applicability", "d3fend", "emb3d"},
+			"open_discussions", "blocked", "stale", "suspect_relations", "verification", "element", "variant", "applicability", "d3fend", "emb3d", "cr"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
+			"change_request": "cr", "change-request": "cr", "change_requests": "cr", "crs": "cr",
 			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention",
 			"open-discussion": "open_discussions", "open-discussions": "open_discussions", "open_discussion": "open_discussions",
 			"verified": "verification", "elements": "element", "variants": "variant", "defend": "d3fend", "defense": "d3fend"},
@@ -31,8 +32,8 @@ var (
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "owner", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention", "open_discussions",
-			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability", "cycle", "d3fend", "emb3d"},
-		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
+			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability", "cycle", "d3fend", "emb3d", "cr"},
+		Aliases: map[string]string{"change_request": "cr", "change-request": "cr", "change_requests": "cr", "crs": "cr", "type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
 			"open-discussion": "open_discussions", "open-discussions": "open_discussions", "open_discussion": "open_discussions",
 			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness",
@@ -124,6 +125,8 @@ type projectContext struct {
 	vcov     *store.VariantCoverage
 	// test id → names of the cycles planning it (query field cycle)
 	cycles map[string][]string
+	// "kind:id" → keys of the item's open change requests (query field cr)
+	openCRs map[string][]string
 }
 
 // verification returns the verification of the project's requirements
@@ -256,6 +259,9 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 	if pc.cycles, err = s.Store.CycleNamesByTest(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
+	if pc.openCRs, err = s.Store.OpenChangeRequestsByItem(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
 	pc.prereqKeys = map[string][]string{}
 	for _, d := range pc.deps {
 		pc.refs[d.TestID] = append(pc.refs[d.TestID], model.ItemRef{Type: "depends_on", Direction: "outgoing", Kind: model.KindTest, ID: d.DependsOnID, Key: d.DependsOnKey, Title: d.DependsOnTitle})
@@ -299,6 +305,7 @@ func (pc *projectContext) folderPath(id *string) string {
 
 // decorateRequirement fills derived fields.
 func (pc *projectContext) decorateRequirement(r *model.Requirement) {
+	r.OpenChangeRequests = pc.openCRs[model.KindRequirement+":"+r.ID]
 	r.FolderPath = pc.folderPath(r.FolderID)
 	r.LinkedTests = len(pc.r2t[r.ID])
 	r.Coverage = store.CoverageOf(pc.r2t[r.ID], pc.cfgResults)
@@ -321,6 +328,7 @@ func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 }
 
 func (pc *projectContext) decorateTest(t *model.TestCase) {
+	t.OpenChangeRequests = pc.openCRs[model.KindTest+":"+t.ID]
 	t.FolderPath = pc.folderPath(t.FolderID)
 	t.LinkedReqs = len(pc.t2r[t.ID])
 	t.LastResult = pc.last[t.ID]
@@ -389,6 +397,7 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"applicability":     {pc.applicabilityKind(r.ID)},
 		"d3fend":            d3fendValues(r.D3fend),
 		"emb3d":             emb3dValues(r.Emb3d),
+		"cr":                crTerms(pc.openCRs[model.KindRequirement+":"+r.ID]),
 	})
 }
 
@@ -505,6 +514,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"cycle":            pc.cycles[t.ID],
 		"d3fend":           d3fendValues(t.D3fend),
 		"emb3d":            emb3dValues(t.Emb3d),
+		"cr":               crTerms(pc.openCRs[model.KindTest+":"+t.ID]),
 	})
 }
 
@@ -602,4 +612,14 @@ func (pc *projectContext) evidence() map[string]string {
 		pc.evidenceLast = pc.stale.FilterLast(pc.last)
 	}
 	return pc.evidenceLast
+}
+
+// crTerms are the query values of an item's open change requests: their
+// keys and "open" (none without any, so has:cr and cr:open mean "has an
+// open change request").
+func crTerms(keys []string) []string {
+	if len(keys) == 0 {
+		return nil
+	}
+	return append([]string{"open"}, keys...)
 }

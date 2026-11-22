@@ -321,6 +321,10 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 	if !s.requireVersion(w, r, p, "requirement", rq.ID, rq.Version) {
 		return
 	}
+	if err := s.changeGuard(r, w, p, rq.ProjectID, model.KindRequirement, rq.ID, rq.Key, rq.Status); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	body, err := readBody(r)
 	if err != nil {
 		s.fail(w, r, err)
@@ -388,6 +392,12 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 
 func (s *Server) handleDeleteRequirement(w http.ResponseWriter, r *http.Request, p *Principal) {
 	id := r.PathValue("id")
+	if pid, _, _, _, err := s.Store.ItemState(r.Context(), p.TenantID(), model.KindRequirement, id); err == nil {
+		if err := s.guardItems(r, w, p, pid, model.KindRequirement, []string{id}); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
 	n, trashID, err := s.Store.TrashRequirements(r.Context(), p.TenantID(), "", []string{id}, p.User.Email)
 	if err == nil && n == 0 {
 		err = store.ErrNotFound
@@ -487,6 +497,10 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 			writeError(w, http.StatusForbidden, "forbidden", "permission "+string(writePerm(kind))+" required")
 			return
 		}
+		if err := s.guardItems(r, w, p, pr.ID, kind, req.IDs); err != nil {
+			s.fail(w, r, err)
+			return
+		}
 		if err := s.normalizeOwner(r.Context(), p, pr.ID, req.Set.Owner); err != nil {
 			s.fail(w, r, err)
 			return
@@ -535,6 +549,10 @@ func (s *Server) handleBulkDelete(kind string) handlerFunc {
 			IDs []string `json:"ids"`
 		}
 		if err := decode(r, &req); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if err := s.guardItems(r, w, p, pr.ID, kind, req.IDs); err != nil {
 			s.fail(w, r, err)
 			return
 		}
@@ -690,6 +708,10 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 	if !s.requireVersion(w, r, p, "test", t.ID, t.Version) {
 		return
 	}
+	if err := s.changeGuard(r, w, p, t.ProjectID, model.KindTest, t.ID, t.Key, t.Status); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	body, err := readBody(r)
 	if err != nil {
 		s.fail(w, r, err)
@@ -762,6 +784,12 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 
 func (s *Server) handleDeleteTest(w http.ResponseWriter, r *http.Request, p *Principal) {
 	id := r.PathValue("id")
+	if pid, _, _, _, err := s.Store.ItemState(r.Context(), p.TenantID(), model.KindTest, id); err == nil {
+		if err := s.guardItems(r, w, p, pid, model.KindTest, []string{id}); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
 	n, trashID, err := s.Store.TrashTests(r.Context(), p.TenantID(), "", []string{id}, p.User.Email)
 	if err == nil && n == 0 {
 		err = store.ErrNotFound

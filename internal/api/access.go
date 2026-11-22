@@ -326,6 +326,7 @@ var resourceProjects = map[string]string{
 	"verification-records":  `SELECT project_id FROM verification_records WHERE id = ? AND tenant_id = ?`,
 	"elements":              `SELECT project_id FROM system_elements WHERE id = ? AND tenant_id = ?`,
 	"waivers":               `SELECT project_id FROM waivers WHERE id = ? AND tenant_id = ?`,
+	"change-requests":       `SELECT project_id FROM change_requests WHERE id = ? AND tenant_id = ?`,
 	"exploratory-sessions":  `SELECT project_id FROM exploratory_sessions WHERE id = ? AND tenant_id = ?`,
 	"webhooks":              `SELECT project_id FROM webhooks WHERE id = ? AND tenant_id = ?`,
 	"chat-channels":         `SELECT project_id FROM chat_channels WHERE id = ? AND tenant_id = ?`,
