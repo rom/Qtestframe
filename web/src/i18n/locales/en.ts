@@ -4909,6 +4909,7 @@ const en = {
     },
     linkCriteria: 'Criteria of the linked tests',
     mapCriteria: 'Map criteria',
+    mapCriteriaFor: 'Map criteria: {key}',
     mapCriteriaOf: 'Criteria verified by {key}',
     mapCriteriaHint: 'Choose the criteria this test verifies, and optionally the step that shows it. A link without criteria counts for the whole requirement.',
     stepOption: 'Step {n}: {action}',

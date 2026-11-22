@@ -25,7 +25,7 @@ func seedVerification(ctx context.Context, st *store.Store, tenantID string, p *
 	if err != nil {
 		return err
 	}
-	auth, err := el("Authentication service", "subsystem", &portal.ID, "Sign-in, sessions, lockout and single sign-on.")
+	auth, err := el("Authentication service", "subsystem", &portal.ID, "Sign-in, lockout and single sign-on.")
 	if err != nil {
 		return err
 	}
@@ -135,8 +135,8 @@ func seedVerification(ctx context.Context, st *store.Store, tenantID string, p *
 		return err
 	}
 
-	// hierarchy: account lockout refines password login (a decomposition)
-	if err := st.CreateRelation(ctx, tenantID, &model.Relation{SourceID: reqs[1].ID, TargetID: reqs[0].ID, Type: "refines", CreatedBy: "seed"}); err != nil {
+	// hierarchy: single sign-on refines password login (a decomposition)
+	if err := st.CreateRelation(ctx, tenantID, &model.Relation{SourceID: reqs[2].ID, TargetID: reqs[0].ID, Type: "refines", CreatedBy: "seed"}); err != nil {
 		return err
 	}
 	_, err = st.SyncEvidenceStatus(ctx, tenantID, p.ID, nil, "seed")

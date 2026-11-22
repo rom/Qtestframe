@@ -4908,6 +4908,7 @@ const sv: Messages = {
     },
     linkCriteria: 'Kriterier för de länkade testfallen',
     mapCriteria: 'Koppla kriterier',
+    mapCriteriaFor: 'Koppla kriterier: {key}',
     mapCriteriaOf: 'Kriterier som {key} verifierar',
     mapCriteriaHint: 'Välj kriterierna som testfallet verifierar, och om du vill steget som visar det. En länk utan kriterier räknas för hela kravet.',
     stepOption: 'Steg {n}: {action}',

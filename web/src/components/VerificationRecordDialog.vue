@@ -162,16 +162,16 @@ async function save() {
       <p class="small muted" style="margin: 0">{{ t('verification.recordHint') }}</p>
       <div class="field">
         <label :for="`${id}-crit`">{{ t('verification.criterion') }}</label>
-        <Select v-model="form.criterion_id" :input-id="`${id}-crit`" :options="criterionOptions" option-label="label" option-value="value" @change="onCriterion" />
+        <Select v-model="form.criterion_id" :input-id="`${id}-crit`" :aria-label="t('verification.criterion')" :options="criterionOptions" option-label="label" option-value="value" @change="onCriterion" />
       </div>
       <div class="form-grid">
         <div class="field">
           <label :for="`${id}-method`">{{ t('verification.method') }}</label>
-          <Select v-model="form.method" :input-id="`${id}-method`" :options="methodOptions" option-label="label" option-value="value" :invalid="problems.includes('method')" />
+          <Select v-model="form.method" :input-id="`${id}-method`" :aria-label="t('verification.method')" :options="methodOptions" option-label="label" option-value="value" :invalid="problems.includes('method')" />
         </div>
         <div class="field">
           <label :for="`${id}-result`">{{ t('verification.resultLabel') }}</label>
-          <Select v-model="form.result" :input-id="`${id}-result`" :options="resultOptions" option-label="label" option-value="value" />
+          <Select v-model="form.result" :input-id="`${id}-result`" :aria-label="t('verification.resultLabel')" :options="resultOptions" option-label="label" option-value="value" />
         </div>
         <div class="field">
           <label :for="`${id}-by`">{{ t('verification.performedBy') }}</label>

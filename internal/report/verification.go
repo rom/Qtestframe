@@ -39,6 +39,11 @@ func init() {
 		Description: "Whether every requirement is verified, and why: evidence per criterion (tests, steps, inspection, analysis, demonstration and review records), the records, the roll-up of child requirements, inconsistencies and coverage per system element.",
 		Params:      []Param{queryParam("requirements")}, build: buildVerification})
 	templateNames[Swedish][Verification] = "Verifiering"
+	// custom report columns (query fields verification and element)
+	fields[EntityRequirement] = append(fields[EntityRequirement], f("verification", "Verification"), f("element", "System elements"))
+	fields[EntityTest] = append(fields[EntityTest], f("element", "System elements"))
+	enumFields[EntityRequirement]["verification"] = EnumVerification
+	texts[Swedish]["System elements"] = "Systemelement"
 	enums[English][EnumVerification] = map[string]string{"verified": "Verified", "partial": "Partly verified", "failed": "Failed", "pending": "Not yet passed", "none": "No evidence"}
 	enums[Swedish][EnumVerification] = map[string]string{"verified": "Verifierat", "partial": "Delvis verifierat", "failed": "Underkänt", "pending": "Inte godkänt än", "none": "Inga belägg"}
 	enums[English][EnumRecordResult] = map[string]string{"pass": "Pass", "fail": "Fail", "conditional": "Conditional pass"}

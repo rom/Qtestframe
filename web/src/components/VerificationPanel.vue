@@ -293,7 +293,7 @@ async function saveAllocation() {
           <li v-for="l in links" :key="l.id" class="row nowrap list-row">
             <span class="mono small">{{ l.test_case_key }}</span>
             <span class="grow small muted">{{ linkCriteriaText(l) }}</span>
-            <Button v-if="canMap" size="small" text icon="pi pi-sliders-h" :label="t('verification.mapCriteria')" :aria-label="t('verification.mapCriteriaOf', { key: l.test_case_key ?? '' })" @click="mapLink(l)" />
+            <Button v-if="canMap" size="small" text icon="pi pi-sliders-h" :label="t('verification.mapCriteria')" :aria-label="t('verification.mapCriteriaFor', { key: l.test_case_key ?? '' })" @click="mapLink(l)" />
           </li>
         </ul>
       </section>

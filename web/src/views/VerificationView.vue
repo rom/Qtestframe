@@ -281,11 +281,11 @@ function deleteElement(c: ElementCoverage) {
       </div>
       <div class="field">
         <label :for="`${id}-kind`">{{ t('verificationView.kindLabel') }}</label>
-        <Select v-model="form.kind" :input-id="`${id}-kind`" :options="kindOptions" option-label="label" option-value="value" />
+        <Select v-model="form.kind" :input-id="`${id}-kind`" :aria-label="t('verificationView.kindLabel')" :options="kindOptions" option-label="label" option-value="value" />
       </div>
       <div class="field">
         <label :for="`${id}-parent`">{{ t('verificationView.parent') }}</label>
-        <Select v-model="form.parent_id" :input-id="`${id}-parent`" :options="parentOptions" option-label="label" option-value="value" filter />
+        <Select v-model="form.parent_id" :input-id="`${id}-parent`" :aria-label="t('verificationView.parent')" :options="parentOptions" option-label="label" option-value="value" filter />
       </div>
       <div class="field">
         <label :for="`${id}-desc`">{{ t('common.description') }}</label>
