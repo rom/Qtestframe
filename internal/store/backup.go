@@ -62,6 +62,8 @@ var BackupTables = []string{
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available
 	"secret_keys",
+	// chat notification channels (0045)
+	"chat_channels",
 }
 
 // tables that exist but are deliberately not part of a backup.
@@ -69,7 +71,9 @@ var BackupTables = []string{
 var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "job_runs": true, "script_jobs": true,
 	"mfa_challenges": true, "mfa_trusted_devices": true,
 	// personal autocomplete history: a convenience, not project data
-	"suggest_history": true}
+	"suggest_history": true,
+	// queue and log of chat posts (the channels are backed up)
+	"chat_deliveries": true}
 
 // NotBackedUpTables returns the tables that exist but are deliberately not
 // part of a backup, sorted (for the administrator guide, see
@@ -91,6 +95,7 @@ var boolColumns = map[string]bool{
 	"verification_records.until_change": true, "verification_settings.strict_criteria": true,
 	"custom_fields.required": true, "custom_fields.show_in_list": true,
 	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
+	"chat_channels.enabled": true, "chat_channels.restricted_content": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

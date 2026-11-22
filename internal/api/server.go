@@ -336,6 +336,7 @@ func (s *Server) routes() {
 	s.routesWorkList(h)
 	// discussions on items (discussions.go)
 	s.routesDiscussions(h)
+	s.routesChat(h)
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)

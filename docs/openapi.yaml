@@ -87,7 +87,7 @@ tags:
 - name: My work
   description: The personal work list across projects
 - name: Notifications and webhooks
-  description: In-app notifications and webhooks
+  description: In-app notifications, webhooks and chat channels
 - name: Files
   description: Files, attachments, documents, avatars
 - name: Reports and export
@@ -12095,6 +12095,241 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/chat-events:
+    get:
+      tags:
+      - Notifications and webhooks
+      summary: Chat events
+      operationId: getChatEvents
+      description: |-
+        the events of the central registry with `group` and `labels` {en, sv}, the `groups` and the `providers`; new registry events appear here at once
+
+        **Permission:** any authenticated user; the handler checks: signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/chat-channels:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Notifications and webhooks
+      summary: List chat channels
+      operationId: getProjectsByPidChatChannels
+      description: |-
+        `[ChatChannel]` without URL or token (`has_secret`, `target`), with `pending` digest events; `restricted`, `can_allow_restricted`, `base_url`
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Notifications and webhooks
+      summary: Create chat channel
+      operationId: postProjectsByPidChatChannels
+      description: |-
+        `{"name","provider":"slack"|"teams"|"teams_legacy"|"mattermost"|"rocketchat"|"googlechat"|"matrix"|"discord","url" (webhook URL; Matrix: "homeserver","room","token"),"events":["*"|event...],"filters":{"failed_only","min_priority","release_id"},"language":"en"|"sv","digest_minutes","enabled","restricted_content"}` → ChatChannel (the URL / token is write-only); `restricted_content` needs `tenant.manage`
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/chat-channels/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Notifications and webhooks
+      summary: Update chat channel
+      operationId: patchChatChannelsById
+      description: |-
+        fields of `{"name","provider":"slack"|"teams"|"teams_legacy"|"mattermost"|"rocketchat"|"googlechat"|"matrix"|"discord","url" (webhook URL; Matrix: "homeserver","room","token"),"events":["*"|event...],"filters":{"failed_only","min_priority","release_id"},"language":"en"|"sv","digest_minutes","enabled","restricted_content"}`; an empty or missing `url` / `token` keeps the stored one; the provider cannot change; `enabled: true` clears the failures
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Notifications and webhooks
+      summary: Delete chat channel
+      operationId: deleteChatChannelsById
+      description: |-
+        removes the channel and its delivery log
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/chat-channels/{id}/test:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Notifications and webhooks
+      summary: Test chat channel
+      operationId: postChatChannelsByIdTest
+      description: |-
+        posts a test message now (also to a channel that is off) → `{"ok","status","error"}`; logged, never retried
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/chat-channels/{id}/deliveries:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Notifications and webhooks
+      summary: Chat deliveries
+      operationId: getChatChannelsByIdDeliveries
+      description: |-
+        the delivery log, newest first: the last 50 finished posts and the queued ones `[{event,count,status,attempts,status_code,error,created_at,next_attempt_at,sent_at}]`
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

@@ -28,6 +28,8 @@ export function notificationTarget(n: Pick<AppNotification, 'project_id' | 'enti
       return { name: 'run', params: { ...params, runId: n.entity_id }, query: { tab: 'discussion' } }
     case 'review':
       return { name: 'reviews', query: { review: n.entity_id } }
+    case 'chat_channel':
+      return { name: 'settings', params }
   }
   return { name: 'dashboard', params }
 }
@@ -43,6 +45,7 @@ export function notificationIcon(event: string): string {
   if (event === 'comment.created') return 'pi pi-comments'
   if (event === 'comment.resolved') return 'pi pi-check-circle'
   if (event === 'impact.review') return 'pi pi-sitemap'
+  if (event.startsWith('chat.')) return 'pi pi-comments'
   if (group === 'waiver') return action === 'requested' ? 'pi pi-pen-to-square' : action === 'approved' ? 'pi pi-verified' : 'pi pi-ban'
   return 'pi pi-bell'
 }

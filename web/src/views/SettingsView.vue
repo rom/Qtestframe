@@ -22,6 +22,7 @@ import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
 import DefectTrackerSettings from '@/components/DefectTrackerSettings.vue'
 import CodeSettings from '@/components/CodeSettings.vue'
 import WebhooksCard from '@/components/WebhooksCard.vue'
+import ChatChannelsCard from '@/components/ChatChannelsCard.vue'
 import VerificationSettingsCard from '@/components/VerificationSettingsCard.vue'
 import ConfigurationsSettings from '@/components/ConfigurationsSettings.vue'
 import WebTestSettings from '@/components/WebTestSettings.vue'
@@ -449,6 +450,7 @@ function deleteProject() {
         <DefectTrackerSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <CodeSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <WebhooksCard v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
+        <ChatChannelsCard v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
         <section v-if="canSave || auth.can(P.projectCreate)" class="card project-archive" style="max-width: 640px; margin-top: 16px" aria-labelledby="h-archive">
           <div class="row nowrap" style="margin-bottom: 6px">
             <h2 id="h-archive" class="plain-heading" style="margin: 0">{{ t('projectArchive.sectionTitle') }}</h2>

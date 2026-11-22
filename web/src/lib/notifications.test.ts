@@ -30,6 +30,7 @@ describe('notificationTarget', () => {
     expect(notificationTarget(n('execution'))).toEqual({ name: 'runs', params: { projectId: 'p1' } })
     expect(notificationTarget(n('run'))).toEqual({ name: 'run', params: { projectId: 'p1', runId: 'x' }, query: { tab: 'discussion' } })
     expect(notificationTarget(n('review'))).toEqual({ name: 'reviews', query: { review: 'x' } })
+    expect(notificationTarget(n('chat_channel'))).toEqual({ name: 'settings', params: { projectId: 'p1' } })
     expect(notificationTarget(n('other'))?.name).toBe('dashboard')
   })
   it('needs a project', () => {

@@ -50,6 +50,7 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	a.m("POST", pp+"/risks", map[string]any{"title": "Secret risk", "likelihood": 2, "impact": 2}, 201)
 	a.m("POST", pp+"/waivers", map[string]any{"title": "Secret waiver", "requirement_ids": []string{r1}}, 201)
 	a.m("POST", pp+"/webhooks", map[string]any{"name": "h", "url": "https://hooks.example.org/x", "events": []string{"defect.updated"}, "enabled": false}, 201)
+	a.m("POST", pp+"/chat-channels", map[string]any{"name": "c", "provider": "slack", "url": "https://hooks.example.org/c", "events": []string{"defect.updated"}, "enabled": false}, 201)
 	a.m("POST", pp+"/configurations", map[string]any{"name": "Chrome"}, 201)
 	a.m("POST", pp+"/variants", map[string]any{"name": "EU model"}, 201)
 	a.m("POST", pp+"/builds", map[string]any{"external_id": "ci-1"}, 201)
@@ -82,6 +83,7 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"defects": `SELECT id FROM defects WHERE project_id = ?`, "risks": `SELECT id FROM risks WHERE project_id = ?`,
 		"waivers":  `SELECT id FROM waivers WHERE project_id = ?`,
 		"webhooks": `SELECT id FROM webhooks WHERE project_id = ?`, "trace-rules": `SELECT id FROM trace_rules WHERE project_id = ?`,
+		"chat-channels":  `SELECT id FROM chat_channels WHERE project_id = ?`,
 		"configurations": `SELECT id FROM configurations WHERE project_id = ?`, "test-dependencies": `SELECT id FROM test_dependencies WHERE project_id = ?`,
 		"reports/definitions": `SELECT id FROM report_definitions WHERE project_id = ?`, "reports/subscriptions": `SELECT id FROM report_subscriptions WHERE project_id = ?`,
 		"reviews": `SELECT id FROM review_requests WHERE project_id = ?`, "files": `SELECT id FROM files WHERE project_id = ?`,
