@@ -251,7 +251,11 @@ async function discover(request) {
   const cycle = items(await api(request, 'GET', `/projects/${pid}/cycles`).catch(() => [])).find((c) => c.status === 'active')
   const p = `/p/${pid}`
   const routes = [
-    { name: 'projects', path: '/projects' },
+    { name: 'projects', path: '/projects', wait: '.project-cards .pc-meta' },
+    // the table layout: "Started by" column
+    { name: 'projects-table', path: '/projects', open: '.page-header .p-selectbutton .p-togglebutton:nth-child(2)', wait: '.p-datatable-tbody tr' },
+    // who started the project and when (project settings)
+    { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '.project-started-line time' },
     // save / load / duplicate a project (project archives)
     { name: 'project-load-dialog', path: '/projects', open: '.page-header .actions button:has(.pi-upload)', wait: '.p-dialog #project-load-form' },
     { name: 'project-duplicate-dialog', path: '/projects', open: '.project-cards li:first-child button:has(.pi-copy)', wait: '.p-dialog #project-duplicate-form' },
@@ -794,6 +798,8 @@ async function main() {
           // every route starts in the list layout unless its address asks for the spreadsheet
           localStorage.removeItem('qtf.layout.requirement')
           localStorage.removeItem('qtf.layout.test')
+          // and the project list in cards (projects-table switches to the table)
+          localStorage.removeItem('qtf.projects.layout')
         }
         const pages = [{ name: 'login', path: '/login', anon: true }, ...routes].filter((r) => !ONLY.length || ONLY.includes(r.name))
         const ctx = await browser.newContext({ ...opts, storageState: state })
