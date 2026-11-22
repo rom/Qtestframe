@@ -295,6 +295,8 @@ func GuessObjectKind(name string) string {
 		return ObjRequirement
 	case strings.Contains(n, "test"):
 		return ObjTest
+	case isHeadingType(name):
+		return ObjHeading
 	}
 	return ObjRequirement
 }
@@ -408,7 +410,13 @@ func PlanReqIF(m *reqimport.ReqIFModel, fields []Field, opt ReqIFOptions, match 
 		role := roleOf(o)
 		chapter, _ := valueOf(o, role, RoleHeading)
 		text, _ := valueOf(o, role, "description")
-		if kind == ObjHeading || (chapter == "" && isHeadingType(o.TypeName) && text == "") {
+		// a heading type the user chose is a folder whatever it holds; one
+		// guessed from the type name only without text
+		forced := false
+		if v, ok := rawMappingFor(opt.ObjectTypes, o.TypeName); ok && v == ObjHeading {
+			forced = true
+		}
+		if forced || (chapter == "" && kind == ObjHeading && text == "") || (chapter == "" && isHeadingType(o.TypeName) && text == "") {
 			if chapter == "" {
 				chapter, _ = valueOf(o, role, "title")
 			}
@@ -416,7 +424,7 @@ func PlanReqIF(m *reqimport.ReqIFModel, fields []Field, opt ReqIFOptions, match 
 				chapter = firstNonEmpty(o.LongName, text)
 			}
 		}
-		if chapter != "" && (text == "" || kind == ObjHeading) {
+		if chapter != "" && (text == "" || forced) {
 			heading[o.Identifier] = strings.ReplaceAll(strings.Join(strings.Fields(chapter), " "), "/", "-")
 		}
 	}
@@ -429,7 +437,7 @@ func PlanReqIF(m *reqimport.ReqIFModel, fields []Field, opt ReqIFOptions, match 
 		switch kindOf[o.TypeName] {
 		case ObjTest:
 			return ObjTest
-		case ObjRequirement:
+		case ObjRequirement, ObjHeading:
 			return ObjRequirement
 		}
 		return ""
@@ -630,9 +638,15 @@ func PlanReqIF(m *reqimport.ReqIFModel, fields []Field, opt ReqIFOptions, match 
 		p.Relations = append(p.Relations, pr)
 	}
 	if opt.Refines {
+		have := map[string]bool{} // the document's own refines relations
+		for _, r := range p.Relations {
+			if r.Type == "refines" {
+				have[r.Source+"\x00"+r.Target] = true
+			}
+		}
 		for i := range m.Objects {
 			o := &m.Objects[i]
-			if p.Kinds[o.Identifier] != ObjRequirement || o.Parent == "" {
+			if p.Kinds[o.Identifier] != ObjRequirement || o.Parent == "" || have[o.Identifier+"\x00"+o.Parent] {
 				continue
 			}
 			if p.Kinds[o.Parent] == ObjRequirement {
