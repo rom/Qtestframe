@@ -86,7 +86,7 @@ const totals = computed(() => {
         <div class="sub">{{ t(`frameworks.coverage.intro.${framework}`) }}</div>
       </div>
       <div class="actions">
-        <HelpLink page="catalogue" :anchor="framework === 'attack' ? 'mitre-attck' : 'mitre-d3fend-and-emb3d'" />
+        <HelpLink page="catalogue" :anchor="framework === 'attack' ? 'mitre-attck' : { en: 'mitre-d3fend-and-emb3d', sv: 'mitre-d3fend-och-emb3d' }" />
         <RouterLink class="p-button p-button-sm p-button-outlined p-button-secondary" :to="{ name: 'catalog', params: { projectId: proj.pid }, query: { tab: 'risks' } }">
           <i class="pi pi-arrow-left" aria-hidden="true" />&nbsp;{{ t('attack.coverage.back') }}
         </RouterLink>

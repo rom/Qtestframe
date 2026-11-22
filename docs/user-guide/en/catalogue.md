@@ -92,9 +92,27 @@ Risks the project already has from the catalogue are skipped, like requirements 
 - Every catalogue risk caused by an attacker lists the techniques that realise it: all security risks, and privacy, AI, availability, data and supply chain risks when an adversary causes them. Hazards, failures and obligations (safety, quality, project, environmental and compliance risks) have none.
 - The **preview** of a risk shows each technique with its name, matrix and tactics, linked to its page on attack.mitre.org or atlas.mitre.org. **show risks with this technique** filters the list by it.
 - **ATT&CK tactic** and **ATT&CK technique** filter the risks; a technique also finds its sub-techniques (*T1110* finds *T1110.004*). The search finds technique ids too.
-- **ATT&CK coverage** at the top of the page shows, for each matrix, the tactics with the number of catalogue risks that list one of their techniques and the number of requirements that cite one or mitigate such a risk, and a matrix of the techniques used, darker with more risks. Select a count or a technique to open the matching risks.
+- **Framework coverage** at the top of the page (tab **ATT&CK**) shows, for each matrix, the tactics with the number of catalogue risks that list one of their techniques and the number of requirements that cite one or mitigate such a risk, and a matrix of the techniques used, darker with more risks. Select a count or a technique to open the matching risks.
 
 A risk you add to the project keeps its techniques: the risk dialog shows them under **MITRE ATT&CK techniques**, where you can change them (see [The risk register](releases-and-risks.md#the-risk-register)).
+
+## MITRE D3FEND and EMB3D
+
+Two more MITRE frameworks connect the catalogue to the defences and to embedded devices:
+
+- [MITRE D3FEND](https://d3fend.mitre.org/) is a knowledge graph of **defensive techniques**, grouped by the tactics *Model*, *Harden*, *Detect*, *Isolate*, *Deceive*, *Evict* and *Restore* (for example *D3-MFA Multi-factor Authentication* or *D3-BA Bootloader Authentication*). Security requirements and tests list the techniques they implement or verify.
+- [MITRE EMB3D](https://emb3d.mitre.org/) is a threat model for **embedded devices**: threats such as *TID-201 Inadequate Bootloader Protection and Verification* and mitigations such as *MID-026 Secure Firmware Update*. Device, industrial and IoT requirements and tests list the mitigations and threats they address, and risks the threats that realise them.
+
+The catalogue uses the published D3FEND and EMB3D data; ids that the frameworks no longer have cannot be used. Names are shown in English, as at MITRE.
+
+- The **preview** names the techniques, mitigations and threats with links to their pages; **show items with it** filters the list on one.
+- **D3FEND technique** and **EMB3D id** filter requirements and tests (risks: **EMB3D id**). Choosing a threat also finds the requirements that list one of its mitigations. The search finds the ids too.
+- **Defenses (D3FEND)** in the preview of a risk shows, for each of its ATT&CK techniques, the D3FEND techniques that counter it (as D3FEND relates defensive and offensive techniques) and the catalogue requirements that implement them, the risk's own mitigating requirements first. A technique that no mitigating requirement counters is marked as a **gap**: consider adding one of the listed requirements.
+- **Framework coverage** at the top of the page has a tab per framework: **ATT&CK** (see above), **D3FEND** (per tactic the defensive techniques that requirements and tests implement, and how many risks are fully countered) and **EMB3D** (per threat category every threat with the risks, requirements and tests that address it; **Only gaps** shows the threats no requirement addresses).
+
+Items you add to the project keep their mappings: requirements and tests their D3FEND techniques and EMB3D ids, risks their EMB3D threats (see [Fields](requirements.md#fields) and [The risk register](releases-and-risks.md#the-risk-register)).
+
+The area **Embedded firmware and microcontroller security** (catalogue type *Hardware*) collects requirements, tests and risks for the firmware of microcontrollers and constrained devices: hardware root of trust, measured boot and attestation, bootloader and update hardening, readout and debug protection, key storage, side-channel and fault injection resistance, memory protection and RTOS hardening, secure communication on constrained networks, the firmware bill of materials and vulnerability handling. It complements **Embedded device security** and is mapped to EMB3D throughout.
 
 ## After adding
 

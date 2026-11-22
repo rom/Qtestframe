@@ -92,9 +92,27 @@ Risker som projektet redan har från katalogen hoppas över, precis som krav och
 - Varje risk i katalogen som orsakas av en angripare anger de tekniker som förverkligar den: alla informationssäkerhetsrisker, och risker för integritet, AI, tillgänglighet, data och leverantörskedjan när en angripare orsakar dem. Faror, fel och skyldigheter (risker för personsäkerhet, kvalitet, projekt, miljö och regelefterlevnad) har inga.
 - **Förhandsvisningen** av en risk visar varje teknik med namn, matris och taktiker, med en länk till dess sida på attack.mitre.org eller atlas.mitre.org. **visa risker med tekniken** filtrerar listan på den.
 - **ATT&CK-taktik** och **ATT&CK-teknik** filtrerar riskerna; en teknik hittar även sina undertekniker (*T1110* hittar *T1110.004*). Sökningen hittar också tekniknummer.
-- **ATT&CK-täckning** högst upp på sidan visar för varje matris taktikerna med antalet risker i katalogen som anger någon av deras tekniker och antalet krav som hänvisar till en eller åtgärdar en sådan risk, och en matris över de tekniker som används, mörkare med fler risker. Välj ett antal eller en teknik för att öppna de risker det gäller.
+- **Täckning av ramverk** högst upp på sidan (fliken **ATT&CK**) visar för varje matris taktikerna med antalet risker i katalogen som anger någon av deras tekniker och antalet krav som hänvisar till en eller åtgärdar en sådan risk, och en matris över de tekniker som används, mörkare med fler risker. Välj ett antal eller en teknik för att öppna de risker det gäller.
 
 En risk som du lägger till i projektet behåller sina tekniker: riskdialogen visar dem under **MITRE ATT&CK-tekniker**, där du kan ändra dem (se [Riskregistret](releases-and-risks.md#riskregistret)).
+
+## MITRE D3FEND och EMB3D
+
+Två ramverk till från MITRE kopplar katalogen till försvaret och till inbyggda enheter:
+
+- [MITRE D3FEND](https://d3fend.mitre.org/) är en kunskapsgraf över **försvarstekniker**, grupperade efter taktikerna *Model*, *Harden*, *Detect*, *Isolate*, *Deceive*, *Evict* och *Restore* (till exempel *D3-MFA Multi-factor Authentication* eller *D3-BA Bootloader Authentication*). Säkerhetskrav och testfall anger de tekniker som de genomför eller verifierar.
+- [MITRE EMB3D](https://emb3d.mitre.org/) är en hotmodell för **inbyggda enheter**: hot som *TID-201 Inadequate Bootloader Protection and Verification* och åtgärder som *MID-026 Secure Firmware Update*. Krav och testfall för enheter, industriella system och sakernas internet anger de åtgärder och hot de hanterar, och risker de hot som förverkligar dem.
+
+Katalogen använder de publicerade data för D3FEND och EMB3D; id:n som ramverken inte längre har går inte att använda. Namnen visas på engelska, som hos MITRE.
+
+- **Förhandsvisningen** visar teknikerna, åtgärderna och hoten med länkar till deras sidor; **visa poster med den** filtrerar listan på en av dem.
+- **D3FEND-teknik** och **EMB3D-id** filtrerar krav och testfall (risker: **EMB3D-id**). Ett valt hot hittar även de krav som anger någon av dess åtgärder. Sökningen hittar också id:na.
+- **Försvar (D3FEND)** i förhandsvisningen av en risk visar för var och en av dess ATT&CK-tekniker de D3FEND-tekniker som motverkar den (så som D3FEND kopplar försvars- och angreppstekniker) och de krav i katalogen som genomför dem, med riskens egna åtgärdande krav först. En teknik som inget av riskens krav motverkar markeras som en **lucka**: överväg att lägga till något av de listade kraven.
+- **Täckning av ramverk** högst upp på sidan har en flik per ramverk: **ATT&CK** (se ovan), **D3FEND** (per taktik de försvarstekniker som krav och testfall genomför, och hur många risker som är helt motverkade) och **EMB3D** (per hotkategori varje hot med de risker, krav och testfall som hanterar det; **Bara luckor** visar de hot som inget krav hanterar).
+
+Poster som du lägger till i projektet behåller sina kopplingar: krav och testfall sina D3FEND-tekniker och EMB3D-id, risker sina EMB3D-hot (se [Fält](requirements.md#fält) och [Riskregistret](releases-and-risks.md#riskregistret)).
+
+Området **Säkerhet i inbyggd firmware och mikrokontroller** (katalogtyp *Hårdvara*) samlar krav, testfall och risker för firmware i mikrokontroller och resurssnåla enheter: hårdvarubaserad förtroendekälla, mätt uppstart och attestering, härdning av startladdare och uppdateringar, skydd mot utläsning och felsökning, nyckellagring, motståndskraft mot sidokanals- och felinjiceringsattacker, minnesskydd och härdning av realtidsoperativsystem, säker kommunikation i resurssnåla nät, materialförteckning för firmware och sårbarhetshantering. Det kompletterar **Säkerhet i inbyggda enheter** och är kopplat till EMB3D genomgående.
 
 ## Efteråt
 
