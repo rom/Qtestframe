@@ -56,6 +56,7 @@ import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
 import VariantSelect from '@/components/VariantSelect.vue'
+import VariantMultiSelect from '@/components/VariantMultiSelect.vue'
 import { useVariants } from '@/composables/variants'
 
 const proj = useProjectStore()
@@ -262,6 +263,11 @@ function goTag(r: Release) {
   if (rep === null) return { value: t('releasesView.unknown'), severity: 'secondary', icon: 'pi pi-question-circle' }
   return rep.go ? { value: t('releasesView.go'), severity: 'success', icon: 'pi pi-check' } : { value: t('releasesView.noGo'), severity: 'danger', icon: 'pi pi-times' }
 }
+// a release gated per variant: criteria × targeted variants
+const gates = computed(() => report.value?.variants ?? [])
+const stateIcon = (st?: string) => (st === 'pass' ? 'pi pi-check-circle' : st === 'waived' ? 'pi pi-verified' : 'pi pi-times-circle')
+const stateLabel = (st?: string) => t(`releasesView.gate.${st === 'pass' || st === 'waived' ? st : 'fail'}`)
+const variantNames = (r: Release) => (r.variants ?? []).map((v) => v.name).join(', ')
 const summarySegments = computed(() => {
   const s = report.value?.summary ?? {}
   return { passed: s.passed ?? 0, failed: s.failed ?? 0, not_run: s.not_run ?? 0 }
@@ -270,7 +276,7 @@ const summarySegments = computed(() => {
 // ---------- create / edit ----------
 const dialog = ref(false)
 const editing = ref<Release | null>(null)
-const form = ref({ name: '', version: '', description: '', status: 'planned', target_date: '' })
+const form = ref({ name: '', version: '', description: '', status: 'planned', target_date: '', variant_ids: [] as string[] })
 const formError = ref('')
 const busy = ref(false)
 const statusOptions = computed(() =>
@@ -278,13 +284,13 @@ const statusOptions = computed(() =>
 )
 function openCreate() {
   editing.value = null
-  form.value = { name: '', version: '', description: '', status: 'planned', target_date: '' }
+  form.value = { name: '', version: '', description: '', status: 'planned', target_date: '', variant_ids: [] }
   formError.value = ''
   dialog.value = true
 }
 function openEdit(r: Release) {
   editing.value = r
-  form.value = { name: r.name, version: r.version, description: r.description, status: r.status, target_date: r.target_date }
+  form.value = { name: r.name, version: r.version, description: r.description, status: r.status, target_date: r.target_date, variant_ids: [...(r.variant_ids ?? [])] }
   formError.value = ''
   dialog.value = true
 }
@@ -581,6 +587,7 @@ function itemNote(c: CriterionResult, note?: string) {
         <Tag :value="statusLabel(detail.status)" :severity="statusSeverity(detail.status)" />
         <Tag v-if="detail.status !== 'released' && goTag(detail)" :value="goTag(detail)!.value" :severity="goTag(detail)!.severity" :icon="goTag(detail)!.icon" />
         <span v-if="detail.target_date" class="small muted">{{ t('releasesView.targetOn', { date: formatDate(detail.target_date) }) }}</span>
+        <span v-if="detail.variants?.length" class="small muted"><i class="pi pi-clone" aria-hidden="true" /> {{ t('releasesView.forVariants', { names: variantNames(detail) }) }}</span>
         <span class="grow" />
         <Button v-if="canWrite && canRelease(detail.status)" :label="t('releasesView.markReleased')" icon="pi pi-send" size="small" @click="openRelease" />
         <Button v-if="canWrite" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('releasesView.editNamed', { name: detail.name })" v-tooltip="t('common.edit')" @click="openEdit(detail)" />
@@ -623,6 +630,41 @@ function itemNote(c: CriterionResult, note?: string) {
             <Tag :value="t('releasesView.sumNotRun', { count: summarySegments.not_run })" severity="secondary" />
           </div>
           <div v-if="!report.criteria.length" class="muted small">{{ t('releasesView.noCriteria') }}</div>
+          <section v-if="gates.length && report.criteria.length" class="gates" aria-labelledby="rel-gates-title">
+            <h3 id="rel-gates-title" class="plain-heading small"><i class="pi pi-clone" aria-hidden="true" /> {{ t('releasesView.gatesTitle') }}</h3>
+            <p class="small muted" style="margin: 0 0 6px">{{ t('releasesView.gatesHint', { go: report.summary.variants_go ?? 0, total: gates.length }) }}</p>
+            <div class="table-scroll">
+              <table class="gate-table">
+                <caption class="sr-only">{{ t('releasesView.gatesCaption') }}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">{{ t('releasesView.criterionCol') }}</th>
+                    <th v-for="g in gates" :key="g.variant.id" scope="col">{{ g.variant.name }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(c, i) in report.criteria" :key="i">
+                    <th scope="row" class="gate-criterion">{{ describe(c) }}</th>
+                    <td v-for="g in gates" :key="g.variant.id" :class="`gate-${g.criteria[i]?.state ?? 'fail'}`">
+                      <span class="row nowrap" style="gap: 4px">
+                        <i :class="stateIcon(g.criteria[i]?.state)" aria-hidden="true" />
+                        <span>{{ stateLabel(g.criteria[i]?.state) }}</span>
+                        <span v-if="g.criteria[i]?.available" class="small mono muted">{{ resultValues(g.criteria[i]).actual }}</span>
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <th scope="row">{{ t('releasesView.goNoGo') }}</th>
+                    <td v-for="g in gates" :key="g.variant.id">
+                      <Tag :value="g.go ? t('releasesView.go') : t('releasesView.noGo')" :severity="g.go ? 'success' : 'danger'" :icon="g.go ? 'pi pi-check' : 'pi pi-times'" />
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
           <ul class="criteria-list">
             <li v-for="(c, i) in report.criteria" :key="i" class="criterion" :class="c.met ? 'met' : 'unmet'">
               <div class="row criterion-head">
@@ -641,6 +683,7 @@ function itemNote(c: CriterionResult, note?: string) {
                   <ItemRef :to="releaseItemRoute(it, proj.pid)" :item-key="it.key" :title="it.title" title-class="ellipsis" grow />
                   <Tag v-if="(c.type === 'risks_mitigated' || c.type === 'residual_risk') && it.note" :value="itemNote(c, it.note)" :severity="riskLevelSeverity(it.note)" />
                   <span v-else-if="it.note" class="small muted">{{ itemNote(c, it.note) }}</span>
+                  <span v-if="it.variants?.length" class="small muted nowrap">{{ t('releasesView.inVariants', { names: it.variants.join(', ') }) }}</span>
                 </li>
               </ul>
               <ul v-if="c.waived?.length || c.accepted?.length" class="blocking waived" :aria-label="t('waivers.acceptedItemsOf', { criterion: describe(c) })">
@@ -649,6 +692,7 @@ function itemNote(c: CriterionResult, note?: string) {
                   <ItemRef :to="releaseItemRoute(it, proj.pid)" :item-key="it.key" :title="it.title" title-class="ellipsis" grow />
                   <Tag v-if="it.kind === 'risk'" :value="t('waivers.riskAccepted')" severity="contrast" icon="pi pi-pen-to-square" />
                   <Tag v-else :value="t('waivers.waivedBy', { keys: it.note || '' })" severity="contrast" icon="pi pi-verified" />
+                  <span v-if="it.variants?.length" class="small muted nowrap">{{ t('releasesView.inVariants', { names: it.variants.join(', ') }) }}</span>
                 </li>
               </ul>
             </li>
@@ -663,6 +707,7 @@ function itemNote(c: CriterionResult, note?: string) {
             <div v-for="w in report.waivers ?? []" :key="w.id" class="row nowrap" style="padding: 3px 0">
               <ItemRef :to="{ name: 'waivers', params: { projectId: proj.pid }, query: { waiver: w.id } }" :item-key="w.key" :title="w.title" title-class="ellipsis" grow />
               <span class="small muted">{{ w.release_id ? w.release_name : t('waivers.wholeProject') }}</span>
+              <span v-if="w.variants?.length" class="small muted">{{ t('waivers.onlyVariants', { names: w.variants.map((v) => v.name).join(', ') }) }}</span>
               <span class="small muted">{{ w.requirements.map((r) => r.key).join(', ') }}</span>
             </div>
             <h3 class="plain-heading small" style="margin-top: 10px">
@@ -800,6 +845,11 @@ function itemNote(c: CriterionResult, note?: string) {
         </div>
         <div v-field class="field"><label for="rel-date">{{ t('releasesView.targetDate') }}</label><InputText id="rel-date" v-model="form.target_date" type="date" /></div>
         <div v-field class="field full"><label for="rel-desc">{{ t('common.description') }}</label><Textarea id="rel-desc" v-model="form.description" rows="3" auto-resize /></div>
+        <div v-if="variants.variants.value.length" class="field full">
+          <label for="rel-variants">{{ t('releasesView.targetVariants') }}</label>
+          <VariantMultiSelect v-model="form.variant_ids" input-id="rel-variants" :variants="variants.variants.value" :placeholder="t('releasesView.noTargetVariants')" aria-describedby="rel-variants-help" />
+          <small id="rel-variants-help" class="muted">{{ t('releasesView.targetVariantsHelp') }}</small>
+        </div>
       </div>
       <div v-if="!editing" class="small muted">{{ t('releasesView.defaultsHint') }}</div>
       <div class="row" style="justify-content: flex-end">
@@ -896,6 +946,15 @@ function itemNote(c: CriterionResult, note?: string) {
 .blocking { list-style: none; margin: 6px 0 0; padding: 0 0 0 24px; display: grid; gap: 2px; max-height: 260px; overflow: auto; }
 .blocking li { padding: 2px 0; border-bottom: 1px dashed var(--qtf-border); }
 .blocking.waived { border-left: 3px solid var(--qtf-border); margin-left: 24px; padding-left: 8px; }
+.gates { margin: 4px 0 12px; }
+.table-scroll { overflow-x: auto; }
+.gate-table { border-collapse: collapse; width: 100%; }
+.gate-table th, .gate-table td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--qtf-border); vertical-align: top; }
+.gate-table thead th { font-size: 12px; font-weight: 600; }
+.gate-criterion { font-weight: 500; min-width: 14em; }
+.gate-pass i { color: var(--p-green-500); }
+.gate-fail i { color: var(--p-red-500); }
+.gate-waived i { color: var(--p-primary-color); }
 .rel-waivers { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--qtf-border); }
 .crit-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--qtf-border); }
 .crit-type { width: 260px; max-width: 100%; }

@@ -30,6 +30,9 @@ export interface Waiver {
   release_name?: string
   requirement_ids: string[]
   requirements: { id: string; key: string; title: string }[]
+  /** limits the waiver to these variants (each with the variants below it); empty: every variant */
+  variant_ids?: string[]
+  variants?: { id: string; name: string }[]
   justification: string
   compensating: string
   conditions: string

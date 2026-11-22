@@ -880,7 +880,7 @@ function criterionLabel(id: string | null) {
 
     <RequirementRisks v-if="item" :requirement-id="item.id" :project-id="projectId" />
     <RequirementWaivers v-if="item" :requirement-id="item.id" :project-id="projectId" />
-    <ApplicabilityPanel v-if="item" item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" :refresh="links.length" />
+    <ApplicabilityPanel v-if="item" item-type="requirement" :item-id="item.id" :item-key="item.key" :project-id="projectId" :can-write="canWrite" :refresh="links.length" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
