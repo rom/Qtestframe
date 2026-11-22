@@ -809,3 +809,67 @@ tests:
           data: "team \"Testteam\""
         - action: Kontrollera aviseringarna för varje teammedlem.
           expected: De 3 medlemmarna med åtkomst har en avisering; den fjärde har ingen.
+risks:
+  - id: COLL-R01
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [mentions, data-exposure]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V8.2.2 (data-specific access)", "CWE-200 (exposure of sensitive information to an unauthorized actor)"]
+    mitigated_by: [COLL-03, COLL-05]
+    attack: [T1213]
+    en:
+      title: Mention suggestions reveal people and items to the wrong users
+      description: Mention suggestions list every user of the organisation, or a mention gives someone a link to an item they may not read. Names, roles and the existence of confidential work leak to people outside the project.
+      mitigation: Suggest only users who already have access to the item and never grant access through a mention.
+    sv:
+      title: Förslag vid omnämnanden visar personer och objekt för fel användare
+      description: Förslagen vid ett omnämnande listar alla användare i organisationen, eller ett omnämnande ger någon en länk till ett objekt som hen inte får läsa. Namn, roller och att ett konfidentiellt arbete pågår läcker till personer utanför projektet.
+      mitigation: Föreslå bara användare som redan har åtkomst till objektet och ge aldrig åtkomst genom ett omnämnande.
+  - id: COLL-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [xss, comments]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V1.3.1 (HTML sanitization)", "CWE-79 (cross-site scripting)"]
+    mitigated_by: [COLL-11, INP-02]
+    attack: [T1059.007, T1539]
+    en:
+      title: Script hidden in a comment runs for every reader
+      description: "A comment with crafted markup or a link is stored and shown to everyone who opens the item. The script runs in the readers' sessions and can act for them or steal their sessions."
+      mitigation: Render comment text with a strict allow-list of formatting, sanitise it on the server and never insert user content as markup.
+    sv:
+      title: Skript gömt i en kommentar körs för alla läsare
+      description: En kommentar med manipulerad märkning eller en länk sparas och visas för alla som öppnar objektet. Skriptet körs i läsarnas sessioner och kan agera för dem eller stjäla deras sessioner.
+      mitigation: Visa kommentarstext med en strikt vitlista av formatering, sanera den på servern och infoga aldrig användarinnehåll som märkning.
+  - id: COLL-R03
+    category: privacy
+    likelihood: 2
+    impact: 4
+    tags: [share-links, external-access]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.14", "GDPR Art. 32(1)(a)"]
+    mitigated_by: [COLL-08, COLL-09]
+    attack: [T1213]
+    en:
+      title: Shared link gives outsiders more than intended
+      description: A link meant for one external reader is forwarded, never expires or opens the whole project instead of one item. Confidential content is read by people the organisation never approved.
+      mitigation: Make external links read-only, limited to the shared item, revocable and time-limited, and check permissions on every internal link.
+    sv:
+      title: Delad länk ger utomstående mer än avsett
+      description: En länk som är avsedd för en extern läsare vidarebefordras, löper aldrig ut eller öppnar hela projektet i stället för ett objekt. Konfidentiellt innehåll läses av personer som organisationen aldrig har godkänt.
+      mitigation: Gör externa länkar skrivskyddade, begränsade till det delade objektet, återkalleliga och tidsbegränsade, och kontrollera behörigheten vid varje intern länk.
+  - id: COLL-R04
+    category: quality
+    likelihood: 3
+    impact: 2
+    tags: [traceability, discussions]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 accountability"]
+    mitigated_by: [COLL-06, COLL-07, COLL-02]
+    en:
+      title: Decisions made in comments cannot be followed afterwards
+      description: Comments are edited or deleted without a trace and threads are left open, so nobody can tell later what was agreed, by whom and when.
+      mitigation: Mark edited comments, leave a placeholder where a comment was deleted and let threads be resolved so that the outcome stays visible.
+    sv:
+      title: Beslut som fattas i kommentarer går inte att följa i efterhand
+      description: Kommentarer ändras eller tas bort utan spår och trådar lämnas öppna, så att ingen senare kan avgöra vad som beslutades, av vem och när.
+      mitigation: Markera ändrade kommentarer, lämna en platshållare där en kommentar togs bort och låt trådar markeras som lösta så att utfallet syns.

@@ -773,3 +773,51 @@ tests:
           data: "orden \"alfa7731\", \"beta7732\", \"gamma7733\""
         - action: Sök efter varje ord.
           expected: Varje sökning hittar objektet och anger den bilaga som innehåller ordet.
+risks:
+  - id: SRCH-R01
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [search-results, authorization]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V8.2.2 (data-specific access)", "OWASP Top 10 2021 A01"]
+    mitigated_by: [SRCH-13, ACC-01]
+    attack: [T1213]
+    en:
+      title: Search results reveal items the user may not open
+      description: "The search index is queried without the user's permissions, so titles, snippets and counts from confidential projects appear in results. Users learn of matters they have no right to know."
+      mitigation: "Filter every search result, snippet, suggestion and count by the user's permissions."
+    sv:
+      title: Sökresultat avslöjar objekt som användaren inte får öppna
+      description: Sökindexet frågas utan användarens behörigheter, så rubriker, utdrag och antal från konfidentiella projekt visas i resultaten. Användare får veta om ärenden som de inte har rätt att känna till.
+      mitigation: Filtrera varje sökresultat, utdrag, förslag och antal efter användarens behörigheter.
+  - id: SRCH-R02
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [performance, expensive-queries]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 time behaviour", "CWE-400 (uncontrolled resource consumption)"]
+    mitigated_by: [SRCH-12, SRCH-08]
+    attack: [T1499.003]
+    en:
+      title: Expensive searches overload the service
+      description: Wildcard searches over all text and attachments, or many requests without paging, run for minutes. One user or a script slows the service down for everyone.
+      mitigation: Keep searches within the response time target, page results with a total count and limit expensive queries.
+    sv:
+      title: Kostsamma sökningar överbelastar tjänsten
+      description: Sökningar med jokertecken över all text och alla bilagor, eller många anrop utan sidindelning, pågår i minuter. En användare eller ett skript gör tjänsten långsam för alla.
+      mitigation: Håll sökningar inom målet för svarstid, dela upp resultat i sidor med totalt antal och begränsa kostsamma frågor.
+  - id: SRCH-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [findability, stale-index]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25012:2008 currentness", "ISO 9241-110:2020 use error robustness"]
+    mitigated_by: [SRCH-16, SRCH-03, SRCH-14]
+    en:
+      title: Users cannot find what exists and create duplicates
+      description: New items appear in search only after hours, and a single typing error returns nothing. Users conclude the item does not exist and create it again.
+      mitigation: Make saved changes findable within seconds, search identifier, title and text and tolerate one typing error.
+    sv:
+      title: Användare hittar inte det som finns och skapar dubbletter
+      description: Nya objekt syns i sökningen först efter flera timmar och ett enda skrivfel ger inga träffar. Användare drar slutsatsen att objektet inte finns och skapar det igen.
+      mitigation: Gör sparade ändringar sökbara inom några sekunder, sök i identitet, rubrik och text och tolerera ett skrivfel.

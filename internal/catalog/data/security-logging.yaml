@@ -852,8 +852,9 @@ risks:
     likelihood: 4
     impact: 4
     tags: [detection, monitoring]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A09", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK T1098 (account manipulation)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A09", "CWE-778 (insufficient logging)"]
     mitigated_by: [SLOG-01, SLOG-02, SLOG-06, SLOG-07, SLOG-12, SLOG-16]
+    attack: [T1078, T1098]
     en:
       title: Intrusion goes unnoticed for months
       description: Security events are not logged or no alert fires when accounts are misused or new administrators appear. The attacker works undisturbed and the damage grows until someone outside notices.
@@ -867,8 +868,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [log-tampering, forensics]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-117 (improper output neutralization for logs)", "MITRE ATT&CK T1070 (indicator removal)", "MITRE ATT&CK T1685 (disable or modify tools)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-117 (improper output neutralization for logs)"]
     mitigated_by: [SLOG-05, SLOG-04, SLOG-11, SLOG-08, SLOG-09]
+    attack: [T1070, T1685]
     en:
       title: Logs erased or forged to hide an attack
       description: An attacker deletes or alters log records, injects false lines or stops a log source. The investigation cannot tell what happened and evidence is lost.
@@ -884,6 +886,7 @@ risks:
     tags: [logs, personal-data]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GDPR Art. 32(1)(a)", "CWE-532 (insertion of sensitive information into log file)", "CWE-359 (exposure of private personal information)"]
     mitigated_by: [SLOG-03, SLOG-17, RET-12]
+    attack: [T1552.001]
     en:
       title: Secrets and personal data collected in logs
       description: Passwords, tokens and personal data are written to logs that many people and tools can read and that are kept for a long time. A leak of the logs exposes them.
@@ -892,3 +895,35 @@ risks:
       title: Hemligheter och personuppgifter samlas i loggar
       description: Lösenord, token och personuppgifter skrivs till loggar som många personer och verktyg kan läsa och som sparas länge. En läcka av loggarna röjer dem.
       mitigation: Håll hemligheter borta från loggarna, identifiera användare med id i stället för namn och radera applikations- och felsökningsloggar efter 30 dagar.
+  - id: SLOG-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [log-sources, detection]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-53 Rev. 5 AU-5 (response to audit logging process failures)", "CWE-778 (insufficient logging)"]
+    mitigated_by: [SLOG-11, SLOG-16]
+    attack: [T1685]
+    en:
+      title: Attacker silences a log source and works unseen
+      description: An attacker stops the log agent on a compromised server, or a rule stops matching after a format change. Monitoring shows nothing while the attack goes on.
+      mitigation: Alert when a log source stops sending and test each security alert rule every month.
+    sv:
+      title: Angripare tystar en loggkälla och arbetar osedd
+      description: En angripare stoppar loggagenten på en komprometterad server, eller en regel slutar matcha efter en formatändring. Övervakningen visar ingenting medan angreppet pågår.
+      mitigation: Larma när en loggkälla slutar skicka och testa varje larmregel för säkerhet varje månad.
+  - id: SLOG-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [log-injection, forensics]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V16.4.1 (log injection)", "CWE-117 (improper output neutralization for logs)"]
+    mitigated_by: [SLOG-04, SLOG-08, SLOG-15]
+    attack: [T1070]
+    en:
+      title: Forged log entries and unsynchronised clocks mislead the investigation
+      description: "User input with line breaks writes fake log entries, and servers' clocks differ by minutes. Investigators cannot tell what happened in which order across services."
+      mitigation: Neutralise user input in logs, synchronise clocks and carry a correlation identifier across services.
+    sv:
+      title: Förfalskade loggposter och osynkroniserade klockor vilseleder utredningen
+      description: Användarinmatning med radbrytningar skriver falska loggposter och servrarnas klockor skiljer sig åt med flera minuter. Utredarna kan inte avgöra vad som hände i vilken ordning mellan tjänsterna.
+      mitigation: Neutralisera användarinmatning i loggar, synkronisera klockor och för med en korrelationsidentitet mellan tjänsterna.

@@ -1114,8 +1114,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [ot, ransomware, segmentation]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "ENISA Threat Landscape 2024", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "ENISA Threat Landscape 2024", "MITRE ATT&CK M0930 (network segmentation)"]
     mitigated_by: [ICS-01, ICS-02, ICS-03, ICS-21]
+    attack: [T0886, T0866]
     en:
       title: Attack on the office network spreads to the control system
       description: Ransomware or an intruder on the enterprise network reaches controllers and HMIs because the networks are not separated. Production stops and the process may be driven into an unsafe state.
@@ -1129,8 +1130,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [remote-access, vendor]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 1.13", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T0822 (external remote services)", "MITRE ATT&CK M0932 (multi-factor authentication)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 1.13", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK M0932 (multi-factor authentication)"]
     mitigated_by: [ICS-05, ICS-06, ICS-18]
+    attack: [T0822]
     en:
       title: Remote maintenance access misused
       description: A vendor's remote connection uses a shared password and bypasses the security controls. An attacker who obtains it controls the process from outside.
@@ -1140,12 +1142,13 @@ risks:
       description: En leverantörs fjärranslutning använder ett delat lösenord och kringgår säkerhetsskydden. En angripare som får tag på den styr processen utifrån.
       mitigation: Tillåt fjärråtkomst bara via en hoppserver med flerfaktorsautentisering, spela in fjärrsessioner och övervaka säkerhetshändelser från styrsystemet centralt.
   - id: ICS-R03
-    category: safety
+    category: security
     likelihood: 2
     impact: 5
     tags: [logic-change, safety-system]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "MITRE ATT&CK T0889 (modify program)", "MITRE ATT&CK T0880 (loss of safety)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 61508-1:2010 §7.4 (hazard and risk analysis)"]
     mitigated_by: [ICS-13, ICS-16, ICS-07, ICS-22]
+    attack: [T0889, T0880, T1692.001]
     en:
       title: Controller logic or safety system manipulated
       description: Unauthorised commands or a modified program are loaded into a controller, or the safety instrumented system shares a network with basic control. The process runs outside its safe limits and can injure people.
@@ -1174,8 +1177,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [communication-loss, recovery]
-    refs: ["IEC 62443-3-2:2020 ZCR 5", "MITRE ATT&CK T0814 (denial of service)", "MITRE ATT&CK T0809 (data destruction)", "MITRE ATT&CK M0953 (data backup)"]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "MITRE ATT&CK M0953 (data backup)"]
     mitigated_by: [ICS-15, ICS-12, ICS-14, ICS-04]
+    attack: [T0814, T0809]
     en:
       title: Process cannot be controlled or restored after a disruption
       description: Network load or a communication loss leaves the controllers in an undefined state, and their configurations cannot be restored. Production stops for days.
@@ -1184,3 +1188,35 @@ risks:
       title: Processen kan inte styras eller återställas efter en störning
       description: Nätbelastning eller ett kommunikationsavbrott lämnar styrenheterna i ett odefinierat tillstånd, och deras konfigurationer kan inte återställas. Produktionen står stilla i flera dagar.
       mitigation: Gå till ett säkert tillstånd vid kommunikationsavbrott, håll styrcykeln deterministisk under nätbelastning, säkerhetskopiera styrenheternas konfigurationer och för en förteckning över styrenheter, RTU:er och operatörspaneler.
+  - id: ICS-R06
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [removable-media, engineering-stations]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 2.3", "IEC 62443-3-3 SR 3.2"]
+    mitigated_by: [ICS-20, ICS-19, ICS-21]
+    attack: [T0847, T0863]
+    en:
+      title: Malware carried into the control system on a USB stick
+      description: A technician copies files to an HMI or engineering station from a USB stick. Malware on the stick spreads in the control network, which has no other way in from outside.
+      mitigation: Block removable media at control stations, allow only approved programs on HMIs and engineering stations and disable unused ports and services.
+    sv:
+      title: Skadlig kod förs in i styrsystemet på ett USB-minne
+      description: En tekniker kopierar filer till en operatörsstation eller ingenjörsstation från ett USB-minne. Skadlig kod på minnet sprids i styrnätet, som saknar andra vägar in utifrån.
+      mitigation: Blockera flyttbara medier vid styrstationer, tillåt bara godkända program på operatörs- och ingenjörsstationer och stäng av oanvända portar och tjänster.
+  - id: ICS-R07
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [asset-inventory, monitoring]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3:2013 SR 7.8", "IEC 62443-3-3:2013 SR 2.8"]
+    mitigated_by: [ICS-04, ICS-18, ICS-13]
+    attack: [T0846, T0889]
+    en:
+      title: Unknown devices and logic changes in the control network go unseen
+      description: There is no inventory of controllers and HMIs and nobody watches the control network. An attacker scans for devices and changes controller logic without triggering any alarm.
+      mitigation: Keep an inventory of controllers, RTUs and HMIs, monitor security events from the control system centrally and detect unapproved logic changes.
+    sv:
+      title: Okända enheter och logikändringar i styrnätet syns inte
+      description: Det finns ingen förteckning över styrenheter och operatörsstationer och ingen övervakar styrnätet. En angripare söker efter enheter och ändrar styrlogik utan att något larm utlöses.
+      mitigation: "För en förteckning över styrenheter, RTU:er och operatörsstationer, övervaka säkerhetshändelser från styrsystemet centralt och upptäck ändringar av logik som inte godkänts."

@@ -864,8 +864,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [ransomware, backup-deletion]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.13", "MITRE ATT&CK T1490 (inhibit system recovery)", "MITRE ATT&CK T1486 (data encrypted for impact)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.13"]
     mitigated_by: [BCK-07, BCK-06, BCK-08, BCK-16, BCK-17]
+    attack: [T1486, T1490]
     en:
       title: Ransomware encrypts data and destroys the backups
       description: An attacker with administrator rights deletes or encrypts the backups before encrypting production. No clean copy remains and the organisation must rebuild or pay.
@@ -919,3 +920,33 @@ risks:
       title: Den primära driftplatsen går förlorad utan återställningsplan
       description: Brand, översvämning eller ett regionalt molnavbrott förstör den primära miljön. Utan en övad katastrofplan och kopior på annan plats tar återställningen veckor.
       mitigation: Dokumentera och öva en plan för katastrofåterställning, ha kopior av säkerhetskopiorna i en annan region och spara dem under fastställd tid.
+  - id: BCK-R05
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [backup-integrity, silent-failure]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ITIL 4 Monitoring and event management", "ISO/IEC 27001:2022 A.8.13 (information backup)"]
+    mitigated_by: [BCK-10, BCK-16, BCK-17, BCK-05]
+    en:
+      title: Backups silently stop or shrink for months
+      description: A backup job fails after a change, or backs up only part of the data, and nobody is alerted. When a restore is needed, the latest usable copy is months old.
+      mitigation: Alert on failed, missing and unusually small backups, verify backups automatically and keep an inventory of existing backups.
+    sv:
+      title: Säkerhetskopior upphör eller krymper i månader utan att någon märker det
+      description: Ett säkerhetskopieringsjobb slutar fungera efter en ändring, eller kopierar bara en del av data, och ingen larmas. När en återläsning behövs är den senaste användbara kopian månader gammal.
+      mitigation: Larma vid misslyckade, saknade och ovanligt små säkerhetskopior, verifiera säkerhetskopior automatiskt och för en förteckning över befintliga säkerhetskopior.
+  - id: BCK-R06
+    category: data
+    likelihood: 2
+    impact: 4
+    tags: [consistency, restore]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Google SRE book ch. 26 (Data Integrity)", "ISO/IEC 27001:2022 A.8.13 (information backup)"]
+    mitigated_by: [BCK-13, BCK-14, BCK-12]
+    en:
+      title: Restored database and files do not match
+      description: The database and the file storage are backed up at different times, or a migration ran without a backup first. After a restore, records point to missing files or the old schema cannot be recovered.
+      mitigation: Restore database and file storage to the same point, back up before each database migration and support restoring a single deleted project.
+    sv:
+      title: Återläst databas och filer stämmer inte överens
+      description: Databasen och fillagringen säkerhetskopieras vid olika tidpunkter, eller en migrering kördes utan säkerhetskopia först. Efter en återläsning pekar poster på filer som saknas eller det gamla schemat kan inte återskapas.
+      mitigation: Återställ databas och fillagring till samma tidpunkt, säkerhetskopiera före varje databasmigrering och stöd återställning av ett enskilt borttaget projekt.

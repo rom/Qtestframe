@@ -1302,6 +1302,8 @@ export interface Risk {
   /** the catalogue risk it was copied from ("" none) and that risk's catalogue area */
   catalog_ref?: string
   catalog_area?: string
+  /** MITRE ATT&CK and ATLAS technique ids (T1110.004, T0886, AML.T0051) */
+  attack?: string[]
   acceptance_valid?: boolean
   review_due?: boolean
 }

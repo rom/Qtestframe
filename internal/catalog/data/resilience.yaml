@@ -926,3 +926,33 @@ risks:
       title: Tjänsten kollapsar i stället för att försämras gradvis vid påfrestning
       description: Obegränsade köer och pooler fyller minnet vid en lasttopp, och felbeteenden har aldrig testats. Tjänsten kraschar och startar inte igen av sig själv.
       mitigation: Avvisa överskottslast i stället för att köa den, begränsa köer och pooler, gör regelbundna tester med injicerade fel och låt tjänsten starta utan databasen.
+  - id: RES-R04
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [messaging, lost-messages]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 recoverability"]
+    mitigated_by: [RES-12, RES-18, RES-15]
+    en:
+      title: Messages lost when processing fails or the broker restarts
+      description: A message that fails processing is dropped, consumers do not reconnect after a broker outage and in-flight work is cut off at shutdown. Orders and events disappear without trace.
+      mitigation: Move failed messages to a dead-letter queue, let consumers resume after a broker outage and finish in-flight work on shutdown.
+    sv:
+      title: Meddelanden går förlorade när bearbetningen misslyckas eller meddelandeservern startas om
+      description: Ett meddelande som inte kan bearbetas kastas, konsumenter återansluter inte efter ett avbrott i meddelandeservern och pågående arbete avbryts vid nedstängning. Beställningar och händelser försvinner spårlöst.
+      mitigation: Flytta misslyckade meddelanden till en kö för döda brev, låt konsumenter återuppta efter ett avbrott i meddelandeservern och slutför pågående arbete vid nedstängning.
+  - id: RES-R05
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [fault-injection, untested-recovery]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISTQB CTAL-TTA (reliability testing)", "Google SRE book ch. 22 (Addressing Cascading Failures)"]
+    mitigated_by: [RES-13, RES-11, RES-17]
+    en:
+      title: Recovery mechanisms fail on their first real use
+      description: Timeouts, circuit breakers and failover were designed but never exercised. In the first real failure one of them is misconfigured and the outage spreads.
+      mitigation: Run regular fault-injection tests, isolate resources per dependency and let services start without the database available.
+    sv:
+      title: Återhämtningsmekanismer fallerar första gången de används på riktigt
+      description: Tidsgränser, kretsbrytare och redundansväxling konstruerades men övades aldrig. Vid det första verkliga felet är en av dem felkonfigurerad och avbrottet sprids.
+      mitigation: Genomför regelbundna felinjiceringstester, isolera resurser per beroende och låt tjänster starta utan att databasen är tillgänglig.

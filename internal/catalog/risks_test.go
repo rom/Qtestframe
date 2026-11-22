@@ -43,10 +43,29 @@ func riskFS(risks string) fstest.MapFS {
 	return fstest.MapFS{
 		"d/groups.yaml":  {Data: []byte("groups:\n  - id: security\n    name: {en: S, sv: S}\n")},
 		"d/sources.yaml": {Data: []byte("kinds:\n  - id: standard\n    name: {en: S, sv: S}\nsources:\n  - id: cwe\n    kind: standard\n    name: {en: CWE, sv: CWE}\n    match: [\"CWE-\"]\n  - id: iso-31000\n    kind: standard\n    name: {en: ISO 31000, sv: ISO 31000}\n    match: [\"ISO 31000\"]\n")},
+		"d/attack.yaml":  {Data: []byte(testAttack)},
 		"d/x.yaml":       {Data: []byte(area("x", "XA", "requirements:\n"+req("XA-01", "XA-T01")+req("XA-02", "XA-T01")+"tests:\n"+test("XA-T01")+risks))},
 		"d/y.yaml":       {Data: []byte(area("y", "YB", "requirements:\n"+req("YB-01", "YB-T01")+"tests:\n"+test("YB-T01")))},
 	}
 }
+
+// testAttack is a small ATT&CK and ATLAS list.
+const testAttack = `matrices:
+  - {id: enterprise, name: Enterprise, version: "20.1", url: https://attack.mitre.org/matrices/enterprise}
+  - {id: atlas, name: ATLAS, version: "5", url: https://atlas.mitre.org/matrices/ATLAS}
+tactics:
+  - {id: TA0001, name: Initial Access, matrix: enterprise, url: https://attack.mitre.org/tactics/TA0001}
+  - {id: TA0006, name: Credential Access, matrix: enterprise, url: https://attack.mitre.org/tactics/TA0006}
+  - {id: AML.TA0005, name: Execution, matrix: atlas, url: https://atlas.mitre.org/tactics/AML.TA0005}
+techniques:
+  - {id: T1190, name: Exploit Public-Facing Application, matrix: enterprise, tactics: [TA0001], url: https://attack.mitre.org/techniques/T1190}
+  - {id: T1110, name: Brute Force, matrix: enterprise, tactics: [TA0006], url: https://attack.mitre.org/techniques/T1110}
+  - {id: T1110.004, name: Credential Stuffing, matrix: enterprise, tactics: [TA0006], url: https://attack.mitre.org/techniques/T1110/004}
+  - {id: AML.T0051, name: LLM Prompt Injection, matrix: atlas, tactics: [AML.TA0005], url: https://atlas.mitre.org/techniques/AML.T0051}
+  - {id: AML.T0051.000, name: Direct, matrix: atlas, tactics: [AML.TA0005], url: https://atlas.mitre.org/techniques/AML.T0051.000}
+mitigations:
+  - {id: M1032, name: Multi-factor Authentication, matrix: enterprise, url: https://attack.mitre.org/mitigations/M1032}
+`
 
 const goodRisk = `risks:
   - id: XA-R01
@@ -56,6 +75,7 @@ const goodRisk = `risks:
     tags: [injection]
     refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "CWE-89 (SQL injection)"]
     mitigated_by: [XA-01, YB-01]
+    attack: [T1190]
     tests: [YB-T01]
     en:
       title: Data stolen through injection
@@ -217,7 +237,7 @@ func TestRiskLibrary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(c.Risks) < 250 {
+	if len(c.Risks) < 500 {
 		t.Errorf("only %d catalogue risks", len(c.Risks))
 	}
 	cats := map[string]int{}
@@ -233,6 +253,11 @@ func TestRiskLibrary(t *testing.T) {
 	for _, want := range []string{"security", "privacy", "safety", "availability", "ai", "supply-chain", "compliance"} {
 		if cats[want] < 5 {
 			t.Errorf("only %d %s risks", cats[want], want)
+		}
+	}
+	for _, a := range c.Areas {
+		if n := len(a.Risks); n < 3 || n > 8 {
+			t.Errorf("area %s has %d risks: give every area 3 to 8", a.ID, n)
 		}
 	}
 	for _, g := range c.Overview("en") {

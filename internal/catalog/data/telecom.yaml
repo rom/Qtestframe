@@ -1335,3 +1335,97 @@ tests:
           expected: Centralen ser tecknen medan de skrivs.
         - action: Kontrollera den position som centralen tar emot.
           expected: Positionen stämmer med testterminalens position.
+risks:
+  - id: TEL-R01
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [signalling, interconnect]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "GSMA FS.11", "GSMA FS.19"]
+    mitigated_by: [TEL-14, TEL-13]
+    attack: [T1430, T1040]
+    en:
+      title: Subscribers tracked or intercepted through signalling abuse
+      description: "An attacker with access to the interconnect sends signalling messages that ask for a subscriber's location or redirect calls and messages. Subscribers are tracked and one-time codes sent by SMS are intercepted."
+      mitigation: Filter interconnect signalling with a signalling firewall and authenticate and authorise every service call in the core network.
+    sv:
+      title: Abonnenter spåras eller avlyssnas genom missbruk av signalering
+      description: En angripare med åtkomst till samtrafiken skickar signaleringsmeddelanden som efterfrågar en abonnents position eller styr om samtal och meddelanden. Abonnenter spåras och engångskoder som skickas via sms fångas upp.
+      mitigation: Filtrera signalering från samtrafiken med en signaleringsbrandvägg och autentisera och auktorisera varje tjänsteanrop i kärnnätet.
+  - id: TEL-R02
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [lawful-interception, insider]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI TS 103 221-1", "ISO/IEC 27001:2022 A.8.15"]
+    mitigated_by: [TEL-10, TEL-09]
+    attack: [T1078, T1040]
+    en:
+      title: Lawful interception capability misused
+      description: Staff or an intruder use the interception functions outside a legal order, or set up interception through other interfaces. Communications of journalists, politicians or companies are monitored illegally.
+      mitigation: Allow interception only through the standardised interface, restrict access to it to named people and audit every use.
+    sv:
+      title: Funktionen för hemlig avlyssning missbrukas
+      description: Personal eller en inkräktare använder avlyssningsfunktionerna utan ett rättsligt beslut, eller sätter upp avlyssning via andra gränssnitt. Kommunikation för journalister, politiker eller företag övervakas olagligt.
+      mitigation: Tillåt avlyssning endast via det standardiserade gränssnittet, begränsa åtkomsten till namngivna personer och granska varje användning.
+  - id: TEL-R03
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [emergency-calls, emergency-number]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive (EU) 2018/1972 Art. 109", "Directive (EU) 2018/1972 Art. 109(5) (equivalent access for end-users with disabilities)"]
+    mitigated_by: [TEL-11, TEL-24, TEL-18]
+    en:
+      title: "Emergency call fails or arrives without the caller's location"
+      description: "After a change in the network, calls to 112 are not routed or the caller's location is missing. Help arrives late or at the wrong place, and people with speech or hearing impairments cannot call at all."
+      mitigation: Test emergency calls with location after every change, offer real-time text for emergency calls and keep the core service running when a site is lost.
+    sv:
+      title: Nödsamtal misslyckas eller når fram utan uppringarens position
+      description: Efter en ändring i nätet kopplas inte samtal till 112 fram eller uppringarens position saknas. Hjälpen kommer sent eller till fel plats, och personer med tal- eller hörselnedsättning kan inte ringa alls.
+      mitigation: Testa nödsamtal med position efter varje ändring, erbjud realtidstext vid nödsamtal och håll kärntjänsten igång när en anläggning faller bort.
+  - id: TEL-R04
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [configuration, outage]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ITU-T M.3400 configuration management", "ITU-T M.3400 fault management"]
+    mitigated_by: [TEL-03, TEL-01, TEL-02, TEL-17]
+    en:
+      title: Network-wide outage after a configuration change
+      description: A faulty configuration is pushed to many network elements at once. Customers lose service, alarms flood the operations centre and the change cannot be rolled back quickly.
+      mitigation: Version every network element configuration with rollback, correlate alarms to a root cause and keep the outage data the report to the regulator needs.
+    sv:
+      title: Avbrott i hela nätet efter en konfigurationsändring
+      description: En felaktig konfiguration skickas ut till många nätelement samtidigt. Kunder förlorar tjänsten, larm översvämmar driftcentralen och ändringen kan inte backas snabbt.
+      mitigation: Versionshantera konfigurationen för varje nätelement med möjlighet att backa, korrelera larm till en grundorsak och spara de avbrottsdata som rapporten till tillsynsmyndigheten behöver.
+  - id: TEL-R05
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [billing, usage-records]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ITU-T M.3400 accounting management", "3GPP TS 32.298"]
+    mitigated_by: [TEL-05]
+    en:
+      title: Usage records lost between the network and billing
+      description: Usage records are dropped or duplicated on the way from the network to billing. Revenue is lost, or customers are charged for calls they never made.
+      mitigation: Reconcile usage records end to end so that every record is billed exactly once.
+    sv:
+      title: Användningsposter försvinner mellan nätet och faktureringen
+      description: Användningsposter tappas eller dubbleras på vägen från nätet till faktureringen. Intäkter går förlorade, eller kunder debiteras för samtal som de aldrig har ringt.
+      mitigation: Stäm av användningsposter hela vägen så att varje post faktureras exakt en gång.
+  - id: TEL-R06
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [nfv, supply-chain]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ETSI GS NFV-SEC 021", "3GPP TS 23.501 §5.15"]
+    mitigated_by: [TEL-16, TEL-15]
+    attack: [T1195.002, T1525]
+    en:
+      title: Tampered network function deployed in the core network
+      description: An unsigned or altered network function package is instantiated, or slices are not isolated. The attacker gains a foothold in the core network and reaches other slices and customers.
+      mitigation: Instantiate only signed network function packages and isolate network slices from each other.
+    sv:
+      title: Manipulerad nätfunktion installeras i kärnnätet
+      description: Ett osignerat eller ändrat paket med en nätfunktion startas, eller nätskivor är inte isolerade. Angriparen får fotfäste i kärnnätet och når andra nätskivor och kunder.
+      mitigation: Starta bara signerade paket med nätfunktioner och isolera nätskivor från varandra.

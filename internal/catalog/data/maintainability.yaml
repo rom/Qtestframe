@@ -931,3 +931,50 @@ tests:
           data: "kärnmoduler: krav, testfall, körningar"
         - action: Läs poängen per modul och jämför med målet.
           expected: Varje modul har en poäng; moduler under 60 % listas med överlevande mutanter.
+risks:
+  - id: MNT-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [outdated-dependencies, patching]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.8 (management of technical vulnerabilities)", "OWASP Top 10 2021 A06 (vulnerable and outdated components)"]
+    mitigated_by: [MNT-12, MNT-13, MNT-18]
+    attack: [T1190]
+    en:
+      title: Known vulnerability in an outdated dependency stays exploitable
+      description: Dependencies and runtimes are updated only when something breaks. A published vulnerability in an old library or an unsupported runtime is exploited before anyone upgrades.
+      mitigation: Patch critical vulnerabilities in dependencies within a set time, let tools propose dependency updates and stay on supported runtime and framework versions.
+    sv:
+      title: Känd sårbarhet i ett gammalt beroende förblir utnyttjbar
+      description: Beroenden och körmiljöer uppdateras bara när något går sönder. En publicerad sårbarhet i ett gammalt bibliotek eller en körmiljö utan stöd utnyttjas innan någon uppgraderar.
+      mitigation: Åtgärda kritiska sårbarheter i beroenden inom en fastställd tid, låt verktyg föreslå uppdateringar av beroenden och håll dig till körmiljöer och ramverk med stöd.
+  - id: MNT-R02
+    category: quality
+    likelihood: 4
+    impact: 3
+    tags: [regressions, review]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 analysability", "ISO/IEC 25010:2023 testability"]
+    mitigated_by: [MNT-01, MNT-03, MNT-05, MNT-07]
+    en:
+      title: Changes break existing functions without anyone noticing
+      description: Changes are merged without review and with few automated tests. Regressions reach production and each fix risks breaking something else.
+      mitigation: Review every change, run automated tests on every change, require coverage of changed code and block merges with severe static analysis findings.
+    sv:
+      title: Ändringar förstör befintliga funktioner utan att någon märker det
+      description: Ändringar slås ihop utan granskning och med få automatiska tester. Regressioner når produktion och varje rättning riskerar att förstöra något annat.
+      mitigation: Granska varje ändring, kör automatiska tester vid varje ändring, kräv täckning av ändrad kod och stoppa sammanslagningar med allvarliga fynd från statisk analys.
+  - id: MNT-R03
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [knowledge, documentation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC/IEEE 42010:2022 (architecture description)", "ISO/IEC/IEEE 42010:2022 (architecture decisions and rationale)"]
+    mitigated_by: [MNT-09, MNT-17, MNT-11, MNT-19]
+    en:
+      title: Only one person understands the system
+      description: "Architecture, decisions and operations live in one developer's head. When that person leaves, changes slow down, incidents take long to resolve and wrong assumptions creep in."
+      mitigation: Keep a current architecture description, architecture decision records and an operations manual, and measure how quickly a new developer becomes productive.
+    sv:
+      title: Bara en person förstår systemet
+      description: Arkitektur, beslut och drift finns i en utvecklares huvud. När den personen slutar går ändringar långsamt, incidenter tar lång tid att lösa och felaktiga antaganden smyger sig in.
+      mitigation: Håll en aktuell arkitekturbeskrivning, arkitekturbeslut och en driftmanual, och mät hur snabbt en ny utvecklare blir produktiv.

@@ -1116,3 +1116,34 @@ risks:
       title: Personuppgiftsincident anmäls inte inom 72 timmar
       description: En incident upptäcks sent, hanteras informellt och dokumenteras inte. Tillsynsmyndigheten underrättas inte i tid och organisationen kan inte visa vad som hände.
       mitigation: För ett register över personuppgiftsincidenter, logga säkerhetshändelser och följ en dokumenterad process för incidenthantering.
+  - id: PRIV-R06
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [access-requests, social-engineering]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 12(6)"]
+    mitigated_by: [PRIV-18, PRIV-01]
+    attack: [T1684.001]
+    en:
+      title: "Someone obtains another person's data through a fake access request"
+      description: "An access request is answered to whatever e-mail address sent it. A stalker or fraudster pretending to be the data subject receives a complete copy of the person's data."
+      mitigation: "Confirm the requester's identity before data is released and send the copy only through a verified channel."
+    sv:
+      title: Någon får ut en annan persons uppgifter genom en falsk begäran om registerutdrag
+      description: En begäran om registerutdrag besvaras till den e-postadress som skickade den. En stalker eller bedragare som utger sig för att vara den registrerade får en fullständig kopia av personens uppgifter.
+      mitigation: Kontrollera den begärandes identitet innan uppgifter lämnas ut och skicka kopian bara via en kontrollerad kanal.
+  - id: PRIV-R07
+    category: privacy
+    likelihood: 3
+    impact: 3
+    tags: [sub-processors, transparency]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 28(2)"]
+    mitigated_by: [PRIV-20, PRIV-08]
+    en:
+      title: "Customers' data handed to a new sub-processor without notice"
+      description: A new hosting, support or analytics provider is taken into use without informing customers. Customers cannot object and their own records of processing become wrong.
+      mitigation: Tell customers of new sub-processors 30 days ahead and keep the inventory of personal data and processors current.
+    sv:
+      title: Kunders data lämnas till ett nytt underbiträde utan förvarning
+      description: En ny leverantör för drift, support eller analys tas i bruk utan att kunderna informeras. Kunderna kan inte invända och deras egna register över behandlingar blir fel.
+      mitigation: Meddela kunder om nya underbiträden 30 dagar i förväg och håll förteckningen över personuppgifter och biträden aktuell.

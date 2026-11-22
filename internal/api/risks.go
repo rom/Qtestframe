@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"slices"
+	"strings"
 
+	"github.com/rom/qtestframe/internal/catalog"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/store"
@@ -24,6 +26,37 @@ func (s *Server) routesRisks(h routeFunc) {
 	h("POST /api/v1/risks/{id}/requirements", s.handleRiskRequirements, "requirement.write")
 	h("GET /api/v1/requirements/{id}/risks", s.handleRisksOfRequirement, "requirement.read")
 	h("POST /api/v1/requirements/{id}/risks", s.handleRequirementRisks, "requirement.write")
+}
+
+// checkTechniques normalises the ATT&CK and ATLAS techniques of a risk
+// and checks them against the catalogue's list (catalog/data/attack.yaml,
+// atlas.yaml): unknown, revoked and deprecated ids are rejected.
+func (s *Server) checkTechniques(k *model.Risk) error {
+	if len(k.Attack) == 0 {
+		k.Attack = []string{}
+		return nil
+	}
+	c, err := s.catalogue()
+	if err != nil {
+		return err
+	}
+	out := []string{}
+	var bad []string
+	for _, id := range k.Attack {
+		id = catalog.NormalizeTechnique(id)
+		switch {
+		case id == "" || slices.Contains(out, id):
+		case !c.ValidTechnique(id):
+			bad = append(bad, id)
+		default:
+			out = append(out, id)
+		}
+	}
+	if len(bad) > 0 {
+		return badRequest("unknown ATT&CK or ATLAS technique %s (see GET /catalog/attack/techniques)", strings.Join(bad, ", "))
+	}
+	k.Attack = out
+	return nil
 }
 
 // catalogAreas sets the catalogue area of risks copied from the catalogue.
@@ -103,7 +136,11 @@ func (s *Server) handleCreateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 	k := &model.Risk{ProjectID: pr.ID, Title: req.Title, Description: req.Description, Category: req.Category, Likelihood: req.Likelihood,
 		Impact: req.Impact, Status: req.Status, Mitigation: req.Mitigation, Owner: req.Owner, CreatedBy: p.User.Email, RequirementIDs: req.RequirementIDs,
 		ResidualLikelihood: req.ResidualLikelihood, ResidualImpact: req.ResidualImpact, ResidualManual: req.ResidualManual, ResidualJustification: req.ResidualJustification,
-		ReviewDate: req.ReviewDate, ReviewOwner: req.ReviewOwner, CustomFields: req.CustomFields}
+		ReviewDate: req.ReviewDate, ReviewOwner: req.ReviewOwner, CustomFields: req.CustomFields, Attack: req.Attack}
+	if err := s.checkTechniques(k); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	if err := s.riskOwners(r, p, k, true, true); err != nil {
 		s.fail(w, r, err)
 		return
@@ -161,13 +198,17 @@ func (s *Server) handleUpdateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 	for name, dst := range map[string]any{"title": &k.Title, "description": &k.Description, "category": &k.Category, "status": &k.Status,
 		"mitigation": &k.Mitigation, "owner": &k.Owner, "likelihood": &k.Likelihood, "impact": &k.Impact,
 		"residual_likelihood": &k.ResidualLikelihood, "residual_impact": &k.ResidualImpact, "residual_manual": &k.ResidualManual,
-		"residual_justification": &k.ResidualJustification, "review_date": &k.ReviewDate, "review_owner": &k.ReviewOwner} {
+		"residual_justification": &k.ResidualJustification, "review_date": &k.ReviewDate, "review_owner": &k.ReviewOwner, "attack": &k.Attack} {
 		if v, ok := raw[name]; ok {
 			if err := json.Unmarshal(v, dst); err != nil {
 				s.fail(w, r, badRequest("invalid %s: %v", name, err))
 				return
 			}
 		}
+	}
+	if err := s.checkTechniques(k); err != nil {
+		s.fail(w, r, err)
+		return
 	}
 	if err := s.riskOwners(r, p, k, k.Owner != oldOwner, k.ReviewOwner != oldReviewOwner); err != nil {
 		s.fail(w, r, err)

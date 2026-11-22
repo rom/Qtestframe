@@ -889,3 +889,34 @@ risks:
       title: Varningen till allmänheten når inte de som är i fara
       description: En varning om ett kemikalieutsläpp eller en översvämning når mobiltelefonerna sent, på ett språk som människor inte förstår eller inte alls eftersom kedjan inte har testats. Människor söker inte skydd i tid.
       mitigation: Leverera varningar till mobiltelefoner i målområdet inom 3 minuter, skriv dem på nationalspråket och ett andra språk och testa varningskedjan varje månad.
+  - id: CMMC-R04
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [eavesdropping, encryption]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "3GPP TS 33.180"]
+    mitigated_by: [CMMC-09, CMMC-11]
+    attack: [T1040]
+    en:
+      title: "Emergency services' radio traffic intercepted"
+      description: Group calls travel without end-to-end encryption. Criminals or curious listeners follow police and rescue operations in real time and act on what they hear.
+      mitigation: Encrypt group calls end to end and keep recordings of group and emergency calls under access control.
+    sv:
+      title: Blåljusmyndigheternas radiotrafik avlyssnas
+      description: Gruppsamtal går utan totalsträckskryptering. Kriminella eller nyfikna lyssnare följer polis- och räddningsinsatser i realtid och agerar på det de hör.
+      mitigation: Kryptera gruppsamtal från ände till ände och skydda inspelningar av grupp- och nödsamtal med behörighetskontroll.
+  - id: CMMC-R05
+    category: availability
+    likelihood: 2
+    impact: 5
+    tags: [power-outage, backup-links]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 22301:2019 §8.4"]
+    mitigated_by: [CMMC-07, CMMC-15, CMMC-08]
+    en:
+      title: Mission-critical network fails in a long power cut
+      description: Base stations have batteries for an hour, command centres have a single link and the dispatch centre has no fallback. In a storm or blackout, communication fails exactly when it is needed.
+      mitigation: Keep base station sites running for hours without mains power, give each command centre a satellite backup link and let a fallback dispatch centre take over quickly.
+    sv:
+      title: Det samhällskritiska nätet fallerar vid ett långt strömavbrott
+      description: Basstationerna har batteri för en timme, ledningscentralerna har en enda förbindelse och larmcentralen saknar reserv. Vid en storm eller ett omfattande strömavbrott fallerar kommunikationen just när den behövs.
+      mitigation: Håll basstationsplatser igång i flera timmar utan elnät, ge varje ledningscentral en reservförbindelse via satellit och låt en reservlarmcentral ta över snabbt.

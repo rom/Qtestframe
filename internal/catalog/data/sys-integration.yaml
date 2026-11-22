@@ -882,3 +882,33 @@ risks:
       title: Verifieringsresultaten bevisar inte det levererade systemet
       description: Testobjektet och miljön registreras inte, miljön skiljer sig från drift och ändringar verifieras inte på nytt. Fel passerar verifieringen och visar sig i drift.
       mitigation: Planera verifiering för varje krav, registrera konfigurationen av testobjekt och miljö med varje resultat, verifiera på nytt efter ändringar utifrån deras påverkan, bedöm skillnader mot driftmiljön och validera med verkliga användare.
+  - id: SYINT-R03
+    category: safety
+    likelihood: 2
+    impact: 4
+    tags: [interface-loss, degraded-mode]
+    refs: ["IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "IEC 61508-2:2010 §7.4.8 (requirements for system behaviour on detection of a fault)", "ISO/IEC/IEEE 15288:2023 §6.4.5 (design definition process)"]
+    mitigated_by: [SYINT-07, SYINT-04, SYINT-20]
+    en:
+      title: Undefined behaviour when an external interface is lost
+      description: Nobody specified what a subsystem does when a connected system stops sending data or sends nonsense. In operation it keeps acting on stale values.
+      mitigation: Define the behaviour on loss of each external interface, check interface compatibility with simulators and run joint interoperability tests before go-live.
+    sv:
+      title: Odefinierat beteende när ett externt gränssnitt faller bort
+      description: Ingen har specificerat vad ett delsystem gör när ett anslutet system slutar skicka data eller skickar orimliga värden. I drift fortsätter det att agera på inaktuella värden.
+      mitigation: Definiera beteendet när varje externt gränssnitt faller bort, kontrollera gränssnittens kompatibilitet med simulatorer och genomför gemensamma interoperabilitetstester före driftstart.
+  - id: SYINT-R04
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [regression, change-impact]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEEE 1012-2016 (system, software and hardware verification and validation)", "ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    mitigated_by: [SYINT-11, SYINT-09, SYINT-18]
+    en:
+      title: Late change invalidates earlier verification
+      description: A subsystem is changed after it was verified, and the results are kept without repeating the tests. The delivered system differs from what was verified.
+      mitigation: Repeat verification after each change based on its impact, record the configuration of the test object with each result and assess differences between test and operational environments.
+    sv:
+      title: Sen ändring gör tidigare verifiering ogiltig
+      description: Ett delsystem ändras efter att det verifierats och resultaten behålls utan att testerna upprepas. Det levererade systemet skiljer sig från det som verifierades.
+      mitigation: Upprepa verifieringen efter varje ändring utifrån dess påverkan, registrera testobjektets konfiguration med varje resultat och bedöm skillnader mellan test- och driftmiljö.

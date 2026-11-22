@@ -852,8 +852,9 @@ risks:
     likelihood: 4
     impact: 4
     tags: [authorization, idor]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A01", "CWE-639 (authorization bypass through user-controlled key)", "CWE-863 (incorrect authorization)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A01", "CWE-639 (authorization bypass through user-controlled key)", "CWE-863 (incorrect authorization)"]
     mitigated_by: [ACC-02, ACC-01, SDL-12]
+    attack: [T1190, T1213]
     en:
       title: Another user's records read by changing an identifier
       description: An attacker who is signed in changes the record identifier in a request and the system returns or changes a record the user has no right to. Confidential data of other users or customers leaks, or is changed without anyone noticing.
@@ -867,8 +868,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [privilege-escalation, roles]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A01", "CWE-269 (improper privilege management)", "CWE-602 (client-side enforcement of server-side security)", "MITRE ATT&CK T1098 (account manipulation)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A01", "CWE-269 (improper privilege management)", "CWE-602 (client-side enforcement of server-side security)"]
     mitigated_by: [ACC-03, ACC-06, ACC-05, SLOG-07]
+    attack: [T1068, T1098]
     en:
       title: Ordinary user gains administrator rights
       description: A user reaches administration functions because the server trusts a role sent by the client or misses a permission check. The user can change configuration, create accounts or read all data.
@@ -882,8 +884,9 @@ risks:
     likelihood: 4
     impact: 3
     tags: [leavers, access-review]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.18", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1018 (user account management)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.18", "MITRE ATT&CK M1018 (user account management)"]
     mitigated_by: [ACC-12, ACC-14, ACC-09, ACC-10]
+    attack: [T1078]
     en:
       title: Former employee keeps access
       description: A person who has left the organisation or changed duties still has an active account or old permissions. The account is used to read or change data after the person should have lost access, by the person or by someone who has taken over the credentials.
@@ -897,8 +900,9 @@ risks:
     likelihood: 2
     impact: 4
     tags: [segregation-of-duties, fraud]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.3", "MITRE ATT&CK T1657 (financial theft)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.3"]
     mitigated_by: [ACC-07, ACC-11, PAY-14]
+    attack: [T1657]
     en:
       title: One person both requests and approves a critical change
       description: The same user can create and approve a payment, a permission or a release. Fraud or a serious mistake passes without a second pair of eyes.
@@ -907,3 +911,35 @@ risks:
       title: En person både begär och godkänner en kritisk ändring
       description: Samma användare kan skapa och godkänna en betalning, en behörighet eller en leverans. Bedrägeri eller ett allvarligt misstag passerar utan en andra granskning.
       mitigation: Tillämpa åtskillnad i arbetsuppgifter så att den som godkänner är en annan än den som begär, ge förhöjd behörighet bara under begränsad tid och kräv ett andra godkännande för stora ekonomiska ändringar.
+  - id: ACC-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [dormant-accounts, emergency-access]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-53 AC-2(3)", "CWE-262 (not using password aging)"]
+    mitigated_by: [ACC-14, ACC-15, ACC-09]
+    attack: [T1078]
+    en:
+      title: Dormant or emergency account used by an attacker
+      description: Accounts nobody uses stay enabled for years, and the emergency access account can be used without anyone noticing. An attacker who gets hold of the credentials works under an identity nobody watches.
+      mitigation: Disable accounts unused for 90 days, alert on every use of the emergency account and review access periodically.
+    sv:
+      title: Vilande konto eller nödkonto används av en angripare
+      description: Konton som ingen använder förblir aktiva i åratal och nödkontot kan användas utan att någon märker det. En angripare som kommer över uppgifterna arbetar under en identitet som ingen övervakar.
+      mitigation: Inaktivera konton som inte använts på 90 dagar, larma vid varje användning av nödkontot och granska behörigheter regelbundet.
+  - id: ACC-R06
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [standing-privileges, admin]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-53 AC-2(2)", "CWE-269 (improper privilege management)"]
+    mitigated_by: [ACC-11, ACC-06, ACC-13]
+    attack: [T1078, T1098]
+    en:
+      title: Permanent administrator rights multiply the damage of one compromised account
+      description: Many people hold administrator rights all the time, and rights are kept when people change roles. One phished account is enough to take over the whole system.
+      mitigation: Grant elevated access for a limited time when needed, require the administrator role for administration and let roles follow identity provider groups when people move.
+    sv:
+      title: Permanenta administratörsbehörigheter förstorar skadan av ett kapat konto
+      description: Många personer har administratörsbehörighet hela tiden och behörigheter behålls när personer byter roll. Ett nätfiskat konto räcker för att ta över hela systemet.
+      mitigation: Ge förhöjd behörighet tidsbegränsat när den behövs, kräv administratörsrollen för administration och låt roller följa grupperna i identitetsleverantören när personer byter tjänst.

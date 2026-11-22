@@ -747,3 +747,67 @@ tests:
           expected: Förslaget visar markeringen extern.
         - action: Låt den externa användaren skriva en kommentar och visa den.
           expected: Kommentarens författare har markeringen extern.
+risks:
+  - id: ACCT-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [invitations, account-takeover]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V6.4.1 (activation codes)", "CWE-640 (weak password recovery mechanism)"]
+    mitigated_by: [ACCT-02, ACCT-04, ACCT-01]
+    attack: [T1078, T1136]
+    en:
+      title: Old invitation link used to create an account
+      description: An invitation that was forwarded, never used or revoked still works. Someone who finds the link creates an account in the organisation with the rights meant for another person.
+      mitigation: Let invitations be used once, expire and be revoked, and verify the e-mail address before an account is activated.
+    sv:
+      title: Gammal inbjudningslänk används för att skapa ett konto
+      description: En inbjudan som har vidarebefordrats, aldrig använts eller återkallats fungerar fortfarande. Den som hittar länken skapar ett konto i organisationen med de behörigheter som var avsedda för en annan person.
+      mitigation: Låt inbjudningar användas en gång, löpa ut och kunna återkallas, och verifiera e-postadressen innan ett konto aktiveras.
+  - id: ACCT-R02
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [email-change, account-takeover]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V6.3.7 (notification of authentication changes)"]
+    mitigated_by: [ACCT-05, NOTIF-12]
+    attack: [T1098]
+    en:
+      title: Account hijacked by changing its e-mail address
+      description: "An attacker with a stolen session changes the account's e-mail address and then resets the password. The real user loses the account and receives no warning."
+      mitigation: Verify a new e-mail address before it is used and notify the old address of every change.
+    sv:
+      title: Konto kapas genom att e-postadressen ändras
+      description: En angripare med en stulen session ändrar kontots e-postadress och återställer sedan lösenordet. Den riktiga användaren förlorar kontot och får ingen varning.
+      mitigation: Verifiera en ny e-postadress innan den används och meddela den gamla adressen vid varje ändring.
+  - id: ACCT-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [deprovisioning, leavers]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.18"]
+    mitigated_by: [ACCT-07, ACCT-13, ACCT-11]
+    attack: [T1078]
+    en:
+      title: Deactivated user keeps working in open sessions
+      description: A user is deactivated in the identity provider but the account stays active here, or open sessions and tokens continue to work. A dismissed employee keeps access for days.
+      mitigation: Provision and deprovision accounts through SCIM and end every session and token within a minute of deactivation.
+    sv:
+      title: Inaktiverad användare fortsätter arbeta i öppna sessioner
+      description: En användare inaktiveras i identitetsleverantören men kontot förblir aktivt här, eller öppna sessioner och token fortsätter att fungera. En uppsagd medarbetare behåller åtkomsten i flera dagar.
+      mitigation: Skapa och avsluta konton via SCIM och avsluta varje session och token inom en minut efter inaktivering.
+  - id: ACCT-R04
+    category: operational
+    likelihood: 2
+    impact: 4
+    tags: [administrators, lockout]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.5.15"]
+    mitigated_by: [ACCT-10, ACCT-14]
+    en:
+      title: Organisation locked out of its own administration
+      description: The last administrator is deactivated or deleted, or leaves without a handover. Nobody can manage users, settings or owned items until the provider steps in.
+      mitigation: Prevent removal of the last administrator and hand over owned items when an account is deactivated.
+    sv:
+      title: Organisationen stängs ute från sin egen administration
+      description: Den sista administratören inaktiveras eller tas bort, eller slutar utan överlämning. Ingen kan hantera användare, inställningar eller ägda objekt förrän leverantören ingriper.
+      mitigation: Förhindra att den sista administratören tas bort och lämna över ägda objekt när ett konto inaktiveras.

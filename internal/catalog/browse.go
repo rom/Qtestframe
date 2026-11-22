@@ -131,12 +131,16 @@ func (c *Catalog) OrderedAreas() []*Area {
 // Source selects items by the reference sources they cite (sources.yaml):
 // a requirement whose refs cite one of them, a test that cites one or
 // verifies such a requirement, a risk that cites one or is mitigated by
-// such a requirement. Category and Level apply to risks only.
+// such a requirement. Category, Level, Attack and Tactic apply to risks
+// only: Attack selects the risks that list one of the ATT&CK or ATLAS
+// techniques (or a sub-technique of one), Tactic those with a technique
+// of one of the tactics (TA0006, AML.TA0005).
 type Filter struct {
 	Area, Group, Type, Obligation, Priority, Tag, Execution string
 	Catalogue                                               string
 	Source                                                  string
 	Category, Level                                         string
+	Attack, Tactic                                          string
 	Q                                                       string
 }
 
@@ -176,9 +180,14 @@ type RiskSummary struct {
 	Sources      []string `json:"sources"`
 	MitigatedBy  []string `json:"mitigated_by"`
 	Tests        []string `json:"tests"`
-	Title        string   `json:"title"`
-	Description  string   `json:"description"`
-	Mitigation   string   `json:"mitigation"`
+	// Attack and Atlas are the ATT&CK and ATLAS technique ids, Tactics the
+	// tactic ids they serve.
+	Attack      []string `json:"attack"`
+	Atlas       []string `json:"atlas"`
+	Tactics     []string `json:"tactics"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Mitigation  string   `json:"mitigation"`
 }
 
 // TestSummary is a test in one language without the steps.
@@ -230,6 +239,7 @@ func (c *Catalog) SummarizeRisk(k *Risk, lang string) RiskSummary {
 	return RiskSummary{ID: k.ID, Area: k.Area, Group: g, Catalogue: kind, Category: k.Category, CategoryName: cat,
 		Likelihood: k.Likelihood, Impact: k.Impact, Score: k.Likelihood * k.Impact, Level: k.Level(),
 		Tags: nonNil(k.Tags), Refs: nonNil(k.Refs), Sources: nonNil(k.Sources), MitigatedBy: nonNil(k.MitigatedBy), Tests: nonNil(k.Tests),
+		Attack: nonNil(k.Attack), Atlas: nonNil(k.Atlas), Tactics: nonNil(c.TacticsOf(k.Techniques())),
 		Title: x.Title, Description: x.Description, Mitigation: x.Mitigation}
 }
 
@@ -254,6 +264,7 @@ func (c *Catalog) riskSources(k *Risk) []string {
 func (c *Catalog) FindRisks(f Filter, lang string) []RiskSummary {
 	lang = Lang(lang)
 	areas, groups, kinds, cats, levels, tags, sources := set(f.Area), set(f.Group), set(f.Catalogue), set(f.Category), set(f.Level), set(f.Tag), set(f.Source)
+	techs, tactics := set(f.Attack), set(f.Tactic)
 	terms := Terms(f.Q)
 	type hit struct {
 		s     RiskSummary
@@ -269,10 +280,14 @@ func (c *Catalog) FindRisks(f Filter, lang string) []RiskSummary {
 			if !accepts(cats, k.Category) || !accepts(levels, k.Level()) || !acceptsAny(tags, k.Tags) || (sources != nil && !acceptsAny(sources, c.riskSources(k))) {
 				continue
 			}
+			if (techs != nil && !c.techniqueMatches(k.Techniques(), techs)) || (tactics != nil && !acceptsAny(tactics, c.TacticsOf(k.Techniques()))) {
+				continue
+			}
 			x := k.Localized(lang)
 			sc := score(k.ID, terms, []field{
 				{lower(x.Title), 10}, {lower(k.ID), 8}, {lower(k.Tags...), 6}, {lower(k.Refs...), 4},
 				{lower(x.Description), 3}, {lower(k.MitigatedBy...), 2}, {lower(x.Mitigation), 1},
+				{lower(c.techniqueTerms(k)...), 4},
 			})
 			if sc > 0 {
 				hits = append(hits, hit{c.SummarizeRisk(k, lang), sc})
@@ -595,5 +610,23 @@ func (c *Catalog) Tags(kind string) []TagCount {
 		}
 		return out[i].Tag < out[j].Tag
 	})
+	return out
+}
+
+// Techniques are the ATT&CK and ATLAS technique ids of the risk.
+func (k *Risk) Techniques() []string {
+	return append(append([]string{}, k.Attack...), k.Atlas...)
+}
+
+// techniqueTerms are the ids and names of the risk's techniques, for the
+// free-text search ("T1110", "credential stuffing").
+func (c *Catalog) techniqueTerms(k *Risk) []string {
+	var out []string
+	for _, id := range k.Techniques() {
+		out = append(out, id)
+		if t := c.techByID[id]; t != nil {
+			out = append(out, c.FullName(t))
+		}
+	}
 	return out
 }

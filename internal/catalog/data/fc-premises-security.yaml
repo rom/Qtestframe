@@ -843,6 +843,7 @@ risks:
     tags: [unauthorised-entry, access-control]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.7.2", "EN 60839-11-1"]
     mitigated_by: [FCSEC-01, FCSEC-02, FCSEC-03, FCSEC-05, FCSEC-09]
+    attack_exempt: true
     en:
       title: Unauthorised person enters a restricted area
       description: A lost card still works, a door is held open or a visitor walks around unescorted. Someone reaches equipment or documents they must not access.
@@ -858,6 +859,7 @@ risks:
     tags: [burglary, critical-entity]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Directive (EU) 2022/2557 (CER) Art. 13(1)(c)"]
     mitigated_by: [FCSEC-06, FCSEC-07, FCSEC-16, FCSEC-19, FCSEC-15]
+    attack_exempt: true
     en:
       title: Break-in or sabotage at a critical site
       description: Intruders force the perimeter of a site that supports essential services and damage or steal equipment. The service is interrupted and the response arrives too late.
@@ -871,8 +873,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [building-automation, ot]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1392 (use of default credentials)", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1392 (use of default credentials)", "MITRE ATT&CK M0930 (network segmentation)"]
     mitigated_by: [FCSEC-12, FCSEC-13, FCSEC-14]
+    attack: [T0886, T1694.001]
     en:
       title: Building automation taken over from the internet
       description: The building automation system is reachable from the office network or internet with default passwords. An attacker turns off heating, ventilation or access control.
@@ -881,3 +884,19 @@ risks:
       title: Fastighetsautomationen tas över från internet
       description: Fastighetsautomationen kan nås från kontorsnätet eller internet med standardlösenord. En angripare stänger av värme, ventilation eller passersystem.
       mitigation: Skilj fastighetsautomationens nät från kontorsnätet och internet, använd personliga konton och inga standardlösenord och bedöm programuppdateringar varje kvartal.
+  - id: FCSEC-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [lost-cards, keys]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.7.2"]
+    mitigated_by: [FCSEC-03, FCSEC-04, FCSEC-10]
+    attack_exempt: true
+    en:
+      title: Lost access card or key still opens restricted areas
+      description: A card is lost or an employee leaves, but the card is blocked days later and mechanical keys are never accounted for. Whoever has the card or key enters the premises.
+      mitigation: Block access cards within an hour, review access rights to restricted zones every quarter and check the key register every year.
+    sv:
+      title: Borttappat passerkort eller nyckel öppnar fortfarande skyddade utrymmen
+      description: Ett kort tappas bort eller en medarbetare slutar, men kortet spärras först flera dagar senare och mekaniska nycklar inventeras aldrig. Den som har kortet eller nyckeln tar sig in i lokalerna.
+      mitigation: Spärra passerkort inom en timme, granska behörigheter till skyddade zoner varje kvartal och kontrollera nyckelregistret varje år.

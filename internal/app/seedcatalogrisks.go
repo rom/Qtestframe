@@ -57,7 +57,7 @@ func seedCatalogRisks(ctx context.Context, st *store.Store, tenantID, projectID 
 			cat = rc.Name.Get("en")
 		}
 		r := &model.Risk{ProjectID: projectID, Title: x.Title, Description: x.Description, Mitigation: x.Mitigation, Category: cat,
-			Likelihood: k.Likelihood, Impact: k.Impact, Status: s.status, CatalogRef: k.ID, CreatedBy: "seed"}
+			Likelihood: k.Likelihood, Impact: k.Impact, Status: s.status, CatalogRef: k.ID, CreatedBy: "seed", Attack: k.Techniques()}
 		for _, t := range s.reqs {
 			if id := byTitle[t]; id != "" {
 				r.RequirementIDs = append(r.RequirementIDs, id)

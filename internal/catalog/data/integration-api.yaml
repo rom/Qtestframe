@@ -879,3 +879,34 @@ risks:
       title: Integrationsmeddelanden går förlorade, dubbleras eller förfalskas
       description: Upprepade anrop för att skapa poster ger dubbletter, webhookar går förlorade vid ett kort avbrott eller en förfalskad webhook godtas. Systemen glider isär och någon måste stämma av för hand.
       mitigation: Använd idempotensnycklar för anrop som skapar poster, signera webhookanrop, gör omförsök av webhookar med ökande väntetid och besvara långvariga operationer med en statusresurs.
+  - id: API-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [webhooks, forgery]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V4.1.5 (per-message signatures)", "CWE-345 (insufficient verification of data authenticity)"]
+    mitigated_by: [API-13]
+    attack: [T1565.002]
+    en:
+      title: Forged webhook calls trigger actions in customer systems
+      description: Webhook requests are not signed, so customers cannot tell them from forged requests. An attacker who knows the address sends fake events that create, change or approve records.
+      mitigation: Sign every webhook request and document how receivers verify the signature and the time stamp.
+    sv:
+      title: Förfalskade webhookanrop utlöser åtgärder i kunders system
+      description: Webhookanrop signeras inte, så kunderna kan inte skilja dem från förfalskade anrop. En angripare som känner till adressen skickar falska händelser som skapar, ändrar eller godkänner poster.
+      mitigation: Signera varje webhookanrop och dokumentera hur mottagare kontrollerar signaturen och tidsstämpeln.
+  - id: API-R04
+    category: data
+    likelihood: 3
+    impact: 3
+    tags: [retries, duplicates]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IETF draft-ietf-httpapi-idempotency-key-header", "Standard Webhooks specification 1.0"]
+    mitigated_by: [API-11, API-14, API-16]
+    en:
+      title: Retries create duplicate records in integrations
+      description: Clients retry create requests after a timeout and every retry creates a new record. Long operations time out and are started again, doubling orders or payments.
+      mitigation: Accept idempotency keys for create requests, retry webhooks with backoff and answer long-running operations with a status resource.
+    sv:
+      title: Nya försök skapar dubbla poster i integrationer
+      description: Klienter gör nya försök med skapande anrop efter en tidsgräns och varje försök skapar en ny post. Långa åtgärder får tidsgräns och startas igen, så att order eller betalningar dubbleras.
+      mitigation: Ta emot idempotensnycklar för skapande anrop, gör nya försök med webhooks med ökande väntetid och svara på långa åtgärder med en statusresurs.

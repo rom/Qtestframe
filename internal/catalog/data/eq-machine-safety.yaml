@@ -1040,3 +1040,34 @@ risks:
       title: Operatörsfel eftersom manöverdon och varningar är otydliga
       description: Manöverdonen är förvirrande, larmen säger inte vad som ska göras och kvarstående risker är inte märkta. Operatören startar en rörelse av misstag eller reagerar fel på ett fel.
       mitigation: Märk kvarstående risker med varningsskyltar, koda manöverdon med färg och riktning, ange orsak och åtgärd i larmmeddelanden, bekräfta kommandon som startar rörelse på pekskärmar och visa text på operatörernas språk.
+  - id: EQSAF-R05
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [safety-plc, connectivity]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "Regulation (EU) 2023/1230 Annex III §1.1.9 (protection against corruption)", "IEC 62061:2021"]
+    mitigated_by: [EQSAF-18, EQSAF-23, EQSAF-19]
+    attack: [T0889, T0880]
+    en:
+      title: "Safety function changed through the machine's network connection"
+      description: The safety controller can be reprogrammed over the plant network and nobody checks the program afterwards. A remote change, by mistake or by an attacker, disables a guard interlock.
+      mitigation: Protect safety functions against corruption through connections, verify the safety program checksum after each change and record interventions and safety software versions.
+    sv:
+      title: Säkerhetsfunktion ändras via maskinens nätanslutning
+      description: Säkerhetsstyrningen kan programmeras om via fabriksnätet och ingen kontrollerar programmet efteråt. En fjärrändring, av misstag eller av en angripare, kopplar bort en förregling på ett skydd.
+      mitigation: Skydda säkerhetsfunktioner mot förvanskning via anslutningar, kontrollera säkerhetsprogrammets kontrollsumma efter varje ändring och registrera ingrepp och versioner av säkerhetsprogramvaran.
+  - id: EQSAF-R06
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [modification, reassessment]
+    refs: ["ISO 12100:2010 §5 (risk assessment)", "Regulation (EU) 2023/1230 Art. 18 (substantial modification)"]
+    mitigated_by: [EQSAF-12, EQSAF-03]
+    en:
+      title: Machine modified without a new safety assessment
+      description: A machine is rebuilt for a new product, given a higher speed or combined with another one. The earlier risk assessment no longer applies and new hazards are left unguarded.
+      mitigation: Assess safety before each modification of the machine and verify the achieved performance level of each affected safety function.
+    sv:
+      title: Maskin byggs om utan ny säkerhetsbedömning
+      description: En maskin byggs om för en ny produkt, får högre hastighet eller kombineras med en annan. Den tidigare riskbedömningen gäller inte längre och nya risker lämnas utan skydd.
+      mitigation: Gör en säkerhetsbedömning före varje ombyggnad av maskinen och verifiera den uppnådda prestandanivån för varje berörd säkerhetsfunktion.

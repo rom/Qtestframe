@@ -900,3 +900,33 @@ risks:
       title: Dålig datakvalitet sprider sig i systemet
       description: Ogiltiga värden, dubbletter och oklara fältbetydelser kommer in i systemet och matar rapporter och integrationer. Beslut fattas på felaktiga uppgifter.
       mitigation: Validera varje fält på servern, avvisa dubbletter av unika värden, slå ihop dubblettposter, markera obligatoriska fält före inmatning och för en dataordbok.
+  - id: DATA-R04
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [bulk-operations, references]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9241-110:2020 self-descriptiveness", "ISO/IEC 25010:2023 integrity"]
+    mitigated_by: [DATA-12, DATA-13, DATA-14, DATA-08]
+    en:
+      title: Bulk change damages hundreds of records at once
+      description: A bulk edit or delete applies to more items than the user intended and leaves broken references. There is no report of what changed and no easy way back.
+      mitigation: Report the result of bulk operations, refuse deletions that leave broken references and keep deleted items in a recycle bin.
+    sv:
+      title: Massändring skadar hundratals poster på en gång
+      description: En massredigering eller massradering träffar fler objekt än användaren avsåg och lämnar brutna referenser. Det finns ingen rapport om vad som ändrats och inget enkelt sätt att gå tillbaka.
+      mitigation: Rapportera resultatet av massåtgärder, vägra raderingar som lämnar brutna referenser och spara borttagna objekt i en papperskorg.
+  - id: DATA-R05
+    category: data
+    likelihood: 3
+    impact: 3
+    tags: [duplicates, data-dictionary]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25012:2008 consistency", "ISO/IEC 25012:2008 understandability"]
+    mitigated_by: [DATA-05, DATA-15, DATA-18]
+    en:
+      title: Duplicate records split information about one customer or item
+      description: The same customer or item is registered twice with small differences. Updates go to one record, history to the other, and reports count both.
+      mitigation: Reject duplicate unique values, support merging of duplicate records and keep a data dictionary that defines each field.
+    sv:
+      title: Dubbletter delar upp informationen om en kund eller ett objekt
+      description: Samma kund eller objekt registreras två gånger med små skillnader. Uppdateringar hamnar i den ena posten, historiken i den andra och rapporter räknar båda.
+      mitigation: Avvisa dubbla unika värden, stöd sammanslagning av dubbletter och för en dataordbok som definierar varje fält.

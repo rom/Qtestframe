@@ -717,3 +717,33 @@ risks:
       title: Innehåll från tredje part används utan att dess licens är känd
       description: Kopierade kodstycken, typsnitt, bilder eller AI-genererad kod kommer in i produkten utan att källa eller licens registreras. Upphovsangivelser saknas och rätten att använda dem kan inte visas.
       mitigation: Leverera upphovsangivelser med varje version, registrera kopierade kodstycken och licenserna för typsnitt, ikoner och bilder, ange fastställda licenser i programvaruförteckningen och kontrollera genererad kod mot publik kod.
+  - id: LIC-R03
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [network-copyleft, saas]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GNU AGPL v3 §13 (remote network interaction)", "Server Side Public License v1 §13"]
+    mitigated_by: [LIC-05, LIC-02]
+    en:
+      title: "Network copyleft licence forces publication of the service's source code"
+      description: A component under a network copyleft licence is used in the hosted service without review. The licence requires the source code of the service to be offered to all its users.
+      mitigation: Review network copyleft licences before use and stop the build on licences the policy forbids.
+    sv:
+      title: Nätverkscopyleftlicens tvingar fram publicering av tjänstens källkod
+      description: En komponent under en nätverkscopyleftlicens används i den driftade tjänsten utan granskning. Licensen kräver att tjänstens källkod erbjuds alla dess användare.
+      mitigation: Granska nätverkscopyleftlicenser före användning och stoppa bygget vid licenser som policyn förbjuder.
+  - id: LIC-R04
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [generated-code, snippets]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "OpenChain ISO/IEC 5230:2020 §3.3 (open source content review and approval)"]
+    mitigated_by: [LIC-14, LIC-07]
+    en:
+      title: Code from AI assistants or forums copied without its licence
+      description: Developers paste code suggested by an AI assistant or found online. Parts of it match licensed public code whose conditions are not met, and the product carries an unknown licence obligation.
+      mitigation: Check generated code against public code and record copied snippets with their source and licence.
+    sv:
+      title: Kod från AI-assistenter eller forum kopieras utan dess licens
+      description: Utvecklare klistrar in kod som en AI-assistent föreslagit eller som hittats på nätet. Delar av den motsvarar licensierad publik kod vars villkor inte uppfylls, och produkten bär en okänd licensförpliktelse.
+      mitigation: Kontrollera genererad kod mot publik kod och registrera kopierade kodavsnitt med källa och licens.

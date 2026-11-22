@@ -857,3 +857,49 @@ tests:
           expected: Den nya bekräftelsen har ett annat referensnummer.
         - action: Upprepa för de andra 2 formulären.
           expected: Vart och ett slutar med en bekräftelse med samma delar.
+risks:
+  - id: FORM-R01
+    category: data
+    likelihood: 3
+    impact: 3
+    tags: [double-submission, idempotency]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "RFC 9110 §9.2.2"]
+    mitigated_by: [FORM-11, FORM-13, FORM-17]
+    en:
+      title: Duplicate orders or applications from a double submission
+      description: A slow response makes the user press submit again, or the browser resends the form. Two orders, payments or applications are created and must be cleaned up by hand.
+      mitigation: Make one submission create exactly one record, show a review step before binding submissions and confirm with a reference number.
+    sv:
+      title: Dubbla beställningar eller ansökningar efter dubbel inskickning
+      description: Ett långsamt svar får användaren att trycka på skicka igen, eller webbläsaren skickar formuläret på nytt. Två beställningar, betalningar eller ansökningar skapas och måste rensas för hand.
+      mitigation: Låt en inskickning skapa exakt en post, visa ett granskningssteg före bindande inskickningar och bekräfta med ett referensnummer.
+  - id: FORM-R02
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [data-loss, session-timeout]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "WCAG 2.2 SC 2.2.5", "ISO 9241-110:2020 user error robustness"]
+    mitigated_by: [FORM-16, FORM-08, FORM-07]
+    en:
+      title: Long form lost when the session expires
+      description: A user spends half an hour on an application, the session times out and everything entered is gone. The user gives up or makes mistakes when typing it again.
+      mitigation: Save drafts automatically, keep the input when the session expires and keep values when moving between steps.
+    sv:
+      title: Långt formulär försvinner när sessionen löper ut
+      description: En användare lägger en halvtimme på en ansökan, sessionen löper ut och allt som angetts är borta. Användaren ger upp eller gör fel när allt ska skrivas in igen.
+      mitigation: Spara utkast automatiskt, behåll inmatningen när sessionen löper ut och behåll värden vid förflyttning mellan steg.
+  - id: FORM-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [errors, accessibility]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "WCAG 2.2 SC 3.3.1", "ISO 9241-110:2020 user error robustness"]
+    mitigated_by: [FORM-03, FORM-04, FORM-12, FORM-05]
+    en:
+      title: Users give up because of unclear errors and strict formats
+      description: The form rejects phone numbers with spaces, asks for the same data twice and shows errors only in colour at the top. Users cannot tell what is wrong and abandon the form.
+      mitigation: Accept tolerant input formats, show an error summary and inline errors in text and never ask for the same data twice in one process.
+    sv:
+      title: Användare ger upp på grund av otydliga fel och strikta format
+      description: Formuläret avvisar telefonnummer med mellanslag, frågar efter samma uppgifter två gånger och visar fel bara i färg högst upp. Användarna förstår inte vad som är fel och lämnar formuläret.
+      mitigation: Godta toleranta inmatningsformat, visa en felsammanfattning och fel vid fälten i text och fråga aldrig efter samma uppgifter två gånger i samma process.

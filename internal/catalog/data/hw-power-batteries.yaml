@@ -783,3 +783,18 @@ risks:
       title: Batteriprodukter kan inte skickas eller säljas
       description: En sammanfattning av UN 38.3-provningen eller den märkning som batteriförordningen kräver saknas. Transportörer vägrar ta emot försändelserna eller produkterna stoppas på marknaden.
       mitigation: Ta fram en sammanfattning av UN 38.3-provningen för varje litiumbatteri som skickas, märk batterierna som batteriförordningen kräver och gör hälsotillståndet läsbart.
+  - id: HWPWR-R04
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [charging, overcharge]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62133-2:2017 (safety of portable sealed secondary lithium cells and batteries)"]
+    mitigated_by: [HWPWR-10, HWPWR-11, HWPWR-08]
+    en:
+      title: Battery overcharged or charged in the cold
+      description: The charger relies on a single protection, or charges while the cells are below freezing. Lithium plating or overcharge leads to swelling, venting or fire later in use.
+      mitigation: Charge only within the cell temperature range, add an independent second level of overcharge protection and use certified cells and packs.
+    sv:
+      title: Batteriet överladdas eller laddas i kyla
+      description: Laddaren förlitar sig på ett enda skydd eller laddar när cellerna är under fryspunkten. Litiumplätering eller överladdning leder senare till svullnad, gasutsläpp eller brand.
+      mitigation: Ladda bara inom cellernas temperaturområde, lägg till en oberoende andra nivå av överladdningsskydd och använd certifierade celler och batteripaket.

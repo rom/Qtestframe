@@ -813,3 +813,50 @@ tests:
         - action: Skicka in ett objekt med kostnaden 50 000.
           expected: Begäran om godkännande går till gruppen teamledare.
           data: "kostnad 50 000"
+risks:
+  - id: WFL-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [business-logic, approvals]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V2.3.1 (business logic step order)", "CWE-841 (improper enforcement of behavioral workflow)"]
+    mitigated_by: [WFL-02, WFL-03, WFL-13]
+    attack: [T1565.001]
+    en:
+      title: Approval step skipped by calling the server directly
+      description: Transition rules are only enforced in the interface. A user sends a request that moves an item straight to approved, or approves an item they wrote themselves.
+      mitigation: "Enforce transition rules on the server, forbid approval of one's own item and require re-authentication at approval."
+    sv:
+      title: Godkännandesteg hoppas över genom direkta anrop till servern
+      description: Övergångsregler upprätthålls bara i gränssnittet. En användare skickar ett anrop som flyttar ett objekt direkt till godkänt, eller godkänner ett objekt som hen själv har skrivit.
+      mitigation: Upprätthåll övergångsregler på servern, förbjud godkännande av eget objekt och kräv ny autentisering vid godkännande.
+  - id: WFL-R02
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [bottlenecks, escalation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ITIL 4 Service request management", "ISO/IEC 27001:2022 A.5.3"]
+    mitigated_by: [WFL-09, WFL-10, WFL-11, WFL-15]
+    en:
+      title: Items stuck for weeks waiting for an absent approver
+      description: "Approval requests wait in one person's queue while they are away, without reminders or delegation. Deliveries and decisions are delayed and nobody sees where they stopped."
+      mitigation: "Remind and escalate waiting approvals, support delegation during absence and show each user's queue and the time items have spent in their state."
+    sv:
+      title: Objekt fastnar i veckor i väntan på en frånvarande godkännare
+      description: Begäran om godkännande väntar i en persons kö medan hen är borta, utan påminnelser eller delegering. Leveranser och beslut försenas och ingen ser var de har stannat.
+      mitigation: Påminn om och eskalera väntande godkännanden, stöd delegering vid frånvaro och visa varje användares kö och hur länge objekt har legat i sitt tillstånd.
+  - id: WFL-R03
+    category: data
+    likelihood: 2
+    impact: 4
+    tags: [concurrency, workflow-changes]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 functional correctness", "ISO/IEC 25010:2023 integrity"]
+    mitigated_by: [WFL-14, WFL-17, WFL-06]
+    en:
+      title: Conflicting decisions or a workflow change leave items in invalid states
+      description: Two approvers decide at the same moment and both decisions are applied, or the workflow is changed and existing items end up in a state that no longer exists.
+      mitigation: Make concurrent decisions give one outcome, keep existing items valid when a workflow changes and lock approved versions.
+    sv:
+      title: Motstridiga beslut eller en ändring av arbetsflödet ger objekt ogiltiga tillstånd
+      description: Två godkännare beslutar i samma ögonblick och båda besluten verkställs, eller arbetsflödet ändras och befintliga objekt hamnar i ett tillstånd som inte längre finns.
+      mitigation: Låt samtidiga beslut ge ett utfall, behåll befintliga objekt giltiga när ett arbetsflöde ändras och lås godkända versioner.

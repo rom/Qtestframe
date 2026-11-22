@@ -888,7 +888,7 @@ risks:
     likelihood: 3
     impact: 4
     tags: [accountability, audit]
-    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "21 CFR Part 11 §11.10(e)", "CWE-778 (insufficient logging)", "MITRE ATT&CK T1565.001 (stored data manipulation)"]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "21 CFR Part 11 §11.10(e)", "CWE-778 (insufficient logging)"]
     mitigated_by: [AUD-01, AUD-14, AUD-13, AUD-10]
     en:
       title: Changes cannot be traced to a person
@@ -903,8 +903,9 @@ risks:
     likelihood: 2
     impact: 4
     tags: [tampering, integrity]
-    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "21 CFR Part 11 §11.10(e)", "CWE-353 (missing support for integrity check)", "MITRE ATT&CK T1070 (indicator removal)"]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "21 CFR Part 11 §11.10(e)", "CWE-353 (missing support for integrity check)"]
     mitigated_by: [AUD-02, AUD-03, AUD-16, AUD-06]
+    attack: [T1070, T1565.001]
     en:
       title: Audit trail altered to cover up a change
       description: A privileged user or an attacker edits or deletes audit entries. The trail no longer shows what really happened and can no longer be used as evidence.
@@ -928,3 +929,34 @@ risks:
       title: Elektronisk underskrift förnekas eller flyttas till annat innehåll
       description: En underskrift kan ges utan förnyad autentisering eller fortsätter att gälla när det undertecknade innehållet ändras. Undertecknaren förnekar godkännandet, eller ett godkännande ser ut att omfatta innehåll det aldrig omfattade.
       mitigation: Kräv förnyad autentisering för varje elektronisk underskrift, bind underskriften till det undertecknade innehållet och registrera ett skäl för varje ändring av en godkänd post.
+  - id: AUD-R04
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [impersonation, support-access]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.8.15", "CWE-778 (insufficient logging)"]
+    mitigated_by: [AUD-15, AUD-13, AUD-11]
+    attack: [T1078, T1098]
+    en:
+      title: Changes made while impersonating a user cannot be told apart
+      description: An administrator or support person acts as a user, and the audit trail shows only the user. Permission changes and reads of sensitive records are not audited, so misuse cannot be proven or detected.
+      mitigation: Record both identities during impersonation, audit configuration and permission changes and record reads of sensitive records.
+    sv:
+      title: Ändringar som görs i en annan användares namn går inte att skilja ut
+      description: En administratör eller supportperson agerar som en användare och granskningsloggen visar bara användaren. Behörighetsändringar och läsning av känsliga poster loggas inte, så missbruk kan varken bevisas eller upptäckas.
+      mitigation: Registrera båda identiteterna när någon agerar som en annan användare, logga konfigurations- och behörighetsändringar och registrera läsning av känsliga poster.
+  - id: AUD-R05
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [review, critical-data]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "EU GMP Annex 11 §9", "21 CFR Part 11 §11.10(b)"]
+    mitigated_by: [AUD-17, AUD-05, AUD-06]
+    en:
+      title: Audit trail kept but never reviewed
+      description: Entries on critical data are recorded but nobody looks at them, and auditors cannot get an export. Unauthorised changes stay unnoticed until an inspection finds them.
+      mitigation: Review audit entries on critical data every month and give auditors a read-only role and an export of the audit trail.
+    sv:
+      title: Granskningsloggen sparas men granskas aldrig
+      description: Poster om kritiska data registreras men ingen tittar på dem, och revisorer kan inte få en export. Obehöriga ändringar upptäcks inte förrän en inspektion hittar dem.
+      mitigation: Granska loggposter om kritiska data varje månad och ge revisorer en roll med enbart läsrätt och en export av granskningsloggen.

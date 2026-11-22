@@ -783,8 +783,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [provider-breach, trusted-relationship]
-    refs: ["ISO/IEC 27036-2:2022", "ISO/IEC 27001:2022 A.5.20", "MITRE ATT&CK T1199 (trusted relationship)"]
+    refs: ["ISO/IEC 27036-2:2022", "ISO/IEC 27001:2022 A.5.20"]
     mitigated_by: [SVOUT-01, SVOUT-02, SVOUT-07, SVOUT-08, SVOUT-17]
+    attack: [T1199]
     en:
       title: Breach at the provider reaches the customer's systems
       description: An outsourcing provider or its subcontractor is compromised, and its access is used against the customer. The customer has no audit right and learns late what happened.
@@ -823,3 +824,19 @@ risks:
       title: Leverantören behandlar personuppgifter utanför avtalet
       description: Personuppgifter behandlas utan biträdesavtal, flyttas till nya underleverantörer eller länder utan besked eller sparas efter att avtalet upphört. Kunden är fortfarande ansvarig för överträdelsen.
       mitigation: Teckna personuppgiftsbiträdesavtal först, kräv att nya underleverantörer meddelas 30 dagar i förväg med rätt att invända, håll data i de avtalade länderna, radera dem med intyg efter återlämning och kräv att incidenter rapporteras inom 24 timmar.
+  - id: SVOUT-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [provider-staff, privileged-access]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.18", "ISO/IEC 27001:2022 A.6.1"]
+    mitigated_by: [SVOUT-07, SVOUT-15, SVOUT-06]
+    attack: [T1078, T1199]
+    en:
+      title: "Provider administrator misuses access to the customer's systems"
+      description: Provider staff use shared administrator accounts without logging and were never vetted. One of them copies customer data or sabotages systems, and the provider tells the customer late.
+      mitigation: Require personal accounts with logging for provider staff, background checks of staff with privileged access and incident reports to the customer within 24 hours.
+    sv:
+      title: Leverantörens administratör missbrukar åtkomsten till kundens system
+      description: Leverantörens personal använder gemensamma administratörskonton utan loggning och har aldrig kontrollerats. En av dem kopierar kunddata eller saboterar system, och leverantören informerar kunden sent.
+      mitigation: Kräv personliga konton med loggning för leverantörens personal, bakgrundskontroll av personal med privilegierad åtkomst och incidentrapport till kunden inom 24 timmar.

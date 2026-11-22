@@ -144,7 +144,7 @@ export function filterRisks<T extends Risk>(risks: readonly T[], f: RiskFilter):
       (!f.impact || (f.residual ? residualPoint(r).impact : r.impact) === f.impact) &&
       (!f.levels?.length || f.levels.includes(r.level)) &&
       (!f.statuses?.length || f.statuses.includes(r.status)) &&
-      (!text || [r.key, r.title, r.category, r.owner, r.description, r.mitigation].some((v) => (v ?? '').toLowerCase().includes(text))),
+      (!text || [r.key, r.title, r.category, r.owner, r.description, r.mitigation, ...(r.attack ?? [])].some((v) => (v ?? '').toLowerCase().includes(text))),
   )
 }
 

@@ -776,6 +776,7 @@ risks:
     tags: [card-data, pci-dss]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "PCI DSS v4.0.1 Req. 3.3.1", "CWE-312 (cleartext storage of sensitive information)"]
     mitigated_by: [PAY-01, PAY-02, PAY-03, PAY-15]
+    attack: [T1190, T1005]
     en:
       title: Card data stolen from the system
       description: Card numbers or security codes pass through or are stored in the system. A breach exposes them, cards are misused and the organisation faces card scheme penalties and a full compliance audit.
@@ -789,8 +790,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [skimming, payment-page]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "PCI DSS v4.0.1 Req. 6.4.3", "CWE-829 (inclusion of functionality from untrusted control sphere)", "MITRE ATT&CK T1059.007 (JavaScript)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "PCI DSS v4.0.1 Req. 6.4.3", "CWE-829 (inclusion of functionality from untrusted control sphere)"]
     mitigated_by: [PAY-10, PAY-02, INP-06]
+    attack: [T1059.007, T1056.003]
     en:
       title: Payment page skimmed by an injected script
       description: A compromised third-party script on the payment page copies card details as customers type them. Many cards are stolen before anyone notices.
@@ -819,8 +821,9 @@ risks:
     likelihood: 3
     impact: 3
     tags: [card-testing, fraud]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-799 (improper control of interaction frequency)", "MITRE ATT&CK T1657 (financial theft)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-799 (improper control of interaction frequency)"]
     mitigated_by: [PAY-12, PAY-07, PAY-13, PAY-14]
+    attack: [T1657]
     en:
       title: Payment flow abused for fraud
       description: Criminals test stolen cards in bulk, pay without strong authentication or use a leaked provider key to refund or redirect payouts. The organisation pays fees, chargebacks and lost funds.
@@ -829,3 +832,35 @@ risks:
       title: Betalflödet missbrukas för bedrägeri
       description: Brottslingar testar stulna kort i stor skala, betalar utan stark autentisering eller använder en läckt nyckel hos leverantören för att återbetala eller styra om utbetalningar. Organisationen betalar avgifter, återkrav och förlorade medel.
       mitigation: Skydda mot korttestning, kräv stark kundautentisering inom EES, använd begränsade nycklar hos leverantören och kräv ett andra godkännande för stora återbetalningar och ändrade utbetalningar.
+  - id: PAY-R05
+    category: security
+    likelihood: 4
+    impact: 3
+    tags: [card-testing, fraud]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP API Security Top 10 2023 API6"]
+    mitigated_by: [PAY-12, PAY-07]
+    attack: [T1110, T1657]
+    en:
+      title: Checkout used by fraudsters to test stolen cards
+      description: Bots submit thousands of small payments with stolen card numbers to find the valid ones. The merchant pays fees and chargebacks and the payment provider may close the account.
+      mitigation: Protect against card testing with limits and checks per client and require strong customer authentication for card payments in the EEA.
+    sv:
+      title: Kassan används av bedragare för att testa stulna kort
+      description: Robotar skickar tusentals små betalningar med stulna kortnummer för att hitta de giltiga. Handlaren betalar avgifter och återkrav och betaltjänstleverantören kan stänga kontot.
+      mitigation: Skydda mot korttestning med gränser och kontroller per klient och kräv stark kundautentisering för kortbetalningar inom EES.
+  - id: PAY-R06
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [payout-fraud, insider]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.3", "PCI DSS v4.0.1 Req. 7.2.5"]
+    mitigated_by: [PAY-14, PAY-13, PAY-09]
+    attack: [T1657, T1078]
+    en:
+      title: Payout details changed to divert money
+      description: An insider or an attacker with a stolen account changes the payout account or issues large refunds to their own card. Money leaves the company before anyone notices.
+      mitigation: Require a second approval for large refunds and payout changes, use restricted keys for the payment provider and never refund more than was captured.
+    sv:
+      title: Utbetalningsuppgifter ändras för att styra om pengar
+      description: En insider eller en angripare med ett stulet konto ändrar utbetalningskontot eller gör stora återbetalningar till sitt eget kort. Pengarna lämnar företaget innan någon märker det.
+      mitigation: Kräv ett andra godkännande för stora återbetalningar och ändrade utbetalningsuppgifter, använd begränsade nycklar mot betaltjänstleverantören och återbetala aldrig mer än det som dragits.

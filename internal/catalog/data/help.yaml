@@ -799,3 +799,49 @@ tests:
           data: "till exempel 35 inställningar"
         - action: Slå upp varje inställning i handboken.
           expected: Varje inställning beskrivs med sin effekt, sitt standardvärde och den behörighet som krävs för att ändra den.
+risks:
+  - id: HELP-R01
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [documentation, versions]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC/IEEE 26514:2022"]
+    mitigated_by: [HELP-07, HELP-05, HELP-09]
+    en:
+      title: Documentation describes a different version than the one in use
+      description: Help pages are not updated with releases. Users follow outdated instructions, make mistakes and call support for questions the documentation should answer.
+      mitigation: Update the user documentation with each release, cover each core task and publish release notes for users.
+    sv:
+      title: Dokumentationen beskriver en annan version än den som används
+      description: Hjälpsidor uppdateras inte med releaserna. Användare följer inaktuella instruktioner, gör fel och kontaktar supporten med frågor som dokumentationen borde besvara.
+      mitigation: Uppdatera användardokumentationen med varje release, täck varje central uppgift och publicera releaseinformation för användare.
+  - id: HELP-R02
+    category: operational
+    likelihood: 3
+    impact: 2
+    tags: [support, diagnostics]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 maintainability", "ISO/IEC 25010:2023 interaction capability"]
+    mitigated_by: [HELP-12, HELP-11, HELP-14]
+    en:
+      title: "Support cannot reproduce users' problems"
+      description: Support requests arrive without version, page or error details and users cannot find where to ask for help. Problems take days of back and forth to diagnose.
+      mitigation: Make support reachable from every page, attach technical context to support requests and link error messages to help.
+    sv:
+      title: Supporten kan inte återskapa användarnas problem
+      description: Supportärenden kommer in utan version, sida eller felinformation och användare hittar inte var de kan be om hjälp. Det tar dagar av fram och tillbaka att ställa diagnos.
+      mitigation: Gör supporten nåbar från varje sida, bifoga teknisk kontext till supportärenden och länka felmeddelanden till hjälpen.
+  - id: HELP-R03
+    category: operational
+    likelihood: 2
+    impact: 3
+    tags: [administrators, settings]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC/IEEE 26514:2022 (information for users)"]
+    mitigated_by: [HELP-18, HELP-06]
+    en:
+      title: Administrator misconfigures a setting that is not documented
+      description: A setting with security or data consequences is not described in the administrator guide, or only in one language. The administrator guesses and leaves the system in an unsafe or unintended state.
+      mitigation: Describe every setting in the administrator guide, in each interface language.
+    sv:
+      title: Administratör ställer in en odokumenterad inställning fel
+      description: En inställning med konsekvenser för säkerhet eller data beskrivs inte i administratörshandboken, eller bara på ett språk. Administratören gissar och lämnar systemet i ett osäkert eller oavsiktligt tillstånd.
+      mitigation: Beskriv varje inställning i administratörshandboken, på varje gränssnittsspråk.

@@ -1136,8 +1136,9 @@ risks:
     likelihood: 5
     impact: 4
     tags: [credential-stuffing, password]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "ENISA Threat Landscape 2024", "CWE-307 (improper restriction of excessive authentication attempts)", "MITRE ATT&CK T1110.004 (credential stuffing)", "MITRE ATT&CK T1110.003 (password spraying)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "ENISA Threat Landscape 2024", "CWE-307 (improper restriction of excessive authentication attempts)"]
     mitigated_by: [AUTH-02, AUTH-07, AUTH-09, SLOG-06]
+    attack: [T1110.003, T1110.004]
     en:
       title: Accounts taken over with leaked passwords
       description: Attackers try passwords leaked from other services, or a few common passwords on many accounts. Accounts whose users reuse passwords are taken over and their data and rights misused.
@@ -1151,8 +1152,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [phishing, mfa, administrator]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T1111 (multi-factor authentication interception)", "MITRE ATT&CK T1598 (phishing for information)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ENISA Threat Landscape 2024", "CWE-308 (use of single-factor authentication)"]
     mitigated_by: [AUTH-06, AUTH-18, AUTH-08, AUTH-19]
+    attack: [T1111, T1598.003]
     en:
       title: Administrator account phished
       description: An administrator enters the password and a one-time code on a fake sign-in page, or approves a code sent by SMS to an attacker. The attacker gets full control of the system.
@@ -1166,8 +1168,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [account-recovery, password-reset]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "CWE-640 (weak password recovery mechanism)", "MITRE ATT&CK T1098 (account manipulation)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A07", "CWE-640 (weak password recovery mechanism)"]
     mitigated_by: [AUTH-11, AUTH-12, AUTH-13, AUTH-16, AUTH-20]
+    attack: [T1098]
     en:
       title: Account taken over through password recovery
       description: A reset link that never expires, can be reused or is protected only by guessable security questions lets an attacker set a new password. The real user is locked out and may not notice in time.
@@ -1181,8 +1184,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [password-storage, data-breach]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-916 (password hash with insufficient computational effort)", "CWE-257 (storing passwords in a recoverable format)", "MITRE ATT&CK T1110.002 (password cracking)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-916 (password hash with insufficient computational effort)", "CWE-257 (storing passwords in a recoverable format)"]
     mitigated_by: [AUTH-05, CRY-05]
+    attack: [T1110.002]
     en:
       title: Leaked password database cracked offline
       description: A copy of the user table leaks and the stored passwords are recovered because they are stored in a weak or reversible form. Users' passwords are exposed here and on every service where they reuse them.
@@ -1196,8 +1200,9 @@ risks:
     likelihood: 3
     impact: 5
     tags: [default-credentials, single-sign-on]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1392 (use of default credentials)", "CWE-347 (improper verification of cryptographic signature)", "MITRE ATT&CK T1078.001 (default accounts)", "MITRE ATT&CK T1606.002 (SAML tokens)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1392 (use of default credentials)", "CWE-347 (improper verification of cryptographic signature)"]
     mitigated_by: [AUTH-15, AUTH-14, AUTH-21]
+    attack: [T1078.001, T1606.002]
     en:
       title: Authentication bypassed with default or forged credentials
       description: An installation keeps a default password, or the system accepts single sign-on assertions without checking signature, audience and issuer. Anyone who knows the default or can forge an assertion signs in as any user.
@@ -1206,3 +1211,35 @@ risks:
       title: Autentiseringen kringgås med standard- eller förfalskade inloggningsuppgifter
       description: En installation behåller ett standardlösenord, eller systemet godtar intyg från gemensam inloggning utan att kontrollera signatur, mottagare och utfärdare. Den som känner till standardlösenordet eller kan förfalska ett intyg loggar in som vilken användare som helst.
       mitigation: Leverera inga standardinloggningar, validera varje intyg från gemensam inloggning fullständigt och koppla federerade konton via utfärdare och subjekt.
+  - id: AUTH-R06
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [mfa-fatigue, push]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "RFC 6238", "CWE-308 (use of single-factor authentication)"]
+    mitigated_by: [AUTH-08, AUTH-19, AUTH-22]
+    attack: [T1621]
+    en:
+      title: "User approves an attacker's sign-in after repeated prompts"
+      description: An attacker with the password triggers sign-in prompts again and again until the tired user approves one. The second factor gives no protection.
+      mitigation: Prefer passkeys, use one-time codes that expire and are used once, and notify users of sign-ins from new devices.
+    sv:
+      title: Användare godkänner en angripares inloggning efter upprepade förfrågningar
+      description: En angripare som har lösenordet utlöser inloggningsförfrågningar gång på gång tills den trötta användaren godkänner en. Den andra faktorn ger inget skydd.
+      mitigation: Föredra passnycklar, använd engångskoder som löper ut och används en gång, och meddela användare vid inloggning från nya enheter.
+  - id: AUTH-R07
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [account-enumeration, reconnaissance]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V6.3.8 (no user enumeration)", "CWE-204 (observable response discrepancy)"]
+    mitigated_by: [AUTH-10, AUTH-09]
+    attack: [T1589]
+    en:
+      title: Sign-in reveals which accounts exist
+      description: The sign-in and reset pages answer differently for known and unknown addresses. Attackers build a list of valid accounts to target with password guessing and phishing.
+      mitigation: Give the same answer for known and unknown accounts and limit failed sign-in attempts.
+    sv:
+      title: Inloggningen avslöjar vilka konton som finns
+      description: Inloggnings- och återställningssidorna svarar olika för kända och okända adresser. Angripare bygger en lista över giltiga konton som de riktar lösenordsgissning och nätfiske mot.
+      mitigation: Ge samma svar för kända och okända konton och begränsa antalet misslyckade inloggningsförsök.

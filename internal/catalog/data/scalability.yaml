@@ -845,3 +845,34 @@ risks:
       title: Kapaciteten tar slut utan förvarning
       description: Lagring, kvoter eller marginal förbrukas eftersom ingen prognostiserar tillväxten. Tjänsten slutar ta emot data eller nya kunder med kort varsel.
       mitigation: Ha kapacitetsmarginal i produktion, gör en kapacitetsprognos varje kvartal, varna innan lagringskvoter är förbrukade och definiera den datamängd per organisation som stöds.
+  - id: SCAL-R03
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [scale-out, database-connections]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 capacity", "ISTQB CT-PT Performance Testing syllabus §1.2 (scalability testing)"]
+    mitigated_by: [SCAL-13, SCAL-05, SCAL-04]
+    en:
+      title: Scaling out makes the outage worse
+      description: More instances are started under load, each opens its own database connections and the database runs out of connections. The service fails completely instead of absorbing the peak.
+      mitigation: Size database connections for the maximum number of instances, keep instances stateless and verify the throughput gain of added instances.
+    sv:
+      title: Uppskalning förvärrar avbrottet
+      description: Fler instanser startas under last, var och en öppnar egna databasanslutningar och databasen får slut på anslutningar. Tjänsten faller helt i stället för att klara toppen.
+      mitigation: Dimensionera databasanslutningarna för det största antalet instanser, håll instanserna tillståndslösa och kontrollera vad varje ny instans tillför i genomströmning.
+  - id: SCAL-R04
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [rate-limits, abuse]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62443-3-3 SR 7.1", "OWASP API Security Top 10 2023 API4 (unrestricted resource consumption)"]
+    mitigated_by: [SCAL-09, SCAL-12, SCAL-10]
+    attack: [T1499.003]
+    en:
+      title: One client consumes all capacity
+      description: An integration or a scraper sends unlimited requests, asks for huge pages or uploads large files. Other customers see timeouts while one client uses all resources.
+      mitigation: Rate limit each API client, cap page sizes of list endpoints and set a maximum upload size.
+    sv:
+      title: En klient förbrukar all kapacitet
+      description: En integration eller ett insamlingsskript skickar obegränsat med anrop, begär enorma sidor eller laddar upp stora filer. Andra kunder får tidsgränser medan en klient använder alla resurser.
+      mitigation: Begränsa anropstakten per API-klient, sätt tak för sidstorlek i listor och sätt en största tillåten uppladdningsstorlek.

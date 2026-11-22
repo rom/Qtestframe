@@ -846,8 +846,9 @@ risks:
     likelihood: 3
     impact: 4
     tags: [tls, adversary-in-the-middle]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-295 (improper certificate validation)", "CWE-319 (cleartext transmission of sensitive information)", "MITRE ATT&CK T1557 (adversary-in-the-middle)", "MITRE ATT&CK T1040 (network sniffing)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-295 (improper certificate validation)", "CWE-319 (cleartext transmission of sensitive information)"]
     mitigated_by: [CRY-01, CRY-02, CRY-03, CRY-04]
+    attack: [T1557, T1040]
     en:
       title: Traffic intercepted or altered in transit
       description: A connection uses an old protocol, plain text or a client that does not validate certificates. Someone on the network reads credentials and data or changes them on the way.
@@ -861,8 +862,9 @@ risks:
     likelihood: 2
     impact: 5
     tags: [key-management, encryption]
-    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-522 (insufficiently protected credentials)", "CWE-324 (use of a key past its expiration date)", "MITRE ATT&CK T1552.004 (private keys)"]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-522 (insufficiently protected credentials)", "CWE-324 (use of a key past its expiration date)"]
     mitigated_by: [CRY-11, CRY-08, CRY-15, CRY-06]
+    attack: [T1552.004]
     en:
       title: Encryption keys stolen together with the data
       description: Data is encrypted, but the keys are stored next to it, used for many purposes and never rotated. One breach exposes all encrypted data, including copies taken earlier.
@@ -878,6 +880,7 @@ risks:
     tags: [post-quantum, harvest-now-decrypt-later]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST IR 8547", "CWE-327 (broken or risky cryptographic algorithm)", "CWE-326 (inadequate encryption strength)"]
     mitigated_by: [CRY-13, CRY-17, CRY-12, CRY-14, CRY-16]
+    attack: [T1040]
     en:
       title: Recorded traffic decrypted by a future quantum computer
       description: An adversary records encrypted traffic today and decrypts it once quantum computers break the key exchange. Data with a long confidentiality need, such as health or trade secrets, is exposed years later.
@@ -893,6 +896,7 @@ risks:
     tags: [randomness, weak-algorithm]
     refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A02", "CWE-338 (cryptographically weak PRNG)", "CWE-327 (broken or risky cryptographic algorithm)", "CWE-328 (use of weak hash)"]
     mitigated_by: [CRY-09, CRY-10, SESS-01]
+    attack: [T1606]
     en:
       title: Tokens or signatures broken because of weak cryptography
       description: Session tokens, reset codes or keys come from a predictable random generator, or data is protected with a broken hash or cipher. An attacker predicts tokens or forges protected values.
@@ -901,3 +905,35 @@ risks:
       title: Token eller signaturer knäcks på grund av svag kryptografi
       description: Sessionstoken, återställningskoder eller nycklar kommer från en förutsägbar slumptalsgenerator, eller data skyddas med en knäckt hash eller ett knäckt chiffer. En angripare förutsäger token eller förfalskar skyddade värden.
       mitigation: Använd en kryptografiskt säker slumptalsgenerator för alla hemliga värden och tillåt inga knäckta algoritmer.
+  - id: CRY-R05
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [certificate-validation, tls]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V12.3.2 (TLS certificate validation)", "CWE-295 (improper certificate validation)"]
+    mitigated_by: [CRY-04, CRY-03, CRY-02]
+    attack: [T1557]
+    en:
+      title: Certificate checks switched off in an integration
+      description: A developer turns off certificate validation to get past a test certificate, and the setting reaches production. Anyone on the network path can impersonate the remote service.
+      mitigation: Never turn off certificate validation, encrypt connections between internal components and use HTTP Strict Transport Security.
+    sv:
+      title: Certifikatkontrollen stängs av i en integration
+      description: En utvecklare stänger av certifikatvalideringen för att komma förbi ett testcertifikat, och inställningen når produktion. Vem som helst på nätvägen kan utge sig för att vara den andra tjänsten.
+      mitigation: Stäng aldrig av certifikatvalideringen, kryptera anslutningar mellan interna komponenter och använd HTTP Strict Transport Security.
+  - id: CRY-R06
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [weak-randomness, tokens]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V11.5.1 (cryptographically secure random values)", "CWE-338 (use of cryptographically weak pseudo-random number generator)"]
+    mitigated_by: [CRY-09, CRY-15]
+    attack: [T1606]
+    en:
+      title: Predictable tokens and keys generated by a weak random source
+      description: Reset links, session tokens or keys are made with an ordinary random function. An attacker who observes a few values predicts the next ones and takes over accounts.
+      mitigation: Generate every token and key with a cryptographically secure random generator and use one key for one purpose only.
+    sv:
+      title: Förutsägbara token och nycklar skapas av en svag slumpkälla
+      description: Återställningslänkar, sessionstoken eller nycklar skapas med en vanlig slumpfunktion. En angripare som ser några värden förutsäger nästa och tar över konton.
+      mitigation: Skapa varje token och nyckel med en kryptografiskt säker slumpgenerator och använd en nyckel för ett enda syfte.

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/rom/qtestframe/internal/catalog"
 	"github.com/rom/qtestframe/internal/customfield"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
@@ -55,8 +56,8 @@ var customFieldPrefix = []string{"cf."}
 
 // riskSchema: the query fields of risks.
 var riskSchema = &query.Schema{
-	Fields:   []string{"id", "key", "title", "description", "category", "likelihood", "impact", "score", "level", "status", "mitigation", "owner", "review_owner", "review_date", "created_by", "catalog", "catalog_area"},
-	Aliases:  map[string]string{"area": "catalog_area"},
+	Fields:   []string{"id", "key", "title", "description", "category", "likelihood", "impact", "score", "level", "status", "mitigation", "owner", "review_owner", "review_date", "created_by", "catalog", "catalog_area", "attack", "tactic"},
+	Aliases:  map[string]string{"area": "catalog_area", "technique": "attack", "atlas": "attack"},
 	Prefixes: customFieldPrefix,
 }
 
@@ -65,7 +66,35 @@ func riskRecord(k *model.Risk) query.MapRecord {
 		"category": {k.Category}, "likelihood": {strconv.Itoa(k.Likelihood)}, "impact": {strconv.Itoa(k.Impact)}, "score": {strconv.Itoa(k.Score)},
 		"level": {k.Level}, "status": {k.Status}, "mitigation": {k.Mitigation}, "owner": {k.Owner},
 		"review_owner": {k.ReviewOwner}, "review_date": {k.ReviewDate}, "created_by": {k.CreatedBy},
-		"catalog": {k.CatalogRef}, "catalog_area": {k.CatalogArea}})
+		"catalog": {k.CatalogRef}, "catalog_area": {k.CatalogArea}, "attack": attackValues(k.Attack), "tactic": tacticValues(k.Attack)})
+}
+
+// attackValues are the technique ids of a risk with their names, so that
+// attack:T1110 finds the sub-techniques too and attack:"brute force" works.
+func attackValues(ids []string) []string {
+	out := append([]string{}, ids...)
+	if c, err := catalog.Default(); err == nil {
+		for _, id := range ids {
+			if t := c.Technique(id); t != nil {
+				out = append(out, c.FullName(t))
+			}
+		}
+	}
+	return out
+}
+
+// tacticValues are the ids and names of the tactics of the techniques.
+func tacticValues(ids []string) []string {
+	out := []string{}
+	if c, err := catalog.Default(); err == nil {
+		for _, ta := range c.TacticsOf(ids) {
+			out = append(out, ta)
+			if t := c.Tactic(ta); t != nil {
+				out = append(out, t.Name)
+			}
+		}
+	}
+	return out
 }
 
 // withCustom adds the custom values of an item to its query record as

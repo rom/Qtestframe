@@ -881,3 +881,50 @@ risks:
       title: Kunderna avbryter köpet i kassan
       description: Kunderna måste skapa ett konto, upptäcker att varor är slut efter betalningen eller fastnar efter en nekad betalning eller bankautentisering. Försäljning går förlorad i sista steget.
       mitigation: Tillåt köp utan konto, kontrollera lagersaldot före betalningen, visa prisändringar sedan varan lades i varukorgen, återvänd smidigt från stark kundautentisering och ge ett tydligt meddelande och möjlighet att försöka igen efter en nekad betalning.
+  - id: SHOP-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [card-data, pci-dss]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "PCI DSS v4.0.1 Req. 3", "PCI DSS v4.0.1 SAQ A"]
+    mitigated_by: [SHOP-08, PAY-02]
+    attack: [T1056.003, T1059.007]
+    en:
+      title: Card details captured on the checkout page
+      description: "Card fields are part of the shop's own page, so any injected or compromised script on that page can read them. Cards are skimmed for months before anyone notices."
+      mitigation: "Never handle card details in the system, use the payment provider's hosted fields or page and control the scripts on payment pages."
+    sv:
+      title: Kortuppgifter fångas upp på kassasidan
+      description: Kortfälten är en del av butikens egen sida, så varje injicerat eller kapat skript på sidan kan läsa dem. Kort skimmas i månader innan någon märker det.
+      mitigation: Hantera aldrig kortuppgifter i systemet, använd betaltjänstleverantörens fält eller sida och kontrollera skripten på betalsidor.
+  - id: SHOP-R04
+    category: data
+    likelihood: 3
+    impact: 3
+    tags: [stock, overselling]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 functional correctness", "ISO 4217"]
+    mitigated_by: [SHOP-05, SHOP-12]
+    en:
+      title: Goods sold that are out of stock or totals miscalculated
+      description: Stock is not checked before payment and amounts are rounded per line in different ways. Customers pay for goods that cannot be delivered and totals differ between the order, invoice and payment.
+      mitigation: "Check stock before payment and round amounts to the currency's minor unit by one rule throughout."
+    sv:
+      title: Varor säljs som är slut i lager eller summor beräknas fel
+      description: Lagret kontrolleras inte före betalning och belopp avrundas olika per rad. Kunder betalar för varor som inte kan levereras och summor skiljer sig mellan order, faktura och betalning.
+      mitigation: Kontrollera lagret före betalning och avrunda belopp till valutans minsta enhet enligt en regel överallt.
+  - id: SHOP-R05
+    category: security
+    likelihood: 3
+    impact: 3
+    tags: [discount-abuse, fraud]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Directive 2005/29/EC Art. 6", "CWE-840 (business logic errors)"]
+    mitigated_by: [SHOP-10, PAY-04]
+    attack: [T1657]
+    en:
+      title: Discount codes and checkout logic abused for fraud
+      description: Codes can be combined without limit, reused or applied after the price changes, and orders are released before payment is confirmed. Fraudsters take goods at a fraction of the price.
+      mitigation: Define clear rules for discount codes, check them on the server and release orders only after confirmed payment.
+    sv:
+      title: Rabattkoder och kassalogik missbrukas för bedrägeri
+      description: Koder kan kombineras utan gräns, återanvändas eller tillämpas efter prisändringar, och order släpps före bekräftad betalning. Bedragare tar varor för en bråkdel av priset.
+      mitigation: Fastställ tydliga regler för rabattkoder, kontrollera dem på servern och släpp order först efter bekräftad betalning.

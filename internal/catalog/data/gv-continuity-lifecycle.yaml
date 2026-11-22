@@ -927,3 +927,34 @@ risks:
       title: System körs efter att stödet har upphört
       description: Datum när stödet upphör bevakas inte och ersättningar planeras eller budgeteras inte. Kritiska system körs utan säkerhetsuppdateringar och reservdelar, och ersättningen blir akut.
       mitigation: Bevaka när stödet upphör, besluta om utfasning 24 månader i förväg, planera ett utbytesår för kritiska tillgångar, räkna med livscykelkostnaden i investeringsbeslut och godkänn en avvecklingsplan.
+  - id: GVLC-R04
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [continuity-plans, ransomware]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 22301:2019 §8.4", "ISO 22301:2019 §8.5 (exercise programme)"]
+    mitigated_by: [GVLC-10, GVLC-09, GVLC-20]
+    en:
+      title: Continuity plans unreachable when the IT is down
+      description: The continuity plans and contact lists are stored only on the systems the crisis has taken out. The crisis organisation improvises and the recovery takes far longer than planned.
+      mitigation: Keep continuity plans reachable without the primary IT, exercise each plan every year and prepare crisis communication with approved templates and tested contact lists.
+    sv:
+      title: Kontinuitetsplanerna går inte att nå när IT ligger nere
+      description: Kontinuitetsplanerna och kontaktlistorna finns bara i de system som krisen har slagit ut. Krisorganisationen improviserar och återställningen tar mycket längre tid än planerat.
+      mitigation: Håll kontinuitetsplanerna tillgängliga utan den ordinarie IT-miljön, öva varje plan varje år och förbered kriskommunikation med godkända mallar och testade kontaktlistor.
+  - id: GVLC-R05
+    category: privacy
+    likelihood: 2
+    impact: 4
+    tags: [disposal, media-sanitisation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 A.7.14", "Directive 2012/19/EU (WEEE)"]
+    mitigated_by: [GVLC-16, GVLC-17, GVLC-18]
+    attack: [T1005]
+    en:
+      title: Data recovered from disposed equipment
+      description: Old computers and disks are sold or recycled without sanitising the storage. A buyer recovers personal data, credentials and internal documents.
+      mitigation: Sanitise storage media with a certificate, dispose of electronic equipment through a licensed recycler and revoke accounts and certificates of retired systems.
+    sv:
+      title: Data återskapas från kasserad utrustning
+      description: Gamla datorer och diskar säljs eller återvinns utan att lagringen rensas. En köpare återskapar personuppgifter, inloggningsuppgifter och interna dokument.
+      mitigation: Rensa lagringsmedier med intyg, lämna elektronisk utrustning till en godkänd återvinnare och återkalla konton och certifikat för avvecklade system.

@@ -70,9 +70,10 @@ The **Risks** tab lists typical risks of the areas: what can go wrong, for examp
 - a **typical likelihood and impact** on the same scale 1–5 as the [risk register](releases-and-risks.md#the-risk-register), and the level they give (low, medium, high, critical);
 - a **suggested mitigation**;
 - the catalogue requirements that **mitigate** it (at least one, from any area), and sometimes catalogue tests that check it directly;
-- the sources it is based on under **Based on**: risk management standards (ISO 31000, ISO/IEC 27005, ISO/IEC 23894 for AI, ISO 14971 for medical devices, ISO 26262 for vehicles, ISO 12100 for machinery, IEC 62443-3-2 for industrial systems), the AI Act's risk management (Art. 9), the GDPR's impact assessment (Art. 35), threat catalogues (OWASP Top 10, ENISA Threat Landscape) and the CWE weaknesses and MITRE ATT&CK techniques of the mitigating requirements.
+- the sources it is based on under **Based on**: risk management standards (ISO 31000, ISO/IEC 27005, ISO/IEC 23894 for AI, ISO 14971 for medical devices, ISO 26262 for vehicles, ISO 12100 for machinery, IEC 62443-3-2 for industrial systems), the AI Act's risk management (Art. 9), the GDPR's impact assessment (Art. 35), threat catalogues (OWASP Top 10, ENISA Threat Landscape) and the CWE weaknesses of the mitigating requirements;
+- for risks caused by an attacker, the **MITRE ATT&CK techniques** that realise them (see [MITRE ATT&CK](#mitre-attck)).
 
-Filter the risks by **Category** and **Risk level**, by area in the tree, by tag or by the laws and standards to comply with (a risk counts for a source when it cites it or one of its mitigating requirements does). The preview shows the description, the suggested mitigation and the mitigating requirements; select one to open it.
+Filter the risks by **Category**, **Risk level**, **ATT&CK tactic** and **ATT&CK technique**, by area in the tree, by tag or by the laws and standards to comply with (a risk counts for a source when it cites it or one of its mitigating requirements does). The preview shows the description, the suggested mitigation and the mitigating requirements; select one to open it.
 
 **Add a risk with its mitigation.** Tick risks and select **Add N risks (+ requirements, tests)**. The dialog adds:
 
@@ -83,6 +84,17 @@ Filter the risks by **Category** and **Risk level**, by area in the tree, by tag
 **Add requirements with their risks.** When you add requirements that mitigate catalogue risks, the dialog offers **Also add the N risks these requirements mitigate**. Requirements you add later are linked to the catalogue risks the project already has, so the order does not matter.
 
 Risks the project already has from the catalogue are skipped, like requirements and tests, unless you choose **Add copies of items already in the project**.
+
+## MITRE ATT&CK
+
+[MITRE ATT&CK](https://attack.mitre.org/) describes how attackers work: **tactics** are their goals (initial access, credential access, impact …) and **techniques** the ways to reach them, such as *T1110.004 Brute Force: Credential Stuffing*. The catalogue knows the techniques of the Enterprise, ICS (industrial control systems) and Mobile matrices, without revoked or deprecated ones, and the [MITRE ATLAS](https://atlas.mitre.org/) techniques of attacks on AI systems (*AML.T0051 LLM Prompt Injection*).
+
+- Every catalogue risk caused by an attacker lists the techniques that realise it: all security risks, and privacy, AI, availability, data and supply chain risks when an adversary causes them. Hazards, failures and obligations (safety, quality, project, environmental and compliance risks) have none.
+- The **preview** of a risk shows each technique with its name, matrix and tactics, linked to its page on attack.mitre.org or atlas.mitre.org. **show risks with this technique** filters the list by it.
+- **ATT&CK tactic** and **ATT&CK technique** filter the risks; a technique also finds its sub-techniques (*T1110* finds *T1110.004*). The search finds technique ids too.
+- **ATT&CK coverage** at the top of the page shows, for each matrix, the tactics with the number of catalogue risks that list one of their techniques and the number of requirements that cite one or mitigate such a risk, and a matrix of the techniques used, darker with more risks. Select a count or a technique to open the matching risks.
+
+A risk you add to the project keeps its techniques: the risk dialog shows them under **MITRE ATT&CK techniques**, where you can change them (see [The risk register](releases-and-risks.md#the-risk-register)).
 
 ## After adding
 

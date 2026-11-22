@@ -1013,3 +1013,49 @@ risks:
       title: Skada för människor eller samhälle rapporteras inte
       description: Ett AI-system påverkar individer eller grupper på sätt som inte har bedömts, och de berörda har inget sätt att framföra synpunkter. Skadan fortsätter och upptäcks utifrån.
       mitigation: Bedöm påverkan på individer, grupper och samhälle, erbjud en kanal för att rapportera farhågor, informera berörda om incidenter och vidta korrigerande åtgärder för varje avvikelse.
+  - id: AIMS-R04
+    category: ai
+    likelihood: 3
+    impact: 3
+    tags: [intended-use, misuse]
+    refs: ["ISO/IEC 42001:2023 §8.2 (AI risk assessment)", "ISO/IEC 42001:2023 Annex A.9.2 (processes for responsible use of AI systems)", "NIST AI RMF 1.0 MAP 1.1 (intended purposes and context of use)"]
+    mitigated_by: [AIMS-22, AIMS-08, AIMS-03]
+    en:
+      title: AI system used for a purpose it was never assessed for
+      description: A system built to sort support tickets is reused to rank job applicants. Nobody assessed the risks of the new use and decisions about people rest on an unsuitable model.
+      mitigation: Document the intended use, users and context, give each AI system an owner and stop use outside the intended purpose.
+    sv:
+      title: AI-system används för ett syfte som det aldrig bedömts för
+      description: Ett system som byggts för att sortera supportärenden återanvänds för att rangordna arbetssökande. Ingen har bedömt riskerna med den nya användningen och beslut om människor vilar på en olämplig modell.
+      mitigation: Dokumentera avsedd användning, användare och sammanhang, ge varje AI-system en ägare och stoppa användning utanför det avsedda syftet.
+  - id: AIMS-R05
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [model-supply-chain, third-party-models]
+    refs: ["ISO/IEC 42001:2023 §8.2 (AI risk assessment)", "ISO/IEC 42001:2023 Annex A.10.3 (suppliers)", "MITRE ATLAS (adversarial threat landscape for AI systems)"]
+    mitigated_by: [AIMS-11, AIENG-15]
+    atlas: [AML.T0010.003, AML.T0058]
+    en:
+      title: Backdoored model downloaded from a public hub
+      description: A pre-trained model or data set is taken from a public repository without checking its source. It contains a hidden trigger or malicious code that runs when the model is loaded.
+      mitigation: Assess third-party AI models and services before use and take pre-trained models and data sets only from verified sources.
+    sv:
+      title: Modell med bakdörr laddas ned från en publik samling
+      description: En förtränad modell eller datamängd hämtas från ett publikt arkiv utan att källan kontrolleras. Den innehåller en dold utlösare eller skadlig kod som körs när modellen laddas.
+      mitigation: Bedöm AI-modeller och AI-tjänster från tredje part före användning och hämta förtränade modeller och datamängder bara från verifierade källor.
+  - id: AIMS-R06
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [audit, lifecycle-gates]
+    refs: ["ISO/IEC 42001:2023 §8.2 (AI risk assessment)", "ISO/IEC 22989:2022 §6 (AI system life cycle)", "ISO/IEC 42001:2023 §9.2 (internal audit)"]
+    mitigated_by: [AIMS-14, AIMS-15, AIMS-10]
+    en:
+      title: AI systems move to production without passing any gate
+      description: "There are no review gates in the AI life cycle and the management system is never audited. Models go live on the developers' judgement alone and weaknesses are found by customers."
+      mitigation: Define review gates at the stages of the AI life cycle, take a documented go or no-go decision before deployment and audit the AI management system yearly.
+    sv:
+      title: AI-system går i produktion utan att passera någon kontrollpunkt
+      description: Det finns inga kontrollpunkter i AI-livscykeln och ledningssystemet revideras aldrig. Modeller tas i drift enbart efter utvecklarnas bedömning och svagheter upptäcks av kunder.
+      mitigation: Inför kontrollpunkter i AI-livscykelns steg, fatta ett dokumenterat beslut om driftsättning och revidera AI-ledningssystemet varje år.
