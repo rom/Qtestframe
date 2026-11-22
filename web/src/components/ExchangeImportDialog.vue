@@ -267,9 +267,12 @@ function rowLabel(r: ExchangeRow) {
     <div class="grid" style="gap: 14px" :aria-busy="busy">
       <div class="row small muted" style="align-items: flex-start">
         <p class="grow" style="margin: 0">{{ source ? t('exchange.sourceIntro', { source: sourceName }) : isReqIF ? t('exchange.reqifIntro') : t('exchange.xlsxIntro') }}</p>
-        <HelpLink page="reports-and-export" :anchor="{ en: 'exchanging-data-with-other-tools', sv: 'utbyta-data-med-andra-verktyg' }" />
+        <HelpLink
+          page="reports-and-export"
+          :anchor="source ? { en: 'jira-and-azure-devops', sv: 'jira-och-azure-devops' } : { en: 'exchanging-data-with-other-tools', sv: 'utbyta-data-med-andra-verktyg' }"
+        />
       </div>
-      <div v-if="!isReqIF && canExport && !preview && !result" class="row">
+      <div v-if="!isReqIF && !source && canExport && !preview && !result" class="row">
         <Button :label="t('exchange.downloadWorkbook')" icon="pi pi-download" severity="secondary" outlined :loading="downloading" @click="exportWorkbook" />
       </div>
 

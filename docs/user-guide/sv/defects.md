@@ -2,7 +2,7 @@
 
 En **defekt** (bugg) är ett problem som hittats vid testning. Varje defekt har en nyckel som `SHOP-BUG-3`, en titel, en beskrivning, en status, en allvarlighetsgrad, en prioritet och en tilldelad person, och den kopplas till de krav, testfall och exekveringar den gäller. Defekterna finns under **Defekter** i projektets sidomeny.
 
-Defekter kan speglas i **Jira**, **GitHub Issues** eller **GitLab**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
+Defekter kan speglas i **Jira**, **GitHub Issues**, **GitLab** eller **Request Tracker (RT)**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
 
 | Åtgärd | Roll som krävs |
 |---|---|
@@ -112,6 +112,17 @@ Kontot behöver behörighet att bläddra i projektet och skapa ärenden i det.
 
 Ett GitLab-ärendes status är *opened* eller *closed*; se tabellen under [Skicka, synkronisera och importera](#skicka-synkronisera-och-importera).
 
+### Request Tracker (RT)
+
+Qtestframe arbetar med RT 5 via dess REST2-API.
+
+- **RT-adress**: adressen till RT-instansen, t.ex. `https://rt.example.com` (utan `/REST/2.0`).
+- **Kö**: kön som nya ärenden hamnar i, med namn (t.ex. `General`) eller nummer.
+- **Anpassat fält för etiketter** (valfritt): RT har inga etiketter. Om kön har ett anpassat fält för dem, till exempel ett flervärdesfält *Tags*, anger du dess namn: etiketterna för nya ärenden (fältet **Etiketter** och etiketterna för [ärenden från krav](requirements.md#ärenden-i-gitlab-github-eller-jira)) skrivs till det. Tomt skickar inga etiketter.
+- **Token**: en autentiseringstoken för den RT-användare som Qtestframe agerar som. Logga in i RT som den användaren, öppna **Logged in as → Settings → Auth Tokens**, skapa en token och klistra in den. Användaren behöver rättigheterna *CreateTicket*, *ShowTicket*, *ModifyTicket* och *CommentOnTicket* i kön. Qtestframe skickar den som `Authorization: token …`.
+
+Ett ärende anges med sitt nummer: `#123` (även `123` eller `RT#123`). Ett RT-ärendes beskrivning är dess första meddelande, som RT inte låter någon ersätta: **Uppdatera ärende** på ett krav ändrar därför ämnet och lägger till den nya texten som en kommentar. Ärenden skapas och kommenteras som vanlig text.
+
 ### Token
 
 Token kan **bara skrivas, aldrig läsas**: när den väl är sparad visas den aldrig och skickas aldrig tillbaka till webbläsaren, kortet säger bara **Token sparad**. Lämna fältet tomt när du ändrar andra inställningar för att behålla den. Skriv en ny och spara för att byta. **Ta bort token** raderar den. Om du sätter ärendehanteraren till **Ingen** tas hela anslutningen bort.
@@ -123,14 +134,16 @@ När en ärendehanterare är ansluten har listan över defekter tre åtgärder t
 - **Skicka till ärendehanteraren** (uppladdningsknappen för en defekt) skapar ett ärende från defekten: titeln med defektens nyckel, beskrivningen, allvarlighetsgraden och prioriteten samt nycklarna för de kopplade objekten. Defekten visar sedan ärendets nyckel, en länk till det och dess status i ärendehanteraren. En defekt som redan har ett ärende kan inte skickas igen.
 - **Synkronisera** (synkknappen för en defekt) läser ärendets status och uppdaterar defektens status; **Synkronisera alla** gör det för varje defekt med ett ärende i den anslutna ärendehanteraren och visar hur många som ändrades. Statusarna översätts så här:
 
-  | Jira | GitHub | GitLab | Defektens status |
-  |---|---|---|---|
-  | statuskategori *To Do* | open | opened | Öppen |
-  | statuskategori *In Progress* | | | Pågår |
-  | *Done* | closed (completed) | closed | Stängd |
-  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | | Avvisad |
+  | Jira | GitHub | GitLab | RT | Defektens status |
+  |---|---|---|---|---|
+  | statuskategori *To Do* | open | opened | new | Öppen |
+  | statuskategori *In Progress* | | | open, stalled | Pågår |
+  | *Done* | closed (completed) | closed | resolved | Stängd |
+  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | | rejected, deleted | Avvisad |
 
-- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub, `#123` eller `grupp/projekt#123` i GitLab) och allvarlighetsgraden. Titel och status hämtas från ärendet.
+  Statusar i en egen RT-livscykel som inte finns i tabellen lämnar defektens status som den är; RT-statusen visas ändå.
+
+- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub, `#123` eller `grupp/projekt#123` i GitLab, `#123` i RT) och allvarlighetsgraden. Titel och status hämtas från ärendet.
 
 Synkronisering läser bara; den ändrar aldrig ärendet. Ändringar du gör i en defekt i Qtestframe skrivs inte till ärendehanteraren.
 

@@ -132,6 +132,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 34 | `0034_custom_fields.sql` |
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
+| 37 | `0037_import_sources.sql` |
 
 <!-- END GENERATED: migrations -->
 

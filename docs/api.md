@@ -1008,6 +1008,37 @@ fields with a stable `key`, a `label`, a type and functions to read a value
 and write it into the create / PATCH body; they then appear as workbook
 columns, as ReqIF mapping targets and in the diff.
 
+
+### Import from Jira and Azure DevOps
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/import-sources` | project.read | `{jira: {url, user, jql, has_token}, azure_devops: {url, project, area_path, work_item_types, has_token}, jira_from_tracker, tracker_jira_url, tracker_jira_key}` |
+| PUT | `/projects/{pid}/import-sources` | project.update | same fields plus `jira.token`, `azure_devops.token` (write-only; empty keeps the saved one) and `clear_tokens: {jira, azure_devops}` |
+| POST | `/projects/{pid}/import-sources/{source}/check` | project.update | `source` `jira` or `azure-devops`; 200 or 502 `tracker_error` |
+| POST | `/projects/{pid}/requirements/import/{source}/preview` | requirement.write | runs the query; the diff as for ReqIF plus `{source, query, truncated}` |
+| POST | `/projects/{pid}/requirements/import/{source}/apply` | requirement.write | runs the query again and saves (one transaction) |
+
+The body of preview and apply is JSON: `query` (JQL for Jira, WIQL for
+Azure DevOps), or for Azure DevOps `area_path` and `work_item_types` (both
+missing: the saved defaults), `mapping` (the tracker's field name →
+requirement field, `cf.<key>` for a custom field, `""` to ignore),
+`folder_id` (target of new requirements), `relations` (default true) and
+`limit` (at most 1000); apply also `overwrite_conflicts`, `create` and
+`exclude_refs` (issue keys or work item IDs to leave out). The items are
+put into a ReqIF model and go through the ReqIF import: the same
+`attributes` (the tracker's fields, with `guess` the default mapping),
+`targets`, diff and relations. Each imported item is recorded as an
+external reference (system `jira` with the issue key, or `azure-devops`
+with the work item ID), so the next import updates the requirement; links
+between imported items (Jira issue links and parents, Azure DevOps parent,
+predecessor, duplicate and related links) become relations and are removed
+when the link is gone. Jira descriptions (wiki markup) and Azure DevOps
+HTML fields become Markdown; statuses and priorities are mapped by name
+(and by the Jira status category), values without a match are left out
+with a warning on the row. Without a Jira URL of its own the Jira import
+uses the project's defect tracker when it is Jira. Tokens are encrypted
+and never returned; tracker errors answer 502 `tracker_error`.
 ## Catalogue
 
 A built-in library of standard requirements and tests for software
@@ -2032,13 +2063,13 @@ Statuses: `open`, `in_progress` (open), `resolved`, `closed`, `rejected`.
 Severities: `critical`, `major`, `minor`, `trivial`. Requirements carry
 `open_defects` (query field `defects`).
 
-**Jira, GitHub and GitLab.** Each project can be connected to one tracker.
+**Jira, GitHub, GitLab and Request Tracker.** Each project can be connected to one tracker.
 The same connection is used for defects and for
 [issues created from requirements](#issues-from-requirements).
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github\|gitlab, url, project_key, repo, project, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned |
+| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github\|gitlab\|rt, url, project_key, repo, project, queue, labels_field, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned |
 | PUT | `/projects/{pid}/defect-tracker` | project.update | same fields plus `token` (write-only; empty keeps the saved one) and `clear_token` |
 | POST | `/projects/{pid}/defect-tracker/check` | project.update | 200 or 502 `tracker_error` |
 | POST | `/defects/{id}/push` | run.execute | creates the issue → Defect with `external_key`, `external_url`; 409 when already linked |
@@ -2066,6 +2097,19 @@ issue; `milestone` (GitLab: the number shown as `%3` or the title, also of
 a group milestone; GitHub: number or title) and `assignee` (username or
 numeric ID; GitHub login) are given to new issues. Jira ignores labels,
 milestone and assignee of the settings.
+
+Request Tracker (`type: "rt"`) uses the REST2 API of RT 5 below
+`url` + `/REST/2.0` (a trailing `/REST/2.0` is removed) with an RT auth
+token sent as `Authorization: token <token>`. New tickets go to `queue`
+(name or ID) as `text/plain`; `labels` and the labels of issues from
+requirements are written to the custom field `labels_field` when it is set
+(RT has no labels). Tickets are referred to as `#123` (`123` and `RT#123`
+are accepted). Status mapping of the default lifecycle: `new` → `open`,
+`open` and `stalled` → `in_progress`, `resolved` → `closed`, `rejected` and
+`deleted` → `rejected`; other statuses leave the defect's status. An update
+of an issue from a requirement sets the subject and adds the new text as a
+comment (an RT ticket's content cannot be replaced). The check reads the
+queue.
 
 The token is encrypted at rest like the other stored secrets and is write
 only: no answer, error message or audit entry contains it. Requests to the
