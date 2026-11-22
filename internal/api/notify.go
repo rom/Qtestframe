@@ -244,8 +244,10 @@ func Sign(secret string, body []byte) string {
 	return "sha256=" + hex.EncodeToString(m.Sum(nil))
 }
 
-// notifyEvent posts an event to the project's webhooks in the background.
+// notifyEvent posts an event to the project's webhooks and chat channels
+// (chat.go) in the background.
 func (s *Server) notifyEvent(r *http.Request, p *Principal, projectID, event string, data any) {
+	s.notifyChat(r, p, projectID, event, data)
 	hooks, err := s.Store.WebhooksFor(r.Context(), p.TenantID(), projectID, event)
 	if err != nil || len(hooks) == 0 {
 		return

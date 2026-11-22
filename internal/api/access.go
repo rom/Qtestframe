@@ -331,6 +331,7 @@ var resourceProjects = map[string]string{
 	"elements":              `SELECT project_id FROM system_elements WHERE id = ? AND tenant_id = ?`,
 	"waivers":               `SELECT project_id FROM waivers WHERE id = ? AND tenant_id = ?`,
 	"webhooks":              `SELECT project_id FROM webhooks WHERE id = ? AND tenant_id = ?`,
+	"chat-channels":         `SELECT project_id FROM chat_channels WHERE id = ? AND tenant_id = ?`,
 	"trace-rules":           `SELECT project_id FROM trace_rules WHERE id = ? AND tenant_id = ?`,
 	"custom-fields":         `SELECT project_id FROM custom_fields WHERE id = ? AND tenant_id = ?`,
 	"templates":             `SELECT project_id FROM item_templates WHERE id = ? AND tenant_id = ?`,

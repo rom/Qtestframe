@@ -124,6 +124,7 @@ var projectArchiveTables = []archiveTable{
 	{"risks", ofProject},
 	{"risk_requirements", `risk_id IN (SELECT id FROM risks WHERE project_id = ?)`},
 	{"webhooks", ofProject},
+	{"chat_channels", ofProject},
 	{"review_requests", ofProject},
 	{"baseline_signoffs", inBaseline},
 	{"metric_snapshots", ofProject},
@@ -187,6 +188,7 @@ var ProjectArchiveExcluded = map[string]string{
 	"code_settings":        "secret (webhook secret of the code integration)",
 	"field_set_fields":     "organisation field sets (the project has its own copies)",
 	"org_item_templates":   "organisation templates",
+	"chat_deliveries":      "queue and log of chat posts",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.
@@ -225,6 +227,12 @@ func sanitizeArchiveRow(table string, row map[string]any) {
 		// administrator sets a new secret and enables it
 		row["secret"] = ""
 		row["enabled"] = false
+	case "chat_channels":
+		// the webhook URL or access token is write-only, as above
+		row["secret"] = ""
+		row["enabled"] = false
+		row["failures"] = 0
+		row["next_digest_at"] = nil
 	case "projects":
 		if s, ok := row["defect_tracker"].(string); ok && s != "" {
 			var m map[string]any

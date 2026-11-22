@@ -131,6 +131,8 @@ func (s *Server) notificationURL(n *model.Notification) string {
 		return p + "/risks?risk=" + q
 	case "execution":
 		return p + "/runs"
+	case "chat_channel":
+		return p + "/settings"
 	}
 	return p + "/dashboard"
 }
@@ -197,6 +199,7 @@ func eventLabel(lang, event string) string {
 		"waiver.revoked":   {"Waiver revoked", "Undantag återkallat"},
 		"waiver.expired":   {"Waiver expired", "Undantag har gått ut"},
 		"project.shared":   {"A project was shared with you", "Ett projekt har delats med dig"},
+		"chat.disabled":    {"A chat channel was turned off", "En chattkanal har stängts av"},
 	}
 	l, ok := labels[event]
 	if !ok {
@@ -300,6 +303,10 @@ func (s *Server) RunJobs(ctx context.Context) {
 	// expired waivers no longer accept their requirements (also without e-mail)
 	if _, err := s.RunWaiverExpiry(ctx); err != nil {
 		s.Log.Warn("waiver expiry job", "err", err)
+	}
+	// chat digests and retries (also without e-mail)
+	if _, err := s.RunChatJobs(ctx); err != nil {
+		s.Log.Warn("chat job", "err", err)
 	}
 	if !s.emailOn() {
 		return
