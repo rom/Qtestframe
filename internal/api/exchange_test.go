@@ -398,7 +398,7 @@ func TestReqIFImportPolarionMapping(t *testing.T) {
 				t.Errorf("registration: %v", r)
 			}
 		case "E-mail verification":
-			if r["status"] != "review" || r["obligation"] != "should" || !strings.Contains(r["description"].(string), "Link lifetime 24 h") {
+			if r["status"] != "review" || r["obligation"] != "should" || !strings.Contains(r["description"].(string), "| Link lifetime | 24 h |") {
 				t.Errorf("verification: %v", r)
 			}
 		case "Loan renewal":

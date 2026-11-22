@@ -58,6 +58,19 @@ type ReqIFDocument struct {
 	// CustomFields are the project's requirement custom fields, exported
 	// as further attributes of the Requirement type.
 	CustomFields []ReqIFCustomField
+
+	// Tests (optional, see reqif_tests.go) are exported as SPEC-OBJECTs of
+	// the type "Test case" in a second SPECIFICATION with their folder
+	// tree (TestFolders); Links are the "Verifies" SPEC-RELATIONs (test →
+	// requirement) and TestCustomFields the test custom fields.
+	Tests            []ReqIFTest
+	TestFolders      []ReqIFFolder
+	Links            []ReqIFLink
+	TestCustomFields []ReqIFCustomField
+	// Records (optional) are verification records: SPEC-OBJECTs of the type
+	// "Verification record" in a third SPECIFICATION, each related to its
+	// requirement by a "Verification record of" SPEC-RELATION.
+	Records []ReqIFRecord
 }
 
 // ReqIFCustomField is a custom field exported as an attribute: Type is the
@@ -170,6 +183,10 @@ func reqifEnumValues(enum string) []string {
 		return reqifTypes
 	case "priority":
 		return reqifPriorities
+	case "teststatus":
+		return reqifTestStatuses
+	case "exec":
+		return reqifExecTypes
 	}
 	return reqifStatuses
 }
@@ -220,13 +237,12 @@ func WriteReqIFZ(out io.Writer, doc ReqIFDocument) error {
 		file ReqIFFile
 	}
 	var files []entry
-	for i := range doc.Requirements {
-		rq := &doc.Requirements[i]
-		rq.attachmentPaths = nil
-		for _, f := range rq.Attachments {
-			stem := safeFileName(rq.Key)
+	place := func(key, fallback string, list []ReqIFFile) []string {
+		var paths []string
+		for _, f := range list {
+			stem := safeFileName(key)
 			if stem == "" {
-				stem = "requirement"
+				stem = fallback
 			}
 			name := safeFileName(f.Name)
 			if name == "" {
@@ -238,9 +254,18 @@ func WriteReqIFZ(out io.Writer, doc ReqIFDocument) error {
 				p = path.Join("files", stem, strings.TrimSuffix(name, ext)+"-"+strconv.Itoa(n)+ext)
 			}
 			used[p] = true
-			rq.attachmentPaths = append(rq.attachmentPaths, p)
+			paths = append(paths, p)
 			files = append(files, entry{p, f})
 		}
+		return paths
+	}
+	for i := range doc.Requirements {
+		rq := &doc.Requirements[i]
+		rq.attachmentPaths = place(rq.Key, "requirement", rq.Attachments)
+	}
+	for i := range doc.Tests {
+		t := &doc.Tests[i]
+		t.attachmentPaths = place(t.Key, "test", t.Attachments)
 	}
 	stem := safeFileName(doc.ProjectKey)
 	if stem == "" {
@@ -313,17 +338,13 @@ func buildReqIF(doc ReqIFDocument) string {
 	w.line(`<DATATYPE-DEFINITION-INTEGER` + reqifAttrs("qtf-dt-integer", "Integer", now) + ` MAX="2147483647" MIN="0"/>`)
 	w.line(`<DATATYPE-DEFINITION-DATE` + reqifAttrs("qtf-dt-date", "Date", now) + `/>`)
 	for _, enum := range []string{"obligation", "type", "priority", "status"} {
-		w.open(`<DATATYPE-DEFINITION-ENUMERATION` + reqifAttrs("qtf-dt-"+enum, reqifLabel("", enum), now) + `>`)
-		w.open("<SPECIFIED-VALUES>")
-		for i, code := range reqifEnumValues(enum) {
-			w.open(`<ENUM-VALUE` + reqifAttrs("qtf-ev-"+enum+"-"+strings.ReplaceAll(code, "_", "-"), reqifLabel(enum, code), now) + `>`)
-			w.line(`<PROPERTIES><EMBEDDED-VALUE KEY="` + strconv.Itoa(i) + `" OTHER-CONTENT="` + code + `"/></PROPERTIES>`)
-			w.close("</ENUM-VALUE>")
-		}
-		w.close("</SPECIFIED-VALUES>")
-		w.close("</DATATYPE-DEFINITION-ENUMERATION>")
+		reqifEnumDatatype(w, enum, reqifLabel("", enum), now)
 	}
-	reqifCustomDatatypes(w, doc.CustomFields, now)
+	if len(doc.Tests) > 0 {
+		reqifEnumDatatype(w, "teststatus", "Test status", now)
+		reqifEnumDatatype(w, "exec", "Execution type", now)
+	}
+	reqifCustomDatatypes(w, doc.CustomFields, doc.TestCustomFields, now)
 	w.close("</DATATYPES>")
 
 	// spec types
@@ -333,9 +354,10 @@ func buildReqIF(doc ReqIFDocument) string {
 	for _, a := range reqifReqAttrs {
 		reqifAttrDef(w, a, now)
 	}
-	reqifCustomAttrDefs(w, doc.CustomFields, now)
+	reqifCustomAttrDefs(w, doc.CustomFields, reqifCustomID, "qtf-dt-cf-", now)
 	w.close("</SPEC-ATTRIBUTES>")
 	w.close("</SPEC-OBJECT-TYPE>")
+	reqifTestTypes(w, doc, now)
 	w.open(`<SPEC-OBJECT-TYPE` + reqifAttrs("qtf-type-heading", "Heading", now) + `>`)
 	w.open("<SPEC-ATTRIBUTES>")
 	reqifAttrDef(w, reqifAttr{"qtf-ad-chapter", "ReqIF.ChapterName", "string", ""}, now)
@@ -345,6 +367,7 @@ func buildReqIF(doc ReqIFDocument) string {
 	for _, rt := range reqifRelTypes {
 		w.line(`<SPEC-RELATION-TYPE` + reqifAttrs("qtf-reltype-"+strings.ReplaceAll(rt, "_", "-"), reqifLabel("", rt), now) + `/>`)
 	}
+	reqifTestRelationTypes(w, doc, now)
 	w.close("</SPEC-TYPES>")
 
 	// folders: keep those that are the ancestors of an exported requirement
@@ -371,6 +394,7 @@ func buildReqIF(doc ReqIFDocument) string {
 	for _, rq := range doc.Requirements {
 		reqifObject(w, rq, doc.CustomFields)
 	}
+	reqifTestObjects(w, doc)
 	w.close("</SPEC-OBJECTS>")
 
 	// relations between exported requirements
@@ -380,7 +404,8 @@ func buildReqIF(doc ReqIFDocument) string {
 			rels = append(rels, rel)
 		}
 	}
-	if len(rels) > 0 {
+	extra := reqifTestRelations(doc, inExport)
+	if len(rels) > 0 || len(extra) > 0 {
 		w.open("<SPEC-RELATIONS>")
 		for _, rel := range rels {
 			w.open(`<SPEC-RELATION` + reqifAttrs("qtf-rel-"+rel.ID, reqifLabel("", rel.Type), rel.CreatedAt) + `>`)
@@ -388,6 +413,9 @@ func buildReqIF(doc ReqIFDocument) string {
 			w.line("<TARGET><SPEC-OBJECT-REF>qtf-req-" + esc(rel.TargetID) + "</SPEC-OBJECT-REF></TARGET>")
 			w.line("<TYPE><SPEC-RELATION-TYPE-REF>qtf-reltype-" + strings.ReplaceAll(rel.Type, "_", "-") + "</SPEC-RELATION-TYPE-REF></TYPE>")
 			w.close("</SPEC-RELATION>")
+		}
+		for _, x := range extra {
+			x(w)
 		}
 		w.close("</SPEC-RELATIONS>")
 	}
@@ -437,6 +465,7 @@ func buildReqIF(doc ReqIFDocument) string {
 	}
 	hier("", 0)
 	w.close("</SPECIFICATION>")
+	reqifTestSpecifications(w, doc, now)
 	w.close("</SPECIFICATIONS>")
 
 	w.close("</REQ-IF-CONTENT>")
@@ -481,6 +510,18 @@ func reqifXHTML(w *reqifWriter, def, xhtml string) {
 		`</ATTRIBUTE-DEFINITION-XHTML-REF></DEFINITION><THE-VALUE>` + xhtml + `</THE-VALUE></ATTRIBUTE-VALUE-XHTML>`)
 }
 
+func reqifEnumDatatype(w *reqifWriter, enum, name string, now time.Time) {
+	w.open(`<DATATYPE-DEFINITION-ENUMERATION` + reqifAttrs("qtf-dt-"+enum, name, now) + `>`)
+	w.open("<SPECIFIED-VALUES>")
+	for i, code := range reqifEnumValues(enum) {
+		w.open(`<ENUM-VALUE` + reqifAttrs("qtf-ev-"+enum+"-"+strings.ReplaceAll(code, "_", "-"), reqifLabel(enum, code), now) + `>`)
+		w.line(`<PROPERTIES><EMBEDDED-VALUE KEY="` + strconv.Itoa(i) + `" OTHER-CONTENT="` + code + `"/></PROPERTIES>`)
+		w.close("</ENUM-VALUE>")
+	}
+	w.close("</SPECIFIED-VALUES>")
+	w.close("</DATATYPE-DEFINITION-ENUMERATION>")
+}
+
 func reqifEnum(w *reqifWriter, def, enum, code string) {
 	if !contains(reqifEnumValues(enum), code) {
 		return
@@ -515,21 +556,7 @@ func reqifObject(w *reqifWriter, rq ReqIFRequirement, custom []ReqIFCustomField)
 	reqifString(w, "qtf-ad-key", rq.Key)
 	reqifString(w, "qtf-ad-title", rq.Title)
 	if strings.TrimSpace(rq.Description) != "" {
-		files := map[string]string{}
-		for i, f := range rq.Attachments {
-			if i < len(rq.attachmentPaths) {
-				files[f.ID] = rq.attachmentPaths[i]
-			}
-		}
-		reqifXHTML(w, "qtf-ad-text", MarkdownToXHTML(rq.Description, func(url string) (string, string) {
-			// images that are attachments in the archive: point to the file
-			for i, f := range rq.Attachments {
-				if p, ok := files[f.ID]; ok && strings.Contains(url, "/files/"+f.ID+"/") {
-					return p, rq.Attachments[i].ContentType
-				}
-			}
-			return url, ""
-		}))
+		reqifXHTML(w, "qtf-ad-text", MarkdownToXHTML(rq.Description, imageResolver(rq.Attachments, rq.attachmentPaths)))
 	}
 	reqifEnum(w, "qtf-ad-obligation", "obligation", rq.Obligation)
 	reqifEnum(w, "qtf-ad-type", "type", rq.Type)
@@ -549,20 +576,9 @@ func reqifObject(w *reqifWriter, rq ReqIFRequirement, custom []ReqIFCustomField)
 		w.line(`<ATTRIBUTE-VALUE-DATE THE-VALUE="` + reqifTime(rq.CreatedAt) + `"><DEFINITION><ATTRIBUTE-DEFINITION-DATE-REF>qtf-ad-created-on</ATTRIBUTE-DEFINITION-DATE-REF></DEFINITION></ATTRIBUTE-VALUE-DATE>`)
 	}
 	if len(rq.attachmentPaths) > 0 {
-		var b strings.Builder
-		b.WriteString("<xhtml:div><xhtml:ul>")
-		for i, p := range rq.attachmentPaths {
-			f := rq.Attachments[i]
-			ct := f.ContentType
-			if ct == "" {
-				ct = "application/octet-stream"
-			}
-			b.WriteString(`<xhtml:li><xhtml:object data="` + esc(p) + `" type="` + esc(strings.SplitN(ct, ";", 2)[0]) + `">` + esc(f.Name) + `</xhtml:object></xhtml:li>`)
-		}
-		b.WriteString("</xhtml:ul></xhtml:div>")
-		reqifXHTML(w, "qtf-ad-attachments", b.String())
+		reqifXHTML(w, "qtf-ad-attachments", attachmentsXHTML(rq.attachmentPaths, rq.Attachments))
 	}
-	reqifCustomValues(w, custom, rq.Custom)
+	reqifCustomValues(w, custom, rq.Custom, reqifCustomID, reqifOptionID)
 	w.close("</VALUES>")
 	w.line("<TYPE><SPEC-OBJECT-TYPE-REF>qtf-type-requirement</SPEC-OBJECT-TYPE-REF></TYPE>")
 	w.close("</SPEC-OBJECT>")
@@ -603,19 +619,23 @@ func reqifOptionID(f ReqIFCustomField, i int) string {
 
 // reqifCustomDatatypes writes the REAL and BOOLEAN datatypes (when used)
 // and one enumeration per select field.
-func reqifCustomDatatypes(w *reqifWriter, fields []ReqIFCustomField, now time.Time) {
+func reqifCustomDatatypes(w *reqifWriter, fields, testFields []ReqIFCustomField, now time.Time) {
 	real, boolean := false, false
-	for _, f := range fields {
+	for n, f := range append(append([]ReqIFCustomField{}, fields...), testFields...) {
+		dt, option := "qtf-dt-cf-", reqifOptionID
+		if n >= len(fields) {
+			dt, option = "qtf-dt-tcf-", reqifTestOptionID
+		}
 		switch reqifCustomKind(f.Type) {
 		case "REAL":
 			real = true
 		case "BOOLEAN":
 			boolean = true
 		case "ENUMERATION":
-			w.open(`<DATATYPE-DEFINITION-ENUMERATION` + reqifAttrs("qtf-dt-cf-"+strings.ReplaceAll(f.Key, "_", "-"), f.Name, now) + `>`)
+			w.open(`<DATATYPE-DEFINITION-ENUMERATION` + reqifAttrs(dt+strings.ReplaceAll(f.Key, "_", "-"), f.Name, now) + `>`)
 			w.open("<SPECIFIED-VALUES>")
 			for i, o := range f.Options {
-				w.open(`<ENUM-VALUE` + reqifAttrs(reqifOptionID(f, i), o, now) + `>`)
+				w.open(`<ENUM-VALUE` + reqifAttrs(option(f, i), o, now) + `>`)
 				w.line(`<PROPERTIES><EMBEDDED-VALUE KEY="` + strconv.Itoa(i) + `" OTHER-CONTENT="` + esc(o) + `"/></PROPERTIES>`)
 				w.close("</ENUM-VALUE>")
 			}
@@ -631,36 +651,36 @@ func reqifCustomDatatypes(w *reqifWriter, fields []ReqIFCustomField, now time.Ti
 	}
 }
 
-func reqifCustomAttrDefs(w *reqifWriter, fields []ReqIFCustomField, now time.Time) {
+func reqifCustomAttrDefs(w *reqifWriter, fields []ReqIFCustomField, id func(ReqIFCustomField) string, enumPrefix string, now time.Time) {
 	for _, f := range fields {
 		kind := reqifCustomKind(f.Type)
 		dt := "qtf-dt-" + strings.ToLower(kind)
 		multi := ""
 		if kind == "ENUMERATION" {
-			dt = "qtf-dt-cf-" + strings.ReplaceAll(f.Key, "_", "-")
+			dt = enumPrefix + strings.ReplaceAll(f.Key, "_", "-")
 			multi = ` MULTI-VALUED="` + strconv.FormatBool(f.Type == "multi_select") + `"`
 		}
-		w.open(`<ATTRIBUTE-DEFINITION-` + kind + reqifAttrs(reqifCustomID(f), f.Name, now) + multi + `>`)
+		w.open(`<ATTRIBUTE-DEFINITION-` + kind + reqifAttrs(id(f), f.Name, now) + multi + `>`)
 		w.line("<TYPE><DATATYPE-DEFINITION-" + kind + "-REF>" + dt + "</DATATYPE-DEFINITION-" + kind + "-REF></TYPE>")
 		w.close("</ATTRIBUTE-DEFINITION-" + kind + ">")
 	}
 }
 
-func reqifCustomValues(w *reqifWriter, fields []ReqIFCustomField, values map[string][]string) {
+func reqifCustomValues(w *reqifWriter, fields []ReqIFCustomField, values map[string][]string, id func(ReqIFCustomField) string, option func(ReqIFCustomField, int) string) {
 	for _, f := range fields {
 		vals := values[f.Key]
 		if len(vals) == 0 || (len(vals) == 1 && vals[0] == "") {
 			continue
 		}
 		kind := reqifCustomKind(f.Type)
-		def := `<DEFINITION><ATTRIBUTE-DEFINITION-` + kind + `-REF>` + reqifCustomID(f) + `</ATTRIBUTE-DEFINITION-` + kind + `-REF></DEFINITION>`
+		def := `<DEFINITION><ATTRIBUTE-DEFINITION-` + kind + `-REF>` + id(f) + `</ATTRIBUTE-DEFINITION-` + kind + `-REF></DEFINITION>`
 		switch kind {
 		case "ENUMERATION":
 			var refs strings.Builder
 			for _, v := range vals {
 				for i, o := range f.Options {
 					if o == v {
-						refs.WriteString("<ENUM-VALUE-REF>" + reqifOptionID(f, i) + "</ENUM-VALUE-REF>")
+						refs.WriteString("<ENUM-VALUE-REF>" + option(f, i) + "</ENUM-VALUE-REF>")
 					}
 				}
 			}

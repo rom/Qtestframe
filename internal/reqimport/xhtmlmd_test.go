@@ -12,7 +12,8 @@ func TestXHTMLMarkdown(t *testing.T) {
 		{"<ol><li>a</li><li>b<ul><li>c</li></ul></li></ol><p>after</p>", "1. a\n2. b\n- c\n\nafter"},
 		{"<ul><li><p>para in item</p></li></ul>", "- para in item"},
 		{"<h3>Head</h3><pre>  x &lt; y\n</pre>", "### Head\n\n```\n  x < y\n```"},
-		{"<table><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></table>", "a b\nc"},
+		{"<table><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></table>", "| a | b |\n| --- | --- |\n| c |  |"},
+		{`<p><object data="f/x.ole" type="application/oleobject"><object data="f/x.png" type="image/png">pic</object></object> <img src="f/y.png" alt="y"/></p>`, "![x.png](f/x.png) ![y](f/y.png)"},
 		{`<p><a href="https://x">link</a> <object data="f/i.png" type="image/png">img</object></p>`, "[link](https://x) ![img](f/i.png)"},
 		{"<p>  </p><p>x<span> </span>y</p></ul>", "x y"},
 	}

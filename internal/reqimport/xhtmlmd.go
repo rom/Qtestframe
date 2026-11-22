@@ -2,6 +2,7 @@ package reqimport
 
 import (
 	"encoding/xml"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -22,6 +23,11 @@ func xhtmlMarkdown(inner string) string {
 		pre    bool
 		lists  []int // item counter per open list; -1 = bullet list
 		hrefs  []string
+		// objects: the open <object>s; an inner object (the preview image
+		// of an OLE object) replaces the outer one
+		objects []*mdObject
+		// tables: rows of cells of the open table
+		table *mdTable
 	)
 	flush := func() {
 		if pre {
@@ -47,8 +53,15 @@ func xhtmlMarkdown(inner string) string {
 		case xml.StartElement:
 			name := strings.ToLower(t.Name.Local)
 			switch name {
-			case "p", "div", "table", "blockquote":
+			case "table":
 				if len(lists) == 0 {
+					flush()
+				}
+				if table == nil {
+					table = &mdTable{}
+				}
+			case "p", "div", "blockquote":
+				if len(lists) == 0 && table == nil {
 					flush()
 				}
 			case "h1", "h2", "h3", "h4", "h5", "h6":
@@ -72,10 +85,37 @@ func xhtmlMarkdown(inner string) string {
 				} else {
 					cur.WriteString("- ")
 				}
-			case "br", "tr":
-				cur.WriteString("\n")
+			case "br":
+				if table != nil {
+					cur.WriteString("<br>")
+				} else {
+					cur.WriteString("\n")
+				}
+			case "tr":
+				if table != nil {
+					table.rows = append(table.rows, nil)
+				} else {
+					cur.WriteString("\n")
+				}
 			case "td", "th":
-				cur.WriteString(" ")
+				if table != nil {
+					table.cellStart = cur.Len()
+				} else {
+					cur.WriteString(" ")
+				}
+			case "img":
+				src, alt := "", ""
+				for _, a := range t.Attr {
+					switch strings.ToLower(a.Name.Local) {
+					case "src":
+						src = a.Value
+					case "alt":
+						alt = a.Value
+					}
+				}
+				if src != "" {
+					cur.WriteString("![" + alt + "](" + src + ")")
+				}
 			case "pre":
 				flush()
 				pre = true
@@ -88,15 +128,30 @@ func xhtmlMarkdown(inner string) string {
 				if !pre {
 					cur.WriteString("`")
 				}
-			case "a", "object":
-				attr := "href"
-				if name == "object" {
-					attr = "data"
-					cur.WriteString("!")
+			case "object":
+				o := &mdObject{start: cur.Len()}
+				for _, a := range t.Attr {
+					switch strings.ToLower(a.Name.Local) {
+					case "data":
+						o.data = a.Value
+					case "type":
+						o.typ = strings.ToLower(a.Value)
+					case "name":
+						o.name = a.Value
+					}
 				}
+				if n := len(objects); n > 0 {
+					// an inner object: an image stands for the outer one
+					if outer := objects[n-1]; strings.HasPrefix(o.typ, "image/") && !strings.HasPrefix(outer.typ, "image/") {
+						outer.data, outer.typ = o.data, o.typ
+					}
+					o.inner = true
+				}
+				objects = append(objects, o)
+			case "a":
 				href := ""
 				for _, a := range t.Attr {
-					if strings.EqualFold(a.Name.Local, attr) {
+					if strings.EqualFold(a.Name.Local, "href") {
 						href = a.Value
 					}
 				}
@@ -106,8 +161,29 @@ func xhtmlMarkdown(inner string) string {
 		case xml.EndElement:
 			name := strings.ToLower(t.Name.Local)
 			switch name {
-			case "p", "div", "table", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6":
-				if len(lists) == 0 {
+			case "table":
+				if table != nil {
+					md := table.markdown()
+					table = nil
+					cur.Reset()
+					if md != "" {
+						blocks = append(blocks, md)
+					}
+				}
+			case "td", "th":
+				if table != nil && len(table.rows) > 0 {
+					s := cur.String()
+					if table.cellStart <= len(s) {
+						s = s[table.cellStart:]
+					}
+					cur.Reset()
+					cell := strings.Join(strings.Fields(strings.ReplaceAll(s, "|", `\|`)), " ")
+					table.rows[len(table.rows)-1] = append(table.rows[len(table.rows)-1], cell)
+				}
+			case "p", "div", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6":
+				if table != nil {
+					cur.WriteString(" ")
+				} else if len(lists) == 0 {
 					flush()
 				}
 			case "ul", "ol":
@@ -130,7 +206,30 @@ func xhtmlMarkdown(inner string) string {
 				if !pre {
 					cur.WriteString("`")
 				}
-			case "a", "object":
+			case "object":
+				n := len(objects)
+				if n == 0 {
+					continue
+				}
+				o := objects[n-1]
+				objects = objects[:n-1]
+				s := cur.String()
+				label := ""
+				if o.start <= len(s) {
+					label = strings.TrimSpace(s[o.start:])
+					cur.Reset()
+					cur.WriteString(s[:o.start])
+				}
+				if o.inner {
+					continue
+				}
+				label = firstNonEmpty(firstNonEmpty(label, o.name), path.Base(o.data))
+				if o.data != "" {
+					cur.WriteString("![" + label + "](" + o.data + ")")
+				} else {
+					cur.WriteString(label)
+				}
+			case "a":
 				href := ""
 				if n := len(hrefs); n > 0 {
 					href, hrefs = hrefs[n-1], hrefs[:n-1]
@@ -163,3 +262,60 @@ func xhtmlMarkdown(inner string) string {
 }
 
 func isSpace(b byte) bool { return b == ' ' || b == '\n' || b == '\t' || b == '\r' }
+
+type mdObject struct {
+	data, typ, name string
+	start           int
+	inner           bool
+}
+
+type mdTable struct {
+	rows      [][]string
+	cellStart int
+}
+
+// markdown renders the table as a GFM table, the first row as the header.
+func (t *mdTable) markdown() string {
+	var rows [][]string
+	width := 0
+	for _, r := range t.rows {
+		if len(r) == 0 {
+			continue
+		}
+		rows = append(rows, r)
+		width = max(width, len(r))
+	}
+	if len(rows) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	line := func(cells []string) {
+		b.WriteString("|")
+		for i := 0; i < width; i++ {
+			c := ""
+			if i < len(cells) {
+				c = cells[i]
+			}
+			b.WriteString(" " + c + " |")
+		}
+		b.WriteString("\n")
+	}
+	line(rows[0])
+	sep := make([]string, width)
+	for i := range sep {
+		sep[i] = "---"
+	}
+	line(sep)
+	for _, r := range rows[1:] {
+		line(r)
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
+// XHTMLToMarkdown turns XHTML (the inner XML of a ReqIF or OSLC value)
+// into Markdown: paragraphs, line breaks, lists, headings, code, emphasis,
+// links, tables (GFM) and embedded objects and images (![name](path)).
+func XHTMLToMarkdown(inner string) string { return xhtmlMarkdown(inner) }
+
+// XHTMLText strips XHTML markup and keeps line breaks.
+func XHTMLText(inner string) string { return xhtmlText(inner) }
