@@ -2536,7 +2536,7 @@ paths:
       summary: Get code integration
       operationId: getProjectsByPidCodeSettings
       description: |-
-        `{has_secret, gitlab_url, github_url, updated_by, updated_at}` — the webhook URLs to enter in GitLab and GitHub
+        `{has_secret, gitlab_url, github_url, updated_by, updated_at, ci, has_ci_token}` — the webhook URLs to enter in GitLab and GitHub, and the server-side CI posting (see `PUT /projects/{pid}/ci-settings`)
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -10225,7 +10225,7 @@ paths:
       summary: Regression selection
       operationId: postProjectsByPidRegression
       description: |-
-        `{requirement_ids?: [ids or keys], change_ids?: [...], since_build?: ref, variant?: ref, include_related?: false, include_prerequisites?: true}` → `{requirements, tests: [{id, key, title, last_result, reasons: [{kind, ref, type}]}], changes, variant, since_build}`
+        `{requirement_ids?: [ids or keys], change_ids?: [...], since_build?: ref, variant?: ref, include_related?: false, include_prerequisites?: true, commits?: [SHAs], merge_request?, keys?: [item keys], tags?: [always-run tags], all?}` → `{requirements, tests: [{id, key, title, last_result, reasons: [{kind, ref, type}]}], changes, variant, since_build, unknown}`
 
         **Permission:** `test.read`.
       x-permission: test.read

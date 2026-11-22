@@ -184,7 +184,7 @@ Find defects with queries: `defect:JIRA-*` in the run's filter finds executions 
 
 ## Import results from CI
 
-Automated pipelines (GitLab CI, GitHub Actions, Jenkins …) can report results into a run by test key.
+Automated pipelines (GitLab CI, GitHub Actions, Jenkins …) can report results into a run by test key. For ready-made pipeline templates, the quality gate, commit statuses in GitLab and test selection, see [CI/CD](ci-cd.md).
 
 1. Create an API token: **Administration → API tokens → New token**, role **Tester** or higher (see [API tokens](administration.md#api-tokens)). Copy the token; it is shown only once and starts with `qtf_`.
 2. Open the run and select **CI import**. The dialog shows the endpoint with the run's ID and a ready-made command.

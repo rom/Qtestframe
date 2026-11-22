@@ -101,7 +101,7 @@ A **build** is a CI build that test results were uploaded for. The CI passes it 
 POST /api/v1/runs/{run}/junit?build_id=4711&build_number=1.4.41&commit=3f2c9e1&branch=main&pipeline_url=https://ci.example.org/p/4711&variant=EU%20model
 ```
 
-`build_id` is the CI's own id (unique per project); `build_number`, `commit`, `branch` and `pipeline_url` are optional, and `variant` makes the run a run for that variant. The run is then associated with the build.
+`qtestframe report` sends these by itself in GitLab CI, GitHub Actions and Jenkins (see [CI/CD](ci-cd.md)). `build_id` is the CI's own id (unique per project); `build_number`, `commit`, `branch` and `pipeline_url` are optional, and `variant` makes the run a run for that variant. The run is then associated with the build.
 
 - **Verified in build**: the **Code** tab of a requirement shows the latest build in which every linked test passed, and the builds its tests ran in with the coverage in each.
 - **Build history**: the **Code** tab of a test lists the builds it ran in, newest first, with the result in each.

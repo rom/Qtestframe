@@ -29,6 +29,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Traceability and coverage](traceability-and-coverage.md) | The traceability matrix, how coverage is calculated, the dashboard |
 | [Duplicates and conflicts](duplicates-and-conflicts.md) | Similar requirements while writing, suspected duplicate requirements and tests, potentially conflicting requirements, merging, thresholds |
 | [Variants and code](variants-and-code.md) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
+| [CI/CD](ci-cd.md) | Pipeline templates for GitLab and GitHub, uploading results, the quality gate, commit statuses and merge request notes, test selection and child pipelines |
 | [Baselines](baselines.md) | Freezing a release and comparing versions |
 | [Discussions](discussions.md) | Threaded comments on items with Markdown, @mentions, reactions, resolving, and the project's Discussions page |
 | [Search and filters](search-and-filters.md) | The query language with many examples |
