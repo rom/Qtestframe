@@ -2260,6 +2260,24 @@ Prints the tests a CI pipeline runs for a change: the requirements and tests tha
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 | `--variant` | `string` | only tests that apply to this variant |
 
+### `qtestframe stubs`
+
+Writes generated test code stubs into a directory (`--out`): one file per test of `--query` (default `execution_type:automated`) or `--ids`, for `--framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`, `robot` or `cucumber`, named after the test key so that JUnit results map back, and marked as skipped until implemented. Generating again creates new files, regenerates unchanged stubs, only updates the header block of implemented ones and leaves files without qtestframe markers alone; `--dry-run` lists what would change. `--mark-script` sets the script of tests without one to their stub path (see the user guide page CI/CD).
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--dry-run` | — | only print what would be written |
+| `--framework` | `string` | test framework: pytest, playwright, go, junit5, jest, vitest, robot, cucumber |
+| `--ids` | `value` | only these tests (keys or ids; repeatable or comma-separated) |
+| `--mark-script` | — | set the script of tests without one to their stub path (needs test.write) |
+| `--out` | `string` | directory to write the stubs to (default ".") |
+| `--package` | `string` | Go package (default: the name of --out, else tests) or Java package of the stubs |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--query` | `string` | the tests to generate stubs for (query language); "" for all (default "execution_type:automated") |
+| `--script-dir` | `string` | directory of the stubs in the repository for --mark-script (default --out when it is relative) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+
 ### `qtestframe version`
 
 Prints the version (also `--version`, `-v`).

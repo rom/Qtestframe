@@ -250,6 +250,24 @@ Skriver de testfall en CI-pipeline kör för en ändring: de krav och testfall s
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 | `--variant` | `string` | only tests that apply to this variant |
 
+### `qtestframe stubs`
+
+Skriver genererade kodstubbar för testfall till en katalog (`--out`): en fil per testfall i `--query` (standard `execution_type:automated`) eller `--ids`, för `--framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`, `robot` eller `cucumber`, namngiven efter testnyckeln så att JUnit-resultaten hittar tillbaka och markerad som överhoppad tills den implementeras. En ny generering skapar nya filer, genererar om oförändrade stubbar, uppdaterar bara huvudblocket i implementerade och lämnar filer utan qtestframe-markeringar orörda; `--dry-run` listar vad som skulle ändras. `--mark-script` sätter skriptet för testfall utan skript till stubbens sökväg (se sidan CI/CD i användarhandboken).
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--dry-run` | — | only print what would be written |
+| `--framework` | `string` | test framework: pytest, playwright, go, junit5, jest, vitest, robot, cucumber |
+| `--ids` | `value` | only these tests (keys or ids; repeatable or comma-separated) |
+| `--mark-script` | — | set the script of tests without one to their stub path (needs test.write) |
+| `--out` | `string` | directory to write the stubs to (default ".") |
+| `--package` | `string` | Go package (default: the name of --out, else tests) or Java package of the stubs |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--query` | `string` | the tests to generate stubs for (query language); "" for all (default "execution_type:automated") |
+| `--script-dir` | `string` | directory of the stubs in the repository for --mark-script (default --out when it is relative) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+
 ### `qtestframe version`
 
 Skriver ut versionen (även `--version`, `-v`).
