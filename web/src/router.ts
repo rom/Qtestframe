@@ -44,6 +44,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'defects', name: 'defects', component: () => import('./views/DefectsView.vue'), meta: { perm: P.projectRead } },
           { path: 'risks', name: 'risks', component: () => import('./views/RisksView.vue'), meta: { perm: P.requirementRead } },
           { path: 'traceability', name: 'traceability', component: () => import('./views/TraceabilityView.vue') },
+          { path: 'verification', name: 'verification', component: () => import('./views/VerificationView.vue'), meta: { perm: P.requirementRead } },
           { path: 'graph', name: 'graph', component: () => import('./views/GraphView.vue') },
           { path: 'analytics', name: 'analytics', component: () => import('./views/AnalyticsView.vue'), meta: { perm: P.requirementRead } },
           { path: 'prompts', name: 'prompts', component: () => import('./views/PromptsView.vue') },

@@ -5,6 +5,7 @@
 // and the language findings summed up per rule.
 import ItemRef from '../components/ItemRef.vue'
 import ComplianceSection from '@/components/ComplianceSection.vue'
+import StatusTag from '@/components/StatusTag.vue'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -167,6 +168,19 @@ const healthClass = computed(() => {
           </div>
         </section>
       </div>
+
+      <section v-if="report.verification?.length" class="card" style="margin-top: 16px" aria-labelledby="an-verification">
+        <div class="row" style="justify-content: space-between; flex-wrap: wrap; gap: 8px">
+          <h2 id="an-verification" class="plain-heading">{{ t('verification.analyticsTitle') }}</h2>
+          <RouterLink :to="{ name: 'verification', params: { projectId: proj.pid } }" class="small">{{ t('verification.openView') }}</RouterLink>
+        </div>
+        <p class="small muted" style="margin-top: 0">{{ t('verification.analyticsHint') }}</p>
+        <ul class="row plain-list" style="gap: 8px; flex-wrap: wrap">
+          <li v-for="c in report.verification" :key="c.value" class="row nowrap" style="gap: 6px">
+            <StatusTag :value="c.value" kind="verification" /> <b>{{ c.count }}</b> <span class="small muted">({{ c.percent }} %)</span>
+          </li>
+        </ul>
+      </section>
 
       <section v-if="report.languages?.length" class="card" style="margin-top: 16px">
         <h2 class="plain-heading">{{ t('analytics.languages') }}</h2>

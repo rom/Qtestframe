@@ -315,6 +315,9 @@ table.matrix td.cell.linked { background: color-mix(in srgb, var(--mark, var(--p
 /* the mark's colour is the linked test's result; suspect links get a dashed amber frame */
 table.matrix td.cell.linked .pi { color: color-mix(in srgb, var(--mark, var(--qtf-text)) 55%, var(--qtf-text)); }
 table.matrix td.cell.suspect { box-shadow: inset 0 0 0 2px #d97706; }
+/* criterion rows (verification): which test verifies which criterion, through a step or as a whole */
+table.matrix tr.crit-row th { padding: 2px 8px 2px 24px; }
+table.matrix tr.crit-row .crit-label { display: inline-block; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
 .trace-legends { display: grid; gap: 4px; margin-left: auto; justify-items: end; }
 .trace-legends .trace-legend { margin-left: 0; }
 .mark-swatch { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 3px; background: color-mix(in srgb, var(--mark, var(--p-primary-color)) 30%, var(--qtf-card)); border: 1px solid var(--qtf-border); }
