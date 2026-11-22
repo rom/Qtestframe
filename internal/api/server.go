@@ -359,6 +359,7 @@ func (s *Server) routes() {
 	s.routesVariants(h)
 	s.routesCode(h)
 	s.routesCI(h)
+	s.routesStubs(h)
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)

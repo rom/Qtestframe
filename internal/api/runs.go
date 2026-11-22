@@ -504,6 +504,10 @@ func (s *Server) handleRunScript(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, badRequest("test has no automated script"))
 		return
 	}
+	if isStubRef(d.Test.Script) {
+		s.fail(w, r, badRequest("the test's code is in the repository (%s); its results come from CI", stubPath(d.Test.Script)))
+		return
+	}
 	if !s.Runner.Enabled() {
 		s.fail(w, r, runner.ErrDisabled)
 		return
