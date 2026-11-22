@@ -246,6 +246,35 @@ func TestReqSyncJira(t *testing.T) {
 	if jf.Field("SHOP-2", "summary") != "Sign out" {
 		t.Fatal(jf.Field("SHOP-2", "summary"))
 	}
+	// a third, dismissed: both keep their values until one changes again
+	a.m("PATCH", "/api/v1/requirements/"+logoutID, map[string]any{"title": "Sign out now"}, 200)
+	jf.Set("SHOP-2", "summary", "Log off now")
+	a.m("POST", base+"/req-sync/jira/run", nil, 200)
+	c = items(a.m("GET", base+"/req-sync/conflicts", nil, 200))[0]
+	res = a.m("POST", base+"/req-sync/conflicts/"+c["id"].(string)+"/resolve", map[string]any{"resolution": "dismiss"}, 200)
+	if rc := res["conflict"].(map[string]any); rc["status"] != "dismissed" || rc["resolved_by"] != "admin@example.com" || rc["resolution"] != "title: dismissed" {
+		t.Fatal(rc)
+	}
+	run = a.m("POST", base+"/req-sync/jira/run", nil, 200)
+	if s := summaryOfRun(run); s["conflicts"]+s["pulled"]+s["pushed"] != 0 || jf.Field("SHOP-2", "summary") != "Log off now" {
+		t.Fatalf("after dismiss %v", run)
+	}
+	// a conflict closes by itself when both sides agree again
+	a.m("PATCH", "/api/v1/requirements/"+logoutID, map[string]any{"title": "Sign off"}, 200)
+	jf.Set("SHOP-2", "summary", "Signing off")
+	a.m("POST", base+"/req-sync/jira/run", nil, 200)
+	a.m("PATCH", "/api/v1/requirements/"+logoutID, map[string]any{"title": "Signing off"}, 200)
+	a.m("POST", base+"/req-sync/jira/run", nil, 200)
+	if n := len(items(a.m("GET", base+"/req-sync/conflicts", nil, 200))); n != 0 {
+		t.Fatal("open", n)
+	}
+	var agreed bool
+	for _, x := range items(a.m("GET", base+"/req-sync/conflicts?status=all&source=jira", nil, 200)) {
+		agreed = agreed || x["resolution"] == "the sides agree again"
+	}
+	if !agreed {
+		t.Fatal("not closed by the sync")
+	}
 
 	// a requirement made here with the push tag gets a Jira issue
 	nr := a.m("POST", base+"/requirements", map[string]any{"title": "Password reset", "description": "Users **can** reset.", "tags": []string{"push-me"}, "priority": "low"}, 201)

@@ -681,9 +681,11 @@ func (e *syncEngine) applyItem(ctx context.Context, r *http.Request, si *syncIte
 		if err := e.s.Store.SaveReqSyncConflict(ctx, tenant, c); err != nil {
 			return err
 		}
+	} else if e.opt.trigger == "resolve" {
+		// the decision closes it (handleResolveReqSyncConflict)
 	} else if n, err := e.s.Store.CloseReqSyncConflicts(ctx, tenant, e.pr.ID, e.cfg.System, rq.ID, "resolved", "the sides agree again", ""); err != nil {
 		return err
-	} else if n > 0 && e.opt.trigger != "resolve" {
+	} else if n > 0 {
 		e.s.audit(ctx, e.p, "req_sync.conflict.closed", model.KindRequirement, rq.ID, rq.Key+": both sides agree again")
 	}
 	// the new base: the current values, except the fields in conflict and
