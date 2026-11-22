@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
@@ -26,30 +27,39 @@ func (s *Server) snapshotOf(ctx context.Context, p *Principal, kind, id string) 
 	return nil
 }
 
-// afterContentChange marks the links of an item suspect when its content
-// changed (compared with the snapshot before), then lets the statuses of
-// the affected requirements follow their evidence.
+// snapshotKey returns the key in a snapshot.
+func snapshotKey(b json.RawMessage) string {
+	var v struct {
+		Key string `json:"key"`
+	}
+	_ = json.Unmarshal(b, &v)
+	return v.Key
+}
+
+// afterContentChange handles a change of an item (compared with the
+// snapshot before): when its substance changed, results recorded before
+// now go stale, documents generated before now are outdated, verification
+// records valid until a change stop counting, and the change impact
+// (impact.go) marks its links and what is related to it suspect; a status
+// change only recommends reviews. Then the statuses of the affected
+// requirements follow their evidence.
 func (s *Server) afterContentChange(ctx context.Context, p *Principal, kind, id, key, projectID string, before json.RawMessage) {
 	if before == nil {
 		return
 	}
 	after := s.snapshotOf(ctx, p, kind, id)
-	changed := store.ContentChanged(kind, store.ChangedFields(before, after))
+	fields := store.ChangedFields(before, after)
+	changed := store.ContentChanged(kind, fields)
 	if len(changed) == 0 {
+		if slices.Contains(fields, "status") {
+			reason := kind + " " + key + " status changed by " + p.User.Email
+			s.recordImpact(ctx, p, projectID, store.ImpactRoot{Kind: kind, ID: id, ReviewOnly: true, Fields: []string{"status"}}, reason)
+		}
 		return
 	}
 	reason := kind + " " + key + " changed (" + strings.Join(changed, ", ") + ") by " + p.User.Email
-	// results recorded before now go stale, documents generated before now are outdated
 	if err := s.Store.MarkContentChanged(ctx, p.TenantID(), kind, id); err != nil {
 		s.Log.Warn("mark content changed", "err", err)
-	}
-	reqs, err := s.Store.MarkLinksSuspect(ctx, p.TenantID(), kind, id, reason)
-	if err != nil {
-		s.Log.Warn("mark links suspect", "err", err)
-		return
-	}
-	if len(reqs) > 0 {
-		s.audit(ctx, p, "link.suspect", kind, id, reason)
 	}
 	if kind == model.KindRequirement {
 		// verification records valid "until a change" stop counting
@@ -58,14 +68,8 @@ func (s *Server) afterContentChange(ctx context.Context, p *Principal, kind, id,
 		} else if n > 0 {
 			s.audit(ctx, p, "verification.invalidate", kind, id, reason)
 		}
-		// along the requirement relations, to tracker issues (correlations.go)
-		reqs = append(reqs, s.applyChangeImpact(ctx, p, id, key, reason)...)
-		// stale results and invalidated records may change its status even without links
-		reqs = append(reqs, id)
-	} else {
-		reqs = append(reqs, s.requirementsOfTests(ctx, p, projectID, []string{id})...)
 	}
-	s.syncEvidence(ctx, p, projectID, reqs)
+	s.recordImpact(ctx, p, projectID, store.ImpactRoot{Kind: kind, ID: id, Fields: changed}, reason)
 }
 
 // syncEvidence applies "status follows evidence" to requirements and audits

@@ -465,8 +465,15 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 			writeError(w, http.StatusForbidden, "forbidden", "permission "+string(writePerm(kind))+" required")
 			return
 		}
+		// the change impact of a change of substance (obligation, execution
+		// type) or status: snapshots before, compared after (impact.go)
+		impact := req.Set.Status != nil || req.Set.Obligation != nil || req.Set.ExecutionType != nil
+		before := map[string]json.RawMessage{}
 		for _, id := range uniqStrings(req.IDs) {
 			s.ensureInitialRevision(r.Context(), p, kind, id)
+			if impact {
+				before[id] = s.snapshotOf(r.Context(), p, kind, id)
+			}
 		}
 		n, err := s.Store.BulkUpdateItems(r.Context(), p.TenantID(), kind, pr.ID, req.IDs, req.Set)
 		if err != nil {
@@ -475,6 +482,9 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 		}
 		for _, id := range uniqStrings(req.IDs) {
 			s.record(r.Context(), p, kind, id, "bulk_update")
+			if b := before[id]; b != nil {
+				s.afterContentChange(r.Context(), p, kind, id, snapshotKey(b), pr.ID, b)
+			}
 		}
 		s.audit(r.Context(), p, kind+".bulk_update", kind, strings.Join(req.IDs, ","), "")
 		writeJSON(w, http.StatusOK, map[string]int{"updated": n})
