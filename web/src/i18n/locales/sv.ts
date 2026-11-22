@@ -4983,6 +4983,8 @@ const sv: Messages = {
     executions: 'Resultat',
     lastResult: 'Senaste resultat',
     resultEnvironment: 'Miljö vid exekveringen',
+    passed: 'Godkända',
+    failed: 'Underkända',
   },
   dataSets: {
     title: 'Testdata',
@@ -5074,7 +5076,7 @@ const sv: Messages = {
     askRefresh: 'Be om uppdatering',
     refreshAsked: 'Ägaren har ombetts uppdatera datamängden',
     sourceHeader: 'Delad testdata',
-    sourceLine: 'Hämtar sina rader från datamängden {name}',
+    sourceLine: 'Hämtar sina rader från den delade datamängden',
     sourceNone: 'Använder sina egna rader',
   },
   backup: {

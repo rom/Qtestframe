@@ -31,6 +31,7 @@ Det här är de inbyggda rollernas behörigheter tills en organisation ändrar d
 | `run.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `cycle.plan` |  |  |  |  | ✔ | ✔ | ✔ |
+| `environment.manage` |  |  |  |  | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  |  | ✔ | ✔ | ✔ |
 | `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
@@ -100,7 +101,7 @@ Ett projekt är antingen **organisationsgemensamt** (standard: alla medlemmar se
 | övriga medlemmar, organisationsgemensamt projekt | organisationsrollerna |
 | övriga medlemmar, begränsat projekt | inga: projektet svarar `404` |
 
-Bara **projektbehörigheter** kommer från projektrollerna (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Behörigheter på organisationsnivå – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – kommer alltid från organisationsrollerna, och en API-nyckel begränsas av sina egna roller även i ett projekt.
+Bara **projektbehörigheter** kommer från projektrollerna (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`, `environment.manage`, `script.execute`, `export`, `comment.create`). Behörigheter på organisationsnivå – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – kommer alltid från organisationsrollerna, och en API-nyckel begränsas av sina egna roller även i ett projekt.
 
 Vad en begränsning **inte** döljer, så planera för det:
 

@@ -23,6 +23,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Tests](tests.md) | Manual steps, automated scripts, shared steps, categories, execution history, comments, history and attachments |
 | [Catalogue](catalogue.md) | Standard requirements and tests to add to a project: browsing, searching, the preview and adding with tests and trace links |
 | [Test cycles](test-cycles.md) | Planning test cycles: tests, testers and estimates, the runs a cycle creates, progress, burndown, workload, recurring cycles |
+| [Test environments and test data](test-environments.md) | Environments with components and versions, status, health checks and credentials; booking calendar, capacity and approvals; the environment and versions of every result; shared test data sets with classification, expiry, usage and refresh requests |
 | [Test runs and execution](runs.md) | Runs, the execution runner and its keyboard shortcuts, defects, CI import with API tokens, attachments |
 | [Exploratory testing](exploratory-testing.md) | Session-based exploratory testing: charters, the session timer, typed notes with keyboard shortcuts, defects from notes, debriefs, metrics and the session report |
 | [Waivers, residual risk and the SoA](waivers-and-soa.md) | Waivers and deviations with signed approvals, residual risk and its acceptance, the Statement of Applicability (ISO/IEC 27001 Annex A) |

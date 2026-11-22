@@ -49,6 +49,8 @@ Projekt kan skicka signerade händelser till andra system. Användare med `proje
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
+| environment | `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected` |
+| testdata | `testdata.refresh_requested`, `testdata.refresh_resolved` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -77,7 +79,7 @@ Projekt kan skicka sina händelser till chattkanaler: Slack, Microsoft Teams, Ma
 
 | Grupp | Händelser |
 |---|---|
-| Testkörningar | `run.created` (Testkörning skapad), `run.updated` (Testkörning ändrad), `run.completed` (Testkörning avslutad), `execution.updated` (Testresultat registrerat) |
+| Testkörningar | `run.created` (Testkörning skapad), `run.updated` (Testkörning ändrad), `run.completed` (Testkörning avslutad), `execution.updated` (Testresultat registrerat), `environment.status_changed` (Miljöns status ändrad), `environment.booking_requested` (Miljöbokning begärd), `environment.booking_approved` (Miljöbokning godkänd), `environment.booking_rejected` (Miljöbokning avslagen), `testdata.refresh_requested` (Uppdatering av testdata begärd), `testdata.refresh_resolved` (Begäran om uppdatering av testdata stängd) |
 | Defekter | `defect.created` (Defekt rapporterad), `defect.updated` (Defekt ändrad), `defect.status` (Defektens status ändrad), `defect.assigned` (Defekt tilldelad), `defect.regression` (Regression upptäckt) |
 | Krav och tester | `requirement.created` (Krav skapat), `requirement.updated` (Krav ändrat), `test.created` (Test skapat), `test.updated` (Test ändrat), `comment.created` (Ny kommentar), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baslinje signerad) |
 | Granskningar | `review.requested` (Granskning begärd), `review.completed` (Granskning klar) |

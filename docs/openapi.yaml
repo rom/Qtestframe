@@ -106,6 +106,10 @@ tags:
   description: Health, readiness and this description
 - name: Exploratory testing
   description: Session-based exploratory testing (charters, timer, notes, debriefs, metrics)
+- name: Environments
+  description: Test environments, their components, health checks and bookings
+- name: Test data
+  description: Shared test data sets, their links, usage and refresh requests
 paths:
   /healthz:
     get:
@@ -6923,7 +6927,7 @@ paths:
       summary: Create run
       operationId: postProjectsByPidRuns
       description: |-
-        `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>"}` – union of explicit tests, tests in folders (recursive) and tests matching query
+        `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>"}` – union of explicit tests, tests in folders (recursive) and tests matching query `environment_id` (an environment item of the project or a shared one, by id or name; "" none) selects the environment; with it, `booking: {starts_at, ends_at, purpose?}` books it for the item at once (409 `booking_conflict` when it does not fit; nothing is created). A free-text `environment` naming an environment item of the project is linked to it.
 
         **Permission:** `run.write`.
       x-permission: run.write
@@ -7153,7 +7157,7 @@ paths:
       summary: Update run
       operationId: patchRunsById
       description: |-
-        `{"name","description","status","environment","build"}`. A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically.
+        `{"name","description","status","environment","build"}`. A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically. `environment_id` (id or name, "" none) selects an environment item (its name is kept in `environment`); a new free-text `environment` is linked by name again.
 
         **Permission:** `run.write`.
       x-permission: run.write
@@ -18286,7 +18290,7 @@ paths:
         - "Exploratory testing"
       summary: "Plan an exploratory session"
       operationId: "postProjectsByPidExploratorySessions"
-      description: "Creates a planned session (key PROJ-EXP-n): `title` (the charter, required), `mission`, `tester` (e-mail of a member who may run sessions in the project; default the caller), `timebox_minutes` (5–480, default 60; 30, 60 and 90 are usual) and `scope`, a list of `{type: folder | requirement | test, id}` of the project.\n\n**Permission:** `run.write`."
+      description: "Creates a planned session (key PROJ-EXP-n): `title` (the charter, required), `mission`, `tester` (e-mail of a member who may run sessions in the project; default the caller), `timebox_minutes` (5–480, default 60; 30, 60 and 90 are usual) and `scope`, a list of `{type: folder | requirement | test, id}` of the project. `environment_id` (an environment item of the project or a shared one, by id or name; \"\" none) selects the environment; with it, `booking: {starts_at, ends_at, purpose?}` books it for the item at once (409 `booking_conflict` when it does not fit; nothing is created).\n\n**Permission:** `run.write`."
       x-permission: "run.write"
       requestBody:
         required: true
@@ -18830,7 +18834,7 @@ paths:
       summary: Create a test cycle
       operationId: postProjectsByPidCycles
       description: |-
-        `{name, goal?, description?, owner_id? (default: the caller), release_id?, variant_id? (id or name), build_id?, environment?, configuration_ids?, start_date?, end_date? (YYYY-MM-DD), scheduled_start_at? (RFC 3339: the cycle starts by itself), copy_from? (a cycle whose plan, testers, estimates, release, variant, build and configurations are copied)}`. A new cycle is planned.
+        `{name, goal?, description?, owner_id? (default: the caller), release_id?, variant_id? (id or name), build_id?, environment?, configuration_ids?, start_date?, end_date? (YYYY-MM-DD), scheduled_start_at? (RFC 3339: the cycle starts by itself), copy_from? (a cycle whose plan, testers, estimates, release, variant, build and configurations are copied)}`. A new cycle is planned. `environment_id` (an environment item of the project or a shared one, by id or name; "" none) selects the environment; with it, `booking: {starts_at, ends_at, purpose?}` books it for the item at once (409 `booking_conflict` when it does not fit; nothing is created). Its runs get the environment.
 
         **Permission:** `cycle.plan`.
       x-permission: cycle.plan
@@ -19551,6 +19555,1023 @@ paths:
                 type: string
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/v1/projects/{pid}/environments:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Environments
+      summary: "Test environments"
+      operationId: getProjectsByPidEnvironmentsEnv
+      description: "The environments of the project and those shared by the organisation (`?shared=false` leaves those out), by name, with `booked_now`, `next_booking` and `run_count`. `?q=` filters with the query language (fields `name`, `type`, `status`, `description`, `owner`, `tag`, `component` (a name or \"name version\"), `url`, `shared`, `capacity`, `approval`, `health`, `booked`, `created_by`, `created_at`, `updated_at`).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Environments
+      summary: "Create a test environment"
+      operationId: postProjectsByPidEnvironmentsEnv
+      description: "`{name, type? (dev | test | staging | pre_prod | prod_like | lab | hil_rig | device), status? (available | in_use | maintenance | broken | retired), status_note?, description?, urls?, components? [{name, version}], owner_id?, tags?, configuration_ids?, variant_ids? (project environments), capacity? (overlapping bookings allowed, default 1), requires_approval?, credentials_ref? (where the credentials are, never the secret), secret? (write-only: encrypted, never returned; `has_secret` says whether one is stored), clear_secret?, health_url? (http or https; checked every `health_interval_minutes` by the background job), health_interval_minutes?}` and `shared` (true: an environment shared by the organisation, which needs `environment.manage` in the organisation). The owner defaults to the caller.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of the project"
+      operationId: getProjectsByPidBookingsEnv
+      description: "The bookings of the project's environments and those made for the project; `?from=`, `?to=` (RFC 3339 or YYYY-MM-DD) limit the time, `?status=` (comma separated) the states. A booking made for a project the caller does not see has `hidden: true` and only its time and status.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments:
+    parameters:
+    get:
+      tags:
+      - Environments
+      summary: "Shared environments"
+      operationId: getEnvironmentsEnv
+      description: "The environments shared by the organisation.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Test environment"
+      operationId: getEnvironmentsByIdEnv
+      description: "An environment (never its secret).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Environments
+      summary: "Change a test environment"
+      operationId: patchEnvironmentsByIdEnv
+      description: "`{name, type? (dev | test | staging | pre_prod | prod_like | lab | hil_rig | device), status? (available | in_use | maintenance | broken | retired), status_note?, description?, urls?, components? [{name, version}], owner_id?, tags?, configuration_ids?, variant_ids? (project environments), capacity? (overlapping bookings allowed, default 1), requires_approval?, credentials_ref? (where the credentials are, never the secret), secret? (write-only: encrypted, never returned; `has_secret` says whether one is stored), clear_secret?, health_url? (http or https; checked every `health_interval_minutes` by the background job), health_interval_minutes?}`; only the given fields change. A changed name is kept in the free-text environment of its runs and cycles. A shared environment needs `environment.manage` in the organisation.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Environments
+      summary: "Delete a test environment"
+      operationId: deleteEnvironmentsByIdEnv
+      description: "Removes the environment and its bookings; runs, cycles and results keep its name, and results the component versions they recorded.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}/secret:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Environments
+      summary: "Reveal the secret"
+      operationId: postEnvironmentsByIdSecretEnv
+      description: "`{secret}`: the decrypted secret of the environment, to environment managers; every reveal writes the audit entry `environment.secret_reveal`. 404 when none is stored.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}/check:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Environments
+      summary: "Run the health check"
+      operationId: postEnvironmentsByIdCheckEnv
+      description: "Fetches the health check URL now (2xx or 3xx is up) and records the result like the background job: a failing check marks an available or in-use environment broken, a passing one makes an environment the check had marked broken available again.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}/history:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Environment history"
+      operationId: getEnvironmentsByIdHistoryEnv
+      description: "The revisions of the environment (fields, components, never the secret).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of an environment"
+      operationId: getEnvironmentsByIdBookingsEnv
+      description: "The bookings of the environment; `?from=`, `?to=`, `?status=` as for the project bookings.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Environments
+      summary: "Book an environment"
+      operationId: postEnvironmentsByIdBookingsEnv
+      description: "`{starts_at, ends_at (RFC 3339), purpose?, project_id? (the project of a booking of a shared environment), run_id?, cycle_id?, session_id? (items of that project)}`. The caller needs `run.execute` in the project of the booking. The booking is `pending` when the environment requires approval (unless the caller owns or manages it), else `approved`. 409 `booking_conflict` with `{capacity, overlapping}` when it would exceed the capacity at some moment; a retired environment cannot be booked.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/bookings/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Booking"
+      operationId: getBookingsByIdEnv
+      description: "A booking.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Environments
+      summary: "Change a booking"
+      operationId: patchBookingsByIdEnv
+      description: "`{starts_at, ends_at (RFC 3339), purpose?, project_id? (the project of a booking of a shared environment), run_id?, cycle_id?, session_id? (items of that project)}` (without `project_id`); by the booker, the owner of the environment or an environment manager. A changed time of an approved booking of an environment that requires approval waits for approval again. 409 as when booking.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/bookings/{id}/decision:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Environments
+      summary: "Approve or reject a booking"
+      operationId: postBookingsByIdDecisionEnv
+      description: "`{decision: approved | rejected, note?}` of a pending booking, by the owner of the environment or an environment manager; approving checks the capacity again. The booker is notified (`environment.booking_approved`, `environment.booking_rejected`).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/bookings/{id}/cancel:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Environments
+      summary: "Cancel a booking"
+      operationId: postBookingsByIdCancelEnv
+      description: "Cancels a pending or approved booking (the booker, the owner of the environment or an environment manager).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of a run"
+      operationId: getRunsByIdBookingsEnv
+      description: "The bookings linked to the run.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of a test cycle"
+      operationId: getCyclesByIdBookingsEnv
+      description: "The bookings linked to the cycle.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/exploratory-sessions/{id}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of an exploratory session"
+      operationId: getExploratorySessionsByIdBookingsEnv
+      description: "The bookings linked to the session.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/releases/{id}/environments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Tested environments of a release"
+      operationId: getReleasesByIdEnvironmentsEnv
+      description: "`[{environment_id, name, type, components, executions, passed, failed, blocked, last_at}]`: the environments and component versions (as recorded on the results) the final results of the release's runs were obtained in, one row per environment and set of versions.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/test-data-sets:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Test data
+      summary: "Test data sets"
+      operationId: getProjectsByPidTestDataSetsEnv
+      description: "The data sets of the project with their links, `usage_count`, `last_used_at`, `open_refreshes`, `file_count`, `expired` and `expiring` (within 14 days). `?q=` filters (fields `name`, `description`, `kind`, `classification`, `owner`, `status`, `tag`, `expires`, `expired`, `expiring`, `parameter`, `linked`, `version`, `usage`, `refresh`, `created_by`, `created_at`, `updated_at`).\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Test data
+      summary: "Create a test data set"
+      operationId: postProjectsByPidTestDataSetsEnv
+      description: "`{name, description?, kind? (table | files), parameters?, data_rows? [{name, values}], classification? (synthetic | anonymised | production_copy), owner_id? (default: the caller), expires_on? (YYYY-MM-DD), tags?, status? (active | archived)}`; parameters and rows follow the rules of the inline data of a test.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Test data set"
+      operationId: getTestDataSetsByIdEnv
+      description: "A data set with its links.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Test data
+      summary: "Change a test data set"
+      operationId: patchTestDataSetsByIdEnv
+      description: "The fields of the create body; `version` (optional) is the version the change is based on (409 `conflict` when it was saved in the meantime). Every change is a new version.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Test data
+      summary: "Delete a test data set"
+      operationId: deleteTestDataSetsByIdEnv
+      description: "Removes the set, its links, usage and refresh requests; tests that took their rows from it use their own rows again.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/history:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data set history"
+      operationId: getTestDataSetsByIdHistoryEnv
+      description: "The revisions of the set.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/usage:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data set usage"
+      operationId: getTestDataSetsByIdUsageEnv
+      description: "`[{data_version, run_id, run_name, test_case_id, test_key, used_at}]`, newest first (`?limit=`, default 200): a run that created executions of a test taking its rows from the set records the version it used.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/links:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Test data
+      summary: "Link a data set"
+      operationId: postTestDataSetsByIdLinksEnv
+      description: "`{item_type: test | configuration | run, item_id, usage?: reference | source}`; `source` (tests, table sets only): the data-driven test gets one iteration per row of the set instead of its own rows; a test has one source (linking another makes the previous one a reference). Answers the set.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/links/{link}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: link
+      in: path
+      required: true
+      schema:
+        type: string
+      description: link id
+    delete:
+      tags:
+      - Test data
+      summary: "Unlink a data set"
+      operationId: deleteTestDataSetsByIdLinksByLinkEnv
+      description: "Removes a link.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/refresh-requests:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Refresh requests"
+      operationId: getTestDataSetsByIdRefreshRequestsEnv
+      description: "The refresh requests of the set, newest first.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Test data
+      summary: "Ask for a refresh"
+      operationId: postTestDataSetsByIdRefreshRequestsEnv
+      description: "`{reason, needed_by? (YYYY-MM-DD)}` asks the owner of the set to refresh it (needs `test.write` or `run.execute`); the owner is notified (`testdata.refresh_requested`) and sees it in My work.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-refresh-requests/{id}/resolve:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Test data
+      summary: "Close a refresh request"
+      operationId: postTestDataRefreshRequestsByIdResolveEnv
+      description: "`{status: done | rejected, note?}` by the owner of the set or someone with `test.write`; the requester is notified (`testdata.refresh_resolved`).\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/data-sets:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data sets of a test"
+      operationId: getTestsByIdDataSetsEnv
+      description: "The links of data sets to the test (with `data_set_name` and `usage`).\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/configurations/{id}/data-sets:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data sets of a configuration"
+      operationId: getConfigurationsByIdDataSetsEnv
+      description: "The links of data sets to the configuration.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/data-sets:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data sets of a run"
+      operationId: getRunsByIdDataSetsEnv
+      description: "The links of data sets to the run.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/attachments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "List attachments (data sets)"
+      operationId: getTestDataSetsByIdAttachmentsEnv
+      description: "**Permission:** any authenticated user; the handler checks `test.read` in the data set's project."
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Test data
+      summary: "Upload attachment (data sets)"
+      operationId: postTestDataSetsByIdAttachmentsEnv
+      description: "Multipart upload (`file`, optional `description`, `tags`) of a data file of the set.\n\n**Permission:** any authenticated user; the handler checks `test.write` in the data set's project."
+      x-permission: authenticated
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/attachments/link:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Test data
+      summary: "Link a project document (data sets)"
+      operationId: postTestDataSetsByIdAttachmentsLinkEnv
+      description: "`{\"file_id\"}` of a file of the project.\n\n**Permission:** any authenticated user; the handler checks `test.write` in the data set's project."
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/attachments/{file}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: file
+      in: path
+      required: true
+      schema:
+        type: string
+      description: file id
+    delete:
+      tags:
+      - Test data
+      summary: "Unlink attachment (data sets)"
+      operationId: deleteTestDataSetsByIdAttachmentsByFileEnv
+      description: "**Permission:** any authenticated user; the handler checks `test.write` in the data set's project."
+      x-permission: authenticated
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:

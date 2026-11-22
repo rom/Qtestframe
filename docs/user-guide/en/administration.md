@@ -30,7 +30,7 @@ Every organisation starts with seven built-in roles. By default each role in the
 | **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content; write in [discussions](discussions.md) (*comment.create*, as all roles below except Viewer) |
 | **Subject matter expert** | take part in writing requirements: create and edit requirements with their criteria, rationale, sources, relations, links and attachments (*requirement.write*); review requirements (*requirement.review*) and discuss them; read tests, runs, defects and risks. No tests, runs, cycles, waivers, settings or members |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
-| **Test lead** | plan [test cycles](test-cycles.md) (*cycle.plan*), mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
+| **Test lead** | plan [test cycles](test-cycles.md) (*cycle.plan*), manage [test environments](test-environments.md) and approve their bookings (*environment.manage*), mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
 | **Manager** | approve and reject requirements (*requirement.review*), write requirements and requirement folders, create and edit projects, all categories and the [traceability rules](traceability-and-coverage.md#traceability-rules), create baselines |
 | **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, remove any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
@@ -47,7 +47,7 @@ The default matrix of permissions:
 | `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `requirement.write` | | | ✔ | | | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `environment.manage`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
 | `waiver.approve`, `project.create`, `project.update` | | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | | ✔ |
 

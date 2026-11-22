@@ -4981,6 +4981,8 @@ const en = {
     executions: 'Results',
     lastResult: 'Last result',
     resultEnvironment: 'Environment at execution',
+    passed: 'Passed',
+    failed: 'Failed',
   },
   dataSets: {
     title: 'Test data',
@@ -5072,7 +5074,7 @@ const en = {
     askRefresh: 'Ask for a refresh',
     refreshAsked: 'The owner was asked to refresh the set',
     sourceHeader: 'Shared test data',
-    sourceLine: 'Takes its rows from the data set {name}',
+    sourceLine: 'Takes its rows from the shared data set',
     sourceNone: 'Uses its own rows',
   },
   backup: {
