@@ -212,6 +212,10 @@ Only members with the permission *script.execute* (by default **Test lead** and 
 
 3. Restart the server. **Run script** now works for web tests; the demo project of `qtestframe seed-demo` has one (*Login page shows the sign-in form*) that opens the server's own login page — set `server.base_url` to the address the server is reachable at.
 
+## Consistency checks
+
+Projects do not get the [built-in consistency checks](traceability-and-coverage.md#built-in-consistency-checks) as rules automatically: a manager adds them with **Add built-in checks** (they start as warnings, so release readiness does not change). Dismissed findings (*not a duplicate*) are part of backups and project archives.
+
 ## API tokens
 
 API tokens let scripts and CI pipelines use the REST API without a password, for example for the [CI import](runs.md#import-results-from-ci).

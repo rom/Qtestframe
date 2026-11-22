@@ -923,6 +923,10 @@ export interface TraceRuleFields {
   target_type?: string
   target_query?: string
   every?: boolean
+  /** duplicate_suspect: least similarity (0.5–1) */
+  threshold?: number
+  /** unmitigated_risk: least risk level */
+  level?: string
 }
 
 export interface TraceRule extends TraceRuleFields {
@@ -939,9 +943,42 @@ export interface TraceViolation {
   id: string
   key: string
   title: string
+  status?: string
   found: number
   required: number
   total: number
+  /** built-in checks: reason code, detail, other items involved, fix actions */
+  check?: string
+  note?: string
+  related?: TraceRelated[]
+  fixes?: string[]
+}
+
+/** Another item involved in a violation of a built-in check. */
+export interface TraceRelated {
+  /** requirement | test | risk | release */
+  kind: string
+  id: string
+  key: string
+  title: string
+  status?: string
+  role: string
+  /** id of the relation, trace link or prerequisite connecting it */
+  link?: string
+  check?: string
+  note?: string
+}
+
+/** A built-in consistency check with its project default (GET trace-rules/builtins). */
+export interface BuiltinCheck {
+  kind: string
+  scope: string
+  name: string
+  description: string
+  severity: string
+  enabled: boolean
+  installed: boolean
+  rule?: TraceRule
 }
 
 export interface TraceRuleResult {
@@ -951,12 +988,19 @@ export interface TraceRuleResult {
   violation_count: number
   passed: boolean
   error?: string
+  waived?: number
 }
 
 export interface TraceRulesReport {
   results: TraceRuleResult[]
   passed: boolean
   summary: Record<string, number>
+}
+
+/** GET /projects/{pid}/analytics/consistency */
+export interface ConsistencyReport extends TraceRulesReport {
+  checks: BuiltinCheck[]
+  installed: number
 }
 
 export interface ItemTraceViolation extends TraceViolation {
@@ -1098,6 +1142,8 @@ export interface Defect {
   created_at: string
   updated_at: string
   resolved_at: string | null
+  /** phase found in (requirements … production, '' unknown) */
+  found_in?: string
   links?: DefectLink[]
 }
 
@@ -1405,4 +1451,62 @@ export interface ElementCoverage {
   tests: number
   tests_passed: number
   percent: number
+}
+/** Quality metrics (GET /projects/{pid}/analytics/quality, internal/analytics quality.go). */
+export interface QualityPeriod {
+  period: string
+  value: number
+  count: number
+  total: number
+}
+export interface QualityItem {
+  kind: string
+  id: string
+  key: string
+  title: string
+  count: number
+  value?: number
+  note?: string
+}
+export interface QualityCount {
+  value: string
+  count: number
+  percent: number
+}
+export interface QualityGroup {
+  name: string
+  requirements: number
+  defects: number
+  density: number
+}
+export interface QualityDurations {
+  count: number
+  mean_hours: number
+  median_hours: number
+  p90_hours: number
+}
+export interface QualityReport {
+  from: string
+  to: string
+  period: 'week' | 'month'
+  periods: string[]
+  stale_days: number
+  volatility: { changes: number; requirements: number; changed: number; per_requirement: number; trend: QualityPeriod[]; most_changed: QualityItem[] }
+  defect_density: { defects: number; requirements: number; per_requirement: number; by_severity: QualityCount[]; by_requirement: QualityItem[]; by_folder: QualityGroup[]; by_category: QualityGroup[] }
+  escaped: {
+    defects: number
+    escaped: number
+    percent: number
+    production: number
+    after_release: number
+    by_phase: QualityCount[]
+    by_release: { id: string; name: string; released_at: string; escaped: number }[]
+    trend: QualityPeriod[]
+    items: QualityItem[]
+  }
+  effectiveness: { defects: number; tests: number; executions: number; hours: number; per_test: number; per_hour: number; top_tests: QualityItem[]; trend: QualityPeriod[]; untimed_percent: number }
+  result_age: { tests: number; with_result: number; never: number; buckets: QualityCount[]; stale_days: number; stale: number; stale_percent: number; median_days: number; oldest: QualityItem[] }
+  review_turnaround: QualityDurations & { pending: number; oldest_pending_days: number; trend: QualityPeriod[] }
+  fix_time: QualityDurations & { open: number; by_severity: (QualityDurations & { severity: string })[]; trend: QualityPeriod[] }
+  requirement_quality: { requirements: number; with_warnings: number; percent: number; by_rule: QualityCount[]; trend: QualityPeriod[]; items: QualityItem[] }
 }

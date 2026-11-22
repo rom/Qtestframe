@@ -148,6 +148,7 @@ var projectArchiveTables = []archiveTable{
 	{"item_applicability", ofProject},
 	{"code_changes", ofProject},
 	{"code_change_items", `change_id IN (SELECT id FROM code_changes WHERE project_id = ?)`},
+	{"consistency_dismissals", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},

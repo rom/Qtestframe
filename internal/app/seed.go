@@ -8,6 +8,7 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/reqlang"
 	"github.com/rom/qtestframe/internal/store"
+	"github.com/rom/qtestframe/internal/tracerules"
 )
 
 // SeedDemo creates a demonstration project with folders, requirements,
@@ -210,6 +211,25 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 		if err := st.CreateTraceRule(ctx, tenantID, &tr); err != nil {
 			return nil, err
 		}
+	}
+	// the built-in consistency checks, with something for them to find: a
+	// near-duplicate of "Account lockout" and a high risk nobody mitigates
+	for _, b := range tracerules.Builtins {
+		rule := tracerules.BuiltinRule(b, p.ID)
+		rule.CreatedBy = "seed"
+		if err := st.CreateTraceRule(ctx, tenantID, &rule); err != nil {
+			return nil, err
+		}
+	}
+	dup := &model.Requirement{ProjectID: p.ID, FolderID: &rf.ID, Title: "Account lockout after failed logins",
+		Description: "The system MUST NOT allow more than 10 failed login attempts per account within 5 minutes.", Obligation: model.ObligationMustNot,
+		Type: "security", Priority: "high", Status: "draft", CategoryIDs: []string{cat("Area", "Security")}, CreatedBy: "seed", Tags: []string{"security"}}
+	if err := st.CreateRequirement(ctx, tenantID, dup); err != nil {
+		return nil, err
+	}
+	if err := st.CreateRisk(ctx, tenantID, &model.Risk{ProjectID: p.ID, Title: "Credential stuffing takes over accounts", Category: "security",
+		Likelihood: 4, Impact: 5, Owner: "security team", CreatedBy: "seed"}); err != nil {
+		return nil, err
 	}
 	run := &model.TestRun{ProjectID: p.ID, Name: "Sprint 12 regression", Environment: "staging", Build: "1.4.0-rc1", CreatedBy: "seed"}
 	if err := st.CreateRun(ctx, tenantID, run, testIDs); err != nil {

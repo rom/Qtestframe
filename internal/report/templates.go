@@ -248,7 +248,7 @@ func (l loc) traceRuleSections(results []tracerules.Result) []export.Section {
 	rules := export.Section{Name: "trace_rules", Title: l.t("Traceability rules"),
 		Columns: l.cols("Rule", "Severity", "Applies to", "Selector", "Matching items", "Violations", "Result")}
 	viol := export.Section{Name: "trace_rule_violations", Title: l.t("Traceability rule violations"),
-		Columns: l.cols("Rule", "Severity", "Item", "Title", "Found", "Required")}
+		Columns: l.cols("Rule", "Severity", "Item", "Title", "Found", "Required", "Involved items")}
 	for _, res := range results {
 		result := l.tc("rule", "Passed")
 		switch {
@@ -260,7 +260,15 @@ func (l loc) traceRuleSections(results []tracerules.Result) []export.Section {
 		rules.Rows = append(rules.Rows, []string{res.Rule.Name, l.enum(EnumSeverity, res.Rule.Severity), l.enum(EnumScope, res.Rule.Scope), res.Rule.Selector,
 			itoa(res.Matched), itoa(res.ViolationCount), result})
 		for _, v := range res.Violations {
-			viol.Rows = append(viol.Rows, []string{res.Rule.Name, l.enum(EnumSeverity, res.Rule.Severity), v.Key, v.Title, itoa(v.Found), itoa(v.Required)})
+			var involved []string
+			for _, rl := range v.Related {
+				x := rl.Key
+				if rl.Note != "" {
+					x += " (" + rl.Note + ")"
+				}
+				involved = append(involved, x)
+			}
+			viol.Rows = append(viol.Rows, []string{res.Rule.Name, l.enum(EnumSeverity, res.Rule.Severity), v.Key, v.Title, itoa(v.Found), itoa(v.Required), strings.Join(involved, ", ")})
 		}
 	}
 	return []export.Section{rules, viol}

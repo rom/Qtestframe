@@ -2,6 +2,12 @@
 // model.TraceRule) on its requirements, tests, trace links, relations and
 // item links. The caller loads the project once into a Graph; Evaluate
 // then indexes the links and relations once and checks every rule.
+//
+// Besides the configurable trace kinds there are built-in consistency
+// checks (model.TraceBuiltinKinds, builtin.go) with a fixed condition, such
+// as conflicting requirements in one release or a test that verifies an
+// obsolete requirement. Their predicates go through Hooks so that other
+// features (verification records, staleness, waivers) can refine them.
 package tracerules
 
 import (
@@ -11,12 +17,16 @@ import (
 	"github.com/rom/qtestframe/internal/query"
 )
 
-// Item is a requirement or test of the project.
+// Item is a requirement or test of the project (or, in the built-in
+// checks, a risk or release).
 type Item struct {
 	Kind  string `json:"kind"`
 	ID    string `json:"id"`
 	Key   string `json:"key"`
 	Title string `json:"title"`
+	// Status of the item where a check needs it ("" unknown; "deleted"
+	// for an item in the trash).
+	Status string `json:"status,omitempty"`
 }
 
 // Graph is the project content the rules are evaluated on.
@@ -32,6 +42,15 @@ type Graph struct {
 	Record func(kind, id string) query.Record
 	// Schemas: item kind → query schema (nil accepts any field).
 	Schemas map[string]*query.Schema
+
+	// The facts below are only used by the built-in consistency checks
+	// (nil: the check finds nothing in them).
+	Facts
+	// Hooks refine the predicates of the built-in checks (nil fields:
+	// DefaultHooks).
+	Hooks Hooks
+
+	linksByReq map[string][]model.TraceLink
 }
 
 // Violation is an item that breaks a rule.
@@ -44,6 +63,28 @@ type Violation struct {
 	// direction and target type) before the conditions (not suspect,
 	// passed, target query) were applied.
 	Total int `json:"total"`
+	// Built-in checks: Check is the reason code (e.g. obsolete, deleted,
+	// failing, cycle; see builtin.go), Note a detail (the similarity, the
+	// catalogue id), Related the other items involved and Fixes the
+	// actions that resolve the violation (FixActions).
+	Check   string    `json:"check,omitempty"`
+	Note    string    `json:"note,omitempty"`
+	Related []Related `json:"related,omitempty"`
+	Fixes   []string  `json:"fixes,omitempty"`
+}
+
+// Related is another item involved in a violation of a built-in check.
+type Related struct {
+	Item
+	// Role: how it is involved (conflicts_with, depends_on, parent,
+	// verifies, prerequisite, cycle, release, mitigation, duplicate).
+	Role string `json:"role"`
+	// Link is the id of the relation, trace link or test prerequisite
+	// that connects it to the violating item ("" none or deleted).
+	Link string `json:"link,omitempty"`
+	// Check is the reason code for this item (as Violation.Check).
+	Check string `json:"check,omitempty"`
+	Note  string `json:"note,omitempty"`
 }
 
 // Result is the evaluation of one rule.
@@ -56,6 +97,9 @@ type Result struct {
 	Passed         bool        `json:"passed"`
 	// Error is set when a query of the rule is invalid (the rule fails).
 	Error string `json:"error,omitempty"`
+	// Waived is the number of violations a waiver accepts (Hooks.Waived);
+	// they are not listed and do not fail the rule.
+	Waived int `json:"waived,omitempty"`
 }
 
 // Scope restricts the items checked (nil: every item).
@@ -140,9 +184,35 @@ func Evaluate(rules []model.TraceRule, g *Graph, scope Scope) []Result {
 	x := newIndex(g)
 	out := make([]Result, 0, len(rules))
 	for i, r := range rules {
-		out = append(out, x.evaluate(i, r, scope))
+		var res Result
+		if model.IsBuiltinCheck(r.Kind) {
+			res = x.evaluateBuiltin(i, r, scope)
+		} else {
+			res = x.evaluate(i, r, scope)
+		}
+		x.waive(&res)
+		out = append(out, res)
 	}
 	return out
+}
+
+// waive drops the violations a waiver accepts.
+func (x *index) waive(res *Result) {
+	waived := x.hooks().Waived
+	if waived == nil || len(res.Violations) == 0 {
+		return
+	}
+	kept := res.Violations[:0]
+	for _, v := range res.Violations {
+		if waived(x.g, res.Rule, v) {
+			res.Waived++
+			continue
+		}
+		kept = append(kept, v)
+	}
+	res.Violations = kept
+	res.ViolationCount = len(kept)
+	res.Passed = res.Error == "" && res.ViolationCount == 0
 }
 
 func (x *index) evaluate(n int, r model.TraceRule, scope Scope) Result {

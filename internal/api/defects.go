@@ -18,8 +18,8 @@ import (
 // (testers report defects), deleting and the tracker settings project.update.
 
 var defectSchema = &query.Schema{
-	Fields:  []string{"key", "title", "description", "status", "severity", "priority", "assignee", "external", "created_by", "id", "open", "linked"},
-	Aliases: map[string]string{"external_key": "external"},
+	Fields:  []string{"key", "title", "description", "status", "severity", "priority", "assignee", "external", "created_by", "id", "open", "linked", "found_in"},
+	Aliases: map[string]string{"external_key": "external", "phase": "found_in"},
 }
 
 func (s *Server) routesDefects(h routeFunc) {
@@ -56,7 +56,7 @@ func defectRecord(d *model.Defect) query.MapRecord {
 	}
 	return query.MapRecord{"key": {d.Key}, "title": {d.Title}, "description": {d.Description}, "status": {d.Status}, "severity": {d.Severity},
 		"priority": {d.Priority}, "assignee": {d.Assignee}, "external": {d.ExternalKey}, "created_by": {d.CreatedBy}, "id": {d.ID},
-		"open": {open}, "linked": linked}
+		"open": {open}, "linked": linked, "found_in": {d.FoundIn}}
 }
 
 func (s *Server) handleListDefects(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -94,7 +94,7 @@ func (s *Server) handleCreateDefect(w http.ResponseWriter, r *http.Request, p *P
 		return
 	}
 	d := &model.Defect{ProjectID: pr.ID, Title: req.Title, Description: req.Description, Status: req.Status, Severity: req.Severity,
-		Priority: req.Priority, Assignee: req.Assignee, ExternalKey: req.ExternalKey, ExternalURL: req.ExternalURL, CreatedBy: p.User.Email, Links: req.Links}
+		Priority: req.Priority, Assignee: req.Assignee, ExternalKey: req.ExternalKey, ExternalURL: req.ExternalURL, CreatedBy: p.User.Email, Links: req.Links, FoundIn: req.FoundIn}
 	if err := s.Store.CreateDefect(r.Context(), p.TenantID(), d); err != nil {
 		s.fail(w, r, err)
 		return
@@ -124,7 +124,7 @@ func (s *Server) handleUpdateDefect(w http.ResponseWriter, r *http.Request, p *P
 		return
 	}
 	var req struct {
-		Title, Description, Status, Severity, Priority, Assignee, ExternalKey, ExternalURL *string
+		Title, Description, Status, Severity, Priority, Assignee, ExternalKey, ExternalURL, FoundIn *string
 	}
 	body, err := readBody(r)
 	if err != nil {
@@ -138,9 +138,10 @@ func (s *Server) handleUpdateDefect(w http.ResponseWriter, r *http.Request, p *P
 	}
 	req.Title, req.Description, req.Status, req.Severity = raw["title"], raw["description"], raw["status"], raw["severity"]
 	req.Priority, req.Assignee, req.ExternalKey, req.ExternalURL = raw["priority"], raw["assignee"], raw["external_key"], raw["external_url"]
+	req.FoundIn = raw["found_in"]
 	old, oldAssignee := d.Status, d.Assignee
 	for _, f := range []struct{ src, dst *string }{{req.Title, &d.Title}, {req.Description, &d.Description}, {req.Status, &d.Status},
-		{req.Severity, &d.Severity}, {req.Priority, &d.Priority}, {req.Assignee, &d.Assignee}, {req.ExternalKey, &d.ExternalKey}, {req.ExternalURL, &d.ExternalURL}} {
+		{req.Severity, &d.Severity}, {req.Priority, &d.Priority}, {req.Assignee, &d.Assignee}, {req.ExternalKey, &d.ExternalKey}, {req.ExternalURL, &d.ExternalURL}, {req.FoundIn, &d.FoundIn}} {
 		if f.src != nil {
 			*f.dst = *f.src
 		}

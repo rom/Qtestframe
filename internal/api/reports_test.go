@@ -86,7 +86,7 @@ func TestReportTemplatesAndFields(t *testing.T) {
 	pid := a.project("FLD")
 	var tmpls []map[string]any
 	a.call("GET", "/api/v1/reports/templates", nil, 200, &tmpls)
-	if len(tmpls) != 11 {
+	if len(tmpls) != 12 {
 		t.Fatal(tmpls)
 	}
 	ids := map[string]bool{}

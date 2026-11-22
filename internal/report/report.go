@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/analytics"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/tracerules"
@@ -136,6 +137,8 @@ type Data struct {
 	Waivers      []model.Waiver
 	Release      *ReleaseReport
 	SoADecisions map[string]model.SoADecision
+	// Quality: the computed quality metrics (quality metrics report).
+	Quality *analytics.QualityReport
 	// Query is the filter applied by the caller (shown in the subtitle).
 	Query string
 	Now   time.Time

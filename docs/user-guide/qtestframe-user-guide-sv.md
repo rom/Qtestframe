@@ -1722,6 +1722,8 @@ Alla defekter kontrolleras innan någon ändras, så ett felaktigt värde ändra
 
 Allvarlighetsgraden säger hur illa problemet är; **prioriteten** (kritisk, hög, medel, låg) säger hur snart det ska åtgärdas.
 
+**Upptäckt i** anger i vilken fas defekten hittades: *Krav*, *Design*, *Utveckling*, *Test*, *Acceptans* eller *Produktion* (tomt när det är okänt). Defekter som hittats i produktion räknas som läckta i [kvalitetsmåtten](#kvalitetsmått); filtrera med `found_in:production`.
+
 ## Koppla defekter till objekt
 
 En defekt kan kopplas till valfritt antal **krav**, **testfall** och **exekveringar** i projektet. I defektdialogen, under **Kopplade objekt**, väljer du **Koppla krav** eller **Koppla testfall** för att välja objekt, eller **Koppla exekvering** för att välja en körning och en av dess exekveringar. Ta bort en koppling med ×.
@@ -2006,6 +2008,26 @@ Förinställningarna:
 
 Reglerna utvärderas också på en releases omfattning av utgångskriteriet [Spårbarhetsregler](#utgångskriterier), och rapporten **Spårbarhet** listar varje påslagen regel med resultat och de objekt som bryter mot den.
 
+### Inbyggda konsistenskontroller
+
+Utöver de regler du skriver har Qtestframe **inbyggda kontroller** med fasta villkor. De hittar objekt vars tillstånd motsäger deras relationer, länkar eller release:
+
+| Kontroll | Ett objekt bryter mot den när |
+|---|---|
+| Motstridiga krav i en release | två krav med relationen *står i konflikt med* är båda godkända (eller implementerade eller verifierade) och i samma release |
+| Godkänt krav med ouppfyllt beroende | ett godkänt krav *beror på* ett krav som är avvisat, föråldrat eller borttaget (finns kvar i papperskorgen) |
+| Aktivt krav med föråldrad förälder | ett krav som *förfinar* eller är *härlett från* ett föråldrat krav är inte själv avvisat eller föråldrat |
+| Testfall verifierar ett inaktivt krav | ett testfall verifierar ett avvisat eller föråldrat krav |
+| Trasig testförutsättning | en förutsättning för ett testfall är borttagen, underkändes senast, eller förutsättningarna bildar en cykel |
+| SKA-krav i en release utan godkänt belägg | ett MUST- eller SHALL-krav i en planerad eller aktiv release har inget länkat testfall som inte är misstänkt och som godkändes senast |
+| Hög risk utan verifierad åtgärd | en hög eller kritisk risk (inte stängd eller accepterad) saknar länkat krav, eller inget av dess krav är verifierat |
+| Regelverkskrav avvisat utan motivering | ett krav som lagts till från ett regelverk i [katalogen](#katalog) (en lag eller ett direktiv) är avvisat och har ingen kommentar och ingen egen motivering |
+| Misstänkt dubblerade krav | två aktiva krav har nästan identisk titel och beskrivning (likhet minst 0,9 som standard) och ingen relation *dubblerar* |
+
+Ett projekt får dem med **Lägg till inbyggda kontroller** (bland reglerna eller under **Analys**): de läggs till som regler med allvarligheten *varning*, så de syns i utgångskriteriet [Spårbarhetsregler](#utgångskriterier) först när det räknar varningar, eller när du höjer en kontroll till *fel*. En inbyggd kontroll är märkt **Inbyggd**; du kan byta namn, ändra allvarlighet, stänga av den, begränsa den med en fråga och, för dubblettkontrollen, ange **Likhetsgräns** (0,5 till 1) eller, för riskkontrollen, **Lägsta risknivå**.
+
+Varje överträdelse visar de andra berörda objekten (det motstridiga kravet och releasen, den föråldrade föräldern, förutsättningen som underkändes …), var och en som länk, och föreslår en åtgärd där det finns en självklar: **Ta bort relationen**, **Ta bort länken**, **Ta bort förutsättningen**, **Ta bort från** releasen, **Markera som föråldrat**, **Registrera en motivering**, **Länka en åtgärd**, och för en misstänkt dubblett **Markera som dubblett** (lägger till relationen *dubblerar*) eller **Inget problem** (paret rapporteras inte igen). **Inget problem** kvitterar också ett beroende på ett borttaget objekt.
+
 ## Ändringspåverkan
 
 En ändring av ett krav stannar sällan hos det kravet. När **innehållet** i ett krav ändras (titel, beskrivning, kravnivå eller kriterier) markerar Qtestframe det som kanske inte längre stämmer:
@@ -2195,6 +2217,7 @@ Trenderna bygger på en ögonblicksbild av siffrorna som Qtestframe sparar en g�
 - **Åtgärder för öppna risker**: de öppna riskerna efter hur långt kraven som hanterar dem är testade: *Inga krav*, *Otestad*, *Delvis testad*, *Testad, inte alla godkända* och *Verifierad* (som i [riskrapporten](#standardrapporter)).
 - **Ålder på öppna defekter**: öppna och påbörjade defekter efter ålder (under 7 dagar, 7–30, 30–90, över 90 dagar), uppdelade per allvarlighetsgrad, med medelåldern och den äldsta.
 - **Spårbarhetsregler**: om alla aktiverade regler med allvarlighet *fel* är uppfyllda, hur många regler som är aktiverade, hur många som bryts (fel och varningar) och antalet överträdelser. **Spårbarhet →** öppnar matrisen med reglerna.
+- **Kvalitetsmått** och **Konsistenskontroller** (de som hittar problem): samma som under [Analys](#kvalitetsmått).
 
 De extra nyckeltalen och diagrammen räknas fram på servern i en enda begäran, som läses in samtidigt med resten av översikten.
 
@@ -2240,6 +2263,27 @@ Cykler (till exempel två krav som beror på varandra) ritas, men en av linjerna
 **Kravens språk** visar hur många krav som är skrivna på varje språk. Bara texter som är tillräckligt långa för att avgöra språket räknas; en titel på ett eller två ord räcker inte.
 
 **Språk** väljer analysens språk (identifieras per krav som standard). Anmärkningar om testfall visas när du får läsa testfall.
+
+### Konsistenskontroller
+
+**Konsistenskontroller** under **Analys** utvärderar varje [inbyggd konsistenskontroll](#inbyggda-konsistenskontroller) på projektet, även de som inte lagts till som regler än (märkta **Standard**; de räknas inte för releaser förrän de lagts till). **Visa överträdelser** listar objekten med de berörda objekten och åtgärderna.
+
+### Kvalitetsmått
+
+**Kvalitetsmått** under **Analys** (och på översiktens flik **Kvalitet**) mäter projektet ur dess historik. Välj period (30, 90, 180 eller 365 dagar) och efter hur många dagar ett senaste resultat räknas som inaktuellt. Trenderna är per vecka, eller per månad för perioder över 120 dagar.
+
+| Mått | Vad det mäter |
+|---|---|
+| **Kravens föränderlighet** | ändringarna av krav efter att de skapades (varje sparad version; flyttar räknas inte), per period, som ändringar per krav och period, och de mest ändrade kraven |
+| **Defekttäthet** | defekter per aktivt krav, per mapp och per kategori; en defekt räknas för ett krav när den är länkad till kravet, till ett testfall som verifierar det eller till en körning av ett sådant testfall |
+| **Läckta defekter** | defekter som hittats i produktion (defektens fält **Upptäckt i**, se [Defekter](#defekter-1)) eller rapporterats efter att en release de berör släppts; andelen av alla defekter, per upptäcktsfas och per release |
+| **Testeffektivitet** | defekter hittade av test (länkade till ett testfall eller en av dess körningar) per kört testfall och per körtimme; körningar utan tidsåtgång räknas inte i timmarna |
+| **Resultatens ålder** | hur gammalt varje testfalls senaste resultat är (0–7, 8–30, 31–90, 91–180 och fler dagar, aldrig körda) och hur många som är äldre än gränsen |
+| **Granskningstid** | tiden från en granskningsbegäran till beslutet (median, medel och 90:e percentilen), och de väntande begärandena |
+| **Tid till rättning av defekter** | tiden från att en defekt rapporteras tills den är löst, per allvarlighet (avvisade defekter räknas inte) |
+| **Kravkvalitet** | andelen aktiva krav vars text har varningar från språkanalysen; trenden spelar upp varje kravs text ur dess historik |
+
+Varje diagram har ett textalternativ och **Visa som tabell** visar siffrorna i en tabell. **Exportera som rapport** öppnar rapporterna: standardrapporten **Kvalitetsmått** innehåller samma siffror.
 
 ### Efterlevnad av lagar och standarder
 
@@ -2654,6 +2698,7 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 | **Efterlevnad** | efterlevnad av lagar, standarder och bästa praxis: per källa, per avsnitt, de katalogkrav som saknas och de krav som inte är uppfyllda (se [Efterlevnad av lagar och standarder](#efterlevnad-av-lagar-och-standarder)) | valfria lagar, standarder och bästa praxis (standard: de som projektet använder) |
 | **Uttalande om tillämplighet** | varje åtgärd i en standard med tillämplighet, motivering, införande, ägare, krav och belägg (se [Uttalande om tillämplighet](#uttalande-om-tillämplighet)) | standarden (standard: ISO/IEC 27001:2022 bilaga A) |
 | **Releaseberedskap** | en release: go / no-go, varje utgångskriterium med vad som stoppar det och vad ett [undantag](#undantag-och-avvikelser) eller en signerad risk accepterar, gällande undantag och riskerna över acceptansgränsen | releasen (standard: den aktuella) |
+| **Kvalitetsmått** | kravens föränderlighet, defekttäthet, läckta defekter, testeffektivitet, resultatens ålder, granskningstid, tid till rättning och kravkvalitet, med trender (se [Kvalitetsmått](#kvalitetsmått)) | valfri historik i dagar (30, 90, 180 eller 365) och efter hur många dagar ett resultat är inaktuellt |
 
 **Riskrapporten** innehåller:
 
@@ -3141,6 +3186,10 @@ Bara medlemmar med behörigheten *script.execute* (som standard **Testledare** o
    ```
 
 3. Starta om servern. **Kör skript** fungerar nu för webbtester; demoprojektet från `qtestframe seed-demo` har ett (*Login page shows the sign-in form*) som öppnar serverns egen inloggningssida — sätt `server.base_url` till adressen servern nås på.
+
+## Konsistenskontroller
+
+Projekt får inte de [inbyggda konsistenskontrollerna](#inbyggda-konsistenskontroller) som regler automatiskt: en förvaltare lägger till dem med **Lägg till inbyggda kontroller** (de börjar som varningar, så releasernas beredskap ändras inte). Avfärdade fynd (*ingen dubblett*) ingår i säkerhetskopior och projektarkiv.
 
 ## API-nycklar
 

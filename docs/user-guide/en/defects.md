@@ -49,6 +49,8 @@ Every defect is checked before any is changed, so one wrong value changes nothin
 
 Severity says how bad the problem is; **priority** (critical, high, medium, low) says how soon it should be fixed.
 
+**Found in** records the phase in which the defect was found: *Requirements*, *Design*, *Development*, *Test*, *Acceptance* or *Production* (empty when unknown). Defects found in production count as escaped in the [quality metrics](traceability-and-coverage.md#quality-metrics); filter with `found_in:production`.
+
 ## Linking defects to items
 
 A defect can be linked to any number of **requirements**, **tests** and **executions** of the project. In the defect dialog, under **Linked items**, select **Link requirement** or **Link test** to pick items, or **Link execution** to choose a run and one of its executions. Remove a link with ×.

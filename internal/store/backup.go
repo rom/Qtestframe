@@ -42,6 +42,7 @@ var BackupTables = []string{
 	"trace_rules",
 	// change and defect correlations: generated document contents, regressions
 	"document_items", "defect_regressions",
+	"consistency_dismissals",
 	"invitations", "report_subscriptions",
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",

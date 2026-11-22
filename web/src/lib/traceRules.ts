@@ -3,6 +3,7 @@
 // internal/tracerules).
 import type { RouteLocationRaw } from 'vue-router'
 import type { TraceRule, TraceRuleFields, TraceRuleResult, TraceViolation } from './types'
+import { builtinScope, isBuiltin, itemRoute, violationLine } from './consistency'
 
 export const TRACE_RULE_KINDS = ['verified_by', 'verifies', 'relation', 'item_link'] as const
 export const TRACE_RULE_SEVERITIES = ['error', 'warning'] as const
@@ -91,6 +92,8 @@ export function draftOf(r: TraceRule): TraceRuleFields {
     target_type: r.target_type ?? '',
     target_query: r.target_query ?? '',
     every: !!r.every,
+    ...(r.threshold ? { threshold: r.threshold } : {}),
+    ...(r.level ? { level: r.level } : {}),
   }
 }
 
@@ -102,6 +105,22 @@ export function changeScope(d: TraceRuleFields, scope: string): TraceRuleFields 
 
 /** The draft as sent to the API: only the options its kind uses. */
 export function cleanRule(d: TraceRuleFields): TraceRuleFields {
+  if (isBuiltin(d.kind)) {
+    const scope = builtinScope(d.kind)
+    const out: TraceRuleFields = {
+      name: d.name.trim(),
+      description: (d.description ?? '').trim(),
+      severity: d.severity,
+      enabled: d.enabled,
+      scope,
+      selector: scope === 'risk' ? '' : (d.selector ?? '').trim(),
+      kind: d.kind,
+      min: 1,
+    }
+    if (d.kind === 'duplicate_suspect') out.threshold = Math.min(1, Math.max(0.5, Number(d.threshold) || 0.9))
+    if (d.kind === 'unmitigated_risk') out.level = d.level || 'high'
+    return out
+  }
   const o = kindOptions(d.kind)
   const min = Math.round(Number(d.min))
   const out: TraceRuleFields = {
@@ -131,6 +150,7 @@ export function cleanRule(d: TraceRuleFields): TraceRuleFields {
  * relation(type, direction) translates a relation type.
  */
 export function ruleSummary(r: TraceRuleFields, t: T, relation: (type: string, direction: string) => string): string {
+  if (isBuiltin(r.kind)) return t(`consistency.check.${r.kind}.description`)
   const who = r.selector ? t(`traceRules.summary.matching.${r.scope === 'test' ? 'test' : 'requirement'}`, { selector: r.selector }) : t(`traceRules.summary.all.${r.scope === 'test' ? 'test' : 'requirement'}`)
   let what: string
   switch (r.kind) {
@@ -161,7 +181,8 @@ export function ruleSummary(r: TraceRuleFields, t: T, relation: (type: string, d
 }
 
 /** What a violating item lacks, e.g. "0 of 1 required" or "1 of 2 qualify, 2 required". */
-export function violationText(v: Pick<TraceViolation, 'found' | 'required' | 'total'>, t: T): string {
+export function violationText(v: Pick<TraceViolation, 'found' | 'required' | 'total' | 'check' | 'note' | 'related'>, t: T): string {
+  if (v.check) return violationLine(v, t)
   if (v.total > v.found) return t('traceRules.violation.partial', { found: v.found, total: v.total, required: v.required })
   return t('traceRules.violation.missing', { found: v.found, required: v.required })
 }
@@ -210,6 +231,7 @@ export function filterResults(list: readonly TraceRuleResult[] | null | undefine
 
 /** Route of a violating item. */
 export function violationRoute(v: Pick<TraceViolation, 'kind' | 'id'>, projectId: string): RouteLocationRaw {
+  if (v.kind !== 'test' && v.kind !== 'requirement') return itemRoute(v, projectId) ?? { name: 'traceability', params: { projectId } }
   return { name: v.kind === 'test' ? 'tests' : 'requirements', params: { projectId }, query: { item: v.id } }
 }
 

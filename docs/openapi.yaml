@@ -2432,6 +2432,98 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/analytics/consistency:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Requirements
+      summary: Built-in consistency checks
+      operationId: getProjectsByPidAnalyticsConsistency
+      description: |-
+        Evaluates every built-in consistency check (conflict_in_release, unmet_dependency, obsolete_parent, verifies_inactive, broken_prerequisite, unevidenced_must, unmitigated_risk, unjustified_rejection, duplicate_suspect) on the project: with the project's own rule where it has installed the check, else with the default (rule id `builtin:<kind>`, not counted by releases) → `{results:[TraceRuleResult], passed, summary, checks:[{kind, scope, name, description, severity, enabled, installed, rule?}], installed}`. Violations carry `check` (reason), `note`, `related:[{kind, id, key, title, status?, role, link?, check?, note?}]` and `fixes:[remove_relation|remove_link|remove_dependency|remove_from_release|set_obsolete|add_justification|link_mitigation|mark_duplicate|dismiss]`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: 'violations listed per check (default 500)'
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/analytics/quality:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Requirements
+      summary: Quality metrics
+      operationId: getProjectsByPidAnalyticsQuality
+      description: |-
+        Quality metrics computed from the project's history → `{from, to, period, periods, stale_days, volatility:{changes, requirements, changed, per_requirement, trend, most_changed}, defect_density:{defects, requirements, per_requirement, by_severity, by_requirement, by_folder, by_category}, escaped:{defects, escaped, percent, production, after_release, by_phase, by_release, trend, items}, effectiveness:{defects, tests, executions, hours, per_test, per_hour, top_tests, trend, untimed_percent}, result_age:{tests, with_result, never, buckets, stale_days, stale, stale_percent, median_days, oldest}, review_turnaround:{count, mean_hours, median_hours, p90_hours, pending, oldest_pending_days, trend}, fix_time:{count, mean_hours, median_hours, p90_hours, open, by_severity, trend}, requirement_quality:{requirements, with_warnings, percent, by_rule, trend, items}}`. Trends are `[{period, count, total, value}]` per week or month.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - name: range
+        in: query
+        required: false
+        description: 'days of history: 30, 90 (default), 180 or 365'
+        schema:
+          type: integer
+      - name: period
+        in: query
+        required: false
+        description: 'week or month (default: week up to 120 days, else month)'
+        schema:
+          type: string
+      - name: stale_days
+        in: query
+        required: false
+        description: 'a latest result older than this is stale (default 30)'
+        schema:
+          type: integer
+      - name: lang
+        in: query
+        required: false
+        description: 'analysis language (auto or a language code; default auto)'
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/prompts:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -12290,7 +12382,7 @@ paths:
       summary: Create traceability rule
       operationId: postProjectsByPidTraceRules
       description: |-
-        `{name, description?, severity: error|warning, enabled?, scope: requirement|test, selector?, kind: verified_by|verifies|relation|item_link, min?, options?}` → TraceRule; at most 200 per project
+        `{name, description?, severity: error|warning, enabled?, scope: requirement|test|risk, selector?, kind: verified_by|verifies|relation|item_link or a built-in check (conflict_in_release, unmet_dependency, obsolete_parent, verifies_inactive, broken_prerequisite, unevidenced_must, unmitigated_risk, unjustified_rejection, duplicate_suspect), min?, options?, threshold? (duplicate_suspect, 0.5–1), level? (unmitigated_risk: low|medium|high|critical)}` → TraceRule; at most 200 per project
 
         **Permission:** `project.update`.
       x-permission: project.update
@@ -12307,6 +12399,63 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/trace-rules/builtins:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: List built-in consistency checks
+      operationId: getProjectsByPidTraceRulesBuiltins
+      description: |-
+        the built-in checks with their project defaults and whether the project has them → `{items:[{kind, scope, name, description, severity, enabled, installed, rule?}]}`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Traceability
+      summary: Install built-in consistency checks
+      operationId: postProjectsByPidTraceRulesBuiltins
+      description: |-
+        `{kinds?:[kind]}` (optional body) creates the built-in checks the project does not have yet, with their defaults (enabled, severity warning) → `{items:[TraceRule]}` (the rules created)
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -13174,6 +13323,98 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/consistency/dismissals:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: List dismissed consistency findings
+      operationId: getProjectsByPidConsistencyDismissals
+      description: |-
+        dismissed findings of the built-in checks → `{items:[{id, project_id, check, item_a, item_b, created_by, created_at}]}`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Traceability
+      summary: Dismiss a consistency finding
+      operationId: postProjectsByPidConsistencyDismissals
+      description: |-
+        `{check: duplicate_suspect|unmet_dependency|broken_prerequisite, item_id, other_id}`: not a duplicate, or a dependency on a deleted item dealt with. Needs requirement.write (test.write for broken_prerequisite) in the project.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Traceability
+      summary: Restore a dismissed consistency finding
+      operationId: deleteProjectsByPidConsistencyDismissals
+      description: |-
+        same body as the dismissal; removes it
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -17035,6 +17276,9 @@ components:
           - string
           - 'null'
           format: date-time
+        found_in:
+          type: string
+          description: phase found in (requirements, design, development, test, acceptance, production; empty unknown)
         links:
           type: array
           items:

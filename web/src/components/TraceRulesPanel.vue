@@ -18,6 +18,8 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import QueryInput from './QueryInput.vue'
+import ConsistencyViolation from './ConsistencyViolation.vue'
+import { builtinScope, isBuiltin } from '@/lib/consistency'
 import HelpTip from '@/guide/HelpTip.vue'
 import { api, ApiError } from '@/lib/api'
 import { P } from '@/lib/permissions'
@@ -43,7 +45,7 @@ import {
   violationRoute,
   violationText,
 } from '@/lib/traceRules'
-import type { TraceRule, TraceRuleFields, TraceRuleResult, TraceRulesReport } from '@/lib/types'
+import type { BuiltinCheck, TraceRule, TraceRuleFields, TraceRuleResult, TraceRulesReport } from '@/lib/types'
 import { relationText } from '@/i18n/labels'
 import { useAuthStore } from '@/stores/auth'
 import { useUndoStore } from '@/stores/undo'
@@ -62,8 +64,33 @@ const onlyViolations = ref(false)
 const search = ref('')
 const open = ref<Record<string, boolean>>({})
 
+// built-in consistency checks the project does not have as rules yet
+const builtins = ref<BuiltinCheck[]>([])
+const missingBuiltins = computed(() => builtins.value.filter((b) => !b.installed).length)
+const installing = ref(false)
+async function loadBuiltins() {
+  try {
+    builtins.value = (await api.get<{ items: BuiltinCheck[] }>(`/projects/${props.projectId}/trace-rules/builtins`)).items ?? []
+  } catch {
+    builtins.value = []
+  }
+}
+async function installBuiltins() {
+  installing.value = true
+  try {
+    const res = await api.post<{ items: TraceRule[] }>(`/projects/${props.projectId}/trace-rules/builtins`)
+    notify.ok(t('consistency.installed', { n: res.items.length }, res.items.length))
+    await load()
+  } catch (e) {
+    notify.fail(e, t('consistency.installFailed'))
+  } finally {
+    installing.value = false
+  }
+}
+
 async function load() {
   loading.value = true
+  void loadBuiltins()
   try {
     report.value = await api.get<TraceRulesReport>(`/projects/${props.projectId}/trace-rules/evaluate?all=1`)
   } catch (e) {
@@ -111,6 +138,8 @@ const relationOptions = computed(() => [{ value: '', label: t('traceRules.anyRel
 const directionOptions = computed(() => TRACE_DIRECTIONS.map((d) => ({ value: d, label: d ? t(`traceRules.direction.${d}`) : t('traceRules.anyDirection') })))
 const targetOptions = computed(() => [{ value: '', label: t('traceRules.anyTarget') }, ...TRACE_TARGET_TYPES.map((x) => ({ value: x, label: t(`traceRules.targetType.${x}`) }))])
 const opts = computed(() => kindOptions(form.value.kind))
+const builtinForm = computed(() => isBuiltin(form.value.kind))
+const levelOptions = computed(() => ['low', 'medium', 'high', 'critical'].map((l) => ({ value: l, label: t(`risksView.level.${l}`) })))
 const otherKind = computed(() => targetKind(form.value))
 
 function openCreate() {
@@ -235,6 +264,7 @@ function remove(r: TraceRule) {
       <span class="row small nowrap"><ToggleSwitch v-model="onlyViolations" input-id="tr-only" /><label for="tr-only">{{ t('traceRules.onlyViolations') }}</label></span>
       <HelpTip id="trace.rules" :label="t('traceRules.title')" />
       <span class="grow" />
+      <Button v-if="canManage && missingBuiltins" :label="t('consistency.install')" icon="pi pi-shield" size="small" severity="secondary" outlined :loading="installing" @click="installBuiltins" />
       <Button v-if="canManage" :label="t('traceRules.new')" icon="pi pi-plus" size="small" aria-haspopup="dialog" @click="openCreate" />
     </div>
     <div v-if="report" class="row small" role="status" style="margin-bottom: 10px">
@@ -257,6 +287,7 @@ function remove(r: TraceRule) {
           <i :class="!res.rule.enabled ? 'pi pi-minus-circle' : res.passed ? 'pi pi-check-circle' : 'pi pi-times-circle'" class="rule-icon" aria-hidden="true" />
           <span class="sr-only">{{ !res.rule.enabled ? t('traceRules.disabled') : res.passed ? t('traceRules.passed') : t('traceRules.failed') }}:</span>
           <b class="grow rule-name">{{ res.rule.name }}</b>
+          <Tag v-if="isBuiltin(res.rule.kind)" :value="t('consistency.builtin')" severity="info" icon="pi pi-shield" v-tooltip="t('consistency.builtinHint')" />
           <Tag :value="t(`traceRules.severity.${res.rule.severity}`)" :severity="severityTone(res.rule.severity)" />
           <Tag v-if="!res.rule.enabled" :value="t('traceRules.disabled')" severity="secondary" />
           <span class="small mono nowrap">{{ t('traceRules.resultLine', { matched: res.matched }, res.violation_count) }}</span>
@@ -281,11 +312,18 @@ function remove(r: TraceRule) {
             @click="open[res.rule.id] = !open[res.rule.id]"
           />
           <ul v-if="open[res.rule.id]" :id="'trv-' + res.rule.id" class="plain-list violations" :aria-label="t('traceRules.violationsOf', { name: res.rule.name })">
-            <li v-for="v in res.violations" :key="v.kind + v.id" class="row nowrap">
-              <span class="sr-only">{{ t(`traceRules.scope.${v.kind === 'test' ? 'test' : 'requirement'}`) }}</span>
-              <ItemRef :to="violationRoute(v, projectId)" :item-key="v.key" :title="v.title" :hint="v.title" title-class="ellipsis" grow />
-              <span class="small muted nowrap">{{ violationText(v, t) }}</span>
-            </li>
+            <template v-for="v in res.violations" :key="v.kind + v.id">
+              <li v-if="isBuiltin(res.rule.kind)" class="builtin-violation">
+                <span class="sr-only">{{ t(`consistency.kind.${v.kind}`) }}</span>
+                <ItemRef :to="violationRoute(v, projectId)" :item-key="v.key" :title="v.title" :hint="v.title" title-class="ellipsis" />
+                <ConsistencyViolation :violation="v" :check="res.rule.kind" :project-id="projectId" @changed="load" />
+              </li>
+              <li v-else class="row nowrap">
+                <span class="sr-only">{{ t(`traceRules.scope.${v.kind === 'test' ? 'test' : 'requirement'}`) }}</span>
+                <ItemRef :to="violationRoute(v, projectId)" :item-key="v.key" :title="v.title" :hint="v.title" title-class="ellipsis" grow />
+                <span class="small muted nowrap">{{ violationText(v, t) }}</span>
+              </li>
+            </template>
             <li v-if="res.violation_count > res.violations.length" class="small muted">{{ t('traceRules.more', { n: res.violation_count - res.violations.length }) }}</li>
           </ul>
         </template>
@@ -296,7 +334,7 @@ function remove(r: TraceRule) {
   <Dialog v-model:visible="dialog" :header="editing ? t('traceRules.editHeader') : t('traceRules.new')" modal style="width: min(680px, 96vw)">
     <form class="grid trace-rule-form" style="gap: 12px" @submit.prevent="save">
       <Message v-if="formError" severity="error" :closable="false">{{ errorText(formError) }}</Message>
-      <div v-if="!editing" v-field class="field">
+      <div v-if="!editing && !builtinForm" v-field class="field">
         <label for="tr-preset">{{ t('traceRules.preset.label') }}</label>
         <Select v-model="preset" input-id="tr-preset" :options="presetOptions" option-label="label" option-value="value" :placeholder="t('traceRules.preset.placeholder')" show-clear />
       </div>
@@ -311,6 +349,21 @@ function remove(r: TraceRule) {
           <span class="field-label">{{ t('traceRules.state') }}</span>
           <span class="row small nowrap"><ToggleSwitch v-model="form.enabled" input-id="tr-enabled" /><label for="tr-enabled">{{ t('traceRules.enabled') }}</label></span>
         </div>
+        <div v-if="builtinForm" class="field full small muted">{{ t(`consistency.check.${form.kind}.description`) }}</div>
+        <div v-if="builtinForm && form.kind === 'duplicate_suspect'" v-field class="field">
+          <label for="tr-threshold">{{ t('consistency.threshold') }}</label>
+          <InputNumber v-model="form.threshold" input-id="tr-threshold" :min="0.5" :max="1" :step="0.05" :min-fraction-digits="2" :max-fraction-digits="2" show-buttons aria-describedby="tr-threshold-h" />
+          <small id="tr-threshold-h" class="muted">{{ t('consistency.thresholdHint') }}</small>
+        </div>
+        <div v-if="builtinForm && form.kind === 'unmitigated_risk'" v-field class="field">
+          <label for="tr-level">{{ t('consistency.level') }}</label>
+          <Select v-model="form.level" input-id="tr-level" :options="levelOptions" option-label="label" option-value="value" />
+        </div>
+        <div v-if="builtinForm && builtinScope(form.kind) !== 'risk'" class="field full">
+          <span class="field-label">{{ t('traceRules.selector') }}</span>
+          <QueryInput v-model="form.selector" :scope="builtinScope(form.kind) === 'test' ? 'test' : 'requirement'" :error="selectorError" :placeholder="t('traceRules.selectorPlaceholder')" />
+        </div>
+        <template v-if="!builtinForm">
         <div class="field full">
           <span id="tr-scope-l" class="field-label">{{ t('traceRules.appliesTo') }}</span>
           <SelectButton :model-value="form.scope" :options="scopeOptions" option-label="label" option-value="value" :allow-empty="false" aria-labelledby="tr-scope-l" @update:model-value="setScope" />
@@ -349,6 +402,7 @@ function remove(r: TraceRule) {
           <span v-if="opts.passed" class="row small nowrap"><Checkbox v-model="form.passed" binary input-id="tr-passed" /><label for="tr-passed">{{ t('traceRules.passedOnly') }}</label></span>
           <span class="row small nowrap"><Checkbox v-model="form.every" binary input-id="tr-every" /><label for="tr-every">{{ t('traceRules.every') }}</label></span>
         </div>
+        </template>
       </div>
       <div class="small muted" aria-live="polite">{{ summary(cleanRule(form)) }}</div>
       <div v-if="preview" class="small preview" role="status">
@@ -380,4 +434,5 @@ function remove(r: TraceRule) {
 .violations-toggle { justify-self: start; }
 .checks { flex-direction: row; flex-wrap: wrap; gap: 8px 18px; }
 .preview { padding: 6px 10px; border-radius: 6px; background: var(--qtf-hover); }
+.builtin-violation { display: grid; gap: 2px; min-width: 0; padding: 4px 0; }
 </style>

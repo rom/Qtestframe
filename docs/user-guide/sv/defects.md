@@ -49,6 +49,8 @@ Alla defekter kontrolleras innan någon ändras, så ett felaktigt värde ändra
 
 Allvarlighetsgraden säger hur illa problemet är; **prioriteten** (kritisk, hög, medel, låg) säger hur snart det ska åtgärdas.
 
+**Upptäckt i** anger i vilken fas defekten hittades: *Krav*, *Design*, *Utveckling*, *Test*, *Acceptans* eller *Produktion* (tomt när det är okänt). Defekter som hittats i produktion räknas som läckta i [kvalitetsmåtten](traceability-and-coverage.md#kvalitetsmått); filtrera med `found_in:production`.
+
 ## Koppla defekter till objekt
 
 En defekt kan kopplas till valfritt antal **krav**, **testfall** och **exekveringar** i projektet. I defektdialogen, under **Kopplade objekt**, väljer du **Koppla krav** eller **Koppla testfall** för att välja objekt, eller **Koppla exekvering** för att välja en körning och en av dess exekveringar. Ta bort en koppling med ×.
