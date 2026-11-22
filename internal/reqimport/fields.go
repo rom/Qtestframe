@@ -234,6 +234,9 @@ var obligationValues = map[string]string{
 	"should": model.ObligationShould, "should not": model.ObligationShouldNot, "shouldnot": model.ObligationShouldNot,
 	"recommended": model.ObligationShould, "not recommended": model.ObligationShouldNot,
 	"may": model.ObligationMay, "optional": model.ObligationOptional, "will": model.ObligationWill,
+	// MoSCoW, as in the Polarion "Severity" of requirements
+	"must have": model.ObligationMust, "should have": model.ObligationShould, "could have": model.ObligationMay,
+	"nice to have": model.ObligationMay, "won't have": model.ObligationOptional, "will not have": model.ObligationOptional,
 	"describe": model.ObligationDescribe, "describes": model.ObligationDescribe, "informative": model.ObligationDescribe,
 	"info": model.ObligationDescribe,
 	"ska":  model.ObligationShall, "skall": model.ObligationShall, "ska inte": model.ObligationShallNot,
@@ -258,7 +261,10 @@ var typeValues = map[string]string{
 	"interface": "interface", "gränssnitt": "interface", "integration": "interface",
 	"constraint": "constraint", "begränsning": "constraint", "restriktion": "constraint", "villkor": "constraint",
 	"business": "business", "affär": "business", "verksamhet": "business", "verksamhetskrav": "business",
-	"affärskrav": "business",
+	"affärskrav":             "business",
+	"functional requirement": "functional", "non functional requirement": "non_functional",
+	"performance requirement": "performance", "security requirement": "security", "interface requirement": "interface",
+	"business requirement": "business", "regulatory requirement": "regulatory", "safety requirement": "security",
 	"regulatory": "regulatory", "legal": "regulatory", "compliance": "regulatory", "regulatorisk": "regulatory",
 	"lagkrav": "regulatory", "juridisk": "regulatory", "författningskrav": "regulatory",
 }
@@ -269,13 +275,14 @@ var priorityValues = map[string]string{
 	"high": "high", "major": "high", "hög": "high", "högt": "high", "p2": "high", "2": "high",
 	"medium": "medium", "normal": "medium", "moderate": "medium", "medel": "medium", "mellan": "medium",
 	"p3": "medium", "3": "medium",
-	"low": "low", "minor": "low", "lowest": "low", "trivial": "low", "låg": "low", "lågt": "low", "p4": "low", "4": "low",
+	"highest priority": "critical",
+	"low":              "low", "minor": "low", "lowest": "low", "trivial": "low", "låg": "low", "lågt": "low", "p4": "low", "4": "low",
 }
 
 var statusValues = map[string]string{
 	"draft": "draft", "new": "draft", "proposed": "draft", "open": "draft", "utkast": "draft", "ny": "draft",
 	"föreslagen": "draft",
-	"review":     "review", "in review": "review", "under review": "review", "granskning": "review",
+	"review":     "review", "in review": "review", "reviewed": "review", "inreview": "review", "to review": "review", "under review": "review", "granskning": "review",
 	"under granskning": "review", "för granskning": "review",
 	"approved": "approved", "accepted": "approved", "agreed": "approved", "godkänd": "approved",
 	"godkänt": "approved", "fastställd": "approved", "beslutad": "approved",

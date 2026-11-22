@@ -44,6 +44,8 @@ var BackupTables = []string{
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",
 	"system_settings",
+	// where items came from in other tools (the ReqIF import)
+	"external_refs",
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available
 	"secret_keys",
