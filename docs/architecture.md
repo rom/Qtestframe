@@ -95,6 +95,8 @@ pair.
 | `internal/query` | Lexer, parser and evaluator of the filter/search language; matched-field and term extraction for highlighting. |
 | `internal/reqlang` | RFC 2119 / RFC 8174 keyword detection, obligation level, requirement lint rules and score. |
 | `internal/export` | Format-neutral `Dataset` rendered as CSV (ZIP for several sections), XLSX (`excelize`), PDF (`go-pdf/fpdf`) and DOCX (hand-written OOXML). |
+| `internal/interop` | Exchange with other tools and with Excel: a field registry (built-in fields plus `Register`ed extensions such as custom fields), the round-trip workbook (write / read), the diff of a file against the stored items (new, changed, unchanged, conflict, error per cell) and the ReqIF attribute mapping with hierarchy and relations. The API applies a confirmed diff in one transaction through the regular create / PATCH handlers (`internal/api/exchange*.go`). |
+| `internal/oslc` | RDF/XML, Turtle and JSON-LD writers and the `oslc.where` parser of the read-only OSLC RM / QM provider (`internal/api/oslc.go`). |
 | `internal/runner` | Executes automated test scripts with timeout and output cap; optional re-exec through `qtestframe sandbox-exec` (rlimits, no_new_privs, Landlock, seccomp). |
 | `internal/hardening` | In-process Linux hardening: `PR_SET_NO_NEW_PRIVS`, capability dropping, Landlock (`go-landlock`), seccomp deny-list (`go-seccomp-bpf`), rlimits; no-ops on other platforms. |
 | `internal/logging` | `log/slog` setup (text or JSON) with fan-out to a syslog writer (RFC 5424 or RFC 3164; UDP, TCP, TLS, Unix; RFC 6587 octet counting on streams). |
