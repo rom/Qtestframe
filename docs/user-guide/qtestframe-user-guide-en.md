@@ -98,7 +98,7 @@ The language buttons at the top of the sign-in page switch between English and S
 
 The dark bar on the left is the main navigation:
 
-- **Workspace:** **Projects** (all projects of the current organisation) and **Search** (search across projects).
+- **Workspace:** **Projects** (all projects of the current organisation) and **Search** (search across projects). Each project card shows when the project was started and by whom: who created it, or loaded or duplicated it from a [project file](#reports-and-export). The creator is left out when it is not known (projects from the demo data or the command line, and projects older than this information). The table view has the same as columns, and **Categories & settings → Project** shows it too.
 - **The open project:** once you open a project, its key and name appear with its sections: **Dashboard**, **Requirements**, **Tests**, **Operations** (test runs), **Traceability**, **Analytics**, **Dependency graph**, **Test flow**, **AI prompts** (software projects), **Tags**, **Baselines**, **Categories & settings**, **Export** and, where available, **Documents** and **Reports**.
 - **Administration**, if your role allows it.
 
@@ -3614,10 +3614,15 @@ Qtestframe can write two complete documents for you and save them in the archive
    - **Filter**: a [query](#search-and-filters) on the requirements (specification) or the tests (test plan), for example `status:approved` or `folder:Checkout`.
    - **Include rejected and obsolete requirements** (and, for a test plan, deprecated tests). They are left out by default.
    - **Group the requirements by** folder, category (one dimension) or type (specification only; a test plan is always grouped by folder).
+   - **Each requirement on a new page** (specification only, on by default): in PDF and Word every requirement starts at the top of a page. A folder or group heading right before a requirement (with the folder's description) moves to the new page with it, so a heading is never left alone at the bottom of a page, and no page stays blank. Turn it off for compact printing: the requirements then follow one another. See [Page layout](#page-layout).
    - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report. **Discussions of the items** adds an appendix with the [discussion](#discussions) threads of the requirements or tests (removed comments are left out; resolved threads are marked). **Dependency graph of the requirements** (specification only, on by default) adds the [dependency graph appendix](#dependency-graph-appendix).
 3. Select **Create**. A progress bar shows while the document is being written; a project with thousands of requirements takes a few seconds.
 
 The new document appears at the top of the archive, highlighted, with **Open** (PDF) and **Download**. It is a *document* with the tags `generated`, `requirements-specification` or `test-plan` and the version (for example `v2.0`); the earlier versions of the same kind make up its revision history. Obligation keywords in requirement texts (MUST, SHALL, SKA …) are printed in bold.
+
+### Page layout
+
+In PDF and Word a requirement or test is never split across two pages when it fits on one: if it does not fit on the rest of a page, it starts on the next one, together with the folder headings right before it. Only an item longer than a page continues on the next page. In a specification with **Each requirement on a new page** every requirement starts a page anyway. Word keeps the items together with its *keep with next* and *page break before* paragraph settings, so the layout stays right when you edit the file. Markdown has no pages: it looks the same either way.
 
 ### Dependency graph appendix
 

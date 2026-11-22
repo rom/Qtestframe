@@ -13,7 +13,7 @@ describe('generated documents', () => {
     expect(generateDocBody(f)).toEqual({
       kind: 'requirements_spec',
       format: 'pdf',
-      options: { fields: defaultDocFields('requirements_spec'), include_inactive: false, traceability: true, glossary: true, lang: 'sv', group_by: 'folder', dependency_graph: true },
+      options: { fields: defaultDocFields('requirements_spec'), include_inactive: false, traceability: true, glossary: true, lang: 'sv', group_by: 'folder', dependency_graph: true, new_page_per_requirement: true },
     })
     const body = generateDocBody({ ...f, title: ' SRS ', version: '2.0', author: '', query: 'status:approved', baselineId: 'b1', groupBy: 'category', dimension: 'Level', format: 'md', fields: ['results', 'description'] })
     expect(body.format).toBe('md')
@@ -25,6 +25,15 @@ describe('generated documents', () => {
     expect(generateDocBody({ ...f, groupBy: 'category' }).options).not.toHaveProperty('dimension')
     expect(generateDocBody(f).options).not.toHaveProperty('include_discussions')
     expect(generateDocBody({ ...f, discussions: true }).options.include_discussions).toBe(true)
+  })
+
+  it('starts every requirement of a specification on a new page by default', () => {
+    const f = blankDocForm('requirements_spec', 'en')
+    expect(f.newPagePerRequirement).toBe(true)
+    expect(generateDocBody({ ...f, newPagePerRequirement: false }).options.new_page_per_requirement).toBe(false)
+    expect(generateDocBody(blankDocForm('test_plan', 'en')).options).not.toHaveProperty('new_page_per_requirement')
+    const off = { ...f, newPagePerRequirement: false }
+    expect(switchDocKind(switchDocKind(off, 'test_plan'), 'requirements_spec').newPagePerRequirement).toBe(false)
   })
 
   it('adds the dependency graph appendix to a specification by default', () => {

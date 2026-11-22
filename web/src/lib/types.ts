@@ -256,8 +256,14 @@ export interface Project {
   access?: ProjectAccessMode
   /** the caller's access to the project (effective permissions there) */
   my_access?: ProjectAccess
+  /** when the project was started (created, loaded or duplicated) */
   created_at: string
   updated_at: string
+  /** user id of who started the project ("" unknown: seeded, command line, older data) */
+  created_by?: string
+  /** the creator's display name (their e-mail when they have none); "" when unknown or no account */
+  created_by_name?: string
+  created_by_email?: string
 }
 
 export type ProjectAccessMode = 'organisation' | 'restricted'

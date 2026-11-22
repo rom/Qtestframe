@@ -177,6 +177,13 @@ async function generate() {
           <Select v-model="form.dimension" :input-id="`${id}-dim`" :options="dimensionOptions" option-label="label" option-value="value" :disabled="busy" :placeholder="t('documents.generate.firstDimension')" />
         </div>
       </div>
+      <div v-if="isSpec">
+        <div class="row nowrap">
+          <Checkbox v-model="form.newPagePerRequirement" :input-id="`${id}-newpage`" binary :disabled="busy" :aria-describedby="`${id}-newpage-help`" />
+          <label :for="`${id}-newpage`">{{ t('documents.generate.newPagePerRequirement') }}</label>
+        </div>
+        <small :id="`${id}-newpage-help`" class="muted">{{ t('documents.generate.newPagePerRequirementHelp') }}</small>
+      </div>
 
       <fieldset class="plain-fieldset" :disabled="busy" :aria-describedby="showProblems && problems.includes('fields') ? `${id}-fields-error` : undefined">
         <legend class="field-label">{{ isSpec ? t('documents.generate.fieldsRequirements') : t('documents.generate.fieldsTests') }}</legend>

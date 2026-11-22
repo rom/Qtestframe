@@ -9246,6 +9246,10 @@ paths:
                       type: boolean
                       default: true
                       description: 'requirements specification: add the dependency graph appendix (the relations between the requirements as figures and as a table; left out without relations)'
+                    new_page_per_requirement:
+                      type: boolean
+                      default: true
+                      description: 'requirements specification: every requirement starts at the top of a new page (PDF, DOCX), together with a folder or group heading right before it; false prints compactly. Items that fit on one page are never split across two.'
                     lang:
                       type: string
                       enum:
@@ -20673,9 +20677,19 @@ components:
         created_at:
           type: string
           format: date-time
+          description: when the project was started (created, or loaded or duplicated from a project archive)
         updated_at:
           type: string
           format: date-time
+        created_by:
+          type: string
+          description: user id of who started the project; empty when unknown (seeded, command line, or created before this was recorded and without an audit log entry)
+        created_by_name:
+          type: string
+          description: the creator's display name (their e-mail when they have none); empty when unknown or the account no longer exists
+        created_by_email:
+          type: string
+          description: the creator's e-mail; empty when unknown or the account no longer exists
     Folder:
       type: object
       properties:

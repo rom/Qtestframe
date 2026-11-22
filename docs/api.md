@@ -215,7 +215,7 @@ default):
 
 | Method | Path | Permission |
 |---|---|---|
-| GET | `/projects` | signed in – the projects the caller may read (see [Project sharing](#project-sharing-per-project-access)), each with `access` and `my_access` |
+| GET | `/projects` | signed in – the projects the caller may read (see [Project sharing](#project-sharing-per-project-access)), each with `access` and `my_access`, and who started it and when: `created_at`, `created_by` (user id), `created_by_name` (display name, else e-mail) and `created_by_email` – the creator fields are `""` when unknown (seeded projects, the command line, projects older than this field without a `project.create` audit entry) or when the account no longer exists |
 | POST | `/projects` | project.create – `{"key","name","description","color"?,"type"?,"tech_context"?,"seed_categories":true}` |
 | GET | `/projects/{pid}` | project.read |
 | PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
@@ -2834,6 +2834,7 @@ format, file name, item counts and duration).
     "traceability": true, "glossary": true,
     "include_discussions": false,       // appendix with the items' discussions
     "dependency_graph": true,           // specification: dependency graph appendix (default true)
+    "new_page_per_requirement": true,   // specification: every requirement starts a new page (default true)
     "lang": "sv"                        // default: the user's language
   }
 }
@@ -2847,6 +2848,17 @@ Markdown, SVG with a PNG fallback in DOCX) of at most 24 requirements each
 folder, references to the other figures), a legend of the relation types
 and statuses, and a table of every relation as text. It is left out when
 the requirements have no relations.
+
+`new_page_per_requirement` (requirements specification only, default
+`true`) starts every requirement at the top of a new page in PDF and DOCX
+(DOCX: `pageBreakBefore` on its heading). A folder or group heading (and
+the folder description) right before a requirement moves to the new page
+with it, so no heading is left alone at the bottom of a page and no page
+stays blank. `false` prints compactly: requirements follow one another.
+Either way, and for the tests of a test plan, an item that fits on one
+page is not split across two: it moves to the next page with the headings
+right before it (DOCX: keep with next); an item longer than a page flows.
+Markdown has no pages and is the same either way.
 
 → `201` with the `File` (`kind: document`). Its name defaults to
 `<KEY>-requirements-specification-v<version>.<ext>` or

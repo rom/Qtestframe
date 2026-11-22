@@ -106,6 +106,12 @@ type DocOptions struct {
 	// specification: the relations between its requirements as figures
 	// and as a table (default true; not for a test plan).
 	DependencyGraph *bool `json:"dependency_graph,omitempty"`
+	// NewPagePerRequirement starts every requirement of a requirements
+	// specification on a new page; a folder or group heading right before
+	// a requirement moves to the new page with it (default true; not for a
+	// test plan). Off, requirements follow one another and each one only
+	// moves to the next page when it would be split and fits on one page.
+	NewPagePerRequirement *bool `json:"new_page_per_requirement,omitempty"`
 }
 
 // Normalize validates o for a document of kind and fills in defaults.
@@ -152,9 +158,14 @@ func (o *DocOptions) Normalize(kind string) error {
 		o.Glossary = &t
 	}
 	if kind == DocTestPlan {
-		o.DependencyGraph = nil
-	} else if o.DependencyGraph == nil {
-		o.DependencyGraph = &t
+		o.DependencyGraph, o.NewPagePerRequirement = nil, nil
+	} else {
+		if o.DependencyGraph == nil {
+			o.DependencyGraph = &t
+		}
+		if o.NewPagePerRequirement == nil {
+			o.NewPagePerRequirement = &t
+		}
 	}
 	return nil
 }
@@ -276,6 +287,11 @@ type docGen struct {
 	reqKeys, testKeys map[string]string
 	reqByID           map[string]*model.Requirement
 	testByID          map[string]*model.TestCase
+	// pageItems: every item of the chapter being written starts a new
+	// page; groupOpen: a page was just started (by a page break or a
+	// heading on a new page) and only headings followed, so the next
+	// heading or item stays on it
+	pageItems, groupOpen bool
 }
 
 func newDocGen(kind string, d *DocData, o DocOptions) *docGen {
@@ -373,17 +389,42 @@ func (g *docGen) h(level int, text string) {
 		}
 	}
 	g.add(export.Heading(level, strings.Join(parts, ".")+" "+text))
+	g.newPageGroup()
+}
+
+// newPageGroup starts the heading just added on a new page when items
+// start new pages and it is the first heading after an item.
+func (g *docGen) newPageGroup() {
+	if !g.pageItems {
+		return
+	}
+	if !g.groupOpen {
+		g.doc.Blocks[len(g.doc.Blocks)-1].NewPage = true
+	}
+	g.groupOpen = true
+}
+
+// itemPages makes every item written by fn start a new page (with the
+// group headings right before it) when on is true; fn starts after a page
+// break or on the chapter's first page.
+func (g *docGen) itemPages(on bool, fn func()) {
+	g.pageItems, g.groupOpen = on, true
+	fn()
+	g.pageItems, g.groupOpen = false, false
 }
 
 // plainHeading adds an unnumbered heading.
 func (g *docGen) plainHeading(level int, text string) { g.add(export.Heading(level, text)) }
 
 // itemHeading adds the heading of one requirement or test (not numbered,
-// not in the table of contents).
+// not in the table of contents). The item stays on one page when it fits
+// on one; it starts a new page when items do (itemPages).
 func (g *docGen) itemHeading(level int, key, title string) {
 	b := export.Heading(min(max(level, 1), 6), strings.TrimSpace(key+" "+title))
-	b.NoTOC = true
+	b.NoTOC, b.KeepTogether = true, true
 	g.add(b)
+	g.newPageGroup()
+	g.groupOpen = false // what follows belongs to the item
 }
 
 func (g *docGen) appendices() {
@@ -775,6 +816,32 @@ func (g *docGen) requirementsSpec() {
 	if len(d.Requirements) == 0 {
 		g.add(export.Note(l.t("No requirements match the selection.")))
 	}
+	g.itemPages(g.o.NewPagePerRequirement != nil && *g.o.NewPagePerRequirement, g.requirementItems)
+
+	waivers := g.specWaivers()
+	if *g.o.Traceability || *g.o.Glossary || waivers || g.hasDiscussions() || g.hasDependencyGraph() {
+		g.appendices()
+	}
+	if *g.o.Traceability {
+		g.add(export.PageBreak())
+		g.traceabilityMatrix()
+	}
+	g.dependencyGraphAppendix()
+	if waivers {
+		g.waiverAppendix()
+	}
+	g.discussionAppendix()
+	if *g.o.Glossary {
+		g.add(export.PageBreak())
+		g.glossary(false)
+	}
+}
+
+// requirementItems writes the requirements of the Requirements chapter,
+// grouped as chosen.
+func (g *docGen) requirementItems() {
+	l := g.l
+	d := g.d
 	n := len(d.Requirements)
 	emit := func(i, level int) { g.requirement(&d.Requirements[i], level) }
 	switch g.o.GroupBy {
@@ -836,24 +903,6 @@ func (g *docGen) requirementsSpec() {
 		}
 	default:
 		g.byFolder(model.KindRequirement, n, func(i int) *string { return d.Requirements[i].FolderID }, g.reqOrder, emit)
-	}
-
-	waivers := g.specWaivers()
-	if *g.o.Traceability || *g.o.Glossary || waivers || g.hasDiscussions() || g.hasDependencyGraph() {
-		g.appendices()
-	}
-	if *g.o.Traceability {
-		g.add(export.PageBreak())
-		g.traceabilityMatrix()
-	}
-	g.dependencyGraphAppendix()
-	if waivers {
-		g.waiverAppendix()
-	}
-	g.discussionAppendix()
-	if *g.o.Glossary {
-		g.add(export.PageBreak())
-		g.glossary(false)
 	}
 }
 

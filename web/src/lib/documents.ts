@@ -46,6 +46,8 @@ export interface DocForm {
   discussions: boolean
   /** appendix with the relations between the requirements as graphs and a table (requirements specification) */
   dependencyGraph: boolean
+  /** every requirement starts a new page (requirements specification; off: compact printing) */
+  newPagePerRequirement: boolean
   lang: string
 }
 
@@ -66,6 +68,7 @@ export function blankDocForm(kind: DocKind, lang: string): DocForm {
     glossary: true,
     discussions: false,
     dependencyGraph: true,
+    newPagePerRequirement: true,
     lang,
   }
 }
@@ -94,6 +97,7 @@ export function generateDocBody(form: DocForm) {
     options.group_by = form.groupBy
     if (form.groupBy === 'category' && form.dimension) options.dimension = form.dimension
     options.dependency_graph = form.dependencyGraph
+    options.new_page_per_requirement = form.newPagePerRequirement
   }
   return { kind: form.kind, format: form.format, options }
 }

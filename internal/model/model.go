@@ -344,6 +344,14 @@ type Project struct {
 	Access    string    `json:"access"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	// CreatedBy is the user id of who started the project (created it, or
+	// loaded or duplicated it from a project archive); "" when unknown
+	// (seeded, command line, or older than this field). CreatedByName is
+	// the creator's display name (their e-mail when they have none) and
+	// CreatedByEmail their e-mail; both "" when there is no such account.
+	CreatedBy      string `json:"created_by"`
+	CreatedByName  string `json:"created_by_name"`
+	CreatedByEmail string `json:"created_by_email"`
 	// MyAccess is the caller's access to the project (set by the API).
 	MyAccess *ProjectAccessInfo `json:"my_access,omitempty"`
 }
