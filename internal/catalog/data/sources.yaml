@@ -2710,6 +2710,16 @@ sources:
     name: {en: "NIST SP 800-63C Digital Identity Guidelines: Federation and Assertions", sv: "NIST SP 800-63C Riktlinjer för digital identitet: federation och intyg"}
     match: ["NIST SP 800-63C"]
     url: https://pages.nist.gov/800-63-4/sp800-63c.html
+  - id: nist-ir-8259
+    kind: guideline
+    jurisdiction: US
+    short: NIST IR 8259
+    name: {en: "NIST IR 8259 series: IoT device cybersecurity for manufacturers (8259, 8259A)", sv: "NIST IR 8259-serien: cybersäkerhet i IoT-enheter för tillverkare (8259, 8259A)"}
+    match: ["NIST IR 8259"]
+    url: https://doi.org/10.6028/NIST.IR.8259
+    links:
+      - {label: "NIST IR 8259A", url: "https://doi.org/10.6028/NIST.IR.8259A"}
+      - {label: "NIST IR 8259", url: "https://doi.org/10.6028/NIST.IR.8259"}
   - id: nist-ir-8547
     kind: guideline
     jurisdiction: US
