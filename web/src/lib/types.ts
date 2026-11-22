@@ -1493,6 +1493,8 @@ export interface VerificationRecord {
 
 export interface VerificationSettings {
   strict_criteria: boolean
+  /** debriefed exploratory sessions count as evidence for their scoped requirements */
+  exploratory_evidence?: boolean
   updated_by?: string
   updated_at?: string | null
 }

@@ -110,8 +110,8 @@ func (s *Store) SetLinkCriteria(ctx context.Context, tenantID, linkID string, li
 func (s *Store) VerificationSettings(ctx context.Context, tenantID, projectID string) (*model.VerificationSettings, error) {
 	var v model.VerificationSettings
 	var at sql.NullTime
-	err := s.c(ctx).row(ctx, `SELECT strict_criteria, updated_by, updated_at FROM verification_settings WHERE project_id = ? AND tenant_id = ?`, projectID, tenantID).
-		Scan(&v.StrictCriteria, &v.UpdatedBy, &at)
+	err := s.c(ctx).row(ctx, `SELECT strict_criteria, exploratory_evidence, updated_by, updated_at FROM verification_settings WHERE project_id = ? AND tenant_id = ?`, projectID, tenantID).
+		Scan(&v.StrictCriteria, &v.ExploratoryEvidence, &v.UpdatedBy, &at)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
@@ -126,9 +126,10 @@ func (s *Store) SetVerificationSettings(ctx context.Context, tenantID, projectID
 	}
 	now := s.now()
 	v.UpdatedBy, v.UpdatedAt = user, &now
-	_, err := s.c(ctx).exec(ctx, `INSERT INTO verification_settings (project_id, tenant_id, strict_criteria, updated_by, updated_at) VALUES (?, ?, ?, ?, ?)
-		ON CONFLICT (project_id) DO UPDATE SET strict_criteria = excluded.strict_criteria, updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
-		projectID, tenantID, v.StrictCriteria, user, now)
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO verification_settings (project_id, tenant_id, strict_criteria, exploratory_evidence, updated_by, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+		ON CONFLICT (project_id) DO UPDATE SET strict_criteria = excluded.strict_criteria, exploratory_evidence = excluded.exploratory_evidence,
+		updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
+		projectID, tenantID, v.StrictCriteria, v.ExploratoryEvidence, user, now)
 	return err
 }
 
@@ -606,6 +607,13 @@ func (s *Store) VerificationInput(ctx context.Context, tenantID, projectID strin
 		return nil, err
 	}
 	in.Strict = st.StrictCriteria
+	// debriefed exploratory sessions are evidence only where the project
+	// says so (off by default)
+	if st.ExploratoryEvidence {
+		if in.Sessions, err = s.ExploratoryEvidence(ctx, tenantID, projectID); err != nil {
+			return nil, err
+		}
+	}
 	return in, nil
 }
 

@@ -289,6 +289,10 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedImportSources(ctx, st, tenantID, p, reqs); err != nil {
 		return nil, err
 	}
+	// exploratory test sessions (seedexploratory.go)
+	if err := seedExploratory(ctx, st, clock, tenantID, p, []*model.Folder{rf, rf2, rf3}, reqs, testIDs); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

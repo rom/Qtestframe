@@ -203,6 +203,10 @@ async function discover(request) {
   // a release gated per variant (seed: 1.5 for both products) and a requirement whose applicability changed
   const gatedRelease = items(await api(request, 'GET', `/projects/${pid}/releases`)).find((r) => (r.variant_ids ?? []).length > 0)
   const applicReq = items(await api(request, 'GET', `/projects/${pid}/requirements?q=applicability:selected`).catch(() => []))[0]
+  // exploratory sessions (seed-demo: debriefed, paused and planned ones)
+  const xSessions = items(await api(request, 'GET', `/projects/${pid}/exploratory-sessions`).catch(() => []))
+  const xDebriefed = xSessions.find((x) => x.status === 'debriefed')
+  const xOpen = xSessions.find((x) => x.status === 'paused' || x.status === 'in_progress')
   const hasBaselines = items(await api(request, 'GET', `/projects/${pid}/baselines`)).length > 0
   const firstBaseline = hasBaselines ? items(await api(request, 'GET', `/projects/${pid}/baselines`))[0] : null
   const documents = items(await api(request, 'GET', `/projects/${pid}/documents`))
@@ -336,6 +340,13 @@ async function discover(request) {
     { name: 'waivers', path: `${p}/waivers`, wait: '.p-datatable-tbody tr' },
     { name: 'waiver-new-dialog', path: `${p}/waivers`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #wv-title' },
     hasWaivers && { name: 'waiver-detail', path: `${p}/waivers`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog .wv-fields' },
+    // exploratory testing: the session list with its metrics, the new-session dialog, the session runner (notes, shortcuts, debrief, defect from a note)
+    { name: 'exploratory', path: `${p}/exploratory`, wait: '.p-datatable-tbody tr' },
+    { name: 'exploratory-new-dialog', path: `${p}/exploratory`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #xs-title' },
+    xDebriefed && { name: 'exploratory-session', path: `${p}/exploratory/${xDebriefed.id}`, wait: '.xs-fields' },
+    xDebriefed && { name: 'exploratory-debrief-dialog', path: `${p}/exploratory/${xDebriefed.id}`, open: 'section[aria-labelledby="xs-debrief-h"] button:has(.pi-check-square)', wait: '.p-dialog #xs-db-sum' },
+    xOpen && { name: 'exploratory-session-runner', path: `${p}/exploratory/${xOpen.id}`, open: 'button[aria-controls="xs-keys"]', wait: '#xs-keys dl' },
+    xOpen && { name: 'exploratory-defect-dialog', path: `${p}/exploratory/${xOpen.id}`, open: '.xs-notes li:first-child button:has(.pi-exclamation-circle)', wait: '.p-dialog #xs-d-title' },
     { name: 'soa', path: `${p}/soa`, wait: '[role="grid"] [role="gridcell"]' },
     { name: 'soa-control', path: `${p}/soa`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: ['Control+Enter'], wait: '.p-dialog' },
     hasReleases && { name: 'release-waivers', path: `${p}/releases`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.rel-waivers' },

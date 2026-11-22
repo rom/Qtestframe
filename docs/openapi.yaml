@@ -100,6 +100,8 @@ tags:
   description: Built-in catalogue of standard requirements and tests, and copying them into a project
 - name: Operations
   description: Health, readiness and this description
+- name: Exploratory testing
+  description: Session-based exploratory testing (charters, timer, notes, debriefs, metrics)
 paths:
   /healthz:
     get:
@@ -17116,6 +17118,595 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/exploratory-sessions:
+    parameters:
+    - "$ref": "#/components/parameters/pid"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "List exploratory sessions"
+      operationId: "getProjectsByPidExploratorySessions"
+      description: "The exploratory test sessions of the project, newest first, with their scope (areas, requirements, tests), note counts, `bug_count` and the debrief. `elapsed_seconds` includes the running part of a running session. Filters: `status` (planned, in_progress, paused, completed, debriefed), `tester` (e-mail), `outcome` (passed, failed, inconclusive), `mine=true` (the caller is the tester), `requirement_id`, `test_id`, `folder_id` (sessions with this item in their scope) and `q`, a query over key, title, mission (alias charter), status, tester (assignee, owner), outcome (result), area (folder), requirement, test, notes, bugs, timebox, created_by and id.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      parameters:
+        - name: "status"
+          in: "query"
+          required: false
+          description: "planned | in_progress | paused | completed | debriefed"
+          schema:
+            type: "string"
+        - name: "tester"
+          in: "query"
+          required: false
+          description: "the tester's e-mail"
+          schema:
+            type: "string"
+        - name: "outcome"
+          in: "query"
+          required: false
+          description: "passed | failed | inconclusive"
+          schema:
+            type: "string"
+        - name: "mine"
+          in: "query"
+          required: false
+          description: "true: only the caller's sessions"
+          schema:
+            type: "string"
+        - name: "requirement_id"
+          in: "query"
+          required: false
+          description: "sessions with this requirement in scope"
+          schema:
+            type: "string"
+        - name: "test_id"
+          in: "query"
+          required: false
+          description: "sessions with this test in scope"
+          schema:
+            type: "string"
+        - name: "folder_id"
+          in: "query"
+          required: false
+          description: "sessions with this area (folder) in scope"
+          schema:
+            type: "string"
+        - name: "q"
+          in: "query"
+          required: false
+          description: "query expression"
+          schema:
+            type: "string"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Plan an exploratory session"
+      operationId: "postProjectsByPidExploratorySessions"
+      description: "Creates a planned session (key PROJ-EXP-n): `title` (the charter, required), `mission`, `tester` (e-mail of a member who may run sessions in the project; default the caller), `timebox_minutes` (5–480, default 60; 30, 60 and 90 are usual) and `scope`, a list of `{type: folder | requirement | test, id}` of the project.\n\n**Permission:** `run.write`."
+      x-permission: "run.write"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratorySessionInput"
+      responses:
+        "201":
+          description: "Created"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/projects/{pid}/exploratory-metrics:
+    parameters:
+    - "$ref": "#/components/parameters/pid"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "Exploratory testing metrics"
+      operationId: "getProjectsByPidExploratoryMetrics"
+      description: "Sessions by status and outcome, session hours, bugs (bug notes and notes a defect was raised from) and bugs per session hour, the average time split and coverage of the debriefs, and the same per area (folder in the scope; `id` \"\" = no area) and per tester.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "Get an exploratory session"
+      operationId: "getExploratorySessionsById"
+      description: "The session with its scope, the timer (`started_at`, `running_since` while it runs, `elapsed_seconds` now, `ended_at`), the debrief (`reviewed`: by someone other than the tester), note counts and the linked defects.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    patch:
+      tags:
+        - "Exploratory testing"
+      summary: "Change an exploratory session"
+      operationId: "patchExploratorySessionsById"
+      description: "Changes the charter (`title`, `mission`, `scope`), the `tester` and the `timebox_minutes`; fields left out stay. A debriefed session cannot be changed (409).\n\n**Permission:** `run.write`."
+      x-permission: "run.write"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratorySessionInput"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Exploratory testing"
+      summary: "Delete an exploratory session"
+      operationId: "deleteExploratorySessionsById"
+      description: "Deletes the session with its notes, its attachments (files without other links) and its defect links (the defects stay).\n\n**Permission:** `run.write`."
+      x-permission: "run.write"
+      responses:
+        "204":
+          description: "No content"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/timer:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Start, pause or stop the session timer"
+      operationId: "postExploratorySessionsByIdTimer"
+      description: "`{\"action\": \"start\" | \"pause\" | \"stop\"}`: start (planned or paused → in_progress), pause (in_progress → paused), stop (in_progress or paused → completed). The server records the time, so it survives reloads. Only the tester, or someone with `run.write`, runs a session; a session without tester becomes the caller's at its start. 409 for an action the status does not allow.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratoryTimer"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/debrief:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    put:
+      tags:
+        - "Exploratory testing"
+      summary: "Debrief an exploratory session"
+      operationId: "putExploratorySessionsByIdDebrief"
+      description: "Records (or replaces) the debrief of a completed session: `summary`, `coverage_pct` (estimate, 0–100), the SBTM time split `setup_pct`, `testing_pct`, `bug_pct` (summing to 100), `outcome` (passed, failed, inconclusive) and `comment` (a reviewer's remarks). The tester debriefs their own session; a reviewer needs `run.write` as well. When the project counts exploratory sessions as verification evidence (`exploratory_evidence` of the verification settings), the scoped requirements' status follows.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratoryDebrief"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Exploratory testing"
+      summary: "Reopen a debriefed session"
+      operationId: "deleteExploratorySessionsByIdDebrief"
+      description: "Removes the debrief: debriefed → completed (409 otherwise).\n\n**Permission:** `run.write`."
+      x-permission: "run.write"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/history:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "History of an exploratory session"
+      operationId: "getExploratorySessionsByIdHistory"
+      description: "The revisions of the session (create, update, stop, debrief, reopen), newest first, with the changed fields.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/report:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "Exploratory session report"
+      operationId: "getExploratorySessionsByIdReport"
+      description: "The session report (template `exploratory_session` of the report generation): `format` md (default), pdf, docx, xlsx or csv; `lang` en or sv; `archive=true` saves it in the project's documents and answers with the file.\n\n**Permission:** `run.read`, `export`."
+      x-permission: "run.read, export"
+      parameters:
+        - name: "format"
+          in: "query"
+          required: false
+          description: "md | pdf | docx | xlsx | csv"
+          schema:
+            type: "string"
+        - name: "lang"
+          in: "query"
+          required: false
+          description: "en | sv"
+          schema:
+            type: "string"
+        - name: "archive"
+          in: "query"
+          required: false
+          description: "true: save in the project documents"
+          schema:
+            type: "string"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/notes:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "List the notes of a session"
+      operationId: "getExploratorySessionsByIdNotes"
+      description: "The notes in the order taken, each with its type, the session time it was taken at (`elapsed_seconds`), its files and the defect raised from it.\n\n**Permission:** `run.read`."
+      x-permission: "run.read"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Add a note"
+      operationId: "postExploratorySessionsByIdNotes"
+      description: "`{\"type\": \"observation\" | \"question\" | \"issue\" | \"idea\" | \"bug\", \"body\", \"file_ids\"}` (file_ids: attachments of the session). Notes are taken from the start of the session until its debrief (409 otherwise), by the tester or someone with `run.write`.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratoryNoteInput"
+      responses:
+        "201":
+          description: "Created"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/notes/{note}:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    - name: note
+      in: path
+      required: true
+      schema:
+        type: string
+      description: note id
+    patch:
+      tags:
+        - "Exploratory testing"
+      summary: "Change a note"
+      operationId: "patchExploratorySessionsByIdNotesByNote"
+      description: "Changes `type`, `body` and `file_ids` of a note: its author, or someone with `run.write`; not after the debrief.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              "$ref": "#/components/schemas/ExploratoryNoteInput"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    delete:
+      tags:
+        - "Exploratory testing"
+      summary: "Delete a note"
+      operationId: "deleteExploratorySessionsByIdNotesByNote"
+      description: "Deletes a note: its author, or someone with `run.write`; not after the debrief.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      responses:
+        "204":
+          description: "No content"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/notes/{note}/defect:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    - name: note
+      in: path
+      required: true
+      schema:
+        type: string
+      description: note id
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Raise a defect from a note"
+      operationId: "postExploratorySessionsByIdNotesByNoteDefect"
+      description: "Creates a defect prefilled from the note (title: its first line; description: the note, the session and its charter; found in: test), linked to the session and to the requirements in its scope. The body may override `title`, `description`, `severity`, `priority` and `assignee`. The note is marked with the defect and becomes a bug note. 409 when a defect was already raised from it.\n\n**Permission:** `run.execute`."
+      x-permission: "run.execute"
+      responses:
+        "201":
+          description: "Created"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/attachments:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    get:
+      tags:
+        - "Exploratory testing"
+      summary: "List attachments (exploratory sessions)"
+      operationId: "getExploratorySessionsByIdAttachments"
+      description: "**Permission:** any authenticated user; the handler checks `run.read` in the session's project."
+      x-permission: "authenticated"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Upload attachment (exploratory sessions)"
+      operationId: "postExploratorySessionsByIdAttachments"
+      description: "Multipart upload (`file`, optional `description`, `tags`) of a screenshot or file to the session, stored like every attachment.\n\n**Permission:** any authenticated user; the handler checks `run.execute` in the session's project."
+      x-permission: "authenticated"
+      responses:
+        "201":
+          description: "Created"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/attachments/link:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    post:
+      tags:
+        - "Exploratory testing"
+      summary: "Link a project document (exploratory sessions)"
+      operationId: "postExploratorySessionsByIdAttachmentsLink"
+      description: "`{\"file_id\"}` of a file of the project.\n\n**Permission:** any authenticated user; the handler checks `run.execute` in the session's project."
+      x-permission: "authenticated"
+      responses:
+        2XX:
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: "object"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
+  /api/v1/exploratory-sessions/{id}/attachments/{file}:
+    parameters:
+    - "$ref": "#/components/parameters/id"
+    - name: file
+      in: path
+      required: true
+      schema:
+        type: string
+      description: file id
+    delete:
+      tags:
+        - "Exploratory testing"
+      summary: "Unlink attachment (exploratory sessions)"
+      operationId: "deleteExploratorySessionsByIdAttachmentsByFile"
+      description: "**Permission:** any authenticated user; the handler checks `run.execute` in the session's project."
+      x-permission: "authenticated"
+      responses:
+        "204":
+          description: "No content"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        default:
+          "$ref": "#/components/responses/Error"
 components:
   securitySchemes:
     sessionCookie:
@@ -17301,6 +17892,96 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    ExploratorySessionInput:
+      type: "object"
+      properties:
+        title:
+          type: "string"
+          description: "the charter (at most 300 characters)"
+        mission:
+          type: "string"
+        tester:
+          type: "string"
+          description: "e-mail"
+        timebox_minutes:
+          type: "integer"
+          minimum: 5
+          maximum: 480
+        scope:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              type:
+                type: "string"
+                enum:
+                  - "folder"
+                  - "requirement"
+                  - "test"
+              id:
+                type: "string"
+    ExploratoryTimer:
+      type: "object"
+      required:
+        - "action"
+      properties:
+        action:
+          type: "string"
+          enum:
+            - "start"
+            - "pause"
+            - "stop"
+    ExploratoryDebrief:
+      type: "object"
+      required:
+        - "outcome"
+        - "setup_pct"
+        - "testing_pct"
+        - "bug_pct"
+      properties:
+        summary:
+          type: "string"
+        coverage_pct:
+          type: "integer"
+          minimum: 0
+          maximum: 100
+        setup_pct:
+          type: "integer"
+          minimum: 0
+          maximum: 100
+        testing_pct:
+          type: "integer"
+          minimum: 0
+          maximum: 100
+        bug_pct:
+          type: "integer"
+          minimum: 0
+          maximum: 100
+        outcome:
+          type: "string"
+          enum:
+            - "passed"
+            - "failed"
+            - "inconclusive"
+        comment:
+          type: "string"
+    ExploratoryNoteInput:
+      type: "object"
+      properties:
+        type:
+          type: "string"
+          enum:
+            - "observation"
+            - "question"
+            - "issue"
+            - "idea"
+            - "bug"
+        body:
+          type: "string"
+        file_ids:
+          type: "array"
+          items:
+            type: "string"
     BatchUpdate:
       type: object
       required:

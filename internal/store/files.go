@@ -13,7 +13,7 @@ import (
 )
 
 // Attachable entity types.
-var AttachableTypes = []string{model.KindRequirement, model.KindTest, "run", "execution"}
+var AttachableTypes = []string{model.KindRequirement, model.KindTest, "run", "execution", model.KindExploratory}
 
 // CleanFileName strips paths and control characters from an uploaded name.
 func CleanFileName(name string) string {
@@ -155,7 +155,7 @@ func (s *Store) fileLinks(ctx context.Context, ids []string) (map[string][]model
 	if len(ids) == 0 {
 		return out, nil
 	}
-	rows, err := s.c(ctx).query(ctx, `SELECT a.file_id, a.entity_type, a.entity_id, COALESCE(r.key, t.key, ru.name, et.key, ''), COALESCE(e.run_id, ''), COALESCE(sr.execution_id, '')
+	rows, err := s.c(ctx).query(ctx, `SELECT a.file_id, a.entity_type, a.entity_id, COALESCE(r.key, t.key, ru.name, et.key, xs.key, ''), COALESCE(e.run_id, ''), COALESCE(sr.execution_id, '')
 		FROM attachments a
 		LEFT JOIN requirements r ON a.entity_type = 'requirement' AND r.id = a.entity_id
 		LEFT JOIN test_cases t ON a.entity_type = 'test' AND t.id = a.entity_id
@@ -163,6 +163,7 @@ func (s *Store) fileLinks(ctx context.Context, ids []string) (map[string][]model
 		LEFT JOIN step_results sr ON a.entity_type = 'step' AND sr.id = a.entity_id
 		LEFT JOIN test_executions e ON (a.entity_type = 'execution' AND e.id = a.entity_id) OR (a.entity_type = 'step' AND e.id = sr.execution_id)
 		LEFT JOIN test_cases et ON et.id = e.test_case_id
+		LEFT JOIN exploratory_sessions xs ON a.entity_type = 'exploratory_session' AND xs.id = a.entity_id
 		WHERE a.file_id IN (`+placeholders(len(ids))+`) ORDER BY a.entity_type`, anySlice(ids)...)
 	if err != nil {
 		return nil, err

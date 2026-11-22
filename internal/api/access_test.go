@@ -70,6 +70,7 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 	}
 	a.m("POST", "/api/v1/requirements/"+r1+"/verification-records", map[string]any{"method": "inspection", "result": "pass"}, 201)
 	a.m("POST", pp+"/elements", map[string]any{"name": "Secret unit"}, 201)
+	a.m("POST", pp+"/exploratory-sessions", map[string]any{"title": "Secret session"}, 201)
 	a.m("PUT", pp+"/access", map[string]any{"access": "restricted"}, 200)
 	// an id of each resource, read from the database
 	q := map[string]string{
@@ -90,6 +91,7 @@ func newSharedFixture(t *testing.T, e *env) *sharedFixture {
 		"comments":             `SELECT c.id FROM comments c JOIN requirements r ON r.id = c.entity_id WHERE r.project_id = ?`,
 		"verification-records": `SELECT id FROM verification_records WHERE project_id = ?`,
 		"elements":             `SELECT id FROM system_elements WHERE project_id = ?`,
+		"exploratory-sessions": `SELECT id FROM exploratory_sessions WHERE project_id = ?`,
 		"variants":             `SELECT id FROM variants WHERE project_id = ?`, "builds": `SELECT id FROM builds WHERE project_id = ?`,
 		"custom-fields": `SELECT id FROM custom_fields WHERE project_id = ?`, "templates": `SELECT id FROM item_templates WHERE project_id = ?`,
 	}

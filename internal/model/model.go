@@ -805,7 +805,7 @@ const DefectEscapedPhase = "production"
 
 var (
 	// DefectLinkTypes are the items a defect can be linked to.
-	DefectLinkTypes = []string{KindRequirement, KindTest, "execution", "run"}
+	DefectLinkTypes = []string{KindRequirement, KindTest, "execution", "run", KindExploratory}
 )
 
 // Defect is a problem found while testing, optionally mirrored in an

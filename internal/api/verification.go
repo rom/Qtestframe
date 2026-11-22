@@ -159,10 +159,26 @@ func (s *Server) handlePutVerificationSettings(w http.ResponseWriter, r *http.Re
 	if !ok {
 		return
 	}
-	var req model.VerificationSettings
-	if err := decode(r, &req); err != nil {
+	// fields left out keep their value
+	var body struct {
+		StrictCriteria      *bool `json:"strict_criteria"`
+		ExploratoryEvidence *bool `json:"exploratory_evidence"`
+	}
+	if err := decode(r, &body); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	cur, err := s.Store.VerificationSettings(r.Context(), p.TenantID(), pr.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	req := model.VerificationSettings{StrictCriteria: cur.StrictCriteria, ExploratoryEvidence: cur.ExploratoryEvidence}
+	if body.StrictCriteria != nil {
+		req.StrictCriteria = *body.StrictCriteria
+	}
+	if body.ExploratoryEvidence != nil {
+		req.ExploratoryEvidence = *body.ExploratoryEvidence
 	}
 	if err := s.Store.SetVerificationSettings(r.Context(), p.TenantID(), pr.ID, p.User.Email, &req); err != nil {
 		s.fail(w, r, err)
@@ -171,6 +187,9 @@ func (s *Server) handlePutVerificationSettings(w http.ResponseWriter, r *http.Re
 	detail := "strict criterion coverage off"
 	if req.StrictCriteria {
 		detail = "strict criterion coverage on"
+	}
+	if req.ExploratoryEvidence {
+		detail += ", exploratory sessions count as evidence"
 	}
 	s.audit(r.Context(), p, "verification.settings", "project", pr.ID, detail)
 	s.syncEvidence(r.Context(), p, pr.ID, nil)

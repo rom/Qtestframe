@@ -56,6 +56,8 @@ export function workItemRoute(it: Pick<WorkItem, 'project_id' | 'entity_type' | 
       return { name: 'run', params: { ...params, runId: it.entity_id }, query: { tab: 'discussion' } }
     case 'review':
       return { name: 'reviews', query: { review: it.entity_id } }
+    case 'exploratory_session':
+      return { name: 'exploratorySession', params: { ...params, sessionId: it.entity_id } }
     case 'execution':
       return it.run_id ? { name: 'execute', params: { ...params, runId: it.run_id, executionId: it.entity_id } } : { name: 'runs', params }
   }

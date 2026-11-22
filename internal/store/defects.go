@@ -202,13 +202,14 @@ func (s *Store) defectLinks(ctx context.Context, tenantID string, ids []string) 
 		return out, nil
 	}
 	rows, err := s.c(ctx).query(ctx, `SELECT l.defect_id, l.entity_type, l.entity_id,
-		COALESCE(r.key, t.key, et.key, ru.name, ''), COALESCE(r.title, t.title, et.title, '')
+		COALESCE(r.key, t.key, et.key, ru.name, xs.key, ''), COALESCE(r.title, t.title, et.title, xs.title, '')
 		FROM defect_links l
 		LEFT JOIN requirements r ON l.entity_type = 'requirement' AND r.id = l.entity_id
 		LEFT JOIN test_cases t ON l.entity_type = 'test' AND t.id = l.entity_id
 		LEFT JOIN test_executions e ON l.entity_type = 'execution' AND e.id = l.entity_id
 		LEFT JOIN test_cases et ON et.id = e.test_case_id
 		LEFT JOIN test_runs ru ON l.entity_type = 'run' AND ru.id = l.entity_id
+		LEFT JOIN exploratory_sessions xs ON l.entity_type = 'exploratory_session' AND xs.id = l.entity_id
 		WHERE l.defect_id IN (`+placeholders(len(ids))+`) ORDER BY l.entity_type`, anySlice(ids)...)
 	if err != nil {
 		return nil, err
@@ -235,6 +236,7 @@ func addDefectLink(ctx context.Context, c conn, tenantID, projectID, defectID st
 		model.KindTest:        `SELECT project_id FROM test_cases WHERE id = ? AND tenant_id = ?`,
 		"execution":           `SELECT r.project_id FROM test_executions e JOIN test_runs r ON r.id = e.run_id WHERE e.id = ? AND e.tenant_id = ?`,
 		"run":                 `SELECT project_id FROM test_runs WHERE id = ? AND tenant_id = ?`,
+		model.KindExploratory: `SELECT project_id FROM exploratory_sessions WHERE id = ? AND tenant_id = ?`,
 	}[l.EntityType]
 	var pid string
 	if err := c.row(ctx, q, l.EntityID, tenantID).Scan(&pid); err != nil {

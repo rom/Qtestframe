@@ -98,7 +98,15 @@ const releaseList = ref<Release[]>([])
 const releaseOptions = computed(() => [{ label: t('reports.releaseDefault'), value: '' }, ...releaseList.value.map((r) => ({ label: r.version ? `${r.name} (${r.version})` : r.name, value: r.id }))])
 const soaSources = ref<SoASource[]>([])
 const soaSourceOptions = computed(() => soaSources.value.map((s) => ({ label: s.title, value: s.id })))
+// exploratory sessions (session report)
+const sessionList = ref<{ id: string; key: string; title: string }[]>([])
+const sessionOptions = computed(() => [{ label: t('reports.sessionDefault'), value: '' }, ...sessionList.value.map((x) => ({ label: `${x.key} ${x.title}`, value: x.id }))])
 async function loadReleaseAndSources() {
+  try {
+    sessionList.value = asItems(await api.get<{ items: { id: string; key: string; title: string }[] }>(`/projects/${proj.pid}/exploratory-sessions`))
+  } catch {
+    sessionList.value = []
+  }
   try {
     releaseList.value = asItems(await api.get<{ items: Release[] }>(`/projects/${proj.pid}/releases`))
   } catch {
@@ -430,6 +438,10 @@ onMounted(() => {
               <template v-else-if="p.name === 'release_id'">
                 <label :for="`tpl-rel-${tpl.id}`">{{ t('reports.release') }}</label>
                 <Select v-model="cards[tpl.id].params.release_id" :input-id="`tpl-rel-${tpl.id}`" :options="releaseOptions" option-label="label" option-value="value" :placeholder="t('reports.releaseDefault')" />
+              </template>
+              <template v-else-if="p.name === 'session_id'">
+                <label :for="`tpl-xs-${tpl.id}`">{{ t('reports.session') }}</label>
+                <Select v-model="cards[tpl.id].params.session_id" :input-id="`tpl-xs-${tpl.id}`" :options="sessionOptions" option-label="label" option-value="value" filter :placeholder="t('reports.sessionDefault')" />
               </template>
               <template v-else-if="p.name === 'source'">
                 <label :for="`tpl-soa-${tpl.id}`">{{ t('reports.soaSource') }}</label>

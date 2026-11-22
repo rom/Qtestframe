@@ -118,14 +118,18 @@ type VerificationSettings struct {
 	// to it, or a verification record). Off (default): a plain test link
 	// without criterion mapping counts for every criterion that has no
 	// evidence of its own, as before criterion-level verification.
-	StrictCriteria bool       `json:"strict_criteria"`
-	UpdatedBy      string     `json:"updated_by,omitempty"`
-	UpdatedAt      *time.Time `json:"updated_at,omitempty"`
+	StrictCriteria bool `json:"strict_criteria"`
+	// ExploratoryEvidence: a debriefed exploratory session counts as
+	// evidence (kind exploratory, about the requirement as a whole) for the
+	// requirements in its scope. Off (default): sessions are not evidence.
+	ExploratoryEvidence bool       `json:"exploratory_evidence"`
+	UpdatedBy           string     `json:"updated_by,omitempty"`
+	UpdatedAt           *time.Time `json:"updated_at,omitempty"`
 }
 
 // Evidence is one piece of evidence about a requirement or criterion.
 type Evidence struct {
-	// Kind: test | record.
+	// Kind: test | record | exploratory (a debriefed exploratory session).
 	Kind string `json:"kind"`
 	// ID of the test or the record; LinkID of the trace link (tests).
 	ID     string `json:"id"`
@@ -146,7 +150,7 @@ type Evidence struct {
 	// criterion) counted for this criterion (non-strict projects).
 	Plain bool `json:"plain,omitempty"`
 	// Note says why the evidence is pending or void: suspect, step_not_run,
-	// not_run, expired, invalidated, superseded, conditional.
+	// not_run, expired, invalidated, superseded, conditional, inconclusive.
 	Note string `json:"note,omitempty"`
 	// Date of the record, or when the test last ran.
 	Date string `json:"date,omitempty"`
