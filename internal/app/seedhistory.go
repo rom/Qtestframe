@@ -97,18 +97,18 @@ func seedHistory(ctx context.Context, st *store.Store, clock *seedClock, tenantI
 		return []model.DefectLink{{EntityType: model.KindTest, EntityID: testIDs[i]}}
 	}
 	defects := []struct {
-		opened, resolved int
-		title, severity  string
-		test             int
+		opened, resolved         int
+		title, severity, foundIn string
+		test                     int
 	}{
-		{28, 20, "Lockout counter resets after 4 minutes", "major", 2},
-		{24, 17, "Error message reveals that the account exists", "critical", 1},
-		{18, 0, "Statement CSV uses a comma as decimal separator", "minor", 4},
-		{4, 0, "Lockout test times out intermittently on CI", "major", 2},
+		{28, 20, "Lockout counter resets after 4 minutes", "major", "test", 2},
+		{24, 17, "Error message reveals that the account exists", "critical", "test", 1},
+		{18, 0, "Statement CSV uses a comma as decimal separator", "minor", "production", 4},
+		{4, 0, "Lockout test times out intermittently on CI", "major", "development", 2},
 	}
 	for _, d := range defects {
 		clock.at = day(d.opened)
-		df := &model.Defect{ProjectID: projectID, Title: d.title, Severity: d.severity, Priority: "medium", CreatedBy: "seed", Links: link(d.test)}
+		df := &model.Defect{ProjectID: projectID, Title: d.title, Severity: d.severity, Priority: "medium", CreatedBy: "seed", Links: link(d.test), FoundIn: d.foundIn}
 		if err := st.CreateDefect(ctx, tenantID, df); err != nil {
 			return err
 		}
@@ -118,6 +118,18 @@ func seedHistory(ctx context.Context, st *store.Store, clock *seedClock, tenantI
 			if err := st.UpdateDefect(ctx, tenantID, df); err != nil {
 				return err
 			}
+		}
+	}
+	// requirement edits over the weeks (volatility and quality trend)
+	for _, ed := range []struct{ req, ago int }{{0, 33}, {1, 26}, {1, 19}, {3, 15}, {4, 9}, {4, 5}, {4, 2}} {
+		if ed.req >= len(reqs) {
+			continue
+		}
+		clock.at = day(ed.ago)
+		r := reqs[ed.req]
+		r.Version++
+		if err := st.AddRevision(ctx, tenantID, model.KindRequirement, r.ID, r.Version, "update", "seed", store.SnapshotRequirement(r)); err != nil {
+			return err
 		}
 	}
 	return nil

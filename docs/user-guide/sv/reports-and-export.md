@@ -72,6 +72,7 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 | **Testförteckning** | testfall per mapp, typ, status och kategori | valfritt filter |
 | **Riskrapport** | [riskerna](releases-and-risks.md) med nyckeltal, värmekarta, riskregister, spårbarhet till krav och testfall, otestade åtgärder och de största riskerna | – |
 | **Efterlevnad** | efterlevnad av lagar, standarder och bästa praxis: per källa, per avsnitt, de katalogkrav som saknas och de krav som inte är uppfyllda (se [Efterlevnad av lagar och standarder](traceability-and-coverage.md#efterlevnad-av-lagar-och-standarder)) | valfria lagar, standarder och bästa praxis (standard: de som projektet använder) |
+| **Kvalitetsmått** | kravens föränderlighet, defekttäthet, läckta defekter, testeffektivitet, resultatens ålder, granskningstid, tid till rättning och kravkvalitet, med trender (se [Kvalitetsmått](traceability-and-coverage.md#kvalitetsmått)) | valfri historik i dagar (30, 90, 180 eller 365) och efter hur många dagar ett resultat är inaktuellt |
 
 **Riskrapporten** innehåller:
 

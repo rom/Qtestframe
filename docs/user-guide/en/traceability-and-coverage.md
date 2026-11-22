@@ -80,6 +80,26 @@ The presets:
 
 The rules are also evaluated on a release's scope by the exit criterion [Traceability rules](releases-and-risks.md#exit-criteria), and the **Traceability** report lists every enabled rule with its result and the items that break it.
 
+### Built-in consistency checks
+
+Besides the rules you write, Qtestframe has **built-in checks** with a fixed condition. They find items whose state contradicts their relations, links or release:
+
+| Check | An item breaks it when |
+|---|---|
+| Conflicting requirements in a release | two requirements related by *conflicts with* are both approved (or implemented or verified) and in the same release |
+| Approved requirement with an unmet dependency | an approved requirement *depends on* one that is rejected, obsolete or deleted (still in the trash) |
+| Active requirement with an obsolete parent | a requirement that *refines* or is *derived from* an obsolete requirement is not rejected or obsolete itself |
+| Test verifies an inactive requirement | a test verifies a rejected or obsolete requirement |
+| Broken test prerequisite | a prerequisite of a test is deleted, its latest result failed, or prerequisites form a cycle |
+| MUST requirement in a release without passing evidence | a MUST or SHALL requirement in a planned or active release has no linked test that is not suspect and passed its latest execution |
+| High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or none of its requirements is verified |
+| Regulatory requirement rejected without justification | a requirement added from a regulation of the [catalogue](catalogue.md) (a law or directive) is rejected, and it has no comment and no rationale of its own |
+| Suspected duplicate requirements | two active requirements have nearly identical title and description (similarity of at least 0.9 by default) and no *duplicates* relation |
+
+A project gets them with **Add built-in checks** (on the rules or in **Analytics**): they are added as rules with the severity *warning*, so they show up in the release exit criterion [Traceability rules](releases-and-risks.md#exit-criteria) only when it counts warnings, or after you raise a check to *error*. A built-in check is marked **Built-in**; you can rename it, change its severity, turn it off, narrow it with a query and, for the duplicate check, set the **Similarity threshold** (0.5 to 1) or, for the risk check, the **Least risk level**.
+
+Each violation names the other items involved (the conflicting requirement and the release, the obsolete parent, the failing prerequisite …), each a link, and offers a fix where one is obvious: **Remove relation**, **Unlink**, **Remove prerequisite**, **Remove from** the release, **Set obsolete**, **Record a justification**, **Link a mitigation**, and for a suspected duplicate **Mark as duplicate** (adds the *duplicates* relation) or **Not a problem** (the pair is not reported again). **Not a problem** also acknowledges a dependency on a deleted item.
+
 ## How coverage is calculated
 
 Coverage is derived from the **last result** of every linked test. It is computed every time you look at it and never stored, so it is always current.
@@ -163,6 +183,7 @@ The trends come from a snapshot of the figures that Qtestframe saves once a day 
 - **Mitigation of open risks**: the open risks by how far the requirements that address them are tested: *No requirements*, *Untested*, *Partly tested*, *Tested, not all passed* and *Verified* (as in the [risk report](reports-and-export.md#standard-reports)).
 - **Age of open defects**: open and in-progress defects by age (under 7 days, 7–30, 30–90, over 90 days), split by severity, with the average and the oldest age.
 - **Traceability rules**: whether all enabled rules of severity *error* are met, how many rules are enabled, how many are broken (errors and warnings) and the number of violations. **Traceability →** opens the matrix with the rules.
+- **Quality metrics** and **Consistency checks** (the failing ones): the same as in [Analytics](#quality-metrics).
 
 The further key figures and these charts are counted on the server in one request, loaded next to the rest of the dashboard.
 
@@ -208,6 +229,27 @@ Cycles (for example two requirements that depend on each other) are drawn, but o
 **Languages of the requirements** shows how many requirements are written in each language. Only texts long enough to tell the language are counted; a title of one or two words is not enough.
 
 **Language** chooses the language of the analysis (detected per requirement by default). Test findings are shown when you may read tests.
+
+### Consistency checks
+
+**Consistency checks** in **Analytics** evaluates every [built-in consistency check](#built-in-consistency-checks) on the project, also those it has not added as rules yet (marked **Default**; they do not count for releases until they are added). **Show violations** lists the items with the items involved and the fixes.
+
+### Quality metrics
+
+**Quality metrics** in **Analytics** (and on the dashboard's **Quality** tab) measures the project from its history. Choose the period (30, 90, 180 or 365 days) and after how many days a latest result counts as stale. Trends are per week, or per month for periods over 120 days.
+
+| Metric | What it measures |
+|---|---|
+| **Requirements volatility** | the changes to requirements after their creation (every saved version; moves do not count), per period, as changes per requirement and period, and the most changed requirements |
+| **Defect density** | defects per active requirement, per folder and per category; a defect counts for a requirement when it is linked to it, to a test that verifies it or to an execution of such a test |
+| **Escaped defects** | defects found in production (the defect's **Found in** field, see [Defects](defects.md)) or reported after a release they concern was released; the share of all defects, per phase found and per release |
+| **Test effectiveness** | defects found by tests (linked to a test or one of its executions) per test executed and per execution hour; executions without a duration are not counted in the hours |
+| **Result age** | how old the latest result of each test is (0–7, 8–30, 31–90, 91–180 and more days, never run) and how many are older than the limit |
+| **Review turnaround** | the time from a review request to its decision (median, mean and 90th percentile), and the pending requests |
+| **Time to fix defects** | the time from reporting a defect to resolving it, per severity (rejected defects do not count) |
+| **Requirement quality** | the share of active requirements whose text has warnings of the language analysis; the trend replays each requirement's text from its history |
+
+Every chart has a text alternative and **Show as table** shows its figures as a table. **Export as report** opens the reports: the standard report **Quality metrics** contains the same figures.
 
 ### Compliance with laws and standards
 

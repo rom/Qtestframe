@@ -4845,7 +4845,7 @@ const en = {
     default: 'Default',
     builtin: 'Built-in',
     builtinHint: 'A built-in check with a fixed condition; you can change its name, severity, state and selector.',
-    count: 'one violation | {n} violations',
+    count: '{n} violation | {n} violations',
     fixed: 'Fixed',
     fixFailed: 'The fix failed',
     involved: 'Items involved with {key}',

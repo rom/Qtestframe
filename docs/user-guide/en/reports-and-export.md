@@ -70,6 +70,7 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 | **Test inventory** | tests by folder, type, status and category | optional filter |
 | **Risk report** | the [risks](releases-and-risks.md) with key figures, a heat map, the risk register, traceability to requirements and tests, untested mitigations and the top risks | – |
 | **Compliance** | compliance with laws, standards and best practices: per source, per clause, the missing catalogue requirements and the requirements not fulfilled (see [Compliance with laws and standards](traceability-and-coverage.md#compliance-with-laws-and-standards)) | optional laws, standards and best practices (default: those the project uses) |
+| **Quality metrics** | requirements volatility, defect density, escaped defects, test effectiveness, result age, review turnaround, time to fix defects and requirement quality, with their trends (see [Quality metrics](traceability-and-coverage.md#quality-metrics)) | optional history in days (30, 90, 180 or 365) and the days after which a result is stale |
 
 **The risk report** contains:
 

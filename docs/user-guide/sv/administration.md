@@ -200,6 +200,10 @@ Bara medlemmar med behörigheten *script.execute* (som standard **Testledare** o
 
 3. Starta om servern. **Kör skript** fungerar nu för webbtester; demoprojektet från `qtestframe seed-demo` har ett (*Login page shows the sign-in form*) som öppnar serverns egen inloggningssida — sätt `server.base_url` till adressen servern nås på.
 
+## Konsistenskontroller
+
+Projekt får inte de [inbyggda konsistenskontrollerna](traceability-and-coverage.md#inbyggda-konsistenskontroller) som regler automatiskt: en förvaltare lägger till dem med **Lägg till inbyggda kontroller** (de börjar som varningar, så releasernas beredskap ändras inte). Avfärdade fynd (*ingen dubblett*) ingår i säkerhetskopior och projektarkiv.
+
 ## API-nycklar
 
 Med API-nycklar kan skript och CI-pipelines använda REST-API:et utan lösenord, till exempel för [CI-importen](runs.md#importera-utfall-från-ci).
