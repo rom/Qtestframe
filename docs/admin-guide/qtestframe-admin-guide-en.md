@@ -1272,7 +1272,58 @@ The same applies, in a weaker form, to HSM keys (use the HSM's own key backup) a
 
 Every organisation has an audit log (**Administration → Audit log**, permission `audit.read`, API `GET /api/v1/audit`, newest first, up to 5000 entries per request): who (user id and e-mail, or `SCIM: <token>`, or `cli`), what (`action`, entity, short details) and when. Recorded are sign-ins (with the method, and `mfa=…`, `amr`/`acr` for single sign-on), changes of projects, items, runs, members, roles, tokens, sharing, organisations and users, exports, backups and restores (`admin.backup`, `admin.restore`), MFA resets and policy changes, and system settings (`settings.update`). Old and new values of items are kept in the item history, not in the audit log; the client address is in the request log, not in the audit entry.
 
-Each audit entry is also written as an INFO log record `audit`. Ship the log to a central syslog server (see [Logging](#central-syslog)), so the trail survives a compromise of the host. Failed sign-ins appear in the server log (`login failed`) and in the user's sign-in history, not in the audit log. The audit log is part of a backup.
+Each audit entry is also written as an INFO log record `audit`. Ship the log to a central syslog server (see [Logging](#central-syslog)), so the trail survives a compromise of the host. Failed sign-ins appear in the server log (`login failed`) and in the user's sign-in history, not in the audit log. The audit log is part of a backup. Entries also record the reason for change given in electronic-records mode (`reason`).
+
+### Tamper-evident audit trail
+
+The audit log of each organisation is a **hash chain** (the system entries of the command line, such as `admin.backup`, have their own chain). Every entry gets a sequence number (`seq`, 1, 2, …), the hash of the entry before it (`prev_hash`) and its own hash: SHA-256 over a canonical encoding of its fields (organisation, sequence number, id, UTC time to the microsecond, user, action, entity, details, reason for change) and the previous hash. The exact encoding is in `docs/api.md` ("Tamper-evident audit trail"), so an export can be checked with other tools.
+
+- **How entries are chained.** An entry is written in the transaction of the change it records (a rolled-back change leaves no entry) and chained right after that transaction commits, in a short transaction of its own that holds the organisation's row in `audit_heads` (PostgreSQL: `SELECT … FOR UPDATE`). So appends of one organisation are serialised without a lock during the request, and several server processes can share the database. Until it is chained (normally milliseconds) an entry shows `seq` 0; entries left unchained by a process that stopped are chained by the next entry or the next start.
+- **Signed checkpoints.** Every 1 000 entries, at least hourly while entries are written, and at every verification and export, the server writes a checkpoint: an HMAC-SHA256 over the organisation, a sequence number and that entry's hash, with a 256-bit key in `audit_keys` that is **encrypted like the other stored secrets** (see [Encryption of stored secrets](#encryption-of-stored-secrets)). Someone who can change the database but not read the server's key (the key file, TPM or HSM) can recompute hashes, but cannot forge checkpoints: rewriting the chain or removing entries before the newest checkpoint is detected. Entries after the newest checkpoint can be removed undetected by such an attacker; the central syslog copy and regular exports close that gap. Without a key provider the checkpoint key is stored as plaintext and the verification says so.
+- **What it detects**, with the first broken link: a changed entry (`entry_changed`), a removed, replaced or reordered entry (`link_broken`, `sequence_gap`), entries removed at the end (`truncated`, against the recorded end of the chain and the checkpoints), a rewritten chain (`checkpoint_mismatch`) and a forged checkpoint (`checkpoint_signature`). It does **not** prevent changes: a database administrator can still change or delete rows; the chain makes it evident. Anyone with the server's key and the database can rewrite everything – protect the key and the hosts accordingly.
+- **Verify** under **Administration → Audit log → Verify audit trail** (permission `audit.read`, `POST /api/v1/audit/verify`), or on the server:
+
+  ```sh
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml            # every organisation; exit 1 when broken
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml --tenant acme --json
+  ```
+
+  Run it from a timer and alert on exit status 1. 100 000 entries verify in about a second (SQLite and PostgreSQL on a laptop); the first chaining after the upgrade chains 100 000 entries in 2–4 seconds.
+- **Export for external archiving**: **Export with hashes (JSON / CSV)** (`GET /api/v1/audit/archive?format=json|csv`) gives the whole chain with sequence numbers and hashes; JSON also has the checkpoints and the end of the chain. `qtestframe audit verify --file EXPORT.json` checks an export without the database (entries, links, end, checkpoint hashes; the checkpoint signatures need the server key). Keep exports on write-once storage to extend the protection beyond the newest checkpoint.
+- **After the upgrade** (migration 0055) the existing entries of each organisation are chained at the first start: the chain begins with an `audit.chain_start` entry that says how many earlier entries follow and when they were chained. The chain proves that those entries were not changed **after** that moment, not before.
+
+The chain in backups, restores and project archives is described in [Backup, restore and migration](#the-audit-trail-in-backups).
+
+## Electronic-records mode (21 CFR Part 11 / EU GMP Annex 11)
+
+An organisation setting under **Administration → Electronic records** (change: `tenant.manage`; read and report: `audit.read`; `GET`/`PUT /api/v1/erecords`), **off by default**. When it is on, the server enforces:
+
+| Control | What the server does |
+|---|---|
+| Re-authentication at every signature | Baseline sign-offs, waiver decisions, risk acceptance, sign-offs of verification records and the actions below need the signer's **password** and, when the signer has a second factor, a **current code** (a recovery code works too). Accounts without a password here (single sign-on) sign within *SSO signing window* minutes (default 5) of signing in at the identity provider, plus the code when they have a second factor here. API tokens cannot sign. Failed attempts are rate-limited. |
+| Meaning of the signature | The signer chooses a meaning from the organisation's list (default authored, reviewed, approved, verified, released; up to 20, your own words allowed). |
+| Manifestation | Every signature records the printed name, e-mail, UTC time, the signer's time zone, the meaning, the method (`password`, `password+mfa`, `sso`, `sso+mfa`) and the hash of the record version signed; signed records show this, and a later change of the record shows *Record changed after signing*. |
+| Actions that need a signature | Chosen from: requirement approval (status → approved, also by bulk change, spreadsheet and bulk review), test approval (status → ready), release go (status → released), baseline creation. Enforced on every route that performs them; without a signature the request answers 428 `signature_required`. |
+| Reason for change | Chosen kinds of change (requirement, test, run, execution, release, baseline, risk, waiver and verification-record changes and deletions) need a reason, recorded in the audit entries of the change. |
+| Inactivity timeout | Browser sessions end after *Sign out after inactivity* minutes (1–480, default 15) without requests; the client's own polling does not count. |
+
+The settings are cached for up to 5 seconds per server process. Signatures given in the dialogs that existed before (baseline sign-offs, waiver decisions, risk acceptance) are recorded with their manifestation in every mode.
+
+**Part 11 / Annex 11 controls report.** **Create report** on the same page (`GET /api/v1/erecords/report`, `?format=md` for Markdown) lists every control with its references, who covers it (*tool*, *tool and procedures*, *your procedures*), its status here and the evidence (settings, a fresh verification of the audit trail, signature counts, multi-factor use).
+
+### What the tool provides – and what your procedures must cover
+
+Qtestframe provides technical controls. It is **not** "Part 11 compliant" by itself, and no setting makes it so: compliance is a property of the validated system in use, its procedures and its people.
+
+| The tool provides | Your procedures must cover |
+|---|---|
+| A computer-generated, time-stamped, tamper-evident audit trail with verification and export | Validation of the installed version for its intended use (and after upgrades); review of audit trails as part of record review; periodic verification and archiving of exports |
+| Signatures with re-authentication, meaning, manifestation and linking to the record version | A written policy that electronic signatures are binding, and the certification to the FDA (§11.100(c)); deciding which records need which signatures and when re-signing is needed |
+| Role-based access, multi-factor authentication, session expiry and an inactivity timeout | Identity checks before an account is created, never reusing accounts, access reviews, leaver processes, password ageing and loss management (or your identity provider's) |
+| Backups that keep the chain valid; exports in open formats | Backup schedule, restore tests, retention periods, business continuity and disaster recovery |
+| Documentation of each version | Training, change control of the installation and its configuration, supplier assessment |
+
+Time stamps come from the server clock: keep it synchronised (NTP).
 
 ## Security headers and CSP
 
@@ -1736,9 +1787,9 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**In a backup** (94 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
+**In a backup** (100 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`.
 
-**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1794,6 +1845,15 @@ A restore is refused, and nothing is changed, when:
 The system settings of the backup apply at once. After a restore, check `qtestframe secrets status` and sign in.
 
 To recover a single item, use its history in the web client; to move one project, see below.
+
+## The audit trail in backups
+
+The hash chain of the audit trail (see [Tamper-evident audit trail](#tamper-evident-audit-trail)) survives backups and restores, also between SQLite and PostgreSQL:
+
+- A **backup** is a consistent snapshot of the entries, the recorded ends of the chains (`audit_heads`), the signed checkpoints and their key (`audit_keys`, encrypted with the backed-up data keys), so the restored chain verifies like the original. Times are kept to the microsecond, which both databases store.
+- A **restore** replaces the chain with the backup's: entries written after the backup are gone, together with the checkpoints written after it, so the restored chain is intact; the restore itself (`admin.restore`) is the next entry. Keep the audit-trail exports of the time between the backup and the restore if you must prove what happened then. Verify after a restore: `qtestframe audit verify`.
+- Restoring into an installation with another key fails as for every encrypted secret; the checkpoint key cannot be read without the backup's key.
+- **Project archives** (below) never contain the audit trail or the electronic signatures: they belong to the organisation. Saving, loading, duplicating or deleting a project only adds entries to the chain; nothing is removed from it. Electronic signatures are kept when their project is deleted.
 
 ## Upgrading
 
@@ -1864,6 +1924,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 51 | `0051_frameworks.sql` |
 | 52 | `0052_multiple_roles.sql` |
 | 53 | `0053_ci_integration.sql` |
+| 55 | `0055_audit_chain_erecords.sql` |
 
 <!-- END GENERATED: migrations -->
 
@@ -2141,6 +2202,17 @@ Stores every secret as plaintext again (before a downgrade). Needs `--yes`.
 #### `qtestframe secrets generate-key`
 
 Prints a new random 256-bit key (base64) for `QTF_SECRETS_KEY` or a key file.
+
+### `qtestframe audit verify`
+
+Verifies the hash chain of the audit trail: every entry's hash, the links between entries, the sequence, the recorded end of the chain and the signed checkpoints (with `--tenant` one organisation, otherwise every organisation and the system entries). Exit `0` when intact, `1` at the first broken link (printed with its entry). `--file EXPORT.json` checks an export (Administration → Audit trail → Export with hashes) without the database; the signatures of its checkpoints need the server's key and are only checked against the database.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--file` | `string` | verify an exported audit trail (JSON) instead of the database |
+| `--json` | — | print the result as JSON |
+| `--tenant` | `string` | organisation (slug); default every organisation |
 
 ### `qtestframe check-config`
 
