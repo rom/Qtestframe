@@ -193,7 +193,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 
 	register := export.Section{Name: "register", Title: l.t("Risk register"),
 		Columns: l.cols("Key", "Title", "Category", "Owner", "Likelihood", "Impact", "Score", "Level", "Status", "Mitigation", "Requirements", "Mitigation state", "Updated",
-			"Residual likelihood", "Residual impact", "Residual score", "Residual level", "Residual from", "Residual justification", "Above threshold", "Accepted by", "Review date", "Review owner", "ATT&CK techniques")}
+			"Residual likelihood", "Residual impact", "Residual score", "Residual level", "Residual from", "Residual justification", "Above threshold", "Accepted by", "Review date", "Review owner", "ATT&CK techniques", "EMB3D threats")}
 	above := export.Section{Name: "above_threshold", Title: l.t("Risks above the acceptance threshold after mitigation"),
 		Columns: l.cols("Key", "Title", "Score", "Level", "Residual score", "Residual level", "Residual from", "Status", "Owner", "Accepted by")}
 	aboveOpen, aboveAccepted, reviewDue := 0, 0, 0
@@ -211,7 +211,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 			l.enum(EnumRiskLevel, k.Level), l.enum(EnumRiskStatus, k.Status), k.Mitigation, keysOf(k.RequirementIDs),
 			l.enum(EnumMitigation, MitigationState(k.RequirementIDs, coverage)), ts(k.UpdatedAt),
 			itoa(rl), itoa(ri), itoa(k.ResidualScore), l.enum(EnumRiskLevel, k.ResidualLevel), l.enum(EnumResidualSource, k.ResidualSource),
-			k.ResidualJustification, l.yesNo(k.AboveThreshold), accepted, k.ReviewDate, k.ReviewOwner, strings.Join(k.Attack, ", ")})
+			k.ResidualJustification, l.yesNo(k.AboveThreshold), accepted, k.ReviewDate, k.ReviewOwner, strings.Join(k.Attack, ", "), strings.Join(k.Emb3d, ", ")})
 		if k.ReviewDue {
 			reviewDue++
 		}
@@ -284,6 +284,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 	}
 
 	attack, mapped := attackSection(l, risks)
+	emb3d, embMapped := emb3dSection(l, risks)
 	summary := l.kpiSection("summary", "Key figures",
 		kv{"Risks", itoa(len(risks))},
 		kv{"Open risks (identified or mitigating)", itoa(open)},
@@ -304,6 +305,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 		kv{"Risks above the threshold after mitigation, accepted", itoa(aboveAccepted)},
 		kv{"Risks due for review", itoa(reviewDue)},
 		kv{"Risks with ATT&CK techniques", itoa(mapped)},
+		kv{"Risks with EMB3D threats", itoa(embMapped)},
 	)
 	return &export.Dataset{Sections: []export.Section{
 		summary,
@@ -318,6 +320,7 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 		untested,
 		due,
 		attack,
+		emb3d,
 	}}, nil
 }
 
@@ -362,6 +365,46 @@ func attackSection(l loc, risks []model.Risk) (export.Section, int) {
 			}
 		}
 		sec.Rows = append(sec.Rows, []string{id, name, matrix, strings.Join(tactics, ", "), strings.Join(byTech[id], ", "), itoa(open[id]), url})
+	}
+	return sec, mapped
+}
+
+// emb3dSection lists the MITRE EMB3D threats of the risks
+// (catalog/data/emb3d.yaml) with their category and the risks that list
+// them, most open risks first; mapped counts the risks with a threat.
+func emb3dSection(l loc, risks []model.Risk) (export.Section, int) {
+	sec := export.Section{Name: "emb3d", Title: l.t("MITRE EMB3D threats of the risks"),
+		Columns: l.cols("Threat", "Name", "Category", "Risks", "Open risks", "Link")}
+	byThreat, open := map[string][]string{}, map[string]int{}
+	var order []string
+	mapped := 0
+	for _, k := range risks {
+		if len(k.Emb3d) > 0 {
+			mapped++
+		}
+		for _, id := range k.Emb3d {
+			if _, ok := byThreat[id]; !ok {
+				order = append(order, id)
+			}
+			byThreat[id] = append(byThreat[id], k.Key)
+			if riskOpen(k.Status) {
+				open[id]++
+			}
+		}
+	}
+	sort.SliceStable(order, func(i, j int) bool {
+		if open[order[i]] != open[order[j]] {
+			return open[order[i]] > open[order[j]]
+		}
+		return order[i] < order[j]
+	})
+	c, _ := catalog.Default()
+	for _, id := range order {
+		var x catalog.Emb3dSummary
+		if c != nil {
+			x = c.SummarizeEmb3d(id)
+		}
+		sec.Rows = append(sec.Rows, []string{id, x.Name, x.Category, strings.Join(byThreat[id], ", "), itoa(open[id]), x.URL})
 	}
 	return sec, mapped
 }

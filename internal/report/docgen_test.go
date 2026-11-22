@@ -33,7 +33,7 @@ func sampleDocData() *DocData {
 		Requirements: []model.Requirement{
 			{ID: "r1", Key: "P-REQ-1", Title: "Pay by card", FolderID: ptrS("f2"), Description: "The system MUST accept card payments.\n\nIt SHOULD accept wallets; it may be slow.",
 				Rationale: "Most customers pay by card.", Type: "functional", Priority: "high", Obligation: "must", Status: "approved", Source: "Customer",
-				Owner: "po@example.com", Tags: []string{"pay"}, CategoryIDs: []string{"c1"}, Version: 3, FolderPath: "Checkout / Payment",
+				Owner: "po@example.com", Tags: []string{"pay"}, D3fend: []string{"D3-MFA"}, Emb3d: []string{"MID-026"}, CategoryIDs: []string{"c1"}, Version: 3, FolderPath: "Checkout / Payment",
 				Criteria: []model.EvaluationCriterion{{Description: "Visa is accepted", Method: "test", Threshold: "2 s"}},
 				RelationRefs: []model.ItemRef{{Type: "depends_on", Direction: "outgoing", Kind: "requirement", ID: "r2", Key: "P-REQ-2", Title: "Receipt"},
 					{Type: "refines", Direction: "outgoing", Kind: "requirement", ID: "rz", Key: "P-REQ-77", Title: "Outside"}, {Type: "verifies", Direction: "incoming", Kind: "test", Key: "P-TC-1"}}},
@@ -91,7 +91,7 @@ func docText(t *testing.T, doc *export.Document) string {
 func TestRequirementsSpec(t *testing.T) {
 	d := sampleDocData()
 	doc, err := BuildDocument(DocRequirementsSpec, d, DocOptions{Author: "Ann", Fields: []string{"description", "rationale", "criteria", "type", "priority",
-		"obligation", "status", "source", "owner", "tags", "categories", "relations", "tests", "results", "version"}})
+		"obligation", "status", "source", "owner", "tags", "frameworks", "categories", "relations", "tests", "results", "version"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestRequirementsSpec(t *testing.T) {
 		"## 1 Introduction", "The web shop and its back office.", `The key words "MUST"`, "BCP 14",
 		"## 2 Requirements", "### 2.1 Without folder", "#### P-REQ-10 Loose", "### 2.2 Checkout", "Paying for the cart.", "#### P-REQ-2 Receipt", "#### 2.2.1 Payment", "##### P-REQ-1 Pay by card",
 		"The system **MUST** accept card payments.", "It **SHOULD** accept wallets; it may be slow.", "Systemet **SKA** skicka",
-		"**Verified by:** P-TC-1 (Passed)", "**Related requirements:** P-REQ-2", "**Categories:** Level: System", "**Rationale:** Most customers pay by card.",
+		"**Verified by:** P-TC-1 (Passed)", "**Related requirements:** P-REQ-2", "**MITRE D3FEND:** D3-MFA Multi-factor Authentication", "**MITRE EMB3D:** MID-026 Secure Firmware Update", "**Categories:** Level: System", "**Rationale:** Most customers pay by card.",
 		"| 1 | Visa is accepted | Test | 2 s |", "**Source:** Customer",
 		"## Appendix A. Traceability matrix", "| P-REQ-1 | Pay by card | MUST | P-TC-1 (Passed) |", "1 requirement has no test.",
 		"## Appendix B. Dependency graph", "**Figure B.1. Requirement relations**", "](data:image/svg+xml;base64,",

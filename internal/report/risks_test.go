@@ -19,7 +19,7 @@ func sampleRisks() []model.Risk {
 		{ID: "k4", Key: "P-RISK-4", Title: "Typo", Likelihood: 1, Impact: 1, Status: "closed", UpdatedAt: old},
 		{ID: "k5", Key: "P-RISK-5", Title: "Unowned", Likelihood: 3, Impact: 4, Status: "identified", UpdatedAt: t0},
 		{ID: "k6", Key: "P-RISK-6", Title: "Wrong password accepted", Likelihood: 4, Impact: 4, Status: "identified", RequirementIDs: []string{"r1"}, UpdatedAt: t0,
-			Attack: []string{"T1110.004", "T1078"}},
+			Attack: []string{"T1110.004", "T1078"}, Emb3d: []string{"TID-201"}},
 	}
 }
 
@@ -105,13 +105,18 @@ func TestRiskReport(t *testing.T) {
 	if metric(t, sum, "Risks with ATT&CK techniques") != "1" || reg.Rows[1][23] != "T1110.004, T1078" {
 		t.Fatal(reg.Rows[1])
 	}
+	emb := section(t, ds, "emb3d")
+	if len(emb.Rows) != 1 || emb.Rows[0][0] != "TID-201" || emb.Rows[0][1] != "Inadequate Bootloader Protection and Verification" || emb.Rows[0][2] != "system software" ||
+		emb.Rows[0][3] != "P-RISK-6" || !strings.HasPrefix(emb.Rows[0][5], "https://emb3d.mitre.org/") || metric(t, sum, "Risks with EMB3D threats") != "1" || reg.Rows[1][24] != "TID-201" {
+		t.Fatal(emb.Rows, reg.Rows[1])
+	}
 	renderAll(t, ds)
 
 	// no risks: every section is still there
 	d := sampleData()
 	d.Risks = nil
 	ds, err = Build(Risks, d, nil)
-	if err != nil || len(ds.Sections) != 12 || metric(t, section(t, ds, "summary"), "Share of open risks verified") != "–" {
+	if err != nil || len(ds.Sections) != 13 || metric(t, section(t, ds, "summary"), "Share of open risks verified") != "–" {
 		t.Fatal(err, names(ds))
 	}
 }
