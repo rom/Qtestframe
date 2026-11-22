@@ -20,6 +20,8 @@ const (
 const docxContentTypes = xmlHeader + `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
 	`<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
 	`<Default Extension="xml" ContentType="application/xml"/>` +
+	`<Default Extension="png" ContentType="image/png"/>` +
+	`<Default Extension="jpeg" ContentType="image/jpeg"/>` +
 	`<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
 	`<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>` +
 	`<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>` +
@@ -30,9 +32,13 @@ const docxRootRels = xmlHeader + `<Relationships xmlns="http://schemas.openxmlfo
 	`<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>` +
 	`</Relationships>`
 
-const docxDocRels = xmlHeader + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-	`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
-	`</Relationships>`
+// docxDocRels are the relationships of a report's document part: the
+// styles and the logo.
+func docxDocRels(l *Logo) string {
+	return xmlHeader + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+		`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
+		docxLogoRel(l) + `</Relationships>`
+}
 
 const docxStyles = xmlHeader + `<w:styles xmlns:w="` + nsW + `">` +
 	`<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="{{LANG}}"/></w:rPr></w:rPrDefault>` +
@@ -140,7 +146,8 @@ func docxTable(b *strings.Builder, s Section) {
 func docxDocument(ds Dataset) string {
 	var b strings.Builder
 	b.WriteString(xmlHeader)
-	b.WriteString(`<w:document xmlns:w="` + nsW + `" xmlns:r="` + nsR + `"><w:body>`)
+	b.WriteString(`<w:document xmlns:w="` + nsW + `" xmlns:r="` + nsR + `" xmlns:wp="` + nsWP + `" xmlns:a="` + nsA + `" xmlns:pic="` + nsPic + `"><w:body>`)
+	docxLogo(&b, ds.Logo, 1)
 	docxPara(&b, "Title", ds.Title)
 	if ds.Subtitle != "" {
 		docxPara(&b, "Subtitle", ds.Subtitle)
@@ -185,7 +192,7 @@ func WriteDOCX(w io.Writer, ds Dataset) error {
 	parts := []struct{ name, body string }{
 		{"[Content_Types].xml", docxContentTypes},
 		{"_rels/.rels", docxRootRels},
-		{"word/_rels/document.xml.rels", docxDocRels},
+		{"word/_rels/document.xml.rels", docxDocRels(ds.Logo)},
 		{"word/document.xml", docxDocument(ds)},
 		{"word/styles.xml", strings.Replace(docxStyles, "{{LANG}}", ds.label("docLang"), 1)},
 		{"docProps/core.xml", docxCore(ds)},
@@ -196,6 +203,15 @@ func WriteDOCX(w io.Writer, ds Dataset) error {
 			return err
 		}
 		if _, err := io.WriteString(f, p.body); err != nil {
+			return err
+		}
+	}
+	if ds.Logo.ok() {
+		f, err := zw.CreateHeader(&zip.FileHeader{Name: docxLogoPart(ds.Logo), Method: zip.Store, Modified: mod})
+		if err != nil {
+			return err
+		}
+		if _, err := f.Write(ds.Logo.Data); err != nil {
 			return err
 		}
 	}

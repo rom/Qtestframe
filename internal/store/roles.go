@@ -193,6 +193,7 @@ func (s *Store) TenantSettings(ctx context.Context, tenantID string) (*model.Ten
 	if len(st.ReadyRequirementStatuses) == 0 {
 		st.ReadyRequirementStatuses = append([]string{}, model.DefaultReadyRequirementStatuses...)
 	}
+	st.Logo.Normalize()
 	return &st, nil
 }
 

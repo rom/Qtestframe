@@ -512,6 +512,7 @@ func (s *Server) handleProjectImpactExport(w http.ResponseWriter, r *http.Reques
 	}
 	lang := reportLang(r, p, q.Get("lang"))
 	ds := impactDataset(pr, imp, lang)
+	ds.Logo = s.documentLogo(r.Context(), p, pr)
 	if f == export.CSV {
 		// one file: the rows only
 		ds.Sections = ds.Sections[1:]

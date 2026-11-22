@@ -416,6 +416,7 @@ func (s *Server) render(r *http.Request, p *Principal, pr *model.Project, job re
 		}
 	}
 	ds.Link = s.itemLink(pr)
+	ds.Logo = s.documentLogo(r.Context(), p, pr)
 	multi := len(ds.Sections) > 1
 	ext := f.Extension(multi)
 	name := strings.TrimSpace(job.name)

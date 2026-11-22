@@ -185,6 +185,13 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, err)
 		return
 	}
+	// the logo changes only through /settings/logo (logo.go)
+	cur, err := s.Store.TenantSettings(r.Context(), p.TenantID())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	st.Logo = cur.Logo
 	if err := s.Store.SaveTenantSettings(r.Context(), p.TenantID(), &st); err != nil {
 		s.fail(w, r, err)
 		return

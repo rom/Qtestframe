@@ -31,6 +31,7 @@ const docDocxContentTypes = xmlHeader + `<Types xmlns="http://schemas.openxmlfor
 	`<Default Extension="xml" ContentType="application/xml"/>` +
 	`<Default Extension="png" ContentType="image/png"/>` +
 	`<Default Extension="svg" ContentType="image/svg+xml"/>` +
+	`<Default Extension="jpeg" ContentType="image/jpeg"/>` +
 	`<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
 	`<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>` +
 	`<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>` +
@@ -38,8 +39,8 @@ const docDocxContentTypes = xmlHeader + `<Types xmlns="http://schemas.openxmlfor
 	`</Types>`
 
 // docDocxDocRels are the relationships of the document part: styles,
-// footer and the images of n figures (rIdP<i> PNG, rIdS<i> SVG).
-func docDocxDocRels(n int) string {
+// footer, the images of n figures (rIdP<i> PNG, rIdS<i> SVG) and the logo.
+func docDocxDocRels(n int, logo *Logo) string {
 	var b strings.Builder
 	b.WriteString(xmlHeader + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
 		`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
@@ -48,7 +49,7 @@ func docDocxDocRels(n int) string {
 		fmt.Fprintf(&b, `<Relationship Id="rIdP%d" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/figure%d.png"/>`, i, i)
 		fmt.Fprintf(&b, `<Relationship Id="rIdS%d" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/figure%d.svg"/>`, i, i)
 	}
-	b.WriteString(`</Relationships>`)
+	b.WriteString(docxLogoRel(logo) + `</Relationships>`)
 	return b.String()
 }
 
@@ -279,7 +280,7 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 	for _, p := range []struct{ name, body string }{
 		{"[Content_Types].xml", docDocxContentTypes},
 		{"_rels/.rels", docxRootRels},
-		{"word/_rels/document.xml.rels", docDocxDocRels(len(figures))},
+		{"word/_rels/document.xml.rels", docDocxDocRels(len(figures), doc.Logo)},
 		{"word/styles.xml", docDocxStyles(ds.label("docLang"))},
 		{"word/footer1.xml", docDocxFooter(ds)},
 		{"docProps/core.xml", docDocxCore(doc)},
@@ -305,8 +306,14 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 	}
 	b.WriteString(xmlHeader)
 	b.WriteString(`<w:document xmlns:w="` + nsW + `" xmlns:r="` + nsR + `" xmlns:wp="` + nsWP + `" xmlns:a="` + nsA + `" xmlns:pic="` + nsPic + `" xmlns:asvg="` + nsASVG + `"><w:body>`)
-	// title page
-	b.WriteString(`<w:p><w:pPr><w:spacing w:before="3600"/></w:pPr></w:p>`)
+	// title page: the logo at the top, the title about a third down
+	before := 3600
+	if doc.Logo.ok() {
+		docxLogo(&b, doc.Logo, len(figures)+1)
+		_, h := doc.Logo.SizeMM()
+		before = max(480, before-int(h*56.7)-240)
+	}
+	fmt.Fprintf(&b, `<w:p><w:pPr><w:spacing w:before="%d"/></w:pPr></w:p>`, before)
 	docxPara(&b, "Title", doc.Title)
 	if doc.Subtitle != "" {
 		docxPara(&b, "Subtitle", doc.Subtitle)
@@ -426,6 +433,15 @@ func writeDocDOCX(w io.Writer, doc *Document) error {
 	}
 	if err := bw.Flush(); err != nil {
 		return err
+	}
+	if doc.Logo.ok() {
+		w, err := part(docxLogoPart(doc.Logo))
+		if err != nil {
+			return err
+		}
+		if _, err := w.Write(doc.Logo.Data); err != nil {
+			return err
+		}
 	}
 	for i, f := range figures {
 		img, err := f.PNG(docxFigureScale(f))
