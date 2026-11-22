@@ -128,7 +128,7 @@ async function save(clearToken = false) {
         <div class="form-grid">
           <div v-field class="field">
             <label>{{ t('ci.posting.release') }}</label>
-            <Select v-model="form.release_id" :options="releaseOptions" option-label="label" option-value="value" aria-describedby="ci-release-hint" />
+            <Select v-model="form.release_id" :options="releaseOptions" option-label="label" option-value="value" :placeholder="t('ci.posting.noRelease')" aria-describedby="ci-release-hint" />
             <span id="ci-release-hint" class="small muted">{{ t('ci.posting.releaseHint') }}</span>
           </div>
           <div v-field class="field">
@@ -140,7 +140,8 @@ async function save(clearToken = false) {
       </template>
       <div class="row">
         <span class="small muted grow" role="status">
-          {{ cs.ci?.provider ? t('ci.posting.active') : t('ci.posting.inactive') }}<template v-if="cs.has_ci_token"> · {{ t('ci.posting.hasToken') }}</template>
+          {{ cs.ci?.provider ? t('ci.posting.active') : t('ci.posting.inactive') }}<template v-if="cs.has_ci_token"> · {{ t('ci.posting.hasToken') }}</template
+          ><template v-else-if="cs.ci?.provider"> · {{ t('ci.posting.noToken') }}</template>
         </span>
         <Button v-if="cs.has_ci_token" type="button" :label="t('ci.posting.removeToken')" severity="danger" text :loading="saving" @click="save(true)" />
         <Button type="submit" :label="t('common.save')" icon="pi pi-check" :loading="saving" />

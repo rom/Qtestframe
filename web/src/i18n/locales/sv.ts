@@ -5187,6 +5187,7 @@ const sv: Messages = {
       active: 'Rapporteringen är på',
       inactive: 'Rapporteringen är av',
       hasToken: 'token sparad',
+      noToken: 'ingen token sparad: inget skickas',
       removeToken: 'Ta bort token',
       tokenRemoved: 'Token borttagen',
       saved: 'Sparat',

@@ -5185,6 +5185,7 @@ const en = {
       active: 'Posting is on',
       inactive: 'Posting is off',
       hasToken: 'token saved',
+      noToken: 'no token saved: nothing is posted',
       removeToken: 'Remove token',
       tokenRemoved: 'Token removed',
       saved: 'Saved',
