@@ -6162,6 +6162,15 @@ const en = {
     depthHint: 'The number of steps between requirements, tests and risks (1 to 10). 1 is the direct impact only; the verifying tests of an affected requirement and the defects, variants and code changes of an affected item do not count as a step.',
     depthField: 'Impact depth',
     relationMode: 'Effect along {relation}',
+    applicabilityLegend: 'Changed variant applicability',
+    applicabilityHint:
+      'When the variants a requirement or test applies to change, its tests, related requirements and the other items the rules above reach may need a look. By default a review is recommended: nothing is marked and the owners of the reached items are notified.',
+    applicabilityField: 'A changed applicability',
+    applicabilityValue: {
+      review: 'Recommends a review (default)',
+      suspect: 'Marks links and relations suspect',
+      off: 'Has no impact',
+    },
     rulesLegend: 'Other connections',
     rulesHint: 'Along trace links a change can mark suspect; along the other connections it only recommends a review (the owners can be notified).',
     choiceLegend: 'What to do with the impact',

@@ -248,7 +248,8 @@ func (s *Server) applyImpact(ctx context.Context, p *Principal, projectID string
 	if choice == model.ImpactApplySuspect {
 		use = nil
 		for _, r := range roots {
-			if !r.ReviewOnly {
+			// a changed applicability recommends its reviews at once
+			if !r.ReviewOnly || slices.Contains(r.Fields, "applicability") {
 				use = append(use, r)
 			}
 		}

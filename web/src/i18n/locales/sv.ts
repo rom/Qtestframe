@@ -6161,6 +6161,15 @@ const sv: Messages = {
     depthHint: 'Antalet steg mellan krav, testfall och risker (1 till 10). 1 är bara den direkta påverkan; de verifierande testfallen för ett påverkat krav och defekter, varianter och kodändringar för en påverkad post räknas inte som ett steg.',
     depthField: 'Påverkansdjup',
     relationMode: 'Effekt längs {relation}',
+    applicabilityLegend: 'Ändrad tillämplighet (varianter)',
+    applicabilityHint:
+      'När varianterna som ett krav eller testfall gäller ändras kan dess testfall, relaterade krav och de andra poster som reglerna ovan når behöva ses över. Som standard rekommenderas en granskning: inget markeras och ägarna till de nådda posterna aviseras.',
+    applicabilityField: 'En ändrad tillämplighet',
+    applicabilityValue: {
+      review: 'Rekommenderar granskning (standard)',
+      suspect: 'Markerar länkar och relationer misstänkta',
+      off: 'Har ingen påverkan',
+    },
     rulesLegend: 'Andra kopplingar',
     rulesHint: 'Längs spårlänkar kan en ändring markera misstänkt; längs de andra kopplingarna rekommenderar den bara en granskning (ägarna kan aviseras).',
     choiceLegend: 'Vad ska göras med påverkan',

@@ -80,6 +80,28 @@ type CorrelationSettings struct {
 	// graph (ImpactEdgeKinds: verifying tests, item links, risks, defects,
 	// variants, code changes).
 	ImpactRules map[string]ImpactRule `json:"impact_rules"`
+	// ApplicabilityImpact: what a change of the variants a requirement or
+	// test applies to does (ApplicabilityImpacts): ModeReview (default)
+	// recommends a review of what the impact rules reach (its owners are
+	// notified, nothing is marked), ModeSuspect is a change of substance
+	// (the rules mark trace links and relations suspect),
+	// ApplicabilityOff does nothing.
+	ApplicabilityImpact string `json:"applicability_impact"`
+}
+
+// ApplicabilityOff: a change of applicability has no impact.
+const ApplicabilityOff = "off"
+
+// ApplicabilityImpacts lists the valid values of
+// CorrelationSettings.ApplicabilityImpact.
+var ApplicabilityImpacts = []string{ModeReview, ModeSuspect, ApplicabilityOff}
+
+// ApplicabilityMode returns ApplicabilityImpact (ModeReview when unset).
+func (c *CorrelationSettings) ApplicabilityMode() string {
+	if slices.Contains(ApplicabilityImpacts, c.ApplicabilityImpact) {
+		return c.ApplicabilityImpact
+	}
+	return ModeReview
 }
 
 // Change impact depth (CorrelationSettings.ImpactDepth).
@@ -209,16 +231,17 @@ var ImpactChoices = []string{ImpactApplySuspect, ImpactApplyNotify, ImpactApplyS
 // not chosen its own.
 func DefaultCorrelationSettings() CorrelationSettings {
 	return CorrelationSettings{
-		RelationImpact:     map[string]string{"refines": ImpactIncoming, "derived_from": ImpactIncoming, "depends_on": ImpactIncoming},
-		FlagIssues:         true,
-		StaleAfterDays:     DefaultStaleAfterDays,
-		StaleOnChange:      true,
-		BlockingSeverities: []string{"critical", "major"},
-		WarningSeverities:  []string{"minor"},
-		RegressionAction:   RegressionReopen,
-		ImpactDepth:        DefaultImpactDepth,
-		RelationModes:      map[string]string{},
-		ImpactRules:        DefaultImpactRules(),
+		RelationImpact:      map[string]string{"refines": ImpactIncoming, "derived_from": ImpactIncoming, "depends_on": ImpactIncoming},
+		FlagIssues:          true,
+		StaleAfterDays:      DefaultStaleAfterDays,
+		StaleOnChange:       true,
+		BlockingSeverities:  []string{"critical", "major"},
+		WarningSeverities:   []string{"minor"},
+		RegressionAction:    RegressionReopen,
+		ImpactDepth:         DefaultImpactDepth,
+		RelationModes:       map[string]string{},
+		ImpactRules:         DefaultImpactRules(),
+		ApplicabilityImpact: ModeReview,
 	}
 }
 

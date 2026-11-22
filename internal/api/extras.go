@@ -279,6 +279,8 @@ func (s *Server) restoreApplicability(ctx context.Context, p *Principal, kind, i
 	if _, err := s.Store.SetApplicability(ctx, p.TenantID(), projectID, kind, []string{id}, want, p.User.Email); err != nil {
 		return false, err
 	}
+	names, _ := s.variantNameMap(ctx, p, projectID)
+	s.applicabilityImpact(ctx, p, projectID, kind, id, snapshotKey(snap), applicabilityText(cur, names)+" → "+applicabilityText(want, names))
 	return true, nil
 }
 
