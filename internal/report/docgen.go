@@ -100,6 +100,8 @@ type DocOptions struct {
 	// the requirements and tests that apply to it, with its coverage and
 	// results.
 	Variant string `json:"variant,omitempty"`
+	// Discussions adds an appendix with the discussions of the items.
+	Discussions bool `json:"include_discussions,omitempty"`
 }
 
 // Normalize validates o for a document of kind and fills in defaults.
@@ -200,6 +202,9 @@ type DocData struct {
 	// CustomFields are the project's custom field definitions per item
 	// kind (requirement, test), shown with the "custom_fields" field.
 	CustomFields map[string][]model.CustomField
+	// Discussions: item id → its comments (not removed, oldest first);
+	// shown with DocOptions.Discussions.
+	Discussions map[string][]model.Comment
 }
 
 // DocTitle is the default title of a document of kind in lang.
@@ -825,7 +830,7 @@ func (g *docGen) requirementsSpec() {
 	}
 
 	waivers := g.specWaivers()
-	if *g.o.Traceability || *g.o.Glossary || waivers {
+	if *g.o.Traceability || *g.o.Glossary || waivers || g.hasDiscussions() {
 		g.appendices()
 	}
 	if *g.o.Traceability {
@@ -835,6 +840,7 @@ func (g *docGen) requirementsSpec() {
 	if waivers {
 		g.waiverAppendix()
 	}
+	g.discussionAppendix()
 	if *g.o.Glossary {
 		g.add(export.PageBreak())
 		g.glossary(false)
@@ -1230,13 +1236,14 @@ func (g *docGen) testPlan() {
 	g.byFolder(model.KindTest, len(d.Tests), func(i int) *string { return d.Tests[i].FolderID }, g.testOrder,
 		func(i, level int) { g.test(&d.Tests[i], level) })
 
-	if *g.o.Traceability || *g.o.Glossary {
+	if *g.o.Traceability || *g.o.Glossary || g.hasDiscussions() {
 		g.appendices()
 	}
 	if *g.o.Traceability {
 		g.add(export.PageBreak())
 		g.coverage(in, out)
 	}
+	g.discussionAppendix()
 	if *g.o.Glossary {
 		g.add(export.PageBreak())
 		g.glossary(true)

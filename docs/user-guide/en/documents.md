@@ -48,7 +48,7 @@ Qtestframe can write two complete documents for you and save them in the archive
    - **Filter**: a [query](search-and-filters.md) on the requirements (specification) or the tests (test plan), for example `status:approved` or `folder:Checkout`.
    - **Include rejected and obsolete requirements** (and, for a test plan, deprecated tests). They are left out by default.
    - **Group the requirements by** folder, category (one dimension) or type (specification only; a test plan is always grouped by folder).
-   - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report.
+   - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report. **Discussions of the items** adds an appendix with the [discussion](discussions.md) threads of the requirements or tests (removed comments are left out; resolved threads are marked).
 3. Select **Create**. A progress bar shows while the document is being written; a project with thousands of requirements takes a few seconds.
 
 The new document appears at the top of the archive, highlighted, with **Open** (PDF) and **Download**. It is a *document* with the tags `generated`, `requirements-specification` or `test-plan` and the version (for example `v2.0`); the earlier versions of the same kind make up its revision history. Obligation keywords in requirement texts (MUST, SHALL, SKA …) are printed in bold.

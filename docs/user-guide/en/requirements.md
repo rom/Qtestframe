@@ -160,9 +160,9 @@ A mention is written as `@handle`: for users the part of the e-mail address befo
 
 To find everything that mentions someone, filter with `mention:anna.berg` (or `mention:@anna.berg`).
 
-## Comments
+## Discussion
 
-The **Comments** tab is a discussion thread on the requirement. Write in the field and select **Comment** (or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Everyone who can read the requirement can read and write comments. You can edit and delete your own comments; administrators can delete any comment. The number of comments is shown on the tab and in the **Comments** column.
+The **Discussion** tab holds the requirement's [discussion](discussions.md): threads of comments in Markdown, with replies, @mentions, reactions and **Resolve**. The number on the tab is the number of open threads; the **Comments** column counts the comments. Everyone who can read the requirement can read the discussion; writing in it needs `comment.create` (every role except Viewer). You can edit and remove your own comments; moderators can remove any comment.
 
 ## When someone else saved first
 

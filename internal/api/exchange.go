@@ -239,7 +239,7 @@ func (s *Server) handleExchangeExport(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, err)
 		return
 	}
-	if perm := readPerm(kind); !p.Can(perm) {
+	if perm := readPermOf(kind); !p.Can(perm) {
 		writeError(w, http.StatusForbidden, "forbidden", "permission "+string(perm)+" required")
 		return
 	}

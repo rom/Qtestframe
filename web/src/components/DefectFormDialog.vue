@@ -3,6 +3,7 @@
 // executions. New defects can start from a draft (e.g. from a failed
 // execution); links of an existing defect are saved one by one.
 import RegressionHistory from './RegressionHistory.vue'
+import DiscussionPanel from './DiscussionPanel.vue'
 import { DEFECT_PHASES } from '@/lib/quality'
 import ItemRef from './ItemRef.vue'
 import CustomFieldsEditor from './CustomFieldsEditor.vue'
@@ -198,6 +199,7 @@ async function save() {
         <div class="small muted" style="margin-top: 4px">{{ t('defectsView.externalManualHint') }}</div>
       </details>
     </form>
+    <DiscussionPanel v-if="!isNew && defect" entity="defect" :entity-id="defect.id" :project-id="projectId" compact class="dialog-discussion" />
     <template #footer>
       <Button :label="canEdit ? t('common.cancel') : t('common.close')" text severity="secondary" @click="visible = false" />
       <Button v-if="canEdit" type="submit" form="defect-form" :label="isNew ? t('defectsView.report') : t('common.save')" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />

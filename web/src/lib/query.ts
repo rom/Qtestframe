@@ -138,6 +138,7 @@ export const QUERY_HELP: QueryHelpEntry[] = [
   { example: 'dimension:"Polarity/Negative"', meaning: 'Category as Dimension/Name', id: 'dimension' },
   { example: 'has:criteria   (or field:*)', meaning: 'Field not empty', id: 'has' },
   { example: 'verification:verified  element:"Power unit"', meaning: 'Verification state; allocated to a system element (or below it)', id: 'verification' },
+  { example: 'has:open-discussion  mentions:me', meaning: 'Unresolved discussion threads; mentioned (also in its discussion)', id: 'discussion' },
   { example: '(a OR b) AND c', meaning: 'Grouping', id: 'group' },
   { example: 'cf.supplier:"Acme"  cf.mass>2', meaning: 'Custom field (by its key)', id: 'custom' },
   { example: 'sort:-cf.mass  sort:title', meaning: 'Sort the result (- for descending)', id: 'sort' },
@@ -155,7 +156,7 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' |
   requirement: [
     'key', 'title', 'description', 'obligation', 'type', 'priority', 'status', 'source', 'rationale', 'owner',
     'tag', 'version', 'folder', 'category', 'dimension', 'coverage', 'linked', 'created_by', 'created_at',
-    'updated_at', 'criteria', 'related', 'parent', 'child', 'comments', 'mention', 'suspect', 'risk', 'defects', 'catalog',
+    'updated_at', 'criteria', 'related', 'parent', 'child', 'comments', 'open_discussions', 'mention', 'suspect', 'risk', 'defects', 'catalog',
     'blocked', 'stale', 'suspect_relations',
     'verification', 'element',
     'variant', 'applicability',
@@ -163,7 +164,7 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' |
   test: [
     'key', 'title', 'description', 'preconditions', 'execution_type', 'type', 'script_language', 'script',
     'expected', 'step', 'priority', 'status', 'estimate', 'owner', 'tag', 'folder', 'category', 'dimension', 'linked',
-    'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'version', 'mention', 'depends_on', 'suspect', 'flaky', 'flakiness', 'catalog', 'stale',
+    'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'open_discussions', 'version', 'mention', 'depends_on', 'suspect', 'flaky', 'flakiness', 'catalog', 'stale',
     'element',
     'variant', 'applicability',
   ],

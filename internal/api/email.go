@@ -131,6 +131,10 @@ func (s *Server) notificationURL(n *model.Notification) string {
 		return p + "/risks?risk=" + q
 	case "execution":
 		return p + "/runs"
+	case model.DiscussionRun:
+		return p + "/runs/" + url.PathEscape(n.EntityID)
+	case model.DiscussionReview:
+		return p + "/reviews"
 	}
 	return p + "/dashboard"
 }
@@ -184,6 +188,8 @@ func eventLabel(lang, event string) string {
 	sv := mailLang(lang) == "sv"
 	labels := map[string][2]string{
 		"mention":          {"You were mentioned", "Du har nämnts"},
+		"comment.created":  {"New comment", "Ny kommentar"},
+		"comment.resolved": {"Discussion resolved", "Diskussionen är löst"},
 		"assigned":         {"Assigned to you", "Tilldelad dig"},
 		"defect.created":   {"New defect", "Ny defekt"},
 		"defect.assigned":  {"Defect assigned to you", "Defekt tilldelad dig"},

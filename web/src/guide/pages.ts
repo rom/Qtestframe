@@ -14,6 +14,7 @@ export const GUIDE_PAGES = [
   'waivers-and-soa',
   'defects',
   'reviews-and-notifications',
+  'discussions',
   'traceability-and-coverage',
   'variants-and-code',
   'baselines',

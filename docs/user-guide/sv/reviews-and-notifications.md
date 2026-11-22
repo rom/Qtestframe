@@ -29,6 +29,7 @@ Du får en notis när någon annan:
 
 - gör dig till ägare av ett krav, ett testfall eller en risk (även vid en massändring), eller tilldelar dig en exekvering eller en defekt,
 - nämner dig med `@handle` i en beskrivning, en kommentar eller anteckningar vid exekvering,
+- svarar i eller löser en [diskussionstråd](discussions.md) som du har skrivit i, eller startar en tråd om ett objekt du är ansvarig för eller en granskning du deltar i,
 - ber dig granska något, eller har granskat det du bad om,
 - ändrar status på en defekt som är tilldelad dig.
 

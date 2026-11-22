@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
+import DiscussionPanel from '@/components/DiscussionPanel.vue'
 import ItemRef from '../components/ItemRef.vue'
 import { customCellText, customColumns } from '@/lib/customColumns'
 import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
@@ -658,6 +659,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         <Button v-if="canWrite" type="submit" :label="editing ? t('common.save') : t('common.create')" icon="pi pi-check" :loading="busy" :disabled="!form.title.trim() || residualInvalid" />
       </div>
     </form>
+    <DiscussionPanel v-if="editing" entity="risk" :entity-id="editing.id" :project-id="proj.pid" compact class="dialog-discussion" />
   </Dialog>
   <ItemPickerDialog v-model:visible="bulkPicker" kind="requirement" :project-id="proj.pid" :header="t('risksView.bulk.linkHeader', { n: selection.length }, selection.length)" :confirm-label="t('common.link')" @pick="bulkLink" />
   <Dialog v-model:visible="ownerDialog" :header="t('risksView.bulk.ownerHeader', { n: selection.length }, selection.length)" modal style="width: min(440px, 96vw)">

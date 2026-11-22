@@ -50,6 +50,7 @@ func boolParam(r *http.Request, name string, def bool) bool {
 
 // filterRequirements returns decorated requirements matching q and folder.
 func (s *Server) filterRequirements(r *http.Request, p *Principal, pr *model.Project, pc *projectContext, expr, folder string, recursive bool) ([]model.Requirement, error) {
+	pc.forCaller(p)
 	q, err := query.Parse(expr, requirementSchema)
 	if err != nil {
 		return nil, err
@@ -534,6 +535,7 @@ func (s *Server) handleBulkDelete(kind string) handlerFunc {
 // ---------------------------------------------------------------- tests
 
 func (s *Server) filterTests(r *http.Request, p *Principal, pr *model.Project, pc *projectContext, expr, folder string, recursive bool) ([]model.TestCase, error) {
+	pc.forCaller(p)
 	q, err := query.Parse(expr, testSchema)
 	if err != nil {
 		return nil, err

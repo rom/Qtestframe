@@ -133,6 +133,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
 | 38 | `0038_owners_worklist.sql` |
+| 39 | `0039_discussions.sql` |
 | 46 | `0046_variant_gates.sql` |
 
 <!-- END GENERATED: migrations -->

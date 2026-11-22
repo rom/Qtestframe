@@ -29,6 +29,7 @@ You get a notification when someone else:
 
 - makes you the owner of a requirement, a test or a risk (also in a bulk change), or assigns an execution or a defect to you,
 - mentions you with `@handle` in a description, a comment or execution notes,
+- replies in or resolves a [discussion](discussions.md) thread you wrote in, or starts a thread on an item you own or a review you take part in,
 - asks you to review something, or finishes a review you asked for,
 - changes the status of a defect assigned to you.
 

@@ -27,11 +27,11 @@ Every organisation starts with six built-in roles. By default each role in the t
 | Role | Can additionally (default) |
 |---|---|
 | **Viewer** | read all projects, requirements, tests, runs, documents and the member list; search; export and generate reports |
-| **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content |
+| **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content; write in [discussions](discussions.md) (*comment.create*, as all roles below except Viewer) |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
 | **Test lead** | mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
 | **Manager** | approve and reject requirements (*requirement.review*), write requirements and requirement folders, create and edit projects, all categories and the [traceability rules](traceability-and-coverage.md#traceability-rules), create baselines |
-| **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, delete any comment |
+| **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, remove any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
 
 The default matrix of permissions:
@@ -41,6 +41,7 @@ The default matrix of permissions:
 | `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.review` | | ✔ | | ✔ | ✔ | ✔ |
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
+| `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
 | `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
 | `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |

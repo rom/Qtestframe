@@ -23,6 +23,8 @@ describe('generated documents', () => {
     const plan = generateDocBody({ ...blankDocForm('test_plan', 'en'), groupBy: 'type' })
     expect(plan.options).not.toHaveProperty('group_by')
     expect(generateDocBody({ ...f, groupBy: 'category' }).options).not.toHaveProperty('dimension')
+    expect(generateDocBody(f).options).not.toHaveProperty('include_discussions')
+    expect(generateDocBody({ ...f, discussions: true }).options.include_discussions).toBe(true)
   })
 
   it('switches the kind with its own fields and without the filter', () => {

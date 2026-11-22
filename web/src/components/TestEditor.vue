@@ -42,7 +42,8 @@ import ItemPickerDialog from './ItemPickerDialog.vue'
 import TestDependenciesPanel from './TestDependenciesPanel.vue'
 import ApplicabilityPanel from './ApplicabilityPanel.vue'
 import CodePanel from './CodePanel.vue'
-import CommentsPanel from './CommentsPanel.vue'
+import DiscussionPanel from './DiscussionPanel.vue'
+import { useRoute } from 'vue-router'
 import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import TestExecutionsPanel from './TestExecutionsPanel.vue'
@@ -183,6 +184,8 @@ async function load() {
     const t = await api.get<TestCase>(`/tests/${props.itemId}`)
     item.value = t
     commentCount.value = t.comment_count ?? 0
+    openDiscussions.value = t.open_discussions ?? 0
+    if (route.query.tab === 'comments') tab.value = 'comments'
     attachmentCount.value = null
     form.value = {
       title: t.title,
@@ -272,6 +275,9 @@ const calledBy = computed(() => item.value?.called_by ?? [])
 // ---------- tabs ----------
 const tab = ref('details')
 const commentCount = ref(0)
+// unresolved threads of the discussion (badge of the Discussion tab)
+const openDiscussions = ref(0)
+const route = useRoute()
 const attachmentCount = ref<number | null>(null)
 const execCount = ref<number | null>(null)
 /** open defects of the test and its executions (known once the tab was opened) */
@@ -520,7 +526,7 @@ const scriptPlaceholder = computed(() => {
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
       <Tab value="code"><i class="pi pi-code" aria-hidden="true" /> {{ t('code.tab') }} <span v-if="codeCount" class="count">{{ codeCount }}</span></Tab>
       <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
-      <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('discussions.tab') }} <span v-if="openDiscussions" class="count" :title="t('discussions.openBadge', { n: openDiscussions }, openDiscussions)">{{ openDiscussions }}</span><span v-if="openDiscussions" class="sr-only">{{ t('discussions.openBadge', { n: openDiscussions }, openDiscussions) }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
       <Tab value="impact"><i class="pi pi-share-alt" aria-hidden="true" /> {{ t('correlations.tab') }}</Tab>
@@ -531,7 +537,7 @@ const scriptPlaceholder = computed(() => {
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'impact'" v-bind="panel('impact')"><ImpactPanel kind="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @changed="load" /></div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
-  <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
+  <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><DiscussionPanel entity="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (commentCount = n)" @open="(n) => (openDiscussions = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
   <HistoryPanel

@@ -372,6 +372,8 @@ export interface Requirement {
   linked_tests: number
   coverage?: string
   comment_count?: number
+  /** unresolved discussion threads */
+  open_discussions?: number
   relation_count?: number
   /** Related items in both directions (requirement relations and verifying tests). */
   relations?: ItemRef[] | null
@@ -462,6 +464,8 @@ export interface TestCase {
   linked_requirements: number
   last_result?: string
   comment_count?: number
+  /** unresolved discussion threads */
+  open_discussions?: number
   called_by?: TestRef[] | null
   /** links to requirements that are suspect */
   suspect_links?: number
@@ -778,18 +782,47 @@ export interface BaselineDiff {
   unchanged: number
 }
 
+/** Items that have discussions. */
+export type DiscussionKind = 'requirement' | 'test' | 'defect' | 'risk' | 'run' | 'review'
+
 export interface Comment {
   id: string
-  entity_type: string
+  project_id: string
+  entity_type: DiscussionKind | string
   entity_id: string
+  /** the first comment of the thread of a reply ('' starts a thread) */
+  parent_id: string
   user_id: string
   user_email: string
   user_name: string
   /** avatar of the author (when the server includes it) */
   user_avatar?: string
+  /** Markdown; empty when removed */
   body: string
   created_at: string
   updated_at: string
+  resolved_at?: string | null
+  resolved_by?: string
+  resolved_by_name?: string
+  deleted?: boolean
+  deleted_at?: string
+  /** user ids mentioned in the body */
+  mentions?: string[]
+  /** reaction → user ids */
+  reactions?: Record<string, string[]>
+}
+
+/** A thread of a discussion list (GET /projects/{pid}/discussions). */
+export interface DiscussionThread {
+  root: Comment
+  project_key: string
+  entity_key: string
+  entity_title: string
+  replies: number
+  last_at: string
+  last_by: string
+  participants: string[]
+  mentioned: string[]
 }
 
 export interface AuditEntry {

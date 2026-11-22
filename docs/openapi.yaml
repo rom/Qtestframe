@@ -82,6 +82,8 @@ tags:
   description: Waivers and deviations with their electronically signed approvals
 - name: Reviews
   description: Review requests
+- name: Discussions
+  description: Threaded comments on requirements, tests, defects, risks, runs and review requests
 - name: My work
   description: The personal work list across projects
 - name: Notifications and webhooks
@@ -3456,7 +3458,7 @@ paths:
       summary: List comments (requirement)
       operationId: getRequirementsByIdComments
       description: |-
-        `[Comment]` oldest first: `{id, entity_type, entity_id, user_id, user_email, user_name, body, created_at, updated_at}`
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -3490,8 +3492,11 @@ paths:
       - Requirements
       summary: Add comment (requirement)
       operationId: postRequirementsByIdComments
-      description: '**Permission:** `requirement.read`.'
-      x-permission: requirement.read
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`. Markdown; `@handle` mentions notify the people mentioned.
+
+        **Permission:** `requirement.read`, `comment.create`.
+      x-permission: requirement.read, comment.create
       requestBody:
         required: true
         content:
@@ -3527,10 +3532,10 @@ paths:
       summary: Update comment
       operationId: patchCommentsById
       description: |-
-        `{"body"}`, author only
+        `{"body"}`, author only; people newly mentioned are notified
 
-        **Permission:** any authenticated user; the handler checks: the author only.
-      x-permission: authenticated
+        **Permission:** `comment.create`; the handler checks: the author only.
+      x-permission: comment.create
       requestBody:
         required: false
         content:
@@ -3559,13 +3564,535 @@ paths:
       summary: Delete comment
       operationId: deleteCommentsById
       description: |-
-        author, or `member.manage`
+        Removes the comment: it stays in its thread as removed (body cleared). The author, or a moderator (`project.update` in the project, or `member.manage`).
 
-        **Permission:** any authenticated user; the handler checks: the author, or `member.manage`.
+        **Permission:** any authenticated user; the handler checks: the author, or a moderator.
       x-permission: authenticated
       responses:
         '204':
           description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/defects/{id}/comments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Discussions
+      summary: List comments (defect)
+      operationId: getDefectsByIdComments
+      description: |-
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Discussions
+      summary: Add comment (defect)
+      operationId: postDefectsByIdComments
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`.
+
+        **Permission:** `project.read`, `comment.create`.
+      x-permission: project.read, comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                parent_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/risks/{id}/comments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Discussions
+      summary: List comments (risk)
+      operationId: getRisksByIdComments
+      description: |-
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Discussions
+      summary: Add comment (risk)
+      operationId: postRisksByIdComments
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`.
+
+        **Permission:** `requirement.read`, `comment.create`.
+      x-permission: requirement.read, comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                parent_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/comments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Discussions
+      summary: List comments (run)
+      operationId: getRunsByIdComments
+      description: |-
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Discussions
+      summary: Add comment (run)
+      operationId: postRunsByIdComments
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`.
+
+        **Permission:** `run.read`, `comment.create`.
+      x-permission: run.read, comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                parent_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/reviews/{id}/comments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Discussions
+      summary: List comments (review request)
+      operationId: getReviewsByIdComments
+      description: |-
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
+
+        **Permission:** any authenticated user; the handler checks: the reviewer, the requester or the read permission of the reviewed item.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Discussions
+      summary: Add comment (review request)
+      operationId: postReviewsByIdComments
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`.
+
+        **Permission:** any authenticated user; the handler checks: the reviewer, the requester or the read permission of the reviewed item, `comment.create`.
+      x-permission: comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+                parent_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/comments/{id}/resolve:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Discussions
+      summary: Resolve thread
+      operationId: postCommentsByIdResolve
+      description: |-
+        Resolves the thread of the comment (any comment of the thread) → its first comment. The people who wrote in the thread are notified; webhook event `comment.resolved`.
+
+        **Permission:** `comment.create` (and the read permission of the item).
+      x-permission: comment.create
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/comments/{id}/reopen:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Discussions
+      summary: Reopen thread
+      operationId: postCommentsByIdReopen
+      description: |-
+        Reopens a resolved thread → its first comment.
+
+        **Permission:** `comment.create` (and the read permission of the item).
+      x-permission: comment.create
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/comments/{id}/reactions:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Discussions
+      summary: React to comment
+      operationId: postCommentsByIdReactions
+      description: |-
+        `{"reaction"}` (`+1`, `-1`, `heart`, `tada`, `eyes`, `check`): adds the caller's reaction, or takes it back → `{reactions: {reaction: [user id]}}`.
+
+        **Permission:** `comment.create` (and the read permission of the item).
+      x-permission: comment.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reaction:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reactions:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/discussions:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Discussions
+      summary: List project discussions
+      operationId: getProjectsByPidDiscussions
+      description: |-
+        The project's discussion threads (default: the open ones) with the item each is about, the number of replies and the latest activity.
+
+        **Permission:** `project.read`; threads whose item the caller may not read are left out.
+      x-permission: project.read
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [open, resolved, all]
+      - name: filter
+        in: query
+        description: '`mine`: threads the caller wrote in; `mentioned`: threads that mention the caller'
+        schema:
+          type: string
+          enum: [mine, mentioned]
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum: [requirement, test, defect, risk, run, review]
+      - name: q
+        in: query
+        description: text in a comment (case-insensitive)
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Threads, latest activity first
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiscussionThread'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/discussions:
+    get:
+      tags:
+      - Discussions
+      summary: List my discussions
+      operationId: getDiscussions
+      description: |-
+        Threads across the projects the caller sees; without `filter` the threads that mention the caller (default: the open ones).
+
+        **Permission:** any authenticated user; only the projects and items the caller may read.
+      x-permission: authenticated
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [open, resolved, all]
+      - name: filter
+        in: query
+        description: '`mine`: threads the caller wrote in; `mentioned`: threads that mention the caller'
+        schema:
+          type: string
+          enum: [mine, mentioned]
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum: [requirement, test, defect, risk, run, review]
+      - name: q
+        in: query
+        description: text in a comment (case-insensitive)
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Threads, latest activity first
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiscussionThread'
+                  total:
+                    type: integer
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -5309,7 +5836,7 @@ paths:
       summary: List comments (test)
       operationId: getTestsByIdComments
       description: |-
-        `[Comment]` oldest first: `{id, entity_type, entity_id, user_id, user_email, user_name, body, created_at, updated_at}`
+        `[Comment]` oldest first, removed comments included (`deleted: true`, empty body): `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`. A thread is a comment with `parent_id` "" and the comments whose `parent_id` is its id.
 
         **Permission:** `test.read`.
       x-permission: test.read
@@ -5343,8 +5870,11 @@ paths:
       - Requirements
       summary: Add comment (test)
       operationId: postTestsByIdComments
-      description: '**Permission:** `test.read`.'
-      x-permission: test.read
+      description: |-
+        `{"body", "parent_id"?}`: starts a thread, or replies to the thread of `parent_id`. Markdown; `@handle` mentions notify the people mentioned.
+
+        **Permission:** `test.read`, `comment.create`.
+      x-permission: test.read, comment.create
       requestBody:
         required: true
         content:
@@ -8150,6 +8680,9 @@ paths:
                     glossary:
                       type: boolean
                       default: true
+                    include_discussions:
+                      type: boolean
+                      description: add an appendix with the discussions of the items
                     lang:
                       type: string
                       enum:
@@ -18938,10 +19471,16 @@ components:
       properties:
         id:
           type: string
+        project_id:
+          type: string
         entity_type:
           type: string
+          enum: [requirement, test, defect, risk, run, review]
         entity_id:
           type: string
+        parent_id:
+          type: string
+          description: the first comment of the thread ("" for a comment that starts a thread)
         user_id:
           type: string
         user_email:
@@ -18952,12 +19491,65 @@ components:
           type: string
         body:
           type: string
+          description: Markdown; empty for a removed comment
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        resolved_by:
+          type: string
+        resolved_by_name:
+          type: string
+        deleted:
+          type: boolean
+        deleted_at:
+          type: string
+          format: date-time
+        deleted_by:
+          type: string
+        mentions:
+          type: array
+          description: user ids mentioned in the body
+          items:
+            type: string
+        reactions:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    DiscussionThread:
+      type: object
+      properties:
+        root:
+          $ref: '#/components/schemas/Comment'
+        project_key:
+          type: string
+        entity_key:
+          type: string
+        entity_title:
+          type: string
+        replies:
+          type: integer
+        last_at:
+          type: string
+          format: date-time
+        last_by:
+          type: string
+        participants:
+          type: array
+          items:
+            type: string
+        mentioned:
+          type: array
+          items:
+            type: string
     AuditEntry:
       type: object
       properties:

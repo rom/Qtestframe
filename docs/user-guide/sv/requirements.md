@@ -177,9 +177,9 @@ Ett omnämnande skrivs som `@namn`: för användare delen av e-postadressen för
 
 Filtrera med `mention:anna.berg` (eller `mention:@anna.berg`) för att hitta allt som nämner en person.
 
-## Kommentarer
+## Diskussion
 
-Fliken **Kommentarer** är en diskussionstråd för kravet. Skriv i fältet och välj **Kommentera** (eller tryck <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Alla som kan läsa kravet kan läsa och skriva kommentarer. Du kan redigera och ta bort dina egna kommentarer; administratörer kan ta bort alla kommentarer. Antalet kommentarer visas på fliken och i kolumnen **Kommentarer**.
+Fliken **Diskussion** innehåller kravets [diskussion](discussions.md): trådar med kommentarer i Markdown, med svar, @omnämnanden, reaktioner och **Markera som löst**. Siffran på fliken är antalet öppna trådar; kolumnen **Kommentarer** räknar kommentarerna. Alla som kan läsa kravet kan läsa diskussionen; att skriva i den kräver `comment.create` (alla roller utom Läsare). Du kan redigera och ta bort dina egna kommentarer; moderatorer kan ta bort alla kommentarer.
 
 ## När någon annan har sparat först
 

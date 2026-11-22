@@ -198,6 +198,10 @@ async function generate() {
             <Checkbox v-model="form.glossary" :input-id="`${id}-glossary`" binary />
             <label :for="`${id}-glossary`">{{ t('documents.generate.glossary') }}</label>
           </span>
+          <span class="row nowrap">
+            <Checkbox v-model="form.discussions" :input-id="`${id}-discussions`" binary />
+            <label :for="`${id}-discussions`">{{ t('documents.generate.discussions') }}</label>
+          </span>
         </div>
       </fieldset>
 

@@ -827,6 +827,7 @@ These are the permissions of the built-in roles until an organisation changes th
 | `run.write` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  | ✔ | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  | ✔ | ✔ | ✔ |
+| `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `audit.read` |  |  |  | ✔ | ✔ | ✔ |
 | `token.manage` |  |  | ✔ | ✔ | ✔ | ✔ |
@@ -1306,7 +1307,7 @@ Projects can send signed events to other systems. Users with `project.update` se
 | defect | `defect.created`, `defect.updated`, `defect.status`, `defect.assigned`, `defect.regression` |
 | risk | `risk.created`, `risk.updated` |
 | release | `release.created`, `release.updated`, `release.released` |
-| comment | `comment.created` |
+| comment | `comment.created`, `comment.mentioned`, `comment.resolved` |
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
@@ -1618,6 +1619,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
 | 38 | `0038_owners_worklist.sql` |
+| 39 | `0039_discussions.sql` |
 | 46 | `0046_variant_gates.sql` |
 
 <!-- END GENERATED: migrations -->

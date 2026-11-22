@@ -345,6 +345,17 @@ func TestSeedDemo(t *testing.T) {
 	if web != 1 {
 		t.Errorf("%d web tests", web)
 	}
+	// discussions: open threads (one mentions Erik), a resolved one
+	erik, _ := st.GetUserByEmail(context.Background(), DemoOutsiderEmail)
+	if th, err := st.ListDiscussionThreads(context.Background(), tn.ID, store.DiscussionFilter{ProjectIDs: []string{ps[0].ID}, Status: store.ThreadsAll}); err != nil || len(th) != 4 {
+		t.Errorf("threads %+v %v", th, err)
+	}
+	if th, err := st.OpenThreadsMentioning(context.Background(), tn.ID, erik.ID, nil); err != nil || len(th) != 2 {
+		t.Errorf("Erik's threads %+v %v", th, err)
+	}
+	if err := SeedDemoDiscussions(context.Background(), st, tn.ID, &ps[0]); err != nil {
+		t.Error(err) // a second time: nothing
+	}
 	// with bootstrap credentials the administrator is created before the
 	// demo users (who would otherwise stop the bootstrap of the first start)
 	bcfg := writeConfig(t, "bootstrap: {admin_email: boss@example.com, admin_password: "+strongPassword+"}")

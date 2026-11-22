@@ -36,7 +36,7 @@ export interface WorkSummary {
 export const emptySummary = (): WorkSummary => ({ count: 0, overdue: 0, by_reason: {}, by_kind: {}, by_project: {} })
 
 /** The reasons in the order they are offered as filters. */
-export const WORK_REASONS = ['overdue', 'review_requested', 'waiver_approval', 'risk_acceptance', 'assigned', 'owner', 'risk_review', 'suspect', 'stale', 'blocked'] as const
+export const WORK_REASONS = ['overdue', 'review_requested', 'waiver_approval', 'risk_acceptance', 'assigned', 'owner', 'mentioned', 'risk_review', 'suspect', 'stale', 'blocked'] as const
 
 /** Where a row of the work list leads. */
 export function workItemRoute(it: Pick<WorkItem, 'project_id' | 'entity_type' | 'entity_id' | 'run_id'>): RouteLocationRaw {
@@ -52,6 +52,10 @@ export function workItemRoute(it: Pick<WorkItem, 'project_id' | 'entity_type' | 
       return { name: 'risks', params, query: { risk: it.entity_id } }
     case 'waiver':
       return { name: 'waivers', params, query: { waiver: it.entity_id } }
+    case 'run':
+      return { name: 'run', params: { ...params, runId: it.entity_id }, query: { tab: 'discussion' } }
+    case 'review':
+      return { name: 'reviews', query: { review: it.entity_id } }
     case 'execution':
       return it.run_id ? { name: 'execute', params: { ...params, runId: it.run_id, executionId: it.entity_id } } : { name: 'runs', params }
   }

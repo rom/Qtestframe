@@ -371,7 +371,11 @@ func cmdSeedDemo(args []string, env Env) error {
 			sp.Key, DemoMemberEmail, DemoOutsiderEmail, DemoUserPassword)
 	}
 	// owners and assignments for "My work" (the users exist now)
-	return SeedDemoWorkList(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail)
+	if err := SeedDemoWorkList(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {
+		return err
+	}
+	// discussions by the demo users (seeddiscussions.go)
+	return SeedDemoDiscussions(env.Ctx, st, t.ID, p)
 }
 
 // cmdBackup writes a logical, database-agnostic backup (see

@@ -2404,7 +2404,10 @@ default off). See [E-mail](#e-mail).
 Users are notified (never about their own actions) when they are made
 owner, assignee of an execution or a defect, are @mentioned in a
 description, comment or execution notes, get a review request or a
-decision on one, and when a defect assigned to them changes status.
+decision on one, and when a defect assigned to them changes status. In
+discussions, the people who wrote in a thread hear about replies and about
+the thread being resolved, and the owner of an item (requirement owner,
+defect assignee, risk owner, reviewer and requester) about new threads.
 
 A webhook delivery is `POST <url>` with `Content-Type: application/json`,
 headers `X-Qtestframe-Event`, `X-Qtestframe-Webhook` and
@@ -2414,7 +2417,7 @@ secret>`, and body
 `requirement.created/updated`, `test.created/updated`,
 `run.created/updated/completed`, `execution.updated`,
 `defect.created/updated/status/assigned`, `risk.created/updated`,
-`release.created/updated/released`, `comment.created`,
+`release.created/updated/released`, `comment.created/mentioned/resolved`,
 `review.requested/completed`, `baseline.signed`, `defect.regression`,
 `waiver.requested/approved/rejected/revoked`. Deliveries run in the
 background with a 10 s timeout, are not retried and do not follow
@@ -2446,21 +2449,44 @@ date, then the most recently changed. Sources and reasons:
 | `reviews` | pending review requests to the caller (the row is the item to review; `due` = the review's due date) | `review_requested` |
 | `waivers` | requested waivers the caller may decide and has not signed (one of its approvers, or holds `waiver.approve` when it names none; never the requester) | `waiver_approval` |
 | `risk_acceptance` | mitigated or accepted risks above the acceptance threshold without a valid acceptance signature, for holders of `waiver.approve` | `risk_acceptance` |
+| `mentions` | items with an unresolved discussion thread that mentions the caller (`detail` = who wrote last); a requirement can also be an `owned` row, and the reasons are joined | `mentioned` |
 
 A row with a due date before today also has the reason `overdue`. The
 sources are a small registry in `internal/api/worklist.go`; its comment
 describes how to add one.
 
-## Comments
+## Discussions
+
+Threaded comments on requirements, tests, defects, risks, test runs and
+review requests. A thread is a comment with `parent_id` "" and its replies
+(`parent_id` = the first comment; a reply to a reply joins the same
+thread). Bodies are Markdown (rendered and sanitised by the client);
+`@handle` mentions of members are stored as user ids in `mentions`.
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/requirements/{id}/comments`, `/tests/{id}/comments` | `[Comment]` oldest first: `{id, entity_type, entity_id, user_id, user_email, user_name, body, created_at, updated_at}` |
-| POST | same | `{"body"}` (1–10000 chars); any member who can read the item |
-| PATCH | `/comments/{id}` | `{"body"}`, author only |
-| DELETE | `/comments/{id}` | author, or `member.manage` |
+| GET | `/requirements/{id}/comments`, `/tests/{id}/comments`, `/defects/{id}/comments`, `/risks/{id}/comments`, `/runs/{id}/comments`, `/reviews/{id}/comments` | `[Comment]` oldest first, removed ones included: `{id, project_id, entity_type, entity_id, parent_id, user_id, user_email, user_name, body, created_at, updated_at, resolved_at, resolved_by, resolved_by_name, deleted, mentions, reactions}`; the read permission of the item (a review request: its reviewer, its requester or the read permission of the reviewed item) |
+| POST | same | (`comment.create`) `{"body", "parent_id"?}` (1–10000 chars) |
+| PATCH | `/comments/{id}` | (`comment.create`) `{"body"}`, author only |
+| DELETE | `/comments/{id}` | the author, or a moderator (`project.update` in the project, or `member.manage`): the comment stays in its thread as removed, its body, mentions and reactions are cleared |
+| POST | `/comments/{id}/resolve`, `/comments/{id}/reopen` | (`comment.create`) resolves or reopens the thread of the comment → its first comment |
+| POST | `/comments/{id}/reactions` | (`comment.create`) `{"reaction"}` (`+1`, `-1`, `heart`, `tada`, `eyes`, `check`) adds or takes back the caller's reaction → `{reactions}` |
+| GET | `/projects/{pid}/discussions` | the project's threads: `?status=open` (default) `\|resolved\|all`, `?filter=mine` (threads the caller wrote in) `\|mentioned`, `?type=`, `?q=` (text), `?limit=` → `[DiscussionThread]` `{root, project_key, entity_key, entity_title, replies, last_at, last_by, participants, mentioned}`, latest activity first |
+| GET | `/discussions` | the same across the projects the caller sees; without `filter`, the threads that mention the caller |
 
-Requirement and test lists add `comment_count`.
+Requirement and test lists add `comment_count` (comments not removed) and
+`open_discussions` (unresolved threads). In their query language
+`has:open-discussion` (alias of `open_discussions`, e.g.
+`open_discussions>1`) finds items with unresolved threads; `mention:`
+(`mentions:`) also matches the people mentioned in an item's discussion,
+and `mentions:me` the caller.
+
+Audit log: `comment.create`, `comment.update`, `comment.delete` (with
+"(moderated)" when someone else's comment was removed), `comment.resolve`,
+`comment.reopen`. Webhook events: `comment.created`, `comment.mentioned`
+(data with `mentioned`: user ids), `comment.resolved`; each with
+`{kind, id, key, title, comment}`. Comments are part of project archives,
+backups and the trash of requirements and tests.
 
 ## Test execution history, defects and shared steps
 
@@ -2536,6 +2562,7 @@ format, file name, item counts and duration).
     "dimension": "Level",               // category dimension for group_by category
     "fields": ["description", "tests"], // default: all but "results"
     "traceability": true, "glossary": true,
+    "include_discussions": false,       // appendix with the items' discussions
     "lang": "sv"                        // default: the user's language
   }
 }

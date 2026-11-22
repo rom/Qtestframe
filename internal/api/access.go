@@ -50,7 +50,7 @@ var projectScoped = map[string]bool{
 	string(rbac.RequirementRd): true, string(rbac.RequirementWr): true, string(rbac.RequirementRev): true, string(rbac.WaiverApprove): true,
 	string(rbac.TestRead): true, string(rbac.TestWrite): true, string(rbac.TestReview): true,
 	string(rbac.RunRead): true, string(rbac.RunWrite): true, string(rbac.RunExecute): true,
-	string(rbac.ScriptExecute): true, string(rbac.Export): true,
+	string(rbac.ScriptExecute): true, string(rbac.Export): true, string(rbac.CommentCreate): true,
 }
 
 // adminUser reports whether the caller is an organisation administrator
@@ -342,10 +342,7 @@ var resourceProjects = map[string]string{
 	"reports/subscriptions": `SELECT project_id FROM report_subscriptions WHERE id = ? AND tenant_id = ?`,
 	"reviews":               `SELECT project_id FROM review_requests WHERE id = ? AND tenant_id = ?`,
 	"files":                 `SELECT COALESCE(project_id, '') FROM files WHERE id = ? AND tenant_id = ?`,
-	"comments": `SELECT COALESCE(r.project_id, t.project_id, '') FROM comments c
-		LEFT JOIN requirements r ON c.entity_type = 'requirement' AND r.id = c.entity_id
-		LEFT JOIN test_cases t ON c.entity_type = 'test' AND t.id = c.entity_id
-		WHERE c.id = ? AND c.tenant_id = ?`,
+	"comments":              `SELECT COALESCE(project_id, '') FROM comments WHERE id = ? AND tenant_id = ?`,
 }
 
 // nonProjectResources are {id} resources that belong to no project.

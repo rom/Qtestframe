@@ -368,6 +368,15 @@ async function discover(request) {
     linkedReq && { name: 'impact-confirm-dialog', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer form input[required]', keys: ['End', 'X', 'Enter'], wait: '.impact-confirm-dialog' },
     firstBaseline && { name: 'baseline-impact-dialog', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, open: '.filterbar button:has(.pi-share-alt)', wait: '.baseline-impact-dialog .row' },
     regressedDefect && { name: 'defect-regressions', path: `${p}/defects?item=${regressedDefect.id}`, wait: '#defect-regressions-h' },
+    // discussions (seed-demo: threads on requirements, a defect and the regression run): the project's list,
+    // the Discussion tab with a reply box and the reactions menu, a defect's and a run's discussion
+    { name: 'discussions', path: `${p}/discussions`, wait: '.p-datatable-tbody tr' },
+    { name: 'discussions-all', path: `${p}/discussions?status=all&filter=mine`, wait: '.p-datatable' },
+    { name: 'requirement-discussion', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}&tab=comments`, wait: '.p-drawer .discussion .thread' },
+    { name: 'discussion-reply', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}&tab=comments`, open: '.p-drawer .discussion .thread-actions button:has(.pi-reply)', wait: '.reply-box' },
+    { name: 'discussion-reactions', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}&tab=comments`, open: '.p-drawer .discussion .comment button:has(.pi-face-smile)', wait: '.p-menu' },
+    regressedDefect && { name: 'defect-discussion', path: `${p}/defects?item=${regressedDefect.id}`, wait: '.p-dialog .discussion' },
+    run && { name: 'run-discussion', path: `${p}/runs/${run.id}?tab=discussion`, wait: '.discussion' },
     // custom fields and item templates: the settings tabs, their dialogs, the picker of a new item, the field sets
     { name: 'custom-fields-settings', path: `${p}/settings?tab=customFields`, wait: '.cf-settings .cf-table' },
     { name: 'custom-field-dialog', path: `${p}/settings?tab=customFields`, open: '.cf-settings > .row button:has(.pi-plus)', wait: '.p-dialog .cf-form' },
