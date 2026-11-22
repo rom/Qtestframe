@@ -70,6 +70,7 @@ func (s *Server) handleListDefects(w http.ResponseWriter, r *http.Request, p *Pr
 		s.fail(w, r, err)
 		return
 	}
+	s.bindMe(r.Context(), p, q)
 	list, err := s.Store.ListDefects(r.Context(), p.TenantID(), pr.ID)
 	if err != nil {
 		s.fail(w, r, err)

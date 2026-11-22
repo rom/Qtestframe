@@ -82,6 +82,8 @@ tags:
   description: Waivers and deviations with their electronically signed approvals
 - name: Reviews
   description: Review requests
+- name: My work
+  description: The personal work list across projects
 - name: Notifications and webhooks
   description: In-app notifications and webhooks
 - name: Files
@@ -11093,6 +11095,101 @@ paths:
           $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/my-work:
+    get:
+      tags:
+      - My work
+      summary: List my work
+      operationId: getMyWork
+      description: |-
+        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `waiver_approval`, `risk_acceptance`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
+
+        **Permission:** any authenticated user; the handler checks: signed in, and the permissions of each row's project.
+      x-permission: authenticated
+      parameters:
+      - name: project
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Project id or key.
+      - name: source
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Comma-separated source names (owned, defects, executions, reviews, waivers, risk_acceptance).
+      - name: reason
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Keep only the rows with this reason.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkItem'
+                  total:
+                    type: integer
+                  summary:
+                    $ref: '#/components/schemas/WorkSummary'
+                  sources:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/my-work/count:
+    get:
+      tags:
+      - My work
+      summary: Count my work
+      operationId: getMyWorkCount
+      description: |-
+        The summary of the caller's work list (for the badge in the main navigation and the dashboard widget); takes the same `project` and `source` parameters as `GET /my-work`.
+
+        **Permission:** any authenticated user; the handler checks: signed in.
+      x-permission: authenticated
+      parameters:
+      - name: project
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: source
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/webhook-events:
     get:
       tags:
@@ -17587,6 +17684,9 @@ components:
           - deprecated
         estimated_minutes:
           type: integer
+        owner:
+          type: string
+          description: The project member responsible for the test (e-mail address; a name that is no member stays as text).
         tags:
           type: array
           items:
@@ -18016,6 +18116,74 @@ components:
         created_at:
           type: string
           format: date-time
+    WorkItem:
+      type: object
+      description: A row of the work list (GET /my-work).
+      properties:
+        kind:
+          type: string
+          description: requirement, test, risk, defect, execution, waiver, ...; kind and id identify the row
+        id:
+          type: string
+        entity_type:
+          type: string
+          description: The item the row links to.
+        entity_id:
+          type: string
+        run_id:
+          type: string
+          description: The run of an execution.
+        key:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        project_id:
+          type: string
+        project_key:
+          type: string
+        project_name:
+          type: string
+        reasons:
+          type: array
+          items:
+            type: string
+          description: owner, assigned, review_requested, waiver_approval, risk_acceptance, risk_review, overdue, suspect, stale, blocked
+        detail:
+          type: string
+          description: The run of an execution, the requester of a review or waiver, the residual level of a risk to accept.
+        due:
+          type: string
+          description: YYYY-MM-DD, absent without a due date
+        overdue:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+        sources:
+          type: array
+          items:
+            type: string
+    WorkSummary:
+      type: object
+      properties:
+        count:
+          type: integer
+        overdue:
+          type: integer
+        by_reason:
+          type: object
+          additionalProperties:
+            type: integer
+        by_kind:
+          type: object
+          additionalProperties:
+            type: integer
+        by_project:
+          type: object
+          additionalProperties:
+            type: integer
     Webhook:
       type: object
       properties:

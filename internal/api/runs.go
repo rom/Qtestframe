@@ -239,6 +239,7 @@ func (s *Server) handleListExecutions(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, err)
 		return
 	}
+	s.bindMe(r.Context(), p, q)
 	es, err := s.Store.ListExecutions(r.Context(), p.TenantID(), id)
 	if err != nil {
 		s.fail(w, r, err)

@@ -27,7 +27,7 @@ var (
 	}
 	testSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
-			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
+			"expected", "step", "priority", "status", "estimate", "owner", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
 			"depends_on", "suspect", "flaky", "flakiness", "catalog", "stale", "element", "variant", "applicability"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
@@ -387,11 +387,11 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"preconditions": {t.Preconditions}, "execution_type": {t.ExecutionType},
 		"script_language": {t.ScriptLanguage}, "script": {t.Script}, "expected": {t.ExpectedResult},
 		"step": steps, "priority": {t.Priority}, "status": {t.Status}, "estimate": {strconv.Itoa(t.EstimatedMin)},
-		"tag": t.Tags, "folder": {t.FolderPath}, "category": names, "dimension": dims, "linked": linkedKeys,
+		"owner": {t.Owner}, "tag": t.Tags, "folder": {t.FolderPath}, "category": names, "dimension": dims, "linked": linkedKeys,
 		"last_result": {t.LastResult}, "created_by": {t.CreatedBy}, "created_at": {ts(t.CreatedAt)},
 		"updated_at": {ts(t.UpdatedAt)}, "defect": pc.defects[t.ID], "calls": calls,
 		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)}, "suspect": {strconv.Itoa(t.SuspectLinks)},
-		"mention":       mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
+		"mention":       mentions(append([]string{t.Owner, t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
 		"depends_on":    pc.prereqKeys[t.ID],
 		"flaky":         {strconv.FormatBool(t.Flaky)},
 		"flakiness":     {strconv.Itoa(t.Flakiness)},

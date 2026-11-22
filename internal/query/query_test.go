@@ -345,3 +345,36 @@ func TestQuotedEscapes(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
+func TestBind(t *testing.T) {
+	r := MapRecord{"owner": {"Anna@Example.com"}, "title": {"me and you"}, "assignee": {"james"}}
+	for expr, want := range map[string]bool{
+		"owner:me":                   true,
+		"owner=me":                   true,
+		"owner!=me":                  false,
+		"-owner:me":                  false,
+		"assignee:me":                false, // "james" contains "me" but is not the caller
+		"title:me":                   true,  // not bound: plain contains
+		"owner:me AND assignee:jam":  true,
+		"(owner:me OR assignee:me)":  true,
+		"owner:/me/":                 false,
+		"owner:anna":                 true,
+		"NOT (owner:me) OR title:me": true,
+	} {
+		q, err := Parse(expr, nil)
+		if err != nil {
+			t.Fatal(expr, err)
+		}
+		q.Bind([]string{"owner", "assignee"}, "me", []string{"anna@example.com", " ", "anna"})
+		if got := q.Match(r); got != want {
+			t.Errorf("%s: got %v want %v", expr, got, want)
+		}
+	}
+	var empty *Query
+	empty.Bind([]string{"owner"}, "me", nil)
+	q, _ := Parse("owner:me", nil)
+	q.Bind([]string{"owner"}, "me", nil)
+	if q.Match(r) {
+		t.Error("no names: matches nothing")
+	}
+}

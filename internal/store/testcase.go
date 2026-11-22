@@ -8,14 +8,14 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 )
 
-const testCols = `id, project_id, folder_id, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at, version, parameters, data_rows, catalog_ref, custom_fields`
+const testCols = `id, project_id, folder_id, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at, version, parameters, data_rows, catalog_ref, custom_fields, owner`
 
 func scanTest(r interface{ Scan(...any) error }) (*model.TestCase, error) {
 	var t model.TestCase
 	var folder sql.NullString
 	var tags, params, rows, custom string
 	if err := r.Scan(&t.ID, &t.ProjectID, &folder, &t.Key, &t.Title, &t.Description, &t.Preconditions, &t.ExecutionType, &t.ScriptLanguage, &t.Script,
-		&t.ExpectedResult, &t.Priority, &t.Status, &t.EstimatedMin, &tags, &t.Position, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt, &t.Version, &params, &rows, &t.CatalogRef, &custom); err != nil {
+		&t.ExpectedResult, &t.Priority, &t.Status, &t.EstimatedMin, &tags, &t.Position, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt, &t.Version, &params, &rows, &t.CatalogRef, &custom, &t.Owner); err != nil {
 		return nil, err
 	}
 	t.CustomFields = decodeCustom(custom)
@@ -31,6 +31,10 @@ func scanTest(r interface{ Scan(...any) error }) (*model.TestCase, error) {
 func ValidateTest(t *model.TestCase) error {
 	t.Tags = cleanTags(t.Tags)
 	t.Title = strings.TrimSpace(t.Title)
+	t.Owner = strings.TrimSpace(t.Owner)
+	if len([]rune(t.Owner)) > 200 {
+		return Invalidf("owner is too long")
+	}
 	if t.Title == "" {
 		return Invalidf("test title is required")
 	}
@@ -102,11 +106,11 @@ func (s *Store) CreateTest(ctx context.Context, tenantID string, t *model.TestCa
 			return err
 		}
 		t.Key, t.Position = key, seq
-		if _, err := c.exec(ctx, `INSERT INTO test_cases (id, tenant_id, project_id, folder_id, seq, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at, parameters, data_rows, catalog_ref, custom_fields)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		if _, err := c.exec(ctx, `INSERT INTO test_cases (id, tenant_id, project_id, folder_id, seq, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at, parameters, data_rows, catalog_ref, custom_fields, owner)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			t.ID, tenantID, t.ProjectID, nullStr(t.FolderID), seq, t.Key, t.Title, t.Description, t.Preconditions, t.ExecutionType, t.ScriptLanguage, t.Script,
 			t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), t.Position, t.CreatedBy, t.CreatedAt, t.UpdatedAt,
-			encodeJSON(t.Parameters), encodeJSON(t.DataRows), t.CatalogRef, encodeCustom(t.CustomFields)); err != nil {
+			encodeJSON(t.Parameters), encodeJSON(t.DataRows), t.CatalogRef, encodeCustom(t.CustomFields), t.Owner); err != nil {
 			return mapErr(err, "test")
 		}
 		if err := setCategories(ctx, c, model.KindTest, t.ProjectID, t.ID, t.CategoryIDs); err != nil {
@@ -345,9 +349,9 @@ func (s *Store) UpdateTest(ctx context.Context, tenantID string, t *model.TestCa
 		}
 		t.CustomFields = custom
 		// AND version: a save that raced with another one fails (ErrStale)
-		res, err := c.exec(ctx, `UPDATE test_cases SET folder_id = ?, title = ?, description = ?, preconditions = ?, execution_type = ?, script_language = ?, script = ?, expected_result = ?, priority = ?, status = ?, estimated_min = ?, tags = ?, custom_fields = ?, updated_at = ?, version = ?, parameters = ?, data_rows = ? WHERE id = ? AND version = ?`,
+		res, err := c.exec(ctx, `UPDATE test_cases SET folder_id = ?, title = ?, description = ?, preconditions = ?, execution_type = ?, script_language = ?, script = ?, expected_result = ?, priority = ?, status = ?, estimated_min = ?, tags = ?, custom_fields = ?, updated_at = ?, version = ?, parameters = ?, data_rows = ?, owner = ? WHERE id = ? AND version = ?`,
 			nullStr(t.FolderID), t.Title, t.Description, t.Preconditions, t.ExecutionType, t.ScriptLanguage, t.Script, t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), encodeCustom(t.CustomFields), t.UpdatedAt, t.Version,
-			encodeJSON(t.Parameters), encodeJSON(t.DataRows), t.ID, old.Version)
+			encodeJSON(t.Parameters), encodeJSON(t.DataRows), t.Owner, t.ID, old.Version)
 		if err != nil {
 			return err
 		}

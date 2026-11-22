@@ -2387,6 +2387,37 @@ secret>`, and body
 background with a 10 s timeout, are not retried and do not follow
 redirects; the latest outcome is stored as `last_status`, `last_error`.
 
+## My work
+
+The personal work list: what needs the caller, across the projects they
+can see (project sharing and the permissions there apply to every row).
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/my-work?project=&source=&reason=` | signed in | `{"items":[WorkItem],"total":n,"summary":WorkSummary,"sources":[...]}`; `project` is a project id or key, `source` comma-separated source names, `reason` keeps the rows with that reason |
+| GET | `/my-work/count?project=&source=` | signed in | `WorkSummary`: `{"count","overdue","by_reason","by_kind","by_project"}` (the badge in the navigation, the dashboard widget) |
+
+`WorkItem`: `{kind, id, entity_type, entity_id, run_id?, key, title,
+status, project_id, project_key, project_name, reasons, detail?, due?,
+overdue, updated_at, sources}`. Rows of the same item (`kind` + `id`) are
+merged and their reasons joined; overdue rows come first, then by due
+date, then the most recently changed. Sources and reasons:
+
+| Source | Rows | Reasons |
+|---|---|---|
+| `owned` | requirements the caller owns in draft, review, approved or implemented; tests in draft or review; open risks (identified, mitigating) | `owner` |
+| | owned requirements and tests (not rejected, obsolete or deprecated) with suspect links or relations, stale results or blocking defects | `suspect`, `stale`, `blocked` |
+| | risks whose review the caller owns, due within 7 days | `risk_review` (`due` = review date) |
+| `defects` | open defects (open, in progress) assigned to the caller | `assigned` |
+| `executions` | executions assigned to the caller, not run or in progress, in planned or running runs (`run_id`, `detail` = run name) | `assigned` |
+| `reviews` | pending review requests to the caller (the row is the item to review; `due` = the review's due date) | `review_requested` |
+| `waivers` | requested waivers the caller may decide and has not signed (one of its approvers, or holds `waiver.approve` when it names none; never the requester) | `waiver_approval` |
+| `risk_acceptance` | mitigated or accepted risks above the acceptance threshold without a valid acceptance signature, for holders of `waiver.approve` | `risk_acceptance` |
+
+A row with a due date before today also has the reason `overdue`. The
+sources are a small registry in `internal/api/worklist.go`; its comment
+describes how to add one.
+
 ## Comments
 
 | Method | Path | Notes |
@@ -3140,7 +3171,7 @@ the requirement is allocated to, or of one above it, e.g. `element:"Power unit"`
 
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of
-steps), priority, status, estimate, tag, folder, category, dimension, linked,
+steps), priority, status, estimate, owner, tag, folder, category, dimension, linked,
 last_result, created_by, created_at, updated_at, flaky (true/false),
 flakiness (alias flips), catalog, stale` (true/false) and `element` (as for requirements).
 
@@ -3151,7 +3182,18 @@ variants the item applies to) and `applicability` (`all` | `selected`), see
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Risk fields (`GET /projects/{pid}/risks?q=`): `id,
 key, title, description, category, likelihood, impact, score, level, status,
-mitigation, owner, created_by`.
+mitigation, owner, review_owner, review_date, created_by`.
+
+Owners and assignees: `owner:me` (also `owner=me`, `owner!=me`) and
+`assignee:me` (defects, executions) match the items of the caller, however
+they are named in the field (e-mail address, display name or @handle), and
+not merely values containing "me"; `review_owner:me` likewise for risks.
+`owner:anna@example.com` finds the items of one member. An owner is a
+project member stored as their e-mail address; writes accept the display
+name, the e-mail address, `@handle` or the user id of a member and store
+the e-mail address (a member who may not see the project is refused with
+400), any other name stays as free text. Changing a member's e-mail address
+moves their owner and assignee references along.
 
 Custom fields: every list with custom fields (requirements, tests, runs,
 defects, risks) accepts `cf.<key>` with every operator (`cf.supplier:"Acme"`,

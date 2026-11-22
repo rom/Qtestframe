@@ -244,6 +244,14 @@ func (s *Server) handleBulkRisks(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, err)
 		return
 	}
+	if err := s.normalizeOwner(r.Context(), p, pr.ID, set.Owner); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	oldOwners := map[string]string{}
+	for _, k := range list {
+		oldOwners[k.ID] = k.Owner
+	}
 	for _, k := range list {
 		for _, f := range []struct{ src, dst *string }{{set.Status, &k.Status}, {set.Owner, &k.Owner}, {set.Category, &k.Category}} {
 			if f.src != nil {
@@ -288,6 +296,7 @@ func (s *Server) handleBulkRisks(w http.ResponseWriter, r *http.Request, p *Prin
 		}
 		s.audit(ctx, p, "risk.update", "risk", k.ID, k.Key+" "+k.Status+" (bulk)")
 		s.notifyEvent(r, p, pr.ID, "risk.updated", map[string]any{"risk": k, "bulk": true})
+		s.riskAssigned(r, p, k, oldOwners[k.ID], k.ReviewOwner)
 	}
 	s.audit(ctx, p, "risk.bulk_update", "risk", "", fmt.Sprintf("%d risks", len(list)))
 	writeJSON(w, http.StatusOK, map[string]int{"updated": len(list)})

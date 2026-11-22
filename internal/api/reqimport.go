@@ -255,6 +255,7 @@ func (s *Server) handleImportRequirements(w http.ResponseWriter, r *http.Request
 	out := importResponse{DryRun: dryRun, Format: res.Format, Items: []importedItem{}, SkippedItems: []skippedItem{},
 		Warnings: res.Warnings, Errors: res.Errors}
 	var items []store.ImportItem
+	pp := s.loadPeople(r.Context(), p)
 	var from []reqimport.Candidate
 	for i, c := range res.Candidates {
 		skip := ""
@@ -273,6 +274,11 @@ func (s *Server) handleImportRequirements(w http.ResponseWriter, r *http.Request
 			Owner: c.Owner, Tags: c.Tags, CreatedBy: p.User.Email}
 		if rq.Status == "" {
 			rq.Status = status
+		}
+		// an owner naming a member becomes the member's e-mail address
+		// (owners.go); anything else stays as text
+		if owner, err := s.ownerOf(r.Context(), p, pp, pr.ID, rq.Owner); err == nil {
+			rq.Owner = owner
 		}
 		rq.CustomFields = s.importCustom(r, p, pr, c, &out.Warnings)
 		for _, cr := range c.Criteria {

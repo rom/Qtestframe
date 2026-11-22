@@ -287,6 +287,7 @@ func (s *Server) customRecords(r *http.Request, p *Principal, pr *model.Project,
 	if err != nil {
 		return nil, err
 	}
+	s.bindMe(r.Context(), p, q)
 	var runs []model.TestRun
 	if c.Entity == report.EntityExecution && c.RunID != "" {
 		run, err := s.projectRun(r, p, pr, c.RunID)

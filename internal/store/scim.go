@@ -412,12 +412,31 @@ func (s *Store) SetUserEmail(ctx context.Context, userID, email string) error {
 	if !strings.Contains(email, "@") || len(email) > 254 {
 		return Invalidf("a valid e-mail address is required")
 	}
-	res, err := s.c(ctx).exec(ctx, `UPDATE users SET email = ? WHERE id = ?`, email, userID)
-	if err != nil {
-		return mapErr(err, "user with this e-mail")
+	return s.tx(ctx, func(c conn) error {
+		var before string
+		if err := c.row(ctx, `SELECT email FROM users WHERE id = ?`, userID).Scan(&before); err != nil {
+			return mapErr(err, "user")
+		}
+		if _, err := c.exec(ctx, `UPDATE users SET email = ? WHERE id = ?`, email, userID); err != nil {
+			return mapErr(err, "user with this e-mail")
+		}
+		return renameOwner(ctx, c, userID, before, email)
+	})
+}
+
+// renameOwner moves the owners and assignees that reference a member by
+// e-mail address to the member's new address, in the tenants the user
+// belongs to.
+func renameOwner(ctx context.Context, c conn, userID, before, after string) error {
+	if before == "" || before == after {
+		return nil
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return mapErr(sql.ErrNoRows, "user")
+	for _, col := range [][2]string{{"requirements", "owner"}, {"test_cases", "owner"}, {"risks", "owner"}, {"risks", "review_owner"},
+		{"defects", "assignee"}, {"test_executions", "assignee"}} {
+		if _, err := c.exec(ctx, `UPDATE `+col[0]+` SET `+col[1]+` = ? WHERE lower(`+col[1]+`) = ?
+			AND tenant_id IN (SELECT tenant_id FROM memberships WHERE user_id = ?)`, after, before, userID); err != nil {
+			return err
+		}
 	}
 	return nil
 }

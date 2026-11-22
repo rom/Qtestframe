@@ -339,6 +339,7 @@ func (s *Server) routes() {
 	s.routesWaivers(h)
 	s.routesSoA(h)
 	s.routesNotifications(h)
+	s.routesWorkList(h)
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)

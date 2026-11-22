@@ -520,10 +520,12 @@ func (s *Store) moveItemsToProject(ctx context.Context, c conn, tenantID, kind s
 
 // BulkUpdate describes a bulk field change.
 type BulkUpdate struct {
-	Status            *string  `json:"status"`
-	Priority          *string  `json:"priority"`
-	Obligation        *string  `json:"obligation"`
-	ExecutionType     *string  `json:"execution_type"`
+	Status        *string `json:"status"`
+	Priority      *string `json:"priority"`
+	Obligation    *string `json:"obligation"`
+	ExecutionType *string `json:"execution_type"`
+	// Owner: the new owner ("" removes it).
+	Owner             *string  `json:"owner"`
 	AddCategoryIDs    []string `json:"add_category_ids"`
 	RemoveCategoryIDs []string `json:"remove_category_ids"`
 	AddTags           []string `json:"add_tags"`
@@ -571,6 +573,14 @@ func (s *Store) BulkUpdateItems(ctx context.Context, tenantID, kind, projectID s
 	}
 	if err != nil {
 		return 0, err
+	}
+	if u.Owner != nil {
+		owner := strings.TrimSpace(*u.Owner)
+		if len([]rune(owner)) > 200 {
+			return 0, Invalidf("owner is too long")
+		}
+		sets = append(sets, "owner = ?")
+		args = append(args, owner)
 	}
 	ids = uniq(ids)
 	n := 0

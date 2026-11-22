@@ -191,6 +191,7 @@ func (s *Server) restoreTestTo(ctx context.Context, p *Principal, cur, old *mode
 	cur.Title, cur.Description, cur.Preconditions, cur.ExecutionType = old.Title, old.Description, old.Preconditions, old.ExecutionType
 	cur.ScriptLanguage, cur.Script, cur.ExpectedResult = old.ScriptLanguage, old.Script, old.ExpectedResult
 	cur.Priority, cur.Status, cur.EstimatedMin, cur.Tags = old.Priority, old.Status, old.EstimatedMin, old.Tags
+	cur.Owner = old.Owner
 	cur.CustomFields = s.restorableCustom(ctx, p, cur.ProjectID, model.KindTest, old.CustomFields, cur.CustomFields)
 	var err error
 	if cur.CategoryIDs, err = s.existingCategories(ctx, p, cur.ProjectID, old.CategoryIDs); err != nil {

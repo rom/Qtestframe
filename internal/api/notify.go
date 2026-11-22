@@ -203,26 +203,10 @@ func (s *Server) notifyDefect(r *http.Request, p *Principal, d *model.Defect, ev
 // e-mail, display name, handle, @handle; lower case) to the user id; nil
 // when the members cannot be read.
 func (s *Server) peopleIndex(ctx context.Context, p *Principal) map[string]string {
-	ms, err := s.Store.ListTenantMembers(ctx, p.TenantID())
-	if err != nil {
-		return nil
+	if pp := s.loadPeople(ctx, p); pp != nil {
+		return pp.index
 	}
-	users := make([]mention.User, 0, len(ms))
-	for _, m := range ms {
-		users = append(users, mention.User{ID: m.UserID, Email: m.Email, Name: m.Name})
-	}
-	index := map[string]string{}
-	for _, d := range mention.Directory(users, nil) {
-		if d.UserID == "" {
-			continue
-		}
-		for _, k := range []string{d.UserID, d.Email, d.Name, d.Handle, "@" + d.Handle} {
-			if k != "" {
-				index[strings.ToLower(k)] = d.UserID
-			}
-		}
-	}
-	return index
+	return nil
 }
 
 // ---------------------------------------------------------------- webhooks

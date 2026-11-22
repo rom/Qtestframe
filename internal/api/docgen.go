@@ -181,6 +181,7 @@ func (s *Server) documentData(r *http.Request, p *Principal, pr *model.Project, 
 	if err != nil {
 		return nil, err
 	}
+	s.bindMe(ctx, p, q)
 	pc, err := s.loadContext(ctx, tid, pr)
 	if err != nil {
 		return nil, err

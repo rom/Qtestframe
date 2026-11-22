@@ -59,6 +59,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Princip
 		s.fail(w, r, err)
 		return
 	}
+	s.bindMe(r.Context(), p, q)
 	types := map[string]bool{"requirement": true, "test": true, "run": true}
 	if t := r.URL.Query().Get("types"); t != "" {
 		types = map[string]bool{}
@@ -274,7 +275,7 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 	}
 	if want["tests"] {
 		sec := export.Section{Name: "tests", Title: "Test cases",
-			Columns: append([]string{"Key", "Title", "Execution", "Status", "Priority", "Folder", "Categories", "Tags", "Preconditions", "Steps", "Expected result", "Script language", "Linked requirements", "Last result", "Parameters", "Data rows"},
+			Columns: append([]string{"Key", "Title", "Execution", "Status", "Priority", "Folder", "Categories", "Tags", "Preconditions", "Steps", "Expected result", "Script language", "Linked requirements", "Last result", "Parameters", "Data rows", "Owner"},
 				customColumns(cf[model.KindTest])...)}
 		for _, t := range tests {
 			var steps []string
@@ -287,7 +288,7 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 			}
 			sec.Rows = append(sec.Rows, append([]string{t.Key, t.Title, t.ExecutionType, t.Status, t.Priority, t.FolderPath, cats(t.CategoryIDs),
 				strings.Join(t.Tags, ", "), t.Preconditions, strings.Join(steps, "\n"), t.ExpectedResult, t.ScriptLanguage,
-				strconv.Itoa(t.LinkedReqs), t.LastResult, strings.Join(t.Parameters, ", "), strconv.Itoa(len(t.DataRows))}, customCells(cf[model.KindTest], t.CustomFields)...))
+				strconv.Itoa(t.LinkedReqs), t.LastResult, strings.Join(t.Parameters, ", "), strconv.Itoa(len(t.DataRows)), t.Owner}, customCells(cf[model.KindTest], t.CustomFields)...))
 		}
 		ds.Sections = append(ds.Sections, sec)
 	}

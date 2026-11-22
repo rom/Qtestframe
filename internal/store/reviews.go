@@ -352,7 +352,7 @@ func (s *Store) ListInReview(ctx context.Context, tenantID string) ([]InReviewIt
 		FROM requirements r JOIN projects p ON p.id = r.project_id
 		WHERE r.tenant_id = ? AND r.status = 'review'
 		UNION ALL
-		SELECT 'test', t.id, t.key, t.title, t.project_id, p.key, p.name, '', t.created_by, t.version, t.updated_at
+		SELECT 'test', t.id, t.key, t.title, t.project_id, p.key, p.name, t.owner, t.created_by, t.version, t.updated_at
 		FROM test_cases t JOIN projects p ON p.id = t.project_id
 		WHERE t.tenant_id = ? AND t.status = 'review'`, tenantID, tenantID)
 	if err != nil {
