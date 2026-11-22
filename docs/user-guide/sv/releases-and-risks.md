@@ -72,6 +72,8 @@ Varje kriterium visar om det är uppfyllt, det faktiska värdet bredvid målet (
 
 Etiketten i listan över releaser bygger på samma utvärdering, så att du direkt ser vilka releaser som är klara.
 
+I ett projekt med [varianter](variants-and-code.md) kan en release rikta sig mot varianter: utgångskriterierna utvärderas då för var och en av dem, fliken **Status** visar en matris med kriterier × varianter, och releasen är go först när varje målvariant är det (se [releasegrindar per variant](variants-and-code.md#releasegrindar-per-variant)).
+
 Ett procentkriterium utan något att mäta är **inte uppfyllt**: en release utan krav i omfattningen, eller utan exekveringar för *exekverade*, visar *Inget att mäta än* och får no-go. En release helt utan utgångskriterier får alltid go.
 
 ## Markera en release som släppt

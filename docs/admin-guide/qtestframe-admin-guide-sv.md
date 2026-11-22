@@ -1617,6 +1617,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 34 | `0034_custom_fields.sql` |
 | 35 | `0035_external_refs.sql` |
 | 36 | `0036_variants_code.sql` |
+| 46 | `0046_variant_gates.sql` |
 
 <!-- END GENERATED: migrations -->
 

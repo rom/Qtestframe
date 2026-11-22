@@ -72,6 +72,8 @@ Each criterion shows whether it is met, the actual value next to the target (for
 
 The badge in the release list is the same evaluation, so you can see at a glance which releases are ready.
 
+In a project with [variants](variants-and-code.md), a release can target variants: the exit criteria are then evaluated for each of them, the **Status** tab shows a matrix of criteria × variants, and the release is a go only when every targeted variant is (see [release gates per variant](variants-and-code.md#release-gates-per-variant)).
+
 A percentage criterion with nothing to measure is **not met**: a release without requirements in its scope, or without executions for *executed*, shows *Nothing to measure yet* and is a no-go. A release without any exit criteria is always a go.
 
 ## Mark a release released
