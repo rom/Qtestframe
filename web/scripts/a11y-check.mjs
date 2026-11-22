@@ -464,6 +464,17 @@ async function discover(request) {
       upload: ['.exchange-dialog input[type="file"]', 'internal/interop/testdata/doors.reqif'],
       wait: '.exchange-dialog .ex-table',
     },
+    // a DOORS Next–shaped document with test cases: object and relation type mappings, the tests' diff
+    {
+      name: 'exchange-reqif-tests',
+      path: `${p}/requirements`,
+      open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(2) .p-menu-item-link'],
+      upload: ['.exchange-dialog input[type="file"]', 'internal/interop/testdata/dng-tests.reqif'],
+      wait: '.exchange-dialog .ex-table',
+    },
+    // the OSLC delegated dialogs (server-rendered pages other tools show)
+    { name: 'oslc-dialog-select', path: `/api/v1/oslc/projects/${pid}/dialogs/requirement/select`, wait: '#list li' },
+    { name: 'oslc-dialog-create', path: `/api/v1/oslc/projects/${pid}/dialogs/test/create?lang=sv`, wait: '#create:not([hidden])' },
     { name: 'exchange-xlsx-dialog', path: `${p}/tests`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:last-child .p-menu-item-link'], wait: '.exchange-dialog' },
     // importing from Jira and Azure DevOps: the query forms (the demo has both sources, without tokens) and the settings card
     { name: 'exchange-jira-dialog', path: `${p}/requirements`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(3) .p-menu-item-link'], wait: '.exchange-dialog form textarea' },

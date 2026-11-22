@@ -319,6 +319,9 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedExploratory(ctx, st, clock, tenantID, p, []*model.Folder{rf, rf2, rf3}, reqs, testIDs); err != nil {
 		return nil, err
 	}
+	if err := seedInterop(ctx, st, tenantID, reqs, testIDs); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

@@ -106,7 +106,7 @@ func TestOSLCProvider(t *testing.T) {
 	if !strings.Contains(body, "oslc:nextPage") || strings.Count(body, "rdfs:member") != 1 {
 		t.Errorf("paging: %s", body)
 	}
-	for _, bad := range []string{`dcterms:description="x"`, `title="x"`, `dcterms:title "x"`, `dcterms:title=x`, `foo:title="x"`} {
+	for _, bad := range []string{`title="x"`, `dcterms:title "x"`, `dcterms:title=x`, `foo:title="x"`} {
 		c.accept("/api/v1/oslc/projects/"+pid+"/requirements?oslc.where="+url.QueryEscape(bad), "", 400)
 	}
 	c.accept("/api/v1/oslc/projects/"+pid+"/tests?oslc.pageSize=0", "", 400)

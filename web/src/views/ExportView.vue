@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import HelpTip from '@/guide/HelpTip.vue'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import Message from 'primevue/message'
+import Select from 'primevue/select'
 import QueryInput from '@/components/QueryInput.vue'
-import { api } from '@/lib/api'
+import { api, asItems } from '@/lib/api'
+import type { ListResponse } from '@/lib/types'
 import { exportExtension, isReqIFFormat } from '@/lib/download'
 import { P } from '@/lib/permissions'
 import { useProjectStore } from '@/stores/project'
@@ -42,6 +44,21 @@ const busy = ref(false)
 const error = ref<unknown>(null)
 const reqif = computed(() => isReqIFFormat(format.value))
 const willZip = computed(() => exportExtension(format.value, selected.value.length) === 'zip')
+// ReqIF: test cases with their links, verification records, a baseline
+const withTests = ref(false)
+const withRecords = ref(false)
+const baseline = ref('')
+const baselines = ref<{ id: string; name: string }[]>([])
+const baselineOptions = computed(() => [{ value: '', label: t('export.reqifCurrent') }, ...baselines.value.map((b) => ({ value: b.id, label: b.name }))])
+watch(reqif, async (on) => {
+  if (!on || baselines.value.length || !proj.pid) return
+  try {
+    baselines.value = asItems(await api.get<ListResponse<{ id: string; name: string }>>(`/projects/${proj.pid}/baselines`))
+  } catch {
+    baselines.value = []
+  }
+})
+const include = computed(() => [withTests.value ? 'tests' : '', withRecords.value ? 'records' : ''].filter(Boolean).join(','))
 
 async function download() {
   busy.value = true
@@ -52,7 +69,9 @@ async function download() {
       {
         format: format.value,
         aspects: reqif.value || selected.value.length === aspects.value.length ? undefined : selected.value,
-        q: q.value.trim(),
+        q: reqif.value && baseline.value ? undefined : q.value.trim(),
+        include: reqif.value && include.value ? include.value : undefined,
+        baseline: reqif.value && baseline.value ? baseline.value : undefined,
       },
       `${proj.project?.key ?? 'export'}.${exportExtension(format.value, selected.value.length)}`,
     )
@@ -106,8 +125,20 @@ async function download() {
       </span>
     </div>
     </fieldset>
+    <fieldset v-if="reqif" class="plain-fieldset">
+      <legend class="section-title">{{ t('export.reqifContent') }}</legend>
+      <div class="row wrap" style="gap: 18px">
+        <span class="row nowrap"><Checkbox v-model="withTests" binary input-id="reqif-tests" /><label for="reqif-tests">{{ t('export.reqifTests') }}</label></span>
+        <span class="row nowrap"><Checkbox v-model="withRecords" binary input-id="reqif-records" /><label for="reqif-records">{{ t('export.reqifRecords') }}</label></span>
+      </div>
+      <div v-field class="field" style="max-width: 360px; margin-top: 10px">
+        <label for="reqif-baseline">{{ t('export.reqifBaseline') }}</label>
+        <Select v-model="baseline" input-id="reqif-baseline" :options="baselineOptions" option-label="label" option-value="value" />
+      </div>
+    </fieldset>
     <div class="section-title">{{ t('export.filter') }} <HelpTip id="query.filter" :label="t('export.filter')" /></div>
-    <QueryInput v-model="q" scope="requirement" :error="error" :placeholder="t('export.filterPlaceholder', { example: 'status:approved OR obligation:must' })" @submit="download" />
+    <p v-if="reqif && baseline" class="small muted" style="margin: 0 0 6px">{{ t('export.reqifBaselineHint') }}</p>
+    <QueryInput v-else v-model="q" scope="requirement" :error="error" :placeholder="t('export.filterPlaceholder', { example: 'status:approved OR obligation:must' })" @submit="download" />
     <div class="row" style="margin-top: 18px">
       <span v-if="willZip" class="small muted"><i class="pi pi-info-circle" /> {{ t('export.zipHint') }}</span>
       <span class="grow" />

@@ -73,7 +73,7 @@ func TestRequirementImportJira(t *testing.T) {
 		m := x.(map[string]any)
 		attrs[m["name"].(string)] = m["field"].(string) + "/" + m["guess"].(string)
 	}
-	if attrs["Summary"] != "title/title" || attrs["Acceptance Criteria"] != "criteria/criteria" || attrs["Labels"] != "tags/tags" || attrs["Risk class"] != "cf.risk_class/cf.risk_class" {
+	if attrs["Summary"] != "title/title" || attrs["Acceptance Criteria"] != "criteria/criteria" || attrs["Labels"] != "tags/tags" || attrs["Risk class"] != "cf:risk_class/cf:risk_class" {
 		t.Fatalf("attributes %v", attrs)
 	}
 	for _, tg := range pv["targets"].([]any) {

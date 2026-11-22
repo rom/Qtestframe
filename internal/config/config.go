@@ -279,6 +279,10 @@ type Server struct {
 	WriteTimeout   time.Duration `yaml:"write_timeout"`
 	TrustedProxies []string      `yaml:"trusted_proxies"`
 	HSTS           bool          `yaml:"hsts"`
+	// FrameAncestors are the origins (https://doors.example.com) that may
+	// show the OSLC delegated dialogs in a frame; without any they open
+	// in a window of their own.
+	FrameAncestors []string `yaml:"frame_ancestors"`
 }
 
 // Database selects the SQL backend.
@@ -824,6 +828,11 @@ func (c *Config) Validate() error {
 	if (c.Server.TLSCert == "") != (c.Server.TLSKey == "") {
 		errs = append(errs, errors.New("server.tls_cert and server.tls_key must be set together"))
 	}
+	for _, o := range c.Server.FrameAncestors {
+		if !ValidOrigin(o) {
+			errs = append(errs, fmt.Errorf("server.frame_ancestors: %q is not an origin such as https://doors.example.com", o))
+		}
+	}
 	if c.Auth.SessionTTL <= 0 {
 		errs = append(errs, errors.New("auth.session_ttl must be positive"))
 	}
@@ -954,4 +963,14 @@ func (e Email) validate() []error {
 		errs = append(errs, errors.New("email.digest_hour must be between 0 and 23"))
 	}
 	return errs
+}
+
+// ValidOrigin reports whether s is an origin: http(s)://host[:port]
+// without a path, query or user.
+func ValidOrigin(s string) bool {
+	u, err := url.Parse(s)
+	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.User != nil {
+		return false
+	}
+	return (u.Path == "" || u.Path == "/") && u.RawQuery == "" && u.Fragment == "" && !strings.ContainsAny(s, " ;,'\"")
 }

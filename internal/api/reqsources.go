@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rom/qtestframe/internal/customfield"
 	"github.com/rom/qtestframe/internal/interop"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/reqimport"
@@ -310,6 +309,16 @@ func sourceModel(res *tracker.SourceResult, query string, relations bool) (*reqi
 	return m, defaults, names
 }
 
+// identityTypes maps relation type names that already are model relation
+// types to themselves (the source models use the model's codes).
+func identityTypes(names []string) map[string]string {
+	out := map[string]string{}
+	for _, n := range names {
+		out[n] = n
+	}
+	return out
+}
+
 func hasValue(m map[string]string, v string) bool {
 	for _, x := range m {
 		if x == v {
@@ -428,12 +437,8 @@ func (s *Server) planSource(r *http.Request, p *Principal, pr *model.Project, re
 		mapping[k] = v
 	}
 	name := sourceNames[res.System]
-	defs, err := s.Store.ListCustomFields(r.Context(), p.TenantID(), pr.ID, model.KindRequirement)
-	if err != nil {
-		return nil, nil, err
-	}
 	u, err := s.planReqIF(r, p, pr, name+": "+query, m, reqifPlanOpts{system: res.System, format: res.System, origin: name, mapping: mapping,
-		folderID: strings.TrimSpace(req.FolderID), noRelations: !relations, moreFields: customInteropFields(defs),
+		folderID: strings.TrimSpace(req.FolderID), noRelations: !relations, noTests: true, relationTypes: identityTypes(m.RelationTypes),
 		adjust: adjustSourcePlan(res, defaults, linkNames, strings.TrimSpace(req.FolderID))})
 	if err != nil {
 		return nil, nil, err
@@ -449,52 +454,6 @@ func (s *Server) planSource(r *http.Request, p *Principal, pr *model.Project, re
 		pv.Relations.Changes = pv.Relations.Changes[:500]
 	}
 	return u, pv, nil
-}
-
-// customInteropFields are the requirement custom fields as fields of the
-// import ("cf.<key>"): values are read with customfield.Parse and
-// compared as text; user fields are left out (their values must be
-// members, which a tracker's user names are not).
-func customInteropFields(defs []model.CustomField) []interop.Field {
-	var out []interop.Field
-	for i := range defs {
-		f := defs[i]
-		if f.Type == model.FieldUser {
-			continue
-		}
-		typ := interop.Text
-		if f.Type == model.FieldLongText {
-			typ = interop.LongText
-		}
-		out = append(out, interop.Field{Key: customFieldPrefix[0] + f.Key, Label: f.Label, Type: typ,
-			Get: func(it *interop.Item) string {
-				if it.Req == nil {
-					return ""
-				}
-				return customfield.Plain(it.Req.CustomFields[f.Key])
-			},
-			Parse: func(raw string) (string, error) {
-				v, err := customfield.Parse(&f, raw)
-				if err != nil {
-					return "", fmt.Errorf("%s", strings.TrimPrefix(err.Error(), customfield.ErrInvalid.Error()+": "))
-				}
-				return customfield.Plain(v), nil
-			},
-			Put: func(b map[string]any, raw string, _ *interop.Item) error {
-				v, err := customfield.Parse(&f, raw)
-				if err != nil {
-					return err
-				}
-				cf, _ := b["custom_fields"].(map[string]any)
-				if cf == nil {
-					cf = map[string]any{}
-					b["custom_fields"] = cf
-				}
-				cf[f.Key] = v
-				return nil
-			}})
-	}
-	return out
 }
 
 func slicesFilter[T any](in []T, keep func(T) bool) []T {
@@ -576,6 +535,6 @@ func (s *Server) handleExternalImportApply(w http.ResponseWriter, r *http.Reques
 				opt.exclude[i] = true
 			}
 		}
-		s.applyReqIF(w, r, p, pr, u, opt)
+		s.applyReqIF(w, r, p, pr, u, opt, applyOptions{exclude: map[int]bool{}})
 	})(w, r, p)
 }

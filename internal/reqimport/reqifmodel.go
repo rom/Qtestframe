@@ -1,10 +1,13 @@
 package reqimport
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
+	"net/url"
+	"path"
 	"sort"
 	"strings"
 )
@@ -48,6 +51,15 @@ type ReqIFObject struct {
 	Depth  int    `json:"depth"`
 	// Order is the position in document order (hierarchy first).
 	Order int `json:"order"`
+	// XHTML holds the raw XHTML of the XHTML attribute values by attribute
+	// long name (for test steps and embedded objects).
+	XHTML map[string]string `json:"-"`
+}
+
+// ReqIFObjectType is a SPEC-OBJECT-TYPE of the document.
+type ReqIFObjectType struct {
+	Name    string `json:"name"`
+	Objects int    `json:"objects"`
 }
 
 // ReqIFRelation is a SPEC-RELATION between two objects.
@@ -64,14 +76,47 @@ type ReqIFModel struct {
 	ToolID     string `json:"tool_id"`
 	SourceTool string `json:"source_tool"`
 	// Qtestframe is set for exports of Qtestframe (identifiers qtf-req-<id>).
-	Qtestframe    bool             `json:"qtestframe"`
-	Specs         []string         `json:"specifications"`
-	Attributes    []ReqIFAttribute `json:"attributes"`
-	Objects       []ReqIFObject    `json:"-"`
-	Relations     []ReqIFRelation  `json:"-"`
-	RelationTypes []string         `json:"relation_types"`
-	Warnings      []string         `json:"warnings"`
-	Errors        []string         `json:"errors"`
+	Qtestframe    bool              `json:"qtestframe"`
+	Specs         []string          `json:"specifications"`
+	Attributes    []ReqIFAttribute  `json:"attributes"`
+	Objects       []ReqIFObject     `json:"-"`
+	Relations     []ReqIFRelation   `json:"-"`
+	RelationTypes []string          `json:"relation_types"`
+	ObjectTypes   []ReqIFObjectType `json:"object_types"`
+	Warnings      []string          `json:"warnings"`
+	Errors        []string          `json:"errors"`
+	// zip is the .reqifz archive (embedded files), base the folder of its
+	// first .reqif document.
+	zip  *zip.Reader
+	base string
+}
+
+// File returns a file of the .reqifz archive referenced by an XHTML object
+// (relative to the document) and its path in the archive.
+func (m *ReqIFModel) File(ref string) ([]byte, string, bool) {
+	if m.zip == nil {
+		return nil, "", false
+	}
+	ref = strings.TrimSpace(ref)
+	if ref == "" || strings.Contains(ref, "://") || strings.HasPrefix(ref, "/") {
+		return nil, "", false
+	}
+	if u, err := url.PathUnescape(ref); err == nil {
+		ref = u
+	}
+	for _, name := range []string{path.Clean(path.Join(m.base, ref)), path.Clean(ref)} {
+		if strings.HasPrefix(name, "../") || name == ".." {
+			continue
+		}
+		if f := zipFile(m.zip, name); f != nil {
+			b, err := readZipEntry(f)
+			if err != nil {
+				return nil, "", false
+			}
+			return b, name, true
+		}
+	}
+	return nil, "", false
 }
 
 type rmDoc struct {
@@ -140,6 +185,8 @@ func ParseReqIFModel(data []byte) (m *ReqIFModel, err error) {
 		return nil, invalidf("the file is empty")
 	}
 	var docs [][]byte
+	var zipped *zip.Reader
+	base := ""
 	if isZip(data) {
 		zr, err := openZip(data, ".reqifz")
 		if err != nil {
@@ -155,6 +202,10 @@ func ParseReqIFModel(data []byte) (m *ReqIFModel, err error) {
 		if len(names) == 0 {
 			return nil, invalidf("the .reqifz archive contains no .reqif file")
 		}
+		zipped, base = zr, path.Dir(names[0])
+		if base == "." {
+			base = ""
+		}
 		for _, n := range names {
 			b, err := readZipEntry(zipFile(zr, n))
 			if err != nil {
@@ -165,7 +216,8 @@ func ParseReqIFModel(data []byte) (m *ReqIFModel, err error) {
 	} else {
 		docs = [][]byte{data}
 	}
-	m = &ReqIFModel{Attributes: []ReqIFAttribute{}, Specs: []string{}, RelationTypes: []string{}, Warnings: []string{}, Errors: []string{}}
+	m = &ReqIFModel{Attributes: []ReqIFAttribute{}, Specs: []string{}, RelationTypes: []string{}, ObjectTypes: []ReqIFObjectType{},
+		Warnings: []string{}, Errors: []string{}, zip: zipped, base: base}
 	for _, d := range docs {
 		if err := m.add(d); err != nil {
 			return nil, err
@@ -194,8 +246,7 @@ func (m *ReqIFModel) add(data []byte) error {
 	if len(c.Objects) == 0 && len(c.Specs) == 0 {
 		return invalidf("not a ReqIF file: no SPEC-OBJECTS found")
 	}
-	markdown := doc.Header.fromQtestframe()
-	if markdown {
+	if doc.Header.fromQtestframe() {
 		m.Qtestframe = true
 	}
 	m.Title = firstNonEmpty(m.Title, strings.TrimSpace(doc.Header.Title))
@@ -263,7 +314,8 @@ func (m *ReqIFModel) add(data []byte) error {
 	add := func(o *rqObject, parent, spec string, depth int) {
 		have[o.ID] = true
 		ob := ReqIFObject{Identifier: o.ID, LongName: o.Name, TypeName: typeName[strings.TrimSpace(o.Type)], Values: map[string]string{},
-			Parent: parent, Spec: spec, Depth: depth, Order: len(m.Objects)}
+			XHTML: map[string]string{}, Parent: parent, Spec: spec, Depth: depth, Order: len(m.Objects)}
+		m.countType(ob.TypeName)
 		for _, v := range o.Values.All {
 			if len(v.Def.Refs) == 0 {
 				continue
@@ -272,7 +324,12 @@ func (m *ReqIFModel) add(data []byte) error {
 			if name == "" {
 				continue
 			}
-			text := reqifValue(v, enumNames, markdown)
+			// XHTML becomes Markdown (paragraphs, lists, tables, emphasis,
+			// links and embedded objects)
+			text := reqifValue(v, enumNames, true)
+			if v.XMLName.Local == "ATTRIBUTE-VALUE-XHTML" && strings.TrimSpace(v.XHTML.Inner) != "" {
+				ob.XHTML[name] = v.XHTML.Inner
+			}
 			if text == "" {
 				continue
 			}
@@ -334,7 +391,18 @@ func (m *ReqIFModel) add(data []byte) error {
 	return nil
 }
 
+func (m *ReqIFModel) countType(name string) {
+	for i := range m.ObjectTypes {
+		if m.ObjectTypes[i].Name == name {
+			m.ObjectTypes[i].Objects++
+			return
+		}
+	}
+	m.ObjectTypes = append(m.ObjectTypes, ReqIFObjectType{Name: name, Objects: 1})
+}
+
 // ReqIFRole guesses what an attribute (by long name) holds: a field of
+
 // Fields, "heading" for a chapter name, "version" for the version of a
 // Qtestframe export, or "" (ignored).
 func ReqIFRole(name string) string {

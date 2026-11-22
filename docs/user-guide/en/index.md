@@ -32,6 +32,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Discussions](discussions.md) | Threaded comments on items with Markdown, @mentions, reactions, resolving, and the project's Discussions page |
 | [Search and filters](search-and-filters.md) | The query language with many examples |
 | [Reports and export](reports-and-export.md) | Standard reports, the custom report builder, export formats and the document archive |
+| [Interoperability](interoperability.md) | ReqIF export and import with tests, relations and attachments; OSLC links, selection and creation from DOORS Next, Polarion, Codebeamer |
 | [Documents](documents.md) | The project's document archive: uploads, previews and links |
 | [Administration](administration.md) | Organisations, users, members and roles, project sharing, password resets, API tokens, the audit log, backup and restore |
 | [Accessibility and languages](accessibility-and-languages.md) | Keyboard use, screen readers, themes, English and Swedish, phones and tablets |
