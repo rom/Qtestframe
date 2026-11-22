@@ -2,6 +2,7 @@
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
 import ItemRef from '../components/ItemRef.vue'
+import { customCellText, customColumns } from '@/lib/customColumns'
 import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
 import { defaultValues, type CustomValues } from '@/lib/customFields'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -41,6 +42,10 @@ const route = useRoute()
 const router = useRouter()
 const notify = useNotify()
 const { t } = useI18n()
+
+/** custom fields shown in lists (show_in_list) as columns */
+const listedCols = computed(() => customColumns(useProjectStore().customFieldsFor('risk').filter((f) => f.show_in_list)))
+const cellOf = (row: { custom_fields?: Record<string, unknown> }, field: string) => customCellText(useProjectStore().customFieldsFor('risk'), row, field, [t('common.yes'), t('common.no')])
 const canWrite = computed(() => auth.can(P.requirementWrite))
 
 const levelLabel = (l: string) => (l ? t(`risksView.level.${l}`) : '')
@@ -414,6 +419,9 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <template #body="{ data }"><Tag :value="statusLabel(data.status)" :severity="riskStatusSeverity(data.status)" /></template>
         </Column>
         <Column field="owner" :header="t('common.owner')" sortable><template #body="{ data }"><span class="small">{{ data.owner }}</span></template></Column>
+        <Column v-for="c in listedCols" :key="c.field" :header="c.header" sortable :sort-field="c.sortField" :style="c.width ? { width: c.width } : {}">
+          <template #body="{ data }"><span class="small">{{ cellOf(data, c.field) }}</span></template>
+        </Column>
         <Column :header="t('risksView.requirements')" style="min-width: 160px">
           <template #body="{ data }">
             <span class="row small" style="gap: 4px">
