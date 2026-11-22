@@ -21123,6 +21123,9 @@ components:
           - project
           - 'off'
           description: autocomplete suggestions in free-text fields; empty = on (history and project values)
+        live_updates_off:
+          type: boolean
+          description: Turn off live updates and presence in the web client (it polls instead and the user is not shown to others as viewing or editing).
     Suggestion:
       type: object
       required:

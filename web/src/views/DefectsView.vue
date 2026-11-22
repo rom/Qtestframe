@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Defects of the project: filter, report and edit them, and mirror them in
 // the project's Jira or GitHub Issues (push, sync, import).
+import { useLiveRefresh } from '@/composables/live'
 import { computed, onMounted, ref, watch } from 'vue'
 import { customCellText, customColumns } from '@/lib/customColumns'
 import { useRoute, useRouter } from 'vue-router'
@@ -74,8 +75,10 @@ const composed = computed(() => and(q.value, anyOf('status', statuses.value), an
 const statusOptions = computed(() => DEFECT_STATUSES.map((v) => ({ value: v, label: t(`defectsView.status.${v}`) })))
 const severityOptions = computed(() => DEFECT_SEVERITIES.map((v) => ({ value: v, label: t(`defectsView.severity.${v}`) })))
 
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
-  loading.value = true
+  if (!quiet) loading.value = true
   queryError.value = null
   try {
     defects.value = asItems(await api.get<{ items: Defect[] }>(`/projects/${proj.pid}/defects`, { q: composed.value })).sort(compareDefects)
@@ -86,6 +89,16 @@ async function load() {
     loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ({ types: ['defect'], projectId: proj.pid }),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  }, { announce: () => t('live.listUpdated') },
+)
 
 // ---------- tracker ----------
 const tracker = ref<DefectTracker | null>(null)

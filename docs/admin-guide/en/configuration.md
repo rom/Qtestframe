@@ -290,6 +290,17 @@ Every key of the file, its type, its default and the environment variable that s
 | `similarity.embeddings.api_key_file` | string | — | — | File with the API key, sent as a bearer token (relative: in `$CREDENTIALS_DIRECTORY`). The key can also be stored in the system settings; it is never shown again. |
 | `similarity.embeddings.timeout` | duration | `30s` | — | Longest time to wait for the service. When it fails or times out, the local similarity is used. |
 
+### `live`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `live.enabled` | bool | `true` | `QTF_LIVE_ENABLED` | Live updates and presence: lists, dashboards, the notification bell and open items update when someone else changes something, and editors show who else is viewing or editing an item (a Server-Sent Events stream, `GET /api/v1/events/stream`). Off: the web client falls back to polling and to the conflict check on save. Each user can also turn it off in the profile. Behind a reverse proxy, turn off response buffering for the stream (see *Live updates* in the chapter *Features added later*). |
+| `live.heartbeat` | duration | `25s` | — | Interval of the keep-alive comments on an idle stream. Keep it below the idle timeout of proxies and load balancers (nginx `proxy_read_timeout`, 60 s by default). |
+| `live.max_connections` | integer | `2000` | — | Most open event streams of this server instance; further connections are refused with 503 and the clients poll instead. |
+| `live.max_connections_per_user` | integer | `8` | — | Most open event streams of one user (one per browser tab; a tab in the background closes its stream after a minute). |
+| `live.replay_buffer` | integer | `512` | — | Number of recent events kept in memory so that a client that reconnects (`Last-Event-ID`) receives what it missed; when its last event is no longer kept, it reloads what it shows instead. |
+| `live.presence_ttl` | duration | `45s` | — | How long a user stays listed as viewing or editing an item after the last presence heartbeat of their browser (sent every 20 s). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -309,6 +320,7 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_EMAIL_PASSWORD` | the SMTP password; wins over `email.password_file` and a password stored in the web client |
 | `QTF_EMAIL_PORT` | `email.port` (ignored when not a number) |
 | `QTF_EMAIL_USERNAME` | `email.username` |
+| `QTF_LIVE_ENABLED` | `live.enabled` (`1` or `true` = on, anything else = off) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` or `true` = on) |

@@ -534,6 +534,17 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `similarity.embeddings.api_key_file` | text | — | — | Fil med API-nyckeln, som skickas som bearer-token (relativ: i `$CREDENTIALS_DIRECTORY`). Nyckeln kan också sparas i systeminställningarna; den visas aldrig igen. |
 | `similarity.embeddings.timeout` | tidslängd | `30s` | — | Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten. |
 
+### `live`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `live.enabled` | bool | `true` | `QTF_LIVE_ENABLED` | Liveuppdateringar och närvaro: listor, översikter, notisklockan och öppna objekt uppdateras när någon annan ändrar något, och redigerare visar vem mer som tittar på eller redigerar ett objekt (en Server-Sent Events-ström, `GET /api/v1/events/stream`). Av: webbklienten frågar i stället med jämna mellanrum och konfliktkontrollen vid sparande gäller som förut. Varje användare kan också stänga av det i profilen. Bakom en omvänd proxy ska buffring av svar stängas av för strömmen (se *Liveuppdateringar* i kapitlet *Funktioner som lagts till senare*). |
+| `live.heartbeat` | tidslängd | `25s` | — | Intervall för håll-vid-liv-kommentarer på en ström utan händelser. Håll det under tidsgränsen för inaktiva anslutningar i proxyer och lastbalanserare (nginx `proxy_read_timeout`, 60 s som standard). |
+| `live.max_connections` | heltal | `2000` | — | Högsta antal öppna händelseströmmar i den här serverinstansen; fler anslutningar avvisas med 503 och klienterna frågar i stället med jämna mellanrum. |
+| `live.max_connections_per_user` | heltal | `8` | — | Högsta antal öppna händelseströmmar för en användare (en per flik i webbläsaren; en flik i bakgrunden stänger sin ström efter en minut). |
+| `live.replay_buffer` | heltal | `512` | — | Antal senaste händelser som hålls i minnet så att en klient som ansluter igen (`Last-Event-ID`) får det den missade; finns dess senaste händelse inte kvar läser den i stället om det den visar. |
+| `live.presence_ttl` | tidslängd | `45s` | — | Hur länge en användare visas som att den tittar på eller redigerar ett objekt efter den senaste närvarosignalen från webbläsaren (skickas var 20:e sekund). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler
@@ -553,6 +564,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_EMAIL_PASSWORD` | SMTP-lösenordet; vinner över `email.password_file` och ett lösenord sparat i webbklienten |
 | `QTF_EMAIL_PORT` | `email.port` (ignoreras om det inte är ett tal) |
 | `QTF_EMAIL_USERNAME` | `email.username` |
+| `QTF_LIVE_ENABLED` | `live.enabled` (`1` eller `true` = på, allt annat = av) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` eller `true` = på) |
@@ -2324,3 +2336,53 @@ Tabellerna `exploratory_sessions`, `exploratory_scope` och `exploratory_notes` i
 ## CI/CD-integration
 
 Kvalitetsgrinden, testurvalet och pipelinemallarna (migrering 0053) behöver ingen konfiguration; serverns rapporter av commit-statusar och anteckningar i merge requests till GitLab är en projektinställning med en krypterad token och en utkorg i bakgrunden (`ci_deliveries`, som minutjobbet försöker igen, och som inte säkerhetskopieras). Tokens, roller, jobbtokens begränsningar och utgående anslutningar beskrivs i [E-post, webhooks och integrationer](#e-post-webhooks-och-integrationer); ändringar av inställningarna loggas som `project.ci_settings`.
+
+## Liveuppdateringar
+
+Listor, översikter, notisklockan och öppna objekt uppdateras när någon annan ändrar något, och redigerare visar vem mer som tittar på eller redigerar ett objekt. Webbklienten håller en Server-Sent Events-ström öppen per flik i webbläsaren (`GET /api/v1/events/stream`, se API-referensen `docs/openapi.yaml`); det finns ingen tabell och ingen migrering, allt finns i minnet. Det är på som standard; `live.enabled: false` (eller `QTF_LIVE_ENABLED=false`) stänger av det för servern, och varje användare kan stänga av det i profilen. När det är av, inte går att nå eller avbryts gör klienten som förut: klockan och *Mitt arbete* frågar varje minut, listor läses in när de öppnas, och konfliktkontrollen vid sparande (version, `If-Match`, 412) skyddar fortfarande mot att skriva över.
+
+**Vad som skickas.** En händelse säger att ett objekt har ändrats: entitetstyp, id, projekt, version, åtgärd och vem som gjorde det. Den innehåller aldrig titlar eller innehåll; klienten läser om det den visar genom det vanliga API:et, med dess behörighetskontroller. Varje händelse kontrolleras mot användarens åtkomst till projektet (projektdelning, projektroller) och läsbehörigheten för typen (`requirement.read`, `test.read`, `run.read`, `project.read` för defekter och releaser) innan den skrivs till en ström; händelser av andra typer eller utan projekt skickas inte alls. Notishändelser når bara mottagarna och innehåller inget annat än en signal. Ändringar av projektåtkomst, roller eller medlemmar gör att strömmarna läser om vad användarna får se; varje minut autentiserar en ström om sin begäran, så en återkallad session eller API-token, en avstängd användare eller ett borttaget medlemskap avslutar den. Händelserna kommer från granskningsloggen (varje loggad ändring), efter att begärans transaktion har sparats; en ändring som rullas tillbaka meddelas aldrig.
+
+**Närvaro** (vem som tittar på eller redigerar ett objekt) skickas av webbläsaren var 20:e sekund medan ett objekt är öppet (`POST /api/v1/presence`) och glöms efter `live.presence_ttl` (45 s) utan signal. Den sparas inte och finns inte i granskningsloggen. En användare som har stängt av liveuppdateringar visas inte för andra.
+
+**Flera serverinstanser.** På PostgreSQL utbyter instanserna som delar en databas händelser och närvaro med `LISTEN`/`NOTIFY` på en kanal som är uppkallad efter databasen och schemat (`qtf_live_…`); varje instans håller en extra databasanslutning för att lyssna. En lyssnare som tappar anslutningen ansluter igen med ökande väntetid och ber sina klienter att läsa om. På SQLite finns bara en instans per databasfil, och händelserna stannar i den processen (bara inom processen). Inga klibbiga sessioner behövs: en klient som ansluter till en annan instans fortsätter från sin senaste händelse.
+
+**Återupptagning och gränser.** Varje instans håller de senaste `live.replay_buffer` (512) händelserna; en klient som ansluter igen med `Last-Event-ID` får det den missade, eller läser om när händelsen inte längre finns kvar. Högst `live.max_connections` (2000) strömmar per instans och `live.max_connections_per_user` (8) per användare; fler avvisas med `503` och klienten försöker igen med ökande väntetid (1 s upp till 1 min) och frågar med jämna mellanrum under tiden. En flik i bakgrunden stänger sin ström efter en minut och fortsätter när den visas igen. Kommentarsrader skickas var `live.heartbeat` (25 s) så att proxyer inte stänger strömmar utan händelser. Vid avstängning (`SIGTERM`) avslutas strömmarna direkt, så att de 15 sekunderna för att tömma anslutningar inte fördröjs; klienterna ansluter igen.
+
+**Omvänd proxy.** Strömmen är ett långlivat svar som inte får buffras eller komprimeras. Qtestframe skickar `Content-Type: text/event-stream`, `Cache-Control: no-store, no-transform` och `X-Accel-Buffering: no` (nginx buffrar den då inte ens utan inställningarna nedan). Håll proxyns läs-tidsgräns över `live.heartbeat`. Med nginx:
+
+```nginx
+location /api/v1/events/stream {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_buffering off;
+    proxy_cache off;
+    gzip off;
+    proxy_read_timeout 1h;
+}
+```
+
+Med Traefik (dynamisk konfiguration) behöver strömmen ingen egen router; en komprimerings-middleware måste hoppa över den, och ingångspunktens `respondingTimeouts` måste ligga över `live.heartbeat` (standardvärdena räcker):
+
+```yaml
+http:
+  routers:
+    qtestframe:
+      rule: Host(`qtf.example.com`)
+      service: qtestframe
+      middlewares: [compress-except-stream]
+  middlewares:
+    compress-except-stream:
+      compress:
+        excludedContentTypes: [text/event-stream]
+  services:
+    qtestframe:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:8080
+```
+
+Varje öppen flik är en HTTP-anslutning; över HTTP/1.1 tillåter webbläsare sex per webbplats, så om många flikar är öppna bör webbplatsen använda HTTP/2 (en anslutning för alla strömmar).

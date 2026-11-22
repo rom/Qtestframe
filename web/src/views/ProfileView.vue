@@ -93,10 +93,16 @@ function toForm(p: Preferences) {
     // --- obligation keyword highlighting ---
     hide_obligation_highlight: !!p.hide_obligation_highlight,
     autocomplete: autocompleteMode(p) as string,
+    live_updates_off: !!p.live_updates_off,
   }
 }
 const pform = ref(toForm(prefsStore.prefs))
 // --- obligation keyword highlighting: the switch shows "highlight" (on by default) ---
+// live updates: the switch shows "on" (the default), the preference stores "off"
+const liveUpdates = computed({
+  get: () => !pform.value.live_updates_off,
+  set: (v: boolean) => (pform.value.live_updates_off = !v),
+})
 const highlightObligations = computed({
   get: () => !pform.value.hide_obligation_highlight,
   set: (v: boolean) => (pform.value.hide_obligation_highlight = !v),
@@ -500,6 +506,11 @@ onMounted(() => {
         <div v-field class="field" role="group" aria-labelledby="pf-editor-l">
           <span id="pf-editor-l" class="field-label">{{ t('profile.requirementEditor') }}</span>
           <label class="row nowrap small" for="pf-analysis"><ToggleSwitch v-model="pform.hide_analysis" input-id="pf-analysis" /> {{ t('profile.hideAnalysis') }}</label>
+        </div>
+        <div v-field class="field" role="group" aria-labelledby="pf-live-l" :aria-describedby="meta.meta.live_updates ? undefined : 'pf-live-off'">
+          <span id="pf-live-l" class="field-label">{{ t('profile.liveGroup') }}</span>
+          <label class="row nowrap small" for="pf-live"><ToggleSwitch v-model="liveUpdates" input-id="pf-live" :disabled="!meta.meta.live_updates" /> {{ t('profile.liveUpdates') }}</label>
+          <span v-if="!meta.meta.live_updates" id="pf-live-off" class="small muted">{{ t('profile.liveServerOff') }}</span>
         </div>
         <!-- obligation keyword highlighting -->
         <div v-field class="field" role="group" aria-labelledby="pf-obligation-l">

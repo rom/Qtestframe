@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Test cycles: the list (with progress), a timeline of their dates and the
 // recurring schedules that create cycles from a template.
+import { useLiveRefresh } from '@/composables/live'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -80,9 +81,11 @@ const allCycles = ref<TestCycle[]>([])
 const loading = ref(false)
 const q = ref((route.query.q as string) ?? '')
 const queryError = ref<unknown>(null)
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
   if (!pid.value) return
-  loading.value = true
+  if (!quiet) loading.value = true
   queryError.value = null
   try {
     cycles.value = asItems(await api.get<{ items: TestCycle[] }>(`/projects/${pid.value}/cycles`, { q: q.value || undefined }))
@@ -94,6 +97,16 @@ async function load() {
     loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ((pid.value ? { types: ['cycle'], projectId: pid.value } : null)),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  }, { announce: () => t('live.listUpdated') },
+)
 const subtitle = computed(() => {
   const active = allCycles.value.filter((c) => c.status === 'active').length
   return t('cycles.subtitle', { n: allCycles.value.length, active }, allCycles.value.length)

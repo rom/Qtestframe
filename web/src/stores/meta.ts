@@ -19,6 +19,7 @@ export const DEFAULT_META: Meta = {
   email_enabled: false,
   runner_enabled: false,
   web_tests_enabled: false,
+  live_updates: false,
 }
 
 export const useMetaStore = defineStore('meta', {
@@ -37,6 +38,7 @@ export const useMetaStore = defineStore('meta', {
         merged.email_enabled = m?.email_enabled === true
         merged.runner_enabled = m?.runner_enabled === true
         merged.web_tests_enabled = m?.web_tests_enabled === true
+        merged.live_updates = m?.live_updates === true
         if (typeof m?.email_digest_hour === 'number') merged.email_digest_hour = m.email_digest_hour
         this.meta = merged
         this.loaded = true

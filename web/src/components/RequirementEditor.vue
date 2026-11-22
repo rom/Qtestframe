@@ -69,6 +69,7 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import ConflictDialog from './ConflictDialog.vue'
+import LiveItemBar from './LiveItemBar.vue'
 import SuggestInput from './SuggestInput.vue'
 import { autocompleteEnabled, fetchSuggestions, rememberValues, savedEntries } from '@/lib/suggest'
 import CatalogOrigin from './CatalogOrigin.vue'
@@ -493,6 +494,19 @@ async function reloadTheirs() {
   conflictOpen.value = false
   await load()
 }
+// ---------- live updates: someone saved while this is open ----------
+/** unsaved changes (the user counts as editing for presence) */
+const dirty = computed(() => !!props.itemId && !!loaded.value && JSON.stringify(bodyOf(form.value)) !== JSON.stringify(loaded.value))
+/** compare the unsaved changes with the version saved meanwhile */
+async function compareNewer(by: string) {
+  if (!props.itemId) return
+  try {
+    const current = await api.get<Requirement>(`/requirements/${props.itemId}`)
+    showConflict({ current, changedBy: by, changedAt: current.updated_at ?? '' })
+  } catch (e) {
+    error.value = errorMessage(e)
+  }
+}
 /** save only what was changed here, on top of the newer version */
 async function mergeMine() {
   const st = stale.value
@@ -635,6 +649,7 @@ function criterionLabel(id: string | null) {
 </script>
 
 <template>
+  <LiveItemBar type="requirement" :item-id="itemId" :version="item?.version ?? null" :dirty="dirty" @reload="reloadTheirs" @compare="compareNewer" />
   <div v-if="loading" class="empty" aria-busy="true"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <template v-else>
   <Tabs v-if="item" :id="tabsId" v-model:value="tab" class="editor-tabs" scrollable>

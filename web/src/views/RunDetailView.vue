@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLiveRefresh } from '@/composables/live'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
 import type { CustomValues } from '@/lib/customFields'
@@ -96,8 +97,10 @@ async function loadRun() {
     error.value = errorMessage(e)
   }
 }
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function loadExecutions() {
-  loading.value = true
+  if (!quiet) loading.value = true
   queryError.value = null
   try {
     executions.value = asItems(await api.get<{ items: Execution[] }>(`/runs/${props.runId}/executions`, { q: composed.value }))
@@ -108,6 +111,16 @@ async function loadExecutions() {
     loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ({ types: ['run', 'execution'], parentId: props.runId }),
+  () => {
+    quiet = true
+    const done = Promise.all([loadRun(), loadExecutions()])
+    quiet = false
+    return done
+  }, { announce: () => t('live.resultsUpdated') },
+)
 async function reload() {
   await Promise.all([loadRun(), loadExecutions()])
 }

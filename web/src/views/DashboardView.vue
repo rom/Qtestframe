@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLiveRefresh } from '@/composables/live'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Chart from 'primevue/chart'
@@ -96,8 +97,10 @@ async function loadInsights() {
   }
 }
 
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
-  loading.value = true
+  if (!quiet) loading.value = true
   void loadInsights()
   try {
     data.value = await api.get<Dashboard>(`/projects/${proj.pid}/dashboard`)
@@ -108,6 +111,16 @@ async function load() {
   }
   if (section.value === 'trends') loadTrends(true)
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ({ projectId: proj.pid }),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  }, { delay: 3000 },
+)
 onMounted(load)
 
 const reqTotal = computed(() => data.value?.requirements.total ?? 0)

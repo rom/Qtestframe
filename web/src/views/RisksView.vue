@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
+import { useLiveRefresh } from '@/composables/live'
 import DiscussionPanel from '@/components/DiscussionPanel.vue'
 import ItemRef from '../components/ItemRef.vue'
 import { customCellText, customColumns } from '@/lib/customColumns'
@@ -69,8 +70,10 @@ const error = ref('')
 const requirements = ref<Requirement[]>([])
 const reqById = computed(() => new Map(requirements.value.map((r) => [r.id, r])))
 
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
-  loading.value = true
+  if (!quiet) loading.value = true
   error.value = ''
   try {
     risks.value = asItems(await api.get<{ items: Risk[] }>(`/projects/${proj.pid}/risks`))
@@ -80,6 +83,16 @@ async function load() {
     loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ({ types: ['risk'], projectId: proj.pid }),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  }, { announce: () => t('live.listUpdated') },
+)
 async function loadRequirements() {
   try {
     requirements.value = asItems(await api.get<{ items: Requirement[] }>(`/projects/${proj.pid}/requirements`))

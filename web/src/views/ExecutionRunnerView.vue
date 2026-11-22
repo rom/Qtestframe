@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useLiveRefresh } from '@/composables/live'
+import LiveItemBar from '@/components/LiveItemBar.vue'
 import ItemRef from '../components/ItemRef.vue'
 import { useUndoStore } from '@/stores/undo'
 import { patchEntry, recordUndo } from '@/lib/undoActions'
@@ -175,6 +177,8 @@ async function loadList() {
   }
 }
 
+// live updates: parallel testers' results appear in the list of the run
+useLiveRefresh(() => ({ types: ['run', 'execution'], parentId: props.runId }), loadList, { announce: () => t('live.resultsUpdated') })
 async function load() {
   loading.value = true
   error.value = ''
@@ -531,6 +535,7 @@ const statusOptions = computed(() => [
     </div>
   </div>
 
+  <LiveItemBar type="execution" :item-id="executionId" :dirty="dirty" :can-compare="false" @reload="load" />
   <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
   <div v-else-if="loading || !ex" class="empty"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <template v-else>
