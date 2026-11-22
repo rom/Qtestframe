@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useUndoStore } from '@/stores/undo'
+import { useProjectStore } from '@/stores/project'
 import { entry, recordUndo } from '@/lib/undoActions'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
@@ -32,6 +33,10 @@ usePeopleStore().ensure()
 const confirm = useConfirm()
 const { t, te } = useI18n()
 const fieldLabel = (f: string) => {
+  if (f.startsWith('custom_fields.')) {
+    const key = f.slice(14)
+    return useProjectStore().customFields.find((x) => x.key === key)?.label ?? key
+  }
   const k = `fields.${f}`
   return te(k) ? t(k) : f.replace(/_/g, ' ')
 }

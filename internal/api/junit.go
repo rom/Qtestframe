@@ -103,7 +103,7 @@ func (s *Server) createMissingTests(r *http.Request, p *Principal, run *model.Te
 		if !ok {
 			t := &model.TestCase{ProjectID: run.ProjectID, Title: title, ExecutionType: model.ExecAutomated,
 				Status: "draft", Description: "Created by a JUnit import into run " + run.Name + ".", CreatedBy: p.User.Email}
-			if err := s.Store.CreateTest(ctx, p.TenantID(), t); err != nil {
+			if err := s.Store.CreateTest(store.LenientCustomFields(ctx), p.TenantID(), t); err != nil {
 				return nil, nil, err
 			}
 			s.audit(ctx, p, "test.create", "test", t.ID, t.Key)

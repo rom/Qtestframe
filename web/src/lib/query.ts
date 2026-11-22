@@ -139,6 +139,8 @@ export const QUERY_HELP: QueryHelpEntry[] = [
   { example: 'has:criteria   (or field:*)', meaning: 'Field not empty', id: 'has' },
   { example: 'verification:verified  element:"Power unit"', meaning: 'Verification state; allocated to a system element (or below it)', id: 'verification' },
   { example: '(a OR b) AND c', meaning: 'Grouping', id: 'group' },
+  { example: 'cf.supplier:"Acme"  cf.mass>2', meaning: 'Custom field (by its key)', id: 'custom' },
+  { example: 'sort:-cf.mass  sort:title', meaning: 'Sort the result (- for descending)', id: 'sort' },
 ]
 
 export const QUERY_OPERATORS: QueryHelpEntry[] = [

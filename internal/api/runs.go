@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -28,11 +29,14 @@ func (s *Server) handleListRuns(w http.ResponseWriter, r *http.Request, p *Princ
 		return
 	}
 	out := []model.TestRun{}
+	var recs []query.MapRecord
 	for i := range runs {
-		if q.Match(runRecord(&runs[i])) {
+		if rec := runRecord(&runs[i]); q.Match(rec) {
 			out = append(out, runs[i])
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	writeJSON(w, http.StatusOK, listOf(out))
 }
 
@@ -56,6 +60,8 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		VariantID string `json:"variant_id"`
 		// BuildID: the build (id) its results belong to.
 		BuildID *string `json:"build_id"`
+		// CustomFields: values of the project's run custom fields.
+		CustomFields model.CustomValues `json:"custom_fields"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -90,7 +96,7 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		}
 	}
 	run := &model.TestRun{ProjectID: pr.ID, Name: req.Name, Description: req.Description,
-		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email, ReleaseID: req.ReleaseID, BuildID: req.BuildID}
+		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email, ReleaseID: req.ReleaseID, BuildID: req.BuildID, CustomFields: req.CustomFields}
 	if req.VariantID != "" {
 		v, err := s.Store.FindVariant(r.Context(), p.TenantID(), pr.ID, req.VariantID)
 		if err != nil {
@@ -146,8 +152,14 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		// BuildID: its build ("" none).
 		VariantID *string `json:"variant_id"`
 		BuildID   *string `json:"build_id"`
+		// CustomFields are merged into the run's values (null removes one).
+		CustomFields json.RawMessage `json:"custom_fields"`
 	}
 	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if err := mergeCustom(req.CustomFields, &run.CustomFields); err != nil {
 		s.fail(w, r, err)
 		return
 	}

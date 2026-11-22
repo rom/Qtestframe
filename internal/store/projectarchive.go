@@ -149,6 +149,10 @@ var projectArchiveTables = []archiveTable{
 	{"code_changes", ofProject},
 	{"code_change_items", `change_id IN (SELECT id FROM code_changes WHERE project_id = ?)`},
 	{"consistency_dismissals", ofProject},
+	{"custom_fields", ofProject},
+	{"custom_field_archive", ofProject},
+	{"item_templates", ofProject},
+	{"project_template_defaults", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},
@@ -181,6 +185,8 @@ var ProjectArchiveExcluded = map[string]string{
 	"mfa_recovery_codes":   "secret (second factors)",
 	"mfa_policies":         "organisation",
 	"code_settings":        "secret (webhook secret of the code integration)",
+	"field_set_fields":     "organisation field sets (the project has its own copies)",
+	"org_item_templates":   "organisation templates",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.

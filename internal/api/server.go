@@ -366,6 +366,8 @@ func (s *Server) routes() {
 	s.routesSystemSettings(h)
 	// change and defect correlations (correlations.go)
 	s.routesCorrelations(h)
+	// custom fields, field sets and item templates (customfields.go)
+	s.routesCustomFields(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

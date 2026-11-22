@@ -13497,6 +13497,618 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/custom-fields:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: List custom fields
+      operationId: getProjectsByPidCustomFields
+      description: |-
+        the project's field definitions `[CustomField]` in order (`?entity_type=requirement|test|defect|risk|run` for one item kind)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Projects
+      summary: Create custom field
+      operationId: postProjectsByPidCustomFields
+      description: |-
+        `{entity_type, label, key?, type: text|long_text|number|date|single_select|multi_select|checkbox|user|url, unit?, options?, required?, default?, help?, position?, show_in_list?}` → CustomField; the key is derived from the label when omitted and never changes; at most 100 per item kind
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/custom-fields/apply-set:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Apply a field set
+      operationId: postProjectsByPidCustomFieldsApplySet
+      description: |-
+        `{project_type?}` (default: the project's type) copies the organisation's field set of that type into the project; fields whose key the project already has are skipped → `{project_type, added, skipped}`
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/custom-fields/archive:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: List archived custom field values
+      operationId: getProjectsByPidCustomFieldsArchive
+      description: |-
+        the values of deleted field definitions `[CustomFieldArchive]`, newest first (`?values=true` includes the values per item)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/custom-fields/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Projects
+      summary: Get custom field
+      operationId: getCustomFieldsById
+      description: '**Permission:** `project.read`.'
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Projects
+      summary: Update custom field
+      operationId: patchCustomFieldsById
+      description: |-
+        partial update of label, type (only while no item has a value), unit, options, required, default, help, position and show_in_list; key and item kind never change
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Delete custom field
+      operationId: deleteCustomFieldsById
+      description: |-
+        without `?confirm=true` → 409 `{code: confirmation_required, usage}`; with it the definition is deleted and the items' values move to the field archive → CustomFieldArchive (without the values)
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/custom-fields/{id}/usage:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Projects
+      summary: Custom field usage
+      operationId: getCustomFieldsByIdUsage
+      description: |-
+        `{id, key, items}`: the number of items with a value
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/field-sets:
+    get:
+      tags:
+      - Projects
+      summary: List field sets
+      operationId: getFieldSets
+      description: |-
+        the organisation's field sets: `[CustomField]` with `project_type` (`?project_type=` for one type)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/field-sets/{type}/fields:
+    parameters:
+    - name: type
+      in: path
+      required: true
+      description: project type (general, software, hardware, system, business)
+      schema:
+        type: string
+    post:
+      tags:
+      - Projects
+      summary: Add a field to a field set
+      operationId: postFieldSetsByTypeFields
+      description: |-
+        same body as a project field; new projects of the type get a copy
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/field-sets/fields/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Projects
+      summary: Update a field set field
+      operationId: patchFieldSetsFieldsById
+      description: |-
+        partial update (projects keep the copies they have)
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Delete a field set field
+      operationId: deleteFieldSetsFieldsById
+      description: |-
+        projects keep the copies they have
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/templates:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: List item templates
+      operationId: getProjectsByPidTemplates
+      description: |-
+        `{items: [ItemTemplate], defaults: {requirement?, test?}}`: the project's templates, the organisation's for the project type and the built-in ones (`source`: project, organisation, builtin), `default` marks the project default; `?kind=requirement|test`, `?lang=en|sv` for the built-in texts
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Projects
+      summary: Create item template
+      operationId: postProjectsByPidTemplates
+      description: |-
+        `{kind: requirement|test, name, description?, content: {title?, description?, priority?, status?, tags?, obligation?, type?, source?, rationale?, criteria?, preconditions?, expected_result?, execution_type?, estimated_minutes?, steps?, custom_fields?}}` → ItemTemplate
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/templates/default:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    put:
+      tags:
+      - Projects
+      summary: Set the default template
+      operationId: putProjectsByPidTemplatesDefault
+      description: |-
+        `{kind, template_id}` (`""` clears) → `{defaults}`; the template must be the project's, the organisation's for its type or a built-in one of its type
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/templates/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Projects
+      summary: Update item template
+      operationId: patchTemplatesById
+      description: |-
+        partial update; `content` is replaced as a whole
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Delete item template
+      operationId: deleteTemplatesById
+      description: '**Permission:** `project.update`.'
+      x-permission: project.update
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/template-sets:
+    get:
+      tags:
+      - Projects
+      summary: List organisation templates
+      operationId: getTemplateSets
+      description: |-
+        the organisation's templates per project type and the built-in ones `[ItemTemplate]` (`?project_type=`, `?kind=`, `?lang=`)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/template-sets/{type}/templates:
+    parameters:
+    - name: type
+      in: path
+      required: true
+      description: project type (general, software, hardware, system, business)
+      schema:
+        type: string
+    post:
+      tags:
+      - Projects
+      summary: Create organisation template
+      operationId: postTemplateSetsByTypeTemplates
+      description: |-
+        same body as a project template; offered to every project of the type
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/template-sets/templates/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Projects
+      summary: Update organisation template
+      operationId: patchTemplateSetsTemplatesById
+      description: |-
+        partial update; `content` is replaced as a whole
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Delete organisation template
+      operationId: deleteTemplateSetsTemplatesById
+      description: '**Permission:** `settings.manage`.'
+      x-permission: settings.manage
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/coverage:
     parameters:
     - $ref: '#/components/parameters/id'

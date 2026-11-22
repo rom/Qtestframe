@@ -23,6 +23,7 @@ var (
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
 			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention",
 			"verified": "verification", "elements": "element", "variants": "variant"},
+		Prefixes: customFieldPrefix,
 	}
 	testSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
@@ -33,10 +34,12 @@ var (
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
 			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness",
 			"elements": "element", "variants": "variant"},
+		Prefixes: customFieldPrefix,
 	}
 	runSchema = &query.Schema{
-		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration"},
-		Aliases: map[string]string{"env": "environment", "config": "configuration", "configurations": "configuration"},
+		Fields:   []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration"},
+		Aliases:  map[string]string{"env": "environment", "config": "configuration", "configurations": "configuration"},
+		Prefixes: customFieldPrefix,
 	}
 	executionSchema = &query.Schema{
 		Fields:  []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id", "defect", "mention", "configuration"},
@@ -335,7 +338,7 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		crit = append(crit, c.Description, c.Method, c.Threshold)
 	}
 	linkedKeys := pc.r2tKeys[r.ID]
-	return query.MapRecord{
+	return withCustom(r.CustomFields, query.MapRecord{
 		"id": {r.ID}, "key": {r.Key}, "title": {r.Title}, "description": {r.Description}, "obligation": {r.Obligation},
 		"type": {r.Type}, "priority": {r.Priority}, "status": {r.Status}, "source": {r.Source},
 		"rationale": {r.Rationale}, "owner": {r.Owner}, "tag": r.Tags, "version": {strconv.Itoa(r.Version)},
@@ -356,7 +359,7 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"element":           pc.elementTerms(r.ElementIDs),
 		"variant":           pc.variantNames(r.ID),
 		"applicability":     {pc.applicabilityKind(r.ID)},
-	}
+	})
 }
 
 // mentions returns the @handles in the given texts, each also as "@handle"
@@ -379,7 +382,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		}
 	}
 	linkedKeys := pc.t2rKeys[t.ID]
-	return query.MapRecord{
+	return withCustom(t.CustomFields, query.MapRecord{
 		"id": {t.ID}, "key": {t.Key}, "title": {t.Title}, "description": {t.Description},
 		"preconditions": {t.Preconditions}, "execution_type": {t.ExecutionType},
 		"script_language": {t.ScriptLanguage}, "script": {t.Script}, "expected": {t.ExpectedResult},
@@ -397,7 +400,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"element":       pc.elementTerms(t.ElementIDs),
 		"variant":       pc.variantNames(t.ID),
 		"applicability": {pc.applicabilityKind(t.ID)},
-	}
+	})
 }
 
 func runRecord(r *model.TestRun) query.MapRecord {
@@ -405,8 +408,8 @@ func runRecord(r *model.TestRun) query.MapRecord {
 	for _, c := range r.Configurations {
 		cfgs = append(cfgs, c.Name)
 	}
-	return query.MapRecord{"id": {r.ID}, "name": {r.Name}, "description": {r.Description}, "status": {r.Status},
-		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}, "configuration": cfgs}
+	return withCustom(r.CustomFields, query.MapRecord{"id": {r.ID}, "name": {r.Name}, "description": {r.Description}, "status": {r.Status},
+		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}, "configuration": cfgs})
 }
 
 func executionRecord(e *model.Execution) query.MapRecord {

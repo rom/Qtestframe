@@ -280,7 +280,57 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedVariantsAndCode(ctx, st, tenantID, p, reqs, testIDs, run); err != nil {
 		return nil, err
 	}
+	if err := seedCustomFields(ctx, st, tenantID, p.ID, reqs); err != nil {
+		return nil, err
+	}
 	return p, nil
+}
+
+// seedCustomFields gives the demo project custom fields (with values on
+// some requirements) and a project template for new requirements.
+func seedCustomFields(ctx context.Context, st *store.Store, tenantID, projectID string, reqs []*model.Requirement) error {
+	for _, f := range []model.CustomField{
+		{EntityType: model.KindRequirement, Label: "Component", Type: model.FieldSingleSelect, Options: []string{"Web portal", "Mobile app", "Core banking"}, ShowInList: true,
+			Help: "The part of the product the requirement is about."},
+		{EntityType: model.KindRequirement, Label: "Effort", Type: model.FieldNumber, Unit: "d", Help: "Estimated implementation effort in person-days."},
+		{EntityType: model.KindRequirement, Label: "Contract clause", Type: model.FieldText},
+		{EntityType: model.KindTest, Label: "Test environment", Type: model.FieldSingleSelect, Options: []string{"staging", "pre-production"}, Default: "staging"},
+		{EntityType: model.KindDefect, Label: "Found in build", Type: model.FieldText},
+	} {
+		f.ProjectID = projectID
+		if err := st.CreateCustomField(ctx, tenantID, &f); err != nil {
+			return err
+		}
+	}
+	values := []model.CustomValues{
+		{"component": "Web portal", "effort": 3.0, "contract_clause": "4.2.1"},
+		{"component": "Web portal", "effort": 5.0},
+		{"component": "Core banking", "effort": 8.0, "contract_clause": "6.1"},
+		{"component": "Core banking", "effort": 2.0},
+	}
+	for i, v := range values {
+		if i >= len(reqs) {
+			break
+		}
+		r, err := st.GetRequirement(ctx, tenantID, reqs[i].ID)
+		if err != nil {
+			return err
+		}
+		r.CustomFields = v
+		if err := st.UpdateRequirement(ctx, tenantID, r, false); err != nil {
+			return err
+		}
+	}
+	tpl := &model.ItemTemplate{ProjectID: projectID, Kind: model.KindRequirement, Name: "Banking security requirement", CreatedBy: "seed",
+		Description: "A MUST requirement with an abuse case and a review criterion.",
+		Content: model.TemplateContent{Title: "The portal shall protect <asset>", Obligation: model.ObligationMust, Type: "security", Priority: "high",
+			Description: "The portal MUST <control> so that <threat> is prevented.\n\n## Abuse case\n<How an attacker would try>",
+			Tags:        []string{"security"},
+			Criteria: []model.EvaluationCriterion{{Description: "Abuse case is rejected", Method: "test"},
+				{Description: "Control reviewed by the security officer", Method: "review"}},
+			CustomFields: model.CustomValues{"component": "Web portal"}}}
+	// not the default: "New requirement" offers it in the template picker
+	return st.CreateTemplate(ctx, tenantID, tpl)
 }
 
 // seedCoverageTests gives every demo requirement without a test one that

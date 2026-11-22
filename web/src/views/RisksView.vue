@@ -2,6 +2,9 @@
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
 import ItemRef from '../components/ItemRef.vue'
+import { customCellText, customColumns } from '@/lib/customColumns'
+import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
+import { defaultValues, type CustomValues } from '@/lib/customFields'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -42,6 +45,10 @@ const route = useRoute()
 const router = useRouter()
 const notify = useNotify()
 const { t } = useI18n()
+
+/** custom fields shown in lists (show_in_list) as columns */
+const listedCols = computed(() => customColumns(useProjectStore().customFieldsFor('risk').filter((f) => f.show_in_list)))
+const cellOf = (row: { custom_fields?: Record<string, unknown> }, field: string) => customCellText(useProjectStore().customFieldsFor('risk'), row, field, [t('common.yes'), t('common.no')])
 const canWrite = computed(() => auth.can(P.requirementWrite))
 const canApprove = computed(() => auth.can(P.waiverApprove))
 const canSetThreshold = computed(() => auth.can(P.projectUpdate))
@@ -236,6 +243,7 @@ interface Form {
   residual_justification: string
   review_date: string
   review_owner: string
+  custom_fields: CustomValues
 }
 const blank = (): Form => ({
   title: '',
@@ -253,6 +261,7 @@ const blank = (): Form => ({
   residual_justification: '',
   review_date: '',
   review_owner: '',
+  custom_fields: defaultValues(proj.customFieldsFor('risk')),
 })
 const residualScale = (label: (n: number) => string) => [{ label: t('residual.notAssessed'), value: 0 }, ...RISK_SCALE.map((n) => ({ label: `${n} – ${label(n)}`, value: n }))]
 const formResidualLevel = computed(() => (form.value.residual_likelihood && form.value.residual_impact ? riskLevel(form.value.residual_likelihood, form.value.residual_impact) : ''))
@@ -328,6 +337,7 @@ function openEdit(r: Risk) {
     residual_justification: r.residual_justification ?? '',
     review_date: r.review_date ?? '',
     review_owner: r.review_owner ?? '',
+    custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues,
   }
   formError.value = ''
   dialog.value = true
@@ -532,6 +542,9 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <template #body="{ data }"><Tag :value="statusLabel(data.status)" :severity="riskStatusSeverity(data.status)" /></template>
         </Column>
         <Column field="owner" :header="t('common.owner')" sortable><template #body="{ data }"><span class="small">{{ data.owner }}</span></template></Column>
+        <Column v-for="c in listedCols" :key="c.field" :header="c.header" sortable :sort-field="c.sortField" :style="c.width ? { width: c.width } : {}">
+          <template #body="{ data }"><span class="small">{{ cellOf(data, c.field) }}</span></template>
+        </Column>
         <Column :header="t('risksView.requirements')" style="min-width: 160px">
           <template #body="{ data }">
             <span class="row small" style="gap: 4px">
@@ -637,6 +650,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <Button v-if="canWrite" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: q.key })" v-tooltip="t('common.unlink')" @click="unlink(q.id)" />
         </div>
       </div>
+      <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('risk')" :disabled="!canWrite" :project-id="proj.pid" />
       <div class="row" style="justify-content: flex-end">
         <Button v-if="editing && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text style="margin-right: auto" @click="remove(editing)" />
         <Button :label="canWrite ? t('common.cancel') : t('common.close')" text severity="secondary" @click="dialog = false" />

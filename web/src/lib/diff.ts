@@ -230,9 +230,22 @@ export function changedKeys(before: Snapshot | null | undefined, after: Snapshot
   const out: string[] = []
   for (const k of keys) {
     if (IGNORED_FIELDS.has(k)) continue
+    if (k === 'custom_fields') {
+      // one change per custom field, as the server reports them
+      const b = (before?.[k] ?? {}) as Record<string, unknown>
+      const a = (after?.[k] ?? {}) as Record<string, unknown>
+      for (const ck of new Set([...Object.keys(b), ...Object.keys(a)])) if (!same(b[ck], a[ck])) out.push(`custom_fields.${ck}`)
+      continue
+    }
     if (!same(before?.[k], after?.[k])) out.push(k)
   }
   return sortFields(out)
+}
+
+/** The value of a field in a snapshot; custom_fields.<key> reads a custom field. */
+function fieldValue(snap: Snapshot | null | undefined, field: string): unknown {
+  if (field.startsWith('custom_fields.')) return ((snap?.custom_fields ?? {}) as Record<string, unknown>)[field.slice(14)]
+  return snap?.[field]
 }
 
 export interface FieldChange {
@@ -261,8 +274,8 @@ export function diffSnapshots(
   const list = fields ? sortFields(fields.filter((f) => !IGNORED_FIELDS.has(f))) : changedKeys(before, after)
   const out: FieldChange[] = []
   for (const field of list) {
-    const b = valueToText(field, before?.[field], opts)
-    const a = valueToText(field, after?.[field], opts)
+    const b = valueToText(field, fieldValue(before, field), opts)
+    const a = valueToText(field, fieldValue(after, field), opts)
     if (a === b) continue
     const wordy = TEXT_FIELDS.has(field) || /\s/.test(b) || /\s/.test(a)
     out.push({ field, before: b, after: a, segments: wordy ? diffWords(b, a) : null })

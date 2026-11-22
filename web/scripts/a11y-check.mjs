@@ -360,6 +360,13 @@ async function discover(request) {
     linkedReq && { name: 'impact-confirm-dialog', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer form input[required]', keys: ['End', 'X', 'Enter'], wait: '.impact-confirm-dialog' },
     firstBaseline && { name: 'baseline-impact-dialog', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, open: '.filterbar button:has(.pi-share-alt)', wait: '.baseline-impact-dialog .row' },
     regressedDefect && { name: 'defect-regressions', path: `${p}/defects?item=${regressedDefect.id}`, wait: '#defect-regressions-h' },
+    // custom fields and item templates: the settings tabs, their dialogs, the picker of a new item, the field sets
+    { name: 'custom-fields-settings', path: `${p}/settings?tab=customFields`, wait: '.cf-settings .cf-table' },
+    { name: 'custom-field-dialog', path: `${p}/settings?tab=customFields`, open: '.cf-settings > .row button:has(.pi-plus)', wait: '.p-dialog .cf-form' },
+    { name: 'templates-settings', path: `${p}/settings?tab=templates`, wait: '.tpl-settings .tpl-list' },
+    { name: 'template-dialog', path: `${p}/settings?tab=templates`, open: '.tpl-settings > .row button:has(.pi-plus)', wait: '.p-dialog .tpl-form' },
+    { name: 'new-requirement-template', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-plus)', wait: '.template-picker' },
+    { name: 'field-sets', path: '/admin/field-sets', wait: '.cf-settings' },
     webTest && { name: 'web-test-editor', path: `${p}/tests?item=${webTest.id}`, wait: '.p-drawer' },
     webRun && webEx && { name: 'execute-web', path: `${p}/runs/${webRun.id}/exec/${webEx.id}`, wait: '.web-evidence' },
     jobsRun && { name: 'run-jobs', path: `${p}/runs/${jobsRun.id}`, open: '.run-jobs button[aria-controls="run-jobs-list"]', wait: '#run-jobs-list' },

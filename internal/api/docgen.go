@@ -187,6 +187,9 @@ func (s *Server) documentData(r *http.Request, p *Principal, pr *model.Project, 
 	}
 	d := &report.DocData{Project: *pr, Folders: pc.folders, Categories: pc.categories, LastResults: pc.last, Prerequisites: pc.prereqKeys,
 		AllTests: map[string]model.TestRef{}, Now: time.Now().UTC()}
+	if d.CustomFields, err = s.Store.CustomFieldsByKind(ctx, tid, pr.ID); err != nil {
+		return nil, err
+	}
 	if !plan {
 		// waivers and deviations are marked in the requirements and listed in an appendix
 		if d.Waivers, err = s.Store.ListWaivers(ctx, tid, pr.ID, store.WaiverFilter{}); err != nil {

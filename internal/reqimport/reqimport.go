@@ -12,6 +12,8 @@ import (
 	"path"
 	"sort"
 	"strings"
+
+	"github.com/rom/qtestframe/internal/model"
 )
 
 // Formats.
@@ -69,6 +71,9 @@ type Candidate struct {
 	Folder         string      `json:"folder"` // "A/B", relative to the import root
 	Criteria       []Criterion `json:"criteria"`
 	ExternalID     string      `json:"external_id"`
+	// CustomFields are the texts of custom field columns by field key
+	// (mapped to cf.<key>); the importer converts and checks them.
+	CustomFields map[string]string `json:"custom_fields,omitempty"`
 	// Row is the 1-based row, paragraph or object number in the file and
 	// Location its human readable form ("row 5", "paragraph 12" …).
 	Row      int      `json:"row"`
@@ -108,6 +113,10 @@ type Options struct {
 	// Preset names a mapping preset (Presets: "doors", "polarion"); its
 	// mapping applies under Mapping, and its heading rows become folders.
 	Preset string
+	// CustomFields are the project's requirement custom fields: a column
+	// named like a field's label, its export header "Label (unit)", its key
+	// or cf.<key> maps to cf.<key> (unless Mapping says otherwise).
+	CustomFields []model.CustomField
 }
 
 // Result is a parsed file.
@@ -141,7 +150,7 @@ func Parse(data []byte, filename string, opt Options) (res *Result, err error) {
 			res, err = nil, invalidf("the file could not be read (%v)", p)
 		}
 	}()
-	if err := checkMapping(opt.Mapping); err != nil {
+	if err := checkMapping(opt.Mapping, opt.CustomFields); err != nil {
 		return nil, err
 	}
 	preset, err := presetOf(opt.Preset)
@@ -151,6 +160,7 @@ func Parse(data []byte, filename string, opt Options) (res *Result, err error) {
 	if preset != nil {
 		opt.Mapping = preset.merge(opt.Mapping)
 	}
+	opt.Mapping = withCustomMapping(opt.Mapping, opt.CustomFields)
 	if len(bytes.TrimSpace(data)) == 0 {
 		return nil, invalidf("the file is empty")
 	}

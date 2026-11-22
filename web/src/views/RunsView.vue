@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import HelpTip from '@/guide/HelpTip.vue'
+import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
+import { defaultValues, type CustomValues } from '@/lib/customFields'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -97,7 +99,7 @@ onMounted(() => {
 
 // ---------- create ----------
 const dialog = ref(false)
-const form = ref({ name: '', description: '', environment: '', build: '', query: '', release_id: '', configuration_ids: [] as string[] })
+const form = ref({ name: '', description: '', environment: '', build: '', query: '', release_id: '', configuration_ids: [] as string[], custom_fields: {} as CustomValues })
 const pickedTests = ref<TestCase[]>([])
 const folderKeys = ref<Record<string, { checked: boolean; partialChecked: boolean }>>({})
 const folderExpanded = ref<Record<string, boolean>>({})
@@ -111,7 +113,7 @@ const previewError = ref<unknown>(null)
 
 function openCreate() {
   const d = new Date()
-  form.value = { name: t('runs.defaultName', { date: d.toISOString().slice(0, 10) }), description: '', environment: '', build: '', query: '', release_id: '', configuration_ids: [] }
+  form.value = { name: t('runs.defaultName', { date: d.toISOString().slice(0, 10) }), description: '', environment: '', build: '', query: '', release_id: '', configuration_ids: [], custom_fields: defaultValues(proj.customFieldsFor('run')) }
   runVariant.value = null
   pickedTests.value = []
   folderKeys.value = {}
@@ -394,6 +396,7 @@ const runLayout = useColumnLayout(
         </div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="form.description" rows="2" auto-resize /></div>
       </div>
+      <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('run')" :project-id="proj.pid" />
       <div class="section-title" style="margin: 0">{{ t('runs.include') }} <HelpTip id="run.include" :label="t('runs.include')" /></div>
       <Tabs value="tests" scrollable>
         <TabList>

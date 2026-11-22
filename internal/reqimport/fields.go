@@ -189,11 +189,15 @@ func fuzzyField(header string) (string, bool) {
 	return "", false
 }
 
-// checkMapping validates the fields of an explicit mapping.
-func checkMapping(m map[string]string) error {
+// checkMapping validates the fields of an explicit mapping (cf.<key> for
+// a custom field of the project).
+func checkMapping(m map[string]string, custom []model.CustomField) error {
 	for h, f := range m {
 		f = strings.TrimSpace(strings.ToLower(f))
 		if f == "" || f == "ignore" {
+			continue
+		}
+		if k, ok := strings.CutPrefix(f, CustomPrefix); ok && hasCustom(custom, k) {
 			continue
 		}
 		if !model.Valid(Fields, f) {
@@ -201,6 +205,49 @@ func checkMapping(m map[string]string) error {
 		}
 	}
 	return nil
+}
+
+// CustomPrefix starts the field of a custom field column: cf.<key>.
+const CustomPrefix = "cf."
+
+func hasCustom(defs []model.CustomField, key string) bool {
+	for _, d := range defs {
+		if d.Key == key {
+			return true
+		}
+	}
+	return false
+}
+
+// withCustomMapping adds the headers of the custom fields (label, export
+// header, key, cf.<key>) to an explicit mapping; the caller's own entries
+// win.
+func withCustomMapping(m map[string]string, defs []model.CustomField) map[string]string {
+	if len(defs) == 0 {
+		return m
+	}
+	out := map[string]string{}
+	add := func(h, f string) {
+		for k := range out {
+			if strings.EqualFold(k, h) {
+				return
+			}
+		}
+		out[h] = f
+	}
+	for h, f := range m {
+		add(h, f)
+	}
+	for _, d := range defs {
+		f := CustomPrefix + d.Key
+		add(d.Label, f)
+		if d.Unit != "" {
+			add(d.Label+" ("+d.Unit+")", f)
+		}
+		add(d.Key, f)
+		add(f, f)
+	}
+	return out
 }
 
 // mappedField returns the field of header: the explicit mapping wins over

@@ -484,6 +484,9 @@ type Requirement struct {
 	ElementIDs       []string `json:"element_ids,omitempty"`
 	// Applicability: the variants it applies to (nil: all variants).
 	Applicability *Applicability `json:"applicability,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // ItemRef is a derived reference from a requirement or test to a related
@@ -587,6 +590,9 @@ type TestCase struct {
 	ElementIDs []string `json:"element_ids,omitempty"`
 	// Applicability: the variants it applies to (nil: all variants).
 	Applicability *Applicability `json:"applicability,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -672,6 +678,9 @@ type TestRun struct {
 	ReleaseName string         `json:"release_name,omitempty"`
 	VariantName string         `json:"variant_name,omitempty"`
 	BuildLabel  string         `json:"build_label,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // StepResult is the outcome of one manual step.
@@ -815,6 +824,9 @@ type Defect struct {
 	FoundIn string `json:"found_in"`
 	// Links to requirements, tests, executions and runs.
 	Links []DefectLink `json:"links,omitempty"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // DefectLink connects a defect to an item.
@@ -943,6 +955,9 @@ type Risk struct {
 	AboveThreshold  bool   `json:"above_threshold"`
 	AcceptanceValid bool   `json:"acceptance_valid"`
 	ReviewDue       bool   `json:"review_due"`
+	// CustomFields are the values of the project's custom fields (field key
+	// → value); a PATCH merges them, null removes a value.
+	CustomFields CustomValues `json:"custom_fields,omitempty"`
 }
 
 // ResidualOf returns the residual likelihood, impact and source in effect

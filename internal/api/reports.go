@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/customfield"
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
@@ -77,6 +78,17 @@ func (s *Server) handleReportFields(w http.ResponseWriter, r *http.Request, p *P
 	if fs == nil {
 		s.fail(w, r, badRequest("entity must be one of %s", strings.Join(report.Entities, ", ")))
 		return
+	}
+	if entity != report.EntityExecution {
+		// the project's custom fields of the entity: cf.<key>
+		defs, err := s.Store.ListCustomFields(r.Context(), p.TenantID(), r.PathValue("pid"), entity)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		for _, d := range defs {
+			fs = append(fs, report.Field{ID: report.CustomFieldPrefix + d.Key, Label: customfield.Column(&d)})
+		}
 	}
 	writeJSON(w, http.StatusOK, fs)
 }
@@ -369,6 +381,16 @@ func (s *Server) render(r *http.Request, p *Principal, pr *model.Project, job re
 		recs, err := s.customRecords(r, p, pr, job.custom, job.lang)
 		if err != nil {
 			return nil, err
+		}
+		if job.custom.Entity != report.EntityExecution {
+			defs, err := s.Store.ListCustomFields(r.Context(), p.TenantID(), pr.ID, job.custom.Entity)
+			if err != nil {
+				return nil, err
+			}
+			job.custom.CustomLabels = map[string]string{}
+			for _, d := range defs {
+				job.custom.CustomLabels[report.CustomFieldPrefix+d.Key] = customfield.Column(&d)
+			}
 		}
 		ds = report.BuildCustom(*job.custom, recs, pr.Key+" – "+pr.Name, time.Now().UTC(), job.lang)
 	} else {

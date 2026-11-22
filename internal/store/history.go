@@ -78,11 +78,35 @@ func ChangedFields(from, to json.RawMessage) []string {
 		if derivedFields[k] {
 			continue
 		}
+		if k == "custom_fields" {
+			// one entry per custom field: custom_fields.<key>
+			out = append(out, changedCustom(a[k], b[k])...)
+			continue
+		}
 		if !reflect.DeepEqual(normalize(k, a[k]), normalize(k, b[k])) {
 			out = append(out, k)
 		}
 	}
 	sort.Strings(out)
+	return out
+}
+
+// changedCustom lists the custom fields whose values differ between two
+// snapshots' custom_fields objects, as custom_fields.<key>.
+func changedCustom(from, to any) []string {
+	a, _ := from.(map[string]any)
+	b, _ := to.(map[string]any)
+	var out []string
+	for k, v := range a {
+		if !reflect.DeepEqual(v, b[k]) {
+			out = append(out, "custom_fields."+k)
+		}
+	}
+	for k := range b {
+		if _, ok := a[k]; !ok {
+			out = append(out, "custom_fields."+k)
+		}
+	}
 	return out
 }
 

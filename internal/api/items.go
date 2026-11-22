@@ -71,6 +71,7 @@ func (s *Server) filterRequirements(r *http.Request, p *Principal, pr *model.Pro
 	}
 	inFolder := pc.folderFilter(folder, recursive)
 	out := make([]model.Requirement, 0, len(reqs))
+	var recs []query.MapRecord
 	for i := range reqs {
 		rq := &reqs[i]
 		pc.decorateRequirement(rq)
@@ -81,10 +82,12 @@ func (s *Server) filterRequirements(r *http.Request, p *Principal, pr *model.Pro
 			rq.Coverage = vc.Requirement(rq.ID, variant)
 			rq.LinkedTests = len(vc.Tests(rq.ID, variant))
 		}
-		if inFolder(rq.FolderID) && q.Match(pc.requirementRecord(rq)) {
+		if rec := pc.requirementRecord(rq); inFolder(rq.FolderID) && q.Match(rec) {
 			out = append(out, *rq)
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	return out, nil
 }
 
@@ -205,7 +208,8 @@ func (s *Server) createLinkedTest(ctx context.Context, p *Principal, rq *model.R
 	if len(t.Steps) == 0 {
 		t.Steps = []model.TestStep{{Action: "Verify that the requirement is fulfilled: " + rq.Title, Expected: rq.Description}}
 	}
-	if err := s.Store.CreateTest(ctx, p.TenantID(), t); err != nil {
+	// the linked test gets the defaults of the test custom fields
+	if err := s.Store.CreateTest(store.LenientCustomFields(ctx), p.TenantID(), t); err != nil {
 		return nil, err
 	}
 	link := &model.TraceLink{RequirementID: rq.ID, TestCaseID: t.ID}
@@ -529,6 +533,7 @@ func (s *Server) filterTests(r *http.Request, p *Principal, pr *model.Project, p
 	}
 	inFolder := pc.folderFilter(folder, recursive)
 	out := make([]model.TestCase, 0, len(tests))
+	var recs []query.MapRecord
 	for i := range tests {
 		t := &tests[i]
 		pc.decorateTest(t)
@@ -538,10 +543,12 @@ func (s *Server) filterTests(r *http.Request, p *Principal, pr *model.Project, p
 			}
 			t.LastResult = vc.TestResult(t.ID, variant)
 		}
-		if inFolder(t.FolderID) && q.Match(pc.testRecord(t)) {
+		if rec := pc.testRecord(t); inFolder(t.FolderID) && q.Match(rec) {
 			out = append(out, *t)
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	return out, nil
 }
 

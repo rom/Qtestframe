@@ -18,8 +18,9 @@ import (
 // (testers report defects), deleting and the tracker settings project.update.
 
 var defectSchema = &query.Schema{
-	Fields:  []string{"key", "title", "description", "status", "severity", "priority", "assignee", "external", "created_by", "id", "open", "linked", "found_in"},
-	Aliases: map[string]string{"external_key": "external", "phase": "found_in"},
+	Fields:   []string{"key", "title", "description", "status", "severity", "priority", "assignee", "external", "created_by", "id", "open", "linked", "found_in"},
+	Aliases:  map[string]string{"external_key": "external", "phase": "found_in"},
+	Prefixes: customFieldPrefix,
 }
 
 func (s *Server) routesDefects(h routeFunc) {
@@ -54,9 +55,9 @@ func defectRecord(d *model.Defect) query.MapRecord {
 	for _, l := range d.Links {
 		linked = append(linked, l.Key)
 	}
-	return query.MapRecord{"key": {d.Key}, "title": {d.Title}, "description": {d.Description}, "status": {d.Status}, "severity": {d.Severity},
+	return withCustom(d.CustomFields, query.MapRecord{"key": {d.Key}, "title": {d.Title}, "description": {d.Description}, "status": {d.Status}, "severity": {d.Severity},
 		"priority": {d.Priority}, "assignee": {d.Assignee}, "external": {d.ExternalKey}, "created_by": {d.CreatedBy}, "id": {d.ID},
-		"open": {open}, "linked": linked, "found_in": {d.FoundIn}}
+		"open": {open}, "linked": linked, "found_in": {d.FoundIn}})
 }
 
 func (s *Server) handleListDefects(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -75,11 +76,14 @@ func (s *Server) handleListDefects(w http.ResponseWriter, r *http.Request, p *Pr
 		return
 	}
 	out := []model.Defect{}
+	var recs []query.MapRecord
 	for i := range list {
-		if q.Match(defectRecord(&list[i])) {
+		if rec := defectRecord(&list[i]); q.Match(rec) {
 			out = append(out, list[i])
+			recs = append(recs, rec)
 		}
 	}
+	sortByQuery(q, out, recs)
 	writeJSON(w, http.StatusOK, listOf(out))
 }
 
@@ -94,7 +98,7 @@ func (s *Server) handleCreateDefect(w http.ResponseWriter, r *http.Request, p *P
 		return
 	}
 	d := &model.Defect{ProjectID: pr.ID, Title: req.Title, Description: req.Description, Status: req.Status, Severity: req.Severity,
-		Priority: req.Priority, Assignee: req.Assignee, ExternalKey: req.ExternalKey, ExternalURL: req.ExternalURL, CreatedBy: p.User.Email, Links: req.Links, FoundIn: req.FoundIn}
+		Priority: req.Priority, Assignee: req.Assignee, ExternalKey: req.ExternalKey, ExternalURL: req.ExternalURL, CreatedBy: p.User.Email, Links: req.Links, FoundIn: req.FoundIn, CustomFields: req.CustomFields}
 	if err := s.Store.CreateDefect(r.Context(), p.TenantID(), d); err != nil {
 		s.fail(w, r, err)
 		return
@@ -131,8 +135,19 @@ func (s *Server) handleUpdateDefect(w http.ResponseWriter, r *http.Request, p *P
 		s.fail(w, r, err)
 		return
 	}
+	var all map[string]json.RawMessage
+	if err := json.Unmarshal(body, &all); err != nil {
+		s.fail(w, r, badRequest("invalid JSON: %v", err))
+		return
+	}
+	if err := mergeCustom(all["custom_fields"], &d.CustomFields); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	delete(all, "custom_fields")
+	rest, _ := json.Marshal(all)
 	var raw map[string]*string
-	if err := json.Unmarshal(body, &raw); err != nil {
+	if err := json.Unmarshal(rest, &raw); err != nil {
 		s.fail(w, r, badRequest("invalid JSON: %v", err))
 		return
 	}
@@ -506,7 +521,7 @@ func (s *Server) handleImportDefect(w http.ResponseWriter, r *http.Request, p *P
 	}
 	d := &model.Defect{ProjectID: pr.ID, Title: is.Title, Status: is.Mapped, Severity: req.Severity, CreatedBy: p.User.Email, Links: req.Links}
 	applyIssue(d, t, is)
-	if err := s.Store.CreateDefect(r.Context(), p.TenantID(), d); err != nil {
+	if err := s.Store.CreateDefect(store.LenientCustomFields(r.Context()), p.TenantID(), d); err != nil {
 		s.fail(w, r, err)
 		return
 	}

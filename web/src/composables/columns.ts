@@ -30,6 +30,11 @@ export function useColumnLayout(storageKey: () => string, available: ComputedRef
   }
   const order = ref<string[]>(load())
   watch(storageKey, () => (order.value = load()))
+  // columns that arrive later (the project's custom fields) take their saved or default place
+  watch(
+    () => ids.value.join(),
+    () => (order.value = load()),
+  )
   watch(order, (v) => writePref(storageKey(), JSON.stringify(v)), { deep: true })
   const visible = computed(() => order.value.map((id) => available.value.find((c) => c.field === id)).filter((c): c is ColumnDef => !!c))
   // the DataTable (bind with :ref="layout.bind"); our order is the source of

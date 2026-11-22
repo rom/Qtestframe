@@ -13,6 +13,9 @@ import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import ConflictDialog from './ConflictDialog.vue'
 import CatalogOrigin from './CatalogOrigin.vue'
+import CustomFieldsEditor from './CustomFieldsEditor.vue'
+import TemplatePicker from './TemplatePicker.vue'
+import { applyTemplate, defaultValues, type CustomValues, type TemplateContent } from '@/lib/customFields'
 import { fieldConflicts, staleOf, TEST_FIELDS, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 import ReviewBar from './ReviewBar.vue'
@@ -136,7 +139,14 @@ function blank() {
     steps: [] as StepRow[],
     parameters: [] as string[],
     data_rows: [] as DataRow[],
+    custom_fields: defaultValues(useProjectStore().customFieldsFor('test')) as CustomValues,
   }
+}
+/** "New test" with a template: fill in what it defines */
+function onTemplate(c: TemplateContent) {
+  const next = applyTemplate(form.value, c, useProjectStore().customFieldsFor('test'))
+  next.steps = next.steps.map((s) => ({ ...s, uid: s.uid || ++uid }))
+  form.value = next
 }
 
 const form = ref(blank())
@@ -199,6 +209,7 @@ async function load() {
           call_test_key: s.call_test_key,
           call_test_title: s.call_test_title,
         })),
+      custom_fields: { ...(t.custom_fields ?? {}) } as CustomValues,
       parameters: [...(t.parameters ?? [])],
       data_rows: (t.data_rows ?? []).map((r) => ({ name: r.name ?? '', values: { ...(r.values ?? {}) } })),
     }
@@ -540,6 +551,7 @@ const scriptPlaceholder = computed(() => {
     </div>
     <CatalogOrigin v-if="item?.catalog_ref" kind="test" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+    <TemplatePicker v-if="isNew && canWrite" kind="test" :project-id="projectId" @apply="onTemplate" />
     <ReviewBar v-if="item" kind="test" :item="item" @changed="onReviewed" />
     <TraceRuleViolations v-if="item" kind="test" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${linkCount}`" />
 
@@ -590,6 +602,7 @@ const scriptPlaceholder = computed(() => {
         <TagSuggestions v-model="form.tags" :project-id="projectId" :title="form.title" :description="tagText" :disabled="!canWrite" />
       </div>
     </div>
+    <CustomFieldsEditor v-model="form.custom_fields" :fields="proj.customFieldsFor('test')" :disabled="!canWrite" :project-id="projectId" />
 
     <template v-if="form.execution_type === 'automated'">
       <div class="section-title"><i class="pi pi-code" /> {{ t('tests.script') }} <HelpTip id="test.script" :label="t('tests.script')" /></div>

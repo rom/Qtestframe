@@ -27,6 +27,8 @@ import ConfigurationsSettings from '@/components/ConfigurationsSettings.vue'
 import WebTestSettings from '@/components/WebTestSettings.vue'
 import CorrelationSettings from '@/components/CorrelationSettings.vue'
 import SharingPanel from '@/components/SharingPanel.vue'
+import CustomFieldsSettings from '@/components/CustomFieldsSettings.vue'
+import TemplatesSettings from '@/components/TemplatesSettings.vue'
 import ProjectLoadDialog from '@/components/ProjectLoadDialog.vue'
 import ProjectDuplicateDialog from '@/components/ProjectDuplicateDialog.vue'
 import { totalRows, type ProjectLoadResult } from '@/lib/projectArchive'
@@ -55,7 +57,7 @@ const router = useRouter()
 const notify = useNotify()
 const { t } = useI18n()
 const route = useRoute()
-const tab = ref<string>(['requirement', 'test', 'configurations', 'webtests', 'correlations', 'sharing', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
+const tab = ref<string>(['requirement', 'test', 'customFields', 'templates', 'configurations', 'webtests', 'correlations', 'sharing', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
 
 function canEdit(scope: ItemKind) {
   return auth.can(scope === 'requirement' ? P.requirementWrite : P.testWrite) || auth.can(P.projectUpdate)
@@ -306,6 +308,8 @@ function deleteProject() {
     <TabList>
       <Tab value="requirement"><i class="pi pi-list-check" /> {{ t('settings.requirementCategories') }}</Tab>
       <Tab value="test"><i class="pi pi-check-square" /> {{ t('settings.testCategories') }}</Tab>
+      <Tab value="customFields"><i class="pi pi-th-large" /> {{ t('customFields.tab') }}</Tab>
+      <Tab value="templates"><i class="pi pi-clone" /> {{ t('templates.tab') }}</Tab>
       <Tab value="configurations"><i class="pi pi-sliders-h" /> {{ t('configurations.tab') }}</Tab>
       <Tab value="webtests"><i class="pi pi-globe" /> {{ t('webTests.tab') }}</Tab>
       <Tab value="correlations"><i class="pi pi-share-alt" /> {{ t('correlations.settingsTab') }}</Tab>
@@ -367,6 +371,12 @@ function deleteProject() {
             </div>
           </section>
         </div>
+      </TabPanel>
+      <TabPanel value="customFields">
+        <CustomFieldsSettings v-if="proj.pid && tab === 'customFields'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
+      </TabPanel>
+      <TabPanel value="templates">
+        <TemplatesSettings v-if="proj.pid && tab === 'templates'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
       </TabPanel>
       <TabPanel value="configurations">
         <ConfigurationsSettings v-if="proj.pid && tab === 'configurations'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />

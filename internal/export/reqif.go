@@ -55,6 +55,18 @@ type ReqIFDocument struct {
 	// Requirements in display order.
 	Requirements []ReqIFRequirement
 	Relations    []ReqIFRelation
+	// CustomFields are the project's requirement custom fields, exported
+	// as further attributes of the Requirement type.
+	CustomFields []ReqIFCustomField
+}
+
+// ReqIFCustomField is a custom field exported as an attribute: Type is the
+// custom field type (number → REAL, checkbox → BOOLEAN, date → DATE,
+// single_select and multi_select → ENUMERATION with the options, others →
+// STRING); the attribute's LONG-NAME is Name.
+type ReqIFCustomField struct {
+	Key, Name, Type string
+	Options         []string
 }
 
 // ReqIFFolder is a requirement folder.
@@ -75,6 +87,9 @@ type ReqIFRequirement struct {
 	CreatedAt, UpdatedAt                time.Time
 	Attachments                         []ReqIFFile // written by WriteReqIFZ only
 	attachmentPaths                     []string
+	// Custom are the custom field values by key in their text form (one
+	// string per selected option).
+	Custom map[string][]string
 }
 
 // ReqIFCriterion is an evaluation criterion.
@@ -308,6 +323,7 @@ func buildReqIF(doc ReqIFDocument) string {
 		w.close("</SPECIFIED-VALUES>")
 		w.close("</DATATYPE-DEFINITION-ENUMERATION>")
 	}
+	reqifCustomDatatypes(w, doc.CustomFields, now)
 	w.close("</DATATYPES>")
 
 	// spec types
@@ -317,6 +333,7 @@ func buildReqIF(doc ReqIFDocument) string {
 	for _, a := range reqifReqAttrs {
 		reqifAttrDef(w, a, now)
 	}
+	reqifCustomAttrDefs(w, doc.CustomFields, now)
 	w.close("</SPEC-ATTRIBUTES>")
 	w.close("</SPEC-OBJECT-TYPE>")
 	w.open(`<SPEC-OBJECT-TYPE` + reqifAttrs("qtf-type-heading", "Heading", now) + `>`)
@@ -352,7 +369,7 @@ func buildReqIF(doc ReqIFDocument) string {
 		w.close("</SPEC-OBJECT>")
 	}
 	for _, rq := range doc.Requirements {
-		reqifObject(w, rq)
+		reqifObject(w, rq, doc.CustomFields)
 	}
 	w.close("</SPEC-OBJECTS>")
 
@@ -492,7 +509,7 @@ func criteriaXHTML(cs []ReqIFCriterion) string {
 	return b.String()
 }
 
-func reqifObject(w *reqifWriter, rq ReqIFRequirement) {
+func reqifObject(w *reqifWriter, rq ReqIFRequirement, custom []ReqIFCustomField) {
 	w.open(`<SPEC-OBJECT` + reqifAttrs("qtf-req-"+rq.ID, rq.Key, rq.UpdatedAt) + `>`)
 	w.open("<VALUES>")
 	reqifString(w, "qtf-ad-key", rq.Key)
@@ -545,6 +562,7 @@ func reqifObject(w *reqifWriter, rq ReqIFRequirement) {
 		b.WriteString("</xhtml:ul></xhtml:div>")
 		reqifXHTML(w, "qtf-ad-attachments", b.String())
 	}
+	reqifCustomValues(w, custom, rq.Custom)
 	w.close("</VALUES>")
 	w.line("<TYPE><SPEC-OBJECT-TYPE-REF>qtf-type-requirement</SPEC-OBJECT-TYPE-REF></TYPE>")
 	w.close("</SPEC-OBJECT>")
@@ -557,4 +575,104 @@ func ReqIFFileName(projectKey string, at time.Time, zipped bool) string {
 		ext = "reqifz"
 	}
 	return fmt.Sprintf("%s-%s.%s", projectKey, at.UTC().Format("20060102-150405"), ext)
+}
+
+// ---------------------------------------------------------------- custom fields
+
+func reqifCustomKind(t string) string {
+	switch t {
+	case "number":
+		return "REAL"
+	case "checkbox":
+		return "BOOLEAN"
+	case "date":
+		return "DATE"
+	case "single_select", "multi_select":
+		return "ENUMERATION"
+	}
+	return "STRING"
+}
+
+func reqifCustomID(f ReqIFCustomField) string {
+	return "qtf-ad-cf-" + strings.ReplaceAll(f.Key, "_", "-")
+}
+
+func reqifOptionID(f ReqIFCustomField, i int) string {
+	return "qtf-ev-cf-" + strings.ReplaceAll(f.Key, "_", "-") + "-" + strconv.Itoa(i)
+}
+
+// reqifCustomDatatypes writes the REAL and BOOLEAN datatypes (when used)
+// and one enumeration per select field.
+func reqifCustomDatatypes(w *reqifWriter, fields []ReqIFCustomField, now time.Time) {
+	real, boolean := false, false
+	for _, f := range fields {
+		switch reqifCustomKind(f.Type) {
+		case "REAL":
+			real = true
+		case "BOOLEAN":
+			boolean = true
+		case "ENUMERATION":
+			w.open(`<DATATYPE-DEFINITION-ENUMERATION` + reqifAttrs("qtf-dt-cf-"+strings.ReplaceAll(f.Key, "_", "-"), f.Name, now) + `>`)
+			w.open("<SPECIFIED-VALUES>")
+			for i, o := range f.Options {
+				w.open(`<ENUM-VALUE` + reqifAttrs(reqifOptionID(f, i), o, now) + `>`)
+				w.line(`<PROPERTIES><EMBEDDED-VALUE KEY="` + strconv.Itoa(i) + `" OTHER-CONTENT="` + esc(o) + `"/></PROPERTIES>`)
+				w.close("</ENUM-VALUE>")
+			}
+			w.close("</SPECIFIED-VALUES>")
+			w.close("</DATATYPE-DEFINITION-ENUMERATION>")
+		}
+	}
+	if real {
+		w.line(`<DATATYPE-DEFINITION-REAL` + reqifAttrs("qtf-dt-real", "Real", now) + ` ACCURACY="10" MAX="1.0E308" MIN="-1.0E308"/>`)
+	}
+	if boolean {
+		w.line(`<DATATYPE-DEFINITION-BOOLEAN` + reqifAttrs("qtf-dt-boolean", "Boolean", now) + `/>`)
+	}
+}
+
+func reqifCustomAttrDefs(w *reqifWriter, fields []ReqIFCustomField, now time.Time) {
+	for _, f := range fields {
+		kind := reqifCustomKind(f.Type)
+		dt := "qtf-dt-" + strings.ToLower(kind)
+		multi := ""
+		if kind == "ENUMERATION" {
+			dt = "qtf-dt-cf-" + strings.ReplaceAll(f.Key, "_", "-")
+			multi = ` MULTI-VALUED="` + strconv.FormatBool(f.Type == "multi_select") + `"`
+		}
+		w.open(`<ATTRIBUTE-DEFINITION-` + kind + reqifAttrs(reqifCustomID(f), f.Name, now) + multi + `>`)
+		w.line("<TYPE><DATATYPE-DEFINITION-" + kind + "-REF>" + dt + "</DATATYPE-DEFINITION-" + kind + "-REF></TYPE>")
+		w.close("</ATTRIBUTE-DEFINITION-" + kind + ">")
+	}
+}
+
+func reqifCustomValues(w *reqifWriter, fields []ReqIFCustomField, values map[string][]string) {
+	for _, f := range fields {
+		vals := values[f.Key]
+		if len(vals) == 0 || (len(vals) == 1 && vals[0] == "") {
+			continue
+		}
+		kind := reqifCustomKind(f.Type)
+		def := `<DEFINITION><ATTRIBUTE-DEFINITION-` + kind + `-REF>` + reqifCustomID(f) + `</ATTRIBUTE-DEFINITION-` + kind + `-REF></DEFINITION>`
+		switch kind {
+		case "ENUMERATION":
+			var refs strings.Builder
+			for _, v := range vals {
+				for i, o := range f.Options {
+					if o == v {
+						refs.WriteString("<ENUM-VALUE-REF>" + reqifOptionID(f, i) + "</ENUM-VALUE-REF>")
+					}
+				}
+			}
+			if refs.Len() > 0 {
+				w.line(`<ATTRIBUTE-VALUE-ENUMERATION>` + def + `<VALUES>` + refs.String() + `</VALUES></ATTRIBUTE-VALUE-ENUMERATION>`)
+			}
+		case "DATE":
+			if t, err := time.Parse(time.DateOnly, vals[0]); err == nil {
+				w.line(`<ATTRIBUTE-VALUE-DATE THE-VALUE="` + reqifTime(t) + `">` + def + `</ATTRIBUTE-VALUE-DATE>`)
+			}
+		default:
+			w.line(`<ATTRIBUTE-VALUE-` + kind + ` THE-VALUE="` + esc(strings.Join(vals, ", ")) + `">` + def + `</ATTRIBUTE-VALUE-` + kind + `>`)
+		}
+	}
 }
