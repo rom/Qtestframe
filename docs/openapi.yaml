@@ -72,6 +72,8 @@ tags:
   description: Issues created from requirements in GitLab, GitHub or Jira
 - name: Risks
   description: Risks
+- name: Waivers
+  description: Waivers and deviations with their electronically signed approvals
 - name: Reviews
   description: Review requests
 - name: Notifications and webhooks
@@ -2252,6 +2254,66 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/risk-settings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Risks
+      summary: Risk acceptance threshold
+      operationId: getProjectsByPidRiskSettings
+      description: |-
+        `{"threshold", "effective", "default", "levels"}`: the highest residual risk level that is acceptable without an "accept risk" sign-off (`""` = the default, medium).
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Risks
+      summary: Change the risk acceptance threshold
+      operationId: putProjectsByPidRiskSettings
+      description: |-
+        `{"threshold": "low"|"medium"|"high"|"critical"|""}`. A release can set its own with the level of its `residual_risk` exit criterion.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -3849,6 +3911,97 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/waivers:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Waivers
+      summary: List waivers and deviations
+      operationId: getProjectsByPidWaivers
+      description: |-
+        The waivers and deviations of the project, newest first, with their requirements, approvals (`valid`: the signed content is unchanged), `active` (approved and not expired today), `release_name` and `risk_key`. Filters: `status` (draft, requested, approved, rejected, expired, revoked), `type` (waiver, deviation), `release_id` (a release id, or `project` for project-wide ones), `requirement_id`, `active=true`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: "draft | requested | approved | rejected | expired | revoked"
+        schema:
+          type: string
+      - name: type
+        in: query
+        required: false
+        description: "waiver | deviation"
+        schema:
+          type: string
+      - name: release_id
+        in: query
+        required: false
+        description: "a release id, or 'project' for project-wide waivers"
+        schema:
+          type: string
+      - name: requirement_id
+        in: query
+        required: false
+        description: "only waivers covering this requirement"
+        schema:
+          type: string
+      - name: active
+        in: query
+        required: false
+        description: "true: only approved waivers that have not expired"
+        schema:
+          type: string
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Waivers
+      summary: Create a waiver or deviation
+      operationId: postProjectsByPidWaivers
+      description: |-
+        `{"type": "waiver"|"deviation", "title", "release_id" (null: the whole project), "requirement_ids", "justification", "compensating", "conditions", "risk_id", "new_risk": {"title", "likelihood", "impact"} (creates a risk for the requirements and links it), "approvers": [e-mail], "expires_on": "YYYY-MM-DD", "submit": false}` → 201 the waiver (key PROJ-WVR-n), a draft or with `submit` requested (needs requirements, a justification and, for a deviation, compensating measures; the approvers are notified).
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/trash/{id}/restore:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -4585,6 +4738,117 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/soa:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Catalogue
+      summary: Statement of Applicability
+      operationId: getProjectsByPidSoa
+      description: |-
+        The statement for `source` (default `iso-27001`): `{source, url, summary, rows}`; each row is a control `{id, title, group, group_title, applicable (true, false or null = not decided), justification, owner, updated_by, updated_at, status (implemented, partial, planned, not_implemented; "" when excluded), requirements [{id, key, title, state, catalog_ref, waiver}], evidence [{id, key, title, result}], catalogue, missing, suggested}`. The status is derived from the adopted requirements (catalogue imports and own requirements citing the control in their source) and the latest results of their tests; waived requirements count as partial. 400 for an unknown source. The document is the standard report `soa`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: source
+        in: query
+        required: false
+        description: "reference source id (default iso-27001)"
+        schema:
+          type: string
+      - name: lang
+        in: query
+        required: false
+        description: "language of the titles (en, sv)"
+        schema:
+          type: string
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/soa/decisions:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    put:
+      tags:
+      - Catalogue
+      summary: Save Statement of Applicability decisions
+      operationId: putProjectsBySoaDecisions
+      description: |-
+        `{"source", "decisions": [{"control_id", "applicable": true|false|null, "justification", "owner"}]}`: only the controls given change (an excluded control needs a justification; a control of another list → 400) → `{changed, statement}`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/soa/sources:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Catalogue
+      summary: Sources for a Statement of Applicability
+      operationId: getProjectsByPidSoaSources
+      description: |-
+        The reference sources of the registry an SoA can be made for: `{id, kind, short, name, title, shipped, controls}`. Sources with a shipped control list (ISO/IEC 27001:2022 Annex A, 93 controls) come first; the others derive their controls from the clause groups of the catalogue refs.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: lang
+        in: query
+        required: false
+        description: "language of the names (en, sv)"
+        schema:
+          type: string
+      responses:
+        2XX:
+          description: Success
           content:
             application/json:
               schema:
@@ -7582,6 +7846,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/releases/{id}/waivers:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Waivers
+      summary: Waivers of a release
+      operationId: getReleasesByIdWaivers
+      description: |-
+        The waivers for the release and the project-wide waivers that cover requirements of its scope.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/defects:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -8633,6 +8925,66 @@ paths:
       responses:
         '204':
           description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/risks/{id}/accept:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Risks
+      summary: Accept a residual risk (electronic signature)
+      operationId: postRisksByIdAccept
+      description: |-
+        `{"comment", "password"}`: signs the acceptance of the risk's residual assessment (as for waiver decisions) and sets its status to accepted. `acceptance_valid` turns false when the assessment changes.
+
+        **Permission:** `waiver.approve`.
+      x-permission: waiver.approve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Risks
+      summary: Withdraw a risk acceptance
+      operationId: deleteRisksByIdAccept
+      description: |-
+        Removes the sign-off; an accepted risk goes back to mitigating.
+
+        **Permission:** `waiver.approve`.
+      x-permission: waiver.approve
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -10240,6 +10592,34 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/waivers:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Waivers
+      summary: Waivers of a requirement
+      operationId: getRequirementsByIdWaivers
+      description: |-
+        Every waiver that covers the requirement.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
           content:
             application/json:
               schema:
@@ -12157,6 +12537,217 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Waivers
+      summary: Get a waiver
+      operationId: getWaiversById
+      description: |-
+        The waiver with its requirements and approvals.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Waivers
+      summary: Change a waiver
+      operationId: patchWaiversById
+      description: |-
+        The fields of the create request; only a draft or requested waiver can be changed (409 otherwise). Approvals of earlier content stop counting.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Waivers
+      summary: Delete a waiver
+      operationId: deleteWaiversById
+      description: |-
+        204; an approved waiver is revoked first (409).
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}/decision:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Waivers
+      summary: Approve or reject a waiver (electronic signature)
+      operationId: postWaiversByIdDecision
+      description: |-
+        `{"decision": "approve"|"reject", "comment", "password"}`: an electronic signature over the hash of the waiver's content, given in the browser (not with an API token) with the signer's password or a single sign-on less than 15 minutes old (403 `reauth_failed` / `reauth_required`). A rejection needs a comment. The requester cannot sign their own waiver; with designated approvers only they can. The waiver becomes approved when every designated approver (or, without any, one approver) approved it and rejected at the first rejection; the requester and approvers are notified.
+
+        **Permission:** `waiver.approve`.
+      x-permission: waiver.approve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}/revoke:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Waivers
+      summary: Revoke an approved waiver
+      operationId: postWaiversByIdRevoke
+      description: |-
+        `{"comment"}` (required): approved → revoked; its requirements are no longer accepted.
+
+        **Permission:** `waiver.approve`.
+      x-permission: waiver.approve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}/submit:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Waivers
+      summary: Request approval of a waiver
+      operationId: postWaiversByIdSubmit
+      description: |-
+        draft → requested (400 without requirements or justification); the designated approvers are notified (`waiver.requested`).
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/waivers/{id}/withdraw:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Waivers
+      summary: Withdraw a waiver request
+      operationId: postWaiversByIdWithdraw
+      description: |-
+        requested or rejected → draft, to change it.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        2XX:
+          description: Success
           content:
             application/json:
               schema:

@@ -43,6 +43,9 @@ var BackupTables = []string{
 	"invitations", "report_subscriptions",
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",
+	// waivers and deviations with their approvals, the Statement of
+	// Applicability decisions
+	"waivers", "waiver_requirements", "waiver_signoffs", "soa_decisions",
 	"system_settings",
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available

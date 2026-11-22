@@ -102,7 +102,7 @@ func TestRiskReport(t *testing.T) {
 	d := sampleData()
 	d.Risks = nil
 	ds, err = Build(Risks, d, nil)
-	if err != nil || len(ds.Sections) != 9 || metric(t, section(t, ds, "summary"), "Share of open risks verified") != "–" {
+	if err != nil || len(ds.Sections) != 11 || metric(t, section(t, ds, "summary"), "Share of open risks verified") != "–" {
 		t.Fatal(err, names(ds))
 	}
 }

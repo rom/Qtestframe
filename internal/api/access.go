@@ -47,7 +47,7 @@ import (
 // projectScoped lists the permissions a project role governs.
 var projectScoped = map[string]bool{
 	string(rbac.ProjectRead): true, string(rbac.ProjectUpdate): true, string(rbac.ProjectDelete): true,
-	string(rbac.RequirementRd): true, string(rbac.RequirementWr): true, string(rbac.RequirementRev): true,
+	string(rbac.RequirementRd): true, string(rbac.RequirementWr): true, string(rbac.RequirementRev): true, string(rbac.WaiverApprove): true,
 	string(rbac.TestRead): true, string(rbac.TestWrite): true, string(rbac.TestReview): true,
 	string(rbac.RunRead): true, string(rbac.RunWrite): true, string(rbac.RunExecute): true,
 	string(rbac.ScriptExecute): true, string(rbac.Export): true,
@@ -327,6 +327,7 @@ var resourceProjects = map[string]string{
 	"releases":              `SELECT project_id FROM releases WHERE id = ? AND tenant_id = ?`,
 	"defects":               `SELECT project_id FROM defects WHERE id = ? AND tenant_id = ?`,
 	"risks":                 `SELECT project_id FROM risks WHERE id = ? AND tenant_id = ?`,
+	"waivers":               `SELECT project_id FROM waivers WHERE id = ? AND tenant_id = ?`,
 	"webhooks":              `SELECT project_id FROM webhooks WHERE id = ? AND tenant_id = ?`,
 	"trace-rules":           `SELECT project_id FROM trace_rules WHERE id = ? AND tenant_id = ?`,
 	"configurations":        `SELECT project_id FROM configurations WHERE id = ? AND tenant_id = ?`,

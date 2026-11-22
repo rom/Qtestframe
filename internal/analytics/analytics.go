@@ -70,6 +70,9 @@ const (
 	CodeRFCCasing           = "rfc_casing"
 	CodeRFCNotNormative     = "rfc_not_normative"
 	CodeNonRFCKeyword       = "non_rfc_keyword"
+	// CodeWaived: requirements without tests or with failing or unrun
+	// tests that an approved waiver accepts (counted here, not as gaps).
+	CodeWaived = "waived"
 )
 
 // Thresholds (variables so tests and callers can tune them).
@@ -104,6 +107,8 @@ type Requirement struct {
 	Conflicts []string
 	// Suspect: number of its links to tests that are suspect.
 	Suspect int
+	// Waived: an approved, unexpired project-wide waiver accepts it.
+	Waived bool
 }
 
 // Test is the analytics view of a test.
@@ -175,6 +180,9 @@ type Summary struct {
 	CoveragePercent int `json:"coverage_percent"`
 	// AverageScore of the language analysis (0–100).
 	AverageScore int `json:"average_score"`
+	// Waived: requirements whose missing or failing verification a waiver
+	// accepts (shown separately, not as coverage gaps).
+	Waived int `json:"waived"`
 }
 
 // Report is the result of Analyze.
@@ -394,7 +402,7 @@ func Analyze(in Input) Report {
 	}
 
 	// ---- per requirement checks
-	var missing, kwMissing, mismatch, multi, noTestsM, noTests, failing, notRun, noCrit, empty, low, noOwner, conflicts, notReady []Item
+	var missing, kwMissing, mismatch, multi, noTestsM, noTests, failing, notRun, noCrit, empty, low, noOwner, conflicts, notReady, waived []Item
 	var mixedText, englishKw, casing, notNormative, nonRFC, suspect []Item
 	byRule := map[string][]Item{}
 	covered, active, drafts := 0, 0, 0
@@ -487,6 +495,16 @@ func Analyze(in Input) Report {
 			continue
 		}
 		active++
+		if r.Waived && (r.Tests == 0 || r.Coverage == "failed" || r.Coverage == "partial" || r.Coverage == "not_run") {
+			waived = append(waived, reqItem(r, ""))
+			if r.Tests > 0 {
+				covered++
+			}
+			if r.Criteria == 0 && r.Obligation != reqlang.LevelDescribe {
+				noCrit = append(noCrit, reqItem(r, ""))
+			}
+			continue
+		}
 		if r.Tests > 0 {
 			covered++
 		} else if family(r.Obligation) == "mandatory" || family(r.Obligation) == "prohibition" {
@@ -508,6 +526,7 @@ func Analyze(in Input) Report {
 		}
 	}
 	rep.Summary.Covered = covered
+	rep.Summary.Waived = len(waived)
 	if active > 0 {
 		rep.Summary.CoveragePercent = int(math.Round(float64(covered) * 100 / float64(active)))
 	}
@@ -597,6 +616,7 @@ func Analyze(in Input) Report {
 	b.add(CodeSuspectLinks, Warning, CatCoverage, map[string]string{"count": itoa(len(suspect))}, suspect)
 	b.add(CodeTestsNotRun, Info, CatCoverage, map[string]string{"count": itoa(len(notRun))}, notRun)
 	b.add(CodeNoCriteria, Warning, CatCoverage, map[string]string{"count": itoa(len(noCrit))}, noCrit)
+	b.add(CodeWaived, Info, CatCoverage, map[string]string{"count": itoa(len(waived))}, waived)
 	if in.Tests != nil {
 		b.add(CodeTestsNotReady, Info, CatTests, map[string]string{"count": itoa(len(notReady))}, notReady)
 		var orphans []Item

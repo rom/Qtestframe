@@ -191,6 +191,11 @@ func eventLabel(lang, event string) string {
 		"review.requested": {"Review requested", "Granskning begärd"},
 		"review.completed": {"Review completed", "Granskning klar"},
 		"review.reminder":  {"Review reminder", "Påminnelse om granskning"},
+		"waiver.requested": {"Waiver to approve", "Undantag att godkänna"},
+		"waiver.approved":  {"Waiver approved", "Undantag godkänt"},
+		"waiver.rejected":  {"Waiver rejected", "Undantag avslaget"},
+		"waiver.revoked":   {"Waiver revoked", "Undantag återkallat"},
+		"waiver.expired":   {"Waiver expired", "Undantag har gått ut"},
 		"project.shared":   {"A project was shared with you", "Ett projekt har delats med dig"},
 	}
 	l, ok := labels[event]
@@ -292,6 +297,10 @@ func (s *Server) sendDigest(ctx context.Context, u *model.User) {
 // RunJobs runs the e-mail jobs that are due: the daily digest and the
 // scheduled reports.
 func (s *Server) RunJobs(ctx context.Context) {
+	// expired waivers no longer accept their requirements (also without e-mail)
+	if _, err := s.RunWaiverExpiry(ctx); err != nil {
+		s.Log.Warn("waiver expiry job", "err", err)
+	}
 	if !s.emailOn() {
 		return
 	}

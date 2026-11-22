@@ -126,6 +126,10 @@ var projectArchiveTables = []archiveTable{
 	{"baseline_signoffs", inBaseline},
 	{"metric_snapshots", ofProject},
 	{"trace_rules", ofProject},
+	{"waivers", ofProject},
+	{"waiver_requirements", `waiver_id IN (SELECT id FROM waivers WHERE project_id = ?)`},
+	{"waiver_signoffs", `waiver_id IN (SELECT id FROM waivers WHERE project_id = ?)`},
+	{"soa_decisions", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},

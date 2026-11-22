@@ -182,7 +182,10 @@ type DocData struct {
 	Baseline  *model.Baseline
 	Signoffs  []model.Signoff
 	Revisions []Revision
-	Now       time.Time
+	// Waivers of the project (requirements specification: marked in the
+	// requirements and listed in an appendix).
+	Waivers []model.Waiver
+	Now     time.Time
 }
 
 // DocTitle is the default title of a document of kind in lang.
@@ -800,12 +803,16 @@ func (g *docGen) requirementsSpec() {
 		g.byFolder(model.KindRequirement, n, func(i int) *string { return d.Requirements[i].FolderID }, g.reqOrder, emit)
 	}
 
-	if *g.o.Traceability || *g.o.Glossary {
+	waivers := g.specWaivers()
+	if *g.o.Traceability || *g.o.Glossary || waivers {
 		g.appendices()
 	}
 	if *g.o.Traceability {
 		g.add(export.PageBreak())
 		g.traceabilityMatrix()
+	}
+	if waivers {
+		g.waiverAppendix()
 	}
 	if *g.o.Glossary {
 		g.add(export.PageBreak())
@@ -938,6 +945,9 @@ func (g *docGen) requirement(rq *model.Requirement, level int) {
 			tests = l.t("None")
 		}
 		fs = append(fs, export.Item{Label: l.t("Verified by"), Value: tests})
+	}
+	if v := g.waiverField(rq.ID); v != "" {
+		fs = append(fs, export.Item{Label: l.t("Waived by"), Value: v})
 	}
 	if o.has("version") && rq.Version > 0 {
 		fs = append(fs, export.Item{Label: l.t("Version"), Value: strconv.Itoa(rq.Version)})
@@ -1258,6 +1268,11 @@ func (g *docGen) criterion(c model.ExitCriterion) string {
 			lvl = "low"
 		}
 		return g.f("Every risk of level {level} or higher linked to the scope is mitigated or accepted.", "level", g.enum(EnumRiskLevel, lvl))
+	case "residual_risk":
+		if c.Level != "" {
+			return g.f("No risk linked to the scope has a residual level above {level} unless its acceptance is signed.", "level", g.enum(EnumRiskLevel, c.Level))
+		}
+		return g.l.t("No risk linked to the scope has a residual level above the project's risk acceptance threshold unless its acceptance is signed.")
 	case "trace_rules":
 		if c.Level == "warning" {
 			return g.l.t("The traceability rules pass on the scope, without errors or warnings.")

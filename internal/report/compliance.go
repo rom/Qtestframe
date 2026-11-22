@@ -71,14 +71,14 @@ var complianceTexts = map[string]string{
 	"international":                  "internationell",
 }
 
-var complianceStateNames = map[string]string{analytics.StatePassed: "passed", analytics.StateFailing: "failing", analytics.StateBlocked: "blocked", analytics.StateUntested: "untested"}
+var complianceStateNames = map[string]string{analytics.StatePassed: "passed", analytics.StateFailing: "failing", analytics.StateBlocked: "blocked", analytics.StateUntested: "untested", analytics.StateWaived: "waived"}
 
 func (l loc) state(s string) string {
 	n, ok := complianceStateNames[s]
 	if !ok {
 		n = "untested"
 	}
-	return l.tc("state", map[string]string{"passed": "Fulfilled", "failing": "Failing", "blocked": "Blocked", "untested": "Untested"}[n])
+	return l.tc("state", map[string]string{"passed": "Fulfilled", "failing": "Failing", "blocked": "Blocked", "untested": "Untested", "waived": "Waived"}[n])
 }
 
 func (l loc) sourceKind(k string) string {
@@ -109,8 +109,10 @@ func (d *Data) ComplianceInput() analytics.ComplianceInput {
 	tests := d.testIndex()
 	byReq := d.linksByRequirement()
 	in := analytics.ComplianceInput{Lang: d.loc().lang}
+	waived := d.waivedRequirements()
 	for _, r := range d.Requirements {
-		x := analytics.ComplianceRequirement{ID: r.ID, Key: r.Key, Title: r.Title, Status: r.Status, Obligation: r.Obligation, CatalogRef: r.CatalogRef, Source: r.Source}
+		x := analytics.ComplianceRequirement{ID: r.ID, Key: r.Key, Title: r.Title, Status: r.Status, Obligation: r.Obligation, CatalogRef: r.CatalogRef, Source: r.Source,
+			Waived: len(waived[r.ID]) > 0}
 		for _, tid := range byReq[r.ID] {
 			res := ""
 			if t := tests[tid]; t != nil {
@@ -154,7 +156,7 @@ func buildCompliance(d *Data, params map[string]string) (*export.Dataset, error)
 		ds.Subtitle = d.subtitle() + " · " + l.t("Unknown sources: ") + strings.Join(rep.Unknown, ", ")
 	}
 	bySource := export.Section{Name: "sources", Title: l.t("Compliance by source"),
-		Columns: l.cols("Source", "Kind", "Jurisdiction", "Catalogue requirements", "Adopted", "Missing", "Own requirements", "Fulfilled", "Failing", "Blocked", "Untested", "Adoption", "Compliance", "MUST compliance")}
+		Columns: l.cols("Source", "Kind", "Jurisdiction", "Catalogue requirements", "Adopted", "Missing", "Own requirements", "Fulfilled", "Failing", "Blocked", "Untested", "Adoption", "Compliance", "MUST compliance", "Waived")}
 	gaps := export.Section{Name: "gaps", Title: l.t("Missing catalogue requirements"), Columns: l.cols("Source", "Catalogue id", "Title", "Obligation", "Priority", "Clauses")}
 	open := export.Section{Name: "not_fulfilled", Title: l.t("Requirements not fulfilled"), Columns: l.cols("Source", "Key", "Title", "State", "Catalogue id", "Clauses")}
 	var clauseSections []export.Section
@@ -174,7 +176,7 @@ func buildCompliance(d *Data, params map[string]string) (*export.Dataset, error)
 		}
 		bySource.Rows = append(bySource.Rows, []string{s.Name, l.sourceKind(s.Kind), jur, itoa(s.Catalogue), itoa(s.Adopted), itoa(s.Missing), itoa(s.Own),
 			itoa(s.Fulfilment.Passed), itoa(s.Fulfilment.Failing), itoa(s.Fulfilment.Blocked), itoa(s.Fulfilment.Untested),
-			l.pct(s.Adopted, s.Catalogue), l.pct(s.Fulfilment.Passed, total), must})
+			l.pct(s.Adopted, s.Catalogue), l.pct(s.Fulfilment.Passed, total), must, itoa(s.Fulfilment.Waived)})
 		cs := export.Section{Name: "clauses_" + s.ID, Title: l.t("Compliance by clause – ") + name,
 			Columns: l.cols("Clause", "Catalogue requirements", "Adopted", "Missing", "Own requirements", "Fulfilled", "Compliance")}
 		for _, cl := range s.Clauses {
@@ -199,6 +201,9 @@ func buildCompliance(d *Data, params map[string]string) (*export.Dataset, error)
 	ds.Sections = append(ds.Sections, bySource)
 	ds.Sections = append(ds.Sections, clauseSections...)
 	ds.Sections = append(ds.Sections, gaps, open)
+	if ws := relevantWaivers(d.Waivers); len(ws) > 0 {
+		ds.Sections = append(ds.Sections, l.waiverSection("waivers", "Waivers and deviations", ws))
+	}
 	return ds, nil
 }
 

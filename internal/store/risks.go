@@ -12,15 +12,25 @@ import (
 // Risks: likelihood × impact, status, mitigation and the requirements that
 // address them.
 
-const riskCols = `id, project_id, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at`
+const riskCols = `id, project_id, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at,
+	residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner,
+	accepted_by, accepted_name, accepted_at, acceptance_comment, acceptance_hash`
 
 func scanRisk(r interface{ Scan(...any) error }) (*model.Risk, error) {
 	var k model.Risk
-	if err := r.Scan(&k.ID, &k.ProjectID, &k.Key, &k.Title, &k.Description, &k.Category, &k.Likelihood, &k.Impact, &k.Status, &k.Mitigation, &k.Owner, &k.CreatedBy, &k.CreatedAt, &k.UpdatedAt); err != nil {
+	var manual int
+	var acc sql.NullTime
+	if err := r.Scan(&k.ID, &k.ProjectID, &k.Key, &k.Title, &k.Description, &k.Category, &k.Likelihood, &k.Impact, &k.Status, &k.Mitigation, &k.Owner, &k.CreatedBy, &k.CreatedAt, &k.UpdatedAt,
+		&k.ResidualLikelihood, &k.ResidualImpact, &manual, &k.ResidualJustification, &k.ReviewDate, &k.ReviewOwner,
+		&k.AcceptedBy, &k.AcceptedName, &acc, &k.AcceptanceComment, &k.AcceptanceHash); err != nil {
 		return nil, err
 	}
+	k.ResidualManual = manual != 0
+	k.AcceptedAt = timePtr(acc)
 	k.Score = k.Likelihood * k.Impact
 	k.Level = model.RiskLevel(k.Likelihood, k.Impact)
+	// until decorated: the inherent score
+	k.ResidualScore, k.ResidualLevel, k.ResidualSource = k.Score, k.Level, model.ResidualInherent
 	return &k, nil
 }
 
@@ -53,7 +63,7 @@ func validateRisk(k *model.Risk) error {
 		return Invalidf("status must be one of %s", strings.Join(model.RiskStatuses, ", "))
 	}
 	k.Category = strings.TrimSpace(k.Category)
-	return nil
+	return validateResidual(k)
 }
 
 // CreateRisk adds a risk with a new key (PROJ-RISK-n) and its requirements.
@@ -73,8 +83,10 @@ func (s *Store) CreateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 			return err
 		}
 		k.Key = key
-		if _, err := c.exec(ctx, `INSERT INTO risks (id, tenant_id, project_id, seq, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			k.ID, tenantID, k.ProjectID, seq, k.Key, k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.CreatedBy, k.CreatedAt, k.UpdatedAt); err != nil {
+		if _, err := c.exec(ctx, `INSERT INTO risks (id, tenant_id, project_id, seq, key, title, description, category, likelihood, impact, status, mitigation, owner, created_by, created_at, updated_at,
+			residual_likelihood, residual_impact, residual_manual, residual_justification, review_date, review_owner) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			k.ID, tenantID, k.ProjectID, seq, k.Key, k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.CreatedBy, k.CreatedAt, k.UpdatedAt,
+			k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner); err != nil {
 			return mapErr(err, "risk")
 		}
 		return setRiskRequirements(ctx, c, tenantID, k.ProjectID, k.ID, k.RequirementIDs, nil)
@@ -87,8 +99,10 @@ func (s *Store) UpdateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 		return err
 	}
 	k.UpdatedAt = s.now()
-	res, err := s.c(ctx).exec(ctx, `UPDATE risks SET title = ?, description = ?, category = ?, likelihood = ?, impact = ?, status = ?, mitigation = ?, owner = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
-		k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.UpdatedAt, k.ID, tenantID)
+	res, err := s.c(ctx).exec(ctx, `UPDATE risks SET title = ?, description = ?, category = ?, likelihood = ?, impact = ?, status = ?, mitigation = ?, owner = ?, updated_at = ?,
+		residual_likelihood = ?, residual_impact = ?, residual_manual = ?, residual_justification = ?, review_date = ?, review_owner = ? WHERE id = ? AND tenant_id = ?`,
+		k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.UpdatedAt,
+		k.ResidualLikelihood, k.ResidualImpact, boolInt(k.ResidualManual), k.ResidualJustification, k.ReviewDate, k.ReviewOwner, k.ID, tenantID)
 	if err != nil {
 		return err
 	}
@@ -195,6 +209,11 @@ func (s *Store) decorateRisks(ctx context.Context, tenantID, projectID string, r
 	if err != nil {
 		return err
 	}
+	threshold, err := s.RiskThreshold(ctx, tenantID, projectID)
+	if err != nil {
+		return err
+	}
+	today := s.now().UTC().Format("2006-01-02")
 	for i := range risks {
 		k := &risks[i]
 		k.RequirementIDs = reqs[k.ID]
@@ -209,6 +228,7 @@ func (s *Store) decorateRisks(ctx context.Context, tenantID, projectID string, r
 				k.Verified++
 			}
 		}
+		decorateResidual(k, threshold, today)
 	}
 	return nil
 }
