@@ -70,8 +70,10 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 | **Sammanfattning av körning** | en körning: summor, exekveringar, defekter och tidsåtgång | körningen (obligatorisk) |
 | **Defekter** | alla defekter som registrerats på exekveringar, grupperade per defekt | – |
 | **Testförteckning** | testfall per mapp, typ, status och kategori | valfritt filter |
-| **Riskrapport** | [riskerna](releases-and-risks.md) med nyckeltal, värmekarta, riskregister, spårbarhet till krav och testfall, otestade åtgärder och de största riskerna | – |
+| **Riskrapport** | [riskerna](releases-and-risks.md) med nyckeltal, värmekartan före och efter åtgärder, riskerna över acceptansgränsen, riskregistret med [restrisken](waivers-and-soa.md#restrisk), spårbarhet till krav och testfall, otestade åtgärder och de största riskerna | – |
 | **Efterlevnad** | efterlevnad av lagar, standarder och bästa praxis: per källa, per avsnitt, de katalogkrav som saknas och de krav som inte är uppfyllda (se [Efterlevnad av lagar och standarder](traceability-and-coverage.md#efterlevnad-av-lagar-och-standarder)) | valfria lagar, standarder och bästa praxis (standard: de som projektet använder) |
+| **Uttalande om tillämplighet** | varje åtgärd i en standard med tillämplighet, motivering, införande, ägare, krav och belägg (se [Uttalande om tillämplighet](waivers-and-soa.md#uttalande-om-tillämplighet)) | standarden (standard: ISO/IEC 27001:2022 bilaga A) |
+| **Releaseberedskap** | en release: go / no-go, varje utgångskriterium med vad som stoppar det och vad ett [undantag](waivers-and-soa.md#undantag-och-avvikelser) eller en signerad risk accepterar, gällande undantag och riskerna över acceptansgränsen | releasen (standard: den aktuella) |
 
 **Riskrapporten** innehåller:
 

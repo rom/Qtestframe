@@ -116,7 +116,7 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	for _, sp := range specs {
 		r := &model.Requirement{ProjectID: p.ID, FolderID: &sp.folder.ID, Title: sp.title, Description: sp.desc,
 			Obligation: reqlang.DetectObligation(sp.desc), Type: sp.typ, Priority: sp.prio, Status: sp.status,
-			CategoryIDs: []string{cat("Area", sp.area)}, Criteria: sp.criteria, CreatedBy: "seed", Source: "Customer RFP v1.2",
+			CategoryIDs: []string{cat("Area", sp.area)}, Criteria: sp.criteria, CreatedBy: "seed", Source: seedSource(sp.title),
 			// a tag per area, so the tag cloud has something to show
 			Tags: []string{strings.ToLower(sp.area)}}
 		if strings.HasPrefix(sp.desc, "This section describes") {
@@ -252,6 +252,9 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 		return nil, err
 	}
 	if err := seedVerification(ctx, st, tenantID, p, reqs, testIDs); err != nil {
+		return nil, err
+	}
+	if err := seedWaivers(ctx, st, tenantID, p, reqs); err != nil {
 		return nil, err
 	}
 	return p, nil

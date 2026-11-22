@@ -333,6 +333,8 @@ func (s *Server) routes() {
 	s.routesDefects(h)
 	s.routesRequirementIssues(h)
 	s.routesRisks(h)
+	s.routesWaivers(h)
+	s.routesSoA(h)
 	s.routesNotifications(h)
 	s.routesReviews(h)
 	s.routesJUnit(h)

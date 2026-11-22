@@ -29,23 +29,26 @@ const (
 	RequirementRd  Permission = "requirement.read"
 	RequirementWr  Permission = "requirement.write"
 	RequirementRev Permission = "requirement.review"
-	TestRead       Permission = "test.read"
-	TestWrite      Permission = "test.write"
-	TestReview     Permission = "test.review"
-	RunRead        Permission = "run.read"
-	RunWrite       Permission = "run.write"
-	RunExecute     Permission = "run.execute"
-	ScriptExecute  Permission = "script.execute"
-	Export         Permission = "export"
-	AuditRead      Permission = "audit.read"
-	TokenManage    Permission = "token.manage"
+	// WaiverApprove approves, rejects and revokes waivers and deviations
+	// and signs the acceptance of residual risks.
+	WaiverApprove Permission = "waiver.approve"
+	TestRead      Permission = "test.read"
+	TestWrite     Permission = "test.write"
+	TestReview    Permission = "test.review"
+	RunRead       Permission = "run.read"
+	RunWrite      Permission = "run.write"
+	RunExecute    Permission = "run.execute"
+	ScriptExecute Permission = "script.execute"
+	Export        Permission = "export"
+	AuditRead     Permission = "audit.read"
+	TokenManage   Permission = "token.manage"
 )
 
 // AllPermissionList lists every permission in display order (grouped by
 // resource).
 var AllPermissionList = []Permission{
 	ProjectRead, ProjectCreate, ProjectUpdate, ProjectDelete,
-	RequirementRd, RequirementWr, RequirementRev,
+	RequirementRd, RequirementWr, RequirementRev, WaiverApprove,
 	TestRead, TestWrite, TestReview,
 	RunRead, RunWrite, RunExecute, ScriptExecute,
 	Export, AuditRead, TokenManage,
@@ -78,7 +81,7 @@ var defaults = map[string][]Permission{
 	RoleReviewer: with(RequirementRev, TestReview),
 	RoleTester:   with(RunExecute, RunWrite, TestWrite, TokenManage),
 	RoleTestLead: with(RunExecute, RunWrite, TestWrite, TestReview, ScriptExecute, AuditRead, TokenManage, SettingsManage),
-	RoleManager: with(RunExecute, RunWrite, TestWrite, TestReview, RequirementWr, RequirementRev, ProjectCreate,
+	RoleManager: with(RunExecute, RunWrite, TestWrite, TestReview, RequirementWr, RequirementRev, WaiverApprove, ProjectCreate,
 		ProjectUpdate, ScriptExecute, AuditRead, TokenManage, SettingsManage),
 	RoleAdmin: append([]Permission{}, AllPermissionList...),
 }

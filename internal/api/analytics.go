@@ -56,6 +56,11 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request, p *Prin
 			conflicts[rel.TargetID] = append(conflicts[rel.TargetID], rel.SourceKey)
 		}
 	}
+	waived, err := s.waivedKeys(r, p, pr.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	in := analytics.Input{Lang: lang}
 	if lang == "auto" {
 		in.Lang = ""
@@ -72,6 +77,7 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request, p *Prin
 		in.Requirements = append(in.Requirements, analytics.Requirement{
 			ID: rq.ID, Key: rq.Key, Title: rq.Title, Description: rq.Description, Obligation: rq.Obligation, Status: rq.Status, Owner: rq.Owner,
 			Criteria: len(rq.Criteria), Tests: rq.LinkedTests, Coverage: rq.Coverage, TestsReady: ready, Conflicts: conflicts[rq.ID], Suspect: rq.SuspectLinks,
+			Waived: waived[rq.ID] != "",
 		})
 		if v := pc.verification()[rq.ID]; v != nil {
 			ar := &in.Requirements[len(in.Requirements)-1]
@@ -138,9 +144,13 @@ func (s *Server) complianceInput(r *http.Request, p *Principal, pr *model.Projec
 	if err != nil {
 		return in, err
 	}
+	waived, err := s.waivedKeys(r, p, pr.ID)
+	if err != nil {
+		return in, err
+	}
 	for _, rq := range reqs {
 		x := analytics.ComplianceRequirement{ID: rq.ID, Key: rq.Key, Title: rq.Title, Status: rq.Status, Obligation: rq.Obligation,
-			CatalogRef: rq.CatalogRef, Source: rq.Source}
+			CatalogRef: rq.CatalogRef, Source: rq.Source, Waived: waived[rq.ID] != ""}
 		for _, tid := range pc.r2t[rq.ID] {
 			x.Results = append(x.Results, pc.evidence()[tid])
 		}

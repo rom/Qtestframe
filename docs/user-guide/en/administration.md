@@ -42,8 +42,10 @@ The default matrix of permissions:
 | `requirement.review` | | ✔ | | | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
 | `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
-| `requirement.write`, `project.create`, `project.update` | | | | | ✔ | ✔ |
+| `requirement.write`, `waiver.approve`, `project.create`, `project.update` | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
+
+**Waivers and risk acceptance.** Approving, rejecting and revoking [waivers and deviations](waivers-and-soa.md) and signing the acceptance of a residual risk need `waiver.approve` (a project permission, so a project role can grant it in one project). Every decision is an electronic signature (password, or a recent single sign-on) and is recorded in the audit log; the requester of a waiver cannot decide it. Grant `waiver.approve` only to people who may accept not meeting requirements.
 
 **Review decisions.** Setting a requirement to *Approved* or *Rejected* needs `requirement.review`; setting a test to *Ready* needs `test.review`. The same applies to bulk edits, to creating an item with that status and to restoring a version that has it. A reviewer without the write permission may change only the status; editing anything else still needs `requirement.write` or `test.write`. Each decision is recorded in the audit log as `requirement.review` or `test.review`. A copied requirement or test starts as *Draft*, so it is reviewed again.
 

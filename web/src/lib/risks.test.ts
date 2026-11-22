@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filterRisks, heatGrid, highestLevel, levelCounts, levelOfScore, levelRank, riskLevel, riskLevelSeverity, riskOpen, riskScore, riskStatusSeverity } from './risks'
+import { aboveThreshold, atResidual, filterRisks, heatGrid, highestLevel, levelCounts, levelOfScore, levelRank, residualPoint, riskLevel, riskLevelSeverity, riskOpen, riskScore, riskStatusSeverity } from './risks'
 import type { Risk } from './types'
 
 const risk = (p: Partial<Risk>): Risk => ({
@@ -65,5 +65,30 @@ describe('filterRisks', () => {
     expect(levelCounts([...list, risk({ level: 'odd' })])).toEqual({ low: 1, medium: 0, high: 0, critical: 1 })
     expect(highestLevel(list)).toBe('critical')
     expect(highestLevel([])).toBe('')
+  })
+})
+
+describe('residual risk', () => {
+  const base = { likelihood: 5, impact: 4, status: 'identified' }
+  it('uses the residual point once it applies', () => {
+    expect(residualPoint(base)).toEqual({ likelihood: 5, impact: 4 })
+    expect(residualPoint({ ...base, residual_likelihood: 1, residual_impact: 2, residual_source: 'inherent' })).toEqual({ likelihood: 5, impact: 4 })
+    expect(residualPoint({ ...base, residual_likelihood: 1, residual_impact: 2, residual_source: 'verified' })).toEqual({ likelihood: 1, impact: 2 })
+    expect(residualPoint({ ...base, residual_likelihood: 2, residual_impact: 2, residual_source: 'manual' })).toEqual({ likelihood: 2, impact: 2 })
+    const g = heatGrid(atResidual([{ ...base, residual_likelihood: 1, residual_impact: 2, residual_source: 'manual' }]))
+    expect(g[4].cells[1].count).toBe(1)
+    expect(g[0].cells[3].count).toBe(0)
+  })
+  it('compares levels with the acceptance threshold', () => {
+    expect(aboveThreshold('high', 'medium')).toBe(true)
+    expect(aboveThreshold('medium', 'medium')).toBe(false)
+    expect(aboveThreshold('high', '')).toBe(true)
+    expect(aboveThreshold('critical', 'critical')).toBe(false)
+    expect(aboveThreshold('medium', 'low')).toBe(true)
+  })
+  it('filters heat-map cells on the residual point', () => {
+    const r = { ...base, id: 'k', key: 'K', title: 'x', level: 'critical', residual_likelihood: 1, residual_impact: 2, residual_source: 'verified' } as unknown as Risk
+    expect(filterRisks([r], { residual: true, likelihood: 1, impact: 2 }).length).toBe(1)
+    expect(filterRisks([r], { likelihood: 1, impact: 2 }).length).toBe(0)
   })
 })

@@ -1,0 +1,118 @@
+# ISO/IEC 27001:2022 Annex A: the 93 control identifiers with short
+# names, for the Statement of Applicability. Only the identifiers and
+# their short names (titles) are listed; the normative text of the
+# controls is not reproduced. Swedish names are descriptive translations.
+#
+# source: the id in internal/catalog/data/sources.yaml
+# control / control_format: how the control is found in a ref
+# ("ISO/IEC 27001:2022 A.8.13 (information backup)" → "A.8.13")
+source: iso-27001
+title: {en: "ISO/IEC 27001:2022 Annex A", sv: "ISO/IEC 27001:2022 bilaga A"}
+control: '\bA\.(\d+)\.(\d+)\b'
+control_format: 'A.$1.$2'
+groups:
+  - id: A.5
+    title: {en: Organizational controls, sv: Organisatoriska säkerhetsåtgärder}
+    controls:
+      - {id: A.5.1, en: "Policies for information security", sv: "Informationssäkerhetspolicyer"}
+      - {id: A.5.2, en: "Information security roles and responsibilities", sv: "Roller och ansvar för informationssäkerhet"}
+      - {id: A.5.3, en: "Segregation of duties", sv: "Uppdelning av arbetsuppgifter"}
+      - {id: A.5.4, en: "Management responsibilities", sv: "Ledningens ansvar"}
+      - {id: A.5.5, en: "Contact with authorities", sv: "Kontakt med myndigheter"}
+      - {id: A.5.6, en: "Contact with special interest groups", sv: "Kontakt med intressegrupper"}
+      - {id: A.5.7, en: "Threat intelligence", sv: "Hotunderrättelser"}
+      - {id: A.5.8, en: "Information security in project management", sv: "Informationssäkerhet i projektledning"}
+      - {id: A.5.9, en: "Inventory of information and other associated assets", sv: "Förteckning över information och andra tillhörande tillgångar"}
+      - {id: A.5.10, en: "Acceptable use of information and other associated assets", sv: "Tillåten användning av information och andra tillhörande tillgångar"}
+      - {id: A.5.11, en: "Return of assets", sv: "Återlämnande av tillgångar"}
+      - {id: A.5.12, en: "Classification of information", sv: "Klassning av information"}
+      - {id: A.5.13, en: "Labelling of information", sv: "Märkning av information"}
+      - {id: A.5.14, en: "Information transfer", sv: "Överföring av information"}
+      - {id: A.5.15, en: "Access control", sv: "Åtkomststyrning"}
+      - {id: A.5.16, en: "Identity management", sv: "Identitetshantering"}
+      - {id: A.5.17, en: "Authentication information", sv: "Autentiseringsinformation"}
+      - {id: A.5.18, en: "Access rights", sv: "Åtkomsträttigheter"}
+      - {id: A.5.19, en: "Information security in supplier relationships", sv: "Informationssäkerhet i leverantörsrelationer"}
+      - {id: A.5.20, en: "Addressing information security within supplier agreements", sv: "Informationssäkerhet i leverantörsavtal"}
+      - {id: A.5.21, en: "Managing information security in the ICT supply chain", sv: "Informationssäkerhet i IKT-leveranskedjan"}
+      - {id: A.5.22, en: "Monitoring, review and change management of supplier services", sv: "Övervakning, granskning och ändringshantering av leverantörstjänster"}
+      - {id: A.5.23, en: "Information security for use of cloud services", sv: "Informationssäkerhet vid användning av molntjänster"}
+      - {id: A.5.24, en: "Information security incident management planning and preparation", sv: "Planering och förberedelse för hantering av informationssäkerhetsincidenter"}
+      - {id: A.5.25, en: "Assessment and decision on information security events", sv: "Bedömning av och beslut om informationssäkerhetshändelser"}
+      - {id: A.5.26, en: "Response to information security incidents", sv: "Hantering av informationssäkerhetsincidenter"}
+      - {id: A.5.27, en: "Learning from information security incidents", sv: "Lärdomar från informationssäkerhetsincidenter"}
+      - {id: A.5.28, en: "Collection of evidence", sv: "Insamling av bevis"}
+      - {id: A.5.29, en: "Information security during disruption", sv: "Informationssäkerhet vid störningar"}
+      - {id: A.5.30, en: "ICT readiness for business continuity", sv: "IKT-beredskap för kontinuitet"}
+      - {id: A.5.31, en: "Legal, statutory, regulatory and contractual requirements", sv: "Rättsliga, författningsenliga, regulatoriska och avtalsenliga krav"}
+      - {id: A.5.32, en: "Intellectual property rights", sv: "Immateriella rättigheter"}
+      - {id: A.5.33, en: "Protection of records", sv: "Skydd av register och arkiv"}
+      - {id: A.5.34, en: "Privacy and protection of PII", sv: "Integritet och skydd av personuppgifter"}
+      - {id: A.5.35, en: "Independent review of information security", sv: "Oberoende granskning av informationssäkerhet"}
+      - {id: A.5.36, en: "Compliance with policies, rules and standards for information security", sv: "Efterlevnad av policyer, regler och standarder för informationssäkerhet"}
+      - {id: A.5.37, en: "Documented operating procedures", sv: "Dokumenterade driftrutiner"}
+  - id: A.6
+    title: {en: People controls, sv: Personrelaterade säkerhetsåtgärder}
+    controls:
+      - {id: A.6.1, en: "Screening", sv: "Bakgrundskontroll"}
+      - {id: A.6.2, en: "Terms and conditions of employment", sv: "Anställningsvillkor"}
+      - {id: A.6.3, en: "Information security awareness, education and training", sv: "Medvetenhet, utbildning och träning i informationssäkerhet"}
+      - {id: A.6.4, en: "Disciplinary process", sv: "Disciplinär process"}
+      - {id: A.6.5, en: "Responsibilities after termination or change of employment", sv: "Ansvar efter avslutad eller ändrad anställning"}
+      - {id: A.6.6, en: "Confidentiality or non-disclosure agreements", sv: "Sekretessavtal"}
+      - {id: A.6.7, en: "Remote working", sv: "Distansarbete"}
+      - {id: A.6.8, en: "Information security event reporting", sv: "Rapportering av informationssäkerhetshändelser"}
+  - id: A.7
+    title: {en: Physical controls, sv: Fysiska säkerhetsåtgärder}
+    controls:
+      - {id: A.7.1, en: "Physical security perimeters", sv: "Fysiska skalskydd"}
+      - {id: A.7.2, en: "Physical entry", sv: "Fysiskt tillträde"}
+      - {id: A.7.3, en: "Securing offices, rooms and facilities", sv: "Säkra kontor, rum och anläggningar"}
+      - {id: A.7.4, en: "Physical security monitoring", sv: "Fysisk säkerhetsövervakning"}
+      - {id: A.7.5, en: "Protecting against physical and environmental threats", sv: "Skydd mot fysiska och miljörelaterade hot"}
+      - {id: A.7.6, en: "Working in secure areas", sv: "Arbete inom säkra områden"}
+      - {id: A.7.7, en: "Clear desk and clear screen", sv: "Rent skrivbord och tom skärm"}
+      - {id: A.7.8, en: "Equipment siting and protection", sv: "Placering och skydd av utrustning"}
+      - {id: A.7.9, en: "Security of assets off-premises", sv: "Säkerhet för tillgångar utanför lokalerna"}
+      - {id: A.7.10, en: "Storage media", sv: "Lagringsmedier"}
+      - {id: A.7.11, en: "Supporting utilities", sv: "Försörjningsfunktioner"}
+      - {id: A.7.12, en: "Cabling security", sv: "Säkerhet för kablage"}
+      - {id: A.7.13, en: "Equipment maintenance", sv: "Underhåll av utrustning"}
+      - {id: A.7.14, en: "Secure disposal or re-use of equipment", sv: "Säker avveckling eller återanvändning av utrustning"}
+  - id: A.8
+    title: {en: Technological controls, sv: Tekniska säkerhetsåtgärder}
+    controls:
+      - {id: A.8.1, en: "User endpoint devices", sv: "Användares slutpunktsenheter"}
+      - {id: A.8.2, en: "Privileged access rights", sv: "Privilegierade åtkomsträttigheter"}
+      - {id: A.8.3, en: "Information access restriction", sv: "Begränsning av åtkomst till information"}
+      - {id: A.8.4, en: "Access to source code", sv: "Åtkomst till källkod"}
+      - {id: A.8.5, en: "Secure authentication", sv: "Säker autentisering"}
+      - {id: A.8.6, en: "Capacity management", sv: "Kapacitetshantering"}
+      - {id: A.8.7, en: "Protection against malware", sv: "Skydd mot skadlig kod"}
+      - {id: A.8.8, en: "Management of technical vulnerabilities", sv: "Hantering av tekniska sårbarheter"}
+      - {id: A.8.9, en: "Configuration management", sv: "Konfigurationshantering"}
+      - {id: A.8.10, en: "Information deletion", sv: "Radering av information"}
+      - {id: A.8.11, en: "Data masking", sv: "Datamaskering"}
+      - {id: A.8.12, en: "Data leakage prevention", sv: "Förhindrande av dataläckage"}
+      - {id: A.8.13, en: "Information backup", sv: "Säkerhetskopiering av information"}
+      - {id: A.8.14, en: "Redundancy of information processing facilities", sv: "Redundans i informationsbehandlingsresurser"}
+      - {id: A.8.15, en: "Logging", sv: "Loggning"}
+      - {id: A.8.16, en: "Monitoring activities", sv: "Övervakning"}
+      - {id: A.8.17, en: "Clock synchronization", sv: "Synkronisering av klockor"}
+      - {id: A.8.18, en: "Use of privileged utility programs", sv: "Användning av privilegierade hjälpprogram"}
+      - {id: A.8.19, en: "Installation of software on operational systems", sv: "Installation av programvara i driftsystem"}
+      - {id: A.8.20, en: "Networks security", sv: "Nätverkssäkerhet"}
+      - {id: A.8.21, en: "Security of network services", sv: "Säkerhet i nätverkstjänster"}
+      - {id: A.8.22, en: "Segregation of networks", sv: "Uppdelning av nätverk"}
+      - {id: A.8.23, en: "Web filtering", sv: "Webbfiltrering"}
+      - {id: A.8.24, en: "Use of cryptography", sv: "Användning av kryptografi"}
+      - {id: A.8.25, en: "Secure development life cycle", sv: "Säker utvecklingslivscykel"}
+      - {id: A.8.26, en: "Application security requirements", sv: "Säkerhetskrav för applikationer"}
+      - {id: A.8.27, en: "Secure system architecture and engineering principles", sv: "Principer för säker systemarkitektur och systemutveckling"}
+      - {id: A.8.28, en: "Secure coding", sv: "Säker kodning"}
+      - {id: A.8.29, en: "Security testing in development and acceptance", sv: "Säkerhetstestning vid utveckling och godkännande"}
+      - {id: A.8.30, en: "Outsourced development", sv: "Utlagd utveckling"}
+      - {id: A.8.31, en: "Separation of development, test and production environments", sv: "Åtskillnad mellan utvecklings-, test- och produktionsmiljöer"}
+      - {id: A.8.32, en: "Change management", sv: "Ändringshantering"}
+      - {id: A.8.33, en: "Test information", sv: "Testinformation"}
+      - {id: A.8.34, en: "Protection of information systems during audit testing", sv: "Skydd av informationssystem vid revisionstester"}

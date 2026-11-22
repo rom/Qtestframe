@@ -68,8 +68,10 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 | **Run summary** | one run: totals, executions, defects and durations | the run (required) |
 | **Defects** | all defects recorded on executions, grouped by defect | – |
 | **Test inventory** | tests by folder, type, status and category | optional filter |
-| **Risk report** | the [risks](releases-and-risks.md) with key figures, a heat map, the risk register, traceability to requirements and tests, untested mitigations and the top risks | – |
+| **Risk report** | the [risks](releases-and-risks.md) with key figures, the heat map before and after mitigation, the risks above the acceptance threshold, the risk register with the [residual risk](waivers-and-soa.md#residual-risk), traceability to requirements and tests, untested mitigations and the top risks | – |
 | **Compliance** | compliance with laws, standards and best practices: per source, per clause, the missing catalogue requirements and the requirements not fulfilled (see [Compliance with laws and standards](traceability-and-coverage.md#compliance-with-laws-and-standards)) | optional laws, standards and best practices (default: those the project uses) |
+| **Statement of Applicability** | every control of a standard with applicability, justification, implementation, owner, requirements and evidence (see [Statement of Applicability](waivers-and-soa.md#statement-of-applicability)) | the standard (default: ISO/IEC 27001:2022 Annex A) |
+| **Release readiness** | one release: go / no-go, every exit criterion with what blocks it and what a [waiver](waivers-and-soa.md#waivers-and-deviations) or risk sign-off accepts, the waivers in force and the risks above the acceptance threshold | the release (default: the current one) |
 
 **The risk report** contains:
 

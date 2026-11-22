@@ -48,7 +48,9 @@ func (s *Server) handleCreateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	k := &model.Risk{ProjectID: pr.ID, Title: req.Title, Description: req.Description, Category: req.Category, Likelihood: req.Likelihood,
-		Impact: req.Impact, Status: req.Status, Mitigation: req.Mitigation, Owner: req.Owner, CreatedBy: p.User.Email, RequirementIDs: req.RequirementIDs}
+		Impact: req.Impact, Status: req.Status, Mitigation: req.Mitigation, Owner: req.Owner, CreatedBy: p.User.Email, RequirementIDs: req.RequirementIDs,
+		ResidualLikelihood: req.ResidualLikelihood, ResidualImpact: req.ResidualImpact, ResidualManual: req.ResidualManual, ResidualJustification: req.ResidualJustification,
+		ReviewDate: req.ReviewDate, ReviewOwner: req.ReviewOwner}
 	if err := s.Store.CreateRisk(r.Context(), p.TenantID(), k); err != nil {
 		s.fail(w, r, err)
 		return
@@ -88,7 +90,9 @@ func (s *Server) handleUpdateRisk(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	for name, dst := range map[string]any{"title": &k.Title, "description": &k.Description, "category": &k.Category, "status": &k.Status,
-		"mitigation": &k.Mitigation, "owner": &k.Owner, "likelihood": &k.Likelihood, "impact": &k.Impact} {
+		"mitigation": &k.Mitigation, "owner": &k.Owner, "likelihood": &k.Likelihood, "impact": &k.Impact,
+		"residual_likelihood": &k.ResidualLikelihood, "residual_impact": &k.ResidualImpact, "residual_manual": &k.ResidualManual,
+		"residual_justification": &k.ResidualJustification, "review_date": &k.ReviewDate, "review_owner": &k.ReviewOwner} {
 		if v, ok := raw[name]; ok {
 			if err := json.Unmarshal(v, dst); err != nil {
 				s.fail(w, r, badRequest("invalid %s: %v", name, err))

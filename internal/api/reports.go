@@ -177,6 +177,12 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 		if d.Risks, err = s.Store.ListRisks(ctx, p.TenantID(), pr.ID); err != nil {
 			return nil, err
 		}
+		if d.RiskThreshold, err = s.Store.RiskThreshold(ctx, p.TenantID(), pr.ID); err != nil {
+			return nil, err
+		}
+	}
+	if err := s.waiverReportData(r, p, pr, id, params, d); err != nil {
+		return nil, err
 	}
 	if id == report.Verification {
 		if d.Verification, err = s.verificationData(ctx, p, pc, d.Requirements); err != nil {

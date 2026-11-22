@@ -139,6 +139,10 @@ var projectArchiveTables = []archiveTable{
 	{"verification_settings", ofProject},
 	{"verification_records", ofProject},
 	{"verification_record_files", `record_id IN (SELECT id FROM verification_records WHERE project_id = ?)`},
+	{"waivers", ofProject},
+	{"waiver_requirements", `waiver_id IN (SELECT id FROM waivers WHERE project_id = ?)`},
+	{"waiver_signoffs", `waiver_id IN (SELECT id FROM waivers WHERE project_id = ?)`},
+	{"soa_decisions", ofProject},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},

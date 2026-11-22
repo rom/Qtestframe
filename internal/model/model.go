@@ -889,6 +889,50 @@ type Risk struct {
 	// Requirements with tests, and with all tests passed.
 	Covered  int `json:"covered"`
 	Verified int `json:"verified"`
+
+	// Residual risk after mitigation: likelihood and impact (0 = not
+	// assessed). They apply once the mitigation is verified (every
+	// requirement of the risk passed its tests), or at once when entered by
+	// hand (ResidualManual) with a justification.
+	ResidualLikelihood    int    `json:"residual_likelihood"`
+	ResidualImpact        int    `json:"residual_impact"`
+	ResidualManual        bool   `json:"residual_manual"`
+	ResidualJustification string `json:"residual_justification"`
+	// ReviewDate (YYYY-MM-DD, "" none) and ReviewOwner of the next review.
+	ReviewDate  string `json:"review_date"`
+	ReviewOwner string `json:"review_owner"`
+	// Acceptance: the "accept risk" electronic signature over the residual
+	// assessment (AcceptedBy "" = not accepted).
+	AcceptedBy        string     `json:"accepted_by"`
+	AcceptedName      string     `json:"accepted_name"`
+	AcceptedAt        *time.Time `json:"accepted_at"`
+	AcceptanceComment string     `json:"acceptance_comment"`
+	AcceptanceHash    string     `json:"-"`
+	// Derived: the residual score and level in effect, where they come
+	// from (ResidualInherent, ResidualVerified, ResidualManual), the
+	// project's acceptance threshold, whether the residual level is above
+	// it, whether the acceptance still matches the assessment, and whether
+	// the review date has passed.
+	ResidualScore   int    `json:"residual_score"`
+	ResidualLevel   string `json:"residual_level"`
+	ResidualSource  string `json:"residual_source"`
+	Threshold       string `json:"threshold"`
+	AboveThreshold  bool   `json:"above_threshold"`
+	AcceptanceValid bool   `json:"acceptance_valid"`
+	ReviewDue       bool   `json:"review_due"`
+}
+
+// ResidualOf returns the residual likelihood, impact and source in effect
+// for a risk whose mitigation is verified or not.
+func (k *Risk) ResidualOf(mitigationVerified bool) (int, int, string) {
+	assessed := k.ResidualLikelihood > 0 && k.ResidualImpact > 0
+	switch {
+	case assessed && k.ResidualManual:
+		return k.ResidualLikelihood, k.ResidualImpact, ResidualManual
+	case assessed && mitigationVerified:
+		return k.ResidualLikelihood, k.ResidualImpact, ResidualVerified
+	}
+	return k.Likelihood, k.Impact, ResidualInherent
 }
 
 // Notification is an in-app message to one user.
@@ -914,6 +958,7 @@ var WebhookEvents = []string{
 	"risk.created", "risk.updated", "release.created", "release.updated", "release.released",
 	"comment.created", "review.requested", "review.completed", "baseline.signed",
 	"defect.regression",
+	"waiver.requested", "waiver.approved", "waiver.rejected", "waiver.revoked",
 }
 
 // Webhook posts events of a project to a URL, signed with HMAC-SHA256.
@@ -1010,6 +1055,7 @@ var ExitCriterionTypes = []string{
 	"no_open_defects",     // no open defects (of at least the given severity) on the scope
 	"risks_mitigated",     // every risk of at least the given level linked to scope requirements is mitigated or accepted
 	"trace_rules",         // the enabled traceability rules pass on the scope (level error: errors only, warning: also warnings)
+	"residual_risk",       // no risk linked to scope requirements has a residual level above the threshold (the level; default the project's) unless the risk is accepted
 	"no_blocking_defects", // no scope requirement is blocked by an open defect (the project's severity rules)
 }
 
@@ -1019,7 +1065,9 @@ type ExitCriterion struct {
 	// Threshold in percent for the percentage criteria (default 100).
 	Threshold float64 `json:"threshold,omitempty"`
 	// Severity / level for no_open_defects and risks_mitigated; for
-	// trace_rules the least rule severity that counts (error | warning).
+	// trace_rules the least rule severity that counts (error | warning);
+	// for residual_risk the risk acceptance threshold of the release (""
+	// = the project's).
 	Level string `json:"level,omitempty"`
 }
 

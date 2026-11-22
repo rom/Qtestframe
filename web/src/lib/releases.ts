@@ -15,6 +15,7 @@ export const CRITERION_TYPES = [
   'no_open_defects',
   'risks_mitigated',
   'trace_rules',
+  'residual_risk',
   'no_blocking_defects',
 ] as const
 /** Criteria measured in percent of a total, with a threshold. */
@@ -32,7 +33,7 @@ export const RULE_LEVELS = ['error', 'warning'] as const
 export function criterionParam(type: string): CriterionParam {
   if ((PERCENT_CRITERIA as readonly string[]).includes(type)) return 'threshold'
   if (type === 'no_open_defects') return 'severity'
-  if (type === 'risks_mitigated') return 'riskLevel'
+  if (type === 'risks_mitigated' || type === 'residual_risk') return 'riskLevel'
   if (type === 'trace_rules') return 'ruleSeverity'
   return 'none'
 }
@@ -45,7 +46,8 @@ export function newCriterion(type: string): ExitCriterion {
     case 'severity':
       return { type, level: 'major' }
     case 'riskLevel':
-      return { type, level: 'high' }
+      // residual_risk: "" = the project's risk acceptance threshold
+      return type === 'residual_risk' ? { type } : { type, level: 'high' }
     case 'ruleSeverity':
       return { type, level: 'error' }
   }

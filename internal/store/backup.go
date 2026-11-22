@@ -45,6 +45,9 @@ var BackupTables = []string{
 	"invitations", "report_subscriptions",
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",
+	// waivers and deviations with their approvals, the Statement of
+	// Applicability decisions
+	"waivers", "waiver_requirements", "waiver_signoffs", "soa_decisions",
 	"system_settings",
 	// where items came from in other tools (the ReqIF import)
 	"external_refs",

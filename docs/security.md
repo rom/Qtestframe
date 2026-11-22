@@ -371,7 +371,7 @@ OIDC/SAML login neither creates nor changes that membership, so
 | requirement.review | | ✔ | | | ✔ | ✔ |
 | test.write, run.write, run.execute, token.manage | | | ✔ | ✔ | ✔ | ✔ |
 | script.execute, audit.read, settings.manage | | | | ✔ | ✔ | ✔ |
-| requirement.write, project.create, project.update | | | | | ✔ | ✔ |
+| requirement.write, waiver.approve, project.create, project.update | | | | | ✔ | ✔ |
 | project.delete, member.manage, role.manage, tenant.manage | | | | | | ✔ |
 
 * **Separation of duties:** approving requirements and marking tests

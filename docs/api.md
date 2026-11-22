@@ -263,7 +263,7 @@ effective permissions of a caller in a project:
 * organisation administrators (role `admin`) and super administrators keep
   their organisation permissions in every project;
 * a project member gets the project permissions of the project role
-  (`project.*` except `project.create`, `requirement.*`, `test.*`, `run.*`,
+  (`project.*` except `project.create`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`,
   `script.execute`, `export`) **instead of** those of the organisation role
   – in organisation-wide projects too, so a project role raises or lowers a
   user's rights in one project. A direct membership wins over group
@@ -1065,7 +1065,11 @@ problems, warnings, infos. Codes: `rfc_not_normative` (keywords only in lower ca
 another of the same meaning has ≥ 75 %), `mixed_keywords`,
 `no_tests_mandatory`, `no_tests`, `tests_failing`, `tests_not_run`,
 `no_criteria`, `tests_not_ready`, `orphan_tests`, `empty_description`,
-`duplicate_titles`, `conflicts`, `low_quality`, `many_drafts`, `no_owner` and
+`duplicate_titles`, `conflicts`, `low_quality`, `many_drafts`, `no_owner`,
+`waived` (info: requirements without tests or with failing or unrun tests
+that an approved, unexpired project-wide [waiver](#waivers-and-deviations)
+accepts; they are left out of `no_tests*`, `tests_failing` and
+`tests_not_run`, and `summary.waived` counts them) and
 `language_rule` (with `params.rule`, a language analysis rule). At most 200
 items per finding (`total` gives the full count).
 
@@ -1087,7 +1091,10 @@ itself). Per source:
   `GDPR Art. 32; ISO/IEC 27001:2022 A.8.5`).
 - **Fulfilment** of each counted requirement from the latest results of its
   linked tests: `passed` (it has tests and all passed), `failing` (one
-  failed), `blocked` (one blocked, none failed) or `untested`. Several
+  failed), `blocked` (one blocked, none failed) or `untested`; a
+  requirement that has not passed but is accepted by a project-wide
+  [waiver](#waivers-and-deviations) in force is `waived` (counted in
+  `fulfilment.waived`, not as fulfilled). Several
   project copies of one catalogue item count as one, with the worst state.
 - `percent` = fulfilled / (catalogue + own requirements);
   `adoption_percent` = adopted / catalogue; `mandatory_percent` the
@@ -1111,7 +1118,45 @@ itself). Per source:
 
 Gaps come MUST first, then by priority; items not fulfilled first; at most
 200 of each (`gaps_total`, `items_total`). The standard report `compliance`
-presents the same.
+presents the same, with a section of the project's waivers and deviations.
+
+### Statement of Applicability
+
+A Statement of Applicability (SoA) lists every control or clause of a
+reference source with the project's decision whether it applies, the
+justification, the owner and the implementation status. ISO/IEC 27001:2022
+Annex A ships its 93 control identifiers and short names (A.5.1–A.5.37,
+A.6.1–A.6.8, A.7.1–A.7.14, A.8.1–A.8.34; no normative text); for every other
+source the controls are the clause groups of the catalogue refs that cite it
+and of the project's own requirements' `source` fields.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/soa/sources?lang=` | requirement.read | `[{id, kind, short, name, title, shipped, controls}]`, sources with a shipped list first |
+| GET | `/projects/{pid}/soa?source=&lang=` | requirement.read | the statement (`source` default `iso-27001`; 400 unknown) |
+| PUT | `/projects/{pid}/soa/decisions` | requirement.write | `{"source", "decisions": [{"control_id", "applicable": true\|false\|null, "justification", "owner"}]}` → `{changed, statement}`; only the controls given change; an excluded control needs a justification |
+
+```json
+{"source": {"id": "iso-27001", "title": "ISO/IEC 27001:2022 Annex A", "shipped": true, "controls": 93, …},
+ "summary": {"controls": 93, "applicable": 60, "excluded": 5, "undecided": 28, "implemented": 20, "partial": 15, "planned": 10, "not_implemented": 15},
+ "rows": [{"id": "A.8.5", "title": "Secure authentication", "group": "A.8", "group_title": "Technological controls",
+           "applicable": true, "justification": "Users sign in", "owner": "CISO", "updated_by": "…", "updated_at": "…",
+           "status": "implemented", "requirements": [{"id": "…", "key": "WEB-REQ-3", "title": "…", "state": "passed", "catalog_ref": "AUTH-01", "waiver": ""}],
+           "evidence": [{"id": "…", "key": "WEB-TC-4", "title": "…", "result": "passed"}], "catalogue": 12, "missing": 9, "suggested": false}]}
+```
+
+A control's requirements are the project requirements (not rejected or
+obsolete) imported from a catalogue requirement whose refs cite the control
+(`ISO/IEC 27001:2022 A.8.5`) or whose own `source` cites it. `status`:
+`implemented` (all of them passed their tests), `partial` (some passed or
+are accepted by a project-wide waiver), `planned` (requirements adopted, none
+passed yet), `not_implemented` (none); `""` for an excluded control.
+`catalogue`/`missing` count the catalogue requirements citing the control and
+those not adopted. `suggested` marks undecided controls the project already
+has requirements for. The decisions are stored per project and source
+(table `soa_decisions`). The document is the standard report `soa`
+(PDF, DOCX, XLSX, CSV, Markdown; `archive: true` saves it to the document
+archive).
 
 ## Traceability
 
@@ -1643,7 +1688,8 @@ Reading needs `project.read`, changing `project.update`.
 | POST | `/projects/{pid}/releases/bulk` | `{"ids":[...], "set": {"status"?, "target_date"?, "exit_criteria"?}, "add_requirement_ids"?, "remove_requirement_ids"?, "query"?}` → `{"updated":[names], "skipped":[{id, name, reason}]}`. Setting `released` releases only the releases with a go (each with its baseline); the others are skipped with reason `no_go` (no override in bulk). Releasing cannot be combined with a scope change. Every release is validated before any is saved |
 | DELETE | `/projects/{pid}/releases/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/releases/{id}/requirements` | `{"add":[ids],"remove":[ids],"query":"<filter expr>"}` (the query adds its matches) → `{"added","removed","release"}` |
-| GET | `/releases/{id}/status` | `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, actual, total, items:[{kind,id,key,title,note}], available}], summary}` |
+| GET | `/releases/{id}/status` | `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, actual, total, items:[{kind,id,key,title,note}], waived:[…], accepted:[…], available}], summary, waivers:[Waiver], risk_threshold, residual_risks:[…]}` |
+| GET | `/releases/{id}/waivers` | (requirement.read) the waivers for the release and the project-wide waivers covering its scope |
 | GET | `/releases/{id}/burnup` | `{"release_id","name","target_date","from","to","points":[{"day","scope","covered","passed"}]}`: one point per day from the creation of the release (at most 365 days) to its release, or today |
 
 Runs belong to a release with `release_id` on `POST /projects/{pid}/runs`
@@ -1674,6 +1720,18 @@ Exit criterion types (`threshold` in percent, default 100):
 | `risks_mitigated` | no identified or mitigating risk of at least `level` (low, medium, high, critical) addresses a scope requirement |
 | `trace_rules` | no scope requirement and no test linked to one breaks an enabled [traceability rule](#traceability-rules) of severity `level` (`error`, the default: errors only; `warning`: errors and warnings). The items list each item once with the names of the rules it breaks as `note` |
 | `no_blocking_defects` | no scope requirement is blocked by an open defect under the project's severity rules (see [change and defect correlations](#change-and-defect-correlations)); a default of new releases |
+| `residual_risk` | no risk (not closed) linked to a scope requirement has a residual level above `level` (the release's risk acceptance threshold; default the project's, see [Risks](#risks)) unless its "accept risk" sign-off is valid; accepted risks are listed in `accepted` |
+
+**Waivers.** An approved, unexpired [waiver](#waivers-and-deviations) for
+the release or for the whole project makes the criteria treat its
+requirements as accepted: `coverage` and `passed` count them as met,
+`mandatory_passed` does not list them, `no_failed` does not count a failed
+test whose scope requirements are all waived. They are listed in `waived`
+(note: the waiver keys) instead of `items`; `summary.waived` counts them and
+`waivers` lists the waivers in force. `residual_risks` always lists the
+scope risks whose residual level is above `risk_threshold` (note: the
+level, with `, accepted` when signed off) and
+`summary.residual_above_threshold` counts those not accepted.
 
 ## Defects
 
@@ -1914,6 +1972,10 @@ Reading needs `requirement.read`, changing `requirement.write`.
 | DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
 | GET | `/requirements/{id}/risks` | the risks a requirement addresses |
+| GET | `/projects/{pid}/risk-settings` | (requirement.read) `{"threshold", "effective", "default", "levels"}` |
+| PUT | `/projects/{pid}/risk-settings` | (project.update) `{"threshold": "low"\|"medium"\|"high"\|"critical"\|""}`: the project's risk acceptance threshold (`""` = medium) |
+| POST | `/risks/{id}/accept` | (waiver.approve) `{"comment", "password"}`: the "accept risk" electronic signature (as for [waiver decisions](#waivers-and-deviations)); the risk becomes `accepted` |
+| DELETE | `/risks/{id}/accept` | (waiver.approve) withdraws the sign-off; an accepted risk goes back to `mitigating` |
 
 `score` is likelihood × impact; `level` is `low` (1–4), `medium` (5–9),
 `high` (10–16) or `critical` (17–25). Statuses: `identified`, `mitigating`
@@ -1921,6 +1983,77 @@ Reading needs `requirement.read`, changing `requirement.write`.
 the linked requirements with tests and with all tests passed. Requirements
 carry `risk_level`, the highest level of their open risks (query field
 `risk`).
+
+**Residual risk.** `residual_likelihood` and `residual_impact` (1–5, 0 =
+not assessed, both or neither) are the risk after mitigation. They apply
+once the mitigation is verified (every linked requirement passed all its
+tests), or at once with `residual_manual: true` and a
+`residual_justification`. The derived `residual_score`, `residual_level`
+and `residual_source` (`inherent`: no assessment or mitigation not verified
+yet, so the inherent score applies; `verified`; `manual`) give the score in
+effect; `threshold` is the project's risk acceptance threshold and
+`above_threshold` whether the residual level is above it (risks not closed).
+`review_date` (YYYY-MM-DD) and `review_owner` plan the next review
+(`review_due` once the date is reached). The acceptance sign-off fills
+`accepted_by`, `accepted_name`, `accepted_at` and `acceptance_comment`;
+`acceptance_valid` is false when the residual assessment changed since.
+
+## Waivers and deviations
+
+A waiver accepts requirements that are failed, untested or not fulfilled
+for now; a deviation accepts a different solution. Either applies to one
+release (`release_id`) or to the whole project (`null`). Reading needs
+`requirement.read`; creating, changing, submitting and withdrawing
+`requirement.write`; deciding and revoking `waiver.approve` (Manager and
+Admin by default).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/waivers?status=&type=&release_id=&requirement_id=&active=` | `[Waiver]`, newest first; `release_id=project` for project-wide ones, `active=true` for those in force |
+| POST | `/projects/{pid}/waivers` | `{"type": "waiver"\|"deviation", "title", "release_id", "requirement_ids", "justification", "compensating", "conditions", "risk_id", "new_risk": {"title","likelihood","impact"}, "approvers": [e-mail], "expires_on": "YYYY-MM-DD", "submit"}` → 201 (key `PROJ-WVR-n`; a draft, or requested with `submit`) |
+| GET / PATCH / DELETE | `/waivers/{id}` | PATCH only in draft or requested (409 otherwise); DELETE not while approved (revoke first) |
+| POST | `/waivers/{id}/submit` | draft → requested; needs requirements, a justification and, for a deviation, compensating measures; notifies the approvers (`waiver.requested`) |
+| POST | `/waivers/{id}/withdraw` | requested or rejected → draft |
+| POST | `/waivers/{id}/decision` | (waiver.approve) `{"decision": "approve"\|"reject", "comment", "password"}` |
+| POST | `/waivers/{id}/revoke` | (waiver.approve) `{"comment"}` (required): approved → revoked |
+| GET | `/requirements/{id}/waivers` | the waivers covering a requirement |
+
+`Waiver` = `{id, project_id, key, type, title, release_id, release_name,
+requirement_ids, requirements: [{id, key, title}], justification,
+compensating, conditions, risk_id, risk_key, requested_by, approvers,
+status, expires_on, decided_at, decided_by, decision_comment, approvals:
+[{id, user_email, user_name, decision, comment, content_hash, signed_at,
+valid}], active, content_hash, created_by, created_at, updated_at}`.
+
+States: `draft` → `requested` → `approved` or `rejected`; `approved` →
+`expired` or `revoked`. A **decision** is an electronic signature over the
+hash of the waiver's content (`content_hash`): given in the browser, not
+with an API token, with the signer's password or a single sign-on less than
+15 minutes old (403 `reauth_failed` / `reauth_required`). The requester
+cannot decide their own waiver. With designated `approvers` only they may
+sign, and the waiver is approved once all of them approved it; without, one
+approval suffices. Any counted rejection (it needs a comment) rejects it.
+Changing a requested waiver invalidates earlier signatures (`valid:
+false`). Each step is in the audit log (`waiver.create`, `waiver.submit`,
+`waiver.signed`, `waiver.approved`, `waiver.rejected`, `waiver.revoked`,
+`waiver.expired`) and notifies the requester and approvers
+(`waiver.approved`, `waiver.rejected`, `waiver.revoked`, `waiver.expired`;
+webhook events `waiver.requested`, `waiver.approved`, `waiver.rejected`,
+`waiver.revoked`).
+
+**Expiry.** `active` is true while the waiver is approved and today is not
+after `expires_on`. Every minute the server marks approved waivers whose
+expiry date has passed as `expired` and notifies the requester and
+approvers; their requirements are no longer accepted.
+
+**Effects.** A waiver in force makes [release readiness](#releases) and the
+exit criteria treat its requirements as accepted, marked as waived. The
+[analytics](#requirement-analytics) and [compliance](#compliance) show
+requirements under a project-wide waiver separately (`waived`), and the
+[Statement of Applicability](#statement-of-applicability) counts them as
+partly implemented. The compliance and `release` reports have a waiver
+section; the requirements specification marks waived requirements
+("Waived by") and lists the waivers in an appendix.
 
 ## Reviews
 
@@ -1971,7 +2104,8 @@ secret>`, and body
 `run.created/updated/completed`, `execution.updated`,
 `defect.created/updated/status/assigned`, `risk.created/updated`,
 `release.created/updated/released`, `comment.created`,
-`review.requested/completed`, `baseline.signed`, `defect.regression`. Deliveries run in the
+`review.requested/completed`, `baseline.signed`, `defect.regression`,
+`waiver.requested/approved/rejected/revoked`. Deliveries run in the
 background with a 10 s timeout, are not retried and do not follow
 redirects; the latest outcome is stored as `last_status`, `last_error`.
 
@@ -2361,15 +2495,21 @@ params, formats}]`; `formats` is `pdf`, `docx`, `xlsx`, `csv`, `md`):
 | `defects` | defects recorded on executions, grouped by defect | – |
 | `test_inventory` | tests by folder, type, status and category | `query` |
 | `risks` | risk report: key figures (open, mitigated, accepted, closed, open per level, untested and verified mitigations, open risks not updated for 90 days), risks by level × status, open risks by mitigation state, the likelihood × impact heat map (risks not closed; every cell gives its count and level), the top 10 open risks, the risk register, risk → requirement → test traceability with coverage and latest results, open risks with untested mitigation, and open risks due for review | – |
-| `compliance` | compliance with reference sources: by source, by clause, missing catalogue requirements, requirements not fulfilled (see *Compliance*) | `sources` (comma-separated source ids; default: the sources the project uses) |
+| `compliance` | compliance with reference sources: by source, by clause, missing catalogue requirements, requirements not fulfilled (see *Compliance*), waivers and deviations | `sources` (comma-separated source ids; default: the sources the project uses) |
+| `soa` | Statement of Applicability: key figures, applicability by control group, every control with applicability, justification, implementation status, owner, requirements and evidence (see *Statement of Applicability*) | `source` (default `iso-27001`) |
+| `release` | release readiness: go / no-go, every exit criterion with what keeps it from being met and what a waiver or sign-off accepts, the waivers in force, the risks above the acceptance threshold | `release_id` (default: the newest planned or active release) |
 
 The risk report's *mitigation state* of a risk is derived from the
 requirements that address it: `no_requirements`, `untested` (none has
 linked tests), `partly_tested` (some have), `tested` (all have, not all
 passed) or `verified` (all linked tests of all its requirements passed).
-A risk has a single likelihood × impact score and no review date: the
-register shows that score and level, and "due for review" lists the open
-risks whose `updated_at` is 90 days old or more. Recipients of an e-mailed
+The heat map is shown before mitigation (`heat_map`, the inherent score)
+and after it (`heat_map_residual`, the residual score in effect);
+`above_threshold` lists the risks whose residual level is above the
+project's acceptance threshold with their sign-off, and the register adds
+the residual assessment, the threshold flag, the acceptance and the review
+date and owner. "Due for review" lists the open risks whose `updated_at` is
+90 days old or more. Recipients of an e-mailed
 risk report need requirement.read and test.read.
 
 Custom report config (`CustomConfig`):

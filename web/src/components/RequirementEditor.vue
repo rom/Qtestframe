@@ -9,6 +9,7 @@ import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
 import VerificationPanel from './VerificationPanel.vue'
+import RequirementWaivers from './RequirementWaivers.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
@@ -861,6 +862,7 @@ function criterionLabel(id: string | null) {
     </div>
 
     <RequirementRisks v-if="item" :requirement-id="item.id" :project-id="projectId" />
+    <RequirementWaivers v-if="item" :requirement-id="item.id" :project-id="projectId" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />

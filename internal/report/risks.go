@@ -15,9 +15,14 @@ import (
 // whose mitigation is not (fully) tested, the top risks and the open risks
 // that have not been updated for a long time.
 //
-// A risk has one likelihood × impact score (there is no separate residual
-// score after mitigation); how far its mitigation is verified is derived
-// from the requirements that address it ("mitigation state").
+// A risk has an inherent likelihood × impact score and optionally a
+// residual one after mitigation: it applies once the mitigation is
+// verified, or at once when entered by hand with a justification (see
+// model.Risk.ResidualOf). How far the mitigation is verified is derived
+// from the requirements that address it ("mitigation state"). Residual
+// levels above the project's risk acceptance threshold are listed, with
+// their "accept risk" sign-offs; the heat map is shown before and after
+// mitigation.
 
 // Mitigation states of a risk (EnumMitigation).
 const (
@@ -82,10 +87,20 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 	now := d.now()
 
 	risks := append([]model.Risk{}, d.Risks...)
+	threshold := d.RiskThreshold
+	if !slices.Contains(model.RiskLevels, threshold) {
+		threshold = model.RiskThresholdDefault
+	}
+	today := now.Format("2006-01-02")
 	for i := range risks {
 		k := &risks[i]
 		k.Score = k.Likelihood * k.Impact
 		k.Level = model.RiskLevel(k.Likelihood, k.Impact)
+		rl, ri, src := k.ResidualOf(MitigationState(k.RequirementIDs, coverage) == MitigationVerified)
+		k.ResidualSource = src
+		k.ResidualScore, k.ResidualLevel = rl*ri, model.RiskLevel(rl, ri)
+		k.AboveThreshold = k.Status != "closed" && slices.Index(model.RiskLevels, k.ResidualLevel) > slices.Index(model.RiskLevels, threshold)
+		k.ReviewDue = k.ReviewDate != "" && k.ReviewDate <= today && k.Status != "closed"
 	}
 	sort.SliceStable(risks, func(i, j int) bool {
 		if risks[i].Score != risks[j].Score {
@@ -141,22 +156,28 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 	byLevel.Rows = append(byLevel.Rows, append(row, itoa(len(risks))))
 
 	// heat map: likelihood 5 (top) to 1, impact 1 to 5; closed risks are left out
-	heat := export.Section{Name: "heat_map", Title: l.t("Heat map (risks not closed)"), Columns: []string{l.t("Likelihood \\ impact")}}
+	heat := export.Section{Name: "heat_map", Title: l.t("Heat map before mitigation (risks not closed)"), Columns: []string{l.t("Likelihood \\ impact")}}
 	for i := 1; i <= 5; i++ {
 		heat.Columns = append(heat.Columns, itoa(i))
 	}
-	var grid [6][6]int
+	residualHeat := export.Section{Name: "heat_map_residual", Title: l.t("Heat map after mitigation (residual, risks not closed)"), Columns: heat.Columns}
+	var grid, rgrid [6][6]int
 	for _, k := range risks {
 		if k.Status != "closed" && k.Likelihood >= 1 && k.Likelihood <= 5 && k.Impact >= 1 && k.Impact <= 5 {
 			grid[k.Likelihood][k.Impact]++
+			rl, ri, _ := k.ResidualOf(k.ResidualSource == model.ResidualVerified)
+			rgrid[rl][ri]++
 		}
 	}
 	for li := 5; li >= 1; li-- {
-		row := []string{itoa(li)}
+		row, rrow := []string{itoa(li)}, []string{itoa(li)}
 		for im := 1; im <= 5; im++ {
-			row = append(row, itoa(grid[li][im])+" · "+l.enum(EnumRiskLevel, model.RiskLevel(li, im)))
+			lv := l.enum(EnumRiskLevel, model.RiskLevel(li, im))
+			row = append(row, itoa(grid[li][im])+" · "+lv)
+			rrow = append(rrow, itoa(rgrid[li][im])+" · "+lv)
 		}
 		heat.Rows = append(heat.Rows, row)
+		residualHeat.Rows = append(residualHeat.Rows, rrow)
 	}
 
 	keysOf := func(ids []string) string {
@@ -170,11 +191,39 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 	}
 
 	register := export.Section{Name: "register", Title: l.t("Risk register"),
-		Columns: l.cols("Key", "Title", "Category", "Owner", "Likelihood", "Impact", "Score", "Level", "Status", "Mitigation", "Requirements", "Mitigation state", "Updated")}
+		Columns: l.cols("Key", "Title", "Category", "Owner", "Likelihood", "Impact", "Score", "Level", "Status", "Mitigation", "Requirements", "Mitigation state", "Updated",
+			"Residual likelihood", "Residual impact", "Residual score", "Residual level", "Residual from", "Residual justification", "Above threshold", "Accepted by", "Review date", "Review owner")}
+	above := export.Section{Name: "above_threshold", Title: l.t("Risks above the acceptance threshold after mitigation"),
+		Columns: l.cols("Key", "Title", "Score", "Level", "Residual score", "Residual level", "Residual from", "Status", "Owner", "Accepted by")}
+	aboveOpen, aboveAccepted, reviewDue := 0, 0, 0
 	for _, k := range risks {
+		accepted := ""
+		if k.AcceptedBy != "" {
+			accepted = k.AcceptedName
+			if accepted == "" {
+				accepted = k.AcceptedBy
+			}
+			accepted += " " + tsPtr(k.AcceptedAt)
+		}
+		rl, ri, _ := k.ResidualOf(k.ResidualSource == model.ResidualVerified)
 		register.Rows = append(register.Rows, []string{k.Key, k.Title, k.Category, k.Owner, itoa(k.Likelihood), itoa(k.Impact), itoa(k.Score),
 			l.enum(EnumRiskLevel, k.Level), l.enum(EnumRiskStatus, k.Status), k.Mitigation, keysOf(k.RequirementIDs),
-			l.enum(EnumMitigation, MitigationState(k.RequirementIDs, coverage)), ts(k.UpdatedAt)})
+			l.enum(EnumMitigation, MitigationState(k.RequirementIDs, coverage)), ts(k.UpdatedAt),
+			itoa(rl), itoa(ri), itoa(k.ResidualScore), l.enum(EnumRiskLevel, k.ResidualLevel), l.enum(EnumResidualSource, k.ResidualSource),
+			k.ResidualJustification, l.yesNo(k.AboveThreshold), accepted, k.ReviewDate, k.ReviewOwner})
+		if k.ReviewDue {
+			reviewDue++
+		}
+		if !k.AboveThreshold {
+			continue
+		}
+		if k.AcceptedBy != "" {
+			aboveAccepted++
+		} else {
+			aboveOpen++
+		}
+		above.Rows = append(above.Rows, []string{k.Key, k.Title, itoa(k.Score), l.enum(EnumRiskLevel, k.Level), itoa(k.ResidualScore), l.enum(EnumRiskLevel, k.ResidualLevel),
+			l.enum(EnumResidualSource, k.ResidualSource), l.enum(EnumRiskStatus, k.Status), k.Owner, accepted})
 	}
 
 	trace := export.Section{Name: "traceability", Title: l.t("Traceability: risks, requirements and tests"),
@@ -248,12 +297,18 @@ func buildRisks(d *Data, _ map[string]string) (*export.Dataset, error) {
 		kv{"Open risks with verified mitigation", itoa(states[MitigationVerified])},
 		kv{"Share of open risks verified", l.pct(states[MitigationVerified], open)},
 		kv{"Open risks not updated for 90 days or more", itoa(stale)},
+		kv{"Risk acceptance threshold", l.enum(EnumRiskLevel, threshold)},
+		kv{"Risks above the threshold after mitigation, not accepted", itoa(aboveOpen)},
+		kv{"Risks above the threshold after mitigation, accepted", itoa(aboveAccepted)},
+		kv{"Risks due for review", itoa(reviewDue)},
 	)
 	return &export.Dataset{Sections: []export.Section{
 		summary,
 		byLevel,
 		l.countSection("open_by_mitigation_state", "Open risks by mitigation state", "Mitigation state", states, MitigationStates, l.enumLabels(EnumMitigation, MitigationStates)),
 		heat,
+		residualHeat,
+		above,
 		top,
 		register,
 		trace,
