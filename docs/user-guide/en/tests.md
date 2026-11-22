@@ -46,7 +46,7 @@ Switch **Execution type** to **Automated** to show the **Script** field. Choose 
 - Standard output and errors are stored as the execution's **Output**, together with the duration.
 - The script can read these environment variables: `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT`, `QTF_BUILD` and `QTF_BASE_URL`, so one script can test the environment and build named in the run. The project's [test variables](administration.md#web-tests) arrive as `QTF_VAR_<NAME>`, for example `QTF_VAR_USERNAME`; the values of secret variables are masked as `***` in the stored output.
 
-Running scripts needs the **Manager** role and must be enabled by the administrator (`runner.enabled`). If your scripts run elsewhere, for example in a CI pipeline, leave the script empty and [import the results](runs.md#import-results-from-ci) instead. Steps are optional for automated tests.
+Running scripts needs the **Manager** role and must be enabled by the administrator (`runner.enabled`). If your scripts run elsewhere, for example in a CI pipeline, leave the script empty and [import the results](runs.md#import-results-from-ci) instead. **Generate test code** in the list writes the code stubs of such tests for pytest, Playwright, Go, JUnit 5, Jest, Vitest, Robot Framework or Cucumber, named so that their results map back (see [Generate test code](ci-cd.md#generate-test-code)). Steps are optional for automated tests.
 
 ## Web tests (Playwright)
 

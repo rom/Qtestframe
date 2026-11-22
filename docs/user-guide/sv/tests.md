@@ -46,7 +46,7 @@ Växla **Exekveringstyp** till **Automatiserat** för att visa fältet **Skript*
 - Standardutdata och fel sparas som exekveringens **Utdata**, tillsammans med tidsåtgången.
 - Skriptet kan läsa miljövariablerna `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT`, `QTF_BUILD` och `QTF_BASE_URL`, så att ett skript kan testa den miljö och det bygge som körningen anger. Projektets [testvariabler](administration.md#webbtester) finns som `QTF_VAR_<NAMN>`, till exempel `QTF_VAR_USERNAME`; värdena för hemliga variabler maskeras som `***` i sparade utdata.
 
-Att köra skript kräver rollen **Ansvarig** och måste ha aktiverats av administratören (`runner.enabled`). Om dina skript körs någon annanstans, till exempel i en CI-pipeline, lämna skriptet tomt och [importera utfallen](runs.md#importera-utfall-från-ci) i stället. Steg är valfria för automatiserade testfall.
+Att köra skript kräver rollen **Ansvarig** och måste ha aktiverats av administratören (`runner.enabled`). Om dina skript körs någon annanstans, till exempel i en CI-pipeline, lämna skriptet tomt och [importera utfallen](runs.md#importera-utfall-från-ci) i stället. **Generera testkod** i listan skriver kodstubbar för sådana testfall för pytest, Playwright, Go, JUnit 5, Jest, Vitest, Robot Framework eller Cucumber, namngivna så att resultaten hittar tillbaka (se [Generera testkod](ci-cd.md#generera-testkod)). Steg är valfria för automatiserade testfall.
 
 ## Webbtester (Playwright)
 

@@ -963,7 +963,7 @@ Växla **Exekveringstyp** till **Automatiserat** för att visa fältet **Skript*
 - Standardutdata och fel sparas som exekveringens **Utdata**, tillsammans med tidsåtgången.
 - Skriptet kan läsa miljövariablerna `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT`, `QTF_BUILD` och `QTF_BASE_URL`, så att ett skript kan testa den miljö och det bygge som körningen anger. Projektets [testvariabler](#webbtester) finns som `QTF_VAR_<NAMN>`, till exempel `QTF_VAR_USERNAME`; värdena för hemliga variabler maskeras som `***` i sparade utdata.
 
-Att köra skript kräver rollen **Ansvarig** och måste ha aktiverats av administratören (`runner.enabled`). Om dina skript körs någon annanstans, till exempel i en CI-pipeline, lämna skriptet tomt och [importera utfallen](#importera-utfall-från-ci) i stället. Steg är valfria för automatiserade testfall.
+Att köra skript kräver rollen **Ansvarig** och måste ha aktiverats av administratören (`runner.enabled`). Om dina skript körs någon annanstans, till exempel i en CI-pipeline, lämna skriptet tomt och [importera utfallen](#importera-utfall-från-ci) i stället. **Generera testkod** i listan skriver kodstubbar för sådana testfall för pytest, Playwright, Go, JUnit 5, Jest, Vitest, Robot Framework eller Cucumber, namngivna så att resultaten hittar tillbaka (se [Generera testkod](#generera-testkod)). Steg är valfria för automatiserade testfall.
 
 ## Webbtester (Playwright)
 
@@ -3047,12 +3047,51 @@ Alla som kan läsa projektet ser CI-uppsättningen; nycklar och tokens visas ald
 
 ## Namnge automatiserade testfall efter nyckeln
 
-Qtestframe kopplar ett automatiserat resultat till ett testfall genom dess **testnyckel**, till exempel `SHOP-TC-12`. Lägg in nyckeln i testet:
+Qtestframe kopplar ett automatiserat resultat till ett testfall genom dess **testnyckel**, till exempel `SHOP-TC-12`. Lägg in nyckeln i testet (eller [generera testkoden](#generera-testkod) med nyckeln redan på plats):
 
 - i **testnamnet** eller **klassnamnet** i JUnit-rapporten, till exempel `test_SHOP_TC_12_checkout` eller `SHOP-TC-12 kassa`. Understreck står för bindestreck, eftersom de flesta språk inte tillåter bindestreck i namn; nyckeln måste skrivas ut helt och med versaler (`ShopTc12` känns inte igen);
 - eller som en **egenskap** (property) på testfallet: `qtestframe.key`, `test_key` eller `qtestframe`.
 
 Samma identifierare är det testurvalet filtrerar på (`SHOP_TC_12`). Resultat utan nyckel kan skapa automatiserade testfall i utkast med `--create-missing` (se [körningar](#testkörningar-och-exekvering)). För att dela upp testfallen på jobben i en genererad underpipeline taggar du dem `runner:pytest`, `runner:go`, `runner:playwright` eller `runner:maven` (eller ett eget namn); utan en sådan tagg hamnar testfall med skriptspråket *playwright* i `playwright` och *python* i `pytest`, övriga i `default`.
+
+## Generera testkod
+
+I stället för att namnge testen för hand kan Qtestframe skriva en **stubbe** för varje testfall: en källfil för ditt testramverk som redan är namngiven efter nyckeln, beskriver testfallet och rapporteras som *överhoppad* (skipped) tills någon implementerar den. Resultaten hittar sedan tillbaka utan mer arbete.
+
+**I webbklienten.** Markera testfall (eller filtrera listan) under **Testfall** och välj **Generera testkod**. Välj ramverk, testens katalog i förrådet (och paketet för Go och Java), titta på förhandsvisningen av varje fil och välj **Ladda ned zip** (eller den enda filen). Med rätt att ändra testfall kan du också kryssa i **Sätt skriptet för testfall utan skript till stubbens sökväg** (se nedan). Under *Kommandorad* visar dialogen kommandot `qtestframe stubs` som skriver samma filer.
+
+**På kommandoraden**, i förrådet:
+
+```
+qtestframe stubs --framework pytest --query 'execution_type:automated has:!script' --out tests/
+```
+
+`--query` väljer testfallen ([frågespråket](#sökning-och-filter); standard är `execution_type:automated`, `""` är alla testfall), `--ids` anger testfall med nyckel, `--package` sätter Go- eller Java-paketet (Go: katalogens namn som standard), `--dry-run` listar bara vad som skulle ändras. `QTF_URL`, `QTF_TOKEN` och `QTF_PROJECT` läses som för `report`; en token med rollen *läsare* räcker för att generera.
+
+**Ramverk:**
+
+| `--framework` | Fil | Nyckeln finns i | Inte implementerad | Testdata |
+|---|---|---|---|---|
+| `pytest` | `test_SHOP_TC_12.py` | `def test_SHOP_TC_12_checkout…()` | `@pytest.mark.skip` | `@pytest.mark.parametrize` |
+| `playwright` | `SHOP-TC-12.spec.ts` | titeln, `tag: '@SHOP-TC-12'` och annoteringen `qtestframe` | `test.fixme()` | ett test per rad |
+| `go` | `shop_tc_12_test.go` | `func TestSHOP_TC_12_Checkout…` | `t.Skip` | en tabell med deltester |
+| `junit5` | `SHOP_TC_12Test.java` | klass- och metodnamnen, `@Tag("SHOP-TC-12")` | `@Disabled` | `@ParameterizedTest` med `@CsvSource` |
+| `jest`, `vitest` | `SHOP-TC-12.test.ts` | testnamnet | `test.skip` | `test.skip.each` |
+| `robot` | `SHOP-TC-12.robot` | testnamnet och taggen `SHOP-TC-12` | `Skip` | ett testfall per rad som anropar ett nyckelord |
+| `cucumber` | `SHOP-TC-12.feature` | feature- och scenarionamnen, taggen `@SHOP-TC-12` | stegen saknar ännu definitioner; taggen `@qtestframe-stub` | en Scenario Outline med Examples |
+
+Varje stubbe innehåller titeln, en länk till testfallet, kraven det verifierar, prioritet och taggar, beskrivningen, förutsättningarna och det förväntade resultatet, och **stegen som numrerade TODO-kommentarer** med data och förväntade resultat (Cucumber: som Given-, When- och Then-steg). Parametrarna i [testdatat](#testfall) blir parametrar i det parametriserade testet; platshållarna `{{namn}}` står kvar i kommentarerna (Cucumber: `<namn>`). För Playwright låter du JUnit-rapporteraren skriva ut annoteringen (`embedAnnotationsAsProperties: true`); namnet räcker också. JUnit 5 behöver `junit-jupiter-params` för datadrivna test. Cucumber har ingen markering för överhoppade test: stubbens steg saknar definitioner tills du skriver dem; i strikt läge rapporterar Cucumber dem som underkända, så uteslut stubbarna med `--tags 'not @qtestframe-stub'` tills de är implementerade (då har de inget resultat, och aldrig ett godkänt).
+
+**Generera igen.** Varje fil börjar med ett block mellan kommentarraderna `qtestframe:begin SHOP-TC-12 pytest body=…` och `qtestframe:end`. Behåll de två raderna. När du kör `qtestframe stubs` igen:
+
+- en fil som inte finns **skapas**;
+- en fil vars kod under blocket fortfarande är den genererade stubben **genereras om** helt (nya steg, testdata eller titel tas med);
+- en fil vars kod du har ändrat (implementerat) behåller den: bara **huvudblocket** skrivs om (titel, krav, förutsättningar …). Stegen i koden rörs inte igen;
+- en fil utan markeringsraderna (eller med ett annat testfalls) **lämnas orörd**.
+
+Radslut och avslutande blanksteg räknas inte som ändringar. Nedladdningen från webbklienten innehåller alltid hela stubbar: slå ihop den med ett förråd med kommandoraden i stället.
+
+**Markera skripten.** Med `--mark-script` (eller kryssrutan i dialogen) får varje valt testfall som saknar skript skriptet `qtestframe:stub tests/test_SHOP_TC_12.py`, blir automatiserat, får ramverkets skriptspråk (python, playwright eller javascript, där det finns ett) och taggen `runner:<namn>` för [underpipelinen](#testurval) (pytest, playwright, go, maven, jest, vitest, robot, cucumber) om det inte redan har en runner-tagg. Servern kör aldrig ett sådant skript (*Kör automatiserade tester* hoppar över det): resultaten kommer från CI. Eftersom skriptet inte längre är tomt utesluter `has:!script` de här testfallen nästa gång. `--script-dir` sätter katalogen som skrivs i skriptet när `--out` inte är sökvägen i förrådet. Att markera kräver rätt att ändra testfall och syns i varje testfalls historik.
 
 ## Ladda upp resultat
 
@@ -3180,6 +3219,7 @@ Urvalet finns också som `POST /api/v1/projects/{pid}/ci/select`.
 - GitLabs jobbtoken (`CI_JOB_TOKEN`) kan inte skicka commit-statusar eller anteckningar i merge requests: använd en projektåtkomsttoken, eller låt servern skicka.
 - Servern skickar bara till GitLab; statusar i GitHub kommer från pipelinen.
 - Testurvalet är aldrig bättre än länkarna: commits och merge requests blir kända genom [webhookarna](#webhookar) eller nycklarna i commit-meddelandena, och filer bara genom sökvägskartan.
+- Genererade stubbar använder mallar som är inbyggda i servern; de kan ännu inte anpassas per organisation. Projektets konfigurationer blir inte parametrar: kör stubbarna en gång per konfiguration i CI (`qtestframe report --configuration`).
 - API-nycklar begränsas av roller, inte av finare behörigheter: ge CI-användaren rollen testare, eller en egen roll med bara `project.read`, `test.read`, `run.read`, `run.execute` och `run.write`.
 
 # Baslinjer
@@ -3297,6 +3337,7 @@ Med behörighet att redigera både krav och testfall kan de valda taggarna ocks�
 | `version>=2` | jämförelse av tal |
 | `updated_at>=2026-01-01` | jämförelse av datum |
 | `has:criteria` eller `criteria:*` | fältet är inte tomt |
+| `has:!script` eller `-has:script` | fältet är tomt |
 
 ### Operatorer
 
