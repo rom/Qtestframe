@@ -103,6 +103,8 @@ var projectArchiveTables = []archiveTable{
 	{"test_steps", inTests},
 	{"test_case_categories", inTests},
 	{"trace_links", ofProject},
+	{"variants", ofProject},
+	{"builds", ofProject},
 	{"test_runs", ofProject},
 	{"run_configurations", inRuns},
 	{"test_executions", inRuns},
@@ -126,6 +128,9 @@ var projectArchiveTables = []archiveTable{
 	{"baseline_signoffs", inBaseline},
 	{"metric_snapshots", ofProject},
 	{"trace_rules", ofProject},
+	{"item_applicability", ofProject},
+	{"code_changes", ofProject},
+	{"code_change_items", `change_id IN (SELECT id FROM code_changes WHERE project_id = ?)`},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},
@@ -157,6 +162,7 @@ var ProjectArchiveExcluded = map[string]string{
 	"user_mfa":             "secret (second factors)",
 	"mfa_recovery_codes":   "secret (second factors)",
 	"mfa_policies":         "organisation",
+	"code_settings":        "secret (webhook secret of the code integration)",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.
@@ -180,6 +186,9 @@ var mustMapColumns = map[string]string{
 	"revisions":       "entity_id",
 	"review_requests": "entity_id",
 	"item_links":      "source_id",
+	// polymorphic references to requirements and tests
+	"item_applicability": "item_id",
+	"code_change_items":  "item_id",
 }
 
 // sanitizeArchiveRow removes secrets from a row (when saving and again

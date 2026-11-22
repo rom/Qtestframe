@@ -95,6 +95,10 @@ type DocOptions struct {
 	Glossary *bool `json:"glossary,omitempty"`
 	// Lang of the document's own texts (en, sv; default: the user's).
 	Lang string `json:"lang"`
+	// Variant generates the document for one variant (id or name): only
+	// the requirements and tests that apply to it, with its coverage and
+	// results.
+	Variant string `json:"variant,omitempty"`
 }
 
 // Normalize validates o for a document of kind and fills in defaults.
@@ -104,6 +108,7 @@ func (o *DocOptions) Normalize(kind string) error {
 	}
 	o.Title, o.Version, o.Author = strings.TrimSpace(o.Title), strings.TrimSpace(o.Version), strings.TrimSpace(o.Author)
 	o.Query, o.BaselineID, o.Dimension = strings.TrimSpace(o.Query), strings.TrimSpace(o.BaselineID), strings.TrimSpace(o.Dimension)
+	o.Variant = strings.TrimSpace(o.Variant)
 	if len([]rune(o.Title)) > 200 || len([]rune(o.Version)) > 40 || len([]rune(o.Author)) > 200 {
 		return invalidf("title (200), version (40) or author (200) is too long")
 	}
@@ -179,8 +184,10 @@ type DocData struct {
 	Members        []model.ProjectMember
 	Settings       model.TenantSettings
 	// Baseline the items come from (nil: current data) and its signatures.
-	Baseline  *model.Baseline
-	Signoffs  []model.Signoff
+	Baseline *model.Baseline
+	Signoffs []model.Signoff
+	// Variant the document is for (nil: all variants).
+	Variant   *model.VariantRef
 	Revisions []Revision
 	Now       time.Time
 }
@@ -294,6 +301,10 @@ func newDocGen(kind string, d *DocData, o DocOptions) *docGen {
 	}
 	if b := d.Baseline; b != nil {
 		g.doc.TitleFields = append(g.doc.TitleFields, export.Item{Label: g.l.t("Baseline"), Value: b.Name + " (" + b.CreatedAt.UTC().Format("2006-01-02") + ")"})
+	}
+	if v := d.Variant; v != nil {
+		g.doc.TitleFields = append(g.doc.TitleFields, export.Item{Label: g.l.t("Variant"), Value: v.Name})
+		g.doc.Subtitle += " · " + v.Name
 	}
 	return g
 }
@@ -413,6 +424,14 @@ func keywordSpans(text string) []export.Span {
 
 // ---------------------------------------------------------------- shared sections
 
+// variantLabel names the variant of the document ("All variants" without one).
+func (g *docGen) variantLabel() string {
+	if g.d.Variant != nil {
+		return g.d.Variant.Name
+	}
+	return g.l.t("All variants")
+}
+
 func (g *docGen) documentControl() {
 	l := g.l
 	d := g.d
@@ -441,6 +460,7 @@ func (g *docGen) documentControl() {
 		{Label: l.t("Project"), Value: d.Project.Key + " – " + d.Project.Name},
 		{Label: l.t("Based on"), Value: basis},
 		{Label: l.t("Filter"), Value: filter},
+		{Label: l.t("Variant"), Value: g.variantLabel()},
 		{Label: l.t("Inactive items"), Value: inactive},
 	}
 	if g.kind == DocRequirementsSpec {

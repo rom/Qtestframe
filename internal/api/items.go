@@ -58,11 +58,29 @@ func (s *Server) filterRequirements(r *http.Request, p *Principal, pr *model.Pro
 	if err != nil {
 		return nil, err
 	}
+	// ?variant=: only the requirements that apply to it, with their coverage there
+	variant, err := pc.listVariant(r)
+	if err != nil {
+		return nil, err
+	}
+	var vc *store.VariantCoverage
+	if variant != "" {
+		if vc, err = s.variantCoverage(r.Context(), p.TenantID(), pc); err != nil {
+			return nil, err
+		}
+	}
 	inFolder := pc.folderFilter(folder, recursive)
 	out := make([]model.Requirement, 0, len(reqs))
 	for i := range reqs {
 		rq := &reqs[i]
 		pc.decorateRequirement(rq)
+		if vc != nil {
+			if !vc.AppliesTo(rq.ID, variant) {
+				continue
+			}
+			rq.Coverage = vc.Requirement(rq.ID, variant)
+			rq.LinkedTests = len(vc.Tests(rq.ID, variant))
+		}
 		if inFolder(rq.FolderID) && q.Match(pc.requirementRecord(rq)) {
 			out = append(out, *rq)
 		}
@@ -498,11 +516,28 @@ func (s *Server) filterTests(r *http.Request, p *Principal, pr *model.Project, p
 		return nil, err
 	}
 	pc.indexCalls(tests)
+	// ?variant=: only the tests that apply to it, with their result there
+	variant, err := pc.listVariant(r)
+	if err != nil {
+		return nil, err
+	}
+	var vc *store.VariantCoverage
+	if variant != "" {
+		if vc, err = s.variantCoverage(r.Context(), p.TenantID(), pc); err != nil {
+			return nil, err
+		}
+	}
 	inFolder := pc.folderFilter(folder, recursive)
 	out := make([]model.TestCase, 0, len(tests))
 	for i := range tests {
 		t := &tests[i]
 		pc.decorateTest(t)
+		if vc != nil {
+			if !vc.AppliesTo(t.ID, variant) {
+				continue
+			}
+			t.LastResult = vc.TestResult(t.ID, variant)
+		}
 		if inFolder(t.FolderID) && q.Match(pc.testRecord(t)) {
 			out = append(out, *t)
 		}
@@ -844,6 +879,9 @@ func (s *Server) handleTraceability(w http.ResponseWriter, r *http.Request, p *P
 		// Configuration the coverage and results are filtered to ("none":
 		// results without configuration), when given.
 		Configuration string `json:"configuration,omitempty"`
+		// Variant the requirements, tests, coverage and results are of
+		// (?variant=), when given.
+		Variant string `json:"variant,omitempty"`
 	}{Requirements: []traceReq{}, Tests: []traceTest{}, Links: pc.links}
 	// ?configuration=<id> | none: coverage and results in that configuration only
 	cfg, filtered := r.URL.Query().Get("configuration"), false
@@ -857,16 +895,33 @@ func (s *Server) handleTraceability(w http.ResponseWriter, r *http.Request, p *P
 			return
 		}
 	}
+	// with ?variant= the requirements and tests are already those of the variant
+	variant, _ := pc.listVariant(r)
+	var vc *store.VariantCoverage
+	if variant != "" {
+		if vc, err = s.variantCoverage(r.Context(), p.TenantID(), pc); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		res.Variant = variant
+	}
 	for _, rq := range reqs {
 		cov := rq.Coverage
-		if filtered {
+		if filtered && vc != nil {
+			cov = vc.RequirementIn(rq.ID, variant, cfg)
+		} else if filtered {
 			cov = store.CoverageInConfiguration(pc.r2t[rq.ID], pc.cfgResults, cfg)
 		}
 		res.Requirements = append(res.Requirements, traceReq{rq.ID, rq.Key, rq.Title, rq.Obligation, cov})
 	}
 	for _, t := range tests {
 		last := t.LastResult
-		if filtered {
+		if filtered && vc != nil {
+			last = vc.Results(variant)[t.ID][cfg]
+			if last == "" {
+				last = model.ResultNotRun
+			}
+		} else if filtered {
 			last = pc.cfgResults[t.ID][cfg]
 			if last == "" {
 				last = model.ResultNotRun

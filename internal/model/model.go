@@ -462,6 +462,8 @@ type Requirement struct {
 	// relations and the tests that verify it ("verifies", incoming).
 	RelationRefs  []ItemRef `json:"relations,omitempty"`
 	CriteriaCount int       `json:"criteria_count,omitempty"`
+	// Applicability: the variants it applies to (nil: all variants).
+	Applicability *Applicability `json:"applicability,omitempty"`
 }
 
 // ItemRef is a derived reference from a requirement or test to a related
@@ -557,6 +559,8 @@ type TestCase struct {
 	// reaches the threshold (see store.FlakyWindow, store.FlakyMinFlips).
 	Flakiness int  `json:"flakiness,omitempty"`
 	Flaky     bool `json:"flaky,omitempty"`
+	// Applicability: the variants it applies to (nil: all variants).
+	Applicability *Applicability `json:"applicability,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -629,9 +633,16 @@ type TestRun struct {
 	// Configurations the run targets (each test is executed once per
 	// configuration); empty for a run without configurations.
 	Configurations []ConfigurationRef `json:"configurations"`
+	// VariantID: the variant the run tests (nil: variant-neutral, its
+	// results count for every variant); BuildID: the CI build its results
+	// belong to.
+	VariantID *string `json:"variant_id"`
+	BuildID   *string `json:"build_id"`
 	// Derived.
 	Summary     map[string]int `json:"summary,omitempty"`
 	ReleaseName string         `json:"release_name,omitempty"`
+	VariantName string         `json:"variant_name,omitempty"`
+	BuildLabel  string         `json:"build_label,omitempty"`
 }
 
 // StepResult is the outcome of one manual step.

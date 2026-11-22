@@ -17,18 +17,19 @@ var (
 	requirementSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
-			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk", "catalog"},
+			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk", "catalog",
+			"variant", "applicability"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
-			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention"},
+			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention", "variants": "variant"},
 	}
 	testSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
-			"depends_on", "suspect", "flaky", "flakiness", "catalog"},
+			"depends_on", "suspect", "flaky", "flakiness", "catalog", "variant", "applicability"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
-			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness"},
+			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness", "variants": "variant"},
 	}
 	runSchema = &query.Schema{
 		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration"},
@@ -74,6 +75,12 @@ type projectContext struct {
 	prereqKeys map[string][]string
 	// test id → flakiness score (pass/fail flips among the last results)
 	flaky map[string]int
+	// variants of the project, applicability of its items (item id →
+	// applicability, only items not applying to all variants) and the
+	// coverage per variant (loaded on first use, see variantCoverage)
+	variants *store.VariantSet
+	applic   map[string]*model.Applicability
+	vcov     *store.VariantCoverage
 }
 
 func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Project) (*projectContext, error) {
@@ -111,6 +118,9 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 		return nil, err
 	}
 	if pc.cfgResults, err = s.Store.LastConfigResults(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if err := s.loadVariants(ctx, tenantID, pc); err != nil {
 		return nil, err
 	}
 	if pc.openDefects, err = s.Store.OpenDefectCounts(ctx, tenantID, p.ID); err != nil {
@@ -201,6 +211,7 @@ func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.SuspectLinks = pc.suspect[r.ID]
 	r.OpenDefects = pc.openDefects[r.ID]
 	r.RiskLevel = pc.riskLevel[r.ID]
+	r.Applicability = pc.applicability(r.ID)
 }
 
 func (pc *projectContext) decorateTest(t *model.TestCase) {
@@ -216,6 +227,7 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 	t.SuspectLinks = pc.suspect[t.ID]
 	t.Flakiness = pc.flaky[t.ID]
 	t.Flaky = t.Flakiness >= store.FlakyMinFlips
+	t.Applicability = pc.applicability(t.ID)
 	refs := append([]model.ItemRef{}, pc.refs[t.ID]...)
 	seen := map[string]bool{}
 	for _, st := range t.Steps {
@@ -250,12 +262,14 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"linked": linkedKeys, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)},
 		"updated_at": {ts(r.UpdatedAt)}, "criteria": crit,
 		"related": pc.related[r.ID], "parent": pc.parents[r.ID], "child": pc.children[r.ID],
-		"comments": {strconv.Itoa(r.CommentCount)},
-		"suspect":  {strconv.Itoa(r.SuspectLinks)},
-		"defects":  {strconv.Itoa(r.OpenDefects)},
-		"risk":     {r.RiskLevel},
-		"catalog":  {r.CatalogRef},
-		"mention":  mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
+		"comments":      {strconv.Itoa(r.CommentCount)},
+		"suspect":       {strconv.Itoa(r.SuspectLinks)},
+		"defects":       {strconv.Itoa(r.OpenDefects)},
+		"risk":          {r.RiskLevel},
+		"catalog":       {r.CatalogRef},
+		"mention":       mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
+		"variant":       pc.variantNames(r.ID),
+		"applicability": {pc.applicabilityKind(r.ID)},
 	}
 }
 
@@ -288,11 +302,13 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"last_result": {t.LastResult}, "created_by": {t.CreatedBy}, "created_at": {ts(t.CreatedAt)},
 		"updated_at": {ts(t.UpdatedAt)}, "defect": pc.defects[t.ID], "calls": calls,
 		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)}, "suspect": {strconv.Itoa(t.SuspectLinks)},
-		"mention":    mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
-		"depends_on": pc.prereqKeys[t.ID],
-		"flaky":      {strconv.FormatBool(t.Flaky)},
-		"flakiness":  {strconv.Itoa(t.Flakiness)},
-		"catalog":    {t.CatalogRef},
+		"mention":       mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
+		"depends_on":    pc.prereqKeys[t.ID],
+		"flaky":         {strconv.FormatBool(t.Flaky)},
+		"flakiness":     {strconv.Itoa(t.Flakiness)},
+		"catalog":       {t.CatalogRef},
+		"variant":       pc.variantNames(t.ID),
+		"applicability": {pc.applicabilityKind(t.ID)},
 	}
 }
 

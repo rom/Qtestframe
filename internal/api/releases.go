@@ -256,7 +256,8 @@ func (s *Server) handleReleaseRequirements(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *Server) handleReleaseStatus(w http.ResponseWriter, r *http.Request, p *Principal) {
-	rep, err := s.releaseStatus(r, p, r.PathValue("id"))
+	// ?variant=: the readiness of the release for one variant
+	rep, err := s.releaseStatusFor(r, p, r.PathValue("id"), r.URL.Query().Get("variant"))
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -267,8 +268,13 @@ func (s *Server) handleReleaseStatus(w http.ResponseWriter, r *http.Request, p *
 // releaseStatus evaluates a release with the defects and risks known to
 // the server (see releaseDefects / releaseRisks).
 func (s *Server) releaseStatus(r *http.Request, p *Principal, id string) (*store.ReleaseStatusReport, error) {
+	return s.releaseStatusFor(r, p, id, "")
+}
+
+// releaseStatusFor evaluates a release for a variant ("" all variants).
+func (s *Server) releaseStatusFor(r *http.Request, p *Principal, id, variant string) (*store.ReleaseStatusReport, error) {
 	ctx := r.Context()
-	return s.Store.ReleaseStatus(ctx, p.TenantID(), id,
+	return s.Store.ReleaseStatusForVariant(ctx, p.TenantID(), id, variant,
 		func(scope []string, level string) []store.ReleaseItem { return s.releaseDefects(r, p, scope, level) },
 		func(scope []string, level string) []store.ReleaseItem { return s.releaseRisks(r, p, scope, level) },
 		func(projectID string, reqs, tests []string, level string) []store.ReleaseItem {

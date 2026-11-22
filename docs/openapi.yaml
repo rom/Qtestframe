@@ -58,10 +58,14 @@ tags:
   description: Test cases, dependencies and readiness
 - name: Traceability
   description: Requirement–test links and the traceability matrix
+- name: Variants
+  description: Product variants, markets and customer configurations; applicability and coverage per variant
 - name: Item links
   description: Links between requirements, tests, runs, files and URLs
 - name: Runs and executions
   description: Test runs, executions and result imports
+- name: Code and builds
+  description: Commits, merge and pull requests, CI builds, webhooks and the regression selection
 - name: Baselines
   description: Baselines and electronic sign-offs
 - name: Releases
@@ -1578,6 +1582,68 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/hooks/github/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Code and builds
+      summary: GitHub webhook
+      operationId: postHooksGithubByPid
+      description: |-
+        push, pull_request and ping events; `X-Hub-Signature-256` must be the HMAC-SHA256 of the body with the project's webhook secret. As for GitLab
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Invalid signature or token
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/gitlab/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Code and builds
+      summary: GitLab webhook
+      operationId: postHooksGitlabByPid
+      description: |-
+        push and merge request events of a GitLab project; `X-Gitlab-Token` must be the project's webhook secret. Commits and MRs are recorded and linked to the requirements and tests whose keys (DEMO-REQ-12, REQ-12, TC-3) their text names → `{event, changes, links}`; other events 202
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Invalid signature or token
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/categories:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -1675,6 +1741,93 @@ paths:
             schema:
               type: object
         description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/code-changes:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Code and builds
+      summary: List code changes
+      operationId: getProjectsByPidCodeChanges
+      description: |-
+        commits and merge / pull requests, newest first, with their items and (commits) builds; `?kind=commit|merge_request`, `?branch=`, `?since_build=<build id, CI id or number>`, `?limit=` (default 100, max 500)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/code-settings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Code and builds
+      summary: Get code integration
+      operationId: getProjectsByPidCodeSettings
+      description: |-
+        `{has_secret, gitlab_url, github_url, updated_by, updated_at}` — the webhook URLs to enter in GitLab and GitHub
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Code and builds
+      summary: Set code integration
+      operationId: putProjectsByPidCodeSettings
+      description: |-
+        `{secret?: "16 to 200 characters", clear_secret?: true}`; an empty secret keeps the stored one. The secret is write-only
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
       responses:
         '200':
           description: OK
@@ -1954,6 +2107,40 @@ paths:
                 type: object
         '400':
           $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/applicability:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    put:
+      tags:
+      - Variants
+      summary: Set applicability of several items
+      operationId: putProjectsByPidApplicability
+      description: |-
+        `{item_type: requirement|test, item_ids: [...], variant_ids: [...], expression: ""}` → `{updated, applicability}`; needs `requirement.write` or `test.write` for the item type. Empty list and expression: all variants
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2334,6 +2521,65 @@ paths:
       responses:
         '204':
           description: Deleted; header X-Trash-Id names the trash entry
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/applicability:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Variants
+      summary: Get requirement applicability
+      operationId: getRequirementsByIdApplicability
+      description: |-
+        `{variant_ids, variants, expression, all, applies_to: [{id, name}]}`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Variants
+      summary: Set requirement applicability
+      operationId: putRequirementsByIdApplicability
+      description: |-
+        `{variant_ids: [ids or names], expression: "region:EU"}`; both empty: all variants
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2946,6 +3192,65 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/builds:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Code and builds
+      summary: List builds
+      operationId: getProjectsByPidBuilds
+      description: |-
+        the project's CI builds, newest first, with `runs` and the result `summary`; `?limit=`
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Code and builds
+      summary: Register build
+      operationId: postProjectsByPidBuilds
+      description: |-
+        `{external_id, number?, commit_sha?, branch?, pipeline_url?}` — creates the build (201) or updates the given fields of the build with that CI id (200)
+
+        **Permission:** `run.execute`.
+      x-permission: run.execute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/baselines/{id}:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -3456,6 +3761,65 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/applicability:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Variants
+      summary: Get test applicability
+      operationId: getTestsByIdApplicability
+      description: |-
+        as for requirements
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Variants
+      summary: Set test applicability
+      operationId: putTestsByIdApplicability
+      description: |-
+        as for requirements
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/requirements/{id}/item-links:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -3841,6 +4205,93 @@ paths:
                       type: object
                   total:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/variants:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Variants
+      summary: List variants
+      operationId: getProjectsByPidVariants
+      description: |-
+        the project's variants in hierarchy order (parents first), each with `path`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Variants
+      summary: Create variant
+      operationId: postProjectsByPidVariants
+      description: |-
+        `{name, parent_id?, description?, kind?: product|market|customer|other, attributes?: {name: value}, configuration_ids?: [...]}` → Variant; names are unique per project
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/variants/matrix:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Variants
+      summary: Variant coverage matrix
+      operationId: getProjectsByPidVariantsMatrix
+      description: |-
+        the coverage of the requirements (`?q=`, `?folder_id=`) in every variant (`?variants=` ids or names, comma-separated), optionally in one configuration (`?configuration=<id>|none`): `{variants, requirements: [{id, key, title, obligation, coverage: {variant id: coverage}}], summary: {variant id: {coverage: n, applicable: n}}}`; `not_applicable` where a requirement does not apply
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -5536,6 +5987,95 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/code:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Code and builds
+      summary: Requirement code panel
+      operationId: getRequirementsByIdCode
+      description: |-
+        `{changes, builds: [{build, coverage}], verified_build}` — linked commits and MRs / PRs; with `run.read` the builds a linked test ran in and the latest build in which every linked test passed
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Code and builds
+      summary: Link requirement to code
+      operationId: postRequirementsByIdCode
+      description: |-
+        `{change_id}` or a change to add: `{kind: commit|merge_request, ref, url?, title?, repository?, provider?, status?, branch?}` → CodeChange (201)
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/code/{cid}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: cid
+      in: path
+      required: true
+      schema:
+        type: string
+      description: code change id
+    delete:
+      tags:
+      - Code and builds
+      summary: Unlink requirement from code
+      operationId: deleteRequirementsByIdCodeByCid
+      description: |-
+        removes the link; a manual change linked to nothing else is removed
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/tests/{id}/attachments:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -5651,6 +6191,123 @@ paths:
       description: '**Permission:** any authenticated user; the handler checks: `requirement.write` / `test.write` / `run.execute` (runs, executions
         and step results).'
       x-permission: authenticated
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/builds:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Code and builds
+      summary: Test build history
+      operationId: getTestsByIdBuilds
+      description: |-
+        `{items: [{build, result, results: {configuration id: result}}]}`, newest first (at most 100); needs `run.read`
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/code:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Code and builds
+      summary: Test code panel
+      operationId: getTestsByIdCode
+      description: |-
+        `{changes, builds}` — linked commits and MRs / PRs and (with `run.read`) the build history
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Code and builds
+      summary: Link test to code
+      operationId: postTestsByIdCode
+      description: |-
+        as for requirements
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/code/{cid}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: cid
+      in: path
+      required: true
+      schema:
+        type: string
+      description: code change id
+    delete:
+      tags:
+      - Code and builds
+      summary: Unlink test from code
+      operationId: deleteTestsByIdCodeByCid
+      description: |-
+        as for requirements
+
+        **Permission:** `test.write`.
+      x-permission: test.write
       responses:
         '204':
           description: No content
@@ -7196,6 +7853,74 @@ paths:
       x-permission: test.read
       responses:
         '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/regression:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Code and builds
+      summary: Regression selection
+      operationId: postProjectsByPidRegression
+      description: |-
+        `{requirement_ids?: [ids or keys], change_ids?: [...], since_build?: ref, variant?: ref, include_related?: false, include_prerequisites?: true}` → `{requirements, tests: [{id, key, title, last_result, reasons: [{kind, ref, type}]}], changes, variant, since_build}`
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/regression/run:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Code and builds
+      summary: Create regression run
+      operationId: postProjectsByPidRegressionRun
+      description: |-
+        the selection request plus `name`, `description`, `environment`, `build`, `release_id`, `configuration_ids` → `{run, selection}` (201); needs `test.read` too
+
+        **Permission:** `run.write`.
+      x-permission: run.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
           description: OK
           content:
             application/json:
@@ -9369,6 +10094,55 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/builds/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Code and builds
+      summary: Get build
+      operationId: getBuildsById
+      description: |-
+        `{build, runs, changes}` — the build, its runs and the commit it was built from
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Code and builds
+      summary: Delete build
+      operationId: deleteBuildsById
+      description: |-
+        its runs stay, without build
+
+        **Permission:** `run.write`.
+      x-permission: run.write
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/runs/{id}/junit:
     parameters:
     - $ref: '#/components/parameters/id'
@@ -10234,6 +11008,34 @@ paths:
       operationId: getRequirementsByIdTraceRules
       description: |-
         the enabled rules the requirement breaks, with what is missing
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/variants:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Variants
+      summary: Requirement coverage per variant
+      operationId: getRequirementsByIdVariants
+      description: |-
+        `{requirement_id, applicability, variants: [{variant, applies, coverage, tests: [keys], configurations: [{id, name, coverage}]}]}` — the coverage per variant × configuration
 
         **Permission:** `requirement.read`.
       x-permission: requirement.read
@@ -12161,6 +12963,86 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/variants/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Variants
+      summary: Get variant
+      operationId: getVariantsById
+      description: |-
+        one variant with its path
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Variants
+      summary: Update variant
+      operationId: patchVariantsById
+      description: |-
+        the fields to change (as for create; `parent_id: ""` makes it a root, `position` orders siblings)
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Variants
+      summary: Delete variant
+      operationId: deleteVariantsById
+      description: |-
+        its children move to its parent, its runs become variant-neutral and it is removed from applicability lists
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '204':
+          description: No content
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

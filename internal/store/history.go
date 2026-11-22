@@ -642,6 +642,9 @@ func deleteEntityData(ctx context.Context, c conn, entityType string, ids []stri
 	if err := deleteItemLinks(ctx, c, entityType, ids); err != nil {
 		return err
 	}
+	if err := deleteVariantCodeData(ctx, c, entityType, ids); err != nil {
+		return err
+	}
 	if err := deleteDefectLinks(ctx, c, entityType, ids); err != nil {
 		return err
 	}

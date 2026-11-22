@@ -33,7 +33,7 @@ const BackupFormatVersion = 1
 var BackupTables = []string{
 	"tenants", "users", "memberships", "api_tokens", "projects", "configurations", "releases", "folders", "categories",
 	"requirements", "requirement_categories", "evaluation_criteria", "test_cases", "test_steps",
-	"test_case_categories", "trace_links", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
+	"test_case_categories", "trace_links", "variants", "builds", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
 	"audit_log", "revisions", "requirement_relations", "baselines", "baseline_items", "comments",
 	"files", "file_blobs", "attachments", "report_definitions", "login_events", "roles", "test_dependencies",
 	"trash", "item_links", "release_requirements", "defects", "defect_links", "risks", "risk_requirements", "notifications", "webhooks", "review_requests", "baseline_signoffs",
@@ -44,6 +44,8 @@ var BackupTables = []string{
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",
 	"system_settings",
+	// variants and applicability, code links (0036)
+	"item_applicability", "code_changes", "code_change_items", "code_settings",
 	// the data-encryption keys of the stored secrets, wrapped by the key
 	// provider's key: a backup restores only where that key is available
 	"secret_keys",
@@ -68,7 +70,7 @@ var blobColumns = map[string]bool{"file_blobs.data": true}
 
 // selfReferences names tables whose rows reference rows of the same table;
 // restore inserts parents before children.
-var selfReferences = map[string]string{"folders": "parent_id"}
+var selfReferences = map[string]string{"folders": "parent_id", "variants": "parent_id"}
 
 // Restore limits (variables so that tests can lower them).
 var (
