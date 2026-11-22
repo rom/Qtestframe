@@ -604,3 +604,35 @@ risks:
       title: Kunskap försvinner med en konsult
       description: En namngiven konsult byts ut utan överlappning eller slutar utan att lämna över. Arbetet går långsammare och misstag uppstår medan någon ny lär sig systemet.
       mitigation: Byt namngivna konsulter bara efter godkännande och med överlappning, slutför kunskapsöverföringen innan en konsult slutar, definiera leveranser och godkännandekriterier i en uppdragsbeskrivning och godkänn och logga varje fjärrsupportsession.
+  - id: SVSUP-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [remote-support, third-party-access]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "IEC 62443-2-4:2023 SP.07 (remote access)", "ISO/IEC 27001:2022 A.8.15"]
+    mitigated_by: [SVSUP-05, SVSUP-10]
+    attack: [T1133, T1199]
+    en:
+      title: "Supplier's remote support access used to break in"
+      description: "The supplier has a permanent remote connection with a shared account. When the supplier is compromised, or a former employee keeps the credentials, the attacker connects straight into the customer's systems."
+      mitigation: Approve and log each remote support session, use personal accounts and require a confidentiality undertaking and security instruction before access.
+    sv:
+      title: Leverantörens fjärrsupport används för intrång
+      description: Leverantören har en permanent fjärranslutning med ett gemensamt konto. När leverantören komprometteras, eller en tidigare anställd behåller uppgifterna, ansluter angriparen direkt in i kundens system.
+      mitigation: Godkänn och logga varje fjärrsupportsession, använd personliga konton och kräv sekretessåtagande och säkerhetsinstruktion före åtkomst.
+  - id: SVSUP-R04
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [patching, vendor-updates]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "IEC 62443-2-4:2023 SP.11 (patch management)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2"]
+    mitigated_by: [SVSUP-03, SVSUP-02]
+    attack: [T1190, T1210]
+    en:
+      title: Supplier is slow to deliver security updates
+      description: The support contract sets no time for security fixes. A high-severity vulnerability in the delivered software stays open for months while the supplier prioritises other customers.
+      mitigation: Require security updates for high-severity vulnerabilities within 30 days and a support period of at least five years with notice of its end.
+    sv:
+      title: Leverantören är långsam med säkerhetsuppdateringar
+      description: Supportavtalet anger ingen tid för säkerhetsrättningar. En allvarlig sårbarhet i den levererade programvaran står öppen i månader medan leverantören prioriterar andra kunder.
+      mitigation: Kräv säkerhetsuppdateringar för allvarliga sårbarheter inom 30 dagar och en supportperiod på minst fem år med förvarning om när den upphör.

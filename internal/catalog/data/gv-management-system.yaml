@@ -908,3 +908,49 @@ risks:
       title: Rättsligt eller avtalsmässigt krav förbises
       description: Det finns inget register över krav, policyer granskas inte och skydd väljs utan motivering. Ett nytt krav missas tills en kund eller myndighet påpekar det.
       mitigation: För ett register över rättsliga och avtalsmässiga krav, kontrollera efterlevnaden av varje policy varje år, gå igenom policyerna var 12:e månad, registrera intressenter och deras krav och motivera varje skydd i uttalandet om tillämplighet.
+  - id: GVMS-R03
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [audits, corrective-action]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 §10.2", "ISO 19011:2026 §5.4 (establishing the audit programme)"]
+    mitigated_by: [GVMS-09, GVMS-10, GVMS-12]
+    en:
+      title: Audit findings repeat year after year
+      description: Audits cover only some processes, auditors check their own work and corrective actions treat symptoms. The same nonconformities return and the certification body raises a major finding.
+      mitigation: Audit every process within the programme cycle, keep auditors independent and require a root cause and an effectiveness check for each corrective action.
+    sv:
+      title: Revisionsfynd återkommer år efter år
+      description: Revisioner täcker bara vissa processer, revisorer granskar sitt eget arbete och korrigerande åtgärder behandlar symtom. Samma avvikelser kommer tillbaka och certifieringsorganet lämnar en större avvikelse.
+      mitigation: Revidera varje process inom programmets cykel, håll revisorerna oberoende och kräv grundorsak och effektivitetskontroll för varje korrigerande åtgärd.
+  - id: GVMS-R04
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [segregation-of-duties, fraud]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.3"]
+    mitigated_by: [GVMS-04, GVMS-03]
+    attack: [T1078]
+    en:
+      title: One person controls a process from start to end
+      description: Conflicting duties, such as ordering and approving payments or developing and releasing code, rest with one person. Mistakes and fraud are not caught by anyone else.
+      mitigation: Separate conflicting duties and assign one accountable role per process with clear responsibilities.
+    sv:
+      title: En person styr en process från början till slut
+      description: Oförenliga uppgifter, som att beställa och attestera betalningar eller att utveckla och släppa kod, ligger på en person. Misstag och bedrägerier upptäcks inte av någon annan.
+      mitigation: Separera oförenliga uppgifter och utse en ansvarig roll per process med tydligt ansvar.
+  - id: GVMS-R05
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [management-review, objectives]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27001:2022 §9.3.2", "ISO/IEC 27001:2022 §6.2"]
+    mitigated_by: [GVMS-13, GVMS-14, GVMS-05, GVMS-15]
+    en:
+      title: Management steers without facts about the management system
+      description: There are no measurable objectives or indicator reports, and management reviews end without decisions. Resources go to the wrong things and problems are found by external auditors.
+      mitigation: Set measurable objectives with owners, report indicators quarterly and hold yearly management reviews with defined inputs and decisions with owners.
+    sv:
+      title: Ledningen styr utan fakta om ledningssystemet
+      description: Det finns inga mätbara mål eller rapporter om indikatorer, och ledningens genomgångar slutar utan beslut. Resurser läggs på fel saker och problem upptäcks av externa revisorer.
+      mitigation: Fastställ mätbara mål med ägare, rapportera indikatorer varje kvartal och håll årliga ledningens genomgångar med fastställda underlag och beslut med ägare.

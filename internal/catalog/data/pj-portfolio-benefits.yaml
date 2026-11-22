@@ -598,3 +598,33 @@ risks:
       title: För många projekt konkurrerar om samma personer
       description: Förslag godkänns utan poängsättning, inget stoppas någonsin och efterfrågan på nyckelroller överstiger kapaciteten. Alla projekt går långsamt och de viktigaste blir försenade.
       mitigation: Godkänn viktade prioriteringskriterier, poängsätt varje förslag, gå igenom portföljen varje kvartal med ett beslut per komponent, fastställ stoppkriterier och håll efterfrågan på nyckelroller inom kapaciteten.
+  - id: PJPFB-R03
+    category: project
+    likelihood: 3
+    impact: 4
+    tags: [stop-criteria, sunk-cost]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 21504:2022 §6.8 (balancing and optimizing the portfolio)"]
+    mitigated_by: [PJPFB-05, PJPFB-04, PJPFB-14]
+    en:
+      title: Failing projects continue because nobody can stop them
+      description: There are no stop criteria and portfolio reviews only note the status. Money and people stay tied up in projects that no longer pay off.
+      mitigation: Define stop criteria, decide on each component at quarterly portfolio reviews and act on benefit shortfalls.
+    sv:
+      title: Misslyckade projekt fortsätter eftersom ingen kan stoppa dem
+      description: Det finns inga stoppkriterier och portföljgenomgångar konstaterar bara läget. Pengar och personer binds i projekt som inte längre lönar sig.
+      mitigation: Fastställ stoppkriterier, besluta om varje komponent vid kvartalsvisa portföljgenomgångar och agera vid uteblivna nyttor.
+  - id: PJPFB-R04
+    category: project
+    likelihood: 3
+    impact: 3
+    tags: [prioritisation, strategy]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 21504:2022 §5.5 (criteria for selecting and prioritizing portfolio components)", "ISO 21504:2022 §6.8 (balancing and optimizing the portfolio)"]
+    mitigated_by: [PJPFB-02, PJPFB-03, PJPFB-07]
+    en:
+      title: Portfolio follows the loudest voice instead of the strategy
+      description: Proposals are approved without scoring against agreed criteria. The portfolio drifts towards small, visible projects and strategic goals are left unfunded.
+      mitigation: Approve prioritisation criteria with weights, score each proposal before approval and check the portfolio balance against target ranges.
+    sv:
+      title: Portföljen följer den som hörs mest i stället för strategin
+      description: Förslag godkänns utan poängsättning mot överenskomna kriterier. Portföljen glider mot små och synliga projekt och strategiska mål blir utan finansiering.
+      mitigation: Godkänn prioriteringskriterier med vikter, poängsätt varje förslag före godkännande och kontrollera portföljens balans mot målintervall.

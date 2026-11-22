@@ -843,3 +843,49 @@ risks:
       title: Kunder debiteras på sätt de inte förväntade sig
       description: Det är svårt att säga upp, förnyelser och prisändringar kommer utan förvarning och provperioder övergår automatiskt i betalda abonnemang. Kunderna klagar, begär återbetalning och tillsynsmyndigheter agerar.
       mitigation: Tillåt uppsägning via webben i högst lika många steg som registreringen, meddela före årliga förnyelser, avisera prisändringar 30 dagar i förväg, avsluta gratis provperioder utan debitering som standard och fördela kostnaden vid byte av abonnemang.
+  - id: BILL-R03
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [billing-data, access-control]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP ASVS 5.0 V8.2.1 (function-level access)", "ISO/IEC 27001:2022 A.5.15"]
+    mitigated_by: [BILL-13, ACC-04]
+    attack: [T1078, T1657]
+    en:
+      title: Billing data or payment settings changed by an unauthorised user
+      description: "Any administrator can see invoices and change the billing address, plan or bank details. A compromised or malicious account redirects refunds or reads customers' financial data."
+      mitigation: Limit billing data and payment settings to the billing role and keep roles to the least privilege.
+    sv:
+      title: Faktureringsdata eller betalningsinställningar ändras av en obehörig användare
+      description: Alla administratörer kan se fakturor och ändra faktureringsadress, abonnemang eller bankuppgifter. Ett kapat eller illasinnat konto styr om återbetalningar eller läser kundernas ekonomiska uppgifter.
+      mitigation: Begränsa faktureringsdata och betalningsinställningar till faktureringsrollen och ge roller minsta möjliga behörighet.
+  - id: BILL-R04
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [vat, cross-border]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive 2006/112/EC Art. 58 (electronically supplied services)", "Directive 2006/112/EC Art. 196"]
+    mitigated_by: [BILL-16, BILL-14, BILL-15]
+    en:
+      title: Wrong VAT charged on cross-border sales
+      description: "Consumers in other member states are charged the home country's rate, or reverse charge is applied without a valid VAT number. The company owes back taxes, interest and penalties."
+      mitigation: "Apply the VAT rate of the consumer's member state, check VAT numbers against VIES and apply reverse charge only to valid business customers."
+    sv:
+      title: Fel moms tas ut vid gränsöverskridande försäljning
+      description: Konsumenter i andra medlemsstater debiteras hemlandets skattesats, eller omvänd skattskyldighet tillämpas utan ett giltigt momsregistreringsnummer. Företaget får betala skatt i efterhand med ränta och avgifter.
+      mitigation: Tillämpa skattesatsen i konsumentens medlemsstat, kontrollera momsregistreringsnummer mot VIES och tillämpa omvänd skattskyldighet bara på giltiga företagskunder.
+  - id: BILL-R05
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [failed-payments, churn]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 functional appropriateness"]
+    mitigated_by: [BILL-11, BILL-12]
+    en:
+      title: Customers lose service because a card payment failed
+      description: An expired card makes a renewal fail and the account is closed at once without notice. Paying customers lose access and their data, and revenue is lost.
+      mitigation: Retry failed payments and notify the customer before access is restricted, and show usage against plan limits with alerts.
+    sv:
+      title: Kunder förlorar tjänsten för att en kortbetalning misslyckades
+      description: Ett utgånget kort gör att en förnyelse misslyckas och kontot stängs direkt utan förvarning. Betalande kunder förlorar åtkomsten och sina data, och intäkter går förlorade.
+      mitigation: Gör nya försök med misslyckade betalningar och meddela kunden innan åtkomsten begränsas, och visa användning mot abonnemangets gränser med varningar.

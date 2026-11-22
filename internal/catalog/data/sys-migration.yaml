@@ -556,3 +556,33 @@ risks:
       title: Driftövergången misslyckas utan väg tillbaka
       description: Övergången drar över tiden, ett steg glöms bort eller det gamla systemet har ändrats sedan generalrepetitionen. Varken det gamla eller det nya systemet fungerar på måndagsmorgonen.
       mitigation: Följ en driftinstruktion för övergången med ansvarig, tid och kontroll för varje steg, frys ändringar i det gamla systemet, fatta beslut om att gå vidare eller inte vid punkten utan återvändo, öva återgång inom 4 timmar och gå igenom incidenterna dagligen under den förstärkta supportperioden.
+  - id: SYMIG-R03
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [data-quality, mapping]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25012:2008 (data quality model)"]
+    mitigated_by: [SYMIG-03, SYMIG-04, SYMIG-06, SYMIG-11]
+    en:
+      title: Migrated data looks complete but means something else
+      description: Fields are mapped by name without the data owner, and codes in the old system mean something else in the new one. The new system runs on wrong values and decisions go wrong for months.
+      mitigation: Have the data owner approve a field-level mapping, cleanse source data before the final migration, reconcile counts and totals and compare critical outputs in a parallel run.
+    sv:
+      title: Migrerade data ser fullständiga ut men betyder något annat
+      description: Fält mappas efter namn utan dataägaren, och koder i det gamla systemet betyder något annat i det nya. Det nya systemet arbetar med fel värden och beslut blir fel i månader.
+      mitigation: Låt dataägaren godkänna en mappning på fältnivå, tvätta källdata före den slutliga migreringen, stäm av antal och summor och jämför kritiska resultat i parallellkörning.
+  - id: SYMIG-R04
+    category: compliance
+    likelihood: 2
+    impact: 4
+    tags: [archiving, legacy-shutdown]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 15489-1:2016 (records management)", "ISO/IEC/IEEE 15288:2023 §6.4.14 (disposal process)"]
+    mitigated_by: [SYMIG-13]
+    en:
+      title: Records lost when the legacy system is shut down
+      description: Data that was not migrated is deleted together with the old system. Records that must be kept for audits, disputes or archives are gone.
+      mitigation: Archive legacy data with read access before the old system is shut down.
+    sv:
+      title: Handlingar går förlorade när det gamla systemet stängs
+      description: Data som inte migrerades raderas tillsammans med det gamla systemet. Handlingar som måste bevaras för revisioner, tvister eller arkiv är borta.
+      mitigation: Arkivera data från det gamla systemet med läsåtkomst innan det stängs.

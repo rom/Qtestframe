@@ -840,3 +840,33 @@ risks:
       title: Kritisk incident hanteras i normal takt
       description: Prioriteten sätts godtyckligt och det finns inga mål för svars- eller lösningstid för prioritet 1. Ett verksamhetskritiskt avbrott väntar i kön medan eskaleringskontakterna är okända.
       mitigation: Sätt prioritet utifrån påverkan och brådska, svara inom 15 minuter och lös inom 4 timmar för prioritet 1, kom överens om en eskaleringsmatris och fastställ mål för återställningstid och återställningspunkt per tjänst.
+  - id: SVSLA-R03
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [recovery-objectives, continuity]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 27031:2025", "ISO 22301:2019 §8.3"]
+    mitigated_by: [SVSLA-17, SVSLA-18]
+    en:
+      title: Recovery after a disaster takes far longer than the business assumed
+      description: "The agreement states availability but no recovery time or recovery point, and the customer's own obligations are unclear. After a major failure the service is down for days and data is lost."
+      mitigation: Agree recovery time and recovery point objectives per service and write down the customer obligations the targets depend on.
+    sv:
+      title: Återställning efter en katastrof tar mycket längre tid än verksamheten trodde
+      description: Avtalet anger tillgänglighet men ingen återställningstid eller återställningspunkt, och kundens egna åtaganden är oklara. Efter ett större fel ligger tjänsten nere i flera dagar och data går förlorade.
+      mitigation: Kom överens om mål för återställningstid och återställningspunkt per tjänst och skriv ned de åtaganden från kunden som målen är beroende av.
+  - id: SVSLA-R04
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [reporting, measurement]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 20000-1:2018 §9.4", "ISO/IEC 20000-1:2018 §9.1"]
+    mitigated_by: [SVSLA-06, SVSLA-08, SVSLA-09]
+    en:
+      title: Service levels reported only by the provider and never verified
+      description: The provider reports its own figures late and without the measurement data. The customer cannot check the reports and disputes about breaches cannot be settled.
+      mitigation: Require a monthly service report on time, hand over the measurement data on request and hold quarterly service reviews with recorded actions.
+    sv:
+      title: Servicenivåer rapporteras bara av leverantören och kontrolleras aldrig
+      description: Leverantören rapporterar sina egna siffror sent och utan mätdata. Kunden kan inte granska rapporterna och tvister om brott mot avtalet kan inte lösas.
+      mitigation: Kräv en månatlig servicerapport i tid, lämna ut mätdata på begäran och håll kvartalsvisa genomgångar med dokumenterade åtgärder.

@@ -552,3 +552,33 @@ risks:
       title: Systemet avvisas av dem som ska använda det
       description: Användarna och deras arbetsförhållanden studeras inte och utvärdering sker först vid godkännandet. Systemet fungerar enligt specifikationen men inte för personalen, som vägrar använda det eller går runt det.
       mitigation: Planera människocentrerad design, dokumentera användningssammanhanget för varje användargrupp, spåra användarkraven till det, utvärdera användbarheten med representativa användare i varje iteration och validera med driftpersonalen före godkännandet.
+  - id: SYHF-R03
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [workload, control-room]
+    refs: ["IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "ISO 10075-2:2024 (design principles for mental workload)", "ISO 11064-1:2000 (principles for the design of control centres)"]
+    mitigated_by: [SYHF-13, SYHF-04, SYHF-09]
+    en:
+      title: Operators overloaded during a disturbance
+      description: Peak-load situations were never analysed. During a major disturbance operators must handle more information and actions than they can, and critical steps are missed.
+      mitigation: Analyse each critical operator task, assess mental workload in peak-load scenarios and give an overview display of the whole area of responsibility.
+    sv:
+      title: Operatörer överbelastas under en störning
+      description: Situationer med hög belastning har aldrig analyserats. Under en större störning måste operatörerna hantera mer information och fler åtgärder än de klarar och kritiska steg missas.
+      mitigation: Analysera varje kritisk operatörsuppgift, bedöm den mentala arbetsbelastningen i scenarier med hög belastning och ge en översiktsbild av hela ansvarsområdet.
+  - id: SYHF-R04
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [use-error, validation]
+    refs: ["IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "ISO 9241-110:2020 (use error robustness)", "ISO 11064-7:2006 (principles for the evaluation of control centres)"]
+    mitigated_by: [SYHF-06, SYHF-14, SYHF-05]
+    en:
+      title: Critical use error found only in operation
+      description: The design was evaluated with developers, not with representative users and crews. A predictable use error remains in the system and causes an accident.
+      mitigation: Analyse use errors with a mitigation for each critical one, evaluate with representative users in each iteration and validate the integrated system with operating crews.
+    sv:
+      title: Kritiskt användarfel upptäcks först i drift
+      description: Konstruktionen utvärderades med utvecklare, inte med representativa användare och skiftlag. Ett förutsägbart användarfel finns kvar i systemet och orsakar en olycka.
+      mitigation: Analysera användarfel med en åtgärd för varje kritiskt fel, utvärdera med representativa användare i varje iteration och validera det integrerade systemet med skiftlag.
