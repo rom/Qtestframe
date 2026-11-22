@@ -834,3 +834,50 @@ tests:
           expected: En insatstid per larm.
         - action: Beräkna andelen insatstider på högst 20 minuter.
           expected: Andelen är minst 95 %.
+
+risks:
+  - id: FCSEC-R01
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [unauthorised-entry, access-control]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.7.2", "EN 60839-11-1"]
+    mitigated_by: [FCSEC-01, FCSEC-02, FCSEC-03, FCSEC-05, FCSEC-09]
+    en:
+      title: Unauthorised person enters a restricted area
+      description: A lost card still works, a door is held open or a visitor walks around unescorted. Someone reaches equipment or documents they must not access.
+      mitigation: Divide the premises into security zones, require card and PIN at high-security zones, block lost cards within one hour, alarm on forced or held-open doors and escort registered visitors.
+    sv:
+      title: Obehörig person tar sig in i ett skyddat område
+      description: Ett förlorat kort fungerar fortfarande, en dörr hålls öppen eller en besökare går runt utan följe. Någon når utrustning eller handlingar som den inte får komma åt.
+      mitigation: Dela in lokalerna i säkerhetszoner, kräv kort och kod till zoner med hög säkerhet, spärra förlorade kort inom en timme, larma vid uppbrutna eller uppställda dörrar och ledsaga registrerade besökare.
+  - id: FCSEC-R02
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [burglary, critical-entity]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "Directive (EU) 2022/2557 (CER) Art. 13(1)(c)"]
+    mitigated_by: [FCSEC-06, FCSEC-07, FCSEC-16, FCSEC-19, FCSEC-15]
+    en:
+      title: Break-in or sabotage at a critical site
+      description: Intruders force the perimeter of a site that supports essential services and damage or steal equipment. The service is interrupted and the response arrives too late.
+      mitigation: Use grade 3 intrusion alarm and burglar-resistant doors and windows, protect and detect at the perimeter, verify alarms with a guard on site within 20 minutes and assess physical threats every 4 years.
+    sv:
+      title: Inbrott eller sabotage på en kritisk plats
+      description: Inkräktare forcerar skalskyddet på en plats som stöder samhällsviktiga tjänster och skadar eller stjäl utrustning. Tjänsten avbryts och insatsen kommer för sent.
+      mitigation: Använd inbrottslarm av grad 3 och inbrottsskyddade dörrar och fönster, skydda och detektera vid perimetern, verifiera larm med en väktare på plats inom 20 minuter och bedöm fysiska hot vart fjärde år.
+  - id: FCSEC-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [building-automation, ot]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1392 (use of default credentials)", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
+    mitigated_by: [FCSEC-12, FCSEC-13, FCSEC-14]
+    en:
+      title: Building automation taken over from the internet
+      description: The building automation system is reachable from the office network or internet with default passwords. An attacker turns off heating, ventilation or access control.
+      mitigation: Separate the building automation network from the office network and internet, use personal accounts and no default passwords and assess software updates every quarter.
+    sv:
+      title: Fastighetsautomationen tas över från internet
+      description: Fastighetsautomationen kan nås från kontorsnätet eller internet med standardlösenord. En angripare stänger av värme, ventilation eller passersystem.
+      mitigation: Skilj fastighetsautomationens nät från kontorsnätet och internet, använd personliga konton och inga standardlösenord och bedöm programuppdateringar varje kvartal.

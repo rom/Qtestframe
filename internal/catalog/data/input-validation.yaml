@@ -877,3 +877,80 @@ tests:
           data: "ａｄｍｉｎ"
         - action: Registrera namnet "admin2".
           expected: Namnet godtas.
+
+risks:
+  - id: INP-R01
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [injection, sql]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A03", "CWE-89 (SQL injection)", "CWE-78 (OS command injection)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    mitigated_by: [INP-02, INP-03, INP-04, INP-13, INP-01]
+    en:
+      title: Injection gives control of the database or server
+      description: Input reaches a database query, shell command, directory filter or template without separation from the code. An attacker reads or deletes all data, or runs commands on the server.
+      mitigation: Use parameterised queries, keep user input out of shell commands and templates, escape directory filters and validate input on the server.
+    sv:
+      title: Injektion ger kontroll över databasen eller servern
+      description: Inmatning når en databasfråga, ett skalkommando, ett katalogfilter eller en mall utan att hållas åtskild från koden. En angripare läser eller raderar all data eller kör kommandon på servern.
+      mitigation: Använd parametriserade frågor, håll användarinmatning borta från skalkommandon och mallar, skydda katalogfilter och validera inmatning på servern.
+  - id: INP-R02
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [xss, session-theft]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A03", "CWE-79 (cross-site scripting)", "CWE-116 (improper encoding or escaping of output)", "MITRE ATT&CK T1059.007 (JavaScript)", "MITRE ATT&CK T1539 (steal web session cookie)"]
+    mitigated_by: [INP-05, INP-06, SESS-06]
+    en:
+      title: Script injected into pages acts for the victim
+      description: Text from one user is shown to others without encoding and runs as script in their browsers. The script reads data, performs actions in the victim's name or steals the session.
+      mitigation: Encode output for its context, apply a Content Security Policy without inline scripts and protect the session cookie from scripts.
+    sv:
+      title: Injicerat skript på sidor agerar för offret
+      description: Text från en användare visas för andra utan kodning och körs som skript i deras webbläsare. Skriptet läser data, utför åtgärder i offrets namn eller stjäl sessionen.
+      mitigation: Koda utdata för sitt sammanhang, tillämpa en Content Security Policy utan inbäddade skript och skydda sessionskakan från skript.
+  - id: INP-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [ssrf, cloud-metadata]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A10", "CWE-918 (server-side request forgery)", "MITRE ATT&CK T1552.005 (cloud instance metadata API)"]
+    mitigated_by: [INP-10, SECR-13]
+    en:
+      title: Server tricked into calling internal services
+      description: A feature that fetches a URL supplied by the user is pointed at internal addresses or the cloud metadata service. The attacker reads internal data or obtains the server's cloud credentials.
+      mitigation: Allow outgoing requests only to listed destinations, block internal and metadata addresses and use workload identity instead of static cloud keys.
+    sv:
+      title: Servern luras att anropa interna tjänster
+      description: En funktion som hämtar en adress som användaren anger pekas mot interna adresser eller molnets metadatatjänst. Angriparen läser intern data eller får serverns inloggningsuppgifter i molnet.
+      mitigation: Tillåt utgående anrop bara till listade mål, blockera interna adresser och metadataadresser och använd arbetslastidentitet i stället för statiska molnnycklar.
+  - id: INP-R04
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [deserialisation, xml]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A08", "CWE-502 (deserialization of untrusted data)", "CWE-611 (XML external entity reference)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    mitigated_by: [INP-09, INP-11, SDL-13]
+    en:
+      title: Remote code execution through crafted data formats
+      description: The system deserialises objects from untrusted input or lets its XML parser resolve external entities. A crafted message runs code, reads local files or exhausts memory.
+      mitigation: Deserialise no untrusted objects, turn off external entities in XML parsers and fuzz the parsers that handle external input.
+    sv:
+      title: Fjärrexekvering av kod via konstruerade dataformat
+      description: Systemet deserialiserar objekt från inmatning som inte är betrodd eller låter sin XML-tolk slå upp externa entiteter. Ett konstruerat meddelande kör kod, läser lokala filer eller förbrukar allt minne.
+      mitigation: Deserialisera inga objekt från källor som inte är betrodda, stäng av externa entiteter i XML-tolkar och fuzztesta de tolkar som hanterar extern inmatning.
+  - id: INP-R05
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [redos, denial-of-service]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "CWE-1333 (inefficient regular expression complexity)", "CWE-776 (XML entity expansion)", "MITRE ATT&CK T1499.004 (application or system exploitation)"]
+    mitigated_by: [INP-14, INP-11, APIS-07]
+    en:
+      title: Crafted input stalls the service
+      description: A short input makes a regular expression or an XML parser work for minutes. A few such requests occupy every worker and the service stops responding.
+      mitigation: Use regular expressions that run in bounded time, limit entity expansion and limit the request body size.
+    sv:
+      title: Konstruerad inmatning låser tjänsten
+      description: En kort inmatning får ett reguljärt uttryck eller en XML-tolk att arbeta i flera minuter. Ett fåtal sådana anrop upptar alla arbetsprocesser och tjänsten slutar svara.
+      mitigation: Använd reguljära uttryck med begränsad körtid, begränsa expansionen av entiteter och begränsa meddelandestorleken.

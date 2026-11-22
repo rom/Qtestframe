@@ -28,7 +28,7 @@ const (
 	ReasonCycle        = "cycle"         // prerequisites form a cycle
 	ReasonNoEvidence   = "no_evidence"   // unevidenced_must
 	ReasonNoMitigation = "no_mitigation" // the risk has no mitigation requirement
-	ReasonNotVerified  = "not_verified"  // none of the risk's mitigations is verified
+	ReasonNotVerified  = "not_verified"  // not every mitigation of the risk is verified
 	ReasonUnjustified  = "unjustified"   // unjustified_rejection
 	ReasonSimilar      = "similar"       // duplicate_suspect
 )
@@ -84,7 +84,7 @@ var Builtins = []Builtin{
 	{model.CheckVerifiesInactive, "Test verifies an inactive requirement", "A test verifies a requirement that is rejected or obsolete.", "warning", true},
 	{model.CheckBrokenPrerequisite, "Broken test prerequisite", "A test prerequisite is deleted or its latest result is failing, or prerequisites form a cycle.", "warning", true},
 	{model.CheckUnevidencedMust, "MUST requirement in a release without passing evidence", "A MUST or SHALL requirement in a planned or active release has no passing evidence.", "warning", true},
-	{model.CheckUnmitigatedRisk, "High risk without verified mitigation", "A high or critical risk has no linked mitigation requirement, or none of its mitigations is verified.", "warning", true},
+	{model.CheckUnmitigatedRisk, "High risk without verified mitigation", "A high or critical risk has no linked mitigation requirement, or not all of its mitigations are verified.", "warning", true},
 	{model.CheckUnjustifiedRejection, "Regulatory requirement rejected without justification", "A requirement adopted from a regulation of the catalogue is rejected without a recorded justification.", "warning", true},
 	{model.CheckDuplicateSuspect, "Suspected duplicate requirements", "Requirements with nearly identical text and no duplicates relation.", "warning", true},
 }
@@ -721,18 +721,18 @@ func (b *builtinEval) risks(r model.TraceRule, scope Scope) {
 			b.add(v)
 			continue
 		}
-		verified := false
+		// mitigated once every mitigating requirement is verified
+		var open []string
 		for _, id := range k.RequirementIDs {
-			if b.h.Verified(g, id) {
-				verified = true
-				break
+			if !b.h.Verified(g, id) {
+				open = append(open, id)
 			}
 		}
-		if verified {
+		if len(open) == 0 {
 			continue
 		}
 		v.Check = ReasonNotVerified
-		for _, id := range k.RequirementIDs {
+		for _, id := range open {
 			if o, ok := b.req(id); ok {
 				v.Related = append(v.Related, Related{Item: o, Role: "mitigation", Check: ReasonNotVerified})
 			}

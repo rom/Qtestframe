@@ -811,3 +811,35 @@ tests:
         - action: Hämta fakturan som är 6 år gammal och beräkna dess kontrollsumma.
           expected: Fakturan öppnas och kontrollsumman stämmer med originalet.
           data: "SHA-256 registrerad vid utfärdandet"
+
+risks:
+  - id: BILL-R01
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [vat, invoicing]
+    refs: ["Council Directive 2006/112/EC (VAT Directive) Art. 226", "Swedish Bookkeeping Act (1999:1078) ch. 7 §2"]
+    mitigated_by: [BILL-07, BILL-08, BILL-09, BILL-14, BILL-15, BILL-16, BILL-17]
+    en:
+      title: Invoices do not meet VAT and bookkeeping rules
+      description: Invoices lack required content, numbers have gaps, corrections overwrite invoices or the wrong VAT rate is charged. Tax audits lead to back taxes and penalties.
+      mitigation: Include the content required for VAT, number invoices without gaps, correct only by credit note, apply reverse charge and the consumer's member state rate correctly, check VAT numbers and keep invoices for seven years.
+    sv:
+      title: Fakturor uppfyller inte reglerna för moms och bokföring
+      description: Fakturor saknar obligatoriska uppgifter, numreringen har luckor, rättelser skriver över fakturor eller fel momssats tas ut. Skatterevisioner leder till efterbeskattning och avgifter.
+      mitigation: Ta med de uppgifter som momsreglerna kräver, numrera fakturor utan luckor, rätta bara med kreditnota, tillämpa omvänd skattskyldighet och konsumentens medlemsstats momssats korrekt, kontrollera momsregistreringsnummer och spara fakturor i sju år.
+  - id: BILL-R02
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [subscription, consumer-trust]
+    refs: ["Directive 2011/83/EU Art. 8(2)", "ISO 31000:2018 §6.4.2 (risk identification)"]
+    mitigated_by: [BILL-03, BILL-04, BILL-05, BILL-06, BILL-01]
+    en:
+      title: Customers charged in ways they did not expect
+      description: Cancelling is hard, renewals and price changes arrive without notice and trials turn into paid plans automatically. Customers complain, charge back and regulators act.
+      mitigation: Allow online cancellation in no more steps than sign-up, notify before annual renewals, announce price changes 30 days ahead, end free trials without a charge by default and prorate plan changes.
+    sv:
+      title: Kunder debiteras på sätt de inte förväntade sig
+      description: Det är svårt att säga upp, förnyelser och prisändringar kommer utan förvarning och provperioder övergår automatiskt i betalda abonnemang. Kunderna klagar, begär återbetalning och tillsynsmyndigheter agerar.
+      mitigation: Tillåt uppsägning via webben i högst lika många steg som registreringen, meddela före årliga förnyelser, avisera prisändringar 30 dagar i förväg, avsluta gratis provperioder utan debitering som standard och fördela kostnaden vid byte av abonnemang.

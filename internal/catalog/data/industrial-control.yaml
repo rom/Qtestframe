@@ -1107,3 +1107,80 @@ tests:
           data: "en byte ändrad i avbilden"
         - action: Ladda originalpaketet.
           expected: Styrenheten godtar och installerar det.
+
+risks:
+  - id: ICS-R01
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [ot, ransomware, segmentation]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "ENISA Threat Landscape 2024", "MITRE ATT&CK T0886 (remote services)", "MITRE ATT&CK M0930 (network segmentation)"]
+    mitigated_by: [ICS-01, ICS-02, ICS-03, ICS-21]
+    en:
+      title: Attack on the office network spreads to the control system
+      description: Ransomware or an intruder on the enterprise network reaches controllers and HMIs because the networks are not separated. Production stops and the process may be driven into an unsafe state.
+      mitigation: Place every asset in a documented zone, allow no direct traffic from the enterprise network to the control zone, meet the target security level per zone and disable unused ports and services.
+    sv:
+      title: Attack mot kontorsnätet sprids till styrsystemet
+      description: Ransomware eller en inkräktare i det administrativa nätet når styrenheter och operatörspaneler eftersom näten inte är åtskilda. Produktionen stannar och processen kan drivas till ett osäkert tillstånd.
+      mitigation: Placera varje tillgång i en dokumenterad zon, tillåt ingen direkt trafik från det administrativa nätet till styrzonen, uppfyll målsäkerhetsnivån per zon och stäng av oanvända portar och tjänster.
+  - id: ICS-R02
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [remote-access, vendor]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-3 SR 1.13", "CWE-308 (use of single-factor authentication)", "MITRE ATT&CK T0822 (external remote services)", "MITRE ATT&CK M0932 (multi-factor authentication)"]
+    mitigated_by: [ICS-05, ICS-06, ICS-18]
+    en:
+      title: Remote maintenance access misused
+      description: A vendor's remote connection uses a shared password and bypasses the security controls. An attacker who obtains it controls the process from outside.
+      mitigation: Allow remote access only through a jump host with multi-factor authentication, record remote sessions and monitor security events from the control system centrally.
+    sv:
+      title: Fjärråtkomst för underhåll missbrukas
+      description: En leverantörs fjärranslutning använder ett delat lösenord och kringgår säkerhetsskydden. En angripare som får tag på den styr processen utifrån.
+      mitigation: Tillåt fjärråtkomst bara via en hoppserver med flerfaktorsautentisering, spela in fjärrsessioner och övervaka säkerhetshändelser från styrsystemet centralt.
+  - id: ICS-R03
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [logic-change, safety-system]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 61508-1:2010 §7.4 (hazard and risk analysis)", "MITRE ATT&CK T0889 (modify program)", "MITRE ATT&CK T0880 (loss of safety)"]
+    mitigated_by: [ICS-13, ICS-16, ICS-07, ICS-22]
+    en:
+      title: Controller logic or safety system manipulated
+      description: Unauthorised commands or a modified program are loaded into a controller, or the safety instrumented system shares a network with basic control. The process runs outside its safe limits and can injure people.
+      mitigation: Detect unapproved logic changes, separate the safety instrumented system from basic control, authenticate industrial protocols and check firmware integrity before installation.
+    sv:
+      title: Styrlogik eller säkerhetssystem manipuleras
+      description: Obehöriga kommandon eller ett ändrat program laddas in i en styrenhet, eller det säkerhetsinstrumenterade systemet delar nät med basstyrningen. Processen körs utanför sina säkra gränser och kan skada människor.
+      mitigation: Upptäck logikändringar som inte är godkända, skilj det säkerhetsinstrumenterade systemet från basstyrningen, autentisera industriprotokollen och kontrollera firmwarens integritet före installation.
+  - id: ICS-R04
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [alarm-flood, operator]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62682:2022"]
+    mitigated_by: [ICS-08, ICS-09, ICS-10]
+    en:
+      title: Operator misses a critical alarm in an alarm flood
+      description: During a disturbance hundreds of alarms arrive, shelved alarms are forgotten and colours do not distinguish abnormal states. The operator does not react to the alarm that matters.
+      mitigation: Keep the alarm rate per operator within limits, return shelved alarms after a time limit and reserve HMI colours for abnormal states.
+    sv:
+      title: Operatören missar ett kritiskt larm i en larmlavin
+      description: Under en störning kommer hundratals larm, avställda larm glöms bort och färgerna skiljer inte ut onormala tillstånd. Operatören reagerar inte på det larm som är viktigt.
+      mitigation: Håll larmfrekvensen per operatör inom gränserna, låt avställda larm komma tillbaka efter en tidsgräns och reservera färger i operatörspanelen för onormala tillstånd.
+  - id: ICS-R05
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [communication-loss, recovery]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "MITRE ATT&CK T0814 (denial of service)", "MITRE ATT&CK T0809 (data destruction)", "MITRE ATT&CK M0953 (data backup)"]
+    mitigated_by: [ICS-15, ICS-12, ICS-14, ICS-04]
+    en:
+      title: Process cannot be controlled or restored after a disruption
+      description: Network load or a communication loss leaves the controllers in an undefined state, and their configurations cannot be restored. Production stops for days.
+      mitigation: Go to a safe state on loss of communication, keep the control cycle deterministic under network load, back up controller configurations and keep an inventory of controllers, RTUs and HMIs.
+    sv:
+      title: Processen kan inte styras eller återställas efter en störning
+      description: Nätbelastning eller ett kommunikationsavbrott lämnar styrenheterna i ett odefinierat tillstånd, och deras konfigurationer kan inte återställas. Produktionen står stilla i flera dagar.
+      mitigation: Gå till ett säkert tillstånd vid kommunikationsavbrott, håll styrcykeln deterministisk under nätbelastning, säkerhetskopiera styrenheternas konfigurationer och för en förteckning över styrenheter, RTU:er och operatörspaneler.

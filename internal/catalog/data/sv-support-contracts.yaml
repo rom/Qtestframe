@@ -572,3 +572,35 @@ tests:
           expected: Aspekterna under målet är identifierade.
         - action: Slå upp åtgärdsplanen för varje aspekt under målet.
           expected: Var och en har en plan daterad inom 30 dagar efter undersökningsrapporten.
+
+risks:
+  - id: SVSUP-R01
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [end-of-support, escrow]
+    refs: ["ISO/IEC 27036-2:2022", "Regulation (EU) 2024/2847 (CRA) Art. 13(8)"]
+    mitigated_by: [SVSUP-02, SVSUP-03, SVSUP-06, SVSUP-04]
+    en:
+      title: Critical software loses support
+      description: The supplier ends support at short notice, stops providing security updates or goes out of business. The customer runs vulnerable software with nobody able to change it.
+      mitigation: Require support for at least 5 years with 12 months' notice, security updates for high-severity vulnerabilities within 30 days, source code escrow for critical custom software and a list of what the maintenance fee covers.
+    sv:
+      title: Kritisk programvara förlorar sitt stöd
+      description: Leverantören avslutar stödet med kort varsel, slutar leverera säkerhetsuppdateringar eller går i konkurs. Kunden kör sårbar programvara utan att någon kan ändra den.
+      mitigation: Kräv stöd i minst 5 år med 12 månaders varsel, säkerhetsuppdateringar för allvarliga sårbarheter inom 30 dagar, deponering av källkod för kritisk specialutvecklad programvara och en lista över vad underhållsavgiften omfattar.
+  - id: SVSUP-R02
+    category: project
+    likelihood: 3
+    impact: 3
+    tags: [key-person, knowledge-loss]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)"]
+    mitigated_by: [SVSUP-07, SVSUP-11, SVSUP-08, SVSUP-05]
+    en:
+      title: Knowledge leaves with a consultant
+      description: A named consultant is replaced without overlap or leaves without handing over. Work slows down and mistakes follow while someone new learns the system.
+      mitigation: Replace named consultants only with approval and an overlap, complete knowledge transfer before a consultant leaves, define deliverables and acceptance criteria in a statement of work and approve and log each remote support session.
+    sv:
+      title: Kunskap försvinner med en konsult
+      description: En namngiven konsult byts ut utan överlappning eller slutar utan att lämna över. Arbetet går långsammare och misstag uppstår medan någon ny lär sig systemet.
+      mitigation: Byt namngivna konsulter bara efter godkännande och med överlappning, slutför kunskapsöverföringen innan en konsult slutar, definiera leveranser och godkännandekriterier i en uppdragsbeskrivning och godkänn och logga varje fjärrsupportsession.

@@ -46,7 +46,7 @@ const prefs = usePrefsStore()
 const route = useRoute()
 const router = useRouter()
 const notify = useNotify()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 /** custom fields shown in lists (show_in_list) as columns */
 const listedCols = computed(() => customColumns(useProjectStore().customFieldsFor('risk').filter((f) => f.show_in_list)))
@@ -86,7 +86,7 @@ async function loadRequirements() {
   }
 }
 onMounted(async () => {
-  await Promise.all([load(), loadRequirements(), loadThreshold()])
+  await Promise.all([load(), loadRequirements(), loadThreshold(), loadAreaNames()])
   openFromRoute()
 })
 
@@ -119,20 +119,46 @@ const viewOptions = computed(() => [
 const sourceLabel = (s?: string) => t(`residual.source.${s || 'inherent'}`)
 const aboveCount = computed(() => risks.value.filter((r) => r.above_threshold && !r.acceptance_valid).length)
 
+// ---------- catalogue area: narrows the heat map, the level counts and the register ----------
+const area = ref<string>(typeof route.query.area === 'string' ? route.query.area : '')
+const areaNames = ref<Record<string, string>>({})
+async function loadAreaNames() {
+  try {
+    const ov = await api.get<{ groups: { areas: { id: string; name: string }[] }[] }>('/catalog', { lang: String(locale.value).startsWith('sv') ? 'sv' : 'en' })
+    areaNames.value = Object.fromEntries(ov.groups.flatMap((g) => g.areas.map((a) => [a.id, a.name])))
+  } catch {
+    areaNames.value = {}
+  }
+}
+const ALL_AREAS = '*'
+const NO_AREA = '-'
+const areaOptions = computed(() => {
+  const ids = [...new Set(risks.value.map((r) => r.catalog_area ?? '').filter(Boolean))]
+  ids.sort((a, b) => (areaNames.value[a] ?? a).localeCompare(areaNames.value[b] ?? b))
+  return [
+    { label: t('risksView.area.all'), value: ALL_AREAS },
+    ...ids.map((id) => ({ label: areaNames.value[id] ?? id, value: id })),
+    ...(ids.length && risks.value.some((r) => !r.catalog_area) ? [{ label: t('risksView.area.none'), value: NO_AREA }] : []),
+  ]
+})
+const areaSel = computed({ get: () => area.value || ALL_AREAS, set: (v: string) => (area.value = v === ALL_AREAS ? '' : v) })
+const scoped = computed(() => (!area.value ? risks.value : risks.value.filter((r) => (area.value === NO_AREA ? !r.catalog_area : r.catalog_area === area.value))))
+watch(area, (v) => router.replace({ query: { ...route.query, area: v || undefined } }))
+
 // ---------- filters and heat map ----------
 const text = ref('')
 const levels = ref<string[]>([])
 const statuses = ref<string[]>([])
 const includeClosed = ref(false)
 const cell = ref<{ likelihood: number; impact: number } | null>(null)
-const grid = computed(() => heatGrid(view.value === 'after' ? atResidual(risks.value) : risks.value, includeClosed.value))
+const grid = computed(() => heatGrid(view.value === 'after' ? atResidual(scoped.value) : scoped.value, includeClosed.value))
 const filtered = computed(() =>
   filterRisks(
-    risks.value.filter((r) => includeClosed.value || r.status !== 'closed' || statuses.value.includes('closed')),
+    scoped.value.filter((r) => includeClosed.value || r.status !== 'closed' || statuses.value.includes('closed')),
     { residual: view.value === 'after', likelihood: cell.value?.likelihood, impact: cell.value?.impact, levels: levels.value, statuses: statuses.value, text: text.value },
   ),
 )
-const counts = computed(() => levelCounts(risks.value.filter((r) => r.status !== 'closed')))
+const counts = computed(() => levelCounts(scoped.value.filter((r) => r.status !== 'closed')))
 const levelOptions = computed(() => RISK_LEVELS.map((v) => ({ label: levelLabel(v), value: v })))
 const statusOptions = computed(() => RISK_STATUSES.map((v) => ({ label: statusLabel(v), value: v })))
 const scaleOptions = (label: (n: number) => string) => RISK_SCALE.map((n) => ({ label: `${n} – ${label(n)}`, value: n }))
@@ -220,9 +246,10 @@ function toggleCell(c: HeatCell) {
 function cellLabel(c: HeatCell) {
   return t('risksView.cellLabel', { likelihood: c.likelihood, impact: c.impact, score: c.score, level: levelLabel(c.level), count: t('risksView.riskCount', { count: c.count }, c.count) })
 }
-const hasFilter = computed(() => !!cell.value || !!levels.value.length || !!statuses.value.length || !!text.value.trim())
+const hasFilter = computed(() => !!cell.value || !!levels.value.length || !!statuses.value.length || !!text.value.trim() || !!area.value)
 function clearFilters() {
   cell.value = null
+  area.value = ''
   levels.value = []
   statuses.value = []
   text.value = ''
@@ -431,6 +458,10 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <h2 id="heat-title" class="grow">{{ view === 'after' ? t('residual.heatAfter') : t('risksView.heatMap') }}</h2>
           <SelectButton v-model="view" :options="viewOptions" option-label="label" option-value="value" :allow-empty="false" :aria-label="t('residual.view')" size="small" />
         </div>
+        <div v-if="areaOptions.length > 1" class="row small area-row">
+          <label for="risk-area">{{ t('risksView.area.label') }}</label>
+          <Select v-model="areaSel" input-id="risk-area" :options="areaOptions" option-label="label" option-value="value" size="small" filter class="area-select" />
+        </div>
         <div class="heat-wrap">
           <table class="heat">
             <caption class="sr-only">{{ t('risksView.heatCaption') }}</caption>
@@ -487,6 +518,10 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         </Tag>
         <Button v-if="hasFilter" :label="t('common.clear')" text size="small" severity="secondary" @click="clearFilters" />
         <span class="small muted" role="status">{{ t('risksView.shown', { count: filtered.length, total: risks.length }) }}</span>
+        <Tag v-if="area" severity="info" class="cell-chip">
+          <span>{{ t('risksView.area.chip', { area: areaNames[area] ?? (area === NO_AREA ? t('risksView.area.none') : area) }) }}</span>
+          <button type="button" class="link-button" :aria-label="t('risksView.area.clear')" @click="area = ''"><i class="pi pi-times" aria-hidden="true" /></button>
+        </Tag>
       </div>
       <div v-if="selection.length && canWrite" class="bulkbar" role="toolbar" :aria-label="t('risksView.bulk.toolbar')">
         <b>{{ t('common.selected', { count: selection.length }) }}</b>
@@ -519,7 +554,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         <Column field="title" :header="t('common.title')" sortable body-class="stack-main" style="min-width: 200px">
           <template #body="{ data }">
             <button type="button" class="link-button" style="font-weight: 600" :aria-label="t('risksView.openRisk', { key: data.key, title: data.title })" @click.stop="openEdit(data as Risk)">{{ data.title }}</button>
-            <div v-if="data.category" class="small muted">{{ data.category }}</div>
+            <div v-if="data.category || data.catalog_ref" class="small muted">{{ data.category }}<template v-if="data.catalog_ref"><template v-if="data.category"> · </template><span :title="t('risksView.fromCatalogue')">{{ data.catalog_ref }}</span></template></div>
           </template>
         </Column>
         <Column field="likelihood" :header="t('risksView.likelihood')" sortable style="width: 110px"><template #body="{ data }"><span :title="likelihoodLabel(data.likelihood)">{{ data.likelihood }}</span></template></Column>
@@ -732,4 +767,6 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
   .heat-cell { width: 44px; height: 44px; }
   .heat { border-spacing: 3px; }
 }
+.area-row { gap: 8px; align-items: center; margin: 4px 0 8px; }
+.area-select { min-width: 12rem; }
 </style>

@@ -524,3 +524,35 @@ tests:
           expected: Varje handling hittas med innehåll och metadata.
         - action: Upprepa en sökning med testkontot utan behörighet till arkivet.
           expected: Åtkomsten nekas.
+
+risks:
+  - id: SYMIG-R01
+    category: data
+    likelihood: 3
+    impact: 5
+    tags: [data-migration, reconciliation]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)", "ISO/IEC 25012:2008 (data quality model)"]
+    mitigated_by: [SYMIG-03, SYMIG-04, SYMIG-05, SYMIG-06, SYMIG-11]
+    en:
+      title: Data lost or corrupted in the migration
+      description: Fields are mapped wrongly, poor source data is moved as it is and nobody reconciles the result. The new system starts with wrong or missing data that is found only in daily use.
+      mitigation: Have the data owner approve the field mapping, profile and cleanse source data, run two timed full rehearsals, reconcile record counts and control totals and run in parallel with comparison of critical outputs.
+    sv:
+      title: Data går förlorad eller förvanskas vid migreringen
+      description: Fält mappas fel, dålig källdata flyttas som den är och ingen stämmer av resultatet. Det nya systemet startar med felaktiga eller saknade uppgifter som upptäcks först i den dagliga användningen.
+      mitigation: Låt dataägaren godkänna fältmappningen, profilera och tvätta källdata, gör två tidsatta fullständiga generalrepetitioner, stäm av antal poster och kontrollsummor och kör parallellt med jämförelse av kritiska utdata.
+  - id: SYMIG-R02
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [cut-over, rollback]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)", "ITIL 4 Change enablement"]
+    mitigated_by: [SYMIG-07, SYMIG-08, SYMIG-09, SYMIG-10, SYMIG-12]
+    en:
+      title: Cut-over fails with no way back
+      description: The cut-over overruns, a step is forgotten or the legacy system has changed since the rehearsal. Neither the old nor the new system works on Monday morning.
+      mitigation: Follow a cut-over runbook with an owner, timing and check for each step, freeze changes on the legacy system, decide go or no-go at the point of no return, rehearse rollback within 4 hours and review incidents daily during hypercare.
+    sv:
+      title: Driftövergången misslyckas utan väg tillbaka
+      description: Övergången drar över tiden, ett steg glöms bort eller det gamla systemet har ändrats sedan generalrepetitionen. Varken det gamla eller det nya systemet fungerar på måndagsmorgonen.
+      mitigation: Följ en driftinstruktion för övergången med ansvarig, tid och kontroll för varje steg, frys ändringar i det gamla systemet, fatta beslut om att gå vidare eller inte vid punkten utan återvändo, öva återgång inom 4 timmar och gå igenom incidenterna dagligen under den förstärkta supportperioden.

@@ -92,7 +92,7 @@ Besides the rules you write, Qtestframe has **built-in checks** with a fixed con
 | Test verifies an inactive requirement | a test verifies a rejected or obsolete requirement |
 | Broken test prerequisite | a prerequisite of a test is deleted, its latest result failed, or prerequisites form a cycle |
 | MUST requirement in a release without passing evidence | a MUST or SHALL requirement in a planned or active release has no linked test that is not suspect and passed its latest execution |
-| High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or none of its requirements is verified |
+| High risk without verified mitigation | a high or critical risk (not closed or accepted) has no linked requirement, or not every one of its requirements is verified (a risk whose requirements are all verified counts as mitigated) |
 | Regulatory requirement rejected without justification | a requirement added from a regulation of the [catalogue](catalogue.md) (a law or directive) is rejected, and it has no comment and no rationale of its own |
 | Suspected duplicate requirements | two active requirements have nearly identical title and description (similarity of at least 0.9 by default) and no *duplicates* relation |
 

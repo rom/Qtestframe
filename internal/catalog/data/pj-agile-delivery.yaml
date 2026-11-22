@@ -670,3 +670,35 @@ tests:
           expected: Varje skillnad har en angiven risk.
         - action: Läs testslutrapporten.
           expected: Den har körda och godkända test, öppna fel per allvarlighetsgrad, kvarstående risker och avvikelser, och är daterad före beslutet om release.
+
+risks:
+  - id: PJAGL-R01
+    category: quality
+    likelihood: 4
+    impact: 3
+    tags: [definition-of-done, regression]
+    refs: ["Scrum Guide 2020 (The Sprint)", "ISO/IEC/IEEE 29119-2:2021"]
+    mitigated_by: [PJAGL-02, PJAGL-03, PJAGL-14, PJAGL-12, PJAGL-16]
+    en:
+      title: Unfinished work released as done
+      description: Items enter sprints without acceptance criteria, done means different things to different people and regression testing is manual. Defects pile up and releases break existing functions.
+      mitigation: Require acceptance criteria before an item enters a sprint, write a definition of done with tests and documentation, run an automated regression suite on each merge, release nothing with open critical defects and report test completion before the release decision.
+    sv:
+      title: Ofärdigt arbete levereras som klart
+      description: Poster tas in i sprinter utan godkännandekriterier, klart betyder olika saker för olika personer och regressionstesterna är manuella. Felen hopar sig och leveranser förstör befintliga funktioner.
+      mitigation: Kräv godkännandekriterier innan en post tas in i en sprint, skriv en definition av klart med tester och dokumentation, kör en automatiserad regressionssvit vid varje sammanslagning, leverera inget med öppna kritiska fel och rapportera testavslutet före leveransbeslutet.
+  - id: PJAGL-R02
+    category: project
+    likelihood: 3
+    impact: 3
+    tags: [dependencies, forecasting]
+    refs: ["SAFe 6.0 (PI Planning)"]
+    mitigated_by: [PJAGL-07, PJAGL-08, PJAGL-09, PJAGL-01]
+    en:
+      title: Teams block each other and release dates slip
+      description: Teams plan alone, dependencies have no agreed delivery and forecasts are guesses. Releases slip because one team waits for another.
+      mitigation: Plan jointly every 8 to 12 weeks, give each dependency a delivering sprint, forecast releases from measured throughput and keep one ordered backlog with one accountable product owner.
+    sv:
+      title: Team blockerar varandra och leveransdatum glider
+      description: Teamen planerar var för sig, beroenden saknar överenskommen leverans och prognoserna är gissningar. Leveranser glider eftersom ett team väntar på ett annat.
+      mitigation: Planera gemensamt var 8:e till 12:e vecka, ge varje beroende en levererande sprint, gör prognoser för leveranser utifrån uppmätt genomströmning och ha en ordnad backlogg med en ansvarig produktägare.

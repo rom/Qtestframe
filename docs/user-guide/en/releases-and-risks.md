@@ -111,9 +111,9 @@ Every release is checked before any is changed. Changes of status (other than *R
 
 The register shows the score and level of each risk, its status, owner, the requirements that address it, and how many of them are **covered** (have tests) and **verified** (all their tests passed). Filter it by text, level or status. Closed risks are hidden unless you select **Include closed risks** or filter on the status *Closed*.
 
-To add a risk, select **New risk**. Choose the likelihood and impact (the dialog shows the score and level as you go), describe the mitigation and select **Link requirements** to choose the requirements that address the risk. Select a risk in the register to change it.
+To add a risk, select **New risk**. Choose the likelihood and impact (the dialog shows the score and level as you go), describe the mitigation and select **Link requirements** to choose the requirements that address the risk. Select a risk in the register to change it. You can also start from the typical risks of the [catalogue](catalogue.md#risks-in-the-catalogue): they come with a suggested mitigation and the requirements that mitigate them, already linked.
 
-The requirement editor shows the risks a requirement addresses under **Risks**, and the requirement list has optional **Risk** and **Open defects** columns (see **Columns**).
+The requirement editor shows the risks a requirement mitigates under **Mitigates risks**. Select **Link a risk** to choose a risk of the project that the requirement mitigates, or the **×** on a risk to remove the link; the risk's requirements change with it. The requirement list has optional **Risk** and **Open defects** columns (see **Columns**).
 
 ### Change many risks at once
 
@@ -124,6 +124,8 @@ Tick risks in the register. The toolbar sets **status**, **likelihood** or **imp
 The heat map counts the risks in a 5 × 5 grid: likelihood from 5 at the top to 1 at the bottom, impact from 1 on the left to 5 on the right. The colour of a cell is the level of its score. Select a cell to show only the risks with that likelihood and impact in the register; select it again, or the **×** on the filter chip, to show all.
 
 Next to the heat map, **Open risks by level** counts the risks that are not closed, per level; select a level to filter the register.
+
+When the project has risks from the catalogue, **Catalogue area** above the heat map shows only the risks of one area (for example *Authentication* or *Fire safety*), or those not from the catalogue. The heat map, the level counts and the register follow the choice, and the area is part of the page address. The risk list of the API takes the same choice as the query fields `catalog_area` (alias `area`) and `catalog`, for example `area:authentication` or `catalog:AUTH-R01`.
 
 ## Risk levels
 

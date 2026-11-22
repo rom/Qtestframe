@@ -12,7 +12,9 @@ import {
   importPlan,
   inProjectSet,
   isRequirement,
+  isRisk,
   itemSources,
+  linkedIds,
   matchesNode,
   nodeCounts,
   nodeLabel,
@@ -26,6 +28,7 @@ import {
   toggleIds,
   type CatalogGroup,
   type CatalogRequirement,
+  type CatalogRisk,
   type CatalogSource,
   type CatalogTest,
 } from './catalog'
@@ -56,6 +59,26 @@ const test = (id: string, over: Partial<CatalogTest> = {}): CatalogTest => ({
   steps: 2,
   title: 'Short password is rejected',
   description: 'Checks the minimum length.',
+  ...over,
+})
+
+const risk = (id: string, over: Partial<CatalogRisk> = {}): CatalogRisk => ({
+  id,
+  area: 'authentication',
+  group: 'security',
+  category: 'security',
+  category_name: 'Security',
+  likelihood: 4,
+  impact: 3,
+  score: 12,
+  level: 'high',
+  tags: ['credential-stuffing'],
+  refs: [],
+  mitigated_by: ['AUTH-01'],
+  tests: [],
+  title: 'Accounts taken over',
+  description: 'Attackers reuse leaked passwords.',
+  mitigation: 'Refuse breached passwords.',
   ...over,
 })
 
@@ -179,12 +202,56 @@ describe('selection', () => {
   it('plans an import like the server', () => {
     const byId = new Map(reqs.map((r) => [r.id, r]))
     const plan = importPlan(['AUTH-01', 'AUTH-02', 'AUTH-01'], ['PERF-T01'], byId, new Set(['AUTH-02']), new Set(['AUTH-T02']), { includeTests: true, addCopies: false })
-    expect(plan).toEqual({ requirements: ['AUTH-01'], tests: ['PERF-T01', 'AUTH-T01'], included: ['AUTH-T01'], skippedRequirements: ['AUTH-02'], skippedTests: ['AUTH-T02'] })
+    expect(plan).toEqual({
+      requirements: ['AUTH-01'],
+      includedRequirements: [],
+      risks: [],
+      includedRisks: [],
+      skippedRisks: [],
+      tests: ['PERF-T01', 'AUTH-T01'],
+      included: ['AUTH-T01'],
+      skippedRequirements: ['AUTH-02'],
+      skippedTests: ['AUTH-T02'],
+    })
     const copies = importPlan(['AUTH-01', 'NOPE'], ['AUTH-T01'], byId, new Set(['AUTH-01']), new Set(['AUTH-T02']), { includeTests: true, addCopies: true })
     expect(copies.requirements).toEqual(['AUTH-01', 'NOPE'])
     expect(copies.tests).toEqual(['AUTH-T01', 'AUTH-T02'])
     expect(copies.included).toEqual(['AUTH-T02'])
     expect(importPlan(['AUTH-01'], [], byId, new Set(), new Set(), { includeTests: false, addCopies: false }).tests).toEqual([])
+  })
+  it('plans risks with their mitigating requirements and the risks requirements mitigate', () => {
+    const rs = [req('AUTH-01', { tests: ['AUTH-T01'], risks: ['AUTH-R01'] }), req('AUTH-02', { tests: ['AUTH-T02'], risks: ['AUTH-R01', 'AUTH-R02'] }), req('PERF-01', { risks: ['AUTH-R02'] })]
+    const byId = new Map(rs.map((r) => [r.id, r]))
+    const riskById = new Map([risk('AUTH-R01', { mitigated_by: ['AUTH-01', 'AUTH-02'], tests: ['SEC-T09'] }), risk('AUTH-R02', { mitigated_by: ['AUTH-02', 'PERF-01'] })].map((k) => [k.id, k]))
+    const plan = importPlan([], [], byId, new Set(['AUTH-02']), new Set(), { includeTests: true, addCopies: false, riskIds: ['AUTH-R01'], riskById, inRisks: new Set() })
+    expect(plan.risks).toEqual(['AUTH-R01'])
+    expect(plan.requirements).toEqual(['AUTH-01'])
+    expect(plan.includedRequirements).toEqual(['AUTH-01'])
+    expect(plan.skippedRequirements).toEqual([])
+    expect(plan.tests).toEqual(['AUTH-T01', 'AUTH-T02', 'SEC-T09'])
+    const only = importPlan([], [], byId, new Set(), new Set(), { includeTests: false, addCopies: false, riskIds: ['AUTH-R01'], riskById, includeRequirements: false })
+    expect(only.requirements).toEqual([])
+    const withRisks = importPlan(['PERF-01'], [], byId, new Set(), new Set(), { includeTests: false, addCopies: false, riskById, inRisks: new Set(['AUTH-R02']), includeRisks: true })
+    expect(withRisks.risks).toEqual([])
+    expect(withRisks.skippedRisks).toEqual(['AUTH-R02'])
+    const both = importPlan(['AUTH-02'], [], byId, new Set(), new Set(), { includeTests: false, addCopies: false, riskById, includeRisks: true })
+    expect(both.risks).toEqual(['AUTH-R01', 'AUTH-R02'])
+    expect(both.includedRisks).toEqual(['AUTH-R01', 'AUTH-R02'])
+  })
+  it('filters and searches risks', () => {
+    const ks = [risk('AUTH-R01'), risk('FIRE-R01', { area: 'fire', group: 'domain', category: 'safety', level: 'critical', title: 'Fire spreads', mitigation: 'Seal penetrations', mitigated_by: ['FIRE-05'] })]
+    expect(isRisk(ks[0])).toBe(true)
+    expect(isRisk(reqs[0])).toBe(false)
+    expect(filterCatalog(ks, { ...emptyFilters(), categories: ['safety'] }, new Set()).map((x) => x.id)).toEqual(['FIRE-R01'])
+    expect(filterCatalog(ks, { ...emptyFilters(), levels: ['high'] }, new Set()).map((x) => x.id)).toEqual(['AUTH-R01'])
+    expect(filterCatalog(ks, { ...emptyFilters(), priorities: ['low'] }, new Set())).toHaveLength(2)
+    expect(activeFilters({ ...emptyFilters(), categories: ['safety'], levels: ['high'] })).toBe(2)
+    expect(searchScore(ks[1], ['penetrations'])).toBe(2)
+    expect(searchScore(ks[1], ['fire-05'])).toBe(4)
+    expect(linkedIds(ks[1])).toEqual(['FIRE-05'])
+    const byReq = new Map([['FIRE-05', req('FIRE-05', { sources: ['bbr'] })]])
+    expect(itemSources(ks[1], byReq)).toEqual(['bbr'])
+    expect(catalogTree([{ id: 'security', name: 'S', requirements: 1, tests: 1, risks: 1, areas: [{ id: 'authentication', prefix: 'AUTH', group: 'security', name: 'A', description: '', requirements: 1, tests: 1, risks: 1 }] }], 'risk', nodeCounts(ks))[0].total).toBe(1)
   })
 })
 

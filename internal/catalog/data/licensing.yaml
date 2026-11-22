@@ -685,3 +685,35 @@ tests:
           expected: Skanningen av kodstycken körs på pull requesten.
         - action: Läs skanningens resultat.
           expected: Den kopierade funktionen flaggas med källprojekt och GPL-licens, den egna gör det inte, och sammanslagningen väntar på ett beslut.
+
+risks:
+  - id: LIC-R01
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [open-source, copyleft]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.3 (open source content review and approval)", "ISO/IEC 27001:2022 A.5.32"]
+    mitigated_by: [LIC-01, LIC-02, LIC-04, LIC-05, LIC-12]
+    en:
+      title: Open source licence breach forces disclosure or removal
+      description: A copyleft or network copyleft component is shipped without meeting its terms, or an upgrade changes a licence unnoticed. The organisation must release its own source code, remove the component or face a claim.
+      mitigation: Set a licence policy, stop the build on forbidden licences, offer source code for distributed copyleft components, review network copyleft licences before use and stop updates that change a licence.
+    sv:
+      title: Brott mot en öppen källkodslicens tvingar fram offentliggörande eller borttagning
+      description: En komponent med copyleft eller nätverkscopyleft levereras utan att villkoren uppfylls, eller en uppgradering byter licens obemärkt. Organisationen måste släppa sin egen källkod, ta bort komponenten eller möta ett krav.
+      mitigation: Fastställ en licenspolicy, stoppa bygget vid förbjudna licenser, erbjud källkod för distribuerade copyleftkomponenter, granska nätverkscopyleftlicenser före användning och stoppa uppdateringar som byter licens.
+  - id: LIC-R02
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [attribution, generated-code]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.3 (open source content review and approval)", "SPDX 2.3"]
+    mitigated_by: [LIC-03, LIC-07, LIC-09, LIC-10, LIC-14]
+    en:
+      title: Third-party content used without its licence being known
+      description: Copied snippets, fonts, images or AI-generated code enter the product without recording their source or licence. Attribution is missing and the right to use them cannot be shown.
+      mitigation: Ship attribution notices with each release, record copied snippets and the licences of fonts, icons and images, list concluded licences in the SBOM and check generated code against public code.
+    sv:
+      title: Innehåll från tredje part används utan att dess licens är känd
+      description: Kopierade kodstycken, typsnitt, bilder eller AI-genererad kod kommer in i produkten utan att källa eller licens registreras. Upphovsangivelser saknas och rätten att använda dem kan inte visas.
+      mitigation: Leverera upphovsangivelser med varje version, registrera kopierade kodstycken och licenserna för typsnitt, ikoner och bilder, ange fastställda licenser i programvaruförteckningen och kontrollera genererad kod mot publik kod.

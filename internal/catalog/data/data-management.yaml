@@ -853,3 +853,50 @@ tests:
           expected: Varje fält har betydelse, datatyp, tillåtna värden och uppgift om obligatoriskt.
         - action: Jämför fälten i API-beskrivningen med katalogen.
           expected: Inget fält i API:t saknas i katalogen.
+
+risks:
+  - id: DATA-R01
+    category: data
+    likelihood: 4
+    impact: 3
+    tags: [lost-update, concurrency]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25012:2008 (consistency)"]
+    mitigated_by: [DATA-06, DATA-07, DATA-10]
+    en:
+      title: Concurrent edits silently overwrite each other
+      description: Two users edit the same item and the last save wins without warning. Work is lost and nobody notices until the content is wrong.
+      mitigation: Refuse silent overwrites of concurrent edits, show conflicts with both versions and keep the history of changes per item.
+    sv:
+      title: Samtidiga redigeringar skriver obemärkt över varandra
+      description: Två användare redigerar samma post och den sista sparningen vinner utan varning. Arbete går förlorat och ingen märker det förrän innehållet är fel.
+      mitigation: Avvisa tysta överskrivningar vid samtidiga redigeringar, visa konflikter med båda versionerna och spara ändringshistoriken per post.
+  - id: DATA-R02
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [accidental-deletion, bulk-operation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25012:2008 (completeness)"]
+    mitigated_by: [DATA-08, DATA-09, DATA-13, DATA-14]
+    en:
+      title: Data lost through a mistaken deletion or bulk change
+      description: A user deletes or bulk-edits the wrong items, or a deletion breaks references in other records. The data cannot be restored without the help of operations.
+      mitigation: Keep deleted items in a recycle bin for 30 days, restore them with relations and history, report the result of bulk operations and refuse deletions that leave broken references.
+    sv:
+      title: Data går förlorad genom en felaktig radering eller massändring
+      description: En användare raderar eller massredigerar fel poster, eller en radering bryter referenser i andra poster. Uppgifterna kan inte återställas utan hjälp från driften.
+      mitigation: Behåll raderade poster i en papperskorg i 30 dagar, återställ dem med relationer och historik, rapportera resultatet av massoperationer och avvisa raderingar som lämnar brutna referenser.
+  - id: DATA-R03
+    category: data
+    likelihood: 3
+    impact: 3
+    tags: [data-quality, duplicates]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25012:2008 (accuracy)"]
+    mitigated_by: [DATA-03, DATA-05, DATA-15, DATA-18, DATA-04]
+    en:
+      title: Poor data quality spreads through the system
+      description: Invalid values, duplicates and unclear field meanings enter the system and feed reports and integrations. Decisions are taken on wrong data.
+      mitigation: Validate every field on the server, reject duplicate unique values, merge duplicate records, mark mandatory fields before input and keep a data dictionary.
+    sv:
+      title: Dålig datakvalitet sprider sig i systemet
+      description: Ogiltiga värden, dubbletter och oklara fältbetydelser kommer in i systemet och matar rapporter och integrationer. Beslut fattas på felaktiga uppgifter.
+      mitigation: Validera varje fält på servern, avvisa dubbletter av unika värden, slå ihop dubblettposter, markera obligatoriska fält före inmatning och för en dataordbok.

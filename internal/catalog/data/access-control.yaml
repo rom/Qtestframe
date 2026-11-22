@@ -845,3 +845,65 @@ tests:
           expected: Inloggningen lyckas.
         - action: Logga in som samma användare från klienten utanför intervallet.
           expected: Inloggningen avvisas med ett meddelande som anger nätverksbegränsningen.
+
+risks:
+  - id: ACC-R01
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [authorization, idor]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A01", "CWE-639 (authorization bypass through user-controlled key)", "CWE-863 (incorrect authorization)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    mitigated_by: [ACC-02, ACC-01, SDL-12]
+    en:
+      title: Another user's records read by changing an identifier
+      description: An attacker who is signed in changes the record identifier in a request and the system returns or changes a record the user has no right to. Confidential data of other users or customers leaks, or is changed without anyone noticing.
+      mitigation: Check object-level authorisation on every request on the server, deny by default and cover each endpoint with an automated authorisation test matrix.
+    sv:
+      title: Andra användares poster läses genom att en identifierare ändras
+      description: En inloggad angripare ändrar postens identifierare i ett anrop och systemet returnerar eller ändrar en post som användaren inte har rätt till. Konfidentiella uppgifter om andra användare eller kunder läcker eller ändras utan att någon märker det.
+      mitigation: Kontrollera behörigheten till varje objekt i varje anrop på servern, neka som standard och täck varje gränssnitt med en automatiserad behörighetsmatris i testerna.
+  - id: ACC-R02
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [privilege-escalation, roles]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "OWASP Top 10 2021 A01", "CWE-269 (improper privilege management)", "CWE-602 (client-side enforcement of server-side security)", "MITRE ATT&CK T1098 (account manipulation)"]
+    mitigated_by: [ACC-03, ACC-06, ACC-05, SLOG-07]
+    en:
+      title: Ordinary user gains administrator rights
+      description: A user reaches administration functions because the server trusts a role sent by the client or misses a permission check. The user can change configuration, create accounts or read all data.
+      mitigation: Decide roles on the server only, require the administrator role for every administration function, start new accounts with the least privileged role and alert on new administrator rights.
+    sv:
+      title: Vanlig användare får administratörsbehörighet
+      description: En användare når administrationsfunktioner eftersom servern litar på en roll som klienten skickar eller saknar en behörighetskontroll. Användaren kan ändra konfiguration, skapa konton eller läsa all data.
+      mitigation: Bestäm roller enbart på servern, kräv administratörsrollen för varje administrationsfunktion, låt nya konton börja med den minst privilegierade rollen och larma vid nya administratörsbehörigheter.
+  - id: ACC-R03
+    category: security
+    likelihood: 4
+    impact: 3
+    tags: [leavers, access-review]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.18", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1018 (user account management)"]
+    mitigated_by: [ACC-12, ACC-14, ACC-09, ACC-10]
+    en:
+      title: Former employee keeps access
+      description: A person who has left the organisation or changed duties still has an active account or old permissions. The account is used to read or change data after the person should have lost access, by the person or by someone who has taken over the credentials.
+      mitigation: Take deprovisioning from the identity provider into effect within minutes, disable unused accounts, let revoked permissions take effect at once and review access periodically.
+    sv:
+      title: Tidigare anställd behåller åtkomst
+      description: En person som har slutat eller bytt arbetsuppgifter har fortfarande ett aktivt konto eller gamla behörigheter. Kontot används för att läsa eller ändra data efter att personen borde ha förlorat åtkomsten, av personen själv eller av någon som har tagit över inloggningsuppgifterna.
+      mitigation: Låt borttagning i identitetstjänsten slå igenom inom några minuter, inaktivera oanvända konton, låt återkallade behörigheter gälla direkt och granska behörigheterna regelbundet.
+  - id: ACC-R04
+    category: security
+    likelihood: 2
+    impact: 4
+    tags: [segregation-of-duties, fraud]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "ISO/IEC 27001:2022 A.5.3", "MITRE ATT&CK T1657 (financial theft)"]
+    mitigated_by: [ACC-07, ACC-11, PAY-14]
+    en:
+      title: One person both requests and approves a critical change
+      description: The same user can create and approve a payment, a permission or a release. Fraud or a serious mistake passes without a second pair of eyes.
+      mitigation: Enforce segregation of duties so that the approver differs from the requester, grant elevated rights only for a limited time and require a second approval for large financial changes.
+    sv:
+      title: En person både begär och godkänner en kritisk ändring
+      description: Samma användare kan skapa och godkänna en betalning, en behörighet eller en leverans. Bedrägeri eller ett allvarligt misstag passerar utan en andra granskning.
+      mitigation: Tillämpa åtskillnad i arbetsuppgifter så att den som godkänner är en annan än den som begär, ge förhöjd behörighet bara under begränsad tid och kräv ett andra godkännande för stora ekonomiska ändringar.

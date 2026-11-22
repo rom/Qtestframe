@@ -764,3 +764,35 @@ tests:
           expected: Det är minst 4 veckor mellan dem.
         - action: Kontrollera varje avslutskriterium i signeringen.
           expected: Varje kriterium är markerat som uppfyllt med belägg.
+
+risks:
+  - id: PJDEL-R01
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [public-procurement, review]
+    refs: ["Lag (2016:1145) om offentlig upphandling (LOU) 20 kap. 1 § (avtalsspärr)"]
+    mitigated_by: [PJDEL-02, PJDEL-13, PJDEL-14, PJDEL-15, PJDEL-16, PJDEL-17]
+    en:
+      title: Public procurement overturned in court
+      description: Award criteria change after tenders arrive, an evaluator has a conflict of interest or the contract is signed during the standstill period. A tenderer appeals and the procurement must be redone.
+      mitigation: Publish award criteria and weights before tenders arrive, record market consultations, collect conflict of interest declarations, send reasons for the award to each tenderer, sign no contract during the standstill period and assess contract changes against the rules.
+    sv:
+      title: Offentlig upphandling underkänns i domstol
+      description: Utvärderingskriterierna ändras efter att anbuden kommit in, en utvärderare har en intressekonflikt eller avtalet tecknas under avtalsspärren. En anbudsgivare begär överprövning och upphandlingen måste göras om.
+      mitigation: Publicera utvärderingskriterier och vikter innan anbuden kommer in, dokumentera marknadsdialoger, samla in jävsdeklarationer, skicka skälen för tilldelningsbeslutet till varje anbudsgivare, teckna inget avtal under avtalsspärren och bedöm avtalsändringar mot reglerna.
+  - id: PJDEL-R02
+    category: project
+    likelihood: 3
+    impact: 4
+    tags: [acceptance, supplier]
+    refs: ["ISO 21502:2020 §6.8 (closing or terminating a project)", "ISO 9001:2026 §8.6"]
+    mitigated_by: [PJDEL-01, PJDEL-04, PJDEL-06, PJDEL-07, PJDEL-05]
+    en:
+      title: Delivery accepted that does not meet the contract
+      description: Tender requirements have no verification method, acceptance tests are improvised and acceptance is signed without listing deviations. The customer pays for something that does not work as agreed.
+      mitigation: Give each tender requirement a verification method, put deliverables, milestones and the acceptance procedure in the contract, agree the acceptance test plan in advance, sign acceptance with open deviations and deadlines and follow up the supplier monthly.
+    sv:
+      title: Leverans godkänns som inte uppfyller avtalet
+      description: Kraven i upphandlingen saknar verifieringsmetod, godkännandeproven improviseras och godkännandet undertecknas utan att avvikelser listas. Kunden betalar för något som inte fungerar som avtalat.
+      mitigation: Ge varje krav i upphandlingen en verifieringsmetod, skriv in leveranser, milstolpar och godkännandeförfarande i avtalet, kom överens om testplanen för godkännandet i förväg, underteckna godkännandet med öppna avvikelser och tidsfrister och följ upp leverantören varje månad.

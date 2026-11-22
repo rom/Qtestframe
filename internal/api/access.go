@@ -351,7 +351,7 @@ var resourceProjects = map[string]string{
 var nonProjectResources = map[string]bool{
 	"auth/sessions": true, "tenants": true, "users": true, "tokens": true,
 	"scim/tokens": true, "scim/groups": true, "avatars": true,
-	"catalog/requirements": true, "catalog/tests": true,
+	"catalog/requirements": true, "catalog/tests": true, "catalog/risks": true,
 	// the organisation's field sets and templates per project type
 	"field-sets/fields": true, "template-sets/templates": true,
 }

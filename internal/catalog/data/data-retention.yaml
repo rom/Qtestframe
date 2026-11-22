@@ -721,3 +721,50 @@ tests:
           expected: Varje post är yngre än 12 månader.
         - action: Läs varje post.
           expected: Den anger ägaren och den lag eller det behov som motiverar tiden.
+
+risks:
+  - id: RET-R01
+    category: compliance
+    likelihood: 4
+    impact: 3
+    tags: [storage-limitation, deletion]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 5(1)(e)", "CWE-459 (incomplete cleanup)"]
+    mitigated_by: [RET-01, RET-02, RET-03, RET-04, RET-10]
+    en:
+      title: Personal data kept longer than needed
+      description: Data stays in the system, its indexes and replicas years after its purpose ended. A breach then exposes far more than necessary and the storage limitation principle is broken.
+      mitigation: Set a retention period for each data category, delete automatically when it ends, delete inactive accounts, reach indexes, caches and replicas and report the deletions every month.
+    sv:
+      title: Personuppgifter sparas längre än nödvändigt
+      description: Uppgifter finns kvar i systemet, dess index och kopior flera år efter att ändamålet upphört. Ett intrång röjer då mycket mer än nödvändigt och principen om lagringsminimering bryts.
+      mitigation: Fastställ en lagringstid för varje kategori av uppgifter, radera automatiskt när den löper ut, radera inaktiva konton, nå index, cacheminnen och kopior och rapportera raderingarna varje månad.
+  - id: RET-R02
+    category: data
+    likelihood: 2
+    impact: 4
+    tags: [legal-hold, deletion]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 15489-1:2016 §9.9 (disposition)"]
+    mitigated_by: [RET-07, RET-08, RET-14]
+    en:
+      title: Records needed for a dispute deleted
+      description: Automatic deletion removes records that are needed for a legal claim, an investigation or an audit. The organisation cannot defend itself or meets sanctions for destroying evidence.
+      mitigation: Support legal hold on records, never delete records under legal hold and review the retention periods every year.
+    sv:
+      title: Handlingar som behövs i en tvist raderas
+      description: Automatisk radering tar bort handlingar som behövs för ett rättsligt anspråk, en utredning eller en revision. Organisationen kan inte försvara sig eller drabbas av sanktioner för att ha förstört bevis.
+      mitigation: Stöd bevarandebeslut för handlingar, radera aldrig handlingar som omfattas av bevarandebeslut och granska lagringstiderna varje år.
+  - id: RET-R03
+    category: privacy
+    likelihood: 2
+    impact: 4
+    tags: [backup, media-disposal]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 17(1)", "NIST SP 800-88 Rev. 2", "CWE-1266 (improper scrubbing of sensitive data from decommissioned device)"]
+    mitigated_by: [RET-05, RET-06, RET-11, RET-09]
+    en:
+      title: Erased data comes back from backups or old media
+      description: Data erased on request is restored with an old backup, or disks are reused or discarded without sanitising. The erasure is undone and the data is exposed.
+      mitigation: Let backups expire after 35 days, apply erasures again after a restore, sanitise storage media before reuse or disposal and make anonymised data impossible to link back.
+    sv:
+      title: Raderade uppgifter kommer tillbaka från säkerhetskopior eller gamla medier
+      description: Uppgifter som raderats på begäran återställs med en gammal säkerhetskopia, eller diskar återanvänds eller kasseras utan sanering. Raderingen upphävs och uppgifterna röjs.
+      mitigation: Låt säkerhetskopior löpa ut efter 35 dagar, tillämpa raderingar igen efter en återställning, sanera lagringsmedier före återanvändning eller kassering och gör anonymiserade uppgifter omöjliga att koppla tillbaka.

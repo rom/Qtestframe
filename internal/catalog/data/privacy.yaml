@@ -1039,3 +1039,80 @@ tests:
           expected: Varje meddelande ligger minst 30 dagar före startdatumet och anger tjänst, uppgifter och plats.
         - action: Kontrollera att meddelandet förklarar hur man invänder.
           expected: Varje meddelande anger ett sätt att invända och en sista dag.
+
+risks:
+  - id: PRIV-R01
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [data-subject-rights, gdpr]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 12(3)", "GDPR Art. 15", "GDPR Art. 17"]
+    mitigated_by: [PRIV-01, PRIV-02, PRIV-03, PRIV-04, PRIV-18]
+    en:
+      title: Data subject requests cannot be met in time
+      description: The system offers no way to find, export, correct or erase one person's data. Requests take weeks of manual work, deadlines are missed and complaints reach the supervisory authority.
+      mitigation: Support access, rectification, erasure and portability in the system and confirm the requester's identity before data is released.
+    sv:
+      title: Begäranden från registrerade kan inte hanteras i tid
+      description: Systemet saknar sätt att hitta, exportera, rätta eller radera en persons uppgifter. Begäranden tar veckor av manuellt arbete, tidsfrister missas och klagomål når tillsynsmyndigheten.
+      mitigation: Stöd tillgång, rättelse, radering och dataportabilitet i systemet och bekräfta den begärandes identitet innan uppgifter lämnas ut.
+  - id: PRIV-R02
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [dpia, high-risk-processing]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 35(1)", "GDPR Art. 35(7)"]
+    mitigated_by: [PRIV-12, PRIV-08, PRIV-07]
+    en:
+      title: High-risk processing started without an impact assessment
+      description: New processing such as profiling, monitoring or large-scale special category data starts without a data protection impact assessment. The risks to the people concerned are neither known nor reduced, and the processing may have to stop.
+      mitigation: Carry out an impact assessment before high-risk processing, keep an inventory of personal data and collect only the data each purpose needs.
+    sv:
+      title: Behandling med hög risk påbörjas utan konsekvensbedömning
+      description: Ny behandling som profilering, övervakning eller storskalig behandling av känsliga uppgifter påbörjas utan konsekvensbedömning avseende dataskydd. Riskerna för de berörda är varken kända eller minskade, och behandlingen kan behöva stoppas.
+      mitigation: Gör en konsekvensbedömning före behandling med hög risk, för en förteckning över personuppgifter och samla bara in de uppgifter varje ändamål behöver.
+  - id: PRIV-R03
+    category: privacy
+    likelihood: 3
+    impact: 4
+    tags: [test-data, pseudonymisation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 32(1)(a)", "GDPR Art. 25(1)", "CWE-359 (exposure of private personal information)"]
+    mitigated_by: [PRIV-11, PRIV-14, PRIV-15]
+    en:
+      title: Personal data exposed outside production
+      description: Copies of real personal data end up in test environments, analytics tools or are visible to a wider audience than needed. Weaker protection there leads to a personal data breach.
+      mitigation: Use no real personal data in test environments, pseudonymise analytics data and show data to the smallest audience by default.
+    sv:
+      title: Personuppgifter exponeras utanför produktion
+      description: Kopior av verkliga personuppgifter hamnar i testmiljöer, analysverktyg eller blir synliga för en större krets än nödvändigt. Det svagare skyddet där leder till en personuppgiftsincident.
+      mitigation: Använd inga verkliga personuppgifter i testmiljöer, pseudonymisera analysdata och visa uppgifter för minsta möjliga krets som standard.
+  - id: PRIV-R04
+    category: compliance
+    likelihood: 2
+    impact: 4
+    tags: [international-transfer, sub-processor]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 44", "GDPR Art. 28(2)"]
+    mitigated_by: [PRIV-13, PRIV-20, TEN-12]
+    en:
+      title: Personal data transferred abroad without a legal basis
+      description: A new sub-processor or cloud region moves personal data outside the EEA without a documented safeguard. Customers object, and the transfer may have to stop at short notice.
+      mitigation: Document a safeguard for every transfer outside the EEA, tell customers of new sub-processors 30 days ahead and keep tenant data in the chosen region.
+    sv:
+      title: Personuppgifter överförs utomlands utan rättslig grund
+      description: Ett nytt underbiträde eller en ny molnregion flyttar personuppgifter utanför EES utan dokumenterad skyddsåtgärd. Kunder invänder och överföringen kan behöva stoppas med kort varsel.
+      mitigation: Dokumentera en skyddsåtgärd för varje överföring utanför EES, meddela kunderna om nya underbiträden 30 dagar i förväg och håll organisationens data i den valda regionen.
+  - id: PRIV-R05
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [breach-notification]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "GDPR Art. 33(1)", "GDPR Art. 33(5)"]
+    mitigated_by: [PRIV-19, SLOG-01, INC-01]
+    en:
+      title: Personal data breach not reported within 72 hours
+      description: A breach is detected late, handled informally and not documented. The supervisory authority is not notified in time and the organisation cannot show what happened.
+      mitigation: Keep a register of personal data breaches, log security events and follow a documented incident response process.
+    sv:
+      title: Personuppgiftsincident anmäls inte inom 72 timmar
+      description: En incident upptäcks sent, hanteras informellt och dokumenteras inte. Tillsynsmyndigheten underrättas inte i tid och organisationen kan inte visa vad som hände.
+      mitigation: För ett register över personuppgiftsincidenter, logga säkerhetshändelser och följ en dokumenterad process för incidenthantering.

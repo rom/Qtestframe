@@ -880,3 +880,50 @@ tests:
           expected: Den jämför faktiska återställningstider med målen och listar ändringar av planen.
         - action: Läs underlaget för varje investeringsbeslut över gränsen.
           expected: Det har en uppskattning av livscykelkostnaden med anskaffning, drift, underhåll, avveckling och planerad livslängd.
+
+risks:
+  - id: GVLC-R01
+    category: availability
+    likelihood: 3
+    impact: 5
+    tags: [business-continuity, crisis]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO 22301:2019 §8.4 (business continuity plans and procedures)"]
+    mitigated_by: [GVLC-06, GVLC-07, GVLC-08, GVLC-09, GVLC-10, GVLC-19]
+    en:
+      title: Critical activities stop in a crisis
+      description: A major disruption hits and there is no current impact analysis, no continuity solution and no practised crisis organisation. Critical activities stop for longer than the organisation can tolerate.
+      mitigation: Review the business impact analysis every year, provide a continuity solution for each critical activity, name a crisis organisation with deputies, exercise each plan every year, keep plans reachable without the primary IT and set recovery times shorter than the maximum tolerable disruption.
+    sv:
+      title: Kritiska verksamheter stannar vid en kris
+      description: En stor störning inträffar och det finns ingen aktuell konsekvensanalys, ingen kontinuitetslösning och ingen övad krisorganisation. Kritiska verksamheter står stilla längre än organisationen tål.
+      mitigation: Gå igenom konsekvensanalysen varje år, ha en kontinuitetslösning för varje kritisk verksamhet, utse en krisorganisation med ersättare, öva varje plan varje år, håll planerna åtkomliga utan den ordinarie IT-miljön och sätt återställningstider som är kortare än den längsta acceptabla störningen.
+  - id: GVLC-R02
+    category: supply-chain
+    likelihood: 3
+    impact: 4
+    tags: [supplier, contract]
+    refs: ["ISO/IEC 27001:2022 A.5.19", "ITIL 4 Supplier management"]
+    mitigated_by: [GVLC-01, GVLC-02, GVLC-03, GVLC-04, GVLC-05]
+    en:
+      title: Critical supplier fails or a contract lapses unnoticed
+      description: Nobody knows which suppliers are critical, contracts renew or lapse without a decision and there is no exit plan. A supplier failure or an expired contract interrupts the service.
+      mitigation: Keep a supplier register with criticality and contract owner, agree contract terms for critical suppliers, review them every quarter, get a reminder 6 months before a notice deadline and keep an exit plan for each critical supplier.
+    sv:
+      title: Kritisk leverantör fallerar eller ett avtal löper ut obemärkt
+      description: Ingen vet vilka leverantörer som är kritiska, avtal förlängs eller löper ut utan beslut och det finns ingen exitplan. Ett leverantörsfel eller ett utgånget avtal avbryter tjänsten.
+      mitigation: För ett leverantörsregister med kritikalitet och avtalsägare, avtala villkor för kritiska leverantörer, följ upp dem varje kvartal, få en påminnelse 6 månader före en uppsägningstidpunkt och ha en exitplan för varje kritisk leverantör.
+  - id: GVLC-R03
+    category: operational
+    likelihood: 4
+    impact: 3
+    tags: [obsolescence, end-of-life]
+    refs: ["ISO 55001:2024 §6.2 (asset management objectives and planning)", "ISO/IEC 27001:2022 A.8.8"]
+    mitigated_by: [GVLC-11, GVLC-12, GVLC-13, GVLC-22, GVLC-14]
+    en:
+      title: Systems run past their end of support
+      description: End-of-support dates are not monitored and replacements are not planned or budgeted. Critical systems run without security updates and parts, and replacement becomes an emergency.
+      mitigation: Monitor end-of-support dates, decide on obsolescence 24 months ahead, plan a replacement year for critical assets, include life cycle cost in investment decisions and approve a decommissioning plan.
+    sv:
+      title: System körs efter att stödet har upphört
+      description: Datum när stödet upphör bevakas inte och ersättningar planeras eller budgeteras inte. Kritiska system körs utan säkerhetsuppdateringar och reservdelar, och ersättningen blir akut.
+      mitigation: Bevaka när stödet upphör, besluta om utfasning 24 månader i förväg, planera ett utbytesår för kritiska tillgångar, räkna med livscykelkostnaden i investeringsbeslut och godkänn en avvecklingsplan.

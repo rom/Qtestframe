@@ -1082,3 +1082,65 @@ tests:
           data: "syntetiska värden som klarar formatkontroller"
         - action: Kör genomsökningen före träning.
           expected: Genomsökningen rapporterar alla 20 med sina positioner och träningsjobbet spärras.
+
+risks:
+  - id: AIENG-R01
+    category: ai
+    likelihood: 4
+    impact: 3
+    tags: [model-drift, monitoring]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "ISO/IEC 42001:2023 Annex A.6.2.5 (AI system deployment)"]
+    mitigated_by: [AIENG-09, AIENG-10, AIENG-11, AIENG-22]
+    en:
+      title: Model accuracy drops silently in production
+      description: The data the model sees in production drifts away from the training data and its predictions get worse. Users get wrong results for weeks before anyone measures it.
+      mitigation: Alert on drift in the input data, measure production accuracy against ground truth, keep a rollback to the previous model and shadow-run new models before they go live.
+    sv:
+      title: Modellens noggrannhet sjunker obemärkt i produktion
+      description: De data som modellen ser i produktion glider bort från träningsdata och prediktionerna blir sämre. Användarna får felaktiga resultat i flera veckor innan någon mäter det.
+      mitigation: Larma vid drift i indata, mät noggrannheten i produktion mot facit, ha en återgång till föregående modell och kör nya modeller i skuggläge innan de tas i drift.
+  - id: AIENG-R02
+    category: ai
+    likelihood: 3
+    impact: 4
+    tags: [data-leakage, evaluation]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "ISO/IEC 42001:2023 Annex A.6.2.4 (AI system verification and validation)"]
+    mitigated_by: [AIENG-02, AIENG-03, AIENG-05, AIENG-06, AIENG-01]
+    en:
+      title: Model released on misleading evaluation results
+      description: Test data overlaps with training data, data quality is not checked or results are only looked at as an average. The model looks good in evaluation but fails for some groups or cases in real use.
+      mitigation: Version data sets with lineage, check data quality before training, keep training and test data apart, evaluate per data slice with a fixed suite and release no model that regresses on a slice.
+    sv:
+      title: Modell släpps på missvisande utvärderingsresultat
+      description: Testdata överlappar träningsdata, datakvaliteten kontrolleras inte eller resultaten granskas bara som ett medelvärde. Modellen ser bra ut i utvärderingen men fallerar för vissa grupper eller fall i verklig användning.
+      mitigation: Versionshantera datamängder med härkomst, kontrollera datakvaliteten före träning, håll tränings- och testdata åtskilda, utvärdera per delmängd med en fast testsvit och släpp ingen modell som försämras för en delmängd.
+  - id: AIENG-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [rag, permissions]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM08 (vector and embedding weaknesses)", "OWASP Top 10 for LLM Applications 2025 LLM07 (system prompt leakage)"]
+    mitigated_by: [AIENG-17, AIENG-14, AIENG-13, AIENG-12]
+    en:
+      title: AI assistant reveals documents the user may not read
+      description: The retrieval index ignores document permissions, or access rules are written into the system prompt where the model can leak or ignore them. Users read confidential documents through the assistant.
+      mitigation: Make retrieval respect the user's document permissions, put no credentials or access rules in the system prompt, treat model output as untrusted and confirm tool calls with side effects.
+    sv:
+      title: AI-assistent röjer dokument som användaren inte får läsa
+      description: Sökindexet ignorerar dokumentens behörigheter, eller åtkomstregler skrivs i systemprompten där modellen kan läcka eller strunta i dem. Användare läser konfidentiella dokument via assistenten.
+      mitigation: Låt sökningen respektera användarens dokumentbehörigheter, lägg inga inloggningsuppgifter eller åtkomstregler i systemprompten, behandla modellens svar som indata som inte är betrodda och låt användaren bekräfta verktygsanrop med sidoeffekter.
+  - id: AIENG-R04
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [cost, unbounded-consumption]
+    refs: ["ISO/IEC 23894:2023 §6.4 (risk assessment)", "OWASP Top 10 for LLM Applications 2025 LLM10 (unbounded consumption)", "CWE-770 (allocation of resources without limits or throttling)"]
+    mitigated_by: [AIENG-16, APIS-03]
+    en:
+      title: AI usage costs run out of control
+      description: A user, a script or an attack sends long or many requests to a paid model. The bill grows by orders of magnitude and the service is throttled for everyone.
+      mitigation: Limit tokens and requests per user and the request rate per client.
+    sv:
+      title: Kostnaderna för AI-användning skenar
+      description: En användare, ett skript eller en attack skickar långa eller många förfrågningar till en betald modell. Fakturan växer mångfaldigt och tjänsten stryps för alla.
+      mitigation: Begränsa antalet token och förfrågningar per användare och anropsfrekvensen per klient.

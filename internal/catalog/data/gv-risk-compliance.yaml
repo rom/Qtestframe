@@ -568,3 +568,50 @@ tests:
           expected: Det är mindre än 12 månader gammalt.
         - action: Ändra 1 byte i den lagrade kopian av en fil i testpaketet och starta en verifieringskörning.
           expected: Körningen rapporterar filen, och filen återställs från den andra kopian med den ursprungliga kontrollsumman.
+
+risks:
+  - id: GVRC-R01
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [risk-appetite, escalation]
+    refs: ["ISO 31000:2018 §6.4 (risk assessment)", "ISO 31000:2018 §5.4 (design)"]
+    mitigated_by: [GVRC-01, GVRC-02, GVRC-03, GVRC-04, GVRC-05]
+    en:
+      title: Top management unaware of risks above appetite
+      description: Units score risks on different scales and no appetite has been set, so serious risks are not escalated. Top management learns of them when they have already materialised.
+      mitigation: Have top management approve a risk appetite per category, use common likelihood and consequence scales, report risks above appetite within 10 working days, set key risk indicators for the top risks and evaluate the framework every year.
+    sv:
+      title: Högsta ledningen känner inte till risker över riskaptiten
+      description: Enheterna bedömer risker på olika skalor och ingen riskaptit har fastställts, så allvarliga risker eskaleras inte. Högsta ledningen får veta om dem först när de redan har inträffat.
+      mitigation: Låt högsta ledningen godkänna en riskaptit per kategori, använd gemensamma skalor för sannolikhet och konsekvens, rapportera risker över riskaptiten inom 10 arbetsdagar, fastställ riskindikatorer för de största riskerna och utvärdera ramverket varje år.
+  - id: GVRC-R02
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [compliance-obligations, whistleblowing]
+    refs: ["ISO 37301:2021 §4.6 (compliance risk assessment)", "ISO 37301:2021 §4.5 (compliance obligations)"]
+    mitigated_by: [GVRC-06, GVRC-07, GVRC-08, GVRC-09, GVRC-10]
+    en:
+      title: Noncompliance continues until it becomes a scandal
+      description: Compliance obligations are not assessed, new rules are noticed late and whistleblowing reports are not handled. Misconduct continues and becomes public through the media or an authority.
+      mitigation: Assess compliance risk for each obligation, assess new or changed obligations within 60 days, give the compliance function direct access to the governing body, record and report noncompliance each quarter and handle whistleblowing reports within the deadlines.
+    sv:
+      title: Bristande regelefterlevnad fortsätter tills den blir en skandal
+      description: Efterlevnadskraven bedöms inte, nya regler uppmärksammas sent och visselblåsarrapporter hanteras inte. Missförhållanden fortsätter och blir kända via medier eller en myndighet.
+      mitigation: Bedöm efterlevnadsrisken för varje krav, bedöm nya eller ändrade krav inom 60 dagar, ge regelefterlevnadsfunktionen direkt tillgång till det styrande organet, registrera och rapportera bristande efterlevnad varje kvartal och hantera visselblåsarrapporter inom tidsfristerna.
+  - id: GVRC-R03
+    category: compliance
+    likelihood: 2
+    impact: 4
+    tags: [public-records, archive]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)"]
+    mitigated_by: [GVRC-11, GVRC-12, GVRC-13, GVRC-14]
+    en:
+      title: Public records lost, destroyed or unregistered
+      description: Records are not registered on time, are disposed of without a decision or become unreadable in the archive. The authority cannot respond to requests for public documents and breaks archive rules.
+      mitigation: Keep the archive description and list current, dispose of no public records without a disposal decision, register records no later than the working day after receipt and verify checksums of archived electronic records every year.
+    sv:
+      title: Allmänna handlingar går förlorade, förstörs eller registreras inte
+      description: Handlingar registreras inte i tid, gallras utan beslut eller blir oläsbara i arkivet. Myndigheten kan inte besvara begäranden om allmänna handlingar och bryter mot arkivreglerna.
+      mitigation: Håll arkivbeskrivning och arkivförteckning aktuella, gallra inga allmänna handlingar utan gallringsbeslut, registrera handlingar senast arbetsdagen efter att de kommit in och kontrollera kontrollsummor för arkiverade elektroniska handlingar varje år.

@@ -816,3 +816,35 @@ tests:
           expected: Båda visas.
         - action: Hitta de resurser som har en prognos över 80 % av kapaciteten.
           expected: Varje sådan resurs har en daterad åtgärd.
+
+risks:
+  - id: SVSM-R01
+    category: operational
+    likelihood: 4
+    impact: 3
+    tags: [change-management, outage]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.1 (change management)", "ITIL 4 Change enablement"]
+    mitigated_by: [SVSM-05, SVSM-06, SVSM-14, SVSM-11]
+    en:
+      title: Unassessed change disrupts the service
+      description: A change is implemented without assessment, backout plan or notice to users, based on an inaccurate configuration database. It causes an outage that takes long to undo.
+      mitigation: Assess and approve production changes beforehand, keep a backout plan for each normal change, send release notes 5 working days ahead and keep the configuration database at least 98 % correct.
+    sv:
+      title: Ändring som inte har bedömts stör tjänsten
+      description: En ändring genomförs utan bedömning, reservplan eller besked till användarna, på grundval av en felaktig konfigurationsdatabas. Den orsakar ett avbrott som tar lång tid att backa.
+      mitigation: Bedöm och godkänn produktionsändringar i förväg, ha en reservplan för varje normal ändring, skicka releaseinformation 5 arbetsdagar i förväg och håll konfigurationsdatabasen minst 98 % korrekt.
+  - id: SVSM-R02
+    category: operational
+    likelihood: 4
+    impact: 3
+    tags: [recurring-incident, service-desk]
+    refs: ["ISO/IEC 20000-1:2018 §8.6.1", "ITIL 4 Problem management"]
+    mitigated_by: [SVSM-01, SVSM-03, SVSM-04, SVSM-15, SVSM-18]
+    en:
+      title: Same incidents keep returning
+      description: Incidents are fixed one at a time without root cause analysis, and the service desk lacks known errors and workarounds. Users are disrupted again and again and support costs grow.
+      mitigation: Record each incident with priority and configuration item, analyse root causes of major and repeated incidents, give the service desk known errors and knowledge articles and create tickets from critical monitoring events.
+    sv:
+      title: Samma incidenter kommer tillbaka
+      description: Incidenter åtgärdas en i taget utan grundorsaksanalys, och servicedesken saknar kända fel och tillfälliga lösningar. Användarna störs gång på gång och supportkostnaderna växer.
+      mitigation: Registrera varje incident med prioritet och konfigurationsobjekt, analysera grundorsaker till större och återkommande incidenter, ge servicedesken kända fel och kunskapsartiklar och skapa ärenden från kritiska övervakningshändelser.

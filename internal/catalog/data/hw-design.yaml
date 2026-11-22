@@ -1018,3 +1018,50 @@ tests:
           expected: Varje leverantör är tillverkaren eller en auktoriserad distributör, eller så är ordern markerad som köp från mäklare.
         - action: Öppna kontrollrapporten för varje köp från mäklare.
           expected: Varje rapport har testresultat och ett beslut om frisläppning daterat innan delarna fördes in i lagret.
+
+risks:
+  - id: HWDES-R01
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [reliability, thermal]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 60812:2018 (failure modes and effects analysis)"]
+    mitigated_by: [HWDES-02, HWDES-03, HWDES-04, HWDES-12, HWDES-13]
+    en:
+      title: Units fail early in the field
+      description: Components run close to their limits at high ambient temperature and a weak circuit was never analysed. Failure rates in the field are far above the prediction, with returns and warranty costs.
+      mitigation: Derate components at the maximum ambient temperature, keep a thermal margin, analyse critical circuits for the worst case, act on high-priority failure modes in a hardware FMEA and run an accelerated life test before release.
+    sv:
+      title: Enheter går sönder tidigt i fält
+      description: Komponenter arbetar nära sina gränser vid hög omgivningstemperatur och en svag krets har aldrig analyserats. Felfrekvensen i fält ligger långt över prognosen, med returer och garantikostnader som följd.
+      mitigation: Nedklassa komponenter vid högsta omgivningstemperatur, håll en termisk marginal, gör värsta fall-analys av kritiska kretsar, åtgärda högprioriterade felmoder i en hårdvaru-FMEA och kör ett accelererat livslängdstest före lansering.
+  - id: HWDES-R02
+    category: supply-chain
+    likelihood: 4
+    impact: 3
+    tags: [obsolescence, component-shortage]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62402:2019 (obsolescence management)"]
+    mitigated_by: [HWDES-05, HWDES-06, HWDES-22]
+    en:
+      title: Production stops for lack of a component
+      description: A single-source part is discontinued or allocated during a shortage. Production halts and a redesign is needed at short notice, or counterfeit parts enter through brokers.
+      mitigation: Qualify a second source for each active component, monitor the bill of materials for obsolescence and buy components only from authorised sources.
+    sv:
+      title: Produktionen stannar i brist på en komponent
+      description: En komponent med en enda leverantör utgår eller ransoneras under en bristsituation. Produktionen stoppas och en omkonstruktion behövs med kort varsel, eller förfalskade komponenter kommer in via mellanhänder.
+      mitigation: Kvalificera en andra leverantör för varje aktiv komponent, bevaka materialförteckningen för komponenter som utgår och köp komponenter bara från auktoriserade källor.
+  - id: HWDES-R03
+    category: quality
+    likelihood: 3
+    impact: 3
+    tags: [manufacturing-defect, traceability]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IPC-A-610J (acceptability of electronic assemblies)"]
+    mitigated_by: [HWDES-08, HWDES-09, HWDES-10, HWDES-20, HWDES-21]
+    en:
+      title: Manufacturing defects reach customers
+      description: Assembly faults, ESD damage or untested nets pass production test. Faulty units reach customers and it is unclear which units are affected.
+      mitigation: Accept assemblies against IPC-A-610, test at least 90 % of the nets in production, trace each unit to its hardware revision, keep an ESD control programme and inspect the first article of the first lot.
+    sv:
+      title: Tillverkningsfel når kunderna
+      description: Monteringsfel, ESD-skador eller otestade nät passerar produktionstestet. Felaktiga enheter når kunderna och det är oklart vilka enheter som berörs.
+      mitigation: Godkänn kretskortsmonteringar enligt IPC-A-610, testa minst 90 % av näten i produktion, spåra varje enhet till sin hårdvarurevision, ha ett program för ESD-skydd och gör förstaartikelkontroll av första serien.

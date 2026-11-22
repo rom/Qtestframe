@@ -910,3 +910,50 @@ tests:
           expected: Reservenheten startar med samma konfiguration och programkontrollsumma.
         - action: Läs avtalets garantiklausul.
           expected: Garantin gäller i minst 24 månader från datumet för slutgodkännandet.
+
+risks:
+  - id: EQACC-R01
+    category: project
+    likelihood: 3
+    impact: 4
+    tags: [acceptance, supplier]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62381:2024 (factory and site acceptance tests)"]
+    mitigated_by: [EQACC-01, EQACC-04, EQACC-05, EQACC-09, EQACC-10]
+    en:
+      title: Equipment accepted that does not meet the specification
+      description: Acceptance criteria are vague, the factory test is improvised and the site test uses other materials than production. Shortfalls are found after the warranty has started, at the buyer's cost.
+      mitigation: Write measurable acceptance criteria, approve the FAT protocol beforehand, ship no equipment with open critical deviations, test on site with production materials and run at rated capacity.
+    sv:
+      title: Utrustning godkänns som inte uppfyller specifikationen
+      description: Godkännandekriterierna är vaga, fabriksprovet improviseras och platsprovet görs med annat material än i produktionen. Brister upptäcks efter att garantin börjat löpa, på köparens bekostnad.
+      mitigation: Skriv mätbara godkännandekriterier, godkänn FAT-protokollet i förväg, skicka ingen utrustning med öppna kritiska avvikelser, prova på plats med produktionsmaterial och kör vid märkkapacitet.
+  - id: EQACC-R02
+    category: operational
+    likelihood: 3
+    impact: 3
+    tags: [handover, training]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62381:2024 (factory and site acceptance tests)"]
+    mitigated_by: [EQACC-11, EQACC-12, EQACC-22, EQACC-14]
+    en:
+      title: Equipment handed over without what is needed to run it
+      description: Documentation, trained staff, software licences or configuration backups are missing at handover. The buyer cannot operate or maintain the equipment and depends on the supplier for every fault.
+      mitigation: Hand over documentation, software, licences and configuration backups before acceptance, train operators and maintenance staff and issue the final acceptance certificate only after the punch list is closed.
+    sv:
+      title: Utrustning lämnas över utan det som behövs för att driva den
+      description: Dokumentation, utbildad personal, programlicenser eller säkerhetskopior av konfigurationen saknas vid överlämningen. Köparen kan inte driva eller underhålla utrustningen och är beroende av leverantören vid varje fel.
+      mitigation: Lämna över dokumentation, programvara, licenser och säkerhetskopior av konfigurationen före godkännandet, utbilda operatörer och underhållspersonal och utfärda slutligt godkännande först när restpunktslistan är stängd.
+  - id: EQACC-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [ot-security, procurement]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "IEC 62443-2-4:2023 SP.07 (remote access)"]
+    mitigated_by: [EQACC-18, EQACC-19, EQACC-16]
+    en:
+      title: New equipment opens a security hole in the plant network
+      description: Equipment is bought without security requirements and connected with default settings and old firmware. It becomes the easiest way into the plant network.
+      mitigation: Put cybersecurity requirements in the purchase specification, harden the equipment and update its firmware before connection and sanitise storage media at decommissioning.
+    sv:
+      title: Ny utrustning öppnar ett säkerhetshål i anläggningens nät
+      description: Utrustning köps utan säkerhetskrav och ansluts med standardinställningar och gammal firmware. Den blir den enklaste vägen in i anläggningens nät.
+      mitigation: Ställ krav på cybersäkerhet i inköpsspecifikationen, härda utrustningen och uppdatera dess firmware före anslutning och sanera lagringsmedier vid avveckling.

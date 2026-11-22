@@ -989,3 +989,50 @@ tests:
           expected: En lista tas fram.
         - action: Leta upp kundmeddelandet för varje hot och jämför tiderna.
           expected: Varje meddelande skickades inom 24 timmar och anger minst en åtgärd som kunderna kan vidta.
+
+risks:
+  - id: CSL-R01
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [nis2, supervision]
+    refs: ["Cybersäkerhetslag (2025:1506) 2 kap. 3 §", "Directive (EU) 2022/2555 (NIS2) Art. 20", "Directive (EU) 2022/2555 (NIS2) Art. 21"]
+    mitigated_by: [CSL-01, CSL-02, CSL-03, CSL-04, CSL-14]
+    en:
+      title: Obligations under the Cybersecurity Act not met
+      description: The organisation has not assessed whether the Act applies, is not registered or the management body has not approved the risk measures. The supervisory authority finds gaps, and members of the management body can be held personally liable.
+      mitigation: Document whether the Act applies, keep the registration current, have the management body approve the risk management measures and train it every year, and assess the effectiveness of the measures yearly.
+    sv:
+      title: Skyldigheter enligt cybersäkerhetslagen uppfylls inte
+      description: Organisationen har inte bedömt om lagen gäller, är inte registrerad eller ledningsorganet har inte godkänt riskhanteringsåtgärderna. Tillsynsmyndigheten hittar brister och ledamöter i ledningsorganet kan hållas personligt ansvariga.
+      mitigation: Dokumentera om lagen gäller, håll registreringen aktuell, låt ledningsorganet godkänna riskhanteringsåtgärderna och utbildas varje år och bedöm åtgärdernas effektivitet årligen.
+  - id: CSL-R02
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [incident-reporting]
+    refs: ["Cybersäkerhetslag (2025:1506) 2 kap. 3 §", "Directive (EU) 2022/2555 (NIS2) Art. 23"]
+    mitigated_by: [CSL-06, CSL-07, CSL-16, CSL-17]
+    en:
+      title: Significant incident reported late or not at all
+      description: Staff do not know when an incident is reportable and the normal communication systems are down during the incident. The early warning, notification and final report miss their deadlines.
+      mitigation: Write criteria for when an incident is reportable, report within 24 hours, 72 hours and one month, exercise the incident procedure and keep emergency communication that works without the normal systems.
+    sv:
+      title: Betydande incident rapporteras sent eller inte alls
+      description: Personalen vet inte när en incident ska rapporteras och de ordinarie kommunikationssystemen ligger nere under incidenten. Den tidiga varningen, incidentanmälan och slutrapporten missar sina tidsfrister.
+      mitigation: Skriv kriterier för när en incident ska rapporteras, rapportera inom 24 timmar, 72 timmar och en månad, öva incidentrutinen och ha nödkommunikation som fungerar utan de ordinarie systemen.
+  - id: CSL-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [cyber-hygiene, supplier]
+    refs: ["Cybersäkerhetslag (2025:1506) 2 kap. 3 §", "Directive (EU) 2022/2555 (NIS2) Art. 21", "MITRE ATT&CK T1566 (phishing)", "MITRE ATT&CK T1486 (data encrypted for impact)"]
+    mitigated_by: [CSL-05, CSL-08, CSL-12, CSL-13, CSL-15]
+    en:
+      title: Basic cyber hygiene gaps lead to a serious incident
+      description: Without a risk analysis, supplier security, multi-factor authentication, tested restores and staff training, a common phishing or ransomware attack succeeds. Essential services are interrupted.
+      mitigation: Analyse the risks of the network and information systems, assess critical ICT suppliers, require multi-factor authentication for administrators and remote access, test restores every 6 months and train all staff in cyber hygiene.
+    sv:
+      title: Brister i grundläggande cyberhygien leder till en allvarlig incident
+      description: Utan riskanalys, leverantörssäkerhet, flerfaktorsautentisering, testade återställningar och utbildad personal lyckas en vanlig nätfiske- eller ransomwareattack. Samhällsviktiga tjänster avbryts.
+      mitigation: Analysera riskerna för nätverks- och informationssystemen, bedöm kritiska IKT-leverantörer, kräv flerfaktorsautentisering för administratörer och fjärråtkomst, testa återställning var 6:e månad och utbilda all personal i cyberhygien.

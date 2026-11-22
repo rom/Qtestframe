@@ -908,3 +908,50 @@ tests:
           data: +40 °C omgivning
         - action: Läs termoelementen på ytorna.
           expected: Varje yta ligger inom sin gräns och metalldelar som hålls har högst 48 °C.
+
+risks:
+  - id: HWEMC-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [electric-shock, insulation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62368-1:2023"]
+    mitigated_by: [HWEMC-02, HWEMC-03, HWEMC-04, HWEMC-20, HWEMC-21]
+    en:
+      title: User gets an electric shock or burn from the product
+      description: Insufficient insulation, a broken protective earth or a hot surface exposes users to hazardous energy. A user is injured and the product must be recalled.
+      mitigation: Type test electrical safety against a harmonised standard, test electric strength and earth continuity on each unit, meet creepage and clearance distances and keep accessible surfaces below the touch temperature limits.
+    sv:
+      title: Användaren får en elektrisk stöt eller brännskada av produkten
+      description: Otillräcklig isolering, en bruten skyddsjord eller en het yta utsätter användare för farlig energi. En användare skadas och produkten måste återkallas.
+      mitigation: Typprova den elektriska säkerheten mot en harmoniserad standard, prova elhållfasthet och skyddsjordens kontinuitet på varje enhet, uppfyll kraven på krypavstånd och luftavstånd och håll åtkomliga ytor under gränserna för beröringstemperatur.
+  - id: HWEMC-R02
+    category: compliance
+    likelihood: 3
+    impact: 4
+    tags: [emc, market-access]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Directive 2014/30/EU (EMC) Annex I §1 (essential requirements)"]
+    mitigated_by: [HWEMC-05, HWEMC-06, HWEMC-07, HWEMC-19, HWEMC-18]
+    en:
+      title: Product fails EMC testing late or disturbs other equipment
+      description: The product emits too much interference or is disturbed by discharges and radio fields, discovered only at the final test. Launch is delayed by a redesign, or units in the field malfunction.
+      mitigation: Pre-scan EMC for each hardware revision, keep emissions within the class limits and verify immunity to discharges, bursts, surges and radio-frequency fields, and keep harmonics and flicker within limits.
+    sv:
+      title: Produkten fallerar i EMC-prov sent eller stör annan utrustning
+      description: Produkten sänder ut för mycket störningar eller störs av urladdningar och radiofält, vilket upptäcks först vid slutprovningen. Lanseringen försenas av en omkonstruktion eller enheter i fält fungerar felaktigt.
+      mitigation: Gör förhandsmätning av EMC för varje hårdvarurevision, håll emissionerna inom klassens gränser, verifiera immuniteten mot urladdningar, transienter, stötpulser och radiofrekventa fält och håll övertoner och flimmer inom gränserna.
+  - id: HWEMC-R03
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [ce-marking, documentation]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "Regulation (EC) No 765/2008 Art. 30 (general principles of the CE marking)"]
+    mitigated_by: [HWEMC-01, HWEMC-09, HWEMC-08, HWEMC-15, HWEMC-10]
+    en:
+      title: Product stopped by market surveillance
+      description: The declaration of conformity, technical documentation or markings are missing or outdated after a design change. Authorities stop sales or demand a recall.
+      mitigation: Keep a directive matrix for each product, sign a declaration of conformity for each variant, keep the technical documentation for ten years, reassess conformity after relevant design changes and apply a durable CE marking.
+    sv:
+      title: Produkten stoppas av marknadskontrollen
+      description: Försäkran om överensstämmelse, teknisk dokumentation eller märkningar saknas eller är inaktuella efter en konstruktionsändring. Myndigheterna stoppar försäljningen eller kräver återkallelse.
+      mitigation: För en direktivmatris för varje produkt, underteckna en försäkran om överensstämmelse för varje variant, spara den tekniska dokumentationen i tio år, bedöm överensstämmelsen på nytt efter relevanta konstruktionsändringar och anbringa en beständig CE-märkning.

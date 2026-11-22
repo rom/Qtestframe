@@ -26,14 +26,14 @@ const RefsDocPage = "references.md"
 type refsDocText struct {
 	heading, intro, other string
 	jurisdictions         map[string]string
-	reqs, tests           func(n int) string
+	reqs, tests, risks    func(n int) string
 }
 
 var refsDocTexts = map[string]refsDocText{
 	"en": {
 		heading: "Sources cited in the catalogue",
 		intro: "The [requirement catalogue](catalogue.md) cites %d laws, standards, best practices and guidelines. " +
-			"Each source has the number of catalogue requirements that cite it and of catalogue tests that cite it or verify such a requirement, " +
+			"Each source has the number of catalogue requirements that cite it and of catalogue tests that cite it or verify such a requirement and, where there are any, of catalogue risks that cite it, " +
 			"the same numbers as when you choose sources to comply with in the catalogue. " +
 			"Where a source groups several documents, they are listed below it. " +
 			"This section is generated from the catalogue.",
@@ -41,11 +41,12 @@ var refsDocTexts = map[string]refsDocText{
 		jurisdictions: map[string]string{"international": "International", "EU": "European Union", "SE": "Sweden", "US": "United States", "UK": "United Kingdom", "NO": "Norway"},
 		reqs:          func(n int) string { return plural(n, "requirement", "requirements") },
 		tests:         func(n int) string { return plural(n, "test", "tests") },
+		risks:         func(n int) string { return plural(n, "risk", "risks") },
 	},
 	"sv": {
 		heading: "Källor som katalogen hänvisar till",
 		intro: "[Kravkatalogen](catalogue.md) hänvisar till %d lagar, standarder, bästa praxis och vägledningar. " +
-			"Vid varje källa står hur många krav i katalogen som hänvisar till den och hur många testfall i katalogen som hänvisar till den eller verifierar ett sådant krav, " +
+			"Vid varje källa står hur många krav i katalogen som hänvisar till den och hur många testfall i katalogen som hänvisar till den eller verifierar ett sådant krav och, när det finns några, hur många risker i katalogen som hänvisar till den, " +
 			"samma antal som när du väljer källor att uppfylla i katalogen. " +
 			"När en källa samlar flera dokument listas de under den. " +
 			"Avsnittet genereras från katalogen.",
@@ -53,6 +54,7 @@ var refsDocTexts = map[string]refsDocText{
 		jurisdictions: map[string]string{"international": "Internationella", "EU": "Europeiska unionen", "SE": "Sverige", "US": "USA", "UK": "Storbritannien", "NO": "Norge"},
 		reqs:          func(n int) string { return plural(n, "krav", "krav") },
 		tests:         func(n int) string { return plural(n, "testfall", "testfall") },
+		risks:         func(n int) string { return plural(n, "risk", "risker") },
 	},
 }
 
@@ -161,7 +163,11 @@ func (c *Catalog) writeSourceItem(b *strings.Builder, s SourceSummary, tx refsDo
 	if s.Short != "" && !strings.Contains(s.Name, s.Short) {
 		b.WriteString(" (" + mdEscape(s.Short) + ")")
 	}
-	fmt.Fprintf(b, ": %s, %s\n", tx.reqs(s.Requirements), tx.tests(s.Tests))
+	fmt.Fprintf(b, ": %s, %s", tx.reqs(s.Requirements), tx.tests(s.Tests))
+	if s.Risks > 0 {
+		b.WriteString(", " + tx.risks(s.Risks))
+	}
+	b.WriteString("\n")
 	var docs []DocLink
 	for _, l := range src.Links {
 		docs = append(docs, DocLink{Label: l.Label, URL: l.URL})

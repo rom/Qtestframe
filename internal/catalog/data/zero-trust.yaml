@@ -680,3 +680,50 @@ tests:
           expected: Den är yngre än 12 månader.
         - action: Kontrollera var och en av de fem pelarna i bedömningen och planen.
           expected: Var och en har aktuell nivå, målnivå och datum.
+
+risks:
+  - id: ZTA-R01
+    category: security
+    likelihood: 4
+    impact: 4
+    tags: [lateral-movement, network]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-207", "MITRE ATT&CK T1021 (remote services)", "MITRE ATT&CK T1210 (exploitation of remote services)", "MITRE ATT&CK M1030 (network segmentation)"]
+    mitigated_by: [ZTA-01, ZTA-02, ZTA-03, ZTA-08]
+    en:
+      title: Attacker moves freely once inside the network
+      description: Internal services trust every connection from the internal network or VPN. A single compromised laptop or server gives access to everything behind the perimeter.
+      mitigation: Grant no access for being on the internal network, let services prove their identity with short-lived certificates, accept connections only from listed callers and give remote access per application.
+    sv:
+      title: Angripare rör sig fritt när den väl är inne i nätet
+      description: Interna tjänster litar på alla anslutningar från det interna nätet eller VPN. En enda komprometterad bärbar dator eller server ger åtkomst till allt innanför perimetern.
+      mitigation: Ge ingen åtkomst bara för att anslutningen kommer från det interna nätet, låt tjänster styrka sin identitet med kortlivade certifikat, ta bara emot anslutningar från listade anropare och ge fjärråtkomst per applikation.
+  - id: ZTA-R02
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [administrator, unmanaged-device]
+    refs: ["ISO/IEC 27005:2022 §7 (risk assessment process)", "NIST SP 800-207", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK T1098.004 (SSH authorized keys)"]
+    mitigated_by: [ZTA-06, ZTA-12, ZTA-11, ZTA-07]
+    en:
+      title: Administration from an infected or unmanaged device
+      description: An administrator signs in from a personal computer with malware, or uses a long-lived SSH key that has been copied. The attacker inherits the administrator's access.
+      mitigation: Allow administration only from compliant managed devices, use short-lived certificates for shell access, step up authentication on higher risk and re-evaluate sessions on risk signals.
+    sv:
+      title: Administration från en smittad eller ohanterad enhet
+      description: En administratör loggar in från en privat dator med skadlig kod, eller använder en långlivad SSH-nyckel som har kopierats. Angriparen ärver administratörens åtkomst.
+      mitigation: Tillåt administration bara från hanterade enheter som uppfyller kraven, använd kortlivade certifikat för skalåtkomst, kräv starkare autentisering vid högre risk och omvärdera sessioner vid risksignaler.
+  - id: ZTA-R03
+    category: availability
+    likelihood: 2
+    impact: 3
+    tags: [policy, fail-secure]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "NIST SP 800-207", "CWE-636 (not failing securely)"]
+    mitigated_by: [ZTA-05, ZTA-04, ZTA-10]
+    en:
+      title: Faulty access policy opens or blocks access
+      description: An access policy is changed without review, or the policy decision point fails and services fall back to allowing everything. Either the wrong people get in or everyone is locked out without a trace of why.
+      mitigation: Keep access policies as reviewed code, deny access when the decision point is unreachable and log every access decision with its inputs.
+    sv:
+      title: Felaktig åtkomstpolicy öppnar eller stänger åtkomsten
+      description: En åtkomstpolicy ändras utan granskning, eller beslutspunkten för policyn slutar fungera och tjänsterna faller tillbaka till att tillåta allt. Antingen kommer fel personer in eller så stängs alla ute utan spår av varför.
+      mitigation: Håll åtkomstpolicyer som granskad kod, neka åtkomst när beslutspunkten inte kan nås och logga varje åtkomstbeslut med dess indata.

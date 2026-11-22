@@ -754,3 +754,50 @@ tests:
           data: "t.ex. 12 gasolflaskor à 11 kg, 400 l brandfarlig vätska klass 2a"
         - action: Jämför varje mängd över tillståndsgränsen med tillståndet.
           expected: Ett giltigt tillstånd täcker den.
+
+risks:
+  - id: FCFIRE-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [evacuation, escape-routes]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "BFS 2024:7 (säkerhet i händelse av brand)", "Lag (2003:778) om skydd mot olyckor 2 kap. 2 §"]
+    mitigated_by: [FCFIRE-05, FCFIRE-06, FCFIRE-07, FCFIRE-08, FCFIRE-09]
+    en:
+      title: People cannot get out in a fire
+      description: Escape routes are blocked or dark, the evacuation alarm is not heard everywhere and nobody has practised. People are trapped by smoke before they reach safety.
+      mitigation: Provide two independent escape routes from each fire compartment, check them every week, light them for one hour on emergency lighting, make the evacuation alarm audible in each room and drill evacuation every year.
+    sv:
+      title: Människor kommer inte ut vid en brand
+      description: Utrymningsvägar är blockerade eller mörka, utrymningslarmet hörs inte överallt och ingen har övat. Människor stängs inne av röken innan de når säkerhet.
+      mitigation: Ordna två oberoende utrymningsvägar från varje brandcell, kontrollera dem varje vecka, belys dem i en timme med nödbelysning, gör utrymningslarmet hörbart i varje rum och öva utrymning varje år.
+  - id: FCFIRE-R02
+    category: safety
+    likelihood: 3
+    impact: 5
+    tags: [fire-spread, hot-work]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "BFS 2024:7 (säkerhet i händelse av brand)"]
+    mitigated_by: [FCFIRE-10, FCFIRE-11, FCFIRE-12, FCFIRE-14, FCFIRE-17]
+    en:
+      title: Fire starts or spreads through the building
+      description: Hot work without a fire watch starts a fire, and open penetrations, wedged fire doors or an untested sprinkler let it spread beyond the compartment. Large parts of the building are lost.
+      mitigation: Allow hot work only with a permit and fire watch, seal penetrations after each installation, keep fire doors self-closing and check them each quarter, test the sprinkler weekly and keep a register of flammable goods.
+    sv:
+      title: Brand uppstår eller sprids i byggnaden
+      description: Heta arbeten utan brandvakt startar en brand, och öppna genomföringar, kilade branddörrar eller en otestad sprinkler låter den spridas utanför brandcellen. Stora delar av byggnaden går förlorade.
+      mitigation: Tillåt heta arbeten bara med tillstånd och brandvakt, täta genomföringar efter varje installation, håll branddörrar självstängande och kontrollera dem varje kvartal, prova sprinklern varje vecka och för ett register över brandfarliga varor.
+  - id: FCFIRE-R03
+    category: safety
+    likelihood: 3
+    impact: 4
+    tags: [fire-alarm, detection]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "EN 54 (fire detection and fire alarm systems)", "EN 50518:2019 (monitoring and alarm receiving centre)"]
+    mitigated_by: [FCFIRE-03, FCFIRE-04, FCFIRE-15, FCFIRE-01, FCFIRE-02]
+    en:
+      title: Fire detected late or the rescue service not alerted
+      description: The fire alarm does not cover the area, is faulty or its transmission to the rescue service has stopped working. The fire grows before anyone responds.
+      mitigation: Install automatic fire alarm where the documentation says, test it monthly and service it yearly, test alarm transmission every quarter and keep the fire safety documentation and its yearly follow-up current.
+    sv:
+      title: Brand upptäcks sent eller räddningstjänsten larmas inte
+      description: Brandlarmet täcker inte området, är felaktigt eller dess larmöverföring till räddningstjänsten har slutat fungera. Branden växer innan någon reagerar.
+      mitigation: Installera automatiskt brandlarm där dokumentationen anger, prova det varje månad och serva det varje år, prova larmöverföringen varje kvartal och håll brandskyddsdokumentationen och dess årliga uppföljning aktuell.

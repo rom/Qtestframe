@@ -1685,6 +1685,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 40 | `0040_exploratory.sql` |
 | 45 | `0045_chat_channels.sql` |
 | 46 | `0046_variant_gates.sql` |
+| 47 | `0047_risk_catalog.sql` |
 
 <!-- END GENERATED: migrations -->
 

@@ -826,3 +826,50 @@ tests:
           expected: Levererande part, behövt datum och avtalat datum är ifyllda.
         - action: Läs det senaste uppföljningsdatumet för varje öppen post.
           expected: Det är högst 31 dagar gammalt.
+
+risks:
+  - id: PJGOV-R01
+    category: project
+    likelihood: 4
+    impact: 4
+    tags: [cost-overrun, schedule]
+    refs: ["ISO 21502:2020 §4.3 (project governance)", "PRINCE2 Continued business justification"]
+    mitigated_by: [PJGOV-01, PJGOV-02, PJGOV-05, PJGOV-07, PJGOV-08]
+    en:
+      title: Project overruns cost and time without anyone deciding
+      description: The business case is never revisited, actual costs are not compared with the budget and forecasts beyond tolerance are not escalated. The project continues long after it stopped being worth it.
+      mitigation: Approve a business case before the start and update it at each stage gate, compare actual cost with the budget monthly, report earned value indices and escalate forecasts beyond tolerance within 5 working days.
+    sv:
+      title: Projektet överskrider kostnad och tid utan att någon beslutar
+      description: Affärsfallet omprövas aldrig, utfallet jämförs inte med budgeten och prognoser utanför toleransen eskaleras inte. Projektet fortsätter långt efter att det slutat vara lönsamt.
+      mitigation: Godkänn ett affärsfall före start och uppdatera det vid varje beslutspunkt, jämför utfall med budget varje månad, rapportera index för intjänat värde och eskalera prognoser utanför toleransen inom 5 arbetsdagar.
+  - id: PJGOV-R02
+    category: project
+    likelihood: 4
+    impact: 3
+    tags: [scope-creep, requirements]
+    refs: ["ISO 21502:2020 §4.3 (project governance)", "ISO/IEC/IEEE 29148:2018"]
+    mitigated_by: [PJGOV-10, PJGOV-11, PJGOV-12, PJGOV-17]
+    en:
+      title: Scope grows without control
+      description: Requirements are not baselined and changes start before they are approved. The project delivers late, over budget and something different from what was agreed.
+      mitigation: Baseline requirements with source and acceptance criteria, approve changes to the baseline before work starts, trace each requirement to a verification and keep a decision log.
+    sv:
+      title: Omfattningen växer okontrollerat
+      description: Kraven baslinjeras inte och ändringar påbörjas innan de godkänts. Projektet levererar sent, över budget och något annat än det som avtalats.
+      mitigation: Baslinjera kraven med källa och godkännandekriterier, godkänn ändringar av baslinjen innan arbetet påbörjas, spåra varje krav till en verifiering och för en beslutslogg.
+  - id: PJGOV-R03
+    category: project
+    likelihood: 3
+    impact: 3
+    tags: [resources, dependencies]
+    refs: ["ISO 21502:2020 §4.3 (project governance)"]
+    mitigated_by: [PJGOV-09, PJGOV-19, PJGOV-13, PJGOV-03]
+    en:
+      title: Key people or external deliveries not available when needed
+      description: Resources are overallocated across projects and external dependencies are not followed. Work waits for people or deliveries, and the schedule slips step by step.
+      mitigation: Name resources for the next 3 months without overallocation, review the register of external dependencies every month, keep a stakeholder register with a communication plan and document the responsibilities of each role.
+    sv:
+      title: Nyckelpersoner eller externa leveranser finns inte när de behövs
+      description: Resurser är överbelagda mellan projekt och externa beroenden följs inte upp. Arbetet väntar på personer eller leveranser och tidplanen glider steg för steg.
+      mitigation: Namnge resurser för de kommande 3 månaderna utan överbeläggning, gå igenom registret över externa beroenden varje månad, för ett intressentregister med kommunikationsplan och dokumentera ansvaret för varje roll.

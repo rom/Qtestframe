@@ -94,22 +94,37 @@ export function entry(label: string, undo: () => Promise<unknown>, redo: () => P
  * requirements and then the tests to the trash, redo restores the tests
  * first and then the requirements, so their trace links come back.
  */
-export function addedItemsEntry(label: string, projectId: string, requirementIds: readonly string[], testIds: readonly string[]): UndoEntry {
+export function addedItemsEntry(label: string, projectId: string, requirementIds: readonly string[], testIds: readonly string[], riskIds: readonly string[] = []): UndoEntry {
   const reqs = [...requirementIds]
   const tests = [...testIds]
+  // risks have no trash: undo keeps their fields and redo creates them again
+  let risks = [...riskIds]
+  let saved: Record<string, unknown>[] = []
   let trashReq = ''
   let trashTest = ''
   const trash = async (kind: 'requirements' | 'tests', ids: string[]) =>
     ids.length ? ((await api.del<{ trash_id?: string }>(`/projects/${projectId}/${kind}/bulk`, { ids }))?.trash_id ?? '') : ''
+  const riskFields = ['title', 'description', 'category', 'likelihood', 'impact', 'status', 'mitigation', 'owner', 'requirement_ids', 'catalog_ref']
   return {
     label,
     undo: async () => {
+      if (risks.length) {
+        saved = []
+        for (const id of risks) {
+          const k = await api.get<Record<string, unknown>>(`/risks/${id}`)
+          saved.push(Object.fromEntries(riskFields.map((f) => [f, k[f]])))
+        }
+        await api.del(`/projects/${projectId}/risks/bulk`, { ids: risks })
+      }
       trashReq = await trash('requirements', reqs)
       trashTest = await trash('tests', tests)
     },
     redo: async () => {
       if (trashTest) await restoreTrash(trashTest)
       if (trashReq) await restoreTrash(trashReq)
+      const again: string[] = []
+      for (const k of saved) again.push((await api.post<{ id: string }>(`/projects/${projectId}/risks`, k)).id)
+      if (saved.length) risks = again
     },
   }
 }

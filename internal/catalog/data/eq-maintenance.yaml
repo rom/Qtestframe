@@ -890,3 +890,50 @@ tests:
           expected: Varje enhet finns i registret.
         - action: Läs märkningen på varje vald enhet.
           expected: Var och en visar högsta tillåtna last och datum för nästa undersökning, och datumet har inte passerats.
+
+risks:
+  - id: EQMNT-R01
+    category: quality
+    likelihood: 3
+    impact: 4
+    tags: [calibration, measurement]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 10012:2003 §7.1 (metrological confirmation)"]
+    mitigated_by: [EQMNT-02, EQMNT-04, EQMNT-05, EQMNT-06, EQMNT-03]
+    en:
+      title: Decisions taken on wrong measurements
+      description: An instrument drifts out of tolerance or is used after its calibration has expired. Products are accepted or rejected wrongly and the error is found long after.
+      mitigation: Calibrate traceably to SI units, block instruments with overdue calibration, check between calibrations, assess the impact when an instrument is out of tolerance and keep uncertainty small against the tolerance.
+    sv:
+      title: Beslut fattas på felaktiga mätningar
+      description: Ett instrument driver utanför toleransen eller används efter att kalibreringen har gått ut. Produkter godkänns eller underkänns felaktigt och felet upptäcks långt senare.
+      mitigation: Kalibrera spårbart till SI-enheter, spärra instrument med förfallen kalibrering, gör mellankontroller, bedöm konsekvenserna när ett instrument ligger utanför toleransen och håll osäkerheten liten i förhållande till toleransen.
+  - id: EQMNT-R02
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [breakdown, spare-parts]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "EN 13306:2017 (maintenance terminology)"]
+    mitigated_by: [EQMNT-08, EQMNT-10, EQMNT-14, EQMNT-18, EQMNT-16]
+    en:
+      title: Long unplanned stops for lack of maintenance or spares
+      description: Preventive maintenance is skipped, wear is not monitored and critical spares are not in stock. A breakdown stops production for days while parts are ordered.
+      mitigation: Plan preventive maintenance in the maintenance system, keep critical spares in stock, monitor the condition of critical rotating components, analyse the root cause of long stops and review obsolescence every year.
+    sv:
+      title: Långa oplanerade stopp i brist på underhåll eller reservdelar
+      description: Förebyggande underhåll hoppas över, slitage övervakas inte och kritiska reservdelar finns inte i lager. Ett haveri stoppar produktionen i flera dagar medan delar beställs.
+      mitigation: Planera förebyggande underhåll i underhållssystemet, ha kritiska reservdelar i lager, tillståndsövervaka kritiska roterande komponenter, gör grundorsaksanalys av långa stopp och gå igenom risken för föråldring varje år.
+  - id: EQMNT-R03
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [maintenance-safety, lifting]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 45001:2018 §8.1.2"]
+    mitigated_by: [EQMNT-17, EQMNT-19, EQMNT-21, EQMNT-13]
+    en:
+      title: Maintenance worker injured during the work
+      description: Unqualified staff work on electrical installations or under loads lifted with equipment that has not been examined. A worker is electrocuted or crushed.
+      mitigation: Assign maintenance tasks only to qualified personnel, work on electrical installations under a work permit, examine lifting equipment at least every 12 months and keep maintenance points outside the danger zones.
+    sv:
+      title: Underhållspersonal skadas under arbetet
+      description: Personal utan rätt kompetens arbetar med elanläggningar eller under laster som lyfts med utrustning som inte har besiktigats. En arbetare får en elektrisk stöt eller kläms.
+      mitigation: Tilldela underhållsuppgifter bara till kvalificerad personal, arbeta med elanläggningar under arbetstillstånd, besiktiga lyftanordningar minst var 12:e månad och placera underhållspunkter utanför riskområdena.

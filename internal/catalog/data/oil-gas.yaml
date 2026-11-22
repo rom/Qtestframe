@@ -1115,3 +1115,50 @@ tests:
           expected: Läckan visas som försenad.
         - action: Registrera reparationen och efterkontrollen.
           expected: Läckan stängs med båda datumen.
+
+risks:
+  - id: OILG-R01
+    category: safety
+    likelihood: 2
+    impact: 5
+    tags: [emergency-shutdown, fire-and-gas]
+    refs: ["ISO 13702:2015", "IEC 61511-1:2016 §11 (SIS design and engineering)"]
+    mitigated_by: [OILG-01, OILG-03, OILG-04, OILG-05, OILG-19]
+    en:
+      title: Gas release escalates to fire or explosion
+      description: The emergency shutdown responds too slowly, a safety function is bypassed or hot work goes on during gas detection. A leak ignites with risk to life and the installation.
+      mitigation: Respond to emergency shutdown demands within 500 ms, authorise and time-limit bypasses, keep fire and gas independent of process control, check hot work permits against gas detection and detect conflicting permits.
+    sv:
+      title: Gasutsläpp eskalerar till brand eller explosion
+      description: Nödavstängningen reagerar för långsamt, en säkerhetsfunktion är förbikopplad eller heta arbeten pågår trots gasdetektering. Ett läckage antänds med fara för liv och anläggning.
+      mitigation: Svara på nödavstängning inom 500 ms, godkänn och tidsbegränsa förbikopplingar, håll brand- och gassystemet oberoende av processtyrningen, kontrollera tillstånd för heta arbeten mot gasdetekteringen och upptäck motstridiga arbetstillstånd.
+  - id: OILG-R02
+    category: environmental
+    likelihood: 3
+    impact: 4
+    tags: [pipeline-leak, methane]
+    refs: ["API RP 1175", "Regulation (EU) 2024/1787 (methane emissions) Art. 12"]
+    mitigated_by: [OILG-06, OILG-07, OILG-15, OILG-16, OILG-21]
+    en:
+      title: Leak or emissions go undetected
+      description: A pipeline leak is found hours late because of frequent false alarms and reduced sensitivity, or methane emissions and flaring are not recorded. Environmental damage and fines follow.
+      mitigation: Detect pipeline leaks within 10 minutes with few false alarms and visible reduced sensitivity, report methane emissions per source, record venting and flaring events and keep leak detection and repair records.
+    sv:
+      title: Läckage eller utsläpp upptäcks inte
+      description: Ett läckage i en rörledning upptäcks flera timmar för sent på grund av täta falsklarm och sänkt känslighet, eller metanutsläpp och fackling registreras inte. Miljöskador och sanktioner blir följden.
+      mitigation: Upptäck läckage i rörledningar inom 10 minuter med få falsklarm och synlig sänkt känslighet, rapportera metanutsläpp per källa, registrera avluftning och fackling och för register över läcksökning och åtgärder.
+  - id: OILG-R03
+    category: availability
+    likelihood: 3
+    impact: 4
+    tags: [remote-installation, link-loss]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "IEC 62443-3-3 SR 3.1"]
+    mitigated_by: [OILG-11, OILG-12, OILG-13, OILG-17]
+    en:
+      title: Unmanned installation loses contact with the control room
+      description: The control link to a remote installation fails or is attacked, and the main control room becomes unavailable. The installation runs without supervision and data is lost.
+      mitigation: Buffer site data during link loss and backfill it, shut in unmanned installations safely on link loss, authenticate and encrypt the control link and let an alternative control room take over within 30 minutes.
+    sv:
+      title: Obemannad anläggning förlorar kontakten med kontrollrummet
+      description: Styrförbindelsen till en fjärranläggning bryts eller angrips, och huvudkontrollrummet blir otillgängligt. Anläggningen körs utan övervakning och data går förlorade.
+      mitigation: Buffra anläggningens data vid avbrott och fyll på i efterhand, stäng in obemannade anläggningar säkert vid avbrott, autentisera och kryptera styrförbindelsen och låt ett alternativt kontrollrum ta över inom 30 minuter.

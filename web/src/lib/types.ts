@@ -1294,6 +1294,9 @@ export interface Risk {
   residual_source?: string
   threshold?: string
   above_threshold?: boolean
+  /** the catalogue risk it was copied from ("" none) and that risk's catalogue area */
+  catalog_ref?: string
+  catalog_area?: string
   acceptance_valid?: boolean
   review_due?: boolean
 }

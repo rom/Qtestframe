@@ -849,3 +849,35 @@ tests:
           expected: Återbetalningen startas.
         - action: Kontrollera betaltjänstens testpanel dag 14.
           expected: En återbetalning på 499 kr till det ursprungliga kortet är registrerad senast dag 14.
+
+risks:
+  - id: SHOP-R01
+    category: compliance
+    likelihood: 3
+    impact: 3
+    tags: [consumer-law, dark-patterns]
+    refs: ["Directive 2005/29/EC Art. 6", "Directive 2011/83/EU Art. 8(2)"]
+    mitigated_by: [SHOP-02, SHOP-04, SHOP-14, SHOP-16, SHOP-13]
+    en:
+      title: Checkout breaks consumer protection rules
+      description: The total price appears late, paid extras are pre-ticked or reduced prices are misleading. Consumer authorities intervene and customers dispute their orders.
+      mitigation: Show the total price before the order is placed, label the order button with the obligation to pay, pre-tick no paid extras, show the prior price with a reduction and offer withdrawal online.
+    sv:
+      title: Kassan bryter mot konsumentskyddsreglerna
+      description: Totalpriset visas sent, betalda tillägg är förvalda eller sänkta priser är vilseledande. Konsumentmyndigheter ingriper och kunderna bestrider sina beställningar.
+      mitigation: Visa totalpriset innan beställningen läggs, märk beställningsknappen med betalningsskyldigheten, förvälj inga betalda tillägg, visa tidigare pris vid prissänkning och erbjud ångerrätt via webben.
+  - id: SHOP-R02
+    category: quality
+    likelihood: 4
+    impact: 3
+    tags: [abandoned-cart, conversion]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 9241-110:2020 self-descriptiveness"]
+    mitigated_by: [SHOP-03, SHOP-05, SHOP-06, SHOP-09, SHOP-11]
+    en:
+      title: Customers abandon the purchase at checkout
+      description: Customers must create an account, find items out of stock after paying or get stuck after a declined payment or bank authentication. Sales are lost at the last step.
+      mitigation: Allow purchase without an account, check stock before payment, show price changes since the item was added, return cleanly from strong customer authentication and give a clear message and retry after a declined payment.
+    sv:
+      title: Kunderna avbryter köpet i kassan
+      description: Kunderna måste skapa ett konto, upptäcker att varor är slut efter betalningen eller fastnar efter en nekad betalning eller bankautentisering. Försäljning går förlorad i sista steget.
+      mitigation: Tillåt köp utan konto, kontrollera lagersaldot före betalningen, visa prisändringar sedan varan lades i varukorgen, återvänd smidigt från stark kundautentisering och ge ett tydligt meddelande och möjlighet att försöka igen efter en nekad betalning.

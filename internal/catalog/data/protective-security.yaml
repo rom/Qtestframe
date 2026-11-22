@@ -907,3 +907,50 @@ tests:
           expected: Åtkomsten nekas med ett meddelande om att utbildningen har gått ut.
         - action: Registrera en ny utbildning med dagens datum och öppna posten.
           expected: Posten öppnas.
+
+risks:
+  - id: SAKS-R01
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [classified-information, need-to-know]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "CWE-863 (incorrect authorization)"]
+    mitigated_by: [SAKS-04, SAKS-05, SAKS-06, SAKS-07, SAKS-08]
+    en:
+      title: Classified information read by someone without clearance or need to know
+      description: Access is granted on role alone, a clearance has ended without access being removed or access is not logged and reviewed. Information that affects national security is disclosed.
+      mitigation: Require a matching security clearance and check need-to-know, end access within one hour when a clearance ends, log each access to classified records and review the log every week.
+    sv:
+      title: Säkerhetsskyddsklassificerade uppgifter läses av någon utan behörighet eller behov
+      description: Åtkomst ges enbart utifrån roll, en placering i säkerhetsklass har upphört utan att åtkomsten tagits bort eller åtkomsten loggas och granskas inte. Uppgifter som rör Sveriges säkerhet röjs.
+      mitigation: Kräv motsvarande säkerhetsprövning och kontrollera behovet, avsluta åtkomsten inom en timme när behörigheten upphör, logga varje åtkomst till klassificerade uppgifter och granska loggen varje vecka.
+  - id: SAKS-R02
+    category: security
+    likelihood: 2
+    impact: 5
+    tags: [exfiltration, removable-media]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "PMFS 2022:1", "MITRE ATT&CK T1052.001 (exfiltration over USB)"]
+    mitigated_by: [SAKS-09, SAKS-11, SAKS-12, SAKS-16, SAKS-17]
+    en:
+      title: Classified data leaves the protected system
+      description: The classified system is connected to other networks, data is copied to unregistered media or printouts and exports are not registered. Classified data leaves without trace.
+      mitigation: Separate classified systems from other networks, encrypt with approved products, allow writing only to registered removable media, register every printout and export and approve and record destruction.
+    sv:
+      title: Klassificerade uppgifter lämnar det skyddade systemet
+      description: Det klassificerade systemet är anslutet till andra nät, uppgifter kopieras till oregistrerade medier eller utskrifter och exporter registreras inte. Klassificerade uppgifter försvinner utan spår.
+      mitigation: Skilj klassificerade system från andra nät, kryptera med godkända produkter, tillåt skrivning bara till registrerade flyttbara medier, registrera varje utskrift och export och godkänn och dokumentera förstöring.
+  - id: SAKS-R03
+    category: compliance
+    likelihood: 2
+    impact: 4
+    tags: [outsourcing, security-protection-agreement]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "Säkerhetsskyddsförordning (2021:955)"]
+    mitigated_by: [SAKS-01, SAKS-10, SAKS-14, SAKS-15, SAKS-13]
+    en:
+      title: Security-sensitive activity exposed through procurement or a new system
+      description: A system is taken into use or a supplier engaged without a security protection analysis, approval or agreement. Security-sensitive activity is exposed to actors who must not have access.
+      mitigation: Base requirements on the security protection analysis, approve classified systems in writing before use, let suppliers work only under a protective security agreement, assess before outsourcing or procurement and report incidents within 24 hours.
+    sv:
+      title: Säkerhetskänslig verksamhet exponeras genom en upphandling eller ett nytt system
+      description: Ett system tas i bruk eller en leverantör anlitas utan säkerhetsskyddsanalys, godkännande eller säkerhetsskyddsavtal. Säkerhetskänslig verksamhet exponeras för aktörer som inte får ha åtkomst.
+      mitigation: Grunda kraven på säkerhetsskyddsanalysen, godkänn klassificerade system skriftligen före användning, låt leverantörer arbeta bara under säkerhetsskyddsavtal, gör en säkerhetsskyddsbedömning före utkontraktering eller upphandling och rapportera incidenter inom 24 timmar.

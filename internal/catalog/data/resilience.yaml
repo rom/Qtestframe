@@ -879,3 +879,50 @@ tests:
           expected: Förmedlingen tar emot anslutningar.
         - action: Följ konsumenternas anslutningar och köns längd.
           expected: Varje konsument är ansluten och kön minskar inom 5 minuter utan att någon startar om en konsument.
+
+risks:
+  - id: RES-R01
+    category: availability
+    likelihood: 4
+    impact: 3
+    tags: [cascading-failure, dependency]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 (fault tolerance)"]
+    mitigated_by: [RES-01, RES-02, RES-04, RES-11, RES-05]
+    en:
+      title: Slow dependency causes a cascading failure
+      description: One dependency answers slowly, calls pile up without time-outs and retries multiply the load. The whole service stops although only one part had a problem.
+      mitigation: Set a timeout on every outbound call, retry with backoff and jitter, use circuit breakers and isolated resources per dependency and keep core functions working without optional services.
+    sv:
+      title: Ett långsamt beroende orsakar ett kedjefel
+      description: Ett beroende svarar långsamt, anropen hopar sig utan tidsgränser och omförsök mångdubblar lasten. Hela tjänsten stannar trots att bara en del hade problem.
+      mitigation: Sätt en tidsgräns på varje utgående anrop, gör omförsök med ökande väntetid och slumpvis spridning, använd kretsbrytare och isolerade resurser per beroende och låt kärnfunktionerna fungera utan valfria tjänster.
+  - id: RES-R02
+    category: data
+    likelihood: 3
+    impact: 4
+    tags: [partial-update, messaging]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 (fault tolerance)"]
+    mitigated_by: [RES-06, RES-07, RES-12, RES-15, RES-18]
+    en:
+      title: Half-finished operations leave inconsistent data
+      description: A crash, restart or broker outage interrupts a multi-step change or a message. Records are created twice, updated halfway or messages are lost.
+      mitigation: Use idempotency keys and atomic multi-step changes, keep failed messages in a dead-letter queue, finish in-flight work on shutdown and let consumers resume after a broker outage.
+    sv:
+      title: Halvfärdiga operationer lämnar inkonsekventa data
+      description: En krasch, omstart eller ett avbrott i meddelandekön avbryter en ändring i flera steg eller ett meddelande. Poster skapas två gånger, uppdateras till hälften eller meddelanden går förlorade.
+      mitigation: Använd idempotensnycklar och atomära ändringar i flera steg, lägg misslyckade meddelanden i en kö för olevererbara meddelanden, slutför pågående arbete vid avstängning och låt konsumenter fortsätta efter ett avbrott i meddelandekön.
+  - id: RES-R03
+    category: availability
+    likelihood: 3
+    impact: 3
+    tags: [overload, untested-failure]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO/IEC 25010:2023 (recoverability)"]
+    mitigated_by: [RES-14, RES-16, RES-13, RES-17]
+    en:
+      title: Service collapses instead of degrading under stress
+      description: Unbounded queues and pools fill memory during a load spike, and failure modes have never been tested. The service crashes and does not start again on its own.
+      mitigation: Reject excess load instead of queuing it, bound queues and pools, run regular fault-injection tests and let the service start without the database.
+    sv:
+      title: Tjänsten kollapsar i stället för att försämras gradvis vid påfrestning
+      description: Obegränsade köer och pooler fyller minnet vid en lasttopp, och felbeteenden har aldrig testats. Tjänsten kraschar och startar inte igen av sig själv.
+      mitigation: Avvisa överskottslast i stället för att köa den, begränsa köer och pooler, gör regelbundna tester med injicerade fel och låt tjänsten starta utan databasen.

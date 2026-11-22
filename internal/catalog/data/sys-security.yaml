@@ -880,3 +880,50 @@ tests:
           expected: Varje regel har en testpost med en larmtid.
         - action: Kör verktyget för att hitta data på varje testdatabas.
           expected: Inget omaskerat personnummer, namn eller kontaktuppgift hittas.
+
+risks:
+  - id: SYSEC-R01
+    category: security
+    likelihood: 3
+    impact: 5
+    tags: [system-of-systems, defence-in-depth]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "ISO/IEC 27005:2022 §7 (risk assessment process)", "MITRE ATT&CK T1210 (exploitation of remote services)"]
+    mitigated_by: [SYSEC-01, SYSEC-02, SYSEC-03, SYSEC-04, SYSEC-05]
+    en:
+      title: One weak subsystem compromises the whole system
+      description: Subsystems from different suppliers trust each other fully and critical assets sit behind a single control. An attacker who breaks one subsystem reaches the most critical functions.
+      mitigation: Describe the security architecture with trust boundaries and data flows, update the threat model for each release, separate subsystems of different criticality into zones, put two independent controls before each critical asset and apply least privilege between components.
+    sv:
+      title: Ett svagt delsystem komprometterar hela systemet
+      description: Delsystem från olika leverantörer litar fullt på varandra och kritiska tillgångar skyddas av ett enda skydd. En angripare som tar sig in i ett delsystem når de mest kritiska funktionerna.
+      mitigation: Beskriv säkerhetsarkitekturen med förtroendegränser och dataflöden, uppdatera hotmodellen för varje leverans, dela upp delsystem med olika kritikalitet i zoner, ha två oberoende skydd framför varje kritisk tillgång och tillämpa minsta behörighet mellan komponenter.
+  - id: SYSEC-R02
+    category: safety
+    likelihood: 2
+    impact: 4
+    tags: [safety-security-interaction]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 61508-1:2010 §7.4 (hazard and risk analysis)"]
+    mitigated_by: [SYSEC-11, SYSEC-14, SYSEC-15]
+    en:
+      title: Security measure disables a safety function or the reverse
+      description: A lock-out, patch or network filter blocks a safety function, or a safety bypass opens a security hole. Nobody analysed how the two interact.
+      mitigation: Analyse the interaction of security controls and safety functions, be able to recover to a known good configuration within the target time and have residual security risks accepted by the risk owner before go-live.
+    sv:
+      title: En säkerhetsåtgärd sätter en skyddsfunktion ur spel eller tvärtom
+      description: En spärr, en patch eller ett nätfilter blockerar en skyddsfunktion, eller en förbikoppling av skyddet öppnar ett säkerhetshål. Ingen har analyserat hur de två påverkar varandra.
+      mitigation: Analysera samspelet mellan säkerhetsskydd och skyddsfunktioner, kunna återställa till en känd god konfiguration inom måltiden och låt riskägaren godkänna kvarstående säkerhetsrisker före driftsättning.
+  - id: SYSEC-R03
+    category: security
+    likelihood: 3
+    impact: 4
+    tags: [integration-testing, vulnerabilities]
+    refs: ["IEC 62443-3-3 SR 7.6", "CWE-1395 (dependency on vulnerable third-party component)"]
+    mitigated_by: [SYSEC-10, SYSEC-13, SYSEC-16, SYSEC-09, SYSEC-18]
+    en:
+      title: Integrated system goes live with unknown weaknesses
+      description: Each supplier tested its own part, but nobody tested the whole or tracks vulnerabilities across all components. Weaknesses in the integration and old components remain.
+      mitigation: Allocate security requirements to subsystems and suppliers, penetration test the integrated system before acceptance, monitor the bill of materials of the whole system for vulnerabilities, check hardening baselines every month and trigger each detection rule yearly.
+    sv:
+      title: Det integrerade systemet tas i drift med okända svagheter
+      description: Varje leverantör testade sin egen del, men ingen testade helheten eller följer sårbarheterna i alla komponenter. Svagheter i integrationen och gamla komponenter finns kvar.
+      mitigation: Fördela säkerhetskraven på delsystem och leverantörer, penetrationstesta det integrerade systemet före godkännandet, bevaka hela systemets materialförteckning efter sårbarheter, kontrollera härdningsbaslinjerna varje månad och utlös varje detekteringsregel en gång om året.

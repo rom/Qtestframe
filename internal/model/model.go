@@ -1010,6 +1010,10 @@ type Risk struct {
 	// CustomFields are the values of the project's custom fields (field key
 	// → value); a PATCH merges them, null removes a value.
 	CustomFields CustomValues `json:"custom_fields,omitempty"`
+	// CatalogRef is the catalogue risk it was copied from ("" none), and
+	// CatalogArea that risk's catalogue area (derived by the API).
+	CatalogRef  string `json:"catalog_ref"`
+	CatalogArea string `json:"catalog_area,omitempty"`
 }
 
 // ResidualOf returns the residual likelihood, impact and source in effect
@@ -1446,7 +1450,7 @@ const (
 	// CheckUnevidencedMust: a MUST requirement of a release has no passing evidence.
 	CheckUnevidencedMust = "unevidenced_must"
 	// CheckUnmitigatedRisk: a high or critical risk has no mitigation
-	// requirement, or none of them is verified.
+	// requirement, or not all of them are verified.
 	CheckUnmitigatedRisk = "unmitigated_risk"
 	// CheckUnjustifiedRejection: a requirement adopted from a regulation of
 	// the catalogue is rejected without a recorded justification.
