@@ -7,6 +7,7 @@ import (
 
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/rbac"
+	"github.com/rom/qtestframe/internal/report"
 	"github.com/rom/qtestframe/internal/store"
 	"github.com/rom/qtestframe/internal/verification"
 )
@@ -556,4 +557,18 @@ func (pc *projectContext) elementCoverage(reqs []model.Requirement) []model.Elem
 		status[rq.ID] = rq.Status
 	}
 	return verification.ElementCoverage(pc.elements, store.ElementAncestors(pc.elements), status, pc.verification(), pc.last)
+}
+
+// verificationData loads the verification of reqs for reports and
+// documents.
+func (s *Server) verificationData(ctx context.Context, p *Principal, pc *projectContext, reqs []model.Requirement) (*report.VerificationData, error) {
+	st, err := s.Store.VerificationSettings(ctx, p.TenantID(), pc.project.ID)
+	if err != nil {
+		return nil, err
+	}
+	recs, err := s.Store.ListRecords(ctx, p.TenantID(), pc.project.ID, "")
+	if err != nil {
+		return nil, err
+	}
+	return &report.VerificationData{Requirements: pc.verification(), Records: recs, Elements: pc.elementCoverage(reqs), Strict: st.StrictCriteria}, nil
 }

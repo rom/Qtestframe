@@ -129,7 +129,7 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 	d := &report.Data{Project: *pr, Links: pc.links, Categories: pc.categories, Executions: map[string][]model.Execution{}, Now: time.Now().UTC()}
 	reqQ, testQ := "", ""
 	switch id {
-	case report.RequirementsCoverage:
+	case report.RequirementsCoverage, report.Verification:
 		reqQ = expr
 	case report.Traceability:
 		reqQ, testQ = reqExpr(expr), testExpr(expr)
@@ -175,6 +175,11 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 	}
 	if id == report.Risks {
 		if d.Risks, err = s.Store.ListRisks(ctx, p.TenantID(), pr.ID); err != nil {
+			return nil, err
+		}
+	}
+	if id == report.Verification {
+		if d.Verification, err = s.verificationData(ctx, p, pc, d.Requirements); err != nil {
 			return nil, err
 		}
 	}

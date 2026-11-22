@@ -114,7 +114,7 @@ func renderAll(t *testing.T, ds *export.Dataset) {
 
 func TestTemplatesList(t *testing.T) {
 	ts := Templates()
-	if len(ts) != 8 {
+	if len(ts) != 9 {
 		t.Fatal(len(ts))
 	}
 	b, _ := json.Marshal(ts)

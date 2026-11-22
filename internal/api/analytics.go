@@ -73,6 +73,23 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request, p *Prin
 			ID: rq.ID, Key: rq.Key, Title: rq.Title, Description: rq.Description, Obligation: rq.Obligation, Status: rq.Status, Owner: rq.Owner,
 			Criteria: len(rq.Criteria), Tests: rq.LinkedTests, Coverage: rq.Coverage, TestsReady: ready, Conflicts: conflicts[rq.ID], Suspect: rq.SuspectLinks,
 		})
+		if v := pc.verification()[rq.ID]; v != nil {
+			ar := &in.Requirements[len(in.Requirements)-1]
+			ar.Verification = v.State
+			for _, c := range v.Criteria {
+				if c.State == model.VerNone {
+					ar.CriteriaNoEvidence++
+				}
+			}
+			for _, x := range v.Inconsistencies {
+				switch x.Code {
+				case "child_status_unverified":
+					ar.UnverifiedChildren = append(ar.UnverifiedChildren, x.Params["key"])
+				case "status_inconsistent":
+					ar.StatusAhead = true
+				}
+			}
+		}
 	}
 	if p.Can(rbac.TestRead) {
 		in.Tests = []analytics.Test{}
