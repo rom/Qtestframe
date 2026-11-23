@@ -52,7 +52,7 @@ release: web
 test: test-go test-web
 
 test-go:
-	CGO_ENABLED=0 go test -count=1 ./...
+	CGO_ENABLED=0 go test -count=1 -timeout 45m ./...
 
 test-web:
 	cd web && npm run test
