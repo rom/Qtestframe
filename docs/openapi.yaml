@@ -114,6 +114,10 @@ tags:
   description: Session-based exploratory testing (charters, timer, notes, debriefs, metrics)
 - name: AI assistance
   description: Optional suggestions from a language model service (drafts of tests, improved requirements, run summaries, framework mappings, acceptance criteria); nothing is saved without the user
+- name: Environments
+  description: Test environments, their components, health checks and bookings
+- name: Test data
+  description: Shared test data sets, their links, usage and refresh requests
 paths:
   /api/v1/change-requests/{id}:
     parameters:
