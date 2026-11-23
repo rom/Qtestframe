@@ -312,6 +312,10 @@ func TestSeedDemo(t *testing.T) {
 	if err != nil || len(ps) != 3 {
 		t.Errorf("projects %v %v", ps, err)
 	}
+	// the AI assistance is on for the demo organisation (the service is not configured)
+	if ts, err := st.TenantSettings(context.Background(), tn.ID); err != nil || !ts.AIEnabled {
+		t.Errorf("tenant settings %+v %v", ts, err)
+	}
 	// the restricted project, shared with Dana as a viewer
 	var vault *model.Project
 	for i := range ps {

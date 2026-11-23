@@ -46,6 +46,9 @@ type Config struct {
 	// Live configures live updates and presence (Server-Sent Events, see
 	// internal/live).
 	Live Live `yaml:"live"`
+	// AI configures the optional AI assistance (off by default, see
+	// internal/ai): drafts and suggestions from a language model service.
+	AI AI `yaml:"ai"`
 
 	// Meta records where values came from (file keys, environment
 	// variables); filled by Load, not part of the YAML.
@@ -285,6 +288,133 @@ func (e Embeddings) validate() []error {
 	}
 	if e.Timeout < 0 {
 		errs = append(errs, errors.New("similarity.embeddings.timeout must not be negative"))
+	}
+	return errs
+}
+
+// AI providers (ai.provider).
+const (
+	AIAnthropic = "anthropic"
+	AIOpenAI    = "openai"
+)
+
+// AI is the optional AI assistance: a language model service the
+// administrator configures (Anthropic Messages API, or an OpenAI-compatible
+// chat completions endpoint such as Azure OpenAI, Ollama or vLLM). When
+// enabled, the text of the items a user asks about is sent to it. The key
+// is never written in the file: it comes from api_key_file or the system
+// settings.
+type AI struct {
+	Enabled bool `yaml:"enabled"`
+	// Provider is "anthropic" (default) or "openai".
+	Provider string `yaml:"provider"`
+	// URL is the base URL of the service ("" with anthropic: the public
+	// API), e.g. https://llm.example.com/v1 for an OpenAI-compatible one.
+	URL        string        `yaml:"url"`
+	Model      string        `yaml:"model"`
+	APIKeyFile string        `yaml:"api_key_file"`
+	APIKey     string        `yaml:"-"`
+	Timeout    time.Duration `yaml:"timeout"`
+	MaxTokens  int           `yaml:"max_tokens"`
+	// Temperature is "" (the service's default) or a number 0–2.
+	Temperature string `yaml:"temperature"`
+	// RateLimit is the most AI requests of one user per hour.
+	RateLimit int `yaml:"rate_limit"`
+	// Features turns the single features on or off.
+	Features AIFeatures `yaml:"features"`
+	// PriceInput and PriceOutput are optional prices per million input
+	// and output tokens ("" none), used to show an estimated cost.
+	PriceInput  string `yaml:"price_input"`
+	PriceOutput string `yaml:"price_output"`
+}
+
+// AIFeatures are the features of the AI assistance.
+type AIFeatures struct {
+	DraftTests         bool `yaml:"draft_tests"`
+	ImproveRequirement bool `yaml:"improve_requirement"`
+	SummarizeRun       bool `yaml:"summarize_run"`
+	SuggestMappings    bool `yaml:"suggest_mappings"`
+	SuggestCriteria    bool `yaml:"suggest_criteria"`
+}
+
+// On reports whether the AI service is to be used.
+func (a AI) On() bool {
+	return a.Enabled && (a.URL != "" || a.ProviderName() == AIAnthropic) && a.ModelName() != ""
+}
+
+// ProviderName returns the provider with its default.
+func (a AI) ProviderName() string {
+	if a.Provider == "" {
+		return AIAnthropic
+	}
+	return a.Provider
+}
+
+// ModelName returns the configured model. There is no built-in default:
+// the administrator names the model (or deployment) of the service.
+func (a AI) ModelName() string {
+	return strings.TrimSpace(a.Model)
+}
+
+// ParseTemperature returns the temperature (nil: not set).
+func ParseTemperature(s string) (*float64, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil, nil
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil || f < 0 || f > 2 {
+		return nil, errors.New("must be empty or a number between 0 and 2")
+	}
+	return &f, nil
+}
+
+// ParsePrice returns a price per million tokens (0: not set).
+func ParsePrice(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0, nil
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil || f < 0 || f > 1e6 {
+		return 0, errors.New("must be empty or a non-negative number")
+	}
+	return f, nil
+}
+
+func (a AI) validate() []error {
+	var errs []error
+	switch a.Provider {
+	case "", AIAnthropic, AIOpenAI:
+	default:
+		errs = append(errs, errors.New("ai.provider must be anthropic or openai"))
+	}
+	if a.URL != "" {
+		u, err := url.Parse(a.URL)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errs = append(errs, errors.New("ai.url must be an absolute http(s) URL"))
+		}
+	}
+	if a.Enabled && a.URL == "" && a.ProviderName() == AIOpenAI {
+		errs = append(errs, errors.New("ai.url is required for an OpenAI-compatible service"))
+	}
+	if a.Timeout < 0 {
+		errs = append(errs, errors.New("ai.timeout must not be negative"))
+	}
+	if a.MaxTokens < 0 || a.MaxTokens > 128000 {
+		errs = append(errs, errors.New("ai.max_tokens must be between 0 and 128000"))
+	}
+	if a.RateLimit < 0 {
+		errs = append(errs, errors.New("ai.rate_limit must not be negative"))
+	}
+	if _, err := ParseTemperature(a.Temperature); err != nil {
+		errs = append(errs, fmt.Errorf("ai.temperature %w", err))
+	}
+	if _, err := ParsePrice(a.PriceInput); err != nil {
+		errs = append(errs, fmt.Errorf("ai.price_input %w", err))
+	}
+	if _, err := ParsePrice(a.PriceOutput); err != nil {
+		errs = append(errs, fmt.Errorf("ai.price_output %w", err))
 	}
 	return errs
 }
@@ -555,6 +685,8 @@ func Default() Config {
 		Similarity:   Similarity{Embeddings: Embeddings{Timeout: 30 * time.Second}},
 		Live: Live{Enabled: true, Heartbeat: 25 * time.Second, MaxConnections: 2000, MaxConnectionsPerUser: 8,
 			ReplayBuffer: 512, PresenceTTL: 45 * time.Second},
+		AI: AI{Provider: AIAnthropic, Timeout: 2 * time.Minute, MaxTokens: 8192, RateLimit: 30,
+			Features: AIFeatures{DraftTests: true, ImproveRequirement: true, SummarizeRun: true, SuggestMappings: true, SuggestCriteria: true}},
 		Secrets: Secrets{Provider: SecretsLocal, TPM: TPMKey{Device: "/dev/tpmrm0", PCRBank: "sha256"},
 			PKCS11: PKCS11Key{KeyLabel: "qtestframe-kek"}},
 	}
@@ -799,6 +931,12 @@ func (c *Config) resolveSecrets() error {
 		}
 		c.Meta.FileKeys["similarity.embeddings.api_key"] = true
 	}
+	if c.AI.APIKeyFile != "" {
+		if c.AI.APIKey, err = readSecret(c.AI.APIKeyFile); err != nil {
+			return err
+		}
+		c.Meta.FileKeys["ai.api_key"] = true
+	}
 	if env := os.Getenv("QTF_EMAIL_PASSWORD"); env != "" {
 		c.Email.Password = env
 		c.Meta.EnvKeys["email.password"] = "QTF_EMAIL_PASSWORD"
@@ -933,6 +1071,7 @@ func (c *Config) Validate() error {
 	errs = append(errs, c.Email.validate()...)
 	errs = append(errs, c.Secrets.validate()...)
 	errs = append(errs, c.Similarity.Embeddings.validate()...)
+	errs = append(errs, c.AI.validate()...)
 	if c.Email.On() && c.Server.BaseURL == "" {
 		errs = append(errs, errors.New("server.base_url is required for e-mail (links in the messages)"))
 	}

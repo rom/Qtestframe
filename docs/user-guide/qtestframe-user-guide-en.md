@@ -29,6 +29,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Change requests and change control](#change-requests-and-change-control) | Proposing changes to approved requirements and tests, the impact assessment, the change control board's signed decisions, applying, verifying and closing; enforced change control and the emergency override |
 | [Traceability and coverage](#traceability-and-coverage) | The traceability matrix, how coverage is calculated, the dashboard |
 | [Duplicates and conflicts](#duplicates-and-conflicts) | Similar requirements while writing, suspected duplicate requirements and tests, potentially conflicting requirements, merging, thresholds |
+| [AI assistance](#ai-assistance) | Optional AI suggestions: drafts of tests, better requirement wording, acceptance criteria, framework mappings, run summaries with defect drafts; what is sent, and turning it on and off |
 | [Variants and code](#variants-and-code) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
 | [CI/CD](#cicd) | Pipeline templates for GitLab and GitHub, uploading results, the quality gate, commit statuses and merge request notes, test selection and child pipelines |
 | [Baselines](#baselines) | Freezing a release and comparing versions |
@@ -2953,6 +2954,88 @@ Before you add requirements from the [catalogue](#catalogue), the dialog warns a
 
 An administrator can let an external **embeddings service** (an OpenAI-compatible `/v1/embeddings` endpoint) compute the similarity instead (**Administration → System settings → Similarity**; see the administrator guide). The page and the panel then say *Embeddings service*. The title, description and criteria or steps of requirements and tests are then **sent to that service**. Its vectors are cached per item version, so unchanged items are not sent again. The conflict detection always runs on the server. When the service fails, the local similarity is used.
 
+# AI assistance
+
+Qtestframe can ask a language model service for **suggestions**: drafts of tests for a requirement, a better wording of a requirement, a summary of a failed run with defect drafts, framework mappings and acceptance criteria. You review and edit every suggestion; **nothing is saved until you accept it**.
+
+AI assistance is optional and **off by default**. It needs a service set up by a super administrator, the organisation must turn it on, and a project can turn it off (see [Turning it on and off](#turning-it-on-and-off)).
+
+## The Assist button
+
+Pages that can use AI assistance have an **Assist** button with a sparkle icon:
+
+| Where | Actions |
+|---|---|
+| Requirement editor | **Improve wording**, **Suggest acceptance criteria**, **Suggest framework mappings**, **Draft tests** |
+| Test editor | **Draft this test from** the first linked requirement |
+| Run page | **Summarise failures** |
+| Risk dialog | **Suggest framework mappings** |
+
+**Assist** opens a small menu with the actions. When an action cannot be used, it stays visible but disabled, with the reason below it: AI assistance is not set up or turned off, the feature is turned off, the item is not saved yet, the run has no failures, or you have used all requests of this hour. The menu also says which service the text goes to and how many requests you have left.
+
+An action opens a dialog that asks the service at once. While it writes, the dialog shows how far it is; **Cancel request** stops it. Then you see the suggestions, the model, the tokens used, the time and, when the administrator entered prices, an estimated cost. **Ask again** sends the request once more.
+
+Suggestions and the prompts are in the language of the user interface (English or Swedish).
+
+## Draft tests from a requirement
+
+**Draft tests** in a saved requirement sends its title, description and acceptance criteria and suggests up to eight manual tests: title, description, preconditions, test data, expected result and steps with actions, data and expected results, and which acceptance criteria each test covers.
+
+Every test can be edited in the dialog: open its details to change the texts, edit, add or remove steps. Untick the tests you do not want. **Create draft tests** creates the ticked tests with status *Draft* and links each to the requirement and to the criteria it covers. The test data is added to the preconditions. The new tests appear in the [traceability](#traceability-and-coverage) of the requirement; review them like other drafts before you set them to *Ready*.
+
+In the **test editor**, **Draft this test from** *KEY* asks for drafts from the test's first linked requirement. Choose one draft and **Use this draft**: its title (if the test has none), description, preconditions, expected result and steps are added to the form. Save the test to keep them.
+
+## Improve a requirement
+
+**Improve wording** sends the requirement's current text (also when it is not saved yet) together with the findings of the [requirement checks](#requirements) and asks for a rewrite that follows the rules the checks look for: one obligation with an uppercase keyword (MUST, SHOULD, MAY …), an EARS pattern where it fits (*When* … *the system MUST* …), no vague terms, no TBDs, no open lists or escape clauses, active voice and measurable values.
+
+The dialog shows:
+
+- the **changes** as a word diff (inserted words underlined, removed ones struck through) and the explanation;
+- the **findings fixed**: the server checks the rewrite again with the same checks, so the list shows what the rewrite really fixes, not what the service claims;
+- the **findings that remain** and any **new findings**, and the quality score before and after.
+
+Edit the title and text if needed, then **Use this text**: it replaces the text in the editor. It is saved when you save the requirement, so you can still compare and undo. A placeholder such as *[value]* means the service needed a value it could not know.
+
+## Acceptance criteria
+
+**Suggest acceptance criteria** proposes verifiable criteria with a method (test, inspection, analysis, demonstration, review) and, where the requirement implies a quality, a threshold with unit. Criteria that the requirement already has are left out. Edit or untick them and **Add criteria**: they are added to the criteria of the form.
+
+## Framework mappings
+
+**Suggest framework mappings** proposes ids of security frameworks with a reason for each:
+
+- for a **requirement**: MITRE D3FEND techniques and EMB3D mitigations or threats, and CWE weaknesses;
+- for a **risk**: MITRE ATT&CK and ATLAS techniques and EMB3D threats.
+
+Every id is checked against the lists built into Qtestframe; ids that are not in them are dropped, and the dialog says how many. Ids that are already mapped are left out. **Add mappings** adds the ticked ids to the D3FEND, EMB3D or ATT&CK fields of the form; CWE ids are added to the requirement's tags (*CWE-79*), because requirements have no CWE field. CWE ids are known when the [catalogue](#catalogue) refers to them.
+
+## Summarise a failed run
+
+**Summarise failures** on a run page sends the failed and blocked executions (test, notes, the end of the error output, failed steps; at most 40) and the defects linked to the run. You get a short summary, likely common causes (hypotheses from the data) and drafts of defects for failures that no linked defect covers yet.
+
+Edit the title, description and severity of the drafts, untick what you do not want, and **Create defects**: each defect is created and linked to the run and to the executions of its tests. Then manage them as described in [Defects](#defects-1).
+
+## Privacy and what is sent
+
+When you click an action, the text of **that item** is sent to the AI service configured by the administrator — nothing else, and nothing in the background:
+
+| Action | What is sent |
+|---|---|
+| Draft tests, acceptance criteria, improve wording | the requirement's key, title, description, type, obligation, rationale and acceptance criteria (with improve: the findings of the checks) |
+| Summarise failures | the run's name, environment and build, the failed and blocked executions with notes, error output and failed steps, and the linked defects |
+| Framework mappings | the requirement's or risk's title and description (risks: also category and mitigation) and the ids already mapped |
+
+Every request is recorded in the organisation's audit log (feature, user, item, tokens) without the content. The service only answers with text: it cannot change anything in Qtestframe, and the item text is passed to it as data, not as instructions. Suggestions can still be wrong or incomplete: check them like the work of a new colleague.
+
+## Turning it on and off
+
+- **Server:** a super administrator configures the service (Anthropic, or an OpenAI-compatible service such as Azure OpenAI or a local server) under **Administration → System settings → AI assistance** and can turn single features off (see the administrator guide).
+- **Organisation:** an administrator (*settings.manage*) turns it on under **Administration → AI assistance**.
+- **Project:** a project manager (*project.update*) can turn it off for one project under **Settings → Project → AI assistance**, for example when its data must not leave the server.
+
+A limit per user and hour protects against runaway costs; the Assist menu shows how many requests are left.
+
 # Variants and code
 
 A product is often built in several **variants**: models, markets or customer configurations. Not every requirement applies to every variant, and a test run on one variant says nothing about another. Qtestframe keeps track of which requirements and tests apply to which variants and computes coverage per variant.
@@ -4999,7 +5082,7 @@ The words of testing, requirements engineering and the standards and formats beh
 
 **Testing:** [Acceptance testing](#acceptance-testing) · [Accessibility testing](#accessibility-testing) · [Behaviour-driven development](#behaviour-driven-development) · [Black-box testing](#black-box-testing) · [Boundary value analysis](#boundary-value-analysis) · [Code coverage](#code-coverage) · [Continuous integration](#continuous-integration) · [Coverage](#coverage) · [Data-driven testing](#data-driven-testing) · [Decision table testing](#decision-table-testing) · [Defect](#defect) · [Defect lifecycle](#defect-lifecycle) · [End-to-end testing](#end-to-end-testing) · [Entry criteria](#entry-criteria) · [Equivalence partitioning](#equivalence-partitioning) · [Error guessing](#error-guessing) · [Exit criteria](#exit-criteria-1) · [Exploratory testing](#exploratory-testing-1) · [Flaky test](#flaky-test) · [Functional testing](#functional-testing) · [Grey-box testing](#grey-box-testing) · [Integration testing](#integration-testing) · [Load testing](#load-testing) · [Non-functional testing](#non-functional-testing) · [Pairwise testing](#pairwise-testing) · [Performance testing](#performance-testing) · [Priority](#priority) · [Regression testing](#regression-testing) · [Requirement coverage](#requirement-coverage) · [Security testing](#security-testing) · [Session-based test management](#session-based-test-management) · [Severity](#severity) · [Shift-left](#shift-left) · [Smoke and sanity testing](#smoke-and-sanity-testing) · [State transition testing](#state-transition-testing) · [Stress testing](#stress-testing) · [System testing](#system-testing) · [Test case](#test-case) · [Test configuration](#test-configuration) · [Test cycle](#test-cycle) · [Test data](#test-data) · [Test design technique](#test-design-technique) · [Test environment](#test-environment) · [Test execution](#test-execution) · [Test level](#test-level) · [Test oracle](#test-oracle) · [Test plan](#test-plan) · [Test result](#test-result) · [Test run](#test-run) · [Test step](#test-step) · [Test suite](#test-suite) · [Test type](#test-type) · [Test-driven development](#test-driven-development) · [Unit testing](#unit-testing) · [Usability testing](#usability-testing) · [V-model](#v-model) · [Validation](#validation) · [Verification](#verification-1) · [White-box testing](#white-box-testing)
 
-**Requirements:** [Acceptance criteria](#acceptance-criteria) · [Backward traceability](#backward-traceability) · [Baseline](#baseline) · [Bidirectional traceability](#bidirectional-traceability) · [Business requirement](#business-requirement) · [Change impact](#change-impact-1) · [Constraint](#constraint) · [Derived requirement](#derived-requirement) · [Deviation](#deviation) · [EARS](#ears) · [Evaluation criterion](#evaluation-criterion) · [Forward traceability](#forward-traceability) · [Functional requirement](#functional-requirement) · [INCOSE rules](#incose-rules) · [Non-functional requirement](#non-functional-requirement) · [Obligation level](#obligation-level) · [Quality attribute](#quality-attribute) · [Refinement](#refinement) · [Requirement](#requirement) · [Requirement key words](#requirement-key-words) · [Requirement quality](#requirement-quality) · [Residual risk](#residual-risk-1) · [Risk](#risk) · [Risk-based testing](#risk-based-testing) · [SKA, BÖR and FÅR](#ska-bör-and-får) · [Software requirement](#software-requirement) · [Specification](#specification) · [Stakeholder](#stakeholder) · [Stakeholder requirement](#stakeholder-requirement) · [Statement of Applicability](#statement-of-applicability-1) · [Suspect link](#suspect-link) · [System requirement](#system-requirement) · [Trace link](#trace-link) · [Traceability](#traceability) · [Traceability matrix](#traceability-matrix) · [User requirement](#user-requirement) · [Verification method](#verification-method) · [Verification record](#verification-record) · [Waiver](#waiver)
+**Requirements:** [Acceptance criteria](#acceptance-criteria-1) · [Backward traceability](#backward-traceability) · [Baseline](#baseline) · [Bidirectional traceability](#bidirectional-traceability) · [Business requirement](#business-requirement) · [Change impact](#change-impact-1) · [Constraint](#constraint) · [Derived requirement](#derived-requirement) · [Deviation](#deviation) · [EARS](#ears) · [Evaluation criterion](#evaluation-criterion) · [Forward traceability](#forward-traceability) · [Functional requirement](#functional-requirement) · [INCOSE rules](#incose-rules) · [Non-functional requirement](#non-functional-requirement) · [Obligation level](#obligation-level) · [Quality attribute](#quality-attribute) · [Refinement](#refinement) · [Requirement](#requirement) · [Requirement key words](#requirement-key-words) · [Requirement quality](#requirement-quality) · [Residual risk](#residual-risk-1) · [Risk](#risk) · [Risk-based testing](#risk-based-testing) · [SKA, BÖR and FÅR](#ska-bör-and-får) · [Software requirement](#software-requirement) · [Specification](#specification) · [Stakeholder](#stakeholder) · [Stakeholder requirement](#stakeholder-requirement) · [Statement of Applicability](#statement-of-applicability-1) · [Suspect link](#suspect-link) · [System requirement](#system-requirement) · [Trace link](#trace-link) · [Traceability](#traceability) · [Traceability matrix](#traceability-matrix) · [User requirement](#user-requirement) · [Verification method](#verification-method) · [Verification record](#verification-record) · [Waiver](#waiver)
 
 **Standards, formats and frameworks:** [Bearer token](#bearer-token) · [CSV](#csv) · [CWE](#cwe) · [Cyber Resilience Act](#cyber-resilience-act) · [ETag and If-Match](#etag-and-if-match) · [EU AI Act](#eu-ai-act) · [HOTP](#hotp) · [HTTP semantics](#http-semantics) · [ISO/IEC 25010](#isoiec-25010) · [ISO/IEC 27001 Annex A](#isoiec-27001-annex-a) · [ISO/IEC/IEEE 29119](#isoiecieee-29119) · [ISO/IEC/IEEE 29148](#isoiecieee-29148) · [ISTQB](#istqb) · [JSON Web Token](#json-web-token) · [JUnit XML](#junit-xml-1) · [Landlock](#landlock) · [Markdown](#markdown) · [MITRE ATLAS](#mitre-atlas) · [MITRE ATT&CK](#mitre-attck-1) · [MITRE D3FEND](#mitre-d3fend) · [MITRE EMB3D](#mitre-emb3d) · [OAuth 2.0](#oauth-20) · [OpenAPI](#openapi) · [OpenID Connect](#openid-connect) · [OSLC](#oslc-2) · [PKCE](#pkce) · [Problem Details](#problem-details) · [ReqIF](#reqif) · [SAML 2.0](#saml-20) · [SCIM](#scim) · [seccomp](#seccomp) · [STIX](#stix) · [Syslog](#syslog) · [TOTP](#totp) · [WCAG](#wcag) · [WebAuthn and FIDO2](#webauthn-and-fido2)
 
@@ -5017,7 +5100,7 @@ The conditions a product or a requirement must meet to be accepted by the custom
 
 ### Acceptance testing
 
-The test level that decides whether a system is ready to be accepted: by its users (user acceptance testing), by operations (operational acceptance), or against a contract or regulation. It answers "is this what we need?" rather than "does the code work?", so it is mostly a form of [validation](#validation). Acceptance tests are usually derived from [acceptance criteria](#acceptance-criteria) and business processes (ISTQB Glossary).
+The test level that decides whether a system is ready to be accepted: by its users (user acceptance testing), by operations (operational acceptance), or against a contract or regulation. It answers "is this what we need?" rather than "does the code work?", so it is mostly a form of [validation](#validation). Acceptance tests are usually derived from [acceptance criteria](#acceptance-criteria-1) and business processes (ISTQB Glossary).
 
 **In Qtestframe:** plan acceptance testing as a [test cycle](#test-cycle) or [run](#test-run) of its own, for example *Release 2.1 acceptance*, and tag or categorise the tests (`tag:acceptance`). The template for *Business* requirements suggests an acceptance test.
 
@@ -5095,7 +5178,7 @@ BDD: a way of working where the team describes the wanted behaviour as concrete 
 
 **In Qtestframe:** write a scenario as the steps of a test (Given as precondition, When as action, Then as expected result) and link it to the requirement. Automated scenarios report their results through JUnit XML like any other test.
 
-**See also:** [Test-driven development](#test-driven-development), [Acceptance criteria](#acceptance-criteria), [JUnit XML](#junit-xml-1)
+**See also:** [Test-driven development](#test-driven-development), [Acceptance criteria](#acceptance-criteria-1), [JUnit XML](#junit-xml-1)
 
 ### Bidirectional traceability
 
@@ -5357,7 +5440,7 @@ A statement of how the fulfilment of a requirement will be judged: what is check
 
 **In Qtestframe:** each requirement can have several criteria, each with a method (test, inspection, analysis, demonstration, review) and a threshold. Tests are linked to a criterion, other methods record [verification records](#verification-record); the requirement is verified when every criterion is.
 
-**See also:** [Evaluation criteria](#evaluation-criteria), [Acceptance criteria](#acceptance-criteria), [Verification](#verification)
+**See also:** [Evaluation criteria](#evaluation-criteria), [Acceptance criteria](#acceptance-criteria-1), [Verification](#verification)
 
 ### Exit criteria
 
@@ -6309,7 +6392,7 @@ A requirement that describes what a user must be able to do with the system, oft
 
 **In Qtestframe:** write user stories as requirements and their acceptance criteria as evaluation criteria; refine them into system or software requirements where needed.
 
-**See also:** [Stakeholder requirement](#stakeholder-requirement), [Acceptance criteria](#acceptance-criteria), [Behaviour-driven development](#behaviour-driven-development)
+**See also:** [Stakeholder requirement](#stakeholder-requirement), [Acceptance criteria](#acceptance-criteria-1), [Behaviour-driven development](#behaviour-driven-development)
 
 ## V
 

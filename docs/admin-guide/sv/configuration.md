@@ -301,6 +301,27 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `live.replay_buffer` | heltal | `512` | — | Antal senaste händelser som hålls i minnet så att en klient som ansluter igen (`Last-Event-ID`) får det den missade; finns dess senaste händelse inte kvar läser den i stället om det den visar. |
 | `live.presence_ttl` | tidslängd | `45s` | — | Hur länge en användare visas som att den tittar på eller redigerar ett objekt efter den senaste närvarosignalen från webbläsaren (skickas var 20:e sekund). |
 
+### `ai`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `ai.enabled` | bool | `false` | — | Slå på den valfria [AI-assistansen](system-settings.md#ai-assistans) (utkast till tester, förbättrade krav, sammanfattningar av körningar, ramverksmappningar, acceptanskriterier). Av som standard. **När den är på skickas texten i de objekt som en användare frågar om till den konfigurerade tjänsten.** Varje organisation måste också slå på den, och projekt kan välja bort den. Finns även under **Administration → Systeminställningar**. |
+| `ai.provider` | text | `anthropic` | — | Typ av tjänst: `anthropic` (Anthropics Messages API) eller `openai` (en OpenAI-kompatibel chat completions-slutpunkt: OpenAI, Azure OpenAI eller en lokal server som Ollama eller vLLM). |
+| `ai.url` | text | — | — | Tjänstens bas-URL. Tom med `anthropic`: `https://api.anthropic.com`. Krävs med `openai`, t.ex. `https://llm.example.com/v1` (servern lägger till `/chat/completions`); en Azure OpenAI-deployment-URL med `?api-version=…` skickar nyckeln som `api-key`. |
+| `ai.model` | text | — | — | Modell-id som skickas till tjänsten (krävs): modellen i ditt Anthropic-konto, eller modellen eller deploymenten i din OpenAI-kompatibla tjänst. Det finns ingen inbyggd standard. |
+| `ai.api_key_file` | text | — | — | Fil med API-nyckeln (relativ: i `$CREDENTIALS_DIRECTORY`); skickas som `x-api-key` (Anthropic), `Authorization: Bearer` eller `api-key` (Azure). Nyckeln kan också sparas, krypterad, i systeminställningarna; den visas aldrig igen. Lokala servrar behöver kanske ingen nyckel. |
+| `ai.timeout` | tidslängd | `2m` | — | Längsta tid att vänta på ett svar (5 s–10 min). Användaren kan också avbryta en begäran. |
+| `ai.max_tokens` | heltal | `8192` | — | Högsta antal token i ett svar (256–128000). |
+| `ai.temperature` | text | — | — | Temperatur som skickas till tjänsten (0–2). Tom: skickas inte (tjänstens standard; vissa modeller accepterar inget annat värde). |
+| `ai.rate_limit` | heltal | `30` | — | Högsta antal AI-förfrågningar per användare och timme. |
+| `ai.features.draft_tests` | bool | `true` | — | Erbjud *Utkast till tester* i kravredigeraren (och utkast till ett test från ett länkat krav i testredigeraren). |
+| `ai.features.improve_requirement` | bool | `true` | — | Erbjud *Förbättra krav* (en omskrivning för kravkontrollerna, visad som skillnad). |
+| `ai.features.summarize_run` | bool | `true` | — | Erbjud *Sammanfatta fel* på körningssidan (en sammanfattning och utkast till defekter). |
+| `ai.features.suggest_mappings` | bool | `true` | — | Erbjud *Föreslå mappningar* (ATT&CK, D3FEND, EMB3D, CWE) för krav och risker, kontrollerade mot de inbyggda listorna. |
+| `ai.features.suggest_criteria` | bool | `true` | — | Erbjud *Föreslå acceptanskriterier* i kravredigeraren. |
+| `ai.price_input` | text | — | — | Valfritt pris per miljon indata-token (valfri valuta), för att visa en uppskattad kostnad med varje svar. |
+| `ai.price_output` | text | — | — | Valfritt pris per miljon utdata-token. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler

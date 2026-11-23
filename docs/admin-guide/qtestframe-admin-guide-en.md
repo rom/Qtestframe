@@ -545,6 +545,27 @@ Every key of the file, its type, its default and the environment variable that s
 | `live.replay_buffer` | integer | `512` | — | Number of recent events kept in memory so that a client that reconnects (`Last-Event-ID`) receives what it missed; when its last event is no longer kept, it reloads what it shows instead. |
 | `live.presence_ttl` | duration | `45s` | — | How long a user stays listed as viewing or editing an item after the last presence heartbeat of their browser (sent every 20 s). |
 
+### `ai`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `ai.enabled` | bool | `false` | — | Turn on the optional [AI assistance](#ai-assistance) (drafts of tests, improved requirements, run summaries, framework mappings, acceptance criteria). Off by default. **When on, the text of the items a user asks about is sent to the configured service.** Each organisation must also turn it on, and projects can opt out. Also in **Administration → System settings**. |
+| `ai.provider` | string | `anthropic` | — | Type of the service: `anthropic` (the Anthropic Messages API) or `openai` (an OpenAI-compatible chat completions endpoint: OpenAI, Azure OpenAI, or a local server such as Ollama or vLLM). |
+| `ai.url` | string | — | — | Base URL of the service. Empty with `anthropic`: `https://api.anthropic.com`. With `openai` required, e.g. `https://llm.example.com/v1` (the server appends `/chat/completions`); an Azure OpenAI deployment URL with `?api-version=…` sends the key as `api-key`. |
+| `ai.model` | string | — | — | Model id sent to the service (required): the model of your Anthropic account, or the model or deployment of your OpenAI-compatible service. There is no built-in default. |
+| `ai.api_key_file` | string | — | — | File with the API key (relative: in `$CREDENTIALS_DIRECTORY`); sent as `x-api-key` (Anthropic), `Authorization: Bearer` or `api-key` (Azure). The key can also be stored, encrypted, in the system settings; it is never shown again. Local servers may need no key. |
+| `ai.timeout` | duration | `2m` | — | Longest time to wait for one answer (5 s–10 min). The user can also cancel a request. |
+| `ai.max_tokens` | integer | `8192` | — | Most tokens of one answer (256–128000). |
+| `ai.temperature` | string | — | — | Sampling temperature sent to the service (0–2). Empty: not sent (the service's default; some models accept no other value). |
+| `ai.rate_limit` | integer | `30` | — | Most AI requests of one user per hour. |
+| `ai.features.draft_tests` | bool | `true` | — | Offer *Draft tests* in the requirement editor (and drafting a test from a linked requirement in the test editor). |
+| `ai.features.improve_requirement` | bool | `true` | — | Offer *Improve requirement* (a rewrite for the requirement checks, shown as a diff). |
+| `ai.features.summarize_run` | bool | `true` | — | Offer *Summarise failures* on the run page (a summary and defect drafts). |
+| `ai.features.suggest_mappings` | bool | `true` | — | Offer *Suggest mappings* (ATT&CK, D3FEND, EMB3D, CWE) for requirements and risks, checked against the embedded lists. |
+| `ai.features.suggest_criteria` | bool | `true` | — | Offer *Suggest acceptance criteria* in the requirement editor. |
+| `ai.price_input` | string | — | — | Optional price per million input tokens (any currency), to show an estimated cost with each answer. |
+| `ai.price_output` | string | — | — | Optional price per million output tokens. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -1042,6 +1063,22 @@ The settings the page offers, generated from `internal/settings`:
 | Similarity (duplicates) | `similarity.embeddings.model` | text | at once |
 | Similarity (duplicates) | `similarity.embeddings.api_key` | secret (write-only) | at once |
 | Similarity (duplicates) | `similarity.embeddings.timeout` | 1s–5m | at once |
+| AI assistance | `ai.enabled` | on/off | at once |
+| AI assistance | `ai.provider` | `anthropic`, `openai` | at once |
+| AI assistance | `ai.url` | text | at once |
+| AI assistance | `ai.model` | text | at once |
+| AI assistance | `ai.api_key` | secret (write-only) | at once |
+| AI assistance | `ai.timeout` | 5s–10m | at once |
+| AI assistance | `ai.max_tokens` | 256–128000 | at once |
+| AI assistance | `ai.temperature` | text | at once |
+| AI assistance | `ai.rate_limit` | 1–10000 | at once |
+| AI assistance | `ai.features.draft_tests` | on/off | at once |
+| AI assistance | `ai.features.improve_requirement` | on/off | at once |
+| AI assistance | `ai.features.summarize_run` | on/off | at once |
+| AI assistance | `ai.features.suggest_mappings` | on/off | at once |
+| AI assistance | `ai.features.suggest_criteria` | on/off | at once |
+| AI assistance | `ai.price_input` | text | at once |
+| AI assistance | `ai.price_output` | text | at once |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1072,6 +1109,42 @@ Optionally, an **OpenAI-compatible embeddings endpoint** computes the similarity
 **Privacy.** When it is on, the **title, description and acceptance criteria of requirements and the title, description, preconditions and steps of tests are sent to that service**, of every project of every organisation on the server, whenever the similarity checks run or someone types in an editor (the text being written is sent too). Use a service run by your organisation or one you have an agreement with; leave it off otherwise.
 
 The vectors are stored in the table `similarity_embeddings` per item, model and text (a changed item is sent again, an unchanged one is not). It is a cache: it is not part of backups or project archives and is filled again after a restore. Changing the model computes every vector again. **Test the service** on the page sends one short example sentence and reports the vector size. When the service fails or times out, the server logs a warning and uses the local similarity, so the checks never stop working. The conflict detection (opposite obligations, thresholds, exclusive values) always runs on the server. The thresholds of the checks apply to the service's cosine similarity as well; services differ, so check the suspected duplicates after turning it on and adjust the threshold of the duplicate checks if needed.
+
+## AI assistance
+
+Qtestframe can ask a language model service for **suggestions** that users review before anything is saved: drafts of tests for a requirement, an improved wording of a requirement, a summary of a failed run with defect drafts, framework mappings (ATT&CK, D3FEND, EMB3D, CWE) and acceptance criteria (see the user guide, *AI assistance*). It is **off by default** and needs three switches:
+
+1. **Administration → System settings → AI assistance** (or `ai` in the [configuration file](#reference)): the service and `ai.enabled`.
+2. **Administration → AI assistance**: the switch of the organisation (`settings.manage`).
+3. Each project can opt out: **Settings → General → AI assistance** (`project.update`).
+
+| Setting | Meaning |
+|---|---|
+| `ai.provider` | `anthropic`: the Anthropic Messages API (`POST {url}/v1/messages`, key as `x-api-key`). `openai`: an OpenAI-compatible chat completions endpoint (`POST {url}/chat/completions`, key as `Authorization: Bearer`; an Azure OpenAI deployment URL with `?api-version=…` sends it as `api-key`): OpenAI, Azure OpenAI, or a local server such as Ollama or vLLM |
+| `ai.url` | base URL; empty with `anthropic` means `https://api.anthropic.com`; required with `openai`, e.g. `https://llm.example.com/v1` |
+| `ai.model` | the model id (required; there is no built-in default): the model of your Anthropic account, or your model or deployment for `openai` |
+| `ai.api_key` | write-only, stored [encrypted](#encryption-of-stored-secrets); in the file only as `api_key_file`; may stay empty for a local server |
+| `ai.timeout`, `ai.max_tokens`, `ai.temperature` | the longest wait for an answer (default 2 min), the most tokens of an answer (default 8192), the temperature (empty: not sent) |
+| `ai.rate_limit` | AI requests per user and hour (default 30) |
+| `ai.features.*` | turn single features off |
+| `ai.price_input`, `ai.price_output` | optional prices per million tokens: each answer then shows an estimated cost |
+
+**Test the service** on the page sends a fixed short sentence (no item data) and reports the model and the tokens used.
+
+**Data flow and privacy.** Nothing is sent until a user clicks an *Assist* action. The server then sends **only the items of that action** to the service, from the server's network:
+
+| Action | Sent to the service |
+|---|---|
+| Draft tests, Suggest acceptance criteria | key, title, description, type, obligation, rationale and acceptance criteria of the requirement (the editor's current text) |
+| Improve requirement | the same, plus the findings of the requirement checks |
+| Summarise failures | name, status, environment and build of the run; key, title, notes, error output (the last 3000 characters) and failed steps of up to 40 failed or blocked executions; key, title, status and severity of the defects linked to the run |
+| Suggest mappings | key, title, description (risks: category and mitigation) and the ids already mapped |
+
+Users see a notice that the text is sent before they start. Use a service run by your organisation or one you have an agreement with that covers this data (retention, training, location). A local server (Ollama, vLLM) keeps everything on your network.
+
+**Safety.** The service gets no tools and nothing it answers is executed. The item text is sent as JSON between `<item_data>` tags and the instructions tell the model to treat it as data (JSON escapes `<` and `>`, so an item cannot close the tag). Answers must be one JSON object of a fixed schema; the server checks it strictly, asks once more when it does not match, and drops what it cannot verify (framework ids that are not in the embedded lists, criteria that already exist, tests outside the run). The rewrite of a requirement is checked again with the requirement checks on the server, which reports the findings it really fixes. No service call runs inside a database transaction, and a user can cancel a request at any time.
+
+**Audit.** Every request is written to the audit log as `ai.request` with the feature, the user, the item ids, the provider and model, the prompt version, the tokens, the duration and the outcome (`ok`, `cancelled`, `ai_refused`, `ai_invalid_answer`, `ai_service`, `ai_timeout`) — never the content. The prompts are embedded in the binary and versioned (`prompt_version` in each answer and audit entry). Changes of the organisation switch are audited as `settings.update`, the project opt-out as `project.ai_settings`, the test button as `settings.test_ai`.
 
 ## Audit and export
 
@@ -1179,7 +1252,7 @@ The server must read some secrets back, so it cannot hash them. These are stored
 | webhook signing secrets | `webhooks.secret` |
 | defect tracker tokens (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | values of secret web test variables | `projects.web_tests` |
-| SMTP password, OIDC client secrets and the key of the embeddings service entered in the web client | `system_settings` |
+| SMTP password, OIDC client secrets and the keys of the embeddings and AI services entered in the web client | `system_settings` |
 
 Passwords (bcrypt), API and SCIM tokens, sessions, invitations, remembered devices and recovery codes are stored as hashes and need no key. Secrets of the configuration file, `*_file` options and `QTF_*` variables are never stored in the database.
 
@@ -1309,7 +1382,7 @@ Other limits: JSON bodies at most 8 MiB, headers 1 MiB, `ReadHeaderTimeout` 10 s
 
 ## Outgoing connections
 
-Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. When the optional [embeddings service](#embeddings-service-for-similar-items) is on, the server sends the text of requirements and tests to it. Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
+Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. When the optional [embeddings service](#embeddings-service-for-similar-items) is on, the server sends the text of requirements and tests to it; when the optional [AI assistance](#ai-assistance) is on, it sends the items a user asks about to the AI service (each request is audited as `ai.request`). Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
 
 ## Checklist
 
@@ -1881,6 +1954,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 52 | `0052_multiple_roles.sql` |
 | 53 | `0053_ci_integration.sql` |
 | 54 | `0054_change_requests.sql` |
+| 61 | `0061_ai_assistance.sql` |
 
 <!-- END GENERATED: migrations -->
 

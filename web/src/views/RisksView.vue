@@ -42,6 +42,9 @@ import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
 import { loadTechniques, techniqueUrl, type TechniqueList } from '@/lib/attack'
 import FrameworkPicker from '@/components/FrameworkPicker.vue'
+import AssistMenu, { type AssistAction } from '@/components/AssistMenu.vue'
+import AssistDialog, { type AssistApply } from '@/components/AssistDialog.vue'
+import { addIds, type AiFeature } from '@/lib/ai'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -382,6 +385,22 @@ function openCreate() {
   formError.value = ''
   dialog.value = true
 }
+// AI assistance: framework mappings for the risk in the dialog (added to the form)
+const assistOpen = ref(false)
+const assistFeature = ref<AiFeature | null>(null)
+const assistBody = computed(() => ({ kind: 'risk', risk_id: editing.value?.id ?? '', title: form.value.title, description: form.value.description }))
+const assistActions = computed<AssistAction[]>(() => [{ feature: 'suggest_mappings', blocked: form.value.title.trim() ? '' : 'ai.reason.noText' }])
+function openAssist(f: AiFeature) {
+  assistFeature.value = f
+  assistOpen.value = true
+}
+function onAssistApply(a: AssistApply) {
+  if (a.feature !== 'suggest_mappings') return
+  form.value.attack = addIds(form.value.attack, a.mappings.filter((m) => m.framework === 'attack').map((m) => m.id))
+  form.value.emb3d = addIds(form.value.emb3d, a.mappings.filter((m) => m.framework === 'emb3d').map((m) => m.id))
+  notify.info(t('ai.appliedToForm'))
+}
+
 function openEdit(r: Risk) {
   editing.value = r
   form.value = {
@@ -644,6 +663,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
 
   <Dialog v-model:visible="dialog" :header="editing ? t('risksView.editHeader', { key: editing.key }) : t('risksView.new')" modal maximizable :maximize-button-props="{ 'aria-label': t('common.toggleMaximize') }" style="width: min(720px, 96vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="save">
+      <div v-if="canWrite" class="row" style="justify-content: flex-end"><AssistMenu :project-id="proj.pid" :actions="assistActions" size="small" @select="openAssist" /></div>
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
       <div class="form-grid">
         <div v-field class="field full"><label for="risk-title">{{ t('common.title') }}</label><SuggestInput id="risk-title" v-model="form.title" field="risk.title" :project-id="proj.pid" :disabled="!canWrite" autofocus /></div>
@@ -791,6 +811,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
     :error="acceptError"
     @sign="acceptRisk"
   />
+  <AssistDialog v-model:visible="assistOpen" :project-id="proj.pid" :feature="assistFeature" :body="assistBody" @apply="onAssistApply" />
 </template>
 
 <style scoped>

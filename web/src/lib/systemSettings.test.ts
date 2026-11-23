@@ -64,6 +64,9 @@ const SERVER_KEYS = [
   'runner.enabled', 'runner.timeout', 'runner.max_output_bytes', 'runner.deny_network', 'runner.sandbox', 'runner.web.enabled', 'runner.web.browser', 'runner.web.headless',
   'runner.web.timeout', 'runner.web.job_timeout', 'runner.web.max_parallel', 'runner.web.max_evidence_mb', 'runner.web.screenshots', 'runner.web.trace', 'runner.web.video', 'runner.web.playwright_dir',
   'similarity.embeddings.enabled', 'similarity.embeddings.url', 'similarity.embeddings.model', 'similarity.embeddings.api_key', 'similarity.embeddings.timeout',
+  'ai.enabled', 'ai.provider', 'ai.url', 'ai.model', 'ai.api_key', 'ai.timeout', 'ai.max_tokens', 'ai.temperature', 'ai.rate_limit',
+  'ai.features.draft_tests', 'ai.features.improve_requirement', 'ai.features.summarize_run', 'ai.features.suggest_mappings', 'ai.features.suggest_criteria',
+  'ai.price_input', 'ai.price_output',
 ]
 
 describe('system settings texts', () => {

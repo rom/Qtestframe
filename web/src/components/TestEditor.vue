@@ -71,6 +71,9 @@ import SuggestInput from './SuggestInput.vue'
 import { rememberValues, savedEntries } from '@/lib/suggest'
 import { PLAYWRIGHT, WEB_STARTER } from '@/lib/webTests'
 import { useNotify } from '@/composables/notify'
+import AssistMenu, { type AssistAction } from './AssistMenu.vue'
+import AssistDialog, { type AssistApply } from './AssistDialog.vue'
+import { draftPreconditions, type AiFeature } from '@/lib/ai'
 
 const props = defineProps<{
   projectId: string
@@ -508,6 +511,33 @@ function remove() {
   })
 }
 
+// ---------- AI assistance: draft this test from a linked requirement (applied to the form)
+const assistOpen = ref(false)
+const assistFeature = ref<AiFeature | null>(null)
+const assistReq = computed(() => links.value[0] ?? null)
+const assistBody = computed(() => ({ requirement_id: assistReq.value?.requirement_id ?? '' }))
+const assistActions = computed<AssistAction[]>(() => {
+  const l = assistReq.value
+  const key = l ? l.requirement_key || reqById.value.get(l.requirement_id)?.key || '' : ''
+  return [{ feature: 'draft_tests', label: l ? t('ai.action.draftFrom', { key }) : t('ai.action.draft_tests'), blocked: l ? '' : 'ai.reason.noLinkedRequirement' }]
+})
+function openAssist(f: AiFeature) {
+  assistFeature.value = f
+  assistOpen.value = true
+}
+function onAssistApply(a: AssistApply) {
+  if (a.feature !== 'draft_tests') return
+  const f = form.value
+  const d = a.test
+  if (!f.title.trim()) f.title = d.title
+  if (d.description.trim()) f.description = f.description.trim() ? `${f.description.trim()}\n\n${d.description.trim()}` : d.description.trim()
+  const pre = draftPreconditions(d, t('ai.tests.testData'))
+  if (pre) f.preconditions = f.preconditions.trim() ? `${f.preconditions.trim()}\n\n${pre}` : pre
+  if (d.expected_result.trim() && !f.expected_result.trim()) f.expected_result = d.expected_result.trim()
+  for (const st of d.steps) if (st.action.trim()) f.steps.push({ uid: ++uid, action: st.action.trim(), data: st.data.trim(), expected: st.expected.trim() })
+  notify.info(t('ai.appliedToForm'))
+}
+
 // ---------- links ----------
 function linkEntry(created: boolean, id: string, body: Record<string, unknown>, reqKey: string) {
   const pid = props.projectId
@@ -602,6 +632,8 @@ const scriptPlaceholder = computed(() => {
       <StatusTag v-if="item?.last_result" :value="item.last_result" kind="result" />
       <StaleBadge :stale="item?.stale" :reason="item?.stale_reason" />
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
+      <span v-if="canWrite" class="grow" />
+      <AssistMenu v-if="canWrite" :project-id="projectId" :actions="assistActions" size="small" @select="openAssist" />
     </div>
     <CatalogOrigin v-if="item?.catalog_ref" kind="test" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
@@ -823,5 +855,6 @@ const scriptPlaceholder = computed(() => {
   </form>
   </template>
   <ImpactConfirmDialog v-model:visible="impactOpen" :impact="impactPreview" :project-id="projectId" :changed="impactFields" :saving="saving" @confirm="confirmImpact" />
+  <AssistDialog v-model:visible="assistOpen" :project-id="projectId" :feature="assistFeature" :body="assistBody" mode="emit" @apply="onAssistApply" />
   <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

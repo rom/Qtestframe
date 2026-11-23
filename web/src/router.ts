@@ -92,6 +92,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'roles', name: 'rbac', component: () => import('./views/admin/RbacView.vue') },
           { path: 'field-sets', name: 'fieldSets', component: () => import('./views/admin/FieldSetsView.vue') },
           { path: 'execution', name: 'executionSettings', component: () => import('./views/admin/ExecutionSettingsView.vue'), meta: { perm: P.settingsManage } },
+          { path: 'ai', name: 'aiSettings', component: () => import('./views/admin/AiSettingsView.vue'), meta: { perm: P.settingsManage } },
           { path: 'mfa', name: 'mfaPolicy', component: () => import('./views/admin/MfaPolicyView.vue'), meta: { perm: P.tenantManage } },
           { path: 'backup', name: 'backup', component: () => import('./views/admin/BackupView.vue'), meta: { superAdmin: true } },
           // runtime server configuration (OIDC, syslog, SMTP, security, runner); links the MFA page (route mfaPolicy)

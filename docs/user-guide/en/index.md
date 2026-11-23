@@ -29,6 +29,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Change requests and change control](change-requests.md) | Proposing changes to approved requirements and tests, the impact assessment, the change control board's signed decisions, applying, verifying and closing; enforced change control and the emergency override |
 | [Traceability and coverage](traceability-and-coverage.md) | The traceability matrix, how coverage is calculated, the dashboard |
 | [Duplicates and conflicts](duplicates-and-conflicts.md) | Similar requirements while writing, suspected duplicate requirements and tests, potentially conflicting requirements, merging, thresholds |
+| [AI assistance](ai-assistance.md) | Optional AI suggestions: drafts of tests, better requirement wording, acceptance criteria, framework mappings, run summaries with defect drafts; what is sent, and turning it on and off |
 | [Variants and code](variants-and-code.md) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
 | [CI/CD](ci-cd.md) | Pipeline templates for GitLab and GitHub, uploading results, the quality gate, commit statuses and merge request notes, test selection and child pipelines |
 | [Baselines](baselines.md) | Freezing a release and comparing versions |

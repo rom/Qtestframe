@@ -161,3 +161,19 @@ secrets:
   #   pin_file: /run/secrets/hsm-pin   # or QTF_SECRETS_PKCS11_PIN
   #   key_label: qtestframe-kek
   #   generate_key: true
+
+# Optional AI assistance (off by default): drafts of tests, improved
+# requirement texts, run summaries, framework mappings and acceptance
+# criteria, reviewed by the user before anything is saved. When enabled, the
+# text of the items a user asks about is sent to the service; each
+# organisation must also turn it on and projects can opt out. Also in
+# Administration -> System settings -> AI assistance.
+# See docs/admin-guide/en/system-settings.md, "AI assistance".
+# ai:
+#   enabled: true
+#   provider: openai               # anthropic (default) | openai (OpenAI-compatible)
+#   url: http://127.0.0.1:11434/v1 # e.g. a local server; empty with anthropic
+#   model: ""                      # the model or deployment of the service
+#   api_key_file: /run/secrets/ai-key
+#   timeout: 2m
+#   rate_limit: 30                 # requests per user and hour

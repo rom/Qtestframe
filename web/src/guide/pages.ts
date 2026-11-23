@@ -20,6 +20,7 @@ export const GUIDE_PAGES = [
   'discussions',
   'traceability-and-coverage',
   'duplicates-and-conflicts',
+  'ai-assistance',
   'variants-and-code',
   'ci-cd',
   'baselines',

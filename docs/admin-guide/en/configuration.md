@@ -301,6 +301,27 @@ Every key of the file, its type, its default and the environment variable that s
 | `live.replay_buffer` | integer | `512` | — | Number of recent events kept in memory so that a client that reconnects (`Last-Event-ID`) receives what it missed; when its last event is no longer kept, it reloads what it shows instead. |
 | `live.presence_ttl` | duration | `45s` | — | How long a user stays listed as viewing or editing an item after the last presence heartbeat of their browser (sent every 20 s). |
 
+### `ai`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `ai.enabled` | bool | `false` | — | Turn on the optional [AI assistance](system-settings.md#ai-assistance) (drafts of tests, improved requirements, run summaries, framework mappings, acceptance criteria). Off by default. **When on, the text of the items a user asks about is sent to the configured service.** Each organisation must also turn it on, and projects can opt out. Also in **Administration → System settings**. |
+| `ai.provider` | string | `anthropic` | — | Type of the service: `anthropic` (the Anthropic Messages API) or `openai` (an OpenAI-compatible chat completions endpoint: OpenAI, Azure OpenAI, or a local server such as Ollama or vLLM). |
+| `ai.url` | string | — | — | Base URL of the service. Empty with `anthropic`: `https://api.anthropic.com`. With `openai` required, e.g. `https://llm.example.com/v1` (the server appends `/chat/completions`); an Azure OpenAI deployment URL with `?api-version=…` sends the key as `api-key`. |
+| `ai.model` | string | — | — | Model id sent to the service (required): the model of your Anthropic account, or the model or deployment of your OpenAI-compatible service. There is no built-in default. |
+| `ai.api_key_file` | string | — | — | File with the API key (relative: in `$CREDENTIALS_DIRECTORY`); sent as `x-api-key` (Anthropic), `Authorization: Bearer` or `api-key` (Azure). The key can also be stored, encrypted, in the system settings; it is never shown again. Local servers may need no key. |
+| `ai.timeout` | duration | `2m` | — | Longest time to wait for one answer (5 s–10 min). The user can also cancel a request. |
+| `ai.max_tokens` | integer | `8192` | — | Most tokens of one answer (256–128000). |
+| `ai.temperature` | string | — | — | Sampling temperature sent to the service (0–2). Empty: not sent (the service's default; some models accept no other value). |
+| `ai.rate_limit` | integer | `30` | — | Most AI requests of one user per hour. |
+| `ai.features.draft_tests` | bool | `true` | — | Offer *Draft tests* in the requirement editor (and drafting a test from a linked requirement in the test editor). |
+| `ai.features.improve_requirement` | bool | `true` | — | Offer *Improve requirement* (a rewrite for the requirement checks, shown as a diff). |
+| `ai.features.summarize_run` | bool | `true` | — | Offer *Summarise failures* on the run page (a summary and defect drafts). |
+| `ai.features.suggest_mappings` | bool | `true` | — | Offer *Suggest mappings* (ATT&CK, D3FEND, EMB3D, CWE) for requirements and risks, checked against the embedded lists. |
+| `ai.features.suggest_criteria` | bool | `true` | — | Offer *Suggest acceptance criteria* in the requirement editor. |
+| `ai.price_input` | string | — | — | Optional price per million input tokens (any currency), to show an estimated cost with each answer. |
+| `ai.price_output` | string | — | — | Optional price per million output tokens. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables

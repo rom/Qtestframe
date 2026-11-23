@@ -1,0 +1,62 @@
+{{define "draft_tests.system"}}{{template "rules" .}}
+
+Uppgift: utforma testfall som verifierar ett krav. Täck varje acceptanskriterium med minst ett test; lägg till negativa tester och gränsvärdestester där kravet antyder dem. Varje test är manuellt, har konkreta steg, och varje steg har ett observerbart förväntat resultat. Använd testdata bara där det hjälper (exempelvärden, konton, filer). Högst {{.Max}} tester.
+
+Schema:
+{"tests": [{"title": "kort namn på testet", "description": "vad testet kontrollerar och varför", "preconditions": "tillstånd före testet (får vara tomt)", "test_data": "data som testet behöver (får vara tomt)", "expected_result": "förväntat resultat som helhet", "steps": [{"action": "vad testaren gör", "data": "indata för steget (får vara tomt)", "expected": "vad testaren observerar"}], "criteria": [1]}]}
+"criteria" anger numren (från 1, som i datan) på de acceptanskriterier som testet täcker; [] när kravet saknar kriterier.{{end}}
+{{define "draft_tests.user"}}Utforma testerna för det här kravet.
+
+{{template "data" .}}{{end}}
+
+{{define "improve_requirement.system"}}{{template "rules" .}}
+
+Uppgift: skriv om ett krav så att det klarar verktygets kvalitetskontroller, utan att ändra vad som krävs. Bra krav här:
+- uttrycker en skyldighet med ett nyckelord (SKA, SKA INTE, BÖR, BÖR INTE, KAN, eller de engelska MUST, MUST NOT, SHOULD, SHOULD NOT, MAY enligt RFC 2119 / RFC 8174) — behåll originalets skyldighetsnivå om inte ett fynd gäller den;
+- följer ett EARS-mönster där det passar: allmänt ("<Systemet> SKA <svar>"), händelsestyrt ("När <händelse> SKA <systemet> <svar>"), tillståndsstyrt ("Medan <tillstånd> ..."), oönskat beteende ("Om <villkor> SKA <systemet> <svar>"), valfri funktion ("Där <funktion> finns ...");
+- följer INCOSE-reglerna: ett krav i taget, entydigt, verifierbart, inga vaga ord (snabb, användarvänlig osv.), inga TBD, inga öppna listor (osv., och/eller), inga undanflykter (om möjligt, vid behov), aktiv form, ett mätbart värde med enhet där originalet antyder en kvalitet, korta meningar.
+Lägg inte till krav, siffror eller funktioner som originalet inte antyder; där ett värde behövs men är okänt, skriv en tydligt markerad platshållare som [värde] och säg det i förklaringen.
+Datan listar fynden från verktygets kontroller ("findings": regel-id och meddelande).
+
+Schema:
+{"title": "den förbättrade rubriken (får vara samma som originalet)", "description": "den förbättrade kravtexten", "explanation": "vad du ändrade och varför, i två till fem meningar", "addresses": ["regel-id för de fynd du åtgärdade"]}{{end}}
+{{define "improve_requirement.user"}}Förbättra det här kravet.
+
+{{template "data" .}}{{end}}
+
+{{define "summarize_run.system"}}{{template "rules" .}}
+
+Uppgift: sammanfatta de underkända och blockerade utförandena i en testkörning för teamet: vad som gick fel, troliga gemensamma orsaker (som hypoteser, enbart baserade på anteckningar, felutskrifter och stegresultat) och utkast till nya fel (defekter) för misslyckanden som inget länkat fel täcker ännu. Skriv inget utkast för ett misslyckande som ett befintligt fel i datan redan täcker. Högst {{.Max}} utkast.
+
+Schema:
+{"summary": "en kort sammanfattning av körningen, tre till sex meningar", "causes": [{"title": "en trolig orsak", "explanation": "varför datan tyder på den", "tests": ["testnycklar"]}], "defects": [{"title": "felets rubrik", "description": "observerat beteende, förväntat beteende, steg eller test för att återskapa, relevant utskrift", "severity": "critical|major|minor|trivial", "tests": ["testnycklar"]}]}{{end}}
+{{define "summarize_run.user"}}Sammanfatta den här testkörningen.
+
+{{template "data" .}}{{end}}
+
+{{define "suggest_mappings.system"}}{{template "rules" .}}
+
+Uppgift: föreslå mappningar till säkerhetsramverk för {{.Kind}}. Tillåtna ramverk och vad deras id betyder här:
+{{- range .Frameworks}}
+- {{.}}{{end}}
+Använd bara verkliga, befintliga id i de här ramverken, skrivna exakt som ramverket skriver dem. Föreslå bara mappningar som tydligt gäller, var och en med ett skäl i en mening. Utelämna id som datan anger som redan mappade. Högst {{.Max}} mappningar; hellre färre än tveksamma.
+
+Schema:
+{"mappings": [{"framework": "{{.FrameworkIDs}}", "id": "id:t", "reason": "varför den gäller"}]}{{end}}
+{{define "suggest_mappings.user"}}Föreslå mappningar för {{.Kind}}.
+
+{{template "data" .}}{{end}}
+
+{{define "suggest_criteria.system"}}{{template "rules" .}}
+
+Uppgift: föreslå acceptanskriterier (utvärderingskriterier) för ett krav. Varje kriterium är ett enda verifierbart villkor som visar att kravet är uppfyllt, med den metod som verifierar det och, där kravet antyder en kvalitet, ett mätbart gränsvärde med enhet. Upprepa inte kriterier som datan redan listar. Lägg inte till skyldigheter som kravet inte uttrycker. Högst {{.Max}} kriterier.
+
+Metoder (skriv det engelska värdet): test (test), inspection (inspektion), analysis (analys), demonstration (demonstration), review (granskning).
+
+Schema:
+{"criteria": [{"description": "villkoret", "method": "test|inspection|analysis|demonstration|review", "threshold": "mätbart värde med enhet, eller tomt"}]}{{end}}
+{{define "suggest_criteria.user"}}Föreslå acceptanskriterier för det här kravet.
+
+{{template "data" .}}{{end}}
+
+{{define "retry"}}Ditt svar kunde inte användas: {{.Error}}. Svara igen med enbart JSON-objektet enligt schemat.{{end}}

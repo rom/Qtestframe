@@ -505,6 +505,70 @@ var keyDocs = map[string]text{
 		"Longest time to wait for the service. When it fails or times out, the local similarity is used.",
 		"Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten.",
 	},
+	"ai.enabled": {
+		"Turn on the optional [AI assistance](system-settings.md#ai-assistance) (drafts of tests, improved requirements, run summaries, framework mappings, acceptance criteria). Off by default. **When on, the text of the items a user asks about is sent to the configured service.** Each organisation must also turn it on, and projects can opt out. Also in **Administration → System settings**.",
+		"Slå på den valfria [AI-assistansen](system-settings.md#ai-assistans) (utkast till tester, förbättrade krav, sammanfattningar av körningar, ramverksmappningar, acceptanskriterier). Av som standard. **När den är på skickas texten i de objekt som en användare frågar om till den konfigurerade tjänsten.** Varje organisation måste också slå på den, och projekt kan välja bort den. Finns även under **Administration → Systeminställningar**.",
+	},
+	"ai.provider": {
+		"Type of the service: `anthropic` (the Anthropic Messages API) or `openai` (an OpenAI-compatible chat completions endpoint: OpenAI, Azure OpenAI, or a local server such as Ollama or vLLM).",
+		"Typ av tjänst: `anthropic` (Anthropics Messages API) eller `openai` (en OpenAI-kompatibel chat completions-slutpunkt: OpenAI, Azure OpenAI eller en lokal server som Ollama eller vLLM).",
+	},
+	"ai.url": {
+		"Base URL of the service. Empty with `anthropic`: `https://api.anthropic.com`. With `openai` required, e.g. `https://llm.example.com/v1` (the server appends `/chat/completions`); an Azure OpenAI deployment URL with `?api-version=…` sends the key as `api-key`.",
+		"Tjänstens bas-URL. Tom med `anthropic`: `https://api.anthropic.com`. Krävs med `openai`, t.ex. `https://llm.example.com/v1` (servern lägger till `/chat/completions`); en Azure OpenAI-deployment-URL med `?api-version=…` skickar nyckeln som `api-key`.",
+	},
+	"ai.model": {
+		"Model id sent to the service (required): the model of your Anthropic account, or the model or deployment of your OpenAI-compatible service. There is no built-in default.",
+		"Modell-id som skickas till tjänsten (krävs): modellen i ditt Anthropic-konto, eller modellen eller deploymenten i din OpenAI-kompatibla tjänst. Det finns ingen inbyggd standard.",
+	},
+	"ai.api_key_file": {
+		"File with the API key (relative: in `$CREDENTIALS_DIRECTORY`); sent as `x-api-key` (Anthropic), `Authorization: Bearer` or `api-key` (Azure). The key can also be stored, encrypted, in the system settings; it is never shown again. Local servers may need no key.",
+		"Fil med API-nyckeln (relativ: i `$CREDENTIALS_DIRECTORY`); skickas som `x-api-key` (Anthropic), `Authorization: Bearer` eller `api-key` (Azure). Nyckeln kan också sparas, krypterad, i systeminställningarna; den visas aldrig igen. Lokala servrar behöver kanske ingen nyckel.",
+	},
+	"ai.timeout": {
+		"Longest time to wait for one answer (5 s–10 min). The user can also cancel a request.",
+		"Längsta tid att vänta på ett svar (5 s–10 min). Användaren kan också avbryta en begäran.",
+	},
+	"ai.max_tokens": {
+		"Most tokens of one answer (256–128000).",
+		"Högsta antal token i ett svar (256–128000).",
+	},
+	"ai.temperature": {
+		"Sampling temperature sent to the service (0–2). Empty: not sent (the service's default; some models accept no other value).",
+		"Temperatur som skickas till tjänsten (0–2). Tom: skickas inte (tjänstens standard; vissa modeller accepterar inget annat värde).",
+	},
+	"ai.rate_limit": {
+		"Most AI requests of one user per hour.",
+		"Högsta antal AI-förfrågningar per användare och timme.",
+	},
+	"ai.features.draft_tests": {
+		"Offer *Draft tests* in the requirement editor (and drafting a test from a linked requirement in the test editor).",
+		"Erbjud *Utkast till tester* i kravredigeraren (och utkast till ett test från ett länkat krav i testredigeraren).",
+	},
+	"ai.features.improve_requirement": {
+		"Offer *Improve requirement* (a rewrite for the requirement checks, shown as a diff).",
+		"Erbjud *Förbättra krav* (en omskrivning för kravkontrollerna, visad som skillnad).",
+	},
+	"ai.features.summarize_run": {
+		"Offer *Summarise failures* on the run page (a summary and defect drafts).",
+		"Erbjud *Sammanfatta fel* på körningssidan (en sammanfattning och utkast till defekter).",
+	},
+	"ai.features.suggest_mappings": {
+		"Offer *Suggest mappings* (ATT&CK, D3FEND, EMB3D, CWE) for requirements and risks, checked against the embedded lists.",
+		"Erbjud *Föreslå mappningar* (ATT&CK, D3FEND, EMB3D, CWE) för krav och risker, kontrollerade mot de inbyggda listorna.",
+	},
+	"ai.features.suggest_criteria": {
+		"Offer *Suggest acceptance criteria* in the requirement editor.",
+		"Erbjud *Föreslå acceptanskriterier* i kravredigeraren.",
+	},
+	"ai.price_input": {
+		"Optional price per million input tokens (any currency), to show an estimated cost with each answer.",
+		"Valfritt pris per miljon indata-token (valfri valuta), för att visa en uppskattad kostnad med varje svar.",
+	},
+	"ai.price_output": {
+		"Optional price per million output tokens.",
+		"Valfritt pris per miljon utdata-token.",
+	},
 	"system_settings.locked": {
 		"Settings that cannot be changed in **Administration → System settings**: keys (`logging.level`), prefixes ending in `.*` (`email.*`) or `*`. Their stored overrides are ignored.",
 		"Inställningar som inte kan ändras under **Administration → Systeminställningar**: nycklar (`logging.level`), prefix som slutar med `.*` (`email.*`) eller `*`. Deras sparade värden ignoreras.",

@@ -2736,6 +2736,41 @@ counts. Defects link to sessions with `entity_type` `exploratory_session`.
 The report templates `exploratory_session` (param `session_id`) and
 `exploratory_sessions` are part of `/reports/templates`.
 
+## AI assistance
+
+Optional suggestions from a language model service (system settings,
+section `ai`; off by default). It is available in a project when the service
+is configured and on, the organisation turned it on (`ai_enabled` of
+`PUT /settings`) and the project did not opt out. The feature endpoints
+**only return suggestions**: the client shows them for review and saves what
+the user accepts through the regular endpoints.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/ai` | signed in | the organisation's view: `{available, reason, provider, model, features, system_enabled, organisation_enabled, rate_limit, remaining, price_input, price_output, prompt_version}` |
+| GET | `/projects/{pid}/ai` | project.read | the same for the project, with `project_disabled`; `reason` is `off`, `not_configured`, `organisation` or `project` |
+| PUT | `/projects/{pid}/ai` | project.update | `{"disabled": bool}` — the project's opt-out |
+| POST | `/projects/{pid}/ai/draft-tests` | test.write | `{requirement_id, lang}` → `{requirement_id, requirement_key, tests: [{title, description, preconditions, test_data, expected_result, steps: [{action, data, expected}], criteria, criterion_ids}]}` |
+| POST | `/projects/{pid}/ai/improve-requirement` | requirement.write | `{requirement_id?, title, description, analysis_language, lang}` → `{original, title, description, explanation, before, after, fixed, new, claimed}`; `before`/`after` are the analyses of `POST /reqlang/analyze`, `fixed`/`new` the rule ids the rewrite resolves or adds (checked on the server) |
+| POST | `/projects/{pid}/ai/summarize-run` | run.read | `{run_id, lang}` → `{run_id, summary, causes: [{title, explanation, tests}], defects: [{title, description, severity, tests: [{key, title, test_case_id, execution_id}]}], failed, linked_defects}` |
+| POST | `/projects/{pid}/ai/suggest-mappings` | requirement.write | `{requirement_id \| risk_id, kind?, title?, description?, lang}` (`kind: "risk"` for a risk not saved yet) → `{kind, mappings: [{framework, id, name, reason}], dropped}`; requirements `d3fend`, `emb3d`, `cwe`; risks `attack`, `emb3d` (threats); ids not in the embedded lists are dropped |
+| POST | `/projects/{pid}/ai/suggest-criteria` | requirement.write | `{requirement_id?, title, description, criteria, lang}` → `{criteria: [{description, method, threshold}]}` without the existing ones |
+| POST | `/admin/settings/test/ai` | super admin | `{values}` (unsaved settings) → `{ok, message, error, details}` |
+
+Every feature answer is `{meta, result}` with `meta` = `{feature,
+prompt_version, provider, model, usage: {input_tokens, output_tokens},
+retried, duration_ms, cost}` (`cost` from the configured prices, 0 without).
+With `Accept: text/event-stream` the answer is streamed as server-sent
+events: `start` `{feature, provider, model}`, `progress` `{chars}` while the
+service writes, then `result` (the JSON body) or `error` `{status, code,
+error, meta}`. Closing the connection cancels the request at the service.
+Errors: `409 ai_unavailable`, `429 rate_limited` (`ai.rate_limit` per user
+and hour), `422 ai_refused`, `502 ai_service`, `502 ai_invalid_answer` (the
+answer did not match the schema, also after one retry), `504 ai_timeout`.
+`lang` (`en`, `sv`) is the language of the prompt and the suggestions. Each
+request is audited as `ai.request` (feature, item ids, model, tokens,
+outcome — never the content).
+
 ## Waivers and deviations
 
 A waiver accepts requirements that are failed, untested or not fulfilled

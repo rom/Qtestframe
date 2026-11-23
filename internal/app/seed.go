@@ -322,6 +322,10 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedInterop(ctx, st, tenantID, reqs, testIDs); err != nil {
 		return nil, err
 	}
+	// the organisation switch of the AI assistance (seedai.go)
+	if err := seedAI(ctx, st, tenantID); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

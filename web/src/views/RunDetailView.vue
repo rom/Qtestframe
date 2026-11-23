@@ -59,6 +59,9 @@ import { enumLabel, enumOptions } from '@/i18n/labels'
 import Checkbox from 'primevue/checkbox'
 import { BULK_RESULTS, execCounts, execUndo, rejectedText, type ExecBulkResult } from '@/lib/bulkRuns'
 import { entry, recordUndo } from '@/lib/undoActions'
+import AssistMenu, { type AssistAction } from '@/components/AssistMenu.vue'
+import AssistDialog from '@/components/AssistDialog.vue'
+import type { AiFeature } from '@/lib/ai'
 const prefs = usePrefsStore()
 
 const props = defineProps<{ runId: string }>()
@@ -89,6 +92,24 @@ const openDiscussions = ref(0)
 const attachmentCount = ref<number | null>(null)
 const tabsId = 'run-tabs'
 const panel = (v: string) => ({ role: 'tabpanel', id: `${tabsId}_tabpanel_${v}`, 'aria-labelledby': `${tabsId}_tab_${v}` })
+
+// AI assistance: summarise the failures (defect drafts are created only when accepted)
+const assistOpen = ref(false)
+const assistFeature = ref<AiFeature | null>(null)
+const failedCount = computed(() => {
+  const sum = run.value?.summary
+  if (sum) return (sum.failed ?? 0) + (sum.blocked ?? 0)
+  return executions.value.filter((e) => e.status === 'failed' || e.status === 'blocked').length
+})
+const assistActions = computed<AssistAction[]>(() => [{ feature: 'summarize_run', blocked: failedCount.value ? '' : 'ai.reason.noFailures' }])
+function openAssist(f: AiFeature) {
+  assistFeature.value = f
+  assistOpen.value = true
+}
+function onAssistCreated(n: number) {
+  if (n) notify.ok(t('ai.run.created', { n }, n))
+  void loadExecutions()
+}
 
 async function loadRun() {
   try {
@@ -448,6 +469,7 @@ async function copySnippet(text: string = ciSnippet.value) {
         <Button v-if="canScript && executions.length" :label="t('webTests.runAll')" icon="pi pi-bolt" severity="secondary" outlined :loading="queueing" v-tooltip.bottom="t('webTests.runAllHint')" @click="runAutomated()" />
         <Button v-if="canWrite" :label="t('run.addTests')" icon="pi pi-plus" severity="secondary" outlined @click="picker = true" />
         <Button :label="t('run.ciImport')" icon="pi pi-cloud-upload" severity="secondary" outlined @click="ciDialog = true" />
+        <AssistMenu :project-id="proj.pid" :actions="assistActions" @select="openAssist" />
         <Button v-if="canWrite" icon="pi pi-pencil" severity="secondary" text rounded :aria-label="t('common.edit')" v-tooltip="t('common.edit')" @click="openEdit" />
         <Button v-if="canWrite" icon="pi pi-trash" severity="danger" text rounded :aria-label="t('common.delete')" v-tooltip="t('common.delete')" @click="remove" />
       </div>
@@ -747,6 +769,7 @@ async function copySnippet(text: string = ciSnippet.value) {
       <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!bulkForm.status && !bulkForm.assigneeOn && !bulkForm.note.trim()" @click="applyBulk" />
     </template>
   </Dialog>
+  <AssistDialog v-model:visible="assistOpen" :project-id="proj.pid" :feature="assistFeature" :body="{ run_id: runId }" mode="create" @created="onAssistCreated" />
 </template>
 
 

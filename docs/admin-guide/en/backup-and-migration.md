@@ -147,6 +147,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 52 | `0052_multiple_roles.sql` |
 | 53 | `0053_ci_integration.sql` |
 | 54 | `0054_change_requests.sql` |
+| 61 | `0061_ai_assistance.sql` |
 
 <!-- END GENERATED: migrations -->
 

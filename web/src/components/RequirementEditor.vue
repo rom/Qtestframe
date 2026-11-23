@@ -18,6 +18,9 @@ import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
 import ChangeControlBar from './ChangeControlBar.vue'
 import { changeBlocked, proposalOf } from '@/lib/changeRequests'
 import StaleBadge from './StaleBadge.vue'
+import AssistMenu, { type AssistAction } from './AssistMenu.vue'
+import AssistDialog, { type AssistApply } from './AssistDialog.vue'
+import { addCweTags, addIds, type AiFeature } from '@/lib/ai'
 import { contentChanges, needsImpactConfirm, type ChangeImpact, type ImpactChoice } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
@@ -336,6 +339,48 @@ async function confirmAll() {
     notify.fail(e)
   }
 }
+// ---------- AI assistance (suggestions only: applied to the form, saved with Save)
+const assistOpen = ref(false)
+const assistFeature = ref<AiFeature | null>(null)
+const assistBody = computed(() => ({
+  requirement_id: item.value?.id ?? '',
+  title: form.value.title,
+  description: form.value.description,
+  criteria: form.value.criteria.map((c) => ({ description: c.description, method: c.method, threshold: c.threshold })),
+  analysis_language: analysisLanguage.value,
+}))
+const assistActions = computed<AssistAction[]>(() => {
+  const noText = !form.value.title.trim() && !form.value.description.trim() ? 'ai.reason.noText' : ''
+  return [
+    { feature: 'improve_requirement', blocked: form.value.description.trim() ? '' : 'ai.reason.noText' },
+    { feature: 'suggest_criteria', blocked: noText },
+    { feature: 'suggest_mappings', blocked: noText },
+    { feature: 'draft_tests', blocked: !item.value ? 'ai.reason.needsSaved' : !auth.can(P.testWrite) ? 'ai.reason.noPermission' : noText },
+  ]
+})
+function openAssist(f: AiFeature) {
+  assistFeature.value = f
+  assistOpen.value = true
+}
+function onAssistApply(a: AssistApply) {
+  const f = form.value
+  if (a.feature === 'improve_requirement') {
+    if (a.title) f.title = a.title
+    f.description = a.description
+  } else if (a.feature === 'suggest_criteria') {
+    for (const c of a.criteria) f.criteria.push({ description: c.description, method: c.method, threshold: c.threshold ?? '' })
+  } else if (a.feature === 'suggest_mappings') {
+    f.d3fend = addIds(f.d3fend, a.mappings.filter((m) => m.framework === 'd3fend').map((m) => m.id))
+    f.emb3d = addIds(f.emb3d, a.mappings.filter((m) => m.framework === 'emb3d').map((m) => m.id))
+    f.tags = addCweTags(f.tags, a.mappings.filter((m) => m.framework === 'cwe').map((m) => m.id))
+  }
+  notify.info(t('ai.appliedToForm'))
+}
+function onAssistCreated(n: number) {
+  if (n) notify.ok(t('ai.tests.created', { n, key: item.value?.key ?? '' }, n))
+  void loadLinks()
+}
+
 async function loadLinks() {
   if (!props.itemId) return
   try {
@@ -738,6 +783,8 @@ function criterionLabel(id: string | null) {
         <i class="pi pi-exclamation-circle" aria-hidden="true" />{{ t('defectsView.openCount', { n: openDefects }, openDefects) }}
       </button>
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
+      <span v-if="canWrite" class="grow" />
+      <AssistMenu v-if="canWrite" :project-id="projectId" :actions="assistActions" size="small" @select="openAssist" />
     </div>
     <CatalogOrigin v-if="item?.catalog_ref" kind="requirement" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
@@ -1000,5 +1047,6 @@ function criterionLabel(id: string | null) {
   </form>
   </template>
   <ImpactConfirmDialog v-model:visible="impactOpen" :impact="impactPreview" :project-id="projectId" :changed="impactFields" :saving="saving" @confirm="confirmImpact" />
+  <AssistDialog v-model:visible="assistOpen" :project-id="projectId" :feature="assistFeature" :body="assistBody" mode="create" @apply="onAssistApply" @created="onAssistCreated" />
   <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

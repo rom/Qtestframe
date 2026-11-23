@@ -226,7 +226,8 @@ func settingsSummary(st *model.TenantSettings) string {
 		return "no"
 	}
 	return "allow_unready_tests=" + b(st.AllowUnreadyTests) + " allow_unready_requirements=" + b(st.AllowUnreadyRequirements) +
-		" allow_unmet_dependencies=" + b(st.AllowUnmetDependencies) + " ready_requirement_statuses=" + joinPerms(st.ReadyRequirementStatuses)
+		" allow_unmet_dependencies=" + b(st.AllowUnmetDependencies) + " ready_requirement_statuses=" + joinPerms(st.ReadyRequirementStatuses) +
+		" ai_enabled=" + b(st.AIEnabled)
 }
 
 // requireTenant answers 400 when the caller has no current organisation.
