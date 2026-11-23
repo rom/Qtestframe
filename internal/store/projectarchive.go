@@ -205,6 +205,9 @@ var ProjectArchiveExcluded = map[string]string{
 	"chat_deliveries":       "queue and log of chat posts",
 	"ci_deliveries":         "queue and log of CI status posts",
 	"similarity_embeddings": "cache of the embeddings service (computed again)",
+	"req_sync_configs":      "secret (webhook secret of the tracker sync) and the account it runs as",
+	"req_sync_conflicts":    "decisions waiting for the tracker sync (the sync is not part of the archive)",
+	"req_sync_runs":         "log of the tracker sync",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.

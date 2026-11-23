@@ -687,6 +687,7 @@ with the primitives of `internal/secrets`:
 | TOTP secrets (authenticator apps) | `user_mfa.totp_secret` |
 | Webhook signing secrets | `webhooks.secret` |
 | Code webhook secret and CI posting token (GitLab project access token) | `code_settings.webhook_secret`, `code_settings.ci_token` |
+| Webhook secret of the two-way requirement sync (Jira, Azure DevOps) | `req_sync_configs.webhook_secret` |
 | Defect tracker token (Jira, GitHub, GitLab) | `projects.defect_tracker` → `token` |
 | Values of secret web test variables | `projects.web_tests` → `variables[].value` |
 | SMTP password | `system_settings` `email.password` |

@@ -1539,6 +1539,31 @@ Användare med `requirement.write` importerar krav från en JQL-fråga i Jira el
 
 Jira söks med `POST /rest/api/2/search/jql` (Jira Cloud) och, när den inte finns, `POST /rest/api/2/search` (Server och Data Center); Azure DevOps med slutpunkterna för WIQL, fält och arbetsobjekt i REST API 7.1. Högst 1 000 objekt läses per import. Importen läser bara; den granskas som `requirement.import`, ändringar av anslutningen som `import_sources.update`. Token krypteras med serverns hemliga nycklar (de krypteras om vid nyckelrotation), returneras aldrig och utelämnas ur projektarkiv. Importen når källorna via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) som ärendehanterarna; tillåt adresserna ovan i en brandvägg.
 
+### Tvåvägssynk
+
+Tvåvägssynken (migrering 0060, [användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/reports-and-export.md#tv%C3%A5v%C3%A4gssynk-med-jira-och-azure-devops)) använder samma anslutningar och skriver till ärendesystemet, så dess token behöver mer än läsrätt:
+
+| Källa | Behövs för synken |
+|---|---|
+| Jira Cloud, Server, Data Center | *Browse projects*, *Edit issues*, *Transition issues*; *Create issues* för att skicka nya krav, *Add comments* för kommentarer, *Link issues* för länkar |
+| Azure DevOps | personlig åtkomsttoken med omfånget *Work Items (Read & write)* |
+
+Användare med `project.update` ändrar inställningarna (**Ärendesynk → Inställningar**), användare med `requirement.write` kör en synk, förhandsgranskar den och avgör konflikter; alla som kan läsa projektet ser översikten och loggen. Schemalagda synkar och webhook-synkar körs som det konto som senast sparade inställningarna (`req_sync_configs.run_as`), med dess aktuella roller och projektåtkomst: ett konto som förlorar `requirement.write` eller projektet stoppar synken (loggas som misslyckad). Ändringar som hämtas från ärendesystemet går genom den vanliga uppdateringen av krav (behörigheter, granskningsregler, historik, granskningslogg, optimistisk låsning) med konfigurationens val av påverkan.
+
+**Bakgrundsjobb och gränser.** Minutjobbet kör de synkar som står på tur (`interval_minutes`, 0 = inget schema). En körning håller ett lås i databasen (`lease_until`, 15 minuter), så med flera servrar kör bara en av dem en konfiguration åt gången. En körning som misslyckas fördubblar väntan för varje misslyckande i rad (högst ett dygn); ett ärendesystem som svarar 429 försöks igen av klienten efter en kort `Retry-After`, annars stoppas körningen och nästa väntar minst så länge som begärts. Skrivningar sprids ut enligt *Skrivningar per minut* (standard 60) och är högst 500 per körning. Högst 1 000 objekt läses per fråga, plus de länkade objekt som frågan inte längre hittar (Jira: en begäran per objekt; Azure DevOps: i omgångar om 200).
+
+**Webhooks.** Mottagarna är publika ändpunkter; den delade hemligheten (16–200 tecken, krypterad i `req_sync_configs.webhook_secret`, skrivskyddad, omkrypteras vid nyckelrotation) är behörighetsbeviset. Varje anrop besvaras med 202 och synken av de namngivna objekten körs i bakgrunden; anrop för samma konfiguration slås ihop. Högst 600 anrop per projekt och minut tas emot.
+
+| Ärendesystem | Adress | Inställning |
+|---|---|---|
+| Jira Cloud | `<base_url>/api/v1/hooks/req-sync/jira/<projekt-id>` | **System → WebHooks**: händelserna *Issue created*, *Issue updated*, *Comment created*; hemligheten i webhookens fält *Secret* (innehållet signeras, huvudet `X-Hub-Signature: sha256=…`). |
+| Jira Server / Data Center | samma adress med `?secret=<hemligheten>` | **System → WebHooks** (där finns inget fält för hemligheten, så den läggs i adressen: använd HTTPS). |
+| Azure DevOps | `<base_url>/api/v1/hooks/req-sync/azure-devops/<projekt-id>` | **Project settings → Service hooks → Web Hooks**: *Work item created*, *Work item updated*, *Work item commented on*; *Basic authentication* med valfritt användarnamn och hemligheten som lösenord. |
+
+Huvudet `X-Qtestframe-Secret: <hemligheten>` godtas från båda. Ärendesystemet måste nå `server.base_url`; öppna brandväggen för det, eller lita på schemat.
+
+**Data.** Synkläget för varje länkat krav sparas med dess externa referens (`external_refs`: ärendesystemets version, kontrollsummor och värden på båda sidor efter senaste synken). `req_sync_configs` och `req_sync_conflicts` ingår i säkerhetskopian; `req_sync_runs` (loggen, de 100 senaste körningarna per projekt och källa) gör det inte. Projektarkiv utelämnar alla tre (hemligheten och kontot); ett inläst projekt måste ställas in på nytt. Granskningsloggens åtgärder: `req_sync.update` (inställningar), `req_sync.run` (varje körning med sina antal), `requirement.sync.push` och `requirement.sync.create` (ändringar till ärendesystemet), `req_sync.conflict.resolve` och `req_sync.conflict.closed`, utöver de vanliga `requirement.update`, `requirement.create` och `relation.create` för ändringarna här.
+
 ## CI/CD-pipelines (GitLab, GitHub Actions)
 
 Pipelines pratar med servern med kommandot `qtestframe` (`report`, `gate`, `select`; [kommandoradsreferensen](#kommandoradsreferens)) och en API-nyckel. Inget behöver ställas in på servern; det här behöver varje del:
@@ -1825,9 +1850,9 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**I en säkerhetskopia** (99 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`.
+**I en säkerhetskopia** (101 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`.
 
-**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1954,6 +1979,7 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 52 | `0052_multiple_roles.sql` |
 | 53 | `0053_ci_integration.sql` |
 | 54 | `0054_change_requests.sql` |
+| 60 | `0060_req_sync.sql` |
 | 61 | `0061_ai_assistance.sql` |
 
 <!-- END GENERATED: migrations -->

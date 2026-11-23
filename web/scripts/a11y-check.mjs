@@ -560,6 +560,12 @@ async function discover(request) {
     { name: 'exchange-jira-dialog', path: `${p}/requirements`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(3) .p-menu-item-link'], wait: '.exchange-dialog form textarea' },
     { name: 'exchange-azure-dialog', path: `${p}/requirements`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(4) .p-menu-item-link'], wait: '.exchange-dialog form textarea' },
     { name: 'import-sources-settings', path: `${p}/settings?tab=project`, wait: '#h-import-sources + p + form' },
+    // two-way sync with Jira and Azure DevOps (seed-demo: both configured without tokens, an open conflict, a log):
+    // the overview, the conflict view with its field diff, the log with a run's entries, the settings with the field mapping
+    { name: 'tracker-sync', path: `${p}/tracker-sync`, wait: '.sync-source dl' },
+    { name: 'tracker-sync-conflicts', path: `${p}/tracker-sync?tab=conflicts`, wait: '.sync-conflict table.sync-diff' },
+    { name: 'tracker-sync-log', path: `${p}/tracker-sync?tab=log`, open: '.sync-runs tbody tr:last-child button', wait: '.sync-runs .sync-entries' },
+    { name: 'tracker-sync-settings', path: `${p}/tracker-sync?tab=settings&source=azure-devops`, wait: '.sync-form .sync-fields .value-maps' },
     // ReqIF selected: the aspects are disabled and a hint is shown
     { name: 'export-reqif', path: `${p}/export`, open: '.format-grid button:has(.pi-sitemap)', wait: 'fieldset.plain-fieldset[disabled]' },
     { name: 'documents', path: `${p}/documents` },

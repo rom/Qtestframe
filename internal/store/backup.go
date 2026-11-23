@@ -71,6 +71,9 @@ var BackupTables = []string{
 	"chat_channels",
 	// change requests (0054)
 	"change_control_settings", "change_requests", "change_request_items", "change_request_signoffs", "change_request_events",
+	// two-way sync with Jira and Azure DevOps: configurations and the
+	// conflicts waiting for a decision (0060)
+	"req_sync_configs", "req_sync_conflicts",
 }
 
 // tables that exist but are deliberately not part of a backup.
@@ -83,6 +86,8 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "
 	"chat_deliveries": true,
 	// queue and log of CI status posts (0053; the settings are backed up)
 	"ci_deliveries": true,
+	// the log of the two-way tracker sync (0060; the configurations are backed up)
+	"req_sync_runs": true,
 	// vectors of the embeddings service: a cache, computed again
 	"similarity_embeddings": true}
 
@@ -109,6 +114,7 @@ var boolColumns = map[string]bool{
 	"chat_channels.enabled": true, "chat_channels.restricted_content": true,
 	"test_cycle_schedules.auto_start": true, "test_cycle_schedules.enabled": true,
 	"projects.ai_disabled": true,
+	"req_sync_configs.enabled": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

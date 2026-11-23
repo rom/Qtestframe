@@ -176,6 +176,8 @@ func (s *Server) routes() {
 	pub("GET /api/v1/auth/saml/{name}/metadata", s.handleSAMLMetadata)
 	// GitLab and GitHub webhooks (code.go): the signature or secret token is the credential
 	s.routesCodeHooks(pub)
+	// Jira and Azure DevOps webhooks of the requirement sync (reqsync.go): the shared secret is the credential
+	s.routesReqSyncHooks(pub)
 	// CI/CD pipeline templates (ci.go): no secrets in them
 	s.routesCIPublic(pub)
 	pub("GET /api/v1/auth/saml/{name}/login", s.handleSAMLLogin)
@@ -364,6 +366,8 @@ func (s *Server) routes() {
 	// Excel round-trip and ReqIF import (exchange.go), OSLC (oslc.go)
 	s.routesExchange(h)
 	s.routesRequirementSources(h)
+	// two-way sync with Jira and Azure DevOps (reqsync.go)
+	s.routesReqSync(h)
 	s.routesOSLC(pub, h)
 	// SCIM provisioning: its own token authentication (scim.go)
 	s.routesSCIM(m)

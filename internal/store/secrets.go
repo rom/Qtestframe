@@ -353,13 +353,14 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 		return v, nil
 	}
 	// user_mfa.totp_secret, webhooks.secret, code_settings.webhook_secret,
-	// chat_channels.secret
+	// chat_channels.secret, req_sync_configs.webhook_secret
 	for _, t := range []struct{ table, id, col, field string }{
 		{"user_mfa", "user_id", "totp_secret", "user_mfa.totp_secret"},
 		{"webhooks", "id", "secret", "webhooks.secret"},
 		{"code_settings", "project_id", "webhook_secret", "code_settings.webhook_secret"},
 		{"code_settings", "project_id", "ci_token", "code_settings.ci_token"},
 		{"chat_channels", "id", "secret", "chat_channels.secret"},
+		{"req_sync_configs", "id", "webhook_secret", "req_sync_configs.webhook_secret"},
 	} {
 		pairs, err := idValues(ctx, c, `SELECT `+t.id+`, `+t.col+` FROM `+t.table)
 		if err != nil {
@@ -377,6 +378,8 @@ func (s *Store) recode(ctx context.Context, fn recodeFunc) (*SecretStats, error)
 				}
 			case "chat_channels":
 				ad = adChat(p[0])
+			case "req_sync_configs":
+				ad = adReqSync(p[0])
 			}
 			v, err := apply(t.field, p[1], ad)
 			if err != nil {
