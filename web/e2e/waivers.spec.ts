@@ -52,7 +52,9 @@ test('a waiver approved with an e-signature makes the release a go, marked as wa
   await sign.getByLabel('Your password').fill(password)
   await sign.getByRole('button', { name: 'Sign' }).click()
   await expect(sign).toBeHidden()
-  await expect(mdetail.getByText('Approved', { exact: true })).toBeVisible()
+  // the status (the electronic signature below also shows its meaning, Approved)
+  await expect(mdetail.getByText('Approved', { exact: true }).first()).toBeVisible()
+  await expect(mdetail.getByRole('region', { name: 'Electronic signatures' })).toContainText('Approving Manager')
   await expect(mdetail.getByText('In force')).toBeVisible()
   await ctx.close()
 
