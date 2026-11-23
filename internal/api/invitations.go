@@ -258,7 +258,7 @@ func (s *Server) handleGetInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"email": u.Email, "display_name": name, "tenant_name": t.Name, "role": inv.Role, "roles": inv.Roles, "invited_by": inv.InvitedBy,
-		"expires_at": inv.ExpiresAt, "sso": inv.SSO, "local": s.conf().Auth.Local, "password_min_length": minPassword(s.conf()),
+		"expires_at": inv.ExpiresAt, "sso": inv.SSO, "local": s.conf().Auth.Local, "password_min_length": minPassword(s.conf()), "password_min_classes": s.conf().Auth.PasswordMinClasses,
 	})
 }
 
@@ -293,7 +293,7 @@ func (s *Server) handleAcceptInvitation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	pw := req.Password
-	if err := applyUserReq(u, userReq{Password: &pw}, minPassword(s.conf())); err != nil {
+	if err := applyUserReq(u, userReq{Password: &pw}, pwPolicy(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}

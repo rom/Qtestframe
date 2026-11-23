@@ -212,6 +212,9 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 		if err != nil {
 			return nil, err
 		}
+		if err := s.tenantClosed(ctx, ten, u); err != nil {
+			return nil, err
+		}
 		// a token never exceeds the user's current role
 		m, err := s.Store.GetMembership(ctx, t.TenantID, u.ID)
 		if err != nil && !u.SuperAdmin {
@@ -240,7 +243,8 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 		return nil, errors.New("user disabled")
 	}
 	p := &Principal{User: u, Session: sess}
-	// electronic-records mode ends sessions after inactivity
+	// sessions end after inactivity (auth.session_idle_timeout, and the
+	// electronic-records mode of the tenant)
 	if s.idleExpired(ctx, sess) {
 		_ = s.Store.DeleteSession(ctx, sess.ID)
 		return nil, errIdle
@@ -252,7 +256,9 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 		}
 	}
 	if sess.TenantID != "" {
-		if t, err := s.Store.GetTenant(ctx, sess.TenantID); err == nil {
+		// a suspended organisation (or one that does not allow the user's
+		// sign-in method) is closed: the session has no organisation
+		if t, err := s.Store.GetTenant(ctx, sess.TenantID); err == nil && s.tenantClosed(ctx, t, u) == nil {
 			if m, err := s.Store.GetMembership(ctx, t.ID, u.ID); err == nil {
 				p.Tenant = t
 				p.setRoles(m.Roles)
@@ -311,6 +317,15 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.U
 		if err != nil {
 			return nil, err
 		}
+		// only organisations the user can open (not suspended, sign-in
+		// method allowed)
+		open := ms[:0:0]
+		for _, m := range ms {
+			if t, err := s.Store.GetTenant(ctx, m.TenantID); err == nil && s.tenantClosed(ctx, t, u) == nil {
+				open = append(open, m)
+			}
+		}
+		ms = open
 		if len(ms) > 0 {
 			tenantID = ms[0].TenantID
 		}
@@ -431,6 +446,74 @@ type providerInfo struct {
 	Name        string `json:"name"`
 	DisplayName string `json:"display_name"`
 	LoginURL    string `json:"login_url"`
+	// Icon is the icon of the button ("" = the default).
+	Icon string `json:"icon,omitempty"`
+}
+
+// passwordAge marks the local password of u to be changed at this sign-in
+// when it is older than auth.password_max_age_days (a password without a
+// recorded change time counts from now on).
+func (s *Server) passwordAge(ctx context.Context, u *model.User) error {
+	days := s.conf().Auth.PasswordMaxAgeDays
+	if u.AuthProvider != "local" || u.PasswordHash == "" {
+		return nil
+	}
+	if u.PasswordChangedAt == nil {
+		return s.Store.StartPasswordAge(ctx, u.ID)
+	}
+	if days <= 0 || u.MustChangePassword || s.Store.Now().Sub(*u.PasswordChangedAt) < time.Duration(days)*24*time.Hour {
+		return nil
+	}
+	u.MustChangePassword = true
+	if err := s.Store.UpdateUser(ctx, u); err != nil {
+		return err
+	}
+	s.Log.Info("password expired", "user", u.Email, "max_age_days", days)
+	return nil
+}
+
+// errTenantSuspended is the answer for a suspended organisation.
+var errTenantSuspended = errors.New("this organisation is suspended")
+
+// tenantClosed reports why u cannot open the organisation t: it is
+// suspended, or its policy does not allow the sign-in method of u's
+// account. Super administrators can always open it.
+func (s *Server) tenantClosed(ctx context.Context, t *model.Tenant, u *model.User) error {
+	if u.SuperAdmin {
+		return nil
+	}
+	if t.Suspended() {
+		return errTenantSuspended
+	}
+	pol, err := s.Store.TenantPolicy(ctx, t.ID)
+	if err != nil {
+		return err
+	}
+	if !methodAllowed(pol, u.AuthProvider) {
+		return fmt.Errorf("this organisation does not allow sign-in with %s", methodName(u.AuthProvider))
+	}
+	return nil
+}
+
+// methodAllowed reports whether accounts of the sign-in method (users.
+// auth_provider) may open an organisation with the policy. Accounts that
+// SCIM created and that never signed in are allowed (they take the method
+// of their first sign-in).
+func methodAllowed(pol model.TenantPolicy, method string) bool {
+	if len(pol.AllowedProviders) == 0 || method == scimAuthProvider {
+		return true
+	}
+	if method == "" {
+		method = "local"
+	}
+	return slices.Contains(pol.AllowedProviders, method)
+}
+
+func methodName(m string) string {
+	if m == "" || m == "local" {
+		return "a password"
+	}
+	return m
 }
 
 func (s *Server) handleProviders(w http.ResponseWriter, r *http.Request) {
@@ -439,17 +522,19 @@ func (s *Server) handleProviders(w http.ResponseWriter, r *http.Request) {
 		Local bool           `json:"local"`
 		OIDC  []providerInfo `json:"oidc"`
 		SAML  []providerInfo `json:"saml"`
-		// PasswordMinLength is the minimum length of local passwords.
-		PasswordMinLength int `json:"password_min_length"`
-	}{Local: c.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}, PasswordMinLength: minPassword(c)}
+		// PasswordMinLength is the minimum length of local passwords,
+		// PasswordMinClasses the character classes they must use.
+		PasswordMinLength  int `json:"password_min_length"`
+		PasswordMinClasses int `json:"password_min_classes"`
+	}{Local: c.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}, PasswordMinLength: minPassword(c), PasswordMinClasses: c.Auth.PasswordMinClasses}
 	for _, o := range c.Auth.OIDC {
 		if !o.On() {
 			continue
 		}
-		res.OIDC = append(res.OIDC, providerInfo{o.Name, displayName(o.DisplayName, o.Name), "/api/v1/auth/oidc/" + url.PathEscape(o.Name) + "/login"})
+		res.OIDC = append(res.OIDC, providerInfo{o.Name, displayName(o.DisplayName, o.Name), "/api/v1/auth/oidc/" + url.PathEscape(o.Name) + "/login", o.Icon})
 	}
 	for _, sc := range s.conf().Auth.SAML {
-		res.SAML = append(res.SAML, providerInfo{sc.Name, displayName(sc.DisplayName, sc.Name), "/api/v1/auth/saml/" + url.PathEscape(sc.Name) + "/login"})
+		res.SAML = append(res.SAML, providerInfo{sc.Name, displayName(sc.DisplayName, sc.Name), "/api/v1/auth/saml/" + url.PathEscape(sc.Name) + "/login", ""})
 	}
 	writeJSON(w, http.StatusOK, res)
 }
@@ -494,6 +579,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "invalid credentials")
 		return
 	}
+	if err := s.passwordAge(ctx, u); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	tenantID := ""
 	if req.Tenant != "" {
 		t, err := s.Store.GetTenantBySlug(ctx, req.Tenant)
@@ -503,6 +592,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		if _, err := s.Store.GetMembership(ctx, t.ID, u.ID); err != nil && !u.SuperAdmin {
 			writeError(w, http.StatusForbidden, "forbidden", "not a member of tenant")
+			return
+		}
+		if err := s.tenantClosed(ctx, t, u); err != nil {
+			writeError(w, http.StatusForbidden, "forbidden", err.Error())
 			return
 		}
 		tenantID = t.ID
@@ -561,6 +654,9 @@ func (s *Server) principalFromSession(r *http.Request, u *model.User, sess *mode
 	if err != nil {
 		return nil, err
 	}
+	if s.tenantClosed(r.Context(), t, u) != nil {
+		return p, nil
+	}
 	p.Tenant = t
 	if m, err := s.Store.GetMembership(r.Context(), t.ID, u.ID); err == nil {
 		p.setRoles(m.Roles)
@@ -604,6 +700,10 @@ func (s *Server) handleSwitchTenant(w http.ResponseWriter, r *http.Request, p *P
 		s.fail(w, r, err)
 		return
 	}
+	if err := s.tenantClosed(ctx, t, p.User); err != nil {
+		writeError(w, http.StatusForbidden, "forbidden", err.Error())
+		return
+	}
 	var roles []string
 	if m, err := s.Store.GetMembership(ctx, t.ID, p.User.ID); err == nil {
 		roles = m.Roles
@@ -643,9 +743,21 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request, p 
 		writeError(w, http.StatusForbidden, "forbidden", "current password is wrong")
 		return
 	}
-	if err := auth.ValidatePasswordMin(req.New, minPassword(s.conf())); err != nil {
+	if err := pwPolicy(s.conf()).Validate(req.New); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	if n := s.conf().Auth.PasswordHistory; n > 0 {
+		hist, err := s.Store.PasswordHistory(r.Context(), p.User.ID)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		// the current password counts as one of the remembered ones
+		if auth.Reused(req.New, append([]string{p.User.PasswordHash}, hist...), n) {
+			s.fail(w, r, badRequest("%v (the last %d passwords cannot be used again)", auth.ErrPasswordReused, n))
+			return
+		}
 	}
 	hash, err := auth.HashPassword(req.New)
 	if err != nil {
@@ -838,6 +950,9 @@ func (s *Server) externalLoginMFA(w http.ResponseWriter, r *http.Request, id *au
 type provisioningCfg = config.Provisioning
 
 func (s *Server) provision(ctx context.Context, id *auth.Identity, prov provisioningCfg) (*model.User, string, error) {
+	if !prov.DomainAllowed(id.Email) {
+		return nil, "", fmt.Errorf("the e-mail domain of %s may not sign in with this provider", id.Email)
+	}
 	u, err := s.Store.GetUserByExternal(ctx, id.Provider, id.Subject)
 	if errors.Is(err, store.ErrNotFound) {
 		u, err = s.Store.GetUserByEmail(ctx, id.Email)
@@ -869,18 +984,45 @@ func (s *Server) provision(ctx context.Context, id *auth.Identity, prov provisio
 		return nil, "", errors.New("user disabled")
 	}
 	tenantID := ""
-	if prov.DefaultTenant != "" {
-		t, err := s.Store.GetTenantBySlug(ctx, prov.DefaultTenant)
+	var t *model.Tenant
+	switch {
+	case prov.DefaultTenant != "":
+		if t, err = s.Store.GetTenantBySlug(ctx, prov.DefaultTenant); err != nil {
+			return nil, "", err
+		}
+	default:
+		// the organisation whose policy lists the user's e-mail domain
+		_, domain, _ := strings.Cut(id.Email, "@")
+		tid, err := s.Store.TenantByEmailDomain(ctx, domain)
 		if err != nil {
 			return nil, "", err
 		}
+		if tid != "" {
+			if t, err = s.Store.GetTenant(ctx, tid); err != nil {
+				return nil, "", err
+			}
+		}
+	}
+	if t != nil && s.tenantClosed(ctx, t, u) != nil {
+		// a suspended organisation, or one that does not allow this
+		// provider: sign in without joining it
+		t = nil
+	}
+	if t != nil {
 		tenantID = t.ID
 		set, err := s.Store.RoleSet(ctx, t.ID)
 		if err != nil {
 			return nil, "", err
 		}
-		def := prov.DefaultRole
-		if !set.Valid(def) {
+		// the default roles the tenant has (one or several, comma-separated)
+		var defs []string
+		for _, r := range auth.SplitRoles(prov.DefaultRole) {
+			if set.Valid(r) {
+				defs = append(defs, r)
+			}
+		}
+		def := strings.Join(defs, ",")
+		if def == "" {
 			def = rbac.RoleViewer
 		}
 		// every mapped role the tenant has (a deleted custom role is ignored)

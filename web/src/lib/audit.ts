@@ -10,6 +10,8 @@ export interface AuditFilters {
   /** free query expression */
   q?: string
   limit?: number
+  /** another organisation (super administrators; "" = the current one) */
+  tenant?: string
 }
 
 /** Local calendar date "YYYY-MM-DD" of a Date, or a valid date string unchanged. */
@@ -47,6 +49,7 @@ export function auditParams(f: AuditFilters, format?: 'csv' | 'md'): Record<stri
   if (from) out.from = from
   if (to) out.to = to
   if (f.limit && f.limit > 0) out.limit = Math.min(5000, Math.floor(f.limit))
+  if (f.tenant) out.tenant = f.tenant
   if (format) out.format = format
   return out
 }

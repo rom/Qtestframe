@@ -18,7 +18,7 @@ export const AI_ENDPOINT: Record<AiFeature, string> = {
   suggest_criteria: 'suggest-criteria',
 }
 
-export type AiReason = 'off' | 'not_configured' | 'organisation' | 'project'
+export type AiReason = 'off' | 'not_configured' | 'policy' | 'organisation' | 'project'
 
 export interface AiStatus {
   available: boolean

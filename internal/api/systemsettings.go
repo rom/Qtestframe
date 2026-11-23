@@ -12,10 +12,13 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"reflect"
 	"slices"
 	"sort"
@@ -73,6 +76,11 @@ func minPassword(c *config.Config) int {
 		return c.Auth.PasswordMinLength
 	}
 	return auth.MinPasswordLength
+}
+
+// pwPolicy is the password policy of c.
+func pwPolicy(c *config.Config) auth.PasswordPolicy {
+	return auth.PasswordPolicy{MinLength: minPassword(c), MinClasses: c.Auth.PasswordMinClasses}
 }
 
 // mailer returns the current e-mail sender (nil = e-mail off).
@@ -265,6 +273,8 @@ func (s *Server) routesSystemSettings(h routeFunc) {
 	h("POST /api/v1/admin/settings/test/oidc", s.handleTestOIDC)
 	h("POST /api/v1/admin/settings/test/syslog", s.handleTestSyslog)
 	h("POST /api/v1/admin/settings/test/email", s.handleTestSettingsEmail)
+	h("POST /api/v1/admin/settings/test/outbound", s.handleTestOutbound)
+	h("POST /api/v1/admin/settings/test/saml", s.handleTestSAML)
 }
 
 // ---------------------------------------------------------------- views
@@ -320,10 +330,37 @@ type oidcSection struct {
 	UpdatedAt  *time.Time `json:"updated_at,omitempty"`
 }
 
+// samlView is a SAML provider of the configuration file (read-only).
+type samlView struct {
+	Name           string            `json:"name"`
+	DisplayName    string            `json:"display_name"`
+	EntityID       string            `json:"entity_id"`
+	MetadataURL    string            `json:"metadata_url"`
+	MetadataFile   string            `json:"metadata_file"`
+	SPCertFile     string            `json:"sp_cert_file"`
+	EmailAttr      string            `json:"email_attr"`
+	NameAttr       string            `json:"name_attr"`
+	GroupsAttr     string            `json:"groups_attr"`
+	AutoProvision  bool              `json:"auto_provision"`
+	DefaultTenant  string            `json:"default_tenant"`
+	DefaultRole    string            `json:"default_role"`
+	RoleMapping    map[string]string `json:"role_mapping"`
+	AllowedDomains []string          `json:"allowed_domains"`
+	// ACSURL and SPMetadataURL are the addresses to register at the
+	// identity provider.
+	ACSURL        string `json:"acs_url"`
+	SPMetadataURL string `json:"sp_metadata_url"`
+}
+
 type systemSettingsView struct {
 	Sections []string      `json:"sections"`
 	Settings []settingView `json:"settings"`
 	OIDC     oidcSection   `json:"oidc"`
+	// SAML lists the SAML providers of the configuration file (they need
+	// key and certificate files and cannot be changed here).
+	SAML []samlView `json:"saml"`
+	// OIDCIcons are the icons a sign-in button can have.
+	OIDCIcons []string `json:"oidc_icons"`
 	// Locked are the patterns of system_settings.locked.
 	Locked         []string `json:"locked_patterns"`
 	ConfigFile     string   `json:"config_file"`
@@ -398,6 +435,20 @@ func (s *Server) settingsView(ctx context.Context) (*systemSettingsView, error) 
 	if v.Locked == nil {
 		v.Locked = []string{}
 	}
+	v.OIDCIcons = config.OIDCIcons
+	v.SAML = []samlView{}
+	baseURL := strings.TrimSuffix(eff.Server.BaseURL, "/")
+	for _, sc := range eff.Auth.SAML {
+		sp := baseURL + "/api/v1/auth/saml/" + url.PathEscape(sc.Name)
+		x := samlView{Name: sc.Name, DisplayName: sc.DisplayName, EntityID: sc.EntityID, MetadataURL: sc.IDPMetadataURL,
+			MetadataFile: sc.IDPMetadataFile, SPCertFile: sc.SPCertFile, EmailAttr: sc.EmailAttr, NameAttr: sc.NameAttr,
+			GroupsAttr: sc.GroupsAttr, AutoProvision: sc.AutoProvision, DefaultTenant: sc.DefaultTenant, DefaultRole: sc.DefaultRole,
+			RoleMapping: sc.RoleMapping, AllowedDomains: append([]string{}, sc.AllowedDomains...), ACSURL: sp + "/acs", SPMetadataURL: sp + "/metadata"}
+		if x.EntityID == "" {
+			x.EntityID = sp + "/metadata"
+		}
+		v.SAML = append(v.SAML, x)
+	}
 	for _, d := range settings.Registry {
 		x := settingView{Key: d.Key, Section: d.Section, Type: string(d.Kind), Apply: string(d.Apply), Options: d.Options}
 		if d.Kind == settings.Int {
@@ -419,6 +470,9 @@ func (s *Server) settingsView(ctx context.Context) (*systemSettingsView, error) 
 		}
 		if d.Kind == settings.Secret {
 			x.HasSecret, x.FileSecret = ptr(d.Get(&eff).(string) != ""), ptr(d.Get(base).(string) != "")
+		}
+		if d.Kind == settings.List && x.Value == nil {
+			x.Value, x.FileValue = []string{}, []string{}
 		}
 		if d.Apply == settings.Restart {
 			x.RunningValue = d.Display(boot)
@@ -1031,6 +1085,166 @@ func (s *Server) discover(ctx context.Context, issuer string) testResult {
 		res.OK, res.Message = true, "discovery succeeded"
 	}
 	return res
+}
+
+// handleTestOutbound checks whether the outbound settings (with unsaved
+// form values) allow a call to a URL, and fetches it.
+func (s *Server) handleTestOutbound(w http.ResponseWriter, r *http.Request, p *Principal) {
+	if !requireSuper(w, p) {
+		return
+	}
+	var req struct {
+		URL    string                     `json:"url"`
+		Values map[string]json.RawMessage `json:"values"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	u, err := url.Parse(strings.TrimSpace(req.URL))
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		s.fail(w, r, badRequest("the URL must be an absolute http(s) URL"))
+		return
+	}
+	c, err := s.candidate(r.Context(), req.Values, "outbound.")
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	res := testResult{Details: map[string]any{"url": u.String()}}
+	if c.Outbound.Proxy != "" {
+		res.Details["proxy"] = redactURL(c.Outbound.Proxy)
+	}
+	client := &http.Client{Timeout: 15 * time.Second, Transport: newOutboundTransport(func() config.Outbound { return c.Outbound }),
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+	hr, _ := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	resp, err := client.Do(hr)
+	switch {
+	case errors.Is(err, errOutboundBlocked):
+		res.Error = err.Error()
+		res.Details["blocked"] = true
+	case err != nil:
+		res.Error = "allowed by the settings, but the request failed: " + err.Error()
+	default:
+		resp.Body.Close()
+		res.Details["status"] = resp.StatusCode
+		res.OK, res.Message = true, fmt.Sprintf("allowed; %s answered with HTTP %d", u.Host, resp.StatusCode)
+	}
+	details := u.Host
+	if res.Error != "" {
+		details += ": " + res.Error
+	}
+	s.audit(r.Context(), p, "settings.test_outbound", "system_settings", "outbound", details)
+	writeJSON(w, http.StatusOK, res)
+}
+
+// redactURL removes the password of a URL (proxy credentials).
+func redactURL(s string) string {
+	u, err := url.Parse(s)
+	if err != nil {
+		return ""
+	}
+	if _, ok := u.User.Password(); ok {
+		u.User = url.UserPassword(u.User.Username(), "xxxxx")
+	}
+	return u.String()
+}
+
+// handleTestSAML fetches the metadata of a SAML provider of the
+// configuration file and reports what it found.
+func (s *Server) handleTestSAML(w http.ResponseWriter, r *http.Request, p *Principal) {
+	if !requireSuper(w, p) {
+		return
+	}
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	var sc *config.SAML
+	for i := range s.conf().Auth.SAML {
+		if x := &s.conf().Auth.SAML[i]; x.Name == req.Name {
+			sc = x
+		}
+	}
+	if sc == nil {
+		writeError(w, http.StatusNotFound, "not_found", "unknown SAML provider")
+		return
+	}
+	res := testResult{Details: map[string]any{}}
+	var body []byte
+	var err error
+	if sc.IDPMetadataURL != "" {
+		res.Details["url"] = sc.IDPMetadataURL
+		body, err = s.fetchMetadata(r.Context(), sc.IDPMetadataURL)
+	} else {
+		res.Details["file"] = sc.IDPMetadataFile
+		body, err = os.ReadFile(sc.IDPMetadataFile)
+	}
+	if err != nil {
+		res.Error = "the metadata could not be read: " + err.Error()
+	} else {
+		var md struct {
+			XMLName  xml.Name
+			EntityID string `xml:"entityID,attr"`
+			IDP      []struct {
+				Keys []struct {
+					Use string `xml:"use,attr"`
+				} `xml:"KeyDescriptor"`
+				SSO []struct {
+					Binding  string `xml:"Binding,attr"`
+					Location string `xml:"Location,attr"`
+				} `xml:"SingleSignOnService"`
+			} `xml:"IDPSSODescriptor"`
+		}
+		switch err := xml.Unmarshal(body, &md); {
+		case err != nil:
+			res.Error = "the metadata is not valid XML: " + err.Error()
+		case md.XMLName.Local != "EntityDescriptor" || len(md.IDP) == 0:
+			res.Error = "the metadata has no EntityDescriptor with an IDPSSODescriptor"
+		default:
+			res.Details["entity_id"] = md.EntityID
+			res.Details["certificates"] = len(md.IDP[0].Keys)
+			var sso []string
+			for _, x := range md.IDP[0].SSO {
+				sso = append(sso, x.Location)
+			}
+			res.Details["sso_urls"] = sso
+			if len(md.IDP[0].Keys) == 0 {
+				res.Error = "the metadata has no signing certificate"
+			} else {
+				res.OK, res.Message = true, "metadata read: "+md.EntityID
+			}
+		}
+	}
+	details := sc.Name
+	if res.Error != "" {
+		details += ": " + res.Error
+	}
+	s.audit(r.Context(), p, "settings.test_saml", "system_settings", "auth.saml", details)
+	writeJSON(w, http.StatusOK, res)
+}
+
+func (s *Server) fetchMetadata(ctx context.Context, u string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	return io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 }
 
 // decodeOptional is decode that accepts an empty body.

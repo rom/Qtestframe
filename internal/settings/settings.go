@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/mail"
 	"net/url"
 	"os"
 	"regexp"
@@ -69,7 +70,7 @@ const (
 )
 
 // Sections of the administration view, in order.
-var Sections = []string{"general", "security", "oidc", "logging", "email", "runner", "similarity", "ai", "retention"}
+var Sections = []string{"general", "server", "security", "tokens", "oidc", "logging", "email", "outbound", "runner", "live", "similarity", "ai", "retention"}
 
 // Def describes one setting.
 type Def struct {
@@ -87,6 +88,8 @@ type Def struct {
 	Optional bool `json:"-"`
 	// Check validates a decoded value further (nil = none).
 	Check func(any) error `json:"-"`
+	// ItemCheck validates each entry of a list (nil = none).
+	ItemCheck func(string) error `json:"-"`
 
 	get func(*config.Config) any
 	set func(*config.Config, any)
@@ -157,19 +160,47 @@ var Registry = []*Def{
 	checked(optional(str("server.base_url", "general", Runtime, func(c *config.Config) *string { return &c.Server.BaseURL })), checkBaseURL),
 	num("files.max_upload_mb", "general", Runtime, 1, 1024, func(c *config.Config) *int { return &c.Files.MaxUploadMB }),
 	flag("requirements.auto_create_test", "general", Runtime, func(c *config.Config) *bool { return &c.Requirements.AutoCreateTest }),
-	str("server.listen", "general", ReadOnly, func(c *config.Config) *string { return &c.Server.Listen }),
-	str("database.driver", "general", ReadOnly, func(c *config.Config) *string { return &c.Database.Driver }),
 
-	// security
+	// server: the listener, the database and the start-up options (set in
+	// the file; the HTTP timeouts are read at start-up)
+	str("server.listen", "server", ReadOnly, func(c *config.Config) *string { return &c.Server.Listen }),
+	str("server.tls_cert", "server", ReadOnly, func(c *config.Config) *string { return &c.Server.TLSCert }),
+	str("server.tls_key", "server", ReadOnly, func(c *config.Config) *string { return &c.Server.TLSKey }),
+	dur("server.read_timeout", "server", Restart, time.Second, 2*time.Hour, func(c *config.Config) *time.Duration { return &c.Server.ReadTimeout }),
+	dur("server.write_timeout", "server", Restart, time.Second, 2*time.Hour, func(c *config.Config) *time.Duration { return &c.Server.WriteTimeout }),
+	itemChecked(list("server.frame_ancestors", "server", Runtime, func(c *config.Config) *[]string { return &c.Server.FrameAncestors }), checkOrigin),
+	roList("server.trusted_proxies", "server", func(c *config.Config) []string { return c.Server.TrustedProxies }),
+	flag("server.hsts", "server", ReadOnly, func(c *config.Config) *bool { return &c.Server.HSTS }),
+	str("database.driver", "server", ReadOnly, func(c *config.Config) *string { return &c.Database.Driver }),
+	{Key: "database.dsn", Section: "server", Kind: Secret, Apply: ReadOnly,
+		get: func(c *config.Config) any { return c.Database.DSN }},
+	num("database.max_open_conns", "server", ReadOnly, 0, 0, func(c *config.Config) *int { return &c.Database.MaxOpenConns }),
+	str("bootstrap.tenant_slug", "server", ReadOnly, func(c *config.Config) *string { return &c.Bootstrap.TenantSlug }),
+	str("bootstrap.tenant_name", "server", ReadOnly, func(c *config.Config) *string { return &c.Bootstrap.TenantName }),
+	str("bootstrap.admin_email", "server", ReadOnly, func(c *config.Config) *string { return &c.Bootstrap.AdminEmail }),
+	flag("hardening.no_new_privs", "server", ReadOnly, func(c *config.Config) *bool { return &c.Hardening.NoNewPrivs }),
+	flag("hardening.landlock", "server", ReadOnly, func(c *config.Config) *bool { return &c.Hardening.Landlock }),
+	flag("hardening.seccomp", "server", ReadOnly, func(c *config.Config) *bool { return &c.Hardening.Seccomp }),
+	flag("hardening.drop_capabilities", "server", ReadOnly, func(c *config.Config) *bool { return &c.Hardening.DropCapabilities }),
+	roList("hardening.read_only_paths", "server", func(c *config.Config) []string { return c.Hardening.ReadOnlyPaths }),
+	roList("hardening.read_write_paths", "server", func(c *config.Config) []string { return c.Hardening.ReadWritePaths }),
+	str("secrets.provider", "server", ReadOnly, func(c *config.Config) *string { return &c.Secrets.Provider }),
+
+	// security: sign-in, sessions and the password policy
 	flag("auth.local", "security", Runtime, func(c *config.Config) *bool { return &c.Auth.Local }),
 	dur("auth.session_ttl", "security", Runtime, 5*time.Minute, 90*24*time.Hour, func(c *config.Config) *time.Duration { return &c.Auth.SessionTTL }),
+	checked(dur("auth.session_idle_timeout", "security", Runtime, 0, 30*24*time.Hour, func(c *config.Config) *time.Duration { return &c.Auth.SessionIdleTimeout }), checkIdle),
 	num("auth.password_min_length", "security", Runtime, 8, 72, func(c *config.Config) *int { return &c.Auth.PasswordMinLength }),
+	num("auth.password_min_classes", "security", Runtime, 0, 4, func(c *config.Config) *int { return &c.Auth.PasswordMinClasses }),
+	num("auth.password_history", "security", Runtime, 0, 24, func(c *config.Config) *int { return &c.Auth.PasswordHistory }),
+	num("auth.password_max_age_days", "security", Runtime, 0, 3650, func(c *config.Config) *int { return &c.Auth.PasswordMaxAgeDays }),
 	num("auth.login_max_attempts", "security", Runtime, 1, 1000, func(c *config.Config) *int { return &c.Auth.LoginMaxAttempts }),
 	dur("auth.login_lockout", "security", Runtime, time.Minute, 24*time.Hour, func(c *config.Config) *time.Duration { return &c.Auth.LoginLockout }),
 	flag("auth.cookie_secure", "security", ReadOnly, func(c *config.Config) *bool { return &c.Auth.CookieSecure }),
-	flag("server.hsts", "security", ReadOnly, func(c *config.Config) *bool { return &c.Server.HSTS }),
-	{Key: "server.trusted_proxies", Section: "security", Kind: List, Apply: ReadOnly,
-		get: func(c *config.Config) any { return append([]string{}, c.Server.TrustedProxies...) }},
+
+	// API tokens
+	num("auth.token_max_days", "tokens", Runtime, 0, 3650, func(c *config.Config) *int { return &c.Auth.TokenMaxDays }),
+	flag("auth.token_require_expiry", "tokens", Runtime, func(c *config.Config) *bool { return &c.Auth.TokenRequireExpiry }),
 
 	// single sign-on
 	{Key: "auth.oidc", Section: "oidc", Kind: OIDCList, Apply: Runtime,
@@ -186,6 +217,7 @@ var Registry = []*Def{
 	checked(str("logging.syslog.tag", "logging", Runtime, func(c *config.Config) *string { return &c.Logging.Syslog.Tag }), checkTag),
 	str("logging.syslog.ca_file", "logging", ReadOnly, func(c *config.Config) *string { return &c.Logging.Syslog.CAFile }),
 	str("logging.syslog.cert_file", "logging", ReadOnly, func(c *config.Config) *string { return &c.Logging.Syslog.CertFile }),
+	str("logging.syslog.key_file", "logging", ReadOnly, func(c *config.Config) *string { return &c.Logging.Syslog.KeyFile }),
 
 	// e-mail
 	{Key: "email.enabled", Section: "email", Kind: Bool, Apply: Runtime,
@@ -199,8 +231,16 @@ var Registry = []*Def{
 		get: func(c *config.Config) any { return c.Email.Password }, set: func(c *config.Config, v any) { c.Email.Password = v.(string) }},
 	checked(optional(str("email.from", "email", Runtime, func(c *config.Config) *string { return &c.Email.From })), oneLine),
 	checked(optional(str("email.from_name", "email", Runtime, func(c *config.Config) *string { return &c.Email.FromName })), oneLine),
+	checked(optional(str("email.reply_to", "email", Runtime, func(c *config.Config) *string { return &c.Email.ReplyTo })), checkAddress),
 	dur("email.timeout", "email", Runtime, time.Second, 10*time.Minute, func(c *config.Config) *time.Duration { return &c.Email.Timeout }),
 	num("email.digest_hour", "email", Runtime, 0, 23, func(c *config.Config) *int { return &c.Email.DigestHour }),
+
+	// outgoing HTTP calls: proxy and the hosts they may reach
+	checked(optional(str("outbound.proxy", "outbound", Runtime, func(c *config.Config) *string { return &c.Outbound.Proxy })), checkProxy),
+	itemChecked(list("outbound.no_proxy", "outbound", Runtime, func(c *config.Config) *[]string { return &c.Outbound.NoProxy }), checkHostPattern),
+	itemChecked(list("outbound.allowed_hosts", "outbound", Runtime, func(c *config.Config) *[]string { return &c.Outbound.AllowedHosts }), checkHostPattern),
+	itemChecked(list("outbound.denied_hosts", "outbound", Runtime, func(c *config.Config) *[]string { return &c.Outbound.DeniedHosts }), checkHostPattern),
+	flag("outbound.block_private", "outbound", Runtime, func(c *config.Config) *bool { return &c.Outbound.BlockPrivate }),
 
 	// script and web test runner (set up at start-up: restart)
 	flag("runner.enabled", "runner", Restart, func(c *config.Config) *bool { return &c.Runner.Enabled }),
@@ -208,8 +248,12 @@ var Registry = []*Def{
 	num("runner.max_output_bytes", "runner", Restart, 1024, 64<<20, func(c *config.Config) *int { return &c.Runner.MaxOutputBytes }),
 	flag("runner.deny_network", "runner", Restart, func(c *config.Config) *bool { return &c.Runner.DenyNetwork }),
 	flag("runner.sandbox", "runner", ReadOnly, func(c *config.Config) *bool { return &c.Runner.Sandbox }),
+	str("runner.work_dir", "runner", ReadOnly, func(c *config.Config) *string { return &c.Runner.WorkDir }),
+	roList("runner.interpreters", "runner", func(c *config.Config) []string { return mapList(c.Runner.Interpreters) }),
 	flag("runner.web.enabled", "runner", Restart, func(c *config.Config) *bool { return &c.Runner.Web.Enabled }),
 	enum("runner.web.browser", "runner", Restart, []string{"chromium", "firefox", "webkit"}, func(c *config.Config) *string { return &c.Runner.Web.Browser }),
+	checked(optional(str("runner.web.channel", "runner", Restart, func(c *config.Config) *string { return &c.Runner.Web.Channel })), checkTagOrEmpty),
+	flag("runner.web.browser_channels", "runner", Restart, func(c *config.Config) *bool { return &c.Runner.Web.BrowserChannels }),
 	flag("runner.web.headless", "runner", Restart, func(c *config.Config) *bool { return &c.Runner.Web.Headless }),
 	dur("runner.web.timeout", "runner", Restart, time.Second, 24*time.Hour, func(c *config.Config) *time.Duration { return &c.Runner.Web.Timeout }),
 	dur("runner.web.job_timeout", "runner", Restart, time.Second, 24*time.Hour, func(c *config.Config) *time.Duration { return &c.Runner.Web.JobTimeout }),
@@ -218,7 +262,20 @@ var Registry = []*Def{
 	enum("runner.web.screenshots", "runner", Restart, []string{"on_failure", "always", "off"}, func(c *config.Config) *string { return &c.Runner.Web.Screenshots }),
 	enum("runner.web.trace", "runner", Restart, []string{"on_failure", "always", "off"}, func(c *config.Config) *string { return &c.Runner.Web.Trace }),
 	enum("runner.web.video", "runner", Restart, []string{"off", "on_failure", "always"}, func(c *config.Config) *string { return &c.Runner.Web.Video }),
+	str("runner.web.node", "runner", ReadOnly, func(c *config.Config) *string { return &c.Runner.Web.Node }),
 	str("runner.web.playwright_dir", "runner", ReadOnly, func(c *config.Config) *string { return &c.Runner.Web.PlaywrightDir }),
+	str("runner.web.command", "runner", ReadOnly, func(c *config.Config) *string { return &c.Runner.Web.Command }),
+	str("runner.web.browsers_path", "runner", ReadOnly, func(c *config.Config) *string { return &c.Runner.Web.BrowsersPath }),
+	str("runner.web.executable_path", "runner", ReadOnly, func(c *config.Config) *string { return &c.Runner.Web.ExecutablePath }),
+
+	// live updates: the switch and the heartbeat apply to new streams at
+	// once; the limits of the hub are set up at start-up
+	flag("live.enabled", "live", Runtime, func(c *config.Config) *bool { return &c.Live.Enabled }),
+	dur("live.heartbeat", "live", Runtime, time.Second, 5*time.Minute, func(c *config.Config) *time.Duration { return &c.Live.Heartbeat }),
+	dur("live.presence_ttl", "live", Restart, 5*time.Second, time.Hour, func(c *config.Config) *time.Duration { return &c.Live.PresenceTTL }),
+	num("live.max_connections", "live", Restart, 1, 1000000, func(c *config.Config) *int { return &c.Live.MaxConnections }),
+	num("live.max_connections_per_user", "live", Restart, 1, 1000, func(c *config.Config) *int { return &c.Live.MaxConnectionsPerUser }),
+	num("live.replay_buffer", "live", Restart, 0, 100000, func(c *config.Config) *int { return &c.Live.ReplayBuffer }),
 
 	// similarity: the optional embeddings service (off by default; sends
 	// the text of requirements and tests to it)
@@ -248,6 +305,110 @@ var Registry = []*Def{
 	flag("ai.features.suggest_criteria", "ai", Runtime, func(c *config.Config) *bool { return &c.AI.Features.SuggestCriteria }),
 	checked(optional(str("ai.price_input", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceInput })), checkPrice),
 	checked(optional(str("ai.price_output", "ai", Runtime, func(c *config.Config) *string { return &c.AI.PriceOutput })), checkPrice),
+}
+
+// FileOnly are the keys of the configuration file that are not in the
+// Registry, with the reason (the inventory of internal/admindoc checks that
+// every key is in one of the two).
+var FileOnly = map[string]string{
+	"database.dsn_file":                  "the file the database DSN is read from at start-up",
+	"email.password_file":                "a secret file read at start-up (the password itself can be set here)",
+	"similarity.embeddings.api_key_file": "a secret file read at start-up (the key itself can be set here)",
+	"ai.api_key_file":                    "a secret file read at start-up (the key itself can be set here)",
+	"bootstrap.admin_password":           "a secret used once, at the first start",
+	"bootstrap.admin_password_file":      "a secret file used once, at the first start",
+	"auth.saml":                          "SAML providers need key and certificate files: listed read-only",
+	"system_settings.locked":             "the operator's lock on these settings: shown read-only",
+	"secrets.local.key_file":             "the key that protects the stored secrets: shown in the encryption panel",
+	"secrets.tpm.device":                 "the key that protects the stored secrets: shown in the encryption panel",
+	"secrets.tpm.pcrs":                   "the key that protects the stored secrets: shown in the encryption panel",
+	"secrets.tpm.pcr_bank":               "the key that protects the stored secrets: shown in the encryption panel",
+	"secrets.pkcs11.module":              "the key that protects the stored secrets: shown in the encryption panel",
+	"secrets.pkcs11.token_label":         "the key that protects the stored secrets: shown in the encryption panel",
+	"secrets.pkcs11.slot":                "the key that protects the stored secrets: shown in the encryption panel",
+	"secrets.pkcs11.pin_file":            "the key that protects the stored secrets: shown in the encryption panel",
+	"secrets.pkcs11.key_label":           "the key that protects the stored secrets: shown in the encryption panel",
+	"secrets.pkcs11.generate_key":        "the key that protects the stored secrets: shown in the encryption panel",
+}
+
+// list is an editable list of strings.
+func list(key, section string, a Apply, p func(*config.Config) *[]string) *Def {
+	return &Def{Key: key, Section: section, Kind: List, Apply: a,
+		get: func(c *config.Config) any { return append([]string{}, *p(c)...) },
+		set: func(c *config.Config, v any) { *p(c) = append([]string(nil), v.([]string)...) }}
+}
+
+// roList is a read-only list.
+func roList(key, section string, get func(*config.Config) []string) *Def {
+	return &Def{Key: key, Section: section, Kind: List, Apply: ReadOnly,
+		get: func(c *config.Config) any { return append([]string{}, get(c)...) }}
+}
+
+func itemChecked(d *Def, f func(string) error) *Def {
+	d.ItemCheck = f
+	return d
+}
+
+// mapList renders a map as sorted "key=value" entries.
+func mapList(m map[string]string) []string {
+	out := make([]string, 0, len(m))
+	for k, v := range m {
+		out = append(out, k+"="+v)
+	}
+	slices.Sort(out)
+	return out
+}
+
+func checkOrigin(s string) error {
+	if !config.ValidOrigin(s) {
+		return fmt.Errorf("%q is not an origin such as https://doors.example.com", s)
+	}
+	return nil
+}
+
+func checkHostPattern(s string) error {
+	if !config.ValidHostPattern(s) {
+		return fmt.Errorf("%q is not a host name, address or *.domain pattern", s)
+	}
+	return nil
+}
+
+// checkProxy: an http(s) proxy URL (or empty).
+func checkProxy(v any) error {
+	s := v.(string)
+	if s == "" {
+		return nil
+	}
+	u, err := url.Parse(s)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || strings.ContainsAny(s, " \r\n") {
+		return errors.New("must be an http(s) URL such as http://proxy.example.com:3128")
+	}
+	return nil
+}
+
+func checkAddress(v any) error {
+	s := v.(string)
+	if s == "" {
+		return nil
+	}
+	if a, err := mail.ParseAddress(s); err != nil || a.Name != "" || strings.ContainsAny(s, "\r\n<>") {
+		return errors.New("must be a plain e-mail address such as qtf@example.com")
+	}
+	return nil
+}
+
+func checkIdle(v any) error {
+	if t := v.(time.Duration); t != 0 && t < time.Minute {
+		return errors.New("must be 0 (off) or at least 1m")
+	}
+	return nil
+}
+
+func checkTagOrEmpty(v any) error {
+	if v.(string) == "" {
+		return nil
+	}
+	return checkTag(v)
 }
 
 // checkBase: an absolute http(s) base URL without fragment (or empty).
@@ -393,6 +554,31 @@ func (d *Def) Decode(raw json.RawMessage) (any, error) {
 			return nil, bad("must be between %s and %s", ShortDuration(d.MinDur), ShortDuration(d.MaxDur))
 		}
 		v = t
+	case List:
+		var in []string
+		if err := json.Unmarshal(raw, &in); err != nil {
+			return nil, bad("expected a list of strings")
+		}
+		out := []string{}
+		for _, s := range in {
+			s = strings.TrimSpace(s)
+			if s == "" || slices.Contains(out, s) {
+				continue
+			}
+			if len(s) > 500 || strings.ContainsAny(s, "\r\n") {
+				return nil, bad("entries must be one line")
+			}
+			if d.ItemCheck != nil {
+				if err := d.ItemCheck(s); err != nil {
+					return nil, bad("%v", err)
+				}
+			}
+			out = append(out, s)
+		}
+		if len(out) > 200 {
+			return nil, bad("at most 200 entries")
+		}
+		v = out
 	case OIDCList:
 		var ps []OIDCProvider
 		if err := json.Unmarshal(raw, &ps); err != nil {
@@ -503,6 +689,7 @@ func CopyRestart(cfg *config.Config, running *config.Config) {
 type OIDCProvider struct {
 	Name          string            `json:"name"`
 	DisplayName   string            `json:"display_name"`
+	Icon          string            `json:"icon"`
 	Enabled       bool              `json:"enabled"`
 	Issuer        string            `json:"issuer"`
 	ClientID      string            `json:"client_id"`
@@ -515,6 +702,9 @@ type OIDCProvider struct {
 	DefaultTenant string            `json:"default_tenant"`
 	DefaultRole   string            `json:"default_role"`
 	RoleMapping   map[string]string `json:"role_mapping"`
+	// AllowedDomains: only e-mail addresses of these domains may sign in
+	// (empty = any).
+	AllowedDomains []string `json:"allowed_domains"`
 	// LocalMFA: whether Qtestframe asks for its own second factor after a
 	// sign-in through this provider ("off", "unless_idp_mfa", "always");
 	// the amr/acr values count as MFA done by the provider.
@@ -547,6 +737,21 @@ func ValidateProvider(p OIDCProvider) error {
 	case "", config.LocalMFAOff, config.LocalMFAUnlessIdPMFA, config.LocalMFAAlways:
 	default:
 		errs = append(errs, fmt.Errorf("oidc provider %q: local_mfa must be off, unless_idp_mfa or always", p.Name))
+	}
+	if !slices.Contains(config.OIDCIcons, p.Icon) {
+		errs = append(errs, fmt.Errorf("oidc provider %q: icon must be one of %s", p.Name, strings.Join(config.OIDCIcons[1:], ", ")))
+	}
+	for _, d := range p.AllowedDomains {
+		if strings.Contains(d, "@") || !config.ValidHostPattern(d) {
+			errs = append(errs, fmt.Errorf("oidc provider %q: %q is not a domain such as example.com", p.Name, d))
+			break
+		}
+	}
+	for g, r := range p.RoleMapping {
+		if strings.TrimSpace(g) == "" || strings.TrimSpace(r) == "" || strings.ContainsAny(g+r, "\r\n") {
+			errs = append(errs, fmt.Errorf("oidc provider %q: role mappings need a group and at least one role", p.Name))
+			break
+		}
 	}
 	for _, s := range append(append([]string{}, p.MFAAMRValues...), p.MFAACRValues...) {
 		if strings.ContainsAny(s, " \t\r\n") || s == "" || len(s) > 200 {
@@ -584,11 +789,11 @@ func FromConfig(list []config.OIDC) []OIDCProvider {
 	out := make([]OIDCProvider, 0, len(list))
 	for _, o := range list {
 		out = append(out, OIDCProvider{
-			Name: o.Name, DisplayName: o.DisplayName, Enabled: o.On(), Issuer: o.Issuer, ClientID: o.ClientID,
+			Name: o.Name, DisplayName: o.DisplayName, Icon: o.Icon, Enabled: o.On(), Issuer: o.Issuer, ClientID: o.ClientID,
 			ClientSecret: o.ClientSecret, Scopes: append([]string{}, o.Scopes...),
 			EmailClaim: o.EmailClaim, NameClaim: o.NameClaim, GroupsClaim: o.GroupsClaim,
 			AutoProvision: o.AutoProvision, DefaultTenant: o.DefaultTenant, DefaultRole: o.DefaultRole,
-			RoleMapping: o.RoleMapping, LocalMFA: o.LocalMFA,
+			RoleMapping: o.RoleMapping, AllowedDomains: append([]string{}, o.AllowedDomains...), LocalMFA: o.LocalMFA,
 			MFAAMRValues: append([]string{}, o.MFAAMRValues...), MFAACRValues: append([]string{}, o.MFAACRValues...),
 		})
 	}
@@ -615,11 +820,11 @@ func ResolveProviders(base *config.Config, ps []OIDCProvider) []config.OIDC {
 		}
 		on := p.Enabled
 		out = append(out, config.OIDC{
-			Name: p.Name, DisplayName: p.DisplayName, Enabled: &on, Issuer: p.Issuer, ClientID: p.ClientID,
+			Name: p.Name, DisplayName: p.DisplayName, Icon: p.Icon, Enabled: &on, Issuer: p.Issuer, ClientID: p.ClientID,
 			ClientSecret: secret, Scopes: append([]string{}, p.Scopes...),
 			EmailClaim: p.EmailClaim, NameClaim: p.NameClaim, GroupsClaim: p.GroupsClaim,
 			Provisioning: config.Provisioning{AutoProvision: p.AutoProvision, DefaultTenant: p.DefaultTenant,
-				DefaultRole: p.DefaultRole, RoleMapping: p.RoleMapping},
+				DefaultRole: p.DefaultRole, RoleMapping: p.RoleMapping, AllowedDomains: append([]string(nil), p.AllowedDomains...)},
 			LocalMFA: p.LocalMFA, MFAAMRValues: append([]string{}, p.MFAAMRValues...), MFAACRValues: append([]string{}, p.MFAACRValues...),
 		})
 	}

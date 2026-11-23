@@ -177,8 +177,11 @@ func envReference(lang string) (string, error) {
 // ---------------------------------------------------------------- system settings
 
 var sectionText = map[string]text{
-	"general": {"General", "Allmänt"}, "security": {"Security", "Säkerhet"}, "oidc": {"Single sign-on (OIDC)", "Enkel inloggning (OIDC)"},
+	"general": {"General", "Allmänt"}, "server": {"Server and database", "Server och databas"},
+	"security": {"Sign-in and passwords", "Inloggning och lösenord"}, "tokens": {"API tokens", "API-tokens"},
+	"oidc":    {"Single sign-on", "Enkel inloggning"},
 	"logging": {"Logging and syslog", "Loggning och syslog"}, "email": {"E-mail (SMTP)", "E-post (SMTP)"},
+	"outbound": {"Outgoing connections", "Utgående anslutningar"}, "live": {"Live updates", "Liveuppdateringar"},
 	"runner": {"Script and web test runner", "Körning av skript och webbtester"}, "similarity": {"Similarity (duplicates)", "Likhet (dubbletter)"}, "ai": {"AI assistance", "AI-assistans"}, "retention": {"Retention and backups", "Gallring och säkerhetskopior"},
 }
 
@@ -193,6 +196,7 @@ var settingsHeader = text{"| Section | Key | Values | Applies |\n|---|---|---|--
 var kindText = map[settings.Kind]text{
 	settings.String: {"text", "text"}, settings.Bool: {"on/off", "på/av"}, settings.Secret: {"secret (write-only)", "hemlighet (skrivskyddad läsning)"},
 	settings.List: {"list", "lista"}, settings.OIDCList: {"list of providers", "lista med leverantörer"},
+	settings.Int: {"number", "tal"}, settings.Duration: {"duration", "tidslängd"}, settings.Enum: {"choice", "val"},
 }
 
 // settingsReference lists the settings of Administration → System
@@ -206,12 +210,14 @@ func settingsReference(lang string) (string, error) {
 			return "", fmt.Errorf("no name for the section %q", d.Section)
 		}
 		var values string
-		switch d.Kind {
-		case settings.Int:
+		switch {
+		case d.Apply == settings.ReadOnly:
+			values = kindText[d.Kind].in(lang)
+		case d.Kind == settings.Int:
 			values = fmt.Sprintf("%d–%d", d.Min, d.Max)
-		case settings.Duration:
+		case d.Kind == settings.Duration:
 			values = settings.ShortDuration(d.MinDur) + "–" + settings.ShortDuration(d.MaxDur)
-		case settings.Enum:
+		case d.Kind == settings.Enum:
 			values = "`" + strings.Join(d.Options, "`, `") + "`"
 		default:
 			values = kindText[d.Kind].in(lang)

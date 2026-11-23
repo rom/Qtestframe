@@ -16,6 +16,7 @@ import RolePicker from '@/components/RolePicker.vue'
 import { useRolesStore } from '@/stores/roles'
 import type { APIToken } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
+import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
@@ -46,6 +47,11 @@ onMounted(load)
 
 const dialog = ref(false)
 const form = ref({ name: '', roles: ['tester'], expires_days: 90 as number | null })
+const metaStore = useMetaStore()
+void metaStore.load()
+// the server's token policy (System settings → API tokens)
+const maxDays = computed(() => metaStore.meta.token_max_days || 3650)
+const expiryRequired = computed(() => metaStore.meta.token_require_expiry === true || (metaStore.meta.token_max_days ?? 0) > 0)
 const formError = ref('')
 const busy = ref(false)
 const created = ref<string | null>(null)
@@ -152,11 +158,12 @@ const expired = (t: APIToken) => !!t.expires_at && new Date(t.expires_at).getTim
       <div v-field class="field">
         <label>{{ t('admin.expiresAfter') }}</label>
         <HelpTip id="token.expires" :label="t('admin.expiresAfter')" />
-        <InputNumber v-model="form.expires_days" :min="1" :max="3650" show-buttons fluid />
+        <InputNumber v-model="form.expires_days" :min="1" :max="maxDays" show-buttons fluid aria-describedby="tok-exp-hint" />
+        <small id="tok-exp-hint" class="muted">{{ expiryRequired ? t('admin.tokenPolicy', { days: maxDays }) : t('admin.tokenNoExpiry') }}</small>
       </div>
       <div class="row" style="justify-content: flex-end">
         <Button :label="t('common.cancel')" text severity="secondary" @click="dialog = false" />
-        <Button type="submit" :label="t('common.create')" icon="pi pi-check" :loading="busy" :disabled="!form.name.trim()" />
+        <Button type="submit" :label="t('common.create')" icon="pi pi-check" :loading="busy" :disabled="!form.name.trim() || (expiryRequired && !form.expires_days)" />
       </div>
     </form>
   </Dialog>

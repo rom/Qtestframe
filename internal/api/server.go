@@ -125,11 +125,15 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		suggestLimiter: newRateLimiter(300, time.Minute),
 		jobs:           newJobManager(),
 	}
-	lc := cfg.Live
-	s.live = live.NewHub(live.Options{MaxConnections: lc.MaxConnections, MaxPerUser: lc.MaxConnectionsPerUser, Replay: lc.ReplayBuffer, PresenceTTL: lc.PresenceTTL})
-	st.OnNotifications(s.liveNotified)
 	// e-mail, OIDC providers and login limits follow the system settings
 	s.initSettings(context.Background())
+	// the limits of live updates are set up now, from the settings at
+	// start-up (live.* restart settings)
+	lc := s.sys.boot.Live
+	s.live = live.NewHub(live.Options{MaxConnections: lc.MaxConnections, MaxPerUser: lc.MaxConnectionsPerUser, Replay: lc.ReplayBuffer, PresenceTTL: lc.PresenceTTL})
+	st.OnNotifications(s.liveNotified)
+	// outgoing calls follow the outbound settings (outbound.go)
+	s.HTTPClient = s.outboundClient()
 	base := strings.TrimSuffix(cfg.Server.BaseURL, "/")
 	for _, sc := range cfg.Auth.SAML {
 		p, err := auth.NewSAMLProvider(sc, base+"/api/v1/auth/saml/"+url.PathEscape(sc.Name))
@@ -395,6 +399,7 @@ func (s *Server) routes() {
 	s.routesSuggest(h)
 	// Administration → System settings (systemsettings.go)
 	s.routesSystemSettings(h)
+	s.routesSuperAdmin(h)
 	// change and defect correlations (correlations.go)
 	s.routesCorrelations(h)
 	// custom fields, field sets and item templates (customfields.go)

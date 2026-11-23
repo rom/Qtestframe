@@ -261,6 +261,9 @@ func (s *Server) webhookClient() *http.Client {
 	c := http.Client{Timeout: 10 * time.Second}
 	if s.HTTPClient != nil {
 		c = *s.HTTPClient
+		if c.Timeout == 0 || c.Timeout > 10*time.Second {
+			c.Timeout = 10 * time.Second
+		}
 	}
 	// Never follow redirects: the URL is what the admin configured.
 	c.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }

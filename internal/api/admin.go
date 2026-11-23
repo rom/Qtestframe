@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/auth"
+	"github.com/rom/qtestframe/internal/config"
 	"github.com/rom/qtestframe/internal/mail"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/prompt"
@@ -50,6 +51,8 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"email_enabled":        s.emailOn(),
 		"live_updates":         s.liveOn(),
 		"email_digest_hour":    s.conf().Email.DigestHour,
+		"token_max_days":       s.conf().Auth.TokenMaxDays,
+		"token_require_expiry": s.conf().Auth.TokenRequireExpiry,
 		"version":              Version,
 	})
 }
@@ -211,7 +214,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	u := &model.User{Email: req.Email}
-	if err := applyUserReq(u, req, minPassword(s.conf())); err != nil {
+	if err := applyUserReq(u, req, pwPolicy(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -223,7 +226,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, p *Pri
 	writeJSON(w, http.StatusCreated, u)
 }
 
-func applyUserReq(u *model.User, req userReq, minPassword int) error {
+func applyUserReq(u *model.User, req userReq, pol auth.PasswordPolicy) error {
 	if req.DisplayName != nil {
 		u.DisplayName = strings.TrimSpace(*req.DisplayName)
 	}
@@ -237,7 +240,7 @@ func applyUserReq(u *model.User, req userReq, minPassword int) error {
 		u.MustChangePassword = *req.MustChangePassword
 	}
 	if req.Password != nil && *req.Password != "" {
-		if err := auth.ValidatePasswordMin(*req.Password, minPassword); err != nil {
+		if err := pol.Validate(*req.Password); err != nil {
 			return err
 		}
 		h, err := auth.HashPassword(*req.Password)
@@ -264,11 +267,24 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
-	if u.ID == p.User.ID && ((req.SuperAdmin != nil && !*req.SuperAdmin) || (req.Disabled != nil && *req.Disabled)) {
+	demote := (req.SuperAdmin != nil && !*req.SuperAdmin) || (req.Disabled != nil && *req.Disabled)
+	if u.ID == p.User.ID && demote {
 		writeError(w, http.StatusConflict, "conflict", "you cannot demote or disable yourself")
 		return
 	}
-	if err := applyUserReq(u, req, minPassword(s.conf())); err != nil {
+	// there is always an enabled super administrator
+	if u.SuperAdmin && !u.Disabled && demote {
+		n, err := s.Store.CountActiveSuperAdmins(ctx)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if n <= 1 {
+			writeError(w, http.StatusConflict, "last_super_admin", "this is the last enabled super administrator: make another user super administrator first")
+			return
+		}
+	}
+	if err := applyUserReq(u, req, pwPolicy(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -365,7 +381,7 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Prin
 		u = &model.User{Email: req.Email, DisplayName: req.DisplayName}
 		if req.Password != "" {
 			pw := req.Password
-			if err := applyUserReq(u, userReq{Password: &pw}, minPassword(s.conf())); err != nil {
+			if err := applyUserReq(u, userReq{Password: &pw}, pwPolicy(s.conf())); err != nil {
 				s.fail(w, r, err)
 				return
 			}
@@ -553,6 +569,10 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request, p *Pr
 		s.fail(w, r, badRequest("roles must be valid and not exceed your own permissions"))
 		return
 	}
+	if err := tokenPolicy(s.conf(), req.ExpiresDays); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	tok, prefix := auth.NewAPIToken()
 	t := &model.APIToken{TenantID: p.TenantID(), UserID: p.User.ID, Name: strings.TrimSpace(req.Name), Roles: roles,
 		Hash: auth.HashToken(tok), Prefix: prefix, ExpiresAt: s.Store.ExpiryIn(req.ExpiresDays)}
@@ -562,6 +582,21 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request, p *Pr
 	}
 	s.audit(r.Context(), p, "token.create", "token", t.ID, t.Name)
 	writeJSON(w, http.StatusCreated, map[string]any{"token": tok, "item": t})
+}
+
+// tokenPolicy checks the lifetime of a new API token against
+// auth.token_require_expiry and auth.token_max_days (days <= 0: no expiry).
+func tokenPolicy(c *config.Config, days int) error {
+	switch {
+	case days <= 0 && (c.Auth.TokenRequireExpiry || c.Auth.TokenMaxDays > 0):
+		if c.Auth.TokenMaxDays > 0 {
+			return badRequest("tokens must have an expiry date on this server, at most %d days ahead", c.Auth.TokenMaxDays)
+		}
+		return badRequest("tokens must have an expiry date on this server")
+	case c.Auth.TokenMaxDays > 0 && days > c.Auth.TokenMaxDays:
+		return badRequest("tokens may be valid for at most %d days on this server", c.Auth.TokenMaxDays)
+	}
+	return nil
 }
 
 func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -614,7 +649,20 @@ func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request, p *Principa
 		s.fail(w, r, err)
 		return
 	}
-	es, err := s.Store.ListAuditRange(r.Context(), p.TenantID(), from, to, limit)
+	tenantID := p.TenantID()
+	// super administrators can read the audit trail of any organisation
+	if t := r.URL.Query().Get("tenant"); t != "" && t != tenantID {
+		if !p.User.SuperAdmin || p.Token != nil {
+			writeError(w, http.StatusForbidden, "forbidden", "super administrator required for another organisation's audit trail")
+			return
+		}
+		if _, err := s.Store.GetTenant(r.Context(), t); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		tenantID = t
+	}
+	es, err := s.Store.ListAuditRange(r.Context(), tenantID, from, to, limit)
 	if err != nil {
 		s.fail(w, r, err)
 		return
