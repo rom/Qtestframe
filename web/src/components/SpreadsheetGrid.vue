@@ -996,8 +996,8 @@ const stateText = (s: CellState | undefined) => (s ? t(`sheet.state.${s.state}`)
 .sheet-row.new-row .sheet-cell {
   border-top: 1px dashed var(--qtf-border);
 }
-:global(.app-dark) .sheet-cell.st-error .st-icon,
-:global([data-theme^='high_contrast']) .sheet-cell.st-error .st-icon {
+.app-dark .sheet-cell.st-error .st-icon,
+[data-theme^='high_contrast'] .sheet-cell.st-error .st-icon {
   color: var(--p-red-300, #fca5a5);
 }
 @media (forced-colors: active) {

@@ -284,6 +284,6 @@ const obsoleteStatus = computed(() => (kind.value === 'test' ? 'deprecated' : 'o
 .pair-actions { gap: 6px; flex-wrap: wrap; }
 .evidence { margin: 0; padding: 4px 8px; border-left: 3px solid var(--qtf-border); font-size: 13px; overflow-wrap: anywhere; }
 .evidence mark { background: var(--p-amber-200, #fde68a); color: #1f2937; border-radius: 2px; padding: 0 2px; font-weight: 600; }
-:global(.app-dark) .evidence mark { background: var(--p-amber-300, #fcd34d); color: #111827; }
+.app-dark .evidence mark { background: var(--p-amber-300, #fcd34d); color: #111827; }
 .survivor { gap: 8px; align-items: center; margin: 4px 0; }
 </style>

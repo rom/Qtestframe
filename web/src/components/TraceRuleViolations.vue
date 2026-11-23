@@ -57,7 +57,7 @@ defineExpose({ reload: load })
 .trace-violations.is-warning { border-left-color: var(--p-amber-500, #f59e0b); }
 .trace-violations.is-error .pi { color: var(--p-red-600, #dc2626); }
 .trace-violations.is-warning .pi { color: var(--p-amber-600, #d97706); }
-:global(.app-dark) .trace-violations.is-error .pi { color: var(--p-red-400, #f87171); }
-:global(.app-dark) .trace-violations.is-warning .pi { color: var(--p-amber-400, #fbbf24); }
+.app-dark .trace-violations.is-error .pi { color: var(--p-red-400, #f87171); }
+.app-dark .trace-violations.is-warning .pi { color: var(--p-amber-400, #fbbf24); }
 .trace-violations a { color: var(--p-primary-color); }
 </style>
