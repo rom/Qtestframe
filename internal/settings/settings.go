@@ -383,6 +383,9 @@ func checkProxy(v any) error {
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || strings.ContainsAny(s, " \r\n") {
 		return errors.New("must be an http(s) URL such as http://proxy.example.com:3128")
 	}
+	if _, ok := u.User.Password(); ok {
+		return errors.New("a proxy password cannot be stored here: set it in the configuration file or with HTTPS_PROXY")
+	}
 	return nil
 }
 
@@ -631,7 +634,23 @@ func (d *Def) Display(c *config.Config) any {
 	case OIDCList:
 		return nil
 	}
+	if d.Key == "outbound.proxy" {
+		return RedactURL(d.get(c).(string))
+	}
 	return d.get(c)
+}
+
+// RedactURL replaces the password of a URL (proxy credentials) by
+// "REDACTED"; other values are returned unchanged.
+func RedactURL(s string) string {
+	u, err := url.Parse(s)
+	if err != nil || u.User == nil {
+		return s
+	}
+	if _, ok := u.User.Password(); ok {
+		u.User = url.UserPassword(u.User.Username(), "REDACTED")
+	}
+	return u.String()
 }
 
 // Effective returns base with the stored overrides applied. Overrides of

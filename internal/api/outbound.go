@@ -41,34 +41,32 @@ type outboundTransport struct {
 }
 
 func (t *outboundTransport) build() *http.Transport {
-	return func() *http.Transport {
-		b := http.DefaultTransport.(*http.Transport).Clone()
-		b.Proxy = t.proxy
-		d := &net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second}
-		b.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-			c := t.conf()
-			if c.BlockPrivate && ctx.Value(viaProxy{}) == nil {
-				// checked on the address actually dialled (no DNS rebinding)
-				host, _, _ := net.SplitHostPort(addr)
-				if !config.MatchHost(host, c.AllowedHosts) {
-					dd := *d
-					dd.Control = func(_, address string, _ syscall.RawConn) error {
-						h, _, err := net.SplitHostPort(address)
-						if err != nil {
-							return err
-						}
-						if ip := net.ParseIP(h); ip != nil && !publicIP(ip) {
-							return fmt.Errorf("%w: %s is not a public address (outbound.block_private)", errOutboundBlocked, h)
-						}
-						return nil
+	b := http.DefaultTransport.(*http.Transport).Clone()
+	b.Proxy = t.proxy
+	d := &net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second}
+	b.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		c := t.conf()
+		if c.BlockPrivate && ctx.Value(viaProxy{}) == nil {
+			// checked on the address actually dialled (no DNS rebinding)
+			host, _, _ := net.SplitHostPort(addr)
+			if !config.MatchHost(host, c.AllowedHosts) {
+				dd := *d
+				dd.Control = func(_, address string, _ syscall.RawConn) error {
+					h, _, err := net.SplitHostPort(address)
+					if err != nil {
+						return err
 					}
-					return dd.DialContext(ctx, network, addr)
+					if ip := net.ParseIP(h); ip != nil && !publicIP(ip) {
+						return fmt.Errorf("%w: %s is not a public address (outbound.block_private)", errOutboundBlocked, h)
+					}
+					return nil
 				}
+				return dd.DialContext(ctx, network, addr)
 			}
-			return d.DialContext(ctx, network, addr)
 		}
-		return b
-	}()
+		return d.DialContext(ctx, network, addr)
+	}
+	return b
 }
 
 // viaProxy marks requests sent through a proxy (the dial goes to the

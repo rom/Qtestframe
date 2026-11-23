@@ -1113,7 +1113,7 @@ func (s *Server) handleTestOutbound(w http.ResponseWriter, r *http.Request, p *P
 	}
 	res := testResult{Details: map[string]any{"url": u.String()}}
 	if c.Outbound.Proxy != "" {
-		res.Details["proxy"] = redactURL(c.Outbound.Proxy)
+		res.Details["proxy"] = settings.RedactURL(c.Outbound.Proxy)
 	}
 	client := &http.Client{Timeout: 15 * time.Second, Transport: newOutboundTransport(func() config.Outbound { return c.Outbound }),
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
@@ -1138,18 +1138,6 @@ func (s *Server) handleTestOutbound(w http.ResponseWriter, r *http.Request, p *P
 	}
 	s.audit(r.Context(), p, "settings.test_outbound", "system_settings", "outbound", details)
 	writeJSON(w, http.StatusOK, res)
-}
-
-// redactURL removes the password of a URL (proxy credentials).
-func redactURL(s string) string {
-	u, err := url.Parse(s)
-	if err != nil {
-		return ""
-	}
-	if _, ok := u.User.Password(); ok {
-		u.User = url.UserPassword(u.User.Username(), "xxxxx")
-	}
-	return u.String()
 }
 
 // handleTestSAML fetches the metadata of a SAML provider of the
@@ -1303,6 +1291,7 @@ func ExportYAML(c config.Config) ([]byte, error) {
 		oidc[i] = o
 	}
 	c.Auth.OIDC = oidc
+	c.Outbound.Proxy = settings.RedactURL(c.Outbound.Proxy)
 	body, err := yaml.Marshal(c)
 	if err != nil {
 		return nil, err

@@ -16,6 +16,7 @@ import (
 	"github.com/rom/qtestframe/internal/mail"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/rbac"
+	"github.com/rom/qtestframe/internal/settings"
 )
 
 func TestSuperAdminTenantsAccess(t *testing.T) {
@@ -487,8 +488,8 @@ func TestOutboundTransportRules(t *testing.T) {
 	if p, _ := tr.proxy(r); p != nil {
 		t.Fatal(p)
 	}
-	if redactURL("http://user:pw@proxy:3128") != "http://user:xxxxx@proxy:3128" || redactURL("http://proxy:1") != "http://proxy:1" {
-		t.Error(redactURL("http://user:pw@proxy:3128"))
+	if settings.RedactURL("http://user:pw@proxy:3128") != "http://user:REDACTED@proxy:3128" || settings.RedactURL("http://proxy:1") != "http://proxy:1" || settings.RedactURL("::") != "::" {
+		t.Error(settings.RedactURL("http://user:pw@proxy:3128"))
 	}
 }
 

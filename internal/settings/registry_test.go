@@ -43,7 +43,7 @@ func TestRegistryTexts(t *testing.T) {
 func TestNewSettingsDecode(t *testing.T) {
 	ok := map[string]string{
 		"outbound.allowed_hosts":    `[" jira.example.com ", "*.example.org", "jira.example.com", "", "10.0.0.1"]`,
-		"outbound.proxy":            `"http://user:pw@proxy.example.com:3128"`,
+		"outbound.proxy":            `"http://user@proxy.example.com:3128"`,
 		"server.frame_ancestors":    `["https://doors.example.com"]`,
 		"auth.session_idle_timeout": `"0s"`,
 		"email.reply_to":            `"help@example.com"`,
@@ -62,7 +62,7 @@ func TestNewSettingsDecode(t *testing.T) {
 	}
 	bad := map[string][]string{
 		"outbound.allowed_hosts":    {`"a"`, `["a b"]`, `["https://x"]`, `["a\nb"]`, `[1]`},
-		"outbound.proxy":            {`"socks5://p:1"`, `"proxy:3128"`},
+		"outbound.proxy":            {`"socks5://p:1"`, `"proxy:3128"`, `"http://u:pw@proxy:3128"`},
 		"server.frame_ancestors":    {`["https://a/path"]`, `["a.example.com"]`},
 		"auth.session_idle_timeout": {`"30s"`, `"800h"`},
 		"email.reply_to":            {`"Help <h@example.com>"`, `"nope"`},
@@ -119,6 +119,10 @@ func TestNewSettingsApply(t *testing.T) {
 		t.Error("dsn shown")
 	}
 	if v := def(t, "runner.interpreters").Display(&c).([]string); len(v) != 4 || v[0] != "bash=/bin/bash" {
+		t.Error(v)
+	}
+	c.Outbound.Proxy = "http://u:secret@proxy:3128"
+	if v := def(t, "outbound.proxy").Display(&c); v != "http://u:REDACTED@proxy:3128" {
 		t.Error(v)
 	}
 	for _, d := range Registry {
