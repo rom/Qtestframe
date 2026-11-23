@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -9,13 +10,48 @@ import (
 	"github.com/rom/qtestframe/internal/rbac"
 )
 
-// MaxPromptItems bounds the requirements and tests in one prompt.
-const MaxPromptItems = 200
+// MaxPromptItems bounds the requirements and tests in one prompt;
+// MaxSolutionItems the requirements of a solution prompt (which can be
+// split into parts).
+const (
+	MaxPromptItems   = 200
+	MaxSolutionItems = 2000
+)
+
+// promptRequest is the body of POST /projects/{pid}/prompts.
+type promptRequest struct {
+	Kind           string   `json:"kind"`
+	Lang           string   `json:"lang"`
+	TestType       string   `json:"test_type"`
+	Framework      string   `json:"framework"`
+	Notes          string   `json:"notes"`
+	RequirementIDs []string `json:"requirement_ids"`
+	TestIDs        []string `json:"test_ids"`
+	Query          string   `json:"q"`
+	// Scope of requirement prompts (combined with the above): a folder
+	// (with its subfolders; "root" = no folder), a release, a variant (id
+	// or name).
+	FolderID  string `json:"folder_id"`
+	ReleaseID string `json:"release_id"`
+	Variant   string `json:"variant"`
+	// Solution prompts: compact mode, split, token budget per part and
+	// output formats (nil: the kind's defaults).
+	Compact   bool     `json:"compact"`
+	Split     string   `json:"split"`
+	MaxTokens int      `json:"max_tokens"`
+	Formats   []string `json:"formats"`
+	// Format of the answer: "json" (default) or "zip" (the parts as
+	// Markdown files).
+	Format string `json:"format"`
+}
 
 // handlePrompt: POST /projects/{pid}/prompts — builds a prompt for an AI
 // assistant from requirements or tests of a software project (see package
 // prompt). Items are chosen by ID, else by query (q), else all of the
-// project. Read-only: needs the read permission of the items' kind.
+// project; requirement prompts can further be limited to a folder, a
+// release or a variant. Solution prompts start with the project's
+// solution preamble. Read-only: needs the read permission of the items'
+// kind.
 func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Principal) {
 	pr, ok := s.project(w, r, p)
 	if !ok {
@@ -25,28 +61,28 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 		s.fail(w, r, badRequest("prompts are available in software projects; set the project type to software"))
 		return
 	}
-	var req struct {
-		Kind           string   `json:"kind"`
-		Lang           string   `json:"lang"`
-		TestType       string   `json:"test_type"`
-		Framework      string   `json:"framework"`
-		Notes          string   `json:"notes"`
-		RequirementIDs []string `json:"requirement_ids"`
-		TestIDs        []string `json:"test_ids"`
-		Query          string   `json:"q"`
-	}
+	var req promptRequest
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	in := prompt.Input{Kind: req.Kind, Lang: req.Lang, TestType: req.TestType, Framework: strings.TrimSpace(req.Framework), Notes: req.Notes,
-		ProjectKey: pr.Key, ProjectName: pr.Name, ProjectDescription: pr.Description, TechContext: pr.TechContext}
+		ProjectKey: pr.Key, ProjectName: pr.Name, ProjectDescription: pr.Description, TechContext: pr.TechContext,
+		Compact: req.Compact, Split: req.Split, MaxTokens: req.MaxTokens, Formats: req.Formats}
+	solution := prompt.IsSolution(req.Kind)
+	if solution && in.Formats == nil {
+		in.Formats = prompt.DefaultFormats(req.Kind)
+	}
 	if err := prompt.Validate(&in); err != nil {
 		s.fail(w, r, badRequest("%v", err))
 		return
 	}
 	if len(in.Framework) > 200 || len(in.Notes) > 8000 {
 		s.fail(w, r, badRequest("framework may have at most 200 and notes at most 8000 characters"))
+		return
+	}
+	if req.Format != "" && req.Format != "json" && req.Format != "zip" {
+		s.fail(w, r, badRequest("format must be json or zip"))
 		return
 	}
 	forReqs := prompt.ForRequirements(in.Kind)
@@ -56,6 +92,10 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 	}
 	if !p.Can(need) {
 		writeError(w, http.StatusForbidden, "forbidden", "permission "+string(need)+" required")
+		return
+	}
+	if !forReqs && (req.ReleaseID != "" || req.Variant != "") {
+		s.fail(w, r, badRequest("release_id and variant apply to requirement prompts"))
 		return
 	}
 	ctx := r.Context()
@@ -86,13 +126,14 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 	ref := func(key, title string) string { return strings.TrimSpace(key + " " + title) }
 
 	var reqIDs, testIDs []string
+	var sc prompt.Scope
 	if forReqs {
-		if reqIDs, err = s.pickPromptItems(r, p, pr, pc, req.RequirementIDs, req.Query, true); err != nil {
+		if reqIDs, sc, err = s.pickPromptRequirements(r, p, pr, pc, &req); err != nil {
 			s.fail(w, r, err)
 			return
 		}
 	} else {
-		if testIDs, err = s.pickPromptItems(r, p, pr, pc, req.TestIDs, req.Query, false); err != nil {
+		if testIDs, err = s.pickPromptItems(r, p, pr, pc, req.TestIDs, req.Query, req.FolderID, false); err != nil {
 			s.fail(w, r, err)
 			return
 		}
@@ -111,8 +152,12 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 			}
 		}
 	}
-	if n := len(reqIDs) + len(testIDs); n > MaxPromptItems {
-		s.fail(w, r, badRequest("%d items selected; a prompt can hold at most %d — narrow the selection", n, MaxPromptItems))
+	limit := MaxPromptItems
+	if solution {
+		limit = MaxSolutionItems
+	}
+	if n := len(reqIDs) + len(testIDs); n > limit {
+		s.fail(w, r, badRequest("%d items selected; a prompt can hold at most %d — narrow the selection", n, limit))
 		return
 	}
 
@@ -121,6 +166,22 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 		if err != nil {
 			s.fail(w, r, err)
 			return
+		}
+		var risksOf map[string][]prompt.Risk
+		var refsOf func(string) []string
+		if solution {
+			if risksOf, err = s.promptRisks(r, p, pr); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+			if cat, err := s.catalogue(); err == nil && cat != nil {
+				refsOf = func(id string) []string {
+					if c := cat.Requirements[id]; c != nil {
+						return c.Refs
+					}
+					return nil
+				}
+			}
 		}
 		for _, id := range reqIDs {
 			full, err := s.Store.GetRequirement(ctx, p.TenantID(), id)
@@ -137,6 +198,9 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 				switch id {
 				case rel.SourceID:
 					pr.Relations = append(pr.Relations, prompt.RelationText(in.Lang, rel.Type, true)+" "+ref(rel.TargetKey, rel.TargetTitle))
+					if rel.Type == "depends_on" {
+						pr.DependsOn = append(pr.DependsOn, rel.TargetKey)
+					}
 				case rel.TargetID:
 					pr.Relations = append(pr.Relations, prompt.RelationText(in.Lang, rel.Type, false)+" "+ref(rel.SourceKey, rel.SourceTitle))
 				}
@@ -146,6 +210,15 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 					if t := testByID[tid]; t != nil {
 						pr.Tests = append(pr.Tests, ref(t.Key, t.Title))
 					}
+				}
+			}
+			if solution {
+				pr.Folder = pc.folderPath(full.FolderID)
+				pr.Group = topFolderName(pc, full.FolderID)
+				pr.Risks = risksOf[id]
+				pr.D3fend, pr.Emb3d = full.D3fend, full.Emb3d
+				if refsOf != nil && full.CatalogRef != "" {
+					pr.Standards = refsOf(full.CatalogRef)
 				}
 			}
 			in.Requirements = append(in.Requirements, pr)
@@ -188,13 +261,177 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 			in.Tests = append(in.Tests, pt)
 		}
 	}
-	writeJSON(w, http.StatusOK, prompt.Build(in))
+	if solution {
+		if in.Preamble, err = s.Store.SolutionPreamble(ctx, p.TenantID(), pr.ID); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if in.Summary, err = s.promptSummary(r, p, pr, pc, allReqs, len(allTests), in.Requirements, sc, in.Lang); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
+	res := prompt.Build(in)
+	if req.Format == "zip" {
+		writePromptZip(w, pr.Key, res)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
+// topFolderName is the name of the top-level folder an item is in ("" none).
+func topFolderName(pc *projectContext, folderID *string) string {
+	if folderID == nil {
+		return ""
+	}
+	byID := map[string]*model.Folder{}
+	for i := range pc.folders {
+		byID[pc.folders[i].ID] = &pc.folders[i]
+	}
+	f := byID[*folderID]
+	for depth := 0; f != nil && f.ParentID != nil && depth < 64; depth++ {
+		parent := byID[*f.ParentID]
+		if parent == nil {
+			break
+		}
+		f = parent
+	}
+	if f == nil {
+		return ""
+	}
+	return f.Name
+}
+
+// pickPromptRequirements returns the requirements of a requirement prompt:
+// by id or query (pickPromptItems), within the folder, release and
+// variant of the request; and the scope for the prompt's summary.
+func (s *Server) pickPromptRequirements(r *http.Request, p *Principal, pr *model.Project, pc *projectContext, req *promptRequest) ([]string, prompt.Scope, error) {
+	var sc prompt.Scope
+	ids, err := s.pickPromptItems(r, p, pr, pc, req.RequirementIDs, req.Query, req.FolderID, true)
+	if err != nil {
+		return nil, sc, err
+	}
+	if len(req.RequirementIDs) > 0 {
+		sc.Selected = len(ids)
+	} else {
+		sc.Query = strings.TrimSpace(req.Query)
+	}
+	if req.FolderID != "" {
+		if req.FolderID == "root" || req.FolderID == "none" {
+			sc.Folder = "—"
+		} else if sc.Folder = pc.paths[req.FolderID]; sc.Folder == "" {
+			return nil, sc, badRequest("unknown folder %q", req.FolderID)
+		}
+	}
+	keep := func(pred func(string) bool) {
+		out := ids[:0]
+		for _, id := range ids {
+			if pred(id) {
+				out = append(out, id)
+			}
+		}
+		ids = out
+	}
+	if req.ReleaseID != "" {
+		rel, err := s.Store.GetRelease(r.Context(), p.TenantID(), req.ReleaseID)
+		if err != nil || rel.ProjectID != pr.ID {
+			return nil, sc, badRequest("unknown release %q", req.ReleaseID)
+		}
+		in := map[string]bool{}
+		for _, id := range rel.RequirementIDs {
+			in[id] = true
+		}
+		keep(func(id string) bool { return in[id] })
+		sc.Release = rel.Name
+		if rel.Version != "" && rel.Version != rel.Name {
+			sc.Release += " " + rel.Version
+		}
+	}
+	if v := strings.TrimSpace(req.Variant); v != "" {
+		variant := pc.variants.Find(v)
+		if variant == nil {
+			return nil, sc, badRequest("unknown variant %q", v)
+		}
+		vc, err := s.variantCoverage(r.Context(), p.TenantID(), pc)
+		if err != nil {
+			return nil, sc, err
+		}
+		keep(func(id string) bool { return vc.AppliesTo(id, variant.ID) })
+		sc.Variant = variant.Name
+	}
+	return ids, sc, nil
+}
+
+// promptRisks maps requirement ids to the project risks they mitigate.
+func (s *Server) promptRisks(r *http.Request, p *Principal, pr *model.Project) (map[string][]prompt.Risk, error) {
+	risks, err := s.Store.ListRisks(r.Context(), p.TenantID(), pr.ID)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string][]prompt.Risk{}
+	for _, k := range risks {
+		pk := prompt.Risk{Key: k.Key, Title: k.Title, Level: k.Level, Mitigation: k.Mitigation, Attack: k.Attack, Emb3d: k.Emb3d}
+		for _, id := range k.RequirementIDs {
+			out[id] = append(out[id], pk)
+		}
+	}
+	return out, nil
+}
+
+// promptSummary is the project summary of a solution prompt.
+func (s *Server) promptSummary(r *http.Request, p *Principal, pr *model.Project, pc *projectContext, all []model.Requirement, tests int,
+	reqs []prompt.Requirement, sc prompt.Scope, lang string) (prompt.Summary, error) {
+	sum := prompt.Summary{Scope: prompt.ScopeLabel(lang, sc), Total: len(all), InScope: len(reqs)}
+	if p.Can(rbac.TestRead) {
+		sum.Tests = tests
+	}
+	idx := map[string]int{}
+	for _, rq := range reqs {
+		name := rq.Group
+		if name == "" {
+			continue
+		}
+		i, ok := idx[name]
+		if !ok {
+			i = len(sum.Folders)
+			idx[name] = i
+			sum.Folders = append(sum.Folders, prompt.Count{Name: name})
+		}
+		sum.Folders[i].N++
+	}
+	rels, err := s.Store.ListReleases(r.Context(), p.TenantID(), pr.ID)
+	if err != nil {
+		return sum, err
+	}
+	for i, rel := range rels {
+		if i == 12 {
+			sum.Releases = append(sum.Releases, fmt.Sprintf("… (%d)", len(rels)))
+			break
+		}
+		x := rel.Name
+		if rel.Version != "" && rel.Version != rel.Name {
+			x += " " + rel.Version
+		}
+		sum.Releases = append(sum.Releases, x+" ("+rel.Status+")")
+	}
+	if pc.variants != nil {
+		vs := pc.variants.List()
+		for i, v := range vs {
+			if i == 20 {
+				sum.Variants = append(sum.Variants, fmt.Sprintf("… (%d)", len(vs)))
+				break
+			}
+			sum.Variants = append(sum.Variants, v.Name)
+		}
+	}
+	return sum, nil
 }
 
 // pickPromptItems returns the IDs of the chosen requirements (or tests) of
 // the project, in list order: the given IDs, else those matching q (all
-// when q is empty).
-func (s *Server) pickPromptItems(r *http.Request, p *Principal, pr *model.Project, pc *projectContext, ids []string, q string, reqs bool) ([]string, error) {
+// when q is empty), within the folder (and its subfolders) when one is
+// given.
+func (s *Server) pickPromptItems(r *http.Request, p *Principal, pr *model.Project, pc *projectContext, ids []string, q, folder string, reqs bool) ([]string, error) {
 	want := map[string]bool{}
 	for _, id := range ids {
 		want[id] = true
@@ -204,7 +441,7 @@ func (s *Server) pickPromptItems(r *http.Request, p *Principal, pr *model.Projec
 	}
 	var out []string
 	if reqs {
-		list, err := s.filterRequirements(r, p, pr, pc, q, "", true)
+		list, err := s.filterRequirements(r, p, pr, pc, q, folder, true)
 		if err != nil {
 			return nil, err
 		}
@@ -214,7 +451,7 @@ func (s *Server) pickPromptItems(r *http.Request, p *Principal, pr *model.Projec
 			}
 		}
 	} else {
-		list, err := s.filterTests(r, p, pr, pc, q, "", true)
+		list, err := s.filterTests(r, p, pr, pc, q, folder, true)
 		if err != nil {
 			return nil, err
 		}
@@ -224,7 +461,7 @@ func (s *Server) pickPromptItems(r *http.Request, p *Principal, pr *model.Projec
 			}
 		}
 	}
-	if len(ids) > 0 && len(out) < len(want) {
+	if len(ids) > 0 && folder == "" && len(out) < len(want) {
 		return nil, badRequest("%d of the selected items do not belong to this project", len(want)-len(out))
 	}
 	return out, nil

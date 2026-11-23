@@ -253,7 +253,7 @@ func TestProjectTypeAndPrompts(t *testing.T) {
 	}
 	a.m("POST", "/api/v1/projects", map[string]any{"key": "HW", "name": "Hardware", "type": "hardware"}, 201)
 	meta := a.m("GET", "/api/v1/meta", nil, 200)
-	if len(meta["project_types"].([]any)) != 5 || len(meta["prompt_kinds"].([]any)) != 6 || len(meta["test_types"].([]any)) < 10 {
+	if len(meta["project_types"].([]any)) != 5 || len(meta["prompt_kinds"].([]any)) != 10 || len(meta["test_types"].([]any)) < 10 {
 		t.Fatal(meta)
 	}
 

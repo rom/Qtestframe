@@ -49,6 +49,9 @@ func TestValidate(t *testing.T) {
 func TestBuildEveryKind(t *testing.T) {
 	for _, lang := range Languages {
 		for _, kind := range Kinds {
+			if IsSolution(kind) {
+				continue // solution_test.go
+			}
 			in := sample(kind, lang)
 			if err := Validate(&in); err != nil {
 				t.Fatal(err)

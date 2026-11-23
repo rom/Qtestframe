@@ -409,6 +409,8 @@ func (s *Server) routes() {
 	s.routesERecords(h)
 	// the logotype of reports and generated documents (logo.go)
 	s.routesLogo(h)
+	// the solution preamble of software projects (solution.go)
+	s.routesSolution(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
