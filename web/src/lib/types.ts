@@ -9,6 +9,8 @@ export interface Tenant {
   slug: string
   name: string
   created_at: string
+  /** set while a super administrator has suspended the organisation */
+  suspended_at?: string
 }
 
 export interface User {
@@ -27,6 +29,8 @@ export interface User {
   must_change_password?: boolean
   /** has a confirmed second factor (user lists, /auth/me) */
   mfa_enabled?: boolean
+  /** when the local password was last set */
+  password_changed_at?: string
 }
 
 /** Per-user settings (all optional; empty = default). */
@@ -222,12 +226,16 @@ export interface AuthProvider {
   name: string
   display_name: string
   login_url: string
+  /** icon of the button (PrimeIcons name) */
+  icon?: string
 }
 
 export interface Providers {
   local: boolean
   oidc: AuthProvider[] | null
   saml: AuthProvider[] | null
+  password_min_length?: number
+  password_min_classes?: number
 }
 
 export interface APIToken {
@@ -915,6 +923,10 @@ export interface Meta {
   runner_enabled?: boolean
   /** Whether the server runs web tests with Playwright (runner.web.enabled). */
   web_tests_enabled?: boolean
+  /** Longest lifetime of new API tokens in days (0 = no limit). */
+  token_max_days?: number
+  /** New API tokens need an expiry date. */
+  token_require_expiry?: boolean
 }
 
 export interface Dashboard {

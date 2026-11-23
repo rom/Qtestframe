@@ -162,6 +162,8 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 60 | `0060_req_sync.sql` |
 | 61 | `0061_ai_assistance.sql` |
 | 62 | `0062_project_logo.sql` |
+| 63 | `0063_tenant_admin.sql` |
+| 64 | `0064_solution_preamble.sql` |
 
 <!-- END GENERATED: migrations -->
 

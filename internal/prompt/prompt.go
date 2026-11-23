@@ -1,7 +1,9 @@
 // Package prompt builds prompts for AI assistants from the requirements and
 // tests of a software project: implement requirements, review them, design
 // test cases of a test type, automate test cases, review tests, and plan the
-// tests of one test type. The prompts are plain Markdown, in English or
+// tests of one test type; and the solution prompts (solution.go):
+// architecture, design, implementation plan and full solution from the
+// project's solution preamble and the requirements of a scope. The prompts are plain Markdown, in English or
 // Swedish, and contain everything the assistant needs: the project's
 // technical context, the items with their criteria, steps and links, the
 // instructions and the expected form of the answer.
@@ -11,6 +13,8 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+
+	"github.com/rom/qtestframe/internal/model"
 )
 
 // Prompt kinds.
@@ -24,13 +28,14 @@ const (
 )
 
 // Kinds lists the prompt kinds; the first three work on requirements, the
-// others on tests.
-var Kinds = []string{Implement, ReviewRequirements, DesignTests, AutomateTests, ReviewTests, TestStrategy}
+// next three on tests, the solution kinds (SolutionKinds) on requirements.
+var Kinds = []string{Implement, ReviewRequirements, DesignTests, AutomateTests, ReviewTests, TestStrategy,
+	Architecture, Design, ImplementationPlan, FullSolution}
 
 // ForRequirements reports whether a kind takes requirements (else tests).
 // TestStrategy takes both: the tests, and the requirements they verify.
 func ForRequirements(kind string) bool {
-	return kind == Implement || kind == ReviewRequirements || kind == DesignTests
+	return kind == Implement || kind == ReviewRequirements || kind == DesignTests || IsSolution(kind)
 }
 
 // TestTypes are the test types (levels and quality characteristics) a
@@ -55,6 +60,16 @@ type Requirement struct {
 	Relations []string
 	// Tests that verify it, e.g. "SHOP-TC-1 Valid login".
 	Tests []string
+	// Solution prompts: the folder path, the keys of the requirements it
+	// depends on, the linked risks, the standards it cites (catalogue refs
+	// such as CWE ids and standard clauses) and its D3FEND / EMB3D ids.
+	// Group is the top-level folder (for SplitFolder; "" derives it from
+	// Folder).
+	Folder, Group string
+	DependsOn     []string
+	Risks         []Risk
+	Standards     []string
+	D3fend, Emb3d []string
 }
 
 // Step is a manual step of a test.
@@ -87,6 +102,16 @@ type Input struct {
 	Notes                                       string
 	Requirements                                []Requirement
 	Tests                                       []Test
+	// Solution prompts: the preamble (nil: none), the project summary,
+	// compact mode (titles and criteria only), the split (SplitNone,
+	// SplitFolder, SplitSize), the token budget of a part (0: none) and
+	// the output formats (Formats).
+	Preamble  *model.SolutionPreamble
+	Summary   Summary
+	Compact   bool
+	Split     string
+	MaxTokens int
+	Formats   []string
 }
 
 // Result is a built prompt.
@@ -97,6 +122,11 @@ type Result struct {
 	Text  string `json:"prompt"`
 	// Items is the number of requirements and tests in the prompt.
 	Items int `json:"items"`
+	// Tokens estimates the size of the prompt (characters / 4).
+	Tokens int `json:"tokens"`
+	// Parts of a solution prompt, in order (one when it is not split);
+	// Text is then all parts, separated by "---" lines.
+	Parts []Part `json:"parts,omitempty"`
 }
 
 // Validate checks kind, language and test type.
@@ -116,11 +146,17 @@ func Validate(in *Input) error {
 	if (in.Kind == DesignTests || in.Kind == TestStrategy) && in.TestType == "" {
 		return fmt.Errorf("test_type is required for %s", in.Kind)
 	}
+	if IsSolution(in.Kind) {
+		return validateSolution(in)
+	}
 	return nil
 }
 
 // Build creates the prompt. Call Validate first.
 func Build(in Input) Result {
+	if IsSolution(in.Kind) {
+		return buildSolution(in)
+	}
 	tx := texts[in.Lang]
 	if tx == nil {
 		tx = texts["en"]
@@ -203,7 +239,8 @@ func Build(in Input) Result {
 	for _, i := range tx.answers[in.Kind] {
 		b.line(i)
 	}
-	return Result{Kind: in.Kind, Lang: in.Lang, Title: title, Text: strings.TrimRight(b.sb.String(), "\n") + "\n", Items: len(in.Requirements) + len(in.Tests)}
+	text := strings.TrimRight(b.sb.String(), "\n") + "\n"
+	return Result{Kind: in.Kind, Lang: in.Lang, Title: title, Text: text, Items: len(in.Requirements) + len(in.Tests), Tokens: EstimateTokens(text)}
 }
 
 func or(v, def string) string {

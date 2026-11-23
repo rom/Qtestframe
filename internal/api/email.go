@@ -93,6 +93,9 @@ func (s *Server) deliverMail(ctx context.Context, m *mail.Message) error {
 	if m2 == nil {
 		return errEmailOff()
 	}
+	if m.ReplyTo == nil && s.conf().Email.ReplyTo != "" {
+		m.ReplyTo = &mail.Address{Email: s.conf().Email.ReplyTo}
+	}
 	err := m2.Send(ctx, m)
 	if err != nil {
 		s.Log.Warn("e-mail not sent", "to", strings.Join(m.Recipients(), ","), "subject", m.Subject, "err", err)

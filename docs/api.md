@@ -183,10 +183,17 @@ are `mfa.enable`, `mfa.disable`, `mfa.recovery_codes`,
 | GET | `/tenants` | super admin (all) / member (own) | list |
 | POST | `/tenants` | super admin | `{"slug","name"}` |
 | PATCH | `/tenants/{id}` | super admin or tenant.manage | `{"name"}` |
-| DELETE | `/tenants/{id}` | super admin | |
-| GET | `/users` | super admin | list all users |
+| DELETE | `/tenants/{id}` | super admin | deletes the organisation and all its data (the web client asks for a backup first and for the slug to be typed) |
+| GET | `/admin/tenants` | super admin | every organisation with `policy`, `usage` (`members, projects, requirements, tests, runs, files, storage_bytes, last_activity`), `ai_enabled`, `erecords_enabled`, `mfa_required` |
+| GET | `/admin/tenants/{id}` | super admin | one organisation as above |
+| PUT | `/admin/tenants/{id}/policy` | super admin | `TenantPolicy` (below) → the organisation; audited `tenant.policy` with the changes |
+| POST | `/admin/tenants/{id}/suspend` | super admin | suspends the organisation (`suspended_at` is set): its members cannot open it (switch-tenant and sign-in into it answer 403, a session in it has no organisation), its API tokens are refused; nothing is deleted. Audited `tenant.suspend` |
+| POST | `/admin/tenants/{id}/reactivate` | super admin | ends the suspension (`tenant.reactivate`) |
+| GET | `/users` | super admin | list all users (with `mfa_enabled`, `password_changed_at`) |
 | POST | `/users` | super admin | `{"email","display_name","password","super_admin"}` |
-| PATCH | `/users/{id}` | super admin | `{"display_name","disabled","super_admin","password"}`; disabling or setting a password ends the user's sessions; you cannot demote or disable yourself (409) |
+| PATCH | `/users/{id}` | super admin | `{"display_name","disabled","super_admin","password","must_change_password"}`; disabling or setting a password ends the user's sessions; you cannot demote or disable yourself (409), and the last enabled super administrator cannot be demoted or disabled (409 `last_super_admin`) |
+| GET | `/users/{id}/memberships` | super admin | `{"items": [membership with tenant_slug, tenant_name, roles], "sessions": open sessions}` |
+| POST | `/users/{id}/sessions/revoke` | super admin | signs the user out everywhere → `{"revoked": n}` (not yourself: 400; API tokens stay valid); audited `user.revoke_sessions` |
 | GET | `/members` | member.read | members of current tenant; `"scim": true` marks members provisioned by SCIM, whose role and membership only the identity provider changes (`PATCH`, `DELETE` and `POST /members` answer 409 `scim_managed` for them); a member with an open e-mail invitation has `"invitation": {id, sent_at, expires_at, sso, expired, invited_by}` |
 | POST | `/members` | member.manage | `{"email","roles" (or "role"),"display_name"?,"password"?,"invite"?,"sso"?}` – creates the local user if it does not exist. With `"invite": true` (needs e-mail, see [E-mail](#e-mail)) a person without a used account gets an invitation e-mail instead of an initial password (`password` must then be empty), and the answer has `invitation`; an existing account only gets an e-mail that it was added. `"sso": true` invites to sign in with single sign-on |
 | POST | `/members/{user_id}/invitation` | member.manage | sends a new invitation link (the old link stops working) → invitation; 409 when the person already uses the account |
@@ -203,10 +210,10 @@ are `mfa.enable`, `mfa.disable`, `mfa.recovery_codes`,
 | GET | `/settings` | any member | `TenantSettings` (below) |
 | PUT | `/settings` | settings.manage | `TenantSettings` → the stored settings |
 | GET | `/tokens` | token.manage | own tokens in tenant |
-| POST | `/tokens` | token.manage | `{"name","roles" (or "role"),"expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; the roles default to all of the creator's own roles, and their permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its roles' permissions and those of the user's current roles) |
+| POST | `/tokens` | token.manage | `{"name","roles" (or "role"),"expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (400 when the server's token policy needs an expiry date or allows fewer days: `auth.token_require_expiry`, `auth.token_max_days`; token only shown once; the roles default to all of the creator's own roles, and their permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its roles' permissions and those of the user's current roles) |
 | DELETE | `/tokens/{id}` | token.manage | |
-| GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user, the `reason` for change and their place in the hash chain (`seq`, `prev_hash`, `hash`, see [Tamper-evident audit trail](#tamper-evident-audit-trail)) |
-| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"email_enabled"`, `"email_digest_hour"` (UTC) and `"version"` |
+| GET | `/audit?limit=&q=&tenant=` | audit.read | audit log of tenant (super administrators: `tenant=<id>` reads another organisation's), newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user, the `reason` for change and their place in the hash chain (`seq`, `prev_hash`, `hash`, see [Tamper-evident audit trail](#tamper-evident-audit-trail)) |
+| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"email_enabled"`, `"email_digest_hour"` (UTC), the token policy `"token_max_days"` (0 = no limit) and `"token_require_expiry"`, and `"version"` |
 | POST | `/admin/email/test` | tenant.manage | sends a test e-mail to the caller's own address now → `{"ok", "to", "error"?}` with the SMTP error; 400 when e-mail is not configured |
 
 Roles: nobody can grant a permission they do not hold (403 when a role
@@ -234,6 +241,12 @@ default):
 | GET | `/projects/{pid}` | project.read |
 | PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
 | POST | `/projects/{pid}/prompts` | project.read + the read permission of the items' kind – see [Prompts](#prompts-software-projects) |
+| POST | `/projects/{pid}/prompts/send` | project.read + the read permission of the items' kind – send a built prompt to the AI assistance, see [Prompts](#prompts-software-projects) |
+| GET | `/projects/{pid}/solution-preamble` | project.read – see [Solution preamble](#solution-preamble-software-projects) |
+| PUT | `/projects/{pid}/solution-preamble` | project.update – software projects |
+| POST | `/projects/{pid}/solution-preamble/check` | project.read – the warnings of an unsaved preamble |
+| GET | `/projects/{pid}/solution-preamble/history` | project.read – its saved versions |
+| GET | `/projects/{pid}/solution-preamble/templates` | project.read – templates for common stacks |
 | DELETE | `/projects/{pid}` | project.delete |
 | GET | `/projects/{pid}/dashboard` | project.read – see [Dashboard and metrics](#dashboard-and-metrics) |
 | GET | `/projects/{pid}/metrics/trends` | project.read – `?range=30\|90\|365` or `?since=YYYY-MM-DD` |
@@ -388,13 +401,102 @@ projects of type `software` (else 400).
 * `kind` (`/meta` `prompt_kinds`): `implement`, `review_requirements`,
   `design_tests` (requirements; need `requirement.read`), `automate_tests`,
   `review_tests`, `test_strategy` (tests; need `test.read`; the last two also
-  include the requirements the tests verify when the caller may read them).
+  include the requirements the tests verify when the caller may read them),
+  and the solution prompts `architecture`, `design`, `implementation_plan`
+  and `full_solution` (requirements; see below).
 * Items: `requirement_ids` / `test_ids` (must belong to the project), else
-  those matching `q`, else all; more than 200 → 400.
+  those matching `q`, else all; within `folder_id` (with its subfolders;
+  `root` = not in a folder) and, for requirements, `release_id` (the
+  release's requirements) and `variant` (id or name: the requirements that
+  apply to it). More than 200 items (2000 for solution prompts) → 400.
 * `test_type` (`/meta` `test_types`) is required for `design_tests` and
   `test_strategy`; `lang` is `en` (default) or `sv`; `framework` ≤ 200 and
   `notes` ≤ 8000 characters.
-* Response: `{"kind", "lang", "title", "prompt", "items"}`.
+* `format`: `json` (default) or `zip` – the parts as Markdown files
+  (`<KEY>-<kind>-<date>[-part-NN].md`) in an `application/zip` download.
+* Response: `{"kind", "lang", "title", "prompt", "items", "tokens", "parts"}`
+  – `tokens` estimates the size (characters / 4); `parts` (solution prompts)
+  lists `{"index", "title", "label", "prompt", "items", "tokens"}`, and
+  `prompt` is then all parts separated by `---` lines.
+
+Solution prompts start with the project's [solution
+preamble](#solution-preamble-software-projects) (credentials masked) and its
+technical context, then a project summary (scope, requirements by
+obligation, folders, releases, variants, linked risks and tests), the
+requirements (key, obligation, type, priority, status, folder, description,
+rationale, acceptance criteria, relations, linked risks with mitigation and
+ATT&CK / EMB3D ids, verifying tests, catalogue references such as CWE ids and
+standard clauses, D3FEND and EMB3D ids), for `implementation_plan` and
+`full_solution` the dependency order from the *depends on* relations, the
+instructions (trace every element to requirement keys, flag ambiguities and
+conflicts, list assumptions, the requested formats) and the answer format,
+ending with a traceability table. Options:
+
+* `compact`: titles, obligation, priority and acceptance criteria only.
+* `split`: `none` (default), `folder` (one part per top-level folder) or
+  `size` (parts of at most `max_tokens`, default 8000); with `folder`,
+  `max_tokens` splits large folders further. Every part repeats the
+  preamble and has a continuation instruction (first, middle, last part).
+* `max_tokens`: 1000–1000000.
+* `formats` besides Markdown: `mermaid`, `c4`, `openapi`, `sql`; left out:
+  the kind's defaults (architecture: `mermaid`, `c4`; design: `mermaid`,
+  `openapi`, `sql`; full solution: all; implementation plan: none); `[]`:
+  Markdown only.
+
+```json
+{"kind": "architecture", "lang": "sv", "folder_id": "…", "split": "folder", "max_tokens": 12000,
+ "compact": false, "formats": ["mermaid", "c4"]}
+```
+
+`POST /projects/{pid}/prompts/send` (same body; `part`: the part of a split
+prompt to send, 1-based) sends the prompt to the optional [AI
+assistance](#ai-assistance) when it is available in the project (else 409
+`ai_unavailable`) and answers `{"answer", "truncated", "meta", "title",
+"kind"}`; with `Accept: text/event-stream` it streams the events `start`,
+`delta` (`{"text"}`, the answer as it is written), `result` and `error`. It
+is rate limited and audited like the other AI features (`ai.request` with
+`feature=prompt` and the kind, never the content); the answer is not stored
+(the web client offers to save it as a project document).
+
+The command line builds the same prompts: `qtestframe prompt --project KEY
+--kind architecture --scope 'tag:payments' --split folder --out prompts/`
+(see `qtestframe help`).
+
+### Solution preamble (software projects)
+
+`GET /projects/{pid}/solution-preamble` → `{"preamble", "warnings",
+"filled", "software"}`; `PUT` (project.update, software projects only)
+replaces it and answers the same. The preamble's fields (all text, at most
+4000 characters; `additional` 16000): `languages`, `frameworks`,
+`environments`, `architecture_style` (`monolith`, `modular_monolith`,
+`microservices`, `serverless`, `event_driven`, `layered`, `hexagonal`,
+`other` or `""`), `architecture_notes`, `frontend`, `backend`, `messaging`,
+`caching`, `databases`, `integrations`, `deployment`, `performance`,
+`availability`, `scalability`, `security`, `conventions`, `testing`,
+`repository`, `out_of_scope`, `additional`, plus `template` (the template
+it was prefilled from) and, set by the server, `version`, `updated_at` and
+`updated_by`. Send `version` to detect a concurrent change (409).
+
+It holds descriptions only. Unknown fields and fields named like a secret
+(`password`, `secret`, `token`, `credential`, `api_key`, `private_key`,
+`connection_string` …) → 400. Text that looks like a credential – a URL or
+connection string with a password, a `password=` / `api_key:` assignment, a
+private key, a well-known access key or token shape, a long random string –
+is saved but listed in `warnings` (`{"field", "kind", "message",
+"excerpt"}`, `kind` one of `password_in_url`, `password_assignment`,
+`private_key`, `token`; the excerpt is masked), and it is replaced by
+`[REDACTED]` in prompts. Placeholders such as `${DB_PASSWORD}` or
+`<from the vault>` are fine. `POST …/solution-preamble/check` returns the
+warnings of an unsaved body.
+
+`GET …/solution-preamble/history` lists its versions (revisions of entity
+type `solution_preamble`); `GET …/solution-preamble/templates` → `{"items":
+[{"id", "name": {"en", "sv"}, "preamble"}]}` (`go-postgres-vue`,
+`java-spring-oracle`, `dotnet-sqlserver`, `python-fastapi-postgres`,
+`node-ts-mongodb`, `embedded-c-rtos`). The preamble is stored with the
+project (`projects.solution_preamble`), so project archives, duplicates and
+backups include it with its history. Audit action:
+`project.solution_preamble`.
 
 ### Dashboard and metrics
 
@@ -3679,6 +3781,8 @@ All endpoints need a **super administrator signed in with a session**
 | POST | `/admin/settings/test/oidc` | `{"issuer"}` → discovery result |
 | POST | `/admin/settings/test/syslog` | `{"values": {...}}` (unsaved logging values) → sends a test message |
 | POST | `/admin/settings/test/email` | `{"values": {...}}` (unsaved e-mail values) → sends a test e-mail to the caller |
+| POST | `/admin/settings/test/outbound` | `{"url", "values"?}` (unsaved outbound values) → whether the outbound rules allow the URL, and its HTTP status (`details.blocked` when refused) |
+| POST | `/admin/settings/test/saml` | `{"name"}` → reads the metadata of a SAML provider of the file (`details.entity_id`, `certificates`, `sso_urls`) |
 
 A setting in `settings`:
 
@@ -3692,7 +3796,13 @@ A setting in `settings`:
 
 * `type`: `string`, `int` (with `min`/`max`), `bool`, `duration` (Go
   duration strings such as `"12h"`, `"90s"`), `enum` (`options`), `secret`,
-  `list` (read-only).
+  `list` (a JSON array of strings; entries are trimmed and de-duplicated,
+  at most 200).
+* `section`: `general`, `server`, `security`, `tokens`, `oidc`, `logging`,
+  `email`, `outbound`, `runner`, `live`, `similarity`, `ai`, `retention`.
+  Every key of the configuration file is either a setting (editable or
+  `readonly`, shown with its source) or file-only (bootstrap secrets, key
+  files, SAML providers, the key provider of stored secrets).
 * `apply`: `runtime` (applies at once), `restart` (stored now, applies at
   the next start; `running_value` and `pending_restart` show the value in
   use), `readonly` (configuration file only).
@@ -3742,8 +3852,36 @@ Test results are always 200 with `{"ok": bool, "message", "error",
 `details` and an error such as `the document names the issuer "…", not
 "…" (they must match exactly)`.
 
-`GET /auth/providers` (public) also returns `password_min_length`, and
-`GET /invitations/{token}` returns `password_min_length`.
+`GET /auth/providers` (public) also returns `password_min_length` and
+`password_min_classes` (and per OIDC provider its button `icon`), and
+`GET /invitations/{token}` returns `password_min_length` and
+`password_min_classes`.
+
+The GET document also lists `saml`: the SAML providers of the
+configuration file, read-only (`name, display_name, entity_id,
+metadata_url, metadata_file, sp_cert_file, email_attr, name_attr,
+groups_attr, auto_provision, default_tenant, default_role, role_mapping,
+allowed_domains, acs_url, sp_metadata_url`), and `oidc_icons`, the icons
+an OIDC button can have. OIDC providers also take `icon` and
+`allowed_domains` (e-mail domains that may sign in; `*.example.com` for
+subdomains), and a `role_mapping` value or `default_role` may name several
+roles (`"tester, reviewer"`).
+
+`TenantPolicy` (`PUT /admin/tenants/{id}/policy`):
+
+```json
+{"max_members": 50, "max_projects": 10, "max_storage_mb": 2048, "ai_disabled": false,
+ "allowed_providers": ["oidc:corp"], "email_domains": ["example.com"], "note": "contract 42"}
+```
+
+Quotas are 0 for no limit; adding a member, creating a project or storing
+a file beyond them answers 409. `allowed_providers` (`local`,
+`oidc:<name>`, `saml:<name>`; empty = any) are the sign-in methods of
+accounts that may open the organisation (super administrators always can).
+`email_domains`: new single sign-on users of these domains join the
+organisation when their provider names no `default_tenant` (a domain
+belongs to one organisation: 409). `ai_disabled` forbids AI assistance
+(`GET /ai` then has `reason: "policy"`).
 
 ## SCIM 2.0 provisioning
 

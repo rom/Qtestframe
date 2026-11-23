@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { addCweTags, addIds, aiStatus, clearAiStatus, draftTestBody, featureState, formatCost, parseSse, runAssist, splitFixed, type AiStatus } from './ai'
+import { addCweTags, addIds, aiStatus, clearAiStatus, draftTestBody, featureState, formatCost, parseSse, runAssist, splitFixed, streamPost, type AiStatus, type PromptAnswer } from './ai'
 import { ApiError } from './api'
 import type { LanguageIssue } from './types'
 
@@ -55,6 +55,18 @@ describe('ai', () => {
     const [url, init] = fetch.mock.calls[0]
     expect(url).toBe('/api/v1/projects/p1/ai/suggest-criteria')
     expect((init?.headers as Record<string, string>).Accept).toBe('text/event-stream')
+  })
+
+  it('streams the deltas of a sent prompt', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      streamResponse(['event: start\ndata: {}\n\nevent: delta\ndata: {"text":"# Arch"}\n\n', 'event: delta\ndata: {"text":"itecture"}\n\nevent: result\ndata: {"answer":"# Architecture","truncated":false,"meta":{"model":"m"}}\n\n']),
+    )
+    let text = ''
+    const r = await streamPost<PromptAnswer>('/projects/p1/prompts/send', { kind: 'architecture' }, { onDelta: (d) => (text += d) })
+    expect(text).toBe('# Architecture')
+    expect(r.answer).toBe('# Architecture')
+    expect(fetch.mock.calls[0][0]).toBe('/api/v1/projects/p1/prompts/send')
+    expect(JSON.parse(String(fetch.mock.calls[0][1]?.body)).kind).toBe('architecture')
   })
 
   it('turns error events and error responses into ApiErrors', async () => {

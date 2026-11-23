@@ -414,6 +414,29 @@ async function discover(request) {
     { name: 'link-dialog', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: ['.p-drawer [role="tab"]:has(.pi-link)', '.item-links button:has(.pi-link)'], wait: '.link-types' },
     { name: 'new-requirement', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-plus)', wait: '.obligation-help' },
     { name: 'prompts', path: `${p}/prompts`, wait: '.prompts-grid, .p-message' },
+    // solution prompts: the seeded preamble (form, credential warning, template dialog, history) and a split prompt
+    { name: 'solution-preamble', path: `${p}/settings?tab=solution`, wait: '.solution-preamble form #sp-languages' },
+    {
+      name: 'solution-preamble-warning',
+      path: `${p}/settings?tab=solution`,
+      act: async (page) => {
+        await page.locator('#sp-databases').fill('postgres://app:' + 'Not-a-real-0ne' + '@db/app')
+      },
+      wait: '.sp-warnings',
+    },
+    { name: 'solution-preamble-template', path: `${p}/settings?tab=solution`, open: ['#sp-template', '.p-select-overlay li:first-child', '.solution-preamble button:has(.pi-clone)'], wait: '.p-confirmdialog, .p-dialog' },
+    { name: 'solution-preamble-history', path: `${p}/settings?tab=solution`, open: '.solution-preamble button:has(.pi-history)', wait: '#sp-history .history, #sp-history .muted' },
+    { name: 'prompts-solution', path: `${p}/prompts?kind=architecture`, wait: '.preamble-status, .prompts-grid .p-message' },
+    {
+      name: 'prompts-solution-split',
+      path: `${p}/prompts?kind=full_solution`,
+      act: async (page) => {
+        await page.locator('#prompt-split').click()
+        await page.locator('.p-select-overlay li').nth(1).click()
+        await page.locator('.prompts-grid form button[type="submit"]').click()
+      },
+      wait: '.part-buttons, .prompt-output',
+    },
     readinessRun && { name: 'run-readiness', path: `${p}/runs/${readinessRun.id}`, open: 'button.readiness-cell', wait: '.readiness-pop' },
     { name: 'undo-menu', path: `${p}/tests`, open: '.undo-controls button:has(.pi-history)', wait: '.undo-menu' },
     { name: 'columns-menu', path: `${p}/requirements`, open: 'button:has(.pi-table)', wait: '.columns-menu' },
@@ -690,7 +713,11 @@ async function discover(request) {
     { name: 'erecords', path: '/admin/erecords', wait: '.er-grid' },
     { name: 'erecords-report', path: '/admin/erecords', open: 'button:has(.pi-list-check)', wait: '.er-table' },
     { name: 'tenants', path: '/admin/tenants' },
+    // organisations: usage and policy, delete with typed confirmation
+    { name: 'tenants-policy', path: '/admin/tenants', open: '.p-datatable-tbody tr:first-child button:has(.pi-sliders-h)', wait: '.p-dialog .quota-grid' },
+    { name: 'tenants-delete', path: '/admin/tenants', open: '.p-datatable-tbody tr:last-child button:has(.pi-trash)', wait: '.p-dialog input.mono' },
     { name: 'users', path: '/admin/users' },
+    { name: 'users-memberships', path: '/admin/users', open: '.p-datatable-tbody tr:first-child button:has(.pi-building)', wait: '.p-dialog .membership-list, .p-dialog p.muted' },
     // system settings (super admins): every section, the OIDC provider dialog
     { name: 'system-settings', path: '/admin/system', wait: '.sys-field' },
     { name: 'system-settings-security', path: '/admin/system?section=security', wait: '.sys-field' },
@@ -702,6 +729,22 @@ async function discover(request) {
     { name: 'system-settings-email', path: '/admin/system?section=email', wait: '.sys-field' },
     { name: 'system-settings-runner', path: '/admin/system?section=runner', wait: '.sys-field' },
     { name: 'system-settings-retention', path: '/admin/system?section=retention', wait: '.info-list' },
+    { name: 'system-settings-server', path: '/admin/system?section=server', wait: '.sys-field' },
+    { name: 'system-settings-tokens', path: '/admin/system?section=tokens', wait: '.sys-field' },
+    { name: 'system-settings-outbound', path: '/admin/system?section=outbound', wait: '.sys-field' },
+    { name: 'system-settings-live', path: '/admin/system?section=live', wait: '.sys-field' },
+    { name: 'system-settings-authorisation', path: '/admin/system?section=authorisation', wait: '.info-list' },
+    { name: 'system-settings-search', path: '/admin/system', act: (page) => page.locator('.sys-search input').fill('timeout'), wait: '.hit-list' },
+    {
+      name: 'system-settings-confirm',
+      path: '/admin/system?section=tokens',
+      act: async (page) => {
+        await page.locator('.sys-field[data-key="auth.token_max_days"] input').fill('120')
+        await page.keyboard.press('Tab')
+        await page.locator('.sys-buttons button[type="submit"]').click()
+      },
+      wait: '.p-dialog .diff-table',
+    },
   ].filter(Boolean)
   return routes.filter((r) => !ONLY.length || ONLY.includes(r.name))
 }

@@ -1,5 +1,6 @@
 // Kinds of project (mirrors model.ProjectTypes). Software projects get extra
-// features: prompts for AI assistants from requirements and tests.
+// features: prompts for AI assistants from requirements and tests, and
+// solution prompts from the solution preamble.
 import type { Project } from './types'
 
 export const PROJECT_TYPES = ['general', 'software', 'hardware', 'system', 'business'] as const
@@ -15,10 +16,17 @@ export const PROJECT_TYPE_ICONS: Record<ProjectType, string> = {
 
 export const isSoftware = (p: Pick<Project, 'type'> | null | undefined): boolean => p?.type === 'software'
 
-/** Prompt kinds (mirrors prompt.Kinds); the first three take requirements. */
-export const PROMPT_KINDS = ['implement', 'review_requirements', 'design_tests', 'automate_tests', 'review_tests', 'test_strategy'] as const
+/** Solution prompt kinds (mirrors prompt.SolutionKinds): built from the
+ * solution preamble and the requirements of a scope. */
+export const SOLUTION_KINDS = ['architecture', 'design', 'implementation_plan', 'full_solution'] as const
+export type SolutionKind = (typeof SOLUTION_KINDS)[number]
+export const isSolutionKind = (k: unknown): k is SolutionKind => typeof k === 'string' && (SOLUTION_KINDS as readonly string[]).includes(k)
+
+/** Prompt kinds (mirrors prompt.Kinds); the first three and the solution
+ * kinds take requirements. */
+export const PROMPT_KINDS = ['implement', 'review_requirements', 'design_tests', 'automate_tests', 'review_tests', 'test_strategy', ...SOLUTION_KINDS] as const
 export type PromptKind = (typeof PROMPT_KINDS)[number]
-export const promptForRequirements = (k: string): boolean => k === 'implement' || k === 'review_requirements' || k === 'design_tests'
+export const promptForRequirements = (k: string): boolean => k === 'implement' || k === 'review_requirements' || k === 'design_tests' || isSolutionKind(k)
 export const promptNeedsTestType = (k: string): boolean => k === 'design_tests' || k === 'test_strategy'
 export const isPromptKind = (k: unknown): k is PromptKind => typeof k === 'string' && (PROMPT_KINDS as readonly string[]).includes(k)
 

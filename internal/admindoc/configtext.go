@@ -137,6 +137,30 @@ var keyDocs = map[string]text{
 		"Window of `login_max_attempts` (1m–24h).",
 		"Tidsfönstret för `login_max_attempts` (1m–24h).",
 	},
+	"auth.session_idle_timeout": {
+		"Ends a browser session after this long without activity, e.g. `30m` (`0` = off: only `session_ttl` applies). The electronic-records mode of an organisation can set a shorter one; the shorter applies.",
+		"Avslutar en webbläsarsession efter så här lång tid utan aktivitet, t.ex. `30m` (`0` = av: bara `session_ttl` gäller). En organisations läge för elektroniska poster kan ange en kortare; den kortare gäller.",
+	},
+	"auth.password_min_classes": {
+		"How many of the character classes lower-case letters, upper-case letters, digits and symbols a local password must use (2 to 4; `0` = letters and at least one digit or symbol).",
+		"Hur många av teckenklasserna gemener, versaler, siffror och symboler ett lokalt lösenord måste innehålla (2 till 4; `0` = bokstäver och minst en siffra eller symbol).",
+	},
+	"auth.password_history": {
+		"How many earlier passwords a user cannot choose again when they change their password (0 to 24; `0` = off).",
+		"Hur många tidigare lösenord en användare inte kan välja igen när lösenordet byts (0 till 24; `0` = av).",
+	},
+	"auth.password_max_age_days": {
+		"A local password expires this many days after it was set: the next sign-in must change it (`0` = never). For accounts older than this setting the days count from their next sign-in.",
+		"Ett lokalt lösenord går ut så här många dagar efter att det sattes: nästa inloggning måste byta det (`0` = aldrig). För konton som är äldre än inställningen räknas dagarna från nästa inloggning.",
+	},
+	"auth.token_max_days": {
+		"Longest lifetime of a new API token in days (`0` = no limit). With a limit every new token needs an expiry date within it; existing tokens keep theirs.",
+		"Längsta livslängd för en ny API-token i dagar (`0` = ingen gräns). Med en gräns behöver varje ny token ett utgångsdatum inom den; befintliga tokens behåller sina.",
+	},
+	"auth.token_require_expiry": {
+		"Refuse new API tokens without an expiry date.",
+		"Neka nya API-tokens utan utgångsdatum.",
+	},
 	"auth.oidc": {
 		"OpenID Connect providers, each shown as a button on the sign-in page. Can be replaced in **Administration → System settings**.",
 		"OpenID Connect-leverantörer, var och en som en knapp på inloggningssidan. Kan ersättas under **Administration → Systeminställningar**.",
@@ -152,6 +176,14 @@ var keyDocs = map[string]text{
 	"auth.oidc[].display_name": {
 		"Label of the button on the sign-in page.",
 		"Texten på knappen på inloggningssidan.",
+	},
+	"auth.oidc[].icon": {
+		"Icon of the sign-in button: `sign-in`, `key`, `shield`, `building`, `microsoft`, `google`, `github`, `amazon` or `apple` (empty = a generic icon).",
+		"Ikon på inloggningsknappen: `sign-in`, `key`, `shield`, `building`, `microsoft`, `google`, `github`, `amazon` eller `apple` (tom = en allmän ikon).",
+	},
+	"auth.oidc[].allowed_domains": {
+		"E-mail domains that may sign in through the provider (`example.com`; `*.example.com` for its subdomains). Empty = any. Other addresses are refused before an account is looked up or created.",
+		"E-postdomäner som får logga in via leverantören (`example.com`; `*.example.com` för dess underdomäner). Tom = alla. Andra adresser nekas innan ett konto slås upp eller skapas.",
 	},
 	"auth.oidc[].issuer": {
 		"Issuer URL; the server reads `<issuer>/.well-known/openid-configuration` at the first sign-in. Required.",
@@ -268,6 +300,10 @@ var keyDocs = map[string]text{
 	"auth.saml[].default_role": {
 		"As for OIDC.",
 		"Som för OIDC.",
+	},
+	"auth.saml[].allowed_domains": {
+		"E-mail domains that may sign in through the provider, as for OIDC. Empty = any.",
+		"E-postdomäner som får logga in via leverantören, som för OIDC. Tom = alla.",
 	},
 	"auth.saml[].role_mapping": {
 		"As for OIDC.",
@@ -456,6 +492,30 @@ var keyDocs = map[string]text{
 	"email.timeout": {
 		"Limit for sending one message.",
 		"Tidsgräns för att skicka ett meddelande.",
+	},
+	"email.reply_to": {
+		"Reply-To address of e-mails that have none of their own, e.g. a support mailbox (empty = none). Invitations and shared reports reply to the person who sent them.",
+		"Svarsadress (Reply-To) för e-post som saknar en egen, t.ex. en supportbrevlåda (tom = ingen). Inbjudningar och delade rapporter svarar till personen som skickade dem.",
+	},
+	"outbound.proxy": {
+		"HTTP(S) proxy for the server's outgoing calls (webhooks, chat, defect trackers and requirement sources, AI, embeddings, OIDC discovery, environment health checks), e.g. `http://proxy.example.com:3128`. Empty = the environment variables `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY`.",
+		"HTTP(S)-proxy för serverns utgående anrop (webhooks, chatt, ärendehanterare och kravkällor, AI, embeddings, OIDC-discovery, hälsokontroller av miljöer), t.ex. `http://proxy.example.com:3128`. Tom = miljövariablerna `HTTPS_PROXY`, `HTTP_PROXY` och `NO_PROXY`.",
+	},
+	"outbound.no_proxy": {
+		"Hosts reached without `proxy` (exact names or `*.example.com`).",
+		"Värdar som nås utan `proxy` (exakta namn eller `*.example.com`).",
+	},
+	"outbound.allowed_hosts": {
+		"When set, the only hosts outgoing calls may reach (exact names, addresses or `*.example.com`); others are refused. Protects against server-side request forgery through webhook and tracker URLs.",
+		"När den är satt de enda värdar som utgående anrop får nå (exakta namn, adresser eller `*.example.com`); andra nekas. Skyddar mot server-side request forgery via webhook- och ärendehanteraradresser.",
+	},
+	"outbound.denied_hosts": {
+		"Hosts outgoing calls never reach, e.g. `metadata.google.internal` or `169.254.169.254`.",
+		"Värdar som utgående anrop aldrig når, t.ex. `metadata.google.internal` eller `169.254.169.254`.",
+	},
+	"outbound.block_private": {
+		"Refuse outgoing calls to loopback, private, link-local and other non-public addresses (checked on the address actually connected to), unless the host is in `allowed_hosts`. Turn it on when the server is reachable from the internet and its users should not reach your internal network through it.",
+		"Neka utgående anrop till loopback-, privata, länklokala och andra icke-publika adresser (kontrolleras på adressen som faktiskt ansluts), om inte värden finns i `allowed_hosts`. Slå på den när servern nås från internet och användarna inte ska nå ert interna nät genom den.",
 	},
 	"email.digest_hour": {
 		"Hour of the day (UTC, 0–23) when daily digests are sent.",

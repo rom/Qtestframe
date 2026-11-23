@@ -21,6 +21,8 @@ En åtgärd öppnar en dialog som frågar tjänsten direkt. Medan den skriver vi
 
 Förslagen och promptarna är på användargränssnittets språk (engelska eller svenska).
 
+I mjukvaruprojekt kan **AI-prompter** också skicka en färdig prompt – till exempel en arkitektur- eller lösningsprompt – med **Skicka till AI-assistansen** och spara svaret som ett projektdokument, se [Lösningsprompter](requirements.md#lösningsprompter).
+
 ## Utkast till tester från ett krav
 
 **Utkast till tester** i ett sparat krav skickar dess titel, beskrivning och acceptanskriterier och föreslår upp till åtta manuella tester: titel, beskrivning, förutsättningar, testdata, förväntat resultat och steg med åtgärder, data och förväntade resultat, och vilka acceptanskriterier varje test täcker.

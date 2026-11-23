@@ -4448,7 +4448,10 @@ paths:
       - Projects
       summary: Prompt
       operationId: postProjectsByPidPrompts
-      description: '**Permission:** `project.read` checked by the router; project.read + the read permission of the items'' kind – see [Prompts](#prompts-software-projects).'
+      description: |-
+        Builds a prompt for an AI assistant (Markdown; nothing is sent to an AI service). Kinds: `implement`, `review_requirements`, `design_tests`, `automate_tests`, `review_tests`, `test_strategy`, and the solution prompts `architecture`, `design`, `implementation_plan`, `full_solution` (with the solution preamble). Requirements by `requirement_ids` or `q`, within `folder_id`, `release_id`, `variant`. Solution prompts: `compact`, `split` (`none`, `folder`, `size`), `max_tokens` per part, `formats` (`mermaid`, `c4`, `openapi`, `sql`). `format: zip` answers with the parts as Markdown files. → `{kind, lang, title, prompt, items, tokens, parts?}`. See [Prompts](#prompts-software-projects).
+
+        **Permission:** `project.read` checked by the router; project.read + the read permission of the items' kind.
       x-permission: project.read
       requestBody:
         required: false
@@ -4456,7 +4459,326 @@ paths:
           application/json:
             schema:
               type: object
+              properties:
+                kind:
+                  type: string
+                  enum: [implement, review_requirements, design_tests, automate_tests, review_tests, test_strategy, architecture, design, implementation_plan, full_solution]
+                lang:
+                  type: string
+                  enum: [en, sv]
+                test_type:
+                  type: string
+                framework:
+                  type: string
+                  maxLength: 200
+                notes:
+                  type: string
+                  maxLength: 8000
+                requirement_ids:
+                  type: array
+                  items:
+                    type: string
+                test_ids:
+                  type: array
+                  items:
+                    type: string
+                q:
+                  type: string
+                folder_id:
+                  type: string
+                release_id:
+                  type: string
+                variant:
+                  type: string
+                compact:
+                  type: boolean
+                split:
+                  type: string
+                  enum: [none, folder, size]
+                max_tokens:
+                  type: integer
+                  minimum: 1000
+                  maximum: 1000000
+                formats:
+                  type: array
+                  items:
+                    type: string
+                    enum: [mermaid, c4, openapi, sql]
+                format:
+                  type: string
+                  enum: [json, zip]
         description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/prompts/send:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Send a prompt to the AI assistance
+      operationId: postProjectsByPidPromptsSend
+      description: |-
+        Builds a prompt (same body as `POST /projects/{pid}/prompts`; `part` chooses the part of a split prompt, 1-based) and sends it to the optional AI assistance when it is available in the project (else 409 `ai_unavailable`) → `{answer, truncated, meta, title, kind}`; with `Accept: text/event-stream` streamed as the events `start`, `delta` `{text}`, `result` and `error`. Rate limited and audited (`ai.request`, feature `prompt`) like the other AI features; the answer is not stored. See [Prompts](#prompts-software-projects).
+
+        **Permission:** `project.read` checked by the router; project.read + the read permission of the items' kind.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/solution-preamble:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Get the solution preamble
+      operationId: getProjectsByPidSolutionPreamble
+      description: |-
+        The project's solution preamble (languages, stack, environments, constraints, conventions) that solution prompts start with → `{preamble, warnings: [{field, kind, message, excerpt}], filled, software}`. See [Solution preamble](#solution-preamble-software-projects).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Projects
+      summary: Save the solution preamble
+      operationId: putProjectsByPidSolutionPreamble
+      description: |-
+        Replaces the preamble of a software project (fields left out are emptied) and records a version in its history → as GET. Descriptions only: fields named like a password, secret, token, key or connection string are refused (400); text that looks like a credential is saved but reported in `warnings` and masked in prompts. With `version`, a stale save answers 409.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                template:
+                  type: string
+                  description: id of the template it was prefilled from (GET …/templates)
+                version:
+                  type: integer
+                  description: the version edited; 409 when it is no longer the current one
+                architecture_style:
+                  type: string
+                  enum: ['', monolith, modular_monolith, microservices, serverless, event_driven, layered, hexagonal, other]
+                languages:
+                  type: string
+                  maxLength: 4000
+                frameworks:
+                  type: string
+                  maxLength: 4000
+                environments:
+                  type: string
+                  maxLength: 4000
+                architecture_notes:
+                  type: string
+                  maxLength: 4000
+                frontend:
+                  type: string
+                  maxLength: 4000
+                backend:
+                  type: string
+                  maxLength: 4000
+                messaging:
+                  type: string
+                  maxLength: 4000
+                caching:
+                  type: string
+                  maxLength: 4000
+                databases:
+                  type: string
+                  maxLength: 4000
+                integrations:
+                  type: string
+                  maxLength: 4000
+                deployment:
+                  type: string
+                  maxLength: 4000
+                performance:
+                  type: string
+                  maxLength: 4000
+                availability:
+                  type: string
+                  maxLength: 4000
+                scalability:
+                  type: string
+                  maxLength: 4000
+                security:
+                  type: string
+                  maxLength: 4000
+                conventions:
+                  type: string
+                  maxLength: 4000
+                testing:
+                  type: string
+                  maxLength: 4000
+                repository:
+                  type: string
+                  maxLength: 4000
+                out_of_scope:
+                  type: string
+                  maxLength: 4000
+                additional:
+                  type: string
+                  maxLength: 16000
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/solution-preamble/check:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Check a solution preamble
+      operationId: postProjectsByPidSolutionPreambleCheck
+      description: |-
+        The warnings of an unsaved preamble (same body as PUT; nothing is stored) → as GET.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/solution-preamble/history:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: History of the solution preamble
+      operationId: getProjectsByPidSolutionPreambleHistory
+      description: |-
+        The saved versions of the preamble, newest first (revisions of entity type `solution_preamble`) → `{items: [revision]}`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/solution-preamble/templates:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Solution preamble templates
+      operationId: getProjectsByPidSolutionPreambleTemplates
+      description: |-
+        Templates for common stacks to prefill the preamble → `{items: [{id, name: {en, sv}, preamble}]}`.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
       responses:
         '200':
           description: OK
@@ -19321,6 +19643,276 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/outbound:
+    post:
+      tags:
+      - Administration
+      summary: Check a URL against the outbound settings
+      operationId: postAdminSettingsTestOutbound
+      description: |-
+        `{"url": "https://…", "values": {"outbound.…": …}}` (optional unsaved values of the outbound section): checks the URL against the proxy, allowed and denied hosts and the block of private addresses, then fetches it; `{ok, message, error, details: {url, status, blocked, proxy}}` (audited as `settings.test_outbound`). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/saml:
+    post:
+      tags:
+      - Administration
+      summary: Test the metadata of a SAML provider
+      operationId: postAdminSettingsTestSaml
+      description: |-
+        `{"name": "adfs"}`: reads the identity provider metadata of a SAML provider of the configuration file (URL or file) and reports `{ok, message, error, details: {entity_id, certificates, sso_urls}}` (audited as `settings.test_saml`). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants:
+    get:
+      tags:
+      - Administration
+      summary: List organisations with usage and policy
+      operationId: getAdminTenants
+      description: |-
+        `{items: [{id, slug, name, created_at, suspended_at?, policy: {max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers, email_domains, note}, usage: {members, projects, requirements, tests, runs, files, storage_bytes, last_activity}, ai_enabled, erecords_enabled, mfa_required}]}`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Administration
+      summary: Get an organisation with usage and policy
+      operationId: getAdminTenantsById
+      description: |-
+        One organisation as in `GET /admin/tenants`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants/{id}/policy:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    put:
+      tags:
+      - Administration
+      summary: Set the policy of an organisation
+      operationId: putAdminTenantsByIdPolicy
+      description: |-
+        Replaces the policy `{max_members, max_projects, max_storage_mb, ai_disabled, allowed_providers: ["local", "oidc:<name>", "saml:<name>"], email_domains, note}` (0 = no limit; an e-mail domain belongs to one organisation, 409 otherwise) and returns the organisation (audited as `tenant.policy` with the changes). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants/{id}/suspend:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: Suspend an organisation
+      operationId: postAdminTenantsByIdSuspend
+      description: |-
+        Its members can no longer open it and its API tokens are refused until it is reactivated; nothing is deleted (audited as `tenant.suspend`). Super administrators still open it. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/tenants/{id}/reactivate:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: Reactivate an organisation
+      operationId: postAdminTenantsByIdReactivate
+      description: |-
+        Ends a suspension (audited as `tenant.reactivate`). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/memberships:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Administration
+      summary: List the organisations of a user
+      operationId: getUsersByIdMemberships
+      description: |-
+        `{items: [membership with tenant_slug, tenant_name, roles], sessions}` (open sessions). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/sessions/revoke:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: Sign a user out everywhere
+      operationId: postUsersByIdSessionsRevoke
+      description: |-
+        Ends all sessions of the user (not of the caller: 400); API tokens stay valid. `{revoked}`; audited as `user.revoke_sessions`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/web-tests:

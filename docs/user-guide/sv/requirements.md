@@ -439,14 +439,63 @@ I ett projekt vars **projekttyp** är **Mjukvara** (ange den när du skapar proj
    | testfall | **Automatisera testfall** | skriva automatiserade tester i ert **testramverk**, ett per testfall, namngivna efter nyckeln |
    | testfall | **Granska testfall** | kontrollera kvalitet och täckning mot kraven de verifierar |
    | testfall | **Planera en testtyp** | en testplan för en testtyp: omfattning, verktyg, in- och utgångskriterier, tester att lägga till |
+   | lösning | **Arkitektur** | systemets omgivning, containrar och komponenter, viktiga beslut som ADR-kandidater, kvalitetsattributscenarier för de icke-funktionella kraven, risker |
+   | lösning | **Design** | moduler och komponenter, datamodell från kraven, API-design, sekvensflöden för de viktigaste användningsfallen, felhantering, säkerhetsdesign |
+   | lösning | **Implementationsplan** | milstolpar, epics och uppgifter spårade till kravnycklarna, ordnade efter beroendena mellan kraven, med en definition av klar som omfattar de länkade testerna |
+   | lösning | **Hela lösningen** | arkitektur, design och implementationsplan i en prompt, för kraftfulla assistenter |
 
-2. Välj objekten: **alla**, de som **matchar ett filter** ([frågespråket](search-and-filters.md)) eller **valda**. Du kan också utgå från ett krav eller testfall: **AI-prompt** längst ned i redigeraren, eller **AI-prompt** i verktygsfältet för massändring för de markerade raderna.
+2. Välj objekten: **alla**, de som **matchar ett filter** ([frågespråket](search-and-filters.md)), för krav även de **i en mapp** (med undermappar), **i en release** eller **för en variant**, eller **valda**. Du kan också utgå från ett krav eller testfall: **AI-prompt** längst ned i redigeraren, eller **AI-prompt** i verktygsfältet för massändring för de markerade raderna.
 3. Välj **testtyp** (enhets-, integrations-, system-, acceptans-, end-to-end-, API-, regressions-, rök-, prestanda-, säkerhets-, användbarhets- eller tillgänglighetstester), **testramverk eller verktyg** (förslag som pytest, Playwright, JUnit 5 eller Go testing; valfri text fungerar), **promptens språk** (engelska eller svenska) och eventuella **ytterligare instruktioner**.
 4. Välj **Bygg prompt** och sedan **Kopiera** eller **Ladda ned (.md)**.
 
 En prompt innehåller projektets **tekniska beskrivning**, objekten med kravnivå, status, beskrivning, motivering, kriterier med gränsvärden, relationer, länkade testfall eller krav, steg med testdata och förväntade resultat, förutsättande test och, vid automatisering, det nuvarande skriptet, följt av instruktioner och svarets form. Beskriv projektets språk, ramverk, arkitektur och konventioner en gång under **Kategorier & inställningar → Projekt → Teknisk beskrivning**; varje prompt tar med den.
 
-Det räcker att kunna läsa objekten för att bygga en prompt. En prompt rymmer högst 200 objekt. Klistra bara in prompter i AI-tjänster som din organisation tillåter för den här informationen.
+Det räcker att kunna läsa objekten för att bygga en prompt. En prompt rymmer högst 200 objekt (en lösningsprompt 2000 krav). Klistra bara in prompter i AI-tjänster som din organisation tillåter för den här informationen.
+
+### Lösningsprompter
+
+**Lösningsprompterna** (*Arkitektur*, *Design*, *Implementationsplan*, *Hela lösningen*) utgår från hela projektet, eller den mapp, det filter, den release eller den variant du väljer. Var och en börjar med projektets [lösningsbeskrivning](#lösningsbeskrivning), sedan en **sammanfattning av projektet** (omfattning, krav per kravnivå, mappar, releaser, varianter, kopplade risker och tester) och kraven med nyckel, kravnivå, prioritet, status, mapp, beskrivning, acceptanskriterier, relationer (*förfinar*, *beror på*, *står i konflikt med* …), de kopplade riskerna med nivå och åtgärd, de verifierande testerna samt de standarder och ramverksmappningar de har (CWE-id och standardavsnitt från [katalogen](catalogue.md), MITRE ATT&CK-, D3FEND- och EMB3D-id). Implementationsplanen får även kravens **beroendeordning** från relationerna *beror på*.
+
+Assistenten ombeds spåra varje designelement till kravnycklarna, lyfta fram oklarheter och konflikter i stället för att hitta på beteenden, lista sina antaganden, hålla sig till lösningsbeskrivningen och avsluta med en **spårbarhetstabell**. Under **Be också om** väljer du extra format för svaret: **Mermaid-diagram**, **C4-diagram**, ett **OpenAPI-skelett** eller **SQL DDL** (varje typ börjar med lämpliga val).
+
+**Storlek.** Resultatet visar en uppskattning av promptens storlek i **tokens** (tecken / 4). För ett stort projekt:
+
+- **Kompakt** tar bara med kravens titlar, kravnivå, prioritet och acceptanskriterier.
+- **Dela upp i delar** ger flera prompter i följd: **en del per mapp på översta nivån**, eller **delar efter storlek** med högst det angivna antalet tokens (större mappar delas upp ytterligare). Varje del upprepar lösningsbeskrivningen och talar om för assistenten vilken del det är: den första ber den hålla namn och nummer stabila, de följande att fortsätta samma svar och den sista att avsluta med den samlade spårbarhetstabellen. Klistra in dem efter varandra i samma konversation.
+
+Välj en del för att se den och sedan **Kopiera den här delen** eller **Ladda ned den här delen (.md)**, eller **Ladda ned alla delar (.zip)**. **Promptens språk** (engelska eller svenska) är oberoende av användargränssnittets språk.
+
+Kommandoraden bygger samma prompter, till exempel i ett kodförråds verktyg:
+
+```sh
+qtestframe prompt --project SHOP --kind architecture --scope 'tag:payments' --split folder --out prompts/
+```
+
+**Skicka till AI-assistansen.** När den valfria [AI-assistansen](ai-assistance.md) finns i projektet har resultatet även **Skicka till AI-assistansen**: prompten (eller den visade delen) skickas till den tjänst din organisation har satt upp och svaret visas medan det skrivs; **Stoppa** avbryter. **Kopiera svaret** eller **Spara som projektdokument** (det läggs till under **Dokument** med taggen *ai-answer*; kräver rätt att redigera krav eller testfall). Granska svaret innan du använder det. Utan AI-assistans skickas aldrig något.
+
+Den läser `QTF_URL`, `QTF_TOKEN` och `QTF_PROJECT` som `qtestframe stubs` ([CI/CD](ci-cd.md)); `--folder`, `--release`, `--variant`, `--compact`, `--max-tokens`, `--formats` och `--lang` motsvarar valen ovan, och utan `--out` skrivs prompten ut.
+
+### Lösningsbeskrivning
+
+Lösningsbeskrivningen beskriver den tänkta lösningen en gång, under **Kategorier & inställningar → Lösningsbeskrivning** (mjukvaruprojekt; att redigera kräver `project.update`, *Förvaltare*):
+
+| Grupp | Fält |
+|---|---|
+| Språk och miljöer | implementationsspråk och versioner, ramverk och bibliotek, målmiljöer (moln, egen drift, containrar, Kubernetes, operativsystem, webbläsare, enheter) |
+| Arkitektur | arkitekturstil (monolit, modulär monolit, mikrotjänster, serverlös, händelsedriven, skiktad, hexagonal, annan) och anteckningar |
+| Teknikstack | frontend, backend, meddelandehantering, cachning |
+| Data och integrationer | databaser – motor, version, vem som äger schemat, migreringsverktyg, hur applikationen ansluter – samt integrationer och externa API:er |
+| Icke-funktionella mål och säkerhet | prestanda, tillgänglighet, skalbarhet, säkerhets- och regelefterlevnadskrav |
+| Leverans och utvecklingssätt | driftsättning och CI/CD, teststrategi, kodkonventioner, kodförrådets struktur |
+| Omfattning och mer sammanhang | utanför omfattningen, ytterligare sammanhang |
+
+**Mallar** fyller i den för vanliga teknikstackar: *Go + PostgreSQL + Vue*, *Java Spring Boot + Oracle*, *.NET + SQL Server*, *Python FastAPI + PostgreSQL*, *Node.js/TypeScript + MongoDB* och *Inbyggt C + RTOS*. Välj en och **Använd mallen**; fälten den fyller i ersätter dina, övriga lämnas. Anpassa allt och välj **Spara**.
+
+**Bara beskrivningar.** Skriv aldrig lösenord, nycklar, token eller anslutningssträngar med inloggningsuppgifter – beskriv i stället var de förvaras (till exempel *inloggning från valvet*). Medan du skriver flaggas text som ser ut som inloggningsuppgifter (en anslutningssträng med lösenord, en tilldelning `password=`, en privat nyckel, en åtkomstnyckel eller token) vid fältet. Du kan ändå spara, men texten ersätts med `[REDACTED]` i varje prompt; ta bort den. Platshållare som `${DB_PASSWORD}` går bra.
+
+Varje sparning blir en ny version: **Historik** visar vem som ändrade vilka fält och när. Lösningsbeskrivningen hör till projektet, så att [projektarkiv](how-it-works.md#säkerhetskopior-och-projektarkiv) (även när projektet dupliceras) och säkerhetskopior tar med den.
+
+Demoprojektet har en ifylld lösningsbeskrivning för sin internetbank (Go, PostgreSQL och Vue).
 
 ## Ta bort ett krav
 

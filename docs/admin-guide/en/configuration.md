@@ -131,6 +131,12 @@ Every key of the file, its type, its default and the environment variable that s
 | `auth.password_min_length` | integer | `10` | — | Minimum length of local passwords (8–72) set in the web client or the API. `user create` and the bootstrap administrator always use 10. |
 | `auth.login_max_attempts` | integer | `10` | — | Sign-in attempts per client address and e-mail address within `login_lockout` (1–1000); further attempts get HTTP 429. |
 | `auth.login_lockout` | duration | `5m` | — | Window of `login_max_attempts` (1m–24h). |
+| `auth.session_idle_timeout` | duration | `0s` | — | Ends a browser session after this long without activity, e.g. `30m` (`0` = off: only `session_ttl` applies). The electronic-records mode of an organisation can set a shorter one; the shorter applies. |
+| `auth.password_min_classes` | integer | `0` | — | How many of the character classes lower-case letters, upper-case letters, digits and symbols a local password must use (2 to 4; `0` = letters and at least one digit or symbol). |
+| `auth.password_history` | integer | `0` | — | How many earlier passwords a user cannot choose again when they change their password (0 to 24; `0` = off). |
+| `auth.password_max_age_days` | integer | `0` | — | A local password expires this many days after it was set: the next sign-in must change it (`0` = never). For accounts older than this setting the days count from their next sign-in. |
+| `auth.token_max_days` | integer | `0` | — | Longest lifetime of a new API token in days (`0` = no limit). With a limit every new token needs an expiry date within it; existing tokens keep theirs. |
+| `auth.token_require_expiry` | bool | `false` | — | Refuse new API tokens without an expiry date. |
 
 ### `auth.oidc`
 
@@ -140,6 +146,7 @@ Every key of the file, its type, its default and the environment variable that s
 | `auth.oidc[].name` | string | — | — | Identifier of the provider in its URLs (`/api/v1/auth/oidc/<name>/callback`) and in `QTF_OIDC_<NAME>_CLIENT_SECRET`. Use lower-case letters, digits and `_`. |
 | `auth.oidc[].enabled` | bool | `true` | — | `false` keeps the provider configured but hides it from the sign-in page. Default `true`. |
 | `auth.oidc[].display_name` | string | — | — | Label of the button on the sign-in page. |
+| `auth.oidc[].icon` | string | — | — | Icon of the sign-in button: `sign-in`, `key`, `shield`, `building`, `microsoft`, `google`, `github`, `amazon` or `apple` (empty = a generic icon). |
 | `auth.oidc[].issuer` | string | — | — | Issuer URL; the server reads `<issuer>/.well-known/openid-configuration` at the first sign-in. Required. |
 | `auth.oidc[].client_id` | string | — | — | Client ID registered at the provider. Required. |
 | `auth.oidc[].client_secret` | string | — | `QTF_OIDC_<NAME>_CLIENT_SECRET` | Client secret written in the file. Prefer `client_secret_file` or the environment variable. |
@@ -155,6 +162,7 @@ Every key of the file, its type, its default and the environment variable that s
 | `auth.oidc[].default_tenant` | string | — | — | Slug of the organisation whose membership the sign-in creates or updates. |
 | `auth.oidc[].default_role` | string | `viewer` | — | Role when no group is mapped (an unknown or empty role means `viewer`). |
 | `auth.oidc[].role_mapping` | map | — | — | Group → role. The most privileged mapped role wins and is set again at every sign-in. |
+| `auth.oidc[].allowed_domains` | list | — | — | E-mail domains that may sign in through the provider (`example.com`; `*.example.com` for its subdomains). Empty = any. Other addresses are refused before an account is looked up or created. |
 
 ### `auth.saml`
 
@@ -175,6 +183,7 @@ Every key of the file, its type, its default and the environment variable that s
 | `auth.saml[].default_tenant` | string | — | — | As for OIDC. |
 | `auth.saml[].default_role` | string | `viewer` | — | As for OIDC. |
 | `auth.saml[].role_mapping` | map | — | — | As for OIDC. |
+| `auth.saml[].allowed_domains` | list | — | — | E-mail domains that may sign in through the provider, as for OIDC. Empty = any. |
 
 ### `runner`
 
@@ -257,6 +266,7 @@ Every key of the file, its type, its default and the environment variable that s
 | `email.tls` | string | `starttls` | — | `starttls`, `tls` (implicit) or `none` (a local relay only). |
 | `email.timeout` | duration | `30s` | — | Limit for sending one message. |
 | `email.digest_hour` | integer | `7` | — | Hour of the day (UTC, 0–23) when daily digests are sent. |
+| `email.reply_to` | string | — | — | Reply-To address of e-mails that have none of their own, e.g. a support mailbox (empty = none). Invitations and shared reports reply to the person who sent them. |
 
 ### `system_settings`
 
@@ -321,6 +331,16 @@ Every key of the file, its type, its default and the environment variable that s
 | `ai.features.suggest_criteria` | bool | `true` | — | Offer *Suggest acceptance criteria* in the requirement editor. |
 | `ai.price_input` | string | — | — | Optional price per million input tokens (any currency), to show an estimated cost with each answer. |
 | `ai.price_output` | string | — | — | Optional price per million output tokens. |
+
+### `outbound`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `outbound.proxy` | string | — | — | HTTP(S) proxy for the server's outgoing calls (webhooks, chat, defect trackers and requirement sources, AI, embeddings, OIDC discovery, environment health checks), e.g. `http://proxy.example.com:3128`. Empty = the environment variables `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY`. |
+| `outbound.no_proxy` | list | — | — | Hosts reached without `proxy` (exact names or `*.example.com`). |
+| `outbound.allowed_hosts` | list | — | — | When set, the only hosts outgoing calls may reach (exact names, addresses or `*.example.com`); others are refused. Protects against server-side request forgery through webhook and tracker URLs. |
+| `outbound.denied_hosts` | list | — | — | Hosts outgoing calls never reach, e.g. `metadata.google.internal` or `169.254.169.254`. |
+| `outbound.block_private` | bool | `false` | — | Refuse outgoing calls to loopback, private, link-local and other non-public addresses (checked on the address actually connected to), unless the host is in `allowed_hosts`. Turn it on when the server is reachable from the internet and its users should not reach your internal network through it. |
 
 <!-- END GENERATED: config-reference -->
 

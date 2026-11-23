@@ -813,20 +813,32 @@ func (s *Server) signedRoute(pattern string) bool {
 // idleExpired reports whether a session of a tenant in electronic-records
 // mode has been inactive for longer than allowed.
 func (s *Server) idleExpired(ctx context.Context, sess *model.Session) bool {
-	if sess.TenantID == "" || sess.LastSeen == nil {
+	if sess.LastSeen == nil {
 		return false
 	}
-	st := s.erecords(ctx, sess.TenantID)
-	return st.Enabled && s.Store.Now().Sub(*sess.LastSeen) > time.Duration(st.IdleTimeoutMinutes)*time.Minute
+	limit := s.idleLimit(ctx, sess)
+	return limit > 0 && s.Store.Now().Sub(*sess.LastSeen) > limit
+}
+
+// idleLimit is the inactivity timeout of a session (0 = none): the
+// shorter of auth.session_idle_timeout and the electronic-records mode's.
+func (s *Server) idleLimit(ctx context.Context, sess *model.Session) time.Duration {
+	limit := s.conf().Auth.SessionIdleTimeout
+	if sess.TenantID != "" {
+		if st := s.erecords(ctx, sess.TenantID); st.Enabled {
+			if e := time.Duration(st.IdleTimeoutMinutes) * time.Minute; limit == 0 || e < limit {
+				limit = e
+			}
+		}
+	}
+	return limit
 }
 
 // touchInterval is how often the activity of a session is recorded: every
 // minute, more often under an inactivity timeout.
 func (s *Server) touchInterval(ctx context.Context, sess *model.Session) time.Duration {
-	if sess.TenantID != "" {
-		if st := s.erecords(ctx, sess.TenantID); st.Enabled {
-			return min(time.Minute, time.Duration(st.IdleTimeoutMinutes)*time.Minute/6)
-		}
+	if limit := s.idleLimit(ctx, sess); limit > 0 {
+		return min(time.Minute, limit/6)
 	}
 	return time.Minute
 }

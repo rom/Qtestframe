@@ -121,3 +121,19 @@ Vad en begränsning **inte** döljer, så planera för det:
 | Händelselogg | `audit.read` (Testledare och uppåt som standard) |
 | Provisionering (SCIM), Tvåstegsverifiering (organisationens policy) | `tenant.manage` |
 | Organisationer, Användare, Säkerhetskopiering, Systeminställningar, serverns MFA-policy | superadministratörer |
+
+## Organisationer och användare (superadministratörer)
+
+**Administration → Organisationer** listar varje organisation med medlemmar, projekt och lagring, mot dess kvoter.
+
+- **Skapa** med ett kortnamn (2–63 av `a-z`, `0-9`, `-`, går inte att ändra) och ett namn; **byt namn** när som helst.
+- **Stäng av** stoppar en organisation utan att ta bort något: medlemmarna kan inte öppna den (en session i den har ingen organisation, att byta till den eller logga in i den ger 403) och dess API-tokens nekas. **Återaktivera** avslutar avstängningen. Superadministratörer kan fortfarande öppna en avstängd organisation.
+- **Användning och regler** visar antalen (medlemmar, projekt, krav, testfall, körningar, filer, lagring, senaste aktivitet), vad organisationens administratörer har ställt in (AI-assistans, läge för elektroniska poster, krav på MFA) och de **regler** som bara superadministratörer ändrar: kvoter för medlemmar, projekt och lagring (att lägga till utöver dem nekas, inget befintligt tas bort), *Förbjud AI-assistans*, **tillåtna inloggningssätt** (lösenord, en OIDC- eller SAML-leverantör; medlemmar vars konto använder ett annat sätt kan inte öppna organisationen) och **e-postdomäner** vars nya användare med enkel inloggning går med i den.
+- **Ta bort** tar bort organisationen och alla dess data för gott. Dialogen erbjuder en säkerhetskopia först och ber om att kortnamnet skrivs; organisationen du arbetar i kan inte tas bort.
+- **Granskningslogg** öppnar organisationens granskningslogg; superadministratörer kan välja vilken organisation som helst där.
+
+Ingen kan logga in som en annan användare – inte heller superadministratörer. Att byta till en organisation öppnar den i ditt eget namn, och varje åtgärd registreras med det.
+
+**Administration → Användare** listar alla konton i alla organisationer, med filter (status, inloggningssätt, MFA, superadministratörer). Superadministratörer skapar och redigerar konton, **inaktiverar och aktiverar** dem, återställer ett lokalt lösenord (ett tillfälligt, som visas en gång) eller den andra faktorn, **loggar ut en användare överallt** (API-tokens fortsätter att gälla), ser användarens **organisationer och roller** och ger eller tar flaggan superadministratör. Den sista aktiverade superadministratören kan inte degraderas eller inaktiveras.
+
+Vem som får skapa **projekt** är behörigheten `project.create` i varje organisations rollmatris; bara superadministratörer skapar organisationer. Ett nytt projekt syns för hela organisationen tills dess medlemmar begränsar det (ovan).

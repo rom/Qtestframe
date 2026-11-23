@@ -11,6 +11,7 @@ import (
 
 	"github.com/rom/qtestframe/internal/app"
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/settings"
 )
 
 const root = "../.."
@@ -55,6 +56,33 @@ func TestEveryKeyDescribed(t *testing.T) {
 	for env := range envDocs {
 		if _, ok := config.EnvVars[env]; !ok {
 			t.Errorf("description of %s, which config.EnvVars does not read", env)
+		}
+	}
+}
+
+// Every key of the configuration file is in the system settings (editable
+// or shown read-only) or listed as file-only with a reason (the inventory
+// of the administration view).
+func TestSettingsInventory(t *testing.T) {
+	inReg := map[string]bool{}
+	for _, d := range settings.Registry {
+		inReg[d.Key] = true
+	}
+	for _, f := range Fields() {
+		k := f.Key
+		if i := strings.Index(k, "[]"); i >= 0 {
+			k = k[:i] // providers: the list is one setting
+		}
+		if inReg[k] || inReg[f.Key] {
+			continue
+		}
+		if why, ok := settings.FileOnly[k]; !ok || why == "" {
+			t.Errorf("%s: neither a system setting nor in settings.FileOnly", f.Key)
+		}
+	}
+	for k := range settings.FileOnly {
+		if inReg[k] {
+			t.Errorf("%s: in settings.FileOnly and in the registry", k)
 		}
 	}
 }

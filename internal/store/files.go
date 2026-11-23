@@ -68,6 +68,11 @@ func (s *Store) CreateFile(ctx context.Context, tenantID string, f *model.FileIn
 		f.URL = "/api/v1/avatars/" + f.ID
 	}
 	return s.tx(ctx, func(c conn) error {
+		if tenantID != "" {
+			if err := s.checkQuota(ctx, c, tenantID, quotaStorage, f.Size); err != nil {
+				return err
+			}
+		}
 		if _, err := c.exec(ctx, `INSERT INTO files (id, tenant_id, project_id, kind, name, content_type, size, sha256, description, tags, uploaded_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			f.ID, tenantID, nullStr(f.ProjectID), f.Kind, f.Name, f.ContentType, f.Size, f.SHA256, f.Description, encodeTags(f.Tags), f.UploadedBy, f.CreatedAt); err != nil {
 			return err

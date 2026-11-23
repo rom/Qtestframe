@@ -13,7 +13,7 @@ import (
 func TestSecretSettingsAreEncrypted(t *testing.T) {
 	for _, d := range settings.Registry {
 		want := map[settings.Kind]string{settings.Secret: "string", settings.OIDCList: "oidc"}[d.Kind]
-		if want != "" && store.SecretSettings[d.Key] != want {
+		if want != "" && d.Apply != settings.ReadOnly && store.SecretSettings[d.Key] != want {
 			t.Errorf("setting %s (%s) is not listed in store.SecretSettings", d.Key, d.Kind)
 		}
 	}

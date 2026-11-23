@@ -6,7 +6,14 @@ Only super administrators **signed in with a session** can read or change the se
 
 ## Precedence and locking
 
-**Precedence:** a value changed in the web client wins over the `QTF_*` environment variable and the configuration file, which win over the built-in default. The page shows the source of every value (*Default*, *Configuration file*, *Environment*, *Changed here*), and **Reset to file value** deletes the stored value.
+**Precedence**, from strongest to weakest:
+
+1. a `QTF_*` **environment variable** – it always wins and locks the setting on the page;
+2. a value **changed in the web client** (stored in the database) – unless `system_settings.locked` locks the key, then the file wins;
+3. the **configuration file**;
+4. the built-in **default**.
+
+The page shows the source of every value (*Default*, *Configuration file*, *Environment*, *Changed here*). A stored value that is shadowed – the key was later set by an environment variable or locked in the file – is kept but marked *ignored*, and the value in use is shown. **Reset to file value** deletes the stored value. The order is the same as before this page existed; operators who prefer the file to win lock the keys.
 
 **The operator always wins**, through three kinds of lock:
 
@@ -29,9 +36,13 @@ Use environment variables or locks for what must not change from the web client 
 
 | Section | Applies |
 |---|---|
-| General, Security, Single sign-on (OIDC), Logging and syslog, E-mail (SMTP) | **at once** – the e-mail sender, the OIDC providers (unchanged providers are kept, so sign-ins in progress continue), the logger and the sign-in limits are rebuilt |
+| General, Sign-in and passwords, API tokens, Single sign-on, Logging and syslog, E-mail (SMTP), Outgoing connections, Similarity, AI assistance | **at once** – the e-mail sender, the OIDC providers (unchanged providers are kept, so sign-ins in progress continue), the logger, the sign-in limits and the outgoing HTTP client follow the new values |
+| Live updates | the switch and the heartbeat **at once** (new connections); the connection limits, the replay buffer and the presence timeout **after a restart** |
+| Server and database | the HTTP read and write timeouts **after a restart**; everything else is set in the file and shown with its source (listen address, TLS files, database, first start, hardening, key provider) |
 | Script and web test runner | **after a restart** – the runner and its sandbox are set up before the process is locked down (Landlock execute paths, work directory); the value is stored at once and the page shows the value in use until then |
-| Retention and backups | nothing to change: the trash keeps deleted items for 30 days, which is fixed |
+| Retention and backups, Authorisation, Multi-factor authentication | nothing to change here: they explain and link to the pages that manage them (the trash keeps deleted items for 30 days, which is fixed) |
+
+Settings marked **Applies after restart** keep their value in use until the next start. A banner at the top of the page lists every saved change that waits for a restart, with a link to the setting.
 
 `auth.session_ttl` applies to sessions created after the change. New values are validated together with the rest of the configuration – the same checks as `check-config` – before they are stored. If the stored settings are invalid at start-up (for example after a change of the file), the server logs `stored system settings are invalid and were ignored`, uses the file, and the page shows a warning; fix or reset the values there.
 
@@ -46,17 +57,40 @@ The settings the page offers, generated from `internal/settings`:
 | General | `server.base_url` | text | at once |
 | General | `files.max_upload_mb` | 1–1024 | at once |
 | General | `requirements.auto_create_test` | on/off | at once |
-| General | `server.listen` | text | shown only (file) |
-| General | `database.driver` | text | shown only (file) |
-| Security | `auth.local` | on/off | at once |
-| Security | `auth.session_ttl` | 5m–2160h | at once |
-| Security | `auth.password_min_length` | 8–72 | at once |
-| Security | `auth.login_max_attempts` | 1–1000 | at once |
-| Security | `auth.login_lockout` | 1m–24h | at once |
-| Security | `auth.cookie_secure` | on/off | shown only (file) |
-| Security | `server.hsts` | on/off | shown only (file) |
-| Security | `server.trusted_proxies` | list | shown only (file) |
-| Single sign-on (OIDC) | `auth.oidc` | list of providers | at once |
+| Server and database | `server.listen` | text | shown only (file) |
+| Server and database | `server.tls_cert` | text | shown only (file) |
+| Server and database | `server.tls_key` | text | shown only (file) |
+| Server and database | `server.read_timeout` | 1s–2h | after a restart |
+| Server and database | `server.write_timeout` | 1s–2h | after a restart |
+| Server and database | `server.frame_ancestors` | list | at once |
+| Server and database | `server.trusted_proxies` | list | shown only (file) |
+| Server and database | `server.hsts` | on/off | shown only (file) |
+| Server and database | `database.driver` | text | shown only (file) |
+| Server and database | `database.dsn` | secret (write-only) | shown only (file) |
+| Server and database | `database.max_open_conns` | number | shown only (file) |
+| Server and database | `bootstrap.tenant_slug` | text | shown only (file) |
+| Server and database | `bootstrap.tenant_name` | text | shown only (file) |
+| Server and database | `bootstrap.admin_email` | text | shown only (file) |
+| Server and database | `hardening.no_new_privs` | on/off | shown only (file) |
+| Server and database | `hardening.landlock` | on/off | shown only (file) |
+| Server and database | `hardening.seccomp` | on/off | shown only (file) |
+| Server and database | `hardening.drop_capabilities` | on/off | shown only (file) |
+| Server and database | `hardening.read_only_paths` | list | shown only (file) |
+| Server and database | `hardening.read_write_paths` | list | shown only (file) |
+| Server and database | `secrets.provider` | text | shown only (file) |
+| Sign-in and passwords | `auth.local` | on/off | at once |
+| Sign-in and passwords | `auth.session_ttl` | 5m–2160h | at once |
+| Sign-in and passwords | `auth.session_idle_timeout` | 0s–720h | at once |
+| Sign-in and passwords | `auth.password_min_length` | 8–72 | at once |
+| Sign-in and passwords | `auth.password_min_classes` | 0–4 | at once |
+| Sign-in and passwords | `auth.password_history` | 0–24 | at once |
+| Sign-in and passwords | `auth.password_max_age_days` | 0–3650 | at once |
+| Sign-in and passwords | `auth.login_max_attempts` | 1–1000 | at once |
+| Sign-in and passwords | `auth.login_lockout` | 1m–24h | at once |
+| Sign-in and passwords | `auth.cookie_secure` | on/off | shown only (file) |
+| API tokens | `auth.token_max_days` | 0–3650 | at once |
+| API tokens | `auth.token_require_expiry` | on/off | at once |
+| Single sign-on | `auth.oidc` | list of providers | at once |
 | Logging and syslog | `logging.level` | `debug`, `info`, `warn`, `error` | at once |
 | Logging and syslog | `logging.format` | `text`, `json` | at once |
 | Logging and syslog | `logging.syslog.enabled` | on/off | at once |
@@ -67,6 +101,7 @@ The settings the page offers, generated from `internal/settings`:
 | Logging and syslog | `logging.syslog.tag` | text | at once |
 | Logging and syslog | `logging.syslog.ca_file` | text | shown only (file) |
 | Logging and syslog | `logging.syslog.cert_file` | text | shown only (file) |
+| Logging and syslog | `logging.syslog.key_file` | text | shown only (file) |
 | E-mail (SMTP) | `email.enabled` | on/off | at once |
 | E-mail (SMTP) | `email.host` | text | at once |
 | E-mail (SMTP) | `email.port` | 1–65535 | at once |
@@ -75,15 +110,25 @@ The settings the page offers, generated from `internal/settings`:
 | E-mail (SMTP) | `email.password` | secret (write-only) | at once |
 | E-mail (SMTP) | `email.from` | text | at once |
 | E-mail (SMTP) | `email.from_name` | text | at once |
+| E-mail (SMTP) | `email.reply_to` | text | at once |
 | E-mail (SMTP) | `email.timeout` | 1s–10m | at once |
 | E-mail (SMTP) | `email.digest_hour` | 0–23 | at once |
+| Outgoing connections | `outbound.proxy` | text | at once |
+| Outgoing connections | `outbound.no_proxy` | list | at once |
+| Outgoing connections | `outbound.allowed_hosts` | list | at once |
+| Outgoing connections | `outbound.denied_hosts` | list | at once |
+| Outgoing connections | `outbound.block_private` | on/off | at once |
 | Script and web test runner | `runner.enabled` | on/off | after a restart |
 | Script and web test runner | `runner.timeout` | 1s–24h | after a restart |
 | Script and web test runner | `runner.max_output_bytes` | 1024–67108864 | after a restart |
 | Script and web test runner | `runner.deny_network` | on/off | after a restart |
 | Script and web test runner | `runner.sandbox` | on/off | shown only (file) |
+| Script and web test runner | `runner.work_dir` | text | shown only (file) |
+| Script and web test runner | `runner.interpreters` | list | shown only (file) |
 | Script and web test runner | `runner.web.enabled` | on/off | after a restart |
 | Script and web test runner | `runner.web.browser` | `chromium`, `firefox`, `webkit` | after a restart |
+| Script and web test runner | `runner.web.channel` | text | after a restart |
+| Script and web test runner | `runner.web.browser_channels` | on/off | after a restart |
 | Script and web test runner | `runner.web.headless` | on/off | after a restart |
 | Script and web test runner | `runner.web.timeout` | 1s–24h | after a restart |
 | Script and web test runner | `runner.web.job_timeout` | 1s–24h | after a restart |
@@ -92,7 +137,17 @@ The settings the page offers, generated from `internal/settings`:
 | Script and web test runner | `runner.web.screenshots` | `on_failure`, `always`, `off` | after a restart |
 | Script and web test runner | `runner.web.trace` | `on_failure`, `always`, `off` | after a restart |
 | Script and web test runner | `runner.web.video` | `off`, `on_failure`, `always` | after a restart |
+| Script and web test runner | `runner.web.node` | text | shown only (file) |
 | Script and web test runner | `runner.web.playwright_dir` | text | shown only (file) |
+| Script and web test runner | `runner.web.command` | text | shown only (file) |
+| Script and web test runner | `runner.web.browsers_path` | text | shown only (file) |
+| Script and web test runner | `runner.web.executable_path` | text | shown only (file) |
+| Live updates | `live.enabled` | on/off | at once |
+| Live updates | `live.heartbeat` | 1s–5m | at once |
+| Live updates | `live.presence_ttl` | 5s–1h | after a restart |
+| Live updates | `live.max_connections` | 1–1000000 | after a restart |
+| Live updates | `live.max_connections_per_user` | 1–1000 | after a restart |
+| Live updates | `live.replay_buffer` | 0–100000 | after a restart |
 | Similarity (duplicates) | `similarity.embeddings.enabled` | on/off | at once |
 | Similarity (duplicates) | `similarity.embeddings.url` | text | at once |
 | Similarity (duplicates) | `similarity.embeddings.model` | text | at once |
@@ -117,15 +172,23 @@ The settings the page offers, generated from `internal/settings`:
 
 <!-- END GENERATED: system-settings -->
 
-What each key means is in the [configuration reference](configuration.md#reference). Everything else – TLS, the database, hardening, the key provider, SAML, `trusted_proxies`, `cookie_secure`, `hsts`, the paths of the runner – is set only in the file.
+What each key means is in the [configuration reference](configuration.md#reference). Every key of the configuration file is either in this table – editable, or *shown only (file)* with its value and source – or file-only on purpose: the `*_file` options of secrets, the bootstrap password, the SAML providers (they need key and certificate files; the page lists them read-only with a *Test metadata* button), `system_settings.locked` itself and the details of the key provider of stored secrets (shown in the encryption panel of *Server and database*). A test (`TestSettingsInventory`) keeps it that way when a key is added.
+
+## Using the page
+
+- The side navigation groups the sections into *Server*, *Access* and *Services*. **Search** finds a setting in any section by its name, help text, key, value or environment variable, and jumps to it.
+- Each section is saved on its own. **Save section** first shows the changes – old and new value, secrets only as *a new value is stored* – and whether they apply at once or after a restart.
+- **Export settings (JSON)** downloads the values changed here (not the file's, never secrets, without the OIDC provider list) as `qtestframe-settings.json`; **Import settings** reads such a file on another server, skips unknown, locked and secret keys, and shows the changes before they are saved. **Export configuration** still downloads the whole effective configuration as YAML.
 
 ## Notes on single sign-on, syslog and e-mail
 
 - **OIDC providers.** Changing the providers in the web client stores the whole list, which then **replaces** `auth.oidc` of the file. Client secrets of providers that come from the file are not copied into the database: they keep coming from `client_secret_file` or `QTF_OIDC_<NAME>_CLIENT_SECRET`, which always wins. **Reset to file value** returns to the file's list.
-- **SAML** providers can only be configured in the file.
+- **SAML** providers can only be configured in the file; the page lists them (entity ID, metadata, ACS URL, attributes, role mapping) and *Test metadata* reads the identity provider's metadata.
+- **Outgoing connections.** `outbound.*` applies to every outgoing HTTP call: webhooks, chat channels, defect trackers and requirement sources, AI assistance, the embeddings service, OIDC discovery and environment health checks (not SMTP or syslog). `allowed_hosts` and `denied_hosts` take exact names, addresses or `*.example.com`; `block_private` refuses loopback, private, link-local and other non-public addresses, checked on the address actually connected to (so a DNS name that later resolves to an internal address is still refused), unless the host is allowed explicitly. *Check URL* tests an address against the rules, unsaved changes included. With a proxy, the addresses are checked on the server before the call. A proxy password can only come from the file or `HTTPS_PROXY`; the page and the export show it as `REDACTED`. There is no separate rate limit for webhooks or chat beyond their own retry rules.
 - **Syslog over TLS** uses `ca_file`, `cert_file` and `key_file` from the file; they are readable after the lock-down because they are added to the Landlock read-only paths at start-up. A Unix socket that was not configured at start-up may be refused by Landlock; use `udp`, `tcp` or `tls`, or restart.
 - **Secrets** entered on the page (the SMTP password, OIDC client secrets) are write-only, stored [encrypted](security.md#encryption-of-stored-secrets), never logged and never shown again.
-- **Test buttons** (*Test connection* for OIDC discovery, *Send test message* for syslog, *Send test e-mail*) make the server connect to an address the super administrator enters. Filter the server's egress if it can reach internal services.
+- **Test buttons** (*Test connection* for OIDC discovery, *Test metadata* for SAML, *Send test message* for syslog, *Send test e-mail*, *Test the service* for embeddings and AI, *Check URL* for outgoing connections) make the server connect to an address the super administrator enters. They follow the outgoing-connection rules where they use HTTP; filter the server's egress if it can reach internal services.
+- **Not on the page:** a backup schedule (backups are made on demand or from a systemd timer with `qtestframe backup`), metrics endpoints (there is none; `/healthz` and `/readyz` are public and carry no data), CI and tracker defaults (they are per project), and per-organisation settings, which are on the organisation's own pages (AI assistance, Electronic records, Multi-factor authentication) or in its policy (Administration → Organisations).
 
 ## Embeddings service for similar items
 
@@ -183,6 +246,6 @@ Users see a notice that the text is sent before they start. Use a service run by
 
 ## Audit and export
 
-- Every change is written to the audit log as `settings.update` with old → new value (secrets only as *set* / *changed* / *removed*), and to the server log. The test buttons are audited as `settings.test_*`.
+- Every change is written to the audit log as `settings.update` with old → new value (secrets only as *set* / *changed* / *removed*), and to the server log – an import too, as one change. The test buttons are audited as `settings.test_*`.
 - **Export configuration** (`GET /api/v1/admin/settings/export`) downloads the effective configuration as YAML with secrets replaced by `REDACTED` – for example to move the values into the file and then reset them on the page.
 - [Backups](backup-and-migration.md) contain the `system_settings` table with its secrets, still encrypted; a restore applies it at once. Project archives do not contain it.

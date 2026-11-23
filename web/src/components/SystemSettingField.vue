@@ -9,6 +9,7 @@ import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
 import Tag from 'primevue/tag'
+import Textarea from 'primevue/textarea'
 import ToggleSwitch from 'primevue/toggleswitch'
 import { useI18n } from 'vue-i18n'
 import { uid } from '@/lib/a11y'
@@ -54,7 +55,8 @@ const model = computed({
       <span class="sys-badges">
         <Tag :value="t(`sysSettings.source.${s.source}`)" :severity="sourceSeverity(s.source)" class="sys-badge" />
         <Tag v-if="s.apply === 'restart'" :value="t('sysSettings.apply.restart')" severity="warn" class="sys-badge" icon="pi pi-refresh" />
-        <Tag v-if="s.locked" :value="t('sysSettings.apply.readonly')" severity="secondary" class="sys-badge" icon="pi pi-lock" />
+        <Tag v-if="s.locked" :value="t(s.lock_reason === 'environment' ? 'sysSettings.apply.environment' : 'sysSettings.apply.readonly')" severity="secondary" class="sys-badge" icon="pi pi-lock" />
+        <Tag v-if="s.pending_restart" :value="t('sysSettings.apply.pending')" severity="danger" class="sys-badge" icon="pi pi-clock" />
       </span>
     </div>
 
@@ -65,13 +67,17 @@ const model = computed({
       </template>
       <InputNumber v-else-if="s.type === 'int'" v-model="model as number" :input-id="ids.input" :min="s.min" :max="s.max" :use-grouping="false" :disabled="s.locked || busy" :aria-describedby="describedBy" fluid />
       <Select v-else-if="s.type === 'enum'" :model-value="model" :options="options" option-label="label" option-value="value" :label-id="ids.input" :aria-labelledby="ids.label" :disabled="s.locked || busy" :aria-describedby="describedBy" fluid @update:model-value="(v: string) => emit('update:modelValue', v)" />
+      <template v-else-if="s.type === 'secret' && s.locked">
+        <InputText :id="ids.input" :model-value="s.has_secret ? t('sysSettings.secretSet') : t('sysSettings.secretUnset')" disabled :aria-describedby="describedBy" fluid />
+      </template>
       <template v-else-if="s.type === 'secret'">
         <InputText :id="ids.input" v-model="model as string" type="password" autocomplete="new-password" :placeholder="s.has_secret ? t('sysSettings.secretKeep') : ''" :disabled="s.locked || busy || removeSecret" :aria-describedby="describedBy" fluid />
       </template>
-      <InputText v-else :id="ids.input" v-model="model as string" :readonly="s.type === 'list'" :disabled="s.locked || busy" spellcheck="false" :class="{ mono: s.type !== 'string' || s.key.endsWith('url') }" :aria-describedby="describedBy" fluid />
+      <Textarea v-else-if="s.type === 'list'" :id="ids.input" v-model="model as string" :rows="Math.min(6, Math.max(2, String(model ?? '').split('\n').length + 1))" :disabled="s.locked || busy" spellcheck="false" class="mono" :aria-describedby="describedBy" fluid />
+      <InputText v-else :id="ids.input" v-model="model as string" :disabled="s.locked || busy" spellcheck="false" :class="{ mono: s.type !== 'string' || s.key.endsWith('url') }" :aria-describedby="describedBy" fluid />
     </div>
 
-    <small :id="ids.hint" class="muted sys-hint">{{ hint }}</small>
+    <small :id="ids.hint" class="muted sys-hint">{{ hint }}<template v-if="s.type === 'list' && !s.locked"> {{ t('sysSettings.listHint') }}</template></small>
     <div :id="ids.state" class="small sys-state">
       <span v-if="s.type === 'secret'"><i class="pi pi-key" aria-hidden="true" /> {{ s.has_secret ? t('sysSettings.secretSet') : t('sysSettings.secretUnset') }}</span>
       <span v-if="lockText" class="sys-lock"><i class="pi pi-lock" aria-hidden="true" /> {{ lockText }}</span>
