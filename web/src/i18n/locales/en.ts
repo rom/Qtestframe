@@ -222,6 +222,7 @@ const en = {
     tags: 'Tags',
     catalog: 'Catalogue',
     executionSettings: 'Test execution settings',
+    documentSettings: 'Logo on reports and documents',
     mfaPolicy: 'Multi-factor authentication',
     mfaSetup: 'Set up multi-factor authentication',
     documents: 'Documents',

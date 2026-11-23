@@ -224,6 +224,7 @@ const sv: Messages = {
     tags: 'Taggar',
     catalog: 'Katalog',
     executionSettings: 'Inställningar för testexekvering',
+    documentSettings: 'Logotyp i rapporter och dokument',
     mfaPolicy: 'Tvåstegsverifiering',
     mfaSetup: 'Konfigurera tvåstegsverifiering',
     documents: 'Dokument',
