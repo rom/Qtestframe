@@ -9,7 +9,7 @@ describe('project types and prompt kinds', () => {
     for (const t of PROJECT_TYPES) expect(PROJECT_TYPE_ICONS[t]).toMatch(/^pi pi-/)
   })
   it('classifies prompt kinds', () => {
-    expect(PROMPT_KINDS.filter(promptForRequirements)).toEqual(['implement', 'review_requirements', 'design_tests'])
+    expect(PROMPT_KINDS.filter(promptForRequirements)).toEqual(['implement', 'review_requirements', 'design_tests', 'architecture', 'design', 'implementation_plan', 'full_solution'])
     expect(PROMPT_KINDS.filter(promptNeedsTestType)).toEqual(['design_tests', 'test_strategy'])
     expect(isPromptKind('automate_tests')).toBe(true)
     expect(isPromptKind('x')).toBe(false)

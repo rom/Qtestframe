@@ -414,6 +414,29 @@ async function discover(request) {
     { name: 'link-dialog', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: ['.p-drawer [role="tab"]:has(.pi-link)', '.item-links button:has(.pi-link)'], wait: '.link-types' },
     { name: 'new-requirement', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-plus)', wait: '.obligation-help' },
     { name: 'prompts', path: `${p}/prompts`, wait: '.prompts-grid, .p-message' },
+    // solution prompts: the seeded preamble (form, credential warning, template dialog, history) and a split prompt
+    { name: 'solution-preamble', path: `${p}/settings?tab=solution`, wait: '.solution-preamble form #sp-languages' },
+    {
+      name: 'solution-preamble-warning',
+      path: `${p}/settings?tab=solution`,
+      act: async (page) => {
+        await page.locator('#sp-databases').fill('postgres://app:' + 'Not-a-real-0ne' + '@db/app')
+      },
+      wait: '.sp-warnings',
+    },
+    { name: 'solution-preamble-template', path: `${p}/settings?tab=solution`, open: ['#sp-template', '.p-select-overlay li:first-child', '.solution-preamble button:has(.pi-clone)'], wait: '.p-confirmdialog, .p-dialog' },
+    { name: 'solution-preamble-history', path: `${p}/settings?tab=solution`, open: '.solution-preamble button:has(.pi-history)', wait: '#sp-history .history, #sp-history .muted' },
+    { name: 'prompts-solution', path: `${p}/prompts?kind=architecture`, wait: '.preamble-status, .prompts-grid .p-message' },
+    {
+      name: 'prompts-solution-split',
+      path: `${p}/prompts?kind=full_solution`,
+      act: async (page) => {
+        await page.locator('#prompt-split').click()
+        await page.locator('.p-select-overlay li').nth(1).click()
+        await page.locator('.prompts-grid form button[type="submit"]').click()
+      },
+      wait: '.part-buttons, .prompt-output',
+    },
     readinessRun && { name: 'run-readiness', path: `${p}/runs/${readinessRun.id}`, open: 'button.readiness-cell', wait: '.readiness-pop' },
     { name: 'undo-menu', path: `${p}/tests`, open: '.undo-controls button:has(.pi-history)', wait: '.undo-menu' },
     { name: 'columns-menu', path: `${p}/requirements`, open: 'button:has(.pi-table)', wait: '.columns-menu' },

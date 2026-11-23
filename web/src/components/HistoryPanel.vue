@@ -21,13 +21,15 @@ import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
 
 const props = defineProps<{
-  entity: 'requirement' | 'test' | 'exploratory_session' | 'cycle' | 'environment' | 'test_data_set'
+  entity: 'requirement' | 'test' | 'exploratory_session' | 'cycle' | 'environment' | 'test_data_set' | 'solution_preamble'
   entityId: string
   canRestore: boolean
   /** Current version of the item (restoring it would be a no-op). */
   currentVersion?: number
   /** Resolve ids (category_ids, folder_id) to names. */
   resolve?: (field: string, id: string) => string | undefined
+  /** Labels of the fields (else fields.<name> or the name). */
+  fieldLabels?: Record<string, string>
 }>()
 const emit = defineEmits<{ restored: [item: unknown] }>()
 const notify = useNotify()
@@ -39,6 +41,7 @@ const fieldLabel = (f: string) => {
     const key = f.slice(14)
     return useProjectStore().customFields.find((x) => x.key === key)?.label ?? key
   }
+  if (props.fieldLabels?.[f]) return props.fieldLabels[f]
   const k = `fields.${f}`
   return te(k) ? t(k) : f.replace(/_/g, ' ')
 }
@@ -49,7 +52,8 @@ const error = ref('')
 const selectedId = ref<string | null>(null)
 const restoring = ref(false)
 const HISTORY_PATHS: Record<string, string> = { requirement: 'requirements', exploratory_session: 'exploratory-sessions', cycle: 'cycles', environment: 'environments', test_data_set: 'test-data-sets', test: 'tests' }
-const path = computed(() => `/${HISTORY_PATHS[props.entity] ?? 'tests'}/${props.entityId}`)
+// the solution preamble's history is the project's (entityId = the project id)
+const path = computed(() => (props.entity === 'solution_preamble' ? `/projects/${props.entityId}/solution-preamble` : `/${HISTORY_PATHS[props.entity] ?? 'tests'}/${props.entityId}`))
 
 const undoStore = useUndoStore()
 watch(

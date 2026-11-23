@@ -37,6 +37,8 @@ import CorrelationSettings from '@/components/CorrelationSettings.vue'
 import SharingPanel from '@/components/SharingPanel.vue'
 import CustomFieldsSettings from '@/components/CustomFieldsSettings.vue'
 import TemplatesSettings from '@/components/TemplatesSettings.vue'
+import SolutionPreambleSettings from '@/components/SolutionPreambleSettings.vue'
+import { isSoftware } from '@/lib/projectTypes'
 import ProjectLoadDialog from '@/components/ProjectLoadDialog.vue'
 import ProjectDuplicateDialog from '@/components/ProjectDuplicateDialog.vue'
 import { totalRows, type ProjectLoadResult } from '@/lib/projectArchive'
@@ -65,7 +67,7 @@ const router = useRouter()
 const notify = useNotify()
 const { t } = useI18n()
 const route = useRoute()
-const tab = ref<string>(['requirement', 'test', 'customFields', 'templates', 'configurations', 'webtests', 'correlations', 'sharing', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
+const tab = ref<string>(['requirement', 'test', 'customFields', 'templates', 'configurations', 'webtests', 'correlations', 'solution', 'sharing', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
 
 function canEdit(scope: ItemKind) {
   return auth.can(scope === 'requirement' ? P.requirementWrite : P.testWrite) || auth.can(P.projectUpdate)
@@ -321,6 +323,7 @@ function deleteProject() {
       <Tab value="configurations"><i class="pi pi-sliders-h" /> {{ t('configurations.tab') }}</Tab>
       <Tab value="webtests"><i class="pi pi-globe" /> {{ t('webTests.tab') }}</Tab>
       <Tab value="correlations"><i class="pi pi-share-alt" /> {{ t('correlations.settingsTab') }}</Tab>
+      <Tab v-if="isSoftware(proj.project)" value="solution"><i class="pi pi-compass" /> {{ t('solution.tab') }}</Tab>
       <Tab value="sharing"><i class="pi pi-share-alt" /> {{ t('sharing.title') }}</Tab>
       <Tab value="project"><i class="pi pi-cog" /> {{ t('settings.project') }}</Tab>
     </TabList>
@@ -394,6 +397,9 @@ function deleteProject() {
       </TabPanel>
       <TabPanel value="correlations">
         <CorrelationSettings v-if="proj.pid && tab === 'correlations'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
+      </TabPanel>
+      <TabPanel value="solution">
+        <SolutionPreambleSettings v-if="proj.pid && tab === 'solution' && isSoftware(proj.project)" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
       </TabPanel>
       <TabPanel value="sharing">
         <section v-if="proj.project && tab === 'sharing'" class="card" style="max-width: 860px" aria-labelledby="h-sharing">
