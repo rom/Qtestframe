@@ -271,7 +271,7 @@ func (s *Server) handleImportRequirements(w http.ResponseWriter, r *http.Request
 		}
 		rq := &model.Requirement{Title: c.Title, Description: c.Description, Obligation: c.Obligation, Type: c.Type,
 			Priority: c.Priority, Status: c.Status, Source: sourceWithID(c.Source, c.ExternalID), Rationale: c.Rationale,
-			Owner: c.Owner, Tags: c.Tags, CreatedBy: p.User.Email}
+			Owner: c.Owner, Tags: c.Tags, D3fend: c.D3fend, Emb3d: c.Emb3d, CreatedBy: p.User.Email}
 		if rq.Status == "" {
 			rq.Status = status
 		}

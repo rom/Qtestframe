@@ -11,6 +11,7 @@ import (
 	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/rbac"
 	"github.com/rom/qtestframe/internal/store"
+	"github.com/rom/qtestframe/internal/verification"
 )
 
 // Variants of a project, the applicability of requirements and tests and
@@ -20,14 +21,14 @@ func (s *Server) routesVariants(h routeFunc) {
 	h("GET /api/v1/projects/{pid}/variants", s.handleListVariants, "project.read")
 	h("POST /api/v1/projects/{pid}/variants", s.handleCreateVariant, "project.update")
 	h("GET /api/v1/projects/{pid}/variants/matrix", s.handleVariantMatrix, "requirement.read")
-	h("PUT /api/v1/projects/{pid}/applicability", s.handleBulkApplicability, "project.read")
+	h("PUT /api/v1/projects/{pid}/applicability", s.impactAware(s.handleBulkApplicability, true), "project.read")
 	h("GET /api/v1/variants/{id}", s.handleGetVariant, "project.read")
 	h("PATCH /api/v1/variants/{id}", s.handleUpdateVariant, "project.update")
 	h("DELETE /api/v1/variants/{id}", s.handleDeleteVariant, "project.update")
 	h("GET /api/v1/requirements/{id}/applicability", s.handleGetApplicability(model.KindRequirement), "requirement.read")
-	h("PUT /api/v1/requirements/{id}/applicability", s.handlePutApplicability(model.KindRequirement), "requirement.write")
+	h("PUT /api/v1/requirements/{id}/applicability", s.impactAware(s.handlePutApplicability(model.KindRequirement), false), "requirement.write")
 	h("GET /api/v1/tests/{id}/applicability", s.handleGetApplicability(model.KindTest), "test.read")
-	h("PUT /api/v1/tests/{id}/applicability", s.handlePutApplicability(model.KindTest), "test.write")
+	h("PUT /api/v1/tests/{id}/applicability", s.impactAware(s.handlePutApplicability(model.KindTest), false), "test.write")
 	h("GET /api/v1/requirements/{id}/variants", s.handleRequirementVariants, "requirement.read")
 }
 
@@ -103,6 +104,30 @@ func (pc *projectContext) listVariant(r *http.Request) (string, error) {
 		return "", badRequest("unknown variant %q", ref)
 	}
 	return v.ID, nil
+}
+
+// variantScope returns the variant of ?variant= with the coverage per
+// variant (nil and "" without one).
+func (s *Server) variantScope(r *http.Request, p *Principal, pc *projectContext) (*store.VariantCoverage, string, error) {
+	variant, err := pc.listVariant(r)
+	if err != nil || variant == "" {
+		return nil, "", err
+	}
+	vc, err := s.variantCoverage(r.Context(), p.TenantID(), pc)
+	if err != nil {
+		return nil, "", err
+	}
+	return vc, variant, nil
+}
+
+// variantVerification is the verification of the project's requirements
+// in one variant (store.VariantVerificationInput).
+func (s *Server) variantVerification(ctx context.Context, p *Principal, pc *projectContext, vc *store.VariantCoverage, variant string) (verification.Result, error) {
+	in, err := s.Store.VariantVerificationInput(ctx, p.TenantID(), pc.project.ID, pc.last, vc, variant)
+	if err != nil {
+		return nil, err
+	}
+	return verification.Compute(*in), nil
 }
 
 // ---------------------------------------------------------------- variants
@@ -440,6 +465,7 @@ func (s *Server) setApplicability(ctx context.Context, p *Principal, projectID, 
 		changed := !sameApplicability(b, a)
 		if changed {
 			s.record(ctx, p, itemType, id, "applicability")
+			s.applicabilityImpact(ctx, p, projectID, itemType, id, keys[id], applicabilityText(b, names)+" → "+applicabilityText(a, names))
 		}
 		if len(ids) == 1 {
 			d := keys[id] + ": " + applicabilityText(b, names) + " → " + applicabilityText(a, names)
@@ -450,6 +476,25 @@ func (s *Server) setApplicability(ctx context.Context, p *Principal, projectID, 
 		}
 	}
 	return out, nil
+}
+
+// applicabilityImpact applies the change impact of a changed applicability
+// under the project's rule (CorrelationSettings.ApplicabilityImpact): by
+// default a review of what the impact rules reach is recommended (owners
+// are notified, nothing is marked); as a change of substance the rules mark
+// trace links and relations suspect.
+func (s *Server) applicabilityImpact(ctx context.Context, p *Principal, projectID, kind, id, key, change string) {
+	set, err := s.Store.CorrelationSettings(ctx, p.TenantID(), projectID)
+	if err != nil {
+		s.Log.Warn("correlation settings", "err", err)
+		return
+	}
+	mode := set.ApplicabilityMode()
+	if mode == model.ApplicabilityOff {
+		return
+	}
+	reason := kind + " " + key + " applicability changed (" + change + ") by " + p.User.Email
+	s.recordImpact(ctx, p, projectID, store.ImpactRoot{Kind: kind, ID: id, ReviewOnly: mode == model.ModeReview, Fields: []string{"applicability"}}, reason)
 }
 
 // sameApplicability reports whether two applicabilities cover the same

@@ -180,6 +180,8 @@ Läget bredvid varje typ (**Blir misstänkt** eller **Granskning rekommenderas**
 
 **Andra kopplingar** slår på eller av de andra slagen av koppling: spårlänkar (de kan markera misstänkt eller bara rekommendera granskning), delade steg, testberoenden, länkar, risker, defekter, varianter och kodändringar (de rekommenderar bara granskning).
 
+**Ändrad tillämplighet (varianter)** avgör vad som händer när [varianterna ett objekt gäller](variants-and-code.md#tillämplighet) ändras: **Rekommenderar granskning (standard)** — inget markeras, ägarna till de objekt som reglerna når aviseras —, **Markerar länkar och relationer misstänkta** — ändringen räknas som en ändring av texten, längs reglerna ovan — eller **Har ingen påverkan**. Förhandsvisningen innan du sparar och listan **Påverkan** kallar ändringen *applicability*.
+
 ## Inaktuella utfall
 
 Ett testutfall blir **inaktuellt** när
@@ -252,6 +254,8 @@ Täckningen visar om de länkade testfallen är godkända. **Verifiering** går 
 | **Underkänt** | något belägg underkändes: ett testfall underkändes eller blockerades, en post har utfallet *Underkänd* |
 | **Inte godkänt än** | det finns belägg, men inget är godkänt än (ej kört, en misstänkt länk, ett steg som inte körts) |
 | **Inga belägg** | inget testfall och ingen verifieringspost |
+
+**Verifiering** i projektnavigeringen listar alla krav med deras läge, som en hierarki, per systemelement och med inkonsekvenserna. I ett projekt med [varianter](variants-and-code.md#visa-för-en-variant) begränsar **Visa för variant** listan till kraven för en variant, verifierade bara av de testfall som gäller varianten och de resultat som räknas för den (körningar för varianten, dess överordnade och körningar utan variant, i dess konfigurationer). Verifieringsposter räknas för alla varianter.
 
 ### Testfall för kriterier och teststeg
 
@@ -376,7 +380,7 @@ Cykler (till exempel två krav som beror på varandra) ritas, men en av linjerna
 
 ## Kravanalys
 
-**Analys** i projektets navigering analyserar alla krav i projektet på en gång (öppna den igen eller välj **Analysera igen** efter ändringar). Överst: **hälsan** (andelen krav utan problem eller varningar), antalet krav och testfall, andelen **täckta av testfall** (avvisade och inaktuella krav räknas inte) och den genomsnittliga **språkpoängen**.
+**Analys** i projektets navigering analyserar alla krav i projektet på en gång (öppna den igen eller välj **Analysera igen** efter ändringar). Överst: **hälsan** (andelen krav utan problem eller varningar), antalet krav och testfall, andelen **täckta av testfall** (avvisade och inaktuella krav räknas inte) och den genomsnittliga **språkpoängen**. I ett projekt med varianter analyserar **Visa för variant** bara kraven och testfallen för en variant, med dess täckning, resultat och verifiering; efterlevnaden nedan följer samma val.
 
 - **Kravnivåer** visar hur många krav som har varje nivå, inklusive de som **saknar kravnivå**.
 - **Nyckelord per betydelse** grupperar nyckelord som betyder samma sak (MUST, SHALL och REQUIRED; MAY och OPTIONAL …) och visar hur de används, så att du direkt ser projektets konvention.

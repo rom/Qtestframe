@@ -211,6 +211,7 @@ func (p *docPDF) newPage() {
 func (p *docPDF) titlePage() {
 	pdf := p.pdf
 	pdf.AddPage()
+	pdfLogo(pdf, p.doc.Logo, docPDFMargin, docPDFMargin, p.usable)
 	pdf.SetY(70)
 	pdf.SetDrawColor(47, 84, 150)
 	pdf.SetLineWidth(0.8)

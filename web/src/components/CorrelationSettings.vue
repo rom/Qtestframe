@@ -11,6 +11,7 @@ import Message from 'primevue/message'
 import Select from 'primevue/select'
 import { api, errorMessage } from '@/lib/api'
 import {
+  APPLICABILITY_IMPACTS,
   DEFAULT_IMPACT_RULES,
   IMPACT_DIRECTIONS,
   IMPACT_EDGE_KINDS,
@@ -62,6 +63,7 @@ const dirty = computed(() => !!saved.value && JSON.stringify(payload.value) !== 
 const directionOptions = computed(() => IMPACT_DIRECTIONS.map((d) => ({ value: d, label: t(`correlations.direction.${d}`) })))
 const levelOptions = computed(() => ['block', 'warn', 'none'].map((l) => ({ value: l, label: t(`correlations.level.${l}`) })))
 const actionOptions = computed(() => REGRESSION_ACTIONS.map((a) => ({ value: a, label: t(`correlations.action.${a}`) })))
+const applicabilityOptions = computed(() => APPLICABILITY_IMPACTS.map((v) => ({ value: v, label: t(`correlations.applicabilityValue.${v}`) })))
 const modeOptions = computed(() => IMPACT_MODES.map((m) => ({ value: m, label: t(`correlations.mode.${m}`) })))
 /** a rule as one choice: off, recommend a review, or (trace links) mark suspect */
 function ruleValue(edge: string): string {
@@ -150,6 +152,23 @@ async function save() {
               @update:model-value="(v: string) => setRule(edge, v)"
             />
           </template>
+        </div>
+      </fieldset>
+
+      <fieldset class="plain-fieldset">
+        <legend class="field-legend">{{ t('correlations.applicabilityLegend') }}</legend>
+        <p id="corr-applicability-hint" class="small muted" style="margin: 0 0 8px">{{ t('correlations.applicabilityHint') }}</p>
+        <div class="row" style="gap: 8px">
+          <label for="corr-applicability">{{ t('correlations.applicabilityField') }}</label>
+          <Select
+            v-model="form.applicability_impact"
+            input-id="corr-applicability"
+            :options="applicabilityOptions"
+            option-label="label"
+            option-value="value"
+            :disabled="!canEdit"
+            aria-describedby="corr-applicability-hint"
+          />
         </div>
       </fieldset>
 

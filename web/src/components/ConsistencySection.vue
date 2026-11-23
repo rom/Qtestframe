@@ -141,8 +141,8 @@ async function install() {
 .rule-verdict { display: flex; align-items: center; gap: 8px; font-weight: 600; margin: 0 0 8px; }
 .ok-icon { color: var(--p-green-600, #16a34a); }
 .warn-icon { color: var(--p-amber-600, #d97706); }
-:global(.app-dark) .ok-icon { color: var(--p-green-400, #4ade80); }
-:global(.app-dark) .warn-icon { color: var(--p-amber-400, #fbbf24); }
+.app-dark .ok-icon { color: var(--p-green-400, #4ade80); }
+.app-dark .warn-icon { color: var(--p-amber-400, #fbbf24); }
 .checks { display: grid; gap: 0; }
 .check { padding: 8px 0; border-top: 1px solid var(--qtf-border); display: grid; gap: 2px; }
 .check-head { flex-wrap: wrap; gap: 6px 8px; }

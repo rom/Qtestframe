@@ -838,8 +838,10 @@ Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt krav
 | Taggar | Taggar, Etiketter · Tags, Labels (separerade med komma) |
 | Mapp | Mapp, Avsnitt, Kapitel · Folder, Section, Chapter (en sökväg som `Säkerhet / Inloggning`) |
 | Acceptanskriterier | Kriterier, Acceptanskriterier · Criteria, Acceptance criteria (ett per rad; en rad kan börja med en metod, t.ex. `inspektion: …`) |
+| D3FEND-tekniker | D3FEND-tekniker, D3FEND · D3FEND techniques (id som `D3-MFA`, åtskilda med kommatecken) |
+| EMB3D-hot och -åtgärder | EMB3D-hot, EMB3D · EMB3D threats (id som `TID-201`, `MID-002`) |
 
-Värden för typ, prioritet, status och kravnivå kan skrivas på svenska eller engelska (*Hög*/*High*, *Godkänd*/*Approved*, *Säkerhet*/*Security*). Ett okänt värde noteras och standardvärdet används. En rad utan rubrik får en av de första orden i beskrivningen. En fil som exporterats från Qtestframe (krav som CSV eller Excel) kan importeras igen; från en Excel-export följer utvärderingskriterierna på kriteriebladet med.
+Värden för typ, prioritet, status och kravnivå kan skrivas på svenska eller engelska (*Hög*/*High*, *Godkänd*/*Approved*, *Säkerhet*/*Security*). Ett okänt värde noteras och standardvärdet används; okända D3FEND- och EMB3D-id utelämnas med en varning på raden. En rad utan rubrik får en av de första orden i beskrivningen. En fil som exporterats från Qtestframe (krav som CSV eller Excel) kan importeras igen; från en Excel-export följer utvärderingskriterierna på kriteriebladet med.
 
 **ReqIF.** Varje SPEC-OBJECT blir ett krav: *ReqIF.Name* (eller ett attribut som heter title eller name) ger rubriken, *ReqIF.Text* beskrivningen och *ReqIF.ForeignID* ID:t; övriga attribut matchas på namn som kolumner. Formaterad text (XHTML) importeras som ren text med sina radbrytningar; i en ReqIF-fil som Qtestframe har exporterat läses den tillbaka med sin formatering (stycken, listor, fetstil …), så att en [export](#reqif-för-kravverktyg) kommer tillbaka oförändrad. Objekt som bara har ett *ReqIF.ChapterName* är rubriker: specifikationshierarkin under dem blir mappar.
 
@@ -1140,6 +1142,8 @@ Varje krav anger minst ett testfall i katalogen som verifierar det, och varje te
 ## Bläddra och sök
 
 Öppna **Katalog** i projektets sidomeny eller välj **Lägg till från katalogen** överst i listan med krav eller testfall.
+
+![Katalogen: områdena och listan över katalogkrav med sökning och filter, och förhandsvisningen av det valda objektet](images/sv-catalogue.png)
 
 - Växla mellan **Krav**, **Testfall** och **Risker** överst.
 - Välj **English** eller **Svenska** som språk för texterna. Posterna läggs till på det språket.
@@ -1870,6 +1874,10 @@ Kravredigeraren visar under **Åtgärdar risker** de risker som kravet åtgärda
 
 Kryssa i risker i registret. Verktygsfältet anger **status**, **sannolikhet** eller **konsekvens** för alla, **Ägare / kategori** anger det ena eller båda (tomt rensar), **Länka krav** länkar samma krav till varje markerad risk, och **Ta bort** tar bort dem efter bekräftelse. Bara rader som visas förblir markerade, så när du filtrerar registret eller väljer en ruta i värmekartan blir inga dolda risker kvar i urvalet. Alla risker kontrolleras innan någon ändras. Andra ändringar än länkning och borttagning kan ångras med ångra-knappen.
 
+### Importera ett riskregister
+
+**Importera** ovanför registret läser ett riskregister från en CSV- eller Excelfil: bladet *Riskregister* i [riskrapporten](#riskrapporten) (på engelska eller svenska), eller ett eget blad med kolumner som *Nyckel*, *Titel*, *Beskrivning*, *Kategori*, *Ägare*, *Sannolikhet*, *Konsekvens*, *Status*, *Åtgärd*, *Granskningsdatum*, *Granskningsansvarig*, *ATT&CK-tekniker* och *EMB3D-hot*. Välj filen för att se en förhandsvisning: rader med nyckeln till en risk i projektet **ändrar** den (bara de kolumner som filen har), de andra raderna blir **nya** risker, och varje rad listar sina varningar. Okända ATT&CK-, ATLAS- och EMB3D-id, okända statusar och sannolikheter eller konsekvenser utanför 1–5 utelämnas med en varning; en rad utan titel hoppas över. Välj **Importera** för att spara. *(Kravförfattare eller en roll med `requirement.write`)*
+
 ## Värmekartan
 
 Värmekartan räknar riskerna i ett rutnät med 5 × 5 rutor: sannolikhet från 5 överst till 1 nederst, konsekvens från 1 till vänster till 5 till höger. Rutans färg är nivån för dess poäng. Välj en ruta för att bara visa riskerna med den sannolikheten och konsekvensen i registret; välj den igen, eller **×** på filteretiketten, för att visa alla.
@@ -2236,6 +2244,8 @@ Qtestframe säger till när något behöver din uppmärksamhet, låter dig be ko
 ## Mitt arbete
 
 **Mitt arbete** i huvudnavigeringen (under **Projekt** och **Sök**) är din personliga arbetslista: allt som väntar på dig, i alla projekt som du ser, även dina granskningar. Siffran bredvid visar hur många poster som behöver dig; den blir röd när några av dem är försenade. Varje rad länkar till posten och visar varför den finns med. En post visas en gång, med alla sina orsaker: ett krav som du äger och som någon har bett dig granska är en rad med **Ägare** och **Granskning begärd**.
+
+![Mitt arbete: de objekt som behöver dig, med skälen till att de listas (Ägare, Granskas), projekt, status och förfallodatum](images/sv-my-work.png)
 
 | Orsak | Posten finns med eftersom |
 |---|---|
@@ -2665,6 +2675,8 @@ Läget bredvid varje typ (**Blir misstänkt** eller **Granskning rekommenderas**
 
 **Andra kopplingar** slår på eller av de andra slagen av koppling: spårlänkar (de kan markera misstänkt eller bara rekommendera granskning), delade steg, testberoenden, länkar, risker, defekter, varianter och kodändringar (de rekommenderar bara granskning).
 
+**Ändrad tillämplighet (varianter)** avgör vad som händer när [varianterna ett objekt gäller](#tillämplighet) ändras: **Rekommenderar granskning (standard)** — inget markeras, ägarna till de objekt som reglerna når aviseras —, **Markerar länkar och relationer misstänkta** — ändringen räknas som en ändring av texten, längs reglerna ovan — eller **Har ingen påverkan**. Förhandsvisningen innan du sparar och listan **Påverkan** kallar ändringen *applicability*.
+
 ## Inaktuella utfall
 
 Ett testutfall blir **inaktuellt** när
@@ -2737,6 +2749,8 @@ Täckningen visar om de länkade testfallen är godkända. **Verifiering** går 
 | **Underkänt** | något belägg underkändes: ett testfall underkändes eller blockerades, en post har utfallet *Underkänd* |
 | **Inte godkänt än** | det finns belägg, men inget är godkänt än (ej kört, en misstänkt länk, ett steg som inte körts) |
 | **Inga belägg** | inget testfall och ingen verifieringspost |
+
+**Verifiering** i projektnavigeringen listar alla krav med deras läge, som en hierarki, per systemelement och med inkonsekvenserna. I ett projekt med [varianter](#visa-för-en-variant) begränsar **Visa för variant** listan till kraven för en variant, verifierade bara av de testfall som gäller varianten och de resultat som räknas för den (körningar för varianten, dess överordnade och körningar utan variant, i dess konfigurationer). Verifieringsposter räknas för alla varianter.
 
 ### Testfall för kriterier och teststeg
 
@@ -2861,7 +2875,7 @@ Cykler (till exempel två krav som beror på varandra) ritas, men en av linjerna
 
 ## Kravanalys
 
-**Analys** i projektets navigering analyserar alla krav i projektet på en gång (öppna den igen eller välj **Analysera igen** efter ändringar). Överst: **hälsan** (andelen krav utan problem eller varningar), antalet krav och testfall, andelen **täckta av testfall** (avvisade och inaktuella krav räknas inte) och den genomsnittliga **språkpoängen**.
+**Analys** i projektets navigering analyserar alla krav i projektet på en gång (öppna den igen eller välj **Analysera igen** efter ändringar). Överst: **hälsan** (andelen krav utan problem eller varningar), antalet krav och testfall, andelen **täckta av testfall** (avvisade och inaktuella krav räknas inte) och den genomsnittliga **språkpoängen**. I ett projekt med varianter analyserar **Visa för variant** bara kraven och testfallen för en variant, med dess täckning, resultat och verifiering; efterlevnaden nedan följer samma val.
 
 - **Kravnivåer** visar hur många krav som har varje nivå, inklusive de som **saknar kravnivå**.
 - **Nyckelord per betydelse** grupperar nyckelord som betyder samma sak (MUST, SHALL och REQUIRED; MAY och OPTIONAL …) och visar hur de används, så att du direkt ser projektets konvention.
@@ -3109,6 +3123,8 @@ Ett krav eller testfall **gäller** alla varianter tills du anger något annat. 
 
 För att ange tillämpligheten för många objekt på en gång markerar du dem i listan och väljer **Gäller** i verktygsfältet.
 
+**När tillämpligheten ändras** kan objektets testfall, de krav som är relaterade till det och de andra objekt som [ändringspåverkan](#ändringspåverkan) når behöva ses över: ett testfall som skrevs för *EU* kanske inte täcker *US*. Som standard **rekommenderas en granskning**: inget markeras misstänkt, och ägarna till de nådda objekten aviseras. Under **Kategorier och inställningar → Ändringspåverkan → Ändrad tillämplighet (varianter)** kan ett projekt i stället låta ändringen markera spårlänkar och relationer misstänkta (som en ändring av texten gör), eller inte ha någon påverkan. Att ändra tillämpligheten för många objekt på en gång, och att återställa en version eller en baslinje med en annan tillämplighet, fungerar på samma sätt.
+
 ### Historik, ångra och baslinjer
 
 En ändring av tillämpligheten finns i objektets **Historik** (som *Tillämplighet*, med varianterna före och efter) och i granskningsloggen. **Ångra** (Ctrl+Z) tar tillbaka den, även en ändring av många objekt på en gång: varje objekt får det det hade. När du återställer en äldre version från historiken återställs också den versionens tillämplighet.
@@ -3117,7 +3133,7 @@ En ändring av tillämpligheten finns i objektets **Historik** (som *Tillämplig
 
 ### Visa för en variant
 
-Välj en variant i **Visa för variant** i krav- och testfallslistorna och på sidan **Spårbarhet**. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
+Välj en variant i **Visa för variant** i krav- och testfallslistorna och på sidorna **Spårbarhet**, **Verifiering** och **Analys**. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
 
 | Fråga | Hittar |
 |---|---|
@@ -3749,6 +3765,10 @@ Rapporter tas fram på det språk du just nu använder i Qtestframe (**Användar
 
 Under standardrapporterna finns **Dokument** med två kompletta dokument: en **kravspecifikation** och en **testplan** med testspecifikation. **Skapa …** öppnar verktyget i [dokumentarkivet](#skapa-en-kravspecifikation-eller-en-testplan), där dokumentet sparas.
 
+### Logotyp på första sidan
+
+Rapporter och genererade dokument visar organisationens eller projektets logotyp överst på första sidan, i PDF, Word och Markdown (där den är en inbäddad bild). En administratör anger organisationens logotyp under [Administration → Dokument](#logotyp-i-rapporter-och-dokument); ett projekt kan i stället använda en egen, eller ingen, under **Kategorier och inställningar → Projekt → Logotyp i rapporter och dokument**, med placeringen (vänster, mitten eller höger), största storleken och en förhandsvisning av första sidan.
+
 ## Egna rapporter
 
 Under **Anpassad rapport** utformar du en rapport själv:
@@ -3853,7 +3873,7 @@ Använd statusknapparna ovanför tabellen för att bara visa vissa rader, och av
 
 Det här innehåller arbetsboken:
 
-- **En rad per post** med *ID*, *Key*, *Version* och en kolumn per fält: mapp, titel, beskrivning, kravnivå, typ, prioritet, status, källa, motivering, ägare, taggar, acceptanskriterier (ett per rad, till exempel `test: Inloggning fungerar (threshold: 2 s)`) och en kolumn per relationstyp (*Refines*, *Depends on* …) med nycklarna till de relaterade kraven. Tester har i stället förutsättningar, förväntat resultat, exekveringstyp, uppskattade minuter och *Verifies* (nycklarna till de krav som testet verifierar).
+- **En rad per post** med *ID*, *Key*, *Version* och en kolumn per fält: mapp, titel, beskrivning, kravnivå, typ, prioritet, status, källa, motivering, ägare, taggar, acceptanskriterier (ett per rad, till exempel `test: Inloggning fungerar (threshold: 2 s)`), *D3FEND* och *EMB3D* (id åtskilda med kommatecken; okända id utelämnas med en varning i förhandsvisningen) och en kolumn per relationstyp (*Refines*, *Depends on* …) med nycklarna till de relaterade kraven. Tester har i stället förutsättningar, förväntat resultat, exekveringstyp, uppskattade minuter och *Verifies* (nycklarna till de krav som testet verifierar).
 - **Teststeg** på bladet *Steps*, en rad per steg: testet, stegnumret, åtgärd, data, förväntat resultat och, för ett delat steg, nyckeln till det anropade testet. Stegen i ett test som finns på bladet *Tests* ersätts av dess rader på bladet *Steps*.
 - **Listrutor** för fälten med fasta värden, grå kolumner som bara är information (*Verified by*) och ett blad *Instructions*.
 
@@ -3976,11 +3996,11 @@ Den här sidan förklarar båda. Excel fram och tillbaka och de andra exportform
 
 ## ReqIF-export
 
-**Export** (i projektet) har **ReqIF** och **ReqIF (med bilagor)**. En ReqIF-fil innehåller alltid kraven med sina mappar (som kapitelrubriker), egna fält, acceptanskriterier och relationer. Under **Innehåll i ReqIF** lägger du till mer:
+**Export** (i projektet) har **ReqIF** och **ReqIF (med bilagor)**. En ReqIF-fil innehåller alltid kraven med sina mappar (som kapitelrubriker), egna fält, acceptanskriterier, D3FEND- och EMB3D-id och relationer; vid import läses D3FEND- och EMB3D-attributen tillbaka. Under **Innehåll i ReqIF** lägger du till mer:
 
 | Val | Det här tillkommer |
 |---|---|
-| **Testfall med steg och spårlänkar** | Varje testfall som ett objekt av typen *Test case* (titel, beskrivning, förutsättningar, stegen som en tabell, förväntat resultat, exekveringstyp, prioritet, status, uppskattning, taggar, egna fält), testmapparna som ett andra kapitelträd och en relation *Verifies* från varje testfall till varje krav som det verifierar. |
+| **Testfall med steg och spårlänkar** | Varje testfall som ett objekt av typen *Test case* (titel, beskrivning, förutsättningar, stegen som en tabell, förväntat resultat, exekveringstyp, prioritet, status, uppskattning, taggar, D3FEND och EMB3D, egna fält), testmapparna som ett andra kapitelträd och en relation *Verifies* från varje testfall till varje krav som det verifierar. |
 | **Verifieringsposter** | Granskningar, analyser, demonstrationer och genomgångar som har registrerats för kraven, var och en relaterad till sitt krav (*Verification record of*). De är till för att läsas i det andra verktyget; en import av filen hoppar över dem. |
 | **Version** | *Nuvarande läge*, eller en av projektets [baslinjer](#baslinjer): kraven och testfallen exakt som baslinjen frös dem. Filtret gäller inte för en baslinje; relationer, länkar och poster är dagens mellan dess poster. |
 
@@ -4102,7 +4122,7 @@ Det nya dokumentet visas överst i arkivet, markerat, med **Öppna** (PDF) och *
 
 ### Sidlayout
 
-I PDF och Word delas ett krav eller testfall aldrig på två sidor när det får plats på en: om det inte får plats på resten av sidan börjar det på nästa, tillsammans med mapprubrikerna direkt före. Bara ett objekt som är längre än en sida fortsätter på nästa sida. I en specifikation med **Varje krav på en ny sida** börjar ändå varje krav på en ny sida. Word håller ihop objekten med styckeinställningarna *håll ihop med nästa* och *sidbrytning före*, så att layouten stämmer även när du redigerar filen. Markdown har inga sidor och ser likadan ut i båda fallen.
+I PDF och Word delas ett krav eller testfall aldrig på två sidor när det får plats på en: om det inte får plats på resten av sidan börjar det på nästa, tillsammans med mapprubrikerna direkt före. Bara ett objekt som är längre än en sida fortsätter på nästa sida. I en specifikation med **Varje krav på en ny sida** börjar ändå varje krav på en ny sida. Word håller ihop objekten med styckeinställningarna *håll ihop med nästa* och *sidbrytning före*, så att layouten stämmer även när du redigerar filen. Markdown har inga sidor och ser likadan ut i båda fallen. Titelsidan visar projektets eller organisationens [logotyp](#logotyp-på-första-sidan) överst.
 
 ### Bilagan Beroendegraf
 
@@ -4316,6 +4336,19 @@ Det en regel förbjuder avvisas av servern, även för API-klienter och CI-impor
 - när en regel är upplättad visas samma orsaker som en gul varning, och testfallet kan exekveras.
 
 **Kravstatus följer testutfallen** (på som standard) gör att ett implementerat krav blir **Verifierat** när det är [verifierat](#verifiering) – varje kriterium har godkända belägg och varje underkrav är verifierat – och går tillbaka till **Implementerat** när det inte längre gäller. Avstängd ändras statusen bara för hand, och avvikelser listas under **Verifiering → Inkonsekvenser**. Om varje kriterium behöver egna belägg är en projektinställning (**Inställningar → Projekt → Verifiering**).
+
+## Logotyp i rapporter och dokument
+
+*(Admin och Testledare, eller en roll med `settings.manage`)* **Administration → Dokument** anger organisationens logotyp. Den visas överst på första sidan i varje [rapport](#logotyp-på-första-sidan) och [genererat dokument](#skapa-en-kravspecifikation-eller-en-testplan) — kravspecifikationer, testplaner, release-, verifierings-, SoA-, kvalitets-, cykel- och utforskningsrapporter, egna rapporter och exporten av ändringspåverkan — i PDF, Word och Markdown.
+
+![Administration → Dokument: den uppladdade logotypen, dess placering och största storlek, och förhandsvisningen av första sidan](images/sv-admin-documents.png)
+
+- **Ladda upp logotyp** tar en PNG-, JPEG- eller SVG-bild på högst 2 MB. En SVG konverteras till en bild på servern av Qtestframes egen renderare: skript, länkar, inbäddade bilder och texter i den används aldrig (konvertera texter till konturer innan du laddar upp den).
+- **Placering** lägger logotypen till vänster (standard), i mitten eller till höger på sidan.
+- **Största bredd** och **Största höjd** (i millimeter; standard 50 × 20 mm) begränsar storleken. Logotypen behåller sina proportioner och visas aldrig större än sin egen storlek vid 96 dpi.
+- **Förhandsvisningen** visar första sidan i ett dokument med logotypen som den kommer att skrivas ut, även innan du sparar.
+
+Projekten använder denna logotyp om de inte laddar upp en egen under **Kategorier och inställningar → Projekt → Logotyp i rapporter och dokument**, eller slår på **Ingen logotyp i projektets dokument** *(Förvaltare och Admin, eller en roll med `project.update`)*. Ett [projektarkiv](#spara-och-läs-in-projekt) tar med projektets egen logotyp; organisationens logotyp ingår i säkerhetskopior.
 
 ## Fältuppsättningar och mallar
 

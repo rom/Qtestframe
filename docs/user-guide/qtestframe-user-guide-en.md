@@ -819,8 +819,10 @@ Customers often send their requirements as a spreadsheet, a ReqIF export from th
 | Tags | Tags, Labels · Taggar, Etiketter (separated by commas) |
 | Folder | Folder, Section, Chapter · Mapp, Avsnitt, Kapitel (a path such as `Security / Login`) |
 | Acceptance criteria | Criteria, Acceptance criteria · Kriterier, Acceptanskriterier (one per line; a line may start with a method, e.g. `inspection: …`) |
+| D3FEND techniques | D3FEND, D3FEND techniques · D3FEND-tekniker (ids such as `D3-MFA`, separated by commas) |
+| EMB3D threats and mitigations | EMB3D, EMB3D threats · EMB3D-hot (ids such as `TID-201`, `MID-002`) |
 
-Values of type, priority, status and obligation may be written in English or Swedish (*High*/*Hög*, *Approved*/*Godkänd*, *Security*/*Säkerhet*). An unknown value is noted and the default is used. A row without a title gets one from the first words of its description. A file exported from Qtestframe (requirements as CSV or Excel) can be imported again; in an Excel export the evaluation criteria of the criteria sheet come along.
+Values of type, priority, status and obligation may be written in English or Swedish (*High*/*Hög*, *Approved*/*Godkänd*, *Security*/*Säkerhet*). An unknown value is noted and the default is used; unknown D3FEND and EMB3D ids are left out with a warning on the row. A row without a title gets one from the first words of its description. A file exported from Qtestframe (requirements as CSV or Excel) can be imported again; in an Excel export the evaluation criteria of the criteria sheet come along.
 
 **ReqIF.** Every SPEC-OBJECT becomes a requirement: *ReqIF.Name* (or an attribute named title or name) gives the title, *ReqIF.Text* the description and *ReqIF.ForeignID* the ID; other attributes are matched by name like columns. Formatted text (XHTML) is imported as plain text with its line breaks; in a ReqIF file exported by Qtestframe it is read back with its formatting (paragraphs, lists, bold …), so an [export](#reqif-for-requirements-tools) comes back unchanged. Objects with only a *ReqIF.ChapterName* are headings: the specification hierarchy below them becomes folders.
 
@@ -1121,6 +1123,8 @@ Every requirement lists at least one catalogue test that verifies it, and every 
 ## Browse and search
 
 Open **Catalogue** in the project sidebar, or select **Add from catalogue** at the top of the requirement or test list.
+
+![The catalogue: the areas and the list of catalogue requirements with search and filters, and the preview of the selected item](images/en-catalogue.png)
 
 - Switch between **Requirements**, **Tests** and **Risks** at the top.
 - Choose **English** or **Svenska** for the language of the texts. The items are added in this language.
@@ -1849,6 +1853,10 @@ The requirement editor shows the risks a requirement mitigates under **Mitigates
 
 Tick risks in the register. The toolbar sets **status**, **likelihood** or **impact** of all of them, **Owner / category** sets either or both (empty clears), **Link requirements** links the same requirements to every ticked risk, and **Delete** removes them after confirmation. Only rows that are shown stay ticked, so filtering the register or choosing a heat-map cell never leaves hidden risks in the selection. Every risk is checked before any is changed. Changes other than linking and deleting can be undone with the undo button.
 
+### Import a risk register
+
+**Import** above the register reads a risk register from a CSV or Excel file: the *Risk register* sheet of the [risk report](#the-risk-report) (in English or Swedish), or a sheet of your own with columns such as *Key*, *Title*, *Description*, *Category*, *Owner*, *Likelihood*, *Impact*, *Status*, *Mitigation*, *Review date*, *Review owner*, *ATT&CK techniques* and *EMB3D threats*. Choose the file to see a preview: rows with the key of a risk of the project **change** it (only the columns the file has), the other rows become **new** risks, and each row lists its warnings. Unknown ATT&CK, ATLAS and EMB3D ids, unknown statuses and likelihoods or impacts outside 1–5 are left out with a warning; a row without a title is skipped. Select **Import** to save. *(Requirement author or any role with `requirement.write`)*
+
 ## The heat map
 
 The heat map counts the risks in a 5 × 5 grid: likelihood from 5 at the top to 1 at the bottom, impact from 1 on the left to 5 on the right. The colour of a cell is the level of its score. Select a cell to show only the risks with that likelihood and impact in the register; select it again, or the **×** on the filter chip, to show all.
@@ -2215,6 +2223,8 @@ Qtestframe tells you when something needs your attention, lets you ask colleague
 ## My work
 
 **My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see, including your reviews. The badge next to it shows how many items need you; it turns red when some of them are overdue. Each row links to the item and says why it is there. An item is listed once, with all its reasons: a requirement you own that someone asked you to review is one row with **Owner** and **Review requested**.
+
+![My work: the items that need you, each with the reasons it is listed (Owner, In review), its project, status and due date](images/en-my-work.png)
 
 | Reason | The item is listed because |
 |---|---|
@@ -2644,6 +2654,8 @@ The mode next to each type (**Becomes suspect** or **Review recommended**) appli
 
 **Other connections** turns the other kinds of connection on or off: trace links (they can mark suspect or only recommend a review), shared steps, test dependencies, item links, risks, defects, variants and code changes (these only recommend a review).
 
+**Changed variant applicability** decides what happens when the [variants an item applies to](#applicability) change: **Recommends a review (default)** — nothing is marked, the owners of the items the rules reach are notified —, **Marks links and relations suspect** — the change counts like a change of the text, along the rules above — or **Has no impact**. The preview before saving and the **Impact** list name the change *applicability*.
+
 ## Stale results
 
 A test result goes **stale** when
@@ -2716,6 +2728,8 @@ Open a requirement and choose the **Verification** tab. It shows the state with 
 | **Failed** | some evidence failed: a test failed or was blocked, a record's result is *Fail* |
 | **Not yet passed** | there is evidence, but none of it has passed yet (not run, a suspect link, a step not executed) |
 | **No evidence** | no test and no verification record |
+
+**Verification** in the project navigation lists every requirement with its state, as a hierarchy, per system element and with the inconsistencies. In a project with [variants](#show-for-a-variant), **Show for variant** limits it to the requirements of one variant, verified only by the tests that apply to the variant and the results that count for it (runs for the variant, its parents and runs without a variant, in its configurations). Verification records count for every variant.
 
 ### Tests for criteria and test steps
 
@@ -2840,7 +2854,7 @@ Cycles (for example two requirements that depend on each other) are drawn, but o
 
 ## Requirement analytics
 
-**Analytics** in the project navigation analyses all requirements of the project at once (open it again or select **Analyse again** after changes). At the top: the **health** (the share of requirements without problems or warnings), the number of requirements and tests, the share **covered by tests** (rejected and obsolete requirements are not counted) and the average **language score**.
+**Analytics** in the project navigation analyses all requirements of the project at once (open it again or select **Analyse again** after changes). In a project with variants, **Show for variant** analyses only the requirements and tests of one variant, with its coverage, results and verification; the compliance below follows the same choice. At the top: the **health** (the share of requirements without problems or warnings), the number of requirements and tests, the share **covered by tests** (rejected and obsolete requirements are not counted) and the average **language score**.
 
 - **Obligation levels** shows how many requirements have each level, including those with **no obligation**.
 - **Keywords per meaning** groups the keywords that mean the same (MUST, SHALL and REQUIRED; MAY and OPTIONAL …) and shows how each is used, so you see the convention of the project at a glance.
@@ -3088,6 +3102,8 @@ A requirement or test **applies** to all variants until you say otherwise. Open 
 
 To set the applicability of many items at once, select them in the list and choose **Applies to** in the toolbar.
 
+**When the applicability changes,** the item's tests, the requirements related to it and the other items the [change impact](#change-impact) reaches may need a look: a test written for *EU* may not cover *US*. By default a **review is recommended**: nothing is marked suspect, and the owners of the items reached are notified. Under **Categories & settings → Change impact → Changed variant applicability** a project can make it mark the trace links and relations suspect instead (as a change of the text does), or have no impact. Changing the applicability of many items at once, and restoring a version or a baseline with another applicability, work the same way.
+
 ### History, undo and baselines
 
 A change of the applicability is part of the item's **History** (shown as *Applicability*, with the variants before and after) and of the audit log. **Undo** (Ctrl+Z) takes it back, also for a change of many items at once: each item gets what it had. Restoring an older version from the history restores the applicability of that version too.
@@ -3096,7 +3112,7 @@ A change of the applicability is part of the item's **History** (shown as *Appli
 
 ### Show for a variant
 
-In the requirement and test lists and on the **Traceability** page, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
+In the requirement and test lists and on the **Traceability**, **Verification** and **Analytics** pages, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
 
 | Query | Finds |
 |---|---|
@@ -3723,6 +3739,10 @@ Reports are produced in the language you currently use in Qtestframe (**User men
 
 Below the standard reports, **Documents** offers two complete documents: a **requirements specification** and a **test plan** with its test specification. **Create…** opens the generator in the [document archive](#create-a-requirements-specification-or-a-test-plan), where the document is saved.
 
+### Logo on the first page
+
+Reports and generated documents show the logo of the organisation or the project at the top of their first page, in PDF, Word and Markdown (where it is an embedded image). An administrator sets the organisation's logo under [Administration → Documents](#logo-on-reports-and-documents); a project can use its own instead, or none, under **Categories & settings → Project → Logo on reports and documents**, with the placement (left, centre or right), the maximum size and a preview of the first page.
+
 ## Custom reports
 
 Under **Custom report** you design a report yourself:
@@ -3827,7 +3847,7 @@ Use the status buttons above the table to show only some rows, and clear the box
 
 What the workbook contains:
 
-- **One row per item** with *ID*, *Key*, *Version* and one column per field: folder, title, description, obligation, type, priority, status, source, rationale, owner, tags, acceptance criteria (one per line, for example `test: Login works (threshold: 2 s)`) and one column per relation type (*Refines*, *Depends on* …) with the keys of the related requirements. Tests have preconditions, expected result, execution type, estimated minutes and *Verifies* (the keys of the requirements the test verifies) instead.
+- **One row per item** with *ID*, *Key*, *Version* and one column per field: folder, title, description, obligation, type, priority, status, source, rationale, owner, tags, acceptance criteria (one per line, for example `test: Login works (threshold: 2 s)`), *D3FEND* and *EMB3D* (ids separated by commas; unknown ids are left out with a warning in the preview) and one column per relation type (*Refines*, *Depends on* …) with the keys of the related requirements. Tests have preconditions, expected result, execution type, estimated minutes and *Verifies* (the keys of the requirements the test verifies) instead.
 - **Steps of tests** on the sheet *Steps*, one row per step: the test, the step number, action, data, expected result and, for a shared step, the key of the called test. The steps of a test listed on the *Tests* sheet are replaced by its rows on the *Steps* sheet.
 - **Drop-down lists** for the fields with fixed values, grey columns that are only for information (*Verified by*), and a sheet *Instructions*.
 
@@ -3948,11 +3968,11 @@ This page explains both. For the Excel round-trip and the other export formats s
 
 ## ReqIF export
 
-**Export** (in the project) offers **ReqIF** and **ReqIF (with attachments)**. A ReqIF file always contains the requirements with their folders (as chapter headings), custom fields, acceptance criteria and relations. Under **ReqIF content** you add more:
+**Export** (in the project) offers **ReqIF** and **ReqIF (with attachments)**. A ReqIF file always contains the requirements with their folders (as chapter headings), custom fields, acceptance criteria, D3FEND and EMB3D ids and relations; importing the file reads the D3FEND and EMB3D attributes back. Under **ReqIF content** you add more:
 
 | Option | What it adds |
 |---|---|
-| **Test cases with their steps and trace links** | Every test case as an object of the type *Test case* (title, description, preconditions, the steps as a table, expected result, execution type, priority, status, estimate, tags, custom fields), the test folders as a second chapter tree, and a *Verifies* relation from each test to each requirement it verifies. |
+| **Test cases with their steps and trace links** | Every test case as an object of the type *Test case* (title, description, preconditions, the steps as a table, expected result, execution type, priority, status, estimate, tags, D3FEND and EMB3D, custom fields), the test folders as a second chapter tree, and a *Verifies* relation from each test to each requirement it verifies. |
 | **Verification records** | Inspections, analyses, demonstrations and reviews recorded for the requirements, each related to its requirement (*Verification record of*). They are for reading in the other tool; importing the file ignores them. |
 | **Version** | *Current state*, or one of the project's [baselines](#baselines): the requirements and tests exactly as the baseline froze them. The filter does not apply to a baseline; relations, links and records are those of today between its items. |
 
@@ -4074,7 +4094,7 @@ The new document appears at the top of the archive, highlighted, with **Open** (
 
 ### Page layout
 
-In PDF and Word a requirement or test is never split across two pages when it fits on one: if it does not fit on the rest of a page, it starts on the next one, together with the folder headings right before it. Only an item longer than a page continues on the next page. In a specification with **Each requirement on a new page** every requirement starts a page anyway. Word keeps the items together with its *keep with next* and *page break before* paragraph settings, so the layout stays right when you edit the file. Markdown has no pages: it looks the same either way.
+In PDF and Word a requirement or test is never split across two pages when it fits on one: if it does not fit on the rest of a page, it starts on the next one, together with the folder headings right before it. Only an item longer than a page continues on the next page. In a specification with **Each requirement on a new page** every requirement starts a page anyway. Word keeps the items together with its *keep with next* and *page break before* paragraph settings, so the layout stays right when you edit the file. Markdown has no pages: it looks the same either way. The title page shows the [logo](#logo-on-the-first-page) of the project or the organisation at the top.
 
 ### Dependency graph appendix
 
@@ -4289,6 +4309,19 @@ What a rule forbids is refused by the server, also for API clients and CI import
 - when a rule is relaxed, the same reasons appear as an amber warning, and the test can be executed.
 
 **Requirement status follows test results** (on by default) lets an implemented requirement become **Verified** when it is [verified](#verification) — every criterion has passing evidence and every child requirement is verified — and go back to **Implemented** when that no longer holds. Turned off, statuses change only by hand and disagreements are listed under **Verification → Inconsistencies**. Whether each criterion needs evidence of its own is a project setting (**Settings → Project → Verification**).
+
+## Logo on reports and documents
+
+*(Admin and Test lead, or any role with `settings.manage`)* **Administration → Documents** sets the organisation's logo. It is shown at the top of the first page of every [report](#logo-on-the-first-page) and [generated document](#create-a-requirements-specification-or-a-test-plan) — requirements specifications, test plans, release, verification, SoA, quality, cycle and exploratory reports, custom reports and the change impact export — in PDF, Word and Markdown.
+
+![Administration → Documents: the uploaded logo, its placement and maximum size, and the preview of the first page](images/en-admin-documents.png)
+
+- **Upload logo** takes a PNG, JPEG or SVG image of at most 2 MB. An SVG is converted into an image on the server by Qtestframe's own renderer: scripts, links, embedded images and texts in it are never used (convert texts to outlines before you upload it).
+- **Placement** puts the logo at the left (default), in the centre or at the right of the page.
+- **Maximum width** and **Maximum height** (in millimetres; default 50 × 20 mm) bound its size. The logo keeps its proportions and is never shown larger than its own size at 96 dpi.
+- The **preview** shows the first page of a document with the logo as it will be printed, also before you save.
+
+Projects use this logo unless they upload their own under **Categories & settings → Project → Logo on reports and documents**, or turn on **No logo in this project's documents** *(Manager and Admin, or any role with `project.update`)*. A [project archive](#save-and-load-projects) carries the project's own logo; the organisation's logo is part of backups.
 
 ## Field sets and templates
 

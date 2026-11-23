@@ -98,6 +98,7 @@ func (s *Server) handleGenerateDocument(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	doc.Link = s.itemLink(pr)
+	doc.Logo = s.documentLogo(r.Context(), p, pr)
 	var buf bytes.Buffer
 	if err := export.WriteDocument(&buf, f, doc); err != nil {
 		s.fail(w, r, err)

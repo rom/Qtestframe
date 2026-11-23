@@ -96,6 +96,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'field-sets', name: 'fieldSets', component: () => import('./views/admin/FieldSetsView.vue') },
           { path: 'execution', name: 'executionSettings', component: () => import('./views/admin/ExecutionSettingsView.vue'), meta: { perm: P.settingsManage } },
           { path: 'ai', name: 'aiSettings', component: () => import('./views/admin/AiSettingsView.vue'), meta: { perm: P.settingsManage } },
+          { path: 'documents', name: 'documentSettings', component: () => import('./views/admin/DocumentSettingsView.vue'), meta: { perm: P.settingsManage } },
           { path: 'mfa', name: 'mfaPolicy', component: () => import('./views/admin/MfaPolicyView.vue'), meta: { perm: P.tenantManage } },
           { path: 'erecords', name: 'erecords', component: () => import('./views/admin/ERecordsView.vue'), meta: { perm: P.auditRead } },
           { path: 'backup', name: 'backup', component: () => import('./views/admin/BackupView.vue'), meta: { superAdmin: true } },

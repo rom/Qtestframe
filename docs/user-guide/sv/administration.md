@@ -170,6 +170,19 @@ Det en regel förbjuder avvisas av servern, även för API-klienter och CI-impor
 
 **Kravstatus följer testutfallen** (på som standard) gör att ett implementerat krav blir **Verifierat** när det är [verifierat](traceability-and-coverage.md#verifiering) – varje kriterium har godkända belägg och varje underkrav är verifierat – och går tillbaka till **Implementerat** när det inte längre gäller. Avstängd ändras statusen bara för hand, och avvikelser listas under **Verifiering → Inkonsekvenser**. Om varje kriterium behöver egna belägg är en projektinställning (**Inställningar → Projekt → Verifiering**).
 
+## Logotyp i rapporter och dokument
+
+*(Admin och Testledare, eller en roll med `settings.manage`)* **Administration → Dokument** anger organisationens logotyp. Den visas överst på första sidan i varje [rapport](reports-and-export.md#logotyp-på-första-sidan) och [genererat dokument](documents.md#skapa-en-kravspecifikation-eller-en-testplan) — kravspecifikationer, testplaner, release-, verifierings-, SoA-, kvalitets-, cykel- och utforskningsrapporter, egna rapporter och exporten av ändringspåverkan — i PDF, Word och Markdown.
+
+![Administration → Dokument: den uppladdade logotypen, dess placering och största storlek, och förhandsvisningen av första sidan](../images/sv-admin-documents.png)
+
+- **Ladda upp logotyp** tar en PNG-, JPEG- eller SVG-bild på högst 2 MB. En SVG konverteras till en bild på servern av Qtestframes egen renderare: skript, länkar, inbäddade bilder och texter i den används aldrig (konvertera texter till konturer innan du laddar upp den).
+- **Placering** lägger logotypen till vänster (standard), i mitten eller till höger på sidan.
+- **Största bredd** och **Största höjd** (i millimeter; standard 50 × 20 mm) begränsar storleken. Logotypen behåller sina proportioner och visas aldrig större än sin egen storlek vid 96 dpi.
+- **Förhandsvisningen** visar första sidan i ett dokument med logotypen som den kommer att skrivas ut, även innan du sparar.
+
+Projekten använder denna logotyp om de inte laddar upp en egen under **Kategorier och inställningar → Projekt → Logotyp i rapporter och dokument**, eller slår på **Ingen logotyp i projektets dokument** *(Förvaltare och Admin, eller en roll med `project.update`)*. Ett [projektarkiv](reports-and-export.md#spara-och-läs-in-projekt) tar med projektets egen logotyp; organisationens logotyp ingår i säkerhetskopior.
+
 ## Fältuppsättningar och mallar
 
 *(Admin och Testledare, eller en roll med `settings.manage`)* **Administration → Fältuppsättningar** håller, per **projekttyp**, de [egna fält](requirements.md#egna-fält) som ett nytt projekt av den typen får och organisationens [mallar](requirements.md#mallar) för nya krav och testfall. En ändring i en fältuppsättning ändrar inte befintliga projekt: de behåller sina egna kopior och kan tillämpa uppsättningen igen under **Kategorier & inställningar → Egna fält → Tillämpa fältuppsättning** (fält som de redan har hoppas över). Organisationens mallar erbjuds i varje projekt av typen, bredvid de inbyggda. Alla i organisationen kan läsa fältuppsättningarna.

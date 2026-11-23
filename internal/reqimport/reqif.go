@@ -252,6 +252,10 @@ func parseReqIFDoc(data []byte, opt Options, res *Result) error {
 				cd.Folder = joinFolder(folder, text)
 			case FieldCriteria:
 				rw.criteria = joinText(rw.criteria, text)
+			case FieldD3fend:
+				rw.d3fend = joinText(rw.d3fend, text)
+			case FieldEmb3d:
+				rw.emb3d = joinText(rw.emb3d, text)
 			default:
 				if k, ok := strings.CutPrefix(colField[name], CustomPrefix); ok {
 					if cd.CustomFields == nil {

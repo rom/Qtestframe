@@ -4242,8 +4242,15 @@ paths:
       - Requirements
       summary: Analytics
       operationId: getProjectsByPidAnalytics
-      description: '**Permission:** `requirement.read`.'
+      description: '**Permission:** `requirement.read`. With `variant`: the requirements and tests of the variant, its coverage, results and verification.'
       x-permission: requirement.read
+      parameters:
+      - name: variant
+        in: query
+        required: false
+        description: a variant (id or name) — only its requirements and tests, with the results that count for it (the rules of the variant coverage)
+        schema:
+          type: string
       responses:
         '200':
           description: OK
@@ -4277,6 +4284,12 @@ paths:
         in: query
         required: false
         description: reference source ids, comma-separated (default every source the project has adopted requirements of or cites)
+        schema:
+          type: string
+      - name: variant
+        in: query
+        required: false
+        description: a variant (id or name) — only its requirements and tests, with the results that count for it (the rules of the variant coverage)
         schema:
           type: string
       - $ref: '#/components/parameters/catalogLang'
@@ -4905,7 +4918,7 @@ paths:
       summary: Set requirement applicability
       operationId: putRequirementsByIdApplicability
       description: |-
-        `{variant_ids: [ids or names], expression: "region:EU"}`; both empty: all variants
+        `{variant_ids: [ids or names], expression: "region:EU"}`; both empty: all variants. A changed applicability goes through the change impact by the project's `applicability_impact` rule (default: a review is recommended); `?dry_run=impact` previews it, `?impact=suspect|notify|skip` chooses what saving does with it
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
@@ -7304,9 +7317,15 @@ paths:
       - Verification
       summary: Verification of the project
       operationId: getProjectVerification
-      description: '**Permission:** `requirement.read`. Whether every requirement is verified, and why: criteria with their evidence (tests, steps, verification records), the roll-up of refining children, reasons and inconsistencies.'
+      description: '**Permission:** `requirement.read`. Whether every requirement is verified, and why: criteria with their evidence (tests, steps, verification records), the roll-up of refining children, reasons and inconsistencies. With `variant`: the requirements of the variant, verified by the trace links between items that apply to it and the results that count for it (step results only where the variant''s result is the latest execution''s); the answer names `variant`.'
       x-permission: requirement.read
       parameters:
+      - name: variant
+        in: query
+        required: false
+        description: a variant (id or name) — only its requirements and tests, with the results that count for it (the rules of the variant coverage)
+        schema:
+          type: string
       - name: q
         in: query
         schema:
@@ -11401,6 +11420,168 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/settings/logo:
+    get:
+      tags:
+      - Administration
+      summary: Get the organisation's logo
+      operationId: getSettingsLogo
+      description: |-
+        The organisation's logo on the first page of reports and generated documents → `{file_id, content_type, width, height, source (png | jpeg | svg), name, placement (left | center | right), max_width_mm, max_height_mm, url}` (`file_id` "" without an image).
+
+        **Permission:** any authenticated user; the handler checks: any member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Administration
+      summary: Update the logo's placement and size
+      operationId: putSettingsLogo
+      description: |-
+        Placement and maximum size of the organisation's logo (fields left out keep their value) → the logo as GET returns it. The logo keeps its proportions and is never shown larger than its own size at 96 dpi.
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                placement:
+                  type: string
+                  enum: [left, center, right]
+                max_width_mm:
+                  type: integer
+                  minimum: 5
+                  maximum: 170
+                max_height_mm:
+                  type: integer
+                  minimum: 5
+                  maximum: 40
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/settings/logo/image:
+    get:
+      tags:
+      - Administration
+      summary: Organisation logo image
+      operationId: getSettingsLogoImage
+      description: |-
+        The image of the organisation's logo (PNG or JPEG); 404 without one.
+
+        **Permission:** any authenticated user; the handler checks: any member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Administration
+      summary: Upload the organisation's logo
+      operationId: putSettingsLogoImage
+      description: |-
+        multipart `file`: PNG, JPEG or SVG, at most 2 MB. PNG and JPEG are decoded and encoded again (no metadata, at most 1600 pixels on the longer side); an SVG is drawn by Qtestframe's own renderer into a PNG of 1000 pixels on the longer side (scripts, event handlers, links, embedded images, foreign objects, texts and entity declarations are never used or fetched). Replaces the previous image. → the logo as GET returns it.
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - Administration
+      summary: Remove the organisation's logo
+      operationId: deleteSettingsLogoImage
+      description: |-
+        Removes the image (the placement and size stay) → the logo as GET returns it.
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/settings:
     get:
       tags:
@@ -13338,6 +13519,217 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/logo:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Get the project's logo
+      operationId: getProjectsByPidLogo
+      description: |-
+        The logo of the project's reports and documents: its own image if it has one, else the organisation's, unless turned off → `{own: logo, organisation: logo, effective: project | organisation | none}` (a logo as `GET /settings/logo` returns it; `own.off`: no logo at all).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Projects
+      summary: Update the project's logo settings
+      operationId: putProjectsByPidLogo
+      description: |-
+        Placement and maximum size of the project's own logo, and `off` (no logo in the project's documents, not even the organisation's); fields left out keep their value → as GET.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                placement:
+                  type: string
+                  enum: [left, center, right]
+                max_width_mm:
+                  type: integer
+                  minimum: 5
+                  maximum: 170
+                max_height_mm:
+                  type: integer
+                  minimum: 5
+                  maximum: 40
+                off:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/projects/{pid}/logo/image:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Project logo image
+      operationId: getProjectsByPidLogoImage
+      description: |-
+        The image of the project's own logo; 404 without one.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Projects
+      summary: Upload the project's logo
+      operationId: putProjectsByPidLogoImage
+      description: |-
+        multipart `file`: PNG, JPEG or SVG, at most 2 MB. PNG and JPEG are decoded and encoded again (no metadata, at most 1600 pixels on the longer side); an SVG is drawn by Qtestframe's own renderer into a PNG of 1000 pixels on the longer side (scripts, event handlers, links, embedded images, foreign objects, texts and entity declarations are never used or fetched). Replaces the previous image. Turns `off` off → as `GET /projects/{pid}/logo`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - Projects
+      summary: Remove the project's logo
+      operationId: deleteProjectsByPidLogoImage
+      description: |-
+        Removes the project's own image: its documents show the organisation's logo again → as `GET /projects/{pid}/logo`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/projects/{pid}/risks/import:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Requirements
+      summary: Import a risk register
+      operationId: postProjectsByPidRisksImport
+      description: |-
+        A CSV or XLSX file with the columns of the risk register (the risks report's Risk register sheet, English or Swedish headers, or a sheet of one's own; the sheet and header row with a Title column and the most risk columns): Key, Title, Description, Category, Owner, Likelihood, Impact, Status (code or label), Mitigation, Review date, Review owner, ATT&CK techniques, EMB3D threats. A row naming the key of a risk of the project updates the columns the file has; the others create risks. Unknown ATT&CK and ATLAS techniques and EMB3D threats, unknown statuses and likelihoods or impacts outside 1–5 are left out with a warning on the row; a row without a title is an error. `dry_run=true` previews. Atomic → `{dry_run, sheet, columns, created, updated, unchanged, errors, rows:[{row, key, title, action (create | update | unchanged | error), error?, warnings}]}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                dry_run:
+                  type: string
+                  description: '`true`: preview only'
+              required:
+              - file
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/projects/{pid}/risks/bulk:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -17014,7 +17406,7 @@ paths:
       summary: Get correlation settings
       operationId: getProjectsByPidCorrelationSettings
       description: |-
-        the project's change and defect correlation settings `{relation_impact, relation_modes, impact_depth, impact_rules, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
+        the project's change and defect correlation settings `{relation_impact, relation_modes, impact_depth, impact_rules, applicability_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, a changed applicability recommends a review, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -17039,7 +17431,7 @@ paths:
       summary: Save correlation settings
       operationId: putProjectsByPidCorrelationSettings
       description: |-
-        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `relation_modes` (relation type → `suspect` | `review`); `impact_depth` 1–10 (default 3); `impact_rules` (`verifies`, `calls`, `test_depends_on`, `item_link`, `risk`, `defect`, `variant`, `code` → `{direction, mode}`; only `verifies` can mark `suspect`); `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off` → the settings as GET returns them
+        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `relation_modes` (relation type → `suspect` | `review`); `impact_depth` 1–10 (default 3); `impact_rules` (`verifies`, `calls`, `test_depends_on`, `item_link`, `risk`, `defect`, `variant`, `code` → `{direction, mode}`; only `verifies` can mark `suspect`); `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off`; `applicability_impact` `review` (default: a changed variant applicability recommends a review of what the impact rules reach and notifies its owners) | `suspect` (a change of substance: the rules mark trace links and relations suspect) | `off` → the settings as GET returns them
 
         **Permission:** `project.update`.
       x-permission: project.update

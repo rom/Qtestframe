@@ -248,7 +248,8 @@ func (s *Server) applyImpact(ctx context.Context, p *Principal, projectID string
 	if choice == model.ImpactApplySuspect {
 		use = nil
 		for _, r := range roots {
-			if !r.ReviewOnly {
+			// a changed applicability recommends its reviews at once
+			if !r.ReviewOnly || slices.Contains(r.Fields, "applicability") {
 				use = append(use, r)
 			}
 		}
@@ -512,6 +513,7 @@ func (s *Server) handleProjectImpactExport(w http.ResponseWriter, r *http.Reques
 	}
 	lang := reportLang(r, p, q.Get("lang"))
 	ds := impactDataset(pr, imp, lang)
+	ds.Logo = s.documentLogo(r.Context(), p, pr)
 	if f == export.CSV {
 		// one file: the rows only
 		ds.Sections = ds.Sections[1:]

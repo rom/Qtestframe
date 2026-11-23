@@ -48,6 +48,7 @@ func (s *Store) CorrelationSettings(ctx context.Context, tenantID, projectID str
 		set.WarningSeverities = []string{}
 	}
 	fillImpactRules(&set)
+	set.ApplicabilityImpact = set.ApplicabilityMode()
 	return &set, nil
 }
 
@@ -154,6 +155,12 @@ func NormalizeCorrelationSettings(set *model.CorrelationSettings) error {
 			return Invalidf("impact_rules.%s can only recommend a review (mode review)", edge)
 		}
 		set.ImpactRules[edge] = r
+	}
+	if set.ApplicabilityImpact == "" {
+		set.ApplicabilityImpact = model.ModeReview
+	}
+	if !slices.Contains(model.ApplicabilityImpacts, set.ApplicabilityImpact) {
+		return Invalidf("applicability_impact must be one of %s", strings.Join(model.ApplicabilityImpacts, ", "))
 	}
 	fillImpactRules(set)
 	return nil

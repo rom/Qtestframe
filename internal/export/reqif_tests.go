@@ -54,6 +54,8 @@ type ReqIFTest struct {
 	Attachments                 []ReqIFFile // written by WriteReqIFZ only
 	attachmentPaths             []string
 	Custom                      map[string][]string
+	// D3fend and Emb3d: attributes D3FEND and EMB3D.
+	D3fend, Emb3d []string
 }
 
 // ReqIFStep is a test step; Call is the key of a called test.
@@ -86,6 +88,8 @@ var reqifTestAttrs = []reqifAttr{
 	{"qtf-at-status", "Status", "enum", "teststatus"},
 	{"qtf-at-estimate", "Estimated minutes", "integer", ""},
 	{"qtf-at-tags", "Tags", "string", ""},
+	{"qtf-at-d3fend", "D3FEND", "string", ""},
+	{"qtf-at-emb3d", "EMB3D", "string", ""},
 	{"qtf-at-version", "Version", "integer", ""},
 	{"qtf-at-created-by", "ReqIF.ForeignCreatedBy", "string", ""},
 	{"qtf-at-created-on", "ReqIF.ForeignCreatedOn", "date", ""},
@@ -242,6 +246,8 @@ func reqifTestObjects(w *reqifWriter, doc ReqIFDocument) {
 			w.line(`<ATTRIBUTE-VALUE-INTEGER THE-VALUE="` + strconv.Itoa(t.EstimatedMinutes) + `"><DEFINITION><ATTRIBUTE-DEFINITION-INTEGER-REF>qtf-at-estimate</ATTRIBUTE-DEFINITION-INTEGER-REF></DEFINITION></ATTRIBUTE-VALUE-INTEGER>`)
 		}
 		reqifString(w, "qtf-at-tags", strings.Join(t.Tags, ", "))
+		reqifString(w, "qtf-at-d3fend", strings.Join(t.D3fend, ", "))
+		reqifString(w, "qtf-at-emb3d", strings.Join(t.Emb3d, ", "))
 		w.line(`<ATTRIBUTE-VALUE-INTEGER THE-VALUE="` + strconv.Itoa(t.Version) + `"><DEFINITION><ATTRIBUTE-DEFINITION-INTEGER-REF>qtf-at-version</ATTRIBUTE-DEFINITION-INTEGER-REF></DEFINITION></ATTRIBUTE-VALUE-INTEGER>`)
 		reqifString(w, "qtf-at-created-by", t.CreatedBy)
 		if !t.CreatedAt.IsZero() {

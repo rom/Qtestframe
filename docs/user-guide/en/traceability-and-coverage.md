@@ -180,6 +180,8 @@ The mode next to each type (**Becomes suspect** or **Review recommended**) appli
 
 **Other connections** turns the other kinds of connection on or off: trace links (they can mark suspect or only recommend a review), shared steps, test dependencies, item links, risks, defects, variants and code changes (these only recommend a review).
 
+**Changed variant applicability** decides what happens when the [variants an item applies to](variants-and-code.md#applicability) change: **Recommends a review (default)** — nothing is marked, the owners of the items the rules reach are notified —, **Marks links and relations suspect** — the change counts like a change of the text, along the rules above — or **Has no impact**. The preview before saving and the **Impact** list name the change *applicability*.
+
 ## Stale results
 
 A test result goes **stale** when
@@ -252,6 +254,8 @@ Open a requirement and choose the **Verification** tab. It shows the state with 
 | **Failed** | some evidence failed: a test failed or was blocked, a record's result is *Fail* |
 | **Not yet passed** | there is evidence, but none of it has passed yet (not run, a suspect link, a step not executed) |
 | **No evidence** | no test and no verification record |
+
+**Verification** in the project navigation lists every requirement with its state, as a hierarchy, per system element and with the inconsistencies. In a project with [variants](variants-and-code.md#show-for-a-variant), **Show for variant** limits it to the requirements of one variant, verified only by the tests that apply to the variant and the results that count for it (runs for the variant, its parents and runs without a variant, in its configurations). Verification records count for every variant.
 
 ### Tests for criteria and test steps
 
@@ -376,7 +380,7 @@ Cycles (for example two requirements that depend on each other) are drawn, but o
 
 ## Requirement analytics
 
-**Analytics** in the project navigation analyses all requirements of the project at once (open it again or select **Analyse again** after changes). At the top: the **health** (the share of requirements without problems or warnings), the number of requirements and tests, the share **covered by tests** (rejected and obsolete requirements are not counted) and the average **language score**.
+**Analytics** in the project navigation analyses all requirements of the project at once (open it again or select **Analyse again** after changes). In a project with variants, **Show for variant** analyses only the requirements and tests of one variant, with its coverage, results and verification; the compliance below follows the same choice. At the top: the **health** (the share of requirements without problems or warnings), the number of requirements and tests, the share **covered by tests** (rejected and obsolete requirements are not counted) and the average **language score**.
 
 - **Obligation levels** shows how many requirements have each level, including those with **no obligation**.
 - **Keywords per meaning** groups the keywords that mean the same (MUST, SHALL and REQUIRED; MAY and OPTIONAL …) and shows how each is used, so you see the convention of the project at a glance.

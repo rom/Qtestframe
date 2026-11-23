@@ -30,6 +30,7 @@ import ChatChannelsCard from '@/components/ChatChannelsCard.vue'
 import VerificationSettingsCard from '@/components/VerificationSettingsCard.vue'
 import ChangeControlSettings from '@/components/ChangeControlSettings.vue'
 import AiProjectSettings from '@/components/AiProjectSettings.vue'
+import LogoSettingsCard from '@/components/LogoSettingsCard.vue'
 import ConfigurationsSettings from '@/components/ConfigurationsSettings.vue'
 import WebTestSettings from '@/components/WebTestSettings.vue'
 import CorrelationSettings from '@/components/CorrelationSettings.vue'
@@ -453,6 +454,7 @@ function deleteProject() {
           <h2 id="h-icon" class="plain-heading" style="margin-bottom: 10px">{{ t('settings.projectIcon') }}</h2>
           <AvatarPicker kind="icon" :value="proj.project?.icon" :name="proj.project?.key ?? ''" :upload-path="`/projects/${proj.pid}/icon`" :save="saveIcon" :disabled="!auth.can(P.projectUpdate)" @uploaded="onIconUploaded" />
         </section>
+        <LogoSettingsCard v-if="proj.pid" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" style="max-width: 860px" />
         <VerificationSettingsCard v-if="proj.pid" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
         <ChangeControlSettings v-if="proj.pid" id="change-control" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
         <AiProjectSettings v-if="proj.pid" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />

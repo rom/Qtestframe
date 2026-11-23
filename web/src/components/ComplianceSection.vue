@@ -20,7 +20,7 @@ import { enumLabel } from '@/i18n/labels'
 import { useUndoStore } from '@/stores/undo'
 import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{ projectId: string }>()
+const props = defineProps<{ projectId: string; variant?: string | null }>()
 const { t, te, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -42,6 +42,7 @@ async function load() {
     report.value = await api.get<ComplianceReport>(`/projects/${props.projectId}/analytics/compliance`, {
       lang: lang.value,
       ...(chosen.value.length ? { source: chosen.value.join(',') } : {}),
+      variant: props.variant || undefined,
     })
   } catch (e) {
     error.value = errorMessage(e)
@@ -49,7 +50,7 @@ async function load() {
     loading.value = false
   }
 }
-watch([() => props.projectId, chosen, lang], load, { immediate: true })
+watch([() => props.projectId, chosen, lang, () => props.variant], load, { immediate: true })
 watch(() => undoStore.version, load)
 watch(chosen, (v) => void router.replace({ query: { ...route.query, compliance: v.length ? v.join(',') : undefined } }))
 
@@ -267,9 +268,9 @@ const toggleOpen = (id: string) => {
 .cmp-figure.good .value { color: var(--p-green-700, #15803d); }
 .cmp-figure.fair .value { color: var(--p-amber-700, #b45309); }
 .cmp-figure.poor .value { color: var(--p-red-700, #b91c1c); }
-:global(.app-dark) .cmp-figure.good .value { color: var(--p-green-300); }
-:global(.app-dark) .cmp-figure.fair .value { color: var(--p-amber-300); }
-:global(.app-dark) .cmp-figure.poor .value { color: var(--p-red-300); }
+.app-dark .cmp-figure.good .value { color: var(--p-green-300); }
+.app-dark .cmp-figure.fair .value { color: var(--p-amber-300); }
+.app-dark .cmp-figure.poor .value { color: var(--p-red-300); }
 .cmp-stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--qtf-hover); }
 .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .st-passed { background: var(--p-green-500, #22c55e); }

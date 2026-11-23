@@ -333,6 +333,10 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedDashboards(ctx, st, tenantID, p); err != nil {
 		return nil, err
 	}
+	// the organisation's logo on reports and documents (seedlogo.go)
+	if err := seedLogo(ctx, st, tenantID); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 

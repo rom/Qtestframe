@@ -1510,6 +1510,8 @@ export interface RequirementVerification {
 /** GET /projects/{pid}/verification */
 export interface ProjectVerification {
   strict: boolean
+  /** the variant of ?variant= */
+  variant?: string
   counts: Record<string, number>
   criteria_verified: number
   criteria_total: number

@@ -78,6 +78,8 @@ func (s *Server) loadElements(ctx context.Context, tenantID string, pc *projectC
 // projectVerification is the answer of GET /projects/{pid}/verification.
 type projectVerification struct {
 	Strict bool `json:"strict"`
+	// Variant: the variant the verification is for (?variant=; "" all).
+	Variant string `json:"variant,omitempty"`
 	// Counts of the rolled-up states of the requirements listed.
 	Counts map[string]int `json:"counts"`
 	// CriteriaVerified of CriteriaTotal over the requirements listed.
@@ -105,12 +107,24 @@ func (s *Server) handleProjectVerification(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	res := pc.verification()
+	// ?variant=: the requirements of the variant (filterRequirements), verified by its tests and results
+	vc, variant, err := s.variantScope(r, p, pc)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if variant != "" {
+		if res, err = s.variantVerification(r.Context(), p, pc, vc, variant); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
 	st, err := s.Store.VerificationSettings(r.Context(), p.TenantID(), pr.ID)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	out := projectVerification{Strict: st.StrictCriteria, Counts: map[string]int{}, Requirements: []*model.RequirementVerification{}, Inconsistent: []*model.RequirementVerification{}}
+	out := projectVerification{Strict: st.StrictCriteria, Variant: variant, Counts: map[string]int{}, Requirements: []*model.RequirementVerification{}, Inconsistent: []*model.RequirementVerification{}}
 	for _, st := range model.VerificationStates {
 		out.Counts[st] = 0
 	}

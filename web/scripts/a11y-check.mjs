@@ -517,6 +517,14 @@ async function discover(request) {
     { name: 'web-tests-settings', path: `${p}/settings?tab=webtests`, wait: '#h-web-tests' },
     // change and defect correlations: settings, the Impact tabs, the confirmation before saving, a baseline's impact, regression history
     { name: 'correlation-settings', path: `${p}/settings?tab=correlations`, wait: '#h-corr' },
+    // the logo on reports and documents: organisation (Administration → Documents) and project, with the first-page preview
+    { name: 'logo-settings', path: '/admin/documents', wait: '.logo-card .logo-page img' },
+    { name: 'logo-settings-project', path: `${p}/settings?tab=project`, wait: '.logo-card .logo-page' },
+    // the variant filter of the verification view and the analytics
+    { name: 'verification-variant', path: `${p}/verification?variant=EU`, wait: '.ver-counts' },
+    { name: 'analytics-variant', path: `${p}/analytics?variant=EU`, wait: '.analytics-cards, .empty' },
+    // the risk register import
+    { name: 'risk-import-dialog', path: `${p}/risks`, open: '.page-header .actions button:has(.pi-file-import)', wait: '.p-dialog' },
     linkedReq && { name: 'requirement-impact', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
     { name: 'test-impact', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
     linkedReq && { name: 'impact-confirm-dialog', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer form input[required]', keys: ['End', 'X', 'Enter'], wait: '.impact-confirm-dialog' },

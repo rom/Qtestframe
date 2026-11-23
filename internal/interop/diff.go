@@ -184,6 +184,16 @@ func compareRow(kind string, fields []Field, in Incoming, current map[string]*It
 			rd.Errors = append(rd.Errors, CellError{Field: f.Key, Label: f.Label, Cell: c.Ref, Message: err.Error()})
 			continue
 		}
+		if f.Check != nil {
+			var warn string
+			if v, warn = f.Check(v); warn != "" {
+				w := f.Label + ": " + warn
+				if c.Ref != "" {
+					w = c.Ref + " " + w
+				}
+				rd.Warnings = append(rd.Warnings, w)
+			}
+		}
 		if cur == nil {
 			if v != "" {
 				rd.Values[f.Key] = v

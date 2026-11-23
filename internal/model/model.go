@@ -118,6 +118,9 @@ type TenantSettings struct {
 	// (it also needs a service configured in the system settings; projects
 	// can opt out). Off by default.
 	AIEnabled bool `json:"ai_enabled"`
+	// Logo is the organisation's logotype on reports and generated
+	// documents (changed only through /settings/logo).
+	Logo LogoSettings `json:"logo"`
 }
 
 // DefaultReadyRequirementStatuses are the requirement statuses ready for
@@ -167,7 +170,68 @@ const (
 	FileReport     = "report"
 	FileAvatar     = "avatar"
 	FileIcon       = "icon"
+	// FileLogo is the logotype of an organisation (no project) or a
+	// project, shown on the first page of reports and generated documents.
+	FileLogo = "logo"
 )
+
+// Logo placements (LogoSettings.Placement).
+const (
+	LogoLeft   = "left"
+	LogoCenter = "center"
+	LogoRight  = "right"
+)
+
+// LogoPlacements lists the valid logo placements.
+var LogoPlacements = []string{LogoLeft, LogoCenter, LogoRight}
+
+// Logo size bounds and defaults (millimetres, LogoSettings.MaxWidthMM and
+// MaxHeightMM).
+const (
+	DefaultLogoMaxWidthMM  = 50
+	DefaultLogoMaxHeightMM = 20
+	MinLogoMM              = 5
+	MaxLogoWidthMM         = 170
+	MaxLogoHeightMM        = 40
+)
+
+// LogoSettings are the logotype of an organisation's (TenantSettings.Logo)
+// or a project's reports and generated documents: the uploaded image
+// (FileID, a file of kind FileLogo; PNG or JPEG as stored, an uploaded SVG
+// is stored rasterised), where it goes on the first page and how large it
+// may be. A project without its own image uses the organisation's logo,
+// unless Off.
+type LogoSettings struct {
+	FileID      string `json:"file_id"`
+	ContentType string `json:"content_type,omitempty"`
+	Width       int    `json:"width,omitempty"`
+	Height      int    `json:"height,omitempty"`
+	// Source is the uploaded format (png, jpeg or svg), Name the uploaded
+	// file name.
+	Source      string `json:"source,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Placement   string `json:"placement"`
+	MaxWidthMM  int    `json:"max_width_mm"`
+	MaxHeightMM int    `json:"max_height_mm"`
+	// Off (projects only): no logo in the project's documents, not even
+	// the organisation's.
+	Off bool `json:"off,omitempty"`
+}
+
+// Normalize fills in the defaults and keeps the values in range.
+func (l *LogoSettings) Normalize() {
+	if !Valid(LogoPlacements, l.Placement) {
+		l.Placement = LogoLeft
+	}
+	if l.MaxWidthMM <= 0 {
+		l.MaxWidthMM = DefaultLogoMaxWidthMM
+	}
+	if l.MaxHeightMM <= 0 {
+		l.MaxHeightMM = DefaultLogoMaxHeightMM
+	}
+	l.MaxWidthMM = min(max(l.MaxWidthMM, MinLogoMM), MaxLogoWidthMM)
+	l.MaxHeightMM = min(max(l.MaxHeightMM, MinLogoMM), MaxLogoHeightMM)
+}
 
 // FileInfo is the metadata of a stored file.
 type FileInfo struct {

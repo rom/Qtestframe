@@ -38,6 +38,8 @@ type Document struct {
 	// Link maps a table cell value (an item key) to a URL; the Markdown
 	// writer turns such cells into links.
 	Link func(value string) string `json:"-"`
+	// Logo, when set, is shown at the top of the title page.
+	Logo *Logo `json:"-"`
 }
 
 // BlockKind is the kind of a document block.
@@ -145,7 +147,7 @@ func WriteDocument(w io.Writer, f Format, doc *Document) error {
 // ---------------------------------------------------------------- helpers
 
 func (doc *Document) dataset() Dataset {
-	return Dataset{Title: doc.Title, Subtitle: doc.Subtitle, Lang: doc.Lang, GeneratedAt: doc.GeneratedAt}
+	return Dataset{Title: doc.Title, Subtitle: doc.Subtitle, Lang: doc.Lang, GeneratedAt: doc.GeneratedAt, Logo: doc.Logo}
 }
 
 func (doc *Document) tocLevels() int {
@@ -314,6 +316,9 @@ func markdownSpans(spans []Span) string {
 func writeDocMarkdown(w io.Writer, doc *Document) error {
 	ds := doc.dataset()
 	var m MarkdownWriter
+	if s := markdownLogo(doc.Logo); s != "" {
+		m.block(s)
+	}
 	m.Heading(1, doc.Title)
 	m.Paragraph(doc.Subtitle)
 	fields := append([]Item{}, doc.TitleFields...)

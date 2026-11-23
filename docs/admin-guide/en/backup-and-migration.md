@@ -77,15 +77,6 @@ The system settings of the backup apply at once. After a restore, check `qtestfr
 
 To recover a single item, use its history in the web client; to move one project, see below.
 
-## The audit trail in backups
-
-The hash chain of the audit trail (see [Tamper-evident audit trail](security.md#tamper-evident-audit-trail)) survives backups and restores, also between SQLite and PostgreSQL:
-
-- A **backup** is a consistent snapshot of the entries, the recorded ends of the chains (`audit_heads`), the signed checkpoints and their key (`audit_keys`, encrypted with the backed-up data keys), so the restored chain verifies like the original. Times are kept to the microsecond, which both databases store.
-- A **restore** replaces the chain with the backup's: entries written after the backup are gone, together with the checkpoints written after it, so the restored chain is intact; the restore itself (`admin.restore`) is the next entry. Keep the audit-trail exports of the time between the backup and the restore if you must prove what happened then. Verify after a restore: `qtestframe audit verify`.
-- Restoring into an installation with another key fails as for every encrypted secret; the checkpoint key cannot be read without the backup's key.
-- **Project archives** (below) never contain the audit trail or the electronic signatures: they belong to the organisation. Saving, loading, duplicating or deleting a project only adds entries to the chain; nothing is removed from it. Electronic signatures are kept when their project is deleted.
-
 ## Upgrading
 
 1. Read the release notes.
@@ -160,6 +151,7 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 59 | `0059_dashboards.sql` |
 | 60 | `0060_req_sync.sql` |
 | 61 | `0061_ai_assistance.sql` |
+| 62 | `0062_project_logo.sql` |
 
 <!-- END GENERATED: migrations -->
 

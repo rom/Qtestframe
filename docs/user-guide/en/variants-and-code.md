@@ -28,6 +28,8 @@ A requirement or test **applies** to all variants until you say otherwise. Open 
 
 To set the applicability of many items at once, select them in the list and choose **Applies to** in the toolbar.
 
+**When the applicability changes,** the item's tests, the requirements related to it and the other items the [change impact](traceability-and-coverage.md#change-impact) reaches may need a look: a test written for *EU* may not cover *US*. By default a **review is recommended**: nothing is marked suspect, and the owners of the items reached are notified. Under **Categories & settings → Change impact → Changed variant applicability** a project can make it mark the trace links and relations suspect instead (as a change of the text does), or have no impact. Changing the applicability of many items at once, and restoring a version or a baseline with another applicability, work the same way.
+
 ### History, undo and baselines
 
 A change of the applicability is part of the item's **History** (shown as *Applicability*, with the variants before and after) and of the audit log. **Undo** (Ctrl+Z) takes it back, also for a change of many items at once: each item gets what it had. Restoring an older version from the history restores the applicability of that version too.
@@ -36,7 +38,7 @@ A change of the applicability is part of the item's **History** (shown as *Appli
 
 ### Show for a variant
 
-In the requirement and test lists and on the **Traceability** page, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
+In the requirement and test lists and on the **Traceability**, **Verification** and **Analytics** pages, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
 
 | Query | Finds |
 |---|---|
