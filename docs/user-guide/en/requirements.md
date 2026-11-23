@@ -454,6 +454,8 @@ The command line builds the same prompts, for example in a repository's tooling:
 qtestframe prompt --project SHOP --kind architecture --scope 'tag:payments' --split folder --out prompts/
 ```
 
+**Send to AI assistance.** When the optional [AI assistance](ai-assistance.md) is available in the project, the result also has **Send to AI assistance**: it sends the prompt (or the part shown) to the service your organisation set up and shows the answer as it is written; **Stop** cancels it. **Copy the answer**, or **Save as project document** (it is added under **Documents** with the tag *ai-answer*; needs the right to edit requirements or tests). Review the answer before you use it. Without AI assistance nothing is ever sent.
+
 It reads `QTF_URL`, `QTF_TOKEN` and `QTF_PROJECT` like `qtestframe stubs` ([CI/CD](ci-cd.md)); `--folder`, `--release`, `--variant`, `--compact`, `--max-tokens`, `--formats` and `--lang` match the options above, and without `--out` the prompt is printed.
 
 ### Solution preamble

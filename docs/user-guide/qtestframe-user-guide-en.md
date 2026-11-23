@@ -920,6 +920,8 @@ The command line builds the same prompts, for example in a repository's tooling:
 qtestframe prompt --project SHOP --kind architecture --scope 'tag:payments' --split folder --out prompts/
 ```
 
+**Send to AI assistance.** When the optional [AI assistance](#ai-assistance) is available in the project, the result also has **Send to AI assistance**: it sends the prompt (or the part shown) to the service your organisation set up and shows the answer as it is written; **Stop** cancels it. **Copy the answer**, or **Save as project document** (it is added under **Documents** with the tag *ai-answer*; needs the right to edit requirements or tests). Review the answer before you use it. Without AI assistance nothing is ever sent.
+
 It reads `QTF_URL`, `QTF_TOKEN` and `QTF_PROJECT` like `qtestframe stubs` ([CI/CD](#cicd)); `--folder`, `--release`, `--variant`, `--compact`, `--max-tokens`, `--formats` and `--lang` match the options above, and without `--out` the prompt is printed.
 
 ### Solution preamble
@@ -3168,6 +3170,8 @@ Pages that can use AI assistance have an **Assist** button with a sparkle icon:
 An action opens a dialog that asks the service at once. While it writes, the dialog shows how far it is; **Cancel request** stops it. Then you see the suggestions, the model, the tokens used, the time and, when the administrator entered prices, an estimated cost. **Ask again** sends the request once more.
 
 Suggestions and the prompts are in the language of the user interface (English or Swedish).
+
+In software projects, **AI prompts** can also send a built prompt – for example an architecture or full solution prompt – with **Send to AI assistance** and save the answer as a project document, see [Solution prompts](#solution-prompts).
 
 ## Draft tests from a requirement
 

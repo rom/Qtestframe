@@ -234,6 +234,7 @@ default):
 | GET | `/projects/{pid}` | project.read |
 | PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
 | POST | `/projects/{pid}/prompts` | project.read + the read permission of the items' kind – see [Prompts](#prompts-software-projects) |
+| POST | `/projects/{pid}/prompts/send` | project.read + the read permission of the items' kind – send a built prompt to the AI assistance, see [Prompts](#prompts-software-projects) |
 | GET | `/projects/{pid}/solution-preamble` | project.read – see [Solution preamble](#solution-preamble-software-projects) |
 | PUT | `/projects/{pid}/solution-preamble` | project.update – software projects |
 | POST | `/projects/{pid}/solution-preamble/check` | project.read – the warnings of an unsaved preamble |
@@ -439,6 +440,16 @@ ending with a traceability table. Options:
 {"kind": "architecture", "lang": "sv", "folder_id": "…", "split": "folder", "max_tokens": 12000,
  "compact": false, "formats": ["mermaid", "c4"]}
 ```
+
+`POST /projects/{pid}/prompts/send` (same body; `part`: the part of a split
+prompt to send, 1-based) sends the prompt to the optional [AI
+assistance](#ai-assistance) when it is available in the project (else 409
+`ai_unavailable`) and answers `{"answer", "truncated", "meta", "title",
+"kind"}`; with `Accept: text/event-stream` it streams the events `start`,
+`delta` (`{"text"}`, the answer as it is written), `result` and `error`. It
+is rate limited and audited like the other AI features (`ai.request` with
+`feature=prompt` and the kind, never the content); the answer is not stored
+(the web client offers to save it as a project document).
 
 The command line builds the same prompts: `qtestframe prompt --project KEY
 --kind architecture --scope 'tag:payments' --split folder --out prompts/`

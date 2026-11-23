@@ -207,10 +207,25 @@ export interface AssistOptions {
  * ai_invalid_answer, ai_timeout, …) or an AbortError when cancelled.
  */
 export async function runAssist<T>(projectId: string, feature: AiFeature, body: Record<string, unknown>, opts: AssistOptions = {}): Promise<AiAnswer<T>> {
+  return streamPost<AiAnswer<T>>(`/projects/${projectId}/ai/${AI_ENDPOINT[feature]}`, body, opts)
+}
+
+export interface StreamOptions extends AssistOptions {
+  /** text of the answer as it is written (event delta) */
+  onDelta?: (text: string) => void
+}
+
+/**
+ * POSTs a JSON body asking for server-sent events and resolves with the
+ * data of the result event (or the JSON answer when the server does not
+ * stream); progress and delta events go to the callbacks, an error event
+ * or HTTP error rejects with an ApiError.
+ */
+export async function streamPost<R>(path: string, body: Record<string, unknown>, opts: StreamOptions = {}): Promise<R> {
   const headers: Record<string, string> = { Accept: 'text/event-stream', 'Content-Type': 'application/json' }
   const csrf = getCsrfToken()
   if (csrf) headers['X-CSRF-Token'] = csrf
-  const res = await fetch(buildUrl(`/projects/${projectId}/ai/${AI_ENDPOINT[feature]}`), {
+  const res = await fetch(buildUrl(path), {
     method: 'POST',
     headers,
     credentials: 'same-origin',
@@ -234,7 +249,7 @@ export async function runAssist<T>(projectId: string, feature: AiFeature, body: 
     throw err
   }
   const type = res.headers.get('Content-Type') ?? ''
-  if (!type.includes('text/event-stream') || !res.body) return (await res.json()) as AiAnswer<T>
+  if (!type.includes('text/event-stream') || !res.body) return (await res.json()) as R
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buf = ''
@@ -246,12 +261,22 @@ export async function runAssist<T>(projectId: string, feature: AiFeature, body: 
     for (const ev of events) {
       const data = JSON.parse(ev.data) as Record<string, unknown>
       if (ev.event === 'progress') opts.onProgress?.(Number(data.chars) || 0)
-      else if (ev.event === 'result') return data as unknown as AiAnswer<T>
+      else if (ev.event === 'delta') opts.onDelta?.(String(data.text ?? ''))
+      else if (ev.event === 'result') return data as unknown as R
       else if (ev.event === 'error') throw new ApiError(Number(data.status) || 502, String(data.code ?? 'ai_service'), String(data.error ?? ''), undefined, data)
     }
     if (done) break
   }
   throw new ApiError(502, 'ai_service', 'the answer ended early')
+}
+
+/** The answer of POST /projects/{pid}/prompts/send. */
+export interface PromptAnswer {
+  answer: string
+  truncated: boolean
+  meta: Omit<AiMeta, 'feature'> & { feature: string }
+  title: string
+  kind: string
 }
 
 // ---------------------------------------------------------------- helpers

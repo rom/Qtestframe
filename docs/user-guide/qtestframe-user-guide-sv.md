@@ -939,6 +939,8 @@ Kommandoraden bygger samma prompter, till exempel i ett kodförråds verktyg:
 qtestframe prompt --project SHOP --kind architecture --scope 'tag:payments' --split folder --out prompts/
 ```
 
+**Skicka till AI-assistansen.** När den valfria [AI-assistansen](#ai-assistans) finns i projektet har resultatet även **Skicka till AI-assistansen**: prompten (eller den visade delen) skickas till den tjänst din organisation har satt upp och svaret visas medan det skrivs; **Stoppa** avbryter. **Kopiera svaret** eller **Spara som projektdokument** (det läggs till under **Dokument** med taggen *ai-answer*; kräver rätt att redigera krav eller testfall). Granska svaret innan du använder det. Utan AI-assistans skickas aldrig något.
+
 Den läser `QTF_URL`, `QTF_TOKEN` och `QTF_PROJECT` som `qtestframe stubs` ([CI/CD](#cicd)); `--folder`, `--release`, `--variant`, `--compact`, `--max-tokens`, `--formats` och `--lang` motsvarar valen ovan, och utan `--out` skrivs prompten ut.
 
 ### Lösningsbeskrivning
@@ -3189,6 +3191,8 @@ Sidor som kan använda AI-assistans har knappen **Assistera** med en gnistrande 
 En åtgärd öppnar en dialog som frågar tjänsten direkt. Medan den skriver visar dialogen hur långt den har kommit; **Avbryt begäran** stoppar den. Sedan ser du förslagen, modellen, antalet token, tiden och, när administratören har angett priser, en uppskattad kostnad. **Fråga igen** skickar begäran en gång till.
 
 Förslagen och promptarna är på användargränssnittets språk (engelska eller svenska).
+
+I mjukvaruprojekt kan **AI-prompter** också skicka en färdig prompt – till exempel en arkitektur- eller lösningsprompt – med **Skicka till AI-assistansen** och spara svaret som ett projektdokument, se [Lösningsprompter](#lösningsprompter).
 
 ## Utkast till tester från ett krav
 

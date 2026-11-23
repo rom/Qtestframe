@@ -29,6 +29,9 @@ func (s *Server) routesSolution(h routeFunc) {
 	h("POST /api/v1/projects/{pid}/solution-preamble/check", s.handleCheckPreamble, "project.read")
 	h("GET /api/v1/projects/{pid}/solution-preamble/history", s.handlePreambleHistory, "project.read")
 	h("GET /api/v1/projects/{pid}/solution-preamble/templates", s.handlePreambleTemplates, "project.read")
+	// a built prompt sent to the optional AI assistance (promptsend.go);
+	// read of the items' kind: see buildPrompt
+	h("POST /api/v1/projects/{pid}/prompts/send", s.handlePromptSend, "project.read")
 }
 
 // preambleView is the answer of GET/PUT: the preamble, the warnings about

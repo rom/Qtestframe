@@ -43,6 +43,9 @@ type promptRequest struct {
 	// Format of the answer: "json" (default) or "zip" (the parts as
 	// Markdown files).
 	Format string `json:"format"`
+	// Part to send to the AI assistance (POST …/prompts/send; 1-based, 0
+	// = the first).
+	Part int `json:"part"`
 }
 
 // handlePrompt: POST /projects/{pid}/prompts — builds a prompt for an AI
@@ -53,18 +56,32 @@ type promptRequest struct {
 // solution preamble. Read-only: needs the read permission of the items'
 // kind.
 func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Principal) {
-	pr, ok := s.project(w, r, p)
-	if !ok {
-		return
-	}
-	if pr.Type != model.ProjectTypeSoftware {
-		s.fail(w, r, badRequest("prompts are available in software projects; set the project type to software"))
-		return
-	}
 	var req promptRequest
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	pr, res, ok := s.buildPrompt(w, r, p, &req)
+	if !ok {
+		return
+	}
+	if req.Format == "zip" {
+		writePromptZip(w, pr.Key, res)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
+// buildPrompt builds the prompt of a request; on an error it has answered
+// and ok is false.
+func (s *Server) buildPrompt(w http.ResponseWriter, r *http.Request, p *Principal, req *promptRequest) (*model.Project, prompt.Result, bool) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return nil, prompt.Result{}, false
+	}
+	if pr.Type != model.ProjectTypeSoftware {
+		s.fail(w, r, badRequest("prompts are available in software projects; set the project type to software"))
+		return nil, prompt.Result{}, false
 	}
 	in := prompt.Input{Kind: req.Kind, Lang: req.Lang, TestType: req.TestType, Framework: strings.TrimSpace(req.Framework), Notes: req.Notes,
 		ProjectKey: pr.Key, ProjectName: pr.Name, ProjectDescription: pr.Description, TechContext: pr.TechContext,
@@ -75,15 +92,15 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 	}
 	if err := prompt.Validate(&in); err != nil {
 		s.fail(w, r, badRequest("%v", err))
-		return
+		return nil, prompt.Result{}, false
 	}
 	if len(in.Framework) > 200 || len(in.Notes) > 8000 {
 		s.fail(w, r, badRequest("framework may have at most 200 and notes at most 8000 characters"))
-		return
+		return nil, prompt.Result{}, false
 	}
 	if req.Format != "" && req.Format != "json" && req.Format != "zip" {
 		s.fail(w, r, badRequest("format must be json or zip"))
-		return
+		return nil, prompt.Result{}, false
 	}
 	forReqs := prompt.ForRequirements(in.Kind)
 	need := rbac.TestRead
@@ -92,28 +109,28 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 	}
 	if !p.Can(need) {
 		writeError(w, http.StatusForbidden, "forbidden", "permission "+string(need)+" required")
-		return
+		return nil, prompt.Result{}, false
 	}
 	if !forReqs && (req.ReleaseID != "" || req.Variant != "") {
 		s.fail(w, r, badRequest("release_id and variant apply to requirement prompts"))
-		return
+		return nil, prompt.Result{}, false
 	}
 	ctx := r.Context()
 	pc, err := s.loadContext(ctx, p.TenantID(), pr)
 	if err != nil {
 		s.fail(w, r, err)
-		return
+		return nil, prompt.Result{}, false
 	}
 	// every requirement and test of the project, for keys and titles
 	allReqs, err := s.Store.ListRequirements(ctx, p.TenantID(), pr.ID)
 	if err != nil {
 		s.fail(w, r, err)
-		return
+		return nil, prompt.Result{}, false
 	}
 	allTests, err := s.Store.ListTests(ctx, p.TenantID(), pr.ID)
 	if err != nil {
 		s.fail(w, r, err)
-		return
+		return nil, prompt.Result{}, false
 	}
 	reqByID := map[string]*model.Requirement{}
 	for i := range allReqs {
@@ -128,14 +145,14 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 	var reqIDs, testIDs []string
 	var sc prompt.Scope
 	if forReqs {
-		if reqIDs, sc, err = s.pickPromptRequirements(r, p, pr, pc, &req); err != nil {
+		if reqIDs, sc, err = s.pickPromptRequirements(r, p, pr, pc, req); err != nil {
 			s.fail(w, r, err)
-			return
+			return nil, prompt.Result{}, false
 		}
 	} else {
 		if testIDs, err = s.pickPromptItems(r, p, pr, pc, req.TestIDs, req.Query, req.FolderID, false); err != nil {
 			s.fail(w, r, err)
-			return
+			return nil, prompt.Result{}, false
 		}
 		if in.Kind == prompt.TestStrategy || in.Kind == prompt.ReviewTests {
 			// the requirements the tests verify (when the caller may read them)
@@ -158,21 +175,21 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 	}
 	if n := len(reqIDs) + len(testIDs); n > limit {
 		s.fail(w, r, badRequest("%d items selected; a prompt can hold at most %d — narrow the selection", n, limit))
-		return
+		return nil, prompt.Result{}, false
 	}
 
 	if len(reqIDs) > 0 {
 		rels, err := s.Store.ListRelations(ctx, p.TenantID(), pr.ID, "")
 		if err != nil {
 			s.fail(w, r, err)
-			return
+			return nil, prompt.Result{}, false
 		}
 		var risksOf map[string][]prompt.Risk
 		var refsOf func(string) []string
 		if solution {
 			if risksOf, err = s.promptRisks(r, p, pr); err != nil {
 				s.fail(w, r, err)
-				return
+				return nil, prompt.Result{}, false
 			}
 			if cat, err := s.catalogue(); err == nil && cat != nil {
 				refsOf = func(id string) []string {
@@ -187,7 +204,7 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 			full, err := s.Store.GetRequirement(ctx, p.TenantID(), id)
 			if err != nil {
 				s.fail(w, r, err)
-				return
+				return nil, prompt.Result{}, false
 			}
 			pr := prompt.Requirement{Key: full.Key, Title: full.Title, Description: full.Description, Obligation: full.Obligation, Type: full.Type,
 				Priority: full.Priority, Status: full.Status, Source: full.Source, Rationale: full.Rationale, Tags: full.Tags}
@@ -228,13 +245,13 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 		deps, err := s.Store.ListTestDependencies(ctx, p.TenantID(), pr.ID, "")
 		if err != nil {
 			s.fail(w, r, err)
-			return
+			return nil, prompt.Result{}, false
 		}
 		for _, id := range testIDs {
 			full, err := s.Store.GetTest(ctx, p.TenantID(), id)
 			if err != nil {
 				s.fail(w, r, err)
-				return
+				return nil, prompt.Result{}, false
 			}
 			pt := prompt.Test{Key: full.Key, Title: full.Title, Description: full.Description, Preconditions: full.Preconditions, ExecutionType: full.ExecutionType,
 				ScriptLanguage: full.ScriptLanguage, Script: full.Script, ExpectedResult: full.ExpectedResult, Priority: full.Priority, Status: full.Status,
@@ -264,19 +281,14 @@ func (s *Server) handlePrompt(w http.ResponseWriter, r *http.Request, p *Princip
 	if solution {
 		if in.Preamble, err = s.Store.SolutionPreamble(ctx, p.TenantID(), pr.ID); err != nil {
 			s.fail(w, r, err)
-			return
+			return nil, prompt.Result{}, false
 		}
 		if in.Summary, err = s.promptSummary(r, p, pr, pc, allReqs, len(allTests), in.Requirements, sc, in.Lang); err != nil {
 			s.fail(w, r, err)
-			return
+			return nil, prompt.Result{}, false
 		}
 	}
-	res := prompt.Build(in)
-	if req.Format == "zip" {
-		writePromptZip(w, pr.Key, res)
-		return
-	}
-	writeJSON(w, http.StatusOK, res)
+	return pr, prompt.Build(in), true
 }
 
 // topFolderName is the name of the top-level folder an item is in ("" none).

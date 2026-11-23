@@ -21,6 +21,8 @@ An action opens a dialog that asks the service at once. While it writes, the dia
 
 Suggestions and the prompts are in the language of the user interface (English or Swedish).
 
+In software projects, **AI prompts** can also send a built prompt – for example an architecture or full solution prompt – with **Send to AI assistance** and save the answer as a project document, see [Solution prompts](requirements.md#solution-prompts).
+
 ## Draft tests from a requirement
 
 **Draft tests** in a saved requirement sends its title, description and acceptance criteria and suggests up to eight manual tests: title, description, preconditions, test data, expected result and steps with actions, data and expected results, and which acceptance criteria each test covers.

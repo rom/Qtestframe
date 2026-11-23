@@ -4527,6 +4527,49 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/prompts/send:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Send a prompt to the AI assistance
+      operationId: postProjectsByPidPromptsSend
+      description: |-
+        Builds a prompt (same body as `POST /projects/{pid}/prompts`; `part` chooses the part of a split prompt, 1-based) and sends it to the optional AI assistance when it is available in the project (else 409 `ai_unavailable`) → `{answer, truncated, meta, title, kind}`; with `Accept: text/event-stream` streamed as the events `start`, `delta` `{text}`, `result` and `error`. Rate limited and audited (`ai.request`, feature `prompt`) like the other AI features; the answer is not stored. See [Prompts](#prompts-software-projects).
+
+        **Permission:** `project.read` checked by the router; project.read + the read permission of the items' kind.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/solution-preamble:
     parameters:
     - $ref: '#/components/parameters/pid'

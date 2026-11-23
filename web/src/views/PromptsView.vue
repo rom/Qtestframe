@@ -4,7 +4,9 @@
 // here to copy or download. Solution prompts (architecture, design,
 // implementation plan, full solution) start with the project's solution
 // preamble and can be compact or split into parts. Nothing is sent to an
-// AI service.
+// AI service, unless the optional AI assistance is available and the user
+// chooses "Send to AI assistance" (POST …/prompts/send, streamed); the
+// answer can then be saved as a project document.
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AutoComplete from 'primevue/autocomplete'
@@ -23,6 +25,8 @@ import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
 import QueryInput from '@/components/QueryInput.vue'
 import VariantSelect from '@/components/VariantSelect.vue'
 import { api, asItems, errorMessage, postDownload } from '@/lib/api'
+import { aiStatus, streamPost, type AiStatus, type PromptAnswer } from '@/lib/ai'
+import { upload } from '@/lib/upload'
 import { saveBlob } from '@/lib/download'
 import { P } from '@/lib/permissions'
 import {
@@ -299,6 +303,72 @@ async function downloadZip() {
   }
 }
 const words = computed(() => shown.value.split(/\s+/).filter(Boolean).length)
+
+// the optional AI assistance: send the shown prompt (or part), stream the answer
+const ai = ref<AiStatus | null>(null)
+if (proj.pid)
+  aiStatus(proj.pid, (path) => api.get<AiStatus>(path))
+    .then((s) => (ai.value = s))
+    .catch(() => (ai.value = null))
+const aiAvailable = computed(() => !!ai.value?.available)
+const answer = ref('')
+const answering = ref(false)
+const answerError = ref('')
+const answerMeta = ref<PromptAnswer | null>(null)
+let abort: AbortController | null = null
+watch(result, () => {
+  answer.value = ''
+  answerError.value = ''
+  answerMeta.value = null
+})
+async function send() {
+  if (!result.value) return
+  abort = new AbortController()
+  answering.value = true
+  answer.value = ''
+  answerError.value = ''
+  answerMeta.value = null
+  try {
+    const res = await streamPost<PromptAnswer>(`/projects/${proj.pid}/prompts/send`, { ...body(), part: multi.value ? partIndex.value + 1 : undefined }, {
+      signal: abort.signal,
+      onDelta: (text) => (answer.value += text),
+    })
+    answer.value = res.answer
+    answerMeta.value = res
+  } catch (e) {
+    if ((e as Error)?.name !== 'AbortError') answerError.value = errorMessage(e)
+  } finally {
+    answering.value = false
+    abort = null
+  }
+}
+const stop = () => abort?.abort()
+async function copyAnswer() {
+  try {
+    await navigator.clipboard.writeText(answer.value)
+    notify.ok(t('prompts.answerCopied'))
+  } catch {
+    notify.info(t('prompts.copyManually'))
+  }
+}
+const canSaveAnswer = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
+const savingAnswer = ref(false)
+async function saveAnswer() {
+  if (!result.value || !answer.value) return
+  savingAnswer.value = true
+  try {
+    const key = proj.project?.key ?? ''
+    const name = promptPartFileName(key, result.value.kind, partIndex.value + 1, multi.value ? parts.value.length : 1).replace(/\.md$/, '-answer.md')
+    await upload(`/projects/${proj.pid}/documents`, new File([answer.value], name, { type: 'text/markdown' }), {
+      fields: { description: t('prompts.answerDescription', { title: shownTitle.value }), tags: 'ai-answer' },
+    })
+    notify.ok(t('prompts.answerSaved'), name)
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    savingAnswer.value = false
+  }
+}
 </script>
 
 <template>
@@ -461,10 +531,29 @@ const words = computed(() => shown.value.split(/\s+/).filter(Boolean).length)
             <Button :label="multi ? t('prompts.copyPart') : t('prompts.copy')" icon="pi pi-copy" size="small" @click="copy" />
             <Button :label="multi ? t('prompts.downloadPart') : t('prompts.download')" icon="pi pi-download" size="small" outlined @click="download" />
             <Button v-if="multi" :label="t('prompts.downloadZip')" icon="pi pi-file-export" size="small" outlined :loading="zipping" @click="downloadZip" />
+            <Button v-if="aiAvailable" :label="t('prompts.send')" icon="pi pi-send" size="small" severity="secondary" :loading="answering" :disabled="answering" data-test="prompt-send" @click="send" />
           </div>
         </div>
         <Textarea ref="output" :model-value="shown" readonly rows="26" class="mono prompt-output" :aria-label="shownTitle" />
         <p class="small muted" style="margin: 0">{{ t('prompts.privacy') }}</p>
+        <section v-if="answering || answer || answerError" class="grid prompt-answer" style="gap: 8px" aria-labelledby="prompt-answer-h">
+          <div class="row" style="justify-content: space-between; flex-wrap: wrap; gap: 8px">
+            <h3 id="prompt-answer-h" class="plain-heading">{{ t('prompts.answer') }}</h3>
+            <div class="row" style="gap: 6px; flex-wrap: wrap">
+              <Button v-if="answering" :label="t('prompts.stop')" icon="pi pi-stop-circle" size="small" text severity="secondary" @click="stop" />
+              <template v-else-if="answer">
+                <Button :label="t('prompts.copyAnswer')" icon="pi pi-copy" size="small" outlined @click="copyAnswer" />
+                <Button v-if="canSaveAnswer" :label="t('prompts.saveAnswer')" icon="pi pi-save" size="small" outlined :loading="savingAnswer" @click="saveAnswer" />
+              </template>
+            </div>
+          </div>
+          <Message v-if="answerError" severity="error" :closable="false">{{ answerError }}</Message>
+          <Message v-if="answerMeta?.truncated" severity="warn" :closable="false" class="small">{{ t('prompts.answerTruncated') }}</Message>
+          <Textarea v-if="answer || answering" :model-value="answer" readonly rows="16" class="mono prompt-output" :aria-label="t('prompts.answer')" :aria-busy="answering" />
+          <p v-if="answerMeta" class="small muted" style="margin: 0">
+            {{ t('prompts.answerMeta', { model: answerMeta.meta.model || answerMeta.meta.provider, input: answerMeta.meta.usage?.input_tokens ?? 0, output: answerMeta.meta.usage?.output_tokens ?? 0 }) }}
+          </p>
+        </section>
       </template>
     </section>
   </div>

@@ -471,6 +471,8 @@ Kommandoraden bygger samma prompter, till exempel i ett kodförråds verktyg:
 qtestframe prompt --project SHOP --kind architecture --scope 'tag:payments' --split folder --out prompts/
 ```
 
+**Skicka till AI-assistansen.** När den valfria [AI-assistansen](ai-assistance.md) finns i projektet har resultatet även **Skicka till AI-assistansen**: prompten (eller den visade delen) skickas till den tjänst din organisation har satt upp och svaret visas medan det skrivs; **Stoppa** avbryter. **Kopiera svaret** eller **Spara som projektdokument** (det läggs till under **Dokument** med taggen *ai-answer*; kräver rätt att redigera krav eller testfall). Granska svaret innan du använder det. Utan AI-assistans skickas aldrig något.
+
 Den läser `QTF_URL`, `QTF_TOKEN` och `QTF_PROJECT` som `qtestframe stubs` ([CI/CD](ci-cd.md)); `--folder`, `--release`, `--variant`, `--compact`, `--max-tokens`, `--formats` och `--lang` motsvarar valen ovan, och utan `--out` skrivs prompten ut.
 
 ### Lösningsbeskrivning
