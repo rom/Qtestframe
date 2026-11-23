@@ -76,7 +76,10 @@ describe('preferencesPatch', () => {
       create_linked_test: false,
       hide_obligation_highlight: null,
       autocomplete: null,
+      live_updates_off: null,
     })
+    expect(preferencesPatch({ live_updates_off: true }).live_updates_off).toBe(true)
+    expect(normalizePrefs({ live_updates_off: true }).live_updates_off).toBe(true)
     expect(preferencesPatch({ create_linked_test: null }).create_linked_test).toBeNull()
     expect(preferencesPatch({ autocomplete: 'off' }).autocomplete).toBe('off')
     expect(preferencesPatch({ page_size: 25 }).page_size).toBe(25)

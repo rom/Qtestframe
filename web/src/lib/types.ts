@@ -50,6 +50,8 @@ export interface Preferences {
   // --- obligation keyword highlighting ---
   /** do not highlight obligation keywords in requirement texts (default: highlight) */
   hide_obligation_highlight?: boolean
+  /** live updates and presence turned off for this user */
+  live_updates_off?: boolean
   /** autocomplete in free-text fields: '' = on | history | project | off (lib/suggest.ts) */
   autocomplete?: string
 }
@@ -893,6 +895,8 @@ export interface Meta {
   auto_create_test?: boolean
   /** Whether the server can send e-mail (email section of the configuration). */
   email_enabled?: boolean
+  /** the server streams live updates (live.enabled) */
+  live_updates?: boolean
   /** Hour of the day (UTC) when daily digests are sent. */
   email_digest_hour?: number
   /** Whether the server runs scripts (runner.enabled). */

@@ -461,6 +461,30 @@ var keyDocs = map[string]text{
 		"Hour of the day (UTC, 0–23) when daily digests are sent.",
 		"Timme på dygnet (UTC, 0–23) då dagliga sammanfattningar skickas.",
 	},
+	"live.enabled": {
+		"Live updates and presence: lists, dashboards, the notification bell and open items update when someone else changes something, and editors show who else is viewing or editing an item (a Server-Sent Events stream, `GET /api/v1/events/stream`). Off: the web client falls back to polling and to the conflict check on save. Each user can also turn it off in the profile. Behind a reverse proxy, turn off response buffering for the stream (see *Live updates* in the chapter *Features added later*).",
+		"Liveuppdateringar och närvaro: listor, översikter, notisklockan och öppna objekt uppdateras när någon annan ändrar något, och redigerare visar vem mer som tittar på eller redigerar ett objekt (en Server-Sent Events-ström, `GET /api/v1/events/stream`). Av: webbklienten frågar i stället med jämna mellanrum och konfliktkontrollen vid sparande gäller som förut. Varje användare kan också stänga av det i profilen. Bakom en omvänd proxy ska buffring av svar stängas av för strömmen (se *Liveuppdateringar* i kapitlet *Funktioner som lagts till senare*).",
+	},
+	"live.heartbeat": {
+		"Interval of the keep-alive comments on an idle stream. Keep it below the idle timeout of proxies and load balancers (nginx `proxy_read_timeout`, 60 s by default).",
+		"Intervall för håll-vid-liv-kommentarer på en ström utan händelser. Håll det under tidsgränsen för inaktiva anslutningar i proxyer och lastbalanserare (nginx `proxy_read_timeout`, 60 s som standard).",
+	},
+	"live.max_connections": {
+		"Most open event streams of this server instance; further connections are refused with 503 and the clients poll instead.",
+		"Högsta antal öppna händelseströmmar i den här serverinstansen; fler anslutningar avvisas med 503 och klienterna frågar i stället med jämna mellanrum.",
+	},
+	"live.max_connections_per_user": {
+		"Most open event streams of one user (one per browser tab; a tab in the background closes its stream after a minute).",
+		"Högsta antal öppna händelseströmmar för en användare (en per flik i webbläsaren; en flik i bakgrunden stänger sin ström efter en minut).",
+	},
+	"live.replay_buffer": {
+		"Number of recent events kept in memory so that a client that reconnects (`Last-Event-ID`) receives what it missed; when its last event is no longer kept, it reloads what it shows instead.",
+		"Antal senaste händelser som hålls i minnet så att en klient som ansluter igen (`Last-Event-ID`) får det den missade; finns dess senaste händelse inte kvar läser den i stället om det den visar.",
+	},
+	"live.presence_ttl": {
+		"How long a user stays listed as viewing or editing an item after the last presence heartbeat of their browser (sent every 20 s).",
+		"Hur länge en användare visas som att den tittar på eller redigerar ett objekt efter den senaste närvarosignalen från webbläsaren (skickas var 20:e sekund).",
+	},
 	"similarity.embeddings.enabled": {
 		"Use an embeddings service for the similarity of requirements and tests (suspected duplicates, the *Similar requirements* panel). Off by default: the similarity is then computed on the server. **When on, the title, description and criteria or steps of the items are sent to that service.** Also in **Administration → System settings**.",
 		"Använd en tjänst för inbäddningar (embeddings) för likheten mellan krav och tester (misstänkta dubbletter, panelen *Liknande krav*). Av som standard: likheten beräknas då på servern. **När den är på skickas rubrik, beskrivning och kriterier eller steg för objekten till tjänsten.** Finns även under **Administration → Systeminställningar**.",
@@ -574,6 +598,7 @@ var envDocs = map[string]text{
 	"QTF_EMAIL_PORT":                {"`email.port` (ignored when not a number)", "`email.port` (ignoreras om det inte är ett tal)"},
 	"QTF_EMAIL_PASSWORD":            {"the SMTP password; wins over `email.password_file` and a password stored in the web client", "SMTP-lösenordet; vinner över `email.password_file` och ett lösenord sparat i webbklienten"},
 	"QTF_RUNNER_ENABLED":            {"`runner.enabled` (`1` or `true` = on)", "`runner.enabled` (`1` eller `true` = på)"},
+	"QTF_LIVE_ENABLED":              {"`live.enabled` (`1` or `true` = on, anything else = off)", "`live.enabled` (`1` eller `true` = på, allt annat = av)"},
 	"QTF_RUNNER_WEB_ENABLED":        {"`runner.web.enabled` (`1` or `true` = on)", "`runner.web.enabled` (`1` eller `true` = på)"},
 	"QTF_RUNNER_WORK_DIR":           {"`runner.work_dir`", "`runner.work_dir`"},
 	"QTF_RUNNER_WEB_NODE":           {"`runner.web.node`", "`runner.web.node`"},

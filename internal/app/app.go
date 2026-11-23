@@ -428,6 +428,10 @@ func cmdSeedDemo(args []string, env Env) error {
 	if err := SeedDemoChangeRequests(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {
 		return err
 	}
+	// live updates and presence: nothing to store but a profile setting
+	if err := SeedDemoLive(env.Ctx, st); err != nil {
+		return err
+	}
 	// discussions by the demo users (seeddiscussions.go)
 	if err := SeedDemoDiscussions(env.Ctx, st, t.ID, p); err != nil {
 		return err
@@ -755,6 +759,10 @@ func cmdServe(args []string, env Env) error {
 	srv.StartJobs(ctx)
 	// automated tests (web tests, "Run automated tests") run in the background
 	srv.StartScriptJobs(ctx)
+	// live updates: the cross-instance bus (PostgreSQL) and presence expiry;
+	// open event streams never become idle, so shutdown ends them
+	srv.StartLive(ctx)
+	hs.RegisterOnShutdown(srv.StopLive)
 	errc := make(chan error, 1)
 	go func() { errc <- hs.Serve(ln) }()
 	log.Info("qtestframe listening", "addr", ln.Addr().String(), "tls", tlsOn, "version", Version, "db", cfg.Database.Driver)

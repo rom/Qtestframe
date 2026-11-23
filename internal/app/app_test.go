@@ -326,6 +326,10 @@ func TestSeedDemo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// live updates: Erik turned them off in his profile
+	if erik, err := st.GetUserByEmail(context.Background(), DemoOutsiderEmail); err != nil || !erik.Preferences.LiveUpdatesOff || dana.Preferences.LiveUpdatesOff {
+		t.Errorf("live updates preference %+v %v", erik, err)
+	}
 	if g, err := st.ProjectGrantOf(context.Background(), tn.ID, vault.ID, dana.ID); err != nil || strings.Join(g.UserRoles, ",") != "viewer" {
 		t.Errorf("grant %+v %v", g, err)
 	}

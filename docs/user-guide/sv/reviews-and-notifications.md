@@ -60,6 +60,22 @@ När servern kan skicka e-post kan du också få dina notiser med e-post. Välj 
 
 Du får aldrig e-post om det du själv har gjort. Varje e-postmeddelande med notiser har en länk tillbaka till den här inställningen, så att du när som helst kan ändra eller stänga av den.
 
+## Liveuppdateringar
+
+Qtestframe visar andras ändringar när de görs, utan att du behöver läsa om sidan:
+
+- **Listor** med krav, tester, körningar, defekter, risker, testcykler, diskussioner och *Mitt arbete* uppdateras en stund efter att någon annan har ändrat ett objekt i dem. Det du har markerat, sidan du är på och var du har scrollat stannar som de var.
+- Siffrorna på **översikten** och **notisklockan** uppdateras av sig själva.
+- I en **körning** syns andra testares resultat medan du kör dina egna tester.
+- Ett **öppet objekt** visar vem mer som tittar på eller redigerar det: deras avatarer och till exempel *Bea redigerar också det här* ovanför objektet. Någon räknas som redigerande så fort de har ändringar som inte är sparade.
+- När någon sparar en nyare version av objektet du har öppet visas *Bea har ändrat objektet (version 4).* **Läs om** läser in deras version. Har du ändringar som inte är sparade visar **Jämför** fälten de har ändrat bredvid dina, som när sparandet krockar; du kan då fortsätta redigera, ta deras version eller spara dina ändringar ovanpå deras. Inget går förlorat eller skrivs över utan att du väljer det, och meddelandet hindrar inte ditt arbete: **Stäng** döljer det.
+
+Skärmläsare meddelar ändringarna artigt och högst varje halvminut, så att de inte avbryter dig; meddelandet om en nyare version av objektet du har öppet läses upp en gång.
+
+Du får bara höra om objekt som du får se. Om anslutningen bryts (till exempel på ett tåg) ansluter Qtestframe igen av sig själv och kommer ikapp; i en flik i bakgrunden pausar den efter en minut och kommer ikapp när du kommer tillbaka.
+
+För att stänga av liveuppdateringar öppnar du **Profil → Inställningar → Liveuppdateringar**. Listor uppdateras då när du öppnar dem och klockan kontrollerar varje minut; andra ser inte längre att du tittar på eller redigerar något. En administratör kan också stänga av liveuppdateringar för hela servern.
+
 ## Begär granskning
 
 Öppna ett krav eller ett test. Under granskningsfältet visar **Granskningsförfrågningar** vilka som har tillfrågats och vad de beslutade. Välj **Begär granskning** (du behöver skrivbehörighet för posten):

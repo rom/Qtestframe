@@ -22,6 +22,7 @@ import (
 	"github.com/rom/qtestframe/internal/auth"
 	"github.com/rom/qtestframe/internal/catalog"
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/live"
 	"github.com/rom/qtestframe/internal/logging"
 	"github.com/rom/qtestframe/internal/mail"
 	"github.com/rom/qtestframe/internal/model"
@@ -87,6 +88,11 @@ type Server struct {
 	// Logs, when set, applies logging changes of the system settings at
 	// runtime (nil: they are stored and apply at the next start).
 	Logs *logging.Manager
+	// live fans out change events and presence (live.go)
+	live *live.Hub
+	// liveReauth is how often a stream re-authenticates (tests; 0 = 1 min)
+	liveReauth time.Duration
+
 	// system settings (systemsettings.go): live is the effective
 	// configuration (nil = Cfg, no overrides), boot the one at start-up.
 	sys sysState
@@ -114,6 +120,9 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		suggestLimiter: newRateLimiter(300, time.Minute),
 		jobs:           newJobManager(),
 	}
+	lc := cfg.Live
+	s.live = live.NewHub(live.Options{MaxConnections: lc.MaxConnections, MaxPerUser: lc.MaxConnectionsPerUser, Replay: lc.ReplayBuffer, PresenceTTL: lc.PresenceTTL})
+	st.OnNotifications(s.liveNotified)
 	// e-mail, OIDC providers and login limits follow the system settings
 	s.initSettings(context.Background())
 	base := strings.TrimSuffix(cfg.Server.BaseURL, "/")
@@ -178,6 +187,10 @@ func (s *Server) routes() {
 
 	// admin
 	h("GET /api/v1/meta", s.handleMeta)
+	// live updates and presence (live.go)
+	h("GET /api/v1/events/stream", s.handleEventStream)
+	h("POST /api/v1/presence", s.handlePresence)
+	h("GET /api/v1/presence", s.handleGetPresence)
 	h("GET /api/v1/rbac", s.handleRBAC)
 	h("GET /api/v1/tenants", s.handleListTenants)
 	h("POST /api/v1/tenants", s.handleCreateTenant)
@@ -498,6 +511,10 @@ func (w *statusWriter) Write(b []byte) (int, error) {
 	w.bytes += n
 	return n, err
 }
+
+// Unwrap gives http.ResponseController the connection (flushing and
+// deadlines of the event stream).
+func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 func (s *Server) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

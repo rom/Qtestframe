@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLiveRefresh } from '@/composables/live'
 import HelpTip from '@/guide/HelpTip.vue'
 import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
 import { defaultValues, type CustomValues } from '@/lib/customFields'
@@ -71,8 +72,10 @@ const statuses = ref<string[]>([])
 const queryError = ref<unknown>(null)
 const composed = computed(() => and(q.value, anyOf('status', statuses.value)))
 
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
-  loading.value = true
+  if (!quiet) loading.value = true
   queryError.value = null
   try {
     runs.value = asItems(await api.get<{ items: TestRun[] }>(`/projects/${proj.pid}/runs`, { q: composed.value }))
@@ -83,6 +86,16 @@ async function load() {
     loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ({ types: ['run', 'execution'], projectId: proj.pid }),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  }, { announce: () => t('live.listUpdated') },
+)
 const rel = useReleaseOptions(() => proj.pid)
 const cfg = useConfigurations(() => proj.pid)
 // the variant a new run tests (none: variant-neutral)

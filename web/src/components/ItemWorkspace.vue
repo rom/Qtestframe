@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLiveRefresh } from '@/composables/live'
 import { impactGateFor } from '@/composables/impact'
 import type { ImpactDryRun } from '@/lib/correlations'
 import StaleBadge from './StaleBadge.vue'
@@ -141,9 +142,11 @@ const items = ref<Item[]>([])
 const loading = ref(false)
 const selection = ref<Item[]>([])
 
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
   if (!pid.value) return
-  loading.value = true
+  if (!quiet) loading.value = true
   queryError.value = null
   try {
     const res = await api.get<{ items: Item[] }>(`/projects/${pid.value}/${plural.value}`, {
@@ -163,6 +166,17 @@ async function load() {
   }
 }
 
+// live updates: reload quietly when others change items of this kind here
+useLiveRefresh(
+  () => (pid.value ? { types: [props.kind], projectId: pid.value } : null),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  },
+  { announce: () => t('live.listUpdated') },
+)
 watch([selectedFolder, recursive, () => quick.value, variant], () => load(), { deep: true })
 watch(selectedFolder, () => {
   foldersOpen.value = false

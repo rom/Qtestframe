@@ -11,6 +11,7 @@
 // items in review status that concern them (side=in_review).
 // ?review=<id> opens a review request in either view (notifications,
 // discussions and the old /reviews address lead here).
+import { useLiveRefresh } from '@/composables/live'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -88,8 +89,10 @@ const intro = computed(() => {
   return side.value === 'mine' ? t('reviews.intro') : side.value === 'requested' ? t('reviews.introRequested') : t('reviews.introInReview')
 })
 
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
-  loading.value = true
+  if (!quiet) loading.value = true
   error.value = ''
   try {
     const res = await api.get<{ items: WorkItem[]; summary: WorkSummary }>('/my-work', project.value ? { project: project.value } : undefined)
@@ -102,6 +105,16 @@ async function load() {
     loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ({ types: ['requirement', 'test', 'run', 'execution', 'cycle', 'defect', 'risk', 'exploratory_session'], projectId: project.value || null }),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  }, { announce: () => t('live.listUpdated'), delay: 2000 },
+)
 onMounted(async () => {
   void load()
   try {

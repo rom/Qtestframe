@@ -290,6 +290,17 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `similarity.embeddings.api_key_file` | text | — | — | Fil med API-nyckeln, som skickas som bearer-token (relativ: i `$CREDENTIALS_DIRECTORY`). Nyckeln kan också sparas i systeminställningarna; den visas aldrig igen. |
 | `similarity.embeddings.timeout` | tidslängd | `30s` | — | Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten. |
 
+### `live`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `live.enabled` | bool | `true` | `QTF_LIVE_ENABLED` | Liveuppdateringar och närvaro: listor, översikter, notisklockan och öppna objekt uppdateras när någon annan ändrar något, och redigerare visar vem mer som tittar på eller redigerar ett objekt (en Server-Sent Events-ström, `GET /api/v1/events/stream`). Av: webbklienten frågar i stället med jämna mellanrum och konfliktkontrollen vid sparande gäller som förut. Varje användare kan också stänga av det i profilen. Bakom en omvänd proxy ska buffring av svar stängas av för strömmen (se *Liveuppdateringar* i kapitlet *Funktioner som lagts till senare*). |
+| `live.heartbeat` | tidslängd | `25s` | — | Intervall för håll-vid-liv-kommentarer på en ström utan händelser. Håll det under tidsgränsen för inaktiva anslutningar i proxyer och lastbalanserare (nginx `proxy_read_timeout`, 60 s som standard). |
+| `live.max_connections` | heltal | `2000` | — | Högsta antal öppna händelseströmmar i den här serverinstansen; fler anslutningar avvisas med 503 och klienterna frågar i stället med jämna mellanrum. |
+| `live.max_connections_per_user` | heltal | `8` | — | Högsta antal öppna händelseströmmar för en användare (en per flik i webbläsaren; en flik i bakgrunden stänger sin ström efter en minut). |
+| `live.replay_buffer` | heltal | `512` | — | Antal senaste händelser som hålls i minnet så att en klient som ansluter igen (`Last-Event-ID`) får det den missade; finns dess senaste händelse inte kvar läser den i stället om det den visar. |
+| `live.presence_ttl` | tidslängd | `45s` | — | Hur länge en användare visas som att den tittar på eller redigerar ett objekt efter den senaste närvarosignalen från webbläsaren (skickas var 20:e sekund). |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler
@@ -309,6 +320,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_EMAIL_PASSWORD` | SMTP-lösenordet; vinner över `email.password_file` och ett lösenord sparat i webbklienten |
 | `QTF_EMAIL_PORT` | `email.port` (ignoreras om det inte är ett tal) |
 | `QTF_EMAIL_USERNAME` | `email.username` |
+| `QTF_LIVE_ENABLED` | `live.enabled` (`1` eller `true` = på, allt annat = av) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` eller `true` = på) |

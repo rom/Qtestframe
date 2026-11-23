@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia'
 import { api } from '@/lib/api'
 import type { AppNotification } from '@/lib/types'
+import { useLiveStore } from './live'
 
 const POLL_MS = 60_000
+let unsubscribe: (() => void) | null = null
 
-/** The signed-in user's notifications; the unread count is polled. */
+/** The signed-in user's notifications: the unread count follows the live
+ *  updates (a "notification" event), and is polled while the event stream
+ *  is not open (turned off, unavailable, reconnecting). */
 export const useNotificationsStore = defineStore('notifications', {
   state: () => ({ items: [] as AppNotification[], unread: 0, timer: 0 as ReturnType<typeof setInterval> | 0 }),
   actions: {
@@ -39,11 +43,19 @@ export const useNotificationsStore = defineStore('notifications', {
     start() {
       if (this.timer) return
       void this.load()
-      this.timer = setInterval(() => void this.load(), POLL_MS)
+      const live = useLiveStore()
+      this.timer = setInterval(() => {
+        if (!live.active) void this.load()
+      }, POLL_MS)
+      unsubscribe = live.subscribe((ev) => {
+        if (ev.kind === 'notification' || ev.kind === 'reset') void this.load()
+      })
     },
     stop() {
       if (this.timer) clearInterval(this.timer)
       this.timer = 0
+      unsubscribe?.()
+      unsubscribe = null
     },
   },
 })

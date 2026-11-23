@@ -43,6 +43,9 @@ type Config struct {
 	// Similarity configures the detection of similar requirements and
 	// tests (suspected duplicates, see internal/similarity).
 	Similarity Similarity `yaml:"similarity"`
+	// Live configures live updates and presence (Server-Sent Events, see
+	// internal/live).
+	Live Live `yaml:"live"`
 
 	// Meta records where values came from (file keys, environment
 	// variables); filled by Load, not part of the YAML.
@@ -222,6 +225,28 @@ type Email struct {
 	Timeout      time.Duration `yaml:"timeout"`
 	// DigestHour is the hour of the day (UTC) when daily digests are sent.
 	DigestHour int `yaml:"digest_hour"`
+}
+
+// Live configures live updates: the event stream that tells the web
+// clients about changes made by others, and who is viewing or editing an
+// item (presence).
+type Live struct {
+	// Enabled turns the event stream and presence on (default) or off for
+	// the whole server; the clients then fall back to polling.
+	Enabled bool `yaml:"enabled"`
+	// Heartbeat is the interval of the keep-alive comments on idle streams
+	// (keeps proxies and load balancers from closing them).
+	Heartbeat time.Duration `yaml:"heartbeat"`
+	// MaxConnections bounds the open streams of this server instance,
+	// MaxConnectionsPerUser those of one user (browser tabs).
+	MaxConnections        int `yaml:"max_connections"`
+	MaxConnectionsPerUser int `yaml:"max_connections_per_user"`
+	// ReplayBuffer is the number of recent events kept to resume a stream
+	// after a short disconnection (Last-Event-ID).
+	ReplayBuffer int `yaml:"replay_buffer"`
+	// PresenceTTL is how long a viewer stays listed after their last
+	// presence heartbeat.
+	PresenceTTL time.Duration `yaml:"presence_ttl"`
 }
 
 // Similarity configures the similarity checks. Without embeddings the
@@ -528,6 +553,8 @@ func Default() Config {
 		Bootstrap:    Bootstrap{TenantSlug: "default", TenantName: "Default"},
 		Email:        Email{Port: 587, TLS: "starttls", Timeout: 30 * time.Second, DigestHour: 7, FromName: "Qtestframe"},
 		Similarity:   Similarity{Embeddings: Embeddings{Timeout: 30 * time.Second}},
+		Live: Live{Enabled: true, Heartbeat: 25 * time.Second, MaxConnections: 2000, MaxConnectionsPerUser: 8,
+			ReplayBuffer: 512, PresenceTTL: 45 * time.Second},
 		Secrets: Secrets{Provider: SecretsLocal, TPM: TPMKey{Device: "/dev/tpmrm0", PCRBank: "sha256"},
 			PKCS11: PKCS11Key{KeyLabel: "qtestframe-kek"}},
 	}
@@ -654,6 +681,7 @@ var EnvVars = map[string]string{
 	"QTF_EMAIL_PORT":                "email.port",
 	"QTF_EMAIL_PASSWORD":            "email.password",
 	"QTF_RUNNER_ENABLED":            "runner.enabled",
+	"QTF_LIVE_ENABLED":              "live.enabled",
 	"QTF_RUNNER_WEB_ENABLED":        "runner.web.enabled",
 	"QTF_RUNNER_WORK_DIR":           "runner.work_dir",
 	"QTF_RUNNER_WEB_NODE":           "runner.web.node",
@@ -718,6 +746,7 @@ func applyEnv(c *Config) {
 		}
 	}
 	setBool("QTF_RUNNER_ENABLED", &c.Runner.Enabled)
+	setBool("QTF_LIVE_ENABLED", &c.Live.Enabled)
 	setBool("QTF_RUNNER_WEB_ENABLED", &c.Runner.Web.Enabled)
 	set("QTF_RUNNER_WORK_DIR", &c.Runner.WorkDir)
 	set("QTF_RUNNER_WEB_NODE", &c.Runner.Web.Node)
@@ -835,6 +864,18 @@ func (c *Config) Validate() error {
 	}
 	if c.Auth.SessionTTL <= 0 {
 		errs = append(errs, errors.New("auth.session_ttl must be positive"))
+	}
+	if c.Live.Heartbeat < time.Second || c.Live.Heartbeat > 5*time.Minute {
+		errs = append(errs, errors.New("live.heartbeat must be between 1s and 5m"))
+	}
+	if c.Live.MaxConnections < 1 || c.Live.MaxConnectionsPerUser < 1 {
+		errs = append(errs, errors.New("live.max_connections and live.max_connections_per_user must be at least 1"))
+	}
+	if c.Live.ReplayBuffer < 0 || c.Live.ReplayBuffer > 100000 {
+		errs = append(errs, errors.New("live.replay_buffer must be between 0 and 100000"))
+	}
+	if c.Live.PresenceTTL < 5*time.Second || c.Live.PresenceTTL > time.Hour {
+		errs = append(errs, errors.New("live.presence_ttl must be between 5s and 1h"))
 	}
 	if c.Auth.PasswordMinLength < 8 || c.Auth.PasswordMinLength > 72 {
 		errs = append(errs, errors.New("auth.password_min_length must be between 8 and 72"))

@@ -2269,6 +2269,22 @@ When the server can send e-mail, you can also get your notifications by e-mail. 
 
 You never get e-mails about your own actions. Every notification e-mail has a link back to this setting, so you can change it or turn it off at any time.
 
+## Live updates
+
+Qtestframe shows other people's changes as they happen, without reloading the page:
+
+- **Lists** of requirements, tests, runs, defects, risks, test cycles, discussions and *My work* update a moment after someone else changes an item in them. Your selection, the page you are on and the scroll position stay as they were.
+- The **dashboard** counts and the **notification bell** update by themselves.
+- In a **run**, the results of other testers appear while you execute your own tests.
+- An **open item** shows who else is viewing or editing it: their avatars and, for example, *Bea is also editing this* above the item. Someone counts as editing as soon as they have unsaved changes.
+- When someone saves a newer version of the item you have open, a notice says *Bea changed this item (version 4)*. **Reload** loads their version. If you have unsaved changes, **Compare** shows the fields they changed next to yours, as when saving would collide; you can then keep editing, take their version or save your changes on top of it. Nothing is lost or overwritten without you choosing it, and the notice does not block your work: **Dismiss** hides it.
+
+Screen readers announce these changes politely and at most every half minute, so they do not interrupt you; the notice about a newer version of your open item is announced once.
+
+You only ever hear about items you may see. When the connection is interrupted (for example on a train), Qtestframe reconnects by itself and catches up; in a tab in the background it pauses after a minute and catches up when you come back.
+
+To turn live updates off, open your **Profile → Preferences → Live updates**. Lists then update when you open them and the bell checks every minute; others no longer see you as viewing or editing. An administrator can also turn live updates off for the whole server.
+
 ## Request a review
 
 Open a requirement or a test. Under the review bar, **Review requests** shows who has been asked and what they decided. Choose **Request review** (you need write permission for the item):

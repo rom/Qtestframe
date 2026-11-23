@@ -236,6 +236,9 @@ type Preferences struct {
 	// "" = on (my history and project values) | history | project | off.
 	// Only "" and history record what the user saves.
 	Autocomplete string `json:"autocomplete,omitempty"`
+	// LiveUpdatesOff turns off live updates and presence in this user's
+	// web client (it polls instead and is not shown to others).
+	LiveUpdatesOff bool `json:"live_updates_off,omitempty"`
 }
 
 // Preference value sets.
