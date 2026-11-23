@@ -48,6 +48,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"test_types":           prompt.TestTypes,
 		"languages":            model.Languages,
 		"email_enabled":        s.emailOn(),
+		"live_updates":         s.liveOn(),
 		"email_digest_hour":    s.conf().Email.DigestHour,
 		"version":              Version,
 	})

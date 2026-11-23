@@ -31,7 +31,7 @@ const BackupFormatVersion = 1
 // BackupTables lists the backed up tables in foreign-key-safe order
 // (parents first). sessions and schema_migrations are not backed up.
 var BackupTables = []string{
-	"tenants", "users", "memberships", "api_tokens", "projects", "configurations", "releases", "folders", "categories",
+	"tenants", "users", "memberships", "api_tokens", "projects", "configurations", "environments", "releases", "folders", "categories",
 	"requirements", "requirement_categories", "evaluation_criteria", "test_cases", "test_steps",
 	"test_case_categories", "trace_links", "variants", "builds", "test_cycles", "test_cycle_tests", "test_runs", "run_configurations", "test_executions", "execution_iterations", "step_results",
 	"audit_log", "revisions", "requirement_relations", "baselines", "baseline_items", "comments",
@@ -69,6 +69,20 @@ var BackupTables = []string{
 	"secret_keys",
 	// chat notification channels (0045)
 	"chat_channels",
+	// change requests (0054)
+	"change_control_settings", "change_requests", "change_request_items", "change_request_signoffs", "change_request_events",
+	// two-way sync with Jira and Azure DevOps: configurations and the
+	// conflicts waiting for a decision (0060)
+	"req_sync_configs", "req_sync_conflicts",
+	// customisable dashboards and the default of a project (0059)
+	"dashboards", "dashboard_defaults",
+	// the audit trail's hash chain: its ends, signed checkpoints and their
+	// keys (encrypted with the keys above), electronic-records settings and
+	// electronic signatures (0055)
+	"audit_heads", "audit_checkpoints", "audit_keys", "audit_backfill", "erecords_settings", "esignatures",
+	// environment bookings and test data sets (0057; environments come
+	// before test_runs above)
+	"environment_bookings", "test_data_sets", "test_data_links", "test_data_usage", "test_data_refresh_requests",
 }
 
 // tables that exist but are deliberately not part of a backup.
@@ -81,8 +95,12 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "
 	"chat_deliveries": true,
 	// queue and log of CI status posts (0053; the settings are backed up)
 	"ci_deliveries": true,
+	// the log of the two-way tracker sync (0060; the configurations are backed up)
+	"req_sync_runs": true,
 	// vectors of the embeddings service: a cache, computed again
-	"similarity_embeddings": true}
+	"similarity_embeddings": true,
+	// single-use signing tickets, minutes long (0055)
+	"esign_tickets": true}
 
 // NotBackedUpTables returns the tables that exist but are deliberately not
 // part of a backup, sorted (for the administrator guide, see
@@ -106,6 +124,9 @@ var boolColumns = map[string]bool{
 	"field_set_fields.required": true, "field_set_fields.show_in_list": true,
 	"chat_channels.enabled": true, "chat_channels.restricted_content": true,
 	"test_cycle_schedules.auto_start": true, "test_cycle_schedules.enabled": true,
+	"projects.ai_disabled":          true,
+	"req_sync_configs.enabled":      true,
+	"environments.status_by_health": true, "environments.requires_approval": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

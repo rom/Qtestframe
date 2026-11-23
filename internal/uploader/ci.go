@@ -57,3 +57,38 @@ func (c *Client) Select(ctx context.Context, projectID string, in SelectRequest)
 	}
 	return &sel, nil
 }
+
+// StubsRequest is the body of POST /projects/{pid}/tests/stubs.
+type StubsRequest struct {
+	Framework  string   `json:"framework"`
+	Query      string   `json:"query,omitempty"`
+	IDs        []string `json:"ids,omitempty"`
+	Format     string   `json:"format"`
+	Package    string   `json:"package,omitempty"`
+	Dir        string   `json:"dir,omitempty"`
+	MarkScript bool     `json:"mark_script,omitempty"`
+}
+
+// StubFile is a generated stub.
+type StubFile struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+	Key     string `json:"key"`
+	TestID  string `json:"test_id"`
+}
+
+// Stubs is the response of a stubs request (format json).
+type Stubs struct {
+	Files  []StubFile `json:"files"`
+	Marked int        `json:"marked"`
+}
+
+// Stubs generates the test stubs of the tests a query or ids select.
+func (c *Client) Stubs(ctx context.Context, projectID string, in StubsRequest) (*Stubs, error) {
+	in.Format = "json"
+	var out Stubs
+	if err := c.sendJSON(ctx, http.MethodPost, "/projects/"+url.PathEscape(projectID)+"/tests/stubs", in, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

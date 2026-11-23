@@ -15,6 +15,9 @@ import ProgressSpinner from 'primevue/progressspinner'
 import Select from 'primevue/select'
 import SelectButton from 'primevue/selectbutton'
 import HelpLink from '@/guide/HelpLink.vue'
+import VariantSelect from '@/components/VariantSelect.vue'
+import { useVariants } from '@/composables/variants'
+import { useRoute, useRouter } from 'vue-router'
 import { api, errorMessage } from '@/lib/api'
 import { FAMILY_COLORS, findingText, itemNote, languageNames, severityIcon, type AnalyticsFinding, type AnalyticsReport } from '@/lib/analytics'
 import { enumLabel } from '@/i18n/labels'
@@ -32,12 +35,26 @@ const severity = ref<'all' | 'problem' | 'warning' | 'info'>('all')
 const category = ref<string | null>(null)
 const expanded = ref(new Set<number>())
 const SHOWN = 8
+// the requirements and tests of one variant, with its coverage, results and verification (?variant=)
+const route = useRoute()
+const router = useRouter()
+const variants = useVariants(() => proj.pid)
+const variant = ref<string | null>((route.query.variant as string) || null)
+watch(variant, (v) => {
+  if ((route.query.variant ?? null) !== v) void router.replace({ query: { ...route.query, variant: v || undefined } })
+})
+watch(
+  () => proj.pid,
+  () => void variants.load(),
+  { immediate: true },
+)
+const variantName = computed(() => variants.variants.value.find((v) => v.id === variant.value)?.name ?? '')
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
-    report.value = await api.get<AnalyticsReport>(`/projects/${proj.pid}/analytics`, { lang: lang.value })
+    report.value = await api.get<AnalyticsReport>(`/projects/${proj.pid}/analytics`, { lang: lang.value, variant: variant.value || undefined })
     expanded.value = new Set()
   } catch (e) {
     error.value = errorMessage(e)
@@ -45,7 +62,7 @@ async function load() {
     loading.value = false
   }
 }
-watch([() => proj.pid, lang], load, { immediate: true })
+watch([() => proj.pid, lang, variant], load, { immediate: true })
 const undoStore = useUndoStore()
 watch(
   () => undoStore.version,
@@ -87,10 +104,11 @@ const healthClass = computed(() => {
   <div class="page-header">
     <div>
       <h1>{{ t('analytics.title') }}</h1>
-      <div class="sub">{{ t('analytics.intro') }}</div>
+      <div class="sub">{{ t('analytics.intro') }}<template v-if="variantName"> · {{ t('variants.onlyVariant', { name: variantName }) }}</template></div>
     </div>
     <div class="actions">
       <HelpLink page="traceability-and-coverage" :anchor="{ en: 'requirement-analytics', sv: 'kravanalys' }" />
+      <VariantSelect v-if="variants.variants.value.length" v-model="variant" :variants="variants.variants.value" :aria-label="t('variants.showFor')" />
       <Select v-model="lang" :options="langOptions" option-label="label" option-value="value" :aria-label="t('analysis.language')" />
       <Button icon="pi pi-refresh" :label="t('analytics.refresh')" severity="secondary" outlined :loading="loading" @click="load" />
     </div>
@@ -242,7 +260,7 @@ const healthClass = computed(() => {
     </template>
     <ConsistencySection :project-id="proj.pid" />
     <div class="card" style="margin-top: 16px"><QualityMetrics :project-id="proj.pid" id-prefix="aq" /></div>
-    <ComplianceSection :project-id="proj.pid" />
+    <ComplianceSection :project-id="proj.pid" :variant="variant" />
   </template>
 </template>
 

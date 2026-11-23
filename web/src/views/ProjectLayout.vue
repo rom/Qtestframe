@@ -57,15 +57,18 @@ const tabs = computed(() => [
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'exploratory', icon: 'pi pi-compass', label: t('nav.exploratory') },
   { to: 'cycles', icon: 'pi pi-sync', label: t('nav.cycles') },
+  { to: 'environments', icon: 'pi pi-server', label: t('nav.environments') },
   { to: 'releases', icon: 'pi pi-box', label: t('nav.releases') },
   { to: 'defects', icon: 'pi pi-exclamation-circle', label: t('nav.defects') },
   { to: 'risks', icon: 'pi pi-shield', label: t('nav.risks') },
   { to: 'waivers', icon: 'pi pi-verified', label: t('nav.waivers') },
+  { to: 'changeRequests', icon: 'pi pi-file-edit', label: t('nav.changeRequests') },
   { to: 'discussions', icon: 'pi pi-comments', label: t('nav.discussions') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
   { to: 'verification', icon: 'pi pi-verified', label: t('nav.verification') },
   { to: 'variants', icon: 'pi pi-clone', label: t('variants.nav') },
   { to: 'code', icon: 'pi pi-code', label: t('code.nav') },
+  { to: 'trackerSync', icon: 'pi pi-arrow-right-arrow-left', label: t('nav.trackerSync') },
   { to: 'analytics', icon: 'pi pi-chart-bar', label: t('nav.analytics') },
   { to: 'duplicates', icon: 'pi pi-copy', label: t('nav.duplicates') },
   { to: 'soa', icon: 'pi pi-table', label: t('nav.soa') },
@@ -84,7 +87,7 @@ const tabs = computed(() => [
 const ready = computed(() => proj.project?.id === props.projectId)
 const isRunsChild = computed(() => route.name === 'run' || route.name === 'execute')
 const isExploratoryChild = computed(() => route.name === 'exploratorySession')
-const childActive = (to: string) => (to === 'runs' && isRunsChild.value) || (to === 'exploratory' && isExploratoryChild.value) || (to === 'cycles' && route.name === 'cycle')
+const childActive = (to: string) => (to === 'runs' && isRunsChild.value) || (to === 'exploratory' && isExploratoryChild.value) || (to === 'cycles' && route.name === 'cycle') || (to === 'environments' && (route.name === 'environment' || route.name === 'testData'))
 </script>
 
 <template>

@@ -20,7 +20,8 @@ import (
 
 const exploratoryCols = `x.id, x.project_id, x.key, x.title, x.mission, x.tester, x.timebox_minutes, x.status, x.started_at, x.running_since,
 	x.elapsed_seconds, x.ended_at, x.summary, x.coverage_pct, x.setup_pct, x.testing_pct, x.bug_pct, x.outcome, x.debriefed_by,
-	x.debriefed_name, x.debrief_comment, x.debriefed_at, x.version, x.created_by, x.created_at, x.updated_at, p.key`
+	x.debriefed_name, x.debrief_comment, x.debriefed_at, x.version, x.created_by, x.created_at, x.updated_at, p.key,
+	x.environment_id, COALESCE((SELECT en.name FROM environments en WHERE en.id = x.environment_id), '')`
 
 const exploratoryFrom = ` FROM exploratory_sessions x JOIN projects p ON p.id = x.project_id`
 
@@ -35,13 +36,15 @@ const (
 func scanExploratory(row interface{ Scan(...any) error }, now time.Time) (*model.ExploratorySession, error) {
 	var x model.ExploratorySession
 	var started, running, ended, debriefed sql.NullTime
+	var env sql.NullString
 	var d model.ExploratoryDebrief
 	if err := row.Scan(&x.ID, &x.ProjectID, &x.Key, &x.Title, &x.Mission, &x.Tester, &x.TimeboxMinutes, &x.Status, &started, &running,
 		&x.ElapsedSeconds, &ended, &d.Summary, &d.CoveragePct, &d.SetupPct, &d.TestingPct, &d.BugPct, &d.Outcome, &d.By,
-		&d.Name, &d.Comment, &debriefed, &x.Version, &x.CreatedBy, &x.CreatedAt, &x.UpdatedAt, &x.ProjectKey); err != nil {
+		&d.Name, &d.Comment, &debriefed, &x.Version, &x.CreatedBy, &x.CreatedAt, &x.UpdatedAt, &x.ProjectKey, &env, &x.EnvironmentName); err != nil {
 		return nil, err
 	}
 	x.StartedAt, x.RunningSince, x.EndedAt = timePtr(started), timePtr(running), timePtr(ended)
+	x.EnvironmentID = strPtr(env)
 	x.ElapsedSeconds += runningSeconds(x.RunningSince, now)
 	if debriefed.Valid {
 		d.At = debriefed.Time

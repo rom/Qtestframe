@@ -126,7 +126,15 @@ func TestSchema(t *testing.T) {
 	if !q.Match(r) {
 		t.Fatal("has:status")
 	}
+	// has:!field negates
+	for _, s := range []string{"has:!status", "has:-status"} {
+		if q = mustParse(t, s, sc2); q.Match(r) || !q.Match(MapRecord{"status": {""}}) || q.String() != "NOT status:*" && q.String() != "-status:*" {
+			t.Fatal(s, q.String())
+		}
+	}
 	_, err := Parse("has:bogus", sc2)
+	assertErr(t, err, 4, "unknown field")
+	_, err = Parse("has:!bogus", sc2)
 	assertErr(t, err, 4, "unknown field")
 	_, err = Parse("status:a  bogus:x", sc2)
 	assertErr(t, err, 10, "unknown field")

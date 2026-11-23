@@ -25,11 +25,15 @@ const (
 	FieldTags        = "tags"
 	FieldFolder      = "folder"
 	FieldCriteria    = "criteria"
+	// FieldD3fend and FieldEmb3d are MITRE D3FEND techniques and EMB3D
+	// threats and mitigations (lists of ids, checked against the catalogue).
+	FieldD3fend = "d3fend"
+	FieldEmb3d  = "emb3d"
 )
 
 // Fields lists the mappable fields.
 var Fields = []string{FieldTitle, FieldDescription, FieldExternalID, FieldObligation, FieldType, FieldPriority,
-	FieldStatus, FieldSource, FieldRationale, FieldOwner, FieldTags, FieldFolder, FieldCriteria}
+	FieldStatus, FieldSource, FieldRationale, FieldOwner, FieldTags, FieldFolder, FieldCriteria, FieldD3fend, FieldEmb3d}
 
 const maxTitle = 500
 
@@ -87,6 +91,11 @@ var headerNames = map[string]string{
 	"acceptance criterion": FieldCriteria, "acceptanskriterier": FieldCriteria, "acceptanskriterium": FieldCriteria,
 	"kriterier": FieldCriteria, "evaluation criteria": FieldCriteria, "verification criteria": FieldCriteria,
 	"utvärderingskriterier": FieldCriteria, "verifieringskriterier": FieldCriteria,
+
+	"d3fend": FieldD3fend, "d3fend techniques": FieldD3fend, "d3fend technique": FieldD3fend, "d3fend-tekniker": FieldD3fend,
+	"d3fend tekniker": FieldD3fend, "mitre d3fend": FieldD3fend,
+	"emb3d": FieldEmb3d, "emb3d threats": FieldEmb3d, "emb3d threats and mitigations": FieldEmb3d, "emb3d-hot": FieldEmb3d,
+	"emb3d hot": FieldEmb3d, "emb3d-hot och åtgärder": FieldEmb3d, "mitre emb3d": FieldEmb3d,
 
 	// Columns of the requirement export that have no import meaning.
 	"version": "", "linked tests": "", "coverage": "", "categories": "", "kategorier": "",
@@ -536,6 +545,7 @@ func deriveTitle(desc string) string {
 // raw holds unparsed values of a candidate before normalisation.
 type raw struct {
 	obligation, typ, priority, status, criteria string
+	d3fend, emb3d                               string
 }
 
 // finish normalises a candidate: enumerations, derived title, obligation
@@ -594,6 +604,20 @@ func finish(c *Candidate, r raw) bool {
 	}
 	if c.Criteria == nil {
 		c.Criteria = []Criterion{}
+	}
+	if strings.TrimSpace(r.d3fend) != "" {
+		ids, warn := FrameworkIDs(FrameworkD3fend, r.d3fend)
+		c.D3fend = ids
+		if warn != "" {
+			c.Warnings = append(c.Warnings, warn)
+		}
+	}
+	if strings.TrimSpace(r.emb3d) != "" {
+		ids, warn := FrameworkIDs(FrameworkEmb3d, r.emb3d)
+		c.Emb3d = ids
+		if warn != "" {
+			c.Warnings = append(c.Warnings, warn)
+		}
 	}
 	return true
 }

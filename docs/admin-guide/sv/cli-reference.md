@@ -132,6 +132,17 @@ Lagrar alla hemligheter i klartext igen (före en nedgradering). Kräver `--yes`
 
 Skriver ut en ny slumpmässig 256-bitarsnyckel (base64) för `QTF_SECRETS_KEY` eller en nyckelfil.
 
+### `qtestframe audit verify`
+
+Verifierar granskningsloggens hashkedja: varje posts hash, länkarna mellan posterna, ordningen, kedjans registrerade slut och de signerade kontrollpunkterna (med `--tenant` en organisation, annars alla organisationer och systemposterna). Slutstatus `0` när den är intakt, `1` vid den första brutna länken (skrivs ut med sin post). `--file EXPORT.json` kontrollerar en export (Administration → Granskningslogg → Exportera med hashar) utan databasen; kontrollpunkternas signaturer kräver serverns nyckel och kontrolleras bara mot databasen.
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--file` | `string` | verify an exported audit trail (JSON) instead of the database |
+| `--json` | — | print the result as JSON |
+| `--tenant` | `string` | organisation (slug); default every organisation |
+
 ### `qtestframe check-config`
 
 Läser in och kontrollerar konfigurationen (även hemlighetsfiler) utan att röra databasen, och skriver `configuration OK`.
@@ -249,6 +260,24 @@ Skriver de testfall en CI-pipeline kör för en ändring: de krav och testfall s
 | `--token` | `string` | API token (default $QTF_TOKEN) |
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 | `--variant` | `string` | only tests that apply to this variant |
+
+### `qtestframe stubs`
+
+Skriver genererade kodstubbar för testfall till en katalog (`--out`): en fil per testfall i `--query` (standard `execution_type:automated`) eller `--ids`, för `--framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`, `robot` eller `cucumber`, namngiven efter testnyckeln så att JUnit-resultaten hittar tillbaka och markerad som överhoppad tills den implementeras. En ny generering skapar nya filer, genererar om oförändrade stubbar, uppdaterar bara huvudblocket i implementerade och lämnar filer utan qtestframe-markeringar orörda; `--dry-run` listar vad som skulle ändras. `--mark-script` sätter skriptet för testfall utan skript till stubbens sökväg (se sidan CI/CD i användarhandboken).
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--dry-run` | — | only print what would be written |
+| `--framework` | `string` | test framework: pytest, playwright, go, junit5, jest, vitest, robot, cucumber |
+| `--ids` | `value` | only these tests (keys or ids; repeatable or comma-separated) |
+| `--mark-script` | — | set the script of tests without one to their stub path (needs test.write) |
+| `--out` | `string` | directory to write the stubs to (default ".") |
+| `--package` | `string` | Go package (default: the name of --out, else tests) or Java package of the stubs |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--query` | `string` | the tests to generate stubs for (query language); "" for all (default "execution_type:automated") |
+| `--script-dir` | `string` | directory of the stubs in the repository for --mark-script (default --out when it is relative) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 
 ### `qtestframe version`
 

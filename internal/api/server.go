@@ -22,6 +22,7 @@ import (
 	"github.com/rom/qtestframe/internal/auth"
 	"github.com/rom/qtestframe/internal/catalog"
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/live"
 	"github.com/rom/qtestframe/internal/logging"
 	"github.com/rom/qtestframe/internal/mail"
 	"github.com/rom/qtestframe/internal/model"
@@ -78,6 +79,9 @@ type Server struct {
 	mailLimiter *rateLimiter
 	// suggestLimiter bounds the autocomplete queries of one user (suggest.go).
 	suggestLimiter *rateLimiter
+	// aiLimit bounds the AI requests of one user per hour (ai.go).
+	aiOnce  sync.Once
+	aiLimit *rateLimiter
 
 	// jobs runs automated tests in the background (scriptjobs.go);
 	// JobHeartbeat is its heartbeat interval (tests; 0 = 15s).
@@ -87,9 +91,16 @@ type Server struct {
 	// Logs, when set, applies logging changes of the system settings at
 	// runtime (nil: they are stored and apply at the next start).
 	Logs *logging.Manager
+	// live fans out change events and presence (live.go)
+	live *live.Hub
+	// liveReauth is how often a stream re-authenticates (tests; 0 = 1 min)
+	liveReauth time.Duration
+
 	// system settings (systemsettings.go): live is the effective
 	// configuration (nil = Cfg, no overrides), boot the one at start-up.
 	sys sysState
+	// erec caches the electronic-records settings per tenant (erecords.go)
+	erec erecCache
 }
 
 // New creates a server and its identity providers. cfg is the
@@ -114,6 +125,9 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		suggestLimiter: newRateLimiter(300, time.Minute),
 		jobs:           newJobManager(),
 	}
+	lc := cfg.Live
+	s.live = live.NewHub(live.Options{MaxConnections: lc.MaxConnections, MaxPerUser: lc.MaxConnectionsPerUser, Replay: lc.ReplayBuffer, PresenceTTL: lc.PresenceTTL})
+	st.OnNotifications(s.liveNotified)
 	// e-mail, OIDC providers and login limits follow the system settings
 	s.initSettings(context.Background())
 	base := strings.TrimSuffix(cfg.Server.BaseURL, "/")
@@ -164,6 +178,8 @@ func (s *Server) routes() {
 	pub("GET /api/v1/auth/saml/{name}/metadata", s.handleSAMLMetadata)
 	// GitLab and GitHub webhooks (code.go): the signature or secret token is the credential
 	s.routesCodeHooks(pub)
+	// Jira and Azure DevOps webhooks of the requirement sync (reqsync.go): the shared secret is the credential
+	s.routesReqSyncHooks(pub)
 	// CI/CD pipeline templates (ci.go): no secrets in them
 	s.routesCIPublic(pub)
 	pub("GET /api/v1/auth/saml/{name}/login", s.handleSAMLLogin)
@@ -178,6 +194,10 @@ func (s *Server) routes() {
 
 	// admin
 	h("GET /api/v1/meta", s.handleMeta)
+	// live updates and presence (live.go)
+	h("GET /api/v1/events/stream", s.handleEventStream)
+	h("POST /api/v1/presence", s.handlePresence)
+	h("GET /api/v1/presence", s.handleGetPresence)
 	h("GET /api/v1/rbac", s.handleRBAC)
 	h("GET /api/v1/tenants", s.handleListTenants)
 	h("POST /api/v1/tenants", s.handleCreateTenant)
@@ -330,11 +350,15 @@ func (s *Server) routes() {
 	s.routesDependencies(h)
 	s.routesReleases(h)
 	s.routesCycles(h)
+	s.routesEnvironments(h)
+	s.routesTestData(h)
 	s.routesMetrics(h)
+	s.routesDashboards(h)
 	s.routesDefects(h)
 	s.routesRequirementIssues(h)
 	s.routesRisks(h)
 	s.routesWaivers(h)
+	s.routesChangeRequests(h)
 	s.routesSoA(h)
 	s.routesNotifications(h)
 	s.routesWorkList(h)
@@ -347,6 +371,8 @@ func (s *Server) routes() {
 	// Excel round-trip and ReqIF import (exchange.go), OSLC (oslc.go)
 	s.routesExchange(h)
 	s.routesRequirementSources(h)
+	// two-way sync with Jira and Azure DevOps (reqsync.go)
+	s.routesReqSync(h)
 	s.routesOSLC(pub, h)
 	// SCIM provisioning: its own token authentication (scim.go)
 	s.routesSCIM(m)
@@ -359,6 +385,7 @@ func (s *Server) routes() {
 	s.routesVariants(h)
 	s.routesCode(h)
 	s.routesCI(h)
+	s.routesStubs(h)
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)
@@ -376,6 +403,12 @@ func (s *Server) routes() {
 	s.routesExploratory(h)
 	// similar requirements and tests, duplicates and conflicts (similarity.go)
 	s.routesSimilarity(h)
+	// optional AI assistance (ai.go)
+	s.routesAI(h)
+	// tamper-evident audit trail and electronic-records mode (erecords.go)
+	s.routesERecords(h)
+	// the logotype of reports and generated documents (logo.go)
+	s.routesLogo(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -488,6 +521,10 @@ func (w *statusWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
+// Unwrap lets http.ResponseController reach the connection (flushing
+// server-sent events, a longer write deadline).
+func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+
 func (w *statusWriter) Write(b []byte) (int, error) {
 	if w.status == 0 {
 		w.status = http.StatusOK
@@ -564,7 +601,10 @@ func writeError(w http.ResponseWriter, status int, code, msg string) {
 func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error) {
 	var qe *query.Error
 	var ae *apiErr
+	var cb *changeBlocked
 	switch {
+	case errors.As(err, &cb):
+		writeChangeBlocked(w, cb)
 	case errors.As(err, &ae):
 		writeError(w, ae.status, ae.code, ae.msg)
 	case errors.As(err, &qe):

@@ -6,6 +6,8 @@ Qtestframe tells you when something needs your attention, lets you ask colleague
 
 **My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see, including your reviews. The badge next to it shows how many items need you; it turns red when some of them are overdue. Each row links to the item and says why it is there. An item is listed once, with all its reasons: a requirement you own that someone asked you to review is one row with **Owner** and **Review requested**.
 
+![My work: the items that need you, each with the reasons it is listed (Owner, In review), its project, status and due date](../images/en-my-work.png)
+
 | Reason | The item is listed because |
 |---|---|
 | **Owner** | you own a requirement in draft, review, approved or implemented, a test in draft or review, or an open risk (identified or mitigating) |
@@ -59,6 +61,22 @@ When the server can send e-mail, you can also get your notifications by e-mail. 
 - **Daily digest**: once a day you get one e-mail with the notifications you have not read yet and that were not e-mailed before. Nothing is sent on days without new notifications.
 
 You never get e-mails about your own actions. Every notification e-mail has a link back to this setting, so you can change it or turn it off at any time.
+
+## Live updates
+
+Qtestframe shows other people's changes as they happen, without reloading the page:
+
+- **Lists** of requirements, tests, runs, defects, risks, test cycles, discussions and *My work* update a moment after someone else changes an item in them. Your selection, the page you are on and the scroll position stay as they were.
+- The **dashboard** counts and the **notification bell** update by themselves.
+- In a **run**, the results of other testers appear while you execute your own tests.
+- An **open item** shows who else is viewing or editing it: their avatars and, for example, *Bea is also editing this* above the item. Someone counts as editing as soon as they have unsaved changes.
+- When someone saves a newer version of the item you have open, a notice says *Bea changed this item (version 4)*. **Reload** loads their version. If you have unsaved changes, **Compare** shows the fields they changed next to yours, as when saving would collide; you can then keep editing, take their version or save your changes on top of it. Nothing is lost or overwritten without you choosing it, and the notice does not block your work: **Dismiss** hides it.
+
+Screen readers announce these changes politely and at most every half minute, so they do not interrupt you; the notice about a newer version of your open item is announced once.
+
+You only ever hear about items you may see. When the connection is interrupted (for example on a train), Qtestframe reconnects by itself and catches up; in a tab in the background it pauses after a minute and catches up when you come back.
+
+To turn live updates off, open your **Profile → Preferences → Live updates**. Lists then update when you open them and the bell checks every minute; others no longer see you as viewing or editing. An administrator can also turn live updates off for the whole server.
 
 ## Request a review
 

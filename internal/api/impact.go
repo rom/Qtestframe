@@ -112,7 +112,7 @@ func (s *Server) impactAware(fn handlerFunc, batch bool) handlerFunc {
 			return
 		}
 		col := &impactCollector{dry: dry, choice: choice, batch: batch, roots: map[string][]store.ImpactRoot{}, reasons: map[string]string{}}
-		r = r.WithContext(context.WithValue(r.Context(), impactKey{}, col))
+		r = withOverride(r.WithContext(context.WithValue(r.Context(), impactKey{}, col)))
 		if !dry && !batch {
 			fn(w, r, p)
 			return
@@ -248,7 +248,8 @@ func (s *Server) applyImpact(ctx context.Context, p *Principal, projectID string
 	if choice == model.ImpactApplySuspect {
 		use = nil
 		for _, r := range roots {
-			if !r.ReviewOnly {
+			// a changed applicability recommends its reviews at once
+			if !r.ReviewOnly || slices.Contains(r.Fields, "applicability") {
 				use = append(use, r)
 			}
 		}
@@ -512,6 +513,7 @@ func (s *Server) handleProjectImpactExport(w http.ResponseWriter, r *http.Reques
 	}
 	lang := reportLang(r, p, q.Get("lang"))
 	ds := impactDataset(pr, imp, lang)
+	ds.Logo = s.documentLogo(r.Context(), p, pr)
 	if f == export.CSV {
 		// one file: the rows only
 		ds.Sections = ds.Sections[1:]

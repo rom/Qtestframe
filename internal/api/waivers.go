@@ -5,9 +5,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
-	"github.com/rom/qtestframe/internal/auth"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/rbac"
 	"github.com/rom/qtestframe/internal/report"
@@ -265,26 +263,6 @@ func (s *Server) handleWithdrawWaiver(w http.ResponseWriter, r *http.Request, p 
 	s.writeWaiver(w, r, p, id)
 }
 
-// signerOK confirms the identity of a signer: a browser session and their
-// password, or a single sign-on less than 15 minutes old. It writes the
-// error and returns false otherwise.
-func signerOK(w http.ResponseWriter, p *Principal, password string) bool {
-	if p.Token != nil || p.Session == nil {
-		writeError(w, http.StatusForbidden, "forbidden", "electronic signatures are given in the browser, not with an API token")
-		return false
-	}
-	if p.User.PasswordHash != "" {
-		if !auth.CheckPassword(p.User.PasswordHash, password) {
-			writeError(w, http.StatusForbidden, "reauth_failed", "the password is not correct")
-			return false
-		}
-	} else if time.Since(p.Session.CreatedAt) > 15*time.Minute {
-		writeError(w, http.StatusForbidden, "reauth_required", "sign in again (less than 15 minutes ago) to sign")
-		return false
-	}
-	return true
-}
-
 func signerName(p *Principal) string {
 	if p.User.DisplayName != "" {
 		return p.User.DisplayName
@@ -299,9 +277,9 @@ func signerName(p *Principal) string {
 func (s *Server) handleDecideWaiver(w http.ResponseWriter, r *http.Request, p *Principal) {
 	ctx := r.Context()
 	var req struct {
+		signerCreds
 		Decision string `json:"decision"`
 		Comment  string `json:"comment"`
-		Password string `json:"password"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -325,7 +303,8 @@ func (s *Server) handleDecideWaiver(w http.ResponseWriter, r *http.Request, p *P
 		writeError(w, http.StatusForbidden, "forbidden", "you are not one of the waiver's approvers")
 		return
 	}
-	if !signerOK(w, p, req.Password) {
+	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, nil, model.SignWaiverDecision)
+	if !ok {
 		return
 	}
 	a := &model.WaiverApproval{WaiverID: wv.ID, UserID: p.User.ID, UserEmail: p.User.Email, UserName: signerName(p), Decision: req.Decision, Comment: req.Comment}
@@ -334,6 +313,10 @@ func (s *Server) handleDecideWaiver(w http.ResponseWriter, r *http.Request, p *P
 		return
 	}
 	s.audit(ctx, p, "waiver.signed", "waiver", wv.ID, wv.Key+" "+a.Decision+" "+a.ContentHash[:12])
+	if proof.Meaning == "" {
+		proof.Meaning = map[string]string{"approve": "approved", "reject": "rejected"}[a.Decision]
+	}
+	s.recordSignature(ctx, p, model.SignWaiverDecision, model.KindWaiver, wv.ID, proof, a.Decision+": "+a.Comment)
 	if wv, err = s.Store.GetWaiver(ctx, p.TenantID(), wv.ID); err != nil {
 		s.fail(w, r, err)
 		return
@@ -516,14 +499,15 @@ func (s *Server) handleSetRiskSettings(w http.ResponseWriter, r *http.Request, p
 // valid while the residual assessment does not change.
 func (s *Server) handleAcceptRisk(w http.ResponseWriter, r *http.Request, p *Principal) {
 	var req struct {
-		Comment  string `json:"comment"`
-		Password string `json:"password"`
+		signerCreds
+		Comment string `json:"comment"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	if !signerOK(w, p, req.Password) {
+	proof, ok := s.confirmSigner(w, r, p, req.signerCreds, nil, model.SignRiskAccept)
+	if !ok {
 		return
 	}
 	k, err := s.Store.AcceptRisk(r.Context(), p.TenantID(), r.PathValue("id"), p.User.Email, signerName(p), req.Comment)
@@ -532,6 +516,10 @@ func (s *Server) handleAcceptRisk(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	s.audit(r.Context(), p, "risk.accepted", "risk", k.ID, k.Key+" residual "+k.ResidualLevel)
+	if proof.Meaning == "" {
+		proof.Meaning = "accepted"
+	}
+	s.recordSignature(r.Context(), p, model.SignRiskAccept, "risk", k.ID, proof, req.Comment)
 	s.notifyEvent(r, p, k.ProjectID, "risk.updated", map[string]any{"risk": k})
 	writeJSON(w, http.StatusOK, k)
 }
@@ -618,6 +606,9 @@ func (s *Server) releaseReport(r *http.Request, p *Principal, pr *model.Project,
 	for _, c := range st.Criteria {
 		rr.Criteria = append(rr.Criteria, report.ReleaseCriterion{Type: c.Type, Threshold: c.Threshold, Level: c.Level, Met: c.Met, Available: c.Available,
 			Actual: c.Actual, Total: c.Total, Items: refs(c.Items), Waived: refs(c.Waived), Accepted: refs(c.Accepted)})
+	}
+	if rr.Environments, err = s.Store.ReleaseEnvironments(ctx, p.TenantID(), rel.ID); err != nil {
+		return nil, err
 	}
 	for _, g := range st.Variants {
 		vg := report.ReleaseVariantGate{Name: g.Variant.Name, Go: g.Go}

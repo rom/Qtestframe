@@ -73,6 +73,25 @@ const L = {
 
 // ---------------------------------------------------------------- tutorial data per language
 
+/** Further members of the guide organisation, several with more than one role (members and role screenshots). */
+const MEMBERS = [
+  { email: 'anna.lind@example.com', name: 'Anna Lind', roles: ['test_lead', 'reviewer'] },
+  { email: 'erik.berg@example.com', name: 'Erik Berg', roles: ['tester'] },
+  { email: 'maria.holm@example.com', name: 'Maria Holm', roles: ['sme', 'reviewer'] },
+  { email: 'olof.ek@example.com', name: 'Olof Ek', roles: ['manager', 'tester'] },
+  { email: 'sara.nyberg@example.com', name: 'Sara Nyberg', roles: ['viewer'] },
+]
+
+/** The organisation's logo on reports and documents (shapes only: the logo renderer draws no text). */
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80">
+  <rect x="4" y="4" width="72" height="72" rx="14" fill="#2f5496"/>
+  <path d="M22 30 h36 l-6 30 h-24 z" fill="#ffffff"/>
+  <circle cx="30" cy="66" r="5" fill="#f2b134"/><circle cx="50" cy="66" r="5" fill="#f2b134"/>
+  <rect x="92" y="18" width="136" height="12" rx="6" fill="#2f5496"/>
+  <rect x="92" y="38" width="104" height="10" rx="5" fill="#5b7fc7"/>
+  <rect x="92" y="56" width="72" height="8" rx="4" fill="#f2b134"/>
+</svg>`
+
 const DATA = {
   en: {
     tenant: { slug: 'guide-en', name: 'Web Shop Ltd' },
@@ -201,6 +220,17 @@ async function ensureTenant(api, me, { slug, name }) {
     await soft('add membership', () => api.post('/members', { email: EMAIL, role: 'admin' }))
     now = await api.get('/auth/me')
   }
+  // further members, several with more than one role
+  for (const m of MEMBERS) {
+    const have = members.find((x) => (x.email || '').toLowerCase() === m.email)
+    if (!have) await soft(`add member ${m.email}`, () => api.post('/members', { email: m.email, display_name: m.name, roles: m.roles }))
+    else await soft(`roles of ${m.email}`, () => api.patch(`/members/${have.user_id ?? have.id}`, { roles: m.roles }))
+  }
+  // the logo on the first page of reports and documents (Administration → Documents)
+  await soft('logo', () =>
+    api.call('PUT', '/settings/logo/image', undefined, { multipart: { file: { name: 'logo.svg', mimeType: 'image/svg+xml', buffer: Buffer.from(LOGO_SVG) } } }),
+  )
+  await soft('logo placement', () => api.put('/settings/logo', { placement: 'right', max_width_mm: 45, max_height_mm: 15 }))
   return { tenant, me: now ?? me }
 }
 
@@ -308,6 +338,10 @@ async function seedTutorial(api, D) {
   }
   await soft('run status', () => api.patch(`/runs/${run.id}`, { status: 'in_progress' }))
   await soft('planned run', () => api.post(`/projects/${pid}/runs`, { name: D.runs.next, environment: 'staging', build: '1.1.0', query: 'status:ready' }))
+
+  // the administrator owns some requirements and a test (My work)
+  for (const k of ['lockout', 'password', 'guest']) if (reqs[k]) await soft('owner', () => api.patch(`/requirements/${reqs[k].id}`, { owner: EMAIL }))
+  if (linked.total) await soft('test owner', () => api.patch(`/tests/${linked.total.id}`, { owner: EMAIL }))
 
   // collaboration, baseline and a later change
   for (const body of D.comments) await soft('comment', () => api.post(`/requirements/${reqs.timeout.id}/comments`, { body }))
@@ -748,6 +782,30 @@ function shotsFor(lang, D, ids) {
       },
     },
     {
+      name: 'admin-documents',
+      run: async (page) => {
+        await go(page, '/admin/documents', '.logo-card .logo-page img')
+        await page.waitForTimeout(400)
+        await save(page.locator('.logo-card'), `${lang}-admin-documents.png`)
+      },
+    },
+    {
+      name: 'my-work',
+      run: async (page) => {
+        await go(page, '/my-work', '#main-content h1')
+        await page.waitForTimeout(600)
+        await save(page, `${lang}-my-work.png`)
+      },
+    },
+    {
+      name: 'catalogue',
+      run: async (page) => {
+        await go(page, `${P}/catalog`, '.cat-list li')
+        await page.waitForTimeout(400)
+        await save(page, `${lang}-catalogue.png`)
+      },
+    },
+    {
       name: 'admin-tokens',
       run: async (page) => {
         await go(page, '/admin/tokens', '.p-datatable')
@@ -759,6 +817,15 @@ function shotsFor(lang, D, ids) {
       run: async (page) => {
         await go(page, '/admin/audit', '.p-datatable')
         await save(page, `${lang}-admin-audit.png`)
+      },
+    },
+    {
+      name: 'admin-erecords',
+      run: async (page) => {
+        await go(page, '/admin/erecords', '.er-grid')
+        await page.locator('button:has(.pi-list-check)').first().click()
+        await page.waitForSelector('.er-table')
+        await save(page, `${lang}-admin-erecords.png`)
       },
     },
     {

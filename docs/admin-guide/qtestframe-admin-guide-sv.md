@@ -534,6 +534,38 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `similarity.embeddings.api_key_file` | text | — | — | Fil med API-nyckeln, som skickas som bearer-token (relativ: i `$CREDENTIALS_DIRECTORY`). Nyckeln kan också sparas i systeminställningarna; den visas aldrig igen. |
 | `similarity.embeddings.timeout` | tidslängd | `30s` | — | Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten. |
 
+### `live`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `live.enabled` | bool | `true` | `QTF_LIVE_ENABLED` | Liveuppdateringar och närvaro: listor, översikter, notisklockan och öppna objekt uppdateras när någon annan ändrar något, och redigerare visar vem mer som tittar på eller redigerar ett objekt (en Server-Sent Events-ström, `GET /api/v1/events/stream`). Av: webbklienten frågar i stället med jämna mellanrum och konfliktkontrollen vid sparande gäller som förut. Varje användare kan också stänga av det i profilen. Bakom en omvänd proxy ska buffring av svar stängas av för strömmen (se *Liveuppdateringar* i kapitlet *Funktioner som lagts till senare*). |
+| `live.heartbeat` | tidslängd | `25s` | — | Intervall för håll-vid-liv-kommentarer på en ström utan händelser. Håll det under tidsgränsen för inaktiva anslutningar i proxyer och lastbalanserare (nginx `proxy_read_timeout`, 60 s som standard). |
+| `live.max_connections` | heltal | `2000` | — | Högsta antal öppna händelseströmmar i den här serverinstansen; fler anslutningar avvisas med 503 och klienterna frågar i stället med jämna mellanrum. |
+| `live.max_connections_per_user` | heltal | `8` | — | Högsta antal öppna händelseströmmar för en användare (en per flik i webbläsaren; en flik i bakgrunden stänger sin ström efter en minut). |
+| `live.replay_buffer` | heltal | `512` | — | Antal senaste händelser som hålls i minnet så att en klient som ansluter igen (`Last-Event-ID`) får det den missade; finns dess senaste händelse inte kvar läser den i stället om det den visar. |
+| `live.presence_ttl` | tidslängd | `45s` | — | Hur länge en användare visas som att den tittar på eller redigerar ett objekt efter den senaste närvarosignalen från webbläsaren (skickas var 20:e sekund). |
+
+### `ai`
+
+| Nyckel | Typ | Standard | Miljövariabel | Beskrivning |
+|---|---|---|---|---|
+| `ai.enabled` | bool | `false` | — | Slå på den valfria [AI-assistansen](#ai-assistans) (utkast till tester, förbättrade krav, sammanfattningar av körningar, ramverksmappningar, acceptanskriterier). Av som standard. **När den är på skickas texten i de objekt som en användare frågar om till den konfigurerade tjänsten.** Varje organisation måste också slå på den, och projekt kan välja bort den. Finns även under **Administration → Systeminställningar**. |
+| `ai.provider` | text | `anthropic` | — | Typ av tjänst: `anthropic` (Anthropics Messages API) eller `openai` (en OpenAI-kompatibel chat completions-slutpunkt: OpenAI, Azure OpenAI eller en lokal server som Ollama eller vLLM). |
+| `ai.url` | text | — | — | Tjänstens bas-URL. Tom med `anthropic`: `https://api.anthropic.com`. Krävs med `openai`, t.ex. `https://llm.example.com/v1` (servern lägger till `/chat/completions`); en Azure OpenAI-deployment-URL med `?api-version=…` skickar nyckeln som `api-key`. |
+| `ai.model` | text | — | — | Modell-id som skickas till tjänsten (krävs): modellen i ditt Anthropic-konto, eller modellen eller deploymenten i din OpenAI-kompatibla tjänst. Det finns ingen inbyggd standard. |
+| `ai.api_key_file` | text | — | — | Fil med API-nyckeln (relativ: i `$CREDENTIALS_DIRECTORY`); skickas som `x-api-key` (Anthropic), `Authorization: Bearer` eller `api-key` (Azure). Nyckeln kan också sparas, krypterad, i systeminställningarna; den visas aldrig igen. Lokala servrar behöver kanske ingen nyckel. |
+| `ai.timeout` | tidslängd | `2m` | — | Längsta tid att vänta på ett svar (5 s–10 min). Användaren kan också avbryta en begäran. |
+| `ai.max_tokens` | heltal | `8192` | — | Högsta antal token i ett svar (256–128000). |
+| `ai.temperature` | text | — | — | Temperatur som skickas till tjänsten (0–2). Tom: skickas inte (tjänstens standard; vissa modeller accepterar inget annat värde). |
+| `ai.rate_limit` | heltal | `30` | — | Högsta antal AI-förfrågningar per användare och timme. |
+| `ai.features.draft_tests` | bool | `true` | — | Erbjud *Utkast till tester* i kravredigeraren (och utkast till ett test från ett länkat krav i testredigeraren). |
+| `ai.features.improve_requirement` | bool | `true` | — | Erbjud *Förbättra krav* (en omskrivning för kravkontrollerna, visad som skillnad). |
+| `ai.features.summarize_run` | bool | `true` | — | Erbjud *Sammanfatta fel* på körningssidan (en sammanfattning och utkast till defekter). |
+| `ai.features.suggest_mappings` | bool | `true` | — | Erbjud *Föreslå mappningar* (ATT&CK, D3FEND, EMB3D, CWE) för krav och risker, kontrollerade mot de inbyggda listorna. |
+| `ai.features.suggest_criteria` | bool | `true` | — | Erbjud *Föreslå acceptanskriterier* i kravredigeraren. |
+| `ai.price_input` | text | — | — | Valfritt pris per miljon indata-token (valfri valuta), för att visa en uppskattad kostnad med varje svar. |
+| `ai.price_output` | text | — | — | Valfritt pris per miljon utdata-token. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Miljövariabler
@@ -553,6 +585,7 @@ Alla nycklar i filen, deras typ, standardvärde och miljövariabeln som sätter 
 | `QTF_EMAIL_PASSWORD` | SMTP-lösenordet; vinner över `email.password_file` och ett lösenord sparat i webbklienten |
 | `QTF_EMAIL_PORT` | `email.port` (ignoreras om det inte är ett tal) |
 | `QTF_EMAIL_USERNAME` | `email.username` |
+| `QTF_LIVE_ENABLED` | `live.enabled` (`1` eller `true` = på, allt annat = av) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` eller `true` = på) |
@@ -833,6 +866,8 @@ Det här är de inbyggda rollernas behörigheter tills en organisation ändrar d
 | `requirement.write` |  |  | ✔ |  |  | ✔ | ✔ |
 | `requirement.review` |  | ✔ | ✔ |  |  | ✔ | ✔ |
 | `waiver.approve` |  |  |  |  |  | ✔ | ✔ |
+| `change.create` |  |  | ✔ |  | ✔ | ✔ | ✔ |
+| `change.approve` |  |  |  |  | ✔ | ✔ | ✔ |
 | `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `test.review` |  | ✔ |  |  | ✔ | ✔ | ✔ |
@@ -840,6 +875,7 @@ Det här är de inbyggda rollernas behörigheter tills en organisation ändrar d
 | `run.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `cycle.plan` |  |  |  |  | ✔ | ✔ | ✔ |
+| `environment.manage` |  |  |  |  | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  |  | ✔ | ✔ | ✔ |
 | `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
@@ -909,7 +945,7 @@ Ett projekt är antingen **organisationsgemensamt** (standard: alla medlemmar se
 | övriga medlemmar, organisationsgemensamt projekt | organisationsrollerna |
 | övriga medlemmar, begränsat projekt | inga: projektet svarar `404` |
 
-Bara **projektbehörigheter** kommer från projektrollerna (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Behörigheter på organisationsnivå – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – kommer alltid från organisationsrollerna, och en API-nyckel begränsas av sina egna roller även i ett projekt.
+Bara **projektbehörigheter** kommer från projektrollerna (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`, `environment.manage`, `script.execute`, `export`, `comment.create`). Behörigheter på organisationsnivå – medlemmar, roller, API-nycklar, händelseloggen, att skapa projekt – kommer alltid från organisationsrollerna, och en API-nyckel begränsas av sina egna roller även i ett projekt.
 
 Vad en begränsning **inte** döljer, så planera för det:
 
@@ -1028,6 +1064,22 @@ Inställningarna som sidan erbjuder, genererade från `internal/settings`:
 | Likhet (dubbletter) | `similarity.embeddings.model` | text | direkt |
 | Likhet (dubbletter) | `similarity.embeddings.api_key` | hemlighet (skrivskyddad läsning) | direkt |
 | Likhet (dubbletter) | `similarity.embeddings.timeout` | 1s–5m | direkt |
+| AI-assistans | `ai.enabled` | på/av | direkt |
+| AI-assistans | `ai.provider` | `anthropic`, `openai` | direkt |
+| AI-assistans | `ai.url` | text | direkt |
+| AI-assistans | `ai.model` | text | direkt |
+| AI-assistans | `ai.api_key` | hemlighet (skrivskyddad läsning) | direkt |
+| AI-assistans | `ai.timeout` | 5s–10m | direkt |
+| AI-assistans | `ai.max_tokens` | 256–128000 | direkt |
+| AI-assistans | `ai.temperature` | text | direkt |
+| AI-assistans | `ai.rate_limit` | 1–10000 | direkt |
+| AI-assistans | `ai.features.draft_tests` | på/av | direkt |
+| AI-assistans | `ai.features.improve_requirement` | på/av | direkt |
+| AI-assistans | `ai.features.summarize_run` | på/av | direkt |
+| AI-assistans | `ai.features.suggest_mappings` | på/av | direkt |
+| AI-assistans | `ai.features.suggest_criteria` | på/av | direkt |
+| AI-assistans | `ai.price_input` | text | direkt |
+| AI-assistans | `ai.price_output` | text | direkt |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1058,6 +1110,42 @@ Om man vill kan en **OpenAI-kompatibel embeddings-slutpunkt** beräkna likheten 
 **Integritet.** När den är på **skickas titel, beskrivning och acceptanskriterier för krav och titel, beskrivning, förutsättningar och steg för testfall till tjänsten**, för alla projekt i alla organisationer på servern, när likhetskontrollerna körs eller någon skriver i en redigerare (texten som skrivs skickas också). Använd en tjänst som drivs av er organisation eller som ni har avtal med; låt den annars vara av.
 
 Vektorerna lagras i tabellen `similarity_embeddings` per objekt, modell och text (ett ändrat objekt skickas igen, ett oförändrat inte). Den är en cache: den ingår inte i säkerhetskopior eller projektarkiv och fylls på nytt efter en återställning. Byts modellen beräknas alla vektorer om. **Testa tjänsten** på sidan skickar en kort exempelmening och visar vektorns storlek. När tjänsten misslyckas eller inte svarar loggar servern en varning och använder den lokala likheten, så kontrollerna slutar aldrig fungera. Konfliktsökningen (motsatta förpliktelser, gränsvärden, uteslutande värden) körs alltid på servern. Kontrollernas gränsvärden gäller även tjänstens cosinuslikhet; tjänster skiljer sig, så granska de misstänkta dubbletterna när den har slagits på och justera gränsen för dubblettkontrollerna vid behov.
+
+## AI-assistans
+
+Qtestframe kan be en språkmodelltjänst om **förslag** som användarna granskar innan något sparas: utkast till tester för ett krav, en förbättrad formulering av ett krav, en sammanfattning av en underkänd körning med utkast till defekter, ramverksmappningar (ATT&CK, D3FEND, EMB3D, CWE) och acceptanskriterier (se användarhandboken, *AI-assistans*). Den är **av som standard** och kräver tre brytare:
+
+1. **Administration → Systeminställningar → AI-assistans** (eller `ai` i [konfigurationsfilen](#referens)): tjänsten och `ai.enabled`.
+2. **Administration → AI-assistans**: organisationens brytare (`settings.manage`).
+3. Varje projekt kan välja bort den: **Inställningar → Allmänt → AI-assistans** (`project.update`).
+
+| Inställning | Betydelse |
+|---|---|
+| `ai.provider` | `anthropic`: Anthropics Messages API (`POST {url}/v1/messages`, nyckeln som `x-api-key`). `openai`: en OpenAI-kompatibel chat completions-slutpunkt (`POST {url}/chat/completions`, nyckeln som `Authorization: Bearer`; en Azure OpenAI-deployment-URL med `?api-version=…` skickar den som `api-key`): OpenAI, Azure OpenAI eller en lokal server som Ollama eller vLLM |
+| `ai.url` | bas-URL; tom med `anthropic` betyder `https://api.anthropic.com`; krävs med `openai`, t.ex. `https://llm.example.com/v1` |
+| `ai.model` | modell-id (krävs; det finns ingen inbyggd standard): modellen i ditt Anthropic-konto, eller din modell eller deployment för `openai` |
+| `ai.api_key` | kan bara skrivas, lagras [krypterad](#kryptering-av-lagrade-hemligheter); i filen bara som `api_key_file`; kan vara tom för en lokal server |
+| `ai.timeout`, `ai.max_tokens`, `ai.temperature` | längsta väntan på ett svar (standard 2 min), högsta antal token i ett svar (standard 8192), temperaturen (tom: skickas inte) |
+| `ai.rate_limit` | AI-förfrågningar per användare och timme (standard 30) |
+| `ai.features.*` | stäng av enskilda funktioner |
+| `ai.price_input`, `ai.price_output` | valfria priser per miljon token: varje svar visar då en uppskattad kostnad |
+
+**Testa tjänsten** på sidan skickar en fast kort mening (inga objektdata) och visar modellen och antalet token.
+
+**Dataflöde och integritet.** Ingenting skickas förrän en användare klickar på en *Assistera*-åtgärd. Servern skickar då **bara objekten för den åtgärden** till tjänsten, från serverns nätverk:
+
+| Åtgärd | Skickas till tjänsten |
+|---|---|
+| Utkast till tester, Föreslå acceptanskriterier | kravets nyckel, titel, beskrivning, typ, förpliktelse, motivering och acceptanskriterier (redigerarens aktuella text) |
+| Förbättra krav | detsamma, och fynden från kravkontrollerna |
+| Sammanfatta fel | körningens namn, status, miljö och bygge; nyckel, titel, anteckningar, felutskrift (de sista 3000 tecknen) och underkända steg för upp till 40 underkända eller blockerade utföranden; nyckel, titel, status och allvarlighetsgrad för defekterna som är länkade till körningen |
+| Föreslå mappningar | nyckel, titel, beskrivning (risker: kategori och åtgärd) och de id som redan är mappade |
+
+Användarna ser en upplysning om att texten skickas innan de börjar. Använd en tjänst som drivs av er organisation eller som ni har ett avtal med som täcker dessa data (lagring, träning, plats). En lokal server (Ollama, vLLM) håller allt i ert nätverk.
+
+**Säkerhet.** Tjänsten får inga verktyg och ingenting som den svarar körs. Objekttexten skickas som JSON mellan `<item_data>`-taggar och instruktionerna säger åt modellen att behandla den som data (JSON skyddar `<` och `>`, så ett objekt kan inte stänga taggen). Svaren måste vara ett JSON-objekt med ett fast schema; servern kontrollerar det strikt, frågar en gång till när det inte stämmer och tar bort det som inte kan verifieras (ramverks-id som inte finns i de inbyggda listorna, kriterier som redan finns, tester utanför körningen). Omskrivningen av ett krav kontrolleras igen med kravkontrollerna på servern, som visar vilka fynd den verkligen åtgärdar. Inga anrop till tjänsten görs inuti en databastransaktion, och användaren kan avbryta en begäran när som helst.
+
+**Granskning.** Varje begäran skrivs i händelseloggen som `ai.request` med funktion, användare, objekt-id, leverantör och modell, promptversion, antal token, tid och utfall (`ok`, `cancelled`, `ai_refused`, `ai_invalid_answer`, `ai_service`, `ai_timeout`) — aldrig innehållet. Promptarna är inbyggda i programmet och versionerade (`prompt_version` i varje svar och händelse). Ändringar av organisationens brytare granskas som `settings.update`, projektets val som `project.ai_settings`, testknappen som `settings.test_ai`.
 
 ## Granskning och export
 
@@ -1165,7 +1253,7 @@ Servern måste kunna läsa vissa hemligheter tillbaka, så de kan inte hashas. D
 | signeringshemligheter för webhooks | `webhooks.secret` |
 | token för ärendesystem (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | värden för hemliga webbtestvariabler | `projects.web_tests` |
-| SMTP-lösenord, nyckeln till tjänsten för inbäddningar och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
+| SMTP-lösenord, nycklarna till tjänsterna för inbäddningar och AI och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
 
 Lösenord (bcrypt), API- och SCIM-nycklar, sessioner, inbjudningar, ihågkomna enheter och återställningskoder lagras som hashar och behöver ingen nyckel. Hemligheter i konfigurationsfilen, `*_file`-inställningar och `QTF_*`-variabler lagras aldrig i databasen.
 
@@ -1272,7 +1360,58 @@ Samma sak gäller, i svagare form, HSM-nycklar (använd HSM:ens egen nyckelsäke
 
 Varje organisation har en händelselogg (**Administration → Händelselogg**, behörigheten `audit.read`, API `GET /api/v1/audit`, nyaste först, upp till 5000 poster per begäran): vem (användar-id och e-post, eller `SCIM: <token>`, eller `cli`), vad (`action`, objekt, korta detaljer) och när. Här registreras inloggningar (med metod, och `mfa=…`, `amr`/`acr` för single sign-on), ändringar av projekt, objekt, körningar, medlemmar, roller, nycklar, delning, organisationer och användare, exporter, säkerhetskopiering och återställning (`admin.backup`, `admin.restore`), MFA-återställningar och policyändringar, samt systeminställningar (`settings.update`). Gamla och nya värden för objekt finns i objektens historik, inte i händelseloggen; klientadressen finns i begärandeloggen, inte i posten.
 
-Varje post skrivs också som en loggpost `audit` på nivån INFO. Skicka loggen till en central syslog-server (se [Loggning](#central-syslog)), så att spåret överlever att värden komprometteras. Misslyckade inloggningar syns i serverloggen (`login failed`) och i användarens inloggningshistorik, inte i händelseloggen. Händelseloggen ingår i en säkerhetskopia.
+Varje post skrivs också som en loggpost `audit` på nivån INFO. Skicka loggen till en central syslog-server (se [Loggning](#central-syslog)), så att spåret överlever att värden komprometteras. Misslyckade inloggningar syns i serverloggen (`login failed`) och i användarens inloggningshistorik, inte i händelseloggen. Händelseloggen ingår i en säkerhetskopia. Posterna registrerar också den orsak till ändringen som anges i läget för elektroniska poster (`reason`).
+
+### Manipuleringssäker händelselogg
+
+Händelseloggen i varje organisation är en **hashkedja** (kommandoradens systemposter, till exempel `admin.backup`, har en egen kedja). Varje post får ett löpnummer (`seq`, 1, 2, …), hashen av posten före (`prev_hash`) och en egen hash: SHA-256 över en kanonisk kodning av postens fält (organisation, löpnummer, id, UTC-tid på mikrosekunden, användare, åtgärd, objekt, detaljer, orsak till ändringen) och föregående hash. Den exakta kodningen finns i `docs/api.md` ("Tamper-evident audit trail"), så att en export kan kontrolleras med andra verktyg.
+
+- **Så kedjas posterna.** En post skrivs i transaktionen för ändringen den registrerar (en ändring som rullas tillbaka lämnar ingen post) och kedjas direkt när transaktionen har bekräftats, i en kort egen transaktion som håller organisationens rad i `audit_heads` (PostgreSQL: `SELECT … FOR UPDATE`). Tillägg i en organisation sker alltså i tur och ordning utan lås under själva begäran, och flera serverprocesser kan dela databasen. Tills posten är kedjad (normalt millisekunder) visar den `seq` 0; poster som en process lämnade okedjade när den stoppades kedjas av nästa post eller vid nästa start.
+- **Signerade kontrollpunkter.** Var 1 000:e post, minst varje timme medan poster skrivs och vid varje verifiering och export skriver servern en kontrollpunkt: en HMAC-SHA256 över organisationen, ett löpnummer och den postens hash, med en 256-bitarsnyckel i `audit_keys` som är **krypterad som de andra lagrade hemligheterna** (se [Kryptering av lagrade hemligheter](#kryptering-av-lagrade-hemligheter)). Den som kan ändra databasen men inte läsa serverns nyckel (nyckelfilen, TPM eller HSM) kan räkna om hashar men inte förfalska kontrollpunkter: en omskriven kedja eller borttagna poster före den senaste kontrollpunkten upptäcks. Poster efter den senaste kontrollpunkten kan en sådan angripare ta bort oupptäckt; kopian i central syslog och regelbundna exporter täpper till den luckan. Utan nyckelleverantör lagras nyckeln i klartext och verifieringen säger det.
+- **Vad den upptäcker**, med den första brutna länken: en ändrad post (`entry_changed`), en borttagen, utbytt eller omkastad post (`link_broken`, `sequence_gap`), borttagna poster i slutet (`truncated`, mot kedjans registrerade slut och kontrollpunkterna), en omskriven kedja (`checkpoint_mismatch`) och en förfalskad kontrollpunkt (`checkpoint_signature`). Den **hindrar inte** ändringar: en databasadministratör kan fortfarande ändra eller ta bort rader; kedjan gör det synligt. Den som har både serverns nyckel och databasen kan skriva om allt – skydda nyckeln och värdarna därefter.
+- **Verifiera** under **Administration → Händelselogg → Verifiera granskningsloggen** (behörigheten `audit.read`, `POST /api/v1/audit/verify`), eller på servern:
+
+  ```sh
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml            # alla organisationer; slutstatus 1 när den är bruten
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml --tenant acme --json
+  ```
+
+  Kör den från en timer och larma på slutstatus 1. 100 000 poster verifieras på ungefär en sekund (SQLite och PostgreSQL på en bärbar dator); den första kedjningen efter uppgraderingen kedjar 100 000 poster på 2–4 sekunder.
+- **Export för extern arkivering**: **Exportera med hashar (JSON / CSV)** (`GET /api/v1/audit/archive?format=json|csv`) ger hela kedjan med löpnummer och hashar; JSON innehåller också kontrollpunkterna och kedjans slut. `qtestframe audit verify --file EXPORT.json` kontrollerar en export utan databasen (poster, länkar, slut, kontrollpunkternas hashar; deras signaturer kräver serverns nyckel). Spara exporterna på lagring som bara kan skrivas en gång för att förlänga skyddet bortom den senaste kontrollpunkten.
+- **Efter uppgraderingen** (migrering 0055) kedjas varje organisations befintliga poster vid första starten: kedjan börjar med en post `audit.chain_start` som säger hur många tidigare poster som följer och när de kedjades. Kedjan bevisar att de posterna inte ändrats **efter** den tidpunkten, inte före.
+
+Kedjan i säkerhetskopior, återställningar och projektarkiv beskrivs i [Säkerhetskopiering, återställning och migrering](#händelseloggen-i-säkerhetskopior).
+
+## Läge för elektroniska poster (21 CFR Part 11 / EU GMP Annex 11)
+
+En organisationsinställning under **Administration → Elektroniska poster** (ändra: `tenant.manage`; läsa och rapport: `audit.read`; `GET`/`PUT /api/v1/erecords`), **av som standard**. När läget är på kräver servern:
+
+| Kontroll | Vad servern gör |
+|---|---|
+| Ny autentisering vid varje signatur | Signering av baslinjer, beslut om undantag, riskacceptans, signering av verifieringsposter och åtgärderna nedan kräver den som signerar att ange sitt **lösenord** och, om hen har en andra faktor, en **aktuell kod** (en återställningskod fungerar också). Konton utan lösenord här (enkel inloggning) signerar inom *signeringsfönstret för enkel inloggning* (standard 5 minuter) efter inloggningen hos identitetsleverantören, plus koden om de har en andra faktor här. API-nycklar kan inte signera. Misslyckade försök begränsas. |
+| Signaturens innebörd | Den som signerar väljer en innebörd från organisationens lista (standard authored, reviewed, approved, verified, released; upp till 20, egna ord går bra). |
+| Signaturens synliga uppgifter | Varje signatur registrerar namn, e-post, UTC-tid, tidszonen för den som signerar, innebörden, metoden (`password`, `password+mfa`, `sso`, `sso+mfa`) och hashen av den signerade versionen av posten; signerade poster visar detta, och en senare ändring av posten visar *Posten ändrad efter signeringen*. |
+| Åtgärder som kräver signatur | Väljs bland: godkännande av krav (status → godkänd, också genom massändring, kalkylbladsvyn och massgranskning), godkännande av test (status → klar), release go (status → frisläppt), skapande av baslinje. Krävs på varje väg som utför dem; utan signatur svarar begäran 428 `signature_required`. |
+| Orsak till ändringen | Valda slags ändringar (ändringar och borttagningar av krav, tester, körningar, utfall, releaser, baslinjer, risker, undantag och verifieringsposter) kräver en orsak, som registreras i ändringens poster i händelseloggen. |
+| Utloggning vid inaktivitet | Webbläsarsessioner avslutas efter *Logga ut efter inaktivitet* minuter (1–480, standard 15) utan begäranden; klientens egen bakgrundshämtning räknas inte. |
+
+Inställningarna cachas i upp till 5 sekunder per serverprocess. Signaturer i de dialoger som fanns tidigare (signering av baslinjer, beslut om undantag, riskacceptans) registreras med sina uppgifter i alla lägen.
+
+**Rapporten Kontroller enligt Part 11 / Annex 11.** **Skapa rapport** på samma sida (`GET /api/v1/erecords/report`, `?format=md` för Markdown) listar varje kontroll med hänvisningar, vem som täcker den (*verktyget*, *verktyget och rutiner*, *era rutiner*), dess status här och belägg (inställningar, en ny verifiering av händelseloggen, antal signaturer, användning av andra faktor).
+
+### Vad verktyget ger – och vad era rutiner måste täcka
+
+Qtestframe ger tekniska kontroller. Verktyget är **inte** "Part 11-kompatibelt" i sig, och ingen inställning gör det: efterlevnad är en egenskap hos det validerade systemet i drift, dess rutiner och dess människor.
+
+| Verktyget ger | Era rutiner måste täcka |
+|---|---|
+| En datorgenererad, tidsstämplad, manipuleringssäker händelselogg med verifiering och export | Validering av den installerade versionen för den avsedda användningen (och efter uppgraderingar); granskning av händelseloggen som del av granskningen av poster; regelbunden verifiering och arkivering av exporter |
+| Signaturer med ny autentisering, innebörd, synliga uppgifter och koppling till postens version | En skriftlig policy om att elektroniska signaturer är bindande, och intyget till FDA (§11.100(c)); beslut om vilka poster som kräver vilka signaturer och när de ska signeras om |
+| Rollbaserad åtkomst, tvåstegsverifiering, sessioners giltighetstid och utloggning vid inaktivitet | Identitetskontroll innan ett konto skapas, att konton aldrig återanvänds, behörighetsgranskningar, rutiner när någon slutar, lösenordsbyten och förlorade lösenord (eller identitetsleverantörens) |
+| Säkerhetskopior som håller kedjan giltig; exporter i öppna format | Schema för säkerhetskopiering, återställningstester, lagringstider, kontinuitet och katastrofåterställning |
+| Dokumentation för varje version | Utbildning, ändringshantering av installationen och dess konfiguration, leverantörsbedömning |
+
+Tidsstämplarna kommer från serverns klocka: håll den synkroniserad (NTP).
 
 ## Säkerhetshuvuden och CSP
 
@@ -1295,7 +1434,7 @@ Andra gränser: JSON-innehåll högst 8 MiB, huvuden 1 MiB, `ReadHeaderTimeout` 
 
 ## Utgående anslutningar
 
-Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. När den valfria [tjänsten för inbäddningar](#tjänst-för-inbäddningar-för-liknande-objekt) är på skickar servern texten i krav och testfall till den. Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
+Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. När den valfria [tjänsten för inbäddningar](#tjänst-för-inbäddningar-för-liknande-objekt) är på skickar servern texten i krav och testfall till den; när den valfria [AI-assistansen](#ai-assistans) är på skickar den objekten som en användare frågar om till AI-tjänsten (varje begäran granskas som `ai.request`). Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
 
 ## Checklista
 
@@ -1362,6 +1501,9 @@ Projekt kan skicka signerade händelser till andra system. Användare med `proje
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
+| change_request | `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented`, `change_request.closed` |
+| environment | `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected` |
+| testdata | `testdata.refresh_requested`, `testdata.refresh_resolved` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -1390,12 +1532,13 @@ Projekt kan skicka sina händelser till chattkanaler: Slack, Microsoft Teams, Ma
 
 | Grupp | Händelser |
 |---|---|
-| Testkörningar | `run.created` (Testkörning skapad), `run.updated` (Testkörning ändrad), `run.completed` (Testkörning avslutad), `execution.updated` (Testresultat registrerat) |
+| Testkörningar | `run.created` (Testkörning skapad), `run.updated` (Testkörning ändrad), `run.completed` (Testkörning avslutad), `execution.updated` (Testresultat registrerat), `environment.status_changed` (Miljöns status ändrad), `environment.booking_requested` (Miljöbokning begärd), `environment.booking_approved` (Miljöbokning godkänd), `environment.booking_rejected` (Miljöbokning avslagen), `testdata.refresh_requested` (Uppdatering av testdata begärd), `testdata.refresh_resolved` (Begäran om uppdatering av testdata stängd) |
 | Defekter | `defect.created` (Defekt rapporterad), `defect.updated` (Defekt ändrad), `defect.status` (Defektens status ändrad), `defect.assigned` (Defekt tilldelad), `defect.regression` (Regression upptäckt) |
 | Krav och tester | `requirement.created` (Krav skapat), `requirement.updated` (Krav ändrat), `test.created` (Test skapat), `test.updated` (Test ändrat), `comment.created` (Ny kommentar), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baslinje signerad) |
 | Granskningar | `review.requested` (Granskning begärd), `review.completed` (Granskning klar) |
 | Releaser | `release.created` (Release skapad), `release.updated` (Release ändrad), `release.released` (Release släppt) |
 | Undantag | `waiver.requested` (Undantag begärt), `waiver.approved` (Undantag godkänt), `waiver.rejected` (Undantag avslaget), `waiver.revoked` (Undantag återkallat) |
+| Ändringsbegäranden | `change_request.submitted` (Ändringsbegäran inskickad), `change_request.review` (Ändringsbegäran att besluta), `change_request.approved` (Ändringsbegäran godkänd), `change_request.rejected` (Ändringsbegäran avslagen), `change_request.deferred` (Ändringsbegäran uppskjuten), `change_request.implemented` (Ändringsbegäran genomförd), `change_request.closed` (Ändringsbegäran stängd) |
 | Risker | `risk.created` (Risk identifierad), `risk.updated` (Risk ändrad) |
 
 <!-- END GENERATED: chat-events -->
@@ -1449,6 +1592,31 @@ Användare med `requirement.write` importerar krav från en JQL-fråga i Jira el
 | Azure DevOps Server | samlingens adress, t.ex. `https://tfs.example.com/tfs/DefaultCollection` | personlig åtkomsttoken | som ovan |
 
 Jira söks med `POST /rest/api/2/search/jql` (Jira Cloud) och, när den inte finns, `POST /rest/api/2/search` (Server och Data Center); Azure DevOps med slutpunkterna för WIQL, fält och arbetsobjekt i REST API 7.1. Högst 1 000 objekt läses per import. Importen läser bara; den granskas som `requirement.import`, ändringar av anslutningen som `import_sources.update`. Token krypteras med serverns hemliga nycklar (de krypteras om vid nyckelrotation), returneras aldrig och utelämnas ur projektarkiv. Importen når källorna via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) som ärendehanterarna; tillåt adresserna ovan i en brandvägg.
+
+### Tvåvägssynk
+
+Tvåvägssynken (migrering 0060, [användarhandboken](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/sv/reports-and-export.md#tv%C3%A5v%C3%A4gssynk-med-jira-och-azure-devops)) använder samma anslutningar och skriver till ärendesystemet, så dess token behöver mer än läsrätt:
+
+| Källa | Behövs för synken |
+|---|---|
+| Jira Cloud, Server, Data Center | *Browse projects*, *Edit issues*, *Transition issues*; *Create issues* för att skicka nya krav, *Add comments* för kommentarer, *Link issues* för länkar |
+| Azure DevOps | personlig åtkomsttoken med omfånget *Work Items (Read & write)* |
+
+Användare med `project.update` ändrar inställningarna (**Ärendesynk → Inställningar**), användare med `requirement.write` kör en synk, förhandsgranskar den och avgör konflikter; alla som kan läsa projektet ser översikten och loggen. Schemalagda synkar och webhook-synkar körs som det konto som senast sparade inställningarna (`req_sync_configs.run_as`), med dess aktuella roller och projektåtkomst: ett konto som förlorar `requirement.write` eller projektet stoppar synken (loggas som misslyckad). Ändringar som hämtas från ärendesystemet går genom den vanliga uppdateringen av krav (behörigheter, granskningsregler, historik, granskningslogg, optimistisk låsning) med konfigurationens val av påverkan.
+
+**Bakgrundsjobb och gränser.** Minutjobbet kör de synkar som står på tur (`interval_minutes`, 0 = inget schema). En körning håller ett lås i databasen (`lease_until`, 15 minuter), så med flera servrar kör bara en av dem en konfiguration åt gången. En körning som misslyckas fördubblar väntan för varje misslyckande i rad (högst ett dygn); ett ärendesystem som svarar 429 försöks igen av klienten efter en kort `Retry-After`, annars stoppas körningen och nästa väntar minst så länge som begärts. Skrivningar sprids ut enligt *Skrivningar per minut* (standard 60) och är högst 500 per körning. Högst 1 000 objekt läses per fråga, plus de länkade objekt som frågan inte längre hittar (Jira: en begäran per objekt; Azure DevOps: i omgångar om 200).
+
+**Webhooks.** Mottagarna är publika ändpunkter; den delade hemligheten (16–200 tecken, krypterad i `req_sync_configs.webhook_secret`, skrivskyddad, omkrypteras vid nyckelrotation) är behörighetsbeviset. Varje anrop besvaras med 202 och synken av de namngivna objekten körs i bakgrunden; anrop för samma konfiguration slås ihop. Högst 600 anrop per projekt och minut tas emot.
+
+| Ärendesystem | Adress | Inställning |
+|---|---|---|
+| Jira Cloud | `<base_url>/api/v1/hooks/req-sync/jira/<projekt-id>` | **System → WebHooks**: händelserna *Issue created*, *Issue updated*, *Comment created*; hemligheten i webhookens fält *Secret* (innehållet signeras, huvudet `X-Hub-Signature: sha256=…`). |
+| Jira Server / Data Center | samma adress med `?secret=<hemligheten>` | **System → WebHooks** (där finns inget fält för hemligheten, så den läggs i adressen: använd HTTPS). |
+| Azure DevOps | `<base_url>/api/v1/hooks/req-sync/azure-devops/<projekt-id>` | **Project settings → Service hooks → Web Hooks**: *Work item created*, *Work item updated*, *Work item commented on*; *Basic authentication* med valfritt användarnamn och hemligheten som lösenord. |
+
+Huvudet `X-Qtestframe-Secret: <hemligheten>` godtas från båda. Ärendesystemet måste nå `server.base_url`; öppna brandväggen för det, eller lita på schemat.
+
+**Data.** Synkläget för varje länkat krav sparas med dess externa referens (`external_refs`: ärendesystemets version, kontrollsummor och värden på båda sidor efter senaste synken). `req_sync_configs` och `req_sync_conflicts` ingår i säkerhetskopian; `req_sync_runs` (loggen, de 100 senaste körningarna per projekt och källa) gör det inte. Projektarkiv utelämnar alla tre (hemligheten och kontot); ett inläst projekt måste ställas in på nytt. Granskningsloggens åtgärder: `req_sync.update` (inställningar), `req_sync.run` (varje körning med sina antal), `requirement.sync.push` och `requirement.sync.create` (ändringar till ärendesystemet), `req_sync.conflict.resolve` och `req_sync.conflict.closed`, utöver de vanliga `requirement.update`, `requirement.create` och `relation.create` för ändringarna här.
 
 ## CI/CD-pipelines (GitLab, GitHub Actions)
 
@@ -1736,9 +1904,9 @@ En säkerhetskopia utan nyckeln är oanvändbar för de krypterade hemligheterna
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**I en säkerhetskopia** (94 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
+**I en säkerhetskopia** (115 tabeller, i den ordning de återställs): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
 
-**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Inte i en säkerhetskopia:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1794,6 +1962,15 @@ En återställning avvisas, utan att något ändras, när:
 Säkerhetskopians systeminställningar gäller direkt. Efter en återställning: kontrollera `qtestframe secrets status` och logga in.
 
 Använd historiken i webbklienten för att återställa ett enskilt objekt; för att flytta ett projekt, se nedan.
+
+## Händelseloggen i säkerhetskopior
+
+Händelseloggens hashkedja (se [Manipuleringssäker händelselogg](#manipuleringssäker-händelselogg)) klarar säkerhetskopiering och återställning, också mellan SQLite och PostgreSQL:
+
+- En **säkerhetskopia** är en konsekvent ögonblicksbild av posterna, kedjornas registrerade slut (`audit_heads`), de signerade kontrollpunkterna och deras nyckel (`audit_keys`, krypterad med de säkerhetskopierade datanycklarna), så den återställda kedjan verifieras som originalet. Tiderna sparas på mikrosekunden, vilket båda databaserna lagrar.
+- En **återställning** ersätter kedjan med säkerhetskopians: poster som skrevs efter säkerhetskopian försvinner, liksom kontrollpunkterna som skrevs efter den, så den återställda kedjan är intakt; själva återställningen (`admin.restore`) blir nästa post. Spara händelseloggens exporter från tiden mellan säkerhetskopian och återställningen om ni måste kunna visa vad som hände då. Verifiera efter en återställning: `qtestframe audit verify`.
+- Återställning till en installation med en annan nyckel misslyckas som för alla krypterade hemligheter; nyckeln till kontrollpunkterna kan inte läsas utan säkerhetskopians nyckel.
+- **Projektarkiv** (nedan) innehåller aldrig händelseloggen eller de elektroniska signaturerna: de hör till organisationen. Att spara, läsa in, kopiera eller ta bort ett projekt lägger bara till poster i kedjan; inget tas bort ur den. Elektroniska signaturer behålls när deras projekt tas bort.
 
 ## Uppgradering
 
@@ -1864,6 +2041,13 @@ Databasschemat skapas och uppgraderas av numrerade migreringar som är inbäddad
 | 51 | `0051_frameworks.sql` |
 | 52 | `0052_multiple_roles.sql` |
 | 53 | `0053_ci_integration.sql` |
+| 54 | `0054_change_requests.sql` |
+| 55 | `0055_audit_chain_erecords.sql` |
+| 57 | `0057_environments.sql` |
+| 59 | `0059_dashboards.sql` |
+| 60 | `0060_req_sync.sql` |
+| 61 | `0061_ai_assistance.sql` |
+| 62 | `0062_project_logo.sql` |
 
 <!-- END GENERATED: migrations -->
 
@@ -2142,6 +2326,17 @@ Lagrar alla hemligheter i klartext igen (före en nedgradering). Kräver `--yes`
 
 Skriver ut en ny slumpmässig 256-bitarsnyckel (base64) för `QTF_SECRETS_KEY` eller en nyckelfil.
 
+### `qtestframe audit verify`
+
+Verifierar granskningsloggens hashkedja: varje posts hash, länkarna mellan posterna, ordningen, kedjans registrerade slut och de signerade kontrollpunkterna (med `--tenant` en organisation, annars alla organisationer och systemposterna). Slutstatus `0` när den är intakt, `1` vid den första brutna länken (skrivs ut med sin post). `--file EXPORT.json` kontrollerar en export (Administration → Granskningslogg → Exportera med hashar) utan databasen; kontrollpunkternas signaturer kräver serverns nyckel och kontrolleras bara mot databasen.
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--file` | `string` | verify an exported audit trail (JSON) instead of the database |
+| `--json` | — | print the result as JSON |
+| `--tenant` | `string` | organisation (slug); default every organisation |
+
 ### `qtestframe check-config`
 
 Läser in och kontrollerar konfigurationen (även hemlighetsfiler) utan att röra databasen, och skriver `configuration OK`.
@@ -2260,6 +2455,24 @@ Skriver de testfall en CI-pipeline kör för en ändring: de krav och testfall s
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 | `--variant` | `string` | only tests that apply to this variant |
 
+### `qtestframe stubs`
+
+Skriver genererade kodstubbar för testfall till en katalog (`--out`): en fil per testfall i `--query` (standard `execution_type:automated`) eller `--ids`, för `--framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`, `robot` eller `cucumber`, namngiven efter testnyckeln så att JUnit-resultaten hittar tillbaka och markerad som överhoppad tills den implementeras. En ny generering skapar nya filer, genererar om oförändrade stubbar, uppdaterar bara huvudblocket i implementerade och lämnar filer utan qtestframe-markeringar orörda; `--dry-run` listar vad som skulle ändras. `--mark-script` sätter skriptet för testfall utan skript till stubbens sökväg (se sidan CI/CD i användarhandboken).
+
+| Flagga | Värde | Betydelse |
+|---|---|---|
+| `--dry-run` | — | only print what would be written |
+| `--framework` | `string` | test framework: pytest, playwright, go, junit5, jest, vitest, robot, cucumber |
+| `--ids` | `value` | only these tests (keys or ids; repeatable or comma-separated) |
+| `--mark-script` | — | set the script of tests without one to their stub path (needs test.write) |
+| `--out` | `string` | directory to write the stubs to (default ".") |
+| `--package` | `string` | Go package (default: the name of --out, else tests) or Java package of the stubs |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--query` | `string` | the tests to generate stubs for (query language); "" for all (default "execution_type:automated") |
+| `--script-dir` | `string` | directory of the stubs in the repository for --mark-script (default --out when it is relative) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+
 ### `qtestframe version`
 
 Skriver ut versionen (även `--version`, `-v`).
@@ -2324,3 +2537,61 @@ Tabellerna `exploratory_sessions`, `exploratory_scope` och `exploratory_notes` i
 ## CI/CD-integration
 
 Kvalitetsgrinden, testurvalet och pipelinemallarna (migrering 0053) behöver ingen konfiguration; serverns rapporter av commit-statusar och anteckningar i merge requests till GitLab är en projektinställning med en krypterad token och en utkorg i bakgrunden (`ci_deliveries`, som minutjobbet försöker igen, och som inte säkerhetskopieras). Tokens, roller, jobbtokens begränsningar och utgående anslutningar beskrivs i [E-post, webhooks och integrationer](#e-post-webhooks-och-integrationer); ändringar av inställningarna loggas som `project.ci_settings`.
+
+## Liveuppdateringar
+
+Listor, översikter, notisklockan och öppna objekt uppdateras när någon annan ändrar något, och redigerare visar vem mer som tittar på eller redigerar ett objekt. Webbklienten håller en Server-Sent Events-ström öppen per flik i webbläsaren (`GET /api/v1/events/stream`, se API-referensen `docs/openapi.yaml`); det finns ingen tabell och ingen migrering, allt finns i minnet. Det är på som standard; `live.enabled: false` (eller `QTF_LIVE_ENABLED=false`) stänger av det för servern, och varje användare kan stänga av det i profilen. När det är av, inte går att nå eller avbryts gör klienten som förut: klockan och *Mitt arbete* frågar varje minut, listor läses in när de öppnas, och konfliktkontrollen vid sparande (version, `If-Match`, 412) skyddar fortfarande mot att skriva över.
+
+**Vad som skickas.** En händelse säger att ett objekt har ändrats: entitetstyp, id, projekt, version, åtgärd och vem som gjorde det. Den innehåller aldrig titlar eller innehåll; klienten läser om det den visar genom det vanliga API:et, med dess behörighetskontroller. Varje händelse kontrolleras mot användarens åtkomst till projektet (projektdelning, projektroller) och läsbehörigheten för typen (`requirement.read`, `test.read`, `run.read`, `project.read` för defekter och releaser) innan den skrivs till en ström; händelser av andra typer eller utan projekt skickas inte alls. Notishändelser når bara mottagarna och innehåller inget annat än en signal. Ändringar av projektåtkomst, roller eller medlemmar gör att strömmarna läser om vad användarna får se; varje minut autentiserar en ström om sin begäran, så en återkallad session eller API-token, en avstängd användare eller ett borttaget medlemskap avslutar den. Händelserna kommer från granskningsloggen (varje loggad ändring), efter att begärans transaktion har sparats; en ändring som rullas tillbaka meddelas aldrig.
+
+**Närvaro** (vem som tittar på eller redigerar ett objekt) skickas av webbläsaren var 20:e sekund medan ett objekt är öppet (`POST /api/v1/presence`) och glöms efter `live.presence_ttl` (45 s) utan signal. Den sparas inte och finns inte i granskningsloggen. En användare som har stängt av liveuppdateringar visas inte för andra.
+
+**Flera serverinstanser.** På PostgreSQL utbyter instanserna som delar en databas händelser och närvaro med `LISTEN`/`NOTIFY` på en kanal som är uppkallad efter databasen och schemat (`qtf_live_…`); varje instans håller en extra databasanslutning för att lyssna. En lyssnare som tappar anslutningen ansluter igen med ökande väntetid och ber sina klienter att läsa om. På SQLite finns bara en instans per databasfil, och händelserna stannar i den processen (bara inom processen). Inga klibbiga sessioner behövs: en klient som ansluter till en annan instans fortsätter från sin senaste händelse.
+
+**Återupptagning och gränser.** Varje instans håller de senaste `live.replay_buffer` (512) händelserna; en klient som ansluter igen med `Last-Event-ID` får det den missade, eller läser om när händelsen inte längre finns kvar. Högst `live.max_connections` (2000) strömmar per instans och `live.max_connections_per_user` (8) per användare; fler avvisas med `503` och klienten försöker igen med ökande väntetid (1 s upp till 1 min) och frågar med jämna mellanrum under tiden. En flik i bakgrunden stänger sin ström efter en minut och fortsätter när den visas igen. Kommentarsrader skickas var `live.heartbeat` (25 s) så att proxyer inte stänger strömmar utan händelser. Vid avstängning (`SIGTERM`) avslutas strömmarna direkt, så att de 15 sekunderna för att tömma anslutningar inte fördröjs; klienterna ansluter igen.
+
+**Omvänd proxy.** Strömmen är ett långlivat svar som inte får buffras eller komprimeras. Qtestframe skickar `Content-Type: text/event-stream`, `Cache-Control: no-store, no-transform` och `X-Accel-Buffering: no` (nginx buffrar den då inte ens utan inställningarna nedan). Håll proxyns läs-tidsgräns över `live.heartbeat`. Med nginx:
+
+```nginx
+location /api/v1/events/stream {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_buffering off;
+    proxy_cache off;
+    gzip off;
+    proxy_read_timeout 1h;
+}
+```
+
+Med Traefik (dynamisk konfiguration) behöver strömmen ingen egen router; en komprimerings-middleware måste hoppa över den, och ingångspunktens `respondingTimeouts` måste ligga över `live.heartbeat` (standardvärdena räcker):
+
+```yaml
+http:
+  routers:
+    qtestframe:
+      rule: Host(`qtf.example.com`)
+      service: qtestframe
+      middlewares: [compress-except-stream]
+  middlewares:
+    compress-except-stream:
+      compress:
+        excludedContentTypes: [text/event-stream]
+  services:
+    qtestframe:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:8080
+```
+
+Varje öppen flik är en HTTP-anslutning; över HTTP/1.1 tillåter webbläsare sex per webbplats, så om många flikar är öppna bör webbplatsen använda HTTP/2 (en anslutning för alla strömmar).
+
+## Testmiljöer och testdata
+
+Testmiljöer, deras bokningar och testdatamängder (migrering 0057) behöver ingen konfiguration. Den nya behörigheten `environment.manage` (testledare, förvaltare och administratörer som standard; migreringen lägger till den i sparade testledar- och förvaltarroller som har `run.write`) skapar och ändrar miljöer, godkänner bokningar och visar en miljös hemlighet; för en miljö som delas av organisationen hämtas den från organisationsrollerna, inte från projektroller. Att boka kräver `run.execute` i projektet bokningen gäller; testdatamängder använder `test.read` och `test.write`.
+
+En miljös valfria hemlighet krypteras som de andra sparade hemligheterna (`environments.secret`, krypteras om av `qtestframe secrets rotate`), är endast skrivbar i API:t, utelämnas ur projektarkiv, och varje visning loggas som `environment.secret_reveal`. Använd hellre hänvisningen till inloggningsuppgifterna (en sökväg i ett valv).
+
+Minutjobbet kontrollerar miljöerna som har en adress för hälsokontroll (högst 100 per minut, 8 åt gången, 10 s tidsgräns var) med serverns utgående HTTP-klient: adresserna anges av miljöförvaltare och servern måste kunna nå dem. En misslyckad kontroll markerar en tillgänglig miljö som trasig och en lyckad gör den tillgänglig igen; statusbyten loggas som `environment.health`. Tabellerna `environments`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage` och `test_data_refresh_requests` ingår i säkerhetskopian; ett projektarkiv innehåller projektets egna miljöer med deras bokningar och dess testdatamängder (delade miljöer stannar hos organisationen). Migreringen gör om de olika fritextmiljöerna i varje projekts körningar och cykler till miljöposter och kopplar körningarna, cyklerna och deras slutliga resultat till dem. Nya webhook- och chatthändelser: `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected`, `testdata.refresh_requested`, `testdata.refresh_resolved`.

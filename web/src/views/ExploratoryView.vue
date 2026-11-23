@@ -39,6 +39,9 @@ import { useProjectPeopleStore } from '@/stores/projectPeople'
 import { useAuthStore } from '@/stores/auth'
 import { usePrefsStore } from '@/stores/prefs'
 import { useNotify } from '@/composables/notify'
+import { useEnvironments } from '@/composables/environments'
+import EnvironmentField from '@/components/EnvironmentField.vue'
+import type { BookingInput } from '@/lib/environments'
 import { useI18n } from 'vue-i18n'
 
 const proj = useProjectStore()
@@ -145,6 +148,9 @@ const blank = (): Form => ({
   tests: [],
 })
 const formOpen = ref(false)
+const envs = useEnvironments(() => proj.pid)
+const xsEnv = ref<string | null>(null)
+const xsBooking = ref<BookingInput | null>(null)
 const editing = ref<ExploratorySession | null>(null)
 const form = ref<Form>(blank())
 const formError = ref('')
@@ -163,6 +169,9 @@ const testerOptions = computed(() => [
 function openCreate() {
   editing.value = null
   form.value = blank()
+  xsEnv.value = null
+  xsBooking.value = null
+  void envs.load()
   formError.value = ''
   formOpen.value = true
 }
@@ -177,6 +186,9 @@ function openEdit(x: ExploratorySession) {
     requirements: x.scope.filter((s) => s.type === 'requirement'),
     tests: x.scope.filter((s) => s.type === 'test'),
   }
+  xsEnv.value = x.environment_id ?? null
+  xsBooking.value = null
+  void envs.load()
   formError.value = ''
   formOpen.value = true
 }
@@ -191,12 +203,16 @@ async function save() {
   busy.value = true
   formError.value = ''
   const f = form.value
-  const body = {
+  const body: Record<string, unknown> = {
     title: f.title.trim(),
     mission: f.mission,
     tester: f.tester,
     timebox_minutes: f.timebox_minutes,
     scope: [...f.areas.map((id) => ({ type: 'folder', id })), ...f.requirements.map((s) => ({ type: 'requirement', id: s.id })), ...f.tests.map((s) => ({ type: 'test', id: s.id }))],
+  }
+  if (envs.environments.value.length) {
+    body.environment_id = xsEnv.value ?? ''
+    if (xsEnv.value && xsBooking.value) body.booking = xsBooking.value
   }
   try {
     const x = editing.value
@@ -465,6 +481,9 @@ watch(
             <Select v-model="form.timebox_minutes" input-id="xs-box" :options="timeboxOptions" option-label="label" option-value="value" style="min-width: 120px" />
             <InputNumber v-model="form.timebox_minutes" :min="5" :max="480" :aria-label="t('exploratory.timeboxCustom')" suffix=" min" style="width: 110px" />
           </div>
+        </div>
+        <div v-if="envs.environments.value.length" class="field full">
+          <EnvironmentField v-model="xsEnv" v-model:booking="xsBooking" :environments="envs.environments.value" id-prefix="xs" :can-book="auth.can(P.runExecute)" />
         </div>
         <div v-field class="field full">
           <label for="xs-areas">{{ t('exploratory.areas') }}</label>

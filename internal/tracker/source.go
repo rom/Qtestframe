@@ -63,6 +63,9 @@ type SourceItem struct {
 	// Category is the Jira status category (new, indeterminate, done).
 	Category string
 	Links    []SourceLink
+	// Version is the tracker's version of the item: the Jira "updated"
+	// time, the Azure DevOps revision (two-way sync).
+	Version string
 }
 
 // SourceResult is the outcome of a query.
@@ -264,7 +267,8 @@ func jiraItem(base, key string, fields map[string]json.RawMessage, schemas map[s
 		Parent struct {
 			Key string `json:"key"`
 		} `json:"parent"`
-		Links []struct {
+		Updated string `json:"updated"`
+		Links   []struct {
 			ID   string `json:"id"`
 			Type struct {
 				Name    string `json:"name"`
@@ -278,6 +282,7 @@ func jiraItem(base, key string, fields map[string]json.RawMessage, schemas map[s
 	all, _ := json.Marshal(fields)
 	_ = json.Unmarshal(all, &f)
 	it.Type, it.Category = f.IssueType.Name, f.Status.StatusCategory.Key
+	it.Version = f.Updated
 	if f.Parent.Key != "" {
 		it.Links = append(it.Links, SourceLink{Ref: "parent:" + key, Type: "refines", Name: "Parent", Source: key, Target: f.Parent.Key})
 	}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLiveRefresh } from '@/composables/live'
 import HelpTip from '@/guide/HelpTip.vue'
 import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
 import { defaultValues, type CustomValues } from '@/lib/customFields'
@@ -54,6 +55,9 @@ import { enumOptions } from '@/i18n/labels'
 import HelpLink from '@/guide/HelpLink.vue'
 import VariantSelect from '@/components/VariantSelect.vue'
 import { useVariants } from '@/composables/variants'
+import EnvironmentField from '@/components/EnvironmentField.vue'
+import { useEnvironments } from '@/composables/environments'
+import type { BookingInput } from '@/lib/environments'
 const prefs = usePrefsStore()
 
 const proj = useProjectStore()
@@ -71,8 +75,10 @@ const statuses = ref<string[]>([])
 const queryError = ref<unknown>(null)
 const composed = computed(() => and(q.value, anyOf('status', statuses.value)))
 
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
-  loading.value = true
+  if (!quiet) loading.value = true
   queryError.value = null
   try {
     runs.value = asItems(await api.get<{ items: TestRun[] }>(`/projects/${proj.pid}/runs`, { q: composed.value }))
@@ -83,17 +89,32 @@ async function load() {
     loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ({ types: ['run', 'execution'], projectId: proj.pid }),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  }, { announce: () => t('live.listUpdated') },
+)
 const rel = useReleaseOptions(() => proj.pid)
 const cfg = useConfigurations(() => proj.pid)
 // the variant a new run tests (none: variant-neutral)
 const variants = useVariants(() => proj.pid)
 const runVariant = ref<string | null>(null)
+// the environment item of a new run and a booking of it
+const envs = useEnvironments(() => proj.pid)
+const runEnv = ref<string | null>(null)
+const runBooking = ref<BookingInput | null>(null)
 onMounted(() => {
   load()
   if (auth.can(P.projectRead)) {
     rel.load()
     cfg.load()
     variants.load()
+    envs.load()
   }
 })
 
@@ -115,6 +136,8 @@ function openCreate() {
   const d = new Date()
   form.value = { name: t('runs.defaultName', { date: d.toISOString().slice(0, 10) }), description: '', environment: '', build: '', query: '', release_id: '', configuration_ids: [], custom_fields: defaultValues(proj.customFieldsFor('run')) }
   runVariant.value = null
+  runEnv.value = null
+  runBooking.value = null
   pickedTests.value = []
   folderKeys.value = {}
   folderExpanded.value = allKeys(testFolders.value)
@@ -165,6 +188,8 @@ async function create() {
       ...fields,
       ...(release_id ? { release_id } : {}),
       ...(runVariant.value ? { variant_id: runVariant.value } : {}),
+      ...(runEnv.value ? { environment_id: runEnv.value } : {}),
+      ...(runEnv.value && runBooking.value ? { booking: runBooking.value } : {}),
       test_ids: pickedTests.value.map((t) => t.id),
       folder_ids: selectedFolderIds.value,
     })
@@ -377,7 +402,10 @@ const runLayout = useColumnLayout(
       <Message v-if="createError" severity="error" :closable="false">{{ createError }}</Message>
       <div class="form-grid">
         <div v-field class="field full"><label>{{ t('common.name') }}</label><SuggestInput v-model="form.name" field="run.name" :project-id="proj.pid" autofocus /></div>
-        <div v-field class="field"><label>{{ t('common.environment') }}</label><HelpTip id="run.environment" :label="t('common.environment')" /><InputText v-model="form.environment" :placeholder="t('runs.envPlaceholder')" /></div>
+        <div v-if="envs.environments.value.length" class="field full">
+          <EnvironmentField v-model="runEnv" v-model:booking="runBooking" :environments="envs.environments.value" id-prefix="run" :can-book="auth.can(P.runExecute)" />
+        </div>
+        <div v-else v-field class="field"><label>{{ t('common.environment') }}</label><HelpTip id="run.environment" :label="t('common.environment')" /><InputText v-model="form.environment" :placeholder="t('runs.envPlaceholder')" /></div>
         <div v-field class="field"><label>{{ t('common.build') }}</label><HelpTip id="run.build" :label="t('common.build')" /><InputText v-model="form.build" :placeholder="t('runs.buildPlaceholder')" /></div>
         <div v-if="rel.releases.value.length" v-field class="field full">
           <label for="run-release">{{ t('releasesView.release') }}</label>

@@ -50,6 +50,8 @@ export interface Preferences {
   // --- obligation keyword highlighting ---
   /** do not highlight obligation keywords in requirement texts (default: highlight) */
   hide_obligation_highlight?: boolean
+  /** live updates and presence turned off for this user */
+  live_updates_off?: boolean
   /** autocomplete in free-text fields: '' = on | history | project | off (lib/suggest.ts) */
   autocomplete?: string
 }
@@ -402,6 +404,8 @@ export interface Requirement {
   criteria_count?: number
   /** links to tests that are suspect (changed since the link was confirmed) */
   suspect_links?: number
+  /** keys of the open change requests that propose changes to it */
+  open_change_requests?: string[]
   /** highest level of the open risks it addresses */
   risk_level?: string
   /** open defects linked to it or its tests */
@@ -494,6 +498,8 @@ export interface TestCase {
   called_by?: TestRef[] | null
   /** links to requirements that are suspect */
   suspect_links?: number
+  /** keys of the open change requests that propose changes to it */
+  open_change_requests?: string[]
   /** pass/fail flips among the last results; flaky when at the threshold */
   flakiness?: number
   flaky?: boolean
@@ -596,6 +602,8 @@ export interface TestRun {
   /** the test cycle that created the run */
   cycle_id?: string | null
   cycle_name?: string
+  /** the environment item the run is executed in (environment holds its name) */
+  environment_id?: string | null
 }
 
 export interface StepResult {
@@ -703,6 +711,10 @@ export interface TestDependency {
 }
 
 export interface Execution {
+  /** the environment and its component versions when the result was recorded */
+  environment_id?: string | null
+  environment_name?: string
+  environment_components?: { name: string; version: string }[] | null
   id: string
   run_id: string
   test_case_id: string
@@ -865,6 +877,12 @@ export interface AuditEntry {
   entity_id: string
   details: string
   created_at: string
+  /** reason for change (electronic-records mode) */
+  reason?: string
+  /** place in the hash chain (0: not chained yet) */
+  seq?: number
+  prev_hash?: string
+  hash?: string
 }
 
 export interface ListResponse<T> {
@@ -889,6 +907,8 @@ export interface Meta {
   auto_create_test?: boolean
   /** Whether the server can send e-mail (email section of the configuration). */
   email_enabled?: boolean
+  /** the server streams live updates (live.enabled) */
+  live_updates?: boolean
   /** Hour of the day (UTC) when daily digests are sent. */
   email_digest_hour?: number
   /** Whether the server runs scripts (runner.enabled). */
@@ -1115,6 +1135,8 @@ export interface TenantSettings {
   allow_unmet_dependencies: boolean
   /** true turns off "requirement status follows test results" */
   manual_verification?: boolean
+  /** the optional AI assistance is on for the organisation */
+  ai_enabled?: boolean
 }
 
 // ---------------------------------------------------------------- releases
@@ -1494,6 +1516,8 @@ export interface RequirementVerification {
 /** GET /projects/{pid}/verification */
 export interface ProjectVerification {
   strict: boolean
+  /** the variant of ?variant= */
+  variant?: string
   counts: Record<string, number>
   criteria_verified: number
   criteria_total: number
@@ -1662,6 +1686,8 @@ export interface TestCycle {
   variant_id: string | null
   build_id: string | null
   environment: string
+  /** the environment item (its runs get it too) */
+  environment_id?: string | null
   configuration_ids: string[]
   start_date: string
   end_date: string

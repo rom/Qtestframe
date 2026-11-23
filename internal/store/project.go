@@ -299,6 +299,8 @@ func nextKey(ctx context.Context, c conn, projectID, kind string) (int, string, 
 		col, infix = "risk_seq", "RISK"
 	case model.KindWaiver:
 		col, infix = "waiver_seq", "WVR"
+	case model.KindChangeRequest:
+		col, infix = "cr_seq", "CR"
 	}
 	var seq int
 	var key string

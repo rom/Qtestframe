@@ -534,6 +534,38 @@ Every key of the file, its type, its default and the environment variable that s
 | `similarity.embeddings.api_key_file` | string | — | — | File with the API key, sent as a bearer token (relative: in `$CREDENTIALS_DIRECTORY`). The key can also be stored in the system settings; it is never shown again. |
 | `similarity.embeddings.timeout` | duration | `30s` | — | Longest time to wait for the service. When it fails or times out, the local similarity is used. |
 
+### `live`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `live.enabled` | bool | `true` | `QTF_LIVE_ENABLED` | Live updates and presence: lists, dashboards, the notification bell and open items update when someone else changes something, and editors show who else is viewing or editing an item (a Server-Sent Events stream, `GET /api/v1/events/stream`). Off: the web client falls back to polling and to the conflict check on save. Each user can also turn it off in the profile. Behind a reverse proxy, turn off response buffering for the stream (see *Live updates* in the chapter *Features added later*). |
+| `live.heartbeat` | duration | `25s` | — | Interval of the keep-alive comments on an idle stream. Keep it below the idle timeout of proxies and load balancers (nginx `proxy_read_timeout`, 60 s by default). |
+| `live.max_connections` | integer | `2000` | — | Most open event streams of this server instance; further connections are refused with 503 and the clients poll instead. |
+| `live.max_connections_per_user` | integer | `8` | — | Most open event streams of one user (one per browser tab; a tab in the background closes its stream after a minute). |
+| `live.replay_buffer` | integer | `512` | — | Number of recent events kept in memory so that a client that reconnects (`Last-Event-ID`) receives what it missed; when its last event is no longer kept, it reloads what it shows instead. |
+| `live.presence_ttl` | duration | `45s` | — | How long a user stays listed as viewing or editing an item after the last presence heartbeat of their browser (sent every 20 s). |
+
+### `ai`
+
+| Key | Type | Default | Environment | Description |
+|---|---|---|---|---|
+| `ai.enabled` | bool | `false` | — | Turn on the optional [AI assistance](#ai-assistance) (drafts of tests, improved requirements, run summaries, framework mappings, acceptance criteria). Off by default. **When on, the text of the items a user asks about is sent to the configured service.** Each organisation must also turn it on, and projects can opt out. Also in **Administration → System settings**. |
+| `ai.provider` | string | `anthropic` | — | Type of the service: `anthropic` (the Anthropic Messages API) or `openai` (an OpenAI-compatible chat completions endpoint: OpenAI, Azure OpenAI, or a local server such as Ollama or vLLM). |
+| `ai.url` | string | — | — | Base URL of the service. Empty with `anthropic`: `https://api.anthropic.com`. With `openai` required, e.g. `https://llm.example.com/v1` (the server appends `/chat/completions`); an Azure OpenAI deployment URL with `?api-version=…` sends the key as `api-key`. |
+| `ai.model` | string | — | — | Model id sent to the service (required): the model of your Anthropic account, or the model or deployment of your OpenAI-compatible service. There is no built-in default. |
+| `ai.api_key_file` | string | — | — | File with the API key (relative: in `$CREDENTIALS_DIRECTORY`); sent as `x-api-key` (Anthropic), `Authorization: Bearer` or `api-key` (Azure). The key can also be stored, encrypted, in the system settings; it is never shown again. Local servers may need no key. |
+| `ai.timeout` | duration | `2m` | — | Longest time to wait for one answer (5 s–10 min). The user can also cancel a request. |
+| `ai.max_tokens` | integer | `8192` | — | Most tokens of one answer (256–128000). |
+| `ai.temperature` | string | — | — | Sampling temperature sent to the service (0–2). Empty: not sent (the service's default; some models accept no other value). |
+| `ai.rate_limit` | integer | `30` | — | Most AI requests of one user per hour. |
+| `ai.features.draft_tests` | bool | `true` | — | Offer *Draft tests* in the requirement editor (and drafting a test from a linked requirement in the test editor). |
+| `ai.features.improve_requirement` | bool | `true` | — | Offer *Improve requirement* (a rewrite for the requirement checks, shown as a diff). |
+| `ai.features.summarize_run` | bool | `true` | — | Offer *Summarise failures* on the run page (a summary and defect drafts). |
+| `ai.features.suggest_mappings` | bool | `true` | — | Offer *Suggest mappings* (ATT&CK, D3FEND, EMB3D, CWE) for requirements and risks, checked against the embedded lists. |
+| `ai.features.suggest_criteria` | bool | `true` | — | Offer *Suggest acceptance criteria* in the requirement editor. |
+| `ai.price_input` | string | — | — | Optional price per million input tokens (any currency), to show an estimated cost with each answer. |
+| `ai.price_output` | string | — | — | Optional price per million output tokens. |
+
 <!-- END GENERATED: config-reference -->
 
 ## Environment variables
@@ -553,6 +585,7 @@ Every key of the file, its type, its default and the environment variable that s
 | `QTF_EMAIL_PASSWORD` | the SMTP password; wins over `email.password_file` and a password stored in the web client |
 | `QTF_EMAIL_PORT` | `email.port` (ignored when not a number) |
 | `QTF_EMAIL_USERNAME` | `email.username` |
+| `QTF_LIVE_ENABLED` | `live.enabled` (`1` or `true` = on, anything else = off) |
 | `QTF_LOG_FORMAT` | `logging.format` |
 | `QTF_LOG_LEVEL` | `logging.level` |
 | `QTF_RUNNER_ENABLED` | `runner.enabled` (`1` or `true` = on) |
@@ -833,6 +866,8 @@ These are the permissions of the built-in roles until an organisation changes th
 | `requirement.write` |  |  | ✔ |  |  | ✔ | ✔ |
 | `requirement.review` |  | ✔ | ✔ |  |  | ✔ | ✔ |
 | `waiver.approve` |  |  |  |  |  | ✔ | ✔ |
+| `change.create` |  |  | ✔ |  | ✔ | ✔ | ✔ |
+| `change.approve` |  |  |  |  | ✔ | ✔ | ✔ |
 | `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `test.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `test.review` |  | ✔ |  |  | ✔ | ✔ | ✔ |
@@ -840,6 +875,7 @@ These are the permissions of the built-in roles until an organisation changes th
 | `run.write` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `run.execute` |  |  |  | ✔ | ✔ | ✔ | ✔ |
 | `cycle.plan` |  |  |  |  | ✔ | ✔ | ✔ |
+| `environment.manage` |  |  |  |  | ✔ | ✔ | ✔ |
 | `script.execute` |  |  |  |  | ✔ | ✔ | ✔ |
 | `comment.create` |  | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
@@ -909,7 +945,7 @@ A project is either **organisation-wide** (the default: every member sees it wit
 | any other member, organisation-wide project | the organisation roles |
 | any other member, restricted project | none: the project answers `404` |
 
-Only **project-scoped** permissions come from the project roles (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`, `script.execute`, `export`, `comment.create`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation roles, and an API token is capped by its own roles inside a project as well.
+Only **project-scoped** permissions come from the project roles (`project.read`, `project.update`, `project.delete`, `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`, `environment.manage`, `script.execute`, `export`, `comment.create`). Organisation-level permissions – members, roles, API tokens, the audit log, creating projects – always come from the organisation roles, and an API token is capped by its own roles inside a project as well.
 
 What restriction does **not** hide, so plan accordingly:
 
@@ -1028,6 +1064,22 @@ The settings the page offers, generated from `internal/settings`:
 | Similarity (duplicates) | `similarity.embeddings.model` | text | at once |
 | Similarity (duplicates) | `similarity.embeddings.api_key` | secret (write-only) | at once |
 | Similarity (duplicates) | `similarity.embeddings.timeout` | 1s–5m | at once |
+| AI assistance | `ai.enabled` | on/off | at once |
+| AI assistance | `ai.provider` | `anthropic`, `openai` | at once |
+| AI assistance | `ai.url` | text | at once |
+| AI assistance | `ai.model` | text | at once |
+| AI assistance | `ai.api_key` | secret (write-only) | at once |
+| AI assistance | `ai.timeout` | 5s–10m | at once |
+| AI assistance | `ai.max_tokens` | 256–128000 | at once |
+| AI assistance | `ai.temperature` | text | at once |
+| AI assistance | `ai.rate_limit` | 1–10000 | at once |
+| AI assistance | `ai.features.draft_tests` | on/off | at once |
+| AI assistance | `ai.features.improve_requirement` | on/off | at once |
+| AI assistance | `ai.features.summarize_run` | on/off | at once |
+| AI assistance | `ai.features.suggest_mappings` | on/off | at once |
+| AI assistance | `ai.features.suggest_criteria` | on/off | at once |
+| AI assistance | `ai.price_input` | text | at once |
+| AI assistance | `ai.price_output` | text | at once |
 
 <!-- END GENERATED: system-settings -->
 
@@ -1058,6 +1110,42 @@ Optionally, an **OpenAI-compatible embeddings endpoint** computes the similarity
 **Privacy.** When it is on, the **title, description and acceptance criteria of requirements and the title, description, preconditions and steps of tests are sent to that service**, of every project of every organisation on the server, whenever the similarity checks run or someone types in an editor (the text being written is sent too). Use a service run by your organisation or one you have an agreement with; leave it off otherwise.
 
 The vectors are stored in the table `similarity_embeddings` per item, model and text (a changed item is sent again, an unchanged one is not). It is a cache: it is not part of backups or project archives and is filled again after a restore. Changing the model computes every vector again. **Test the service** on the page sends one short example sentence and reports the vector size. When the service fails or times out, the server logs a warning and uses the local similarity, so the checks never stop working. The conflict detection (opposite obligations, thresholds, exclusive values) always runs on the server. The thresholds of the checks apply to the service's cosine similarity as well; services differ, so check the suspected duplicates after turning it on and adjust the threshold of the duplicate checks if needed.
+
+## AI assistance
+
+Qtestframe can ask a language model service for **suggestions** that users review before anything is saved: drafts of tests for a requirement, an improved wording of a requirement, a summary of a failed run with defect drafts, framework mappings (ATT&CK, D3FEND, EMB3D, CWE) and acceptance criteria (see the user guide, *AI assistance*). It is **off by default** and needs three switches:
+
+1. **Administration → System settings → AI assistance** (or `ai` in the [configuration file](#reference)): the service and `ai.enabled`.
+2. **Administration → AI assistance**: the switch of the organisation (`settings.manage`).
+3. Each project can opt out: **Settings → General → AI assistance** (`project.update`).
+
+| Setting | Meaning |
+|---|---|
+| `ai.provider` | `anthropic`: the Anthropic Messages API (`POST {url}/v1/messages`, key as `x-api-key`). `openai`: an OpenAI-compatible chat completions endpoint (`POST {url}/chat/completions`, key as `Authorization: Bearer`; an Azure OpenAI deployment URL with `?api-version=…` sends it as `api-key`): OpenAI, Azure OpenAI, or a local server such as Ollama or vLLM |
+| `ai.url` | base URL; empty with `anthropic` means `https://api.anthropic.com`; required with `openai`, e.g. `https://llm.example.com/v1` |
+| `ai.model` | the model id (required; there is no built-in default): the model of your Anthropic account, or your model or deployment for `openai` |
+| `ai.api_key` | write-only, stored [encrypted](#encryption-of-stored-secrets); in the file only as `api_key_file`; may stay empty for a local server |
+| `ai.timeout`, `ai.max_tokens`, `ai.temperature` | the longest wait for an answer (default 2 min), the most tokens of an answer (default 8192), the temperature (empty: not sent) |
+| `ai.rate_limit` | AI requests per user and hour (default 30) |
+| `ai.features.*` | turn single features off |
+| `ai.price_input`, `ai.price_output` | optional prices per million tokens: each answer then shows an estimated cost |
+
+**Test the service** on the page sends a fixed short sentence (no item data) and reports the model and the tokens used.
+
+**Data flow and privacy.** Nothing is sent until a user clicks an *Assist* action. The server then sends **only the items of that action** to the service, from the server's network:
+
+| Action | Sent to the service |
+|---|---|
+| Draft tests, Suggest acceptance criteria | key, title, description, type, obligation, rationale and acceptance criteria of the requirement (the editor's current text) |
+| Improve requirement | the same, plus the findings of the requirement checks |
+| Summarise failures | name, status, environment and build of the run; key, title, notes, error output (the last 3000 characters) and failed steps of up to 40 failed or blocked executions; key, title, status and severity of the defects linked to the run |
+| Suggest mappings | key, title, description (risks: category and mitigation) and the ids already mapped |
+
+Users see a notice that the text is sent before they start. Use a service run by your organisation or one you have an agreement with that covers this data (retention, training, location). A local server (Ollama, vLLM) keeps everything on your network.
+
+**Safety.** The service gets no tools and nothing it answers is executed. The item text is sent as JSON between `<item_data>` tags and the instructions tell the model to treat it as data (JSON escapes `<` and `>`, so an item cannot close the tag). Answers must be one JSON object of a fixed schema; the server checks it strictly, asks once more when it does not match, and drops what it cannot verify (framework ids that are not in the embedded lists, criteria that already exist, tests outside the run). The rewrite of a requirement is checked again with the requirement checks on the server, which reports the findings it really fixes. No service call runs inside a database transaction, and a user can cancel a request at any time.
+
+**Audit.** Every request is written to the audit log as `ai.request` with the feature, the user, the item ids, the provider and model, the prompt version, the tokens, the duration and the outcome (`ok`, `cancelled`, `ai_refused`, `ai_invalid_answer`, `ai_service`, `ai_timeout`) — never the content. The prompts are embedded in the binary and versioned (`prompt_version` in each answer and audit entry). Changes of the organisation switch are audited as `settings.update`, the project opt-out as `project.ai_settings`, the test button as `settings.test_ai`.
 
 ## Audit and export
 
@@ -1165,7 +1253,7 @@ The server must read some secrets back, so it cannot hash them. These are stored
 | webhook signing secrets | `webhooks.secret` |
 | defect tracker tokens (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | values of secret web test variables | `projects.web_tests` |
-| SMTP password, OIDC client secrets and the key of the embeddings service entered in the web client | `system_settings` |
+| SMTP password, OIDC client secrets and the keys of the embeddings and AI services entered in the web client | `system_settings` |
 
 Passwords (bcrypt), API and SCIM tokens, sessions, invitations, remembered devices and recovery codes are stored as hashes and need no key. Secrets of the configuration file, `*_file` options and `QTF_*` variables are never stored in the database.
 
@@ -1272,7 +1360,58 @@ The same applies, in a weaker form, to HSM keys (use the HSM's own key backup) a
 
 Every organisation has an audit log (**Administration → Audit log**, permission `audit.read`, API `GET /api/v1/audit`, newest first, up to 5000 entries per request): who (user id and e-mail, or `SCIM: <token>`, or `cli`), what (`action`, entity, short details) and when. Recorded are sign-ins (with the method, and `mfa=…`, `amr`/`acr` for single sign-on), changes of projects, items, runs, members, roles, tokens, sharing, organisations and users, exports, backups and restores (`admin.backup`, `admin.restore`), MFA resets and policy changes, and system settings (`settings.update`). Old and new values of items are kept in the item history, not in the audit log; the client address is in the request log, not in the audit entry.
 
-Each audit entry is also written as an INFO log record `audit`. Ship the log to a central syslog server (see [Logging](#central-syslog)), so the trail survives a compromise of the host. Failed sign-ins appear in the server log (`login failed`) and in the user's sign-in history, not in the audit log. The audit log is part of a backup.
+Each audit entry is also written as an INFO log record `audit`. Ship the log to a central syslog server (see [Logging](#central-syslog)), so the trail survives a compromise of the host. Failed sign-ins appear in the server log (`login failed`) and in the user's sign-in history, not in the audit log. The audit log is part of a backup. Entries also record the reason for change given in electronic-records mode (`reason`).
+
+### Tamper-evident audit trail
+
+The audit log of each organisation is a **hash chain** (the system entries of the command line, such as `admin.backup`, have their own chain). Every entry gets a sequence number (`seq`, 1, 2, …), the hash of the entry before it (`prev_hash`) and its own hash: SHA-256 over a canonical encoding of its fields (organisation, sequence number, id, UTC time to the microsecond, user, action, entity, details, reason for change) and the previous hash. The exact encoding is in `docs/api.md` ("Tamper-evident audit trail"), so an export can be checked with other tools.
+
+- **How entries are chained.** An entry is written in the transaction of the change it records (a rolled-back change leaves no entry) and chained right after that transaction commits, in a short transaction of its own that holds the organisation's row in `audit_heads` (PostgreSQL: `SELECT … FOR UPDATE`). So appends of one organisation are serialised without a lock during the request, and several server processes can share the database. Until it is chained (normally milliseconds) an entry shows `seq` 0; entries left unchained by a process that stopped are chained by the next entry or the next start.
+- **Signed checkpoints.** Every 1 000 entries, at least hourly while entries are written, and at every verification and export, the server writes a checkpoint: an HMAC-SHA256 over the organisation, a sequence number and that entry's hash, with a 256-bit key in `audit_keys` that is **encrypted like the other stored secrets** (see [Encryption of stored secrets](#encryption-of-stored-secrets)). Someone who can change the database but not read the server's key (the key file, TPM or HSM) can recompute hashes, but cannot forge checkpoints: rewriting the chain or removing entries before the newest checkpoint is detected. Entries after the newest checkpoint can be removed undetected by such an attacker; the central syslog copy and regular exports close that gap. Without a key provider the checkpoint key is stored as plaintext and the verification says so.
+- **What it detects**, with the first broken link: a changed entry (`entry_changed`), a removed, replaced or reordered entry (`link_broken`, `sequence_gap`), entries removed at the end (`truncated`, against the recorded end of the chain and the checkpoints), a rewritten chain (`checkpoint_mismatch`) and a forged checkpoint (`checkpoint_signature`). It does **not** prevent changes: a database administrator can still change or delete rows; the chain makes it evident. Anyone with the server's key and the database can rewrite everything – protect the key and the hosts accordingly.
+- **Verify** under **Administration → Audit log → Verify audit trail** (permission `audit.read`, `POST /api/v1/audit/verify`), or on the server:
+
+  ```sh
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml            # every organisation; exit 1 when broken
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml --tenant acme --json
+  ```
+
+  Run it from a timer and alert on exit status 1. 100 000 entries verify in about a second (SQLite and PostgreSQL on a laptop); the first chaining after the upgrade chains 100 000 entries in 2–4 seconds.
+- **Export for external archiving**: **Export with hashes (JSON / CSV)** (`GET /api/v1/audit/archive?format=json|csv`) gives the whole chain with sequence numbers and hashes; JSON also has the checkpoints and the end of the chain. `qtestframe audit verify --file EXPORT.json` checks an export without the database (entries, links, end, checkpoint hashes; the checkpoint signatures need the server key). Keep exports on write-once storage to extend the protection beyond the newest checkpoint.
+- **After the upgrade** (migration 0055) the existing entries of each organisation are chained at the first start: the chain begins with an `audit.chain_start` entry that says how many earlier entries follow and when they were chained. The chain proves that those entries were not changed **after** that moment, not before.
+
+The chain in backups, restores and project archives is described in [Backup, restore and migration](#the-audit-trail-in-backups).
+
+## Electronic-records mode (21 CFR Part 11 / EU GMP Annex 11)
+
+An organisation setting under **Administration → Electronic records** (change: `tenant.manage`; read and report: `audit.read`; `GET`/`PUT /api/v1/erecords`), **off by default**. When it is on, the server enforces:
+
+| Control | What the server does |
+|---|---|
+| Re-authentication at every signature | Baseline sign-offs, waiver decisions, risk acceptance, sign-offs of verification records and the actions below need the signer's **password** and, when the signer has a second factor, a **current code** (a recovery code works too). Accounts without a password here (single sign-on) sign within *SSO signing window* minutes (default 5) of signing in at the identity provider, plus the code when they have a second factor here. API tokens cannot sign. Failed attempts are rate-limited. |
+| Meaning of the signature | The signer chooses a meaning from the organisation's list (default authored, reviewed, approved, verified, released; up to 20, your own words allowed). |
+| Manifestation | Every signature records the printed name, e-mail, UTC time, the signer's time zone, the meaning, the method (`password`, `password+mfa`, `sso`, `sso+mfa`) and the hash of the record version signed; signed records show this, and a later change of the record shows *Record changed after signing*. |
+| Actions that need a signature | Chosen from: requirement approval (status → approved, also by bulk change, spreadsheet and bulk review), test approval (status → ready), release go (status → released), baseline creation. Enforced on every route that performs them; without a signature the request answers 428 `signature_required`. |
+| Reason for change | Chosen kinds of change (requirement, test, run, execution, release, baseline, risk, waiver and verification-record changes and deletions) need a reason, recorded in the audit entries of the change. |
+| Inactivity timeout | Browser sessions end after *Sign out after inactivity* minutes (1–480, default 15) without requests; the client's own polling does not count. |
+
+The settings are cached for up to 5 seconds per server process. Signatures given in the dialogs that existed before (baseline sign-offs, waiver decisions, risk acceptance) are recorded with their manifestation in every mode.
+
+**Part 11 / Annex 11 controls report.** **Create report** on the same page (`GET /api/v1/erecords/report`, `?format=md` for Markdown) lists every control with its references, who covers it (*tool*, *tool and procedures*, *your procedures*), its status here and the evidence (settings, a fresh verification of the audit trail, signature counts, multi-factor use).
+
+### What the tool provides – and what your procedures must cover
+
+Qtestframe provides technical controls. It is **not** "Part 11 compliant" by itself, and no setting makes it so: compliance is a property of the validated system in use, its procedures and its people.
+
+| The tool provides | Your procedures must cover |
+|---|---|
+| A computer-generated, time-stamped, tamper-evident audit trail with verification and export | Validation of the installed version for its intended use (and after upgrades); review of audit trails as part of record review; periodic verification and archiving of exports |
+| Signatures with re-authentication, meaning, manifestation and linking to the record version | A written policy that electronic signatures are binding, and the certification to the FDA (§11.100(c)); deciding which records need which signatures and when re-signing is needed |
+| Role-based access, multi-factor authentication, session expiry and an inactivity timeout | Identity checks before an account is created, never reusing accounts, access reviews, leaver processes, password ageing and loss management (or your identity provider's) |
+| Backups that keep the chain valid; exports in open formats | Backup schedule, restore tests, retention periods, business continuity and disaster recovery |
+| Documentation of each version | Training, change control of the installation and its configuration, supplier assessment |
+
+Time stamps come from the server clock: keep it synchronised (NTP).
 
 ## Security headers and CSP
 
@@ -1295,7 +1434,7 @@ Other limits: JSON bodies at most 8 MiB, headers 1 MiB, `ReadHeaderTimeout` 10 s
 
 ## Outgoing connections
 
-Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. When the optional [embeddings service](#embeddings-service-for-similar-items) is on, the server sends the text of requirements and tests to it. Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
+Project administrators (`project.update`) choose the URLs of trackers and webhooks, and script authors (`script.execute`) the targets of web tests; super administrators can make the server connect to addresses with the test buttons of the system settings. When the optional [embeddings service](#embeddings-service-for-similar-items) is on, the server sends the text of requirements and tests to it; when the optional [AI assistance](#ai-assistance) is on, it sends the items a user asks about to the AI service (each request is audited as `ai.request`). Every such request leaves from the server's network. If the server can reach internal services, filter its egress with a firewall or proxy (`deploy/nftables` has an optional egress policy). Webhook deliveries never follow redirects.
 
 ## Checklist
 
@@ -1362,6 +1501,9 @@ Projects can send signed events to other systems. Users with `project.update` se
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
+| change_request | `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented`, `change_request.closed` |
+| environment | `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected` |
+| testdata | `testdata.refresh_requested`, `testdata.refresh_resolved` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -1390,12 +1532,13 @@ Projects can post their events to chat channels: Slack, Microsoft Teams, Matterm
 
 | Group | Events |
 |---|---|
-| Test runs | `run.created` (Test run created), `run.updated` (Test run updated), `run.completed` (Test run completed), `execution.updated` (Test result recorded) |
+| Test runs | `run.created` (Test run created), `run.updated` (Test run updated), `run.completed` (Test run completed), `execution.updated` (Test result recorded), `environment.status_changed` (Environment status changed), `environment.booking_requested` (Environment booking requested), `environment.booking_approved` (Environment booking approved), `environment.booking_rejected` (Environment booking rejected), `testdata.refresh_requested` (Test data refresh requested), `testdata.refresh_resolved` (Test data refresh request closed) |
 | Defects | `defect.created` (Defect reported), `defect.updated` (Defect updated), `defect.status` (Defect status changed), `defect.assigned` (Defect assigned), `defect.regression` (Regression detected) |
 | Requirements and tests | `requirement.created` (Requirement created), `requirement.updated` (Requirement updated), `test.created` (Test created), `test.updated` (Test updated), `comment.created` (New comment), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baseline signed) |
 | Reviews | `review.requested` (Review requested), `review.completed` (Review completed) |
 | Releases | `release.created` (Release created), `release.updated` (Release updated), `release.released` (Release released) |
 | Waivers | `waiver.requested` (Waiver requested), `waiver.approved` (Waiver approved), `waiver.rejected` (Waiver rejected), `waiver.revoked` (Waiver revoked) |
+| Change requests | `change_request.submitted` (Change request submitted), `change_request.review` (Change request to decide), `change_request.approved` (Change request approved), `change_request.rejected` (Change request rejected), `change_request.deferred` (Change request deferred), `change_request.implemented` (Change request implemented), `change_request.closed` (Change request closed) |
 | Risks | `risk.created` (Risk identified), `risk.updated` (Risk updated) |
 
 <!-- END GENERATED: chat-events -->
@@ -1449,6 +1592,31 @@ Users with `requirement.write` import requirements from a Jira JQL query or an A
 | Azure DevOps Server | the collection URL, e.g. `https://tfs.example.com/tfs/DefaultCollection` | personal access token | as above |
 
 Jira is searched with `POST /rest/api/2/search/jql` (Jira Cloud) and, when that does not exist, `POST /rest/api/2/search` (Server and Data Center); Azure DevOps with the WIQL, fields and work items endpoints of REST API 7.1. At most 1,000 items are read per import. The import only reads; it is audited as `requirement.import`, the connection changes as `import_sources.update`. Tokens are encrypted with the server's secret keys (they are re-encrypted by key rotation), never returned, and left out of project archives. The import is reached through the server's outbound proxy (`HTTPS_PROXY`, `NO_PROXY`) like the trackers; allow the hosts above in a firewall.
+
+### Two-way sync
+
+The two-way sync (migration 0060, [user guide](https://github.com/rom/Qtestframe/blob/rom/docs/user-guide/en/reports-and-export.md#two-way-sync-with-jira-and-azure-devops)) uses the same connections and writes to the tracker, so its token needs more than reading:
+
+| Source | Needed for the sync |
+|---|---|
+| Jira Cloud, Server, Data Center | *Browse projects*, *Edit issues*, *Transition issues*; *Create issues* to push new requirements, *Add comments* for comments, *Link issues* for links |
+| Azure DevOps | personal access token with the scope *Work Items (Read & write)* |
+
+Users with `project.update` change the settings (**Tracker sync → Settings**), users with `requirement.write` run a sync, preview it and decide conflicts; everyone who can read the project sees the overview and the log. Scheduled and webhook syncs run as the account that saved the settings last (`req_sync_configs.run_as`), with its current roles and project access: an account that loses `requirement.write` or the project stops the sync (logged as failed). Changes pulled from the tracker go through the regular requirement update (permissions, review rules, history, audit log, optimistic locking) with the impact choice of the configuration.
+
+**Background job and limits.** The minute job runs the syncs that are due (`interval_minutes`, 0 = no schedule). A run holds a lease in the database (`lease_until`, 15 minutes), so with several servers only one runs a configuration at a time. A failing run doubles the wait per consecutive failure (at most a day); a tracker answering 429 is retried by the client after a short `Retry-After`, otherwise the run stops and the next one waits at least as long as asked. Writes are spaced by *Writes per minute* (default 60) and limited to 500 per run. At most 1,000 items are read per query, plus the linked items the query no longer finds (Jira: one request per item; Azure DevOps: in batches of 200).
+
+**Webhooks.** The receivers are public endpoints; the shared secret (16–200 characters, encrypted in `req_sync_configs.webhook_secret`, write-only, re-encrypted by key rotation) is the credential. Each call is answered with 202 and the sync of the named items runs in the background; calls for one configuration are coalesced. At most 600 calls per project and minute are accepted.
+
+| Tracker | URL | Configure |
+|---|---|---|
+| Jira Cloud | `<base_url>/api/v1/hooks/req-sync/jira/<project id>` | **System → WebHooks**: events *Issue created*, *Issue updated*, *Comment created*; the secret in the webhook's *Secret* field (the body is signed, header `X-Hub-Signature: sha256=…`). |
+| Jira Server / Data Center | the same URL with `?secret=<secret>` | **System → WebHooks** (no secret field there, so the secret goes in the URL: use HTTPS). |
+| Azure DevOps | `<base_url>/api/v1/hooks/req-sync/azure-devops/<project id>` | **Project settings → Service hooks → Web Hooks**: *Work item created*, *Work item updated*, *Work item commented on*; *Basic authentication* with any user name and the secret as the password. |
+
+The header `X-Qtestframe-Secret: <secret>` is accepted from both. The tracker must reach `server.base_url`; open the firewall for it, or rely on the schedule.
+
+**Data.** The sync state of each linked requirement is kept with its external reference (`external_refs`: the tracker's version, hashes and values of both sides after the last sync). `req_sync_configs` and `req_sync_conflicts` are part of the backup; `req_sync_runs` (the log, the newest 100 runs per project and source) is not. Project archives leave out all three (the secret and the account); a loaded project has to be set up again. Audit actions: `req_sync.update` (settings), `req_sync.run` (each run with its counts), `requirement.sync.push` and `requirement.sync.create` (changes to the tracker), `req_sync.conflict.resolve` and `req_sync.conflict.closed`, besides the usual `requirement.update`, `requirement.create` and `relation.create` of the changes made here.
 
 ## CI/CD pipelines (GitLab, GitHub Actions)
 
@@ -1736,9 +1904,9 @@ A backup without the key is useless for the encrypted secrets; a backup together
 
 <!-- BEGIN GENERATED: backup-tables (make admin-guide-ref) -->
 
-**In a backup** (94 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`.
+**In a backup** (115 tables, in restore order): `tenants`, `users`, `memberships`, `api_tokens`, `projects`, `configurations`, `environments`, `releases`, `folders`, `categories`, `requirements`, `requirement_categories`, `evaluation_criteria`, `test_cases`, `test_steps`, `test_case_categories`, `trace_links`, `variants`, `builds`, `test_cycles`, `test_cycle_tests`, `test_runs`, `run_configurations`, `test_executions`, `execution_iterations`, `step_results`, `audit_log`, `revisions`, `requirement_relations`, `baselines`, `baseline_items`, `comments`, `files`, `file_blobs`, `attachments`, `report_definitions`, `login_events`, `roles`, `test_dependencies`, `trash`, `item_links`, `release_requirements`, `defects`, `defect_links`, `risks`, `risk_requirements`, `notifications`, `webhooks`, `review_requests`, `baseline_signoffs`, `scim_tokens`, `scim_settings`, `scim_users`, `scim_groups`, `scim_group_members`, `metric_snapshots`, `trace_rules`, `document_items`, `defect_regressions`, `consistency_dismissals`, `invitations`, `report_subscriptions`, `user_mfa`, `mfa_recovery_codes`, `mfa_policies`, `project_members`, `waivers`, `waiver_requirements`, `waiver_signoffs`, `soa_decisions`, `system_settings`, `external_refs`, `link_criteria`, `system_elements`, `requirement_elements`, `test_elements`, `verification_settings`, `verification_records`, `verification_record_files`, `item_applicability`, `code_changes`, `code_change_items`, `code_settings`, `custom_fields`, `field_set_fields`, `custom_field_archive`, `item_templates`, `org_item_templates`, `project_template_defaults`, `exploratory_sessions`, `exploratory_scope`, `exploratory_notes`, `test_cycle_schedules`, `secret_keys`, `chat_channels`, `change_control_settings`, `change_requests`, `change_request_items`, `change_request_signoffs`, `change_request_events`, `req_sync_configs`, `req_sync_conflicts`, `dashboards`, `dashboard_defaults`, `audit_heads`, `audit_checkpoints`, `audit_keys`, `audit_backfill`, `erecords_settings`, `esignatures`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage`, `test_data_refresh_requests`.
 
-**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
+**Not in a backup:** `chat_deliveries`, `ci_deliveries`, `esign_tickets`, `job_runs`, `mfa_challenges`, `mfa_trusted_devices`, `req_sync_runs`, `schema_migrations`, `script_jobs`, `sessions`, `similarity_embeddings`, `suggest_history`.
 
 <!-- END GENERATED: backup-tables -->
 
@@ -1794,6 +1962,15 @@ A restore is refused, and nothing is changed, when:
 The system settings of the backup apply at once. After a restore, check `qtestframe secrets status` and sign in.
 
 To recover a single item, use its history in the web client; to move one project, see below.
+
+## The audit trail in backups
+
+The hash chain of the audit trail (see [Tamper-evident audit trail](#tamper-evident-audit-trail)) survives backups and restores, also between SQLite and PostgreSQL:
+
+- A **backup** is a consistent snapshot of the entries, the recorded ends of the chains (`audit_heads`), the signed checkpoints and their key (`audit_keys`, encrypted with the backed-up data keys), so the restored chain verifies like the original. Times are kept to the microsecond, which both databases store.
+- A **restore** replaces the chain with the backup's: entries written after the backup are gone, together with the checkpoints written after it, so the restored chain is intact; the restore itself (`admin.restore`) is the next entry. Keep the audit-trail exports of the time between the backup and the restore if you must prove what happened then. Verify after a restore: `qtestframe audit verify`.
+- Restoring into an installation with another key fails as for every encrypted secret; the checkpoint key cannot be read without the backup's key.
+- **Project archives** (below) never contain the audit trail or the electronic signatures: they belong to the organisation. Saving, loading, duplicating or deleting a project only adds entries to the chain; nothing is removed from it. Electronic signatures are kept when their project is deleted.
 
 ## Upgrading
 
@@ -1864,6 +2041,13 @@ The database schema is created and upgraded by numbered migrations embedded in t
 | 51 | `0051_frameworks.sql` |
 | 52 | `0052_multiple_roles.sql` |
 | 53 | `0053_ci_integration.sql` |
+| 54 | `0054_change_requests.sql` |
+| 55 | `0055_audit_chain_erecords.sql` |
+| 57 | `0057_environments.sql` |
+| 59 | `0059_dashboards.sql` |
+| 60 | `0060_req_sync.sql` |
+| 61 | `0061_ai_assistance.sql` |
+| 62 | `0062_project_logo.sql` |
 
 <!-- END GENERATED: migrations -->
 
@@ -2142,6 +2326,17 @@ Stores every secret as plaintext again (before a downgrade). Needs `--yes`.
 
 Prints a new random 256-bit key (base64) for `QTF_SECRETS_KEY` or a key file.
 
+### `qtestframe audit verify`
+
+Verifies the hash chain of the audit trail: every entry's hash, the links between entries, the sequence, the recorded end of the chain and the signed checkpoints (with `--tenant` one organisation, otherwise every organisation and the system entries). Exit `0` when intact, `1` at the first broken link (printed with its entry). `--file EXPORT.json` checks an export (Administration → Audit trail → Export with hashes) without the database; the signatures of its checkpoints need the server's key and are only checked against the database.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--file` | `string` | verify an exported audit trail (JSON) instead of the database |
+| `--json` | — | print the result as JSON |
+| `--tenant` | `string` | organisation (slug); default every organisation |
+
 ### `qtestframe check-config`
 
 Loads and validates the configuration (secret files included) without touching the database, and prints `configuration OK`.
@@ -2260,6 +2455,24 @@ Prints the tests a CI pipeline runs for a change: the requirements and tests tha
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 | `--variant` | `string` | only tests that apply to this variant |
 
+### `qtestframe stubs`
+
+Writes generated test code stubs into a directory (`--out`): one file per test of `--query` (default `execution_type:automated`) or `--ids`, for `--framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`, `robot` or `cucumber`, named after the test key so that JUnit results map back, and marked as skipped until implemented. Generating again creates new files, regenerates unchanged stubs, only updates the header block of implemented ones and leaves files without qtestframe markers alone; `--dry-run` lists what would change. `--mark-script` sets the script of tests without one to their stub path (see the user guide page CI/CD).
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--dry-run` | — | only print what would be written |
+| `--framework` | `string` | test framework: pytest, playwright, go, junit5, jest, vitest, robot, cucumber |
+| `--ids` | `value` | only these tests (keys or ids; repeatable or comma-separated) |
+| `--mark-script` | — | set the script of tests without one to their stub path (needs test.write) |
+| `--out` | `string` | directory to write the stubs to (default ".") |
+| `--package` | `string` | Go package (default: the name of --out, else tests) or Java package of the stubs |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--query` | `string` | the tests to generate stubs for (query language); "" for all (default "execution_type:automated") |
+| `--script-dir` | `string` | directory of the stubs in the repository for --mark-script (default --out when it is relative) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
+
 ### `qtestframe version`
 
 Prints the version (also `--version`, `-v`).
@@ -2324,3 +2537,61 @@ The tables `exploratory_sessions`, `exploratory_scope` and `exploratory_notes` a
 ## CI/CD integration
 
 The quality gate, the test selection and the pipeline templates (migration 0053) need no configuration; the server-side posting of GitLab commit statuses and merge request notes is a project setting with an encrypted token and a background outbox (`ci_deliveries`, retried by the minute job, not backed up). Tokens, roles, the job token's limits and outgoing connections are described in [E-mail, webhooks and integrations](#e-mail-webhooks-and-integrations); changes of the settings are audited as `project.ci_settings`.
+
+## Live updates
+
+Lists, dashboards, the notification bell and open items update when someone else changes something, and editors show who else is viewing or editing an item. The web client keeps one Server-Sent Events stream per browser tab open (`GET /api/v1/events/stream`, see the API reference `docs/openapi.yaml`); there is no table and no migration, everything is in memory. It is on by default; `live.enabled: false` (or `QTF_LIVE_ENABLED=false`) turns it off for the server, and every user can turn it off in the profile. When it is off, unavailable or interrupted, the client falls back to what it did before: the bell and *My work* poll every minute, lists reload when they are opened, and the conflict check on save (version, `If-Match`, 412) still protects against overwriting.
+
+**What is sent.** An event says that an item changed: entity type, id, project, version, action and who did it. It never carries titles or content; the client reloads what it shows through the regular API, with its permission checks. Every event is checked against the user's access to its project (project sharing, project roles) and the read permission of its type (`requirement.read`, `test.read`, `run.read`, `project.read` for defects and releases) before it is written to a stream; events of other types or without a project are not sent at all. Notification events reach only their recipients and carry nothing but a ping. Changes of project access, roles or members make the streams re-read what their users may see; every minute a stream re-authenticates its request, so a revoked session or API token, a disabled user or a removed membership ends it. The events come from the audit trail (every audited change), after the request's transaction is committed; a change that is rolled back is never announced.
+
+**Presence** (who is viewing or editing an item) is sent by the browser every 20 s while an item is open (`POST /api/v1/presence`) and forgotten after `live.presence_ttl` (45 s) without a heartbeat. It is not stored and not in the audit log. A user who turned live updates off is not shown to others.
+
+**Several server instances.** On PostgreSQL the instances that share a database exchange events and presence with `LISTEN`/`NOTIFY` on a channel named after the database and schema (`qtf_live_…`); each instance keeps one extra database connection for listening. A listener that loses its connection reconnects with backoff and tells its clients to reload. On SQLite there is only one instance per database file, and events stay in that process (in-process fan-out only). No sticky sessions are needed: a client that reconnects to another instance resumes from its last event.
+
+**Resume and limits.** Each instance keeps the last `live.replay_buffer` (512) events; a client that reconnects with `Last-Event-ID` receives what it missed, or reloads when that event is no longer kept. At most `live.max_connections` (2000) streams per instance and `live.max_connections_per_user` (8) per user; more are refused with `503` and the client retries with backoff (1 s up to 1 min) and polls meanwhile. A tab in the background closes its stream after a minute and resumes when it is shown again. Comment lines are sent every `live.heartbeat` (25 s) so that proxies do not close idle streams. On shutdown (`SIGTERM`) the streams are ended at once, so the 15 s drain is not held up; the clients reconnect.
+
+**Reverse proxy.** The stream is a long-lived response that must not be buffered or compressed. Qtestframe sends `Content-Type: text/event-stream`, `Cache-Control: no-store, no-transform` and `X-Accel-Buffering: no` (nginx then does not buffer it even without the settings below). Keep the proxy's read timeout above `live.heartbeat`. With nginx:
+
+```nginx
+location /api/v1/events/stream {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_buffering off;
+    proxy_cache off;
+    gzip off;
+    proxy_read_timeout 1h;
+}
+```
+
+With Traefik (dynamic configuration) the stream needs no router of its own; a compression middleware must leave it out, and the entry point's `respondingTimeouts` must stay above `live.heartbeat` (the defaults are fine):
+
+```yaml
+http:
+  routers:
+    qtestframe:
+      rule: Host(`qtf.example.com`)
+      service: qtestframe
+      middlewares: [compress-except-stream]
+  middlewares:
+    compress-except-stream:
+      compress:
+        excludedContentTypes: [text/event-stream]
+  services:
+    qtestframe:
+      loadBalancer:
+        servers:
+          - url: http://127.0.0.1:8080
+```
+
+Each open tab is one HTTP connection; over HTTP/1.1 browsers allow six per site, so with many tabs open serve the site over HTTP/2 (one connection for all streams).
+
+## Test environments and test data
+
+Test environments, their bookings and test data sets (migration 0057) need no configuration. The new permission `environment.manage` (test leads, managers and administrators by default; the migration adds it to stored test lead and manager roles that hold `run.write`) creates and changes environments, approves bookings and reveals an environment's secret; for an environment shared by the organisation it is taken from the organisation roles, not from project roles. Booking needs `run.execute` in the project the booking is for; test data sets use `test.read` and `test.write`.
+
+An environment's optional secret is encrypted like the other stored secrets (`environments.secret`, re-encrypted by `qtestframe secrets rotate`), write-only in the API, left out of project archives, and every reveal is audited as `environment.secret_reveal`. Prefer the credentials reference (a vault path).
+
+The minute job checks the environments that have a health check URL (at most 100 per minute, 8 at a time, 10 s timeout each) with the server's outgoing HTTP client: the URLs are entered by environment managers and the server must be able to reach them. A failing check marks an available environment broken and a passing one makes it available again; status changes are audited as `environment.health`. The tables `environments`, `environment_bookings`, `test_data_sets`, `test_data_links`, `test_data_usage` and `test_data_refresh_requests` are part of the backup; a project archive holds the project's own environments with their bookings and its test data sets (shared environments stay with the organisation). The migration turns the distinct free-text environments of each project's runs and cycles into environment items and links the runs, cycles and their final results to them. New webhook and chat events: `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected`, `testdata.refresh_requested`, `testdata.refresh_resolved`.

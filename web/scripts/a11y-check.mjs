@@ -103,6 +103,35 @@ async function api(request, method, path, body, csrf) {
 }
 const items = (x) => (Array.isArray(x) ? x : (x?.items ?? []))
 
+// ---- live updates: a second user on the item (presence) who saves a newer
+// version while the page is open (the notice in the editor; route
+// requirement-live) ----
+const LIVE_EMAIL = 'a11y.live@example.com'
+const LIVE_PASSWORD = 'A11y-live-check-2468'
+let liveUser = null
+
+/** Creates the second user (once) and signs it in, in a context of its own. */
+async function setupLiveUser(browser, request, csrf) {
+  if (!items(await api(request, 'GET', '/members')).some((x) => x.email === LIVE_EMAIL)) {
+    await api(request, 'POST', '/members', { email: LIVE_EMAIL, role: 'manager', display_name: 'Lena Live', password: LIVE_PASSWORD }, csrf)
+  }
+  const ctx = await browser.newContext()
+  const me = await api(ctx.request, 'POST', '/auth/login', { email: LIVE_EMAIL, password: LIVE_PASSWORD })
+  liveUser = { ctx, csrf: me.csrf_token }
+}
+
+/** The second user views and edits the item (presence lasts 45 s). */
+async function liveBefore(id) {
+  await api(liveUser.ctx.request, 'POST', '/presence', { entity_type: 'requirement', entity_id: id, state: 'editing' }, liveUser.csrf)
+}
+
+/** The second user saves a newer version (the rationale gains or loses a full stop). */
+async function liveAfter(id) {
+  const rq = await api(liveUser.ctx.request, 'GET', `/requirements/${id}`)
+  const r = rq.rationale ?? ''
+  await api(liveUser.ctx.request, 'PATCH', `/requirements/${id}`, { rationale: r.endsWith('.') ? r.slice(0, -1) : r + '.' }, liveUser.csrf)
+}
+
 // ---- multi-factor authentication: a user with an authenticator app, for the
 // second step of the sign-in page (route login-mfa) ----
 const MFA_EMAIL = 'a11y.mfa@example.com'
@@ -204,6 +233,9 @@ async function discover(request) {
   const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
   const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
   const hasWaivers = items(await api(request, 'GET', `/projects/${pid}/waivers`)).length > 0
+  // change requests (seed-demo: one in review by Sara for the administrator, closed, deferred and draft ones)
+  const crs = items(await api(request, 'GET', `/projects/${pid}/change-requests`).catch(() => []))
+  const crReview = crs.find((c) => c.status === 'in_review')
   // a release gated per variant (seed: 1.5 for both products) and a requirement whose applicability changed
   const gatedRelease = items(await api(request, 'GET', `/projects/${pid}/releases`)).find((r) => (r.variant_ids ?? []).length > 0)
   const applicReq = items(await api(request, 'GET', `/projects/${pid}/requirements?q=applicability:selected`).catch(() => []))[0]
@@ -228,6 +260,12 @@ async function discover(request) {
   const hasDefinitions = items(await api(request, 'GET', `/projects/${pid}/reports/definitions`).catch(() => [])).length > 0
   // the first catalogue requirement, for the preview
   const catalogReq = items(await api(request, 'GET', '/catalog/requirements').catch(() => []))[0]
+  // AI assistance: the Assist buttons are shown in every project of an organisation that turned it on
+  // (seed-demo); its dialog only opens when a service is configured (ai in the configuration file)
+  const aiStatus = await api(request, 'GET', `/projects/${pid}/ai`).catch(() => null)
+  const aiOrg = aiStatus?.organisation_enabled === true
+  const aiOn = aiStatus?.available === true
+  const failedRun = runs.find((r) => (r.summary?.failed ?? 0) + (r.summary?.blocked ?? 0) > 0)
   // web tests (Playwright): a run with background jobs and the execution of a web test
   let jobsRun = null
   for (const r of runs) {
@@ -251,6 +289,11 @@ async function discover(request) {
   const linkedReq = reqs.find((r) => r.linked_tests > 0) ?? reqs[0]
   // the active test cycle (seed-demo: "Sprint 14 regression")
   const cycle = items(await api(request, 'GET', `/projects/${pid}/cycles`).catch(() => [])).find((c) => c.status === 'active')
+  // test environments and test data (seed-demo: staging with bookings, a set with a refresh request)
+  const envs = items(await api(request, 'GET', `/projects/${pid}/environments`).catch(() => []))
+  const stagingEnv = envs.find((e) => e.name === 'staging') ?? envs[0]
+  const dataSets = items(await api(request, 'GET', `/projects/${pid}/test-data-sets`).catch(() => []))
+  const tableSet = dataSets.find((d) => d.kind === 'table' && d.open_refreshes > 0) ?? dataSets[0]
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects', wait: '.project-cards .pc-meta' },
@@ -265,8 +308,16 @@ async function discover(request) {
     { name: 'dashboard-trends', path: `${p}/dashboard?tab=trends`, wait: 'canvas, .empty' },
     { name: 'dashboard-quality', path: `${p}/dashboard?tab=quality`, wait: 'canvas, .empty' },
     { name: 'dashboard-quality-metrics', path: `${p}/dashboard?tab=quality`, wait: 'section.quality .qkpis' },
+    // customisable dashboards: the seeded shared dashboard, edit mode, the add and settings dialogs, the home dashboard
+    { name: 'dashboard-shared', path: `${p}/dashboard`, open: '[role="tab"]:has-text("Release health")', wait: '.widget-saved_query table, .widget-saved_query .empty' },
+    { name: 'dashboard-edit', path: `${p}/dashboard`, open: 'button[data-test="customise"]', wait: '.dash-grid.editing .handle' },
+    { name: 'dashboard-add-widget', path: `${p}/dashboard`, open: ['button[data-test="customise"]', 'button[data-test="add-widget"]'], wait: '.p-dialog .widget-types' },
+    { name: 'dashboard-widget-settings', path: `${p}/dashboard`, open: ['button[data-test="customise"]', '.widget-coverage .widget-tools button:has(.pi-cog)'], wait: '.p-dialog form' },
+    { name: 'home-dashboard', path: '/home', wait: '.dash-grid .widget' },
     { name: 'requirements', path: `${p}/requirements` },
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
+    // live updates: someone else is editing, then saves a newer version (presence and the notice)
+    reqs[0] && { name: 'requirement-live', path: `${p}/requirements?item=${reqs[0].id}`, live: reqs[0].id, wait: '[data-testid="live-banner"]' },
     { name: 'tests', path: `${p}/tests` },
     // the spreadsheet view: grid, an open cell editor, a refused value, row selection, keyboard help
     { name: 'requirements-sheet', path: `${p}/requirements?view=sheet`, wait: '[role="grid"] [role="gridcell"]' },
@@ -319,6 +370,9 @@ async function discover(request) {
     // CI/CD: the CI setup panel (templates) and the server-side posting to GitLab with its log
     { name: 'ci-setup', path: `${p}/settings?tab=project`, wait: '.ci-setup pre.ci-template' },
     { name: 'ci-posting', path: `${p}/settings?tab=project`, wait: '.ci-posting .ci-deliveries li' },
+    // Generate test code: the dialog with the preview of the automated tests' stubs, and with the selection (bulk bar)
+    { name: 'test-stubs-dialog', path: `${p}/tests?q=${encodeURIComponent('execution_type:automated')}`, open: 'button.stubs-button', wait: '.stubs-dialog [data-testid="stubs-code"]' },
+    { name: 'test-stubs-dialog-selection', path: `${p}/tests`, open: ['.p-datatable-tbody tr:first-child .p-checkbox', '.bulkbar button:has(.pi-code)'], wait: '.stubs-dialog [data-testid="stubs-code"]' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
     // the requirement and test catalogue: both tabs, a selection, the preview, the import dialog, the areas drawer
@@ -364,11 +418,41 @@ async function discover(request) {
     { name: 'undo-menu', path: `${p}/tests`, open: '.undo-controls button:has(.pi-history)', wait: '.undo-menu' },
     { name: 'columns-menu', path: `${p}/requirements`, open: 'button:has(.pi-table)', wait: '.columns-menu' },
     { name: 'baselines', path: `${p}/baselines` },
+    // electronic-records mode (on for these routes only): the signature a
+    // baseline needs, the reason a requirement change needs, the signatures of a record
+    {
+      name: 'erecords-signature-dialog',
+      path: `${p}/baselines`,
+      erecords: true,
+      open: '.page-header .actions button:has(.pi-plus)',
+      act: async (page) => {
+        await page.locator('#bl-name').fill('A11y signed baseline')
+        await page.locator('.p-dialog button[type="submit"]').first().click()
+      },
+      wait: '.p-dialog #er-sign-meaning',
+    },
+    reqs[0] && {
+      name: 'erecords-reason-dialog',
+      path: `${p}/requirements?item=${reqs[0].id}`,
+      erecords: true,
+      act: async (page) => {
+        await page.locator('.p-drawer form input').first().fill(`${reqs[0].title} `)
+        await page.locator('.p-drawer button[type="submit"]').first().click()
+      },
+      wait: '.p-dialog #er-reason',
+    },
+    firstBaseline && { name: 'baseline-signatures', path: `${p}/baselines?b=${firstBaseline.id}`, wait: '.esigs, .signoffs' },
     { name: 'releases', path: `${p}/releases` },
     { name: 'risks', path: `${p}/risks`, wait: '.heat' },
     { name: 'risks-area', path: `${p}/risks?area=authentication`, wait: '.heat' },
     { name: 'requirement-mitigates-risks', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.requirement-risks button:has(.pi-plus)', wait: '.requirement-risks .add-row' },
     // duplicates and conflicts: the review page (requirements, tests, dismissed), the merge dialog, the similar panel of the editor
+    // AI assistance: the Assist menus (requirement editor, run page), the dialog, the project and organisation settings
+    aiOrg && { name: 'assist-menu-requirement', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer button:has(.pi-sparkles)', wait: '.assist-menu' },
+    aiOrg && failedRun && { name: 'assist-menu-run', path: `${p}/runs/${failedRun.id}`, open: '.page-header .actions button:has(.pi-sparkles)', wait: '.assist-menu' },
+    aiOn && { name: 'assist-dialog', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: ['.p-drawer button:has(.pi-sparkles)', '.assist-menu .assist-action:not([disabled])'], wait: '.p-dialog .assist .p-message, .p-dialog .assist .assist-card' },
+    { name: 'settings-project-ai', path: `${p}/settings?tab=project`, wait: 'h2:has(.pi-sparkles)' },
+    { name: 'ai-settings', path: '/admin/ai', wait: '#ai-org-on' },
     { name: 'duplicates', path: `${p}/duplicates`, wait: '.dup-section' },
     { name: 'duplicates-tests', path: `${p}/duplicates?kind=test`, wait: '.dup-section' },
     { name: 'duplicates-dismissed', path: `${p}/duplicates`, open: '.dup-switch .p-toggleswitch', wait: '.dup-section' },
@@ -391,6 +475,14 @@ async function discover(request) {
     { name: 'waivers', path: `${p}/waivers`, wait: '.p-datatable-tbody tr' },
     { name: 'waiver-new-dialog', path: `${p}/waivers`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #wv-title' },
     hasWaivers && { name: 'waiver-detail', path: `${p}/waivers`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.p-dialog .wv-fields' },
+    // change requests: the list, a new one, the detail (diff, impact tree, signatures, timeline), the board's signature, the editor's change control bar, the bulk proposal and the settings
+    { name: 'change-requests', path: `${p}/change-requests`, wait: '.p-datatable-tbody tr' },
+    { name: 'change-request-new-dialog', path: `${p}/change-requests`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #cr-title' },
+    crReview && { name: 'change-request-detail', path: `${p}/change-requests?cr=${crReview.id}`, wait: '.p-dialog .cr-fields' },
+    crReview && { name: 'change-request-sign-dialog', path: `${p}/change-requests?cr=${crReview.id}`, open: '.p-dialog-footer button:has(.pi-pen-to-square)', wait: '.p-dialog .esign' },
+    crReview && { name: 'requirement-change-control', path: `${p}/requirements?item=${crReview.items[0]?.entity_id ?? ''}`, wait: '.p-drawer .cc-bar' },
+    { name: 'requirements-bulk-propose', path: `${p}/requirements`, open: ['.p-datatable-tbody tr:first-child .p-checkbox input', '.bulkbar button:has(.pi-file-edit)'], wait: '.p-dialog #crb-status' },
+    { name: 'settings-change-control', path: `${p}/settings?tab=project`, wait: '#change-control' },
     // exploratory testing: the session list with its metrics, the new-session dialog, the session runner (notes, shortcuts, debrief, defect from a note)
     { name: 'exploratory', path: `${p}/exploratory`, wait: '.p-datatable-tbody tr' },
     { name: 'exploratory-new-dialog', path: `${p}/exploratory`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog #xs-title' },
@@ -398,6 +490,19 @@ async function discover(request) {
     xDebriefed && { name: 'exploratory-debrief-dialog', path: `${p}/exploratory/${xDebriefed.id}`, open: 'section[aria-labelledby="xs-debrief-h"] button:has(.pi-check-square)', wait: '.p-dialog #xs-db-sum' },
     xOpen && { name: 'exploratory-session-runner', path: `${p}/exploratory/${xOpen.id}`, open: 'button[aria-controls="xs-keys"]', wait: '#xs-keys dl' },
     xOpen && { name: 'exploratory-defect-dialog', path: `${p}/exploratory/${xOpen.id}`, open: '.xs-notes li:first-child button:has(.pi-exclamation-circle)', wait: '.p-dialog #xs-d-title' },
+    // test environments: status board, list, booking calendar, the environment, its dialogs; test data sets
+    { name: 'environments', path: `${p}/environments`, wait: '.env-board, .empty-state' },
+    { name: 'environments-list', path: `${p}/environments?tab=list`, wait: '.p-datatable' },
+    { name: 'environments-calendar', path: `${p}/environments?tab=calendar`, wait: '.tl' },
+    { name: 'environment-new-dialog', path: `${p}/environments`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog .env-fieldset' },
+    { name: 'environment-book-dialog', path: `${p}/environments`, open: '.page-header .actions button:has(.pi-calendar-plus)', wait: '.p-dialog input[type="datetime-local"]' },
+    stagingEnv && { name: 'environment', path: `${p}/environments/${stagingEnv.id}`, wait: '.env-grid' },
+    stagingEnv && { name: 'environment-edit-dialog', path: `${p}/environments/${stagingEnv.id}`, open: '.page-header .actions button:has(.pi-pencil)', wait: '.p-dialog .env-fieldset' },
+    stagingEnv && { name: 'environment-booking-dialog', path: `${p}/environments/${stagingEnv.id}`, open: '.tl-bar', wait: '.p-dialog input[type="datetime-local"]' },
+    { name: 'run-new-environment', path: `${p}/runs`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog .env-field' },
+    { name: 'test-data', path: `${p}/test-data`, wait: '.p-datatable-tbody tr' },
+    tableSet && { name: 'test-data-set', path: `${p}/test-data?set=${tableSet.id}`, wait: '.p-dialog .td-table' },
+    tableSet && { name: 'test-data-refresh', path: `${p}/test-data?set=${tableSet.id}`, open: '.p-dialog [role="tab"]:nth-child(4)', wait: '.p-dialog textarea' },
     { name: 'soa', path: `${p}/soa`, wait: '[role="grid"] [role="gridcell"]' },
     { name: 'soa-control', path: `${p}/soa`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: ['Control+Enter'], wait: '.p-dialog' },
     hasReleases && { name: 'release-waivers', path: `${p}/releases`, open: '.p-datatable-tbody tr:first-child .link-button', wait: '.rel-waivers' },
@@ -430,6 +535,14 @@ async function discover(request) {
     { name: 'web-tests-settings', path: `${p}/settings?tab=webtests`, wait: '#h-web-tests' },
     // change and defect correlations: settings, the Impact tabs, the confirmation before saving, a baseline's impact, regression history
     { name: 'correlation-settings', path: `${p}/settings?tab=correlations`, wait: '#h-corr' },
+    // the logo on reports and documents: organisation (Administration → Documents) and project, with the first-page preview
+    { name: 'logo-settings', path: '/admin/documents', wait: '.logo-card .logo-page img' },
+    { name: 'logo-settings-project', path: `${p}/settings?tab=project`, wait: '.logo-card .logo-page' },
+    // the variant filter of the verification view and the analytics
+    { name: 'verification-variant', path: `${p}/verification?variant=EU`, wait: '.ver-counts' },
+    { name: 'analytics-variant', path: `${p}/analytics?variant=EU`, wait: '.analytics-cards, .empty' },
+    // the risk register import
+    { name: 'risk-import-dialog', path: `${p}/risks`, open: '.page-header .actions button:has(.pi-file-import)', wait: '.p-dialog' },
     linkedReq && { name: 'requirement-impact', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
     { name: 'test-impact', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-share-alt)', wait: '.impact-panel .impact-list' },
     linkedReq && { name: 'impact-confirm-dialog', path: `${p}/requirements?item=${linkedReq.id}`, open: '.p-drawer form input[required]', keys: ['End', 'X', 'Enter'], wait: '.impact-confirm-dialog' },
@@ -503,6 +616,12 @@ async function discover(request) {
     { name: 'exchange-jira-dialog', path: `${p}/requirements`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(3) .p-menu-item-link'], wait: '.exchange-dialog form textarea' },
     { name: 'exchange-azure-dialog', path: `${p}/requirements`, open: ['button.exchange-menu', '#exchange-menu .p-menu-item:nth-child(4) .p-menu-item-link'], wait: '.exchange-dialog form textarea' },
     { name: 'import-sources-settings', path: `${p}/settings?tab=project`, wait: '#h-import-sources + p + form' },
+    // two-way sync with Jira and Azure DevOps (seed-demo: both configured without tokens, an open conflict, a log):
+    // the overview, the conflict view with its field diff, the log with a run's entries, the settings with the field mapping
+    { name: 'tracker-sync', path: `${p}/tracker-sync`, wait: '.sync-source dl' },
+    { name: 'tracker-sync-conflicts', path: `${p}/tracker-sync?tab=conflicts`, wait: '.sync-conflict table.sync-diff' },
+    { name: 'tracker-sync-log', path: `${p}/tracker-sync?tab=log`, open: '.sync-runs tbody tr:last-child button', wait: '.sync-runs .sync-entries' },
+    { name: 'tracker-sync-settings', path: `${p}/tracker-sync?tab=settings&source=azure-devops`, wait: '.sync-form .sync-fields .value-maps' },
     // ReqIF selected: the aspects are disabled and a hint is shown
     { name: 'export-reqif', path: `${p}/export`, open: '.format-grid button:has(.pi-sitemap)', wait: 'fieldset.plain-fieldset[disabled]' },
     { name: 'documents', path: `${p}/documents` },
@@ -566,12 +685,17 @@ async function discover(request) {
     { name: 'provisioning', path: '/admin/provisioning', wait: '#h-scim-events' },
     { name: 'provisioning-token-dialog', path: '/admin/provisioning', open: 'section:has(#h-scim-tokens) .filterbar button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'audit', path: '/admin/audit' },
+    // the tamper-evident audit trail and electronic-records mode
+    { name: 'audit-verify', path: '/admin/audit', open: '.chain-card button:has(.pi-verified)', wait: '.chain-result' },
+    { name: 'erecords', path: '/admin/erecords', wait: '.er-grid' },
+    { name: 'erecords-report', path: '/admin/erecords', open: 'button:has(.pi-list-check)', wait: '.er-table' },
     { name: 'tenants', path: '/admin/tenants' },
     { name: 'users', path: '/admin/users' },
     // system settings (super admins): every section, the OIDC provider dialog
     { name: 'system-settings', path: '/admin/system', wait: '.sys-field' },
     { name: 'system-settings-security', path: '/admin/system?section=security', wait: '.sys-field' },
     { name: 'system-settings-similarity', path: '/admin/system?section=similarity', wait: '.sys-field' },
+    { name: 'system-settings-ai', path: '/admin/system?section=ai', wait: '.sys-field' },
     { name: 'system-settings-oidc', path: '/admin/system?section=oidc', wait: '.sys-section .row' },
     { name: 'system-settings-oidc-dialog', path: '/admin/system?section=oidc', open: '.sys-section button:has(.pi-plus)', wait: '.p-dialog #oidc-provider-form' },
     { name: 'system-settings-logging', path: '/admin/system?section=logging', wait: '.sys-field' },
@@ -801,6 +925,9 @@ async function main() {
     // recent searches for the search-suggestions route
     await api(authCtx.request, 'POST', '/suggest/history', { entries: [{ field: 'search', value: 'status:approved' }, { field: 'search', value: 'login' }] }, csrf).catch(() => undefined)
     if (routes.some((r) => r.mfa)) await setupMfaUser(browser, authCtx.request, csrf)
+    if (routes.some((r) => r.live) && (!ONLY.length || routes.some((r) => r.live && ONLY.includes(r.name)))) await setupLiveUser(browser, authCtx.request, csrf)
+    // the electronic-records settings, restored after the routes that turn the mode on
+    const erSaved = (await api(authCtx.request, 'GET', '/erecords').catch(() => null))?.settings ?? { enabled: false }
 
     for (const cfg of CONFIGS) {
       // the user's preferences decide theme and language once signed in
@@ -831,16 +958,30 @@ async function main() {
           // the second sign-in step: a context with a pending sign-in
           const mfaCtx = r.mfa ? await browser.newContext({ ...opts, storageState: await mfaPendingState(browser) }) : null
           if (mfaCtx) await mfaCtx.addInitScript(local, { lang: cfg.lang, theme: cfg.theme })
+          // electronic-records mode for this route only
+          if (r.erecords) await api(authCtx.request, 'PUT', '/erecords', { ...erSaved, enabled: true, reason_edits: ['requirement.update'], signature_actions: ['baseline.create'] }, csrf)
           const page = await (mfaCtx ?? (r.anon ? anon : ctx)).newPage()
           const label = `${cfg.name} ${vp.name} ${r.name}`
           const errors = []
           page.on('pageerror', (e) => errors.push(e.message))
           try {
+            if (r.live && liveUser) await liveBefore(r.live)
             await page.goto(BASE + r.path, { waitUntil: 'domcontentloaded' })
+            if (r.live && liveUser) {
+              // the event stream opens a moment after the page has loaded
+              await settle(page, '[data-testid="live-presence"]')
+              await page.waitForTimeout(2500)
+              await liveAfter(r.live)
+            }
             // open: a selector, or several clicked one after another
             for (const sel of r.open ? [].concat(r.open) : []) {
               await settle(page)
               await page.locator(sel).first().click()
+            }
+            // act: a function of the page (fill a field and save)
+            if (r.act) {
+              await settle(page)
+              await r.act(page)
             }
             // upload: [selector, file] — a file of the repository set in a file input (an import preview)
             if (r.upload) {
@@ -873,6 +1014,7 @@ async function main() {
           } finally {
             await page.close()
             if (mfaCtx) await mfaCtx.close()
+            if (r.erecords) await api(authCtx.request, 'PUT', '/erecords', erSaved, csrf).catch(() => undefined)
           }
         }
         await ctx.close()

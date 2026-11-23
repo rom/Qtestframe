@@ -18,6 +18,8 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import ItemRef from '@/components/ItemRef.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import HelpLink from '@/guide/HelpLink.vue'
+import VariantSelect from '@/components/VariantSelect.vue'
+import { useVariants } from '@/composables/variants'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api, asItems, errorMessage } from '@/lib/api'
@@ -59,7 +61,7 @@ async function load() {
   loading.value = true
   try {
     const [v, cov, els] = await Promise.all([
-      api.get<ProjectVerification>(`/projects/${proj.pid}/verification`),
+      api.get<ProjectVerification>(`/projects/${proj.pid}/verification`, { variant: variant.value || undefined }),
       api.get<{ items: ElementCoverage[] }>(`/projects/${proj.pid}/elements/coverage`),
       api.get<{ items: SystemElement[] }>(`/projects/${proj.pid}/elements`),
     ])
@@ -72,8 +74,25 @@ async function load() {
     loading.value = false
   }
 }
-onMounted(load)
-watch(() => proj.pid, load)
+// the requirements of one variant, verified by its tests and results (?variant=)
+const variants = useVariants(() => proj.pid)
+const variant = ref<string | null>((route.query.variant as string) || null)
+watch(variant, (v) => {
+  if ((route.query.variant ?? null) !== v) void router.replace({ query: { ...route.query, variant: v || undefined } })
+  void load()
+})
+const variantName = computed(() => variants.variants.value.find((v) => v.id === variant.value)?.name ?? '')
+onMounted(() => {
+  void load()
+  void variants.load()
+})
+watch(
+  () => proj.pid,
+  () => {
+    void load()
+    void variants.load()
+  },
+)
 
 const total = computed(() => VERIFICATION_STATES.reduce((n, s) => n + (data.value?.counts[s] ?? 0), 0))
 
@@ -154,12 +173,14 @@ function deleteElement(c: ElementCoverage) {
         {{ t('verificationView.summary', { n: data.counts.verified ?? 0, total }) }}
         <template v-if="data.criteria_total"> · {{ t('verification.criteriaVerified', { n: data.criteria_verified, total: data.criteria_total }) }}</template>
         <template v-if="data.strict"> · {{ t('verification.strict') }}</template>
+        <template v-if="variantName"> · {{ t('variants.onlyVariant', { name: variantName }) }}</template>
       </div>
     </div>
     <div class="actions">
       <SelectButton v-model="tab" :options="tabOptions" option-label="label" option-value="value" :allow-empty="false" :aria-label="t('verificationView.view')">
         <template #option="{ option }"><i :class="option.icon" aria-hidden="true" /><span>{{ option.label }}</span></template>
       </SelectButton>
+      <VariantSelect v-if="variants.variants.value.length" v-model="variant" :variants="variants.variants.value" :aria-label="t('variants.showFor')" />
       <HelpLink page="traceability-and-coverage" :anchor="{ en: 'verification', sv: 'verifiering' }" />
       <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
     </div>

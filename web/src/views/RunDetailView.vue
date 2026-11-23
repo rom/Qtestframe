@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLiveRefresh } from '@/composables/live'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
 import type { CustomValues } from '@/lib/customFields'
@@ -22,6 +23,9 @@ import Panel from 'primevue/panel'
 import Tag from 'primevue/tag'
 import { useReleaseOptions } from '@/composables/releases'
 import { useConfigurations } from '@/composables/configurations'
+import { useEnvironments } from '@/composables/environments'
+import EnvironmentField from '@/components/EnvironmentField.vue'
+import type { BookingInput } from '@/lib/environments'
 import { summaryByConfiguration } from '@/lib/configurations'
 import { runReleaseName } from '@/lib/releases'
 import Popover from 'primevue/popover'
@@ -58,6 +62,9 @@ import { enumLabel, enumOptions } from '@/i18n/labels'
 import Checkbox from 'primevue/checkbox'
 import { BULK_RESULTS, execCounts, execUndo, rejectedText, type ExecBulkResult } from '@/lib/bulkRuns'
 import { entry, recordUndo } from '@/lib/undoActions'
+import AssistMenu, { type AssistAction } from '@/components/AssistMenu.vue'
+import AssistDialog from '@/components/AssistDialog.vue'
+import type { AiFeature } from '@/lib/ai'
 const prefs = usePrefsStore()
 
 const props = defineProps<{ runId: string }>()
@@ -89,6 +96,24 @@ const attachmentCount = ref<number | null>(null)
 const tabsId = 'run-tabs'
 const panel = (v: string) => ({ role: 'tabpanel', id: `${tabsId}_tabpanel_${v}`, 'aria-labelledby': `${tabsId}_tab_${v}` })
 
+// AI assistance: summarise the failures (defect drafts are created only when accepted)
+const assistOpen = ref(false)
+const assistFeature = ref<AiFeature | null>(null)
+const failedCount = computed(() => {
+  const sum = run.value?.summary
+  if (sum) return (sum.failed ?? 0) + (sum.blocked ?? 0)
+  return executions.value.filter((e) => e.status === 'failed' || e.status === 'blocked').length
+})
+const assistActions = computed<AssistAction[]>(() => [{ feature: 'summarize_run', blocked: failedCount.value ? '' : 'ai.reason.noFailures' }])
+function openAssist(f: AiFeature) {
+  assistFeature.value = f
+  assistOpen.value = true
+}
+function onAssistCreated(n: number) {
+  if (n) notify.ok(t('ai.run.created', { n }, n))
+  void loadExecutions()
+}
+
 async function loadRun() {
   try {
     run.value = await api.get<TestRun>(`/runs/${props.runId}`)
@@ -96,8 +121,10 @@ async function loadRun() {
     error.value = errorMessage(e)
   }
 }
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function loadExecutions() {
-  loading.value = true
+  if (!quiet) loading.value = true
   queryError.value = null
   try {
     executions.value = asItems(await api.get<{ items: Execution[] }>(`/runs/${props.runId}/executions`, { q: composed.value }))
@@ -108,16 +135,30 @@ async function loadExecutions() {
     loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ({ types: ['run', 'execution'], parentId: props.runId }),
+  () => {
+    quiet = true
+    const done = Promise.all([loadRun(), loadExecutions()])
+    quiet = false
+    return done
+  }, { announce: () => t('live.resultsUpdated') },
+)
 async function reload() {
   await Promise.all([loadRun(), loadExecutions()])
 }
 const rel = useReleaseOptions(() => proj.pid)
 const cfg = useConfigurations(() => proj.pid)
+const envs = useEnvironments(() => proj.pid)
+const editEnv = ref<string | null>(null)
+const editBooking = ref<BookingInput | null>(null)
 onMounted(() => {
   reload()
   if (auth.can(P.projectRead)) {
     rel.load()
     cfg.load()
+    envs.load()
   }
 })
 
@@ -160,6 +201,8 @@ function openEdit() {
   if (!run.value) return
   const r = run.value
   editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build, release_id: r.release_id ?? '', configuration_ids: (r.configurations ?? []).map((c) => c.id), custom_fields: { ...(r.custom_fields ?? {}) } as CustomValues }
+  editEnv.value = r.environment_id ?? null
+  editBooking.value = null
   editError.value = ''
   editDialog.value = true
 }
@@ -170,7 +213,13 @@ async function saveEdit() {
   const changed = before.join(',') !== configuration_ids.join(',')
   const oldName = run.value?.name
   try {
-    run.value = await api.patch<TestRun>(`/runs/${props.runId}`, changed ? editForm.value : fields)
+    const body: Record<string, unknown> = { ...(changed ? editForm.value : fields) }
+    if (envs.environments.value.length) {
+      delete body.environment
+      body.environment_id = editEnv.value ?? ''
+    }
+    run.value = await api.patch<TestRun>(`/runs/${props.runId}`, body)
+    if (editEnv.value && editBooking.value) await api.post(`/environments/${editEnv.value}/bookings`, { ...editBooking.value, project_id: proj.pid, run_id: props.runId })
     void rememberValues(prefs.prefs, proj.pid, savedEntries({ [RUN_NAME]: fields.name }, { [RUN_NAME]: oldName }))
     editDialog.value = false
     notify.ok(t('run.updated'))
@@ -406,7 +455,11 @@ async function copySnippet(text: string = ciSnippet.value) {
         </div>
         <h1>{{ run.name }}</h1>
         <div class="sub row">
-          <span v-if="run.environment"><i class="pi pi-server" aria-hidden="true" /><span class="sr-only">{{ t('common.environment') }}:</span> {{ run.environment }}</span>
+          <span v-if="run.environment"
+            ><i class="pi pi-server" aria-hidden="true" /><span class="sr-only">{{ t('common.environment') }}:</span>
+            <RouterLink v-if="run.environment_id" :to="{ name: 'environment', params: { projectId: proj.pid, environmentId: run.environment_id } }">{{ run.environment }}</RouterLink
+            ><template v-else>{{ run.environment }}</template></span
+          >
           <RouterLink v-if="runReleaseName(run, rel.names.value)" :to="{ name: 'releases', params: { projectId: proj.pid }, query: { r: run.release_id } }">
             <Tag :value="runReleaseName(run, rel.names.value)" icon="pi pi-box" severity="secondary" :aria-label="t('releasesView.runRelease', { name: runReleaseName(run, rel.names.value) })" />
           </RouterLink>
@@ -435,6 +488,7 @@ async function copySnippet(text: string = ciSnippet.value) {
         <Button v-if="canScript && executions.length" :label="t('webTests.runAll')" icon="pi pi-bolt" severity="secondary" outlined :loading="queueing" v-tooltip.bottom="t('webTests.runAllHint')" @click="runAutomated()" />
         <Button v-if="canWrite" :label="t('run.addTests')" icon="pi pi-plus" severity="secondary" outlined @click="picker = true" />
         <Button :label="t('run.ciImport')" icon="pi pi-cloud-upload" severity="secondary" outlined @click="ciDialog = true" />
+        <AssistMenu :project-id="proj.pid" :actions="assistActions" @select="openAssist" />
         <Button v-if="canWrite" icon="pi pi-pencil" severity="secondary" text rounded :aria-label="t('common.edit')" v-tooltip="t('common.edit')" @click="openEdit" />
         <Button v-if="canWrite" icon="pi pi-trash" severity="danger" text rounded :aria-label="t('common.delete')" v-tooltip="t('common.delete')" @click="remove" />
       </div>
@@ -646,7 +700,10 @@ async function copySnippet(text: string = ciSnippet.value) {
       <Message v-if="editError" severity="error" :closable="false" style="margin-bottom: 10px">{{ editError }}</Message>
       <div class="form-grid">
         <div v-field class="field full"><label>{{ t('common.name') }}</label><SuggestInput v-model="editForm.name" field="run.name" :project-id="proj.pid" /></div>
-        <div v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
+        <div v-if="envs.environments.value.length" class="field full">
+          <EnvironmentField v-model="editEnv" v-model:booking="editBooking" :environments="envs.environments.value" id-prefix="run-edit" :can-book="auth.can(P.runExecute)" />
+        </div>
+        <div v-else v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
         <div v-field class="field"><label>{{ t('common.build') }}</label><InputText v-model="editForm.build" /></div>
         <div v-if="rel.releases.value.length" v-field class="field full">
           <label for="run-edit-release">{{ t('releasesView.release') }}</label>
@@ -734,6 +791,7 @@ async function copySnippet(text: string = ciSnippet.value) {
       <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!bulkForm.status && !bulkForm.assigneeOn && !bulkForm.note.trim()" @click="applyBulk" />
     </template>
   </Dialog>
+  <AssistDialog v-model:visible="assistOpen" :project-id="proj.pid" :feature="assistFeature" :body="{ run_id: runId }" mode="create" @created="onAssistCreated" />
 </template>
 
 

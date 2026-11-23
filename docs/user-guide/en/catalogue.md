@@ -18,6 +18,8 @@ Every requirement lists at least one catalogue test that verifies it, and every 
 
 Open **Catalogue** in the project sidebar, or select **Add from catalogue** at the top of the requirement or test list.
 
+![The catalogue: the areas and the list of catalogue requirements with search and filters, and the preview of the selected item](../images/en-catalogue.png)
+
 - Switch between **Requirements**, **Tests** and **Risks** at the top.
 - Choose **English** or **Svenska** for the language of the texts. The items are added in this language.
 - **Catalogue type** limits the catalogue to one kind of work: *Software*, *Hardware*, *Equipment*, *Systems*, *Communications solutions*, *Projects*, *Services*, *Buildings and facilities*, *Governance*, *Documentation* or *Education* (only the types that have content are listed). It starts with the type that fits the project: software projects show *Software*, hardware projects *Hardware*, system projects *Systems* and business projects *Governance*; general projects show **All types**. The tree, the lists and the laws and standards follow the choice.

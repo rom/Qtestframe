@@ -73,6 +73,9 @@ type Field struct {
 	// Put writes a canonical value into a create or PATCH body (nil: the
 	// field cannot be written that way: Folder and Keys fields).
 	Put func(body map[string]any, value string, it *Item) error `json:"-"`
+	// Check, when set, cleans a parsed value and returns a warning for the
+	// row: what it left out (unknown D3FEND or EMB3D ids …).
+	Check func(value string) (clean, warning string) `json:"-"`
 }
 
 // Item is a stored requirement or test with what the exchange needs
@@ -254,6 +257,22 @@ var relationAliases = map[string][]string{
 	"conflicts_with": {"Står i konflikt med"}, "duplicates": {"Dubblerar"}, "relates_to": {"Relaterar till"},
 }
 
+// frameworkField is a list of MITRE D3FEND or EMB3D ids (the columns and
+// attributes D3FEND and EMB3D of the exports); unknown ids are left out
+// with a row warning (reqimport.FrameworkIDs).
+func frameworkField(key, label string, aliases []string, list string, get func(*Item) string) Field {
+	return Field{Key: key, Label: label, Aliases: aliases, Type: List, Get: get, Put: putList(key),
+		Check: func(v string) (string, string) {
+			ids, warn := reqimport.FrameworkIDs(list, v)
+			return JoinList(ids), warn
+		}}
+}
+
+var (
+	d3fendAliases = []string{"D3FEND techniques", "D3FEND-tekniker", "MITRE D3FEND"}
+	emb3dAliases  = []string{"EMB3D threats and mitigations", "EMB3D threats", "EMB3D-hot och -åtgärder", "MITRE EMB3D"}
+)
+
 func requirementFields() []Field {
 	fs := []Field{
 		{Key: "folder", Label: "Folder", Aliases: []string{"Mapp", "Folder path"}, Type: Folder, Get: func(it *Item) string { return it.Folder }},
@@ -275,6 +294,8 @@ func requirementFields() []Field {
 		{Key: "tags", Label: "Tags", Aliases: []string{"Taggar"}, Type: List, Get: req(func(r *model.Requirement) string { return JoinList(r.Tags) }), Put: putList("tags")},
 		{Key: "criteria", Label: "Acceptance criteria", Aliases: []string{"Acceptanskriterier", "Criteria"}, Type: Criteria,
 			Get: req(func(r *model.Requirement) string { return CriteriaText(r.Criteria) }), Parse: parseCriteriaCell, Put: putCriteria},
+		frameworkField("d3fend", "D3FEND", d3fendAliases, reqimport.FrameworkD3fend, req(func(r *model.Requirement) string { return JoinList(r.D3fend) })),
+		frameworkField("emb3d", "EMB3D", emb3dAliases, reqimport.FrameworkEmb3d, req(func(r *model.Requirement) string { return JoinList(r.Emb3d) })),
 	}
 	for _, rt := range model.RelationTypes {
 		rt := rt
@@ -311,6 +332,8 @@ func testFields() []Field {
 			}},
 		{Key: "owner", Label: "Owner", Aliases: []string{"Ägare"}, Type: Text, Get: tst(func(t *model.TestCase) string { return t.Owner }), Put: put("owner")},
 		{Key: "tags", Label: "Tags", Aliases: []string{"Taggar"}, Type: List, Get: tst(func(t *model.TestCase) string { return JoinList(t.Tags) }), Put: putList("tags")},
+		frameworkField("d3fend", "D3FEND", d3fendAliases, reqimport.FrameworkD3fend, tst(func(t *model.TestCase) string { return JoinList(t.D3fend) })),
+		frameworkField("emb3d", "EMB3D", emb3dAliases, reqimport.FrameworkEmb3d, tst(func(t *model.TestCase) string { return JoinList(t.Emb3d) })),
 		{Key: "verifies", Label: "Verifies", Aliases: []string{"Verifierar", "Linked requirements"}, Type: Keys,
 			Get: func(it *Item) string { return JoinList(sortedCopy(it.Links)) }},
 	}

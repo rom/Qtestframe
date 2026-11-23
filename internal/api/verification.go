@@ -78,6 +78,8 @@ func (s *Server) loadElements(ctx context.Context, tenantID string, pc *projectC
 // projectVerification is the answer of GET /projects/{pid}/verification.
 type projectVerification struct {
 	Strict bool `json:"strict"`
+	// Variant: the variant the verification is for (?variant=; "" all).
+	Variant string `json:"variant,omitempty"`
 	// Counts of the rolled-up states of the requirements listed.
 	Counts map[string]int `json:"counts"`
 	// CriteriaVerified of CriteriaTotal over the requirements listed.
@@ -105,12 +107,24 @@ func (s *Server) handleProjectVerification(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	res := pc.verification()
+	// ?variant=: the requirements of the variant (filterRequirements), verified by its tests and results
+	vc, variant, err := s.variantScope(r, p, pc)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if variant != "" {
+		if res, err = s.variantVerification(r.Context(), p, pc, vc, variant); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
 	st, err := s.Store.VerificationSettings(r.Context(), p.TenantID(), pr.ID)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	out := projectVerification{Strict: st.StrictCriteria, Counts: map[string]int{}, Requirements: []*model.RequirementVerification{}, Inconsistent: []*model.RequirementVerification{}}
+	out := projectVerification{Strict: st.StrictCriteria, Variant: variant, Counts: map[string]int{}, Requirements: []*model.RequirementVerification{}, Inconsistent: []*model.RequirementVerification{}}
 	for _, st := range model.VerificationStates {
 		out.Counts[st] = 0
 	}
@@ -342,11 +356,20 @@ func (s *Server) handleSignRecord(sign bool) handlerFunc {
 			return
 		}
 		var req struct {
+			signerCreds
 			Comment string `json:"comment"`
 		}
 		if sign {
 			if err := decodeOptional(r, &req); err != nil {
 				s.fail(w, r, err)
+				return
+			}
+		}
+		// in electronic-records mode a sign-off is an electronic signature
+		var proof *signerProof
+		if sign && s.erecords(r.Context(), p.TenantID()).Enabled {
+			var ok bool
+			if proof, ok = s.confirmSigner(w, r, p, req.signerCreds, nil, model.SignVerificationSignoff); !ok {
 				return
 			}
 		}
@@ -364,6 +387,9 @@ func (s *Server) handleSignRecord(sign bool) handlerFunc {
 			action = "verification.signoff.remove"
 		}
 		s.audit(r.Context(), p, action, "requirement", v.RequirementID, v.RequirementKey+" "+v.Method)
+		if proof != nil {
+			s.recordSignature(r.Context(), p, model.SignVerificationSignoff, "verification_record", v.ID, proof, req.Comment)
+		}
 		writeJSON(w, http.StatusOK, v)
 	}
 }

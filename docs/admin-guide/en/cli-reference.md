@@ -132,6 +132,17 @@ Stores every secret as plaintext again (before a downgrade). Needs `--yes`.
 
 Prints a new random 256-bit key (base64) for `QTF_SECRETS_KEY` or a key file.
 
+### `qtestframe audit verify`
+
+Verifies the hash chain of the audit trail: every entry's hash, the links between entries, the sequence, the recorded end of the chain and the signed checkpoints (with `--tenant` one organisation, otherwise every organisation and the system entries). Exit `0` when intact, `1` at the first broken link (printed with its entry). `--file EXPORT.json` checks an export (Administration → Audit trail → Export with hashes) without the database; the signatures of its checkpoints need the server's key and are only checked against the database.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--config` | `string` | configuration file (default $QTF_CONFIG) |
+| `--file` | `string` | verify an exported audit trail (JSON) instead of the database |
+| `--json` | — | print the result as JSON |
+| `--tenant` | `string` | organisation (slug); default every organisation |
+
 ### `qtestframe check-config`
 
 Loads and validates the configuration (secret files included) without touching the database, and prints `configuration OK`.
@@ -249,6 +260,24 @@ Prints the tests a CI pipeline runs for a change: the requirements and tests tha
 | `--token` | `string` | API token (default $QTF_TOKEN) |
 | `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 | `--variant` | `string` | only tests that apply to this variant |
+
+### `qtestframe stubs`
+
+Writes generated test code stubs into a directory (`--out`): one file per test of `--query` (default `execution_type:automated`) or `--ids`, for `--framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`, `robot` or `cucumber`, named after the test key so that JUnit results map back, and marked as skipped until implemented. Generating again creates new files, regenerates unchanged stubs, only updates the header block of implemented ones and leaves files without qtestframe markers alone; `--dry-run` lists what would change. `--mark-script` sets the script of tests without one to their stub path (see the user guide page CI/CD).
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--dry-run` | — | only print what would be written |
+| `--framework` | `string` | test framework: pytest, playwright, go, junit5, jest, vitest, robot, cucumber |
+| `--ids` | `value` | only these tests (keys or ids; repeatable or comma-separated) |
+| `--mark-script` | — | set the script of tests without one to their stub path (needs test.write) |
+| `--out` | `string` | directory to write the stubs to (default ".") |
+| `--package` | `string` | Go package (default: the name of --out, else tests) or Java package of the stubs |
+| `--project` | `string` | project key, e.g. SHOP (default $QTF_PROJECT) |
+| `--query` | `string` | the tests to generate stubs for (query language); "" for all (default "execution_type:automated") |
+| `--script-dir` | `string` | directory of the stubs in the repository for --mark-script (default --out when it is relative) |
+| `--token` | `string` | API token (default $QTF_TOKEN) |
+| `--url` | `string` | server base URL, e.g. https://qtestframe.example.com (default $QTF_URL) |
 
 ### `qtestframe version`
 

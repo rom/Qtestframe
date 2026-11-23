@@ -11,13 +11,20 @@ import Message from 'primevue/message'
 import Password from 'primevue/password'
 import SelectButton from 'primevue/selectbutton'
 import Textarea from 'primevue/textarea'
+import SignExtras from './SignExtras.vue'
+import { browserTimeZone } from '@/lib/erecords'
 import { useAuthStore } from '@/stores/auth'
+import { useERecordsStore } from '@/stores/erecords'
 
 const props = defineProps<{
   header: string
   explain: string
   /** offer approve / reject */
   decisions?: boolean
+  /** the decisions offered (default approve, reject; e.g. also defer) */
+  choices?: string[]
+  /** what the signature means (shown above the comment and recorded) */
+  meaning?: string
   /** a comment is required for a rejection (decisions) or always */
   commentRequired?: 'reject' | 'always'
   confirmLabel?: string
@@ -25,35 +32,45 @@ const props = defineProps<{
   error?: string
 }>()
 const visible = defineModel<boolean>('visible', { required: true })
-const emit = defineEmits<{ sign: [value: { decision: string; comment: string; password: string }] }>()
+const emit = defineEmits<{ sign: [value: { decision: string; comment: string; password: string; meaning?: string; mfa_code?: string; time_zone?: string }] }>()
 const { t } = useI18n()
 const auth = useAuthStore()
 const needsPassword = computed(() => (auth.user?.auth_provider ?? 'local') === 'local')
 const decision = ref('approve')
 const comment = ref('')
 const password = ref('')
-const decisionOptions = computed(() => [
-  { label: t('esign.approve'), value: 'approve' },
-  { label: t('esign.reject'), value: 'reject' },
-])
+// electronic-records mode (SignExtras)
+const er = useERecordsStore()
+const erMeaning = ref('')
+const mfaCode = ref('')
+const decisionOptions = computed(() => (props.choices ?? ['approve', 'reject']).map((v) => ({ label: t(`esign.${v}`), value: v })))
 watch(visible, (v) => {
   if (v) {
     decision.value = 'approve'
     comment.value = ''
     password.value = ''
+    mfaCode.value = ''
+    erMeaning.value = er.meanings.length === 1 ? er.meanings[0] : ''
   }
 })
 watch(
   () => props.busy,
   (b) => {
-    if (!b) password.value = ''
+    if (!b) password.value = mfaCode.value = ''
   },
 )
-const needComment = computed(() => props.commentRequired === 'always' || (props.commentRequired === 'reject' && decision.value === 'reject'))
-const canSign = computed(() => (!needsPassword.value || !!password.value) && (!needComment.value || comment.value.trim().length >= 3))
+// a rejection (and any other decision than approve) needs a comment
+const needComment = computed(() => props.commentRequired === 'always' || (props.commentRequired === 'reject' && decision.value !== 'approve'))
+const canSign = computed(
+  () =>
+    (!needsPassword.value || !!password.value) &&
+    (!needComment.value || comment.value.trim().length >= 3) &&
+    (!er.enabled || (!!erMeaning.value && (!auth.user?.mfa_enabled || mfaCode.value.trim().length >= 6))),
+)
 function sign() {
   if (!canSign.value || props.busy) return
-  emit('sign', { decision: props.decisions ? decision.value : 'approve', comment: comment.value.trim(), password: password.value })
+  const extra = er.enabled ? { meaning: erMeaning.value, mfa_code: mfaCode.value.trim(), time_zone: browserTimeZone() } : {}
+  emit('sign', { decision: props.decisions ? decision.value : 'approve', comment: comment.value.trim(), password: password.value, ...extra })
 }
 </script>
 
@@ -61,6 +78,7 @@ function sign() {
   <Dialog v-model:visible="visible" modal :header="header" :style="{ width: 'min(500px, 96vw)' }">
     <form class="esign" @submit.prevent="sign">
       <p class="small" style="margin-top: 0">{{ explain }}</p>
+      <p v-if="props.meaning" class="small esign-meaning"><b>{{ t('esign.meaning') }}</b> {{ props.meaning }}</p>
       <template v-if="decisions">
         <span id="esign-decision" class="field-label">{{ t('esign.decision') }}</span>
         <SelectButton v-model="decision" :options="decisionOptions" option-label="label" option-value="value" :allow-empty="false" aria-labelledby="esign-decision" />
@@ -72,6 +90,7 @@ function sign() {
         <Password v-model="password" input-id="esign-pw" :feedback="false" toggle-mask fluid autocomplete="current-password" />
       </template>
       <p v-else class="small muted">{{ t('esign.ssoHint') }}</p>
+      <SignExtras v-model:meaning="erMeaning" v-model:mfa-code="mfaCode" id-prefix="esign" />
       <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
       <div class="row" style="justify-content: flex-end">
         <Button type="button" :label="t('common.cancel')" severity="secondary" text @click="visible = false" />
@@ -85,5 +104,10 @@ function sign() {
 .esign {
   display: grid;
   gap: 8px;
+}
+.esign-meaning {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--qtf-border);
 }
 </style>

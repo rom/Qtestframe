@@ -13,15 +13,15 @@ import (
 const runCols = `id, project_id, name, description, status, environment, build, created_by, created_at, started_at, completed_at, release_id,
 	variant_id, build_id, COALESCE((SELECT v.name FROM variants v WHERE v.id = test_runs.variant_id), ''),
 	COALESCE((SELECT CASE WHEN b.number <> '' THEN b.number ELSE b.external_id END FROM builds b WHERE b.id = test_runs.build_id), ''),
-	custom_fields, cycle_id, COALESCE((SELECT c.name FROM test_cycles c WHERE c.id = test_runs.cycle_id), '')`
+	custom_fields, cycle_id, COALESCE((SELECT c.name FROM test_cycles c WHERE c.id = test_runs.cycle_id), ''), environment_id`
 
 func scanRun(r interface{ Scan(...any) error }) (*model.TestRun, error) {
 	var run model.TestRun
 	var st, ct sql.NullTime
-	var rel, variant, build, cycle sql.NullString
+	var rel, variant, build, cycle, env sql.NullString
 	var custom string
 	if err := r.Scan(&run.ID, &run.ProjectID, &run.Name, &run.Description, &run.Status, &run.Environment, &run.Build, &run.CreatedBy, &run.CreatedAt, &st, &ct, &rel,
-		&variant, &build, &run.VariantName, &run.BuildLabel, &custom, &cycle, &run.CycleName); err != nil {
+		&variant, &build, &run.VariantName, &run.BuildLabel, &custom, &cycle, &run.CycleName, &env); err != nil {
 		return nil, err
 	}
 	run.CustomFields = decodeCustom(custom)
@@ -29,6 +29,7 @@ func scanRun(r interface{ Scan(...any) error }) (*model.TestRun, error) {
 	run.ReleaseID = strPtr(rel)
 	run.VariantID, run.BuildID = strPtr(variant), strPtr(build)
 	run.CycleID = strPtr(cycle)
+	run.EnvironmentID = strPtr(env)
 	return &run, nil
 }
 
@@ -56,6 +57,9 @@ func (s *Store) CreateRun(ctx context.Context, tenantID string, run *model.TestR
 		if err := checkRunVariantBuild(ctx, c, tenantID, run.ProjectID, run.VariantID, run.BuildID); err != nil {
 			return err
 		}
+		if err := resolveRunEnvironment(ctx, c, tenantID, run.ProjectID, &run.EnvironmentID, &run.Environment); err != nil {
+			return err
+		}
 		cfgs := make([]string, 0, len(run.Configurations))
 		for _, r := range run.Configurations {
 			cfgs = append(cfgs, r.ID)
@@ -71,8 +75,8 @@ func (s *Store) CreateRun(ctx context.Context, tenantID string, run *model.TestR
 			return err
 		}
 		run.CustomFields = custom
-		if _, err := c.exec(ctx, `INSERT INTO test_runs (id, tenant_id, project_id, name, description, status, environment, build, created_by, created_at, release_id, variant_id, build_id, custom_fields, cycle_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			run.ID, tenantID, run.ProjectID, run.Name, run.Description, run.Status, run.Environment, run.Build, run.CreatedBy, run.CreatedAt, nullStr(run.ReleaseID), nullStr(run.VariantID), nullStr(run.BuildID), encodeCustom(run.CustomFields), nullStr(run.CycleID)); err != nil {
+		if _, err := c.exec(ctx, `INSERT INTO test_runs (id, tenant_id, project_id, name, description, status, environment, build, created_by, created_at, release_id, variant_id, build_id, custom_fields, cycle_id, environment_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			run.ID, tenantID, run.ProjectID, run.Name, run.Description, run.Status, run.Environment, run.Build, run.CreatedBy, run.CreatedAt, nullStr(run.ReleaseID), nullStr(run.VariantID), nullStr(run.BuildID), encodeCustom(run.CustomFields), nullStr(run.CycleID), nullStr(run.EnvironmentID)); err != nil {
 			return err
 		}
 		for i, id := range cfgs {
@@ -124,7 +128,16 @@ func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, 
 		if err != nil {
 			return added, err
 		}
+		// a test that takes its data from a shared set gets the set's rows
+		setID, setVersion, _, setRows, fromSet, err := testDataSource(ctx, c, tid)
+		if err != nil {
+			return added, err
+		}
+		if fromSet {
+			rowsJSON = setRows
+		}
 		dataRows := decodeRows(rowsJSON)
+		usageNoted := false
 		var steps []model.TestStep
 		stepsLoaded := false
 		for _, cfg := range cfgs {
@@ -167,6 +180,12 @@ func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, 
 			}
 			next++
 			added++
+			if fromSet && !usageNoted {
+				usageNoted = true
+				if err := recordDataUsage(ctx, c, tenantID, setID, setVersion, runID, tid, "", s.now()); err != nil {
+					return added, err
+				}
+			}
 		}
 	}
 	return added, nil
@@ -374,13 +393,16 @@ func (s *Store) UpdateRun(ctx context.Context, tenantID string, run *model.TestR
 	if err := checkRunVariantBuild(ctx, s.c(ctx), tenantID, run.ProjectID, run.VariantID, run.BuildID); err != nil {
 		return err
 	}
+	if err := resolveRunEnvironment(ctx, s.c(ctx), tenantID, run.ProjectID, &run.EnvironmentID, &run.Environment); err != nil {
+		return err
+	}
 	custom, err := s.checkItemCustom(ctx, tenantID, "run", run.ID, run.CustomFields)
 	if err != nil {
 		return err
 	}
 	run.CustomFields = custom
-	res, err := s.c(ctx).exec(ctx, `UPDATE test_runs SET name = ?, description = ?, status = ?, environment = ?, build = ?, started_at = ?, completed_at = ?, release_id = ?, variant_id = ?, build_id = ?, custom_fields = ? WHERE id = ? AND tenant_id = ?`,
-		run.Name, run.Description, run.Status, run.Environment, run.Build, nullTime(run.StartedAt), nullTime(run.CompletedAt), nullStr(run.ReleaseID), nullStr(run.VariantID), nullStr(run.BuildID), encodeCustom(run.CustomFields), run.ID, tenantID)
+	res, err := s.c(ctx).exec(ctx, `UPDATE test_runs SET name = ?, description = ?, status = ?, environment = ?, build = ?, started_at = ?, completed_at = ?, release_id = ?, variant_id = ?, build_id = ?, custom_fields = ?, environment_id = ? WHERE id = ? AND tenant_id = ?`,
+		run.Name, run.Description, run.Status, run.Environment, run.Build, nullTime(run.StartedAt), nullTime(run.CompletedAt), nullStr(run.ReleaseID), nullStr(run.VariantID), nullStr(run.BuildID), encodeCustom(run.CustomFields), nullStr(run.EnvironmentID), run.ID, tenantID)
 	if err != nil {
 		return err
 	}
@@ -431,7 +453,8 @@ func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
 }
 
 const execCols = `e.id, e.run_id, e.test_case_id, t.key, t.title, e.status, e.assignee, e.executed_by, e.started_at, e.finished_at, e.duration_ms, e.output, e.notes, e.position, e.defects,
-	e.configuration_id, COALESCE(cf.name, ''), (SELECT COUNT(*) FROM execution_iterations i WHERE i.execution_id = e.id)`
+	e.configuration_id, COALESCE(cf.name, ''), (SELECT COUNT(*) FROM execution_iterations i WHERE i.execution_id = e.id),
+	e.environment_id, e.environment_name, e.environment_components`
 
 // execFrom joins what execCols needs.
 const execFrom = ` FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id LEFT JOIN configurations cf ON cf.id = e.configuration_id`
@@ -440,15 +463,20 @@ func scanExecution(r interface{ Scan(...any) error }, extra ...any) (*model.Exec
 	var e model.Execution
 	var st, ft sql.NullTime
 	var defects string
-	var cfg sql.NullString
+	var cfg, env sql.NullString
+	var comps string
 	dest := append([]any{&e.ID, &e.RunID, &e.TestCaseID, &e.TestKey, &e.TestTitle, &e.Status, &e.Assignee, &e.ExecutedBy, &st, &ft, &e.DurationMS, &e.Output, &e.Notes, &e.Position, &defects,
-		&cfg, &e.ConfigurationName, &e.IterationCount}, extra...)
+		&cfg, &e.ConfigurationName, &e.IterationCount, &env, &e.EnvironmentName, &comps}, extra...)
 	if err := r.Scan(dest...); err != nil {
 		return nil, err
 	}
 	e.StartedAt, e.FinishedAt = timePtr(st), timePtr(ft)
 	e.Defects = decodeTags(defects)
 	e.ConfigurationID = strPtr(cfg)
+	e.EnvironmentID = strPtr(env)
+	if comps != "" && comps != "[]" {
+		e.EnvironmentComponents = decodeComponents(comps)
+	}
 	return &e, nil
 }
 
@@ -755,6 +783,12 @@ func (s *Store) UpdateExecution(ctx context.Context, tenantID, id, user string, 
 		if _, err := c.exec(ctx, `UPDATE test_executions SET defects = ?, status = ?, notes = ?, assignee = ?, output = ?, executed_by = ?, started_at = ?, finished_at = ?, duration_ms = ? WHERE id = ?`, encodeTags(e.Defects),
 			e.Status, e.Notes, e.Assignee, e.Output, e.ExecutedBy, nullTime(e.StartedAt), nullTime(e.FinishedAt), e.DurationMS, e.ID); err != nil {
 			return err
+		}
+		// the environment and its component versions at the time of the result
+		if final || wasFinal {
+			if err := snapshotExecutionEnvironment(ctx, c, e.ID, e.RunID, final); err != nil {
+				return err
+			}
 		}
 		for _, sr := range e.StepResults {
 			if _, err := c.exec(ctx, `UPDATE step_results SET status = ?, actual = ?, evidence = ? WHERE id = ?`, sr.Status, sr.Actual, sr.Evidence, sr.ID); err != nil {

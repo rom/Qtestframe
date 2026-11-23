@@ -3,6 +3,7 @@
 // tests, defects, risks, runs and review requests, filtered by status,
 // "I took part" / "mention me", kind of item and text. Opening a thread
 // opens its item with the discussion.
+import { useLiveRefresh } from '@/composables/live'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -50,9 +51,11 @@ const shows = computed(() => [
 const kinds = computed(() => [{ label: t('discussions.view.anyType'), value: '' }, ...KINDS.map((k) => ({ label: t(`discussions.view.kind.${k}`), value: k }))])
 
 let seq = 0
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
   const n = ++seq
-  loading.value = true
+  if (!quiet) loading.value = true
   error.value = ''
   try {
     const params: Record<string, string> = { status: status.value }
@@ -67,6 +70,16 @@ async function load() {
     if (n === seq) loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ((pid.value ? { actionPrefix: 'comment.', projectId: pid.value } : null)),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  }, { announce: () => t('live.listUpdated') },
+)
 onMounted(load)
 let timer: ReturnType<typeof setTimeout> | undefined
 watch([status, show, kind], () => {

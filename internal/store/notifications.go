@@ -22,7 +22,7 @@ func (s *Store) AddNotifications(ctx context.Context, tenantID string, list []mo
 	if len(list) == 0 {
 		return nil
 	}
-	return s.tx(ctx, func(c conn) error {
+	err := s.tx(ctx, func(c conn) error {
 		for i := range list {
 			n := &list[i]
 			n.ID = newID()
@@ -40,6 +40,18 @@ func (s *Store) AddNotifications(ctx context.Context, tenantID string, list []mo
 		}
 		return nil
 	})
+	if err == nil && s.notified != nil {
+		users := make([]string, 0, len(list))
+		seen := map[string]bool{}
+		for _, n := range list {
+			if !seen[n.UserID] {
+				seen[n.UserID] = true
+				users = append(users, n.UserID)
+			}
+		}
+		AfterCommit(ctx, func() { s.notified(tenantID, users) })
+	}
+	return err
 }
 
 // ListNotifications returns a user's newest notifications and the number

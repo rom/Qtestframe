@@ -104,6 +104,10 @@ Reports are produced in the language you currently use in Qtestframe (**User men
 
 Below the standard reports, **Documents** offers two complete documents: a **requirements specification** and a **test plan** with its test specification. **Create…** opens the generator in the [document archive](documents.md#create-a-requirements-specification-or-a-test-plan), where the document is saved.
 
+### Logo on the first page
+
+Reports and generated documents show the logo of the organisation or the project at the top of their first page, in PDF, Word and Markdown (where it is an embedded image). An administrator sets the organisation's logo under [Administration → Documents](administration.md#logo-on-reports-and-documents); a project can use its own instead, or none, under **Categories & settings → Project → Logo on reports and documents**, with the placement (left, centre or right), the maximum size and a preview of the first page.
+
 ## Custom reports
 
 Under **Custom report** you design a report yourself:
@@ -208,7 +212,7 @@ Use the status buttons above the table to show only some rows, and clear the box
 
 What the workbook contains:
 
-- **One row per item** with *ID*, *Key*, *Version* and one column per field: folder, title, description, obligation, type, priority, status, source, rationale, owner, tags, acceptance criteria (one per line, for example `test: Login works (threshold: 2 s)`) and one column per relation type (*Refines*, *Depends on* …) with the keys of the related requirements. Tests have preconditions, expected result, execution type, estimated minutes and *Verifies* (the keys of the requirements the test verifies) instead.
+- **One row per item** with *ID*, *Key*, *Version* and one column per field: folder, title, description, obligation, type, priority, status, source, rationale, owner, tags, acceptance criteria (one per line, for example `test: Login works (threshold: 2 s)`), *D3FEND* and *EMB3D* (ids separated by commas; unknown ids are left out with a warning in the preview) and one column per relation type (*Refines*, *Depends on* …) with the keys of the related requirements. Tests have preconditions, expected result, execution type, estimated minutes and *Verifies* (the keys of the requirements the test verifies) instead.
 - **Steps of tests** on the sheet *Steps*, one row per step: the test, the step number, action, data, expected result and, for a shared step, the key of the called test. The steps of a test listed on the *Tests* sheet are replaced by its rows on the *Steps* sheet.
 - **Drop-down lists** for the fields with fixed values, grey columns that are only for information (*Verified by*), and a sheet *Instructions*.
 
@@ -254,7 +258,7 @@ What happens:
 - **Values**: priorities such as *Highest*, *High* … or Azure DevOps priorities 1 to 4 become *critical* … *low*. Statuses are matched by name (*To Do* and *New* → draft, *In Progress*, *Active* and *Approved* → approved, *Done*, *Resolved* and *Closed* → implemented, *Removed* → obsolete) and, in Jira, otherwise by the status category. A value without a match is left out with a note on the row; the requirement keeps its value.
 - **Re-import**: the key of every issue (`SHOP-12`) or the ID of every work item is kept with the requirement it became. Importing again **updates** that requirement instead of creating a second one, and shows a conflict when the requirement was also edited in Qtestframe. New requirements get *Jira SHOP-12* or *Azure DevOps 1234* as their source. Requirements are never deleted by an import, and existing requirements stay in their folder.
 - **Relations**: links between imported items become requirement relations: in Jira *blocks* (the blocked issue *depends on* the other), *duplicates*, *clones* (*derived from*), *relates to* and the parent of a sub-task or child issue (*refines*); in Azure DevOps *Parent* (*refines*), *Predecessor* (*depends on*), *Duplicate of* and *Related*. A link removed in the tracker removes the relation at the next import with relations. Links to items outside the query are left out.
-- Only reading is needed: the import never changes anything in Jira or Azure DevOps.
+- Only reading is needed: the import never changes anything in Jira or Azure DevOps. To keep both sides in step, use the [two-way sync](#two-way-sync-with-jira-and-azure-devops).
 
 #### Import sources
 
@@ -264,6 +268,33 @@ What happens:
 - **Azure DevOps**: the **Organization address** (`https://dev.azure.com/organization`, or the collection address of Azure DevOps Server), the **Project**, a **Personal access token** with the scope *Work Items (Read)*, and optionally the default **Area path** and **Work item types**.
 
 Tokens are write-only, as for the issue tracker. **Check connection** tries the saved connection.
+
+### Two-way sync with Jira and Azure DevOps
+
+The import brings changes from the tracker when you run it. The **two-way sync** keeps requirements and their Jira issues or Azure DevOps work items in step by itself, in both directions: **Tracker sync** in the project's navigation. It uses the connections and tokens of the [import sources](#import-sources); the token then needs write access (see below). Requirements imported before are already linked and take part at once.
+
+**Settings** *(Manager)*, per source:
+
+- **Sync with Jira / Azure DevOps** turns it on; **Every (minutes)** schedules it (0: only by hand and through the webhook). A sync that fails waits twice as long each time, at most a day; a tracker that limits the rate is left alone for as long as it asks.
+- **Items from the tracker**: the **JQL** or **WIQL query** of the items that take part (empty: the default query of the import source). With **Create requirements for items the query finds that are not linked yet** new issues become requirements in the chosen folder. Linked items stay in sync when the query no longer finds them.
+- **Requirements to the tracker**: **Create items for requirements made here** gives the requirements of a **folder**, with a **tag** or matching a **query** (at least one of them) a new issue or work item of the **Issue type** / **Work item type** (Jira also needs the **project key**, by default the one of the issue tracker). The new item is linked at once.
+- **Field mapping**: which requirement field (title, description, status, priority, tags, acceptance criteria, rationale) goes to which tracker field, given by its ID (`summary`, `customfield_10050`, `System.Title`, `Microsoft.VSTS.Common.AcceptanceCriteria`), and the **direction**: *Both ways*, *Tracker → Qtestframe*, *Qtestframe → tracker* or *Not synced*. Status and priority have a **value map** for each direction, one `value = value` per line, e.g. `In Progress = approved` and `approved = In Progress`. A Jira status is set through the workflow: the issue must have a transition to it.
+- **When both sides changed a field**: *Ask* (a conflict, see below), *The tracker wins* or *Qtestframe wins*.
+- **Impact of changes from the tracker**: as for any edit, *Mark links suspect*, *Notify owners only* or *Do nothing* ([impact](traceability-and-coverage.md)).
+- **Sync comments** copies new comments of the issue into the requirement's discussion and new discussion comments to the issue, each with its author. Only comments made after this was turned on are synced.
+- **Sync links** makes the tracker's links between synced items relations and the other way round (*relates to*, *depends on*, *duplicates*; in Jira also *derived from*, in Azure DevOps also *refines*). Links and relations are only added, never removed.
+- **Writes per minute** spaces the changes sent to the tracker.
+- **Webhook**: the tracker can tell Qtestframe at once that an item changed (see the administrator guide). Copy the **Webhook URL**, **Generate** a shared secret, enter both in the tracker and **Save**; the secret is not shown again.
+
+Scheduled syncs and webhooks run with the permissions of whoever saved the settings last.
+
+**How a sync decides.** After each sync Qtestframe remembers the mapped values of both sides. At the next sync, a side whose value differs from that changed: a field changed on one side goes to the other (as its direction allows); a field changed on both is decided by the setting above. A change from the tracker is saved like an edit made here, with history, audit log, the review rules and *If-Match*: a requirement edited by someone while the sync ran is left for the next sync. A change to the tracker is checked the same way: Azure DevOps refuses it when the work item was changed after it was read, and the sync tries again next time. Requirements and tracker items are never deleted by the sync.
+
+**Overview.** **Sync now** syncs at once; **Preview** shows what a sync would do (pull, push, new requirements and items, conflicts, comments, links) without saving anything. The card shows the linked requirements, the last and next sync, the open conflicts and the last error.
+
+**Conflicts.** With *Ask*, a field changed on both sides waits in **Conflicts**: per field the value **at the last sync**, **Qtestframe now** and **the tracker now**. Choose per field *Keep Qtestframe*, *Take Jira* (*Take Azure DevOps*) or *Leave both* and **Apply decisions**, or decide for all fields at once. The decision is carried out at once (written to the tracker or saved here). The other fields of the item keep syncing meanwhile; a conflict closes by itself when both sides agree again.
+
+**Sync log.** Every sync (by hand, scheduled, webhook, a conflict decision) with what it did per item and the errors; the newest 100 per source are kept. Syncs are also in the audit log (`req_sync.run`).
 
 ### CSV and Excel from DOORS and Polarion
 

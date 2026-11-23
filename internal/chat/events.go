@@ -15,18 +15,20 @@ import (
 // ("discussion.created" → "Discussion created").
 
 // Groups are the event groups in the order of the channel settings.
-var Groups = []string{"runs", "defects", "requirements", "reviews", "releases", "waivers", "risks", "other"}
+var Groups = []string{"runs", "defects", "requirements", "reviews", "releases", "waivers", "changes", "risks", "other"}
 
 // groupOf maps the first part of an event name to its group.
 var groupOf = map[string]string{
 	"run": "runs", "execution": "runs", "cycle": "runs", "session": "runs", "exploratory": "runs",
+	"environment": "runs", "testdata": "runs",
 	"defect":      "defects",
 	"requirement": "requirements", "test": "requirements", "comment": "requirements", "baseline": "requirements",
 	"discussion": "requirements", "mention": "requirements",
-	"review":  "reviews",
-	"release": "releases",
-	"waiver":  "waivers",
-	"risk":    "risks",
+	"review":         "reviews",
+	"release":        "releases",
+	"waiver":         "waivers",
+	"change_request": "changes",
+	"risk":           "risks",
 }
 
 // Group returns the group of an event ("other" when its prefix is unknown).
@@ -45,6 +47,7 @@ var groupLabels = map[string][2]string{
 	"reviews":      {"Reviews", "Granskningar"},
 	"releases":     {"Releases", "Releaser"},
 	"waivers":      {"Waivers", "Undantag"},
+	"changes":      {"Change requests", "Ändringsbegäranden"},
 	"risks":        {"Risks", "Risker"},
 	"other":        {"Other", "Övrigt"},
 }
@@ -58,33 +61,46 @@ func GroupLabel(lang, group string) string {
 }
 
 var eventLabels = map[string][2]string{
-	"requirement.created": {"Requirement created", "Krav skapat"},
-	"requirement.updated": {"Requirement updated", "Krav ändrat"},
-	"test.created":        {"Test created", "Test skapat"},
-	"test.updated":        {"Test updated", "Test ändrat"},
-	"run.created":         {"Test run created", "Testkörning skapad"},
-	"run.updated":         {"Test run updated", "Testkörning ändrad"},
-	"run.completed":       {"Test run completed", "Testkörning avslutad"},
-	"execution.updated":   {"Test result recorded", "Testresultat registrerat"},
-	"defect.created":      {"Defect reported", "Defekt rapporterad"},
-	"defect.updated":      {"Defect updated", "Defekt ändrad"},
-	"defect.status":       {"Defect status changed", "Defektens status ändrad"},
-	"defect.assigned":     {"Defect assigned", "Defekt tilldelad"},
-	"defect.regression":   {"Regression detected", "Regression upptäckt"},
-	"risk.created":        {"Risk identified", "Risk identifierad"},
-	"risk.updated":        {"Risk updated", "Risk ändrad"},
-	"release.created":     {"Release created", "Release skapad"},
-	"release.updated":     {"Release updated", "Release ändrad"},
-	"release.released":    {"Release released", "Release släppt"},
-	"comment.created":     {"New comment", "Ny kommentar"},
-	"review.requested":    {"Review requested", "Granskning begärd"},
-	"review.completed":    {"Review completed", "Granskning klar"},
-	"baseline.signed":     {"Baseline signed", "Baslinje signerad"},
-	"waiver.requested":    {"Waiver requested", "Undantag begärt"},
-	"waiver.approved":     {"Waiver approved", "Undantag godkänt"},
-	"waiver.rejected":     {"Waiver rejected", "Undantag avslaget"},
-	"waiver.revoked":      {"Waiver revoked", "Undantag återkallat"},
-	EventTest:             {"Test message", "Testmeddelande"},
+	"requirement.created":           {"Requirement created", "Krav skapat"},
+	"requirement.updated":           {"Requirement updated", "Krav ändrat"},
+	"test.created":                  {"Test created", "Test skapat"},
+	"test.updated":                  {"Test updated", "Test ändrat"},
+	"run.created":                   {"Test run created", "Testkörning skapad"},
+	"run.updated":                   {"Test run updated", "Testkörning ändrad"},
+	"run.completed":                 {"Test run completed", "Testkörning avslutad"},
+	"execution.updated":             {"Test result recorded", "Testresultat registrerat"},
+	"defect.created":                {"Defect reported", "Defekt rapporterad"},
+	"defect.updated":                {"Defect updated", "Defekt ändrad"},
+	"defect.status":                 {"Defect status changed", "Defektens status ändrad"},
+	"defect.assigned":               {"Defect assigned", "Defekt tilldelad"},
+	"defect.regression":             {"Regression detected", "Regression upptäckt"},
+	"risk.created":                  {"Risk identified", "Risk identifierad"},
+	"risk.updated":                  {"Risk updated", "Risk ändrad"},
+	"release.created":               {"Release created", "Release skapad"},
+	"release.updated":               {"Release updated", "Release ändrad"},
+	"release.released":              {"Release released", "Release släppt"},
+	"comment.created":               {"New comment", "Ny kommentar"},
+	"review.requested":              {"Review requested", "Granskning begärd"},
+	"review.completed":              {"Review completed", "Granskning klar"},
+	"baseline.signed":               {"Baseline signed", "Baslinje signerad"},
+	"waiver.requested":              {"Waiver requested", "Undantag begärt"},
+	"waiver.approved":               {"Waiver approved", "Undantag godkänt"},
+	"waiver.rejected":               {"Waiver rejected", "Undantag avslaget"},
+	"waiver.revoked":                {"Waiver revoked", "Undantag återkallat"},
+	"change_request.submitted":      {"Change request submitted", "Ändringsbegäran inskickad"},
+	"change_request.review":         {"Change request to decide", "Ändringsbegäran att besluta"},
+	"change_request.approved":       {"Change request approved", "Ändringsbegäran godkänd"},
+	"change_request.rejected":       {"Change request rejected", "Ändringsbegäran avslagen"},
+	"change_request.deferred":       {"Change request deferred", "Ändringsbegäran uppskjuten"},
+	"change_request.implemented":    {"Change request implemented", "Ändringsbegäran genomförd"},
+	"change_request.closed":         {"Change request closed", "Ändringsbegäran stängd"},
+	"environment.status_changed":    {"Environment status changed", "Miljöns status ändrad"},
+	"environment.booking_requested": {"Environment booking requested", "Miljöbokning begärd"},
+	"environment.booking_approved":  {"Environment booking approved", "Miljöbokning godkänd"},
+	"environment.booking_rejected":  {"Environment booking rejected", "Miljöbokning avslagen"},
+	"testdata.refresh_requested":    {"Test data refresh requested", "Uppdatering av testdata begärd"},
+	"testdata.refresh_resolved":     {"Test data refresh request closed", "Begäran om uppdatering av testdata stängd"},
+	EventTest:                       {"Test message", "Testmeddelande"},
 }
 
 // EventTest is the event of a "send test message".

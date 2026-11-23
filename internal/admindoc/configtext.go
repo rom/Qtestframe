@@ -461,6 +461,30 @@ var keyDocs = map[string]text{
 		"Hour of the day (UTC, 0–23) when daily digests are sent.",
 		"Timme på dygnet (UTC, 0–23) då dagliga sammanfattningar skickas.",
 	},
+	"live.enabled": {
+		"Live updates and presence: lists, dashboards, the notification bell and open items update when someone else changes something, and editors show who else is viewing or editing an item (a Server-Sent Events stream, `GET /api/v1/events/stream`). Off: the web client falls back to polling and to the conflict check on save. Each user can also turn it off in the profile. Behind a reverse proxy, turn off response buffering for the stream (see *Live updates* in the chapter *Features added later*).",
+		"Liveuppdateringar och närvaro: listor, översikter, notisklockan och öppna objekt uppdateras när någon annan ändrar något, och redigerare visar vem mer som tittar på eller redigerar ett objekt (en Server-Sent Events-ström, `GET /api/v1/events/stream`). Av: webbklienten frågar i stället med jämna mellanrum och konfliktkontrollen vid sparande gäller som förut. Varje användare kan också stänga av det i profilen. Bakom en omvänd proxy ska buffring av svar stängas av för strömmen (se *Liveuppdateringar* i kapitlet *Funktioner som lagts till senare*).",
+	},
+	"live.heartbeat": {
+		"Interval of the keep-alive comments on an idle stream. Keep it below the idle timeout of proxies and load balancers (nginx `proxy_read_timeout`, 60 s by default).",
+		"Intervall för håll-vid-liv-kommentarer på en ström utan händelser. Håll det under tidsgränsen för inaktiva anslutningar i proxyer och lastbalanserare (nginx `proxy_read_timeout`, 60 s som standard).",
+	},
+	"live.max_connections": {
+		"Most open event streams of this server instance; further connections are refused with 503 and the clients poll instead.",
+		"Högsta antal öppna händelseströmmar i den här serverinstansen; fler anslutningar avvisas med 503 och klienterna frågar i stället med jämna mellanrum.",
+	},
+	"live.max_connections_per_user": {
+		"Most open event streams of one user (one per browser tab; a tab in the background closes its stream after a minute).",
+		"Högsta antal öppna händelseströmmar för en användare (en per flik i webbläsaren; en flik i bakgrunden stänger sin ström efter en minut).",
+	},
+	"live.replay_buffer": {
+		"Number of recent events kept in memory so that a client that reconnects (`Last-Event-ID`) receives what it missed; when its last event is no longer kept, it reloads what it shows instead.",
+		"Antal senaste händelser som hålls i minnet så att en klient som ansluter igen (`Last-Event-ID`) får det den missade; finns dess senaste händelse inte kvar läser den i stället om det den visar.",
+	},
+	"live.presence_ttl": {
+		"How long a user stays listed as viewing or editing an item after the last presence heartbeat of their browser (sent every 20 s).",
+		"Hur länge en användare visas som att den tittar på eller redigerar ett objekt efter den senaste närvarosignalen från webbläsaren (skickas var 20:e sekund).",
+	},
 	"similarity.embeddings.enabled": {
 		"Use an embeddings service for the similarity of requirements and tests (suspected duplicates, the *Similar requirements* panel). Off by default: the similarity is then computed on the server. **When on, the title, description and criteria or steps of the items are sent to that service.** Also in **Administration → System settings**.",
 		"Använd en tjänst för inbäddningar (embeddings) för likheten mellan krav och tester (misstänkta dubbletter, panelen *Liknande krav*). Av som standard: likheten beräknas då på servern. **När den är på skickas rubrik, beskrivning och kriterier eller steg för objekten till tjänsten.** Finns även under **Administration → Systeminställningar**.",
@@ -480,6 +504,70 @@ var keyDocs = map[string]text{
 	"similarity.embeddings.timeout": {
 		"Longest time to wait for the service. When it fails or times out, the local similarity is used.",
 		"Längsta tid att vänta på tjänsten. När den misslyckas eller inte svarar används den lokala likheten.",
+	},
+	"ai.enabled": {
+		"Turn on the optional [AI assistance](system-settings.md#ai-assistance) (drafts of tests, improved requirements, run summaries, framework mappings, acceptance criteria). Off by default. **When on, the text of the items a user asks about is sent to the configured service.** Each organisation must also turn it on, and projects can opt out. Also in **Administration → System settings**.",
+		"Slå på den valfria [AI-assistansen](system-settings.md#ai-assistans) (utkast till tester, förbättrade krav, sammanfattningar av körningar, ramverksmappningar, acceptanskriterier). Av som standard. **När den är på skickas texten i de objekt som en användare frågar om till den konfigurerade tjänsten.** Varje organisation måste också slå på den, och projekt kan välja bort den. Finns även under **Administration → Systeminställningar**.",
+	},
+	"ai.provider": {
+		"Type of the service: `anthropic` (the Anthropic Messages API) or `openai` (an OpenAI-compatible chat completions endpoint: OpenAI, Azure OpenAI, or a local server such as Ollama or vLLM).",
+		"Typ av tjänst: `anthropic` (Anthropics Messages API) eller `openai` (en OpenAI-kompatibel chat completions-slutpunkt: OpenAI, Azure OpenAI eller en lokal server som Ollama eller vLLM).",
+	},
+	"ai.url": {
+		"Base URL of the service. Empty with `anthropic`: `https://api.anthropic.com`. With `openai` required, e.g. `https://llm.example.com/v1` (the server appends `/chat/completions`); an Azure OpenAI deployment URL with `?api-version=…` sends the key as `api-key`.",
+		"Tjänstens bas-URL. Tom med `anthropic`: `https://api.anthropic.com`. Krävs med `openai`, t.ex. `https://llm.example.com/v1` (servern lägger till `/chat/completions`); en Azure OpenAI-deployment-URL med `?api-version=…` skickar nyckeln som `api-key`.",
+	},
+	"ai.model": {
+		"Model id sent to the service (required): the model of your Anthropic account, or the model or deployment of your OpenAI-compatible service. There is no built-in default.",
+		"Modell-id som skickas till tjänsten (krävs): modellen i ditt Anthropic-konto, eller modellen eller deploymenten i din OpenAI-kompatibla tjänst. Det finns ingen inbyggd standard.",
+	},
+	"ai.api_key_file": {
+		"File with the API key (relative: in `$CREDENTIALS_DIRECTORY`); sent as `x-api-key` (Anthropic), `Authorization: Bearer` or `api-key` (Azure). The key can also be stored, encrypted, in the system settings; it is never shown again. Local servers may need no key.",
+		"Fil med API-nyckeln (relativ: i `$CREDENTIALS_DIRECTORY`); skickas som `x-api-key` (Anthropic), `Authorization: Bearer` eller `api-key` (Azure). Nyckeln kan också sparas, krypterad, i systeminställningarna; den visas aldrig igen. Lokala servrar behöver kanske ingen nyckel.",
+	},
+	"ai.timeout": {
+		"Longest time to wait for one answer (5 s–10 min). The user can also cancel a request.",
+		"Längsta tid att vänta på ett svar (5 s–10 min). Användaren kan också avbryta en begäran.",
+	},
+	"ai.max_tokens": {
+		"Most tokens of one answer (256–128000).",
+		"Högsta antal token i ett svar (256–128000).",
+	},
+	"ai.temperature": {
+		"Sampling temperature sent to the service (0–2). Empty: not sent (the service's default; some models accept no other value).",
+		"Temperatur som skickas till tjänsten (0–2). Tom: skickas inte (tjänstens standard; vissa modeller accepterar inget annat värde).",
+	},
+	"ai.rate_limit": {
+		"Most AI requests of one user per hour.",
+		"Högsta antal AI-förfrågningar per användare och timme.",
+	},
+	"ai.features.draft_tests": {
+		"Offer *Draft tests* in the requirement editor (and drafting a test from a linked requirement in the test editor).",
+		"Erbjud *Utkast till tester* i kravredigeraren (och utkast till ett test från ett länkat krav i testredigeraren).",
+	},
+	"ai.features.improve_requirement": {
+		"Offer *Improve requirement* (a rewrite for the requirement checks, shown as a diff).",
+		"Erbjud *Förbättra krav* (en omskrivning för kravkontrollerna, visad som skillnad).",
+	},
+	"ai.features.summarize_run": {
+		"Offer *Summarise failures* on the run page (a summary and defect drafts).",
+		"Erbjud *Sammanfatta fel* på körningssidan (en sammanfattning och utkast till defekter).",
+	},
+	"ai.features.suggest_mappings": {
+		"Offer *Suggest mappings* (ATT&CK, D3FEND, EMB3D, CWE) for requirements and risks, checked against the embedded lists.",
+		"Erbjud *Föreslå mappningar* (ATT&CK, D3FEND, EMB3D, CWE) för krav och risker, kontrollerade mot de inbyggda listorna.",
+	},
+	"ai.features.suggest_criteria": {
+		"Offer *Suggest acceptance criteria* in the requirement editor.",
+		"Erbjud *Föreslå acceptanskriterier* i kravredigeraren.",
+	},
+	"ai.price_input": {
+		"Optional price per million input tokens (any currency), to show an estimated cost with each answer.",
+		"Valfritt pris per miljon indata-token (valfri valuta), för att visa en uppskattad kostnad med varje svar.",
+	},
+	"ai.price_output": {
+		"Optional price per million output tokens.",
+		"Valfritt pris per miljon utdata-token.",
 	},
 	"system_settings.locked": {
 		"Settings that cannot be changed in **Administration → System settings**: keys (`logging.level`), prefixes ending in `.*` (`email.*`) or `*`. Their stored overrides are ignored.",
@@ -574,6 +662,7 @@ var envDocs = map[string]text{
 	"QTF_EMAIL_PORT":                {"`email.port` (ignored when not a number)", "`email.port` (ignoreras om det inte är ett tal)"},
 	"QTF_EMAIL_PASSWORD":            {"the SMTP password; wins over `email.password_file` and a password stored in the web client", "SMTP-lösenordet; vinner över `email.password_file` och ett lösenord sparat i webbklienten"},
 	"QTF_RUNNER_ENABLED":            {"`runner.enabled` (`1` or `true` = on)", "`runner.enabled` (`1` eller `true` = på)"},
+	"QTF_LIVE_ENABLED":              {"`live.enabled` (`1` or `true` = on, anything else = off)", "`live.enabled` (`1` eller `true` = på, allt annat = av)"},
 	"QTF_RUNNER_WEB_ENABLED":        {"`runner.web.enabled` (`1` or `true` = on)", "`runner.web.enabled` (`1` eller `true` = på)"},
 	"QTF_RUNNER_WORK_DIR":           {"`runner.work_dir`", "`runner.work_dir`"},
 	"QTF_RUNNER_WEB_NODE":           {"`runner.web.node`", "`runner.web.node`"},

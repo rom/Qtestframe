@@ -6,6 +6,8 @@ Qtestframe säger till när något behöver din uppmärksamhet, låter dig be ko
 
 **Mitt arbete** i huvudnavigeringen (under **Projekt** och **Sök**) är din personliga arbetslista: allt som väntar på dig, i alla projekt som du ser, även dina granskningar. Siffran bredvid visar hur många poster som behöver dig; den blir röd när några av dem är försenade. Varje rad länkar till posten och visar varför den finns med. En post visas en gång, med alla sina orsaker: ett krav som du äger och som någon har bett dig granska är en rad med **Ägare** och **Granskning begärd**.
 
+![Mitt arbete: de objekt som behöver dig, med skälen till att de listas (Ägare, Granskas), projekt, status och förfallodatum](../images/sv-my-work.png)
+
 | Orsak | Posten finns med eftersom |
 |---|---|
 | **Ägare** | du äger ett krav med status utkast, granskning, godkänt eller implementerat, ett testfall med status utkast eller granskning, eller en öppen risk (identifierad eller under åtgärd) |
@@ -59,6 +61,22 @@ När servern kan skicka e-post kan du också få dina notiser med e-post. Välj 
 - **Daglig sammanfattning**: en gång om dagen får du ett e-postmeddelande med de notiser som du inte har läst än och som inte har skickats tidigare. Inget skickas de dagar då inga nya notiser har kommit.
 
 Du får aldrig e-post om det du själv har gjort. Varje e-postmeddelande med notiser har en länk tillbaka till den här inställningen, så att du när som helst kan ändra eller stänga av den.
+
+## Liveuppdateringar
+
+Qtestframe visar andras ändringar när de görs, utan att du behöver läsa om sidan:
+
+- **Listor** med krav, tester, körningar, defekter, risker, testcykler, diskussioner och *Mitt arbete* uppdateras en stund efter att någon annan har ändrat ett objekt i dem. Det du har markerat, sidan du är på och var du har scrollat stannar som de var.
+- Siffrorna på **översikten** och **notisklockan** uppdateras av sig själva.
+- I en **körning** syns andra testares resultat medan du kör dina egna tester.
+- Ett **öppet objekt** visar vem mer som tittar på eller redigerar det: deras avatarer och till exempel *Bea redigerar också det här* ovanför objektet. Någon räknas som redigerande så fort de har ändringar som inte är sparade.
+- När någon sparar en nyare version av objektet du har öppet visas *Bea har ändrat objektet (version 4).* **Läs om** läser in deras version. Har du ändringar som inte är sparade visar **Jämför** fälten de har ändrat bredvid dina, som när sparandet krockar; du kan då fortsätta redigera, ta deras version eller spara dina ändringar ovanpå deras. Inget går förlorat eller skrivs över utan att du väljer det, och meddelandet hindrar inte ditt arbete: **Stäng** döljer det.
+
+Skärmläsare meddelar ändringarna artigt och högst varje halvminut, så att de inte avbryter dig; meddelandet om en nyare version av objektet du har öppet läses upp en gång.
+
+Du får bara höra om objekt som du får se. Om anslutningen bryts (till exempel på ett tåg) ansluter Qtestframe igen av sig själv och kommer ikapp; i en flik i bakgrunden pausar den efter en minut och kommer ikapp när du kommer tillbaka.
+
+För att stänga av liveuppdateringar öppnar du **Profil → Inställningar → Liveuppdateringar**. Listor uppdateras då när du öppnar dem och klockan kontrollerar varje minut; andra ser inte längre att du tittar på eller redigerar något. En administratör kan också stänga av liveuppdateringar för hela servern.
 
 ## Begär granskning
 

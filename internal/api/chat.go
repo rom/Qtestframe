@@ -397,6 +397,8 @@ func (s *Server) chatItemURL(projectID, kind, id string, extra ...string) string
 		return p + "/risks?risk=" + q
 	case "waiver":
 		return p + "/waivers?waiver=" + q
+	case model.KindChangeRequest:
+		return p + "/change-requests?cr=" + q
 	case "release":
 		return p + "/releases?r=" + q
 	case "baseline":
@@ -522,6 +524,11 @@ func (s *Server) chatMessage(ctx context.Context, p *Principal, pr *model.Projec
 		if rel := str(o, "release_id"); rel != "" {
 			f.releases = append(f.releases, rel)
 		}
+	case obj(d, "change_request") != nil:
+		o := obj(d, "change_request")
+		m.Kind, m.Key, m.Title, m.Status, m.Priority = model.KindChangeRequest, str(o, "key"), str(o, "title"), str(o, "status"), str(o, "priority")
+		m.URL = s.chatItemURL(pr.ID, model.KindChangeRequest, str(o, "id"))
+		m.Summary = excerpt(str(o, "decision_comment", "reason"), 300)
 	case obj(d, "signoff") != nil:
 		o := obj(d, "signoff")
 		m.Kind, m.Title, m.Status = "baseline", str(d, "baseline"), str(o, "meaning")

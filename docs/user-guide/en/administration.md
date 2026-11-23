@@ -10,6 +10,7 @@
 | **Provisioning (SCIM)** | Admins |
 | **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
 | **Audit log** | Test lead and up |
+| **Electronic records** | Test lead and up (Admins change the settings) |
 | **Field sets** (custom fields and templates per project type) | Admins and Test leads |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
@@ -30,7 +31,7 @@ Every organisation starts with seven built-in roles. By default each role in the
 | **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content; write in [discussions](discussions.md) (*comment.create*, as all roles below except Viewer) |
 | **Subject matter expert** | take part in writing requirements: create and edit requirements with their criteria, rationale, sources, relations, links and attachments (*requirement.write*); review requirements (*requirement.review*) and discuss them; read tests, runs, defects and risks. No tests, runs, cycles, waivers, settings or members |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
-| **Test lead** | plan [test cycles](test-cycles.md) (*cycle.plan*), mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
+| **Test lead** | plan [test cycles](test-cycles.md) (*cycle.plan*), manage [test environments](test-environments.md) and approve their bookings (*environment.manage*), mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
 | **Manager** | approve and reject requirements (*requirement.review*), write requirements and requirement folders, create and edit projects, all categories and the [traceability rules](traceability-and-coverage.md#traceability-rules), create baselines |
 | **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, remove any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
@@ -46,12 +47,16 @@ The default matrix of permissions:
 | `requirement.review` | | ✔ | ✔ | | | ✔ | ✔ |
 | `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `requirement.write` | | | ✔ | | | ✔ | ✔ |
+| `change.create` | | | ✔ | | ✔ | ✔ | ✔ |
+| `change.approve` | | | | | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `environment.manage`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
 | `waiver.approve`, `project.create`, `project.update` | | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | | ✔ |
 
 **Waivers and risk acceptance.** Approving, rejecting and revoking [waivers and deviations](waivers-and-soa.md) and signing the acceptance of a residual risk need `waiver.approve` (a project permission, so a project role can grant it in one project). Every decision is an electronic signature (password, or a recent single sign-on) and is recorded in the audit log; the requester of a waiver cannot decide it. Grant `waiver.approve` only to people who may accept not meeting requirements.
+
+**Change requests.** Proposing changes in [change requests](change-requests.md) (and assessing, applying, verifying and closing them) needs `change.create`; deciding them as a member of the project's change control board, and the emergency override of enforced change control, need `change.approve`. Both are project permissions. Every decision is an electronic signature, and the requester of a change request cannot decide it.
 
 **Review decisions.** Setting a requirement to *Approved* or *Rejected* needs `requirement.review`; setting a test to *Ready* needs `test.review`. The same applies to bulk edits, to creating an item with that status and to restoring a version that has it. A reviewer without the write permission may change only the status; editing anything else still needs `requirement.write` or `test.write`. Each decision is recorded in the audit log as `requirement.review` or `test.review`. A copied requirement or test starts as *Draft*, so it is reviewed again.
 
@@ -165,6 +170,19 @@ What a rule forbids is refused by the server, also for API clients and CI import
 - when a rule is relaxed, the same reasons appear as an amber warning, and the test can be executed.
 
 **Requirement status follows test results** (on by default) lets an implemented requirement become **Verified** when it is [verified](traceability-and-coverage.md#verification) — every criterion has passing evidence and every child requirement is verified — and go back to **Implemented** when that no longer holds. Turned off, statuses change only by hand and disagreements are listed under **Verification → Inconsistencies**. Whether each criterion needs evidence of its own is a project setting (**Settings → Project → Verification**).
+
+## Logo on reports and documents
+
+*(Admin and Test lead, or any role with `settings.manage`)* **Administration → Documents** sets the organisation's logo. It is shown at the top of the first page of every [report](reports-and-export.md#logo-on-the-first-page) and [generated document](documents.md#create-a-requirements-specification-or-a-test-plan) — requirements specifications, test plans, release, verification, SoA, quality, cycle and exploratory reports, custom reports and the change impact export — in PDF, Word and Markdown.
+
+![Administration → Documents: the uploaded logo, its placement and maximum size, and the preview of the first page](../images/en-admin-documents.png)
+
+- **Upload logo** takes a PNG, JPEG or SVG image of at most 2 MB. An SVG is converted into an image on the server by Qtestframe's own renderer: scripts, links, embedded images and texts in it are never used (convert texts to outlines before you upload it).
+- **Placement** puts the logo at the left (default), in the centre or at the right of the page.
+- **Maximum width** and **Maximum height** (in millimetres; default 50 × 20 mm) bound its size. The logo keeps its proportions and is never shown larger than its own size at 96 dpi.
+- The **preview** shows the first page of a document with the logo as it will be printed, also before you save.
+
+Projects use this logo unless they upload their own under **Categories & settings → Project → Logo on reports and documents**, or turn on **No logo in this project's documents** *(Manager and Admin, or any role with `project.update`)*. A [project archive](reports-and-export.md#save-and-load-projects) carries the project's own logo; the organisation's logo is part of backups.
 
 ## Field sets and templates
 
@@ -287,6 +305,28 @@ The API reference (`docs/api.md`, section *OSLC*) lists the properties and the q
 - Limit the time range with **From date** and **To date**.
 - **Number of entries** sets how many are shown (up to 5000).
 - **Export CSV** downloads the filtered log for an auditor; **Export Markdown** downloads it as a Markdown document with the date range and filter.
+
+
+### Verify the audit trail
+
+The audit log cannot be changed through the application, and every entry is linked to the one before it by a hash (a fingerprint of its content), so a change made directly in the database shows. **Verify audit trail** at the top of the page checks the whole chain and shows either *The audit trail is intact* (with the number of entries and signed checkpoints) or the **first broken link**: the entry number and what is wrong – the entry was changed, entries are missing or were removed at the end, or the chain was rewritten. Keep that evidence and report it as your procedures say.
+
+**Export with hashes (JSON)** and **(CSV)** download the whole trail with each entry's number, hash and the hash of the entry before it, for archiving outside Qtestframe. The open *Details* of an entry also show its number, hash and, in electronic-records mode, the reason for the change.
+
+## Electronic-records mode
+
+*(Admins change it; Test lead and up can read it and create the report)* **Administration → Electronic records** turns on the controls regulated organisations need for electronic records and signatures (21 CFR Part 11, EU GMP Annex 11). It is **off** until an admin turns it on. When it is on:
+
+- **Every signature asks you to confirm who you are**: your password and, if you use an authenticator app, a code from it. You choose the **meaning** of your signature (for example *Approved* or *Reviewed*) from the organisation's list. If you sign in with single sign-on, you sign shortly after signing in.
+- **Some actions need a signature**: the admin chooses among approving a requirement, approving a test (status *Ready*), the release go (*Released*) and creating a baseline. When you do one of them – in the editor, a bulk change, the spreadsheet or a bulk review – the signature dialog opens; the change is saved once you have signed. If you cancel, nothing is saved.
+- **Some changes need a reason**: when you save such a change, a dialog asks why (for example the number of a change request). The reason is stored in the audit log with the change.
+- **You are signed out after a time without activity** (default 15 minutes). Background updates such as the notification count do not keep you signed in.
+
+Signed records show their **Electronic signatures**: the printed name and e-mail of the signer, the date and time in UTC and in the signer's time zone, the meaning, what was signed and how the signer confirmed it. When the record is changed after it was signed, the signature shows *Record changed after signing*. You find them under **History** of a requirement or test, in a baseline's sign-offs, in a waiver, under the acceptance of a risk and in a release.
+
+![Electronic records settings and the Part 11 / Annex 11 controls report](../images/en-admin-erecords.png)
+
+The admin sets on the same page the actions that need a signature, the meanings (one per line), the changes that need a reason, the inactivity time and how soon after a single sign-on accounts may sign. **Create report** shows the **Part 11 / Annex 11 controls**: for each requirement of the regulations what Qtestframe does, what your organisation's procedures must cover and the evidence from this installation; **Download (Markdown)** saves it. Qtestframe gives technical controls – validation, training, written policies and checking people's identity before they get an account remain your organisation's responsibility, and the report says so.
 
 ## Organisations
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLiveRefresh } from '@/composables/live'
 import { impactGateFor } from '@/composables/impact'
 import type { ImpactDryRun } from '@/lib/correlations'
 import StaleBadge from './StaleBadge.vue'
@@ -40,6 +41,8 @@ import { useVariants } from '@/composables/variants'
 import BulkRelationsDialog from './BulkRelationsDialog.vue'
 import BulkItemLinksDialog from './BulkItemLinksDialog.vue'
 import BulkRequirementIssuesDialog from './BulkRequirementIssuesDialog.vue'
+import TestStubsDialog from './TestStubsDialog.vue'
+import BulkProposeDialog from './BulkProposeDialog.vue'
 import type { ImportResult } from '@/lib/reqImport'
 import { api, ApiError, asItems } from '@/lib/api'
 import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
@@ -108,8 +111,13 @@ const bulkApplicabilityOpen = ref(false)
 const bulkRelationsOpen = ref(false)
 const bulkLinksOpen = ref(false)
 const bulkIssuesOpen = ref(false)
+/** "Generate test code" of the selection or the listed tests */
+const stubsOpen = ref(false)
 const shownIds = computed(() => items.value.map((i) => i.id))
 const canLink = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
+/** the bulk "Propose change" (change requests) */
+const canPropose = computed(() => auth.can(P.changeCreate))
+const bulkProposeOpen = ref(false)
 const folders = computed(() => proj.folders[props.kind])
 // rows take the colour of their folder (or of its nearest coloured parent)
 const colorOfFolder = computed(() => folderColors(folders.value))
@@ -134,9 +142,11 @@ const items = ref<Item[]>([])
 const loading = ref(false)
 const selection = ref<Item[]>([])
 
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
   if (!pid.value) return
-  loading.value = true
+  if (!quiet) loading.value = true
   queryError.value = null
   try {
     const res = await api.get<{ items: Item[] }>(`/projects/${pid.value}/${plural.value}`, {
@@ -156,6 +166,17 @@ async function load() {
   }
 }
 
+// live updates: reload quietly when others change items of this kind here
+useLiveRefresh(
+  () => (pid.value ? { types: [props.kind], projectId: pid.value } : null),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  },
+  { announce: () => t('live.listUpdated') },
+)
 watch([selectedFolder, recursive, () => quick.value, variant], () => load(), { deep: true })
 watch(selectedFolder, () => {
   foldersOpen.value = false
@@ -612,6 +633,17 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           />
           <Menu id="exchange-menu" ref="exchangeMenu" :model="exchangeItems" popup />
           <Button
+            v-if="!isReq && items.length"
+            :label="t('stubs.button')"
+            icon="pi pi-code"
+            severity="secondary"
+            outlined
+            class="stubs-button"
+            aria-haspopup="dialog"
+            v-tooltip.bottom="t('stubs.buttonHint')"
+            @click="stubsOpen = true"
+          />
+          <Button
             v-if="canReview && !selection.length && items.length"
             :label="t('bulkReview.toolbar')"
             icon="pi pi-verified"
@@ -680,7 +712,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
       </div>
       <div v-if="composed && composed !== q" class="small muted mono" style="margin: -4px 0 10px">q = {{ composed }}</div>
 
-      <div v-if="selection.length && (canWrite || canReview)" class="bulkbar" role="toolbar" :aria-label="t('workspace.bulkActions')">
+      <div v-if="selection.length && (canWrite || canReview || canPropose)" class="bulkbar" role="toolbar" :aria-label="t('workspace.bulkActions')">
         <b>{{ t('common.selected', { count: selection.length }) }}</b>
         <Button
           v-if="canReview"
@@ -692,6 +724,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           aria-haspopup="dialog"
           @click="bulkReviewOpen = true"
         />
+        <Button v-if="!isReq" :label="t('stubs.button')" icon="pi pi-code" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="stubsOpen = true" />
         <template v-if="canWrite">
         <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.setStatus')" :aria-label="t('workspace.setStatus')" size="small" style="min-width: 140px" />
         <Select v-model="bulkPriority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.setPriority')" :aria-label="t('workspace.setPriority')" size="small" style="min-width: 140px" />
@@ -717,6 +750,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         />
         <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
         </template>
+        <Button v-if="canPropose" :label="t('changeRequests.propose.button')" icon="pi pi-file-edit" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkProposeOpen = true" />
         <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
       </div>
 
@@ -772,7 +806,12 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           </template>
         </Column>
         <Column field="key" :header="t('workspace.colKey')" :reorderable-column="false" sortable style="width: 130px">
-          <template #body="{ data }"><button type="button" class="link-button key-link" tabindex="-1" @click.stop="openEditor((data as Item).id)"><span class="key">{{ data.key }}</span></button></template>
+          <template #body="{ data }">
+            <button type="button" class="link-button key-link" tabindex="-1" @click.stop="openEditor((data as Item).id)"><span class="key">{{ data.key }}</span></button>
+            <span v-if="data.open_change_requests?.length" class="cr-badge small" :title="t('changeRequests.badge', { keys: data.open_change_requests.join(', ') })">
+              <i class="pi pi-file-edit" aria-hidden="true" />{{ t('changeRequests.badgeShort') }}<span class="sr-only">: {{ t('changeRequests.badge', { keys: data.open_change_requests.join(', ') }) }}</span>
+            </span>
+          </template>
         </Column>
         <Column field="title" :header="t('workspace.colTitle')" :reorderable-column="false" sortable style="min-width: 240px" body-class="stack-main">
           <template #body="{ data }">
@@ -960,4 +999,6 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
   <BulkItemLinksDialog v-if="canWrite" v-model:visible="bulkLinksOpen" :source-type="isReq ? 'requirement' : 'test'" :project-id="pid" :selected="selectedIds" />
   <BulkRelationsDialog v-if="isReq && canWrite" v-model:visible="bulkRelationsOpen" :project-id="pid" :selected="selectedIds" @done="load" />
   <BulkRequirementIssuesDialog v-if="isReq && canWrite" v-model:visible="bulkIssuesOpen" :project-id="pid" :selected="selectedIds" />
+  <TestStubsDialog v-if="!isReq" v-model:visible="stubsOpen" :project-id="pid" :ids="selectedIds" :query="composed" :shown="items.length" :can-write="canWrite" @marked="load" />
+  <BulkProposeDialog v-if="canPropose" v-model:visible="bulkProposeOpen" :project-id="pid" :kind="isReq ? 'requirement' : 'test'" :rows="selection" @proposed="load" />
 </template>

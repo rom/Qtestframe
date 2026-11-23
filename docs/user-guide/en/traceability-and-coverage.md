@@ -180,6 +180,8 @@ The mode next to each type (**Becomes suspect** or **Review recommended**) appli
 
 **Other connections** turns the other kinds of connection on or off: trace links (they can mark suspect or only recommend a review), shared steps, test dependencies, item links, risks, defects, variants and code changes (these only recommend a review).
 
+**Changed variant applicability** decides what happens when the [variants an item applies to](variants-and-code.md#applicability) change: **Recommends a review (default)** — nothing is marked, the owners of the items the rules reach are notified —, **Marks links and relations suspect** — the change counts like a change of the text, along the rules above — or **Has no impact**. The preview before saving and the **Impact** list name the change *applicability*.
+
 ## Stale results
 
 A test result goes **stale** when
@@ -253,6 +255,8 @@ Open a requirement and choose the **Verification** tab. It shows the state with 
 | **Not yet passed** | there is evidence, but none of it has passed yet (not run, a suspect link, a step not executed) |
 | **No evidence** | no test and no verification record |
 
+**Verification** in the project navigation lists every requirement with its state, as a hierarchy, per system element and with the inconsistencies. In a project with [variants](variants-and-code.md#show-for-a-variant), **Show for variant** limits it to the requirements of one variant, verified only by the tests that apply to the variant and the results that count for it (runs for the variant, its parents and runs without a variant, in its configurations). Verification records count for every variant.
+
 ### Tests for criteria and test steps
 
 A test linked to a requirement can be mapped to the criteria it verifies. In the **Verification** tab choose **Map criteria** next to the test, tick the criteria and, if you want, the **step** of the test that shows it. A criterion mapped to a step is passed when that step passed in the test's latest execution. When you link a test you can also choose a criterion right away (the selector next to **Link tests**).
@@ -288,7 +292,7 @@ The **Verification** report and the requirements specification show the same: th
 
 ## The dashboard
 
-**Dashboard** is the first page of every project. It has three tabs: **Overview** for the state today, **Trends** for how it changed and **Quality** for what needs attention. The tab is part of the address, so a link can open the dashboard on a given tab. On a phone the charts are stacked.
+**Dashboard** is the first page of every project. It starts with three dashboards, shown as tabs: **Overview** for the state today, **Trends** for how it changed and **Quality** for what needs attention. Every dashboard is a grid of widgets that you can rearrange and extend, and a project can have more dashboards (see [Customising dashboards](#customising-dashboards)). The tab is part of the address, so a link can open the dashboard on a given tab. On a phone the widgets are stacked.
 
 ![The dashboard with key figures, requirement coverage, execution results and recent runs](../images/en-dashboard.png)
 
@@ -333,6 +337,28 @@ The further key figures and these charts are counted on the server in one reques
 
 Every chart has a text alternative with its figures for screen readers, and the legend names each colour. The heat map is a table with a caption, and every cell names its likelihood, impact, level and number of risks.
 
+### Customising dashboards
+
+Every widget of a dashboard can be moved, resized, configured and removed, and you can add widgets and dashboards.
+
+- **Shared dashboards** are seen by everyone who may read the project. The built-in **Overview**, **Trends** and **Quality** are shared; project administrators (permission *project.update*) can change them, add further shared dashboards and choose the one the project opens with (**⋮ → Make the project default**, marked with a star).
+- **Personal dashboards** are yours alone. Choose **⋮ → New dashboard** (optionally starting from a copy of the dashboard shown), or customise a shared dashboard you may not change: **Save as my dashboard** keeps your changes as a personal copy.
+- **Home** in the sidebar is your personal **home dashboard** across all projects: by default **My work**, your discussions and a note. A widget about a project names the project in its settings. You can make it your start page under **Profile → Start page**.
+
+Choose **Customise** to edit the dashboard shown:
+
+- **Add widget** lists the widget types you may see, with a short description. Among them: key figures, requirement coverage, verification status, counts by status, severity or level (as a bar, horizontal bar or doughnut chart, or a table), test results trend, flaky tests, defects, the risk heat map, release readiness (go / no-go per exit criterion and per variant), release burn-up, cycle burn-down, quality metrics, consistency checks, My work, discussions, recent activity, traceability gaps (requirements without tests and tests without requirements), exploratory testing, MITRE ATT&CK, D3FEND and EMB3D coverage, a **saved query** – any query in the [query language](search-and-filters.md), shown as a table of the first items or as a count – and a **note** in Markdown.
+- Drag a widget by its **move** handle (the arrows next to its title) and resize it by the handle in its lower right corner. Widgets in the way move down; **Tidy up** closes the gaps.
+- With the keyboard, focus the move or resize handle and use the **arrow keys** (one cell per press; with **Shift** on the move handle they resize). **Home** and **End** go to the first or last column (on the resize handle: the narrowest and the full width). **Enter** or **Space** picks the widget up and drops it again, **Escape** puts it back where it was. Every change is announced to screen readers, for example "Coverage: column 7, row 1".
+- The **settings** button (cog) sets the title, the width (1–12 columns) and height (rows of about 80 pixels) and the settings of the widget: the release, cycle or variant, the query, the chart type, the period and so on. **Remove** (×) takes the widget off the dashboard.
+- **Save** keeps the layout; **Cancel** discards it.
+
+Some widgets have quick controls of their own, such as the period of a trend or the release of a burn-up; they change the view only until you leave the page.
+
+The **⋮** menu also has **Rename**, **Export as JSON** and **Import from JSON** (a dashboard exported here or on another server; widgets of unknown types are left out), **Reset to default** (a built-in dashboard goes back to its original layout, a copy to the layout it was copied from) and **Delete dashboard**.
+
+Widgets show only what you may see: a widget whose data needs a permission you do not have, or that is about a project you cannot open, says so instead. The widgets on screen load their data together in one request, and widgets further down load when you scroll to them; **Refresh** loads them all again.
+
 ## Dependency graphs
 
 **Dependency graph** in the project sidebar draws how items build on each other. Choose **Requirements** or **Tests** at the top:
@@ -354,7 +380,7 @@ Cycles (for example two requirements that depend on each other) are drawn, but o
 
 ## Requirement analytics
 
-**Analytics** in the project navigation analyses all requirements of the project at once (open it again or select **Analyse again** after changes). At the top: the **health** (the share of requirements without problems or warnings), the number of requirements and tests, the share **covered by tests** (rejected and obsolete requirements are not counted) and the average **language score**.
+**Analytics** in the project navigation analyses all requirements of the project at once (open it again or select **Analyse again** after changes). In a project with variants, **Show for variant** analyses only the requirements and tests of one variant, with its coverage, results and verification; the compliance below follows the same choice. At the top: the **health** (the share of requirements without problems or warnings), the number of requirements and tests, the share **covered by tests** (rejected and obsolete requirements are not counted) and the average **language score**.
 
 - **Obligation levels** shows how many requirements have each level, including those with **no obligation**.
 - **Keywords per meaning** groups the keywords that mean the same (MUST, SHALL and REQUIRED; MAY and OPTIONAL …) and shows how each is used, so you see the convention of the project at a glance.

@@ -2,6 +2,8 @@
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 import SignInNotice from '@/components/SignInNotice.vue'
+import ERecordsHost from '@/components/ERecordsHost.vue'
+import { useERecordsStore } from '@/stores/erecords'
 import { usePrimeVue } from 'primevue/config'
 import { nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -20,6 +22,14 @@ const auth = useAuthStore()
 watch(
   () => auth.me?.user?.preferences?.language,
   (lang) => applyPreference(lang),
+  { immediate: true },
+)
+
+// electronic-records mode of the organisation: the signature dialogs adapt
+const erecords = useERecordsStore()
+watch(
+  () => auth.me?.tenant?.id,
+  () => void erecords.ensure(),
   { immediate: true },
 )
 
@@ -69,4 +79,5 @@ const toastBreakpoints = { '640px': { width: 'calc(100vw - 24px)', right: '12px'
   <Toast position="top-right" :pt="toastPt" :breakpoints="toastBreakpoints" />
   <ConfirmDialog :breakpoints="{ '640px': '100vw' }" />
   <SignInNotice />
+  <ERecordsHost />
 </template>

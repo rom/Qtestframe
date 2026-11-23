@@ -93,6 +93,8 @@ const (
 var projectArchiveTables = []archiveTable{
 	{"projects", `id = ?`},
 	{"configurations", ofProject},
+	// the project's environments (shared ones belong to the organisation)
+	{"environments", ofProject},
 	{"releases", ofProject},
 	{"folders", ofProject},
 	{"categories", ofProject},
@@ -162,6 +164,22 @@ var projectArchiveTables = []archiveTable{
 	{"exploratory_sessions", ofProject},
 	{"exploratory_scope", `session_id IN (SELECT id FROM exploratory_sessions WHERE project_id = ?)`},
 	{"exploratory_notes", `session_id IN (SELECT id FROM exploratory_sessions WHERE project_id = ?)`},
+	// change requests (0054)
+	{"change_control_settings", ofProject},
+	{"change_requests", ofProject},
+	{"change_request_items", `cr_id IN (SELECT id FROM change_requests WHERE project_id = ?)`},
+	{"change_request_signoffs", `cr_id IN (SELECT id FROM change_requests WHERE project_id = ?)`},
+	{"change_request_events", `cr_id IN (SELECT id FROM change_requests WHERE project_id = ?)`},
+	// the project's dashboards (personal ones load for accounts that
+	// exist here) and its default dashboard
+	{"dashboards", ofProject},
+	{"dashboard_defaults", ofProject},
+	// bookings of the project's environments; test data sets
+	{"environment_bookings", `environment_id IN (SELECT id FROM environments WHERE project_id = ?)`},
+	{"test_data_sets", ofProject},
+	{"test_data_links", `data_set_id IN (SELECT id FROM test_data_sets WHERE project_id = ?)`},
+	{"test_data_usage", `data_set_id IN (SELECT id FROM test_data_sets WHERE project_id = ?)`},
+	{"test_data_refresh_requests", `data_set_id IN (SELECT id FROM test_data_sets WHERE project_id = ?)`},
 	// last: they may be about any row above
 	{"revisions", ofTenant},
 	{"comments", ofTenant},
@@ -199,6 +217,16 @@ var ProjectArchiveExcluded = map[string]string{
 	"chat_deliveries":       "queue and log of chat posts",
 	"ci_deliveries":         "queue and log of CI status posts",
 	"similarity_embeddings": "cache of the embeddings service (computed again)",
+	"req_sync_configs":      "secret (webhook secret of the tracker sync) and the account it runs as",
+	"req_sync_conflicts":    "decisions waiting for the tracker sync (the sync is not part of the archive)",
+	"req_sync_runs":         "log of the tracker sync",
+	"audit_heads":           "organisation audit trail (hash chain)",
+	"audit_checkpoints":     "organisation audit trail (hash chain)",
+	"audit_keys":            "server keys of the audit trail",
+	"audit_backfill":        "organisation audit trail (hash chain)",
+	"erecords_settings":     "organisation",
+	"esignatures":           "organisation records of electronic signatures (bound to the organisation's audit trail; the archived sign-offs are kept)",
+	"esign_tickets":         "secret (single-use signing tickets)",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.
@@ -228,6 +256,8 @@ var mustMapColumns = map[string]string{
 	"code_change_items":  "item_id",
 	// polymorphic references to folders, requirements and tests
 	"exploratory_scope": "entity_id",
+	// polymorphic references to tests, configurations and runs
+	"test_data_links": "item_id",
 }
 
 // sanitizeArchiveRow removes secrets from a row (when saving and again
@@ -243,6 +273,9 @@ func sanitizeArchiveRow(table string, row map[string]any) {
 		// administrator sets a new secret and enables it
 		row["secret"] = ""
 		row["enabled"] = false
+	case "environments":
+		// the secret is write-only and stays behind
+		row["secret"] = ""
 	case "chat_channels":
 		// the webhook URL or access token is write-only, as above
 		row["secret"] = ""

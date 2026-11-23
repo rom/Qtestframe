@@ -32,12 +32,51 @@ Anyone who can read the project sees the CI setup; the tokens are never shown th
 
 ## Name automated tests after their key
 
-Qtestframe matches an automated result to a test by its **test key**, for example `SHOP-TC-12`. Put the key into the test:
+Qtestframe matches an automated result to a test by its **test key**, for example `SHOP-TC-12`. Put the key into the test (or [generate the test code](#generate-test-code) with the key already in it):
 
 - in the **test name** or **class name** of the JUnit report, for example `test_SHOP_TC_12_checkout` or `SHOP-TC-12 checkout`. Underscores stand for hyphens, because most languages do not allow hyphens in names; the key must be written in full and in capitals (`ShopTc12` is not recognised);
 - or as a **property** of the test case: `qtestframe.key`, `test_key` or `qtestframe`.
 
 The same identifier is what test selection filters on (`SHOP_TC_12`). Results without a key can create draft automated tests with `--create-missing` (see [runs](runs.md)). To group tests into the jobs of a generated child pipeline, tag them `runner:pytest`, `runner:go`, `runner:playwright` or `runner:maven` (or any name of your own); without such a tag, tests with the script language *playwright* go to `playwright` and *python* to `pytest`, the others to `default`.
+
+## Generate test code
+
+Instead of naming the tests by hand, let Qtestframe write a **stub** for each test: a source file for your test framework that is already named after the key, documents the test and reports as *skipped* until somebody implements it. Its results then map back without further work.
+
+**In the web client.** In **Tests**, select tests (or filter the list) and choose **Generate test code**. Pick the framework, the directory of the tests in the repository (and the package for Go and Java), look at the preview of each file and **Download zip** (or the one file). With the right to edit tests you can also tick **Set the script of the tests without one to their stub path** (see below). Under *Command line* the dialog shows the `qtestframe stubs` command that writes the same files.
+
+**On the command line**, in the repository:
+
+```
+qtestframe stubs --framework pytest --query 'execution_type:automated has:!script' --out tests/
+```
+
+`--query` selects the tests ([query language](search-and-filters.md); the default is `execution_type:automated`, `""` is all tests), `--ids` names tests by key, `--package` sets the Go or Java package (Go: the name of the directory by default), `--dry-run` only lists what would change. `QTF_URL`, `QTF_TOKEN` and `QTF_PROJECT` are read as for `report`; a token with the role *viewer* is enough to generate.
+
+**Frameworks:**
+
+| `--framework` | File | Key in | Not implemented | Test data |
+|---|---|---|---|---|
+| `pytest` | `test_SHOP_TC_12.py` | `def test_SHOP_TC_12_checkout…()` | `@pytest.mark.skip` | `@pytest.mark.parametrize` |
+| `playwright` | `SHOP-TC-12.spec.ts` | the title, `tag: '@SHOP-TC-12'` and the annotation `qtestframe` | `test.fixme()` | one test per row |
+| `go` | `shop_tc_12_test.go` | `func TestSHOP_TC_12_Checkout…` | `t.Skip` | a table with subtests |
+| `junit5` | `SHOP_TC_12Test.java` | the class and method names, `@Tag("SHOP-TC-12")` | `@Disabled` | `@ParameterizedTest` with `@CsvSource` |
+| `jest`, `vitest` | `SHOP-TC-12.test.ts` | the test name | `test.skip` | `test.skip.each` |
+| `robot` | `SHOP-TC-12.robot` | the test name and the tag `SHOP-TC-12` | `Skip` | one test case per row calling a keyword |
+| `cucumber` | `SHOP-TC-12.feature` | the feature and scenario names, the tag `@SHOP-TC-12` | the steps have no definitions yet; tag `@qtestframe-stub` | a Scenario Outline with Examples |
+
+Every stub contains the title, a link to the test, the requirements it verifies, the priority and tags, the description, the preconditions and the expected result, and the **steps as numbered TODO comments** with their data and expected results (Cucumber: as Given, When and Then steps). Parameters of the [test data](tests.md) become the parameters of the parametrised test; `{{name}}` placeholders stay in the comments (Cucumber: `<name>`). For Playwright, have the JUnit reporter write the annotation (`embedAnnotationsAsProperties: true`); the name alone is enough too. JUnit 5 needs `junit-jupiter-params` for data-driven tests. Cucumber has no skip marker: a stub's steps are undefined until you write their definitions; in strict mode Cucumber reports them as failed, so exclude the stubs with `--tags 'not @qtestframe-stub'` until they are implemented (they then have no result, and never a passed one).
+
+**Generating again.** Each file starts with a block between the comment lines `qtestframe:begin SHOP-TC-12 pytest body=…` and `qtestframe:end`. Keep these two lines. When you run `qtestframe stubs` again:
+
+- a file that does not exist is **created**;
+- a file whose code below the block is still the generated stub is **regenerated** completely (new steps, test data or title are taken over);
+- a file whose code you have changed (implemented) keeps it: only the **header block** is rewritten (title, requirements, preconditions…). The steps in the code are not touched again;
+- a file without the marker lines (or with those of another test) is **left alone**.
+
+Line endings and trailing spaces do not count as changes. The download from the web client always contains the full stubs: merge it into a repository with the command line instead.
+
+**Mark the scripts.** With `--mark-script` (or the check box in the dialog) each selected test that has no script gets the script `qtestframe:stub tests/test_SHOP_TC_12.py`, becomes automated, gets the script language of the framework (python, playwright or javascript, where there is one) and the tag `runner:<name>` for the [child pipeline](#test-selection) (pytest, playwright, go, maven, jest, vitest, robot, cucumber) unless it has a runner tag. The server never runs such a script (*Run automated tests* skips it): the results come from CI. Because the script is no longer empty, `has:!script` leaves these tests out the next time. `--script-dir` sets the directory written into the script when `--out` is not the path in the repository. Marking needs the right to edit tests and is recorded in the history of each test.
 
 ## Upload results
 
@@ -165,4 +204,5 @@ The selection is also `POST /api/v1/projects/{pid}/ci/select`.
 - GitLab's job token (`CI_JOB_TOKEN`) cannot post commit statuses or merge request notes: use a project access token, or let the server post.
 - The server posts only to GitLab; GitHub statuses come from the pipeline.
 - Test selection is only as good as the links: commits and merge requests are known through the [webhooks](variants-and-code.md#webhooks) or the keys in commit messages, and files only through the path map.
+- Generated stubs are templates built into the server; they cannot be customised per organisation yet. Project configurations are not turned into parameters: run the stubs once per configuration in CI (`qtestframe report --configuration`).
 - API tokens are limited by roles, not by finer scopes: give the CI user the tester role, or a custom role with only `project.read`, `test.read`, `run.read`, `run.execute` and `run.write`.

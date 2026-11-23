@@ -25,9 +25,12 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Testkörningar och exekvering](runs.md) | Körningar, exekveringsvyn och dess kortkommandon, defekter, CI-import med API-nycklar, bilagor |
 | [Utforskande test](exploratory-testing.md) | Sessionsbaserad utforskande testning: uppdrag, sessionens tidtagning, typade anteckningar med kortkommandon, defekter från anteckningar, utvärderingar, mått och sessionsrapporten |
 | [Undantag, restrisk och SoA](waivers-and-soa.md) | Undantag och avvikelser med signerade godkännanden, restrisk och dess acceptans, uttalandet om tillämplighet (ISO/IEC 27001 bilaga A) |
+| [Ändringsbegäranden och ändringshantering](change-requests.md) | Att föreslå ändringar av godkända krav och tester, bedömningen av påverkan, ändringsnämndens signerade beslut, att genomföra, verifiera och stänga; tvingande ändringshantering och nödåtgärden |
 | [Spårbarhet och täckning](traceability-and-coverage.md) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
 | [Testcykler](test-cycles.md) | Planera testcykler: testfall, testare och uppskattningar, körningarna en cykel skapar, framsteg, nedbränning, arbetsbelastning, återkommande cykler |
+| [Testmiljöer och testdata](test-environments.md) | Miljöer med komponenter och versioner, status, hälsokontroller och inloggningsuppgifter; bokningskalender, kapacitet och godkännanden; miljön och versionerna för varje resultat; delade testdatamängder med klassning, utgångsdatum, användning och uppdateringsbegäranden |
 | [Dubbletter och konflikter](duplicates-and-conflicts.md) | Liknande krav medan du skriver, misstänkt dubblerade krav och testfall, möjligen motstridiga krav, sammanslagning, gränsvärden |
+| [AI-assistans](ai-assistance.md) | Valfria AI-förslag: utkast till tester, bättre kravformuleringar, acceptanskriterier, ramverksmappningar, sammanfattningar av körningar med utkast till defekter; vad som skickas, och att slå på och av |
 | [Varianter och kod](variants-and-code.md) | Varianter och tillämplighet, täckning per variant, incheckningar, merge requests, byggen och regressionsurvalet |
 | [CI/CD](ci-cd.md) | Pipelinemallar för GitLab och GitHub, uppladdning av resultat, kvalitetsgrinden, commit-statusar och anteckningar i merge requests, testurval och underpipelines |
 | [Baslinjer](baselines.md) | Frysa en release och jämföra versioner |

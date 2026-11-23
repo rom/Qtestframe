@@ -6,6 +6,7 @@ import ObligationHelp from './ObligationHelp.vue'
 import ObligationKeywordLine from './ObligationKeywordLine.vue'
 import MentionText from './MentionText.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import ESignaturesPanel from '@/components/ESignaturesPanel.vue'
 import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
 import ApplicabilityPanel from '@/components/ApplicabilityPanel.vue'
 import CodePanel from '@/components/CodePanel.vue'
@@ -15,7 +16,12 @@ import RequirementWaivers from './RequirementWaivers.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
+import ChangeControlBar from './ChangeControlBar.vue'
+import { changeBlocked, proposalOf } from '@/lib/changeRequests'
 import StaleBadge from './StaleBadge.vue'
+import AssistMenu, { type AssistAction } from './AssistMenu.vue'
+import AssistDialog, { type AssistApply } from './AssistDialog.vue'
+import { addCweTags, addIds, type AiFeature } from '@/lib/ai'
 import { contentChanges, needsImpactConfirm, type ChangeImpact, type ImpactChoice } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
@@ -69,6 +75,7 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import ConflictDialog from './ConflictDialog.vue'
+import LiveItemBar from './LiveItemBar.vue'
 import SuggestInput from './SuggestInput.vue'
 import { autocompleteEnabled, fetchSuggestions, rememberValues, savedEntries } from '@/lib/suggest'
 import CatalogOrigin from './CatalogOrigin.vue'
@@ -333,6 +340,48 @@ async function confirmAll() {
     notify.fail(e)
   }
 }
+// ---------- AI assistance (suggestions only: applied to the form, saved with Save)
+const assistOpen = ref(false)
+const assistFeature = ref<AiFeature | null>(null)
+const assistBody = computed(() => ({
+  requirement_id: item.value?.id ?? '',
+  title: form.value.title,
+  description: form.value.description,
+  criteria: form.value.criteria.map((c) => ({ description: c.description, method: c.method, threshold: c.threshold })),
+  analysis_language: analysisLanguage.value,
+}))
+const assistActions = computed<AssistAction[]>(() => {
+  const noText = !form.value.title.trim() && !form.value.description.trim() ? 'ai.reason.noText' : ''
+  return [
+    { feature: 'improve_requirement', blocked: form.value.description.trim() ? '' : 'ai.reason.noText' },
+    { feature: 'suggest_criteria', blocked: noText },
+    { feature: 'suggest_mappings', blocked: noText },
+    { feature: 'draft_tests', blocked: !item.value ? 'ai.reason.needsSaved' : !auth.can(P.testWrite) ? 'ai.reason.noPermission' : noText },
+  ]
+})
+function openAssist(f: AiFeature) {
+  assistFeature.value = f
+  assistOpen.value = true
+}
+function onAssistApply(a: AssistApply) {
+  const f = form.value
+  if (a.feature === 'improve_requirement') {
+    if (a.title) f.title = a.title
+    f.description = a.description
+  } else if (a.feature === 'suggest_criteria') {
+    for (const c of a.criteria) f.criteria.push({ description: c.description, method: c.method, threshold: c.threshold ?? '' })
+  } else if (a.feature === 'suggest_mappings') {
+    f.d3fend = addIds(f.d3fend, a.mappings.filter((m) => m.framework === 'd3fend').map((m) => m.id))
+    f.emb3d = addIds(f.emb3d, a.mappings.filter((m) => m.framework === 'emb3d').map((m) => m.id))
+    f.tags = addCweTags(f.tags, a.mappings.filter((m) => m.framework === 'cwe').map((m) => m.id))
+  }
+  notify.info(t('ai.appliedToForm'))
+}
+function onAssistCreated(n: number) {
+  if (n) notify.ok(t('ai.tests.created', { n, key: item.value?.key ?? '' }, n))
+  void loadLinks()
+}
+
 async function loadLinks() {
   if (!props.itemId) return
   try {
@@ -458,6 +507,27 @@ function bodyOf(f: typeof form.value) {
 }
 /** the body as loaded, for undoing an edit */
 const loaded = ref<Record<string, unknown> | null>(null)
+// ---------- change control: propose the edits in a change request ----------
+const ccBar = ref<InstanceType<typeof ChangeControlBar> | null>(null)
+function proposal() {
+  const proposed = loaded.value ? proposalOf('requirement', loaded.value, bodyOf(form.value) as Record<string, unknown>) : {}
+  const cur = (item.value ?? {}) as unknown as Record<string, unknown>
+  const current: Record<string, unknown> = {}
+  for (const k of Object.keys(proposed)) current[k] = cur[k] ?? null
+  return { proposed, current }
+}
+async function onProposed() {
+  error.value = ''
+  await load()
+}
+/** a save refused by change control: say why and offer to propose the change */
+function blockedSave(e: unknown): boolean {
+  const b = changeBlocked(e)
+  if (!b) return false
+  error.value = t('changeRequests.blockedSave', { reasons: b.reasons.join('; ') })
+  ccBar.value?.propose()
+  return true
+}
 const undoStore = useUndoStore()
 watch(
   () => undoStore.version,
@@ -493,6 +563,19 @@ async function reloadTheirs() {
   conflictOpen.value = false
   await load()
 }
+// ---------- live updates: someone saved while this is open ----------
+/** unsaved changes (the user counts as editing for presence) */
+const dirty = computed(() => !!props.itemId && !!loaded.value && JSON.stringify(bodyOf(form.value)) !== JSON.stringify(loaded.value))
+/** compare the unsaved changes with the version saved meanwhile */
+async function compareNewer(by: string) {
+  if (!props.itemId) return
+  try {
+    const current = await api.get<Requirement>(`/requirements/${props.itemId}`)
+    showConflict({ current, changedBy: by, changedAt: current.updated_at ?? '' })
+  } catch (e) {
+    error.value = errorMessage(e)
+  }
+}
 /** save only what was changed here, on top of the newer version */
 async function mergeMine() {
   const st = stale.value
@@ -521,6 +604,8 @@ const impactOpen = ref(false)
 const impactPreview = ref<ChangeImpact | null>(null)
 const impactFields = ref<string[]>([])
 async function save() {
+  // under enforced change control the edit becomes a proposal
+  if (ccBar.value?.blocked()) return ccBar.value.propose()
   if (isNew.value || !loaded.value || !props.itemId) return doSave()
   const changed = contentChanges('requirement', loaded.value, bodyOf(form.value) as Record<string, unknown>)
   if (!changed.length) return doSave()
@@ -564,7 +649,7 @@ async function doSave(choice?: ImpactChoice) {
   } catch (e) {
     const st = staleOf<Requirement>(e)
     if (st) showConflict(st)
-    else error.value = errorMessage(e)
+    else if (!blockedSave(e)) error.value = errorMessage(e)
   } finally {
     saving.value = false
   }
@@ -635,6 +720,7 @@ function criterionLabel(id: string | null) {
 </script>
 
 <template>
+  <LiveItemBar type="requirement" :item-id="itemId" :version="item?.version ?? null" :dirty="dirty" @reload="reloadTheirs" @compare="compareNewer" />
   <div v-if="loading" class="empty" aria-busy="true"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <template v-else>
   <Tabs v-if="item" :id="tabsId" v-model:value="tab" class="editor-tabs" scrollable>
@@ -665,6 +751,7 @@ function criterionLabel(id: string | null) {
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><DiscussionPanel entity="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (commentCount = n)" @open="(n) => (openDiscussions = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="requirement" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
+  <ESignaturesPanel entity-type="requirement" :entity-id="item.id" :stamp="item.version" />
   <HistoryPanel
     entity="requirement"
     :entity-id="item.id"
@@ -698,6 +785,8 @@ function criterionLabel(id: string | null) {
         <i class="pi pi-exclamation-circle" aria-hidden="true" />{{ t('defectsView.openCount', { n: openDefects }, openDefects) }}
       </button>
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
+      <span v-if="canWrite" class="grow" />
+      <AssistMenu v-if="canWrite" :project-id="projectId" :actions="assistActions" size="small" @select="openAssist" />
     </div>
     <CatalogOrigin v-if="item?.catalog_ref" kind="requirement" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
@@ -911,6 +1000,18 @@ function criterionLabel(id: string | null) {
     <RequirementWaivers v-if="item" :requirement-id="item.id" :project-id="projectId" />
     <ApplicabilityPanel v-if="item" item-type="requirement" :item-id="item.id" :item-key="item.key" :project-id="projectId" :can-write="canWrite" :refresh="links.length" />
 
+    <ChangeControlBar
+      v-if="item"
+      ref="ccBar"
+      kind="requirement"
+      :item-id="item.id"
+      :project-id="projectId"
+      :item-key="item.key"
+      :item-title="item.title"
+      :version="item.version"
+      :proposal="proposal"
+      @proposed="onProposed"
+    />
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
       <SplitButton
@@ -948,5 +1049,6 @@ function criterionLabel(id: string | null) {
   </form>
   </template>
   <ImpactConfirmDialog v-model:visible="impactOpen" :impact="impactPreview" :project-id="projectId" :changed="impactFields" :saving="saving" @confirm="confirmImpact" />
+  <AssistDialog v-model:visible="assistOpen" :project-id="projectId" :feature="assistFeature" :body="assistBody" mode="create" @apply="onAssistApply" @created="onAssistCreated" />
   <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

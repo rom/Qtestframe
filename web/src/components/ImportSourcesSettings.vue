@@ -88,7 +88,9 @@ async function checkSource(source: ImportSourceId) {
 <template>
   <section class="card" style="max-width: 640px; margin-top: 16px" aria-labelledby="h-import-sources">
     <h2 id="h-import-sources" class="plain-heading" style="margin-bottom: 4px">{{ t('importSources.title') }}</h2>
-    <p class="small muted" style="margin: 0 0 12px">{{ t('importSources.intro') }}</p>
+    <p class="small muted" style="margin: 0 0 12px">
+      {{ t('importSources.intro') }} <RouterLink :to="{ name: 'trackerSync' }">{{ t('importSources.syncLink') }}</RouterLink>
+    </p>
     <Message v-if="loadError" severity="error" :closable="false">{{ loadError }}</Message>
     <form v-else class="grid" style="gap: 16px" @submit.prevent="save">
       <fieldset class="plain-fieldset grid" style="gap: 12px">

@@ -359,11 +359,21 @@ func (l *lexer) fieldTerm(rawField, op string, start int) (token, error) {
 		return l.sortTerm(val, vpos, start)
 	}
 	if strings.EqualFold(rawField, "has") && op == ":" && (l.schema == nil || !known) {
-		f, ok := l.schema.resolve(val)
-		if !ok {
-			return token{}, &Error{Pos: vpos, Msg: fmt.Sprintf("unknown field %q", val)}
+		// has:!field (or has:-field) is NOT has:field
+		neg := strings.HasPrefix(val, "!") || strings.HasPrefix(val, "-")
+		name := val
+		if neg {
+			name = val[1:]
 		}
-		return token{kind: tTerm, pos: start, cond: &node{kind: nCond, field: f, op: ":", value: "*", ck: cHas}}, nil
+		f, ok := l.schema.resolve(name)
+		if !ok {
+			return token{}, &Error{Pos: vpos, Msg: fmt.Sprintf("unknown field %q", name)}
+		}
+		n := &node{kind: nCond, field: f, op: ":", value: "*", ck: cHas}
+		if neg {
+			n = &node{kind: nNot, child: n}
+		}
+		return token{kind: tTerm, pos: start, cond: n}, nil
 	}
 	if !known {
 		return token{}, &Error{Pos: start, Msg: fmt.Sprintf("unknown field %q", rawField)}

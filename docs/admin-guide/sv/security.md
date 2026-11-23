@@ -98,7 +98,7 @@ Servern måste kunna läsa vissa hemligheter tillbaka, så de kan inte hashas. D
 | signeringshemligheter för webhooks | `webhooks.secret` |
 | token för ärendesystem (Jira, GitHub, GitLab) | `projects.defect_tracker` |
 | värden för hemliga webbtestvariabler | `projects.web_tests` |
-| SMTP-lösenord, nyckeln till tjänsten för inbäddningar och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
+| SMTP-lösenord, nycklarna till tjänsterna för inbäddningar och AI och OIDC-klienthemligheter som angetts i webbklienten | `system_settings` |
 
 Lösenord (bcrypt), API- och SCIM-nycklar, sessioner, inbjudningar, ihågkomna enheter och återställningskoder lagras som hashar och behöver ingen nyckel. Hemligheter i konfigurationsfilen, `*_file`-inställningar och `QTF_*`-variabler lagras aldrig i databasen.
 
@@ -205,7 +205,58 @@ Samma sak gäller, i svagare form, HSM-nycklar (använd HSM:ens egen nyckelsäke
 
 Varje organisation har en händelselogg (**Administration → Händelselogg**, behörigheten `audit.read`, API `GET /api/v1/audit`, nyaste först, upp till 5000 poster per begäran): vem (användar-id och e-post, eller `SCIM: <token>`, eller `cli`), vad (`action`, objekt, korta detaljer) och när. Här registreras inloggningar (med metod, och `mfa=…`, `amr`/`acr` för single sign-on), ändringar av projekt, objekt, körningar, medlemmar, roller, nycklar, delning, organisationer och användare, exporter, säkerhetskopiering och återställning (`admin.backup`, `admin.restore`), MFA-återställningar och policyändringar, samt systeminställningar (`settings.update`). Gamla och nya värden för objekt finns i objektens historik, inte i händelseloggen; klientadressen finns i begärandeloggen, inte i posten.
 
-Varje post skrivs också som en loggpost `audit` på nivån INFO. Skicka loggen till en central syslog-server (se [Loggning](logging-and-monitoring.md#central-syslog)), så att spåret överlever att värden komprometteras. Misslyckade inloggningar syns i serverloggen (`login failed`) och i användarens inloggningshistorik, inte i händelseloggen. Händelseloggen ingår i en säkerhetskopia.
+Varje post skrivs också som en loggpost `audit` på nivån INFO. Skicka loggen till en central syslog-server (se [Loggning](logging-and-monitoring.md#central-syslog)), så att spåret överlever att värden komprometteras. Misslyckade inloggningar syns i serverloggen (`login failed`) och i användarens inloggningshistorik, inte i händelseloggen. Händelseloggen ingår i en säkerhetskopia. Posterna registrerar också den orsak till ändringen som anges i läget för elektroniska poster (`reason`).
+
+### Manipuleringssäker händelselogg
+
+Händelseloggen i varje organisation är en **hashkedja** (kommandoradens systemposter, till exempel `admin.backup`, har en egen kedja). Varje post får ett löpnummer (`seq`, 1, 2, …), hashen av posten före (`prev_hash`) och en egen hash: SHA-256 över en kanonisk kodning av postens fält (organisation, löpnummer, id, UTC-tid på mikrosekunden, användare, åtgärd, objekt, detaljer, orsak till ändringen) och föregående hash. Den exakta kodningen finns i `docs/api.md` ("Tamper-evident audit trail"), så att en export kan kontrolleras med andra verktyg.
+
+- **Så kedjas posterna.** En post skrivs i transaktionen för ändringen den registrerar (en ändring som rullas tillbaka lämnar ingen post) och kedjas direkt när transaktionen har bekräftats, i en kort egen transaktion som håller organisationens rad i `audit_heads` (PostgreSQL: `SELECT … FOR UPDATE`). Tillägg i en organisation sker alltså i tur och ordning utan lås under själva begäran, och flera serverprocesser kan dela databasen. Tills posten är kedjad (normalt millisekunder) visar den `seq` 0; poster som en process lämnade okedjade när den stoppades kedjas av nästa post eller vid nästa start.
+- **Signerade kontrollpunkter.** Var 1 000:e post, minst varje timme medan poster skrivs och vid varje verifiering och export skriver servern en kontrollpunkt: en HMAC-SHA256 över organisationen, ett löpnummer och den postens hash, med en 256-bitarsnyckel i `audit_keys` som är **krypterad som de andra lagrade hemligheterna** (se [Kryptering av lagrade hemligheter](#kryptering-av-lagrade-hemligheter)). Den som kan ändra databasen men inte läsa serverns nyckel (nyckelfilen, TPM eller HSM) kan räkna om hashar men inte förfalska kontrollpunkter: en omskriven kedja eller borttagna poster före den senaste kontrollpunkten upptäcks. Poster efter den senaste kontrollpunkten kan en sådan angripare ta bort oupptäckt; kopian i central syslog och regelbundna exporter täpper till den luckan. Utan nyckelleverantör lagras nyckeln i klartext och verifieringen säger det.
+- **Vad den upptäcker**, med den första brutna länken: en ändrad post (`entry_changed`), en borttagen, utbytt eller omkastad post (`link_broken`, `sequence_gap`), borttagna poster i slutet (`truncated`, mot kedjans registrerade slut och kontrollpunkterna), en omskriven kedja (`checkpoint_mismatch`) och en förfalskad kontrollpunkt (`checkpoint_signature`). Den **hindrar inte** ändringar: en databasadministratör kan fortfarande ändra eller ta bort rader; kedjan gör det synligt. Den som har både serverns nyckel och databasen kan skriva om allt – skydda nyckeln och värdarna därefter.
+- **Verifiera** under **Administration → Händelselogg → Verifiera granskningsloggen** (behörigheten `audit.read`, `POST /api/v1/audit/verify`), eller på servern:
+
+  ```sh
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml            # alla organisationer; slutstatus 1 när den är bruten
+  sudo -u qtestframe qtestframe audit verify --config /etc/qtestframe/config.yaml --tenant acme --json
+  ```
+
+  Kör den från en timer och larma på slutstatus 1. 100 000 poster verifieras på ungefär en sekund (SQLite och PostgreSQL på en bärbar dator); den första kedjningen efter uppgraderingen kedjar 100 000 poster på 2–4 sekunder.
+- **Export för extern arkivering**: **Exportera med hashar (JSON / CSV)** (`GET /api/v1/audit/archive?format=json|csv`) ger hela kedjan med löpnummer och hashar; JSON innehåller också kontrollpunkterna och kedjans slut. `qtestframe audit verify --file EXPORT.json` kontrollerar en export utan databasen (poster, länkar, slut, kontrollpunkternas hashar; deras signaturer kräver serverns nyckel). Spara exporterna på lagring som bara kan skrivas en gång för att förlänga skyddet bortom den senaste kontrollpunkten.
+- **Efter uppgraderingen** (migrering 0055) kedjas varje organisations befintliga poster vid första starten: kedjan börjar med en post `audit.chain_start` som säger hur många tidigare poster som följer och när de kedjades. Kedjan bevisar att de posterna inte ändrats **efter** den tidpunkten, inte före.
+
+Kedjan i säkerhetskopior, återställningar och projektarkiv beskrivs i [Säkerhetskopiering, återställning och migrering](backup-and-migration.md#händelseloggen-i-säkerhetskopior).
+
+## Läge för elektroniska poster (21 CFR Part 11 / EU GMP Annex 11)
+
+En organisationsinställning under **Administration → Elektroniska poster** (ändra: `tenant.manage`; läsa och rapport: `audit.read`; `GET`/`PUT /api/v1/erecords`), **av som standard**. När läget är på kräver servern:
+
+| Kontroll | Vad servern gör |
+|---|---|
+| Ny autentisering vid varje signatur | Signering av baslinjer, beslut om undantag, riskacceptans, signering av verifieringsposter och åtgärderna nedan kräver den som signerar att ange sitt **lösenord** och, om hen har en andra faktor, en **aktuell kod** (en återställningskod fungerar också). Konton utan lösenord här (enkel inloggning) signerar inom *signeringsfönstret för enkel inloggning* (standard 5 minuter) efter inloggningen hos identitetsleverantören, plus koden om de har en andra faktor här. API-nycklar kan inte signera. Misslyckade försök begränsas. |
+| Signaturens innebörd | Den som signerar väljer en innebörd från organisationens lista (standard authored, reviewed, approved, verified, released; upp till 20, egna ord går bra). |
+| Signaturens synliga uppgifter | Varje signatur registrerar namn, e-post, UTC-tid, tidszonen för den som signerar, innebörden, metoden (`password`, `password+mfa`, `sso`, `sso+mfa`) och hashen av den signerade versionen av posten; signerade poster visar detta, och en senare ändring av posten visar *Posten ändrad efter signeringen*. |
+| Åtgärder som kräver signatur | Väljs bland: godkännande av krav (status → godkänd, också genom massändring, kalkylbladsvyn och massgranskning), godkännande av test (status → klar), release go (status → frisläppt), skapande av baslinje. Krävs på varje väg som utför dem; utan signatur svarar begäran 428 `signature_required`. |
+| Orsak till ändringen | Valda slags ändringar (ändringar och borttagningar av krav, tester, körningar, utfall, releaser, baslinjer, risker, undantag och verifieringsposter) kräver en orsak, som registreras i ändringens poster i händelseloggen. |
+| Utloggning vid inaktivitet | Webbläsarsessioner avslutas efter *Logga ut efter inaktivitet* minuter (1–480, standard 15) utan begäranden; klientens egen bakgrundshämtning räknas inte. |
+
+Inställningarna cachas i upp till 5 sekunder per serverprocess. Signaturer i de dialoger som fanns tidigare (signering av baslinjer, beslut om undantag, riskacceptans) registreras med sina uppgifter i alla lägen.
+
+**Rapporten Kontroller enligt Part 11 / Annex 11.** **Skapa rapport** på samma sida (`GET /api/v1/erecords/report`, `?format=md` för Markdown) listar varje kontroll med hänvisningar, vem som täcker den (*verktyget*, *verktyget och rutiner*, *era rutiner*), dess status här och belägg (inställningar, en ny verifiering av händelseloggen, antal signaturer, användning av andra faktor).
+
+### Vad verktyget ger – och vad era rutiner måste täcka
+
+Qtestframe ger tekniska kontroller. Verktyget är **inte** "Part 11-kompatibelt" i sig, och ingen inställning gör det: efterlevnad är en egenskap hos det validerade systemet i drift, dess rutiner och dess människor.
+
+| Verktyget ger | Era rutiner måste täcka |
+|---|---|
+| En datorgenererad, tidsstämplad, manipuleringssäker händelselogg med verifiering och export | Validering av den installerade versionen för den avsedda användningen (och efter uppgraderingar); granskning av händelseloggen som del av granskningen av poster; regelbunden verifiering och arkivering av exporter |
+| Signaturer med ny autentisering, innebörd, synliga uppgifter och koppling till postens version | En skriftlig policy om att elektroniska signaturer är bindande, och intyget till FDA (§11.100(c)); beslut om vilka poster som kräver vilka signaturer och när de ska signeras om |
+| Rollbaserad åtkomst, tvåstegsverifiering, sessioners giltighetstid och utloggning vid inaktivitet | Identitetskontroll innan ett konto skapas, att konton aldrig återanvänds, behörighetsgranskningar, rutiner när någon slutar, lösenordsbyten och förlorade lösenord (eller identitetsleverantörens) |
+| Säkerhetskopior som håller kedjan giltig; exporter i öppna format | Schema för säkerhetskopiering, återställningstester, lagringstider, kontinuitet och katastrofåterställning |
+| Dokumentation för varje version | Utbildning, ändringshantering av installationen och dess konfiguration, leverantörsbedömning |
+
+Tidsstämplarna kommer från serverns klocka: håll den synkroniserad (NTP).
 
 ## Säkerhetshuvuden och CSP
 
@@ -228,7 +279,7 @@ Andra gränser: JSON-innehåll högst 8 MiB, huvuden 1 MiB, `ReadHeaderTimeout` 
 
 ## Utgående anslutningar
 
-Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. När den valfria [tjänsten för inbäddningar](system-settings.md#tjänst-för-inbäddningar-för-liknande-objekt) är på skickar servern texten i krav och testfall till den. Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
+Projektadministratörer (`project.update`) väljer adresserna till ärendesystem och webhooks, och skriptförfattare (`script.execute`) målen för webbtester; superadministratörer kan få servern att ansluta till adresser med testknapparna i systeminställningarna. När den valfria [tjänsten för inbäddningar](system-settings.md#tjänst-för-inbäddningar-för-liknande-objekt) är på skickar servern texten i krav och testfall till den; när den valfria [AI-assistansen](system-settings.md#ai-assistans) är på skickar den objekten som en användare frågar om till AI-tjänsten (varje begäran granskas som `ai.request`). Alla sådana begäranden går ut från serverns nät. Om servern når interna tjänster: filtrera dess utgående trafik med brandvägg eller proxy (`deploy/nftables` har en valfri policy för utgående trafik). Leveranser av webhooks följer aldrig omdirigeringar.
 
 ## Checklista
 

@@ -32,6 +32,7 @@ import { rolesLabel } from '@/i18n/labels'
 import type { Tenant } from '@/lib/types'
 import { useRolesStore } from '@/stores/roles'
 import { useWorkListStore } from '@/stores/worklist'
+import { useLiveStore } from '@/stores/live'
 import { badgeText } from '@/lib/notifications'
 
 const auth = useAuthStore()
@@ -59,6 +60,16 @@ const allTenants = ref<Tenant[]>([])
 const work = useWorkListStore()
 onMounted(() => work.start())
 onBeforeUnmount(() => work.stop())
+// live updates: one shared event stream for every view (stores/live.ts)
+const live = useLiveStore()
+onMounted(() => live.start())
+onBeforeUnmount(() => live.stop())
+watch(
+  () => auth.tenant?.id,
+  (now, before) => {
+    if (before && now !== before) live.restart()
+  },
+)
 // the badge follows the organisation and the page (work done elsewhere)
 watch(
   () => [auth.tenant?.id, route.name],
@@ -273,6 +284,9 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : roles
         <RouterLink class="nav-item" :to="{ name: 'projects' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.projects') : ''">
           <i class="pi pi-folder-open" aria-hidden="true" /><span class="label">{{ t('nav.projects') }}</span>
         </RouterLink>
+        <RouterLink class="nav-item" :to="{ name: 'homeDashboard' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.homeDashboard') : ''">
+          <i class="pi pi-home" aria-hidden="true" /><span class="label">{{ t('nav.homeDashboard') }}</span>
+        </RouterLink>
         <RouterLink class="nav-item" :to="{ name: 'search' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.search') : ''">
           <i class="pi pi-search" aria-hidden="true" /><span class="label">{{ t('nav.search') }}</span>
         </RouterLink>
@@ -410,6 +424,8 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : roles
           </template>
         </Menu>
       </header>
+      <!-- polite, throttled announcements of live updates (stores/live.ts) -->
+      <div class="sr-only" aria-live="polite" aria-atomic="true" data-testid="live-announcer">{{ live.announcement }}</div>
       <main id="main-content" class="content" tabindex="-1">
         <div v-if="!auth.tenant && route.name !== 'profile' && !route.path.startsWith('/admin')" class="card" style="margin-bottom: 16px">
           <i class="pi pi-info-circle" aria-hidden="true" /> {{ auth.isSuperAdmin ? t('nav.noTenantSuperAdmin') : t('nav.noTenant') }}

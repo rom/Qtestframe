@@ -49,6 +49,9 @@ Projekt kan skicka signerade händelser till andra system. Användare med `proje
 | review | `review.requested`, `review.completed` |
 | baseline | `baseline.signed` |
 | waiver | `waiver.requested`, `waiver.approved`, `waiver.rejected`, `waiver.revoked` |
+| change_request | `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented`, `change_request.closed` |
+| environment | `environment.status_changed`, `environment.booking_requested`, `environment.booking_approved`, `environment.booking_rejected` |
+| testdata | `testdata.refresh_requested`, `testdata.refresh_resolved` |
 
 <!-- END GENERATED: webhook-events -->
 
@@ -77,12 +80,13 @@ Projekt kan skicka sina händelser till chattkanaler: Slack, Microsoft Teams, Ma
 
 | Grupp | Händelser |
 |---|---|
-| Testkörningar | `run.created` (Testkörning skapad), `run.updated` (Testkörning ändrad), `run.completed` (Testkörning avslutad), `execution.updated` (Testresultat registrerat) |
+| Testkörningar | `run.created` (Testkörning skapad), `run.updated` (Testkörning ändrad), `run.completed` (Testkörning avslutad), `execution.updated` (Testresultat registrerat), `environment.status_changed` (Miljöns status ändrad), `environment.booking_requested` (Miljöbokning begärd), `environment.booking_approved` (Miljöbokning godkänd), `environment.booking_rejected` (Miljöbokning avslagen), `testdata.refresh_requested` (Uppdatering av testdata begärd), `testdata.refresh_resolved` (Begäran om uppdatering av testdata stängd) |
 | Defekter | `defect.created` (Defekt rapporterad), `defect.updated` (Defekt ändrad), `defect.status` (Defektens status ändrad), `defect.assigned` (Defekt tilldelad), `defect.regression` (Regression upptäckt) |
 | Krav och tester | `requirement.created` (Krav skapat), `requirement.updated` (Krav ändrat), `test.created` (Test skapat), `test.updated` (Test ändrat), `comment.created` (Ny kommentar), `comment.mentioned` (Comment mentioned), `comment.resolved` (Comment resolved), `baseline.signed` (Baslinje signerad) |
 | Granskningar | `review.requested` (Granskning begärd), `review.completed` (Granskning klar) |
 | Releaser | `release.created` (Release skapad), `release.updated` (Release ändrad), `release.released` (Release släppt) |
 | Undantag | `waiver.requested` (Undantag begärt), `waiver.approved` (Undantag godkänt), `waiver.rejected` (Undantag avslaget), `waiver.revoked` (Undantag återkallat) |
+| Ändringsbegäranden | `change_request.submitted` (Ändringsbegäran inskickad), `change_request.review` (Ändringsbegäran att besluta), `change_request.approved` (Ändringsbegäran godkänd), `change_request.rejected` (Ändringsbegäran avslagen), `change_request.deferred` (Ändringsbegäran uppskjuten), `change_request.implemented` (Ändringsbegäran genomförd), `change_request.closed` (Ändringsbegäran stängd) |
 | Risker | `risk.created` (Risk identifierad), `risk.updated` (Risk ändrad) |
 
 <!-- END GENERATED: chat-events -->
@@ -136,6 +140,31 @@ Användare med `requirement.write` importerar krav från en JQL-fråga i Jira el
 | Azure DevOps Server | samlingens adress, t.ex. `https://tfs.example.com/tfs/DefaultCollection` | personlig åtkomsttoken | som ovan |
 
 Jira söks med `POST /rest/api/2/search/jql` (Jira Cloud) och, när den inte finns, `POST /rest/api/2/search` (Server och Data Center); Azure DevOps med slutpunkterna för WIQL, fält och arbetsobjekt i REST API 7.1. Högst 1 000 objekt läses per import. Importen läser bara; den granskas som `requirement.import`, ändringar av anslutningen som `import_sources.update`. Token krypteras med serverns hemliga nycklar (de krypteras om vid nyckelrotation), returneras aldrig och utelämnas ur projektarkiv. Importen når källorna via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) som ärendehanterarna; tillåt adresserna ovan i en brandvägg.
+
+### Tvåvägssynk
+
+Tvåvägssynken (migrering 0060, [användarhandboken](../../user-guide/sv/reports-and-export.md#tvåvägssynk-med-jira-och-azure-devops)) använder samma anslutningar och skriver till ärendesystemet, så dess token behöver mer än läsrätt:
+
+| Källa | Behövs för synken |
+|---|---|
+| Jira Cloud, Server, Data Center | *Browse projects*, *Edit issues*, *Transition issues*; *Create issues* för att skicka nya krav, *Add comments* för kommentarer, *Link issues* för länkar |
+| Azure DevOps | personlig åtkomsttoken med omfånget *Work Items (Read & write)* |
+
+Användare med `project.update` ändrar inställningarna (**Ärendesynk → Inställningar**), användare med `requirement.write` kör en synk, förhandsgranskar den och avgör konflikter; alla som kan läsa projektet ser översikten och loggen. Schemalagda synkar och webhook-synkar körs som det konto som senast sparade inställningarna (`req_sync_configs.run_as`), med dess aktuella roller och projektåtkomst: ett konto som förlorar `requirement.write` eller projektet stoppar synken (loggas som misslyckad). Ändringar som hämtas från ärendesystemet går genom den vanliga uppdateringen av krav (behörigheter, granskningsregler, historik, granskningslogg, optimistisk låsning) med konfigurationens val av påverkan.
+
+**Bakgrundsjobb och gränser.** Minutjobbet kör de synkar som står på tur (`interval_minutes`, 0 = inget schema). En körning håller ett lås i databasen (`lease_until`, 15 minuter), så med flera servrar kör bara en av dem en konfiguration åt gången. En körning som misslyckas fördubblar väntan för varje misslyckande i rad (högst ett dygn); ett ärendesystem som svarar 429 försöks igen av klienten efter en kort `Retry-After`, annars stoppas körningen och nästa väntar minst så länge som begärts. Skrivningar sprids ut enligt *Skrivningar per minut* (standard 60) och är högst 500 per körning. Högst 1 000 objekt läses per fråga, plus de länkade objekt som frågan inte längre hittar (Jira: en begäran per objekt; Azure DevOps: i omgångar om 200).
+
+**Webhooks.** Mottagarna är publika ändpunkter; den delade hemligheten (16–200 tecken, krypterad i `req_sync_configs.webhook_secret`, skrivskyddad, omkrypteras vid nyckelrotation) är behörighetsbeviset. Varje anrop besvaras med 202 och synken av de namngivna objekten körs i bakgrunden; anrop för samma konfiguration slås ihop. Högst 600 anrop per projekt och minut tas emot.
+
+| Ärendesystem | Adress | Inställning |
+|---|---|---|
+| Jira Cloud | `<base_url>/api/v1/hooks/req-sync/jira/<projekt-id>` | **System → WebHooks**: händelserna *Issue created*, *Issue updated*, *Comment created*; hemligheten i webhookens fält *Secret* (innehållet signeras, huvudet `X-Hub-Signature: sha256=…`). |
+| Jira Server / Data Center | samma adress med `?secret=<hemligheten>` | **System → WebHooks** (där finns inget fält för hemligheten, så den läggs i adressen: använd HTTPS). |
+| Azure DevOps | `<base_url>/api/v1/hooks/req-sync/azure-devops/<projekt-id>` | **Project settings → Service hooks → Web Hooks**: *Work item created*, *Work item updated*, *Work item commented on*; *Basic authentication* med valfritt användarnamn och hemligheten som lösenord. |
+
+Huvudet `X-Qtestframe-Secret: <hemligheten>` godtas från båda. Ärendesystemet måste nå `server.base_url`; öppna brandväggen för det, eller lita på schemat.
+
+**Data.** Synkläget för varje länkat krav sparas med dess externa referens (`external_refs`: ärendesystemets version, kontrollsummor och värden på båda sidor efter senaste synken). `req_sync_configs` och `req_sync_conflicts` ingår i säkerhetskopian; `req_sync_runs` (loggen, de 100 senaste körningarna per projekt och källa) gör det inte. Projektarkiv utelämnar alla tre (hemligheten och kontot); ett inläst projekt måste ställas in på nytt. Granskningsloggens åtgärder: `req_sync.update` (inställningar), `req_sync.run` (varje körning med sina antal), `requirement.sync.push` och `requirement.sync.create` (ändringar till ärendesystemet), `req_sync.conflict.resolve` och `req_sync.conflict.closed`, utöver de vanliga `requirement.update`, `requirement.create` och `relation.create` för ändringarna här.
 
 ## CI/CD-pipelines (GitLab, GitHub Actions)
 

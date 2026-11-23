@@ -503,7 +503,8 @@ type skippedExecution struct {
 	TestKey           string `json:"test_key"`
 	ConfigurationName string `json:"configuration_name,omitempty"`
 	Reason            string `json:"reason"`
-	// Code: not_automated, no_script, disabled, active, not_ready, cycle.
+	// Code: not_automated, no_script, external (the code is a stub in the
+	// repository), disabled, active, not_ready, cycle.
 	Code string `json:"code"`
 }
 
@@ -520,6 +521,8 @@ func (s *Server) cannotRun(t *model.TestCase) (code, reason string) {
 		return "not_automated", "manual test"
 	case strings.TrimSpace(t.Script) == "":
 		return "no_script", "the test has no script"
+	case isStubRef(t.Script):
+		return "external", "the test's code is in the repository (" + stubPath(t.Script) + "); its results come from CI"
 	case t.ScriptLanguage == runner.LangPlaywright && !s.Runner.WebEnabled():
 		return "disabled", "web tests are not enabled on this server"
 	case t.ScriptLanguage != runner.LangPlaywright && !s.Runner.Enabled():

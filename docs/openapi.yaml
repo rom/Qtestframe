@@ -48,6 +48,8 @@ tags:
   description: API tokens
 - name: Projects
   description: Projects and dashboards
+- name: Dashboards
+  description: Customisable dashboards, the home dashboard and widget data
 - name: Folders and categories
   description: Folder trees and category values
 - name: Requirements
@@ -84,6 +86,8 @@ tags:
   description: Risks
 - name: Waivers
   description: Waivers and deviations with their electronically signed approvals
+- name: Change requests
+  description: Formal change control of requirements and tests, decided by the change control board with electronic signatures
 - name: Reviews
   description: Review requests
 - name: Discussions
@@ -92,6 +96,8 @@ tags:
   description: The personal work list across projects
 - name: Notifications and webhooks
   description: In-app notifications, webhooks and chat channels
+- name: Live updates
+  description: Server-Sent Events stream of changes made by others, and presence (who is viewing or editing an item)
 - name: Files
   description: Files, attachments, documents, avatars
 - name: Reports and export
@@ -106,7 +112,651 @@ tags:
   description: Health, readiness and this description
 - name: Exploratory testing
   description: Session-based exploratory testing (charters, timer, notes, debriefs, metrics)
+- name: AI assistance
+  description: Optional suggestions from a language model service (drafts of tests, improved requirements, run summaries, framework mappings, acceptance criteria); nothing is saved without the user
+- name: Environments
+  description: Test environments, their components, health checks and bookings
+- name: Test data
+  description: Shared test data sets, their links, usage and refresh requests
 paths:
+  /api/v1/change-requests/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Change requests
+      summary: Get a change request
+      operationId: getChangeRequestsById
+      description: |-
+        The change request with its items (`proposed` and `current` values of the proposed fields, `base_version`, `current_version`, `outdated`, `applied_version`), the impact snapshot of the assessment (`impact`, a ChangeImpact), signatures (`approvals`, `valid` while the signed content is unchanged), timeline (`events`) and `content_hash`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Change requests
+      summary: Change a draft change request
+      operationId: patchChangeRequestsById
+      description: |-
+        The fields of the create request (and `items` to add or replace proposals); only a draft can be changed (409: withdraw it first).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Change requests
+      summary: Delete a change request
+      operationId: deleteChangeRequestsById
+      description: |-
+        204; only a draft or rejected change request (409 otherwise).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/apply:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Apply an approved change request
+      operationId: postChangeRequestsByIdApply
+      description: |-
+        `{impact?: suspect|notify|skip}` (default the change request's impact_action): approved → implemented. The proposed values are saved atomically through the normal PATCH of each item (validation, permissions, revisions, history, audit) and the change impact is applied once; any failure saves nothing (the answer names the item). 409 `outdated` when an item changed since it was proposed.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/assess:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Assess a change request
+      operationId: postChangeRequestsByIdAssess
+      description: |-
+        `{notes?, effort?, review?}`: submitted or assessed → assessed; the impact is computed again and stored with the assessor's notes and effort estimate. `review: true` sends it to the board at once.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/close:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Close a change request
+      operationId: postChangeRequestsByIdClose
+      description: |-
+        `{create_baseline?, baseline_name?, comment?}`: verified, rejected or deferred → closed; a verified change request can create a baseline of the project (default the change request's `baseline_on_close`).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/decision:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Decide a change request (electronic signature)
+      operationId: postChangeRequestsByIdDecision
+      description: |-
+        `{"decision": "approve"|"reject"|"defer", "comment", "password"}`: an electronic signature of a board member over the content hash, with the project's signature meaning, given in the browser with the signer's password or a single sign-on less than 15 minutes old. Rejecting and deferring need a comment; the requester cannot decide their own change request; only board members (listed users, holders of listed roles; none listed: anyone with `change.approve`). Any rejection rejects, any deferral defers, approvals that meet the quorum (all, any or N) approve. 409 when an item changed since it was proposed.
+
+        **Permission:** `change.approve`.
+      x-permission: change.approve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/impact:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Change requests
+      summary: Change impact of a change request now
+      operationId: getChangeRequestsByIdImpact
+      description: |-
+        The transitive change impact of the proposed changes on the current graph (ChangeImpact with roots, items per kind, depth and path); the stored `impact` is the snapshot of the assessment.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/items:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Add items to a change request
+      operationId: postChangeRequestsByIdItems
+      description: |-
+        `{items: [{entity_type, entity_id, proposed, base_version?}]}` adds items to a draft or replaces the proposals of items it has; the base version is the item's current version unless given.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/items/{item}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: item
+      in: path
+      required: true
+      schema:
+        type: string
+      description: the item's id in the change request
+    delete:
+      tags:
+      - Change requests
+      summary: Remove an item from a change request
+      operationId: deleteChangeRequestsByIdItemsByItem
+      description: |-
+        Removes an item (its id) from a draft change request.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/review:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Send a change request to the board
+      operationId: postChangeRequestsByIdReview
+      description: |-
+        assessed → in_review; the board members (who hold `change.approve`) are notified. Event `change_request.review`.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/submit:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Submit a change request
+      operationId: postChangeRequestsByIdSubmit
+      description: |-
+        draft → submitted (400 without items or reason); the impact snapshot is computed and stored. Event `change_request.submitted`.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/verify:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Verify an implemented change request
+      operationId: postChangeRequestsByIdVerify
+      description: |-
+        `{comment?}`: implemented → verified.
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/change-requests/{id}/withdraw:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Change requests
+      summary: Withdraw a change request
+      operationId: postChangeRequestsByIdWithdraw
+      description: |-
+        `{comment?}`: submitted, assessed, in_review, rejected or deferred → draft, to change it (signatures of the earlier content stop counting).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/change-control:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Change requests
+      summary: Get the change control settings
+      operationId: getProjectsByPidChangeControl
+      description: |-
+        The project's change control: `{settings: {mode: off|warn|enforce, protected_statuses, lock_signed_baselines, board: {users, roles, quorum: all|any|N}, signature_meaning, baseline_on_close, updated_by, updated_at}, effective_statuses, default_statuses, modes, default_signature_meaning}`. Without settings change control is off.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Change requests
+      summary: Set the change control settings
+      operationId: putProjectsByPidChangeControl
+      description: |-
+        `{mode, protected_statuses, lock_signed_baselines, board: {users: [e-mail], roles: [role], quorum}, signature_meaning, baseline_on_close}`. With `enforce`, requirements and tests whose status is protected (empty: approved, implemented, verified, ready) or that are in a signed baseline (`lock_signed_baselines`) cannot be changed directly: PATCH, bulk edit, batch, exchange, restore and delete answer 409 `change_control` `{error, code, hint, kind, id, key, reasons, open_change_requests}`. An emergency override `?change_override=<justification>` (at least 10 characters, `change.approve`) saves the change and is audited (`change_control.override`). With `warn` the change is saved and the answer has the header `X-Change-Control: warn` (and `X-Change-Control-Reason`).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/change-requests:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Change requests
+      summary: List change requests
+      operationId: getProjectsByPidChangeRequests
+      description: |-
+        The change requests of the project, newest first, with their items (key, title, base and current version, `outdated`), signatures and linked defects and risks. Filters: `status`, `category`, `open=true` (not rejected, implemented, verified or closed), `item=<kind>:<id>` (those that change the item).
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Change requests
+      summary: Create a change request
+      operationId: postProjectsByPidChangeRequests
+      description: |-
+        `{title, reason, category: correction|enhancement|regulatory|defect_driven|risk_driven|other, priority, impact_action: suspect|notify|skip, links: {defect_ids, risk_ids, issues}, baseline_on_close, items: [{entity_type: requirement|test, entity_id, proposed: {field: value}, base_version?}], submit?}` → 201 the change request (key PROJ-CR-n, status draft; submitted with `submit: true`). `proposed` holds new field values as in a PATCH (requirements: title, description, obligation, type, priority, status, source, rationale, owner, tags, custom_fields; tests: title, description, preconditions, expected_result, execution_type, priority, status, estimated_minutes, owner, tags, custom_fields).
+
+        **Permission:** `change.create`.
+      x-permission: change.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/change-requests/open-items:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Change requests
+      summary: Items with open change requests
+      operationId: getProjectsByPidChangeRequestsOpenItems
+      description: |-
+        `{items: {"<kind>:<id>": ["PROJ-CR-1", …]}}`: the requirements and tests of the project with open change requests, for badges.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/change-control:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Change requests
+      summary: Change control of a requirement
+      operationId: getRequirementsByIdChangeControl
+      description: |-
+        `{key, mode, protected, blocked, reasons, open_change_requests: [{id, key, title, status}], can_propose, can_override}`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/change-control:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Change requests
+      summary: Change control of a test
+      operationId: getTestsByIdChangeControl
+      description: |-
+        `{key, mode, protected, blocked, reasons, open_change_requests: [{id, key, title, status}], can_propose, can_override}`.
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        2XX:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /healthz:
     get:
       tags:
@@ -1339,7 +1989,7 @@ paths:
       summary: Meta
       operationId: getMeta
       description: |-
-        enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"` and `"version"`
+        enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"live_updates"` (the event stream and presence are on, `live.enabled`) and `"version"`
 
         **Permission:** any authenticated user; the handler checks: any.
       x-permission: authenticated
@@ -1355,6 +2005,124 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/events/stream:
+    get:
+      tags:
+      - Live updates
+      summary: Event stream
+      operationId: getEventsStream
+      description: |-
+        A Server-Sent Events stream (`text/event-stream`) of the changes in the caller's organisation that the caller may see: every event is checked against the caller's access to its project and the read permission of its entity type. Events carry no titles or content, only `{"id","kind","type","entity_id","parent_id","project_id","version","action","actor_id","actor_name","time"}`; clients reload what they show through the regular API.
+
+        Event names: `hello` (`{"heartbeat_ms","presence_ttl_ms","user_id"}`), `change` (an item was created, changed or deleted; `type` is `requirement`, `test`, `run`, `execution` (with the run as `parent_id`), `cycle`, `exploratory_session`, `defect`, `risk`, `release` or `project`; `version` for requirements and tests), `notification` (new notifications for the caller: reload the bell), `presence` (`{"presence":{"user_id","name","avatar","state"}}`, state `viewing`, `editing` or `left`), `reset` (events were missed: reload what is shown) and `bye` (`{"reason":"shutdown"|"unauthorized"}`, the stream ends). Comment lines (`: ping`) are heartbeats.
+
+        Resume after a disconnection with the `Last-Event-ID` header (sent by `EventSource` itself) or `?last_event_id=`: the events missed are replayed from a small buffer, or `reset` is sent when the last event is no longer kept. A GET, so no CSRF token is needed; session cookie or `Authorization: Bearer`. 404 `live_disabled` when `live.enabled` is off; 503 `live_unavailable` (with `Retry-After`) beyond `live.max_connections` or `live.max_connections_per_user`. The stream re-authenticates every minute and ends when the session or token is revoked.
+
+        **Permission:** any authenticated user; the handler checks: a member of the organisation; each event is filtered by project access and read permission.
+      x-permission: authenticated
+      parameters:
+      - name: last_event_id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Resume after this event (like the `Last-Event-ID` header).
+      responses:
+        '200':
+          description: The event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        '503':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/presence:
+    get:
+      tags:
+      - Live updates
+      summary: Who is on an item
+      operationId: getPresence
+      description: |-
+        `?entity_type=&entity_id=` → `{"others":[{"user_id","name","avatar","state"}]}`: who else is viewing or editing the item now (in memory, expires after `live.presence_ttl` without heartbeat). 404 for items the caller may not see.
+
+        **Permission:** any authenticated user; the handler checks: the read permission of the item.
+      x-permission: authenticated
+      parameters:
+      - name: entity_type
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [requirement, test, run, execution, cycle, exploratory_session, defect, risk, release]
+      - name: entity_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The others on the item
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Live updates
+      summary: Presence heartbeat
+      operationId: postPresence
+      description: |-
+        `{"entity_type","entity_id","state":"viewing"|"editing"|"left"}` records that the caller is on an item (send it every 20 s while the item is open, `left` when it is closed) → `{"others":[...],"ttl_ms"}`. Changes (someone arrives, starts editing or leaves) are sent as `presence` events on the stream to those who may see the item. Presence is shared between server instances on PostgreSQL.
+
+        **Permission:** any authenticated user; the handler checks: the read permission of the item.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entity_type:
+                  type: string
+                entity_id:
+                  type: string
+                state:
+                  type: string
+                  enum: [viewing, editing, left]
+      responses:
+        '200':
+          description: The others on the item
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Error'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/rbac:
@@ -1940,6 +2708,272 @@ paths:
           $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/audit/verify:
+    post:
+      tags:
+      - Administration
+      summary: Verify the audit trail
+      operationId: postAuditVerify
+      description: |-
+        Chains pending entries, writes a signed checkpoint at the end of the organisation's audit chain and verifies the whole chain: every entry's hash (SHA-256 over its canonical encoding), the links to the previous entry, the sequence, the recorded end of the chain and every signed checkpoint (HMAC-SHA256 with the server key). The answer is OK or the first broken link (`broken`: `seq`, `problem` one of `entry_changed`, `link_broken`, `sequence_gap`, `truncated`, `checkpoint_mismatch`, `checkpoint_signature`, and a message). Recorded as `audit.verify`.
+
+        **Permission:** `audit.read`.
+      x-permission: audit.read
+      responses:
+        '200':
+          description: Result of the verification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditVerification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/audit/archive:
+    get:
+      tags:
+      - Administration
+      summary: Export the audit trail with hashes
+      operationId: getAuditArchive
+      description: |-
+        The whole audit chain of the organisation in chain order, for external archiving. `format=json` (default): `{"format": "qtestframe-audit-archive-v1", "chain": "qtf-audit-v1", "tenant_id", "tenant", "exported_at", "head_seq", "head_hash", "checkpoints": [...], "entries": [...]}` (entries with `seq`, `prev_hash` and `hash`; `qtestframe audit verify --file` checks it offline). `format=csv`: one row per entry with the columns `seq, id, created_at, user_id, user_email, action, entity_type, entity_id, details, reason, prev_hash, hash` (values as stored, so the hashes can be recomputed). A signed checkpoint is written first; recorded as `audit.archive`.
+
+        **Permission:** `audit.read`.
+      x-permission: audit.read
+      parameters:
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - json
+          - csv
+      responses:
+        '200':
+          description: The audit chain
+          content:
+            application/json:
+              schema:
+                type: object
+            text/csv:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/erecords:
+    get:
+      tags:
+      - Administration
+      summary: Electronic-records settings
+      operationId: getERecords
+      description: |-
+        The organisation's electronic-records settings (21 CFR Part 11 / EU GMP Annex 11 mode, off by default) and the actions and edit types that can be configured: `{"settings": ERecordsSettings, "signature_actions": [...], "reason_edits": [...]}`. Every member may read them (the web client adapts its signature dialogs).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: Settings and choices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    $ref: '#/components/schemas/ERecordsSettings'
+                  signature_actions:
+                    type: array
+                    items:
+                      type: string
+                  reason_edits:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Administration
+      summary: Change the electronic-records settings
+      operationId: putERecords
+      description: |-
+        Replaces the settings. `meanings` (1–20, at most 60 characters each; empty: the defaults), `signature_actions` (of `requirement.approve`, `test.approve`, `release.go`, `baseline.create`), `reason_edits` (see `GET`), `idle_timeout_minutes` (1–480, default 15), `sso_reauth_minutes` (1–60, default 5). Recorded as `erecords.enable`, `erecords.disable` or `erecords.update` with the new settings.
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ERecordsSettings'
+      responses:
+        '200':
+          description: The stored settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ERecordsSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/erecords/report:
+    get:
+      tags:
+      - Administration
+      summary: Part 11 / Annex 11 controls report
+      operationId: getERecordsReport
+      description: |-
+        Lists per requirement of 21 CFR Part 11 and EU GMP Annex 11 what the tool provides (`tool`), what the customer's procedures must cover (`customer`) and where both are needed (`shared`), with the status in this organisation (`met`, `not_configured`, `attention`, `procedural`) and evidence (settings, a fresh verification of the audit chain, signature counts, multi-factor use). `format=md` downloads it as Markdown.
+
+        **Permission:** `audit.read`.
+      x-permission: audit.read
+      parameters:
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - json
+          - md
+      responses:
+        '200':
+          description: The report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceReport'
+            text/markdown:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/esign/tickets:
+    post:
+      tags:
+      - Administration
+      summary: Sign (signing ticket)
+      operationId: postESignTicket
+      description: |-
+        Electronic-records mode only. Re-authenticates the caller for one action: one of `signature_actions`, or `baseline.signoff`, `waiver.decision`, `risk.accept`, `verification.signoff` (whose routes also accept the ticket instead of credentials in the body): `{"action", "password", "mfa_code", "meaning", "comment", "time_zone"}` (the second-factor code when enrolled; single sign-on accounts instead need a sign-in within `sso_reauth_minutes`; `meaning` from the organisation's list; `time_zone` an IANA name, default UTC). Answers `{"ticket", "action", "meaning", "expires_at"}`: a single-use ticket, valid for 5 minutes and for this session, that the request performing the action sends as `X-Signature-Ticket`. Without it such a request answers 428 `signature_required` (`action`, `meanings`). API tokens cannot sign. Errors: 403 `reauth_failed`, `reauth_required`, `mfa_required`, `mfa_invalid`; 400 `meaning_required`; 429 after too many attempts.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - action
+              - meaning
+              properties:
+                action:
+                  type: string
+                password:
+                  type: string
+                  writeOnly: true
+                mfa_code:
+                  type: string
+                  writeOnly: true
+                meaning:
+                  type: string
+                comment:
+                  type: string
+                time_zone:
+                  type: string
+      responses:
+        '201':
+          description: The ticket
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticket:
+                    type: string
+                  action:
+                    type: string
+                  meaning:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/esignatures:
+    get:
+      tags:
+      - Administration
+      summary: Electronic signatures
+      operationId: getESignatures
+      description: |-
+        Signatures (manifestation: printed name, UTC time and the signer's time zone, meaning, method of re-authentication, comment), newest first, each with `valid`: whether the record still has the content (hash) that was signed. With `entity_type` (`requirement`, `test`, `release`, `baseline`, `waiver`, `risk`, `verification_record`) and `entity_id`: the signatures of that record (read permission on it). Otherwise, optionally with `project_id`: all signatures (`audit.read`).
+
+        **Permission:** signed in; read permission on the record, or `audit.read` for lists.
+      x-permission: authenticated
+      parameters:
+      - name: entity_type
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: entity_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: project_id
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Signatures
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ESignature'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects:
     get:
       tags:
@@ -2122,6 +3156,349 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboards:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Dashboards
+      summary: List dashboards
+      operationId: getProjectsByPidDashboards
+      description: |-
+        The dashboards the caller sees in the project → `{items: [Dashboard], default_id, can_manage}`: the built-in layouts `overview`, `trends`, `quality` (the former fixed dashboard; `stored: false` until an administrator changes one, then the shared dashboard that replaces it, `builtin` set), the other shared dashboards, then the caller's personal ones. A Dashboard is `{id, project_id, owner_id (personal), name, builtin, source_id, widgets: [{id, type, title, x, y, w, h, settings}], shared, stored, default, editable}` on a grid of 12 columns. See "Dashboards" in docs/api.md.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Dashboards
+      summary: Create dashboard
+      operationId: postProjectsByPidDashboards
+      description: |-
+        `{name, shared?, widgets?, source_id?}` → Dashboard: a personal dashboard, or a shared one (needs `project.update`); `source_id` copies a dashboard the caller sees. Also takes an export (`{format: qtestframe-dashboard, version: 1, name, widgets}`). Widgets: x 0–11, w 1–12 within the columns, h 1–24, at most 60, known types (see `GET /dashboards/widgets`); at most 30 shared dashboards per project and 30 personal ones per user and project.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboards/default:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    put:
+      tags:
+      - Dashboards
+      summary: Set the default dashboard
+      operationId: putProjectsByPidDashboardsDefault
+      description: |-
+        `{dashboard_id}` (a shared dashboard or a built-in key; "" clears it: the overview) → the list as for GET. The dashboard the project opens with.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboards/{did}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: did
+      in: path
+      required: true
+      schema:
+        type: string
+      description: dashboard id (or the key of a built-in layout overview, trends, quality)
+    get:
+      tags:
+      - Dashboards
+      summary: Get dashboard
+      operationId: getProjectsByPidDashboardsByDid
+      description: |-
+        → Dashboard (also the export: the client adds format and version). Another user's personal dashboard: 404.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Dashboards
+      summary: Change dashboard
+      operationId: putProjectsByPidDashboardsByDid
+      description: |-
+        `{name?, widgets?}` → Dashboard. Personal: its owner; shared: `project.update`. Changing a built-in layout stores the shared dashboard that replaces it.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Dashboards
+      summary: Delete dashboard
+      operationId: deleteProjectsByPidDashboardsByDid
+      description: |-
+        Personal: its owner; shared: `project.update`. A built-in layout cannot be deleted (400); a project default naming the dashboard is cleared.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboards/{did}/reset:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: did
+      in: path
+      required: true
+      schema:
+        type: string
+      description: dashboard id (or the key of a built-in layout overview, trends, quality)
+    post:
+      tags:
+      - Dashboards
+      summary: Reset dashboard
+      operationId: postProjectsByPidDashboardsByDidReset
+      description: |-
+        Returns the dashboard to its default layout → Dashboard: a shared dashboard that replaces a built-in layout is removed (the built-in one applies again), any other gets the layout it was copied from (the built-in overview when that is gone).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/dashboards/home:
+    get:
+      tags:
+      - Dashboards
+      summary: Get home dashboard
+      operationId: getDashboardsHome
+      description: |-
+        The caller's personal cross-project home dashboard → Dashboard (`stored: false`: the built-in one with My work, discussions and a note).
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Dashboards
+      summary: Save home dashboard
+      operationId: putDashboardsHome
+      description: |-
+        `{name?, widgets}` → Dashboard. Widgets about a project name it in `settings.project_id`.
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Dashboards
+      summary: Reset home dashboard
+      operationId: deleteDashboardsHome
+      description: |-
+        Removes the stored home dashboard → the built-in one.
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/dashboards/widgets:
+    get:
+      tags:
+      - Dashboards
+      summary: List widget types
+      operationId: getDashboardsWidgets
+      description: |-
+        The widget registry → `{items: [{type, project, home, w, h}]}`: whether a type is about one project, may be placed on the home dashboard, and its default size.
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/dashboards/data:
+    post:
+      tags:
+      - Dashboards
+      summary: Widget data
+      operationId: postDashboardsData
+      description: |-
+        `{widgets: [{id, type, project_id?, settings?}]}` (at most 60) → `{results: {id: {data} | {data: null, error: {status, code, error}}}}`: the data of many widgets in one request. Each widget reads the API's own endpoints as the caller, so it needs the permissions of those (e.g. `requirement.read` for a saved query of requirements; a project the caller may not see answers 404 for its widgets); every endpoint is read once per request.
+
+        **Permission:** any signed-in member.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/folders:
@@ -2389,6 +3766,68 @@ paths:
                 type: object
         '401':
           description: Invalid signature or token
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/req-sync/jira/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Jira webhook of the requirement sync
+      operationId: postHooksReqSyncJiraByPid
+      description: |-
+        Jira webhook events (jira:issue_created, jira:issue_updated, comment_created, …). The shared secret of the project's Jira sync: the HMAC-SHA256 signature of the body in `X-Hub-Signature: sha256=…` (Jira Cloud), the query parameter `secret` (Jira Server and Data Center) or the header `X-Qtestframe-Secret`. → 202 `{event, items}` and the sync of the named items runs in the background (`{ignored: true}` when the sync is off or the event names no item); 401 for a wrong secret or an unknown project; 429 beyond 600 calls per project and minute.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Invalid secret or signature
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/hooks/req-sync/azure-devops/{pid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Import
+      summary: Azure DevOps webhook of the requirement sync
+      operationId: postHooksReqSyncAzureDevopsByPid
+      description: |-
+        Azure DevOps service hook events (workitem.created, workitem.updated, workitem.commented). The shared secret of the project's Azure DevOps sync as the password of basic authentication (any user name) or in the header `X-Qtestframe-Secret`. → 202 `{event, items}` and the sync of the named items runs in the background (`{ignored: true}` when the sync is off or the event names no item); 401 for a wrong secret or an unknown project; 429 beyond 600 calls per project and minute.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Invalid secret or signature
         default:
           $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/categories:
@@ -2807,8 +4246,15 @@ paths:
       - Requirements
       summary: Analytics
       operationId: getProjectsByPidAnalytics
-      description: '**Permission:** `requirement.read`.'
+      description: '**Permission:** `requirement.read`. With `variant`: the requirements and tests of the variant, its coverage, results and verification.'
       x-permission: requirement.read
+      parameters:
+      - name: variant
+        in: query
+        required: false
+        description: a variant (id or name) — only its requirements and tests, with the results that count for it (the rules of the variant coverage)
+        schema:
+          type: string
       responses:
         '200':
           description: OK
@@ -2842,6 +4288,12 @@ paths:
         in: query
         required: false
         description: reference source ids, comma-separated (default every source the project has adopted requirements of or cites)
+        schema:
+          type: string
+      - name: variant
+        in: query
+        required: false
+        description: a variant (id or name) — only its requirements and tests, with the results that count for it (the rules of the variant coverage)
         schema:
           type: string
       - $ref: '#/components/parameters/catalogLang'
@@ -3470,7 +4922,7 @@ paths:
       summary: Set requirement applicability
       operationId: putRequirementsByIdApplicability
       description: |-
-        `{variant_ids: [ids or names], expression: "region:EU"}`; both empty: all variants
+        `{variant_ids: [ids or names], expression: "region:EU"}`; both empty: all variants. A changed applicability goes through the change impact by the project's `applicability_impact` rule (default: a review is recommended); `?dry_run=impact` previews it, `?impact=suspect|notify|skip` chooses what saving does with it
 
         **Permission:** `requirement.write`.
       x-permission: requirement.write
@@ -5869,9 +7321,15 @@ paths:
       - Verification
       summary: Verification of the project
       operationId: getProjectVerification
-      description: '**Permission:** `requirement.read`. Whether every requirement is verified, and why: criteria with their evidence (tests, steps, verification records), the roll-up of refining children, reasons and inconsistencies.'
+      description: '**Permission:** `requirement.read`. Whether every requirement is verified, and why: criteria with their evidence (tests, steps, verification records), the roll-up of refining children, reasons and inconsistencies. With `variant`: the requirements of the variant, verified by the trace links between items that apply to it and the results that count for it (step results only where the variant''s result is the latest execution''s); the answer names `variant`.'
       x-permission: requirement.read
       parameters:
+      - name: variant
+        in: query
+        required: false
+        description: a variant (id or name) — only its requirements and tests, with the results that count for it (the rules of the variant coverage)
+        schema:
+          type: string
       - name: q
         in: query
         schema:
@@ -6923,7 +8381,7 @@ paths:
       summary: Create run
       operationId: postProjectsByPidRuns
       description: |-
-        `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>"}` – union of explicit tests, tests in folders (recursive) and tests matching query
+        `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>"}` – union of explicit tests, tests in folders (recursive) and tests matching query `environment_id` (an environment item of the project or a shared one, by id or name; "" none) selects the environment; with it, `booking: {starts_at, ends_at, purpose?}` books it for the item at once (409 `booking_conflict` when it does not fit; nothing is created). A free-text `environment` naming an environment item of the project is linked to it.
 
         **Permission:** `run.write`.
       x-permission: run.write
@@ -7153,7 +8611,7 @@ paths:
       summary: Update run
       operationId: patchRunsById
       description: |-
-        `{"name","description","status","environment","build"}`. A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically.
+        `{"name","description","status","environment","build"}`. A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically. `environment_id` (id or name, "" none) selects an environment item (its name is kept in `environment`); a new free-text `environment` is linked by name again.
 
         **Permission:** `run.write`.
       x-permission: run.write
@@ -9966,6 +11424,168 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/settings/logo:
+    get:
+      tags:
+      - Administration
+      summary: Get the organisation's logo
+      operationId: getSettingsLogo
+      description: |-
+        The organisation's logo on the first page of reports and generated documents → `{file_id, content_type, width, height, source (png | jpeg | svg), name, placement (left | center | right), max_width_mm, max_height_mm, url}` (`file_id` "" without an image).
+
+        **Permission:** any authenticated user; the handler checks: any member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Administration
+      summary: Update the logo's placement and size
+      operationId: putSettingsLogo
+      description: |-
+        Placement and maximum size of the organisation's logo (fields left out keep their value) → the logo as GET returns it. The logo keeps its proportions and is never shown larger than its own size at 96 dpi.
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                placement:
+                  type: string
+                  enum: [left, center, right]
+                max_width_mm:
+                  type: integer
+                  minimum: 5
+                  maximum: 170
+                max_height_mm:
+                  type: integer
+                  minimum: 5
+                  maximum: 40
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/settings/logo/image:
+    get:
+      tags:
+      - Administration
+      summary: Organisation logo image
+      operationId: getSettingsLogoImage
+      description: |-
+        The image of the organisation's logo (PNG or JPEG); 404 without one.
+
+        **Permission:** any authenticated user; the handler checks: any member.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Administration
+      summary: Upload the organisation's logo
+      operationId: putSettingsLogoImage
+      description: |-
+        multipart `file`: PNG, JPEG or SVG, at most 2 MB. PNG and JPEG are decoded and encoded again (no metadata, at most 1600 pixels on the longer side); an SVG is drawn by Qtestframe's own renderer into a PNG of 1000 pixels on the longer side (scripts, event handlers, links, embedded images, foreign objects, texts and entity declarations are never used or fetched). Replaces the previous image. → the logo as GET returns it.
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - Administration
+      summary: Remove the organisation's logo
+      operationId: deleteSettingsLogoImage
+      description: |-
+        Removes the image (the placement and size stay) → the logo as GET returns it.
+
+        **Permission:** `settings.manage`.
+      x-permission: settings.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/settings:
     get:
       tags:
@@ -11903,6 +13523,217 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/logo:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Get the project's logo
+      operationId: getProjectsByPidLogo
+      description: |-
+        The logo of the project's reports and documents: its own image if it has one, else the organisation's, unless turned off → `{own: logo, organisation: logo, effective: project | organisation | none}` (a logo as `GET /settings/logo` returns it; `own.off`: no logo at all).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Projects
+      summary: Update the project's logo settings
+      operationId: putProjectsByPidLogo
+      description: |-
+        Placement and maximum size of the project's own logo, and `off` (no logo in the project's documents, not even the organisation's); fields left out keep their value → as GET.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                placement:
+                  type: string
+                  enum: [left, center, right]
+                max_width_mm:
+                  type: integer
+                  minimum: 5
+                  maximum: 170
+                max_height_mm:
+                  type: integer
+                  minimum: 5
+                  maximum: 40
+                off:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/projects/{pid}/logo/image:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Project logo image
+      operationId: getProjectsByPidLogoImage
+      description: |-
+        The image of the project's own logo; 404 without one.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - Projects
+      summary: Upload the project's logo
+      operationId: putProjectsByPidLogoImage
+      description: |-
+        multipart `file`: PNG, JPEG or SVG, at most 2 MB. PNG and JPEG are decoded and encoded again (no metadata, at most 1600 pixels on the longer side); an SVG is drawn by Qtestframe's own renderer into a PNG of 1000 pixels on the longer side (scripts, event handlers, links, embedded images, foreign objects, texts and entity declarations are never used or fetched). Replaces the previous image. Turns `off` off → as `GET /projects/{pid}/logo`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - Projects
+      summary: Remove the project's logo
+      operationId: deleteProjectsByPidLogoImage
+      description: |-
+        Removes the project's own image: its documents show the organisation's logo again → as `GET /projects/{pid}/logo`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/projects/{pid}/risks/import:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Requirements
+      summary: Import a risk register
+      operationId: postProjectsByPidRisksImport
+      description: |-
+        A CSV or XLSX file with the columns of the risk register (the risks report's Risk register sheet, English or Swedish headers, or a sheet of one's own; the sheet and header row with a Title column and the most risk columns): Key, Title, Description, Category, Owner, Likelihood, Impact, Status (code or label), Mitigation, Review date, Review owner, ATT&CK techniques, EMB3D threats. A row naming the key of a risk of the project updates the columns the file has; the others create risks. Unknown ATT&CK and ATLAS techniques and EMB3D threats, unknown statuses and likelihoods or impacts outside 1–5 are left out with a warning on the row; a row without a title is an error. `dry_run=true` previews. Atomic → `{dry_run, sheet, columns, created, updated, unchanged, errors, rows:[{row, key, title, action (create | update | unchanged | error), error?, warnings}]}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                dry_run:
+                  type: string
+                  description: '`true`: preview only'
+              required:
+              - file
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /api/v1/projects/{pid}/risks/bulk:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -12358,7 +14189,7 @@ paths:
       summary: List my work
       operationId: getMyWork
       description: |-
-        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, review requests they asked for that are pending or came back with changes requested, their requirements and tests in review, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `review_returned`, `awaiting_review`, `in_review`, `waiver_approval`, `risk_acceptance`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","waiting","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
+        The caller's work list across the projects they can see: requirements, tests and risks they own in a non-final status, defects and test executions assigned to them, review requests waiting for them, review requests they asked for that are pending or came back with changes requested, their requirements and tests in review, waivers and risk acceptances waiting for their signature, risk reviews they own that are due, and owned items that became suspect, have stale results or are blocked. Rows of the same item are merged; `reasons` say why it is there (`owner`, `assigned`, `review_requested`, `review_returned`, `awaiting_review`, `in_review`, `waiver_approval`, `risk_acceptance`, `change_approval`, `change_returned`, `change_approved`, `risk_review`, `overdue`, `suspect`, `stale`, `blocked`). Overdue rows come first, then by due date, then the most recently changed. `?project=<id or key>` limits the list to one project, `?source=<names>` (comma-separated) to some sources, `?reason=<reason>` to the rows with that reason. → `{"items":[WorkItem],"total":n,"summary":{"count","waiting","overdue","by_reason","by_kind","by_project"},"sources":[...]}`
 
         **Permission:** any authenticated user; the handler checks: signed in, and the permissions of each row's project.
       x-permission: authenticated
@@ -12374,7 +14205,7 @@ paths:
         required: false
         schema:
           type: string
-        description: Comma-separated source names (owned, defects, executions, reviews, waivers, risk_acceptance).
+        description: Comma-separated source names (owned, defects, executions, reviews, waivers, risk_acceptance, change_requests, ...).
       - name: reason
         in: query
         required: false
@@ -13337,6 +15168,249 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ImportPreview'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: Get the two-way sync configurations
+      operationId: getProjectsByPidReqSync
+      description: |-
+        The sync of both sources (`jira`, `azure-devops`) as `{items: [config]}`, a default (not enabled, `id` "") where none is saved. A config: `{id, system, enabled, interval_minutes, settings, has_webhook_secret, webhook_url, run_as, next_run_at, last_run_at, last_status, last_error, failures, open_conflicts, linked, version, connected}`; `settings`: `{fields: [{field, remote, direction, values, push_values}], query, import_new, folder_id, push: {create, folder_id, tag, query, item_type, project_key}, conflict_policy, impact, comments, links, max_writes_per_minute, comments_since}`. The webhook secret is never returned.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/{source}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    put:
+      tags:
+      - Import
+      summary: Save a two-way sync configuration
+      operationId: putProjectsByPidReqSyncBySource
+      description: |-
+        `{enabled, interval_minutes (0 or 5–10080), settings, webhook_secret (write-only, 16–200 characters; empty keeps the saved one), clear_webhook_secret, version}`. `field` is one of title, description, status, priority, tags, criteria, rationale; `direction` both, pull (tracker → Qtestframe), push or none; `conflict_policy` manual, tracker or qtestframe; `impact` suspect, notify or skip. A stale `version` answers 409. Enabling needs `requirement.write` too: scheduled and webhook syncs run as the caller. Audited as `req_sync.update`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/{source}/run:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: source
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - jira
+        - azure-devops
+    post:
+      tags:
+      - Import
+      summary: Sync now or preview
+      operationId: postProjectsByPidReqSyncBySourceRun
+      description: |-
+        `{dry_run}`: runs the sync now and answers the run `{id, system, trigger, dry_run, status (ok, partial, error), summary: {pulled, pushed, created_local, created_remote, conflicts, comments, links, unchanged, errors}, entries: [{requirement_id, requirement_key, external_id, title, action, fields, changes, message}], error, started_at, finished_at}`. A dry run saves nothing and is not logged. 409 while another sync of the source runs; 502 `tracker_error` when the tracker cannot be read. Audited as `req_sync.run`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/runs:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: The sync log
+      operationId: getProjectsByPidReqSyncRuns
+      description: |-
+        The newest runs (at most 100 per source): `?source=`, `?limit=`, `?entries=true` to include the entries.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/runs/{run}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: run
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      tags:
+      - Import
+      summary: A sync run with its entries
+      operationId: getProjectsByPidReqSyncRunsByRun
+      description: |-
+        One run of the log with what it did per item.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/conflicts:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Import
+      summary: Sync conflicts
+      operationId: getProjectsByPidReqSyncConflicts
+      description: |-
+        Requirements and tracker items changed on both sides (policy manual): `{items: [{id, system, requirement_id, requirement_key, title, external_id, external_url, fields: [{field, base, local, remote}], status, resolution, resolved_by, resolved_at, created_at, updated_at}]}`. `?status=open` (default), resolved, dismissed or all; `?source=`.
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/req-sync/conflicts/{cid}/resolve:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: cid
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Import
+      summary: Decide a sync conflict
+      operationId: postProjectsByPidReqSyncConflictsByCidResolve
+      description: |-
+        `{resolution: tracker | qtestframe | dismiss}` for every field, or `{fields: {field: tracker | qtestframe | dismiss}}`. The decision is carried out by a sync of the one item (the tracker's value saved here through the regular update, or Qtestframe's written to the tracker) → `{conflict, run}`; 409 when the conflict is not open or the decision could not be carried out. Audited as `req_sync.conflict.resolve`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -15336,7 +17410,7 @@ paths:
       summary: Get correlation settings
       operationId: getProjectsByPidCorrelationSettings
       description: |-
-        the project's change and defect correlation settings `{relation_impact, relation_modes, impact_depth, impact_rules, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
+        the project's change and defect correlation settings `{relation_impact, relation_modes, impact_depth, impact_rules, applicability_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` (the defaults when it has none: refines, derived_from and depends_on `incoming`, a changed applicability recommends a review, results stale after 90 days and on change, critical and major defects block, minor warn, regressions reopen the defect)
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -15361,7 +17435,7 @@ paths:
       summary: Save correlation settings
       operationId: putProjectsByPidCorrelationSettings
       description: |-
-        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `relation_modes` (relation type → `suspect` | `review`); `impact_depth` 1–10 (default 3); `impact_rules` (`verifies`, `calls`, `test_depends_on`, `item_link`, `risk`, `defect`, `variant`, `code` → `{direction, mode}`; only `verifies` can mark `suspect`); `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off` → the settings as GET returns them
+        saves the settings; fields left out keep their value, `relation_impact` (relation type → `incoming` | `outgoing` | `both` | `off`) is replaced as a whole; `relation_modes` (relation type → `suspect` | `review`); `impact_depth` 1–10 (default 3); `impact_rules` (`verifies`, `calls`, `test_depends_on`, `item_link`, `risk`, `defect`, `variant`, `code` → `{direction, mode}`; only `verifies` can mark `suspect`); `stale_after_days` 0 turns the age rule off (at most 3650); a severity cannot both block and warn; `regression_action` `reopen` | `new_defect` | `off`; `applicability_impact` `review` (default: a changed variant applicability recommends a review of what the impact rules reach and notifies its owners) | `suspect` (a change of substance: the rules mark trace links and relations suspect) | `off` → the settings as GET returns them
 
         **Permission:** `project.update`.
       x-permission: project.update
@@ -18286,7 +20360,7 @@ paths:
         - "Exploratory testing"
       summary: "Plan an exploratory session"
       operationId: "postProjectsByPidExploratorySessions"
-      description: "Creates a planned session (key PROJ-EXP-n): `title` (the charter, required), `mission`, `tester` (e-mail of a member who may run sessions in the project; default the caller), `timebox_minutes` (5–480, default 60; 30, 60 and 90 are usual) and `scope`, a list of `{type: folder | requirement | test, id}` of the project.\n\n**Permission:** `run.write`."
+      description: "Creates a planned session (key PROJ-EXP-n): `title` (the charter, required), `mission`, `tester` (e-mail of a member who may run sessions in the project; default the caller), `timebox_minutes` (5–480, default 60; 30, 60 and 90 are usual) and `scope`, a list of `{type: folder | requirement | test, id}` of the project. `environment_id` (an environment item of the project or a shared one, by id or name; \"\" none) selects the environment; with it, `booking: {starts_at, ends_at, purpose?}` books it for the item at once (409 `booking_conflict` when it does not fit; nothing is created).\n\n**Permission:** `run.write`."
       x-permission: "run.write"
       requestBody:
         required: true
@@ -18830,7 +20904,7 @@ paths:
       summary: Create a test cycle
       operationId: postProjectsByPidCycles
       description: |-
-        `{name, goal?, description?, owner_id? (default: the caller), release_id?, variant_id? (id or name), build_id?, environment?, configuration_ids?, start_date?, end_date? (YYYY-MM-DD), scheduled_start_at? (RFC 3339: the cycle starts by itself), copy_from? (a cycle whose plan, testers, estimates, release, variant, build and configurations are copied)}`. A new cycle is planned.
+        `{name, goal?, description?, owner_id? (default: the caller), release_id?, variant_id? (id or name), build_id?, environment?, configuration_ids?, start_date?, end_date? (YYYY-MM-DD), scheduled_start_at? (RFC 3339: the cycle starts by itself), copy_from? (a cycle whose plan, testers, estimates, release, variant, build and configurations are copied)}`. A new cycle is planned. `environment_id` (an environment item of the project or a shared one, by id or name; "" none) selects the environment; with it, `booking: {starts_at, ends_at, purpose?}` books it for the item at once (409 `booking_conflict` when it does not fit; nothing is created). Its runs get the environment.
 
         **Permission:** `cycle.plan`.
       x-permission: cycle.plan
@@ -19424,6 +21498,109 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/stubs:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - CI/CD
+      summary: Test code stubs
+      operationId: getProjectsByPidTestsStubs
+      description: |-
+        Generated automated-test stubs (`qtestframe stubs`, the *Generate test code* action of the tests list): one file per test, named after its key so that JUnit results map back, with the title, requirements, preconditions, steps as numbered TODO comments and the test data as a parametrised test, marked as skipped until implemented. Parameters: `framework` (pytest, playwright, go, junit5, jest, vitest, robot, cucumber), `q` (or `query`: the tests, query language), `ids` (test ids or keys, comma-separated or repeated; with `q` both must match), `format` (`zip`, the default; `json` → `{framework: {id, name, language, runner, script_language, parametrised}, files: [{path, content, key, framework, test_id}], marked}`; `file`: the one selected stub as text), `package` (Go or Java package), `dir` (a relative directory prefixed to the paths). At most 2000 tests
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      parameters:
+      - name: framework
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [pytest, playwright, go, junit5, jest, vitest, robot, cucumber]
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: ids
+        in: query
+        schema:
+          type: string
+      - name: format
+        in: query
+        schema:
+          type: string
+          enum: [zip, json, file]
+      - name: package
+        in: query
+        schema:
+          type: string
+      - name: dir
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+            text/plain:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - CI/CD
+      summary: Test code stubs (and mark the scripts)
+      operationId: postProjectsByPidTestsStubs
+      description: |-
+        The same as GET with a body `{framework, query, ids: [...], format, package, dir, mark_script}`. `mark_script: true` (needs `test.write`) also sets the script of each selected test that has none to `qtestframe:stub <dir/path>`, makes it automated, sets the script language of the framework (python, playwright, javascript) and adds the tag `runner:<runner>` unless it has a runner tag; such a script is not run by the server (`run-automated` skips it with the code `external`). The answer's `marked` counts the changed tests. Audited as `test.update`; supports `?dry_run=impact` and `?impact=` like other test changes
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/ci/setup:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -19551,6 +21728,1371 @@ paths:
                 type: string
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/v1/ai:
+    get:
+      tags:
+      - AI assistance
+      summary: AI assistance in the organisation
+      operationId: getAI
+      description: |-
+        The availability of the optional AI assistance in the caller's organisation, without a project's opt-out: `{available, reason (off | not_configured | organisation), provider, model, features: {draft_tests, improve_requirement, summarize_run, suggest_mappings, suggest_criteria}, system_enabled, organisation_enabled, rate_limit, remaining, price_input, price_output, prompt_version}`. The organisation switch is `ai_enabled` of `PUT /api/v1/settings`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIStatus'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - AI assistance
+      summary: AI assistance in a project
+      operationId: getProjectsByPidAI
+      description: |-
+        Whether the AI assistance can be used in the project, and why not (`reason`: `off` — not enabled in the system settings, `not_configured` — no usable service, `organisation` — the organisation has not turned it on, `project` — the project opted out). Also the features that are on, the rate limit per user and hour and the caller's remaining requests, and the configured prices.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - AI assistance
+      summary: Opt a project out of the AI assistance
+      operationId: putProjectsByPidAI
+      description: |-
+        `{"disabled": true|false}`: the project's opt-out (audited as `project.ai_settings`). Answers the status like `GET`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [disabled]
+              properties:
+                disabled:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIStatus'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/draft-tests:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Draft tests for a requirement
+      operationId: postProjectsByPidAIDraftTests
+      description: |-
+        `{requirement_id, lang: en|sv}` → `{meta, result: {requirement_id, requirement_key, tests: [{title, description, preconditions, test_data, expected_result, steps: [{action, data, expected}], criteria: [numbers], criterion_ids: [ids]}]}}`. Sends the requirement (title, description, acceptance criteria) to the configured service and returns drafts; **nothing is saved** — the client creates the tests the user accepts (`POST /projects/{pid}/tests`, status `draft`) and links them (`POST /projects/{pid}/links`). See *AI requests* below for streaming, errors and the audit entry.
+
+        **AI requests** (all feature endpoints): with `Accept: text/event-stream` the answer is streamed as server-sent events `start` `{feature, provider, model}`, `progress` `{chars}` while the service writes, then `result` (the JSON body) or `error` `{status, code, error, meta}`; closing the connection cancels the request. Otherwise the JSON body. `meta` is `{feature, prompt_version, provider, model, usage: {input_tokens, output_tokens}, retried, duration_ms, cost}`. Errors: `409 ai_unavailable` (not available here; see `GET /projects/{pid}/ai`), `429 rate_limited`, `422 ai_refused`, `502 ai_service`, `502 ai_invalid_answer` (the answer did not match the schema, also after one retry), `504 ai_timeout`. Each request is audited as `ai.request` with feature, item ids, model and tokens, never the content.
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The suggestions (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/improve-requirement:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Improve the wording of a requirement
+      operationId: postProjectsByPidAIImproveRequirement
+      description: |-
+        `{requirement_id (optional for a requirement not saved yet), title, description (the editor's text; default the stored one), analysis_language: auto|en|sv, lang}` → `{meta, result: {original: {title, description}, title, description, explanation, before, after, fixed: [rule ids], new: [rule ids], claimed: [rule ids]}}`. The findings of the requirement checks (`POST /reqlang/analyze`) are sent with the text; the rewrite is checked again on the server: `fixed` are the findings it resolves, `new` the ones it adds, `claimed` what the service says it resolved. Nothing is saved. Streaming, errors and audit as for `draft-tests`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The suggestion (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/summarize-run:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Summarise the failures of a run
+      operationId: postProjectsByPidAISummarizeRun
+      description: |-
+        `{run_id, lang}` → `{meta, result: {run_id, summary, causes: [{title, explanation, tests: [keys]}], defects: [{title, description, severity, tests: [{key, title, test_case_id, execution_id}]}], failed, linked_defects}}`. Sends the failed and blocked executions (notes, the end of the error output, failed steps; at most 40) and the defects linked to the run. Defect drafts only name tests of the run; the client creates the drafts the user accepts (`POST /projects/{pid}/defects` with links to the executions). `400` when nothing failed. Streaming, errors and audit as for `draft-tests`.
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The summary (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/suggest-mappings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Suggest framework mappings for a requirement or risk
+      operationId: postProjectsByPidAISuggestMappings
+      description: |-
+        `{requirement_id | risk_id, kind (`risk` for a risk not saved yet), title, description, lang}` → `{meta, result: {kind, mappings: [{framework, id, name, reason}], dropped: [{framework, id}]}}`. Requirements: `d3fend` (D3FEND techniques), `emb3d` (EMB3D mitigations and threats), `cwe` (CWE weaknesses the catalogue refers to; accepted as tags `CWE-n`). Risks: `attack` (ATT&CK and ATLAS techniques) and `emb3d` (threats). Every id is checked against the embedded lists: unknown ids are returned in `dropped`, ids already mapped are left out. Streaming, errors and audit as for `draft-tests`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The suggestions (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/ai/suggest-criteria:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - AI assistance
+      summary: Suggest acceptance criteria for a requirement
+      operationId: postProjectsByPidAISuggestCriteria
+      description: |-
+        `{requirement_id (optional), title, description, criteria: [{description, method, threshold}] (the editor's), lang}` → `{meta, result: {criteria: [{description, method, threshold}]}}`. Criteria equal to existing ones are left out; `method` is one of the evaluation methods. Streaming, errors and audit as for `draft-tests`.
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIRequest'
+      responses:
+        '200':
+          description: "The suggestions (JSON, or server-sent events with `Accept: text/event-stream`)"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAnswer'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/ai:
+    post:
+      tags:
+      - Administration
+      summary: Test the AI service with the settings
+      operationId: postAdminSettingsTestAI
+      description: |-
+        `{"values": {"ai.url": "…"}}` (optional unsaved values of the ai section; the stored key is used unless one is given): asks the service for a one-word answer (a fixed text, no item data) and reports `{ok, message, error, details: {model, input_tokens, output_tokens}}`. Audited as `settings.test_ai`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/environments:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Environments
+      summary: "Test environments"
+      operationId: getProjectsByPidEnvironmentsEnv
+      description: "The environments of the project and those shared by the organisation (`?shared=false` leaves those out), by name, with `booked_now`, `next_booking` and `run_count`. `?q=` filters with the query language (fields `name`, `type`, `status`, `description`, `owner`, `tag`, `component` (a name or \"name version\"), `url`, `shared`, `capacity`, `approval`, `health`, `booked`, `created_by`, `created_at`, `updated_at`).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Environments
+      summary: "Create a test environment"
+      operationId: postProjectsByPidEnvironmentsEnv
+      description: "`{name, type? (dev | test | staging | pre_prod | prod_like | lab | hil_rig | device), status? (available | in_use | maintenance | broken | retired), status_note?, description?, urls?, components? [{name, version}], owner_id?, tags?, configuration_ids?, variant_ids? (project environments), capacity? (overlapping bookings allowed, default 1), requires_approval?, credentials_ref? (where the credentials are, never the secret), secret? (write-only: encrypted, never returned; `has_secret` says whether one is stored), clear_secret?, health_url? (http or https; checked every `health_interval_minutes` by the background job), health_interval_minutes?}` and `shared` (true: an environment shared by the organisation, which needs `environment.manage` in the organisation). The owner defaults to the caller.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of the project"
+      operationId: getProjectsByPidBookingsEnv
+      description: "The bookings of the project's environments and those made for the project; `?from=`, `?to=` (RFC 3339 or YYYY-MM-DD) limit the time, `?status=` (comma separated) the states. A booking made for a project the caller does not see has `hidden: true` and only its time and status.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments:
+    parameters:
+    get:
+      tags:
+      - Environments
+      summary: "Shared environments"
+      operationId: getEnvironmentsEnv
+      description: "The environments shared by the organisation.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Test environment"
+      operationId: getEnvironmentsByIdEnv
+      description: "An environment (never its secret).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Environments
+      summary: "Change a test environment"
+      operationId: patchEnvironmentsByIdEnv
+      description: "`{name, type? (dev | test | staging | pre_prod | prod_like | lab | hil_rig | device), status? (available | in_use | maintenance | broken | retired), status_note?, description?, urls?, components? [{name, version}], owner_id?, tags?, configuration_ids?, variant_ids? (project environments), capacity? (overlapping bookings allowed, default 1), requires_approval?, credentials_ref? (where the credentials are, never the secret), secret? (write-only: encrypted, never returned; `has_secret` says whether one is stored), clear_secret?, health_url? (http or https; checked every `health_interval_minutes` by the background job), health_interval_minutes?}`; only the given fields change. A changed name is kept in the free-text environment of its runs and cycles. A shared environment needs `environment.manage` in the organisation.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Environments
+      summary: "Delete a test environment"
+      operationId: deleteEnvironmentsByIdEnv
+      description: "Removes the environment and its bookings; runs, cycles and results keep its name, and results the component versions they recorded.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}/secret:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Environments
+      summary: "Reveal the secret"
+      operationId: postEnvironmentsByIdSecretEnv
+      description: "`{secret}`: the decrypted secret of the environment, to environment managers; every reveal writes the audit entry `environment.secret_reveal`. 404 when none is stored.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}/check:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Environments
+      summary: "Run the health check"
+      operationId: postEnvironmentsByIdCheckEnv
+      description: "Fetches the health check URL now (2xx or 3xx is up) and records the result like the background job: a failing check marks an available or in-use environment broken, a passing one makes an environment the check had marked broken available again.\n\n**Permission:** `environment.manage`."
+      x-permission: environment.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}/history:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Environment history"
+      operationId: getEnvironmentsByIdHistoryEnv
+      description: "The revisions of the environment (fields, components, never the secret).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/environments/{id}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of an environment"
+      operationId: getEnvironmentsByIdBookingsEnv
+      description: "The bookings of the environment; `?from=`, `?to=`, `?status=` as for the project bookings.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Environments
+      summary: "Book an environment"
+      operationId: postEnvironmentsByIdBookingsEnv
+      description: "`{starts_at, ends_at (RFC 3339), purpose?, project_id? (the project of a booking of a shared environment), run_id?, cycle_id?, session_id? (items of that project)}`. The caller needs `run.execute` in the project of the booking. The booking is `pending` when the environment requires approval (unless the caller owns or manages it), else `approved`. 409 `booking_conflict` with `{capacity, overlapping}` when it would exceed the capacity at some moment; a retired environment cannot be booked.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/bookings/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Booking"
+      operationId: getBookingsByIdEnv
+      description: "A booking.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Environments
+      summary: "Change a booking"
+      operationId: patchBookingsByIdEnv
+      description: "`{starts_at, ends_at (RFC 3339), purpose?, project_id? (the project of a booking of a shared environment), run_id?, cycle_id?, session_id? (items of that project)}` (without `project_id`); by the booker, the owner of the environment or an environment manager. A changed time of an approved booking of an environment that requires approval waits for approval again. 409 as when booking.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/bookings/{id}/decision:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Environments
+      summary: "Approve or reject a booking"
+      operationId: postBookingsByIdDecisionEnv
+      description: "`{decision: approved | rejected, note?}` of a pending booking, by the owner of the environment or an environment manager; approving checks the capacity again. The booker is notified (`environment.booking_approved`, `environment.booking_rejected`).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/bookings/{id}/cancel:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Environments
+      summary: "Cancel a booking"
+      operationId: postBookingsByIdCancelEnv
+      description: "Cancels a pending or approved booking (the booker, the owner of the environment or an environment manager).\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of a run"
+      operationId: getRunsByIdBookingsEnv
+      description: "The bookings linked to the run.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/cycles/{id}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of a test cycle"
+      operationId: getCyclesByIdBookingsEnv
+      description: "The bookings linked to the cycle.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/exploratory-sessions/{id}/bookings:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Bookings of an exploratory session"
+      operationId: getExploratorySessionsByIdBookingsEnv
+      description: "The bookings linked to the session.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/releases/{id}/environments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Environments
+      summary: "Tested environments of a release"
+      operationId: getReleasesByIdEnvironmentsEnv
+      description: "`[{environment_id, name, type, components, executions, passed, failed, blocked, last_at}]`: the environments and component versions (as recorded on the results) the final results of the release's runs were obtained in, one row per environment and set of versions.\n\n**Permission:** `run.read`."
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/test-data-sets:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Test data
+      summary: "Test data sets"
+      operationId: getProjectsByPidTestDataSetsEnv
+      description: "The data sets of the project with their links, `usage_count`, `last_used_at`, `open_refreshes`, `file_count`, `expired` and `expiring` (within 14 days). `?q=` filters (fields `name`, `description`, `kind`, `classification`, `owner`, `status`, `tag`, `expires`, `expired`, `expiring`, `parameter`, `linked`, `version`, `usage`, `refresh`, `created_by`, `created_at`, `updated_at`).\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Test data
+      summary: "Create a test data set"
+      operationId: postProjectsByPidTestDataSetsEnv
+      description: "`{name, description?, kind? (table | files), parameters?, data_rows? [{name, values}], classification? (synthetic | anonymised | production_copy), owner_id? (default: the caller), expires_on? (YYYY-MM-DD), tags?, status? (active | archived)}`; parameters and rows follow the rules of the inline data of a test.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Test data set"
+      operationId: getTestDataSetsByIdEnv
+      description: "A data set with its links.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Test data
+      summary: "Change a test data set"
+      operationId: patchTestDataSetsByIdEnv
+      description: "The fields of the create body; `version` (optional) is the version the change is based on (409 `conflict` when it was saved in the meantime). Every change is a new version.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Test data
+      summary: "Delete a test data set"
+      operationId: deleteTestDataSetsByIdEnv
+      description: "Removes the set, its links, usage and refresh requests; tests that took their rows from it use their own rows again.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/history:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data set history"
+      operationId: getTestDataSetsByIdHistoryEnv
+      description: "The revisions of the set.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/usage:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data set usage"
+      operationId: getTestDataSetsByIdUsageEnv
+      description: "`[{data_version, run_id, run_name, test_case_id, test_key, used_at}]`, newest first (`?limit=`, default 200): a run that created executions of a test taking its rows from the set records the version it used.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/links:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Test data
+      summary: "Link a data set"
+      operationId: postTestDataSetsByIdLinksEnv
+      description: "`{item_type: test | configuration | run, item_id, usage?: reference | source}`; `source` (tests, table sets only): the data-driven test gets one iteration per row of the set instead of its own rows; a test has one source (linking another makes the previous one a reference). Answers the set.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/links/{link}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: link
+      in: path
+      required: true
+      schema:
+        type: string
+      description: link id
+    delete:
+      tags:
+      - Test data
+      summary: "Unlink a data set"
+      operationId: deleteTestDataSetsByIdLinksByLinkEnv
+      description: "Removes a link.\n\n**Permission:** `test.write`."
+      x-permission: test.write
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/refresh-requests:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Refresh requests"
+      operationId: getTestDataSetsByIdRefreshRequestsEnv
+      description: "The refresh requests of the set, newest first.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Test data
+      summary: "Ask for a refresh"
+      operationId: postTestDataSetsByIdRefreshRequestsEnv
+      description: "`{reason, needed_by? (YYYY-MM-DD)}` asks the owner of the set to refresh it (needs `test.write` or `run.execute`); the owner is notified (`testdata.refresh_requested`) and sees it in My work.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-refresh-requests/{id}/resolve:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Test data
+      summary: "Close a refresh request"
+      operationId: postTestDataRefreshRequestsByIdResolveEnv
+      description: "`{status: done | rejected, note?}` by the owner of the set or someone with `test.write`; the requester is notified (`testdata.refresh_resolved`).\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/data-sets:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data sets of a test"
+      operationId: getTestsByIdDataSetsEnv
+      description: "The links of data sets to the test (with `data_set_name` and `usage`).\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/configurations/{id}/data-sets:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data sets of a configuration"
+      operationId: getConfigurationsByIdDataSetsEnv
+      description: "The links of data sets to the configuration.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/data-sets:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "Data sets of a run"
+      operationId: getRunsByIdDataSetsEnv
+      description: "The links of data sets to the run.\n\n**Permission:** `test.read`."
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/attachments:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Test data
+      summary: "List attachments (data sets)"
+      operationId: getTestDataSetsByIdAttachmentsEnv
+      description: "**Permission:** any authenticated user; the handler checks `test.read` in the data set's project."
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Test data
+      summary: "Upload attachment (data sets)"
+      operationId: postTestDataSetsByIdAttachmentsEnv
+      description: "Multipart upload (`file`, optional `description`, `tags`) of a data file of the set.\n\n**Permission:** any authenticated user; the handler checks `test.write` in the data set's project."
+      x-permission: authenticated
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/attachments/link:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Test data
+      summary: "Link a project document (data sets)"
+      operationId: postTestDataSetsByIdAttachmentsLinkEnv
+      description: "`{\"file_id\"}` of a file of the project.\n\n**Permission:** any authenticated user; the handler checks `test.write` in the data set's project."
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/test-data-sets/{id}/attachments/{file}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    - name: file
+      in: path
+      required: true
+      schema:
+        type: string
+      description: file id
+    delete:
+      tags:
+      - Test data
+      summary: "Unlink attachment (data sets)"
+      operationId: deleteTestDataSetsByIdAttachmentsByFileEnv
+      description: "**Permission:** any authenticated user; the handler checks `test.write` in the data set's project."
+      x-permission: authenticated
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -19736,6 +23278,103 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    AIStatus:
+      type: object
+      description: Availability of the optional AI assistance.
+      properties:
+        available:
+          type: boolean
+        reason:
+          type: string
+          enum: [off, not_configured, organisation, project]
+        provider:
+          type: string
+          enum: [anthropic, openai]
+        model:
+          type: string
+        features:
+          type: object
+          additionalProperties:
+            type: boolean
+        system_enabled:
+          type: boolean
+        organisation_enabled:
+          type: boolean
+        project_disabled:
+          type: boolean
+        rate_limit:
+          type: integer
+        remaining:
+          type: integer
+        price_input:
+          type: number
+        price_output:
+          type: number
+        prompt_version:
+          type: string
+    AIRequest:
+      type: object
+      description: The item an AI request is about, and the language of the suggestions.
+      properties:
+        lang:
+          type: string
+          enum: [en, sv]
+        requirement_id:
+          type: string
+        risk_id:
+          type: string
+        run_id:
+          type: string
+        kind:
+          type: string
+          enum: [requirement, risk]
+        title:
+          type: string
+        description:
+          type: string
+        criteria:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              method:
+                type: string
+              threshold:
+                type: string
+        analysis_language:
+          type: string
+    AIAnswer:
+      type: object
+      description: Suggestions of an AI request and how they were made.
+      properties:
+        meta:
+          type: object
+          properties:
+            feature:
+              type: string
+            prompt_version:
+              type: string
+            provider:
+              type: string
+            model:
+              type: string
+            usage:
+              type: object
+              properties:
+                input_tokens:
+                  type: integer
+                output_tokens:
+                  type: integer
+            retried:
+              type: boolean
+            duration_ms:
+              type: integer
+            cost:
+              type: number
+        result:
+          type: object
     ExploratorySessionInput:
       type: "object"
       properties:
@@ -21003,6 +24642,9 @@ components:
           - project
           - 'off'
           description: autocomplete suggestions in free-text fields; empty = on (history and project values)
+        live_updates_off:
+          type: boolean
+          description: Turn off live updates and presence in the web client (it polls instead and the user is not shown to others as viewing or editing).
     Suggestion:
       type: object
       required:
@@ -22928,6 +26570,201 @@ components:
           type: array
           items:
             type: string
+    AuditCheckpoint:
+      type: object
+      description: A signed statement that entry `seq` of the organisation's audit chain had hash `hash` (HMAC-SHA256 with the server key `key_id`).
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        seq:
+          type: integer
+        hash:
+          type: string
+        key_id:
+          type: string
+        signature:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    AuditVerification:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+        ok:
+          type: boolean
+        entries:
+          type: integer
+        last_seq:
+          type: integer
+        last_hash:
+          type: string
+        checkpoints:
+          type: integer
+        last_checkpoint:
+          $ref: '#/components/schemas/AuditCheckpoint'
+        key_protected:
+          type: boolean
+          description: the checkpoint key is stored encrypted by the server's key provider
+        unchained:
+          type: integer
+          description: entries written during the verification, not chained yet
+        broken:
+          type: object
+          description: the first broken link (absent when ok)
+          properties:
+            seq:
+              type: integer
+            entry_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            problem:
+              type: string
+              enum:
+              - entry_changed
+              - link_broken
+              - sequence_gap
+              - truncated
+              - checkpoint_mismatch
+              - checkpoint_signature
+            message:
+              type: string
+        verified_at:
+          type: string
+          format: date-time
+        duration_ms:
+          type: integer
+    ERecordsSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        meanings:
+          type: array
+          items:
+            type: string
+        signature_actions:
+          type: array
+          items:
+            type: string
+            enum:
+            - requirement.approve
+            - test.approve
+            - release.go
+            - baseline.create
+        reason_edits:
+          type: array
+          items:
+            type: string
+        idle_timeout_minutes:
+          type: integer
+        sso_reauth_minutes:
+          type: integer
+        updated_by:
+          type: string
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    ESignature:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        entity_type:
+          type: string
+        entity_id:
+          type: string
+        entity_key:
+          type: string
+        action:
+          type: string
+        meaning:
+          type: string
+        comment:
+          type: string
+        user_id:
+          type: string
+        user_email:
+          type: string
+        user_name:
+          type: string
+        method:
+          type: string
+          description: password, password+mfa, sso or sso+mfa
+        time_zone:
+          type: string
+        content_hash:
+          type: string
+        signed_at:
+          type: string
+          format: date-time
+        valid:
+          type: boolean
+        current_hash:
+          type: string
+    ComplianceReport:
+      type: object
+      properties:
+        tenant:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+        generated_by:
+          type: string
+        settings:
+          $ref: '#/components/schemas/ERecordsSettings'
+        audit:
+          $ref: '#/components/schemas/AuditVerification'
+        signatures:
+          type: object
+          additionalProperties:
+            type: integer
+        disclaimer:
+          type: string
+        controls:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              references:
+                type: array
+                items:
+                  type: string
+              title:
+                type: string
+              provider:
+                type: string
+                enum:
+                - tool
+                - shared
+                - customer
+              status:
+                type: string
+                enum:
+                - met
+                - not_configured
+                - attention
+                - procedural
+              tool:
+                type: string
+              customer:
+                type: string
+              evidence:
+                type: array
+                items:
+                  type: string
     AuditEntry:
       type: object
       properties:
@@ -22954,6 +26791,17 @@ components:
         created_at:
           type: string
           format: date-time
+        reason:
+          type: string
+          description: reason for change given with the request (electronic-records mode)
+        seq:
+          type: integer
+          description: position in the organisation's hash chain (0 = not chained yet)
+        prev_hash:
+          type: string
+        hash:
+          type: string
+          description: SHA-256 over the canonical encoding of the entry and prev_hash
     Me:
       type: object
       properties:

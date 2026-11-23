@@ -264,6 +264,9 @@ func trimEmptyEnds(lines []string) []string {
 // several, and one table per section.
 func WriteMarkdown(w io.Writer, ds Dataset) error {
 	var m MarkdownWriter
+	if s := markdownLogo(ds.Logo); s != "" {
+		m.block(s)
+	}
 	m.Heading(1, ds.Title)
 	m.Paragraph(ds.Subtitle)
 	meta := []Item{{Label: ds.label("generated"), Value: generatedAt(ds).Format("2006-01-02 15:04:05 MST")}}

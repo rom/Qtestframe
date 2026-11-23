@@ -1,7 +1,9 @@
 <script setup lang="ts">
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
+import { useLiveRefresh } from '@/composables/live'
 import DiscussionPanel from '@/components/DiscussionPanel.vue'
+import ESignaturesPanel from '@/components/ESignaturesPanel.vue'
 import ItemRef from '../components/ItemRef.vue'
 import { customCellText, customColumns } from '@/lib/customColumns'
 import CustomFieldsEditor from '@/components/CustomFieldsEditor.vue'
@@ -28,6 +30,8 @@ import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { atResidual, filterRisks, heatGrid, levelCounts, levelRank, riskLevel, riskLevelSeverity, riskScore, riskStatusSeverity, RISK_LEVELS, RISK_SCALE, RISK_STATUSES, type HeatCell } from '@/lib/risks'
 import ESignDialog from '@/components/ESignDialog.vue'
+import { signErrorKey } from '@/lib/erecords'
+import RiskImportDialog from '@/components/RiskImportDialog.vue'
 import SelectButton from 'primevue/selectbutton'
 import { formatDate, formatDateTime } from '@/lib/format'
 import type { Requirement, Risk } from '@/lib/types'
@@ -41,6 +45,9 @@ import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
 import { loadTechniques, techniqueUrl, type TechniqueList } from '@/lib/attack'
 import FrameworkPicker from '@/components/FrameworkPicker.vue'
+import AssistMenu, { type AssistAction } from '@/components/AssistMenu.vue'
+import AssistDialog, { type AssistApply } from '@/components/AssistDialog.vue'
+import { addIds, type AiFeature } from '@/lib/ai'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -54,6 +61,7 @@ const { t, locale } = useI18n()
 const listedCols = computed(() => customColumns(useProjectStore().customFieldsFor('risk').filter((f) => f.show_in_list)))
 const cellOf = (row: { custom_fields?: Record<string, unknown> }, field: string) => customCellText(useProjectStore().customFieldsFor('risk'), row, field, [t('common.yes'), t('common.no')])
 const canWrite = computed(() => auth.can(P.requirementWrite))
+const importOpen = ref(false)
 const canApprove = computed(() => auth.can(P.waiverApprove))
 const canSetThreshold = computed(() => auth.can(P.projectUpdate))
 
@@ -69,8 +77,10 @@ const error = ref('')
 const requirements = ref<Requirement[]>([])
 const reqById = computed(() => new Map(requirements.value.map((r) => [r.id, r])))
 
+/** set while reloading for live updates: no spinner (keeps selection and scroll) */
+let quiet = false
 async function load() {
-  loading.value = true
+  if (!quiet) loading.value = true
   error.value = ''
   try {
     risks.value = asItems(await api.get<{ items: Risk[] }>(`/projects/${proj.pid}/risks`))
@@ -80,6 +90,16 @@ async function load() {
     loading.value = false
   }
 }
+// live updates: reload quietly when others change what is shown
+useLiveRefresh(
+  () => ({ types: ['risk'], projectId: proj.pid }),
+  () => {
+    quiet = true
+    const done = load()
+    quiet = false
+    return done
+  }, { announce: () => t('live.listUpdated') },
+)
 async function loadRequirements() {
   try {
     requirements.value = asItems(await api.get<{ items: Requirement[] }>(`/projects/${proj.pid}/requirements`))
@@ -306,19 +326,19 @@ const residualInvalid = computed(() => (form.value.residual_likelihood === 0) !=
 const acceptOpen = ref(false)
 const acceptBusy = ref(false)
 const acceptError = ref('')
-async function acceptRisk(v: { comment: string; password: string }) {
+async function acceptRisk(v: { comment: string; password: string; meaning?: string; mfa_code?: string; time_zone?: string }) {
   if (!editing.value) return
   acceptBusy.value = true
   acceptError.value = ''
   try {
-    const r = await api.post<Risk>(`/risks/${editing.value.id}/accept`, { comment: v.comment, password: v.password })
+    const r = await api.post<Risk>(`/risks/${editing.value.id}/accept`, { comment: v.comment, password: v.password, meaning: v.meaning, mfa_code: v.mfa_code, time_zone: v.time_zone })
     editing.value = r
     form.value.status = r.status
     acceptOpen.value = false
     notify.ok(t('residual.accepted'), r.key)
     await load()
   } catch (e) {
-    if (e instanceof ApiError && (e.code === 'reauth_failed' || e.code === 'reauth_required')) acceptError.value = t(`esign.${e.code}`)
+    if (e instanceof ApiError && signErrorKey(e.code)) acceptError.value = t(signErrorKey(e.code))
     else acceptError.value = errorMessage(e)
   } finally {
     acceptBusy.value = false
@@ -369,6 +389,22 @@ function openCreate() {
   formError.value = ''
   dialog.value = true
 }
+// AI assistance: framework mappings for the risk in the dialog (added to the form)
+const assistOpen = ref(false)
+const assistFeature = ref<AiFeature | null>(null)
+const assistBody = computed(() => ({ kind: 'risk', risk_id: editing.value?.id ?? '', title: form.value.title, description: form.value.description }))
+const assistActions = computed<AssistAction[]>(() => [{ feature: 'suggest_mappings', blocked: form.value.title.trim() ? '' : 'ai.reason.noText' }])
+function openAssist(f: AiFeature) {
+  assistFeature.value = f
+  assistOpen.value = true
+}
+function onAssistApply(a: AssistApply) {
+  if (a.feature !== 'suggest_mappings') return
+  form.value.attack = addIds(form.value.attack, a.mappings.filter((m) => m.framework === 'attack').map((m) => m.id))
+  form.value.emb3d = addIds(form.value.emb3d, a.mappings.filter((m) => m.framework === 'emb3d').map((m) => m.id))
+  notify.info(t('ai.appliedToForm'))
+}
+
 function openEdit(r: Risk) {
   editing.value = r
   form.value = {
@@ -469,6 +505,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
     <div class="actions">
       <HelpLink page="releases-and-risks" />
       <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
+      <Button v-if="canWrite" :label="t('riskImport.open')" icon="pi pi-file-import" severity="secondary" outlined @click="importOpen = true" />
       <Button v-if="canWrite" :label="t('risksView.new')" icon="pi pi-plus" @click="openCreate" />
     </div>
   </div>
@@ -631,6 +668,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
 
   <Dialog v-model:visible="dialog" :header="editing ? t('risksView.editHeader', { key: editing.key }) : t('risksView.new')" modal maximizable :maximize-button-props="{ 'aria-label': t('common.toggleMaximize') }" style="width: min(720px, 96vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="save">
+      <div v-if="canWrite" class="row" style="justify-content: flex-end"><AssistMenu :project-id="proj.pid" :actions="assistActions" size="small" @select="openAssist" /></div>
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
       <div class="form-grid">
         <div v-field class="field full"><label for="risk-title">{{ t('common.title') }}</label><SuggestInput id="risk-title" v-model="form.title" field="risk.title" :project-id="proj.pid" :disabled="!canWrite" autofocus /></div>
@@ -726,6 +764,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <span v-if="editing.review_due" class="small"><Tag :value="t('residual.reviewDue', { date: formatDate(editing.review_date) })" severity="warn" icon="pi pi-calendar" /></span>
           <Button v-if="canApprove && editing.status !== 'closed'" :label="t('residual.accept')" icon="pi pi-pen-to-square" size="small" outlined @click="(acceptError = ''), (acceptOpen = true)" />
         </div>
+        <ESignaturesPanel v-if="editing" entity-type="risk" :entity-id="editing.id" :stamp="editing.accepted_at ?? ''" />
       </fieldset>
       <div>
         <div class="section-title" style="margin-top: 4px">
@@ -769,6 +808,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
     </template>
   </Dialog>
   <ItemPickerDialog v-model:visible="picker" kind="requirement" :project-id="proj.pid" :exclude="form.requirement_ids" :header="t('risksView.linkRequirements')" :confirm-label="t('common.link')" @pick="addLinked" />
+  <RiskImportDialog v-if="proj.pid" v-model:visible="importOpen" :project-id="proj.pid" @imported="load" />
   <ESignDialog
     v-model:visible="acceptOpen"
     :header="t('residual.acceptHeader', { key: editing?.key ?? '' })"
@@ -778,6 +818,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
     :error="acceptError"
     @sign="acceptRisk"
   />
+  <AssistDialog v-model:visible="assistOpen" :project-id="proj.pid" :feature="assistFeature" :body="assistBody" @apply="onAssistApply" />
 </template>
 
 <style scoped>

@@ -53,6 +53,9 @@ export interface ExploratorySession {
   tester: string
   timebox_minutes: number
   status: ExploratoryStatus | string
+  /** the environment explored */
+  environment_id?: string | null
+  environment_name?: string
   started_at: string | null
   running_since: string | null
   /** at the time the server answered (the running part included) */

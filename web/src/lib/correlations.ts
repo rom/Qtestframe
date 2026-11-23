@@ -50,7 +50,12 @@ export interface CorrelationSettings {
   /** relation type → suspect | review */
   relation_modes: Record<string, string>
   impact_rules: Record<string, ImpactRule>
+  /** what a changed variant applicability does: review (default) | suspect | off */
+  applicability_impact: string
 }
+
+/** The values of CorrelationSettings.applicability_impact. */
+export const APPLICABILITY_IMPACTS = ['review', 'suspect', 'off']
 
 /** One step of the path along which a change reaches an item. */
 export interface ImpactStep {
@@ -297,6 +302,7 @@ export function withDefaults(s: Partial<CorrelationSettings> | null | undefined)
         return [k, { direction: r.direction || 'off', mode: MARKABLE_EDGES.includes(k) && r.mode === 'suspect' ? 'suspect' : 'review' }]
       }),
     ),
+    applicability_impact: APPLICABILITY_IMPACTS.includes(s?.applicability_impact ?? '') ? s!.applicability_impact! : 'review',
   }
 }
 

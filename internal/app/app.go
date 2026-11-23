@@ -66,6 +66,8 @@ Usage:
                                                   replace ALL data with a backup
   qtestframe secrets status|migrate|rotate [--prune]|rewrap [--from-config OLD]|decrypt --yes|generate-key [--config FILE]
                                                   encryption of stored secrets (docs/security.md)
+  qtestframe audit verify [--config FILE] [--tenant SLUG] [--file EXPORT.json] [--json]
+                                                  check the hash chain of the audit trail
   qtestframe check-config [--config FILE] [--port N] [--listen HOST:PORT]
   qtestframe healthcheck [--config FILE] [--port N] [--url URL]
   qtestframe report      --url URL --token T (--project KEY --run NAME [--create-run] | --run-id ID)
@@ -87,7 +89,13 @@ Usage:
                          [--format keys|pytest|go|playwright|maven|json|gitlab-child-pipeline]
                          [--output FILE] [--job RUNNER=CMD] [--image RUNNER=IMAGE]
                                                   the tests to run for a change (merge request)
-                         report, gate and select read QTF_URL, QTF_TOKEN and QTF_PROJECT, and the
+  qtestframe stubs       --project KEY --framework pytest|playwright|go|junit5|jest|vitest|robot|cucumber
+                         [--query Q] [--ids KEY,…] [--out DIR] [--package P] [--dry-run]
+                         [--mark-script [--script-dir DIR]]
+                                                  write test code stubs named after the test keys (an
+                                                  unimplemented stub reports as skipped); generating
+                                                  again keeps implemented bodies
+                         report, gate, select and stubs read QTF_URL, QTF_TOKEN and QTF_PROJECT, and the
                          GitLab CI / GitHub Actions variables; tokens for posting: QTF_GITLAB_TOKEN,
                          QTF_GITHUB_TOKEN
   qtestframe version
@@ -126,6 +134,8 @@ func Run(args []string, env Env) int {
 		err = cmdRestore(args[1:], env)
 	case "secrets":
 		err = cmdSecrets(args[1:], env)
+	case "audit":
+		err = cmdAudit(args[1:], env)
 	case "healthcheck":
 		err = cmdHealthcheck(args[1:], env)
 	case "check-config":
@@ -136,6 +146,8 @@ func Run(args []string, env Env) int {
 		err = cmdGate(args[1:], env)
 	case "select":
 		err = cmdSelect(args[1:], env)
+	case "stubs":
+		err = cmdStubs(args[1:], env)
 	case "sandbox-exec":
 		var c *runner.SandboxConfig
 		if c, err = runner.ParseSandboxArgs(args[1:], env.Stderr); err == nil {
@@ -416,12 +428,28 @@ func cmdSeedDemo(args []string, env Env) error {
 	if err := SeedDemoWorkList(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {
 		return err
 	}
+	// change control and change requests (seedchangerequests.go)
+	if err := SeedDemoChangeRequests(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {
+		return err
+	}
+	// live updates and presence: nothing to store but a profile setting
+	if err := SeedDemoLive(env.Ctx, st); err != nil {
+		return err
+	}
+	// the two-way sync with Jira and Azure DevOps, run as the administrator (seedimport.go)
+	if err := SeedDemoReqSync(env.Ctx, st, t.ID, p, cfg.Bootstrap.AdminEmail); err != nil {
+		return err
+	}
 	// discussions by the demo users (seeddiscussions.go)
 	if err := SeedDemoDiscussions(env.Ctx, st, t.ID, p); err != nil {
 		return err
 	}
 	// test cycles with the demo users as testers (after the bootstrap too)
-	return SeedDemoCycles(env.Ctx, st, t.ID, p)
+	if err := SeedDemoCycles(env.Ctx, st, t.ID, p); err != nil {
+		return err
+	}
+	// test environments, bookings and test data (after the runs and cycles)
+	return SeedDemoEnvironments(env.Ctx, st, t.ID, p)
 }
 
 // cmdBackup writes a logical, database-agnostic backup (see
@@ -743,6 +771,10 @@ func cmdServe(args []string, env Env) error {
 	srv.StartJobs(ctx)
 	// automated tests (web tests, "Run automated tests") run in the background
 	srv.StartScriptJobs(ctx)
+	// live updates: the cross-instance bus (PostgreSQL) and presence expiry;
+	// open event streams never become idle, so shutdown ends them
+	srv.StartLive(ctx)
+	hs.RegisterOnShutdown(srv.StopLive)
 	errc := make(chan error, 1)
 	go func() { errc <- hs.Serve(ln) }()
 	log.Info("qtestframe listening", "addr", ln.Addr().String(), "tls", tlsOn, "version", Version, "db", cfg.Database.Driver)

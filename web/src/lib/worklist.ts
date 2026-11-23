@@ -43,10 +43,10 @@ export interface WorkSummary {
 export const emptySummary = (): WorkSummary => ({ count: 0, waiting: 0, overdue: 0, by_reason: {}, by_kind: {}, by_project: {} })
 
 /** The reasons in the order they are offered as filters. */
-export const WORK_REASONS = ['overdue', 'review_requested', 'review_returned', 'waiver_approval', 'risk_acceptance', 'assigned', 'owner', 'mentioned', 'risk_review', 'suspect', 'stale', 'blocked', 'in_review', 'awaiting_review'] as const
+export const WORK_REASONS = ['overdue', 'review_requested', 'review_returned', 'waiver_approval', 'change_approval', 'change_returned', 'change_approved', 'risk_acceptance', 'booking_approval', 'refresh_requested', 'data_expired', 'data_expiring', 'awaiting_approval', 'assigned', 'owner', 'mentioned', 'risk_review', 'suspect', 'stale', 'blocked', 'in_review', 'awaiting_review'] as const
 
 /** Reasons of rows that wait for someone else: listed, not counted. */
-export const WAITING_REASONS: readonly string[] = ['awaiting_review', 'in_review']
+export const WAITING_REASONS: readonly string[] = ['awaiting_review', 'in_review', 'awaiting_approval']
 
 /** Whether a row only waits for others (every reason is a waiting one). */
 export function isWaiting(it: Pick<WorkItem, 'reasons'>): boolean {
@@ -111,6 +111,8 @@ export function workItemRoute(it: Pick<WorkItem, 'project_id' | 'entity_type' | 
       return { name: 'risks', params, query: { risk: it.entity_id } }
     case 'waiver':
       return { name: 'waivers', params, query: { waiver: it.entity_id } }
+    case 'change_request':
+      return { name: 'changeRequests', params, query: { cr: it.entity_id } }
     case 'run':
       return { name: 'run', params: { ...params, runId: it.entity_id }, query: { tab: 'discussion' } }
     case 'review':
@@ -119,6 +121,10 @@ export function workItemRoute(it: Pick<WorkItem, 'project_id' | 'entity_type' | 
       return { name: 'cycle', params: { ...params, cycleId: it.entity_id } }
     case 'exploratory_session':
       return { name: 'exploratorySession', params: { ...params, sessionId: it.entity_id } }
+    case 'environment':
+      return { name: 'environment', params: { ...params, environmentId: it.entity_id } }
+    case 'test_data_set':
+      return { name: 'testData', params, query: { set: it.entity_id } }
     case 'execution':
       return it.run_id ? { name: 'execute', params: { ...params, runId: it.run_id, executionId: it.entity_id } } : { name: 'runs', params }
   }
@@ -130,11 +136,17 @@ export function reasonSeverity(reason: string): 'danger' | 'warn' | 'info' | 'se
   switch (reason) {
     case 'overdue':
     case 'blocked':
+    case 'data_expired':
       return 'danger'
     case 'review_requested':
     case 'review_returned':
     case 'waiver_approval':
+    case 'change_approval':
+    case 'change_returned':
     case 'risk_acceptance':
+    case 'booking_approval':
+    case 'refresh_requested':
+    case 'data_expiring':
     case 'suspect':
     case 'stale':
       return 'warn'
@@ -159,8 +171,14 @@ export function workKindIcon(kind: string): string {
       return 'pi pi-shield'
     case 'waiver':
       return 'pi pi-pen-to-square'
+    case 'change_request':
+      return 'pi pi-file-edit'
     case 'execution':
       return 'pi pi-play-circle'
+    case 'environment_booking':
+      return 'pi pi-calendar'
+    case 'test_data_set':
+      return 'pi pi-database'
   }
   return 'pi pi-inbox'
 }

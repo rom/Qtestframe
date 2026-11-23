@@ -77,6 +77,10 @@ var commands = []command{
 		"Prints a new random 256-bit key (base64) for `QTF_SECRETS_KEY` or a key file.",
 		"Skriver ut en ny slumpmässig 256-bitarsnyckel (base64) för `QTF_SECRETS_KEY` eller en nyckelfil.",
 	}},
+	{[]string{"audit", "verify"}, text{
+		"Verifies the hash chain of the audit trail: every entry's hash, the links between entries, the sequence, the recorded end of the chain and the signed checkpoints (with `--tenant` one organisation, otherwise every organisation and the system entries). Exit `0` when intact, `1` at the first broken link (printed with its entry). `--file EXPORT.json` checks an export (Administration → Audit trail → Export with hashes) without the database; the signatures of its checkpoints need the server's key and are only checked against the database.",
+		"Verifierar granskningsloggens hashkedja: varje posts hash, länkarna mellan posterna, ordningen, kedjans registrerade slut och de signerade kontrollpunkterna (med `--tenant` en organisation, annars alla organisationer och systemposterna). Slutstatus `0` när den är intakt, `1` vid den första brutna länken (skrivs ut med sin post). `--file EXPORT.json` kontrollerar en export (Administration → Granskningslogg → Exportera med hashar) utan databasen; kontrollpunkternas signaturer kräver serverns nyckel och kontrolleras bara mot databasen.",
+	}},
 	{[]string{"check-config"}, text{
 		"Loads and validates the configuration (secret files included) without touching the database, and prints `configuration OK`.",
 		"Läser in och kontrollerar konfigurationen (även hemlighetsfiler) utan att röra databasen, och skriver `configuration OK`.",
@@ -96,6 +100,10 @@ var commands = []command{
 	{[]string{"select"}, text{
 		"Prints the tests a CI pipeline runs for a change: the requirements and tests that the change's commits (from git, `--since`, or `--commits`), merge request, changed files (with the path map `qtestframe-map.yml`) and commit messages refer to, the regression selection and the tests with the `--tag` tags. `--format` gives test keys, a test runner filter (`pytest`, `go`, `playwright`, `maven`), JSON or a GitLab child pipeline (`gitlab-child-pipeline`); `--create-run` creates a run of the selection.",
 		"Skriver de testfall en CI-pipeline kör för en ändring: de krav och testfall som ändringens commits (från git, `--since` eller `--commits`), merge request, ändrade filer (med sökvägskartan `qtestframe-map.yml`) och commit-meddelanden hänvisar till, regressionsurvalet och testfallen med taggarna i `--tag`. `--format` ger testnycklar, ett filter för testköraren (`pytest`, `go`, `playwright`, `maven`), JSON eller en underpipeline för GitLab (`gitlab-child-pipeline`); `--create-run` skapar en körning av urvalet.",
+	}},
+	{[]string{"stubs"}, text{
+		"Writes generated test code stubs into a directory (`--out`): one file per test of `--query` (default `execution_type:automated`) or `--ids`, for `--framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`, `robot` or `cucumber`, named after the test key so that JUnit results map back, and marked as skipped until implemented. Generating again creates new files, regenerates unchanged stubs, only updates the header block of implemented ones and leaves files without qtestframe markers alone; `--dry-run` lists what would change. `--mark-script` sets the script of tests without one to their stub path (see the user guide page CI/CD).",
+		"Skriver genererade kodstubbar för testfall till en katalog (`--out`): en fil per testfall i `--query` (standard `execution_type:automated`) eller `--ids`, för `--framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`, `robot` eller `cucumber`, namngiven efter testnyckeln så att JUnit-resultaten hittar tillbaka och markerad som överhoppad tills den implementeras. En ny generering skapar nya filer, genererar om oförändrade stubbar, uppdaterar bara huvudblocket i implementerade och lämnar filer utan qtestframe-markeringar orörda; `--dry-run` listar vad som skulle ändras. `--mark-script` sätter skriptet för testfall utan skript till stubbens sökväg (se sidan CI/CD i användarhandboken).",
 	}},
 	{[]string{"version"}, text{
 		"Prints the version (also `--version`, `-v`).",

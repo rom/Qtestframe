@@ -69,6 +69,9 @@ func WritePDF(w io.Writer, ds Dataset) error {
 	})
 
 	pdf.AddPage()
+	if h := pdfLogo(pdf, ds.Logo, pdfMargin, pdfMargin, p.usable); h > 0 {
+		pdf.SetY(pdfMargin + h + 4)
+	}
 	pdf.SetFont("Helvetica", "B", 18)
 	pdf.MultiCell(0, 9, p.text(ds.Title), "", "L", false)
 	if ds.Subtitle != "" {

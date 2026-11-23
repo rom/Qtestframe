@@ -21,7 +21,7 @@ import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
 
 const props = defineProps<{
-  entity: 'requirement' | 'test' | 'exploratory_session' | 'cycle'
+  entity: 'requirement' | 'test' | 'exploratory_session' | 'cycle' | 'environment' | 'test_data_set'
   entityId: string
   canRestore: boolean
   /** Current version of the item (restoring it would be a no-op). */
@@ -48,7 +48,8 @@ const loading = ref(false)
 const error = ref('')
 const selectedId = ref<string | null>(null)
 const restoring = ref(false)
-const path = computed(() => `/${props.entity === 'requirement' ? 'requirements' : props.entity === 'exploratory_session' ? 'exploratory-sessions' : props.entity === 'cycle' ? 'cycles' : 'tests'}/${props.entityId}`)
+const HISTORY_PATHS: Record<string, string> = { requirement: 'requirements', exploratory_session: 'exploratory-sessions', cycle: 'cycles', environment: 'environments', test_data_set: 'test-data-sets', test: 'tests' }
+const path = computed(() => `/${HISTORY_PATHS[props.entity] ?? 'tests'}/${props.entityId}`)
 
 const undoStore = useUndoStore()
 watch(

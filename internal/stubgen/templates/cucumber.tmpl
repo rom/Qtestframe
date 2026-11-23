@@ -1,0 +1,35 @@
+{{- /* Cucumber: KEY.feature; the key is in the feature and scenario names and a tag. */ -}}
+@{{oneline .Key}} @qtestframe-stub
+Feature: {{gherkin .Display}}
+{{- if .Requirements}}
+  Requirements: {{gherkin (join .Requirements ", ")}}
+{{- end}}
+{{if .Parametrised}}
+  Scenario Outline: {{gherkin .Display}} [<row>]
+{{- else}}
+  Scenario: {{gherkin .Display}}
+{{- end}}
+{{- range $i, $l := nonEmptyLines .Preconditions}}
+    {{if eq $i 0}}Given{{else}}And{{end}} {{outline $l $.Params}}
+{{- end}}
+{{- range .Steps}}
+{{- if .Call}}
+    When call {{gherkin .Call}}
+{{- else if .Action}}
+    When {{outline .Action $.Params}}
+{{- end}}
+{{- if .Data}}
+    # Data: {{gherkin .Data}}
+{{- end}}
+{{- if .Expected}}
+    Then {{outline .Expected $.Params}}
+{{- end}}
+{{- end}}
+{{- if and (not .Steps) .Expected}}
+    Then {{outline .Expected .Params}}
+{{- end}}
+{{- if .Parametrised}}
+
+    Examples:
+{{table "      " .}}
+{{- end}}

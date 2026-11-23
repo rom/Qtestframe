@@ -2,6 +2,7 @@
 // One test cycle: its plan (tests per configuration with tester and
 // estimate), the board by tester, the progress with the burndown and the
 // workload per tester, and its history.
+import { useLiveRefresh } from '@/composables/live'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Chart from 'primevue/chart'
@@ -44,6 +45,9 @@ import { useAuthStore } from '@/stores/auth'
 import { useProjectPeopleStore } from '@/stores/projectPeople'
 import { useVariants } from '@/composables/variants'
 import { useConfigurations } from '@/composables/configurations'
+import { useEnvironments } from '@/composables/environments'
+import EnvironmentField from '@/components/EnvironmentField.vue'
+import type { BookingInput } from '@/lib/environments'
 import { useChartTheme } from '@/composables/chartTheme'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
@@ -163,6 +167,9 @@ const releases = ref<Release[]>([])
 const releaseOptions = computed(() => releases.value.map((r) => ({ label: r.version && r.version !== r.name ? `${r.name} (${r.version})` : r.name, value: r.id })))
 const editDialog = ref(false)
 const editError = ref('')
+const envs = useEnvironments(() => proj.pid)
+const editEnv = ref<string | null>(null)
+const editBooking = ref<BookingInput | null>(null)
 const edit = reactive({ name: '', goal: '', description: '', owner_id: '', release_id: null as string | null, variant_id: null as string | null, environment: '', configuration_ids: [] as string[], start_date: '', end_date: '', scheduled_start: '' })
 function toLocal(iso: string | null): string {
   if (!iso) return ''
@@ -186,6 +193,9 @@ function openEdit() {
     end_date: c.end_date,
     scheduled_start: toLocal(c.scheduled_start_at),
   })
+  editEnv.value = c.environment_id ?? null
+  editBooking.value = null
+  void envs.load()
   editError.value = ''
   editDialog.value = true
 }
@@ -197,6 +207,11 @@ async function saveEdit() {
   delete body.scheduled_start
   if (edit.scheduled_start) body.scheduled_start_at = new Date(edit.scheduled_start).toISOString()
   else body.clear_scheduled_start = true
+  if (envs.environments.value.length) {
+    body.environment_id = editEnv.value ?? ''
+    if (editEnv.value) delete body.environment
+    if (editEnv.value && editBooking.value) body.booking = editBooking.value
+  }
   try {
     await api.patch(`/cycles/${cycle.value.id}`, body)
     editDialog.value = false
@@ -323,6 +338,9 @@ async function loadProgress() {
     notify.fail(e)
   }
 }
+// live updates: the cycle when others change it, its progress as results come in
+useLiveRefresh(() => ({ types: ['cycle'], entityId: props.cycleId }), load, { announce: () => t('live.listUpdated') })
+useLiveRefresh(() => (pid.value ? { types: ['run', 'execution'], projectId: pid.value } : null), load, { delay: 2000 })
 const burnUnit = ref<'tests' | 'minutes'>('tests')
 const unitOptions = computed(() => [
   { label: t('cycles.progressTab.unitTests'), value: 'tests' },
@@ -669,9 +687,12 @@ watch(() => props.cycleId, () => void load())
           <label :for="`${id}-eowner`">{{ t('cycles.owner') }}</label>
           <Select v-model="edit.owner_id" :input-id="`${id}-eowner`" :options="testerOptions.slice(1)" option-label="label" option-value="value" filter />
         </div>
-        <div class="field">
+        <div v-if="!envs.environments.value.length" class="field">
           <label :for="`${id}-eenv`">{{ t('cycles.environment') }}</label>
           <InputText :id="`${id}-eenv`" v-model="edit.environment" maxlength="200" />
+        </div>
+        <div v-else class="field full">
+          <EnvironmentField v-model="editEnv" v-model:booking="editBooking" :environments="envs.environments.value" :id-prefix="`${id}-ecy`" :can-book="auth.can(P.runExecute)" />
         </div>
         <div class="field">
           <label :for="`${id}-estart`">{{ t('cycles.startDate') }}</label>

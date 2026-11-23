@@ -1,0 +1,27 @@
+{{- /* Playwright: KEY.spec.ts; the key is in the title and the qtestframe annotation. */ -}}
+import { test } from '@playwright/test';
+{{if .Parametrised}}
+const rows = [
+{{- range .DRows}}
+  { name: {{js .Name}}{{range $i, $v := .Values}}, {{(index $.Params $i).Ident}}: {{js $v}}{{end}} },
+{{- end}}
+];
+
+for (const row of rows) {
+  test({{js (print .Display " [")}} + row.name + ']', {
+    tag: {{js (print "@" .Key)}},
+    annotation: { type: 'qtestframe', description: {{js .Key}} },
+  }, async ({ page }) => {
+    test.fixme(true, 'qtestframe stub: not implemented');
+{{todo "typescript" "    // " .Test}}
+  });
+}
+{{- else}}
+test({{js .Display}}, {
+  tag: {{js (print "@" .Key)}},
+  annotation: { type: 'qtestframe', description: {{js .Key}} },
+}, async ({ page }) => {
+  test.fixme(true, 'qtestframe stub: not implemented');
+{{todo "typescript" "  // " .Test}}
+});
+{{- end}}

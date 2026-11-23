@@ -103,6 +103,9 @@ type ReqIFRequirement struct {
 	// Custom are the custom field values by key in their text form (one
 	// string per selected option).
 	Custom map[string][]string
+	// D3fend and Emb3d are the MITRE D3FEND techniques and EMB3D threats
+	// and mitigations (attributes D3FEND and EMB3D).
+	D3fend, Emb3d []string
 }
 
 // ReqIFCriterion is an evaluation criterion.
@@ -168,6 +171,8 @@ var reqifReqAttrs = []reqifAttr{
 	{"qtf-ad-owner", "Owner", "string", ""},
 	{"qtf-ad-tags", "Tags", "string", ""},
 	{"qtf-ad-categories", "Categories", "string", ""},
+	{"qtf-ad-d3fend", "D3FEND", "string", ""},
+	{"qtf-ad-emb3d", "EMB3D", "string", ""},
 	{"qtf-ad-criteria", "Acceptance criteria", "xhtml", ""},
 	{"qtf-ad-version", "Version", "integer", ""},
 	{"qtf-ad-created-by", "ReqIF.ForeignCreatedBy", "string", ""},
@@ -567,6 +572,8 @@ func reqifObject(w *reqifWriter, rq ReqIFRequirement, custom []ReqIFCustomField)
 	reqifString(w, "qtf-ad-owner", rq.Owner)
 	reqifString(w, "qtf-ad-tags", strings.Join(rq.Tags, ", "))
 	reqifString(w, "qtf-ad-categories", strings.Join(rq.Categories, ", "))
+	reqifString(w, "qtf-ad-d3fend", strings.Join(rq.D3fend, ", "))
+	reqifString(w, "qtf-ad-emb3d", strings.Join(rq.Emb3d, ", "))
 	if len(rq.Criteria) > 0 {
 		reqifXHTML(w, "qtf-ad-criteria", criteriaXHTML(rq.Criteria))
 	}

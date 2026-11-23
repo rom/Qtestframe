@@ -312,6 +312,10 @@ func TestSeedDemo(t *testing.T) {
 	if err != nil || len(ps) != 3 {
 		t.Errorf("projects %v %v", ps, err)
 	}
+	// the AI assistance is on for the demo organisation (the service is not configured)
+	if ts, err := st.TenantSettings(context.Background(), tn.ID); err != nil || !ts.AIEnabled {
+		t.Errorf("tenant settings %+v %v", ts, err)
+	}
 	// the restricted project, shared with Dana as a viewer
 	var vault *model.Project
 	for i := range ps {
@@ -325,6 +329,10 @@ func TestSeedDemo(t *testing.T) {
 	dana, err := st.GetUserByEmail(context.Background(), DemoMemberEmail)
 	if err != nil {
 		t.Fatal(err)
+	}
+	// live updates: Erik turned them off in his profile
+	if erik, err := st.GetUserByEmail(context.Background(), DemoOutsiderEmail); err != nil || !erik.Preferences.LiveUpdatesOff || dana.Preferences.LiveUpdatesOff {
+		t.Errorf("live updates preference %+v %v", erik, err)
 	}
 	if g, err := st.ProjectGrantOf(context.Background(), tn.ID, vault.ID, dana.ID); err != nil || strings.Join(g.UserRoles, ",") != "viewer" {
 		t.Errorf("grant %+v %v", g, err)
@@ -342,6 +350,23 @@ func TestSeedDemo(t *testing.T) {
 		t.Errorf("sara grant %+v %v", g, err)
 	}
 	ps = slices.DeleteFunc(ps, func(p model.Project) bool { return p.Key == "VAULT" })
+	// change requests in several states, change control warns
+	for _, pr := range ps {
+		crs, err := st.ListChangeRequests(context.Background(), tn.ID, pr.ID, store.CRFilter{})
+		if err != nil || len(crs) != 4 {
+			t.Fatalf("change requests of %s: %d %v", pr.Key, len(crs), err)
+		}
+		states := map[string]bool{}
+		for _, c := range crs {
+			states[c.Status] = true
+		}
+		if !states["in_review"] || !states["closed"] || !states["deferred"] || !states["draft"] {
+			t.Errorf("states %v", states)
+		}
+		if cc, err := st.ChangeControl(context.Background(), tn.ID, pr.ID); err != nil || cc.Mode != "warn" {
+			t.Errorf("change control %+v %v", cc, err)
+		}
+	}
 	// test cycles: closed, active (half executed, with a burndown), planned
 	for _, pr := range ps {
 		cycles, err := st.ListCycles(context.Background(), tn.ID, pr.ID)

@@ -33,6 +33,9 @@ type Dataset struct {
 	// Link, when set, maps a table cell value (e.g. an item key) to the URL
 	// of that item; the Markdown writer turns such cells into links.
 	Link func(value string) string `json:"-"`
+	// Logo, when set, is shown at the top of the first page (PDF, DOCX,
+	// Markdown).
+	Logo *Logo `json:"-"`
 }
 
 // labels are the texts the writers add, per language.

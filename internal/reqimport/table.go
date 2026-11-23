@@ -177,6 +177,10 @@ func parseRows(rows [][]string, mapping map[string]string, num func(i int) int, 
 				folders = append(folders, v)
 			case FieldCriteria:
 				rw.criteria = joinText(rw.criteria, v)
+			case FieldD3fend:
+				rw.d3fend = joinText(rw.d3fend, v)
+			case FieldEmb3d:
+				rw.emb3d = joinText(rw.emb3d, v)
 			default:
 				if k, ok := strings.CutPrefix(col.Field, CustomPrefix); ok {
 					if c.CustomFields == nil {

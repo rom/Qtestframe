@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import TestDataSources from './TestDataSources.vue'
 import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import ESignaturesPanel from '@/components/ESignaturesPanel.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import ImpactPanel from './ImpactPanel.vue'
 import ImpactConfirmDialog from './ImpactConfirmDialog.vue'
+import ChangeControlBar from './ChangeControlBar.vue'
+import { changeBlocked, proposalOf } from '@/lib/changeRequests'
 import StaleBadge from './StaleBadge.vue'
 import { contentChanges, needsImpactConfirm, type ChangeImpact, type ImpactChoice } from '@/lib/correlations'
 import { isSoftware } from '@/lib/projectTypes'
@@ -12,6 +16,7 @@ import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import ConflictDialog from './ConflictDialog.vue'
+import LiveItemBar from './LiveItemBar.vue'
 import CatalogOrigin from './CatalogOrigin.vue'
 import CustomFieldsEditor from './CustomFieldsEditor.vue'
 import TemplatePicker from './TemplatePicker.vue'
@@ -68,6 +73,9 @@ import SuggestInput from './SuggestInput.vue'
 import { rememberValues, savedEntries } from '@/lib/suggest'
 import { PLAYWRIGHT, WEB_STARTER } from '@/lib/webTests'
 import { useNotify } from '@/composables/notify'
+import AssistMenu, { type AssistAction } from './AssistMenu.vue'
+import AssistDialog, { type AssistApply } from './AssistDialog.vue'
+import { draftPreconditions, type AiFeature } from '@/lib/ai'
 
 const props = defineProps<{
   projectId: string
@@ -313,6 +321,27 @@ function onReorder(e: { value: StepRow[] }) {
 
 // ---------- save ----------
 const loaded = ref<Record<string, unknown> | null>(null)
+// ---------- change control: propose the edits in a change request ----------
+const ccBar = ref<InstanceType<typeof ChangeControlBar> | null>(null)
+function proposal() {
+  const proposed = loaded.value ? proposalOf('test', loaded.value, bodyOf(form.value) as Record<string, unknown>) : {}
+  const cur = (item.value ?? {}) as unknown as Record<string, unknown>
+  const current: Record<string, unknown> = {}
+  for (const k of Object.keys(proposed)) current[k] = cur[k] ?? null
+  return { proposed, current }
+}
+async function onProposed() {
+  error.value = ''
+  await load()
+}
+/** a save refused by change control: say why and offer to propose the change */
+function blockedSave(e: unknown): boolean {
+  const b = changeBlocked(e)
+  if (!b) return false
+  error.value = t('changeRequests.blockedSave', { reasons: b.reasons.join('; ') })
+  ccBar.value?.propose()
+  return true
+}
 const undoStore = useUndoStore()
 watch(
   () => undoStore.version,
@@ -369,6 +398,19 @@ async function reloadTheirs() {
   conflictOpen.value = false
   await load()
 }
+// ---------- live updates: someone saved while this is open ----------
+/** unsaved changes (the user counts as editing for presence) */
+const dirty = computed(() => !!props.itemId && !!loaded.value && JSON.stringify(bodyOf(form.value)) !== JSON.stringify(loaded.value))
+/** compare the unsaved changes with the version saved meanwhile */
+async function compareNewer(by: string) {
+  if (!props.itemId) return
+  try {
+    const current = await api.get<TestCase>(`/tests/${props.itemId}`)
+    showConflict({ current, changedBy: by, changedAt: current.updated_at ?? '' })
+  } catch (e) {
+    error.value = errorMessage(e)
+  }
+}
 /** save only what was changed here, on top of the newer version */
 async function mergeMine() {
   const st = stale.value
@@ -397,6 +439,8 @@ const impactOpen = ref(false)
 const impactPreview = ref<ChangeImpact | null>(null)
 const impactFields = ref<string[]>([])
 async function save() {
+  // under enforced change control the edit becomes a proposal
+  if (ccBar.value?.blocked()) return ccBar.value.propose()
   if (isNew.value || !loaded.value || !props.itemId) return doSave()
   const changed = contentChanges('test', loaded.value, bodyOf(form.value) as Record<string, unknown>)
   if (!changed.length) return doSave()
@@ -436,7 +480,7 @@ async function doSave(choice?: ImpactChoice) {
   } catch (e) {
     const st = staleOf<TestCase>(e)
     if (st) showConflict(st)
-    else error.value = errorMessage(e)
+    else if (!blockedSave(e)) error.value = errorMessage(e)
   } finally {
     saving.value = false
   }
@@ -467,6 +511,33 @@ function remove() {
       notify.fail(e)
     }
   })
+}
+
+// ---------- AI assistance: draft this test from a linked requirement (applied to the form)
+const assistOpen = ref(false)
+const assistFeature = ref<AiFeature | null>(null)
+const assistReq = computed(() => links.value[0] ?? null)
+const assistBody = computed(() => ({ requirement_id: assistReq.value?.requirement_id ?? '' }))
+const assistActions = computed<AssistAction[]>(() => {
+  const l = assistReq.value
+  const key = l ? l.requirement_key || reqById.value.get(l.requirement_id)?.key || '' : ''
+  return [{ feature: 'draft_tests', label: l ? t('ai.action.draftFrom', { key }) : t('ai.action.draft_tests'), blocked: l ? '' : 'ai.reason.noLinkedRequirement' }]
+})
+function openAssist(f: AiFeature) {
+  assistFeature.value = f
+  assistOpen.value = true
+}
+function onAssistApply(a: AssistApply) {
+  if (a.feature !== 'draft_tests') return
+  const f = form.value
+  const d = a.test
+  if (!f.title.trim()) f.title = d.title
+  if (d.description.trim()) f.description = f.description.trim() ? `${f.description.trim()}\n\n${d.description.trim()}` : d.description.trim()
+  const pre = draftPreconditions(d, t('ai.tests.testData'))
+  if (pre) f.preconditions = f.preconditions.trim() ? `${f.preconditions.trim()}\n\n${pre}` : pre
+  if (d.expected_result.trim() && !f.expected_result.trim()) f.expected_result = d.expected_result.trim()
+  for (const st of d.steps) if (st.action.trim()) f.steps.push({ uid: ++uid, action: st.action.trim(), data: st.data.trim(), expected: st.expected.trim() })
+  notify.info(t('ai.appliedToForm'))
 }
 
 // ---------- links ----------
@@ -523,6 +594,7 @@ const scriptPlaceholder = computed(() => {
 </script>
 
 <template>
+  <LiveItemBar type="test" :item-id="itemId" :version="item?.version ?? null" :dirty="dirty" @reload="reloadTheirs" @compare="compareNewer" />
   <div v-if="loading" class="empty" aria-busy="true"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <template v-else>
   <Tabs v-if="item" :id="tabsId" v-model:value="tab" class="editor-tabs" scrollable>
@@ -546,6 +618,7 @@ const scriptPlaceholder = computed(() => {
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><DiscussionPanel entity="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (commentCount = n)" @open="(n) => (openDiscussions = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
+  <ESignaturesPanel entity-type="test" :entity-id="item.id" :stamp="item.version" />
   <HistoryPanel
     entity="test"
     :entity-id="item.id"
@@ -562,6 +635,8 @@ const scriptPlaceholder = computed(() => {
       <StatusTag v-if="item?.last_result" :value="item.last_result" kind="result" />
       <StaleBadge :stale="item?.stale" :reason="item?.stale_reason" />
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
+      <span v-if="canWrite" class="grow" />
+      <AssistMenu v-if="canWrite" :project-id="projectId" :actions="assistActions" size="small" @select="openAssist" />
     </div>
     <CatalogOrigin v-if="item?.catalog_ref" kind="test" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
@@ -714,6 +789,7 @@ const scriptPlaceholder = computed(() => {
       :can-write="canWrite"
       :texts="[form.description, form.preconditions, form.expected_result, ...form.steps.flatMap((s) => [s.action, s.expected, s.data])]"
     />
+    <TestDataSources v-if="itemId" :project-id="projectId" :test-id="itemId" />
 
     <div v-field class="field">
       <label>{{ t('tests.overallExpected') }}</label>
@@ -740,6 +816,18 @@ const scriptPlaceholder = computed(() => {
     <TestDependenciesPanel v-if="item" :project-id="projectId" :test-id="item.id" :can-write="canWrite" @changed="emit('saved', item)" />
     <ApplicabilityPanel v-if="item" item-type="test" :item-id="item.id" :item-key="item.key" :project-id="projectId" :can-write="canWrite" />
 
+    <ChangeControlBar
+      v-if="item"
+      ref="ccBar"
+      kind="test"
+      :item-id="item.id"
+      :project-id="projectId"
+      :item-key="item.key"
+      :item-title="item.title"
+      :version="item.version ?? 0"
+      :proposal="proposal"
+      @proposed="onProposed"
+    />
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
       <Button v-if="item && canWrite" :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text style="margin-right: auto" @click="copy" />
@@ -771,5 +859,6 @@ const scriptPlaceholder = computed(() => {
   </form>
   </template>
   <ImpactConfirmDialog v-model:visible="impactOpen" :impact="impactPreview" :project-id="projectId" :changed="impactFields" :saving="saving" @confirm="confirmImpact" />
+  <AssistDialog v-model:visible="assistOpen" :project-id="projectId" :feature="assistFeature" :body="assistBody" mode="emit" @apply="onAssistApply" />
   <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

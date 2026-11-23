@@ -69,7 +69,7 @@ func TestCommandsCovered(t *testing.T) {
 	for _, c := range commands {
 		documented[strings.Join(c.args, " ")] = true
 	}
-	re := regexp.MustCompile(`(?m)^  qtestframe ([a-z-]+)(?: (create|add)\b)?`)
+	re := regexp.MustCompile(`(?m)^  qtestframe ([a-z-]+)(?: (create|add|verify)\b)?`)
 	for _, m := range re.FindAllStringSubmatch(out.String(), -1) {
 		name := strings.TrimSpace(m[1] + " " + m[2])
 		if name == "secrets" {

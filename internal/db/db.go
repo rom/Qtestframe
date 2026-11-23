@@ -151,11 +151,19 @@ func Rebind(d Dialect, q string) string {
 	return b.String()
 }
 
+// sqliteUUID is an SQL expression giving a new random (version 4) UUID in
+// SQLite: the {{UUID}} token of migrations that create rows (row ids are
+// UUIDs, which project archives rewrite when they are loaded).
+const sqliteUUID = `(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))), 2) || '-' ||
+	substr('89ab', 1 + (abs(random()) % 4), 1) || substr(lower(hex(randomblob(2))), 2) || '-' || lower(hex(randomblob(6))))`
+
 // Render substitutes dialect tokens in a migration template.
 func Render(d Dialect, tmpl string) string {
 	r := map[Dialect]*strings.Replacer{
-		SQLite:   strings.NewReplacer("{{TS}}", "TIMESTAMP", "{{BOOL}}", "INTEGER", "{{FALSE}}", "0", "{{TRUE}}", "1", "{{BLOB}}", "BLOB"),
-		Postgres: strings.NewReplacer("{{TS}}", "TIMESTAMPTZ", "{{BOOL}}", "BOOLEAN", "{{FALSE}}", "FALSE", "{{TRUE}}", "TRUE", "{{BLOB}}", "BYTEA"),
+		SQLite: strings.NewReplacer("{{TS}}", "TIMESTAMP", "{{BOOL}}", "INTEGER", "{{FALSE}}", "0", "{{TRUE}}", "1", "{{BLOB}}", "BLOB",
+			"{{UUID}}", sqliteUUID),
+		Postgres: strings.NewReplacer("{{TS}}", "TIMESTAMPTZ", "{{BOOL}}", "BOOLEAN", "{{FALSE}}", "FALSE", "{{TRUE}}", "TRUE", "{{BLOB}}", "BYTEA",
+			"{{UUID}}", "gen_random_uuid()::text"),
 	}[d]
 	return r.Replace(tmpl)
 }

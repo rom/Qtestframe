@@ -86,7 +86,7 @@ func TestAllPermissions(t *testing.T) {
 	all := AllPermissions()
 	want := []Permission{TenantManage, MemberRead, MemberManage, ProjectRead, ProjectCreate,
 		ProjectUpdate, ProjectDelete, RequirementRd, RequirementWr, TestRead, TestWrite,
-		RunRead, RunWrite, RunExecute, ScriptExecute, Export, AuditRead, TokenManage, RoleManage, SettingsManage, RequirementRev, TestReview, WaiverApprove, CommentCreate, CyclePlan}
+		RunRead, RunWrite, RunExecute, ScriptExecute, Export, AuditRead, TokenManage, RoleManage, SettingsManage, RequirementRev, TestReview, WaiverApprove, CommentCreate, CyclePlan, ChangeCreate, ChangeApprove, EnvironmentManage}
 	if len(all) != len(want) {
 		t.Fatalf("AllPermissions has %d entries, want %d: %v", len(all), len(want), all)
 	}
@@ -212,7 +212,7 @@ func TestSME(t *testing.T) {
 	for p, want := range map[Permission]bool{
 		ProjectRead: true, RequirementRd: true, RequirementWr: true, RequirementRev: true, CommentCreate: true,
 		TestRead: true, RunRead: true, Export: true,
-		TestWrite: false, TestReview: false, RunWrite: false, RunExecute: false, CyclePlan: false, WaiverApprove: false,
+		TestWrite: false, TestReview: false, RunWrite: false, RunExecute: false, CyclePlan: false, WaiverApprove: false, ChangeCreate: true, ChangeApprove: false,
 		ProjectUpdate: false, ProjectDelete: false, ProjectCreate: false, SettingsManage: false, MemberManage: false, TokenManage: false, ScriptExecute: false,
 	} {
 		if Can(RoleSME, p) != want {

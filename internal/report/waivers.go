@@ -244,6 +244,9 @@ type ReleaseReport struct {
 	// Variants: the gates of the variants the release targets (none: the
 	// release is evaluated without a variant).
 	Variants []ReleaseVariantGate
+	// Environments: the environments and component versions the results
+	// of the release's runs were obtained in.
+	Environments []model.ReleaseEnvironment
 }
 
 // ReleaseVariantGate is the evaluation of a release for one variant:
@@ -342,7 +345,9 @@ func buildReleaseReadiness(d *Data, _ map[string]string) (*export.Dataset, error
 	if len(rr.Variants) > 0 {
 		sections = append(sections, l.variantGateSection(rr))
 	}
-	ds := &export.Dataset{Sections: append(sections, l.waiverSection("waivers", "Waivers in force", rr.Waivers), risks)}
+	summary.Rows = append(summary.Rows, []string{l.t("Environments tested"), itoa(len(rr.Environments))})
+	sections[0] = summary
+	ds := &export.Dataset{Sections: append(sections, l.waiverSection("waivers", "Waivers in force", rr.Waivers), risks, l.environmentSection(rr.Environments))}
 	ds.Subtitle = d.subtitle() + " · " + rel.Name
 	return ds, nil
 }

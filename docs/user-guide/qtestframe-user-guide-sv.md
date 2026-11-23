@@ -25,9 +25,12 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Testkörningar och exekvering](#testkörningar-och-exekvering) | Körningar, exekveringsvyn och dess kortkommandon, defekter, CI-import med API-nycklar, bilagor |
 | [Utforskande test](#utforskande-test) | Sessionsbaserad utforskande testning: uppdrag, sessionens tidtagning, typade anteckningar med kortkommandon, defekter från anteckningar, utvärderingar, mått och sessionsrapporten |
 | [Undantag, restrisk och SoA](#undantag-restrisk-och-uttalande-om-tillämplighet) | Undantag och avvikelser med signerade godkännanden, restrisk och dess acceptans, uttalandet om tillämplighet (ISO/IEC 27001 bilaga A) |
+| [Ändringsbegäranden och ändringshantering](#ändringsbegäranden-och-ändringshantering) | Att föreslå ändringar av godkända krav och tester, bedömningen av påverkan, ändringsnämndens signerade beslut, att genomföra, verifiera och stänga; tvingande ändringshantering och nödåtgärden |
 | [Spårbarhet och täckning](#spårbarhet-och-täckning) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
 | [Testcykler](#testcykler) | Planera testcykler: testfall, testare och uppskattningar, körningarna en cykel skapar, framsteg, nedbränning, arbetsbelastning, återkommande cykler |
+| [Testmiljöer och testdata](#testmiljöer-och-testdata) | Miljöer med komponenter och versioner, status, hälsokontroller och inloggningsuppgifter; bokningskalender, kapacitet och godkännanden; miljön och versionerna för varje resultat; delade testdatamängder med klassning, utgångsdatum, användning och uppdateringsbegäranden |
 | [Dubbletter och konflikter](#dubbletter-och-konflikter) | Liknande krav medan du skriver, misstänkt dubblerade krav och testfall, möjligen motstridiga krav, sammanslagning, gränsvärden |
+| [AI-assistans](#ai-assistans) | Valfria AI-förslag: utkast till tester, bättre kravformuleringar, acceptanskriterier, ramverksmappningar, sammanfattningar av körningar med utkast till defekter; vad som skickas, och att slå på och av |
 | [Varianter och kod](#varianter-och-kod) | Varianter och tillämplighet, täckning per variant, incheckningar, merge requests, byggen och regressionsurvalet |
 | [CI/CD](#cicd) | Pipelinemallar för GitLab och GitHub, uppladdning av resultat, kvalitetsgrinden, commit-statusar och anteckningar i merge requests, testurval och underpipelines |
 | [Baslinjer](#baslinjer) | Frysa en release och jämföra versioner |
@@ -186,7 +189,7 @@ Inställningarna sparas med ditt konto och gäller på alla enheter. Ändra dem 
 |---|---|
 | **Språk** | Engelska eller svenska; *Webbläsarens språk* följer webbläsaren. |
 | **Tema** | Färgtema. *Följ operativsystemet* växlar mellan ljust och mörkt enligt systemets inställning. |
-| **Startsida** | Det du ser efter inloggningen: projektlistan, det senast öppnade projektet, ett standardprojekt eller sökningen. |
+| **Startsida** | Det du ser efter inloggningen: projektlistan, det senast öppnade projektet, ett standardprojekt, sökningen eller din [hempanel](#anpassa-översiktspaneler). |
 | **Standardprojekt** | Projektet som öppnas när startsidan är *Standardprojekt*. |
 | **Standardorganisation** | Organisationen som väljs vid inloggning när du inte anger någon. |
 | **Rader per tabellsida** | 10, 25, 50 eller 100 rader i tabeller. |
@@ -836,8 +839,10 @@ Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt krav
 | Taggar | Taggar, Etiketter · Tags, Labels (separerade med komma) |
 | Mapp | Mapp, Avsnitt, Kapitel · Folder, Section, Chapter (en sökväg som `Säkerhet / Inloggning`) |
 | Acceptanskriterier | Kriterier, Acceptanskriterier · Criteria, Acceptance criteria (ett per rad; en rad kan börja med en metod, t.ex. `inspektion: …`) |
+| D3FEND-tekniker | D3FEND-tekniker, D3FEND · D3FEND techniques (id som `D3-MFA`, åtskilda med kommatecken) |
+| EMB3D-hot och -åtgärder | EMB3D-hot, EMB3D · EMB3D threats (id som `TID-201`, `MID-002`) |
 
-Värden för typ, prioritet, status och kravnivå kan skrivas på svenska eller engelska (*Hög*/*High*, *Godkänd*/*Approved*, *Säkerhet*/*Security*). Ett okänt värde noteras och standardvärdet används. En rad utan rubrik får en av de första orden i beskrivningen. En fil som exporterats från Qtestframe (krav som CSV eller Excel) kan importeras igen; från en Excel-export följer utvärderingskriterierna på kriteriebladet med.
+Värden för typ, prioritet, status och kravnivå kan skrivas på svenska eller engelska (*Hög*/*High*, *Godkänd*/*Approved*, *Säkerhet*/*Security*). Ett okänt värde noteras och standardvärdet används; okända D3FEND- och EMB3D-id utelämnas med en varning på raden. En rad utan rubrik får en av de första orden i beskrivningen. En fil som exporterats från Qtestframe (krav som CSV eller Excel) kan importeras igen; från en Excel-export följer utvärderingskriterierna på kriteriebladet med.
 
 **ReqIF.** Varje SPEC-OBJECT blir ett krav: *ReqIF.Name* (eller ett attribut som heter title eller name) ger rubriken, *ReqIF.Text* beskrivningen och *ReqIF.ForeignID* ID:t; övriga attribut matchas på namn som kolumner. Formaterad text (XHTML) importeras som ren text med sina radbrytningar; i en ReqIF-fil som Qtestframe har exporterat läses den tillbaka med sin formatering (stycken, listor, fetstil …), så att en [export](#reqif-för-kravverktyg) kommer tillbaka oförändrad. Objekt som bara har ett *ReqIF.ChapterName* är rubriker: specifikationshierarkin under dem blir mappar.
 
@@ -963,7 +968,7 @@ Växla **Exekveringstyp** till **Automatiserat** för att visa fältet **Skript*
 - Standardutdata och fel sparas som exekveringens **Utdata**, tillsammans med tidsåtgången.
 - Skriptet kan läsa miljövariablerna `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT`, `QTF_BUILD` och `QTF_BASE_URL`, så att ett skript kan testa den miljö och det bygge som körningen anger. Projektets [testvariabler](#webbtester) finns som `QTF_VAR_<NAMN>`, till exempel `QTF_VAR_USERNAME`; värdena för hemliga variabler maskeras som `***` i sparade utdata.
 
-Att köra skript kräver rollen **Ansvarig** och måste ha aktiverats av administratören (`runner.enabled`). Om dina skript körs någon annanstans, till exempel i en CI-pipeline, lämna skriptet tomt och [importera utfallen](#importera-utfall-från-ci) i stället. Steg är valfria för automatiserade testfall.
+Att köra skript kräver rollen **Ansvarig** och måste ha aktiverats av administratören (`runner.enabled`). Om dina skript körs någon annanstans, till exempel i en CI-pipeline, lämna skriptet tomt och [importera utfallen](#importera-utfall-från-ci) i stället. **Generera testkod** i listan skriver kodstubbar för sådana testfall för pytest, Playwright, Go, JUnit 5, Jest, Vitest, Robot Framework eller Cucumber, namngivna så att resultaten hittar tillbaka (se [Generera testkod](#generera-testkod)). Steg är valfria för automatiserade testfall.
 
 ## Webbtester (Playwright)
 
@@ -1138,6 +1143,8 @@ Varje krav anger minst ett testfall i katalogen som verifierar det, och varje te
 ## Bläddra och sök
 
 Öppna **Katalog** i projektets sidomeny eller välj **Lägg till från katalogen** överst i listan med krav eller testfall.
+
+![Katalogen: områdena och listan över katalogkrav med sökning och filter, och förhandsvisningen av det valda objektet](images/sv-catalogue.png)
 
 - Växla mellan **Krav**, **Testfall** och **Risker** överst.
 - Välj **English** eller **Svenska** som språk för texterna. Posterna läggs till på det språket.
@@ -1742,6 +1749,114 @@ En release kan vänta på en cykel: utgångskriteriet **Testcykel genomförd** (
 
 Fliken **Historik** listar cykelns versioner – fälten och planen – med vem som ändrade vad. Att skapa, ändra, planera och ta bort cykler och återkommande cykler registreras i granskningsloggen. Cykler och återkommande cykler ingår i projektarkiv och säkerhetskopior; i ett inläst projekt är de återkommande cyklerna avstängda tills någon slår på dem.
 
+# Testmiljöer och testdata
+
+En **testmiljö** är ett system som dina tester körs mot: ett utvecklings- eller stagingsystem, ett förproduktionssystem, ett labb, en hardware-in-the-loop-rigg (HIL) eller en enhet. Qtestframe håller reda på vad varje miljö består av (dess **komponenter och versioner**), vem som äger den, om den kan användas just nu och vem som har **bokat** den när. Varje testresultat registrerar miljön det togs fram i och versionerna av dess komponenter i det ögonblicket, så att en release kan visa vilka miljöer och versioner som testades.
+
+**Testdatamängder** är namngivna, versionshanterade mängder testdata: tabeller med parametrar som datadrivna tester kan dela, eller datafiler. Varje mängd har en klassning (syntetisk, anonymiserad, kopia av produktionsdata), en ägare och ett utgångsdatum.
+
+Välj **Miljöer** i projektets sidomeny. Sidan Testdata nås därifrån.
+
+| Uppgift | Roll (behörighet) |
+|---|---|
+| Se miljöer, deras bokningar och testdata | alla roller som ser körningar och tester (`run.read`, `test.read`) |
+| Boka en miljö | **Testare** och uppåt (`run.execute`) |
+| Skapa och ändra miljöer, godkänna bokningar, visa en sparad hemlighet | **Testledare**, **Förvaltare**, **Administratör** (`environment.manage`); för en miljö som delas av organisationen, i organisationsrollerna |
+| Skapa och ändra testdatamängder | **Testare** och uppåt (`test.write`) |
+| Be om uppdatering av testdata | alla som skriver tester eller kör testkörningar |
+
+## Miljöer
+
+Välj **Ny miljö** och ange:
+
+- ett **namn**, unikt i projektet, och **typen**: utveckling, test, staging, förproduktion, produktionslik, labb, HIL-rigg eller enhet;
+- **statusen**: *Tillgänglig*, *Används*, *Underhåll*, *Trasig* eller *Avvecklad*, med en **statusanteckning** (till exempel *Uppdatering av firmware till fredag*);
+- **ägaren**, den som ansvarar för miljön (du som standard);
+- **kapaciteten**: hur många bokningar som får överlappa. 1 betyder en i taget; en miljö av CI-containrar kan tillåta många;
+- **Bokningar kräver godkännande**: bokningar väntar tills ägaren eller en miljöförvaltare godkänner dem;
+- **adresserna**, en beskrivning och taggar;
+- **komponenterna och versionerna**, till exempel *Webbapp 1.4.0*, *PostgreSQL 16.4*, *Terminalfirmware 5.0.1*;
+- de **konfigurationer** och **varianter** den erbjuder;
+- var **inloggningsuppgifterna** finns, och eventuellt en **hemlighet** (se nedan);
+- eventuellt en **adress för hälsokontroll**.
+
+Välj **Delad av organisationen** för att göra miljön tillgänglig för alla projekt i organisationen (till exempel ett enhetslabb som flera team använder). Bara den som förvaltar miljöer i organisationen kan göra det.
+
+**Statustavlan** visar varje miljö som ett kort: dess status, komponenter, hur många bokningar den har just nu och nästa bokning, och resultatet av den senaste hälsokontrollen. Fliken **Lista** har samma miljöer i en tabell som du kan filtrera med [frågespråket](#sökning-och-filter), till exempel `status:available component:PostgreSQL`, `type:hil_rig` eller `booked:true`. Välj en miljö för att öppna den.
+
+### Komponenter och versioner
+
+Håll versionerna aktuella när miljön uppgraderas. Ett resultat som registrerats i miljön behåller versionerna det registrerades med: att ändra miljön senare ändrar inte äldre resultat. Exekveringsvyn visar miljön och dess versioner bredvid resultatet, och **Releaser → Körningar → Testade miljöer** listar miljöerna och versionerna som releasens resultat kommer från (även i rapporten om releaseberedskap).
+
+### Inloggningsuppgifter och hemligheter
+
+**Var inloggningsuppgifterna finns** är en hänvisning: en sökväg i ett valv, en post i lösenordshanteraren, ett nyckelskåp. Använd den hellre än att spara hemligheten i Qtestframe.
+
+Om du ändå sparar en **hemlighet** är den endast skrivbar: den krypteras som de andra hemligheter Qtestframe sparar och visas aldrig igen i dialogen. Miljöförvaltare kan välja **Visa** på miljöns sida; varje visning registreras i granskningsloggen. Ett projektarkiv (*Spara projekt*) utelämnar hemligheten.
+
+### Hälsokontroll
+
+Med en **adress för hälsokontroll** hämtar Qtestframe adressen i bakgrunden med några minuters mellanrum (**Kontrollera var**). Ett svar med en HTTP-status under 400 betyder *uppe*. När kontrollen misslyckas blir en *Tillgänglig* miljö eller en som *Används* **Trasig** (markerad *satt av hälsokontrollen*) och ägaren får en notifiering; när kontrollen lyckas igen blir den *Tillgänglig* igen. En status du satt för hand ligger kvar: hälsokontrollen ändrar inte *Underhåll*, *Avvecklad* eller *Trasig* satt för hand. Välj **Kontrollera nu** för att kontrollera direkt.
+
+## Boka en miljö
+
+Välj **Boka** på sidan Miljöer eller på en miljö, eller välj en dag i **Bokningskalendern**. Ange **Från**, **Till** och **syftet**.
+
+Du kan också boka när du skapar en [körning](#testkörningar-och-exekvering), en [testcykel](#testcykler) eller en [utforskande session](#utforskande-test): välj **Miljö** och kryssa i **Boka den för detta**. Bokningen kopplas till körningen, cykeln eller sessionen.
+
+- En miljö tar emot så många överlappande bokningar som dess **kapacitet**. En bokning som inte får plats avvisas och dialogen listar bokningarna som är i vägen. Bokningar som bara möts (en slutar när nästa börjar) överlappar inte.
+- När miljön kräver godkännande är bokningen **Väntar** tills ägaren eller en miljöförvaltare godkänner eller avslår den. De ser den i **Mitt arbete** (*Bokning att godkänna*) och får en notifiering; du ser din egen väntande bokning i Mitt arbete som *Väntar på godkännande* och får besked om beslutet. Ägare och förvaltare bokar utan godkännande.
+- Att flytta en godkänd bokning av en miljö som kräver godkännande gör den väntande igen.
+- Du kan avboka din egen bokning; ägare och förvaltare kan avboka alla bokningar av sin miljö.
+- En avvecklad miljö kan inte bokas. En bokning av en delad miljö som gjorts för ett projekt du inte ser visar bara tiden.
+
+**Bokningskalendern** visar en vecka: en rad per miljö, en stapel per bokning (väntande bokningar streckade). Välj en stapel för att se, flytta, avboka, godkänna eller avslå bokningen. Miljöns egen sida har samma kalender och dess kommande och tidigare bokningar.
+
+## Miljöer för körningar, cykler och sessioner
+
+Körningar, testcykler och utforskande sessioner väljer en **miljö** bland projektets miljöer (och de delade). Körningen behåller miljöns namn som sin miljötext, så filter som `environment:staging` fungerar som förut. En körning som skapas med en miljö i fritext (till exempel från CI eller en resultatimport) kopplas till miljön med det namnet om den finns. När du uppgraderade blev fritextmiljöerna i dina befintliga körningar och cykler miljöer i projektet.
+
+En testcykels körningar får cykelns miljö.
+
+## Testdatamängder
+
+Öppna **Testdata** från sidan Miljöer. Välj **Ny datamängd** och ange:
+
+- ett **namn**, **klassningen** och **sorten**: en **tabell med parametrar** eller **filer**;
+- **ägaren**, ett **utgångsdatum** och taggar;
+- för en tabell: **parametrarna** och **raderna**. Välj **Klistra in tabell** för att klistra in data från ett kalkylark (CSV, semikolon- eller tabbseparerat; första raden namnger parametrarna, en kolumn som heter *name* ger radernas namn);
+- för filer: spara mängden och lägg sedan till filerna på fliken **Filer**.
+
+**Klassning.** *Syntetiska* data är påhittade; *anonymiserade* data kommer från produktion med personuppgifterna utbytta; en **produktionskopia** kan innehålla personuppgifter eller konfidentiell information och visas med en varning. Begränsa åtkomsten till den, följ era dataskyddsregler och ta bort den när den går ut.
+
+**Versioner.** Varje ändring av en mängd är en ny version (se fliken **Historik**).
+
+### Dela data mellan tester
+
+Koppla mängden till tester, konfigurationer och körningar på fliken **Kopplingar**. Kryssa i **Som datakälla för testerna** när du väljer datadrivna tester: ett sådant test hämtar då sina parametrar och rader från mängden i stället för sina egna (se [datadrivna tester](#testfall)). När en körning skapas med testet blir varje rad i mängden en iteration, och fliken **Användning** registrerar vilken körning som använde vilken version. Testets redigerare visar vilken delad mängd det hämtar sina rader från. En arkiverad mängd används inte: testet använder då sina egna rader.
+
+### Uppdateringsbegäran och utgång
+
+Alla som skriver tester eller kör körningar kan **be om uppdatering** på fliken **Uppdateringsbegäran** (vad som ska uppdateras och när det behövs). Ägaren får en notifiering och ser begäran i **Mitt arbete** (*Uppdatering begärd*); ägaren markerar den **Klar** eller **Avslår** den, och den som bad får besked.
+
+En mängd vars utgångsdatum har passerats markeras **Utgången**, och en som går ut inom 14 dagar **Går snart ut**. Båda syns i ägarens Mitt arbete, så att data uppdateras, förlängs eller arkiveras i tid.
+
+## Notifieringar och händelser
+
+| Händelse | Vem som notifieras |
+|---|---|
+| `environment.booking_requested` | miljöns ägare och förvaltare |
+| `environment.booking_approved`, `environment.booking_rejected` | den som bokade |
+| `environment.status_changed` | ägaren (även när hälsokontrollen ändrar statusen) |
+| `testdata.refresh_requested` | datamängdens ägare |
+| `testdata.refresh_resolved` | den som bad om uppdateringen |
+
+Händelserna kan också skickas till [webhooks och chattkanaler](#granskningar-och-notiser).
+
+## Säkerhetskopior och projektarkiv
+
+Miljöer, bokningar, testdatamängder, deras kopplingar, användning och uppdateringsbegäranden ingår i säkerhetskopior. Ett projektarkiv innehåller projektets egna miljöer och deras bokningar samt projektets testdatamängder; delade miljöer tillhör organisationen och stannar kvar (körningarna behåller namnet), liksom sparade hemligheter.
+
 # Releaser och risker
 
 En **release** är en version av produkten som du planerar, testar och levererar, till exempel *Vår 2027* eller *2.1.0*. Den samlar de krav som ska levereras (releasens **omfattning**), de testkörningar som testar den och de **utgångskriterier** som avgör om den får släppas. **Riskregistret** listar vad som kan gå fel, hur sannolikt det är, hur allvarlig konsekvensen blir och vilka krav som hanterar varje risk. Öppna risker påverkar direkt en releases utgångskriterier.
@@ -1868,6 +1983,10 @@ Kravredigeraren visar under **Åtgärdar risker** de risker som kravet åtgärda
 
 Kryssa i risker i registret. Verktygsfältet anger **status**, **sannolikhet** eller **konsekvens** för alla, **Ägare / kategori** anger det ena eller båda (tomt rensar), **Länka krav** länkar samma krav till varje markerad risk, och **Ta bort** tar bort dem efter bekräftelse. Bara rader som visas förblir markerade, så när du filtrerar registret eller väljer en ruta i värmekartan blir inga dolda risker kvar i urvalet. Alla risker kontrolleras innan någon ändras. Andra ändringar än länkning och borttagning kan ångras med ångra-knappen.
 
+### Importera ett riskregister
+
+**Importera** ovanför registret läser ett riskregister från en CSV- eller Excelfil: bladet *Riskregister* i [riskrapporten](#riskrapporten) (på engelska eller svenska), eller ett eget blad med kolumner som *Nyckel*, *Titel*, *Beskrivning*, *Kategori*, *Ägare*, *Sannolikhet*, *Konsekvens*, *Status*, *Åtgärd*, *Granskningsdatum*, *Granskningsansvarig*, *ATT&CK-tekniker* och *EMB3D-hot*. Välj filen för att se en förhandsvisning: rader med nyckeln till en risk i projektet **ändrar** den (bara de kolumner som filen har), de andra raderna blir **nya** risker, och varje rad listar sina varningar. Okända ATT&CK-, ATLAS- och EMB3D-id, okända statusar och sannolikheter eller konsekvenser utanför 1–5 utelämnas med en varning; en rad utan titel hoppas över. Välj **Importera** för att spara. *(Kravförfattare eller en roll med `requirement.write`)*
+
 ## Värmekartan
 
 Värmekartan räknar riskerna i ett rutnät med 5 × 5 rutor: sannolikhet från 5 överst till 1 nederst, konsekvens från 1 till vänster till 5 till höger. Rutans färg är nivån för dess poäng. Välj en ruta för att bara visa riskerna med den sannolikheten och konsekvensen i registret; välj den igen, eller **×** på filteretiketten, för att visa alla.
@@ -1990,6 +2109,71 @@ Ett krav hänvisar till en åtgärd när det har lagts till från ett katalogkra
 Tabellen fungerar som [kalkylbladsvyn](#krav): skriv i cellerna **Tillämplig**, **Motivering** och **Ägare**, klistra in ett block från ett kalkylblad eller fyll nedåt med <kbd>Ctrl</kbd>+<kbd>D</kbd>. Varje ändring sparas direkt. Tryck <kbd>Ctrl</kbd>+<kbd>Enter</kbd> på en åtgärd (eller dubbelklicka på den i första kolumnen) för att se dess krav och belägg. Filtrera på text, tillämplighet, införande och grupp; siffrorna ovanför tabellen räknar åtgärderna.
 
 **Ladda ned** skapar uttalandet som PDF, Word, Excel eller Markdown; **Spara i arkivet** lägger det i [dokumentarkivet](#dokument-1). Det finns också som standardrapporten **Uttalande om tillämplighet** på sidan **Rapporter**.
+
+# Ändringsbegäranden och ändringshantering
+
+När ett krav är godkänt, eller fryst i en signerad baslinje, bör en ändring vara ett beslut och inte en redigering. **Ändringshantering** gör den till det: en **ändringsbegäran** föreslår nya värden för ett eller flera krav och tester, säger varför, visar vad mer ändringen påverkar, beslutas av projektets **ändringsnämnd** med elektroniska signaturer och genomförs sedan i ett steg, med vanliga versioner och historik.
+
+| Åtgärd | Roll som krävs |
+|---|---|
+| Se ändringsbegäranden | Läsare |
+| Föreslå ändringar; redigera, skicka in, bedöma, skicka till nämnden, genomföra, verifiera och stänga ändringsbegäranden | Ämnesexpert, Testledare, Förvaltare (`change.create`) |
+| Besluta om ändringsbegäranden som nämndmedlem; nödåtgärd | Testledare, Förvaltare (`change.approve`) |
+| Ändra projektets inställningar för ändringshantering | Förvaltare (`project.update`) |
+
+För att genomföra en ändringsbegäran krävs också behörighet att redigera posterna den ändrar (`requirement.write`, `test.write`, och granskningsbehörigheten för en granskningsstatus).
+
+## Ändringshantering i ett projekt
+
+Under **Inställningar → Projekt → Ändringshantering** väljer du hur strikt projektet hanterar ändringar:
+
+- **Av** (standard): poster ändras direkt, som utan ändringshantering. Ändringsbegäranden kan ändå användas.
+- **Varna**: skyddade poster kan fortfarande ändras direkt, men redigeraren säger att de omfattas av ändringshantering och ändringen flaggas.
+- **Tvinga**: skyddade poster kan inte ändras direkt. Att spara dem, en massändring, kalkylbladsvyn, en Excel- eller ReqIF-import, att återställa en äldre version eller en baslinje och att ta bort avvisas med *Inte sparat: posten omfattas av ändringshantering*, och redigeraren erbjuder att **föreslå ändringen** i stället.
+
+En post är **skyddad** när dess status är en av de **skyddade statusarna** (standard *Godkänt*, *Implementerat*, *Verifierat* och, för tester, *Klar*) eller, med **Signerade baslinjer låser sina poster**, när den finns i en baslinje som har en [signatur](#baslinjer). Granskningsbeslut och statusen som följer bevisen påverkas inte.
+
+**Ändringsnämnden** är en lista med medlemmar (e-postadresser) och roller. Bara de beslutar om ändringsbegäranden, och bara om de också har `change.approve`; om ingen anges beslutar alla med `change.approve`. **Beslutsförheten** anger hur många godkännanden som behövs: *all* (varje angiven medlem och en innehavare av varje angiven roll), *any* (en medlem) eller ett antal. **Signaturens betydelse** är meningen en nämndmedlem signerar, till exempel *Godkänd för release av ändringsnämnden*. **Att stänga en ändringsbegäran skapar en baslinje som standard** förväljer det valet när en ändringsbegäran stängs.
+
+### Nödåtgärd
+
+När en rättning inte kan vänta på nämnden kan den som har `change.approve` spara en skyddad post direkt med en **nödåtgärd** och en motivering på minst tio tecken (i API:t `?change_override=<motivering>`). Ändringen sparas som vanligt, och granskningsloggen registrerar `change_control.override` med posten, varför den var skyddad och motiveringen.
+
+## Föreslå en ändring
+
+Det finns tre sätt att lägga en ändring i en ändringsbegäran:
+
+- **I redigeraren**: öppna ett krav eller test, ändra fälten som vanligt och välj **Föreslå ändring** under formuläret i stället för **Spara**. Fälten du ändrade (titel, beskrivning, förpliktelse, typ, prioritet, status, källa, motivering, ägare, taggar och egna fält; för tester också förutsättningar, förväntat resultat, utförande och uppskattning) blir förslaget. Ingenting sparas på posten.
+- **För flera**: markera poster i listan och välj **Föreslå ändring** i markeringsraden, sedan ny status, prioritet, förpliktelse eller utförande och ägare för alla.
+- **Efter ett avvisat sparande**: med *tvinga* öppnar ett sparande av en skyddad post samma dialog med dina ändringar.
+
+I dialogen väljer du **En ny ändringsbegäran** (titel, motivering, kategori och prioritet) eller **Ett av mina utkast** för att lägga ändringen i ett utkast du fortfarande skriver. Dialogen visar varje ändring som en skillnad: borttagen text överstruken, tillagd text markerad.
+
+Poster med öppna ändringsbegäranden har en **ÄB**-märkning i listorna, och redigeraren visar deras öppna ändringsbegäranden. I [frågespråket](#sökning-och-filter) hittar `cr:open` (eller `has:cr`) poster med en öppen ändringsbegäran och `cr:DEMO-CR-3` posterna i en.
+
+## Arbetsflödet
+
+**Ändringsbegäranden** i projektets sidomeny listar dem med nyckel (*PROJ-CR-n*), status, kategori, prioritet, poster och den som begärde. Öppna en för att se de föreslagna ändringarna post för post och fält för fält, påverkan, signaturerna och tidslinjen.
+
+1. **Utkast**: den som begär skriver ändringsbegäran. **Kategori** är en av *Rättelse*, *Förbättring*, *Regelkrav*, *Defektdriven*, *Riskdriven* och *Övrigt*. Koppla defekterna, riskerna och ärendena ändringen kommer från, välj vad genomförandet gör med [ändringspåverkan](#spårbarhet-och-täckning) (*Markera misstänkta*, *Meddela ägare* eller *Ingetdera*) och om stängning skapar en baslinje.
+2. **Skicka in**: kräver minst en post och en motivering. Den transitiva ändringspåverkan av de föreslagna ändringarna beräknas och **sparas på ändringsbegäran** som en ögonblicksbild, med vägen till varje påverkad post, så att nämnden beslutar om det som bedömdes.
+3. **Bedöm påverkan**: en bedömare lägger till anteckningar och en uppskattad insats; påverkan beräknas igen. *Skicka sedan till ändringsnämnden* för den vidare direkt.
+4. **Under beslut**: nämndens medlemmar meddelas, och den visas i deras [Mitt arbete](#granskningar-och-notiser) som *Ändringsbeslut*.
+5. **Besluta**: en nämndmedlem väljer **Besluta…**, väljer *Godkänn*, *Avslå* eller *Skjut upp*, skriver en kommentar (krävs för avslag och uppskjutande) och bekräftar med sitt lösenord. Det är en **elektronisk signatur** över ändringsbegärans exakta innehåll med projektets signaturbetydelse. Ett avslag eller uppskjutande beslutar direkt; godkännanden beslutar när beslutsförheten nås. Den som begärde ändringen kan inte besluta om den och meddelas om beslutet.
+6. **Genomför**: en godkänd ändringsbegäran genomförs i ett steg. Varje post får de föreslagna värdena genom det vanliga sparandet, så validering, behörigheter, versioner, historik och granskningsloggen är desamma som vid en redigering; sedan hanteras påverkan en gång, med det valda alternativet. Om en post inte kan sparas sparas ingenting. Om en post har ändrats sedan ändringen föreslogs är ändringsbegäran *inaktuell* och kan varken beslutas eller genomföras: återta den och föreslå ändringen igen.
+7. **Verifiera** och **Stäng**: någon bekräftar att ändringen fungerar som avsett och stänger den sedan, om man vill med en ny baslinje av projektet.
+
+En avslagen eller uppskjuten ändringsbegäran kan **återtas** till utkast och skickas in igen, eller stängas. Utkast och avslagna ändringsbegäranden kan tas bort. Varje steg finns på **tidslinjen** med vem, när och varför.
+
+## Rapporter, aviseringar och integrationer
+
+- Rapportmallen **Ändringsbegäranden** (under **Rapporter**) ger en ändringsbegäran (de föreslagna ändringarna fält för fält, påverkan, signaturerna och tidslinjen) eller registret över alla; **PDF-rapport** i ändringsbegäran gör detsamma för den.
+- Webhooks och chattkanaler kan prenumerera på `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented` och `change_request.closed`.
+- Ändringsbegäranden ingår i projektarkiv och säkerhetskopior.
+
+## I demot
+
+Demoprojektet har ändringshanteringen *varna*, med administratören och förvaltarna som nämnd. Saras ändringsbegäran *Lock accounts for 30 minutes instead of 15* väntar på administratörens beslut i Mitt arbete; det finns också en stängd ändringsbegäran vars ändring har genomförts, en uppskjuten och ett utkast.
 
 # Defekter
 
@@ -2170,6 +2354,8 @@ Qtestframe säger till när något behöver din uppmärksamhet, låter dig be ko
 
 **Mitt arbete** i huvudnavigeringen (under **Projekt** och **Sök**) är din personliga arbetslista: allt som väntar på dig, i alla projekt som du ser, även dina granskningar. Siffran bredvid visar hur många poster som behöver dig; den blir röd när några av dem är försenade. Varje rad länkar till posten och visar varför den finns med. En post visas en gång, med alla sina orsaker: ett krav som du äger och som någon har bett dig granska är en rad med **Ägare** och **Granskning begärd**.
 
+![Mitt arbete: de objekt som behöver dig, med skälen till att de listas (Ägare, Granskas), projekt, status och förfallodatum](images/sv-my-work.png)
+
 | Orsak | Posten finns med eftersom |
 |---|---|
 | **Ägare** | du äger ett krav med status utkast, granskning, godkänt eller implementerat, ett testfall med status utkast eller granskning, eller en öppen risk (identifierad eller under åtgärd) |
@@ -2223,6 +2409,22 @@ När servern kan skicka e-post kan du också få dina notiser med e-post. Välj 
 - **Daglig sammanfattning**: en gång om dagen får du ett e-postmeddelande med de notiser som du inte har läst än och som inte har skickats tidigare. Inget skickas de dagar då inga nya notiser har kommit.
 
 Du får aldrig e-post om det du själv har gjort. Varje e-postmeddelande med notiser har en länk tillbaka till den här inställningen, så att du när som helst kan ändra eller stänga av den.
+
+## Liveuppdateringar
+
+Qtestframe visar andras ändringar när de görs, utan att du behöver läsa om sidan:
+
+- **Listor** med krav, tester, körningar, defekter, risker, testcykler, diskussioner och *Mitt arbete* uppdateras en stund efter att någon annan har ändrat ett objekt i dem. Det du har markerat, sidan du är på och var du har scrollat stannar som de var.
+- Siffrorna på **översikten** och **notisklockan** uppdateras av sig själva.
+- I en **körning** syns andra testares resultat medan du kör dina egna tester.
+- Ett **öppet objekt** visar vem mer som tittar på eller redigerar det: deras avatarer och till exempel *Bea redigerar också det här* ovanför objektet. Någon räknas som redigerande så fort de har ändringar som inte är sparade.
+- När någon sparar en nyare version av objektet du har öppet visas *Bea har ändrat objektet (version 4).* **Läs om** läser in deras version. Har du ändringar som inte är sparade visar **Jämför** fälten de har ändrat bredvid dina, som när sparandet krockar; du kan då fortsätta redigera, ta deras version eller spara dina ändringar ovanpå deras. Inget går förlorat eller skrivs över utan att du väljer det, och meddelandet hindrar inte ditt arbete: **Stäng** döljer det.
+
+Skärmläsare meddelar ändringarna artigt och högst varje halvminut, så att de inte avbryter dig; meddelandet om en nyare version av objektet du har öppet läses upp en gång.
+
+Du får bara höra om objekt som du får se. Om anslutningen bryts (till exempel på ett tåg) ansluter Qtestframe igen av sig själv och kommer ikapp; i en flik i bakgrunden pausar den efter en minut och kommer ikapp när du kommer tillbaka.
+
+För att stänga av liveuppdateringar öppnar du **Profil → Inställningar → Liveuppdateringar**. Listor uppdateras då när du öppnar dem och klockan kontrollerar varje minut; andra ser inte längre att du tittar på eller redigerar något. En administratör kan också stänga av liveuppdateringar för hela servern.
 
 ## Begär granskning
 
@@ -2582,6 +2784,8 @@ Läget bredvid varje typ (**Blir misstänkt** eller **Granskning rekommenderas**
 
 **Andra kopplingar** slår på eller av de andra slagen av koppling: spårlänkar (de kan markera misstänkt eller bara rekommendera granskning), delade steg, testberoenden, länkar, risker, defekter, varianter och kodändringar (de rekommenderar bara granskning).
 
+**Ändrad tillämplighet (varianter)** avgör vad som händer när [varianterna ett objekt gäller](#tillämplighet) ändras: **Rekommenderar granskning (standard)** — inget markeras, ägarna till de objekt som reglerna når aviseras —, **Markerar länkar och relationer misstänkta** — ändringen räknas som en ändring av texten, längs reglerna ovan — eller **Har ingen påverkan**. Förhandsvisningen innan du sparar och listan **Påverkan** kallar ändringen *applicability*.
+
 ## Inaktuella utfall
 
 Ett testutfall blir **inaktuellt** när
@@ -2655,6 +2859,8 @@ Täckningen visar om de länkade testfallen är godkända. **Verifiering** går 
 | **Inte godkänt än** | det finns belägg, men inget är godkänt än (ej kört, en misstänkt länk, ett steg som inte körts) |
 | **Inga belägg** | inget testfall och ingen verifieringspost |
 
+**Verifiering** i projektnavigeringen listar alla krav med deras läge, som en hierarki, per systemelement och med inkonsekvenserna. I ett projekt med [varianter](#visa-för-en-variant) begränsar **Visa för variant** listan till kraven för en variant, verifierade bara av de testfall som gäller varianten och de resultat som räknas för den (körningar för varianten, dess överordnade och körningar utan variant, i dess konfigurationer). Verifieringsposter räknas för alla varianter.
+
 ### Testfall för kriterier och teststeg
 
 Ett testfall som är länkat till ett krav kan kopplas till de kriterier det verifierar. Välj **Koppla kriterier** bredvid testfallet på fliken **Verifiering**, kryssa i kriterierna och, om du vill, det **steg** i testfallet som visar det. Ett kriterium som är kopplat till ett steg är godkänt när det steget godkändes i testfallets senaste exekvering. När du länkar ett testfall kan du också välja ett kriterium direkt (väljaren bredvid **Länka testfall**).
@@ -2690,7 +2896,7 @@ Rapporten **Verifiering** och kravspecifikationen visar samma sak: rapporten har
 
 ## Översikten
 
-**Översikt** är den första sidan i varje projekt. Den har tre flikar: **Översikt** med läget i dag, **Trender** med hur det har förändrats och **Kvalitet** med det som behöver åtgärdas. Fliken ingår i adressen, så en länk kan öppna översikten på en viss flik. På en mobil visas diagrammen under varandra.
+**Översikt** är den första sidan i varje projekt. Den börjar med tre översiktspaneler som visas som flikar: **Översikt** med läget i dag, **Trender** med hur det har förändrats och **Kvalitet** med det som behöver åtgärdas. Varje översiktspanel är ett rutnät av widgetar som du kan ordna om och bygga ut, och ett projekt kan ha fler översiktspaneler (se [Anpassa översiktspaneler](#anpassa-översiktspaneler)). Fliken ingår i adressen, så en länk kan öppna översikten på en viss flik. På en mobil visas widgetarna under varandra.
 
 ![Översikten med nyckeltal, kravtäckning, utfall av exekveringar och de senaste körningarna](images/sv-dashboard.png)
 
@@ -2735,6 +2941,28 @@ De extra nyckeltalen och diagrammen räknas fram på servern i en enda begäran,
 
 Varje diagram har ett textalternativ med siffrorna för skärmläsare, och förklaringen namnger varje färg. Värmekartan är en tabell med rubrik, och varje ruta anger sin sannolikhet, konsekvens, nivå och antal risker.
 
+### Anpassa översiktspaneler
+
+Varje widget i en översiktspanel kan flyttas, ändras i storlek, ställas in och tas bort, och du kan lägga till widgetar och översiktspaneler.
+
+- **Delade översiktspaneler** syns för alla som får läsa projektet. De inbyggda **Översikt**, **Trender** och **Kvalitet** är delade; projektets administratörer (behörigheten *project.update*) kan ändra dem, lägga till fler delade översiktspaneler och välja den som projektet öppnas med (**⋮ → Gör till projektets standard**, markerad med en stjärna).
+- **Personliga översiktspaneler** är bara dina. Välj **⋮ → Ny översiktspanel** (om du vill med en kopia av den som visas som start), eller anpassa en delad översiktspanel som du inte får ändra: **Spara som min översiktspanel** sparar dina ändringar som en personlig kopia.
+- **Hem** i sidomenyn är din personliga **hempanel** över alla projekt: från början **Mitt arbete**, dina diskussioner och en anteckning. En widget som gäller ett projekt anger projektet i sina inställningar. Du kan göra den till din startsida under **Profil → Startsida**.
+
+Välj **Anpassa** för att redigera översiktspanelen som visas:
+
+- **Lägg till widget** listar de widgettyper du får se, med en kort beskrivning. Bland dem: nyckeltal, kravtäckning, verifieringsstatus, antal per status, allvarlighet eller nivå (som stapeldiagram, liggande staplar, ringdiagram eller tabell), trend för testresultat, instabila tester, defekter, riskvärmekartan, releaseberedskap (go / no-go per slutkriterium och per variant), burn-up för release, burn-down för cykel, kvalitetsmått, konsistenskontroller, Mitt arbete, diskussioner, senaste aktivitet, luckor i spårbarheten (krav utan tester och tester utan krav), utforskande testning, täckning av MITRE ATT&CK, D3FEND och EMB3D, en **sparad fråga** – valfri fråga i [frågespråket](#sökning-och-filter), som en tabell med de första objekten eller som ett antal – och en **anteckning** i Markdown.
+- Dra en widget i dess **flytthandtag** (pilarna bredvid rubriken) och ändra storleken med handtaget i nedre högra hörnet. Widgetar som är i vägen flyttas nedåt; **Städa upp** tar bort luckorna.
+- Med tangentbordet: ge flytt- eller storlekshandtaget fokus och använd **piltangenterna** (en cell per tryck; med **Skift** på flytthandtaget ändras storleken). **Home** och **End** går till första eller sista kolumnen (på storlekshandtaget: smalast och full bredd). **Enter** eller **blanksteg** tar upp widgeten och släpper den igen, **Escape** lägger tillbaka den där den var. Varje ändring läses upp för skärmläsare, till exempel ”Kravtäckning: kolumn 7, rad 1”.
+- **Inställningar** (kugghjulet) anger rubriken, bredden (1–12 kolumner) och höjden (rader på ungefär 80 pixlar) och widgetens inställningar: release, cykel eller variant, frågan, diagramtypen, perioden och så vidare. **Ta bort** (×) tar bort widgeten från översiktspanelen.
+- **Spara** sparar layouten; **Avbryt** kastar ändringarna.
+
+En del widgetar har egna snabbval, till exempel perioden för en trend eller releasen för en burn-up; de ändrar bara visningen tills du lämnar sidan.
+
+Menyn **⋮** har också **Byt namn**, **Exportera som JSON** och **Importera från JSON** (en översiktspanel som exporterats här eller från en annan server; widgetar av okända typer utelämnas), **Återställ till standard** (en inbyggd översiktspanel får tillbaka sin ursprungliga layout, en kopia layouten den kopierades från) och **Ta bort översiktspanelen**.
+
+Widgetar visar bara det du får se: en widget vars data kräver en behörighet du saknar, eller som gäller ett projekt du inte kan öppna, säger det i stället. Widgetarna på skärmen läser in sina data tillsammans i en begäran, och widgetar längre ned läses in när du rullar dit; **Uppdatera** läser in alla igen.
+
 ## Beroendegrafer
 
 **Beroendegraf** i projektets sidopanel ritar hur objekten bygger på varandra. Välj **Krav** eller **Testfall** överst:
@@ -2756,7 +2984,7 @@ Cykler (till exempel två krav som beror på varandra) ritas, men en av linjerna
 
 ## Kravanalys
 
-**Analys** i projektets navigering analyserar alla krav i projektet på en gång (öppna den igen eller välj **Analysera igen** efter ändringar). Överst: **hälsan** (andelen krav utan problem eller varningar), antalet krav och testfall, andelen **täckta av testfall** (avvisade och inaktuella krav räknas inte) och den genomsnittliga **språkpoängen**.
+**Analys** i projektets navigering analyserar alla krav i projektet på en gång (öppna den igen eller välj **Analysera igen** efter ändringar). Överst: **hälsan** (andelen krav utan problem eller varningar), antalet krav och testfall, andelen **täckta av testfall** (avvisade och inaktuella krav räknas inte) och den genomsnittliga **språkpoängen**. I ett projekt med varianter analyserar **Visa för variant** bara kraven och testfallen för en variant, med dess täckning, resultat och verifiering; efterlevnaden nedan följer samma val.
 
 - **Kravnivåer** visar hur många krav som har varje nivå, inklusive de som **saknar kravnivå**.
 - **Nyckelord per betydelse** grupperar nyckelord som betyder samma sak (MUST, SHALL och REQUIRED; MAY och OPTIONAL …) och visar hur de används, så att du direkt ser projektets konvention.
@@ -2892,6 +3120,88 @@ Innan du lägger till krav från [katalogen](#katalog) varnar dialogen för de v
 
 En administratör kan låta en extern **tjänst för inbäddningar** (en OpenAI-kompatibel slutpunkt `/v1/embeddings`) beräkna likheten i stället (**Administration → Systeminställningar → Likhet**; se administratörsguiden). Sidan och panelen visar då *Tjänst för inbäddningar*. Titel, beskrivning och kriterier eller steg för krav och testfall **skickas då till tjänsten**. Vektorerna cachas per objektversion, så oförändrade objekt skickas inte igen. Konfliktsökningen körs alltid på servern. När tjänsten inte svarar används den lokala likheten.
 
+# AI-assistans
+
+Qtestframe kan be en språkmodelltjänst om **förslag**: utkast till tester för ett krav, en bättre formulering av ett krav, en sammanfattning av en underkänd körning med utkast till defekter, ramverksmappningar och acceptanskriterier. Du granskar och redigerar varje förslag; **ingenting sparas förrän du godkänner det**.
+
+AI-assistansen är valfri och **av som standard**. Den kräver en tjänst som en superadministratör ställer in, organisationen måste slå på den, och ett projekt kan stänga av den (se [Slå på och av](#slå-på-och-av)).
+
+## Knappen Assistera
+
+Sidor som kan använda AI-assistans har knappen **Assistera** med en gnistrande ikon:
+
+| Var | Åtgärder |
+|---|---|
+| Kravredigeraren | **Förbättra formuleringen**, **Föreslå acceptanskriterier**, **Föreslå ramverksmappningar**, **Utkast till tester** |
+| Testredigeraren | **Gör ett utkast till testet från** det första länkade kravet |
+| Körningssidan | **Sammanfatta fel** |
+| Riskdialogen | **Föreslå ramverksmappningar** |
+
+**Assistera** öppnar en liten meny med åtgärderna. När en åtgärd inte kan användas syns den ändå, avstängd, med orsaken under: AI-assistansen är inte inställd eller avstängd, funktionen är avstängd, objektet är inte sparat ännu, körningen har inga fel, eller du har använt alla förfrågningar för den här timmen. Menyn visar också vilken tjänst texten skickas till och hur många förfrågningar du har kvar.
+
+En åtgärd öppnar en dialog som frågar tjänsten direkt. Medan den skriver visar dialogen hur långt den har kommit; **Avbryt begäran** stoppar den. Sedan ser du förslagen, modellen, antalet token, tiden och, när administratören har angett priser, en uppskattad kostnad. **Fråga igen** skickar begäran en gång till.
+
+Förslagen och promptarna är på användargränssnittets språk (engelska eller svenska).
+
+## Utkast till tester från ett krav
+
+**Utkast till tester** i ett sparat krav skickar dess titel, beskrivning och acceptanskriterier och föreslår upp till åtta manuella tester: titel, beskrivning, förutsättningar, testdata, förväntat resultat och steg med åtgärder, data och förväntade resultat, och vilka acceptanskriterier varje test täcker.
+
+Varje test kan redigeras i dialogen: öppna detaljerna för att ändra texterna, redigera, lägga till eller ta bort steg. Bocka ur de tester du inte vill ha. **Skapa testutkast** skapar de markerade testerna med status *Utkast* och länkar vart och ett till kravet och till kriterierna det täcker. Testdatan läggs till förutsättningarna. De nya testerna syns i kravets [spårbarhet](#spårbarhet-och-täckning); granska dem som andra utkast innan du sätter dem till *Klar*.
+
+I **testredigeraren** ber **Gör ett utkast till testet från** *NYCKEL* om utkast från testets första länkade krav. Välj ett utkast och **Använd det här utkastet**: dess titel (om testet saknar en), beskrivning, förutsättningar, förväntade resultat och steg läggs in i formuläret. Spara testet för att behålla dem.
+
+## Förbättra ett krav
+
+**Förbättra formuleringen** skickar kravets aktuella text (även när det inte är sparat ännu) tillsammans med fynden från [kravkontrollerna](#krav) och ber om en omskrivning som följer reglerna som kontrollerna letar efter: en förpliktelse med ett nyckelord i versaler (SKA, BÖR, KAN … eller MUST, SHOULD, MAY …), ett EARS-mönster där det passar (*När* … *SKA systemet* …), inga vaga ord, inga TBD, inga öppna listor eller undanflykter, aktiv form och mätbara värden.
+
+Dialogen visar:
+
+- **ändringarna** som en ordvis skillnad (tillagda ord understrukna, borttagna överstrukna) och förklaringen;
+- de **åtgärdade fynden**: servern kontrollerar omskrivningen igen med samma kontroller, så listan visar vad omskrivningen verkligen åtgärdar, inte vad tjänsten påstår;
+- de **fynd som finns kvar** och eventuella **nya fynd**, och kvalitetspoängen före och efter.
+
+Redigera titeln och texten vid behov och välj sedan **Använd den här texten**: den ersätter texten i redigeraren. Den sparas när du sparar kravet, så du kan fortfarande jämföra och ångra. En platshållare som *[värde]* betyder att tjänsten behövde ett värde som den inte kunde veta.
+
+## Acceptanskriterier
+
+**Föreslå acceptanskriterier** föreslår verifierbara kriterier med en metod (test, inspektion, analys, demonstration, granskning) och, där kravet antyder en kvalitet, ett gränsvärde med enhet. Kriterier som kravet redan har utelämnas. Redigera eller bocka ur dem och välj **Lägg till kriterier**: de läggs till formulärets kriterier.
+
+## Ramverksmappningar
+
+**Föreslå ramverksmappningar** föreslår id i säkerhetsramverk med ett skäl för varje:
+
+- för ett **krav**: MITRE D3FEND-tekniker och EMB3D-mitigeringar eller -hot, och CWE-svagheter;
+- för en **risk**: MITRE ATT&CK- och ATLAS-tekniker och EMB3D-hot.
+
+Varje id kontrolleras mot listorna som är inbyggda i Qtestframe; id som inte finns där tas bort, och dialogen säger hur många. Id som redan är mappade utelämnas. **Lägg till mappningar** lägger till de markerade id:na i formulärets fält för D3FEND, EMB3D eller ATT&CK; CWE-id läggs till kravets taggar (*CWE-79*), eftersom krav saknar ett CWE-fält. CWE-id är kända när [katalogen](#katalog) hänvisar till dem.
+
+## Sammanfatta en underkänd körning
+
+**Sammanfatta fel** på en körningssida skickar de underkända och blockerade utförandena (test, anteckningar, slutet av felutskriften, underkända steg; högst 40) och defekterna som är länkade till körningen. Du får en kort sammanfattning, troliga gemensamma orsaker (hypoteser utifrån datan) och utkast till defekter för misslyckanden som inget länkat fel täcker ännu.
+
+Redigera utkastens titel, beskrivning och allvarlighetsgrad, bocka ur det du inte vill ha och välj **Skapa defekter**: varje defekt skapas och länkas till körningen och till utförandena av dess tester. Hantera dem sedan enligt [Defekter](#defekter-1).
+
+## Integritet och vad som skickas
+
+När du klickar på en åtgärd skickas texten i **det objektet** till AI-tjänsten som administratören har konfigurerat — ingenting annat, och ingenting i bakgrunden:
+
+| Åtgärd | Vad som skickas |
+|---|---|
+| Utkast till tester, acceptanskriterier, förbättra formuleringen | kravets nyckel, titel, beskrivning, typ, förpliktelse, motivering och acceptanskriterier (vid förbättring: fynden från kontrollerna) |
+| Sammanfatta fel | körningens namn, miljö och bygge, de underkända och blockerade utförandena med anteckningar, felutskrift och underkända steg, och de länkade defekterna |
+| Ramverksmappningar | kravets eller riskens titel och beskrivning (risker: även kategori och åtgärd) och de id som redan är mappade |
+
+Varje begäran registreras i organisationens händelselogg (funktion, användare, objekt, token) utan innehållet. Tjänsten svarar bara med text: den kan inte ändra något i Qtestframe, och objekttexten skickas till den som data, inte som instruktioner. Förslag kan ändå vara fel eller ofullständiga: granska dem som arbetet av en ny kollega.
+
+## Slå på och av
+
+- **Server:** en superadministratör konfigurerar tjänsten (Anthropic, eller en OpenAI-kompatibel tjänst som Azure OpenAI eller en lokal server) under **Administration → Systeminställningar → AI-assistans** och kan stänga av enskilda funktioner (se administratörshandboken).
+- **Organisation:** en administratör (*settings.manage*) slår på den under **Administration → AI-assistans**.
+- **Projekt:** en projektansvarig (*project.update*) kan stänga av den för ett projekt under **Inställningar → Projekt → AI-assistans**, till exempel när projektets data inte får lämna servern.
+
+En gräns per användare och timme skyddar mot skenande kostnader; menyn Assistera visar hur många förfrågningar som finns kvar.
+
 # Varianter och kod
 
 En produkt byggs ofta i flera **varianter**: modeller, marknader eller kundkonfigurationer. Alla krav gäller inte alla varianter, och en testkörning på en variant säger ingenting om en annan. Qtestframe håller reda på vilka krav och testfall som gäller vilka varianter och beräknar täckningen per variant.
@@ -2922,6 +3232,8 @@ Ett krav eller testfall **gäller** alla varianter tills du anger något annat. 
 
 För att ange tillämpligheten för många objekt på en gång markerar du dem i listan och väljer **Gäller** i verktygsfältet.
 
+**När tillämpligheten ändras** kan objektets testfall, de krav som är relaterade till det och de andra objekt som [ändringspåverkan](#ändringspåverkan) når behöva ses över: ett testfall som skrevs för *EU* kanske inte täcker *US*. Som standard **rekommenderas en granskning**: inget markeras misstänkt, och ägarna till de nådda objekten aviseras. Under **Kategorier och inställningar → Ändringspåverkan → Ändrad tillämplighet (varianter)** kan ett projekt i stället låta ändringen markera spårlänkar och relationer misstänkta (som en ändring av texten gör), eller inte ha någon påverkan. Att ändra tillämpligheten för många objekt på en gång, och att återställa en version eller en baslinje med en annan tillämplighet, fungerar på samma sätt.
+
 ### Historik, ångra och baslinjer
 
 En ändring av tillämpligheten finns i objektets **Historik** (som *Tillämplighet*, med varianterna före och efter) och i granskningsloggen. **Ångra** (Ctrl+Z) tar tillbaka den, även en ändring av många objekt på en gång: varje objekt får det det hade. När du återställer en äldre version från historiken återställs också den versionens tillämplighet.
@@ -2930,7 +3242,7 @@ En ändring av tillämpligheten finns i objektets **Historik** (som *Tillämplig
 
 ### Visa för en variant
 
-Välj en variant i **Visa för variant** i krav- och testfallslistorna och på sidan **Spårbarhet**. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
+Välj en variant i **Visa för variant** i krav- och testfallslistorna och på sidorna **Spårbarhet**, **Verifiering** och **Analys**. Listan visar då bara objekten som gäller den, med den täckning och de senaste resultat som räknas för varianten. Frågespråket känner också till varianter, och API:et tar `?variant=` för spårbarhetsmatrisen, exporter, ReqIF och rapporter:
 
 | Fråga | Hittar |
 |---|---|
@@ -3047,12 +3359,51 @@ Alla som kan läsa projektet ser CI-uppsättningen; nycklar och tokens visas ald
 
 ## Namnge automatiserade testfall efter nyckeln
 
-Qtestframe kopplar ett automatiserat resultat till ett testfall genom dess **testnyckel**, till exempel `SHOP-TC-12`. Lägg in nyckeln i testet:
+Qtestframe kopplar ett automatiserat resultat till ett testfall genom dess **testnyckel**, till exempel `SHOP-TC-12`. Lägg in nyckeln i testet (eller [generera testkoden](#generera-testkod) med nyckeln redan på plats):
 
 - i **testnamnet** eller **klassnamnet** i JUnit-rapporten, till exempel `test_SHOP_TC_12_checkout` eller `SHOP-TC-12 kassa`. Understreck står för bindestreck, eftersom de flesta språk inte tillåter bindestreck i namn; nyckeln måste skrivas ut helt och med versaler (`ShopTc12` känns inte igen);
 - eller som en **egenskap** (property) på testfallet: `qtestframe.key`, `test_key` eller `qtestframe`.
 
 Samma identifierare är det testurvalet filtrerar på (`SHOP_TC_12`). Resultat utan nyckel kan skapa automatiserade testfall i utkast med `--create-missing` (se [körningar](#testkörningar-och-exekvering)). För att dela upp testfallen på jobben i en genererad underpipeline taggar du dem `runner:pytest`, `runner:go`, `runner:playwright` eller `runner:maven` (eller ett eget namn); utan en sådan tagg hamnar testfall med skriptspråket *playwright* i `playwright` och *python* i `pytest`, övriga i `default`.
+
+## Generera testkod
+
+I stället för att namnge testen för hand kan Qtestframe skriva en **stubbe** för varje testfall: en källfil för ditt testramverk som redan är namngiven efter nyckeln, beskriver testfallet och rapporteras som *överhoppad* (skipped) tills någon implementerar den. Resultaten hittar sedan tillbaka utan mer arbete.
+
+**I webbklienten.** Markera testfall (eller filtrera listan) under **Testfall** och välj **Generera testkod**. Välj ramverk, testens katalog i förrådet (och paketet för Go och Java), titta på förhandsvisningen av varje fil och välj **Ladda ned zip** (eller den enda filen). Med rätt att ändra testfall kan du också kryssa i **Sätt skriptet för testfall utan skript till stubbens sökväg** (se nedan). Under *Kommandorad* visar dialogen kommandot `qtestframe stubs` som skriver samma filer.
+
+**På kommandoraden**, i förrådet:
+
+```
+qtestframe stubs --framework pytest --query 'execution_type:automated has:!script' --out tests/
+```
+
+`--query` väljer testfallen ([frågespråket](#sökning-och-filter); standard är `execution_type:automated`, `""` är alla testfall), `--ids` anger testfall med nyckel, `--package` sätter Go- eller Java-paketet (Go: katalogens namn som standard), `--dry-run` listar bara vad som skulle ändras. `QTF_URL`, `QTF_TOKEN` och `QTF_PROJECT` läses som för `report`; en token med rollen *läsare* räcker för att generera.
+
+**Ramverk:**
+
+| `--framework` | Fil | Nyckeln finns i | Inte implementerad | Testdata |
+|---|---|---|---|---|
+| `pytest` | `test_SHOP_TC_12.py` | `def test_SHOP_TC_12_checkout…()` | `@pytest.mark.skip` | `@pytest.mark.parametrize` |
+| `playwright` | `SHOP-TC-12.spec.ts` | titeln, `tag: '@SHOP-TC-12'` och annoteringen `qtestframe` | `test.fixme()` | ett test per rad |
+| `go` | `shop_tc_12_test.go` | `func TestSHOP_TC_12_Checkout…` | `t.Skip` | en tabell med deltester |
+| `junit5` | `SHOP_TC_12Test.java` | klass- och metodnamnen, `@Tag("SHOP-TC-12")` | `@Disabled` | `@ParameterizedTest` med `@CsvSource` |
+| `jest`, `vitest` | `SHOP-TC-12.test.ts` | testnamnet | `test.skip` | `test.skip.each` |
+| `robot` | `SHOP-TC-12.robot` | testnamnet och taggen `SHOP-TC-12` | `Skip` | ett testfall per rad som anropar ett nyckelord |
+| `cucumber` | `SHOP-TC-12.feature` | feature- och scenarionamnen, taggen `@SHOP-TC-12` | stegen saknar ännu definitioner; taggen `@qtestframe-stub` | en Scenario Outline med Examples |
+
+Varje stubbe innehåller titeln, en länk till testfallet, kraven det verifierar, prioritet och taggar, beskrivningen, förutsättningarna och det förväntade resultatet, och **stegen som numrerade TODO-kommentarer** med data och förväntade resultat (Cucumber: som Given-, When- och Then-steg). Parametrarna i [testdatat](#testfall) blir parametrar i det parametriserade testet; platshållarna `{{namn}}` står kvar i kommentarerna (Cucumber: `<namn>`). För Playwright låter du JUnit-rapporteraren skriva ut annoteringen (`embedAnnotationsAsProperties: true`); namnet räcker också. JUnit 5 behöver `junit-jupiter-params` för datadrivna test. Cucumber har ingen markering för överhoppade test: stubbens steg saknar definitioner tills du skriver dem; i strikt läge rapporterar Cucumber dem som underkända, så uteslut stubbarna med `--tags 'not @qtestframe-stub'` tills de är implementerade (då har de inget resultat, och aldrig ett godkänt).
+
+**Generera igen.** Varje fil börjar med ett block mellan kommentarraderna `qtestframe:begin SHOP-TC-12 pytest body=…` och `qtestframe:end`. Behåll de två raderna. När du kör `qtestframe stubs` igen:
+
+- en fil som inte finns **skapas**;
+- en fil vars kod under blocket fortfarande är den genererade stubben **genereras om** helt (nya steg, testdata eller titel tas med);
+- en fil vars kod du har ändrat (implementerat) behåller den: bara **huvudblocket** skrivs om (titel, krav, förutsättningar …). Stegen i koden rörs inte igen;
+- en fil utan markeringsraderna (eller med ett annat testfalls) **lämnas orörd**.
+
+Radslut och avslutande blanksteg räknas inte som ändringar. Nedladdningen från webbklienten innehåller alltid hela stubbar: slå ihop den med ett förråd med kommandoraden i stället.
+
+**Markera skripten.** Med `--mark-script` (eller kryssrutan i dialogen) får varje valt testfall som saknar skript skriptet `qtestframe:stub tests/test_SHOP_TC_12.py`, blir automatiserat, får ramverkets skriptspråk (python, playwright eller javascript, där det finns ett) och taggen `runner:<namn>` för [underpipelinen](#testurval) (pytest, playwright, go, maven, jest, vitest, robot, cucumber) om det inte redan har en runner-tagg. Servern kör aldrig ett sådant skript (*Kör automatiserade tester* hoppar över det): resultaten kommer från CI. Eftersom skriptet inte längre är tomt utesluter `has:!script` de här testfallen nästa gång. `--script-dir` sätter katalogen som skrivs i skriptet när `--out` inte är sökvägen i förrådet. Att markera kräver rätt att ändra testfall och syns i varje testfalls historik.
 
 ## Ladda upp resultat
 
@@ -3180,6 +3531,7 @@ Urvalet finns också som `POST /api/v1/projects/{pid}/ci/select`.
 - GitLabs jobbtoken (`CI_JOB_TOKEN`) kan inte skicka commit-statusar eller anteckningar i merge requests: använd en projektåtkomsttoken, eller låt servern skicka.
 - Servern skickar bara till GitLab; statusar i GitHub kommer från pipelinen.
 - Testurvalet är aldrig bättre än länkarna: commits och merge requests blir kända genom [webhookarna](#webhookar) eller nycklarna i commit-meddelandena, och filer bara genom sökvägskartan.
+- Genererade stubbar använder mallar som är inbyggda i servern; de kan ännu inte anpassas per organisation. Projektets konfigurationer blir inte parametrar: kör stubbarna en gång per konfiguration i CI (`qtestframe report --configuration`).
 - API-nycklar begränsas av roller, inte av finare behörigheter: ge CI-användaren rollen testare, eller en egen roll med bara `project.read`, `test.read`, `run.read`, `run.execute` och `run.write`.
 
 # Baslinjer
@@ -3297,6 +3649,7 @@ Med behörighet att redigera både krav och testfall kan de valda taggarna ocks�
 | `version>=2` | jämförelse av tal |
 | `updated_at>=2026-01-01` | jämförelse av datum |
 | `has:criteria` eller `criteria:*` | fältet är inte tomt |
+| `has:!script` eller `-has:script` | fältet är tomt |
 
 ### Operatorer
 
@@ -3521,6 +3874,10 @@ Rapporter tas fram på det språk du just nu använder i Qtestframe (**Användar
 
 Under standardrapporterna finns **Dokument** med två kompletta dokument: en **kravspecifikation** och en **testplan** med testspecifikation. **Skapa …** öppnar verktyget i [dokumentarkivet](#skapa-en-kravspecifikation-eller-en-testplan), där dokumentet sparas.
 
+### Logotyp på första sidan
+
+Rapporter och genererade dokument visar organisationens eller projektets logotyp överst på första sidan, i PDF, Word och Markdown (där den är en inbäddad bild). En administratör anger organisationens logotyp under [Administration → Dokument](#logotyp-i-rapporter-och-dokument); ett projekt kan i stället använda en egen, eller ingen, under **Kategorier och inställningar → Projekt → Logotyp i rapporter och dokument**, med placeringen (vänster, mitten eller höger), största storleken och en förhandsvisning av första sidan.
+
 ## Egna rapporter
 
 Under **Anpassad rapport** utformar du en rapport själv:
@@ -3625,7 +3982,7 @@ Använd statusknapparna ovanför tabellen för att bara visa vissa rader, och av
 
 Det här innehåller arbetsboken:
 
-- **En rad per post** med *ID*, *Key*, *Version* och en kolumn per fält: mapp, titel, beskrivning, kravnivå, typ, prioritet, status, källa, motivering, ägare, taggar, acceptanskriterier (ett per rad, till exempel `test: Inloggning fungerar (threshold: 2 s)`) och en kolumn per relationstyp (*Refines*, *Depends on* …) med nycklarna till de relaterade kraven. Tester har i stället förutsättningar, förväntat resultat, exekveringstyp, uppskattade minuter och *Verifies* (nycklarna till de krav som testet verifierar).
+- **En rad per post** med *ID*, *Key*, *Version* och en kolumn per fält: mapp, titel, beskrivning, kravnivå, typ, prioritet, status, källa, motivering, ägare, taggar, acceptanskriterier (ett per rad, till exempel `test: Inloggning fungerar (threshold: 2 s)`), *D3FEND* och *EMB3D* (id åtskilda med kommatecken; okända id utelämnas med en varning i förhandsvisningen) och en kolumn per relationstyp (*Refines*, *Depends on* …) med nycklarna till de relaterade kraven. Tester har i stället förutsättningar, förväntat resultat, exekveringstyp, uppskattade minuter och *Verifies* (nycklarna till de krav som testet verifierar).
 - **Teststeg** på bladet *Steps*, en rad per steg: testet, stegnumret, åtgärd, data, förväntat resultat och, för ett delat steg, nyckeln till det anropade testet. Stegen i ett test som finns på bladet *Tests* ersätts av dess rader på bladet *Steps*.
 - **Listrutor** för fälten med fasta värden, grå kolumner som bara är information (*Verified by*) och ett blad *Instructions*.
 
@@ -3673,7 +4030,7 @@ Det här händer:
 - **Värden**: prioriteter som *Highest*, *High* … eller Azure DevOps-prioriteterna 1 till 4 blir *kritisk* … *låg*. Statusar matchas på namn (*To Do* och *New* → utkast, *In Progress*, *Active* och *Approved* → godkänd, *Done*, *Resolved* och *Closed* → implementerad, *Removed* → föråldrad) och i Jira annars på statuskategorin. Ett värde utan motsvarighet utelämnas med en anteckning på raden; kravet behåller sitt värde.
 - **Ny import**: nyckeln för varje ärende (`SHOP-12`) eller id:t för varje arbetsobjekt sparas med kravet det blev. En ny import **uppdaterar** det kravet i stället för att skapa ett till, och visar en konflikt när kravet också har ändrats i Qtestframe. Nya krav får *Jira SHOP-12* eller *Azure DevOps 1234* som källa. En import tar aldrig bort krav, och befintliga krav stannar i sin mapp.
 - **Relationer**: länkar mellan importerade objekt blir kravrelationer: i Jira *blocks* (det blockerade ärendet *beror på* det andra), *duplicates*, *clones* (*härledd från*), *relates to* och föräldern till en deluppgift eller ett barnärende (*förfinar*); i Azure DevOps *Parent* (*förfinar*), *Predecessor* (*beror på*), *Duplicate of* och *Related*. En länk som tas bort i ärendehanteraren tar bort relationen vid nästa import med relationer. Länkar till objekt utanför frågan utelämnas.
-- Det räcker med läsrätt: importen ändrar aldrig något i Jira eller Azure DevOps.
+- Det räcker med läsrätt: importen ändrar aldrig något i Jira eller Azure DevOps. För att hålla båda sidor i takt finns [tvåvägssynken](#tvåvägssynk-med-jira-och-azure-devops).
 
 #### Importkällor
 
@@ -3683,6 +4040,33 @@ Det här händer:
 - **Azure DevOps**: **Organisationens adress** (`https://dev.azure.com/organisation`, eller samlingens adress i Azure DevOps Server), **Projekt**, en **Personlig åtkomsttoken** med behörigheten *Work Items (Read)* och eventuellt standardvärden för **Områdessökväg** och **Typer av arbetsobjekt**.
 
 Token kan bara skrivas, som för ärendehanteraren. **Testa anslutningen** provar den sparade anslutningen.
+
+### Tvåvägssynk med Jira och Azure DevOps
+
+Importen hämtar ändringar från ärendesystemet när du kör den. **Tvåvägssynken** håller kraven och deras Jira-ärenden eller Azure DevOps-arbetsobjekt i takt av sig själv, åt båda hållen: **Ärendesynk** i projektets navigering. Den använder anslutningarna och tokens från [importkällorna](#importkällor); token behöver då skrivbehörighet (se nedan). Krav som importerats tidigare är redan länkade och är med direkt.
+
+**Inställningar** *(Manager)*, per källa:
+
+- **Synka med Jira / Azure DevOps** slår på den; **Var (minuter)** schemalägger den (0: bara för hand och via webhooken). En synk som misslyckas väntar dubbelt så länge för varje gång, högst ett dygn; ett ärendesystem som begränsar takten får vara i fred så länge det ber om.
+- **Objekt från ärendesystemet**: **JQL-** eller **WIQL-frågan** för de objekt som är med (tom: importkällans standardfråga). Med **Skapa krav för objekt som frågan hittar och som inte är länkade ännu** blir nya ärenden krav i den valda mappen. Länkade objekt fortsätter att synkas när frågan inte längre hittar dem.
+- **Krav till ärendesystemet**: **Skapa objekt för krav som skapats här** ger kraven i en **mapp**, med en **tagg** eller som matchar en **fråga** (minst en av dem) ett nytt ärende eller arbetsobjekt av **ärendetypen** / **typen av arbetsobjekt** (Jira behöver också **projektnyckeln**, som standard ärendesystemets). Det nya objektet länkas direkt.
+- **Fältmappning**: vilket kravfält (titel, beskrivning, status, prioritet, taggar, acceptanskriterier, motivering) som går till vilket fält i ärendesystemet, angivet med sitt id (`summary`, `customfield_10050`, `System.Title`, `Microsoft.VSTS.Common.AcceptanceCriteria`), och **riktningen**: *Åt båda hållen*, *Ärendesystem → Qtestframe*, *Qtestframe → ärendesystem* eller *Synkas inte*. Status och prioritet har en **värdemappning** för varje riktning, en `värde = värde` per rad, t.ex. `In Progress = approved` och `approved = In Progress`. En Jira-status sätts genom arbetsflödet: ärendet måste ha en övergång till den.
+- **När båda sidor ändrat ett fält**: *Fråga* (en konflikt, se nedan), *Ärendesystemet vinner* eller *Qtestframe vinner*.
+- **Påverkan av ändringar från ärendesystemet**: som för alla redigeringar *Markera länkar som misstänkta*, *Avisera bara ägarna* eller *Gör ingenting* ([påverkan](#spårbarhet-och-täckning)).
+- **Synka kommentarer** kopierar nya kommentarer i ärendet till kravets diskussion och nya diskussionskommentarer till ärendet, var och en med sin författare. Bara kommentarer som skrivits efter att detta slogs på synkas.
+- **Synka länkar** gör ärendesystemets länkar mellan synkade objekt till relationer och tvärtom (*relaterar till*, *beror på*, *duplicerar*; i Jira också *härlett från*, i Azure DevOps också *förfinar*). Länkar och relationer läggs bara till, de tas aldrig bort.
+- **Skrivningar per minut** sprider ut ändringarna som skickas till ärendesystemet.
+- **Webhook**: ärendesystemet kan tala om för Qtestframe direkt att ett objekt ändrats (se administratörshandboken). Kopiera **webhook-adressen**, **Generera** en delad hemlighet, ange båda i ärendesystemet och **Spara**; hemligheten visas inte igen.
+
+Schemalagda synkar och webhooks körs med behörigheterna för den som senast sparade inställningarna.
+
+**Så avgör synken.** Efter varje synk kommer Qtestframe ihåg de mappade värdena på båda sidor. Vid nästa synk har en sida vars värde skiljer sig från det ändrats: ett fält som ändrats på en sida går till den andra (så långt riktningen tillåter); ett fält som ändrats på båda avgörs av inställningen ovan. En ändring från ärendesystemet sparas som en redigering här, med historik, granskningslogg, granskningsreglerna och *If-Match*: ett krav som någon redigerat medan synken pågick lämnas till nästa synk. En ändring till ärendesystemet kontrolleras på samma sätt: Azure DevOps vägrar den när arbetsobjektet ändrats efter att det lästes, och synken försöker igen nästa gång. Synken tar aldrig bort krav eller objekt i ärendesystemet.
+
+**Översikt.** **Synka nu** synkar direkt; **Förhandsgranska** visar vad en synk skulle göra (hämta, skicka, nya krav och objekt, konflikter, kommentarer, länkar) utan att spara något. Kortet visar de länkade kraven, senaste och nästa synk, öppna konflikter och det senaste felet.
+
+**Konflikter.** Med *Fråga* väntar ett fält som ändrats på båda sidor under **Konflikter**: per fält värdet **vid senaste synken**, **Qtestframe nu** och **ärendesystemet nu**. Välj per fält *Behåll Qtestframe*, *Ta Jira* (*Ta Azure DevOps*) eller *Lämna båda* och **Verkställ besluten**, eller bestäm för alla fält på en gång. Beslutet verkställs direkt (skrivs till ärendesystemet eller sparas här). Objektets övriga fält fortsätter att synkas under tiden; en konflikt stängs av sig själv när båda sidor är överens igen.
+
+**Synklogg.** Varje synk (för hand, schemalagd, webhook, ett konfliktbeslut) med vad den gjorde per objekt och felen; de 100 senaste per källa sparas. Synkar finns också i granskningsloggen (`req_sync.run`).
 
 ### CSV och Excel från DOORS och Polarion
 
@@ -3721,11 +4105,11 @@ Den här sidan förklarar båda. Excel fram och tillbaka och de andra exportform
 
 ## ReqIF-export
 
-**Export** (i projektet) har **ReqIF** och **ReqIF (med bilagor)**. En ReqIF-fil innehåller alltid kraven med sina mappar (som kapitelrubriker), egna fält, acceptanskriterier och relationer. Under **Innehåll i ReqIF** lägger du till mer:
+**Export** (i projektet) har **ReqIF** och **ReqIF (med bilagor)**. En ReqIF-fil innehåller alltid kraven med sina mappar (som kapitelrubriker), egna fält, acceptanskriterier, D3FEND- och EMB3D-id och relationer; vid import läses D3FEND- och EMB3D-attributen tillbaka. Under **Innehåll i ReqIF** lägger du till mer:
 
 | Val | Det här tillkommer |
 |---|---|
-| **Testfall med steg och spårlänkar** | Varje testfall som ett objekt av typen *Test case* (titel, beskrivning, förutsättningar, stegen som en tabell, förväntat resultat, exekveringstyp, prioritet, status, uppskattning, taggar, egna fält), testmapparna som ett andra kapitelträd och en relation *Verifies* från varje testfall till varje krav som det verifierar. |
+| **Testfall med steg och spårlänkar** | Varje testfall som ett objekt av typen *Test case* (titel, beskrivning, förutsättningar, stegen som en tabell, förväntat resultat, exekveringstyp, prioritet, status, uppskattning, taggar, D3FEND och EMB3D, egna fält), testmapparna som ett andra kapitelträd och en relation *Verifies* från varje testfall till varje krav som det verifierar. |
 | **Verifieringsposter** | Granskningar, analyser, demonstrationer och genomgångar som har registrerats för kraven, var och en relaterad till sitt krav (*Verification record of*). De är till för att läsas i det andra verktyget; en import av filen hoppar över dem. |
 | **Version** | *Nuvarande läge*, eller en av projektets [baslinjer](#baslinjer): kraven och testfallen exakt som baslinjen frös dem. Filtret gäller inte för en baslinje; relationer, länkar och poster är dagens mellan dess poster. |
 
@@ -3847,7 +4231,7 @@ Det nya dokumentet visas överst i arkivet, markerat, med **Öppna** (PDF) och *
 
 ### Sidlayout
 
-I PDF och Word delas ett krav eller testfall aldrig på två sidor när det får plats på en: om det inte får plats på resten av sidan börjar det på nästa, tillsammans med mapprubrikerna direkt före. Bara ett objekt som är längre än en sida fortsätter på nästa sida. I en specifikation med **Varje krav på en ny sida** börjar ändå varje krav på en ny sida. Word håller ihop objekten med styckeinställningarna *håll ihop med nästa* och *sidbrytning före*, så att layouten stämmer även när du redigerar filen. Markdown har inga sidor och ser likadan ut i båda fallen.
+I PDF och Word delas ett krav eller testfall aldrig på två sidor när det får plats på en: om det inte får plats på resten av sidan börjar det på nästa, tillsammans med mapprubrikerna direkt före. Bara ett objekt som är längre än en sida fortsätter på nästa sida. I en specifikation med **Varje krav på en ny sida** börjar ändå varje krav på en ny sida. Word håller ihop objekten med styckeinställningarna *håll ihop med nästa* och *sidbrytning före*, så att layouten stämmer även när du redigerar filen. Markdown har inga sidor och ser likadan ut i båda fallen. Titelsidan visar projektets eller organisationens [logotyp](#logotyp-på-första-sidan) överst.
 
 ### Bilagan Beroendegraf
 
@@ -3902,6 +4286,7 @@ Filerna lagras i Qtestframes databas, inte på en separat filserver. Det betyder
 | **Provisionering (SCIM)** | Administratörer |
 | **Tvåstegsverifiering** | Administratörer (organisationens policy); superadministratörer ställer också in serverpolicyn |
 | **Händelselogg** | Testledare och uppåt |
+| **Elektroniska poster** | Testledare och uppåt (administratörer ändrar inställningarna) |
 | **Organisationer** | Superadministratörer |
 | **Användare** | Superadministratörer |
 | **Säkerhetskopiering** | Superadministratörer |
@@ -3921,7 +4306,7 @@ Varje organisation börjar med sju inbyggda roller. Som standard kan varje roll 
 | **Granskare** | godkänna och avvisa krav och markera testfall som klara (*requirement.review*, *test.review*), utan att redigera innehållet; skriva i [diskussioner](#diskussioner) (*comment.create*, som alla roller nedan utom Läsare) |
 | **Ämnesexpert** | delta i att skriva krav: skapa och redigera krav med kriterier, motivering, källor, relationer, länkar och bilagor (*requirement.write*); granska krav (*requirement.review*) och diskutera dem; läsa testfall, körningar, defekter och risker. Inga testfall, körningar, cykler, undantag, inställningar eller medlemmar |
 | **Testare** | skriva och länka testfall, hantera testmappar och testfallskategorier, skapa och redigera körningar, registrera utfall, importera utfall från CI, ladda upp bilagor till testfall, körningar och exekveringar, skapa egna API-nycklar |
-| **Testledare** | planera [testcykler](#testcykler) (*cycle.plan*), markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
+| **Testledare** | planera [testcykler](#testcykler) (*cycle.plan*), förvalta [testmiljöer](#testmiljöer-och-testdata) och godkänna deras bokningar (*environment.manage*), markera testfall som klara (*test.review*), köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
 | **Ansvarig** | godkänna och avvisa krav (*requirement.review*), skriva krav och kravmappar, skapa och redigera projekt, alla kategorier och [spårbarhetsreglerna](#spårbarhetsregler), skapa baslinjer |
 | **Administratör** | allt: ta bort projekt, hantera medlemmar och roller, byta namn på organisationen, återställa medlemmars lösenord, ta bort alla kommentarer |
 | **Superadministratör** | allt i alla organisationer; hantera organisationer och användare; säkerhetskopiering och återställning |
@@ -3937,12 +4322,16 @@ Standardmatrisen med behörigheter:
 | `requirement.review` | | ✔ | ✔ | | | ✔ | ✔ |
 | `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `requirement.write` | | | ✔ | | | ✔ | ✔ |
+| `change.create` | | | ✔ | | ✔ | ✔ | ✔ |
+| `change.approve` | | | | | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `environment.manage`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
 | `waiver.approve`, `project.create`, `project.update` | | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | | ✔ |
 
 **Undantag och riskacceptans.** Att godkänna, avslå och återkalla [undantag och avvikelser](#undantag-restrisk-och-uttalande-om-tillämplighet) och att signera acceptansen av en restrisk kräver `waiver.approve` (en projektbehörighet, så en projektroll kan ge den i ett enskilt projekt). Varje beslut är en elektronisk signatur (lösenord, eller en nyligen gjord enkel inloggning) och registreras i händelseloggen; den som begärt ett undantag kan inte besluta om det. Ge `waiver.approve` bara till personer som får acceptera att krav inte uppfylls.
+
+**Ändringsbegäranden.** Att föreslå ändringar i [ändringsbegäranden](#ändringsbegäranden-och-ändringshantering) (och bedöma, genomföra, verifiera och stänga dem) kräver `change.create`; att besluta om dem som medlem i projektets ändringsnämnd, och nödåtgärden förbi tvingande ändringshantering, kräver `change.approve`. Båda är projektbehörigheter. Varje beslut är en elektronisk signatur, och den som begärt en ändring kan inte besluta om den.
 
 **Granskningsbeslut.** Att sätta ett krav till *Godkänt* eller *Avvisat* kräver `requirement.review`; att sätta ett testfall till *Klart* kräver `test.review`. Detsamma gäller massändringar, att skapa ett objekt med den statusen och att återställa en version som har den. En granskare utan skrivbehörighet får bara ändra statusen; att redigera något annat kräver fortfarande `requirement.write` eller `test.write`. Varje beslut registreras i händelseloggen som `requirement.review` eller `test.review`. Ett kopierat krav eller testfall börjar som *Utkast* och granskas alltså på nytt.
 
@@ -4056,6 +4445,19 @@ Det en regel förbjuder avvisas av servern, även för API-klienter och CI-impor
 - när en regel är upplättad visas samma orsaker som en gul varning, och testfallet kan exekveras.
 
 **Kravstatus följer testutfallen** (på som standard) gör att ett implementerat krav blir **Verifierat** när det är [verifierat](#verifiering) – varje kriterium har godkända belägg och varje underkrav är verifierat – och går tillbaka till **Implementerat** när det inte längre gäller. Avstängd ändras statusen bara för hand, och avvikelser listas under **Verifiering → Inkonsekvenser**. Om varje kriterium behöver egna belägg är en projektinställning (**Inställningar → Projekt → Verifiering**).
+
+## Logotyp i rapporter och dokument
+
+*(Admin och Testledare, eller en roll med `settings.manage`)* **Administration → Dokument** anger organisationens logotyp. Den visas överst på första sidan i varje [rapport](#logotyp-på-första-sidan) och [genererat dokument](#skapa-en-kravspecifikation-eller-en-testplan) — kravspecifikationer, testplaner, release-, verifierings-, SoA-, kvalitets-, cykel- och utforskningsrapporter, egna rapporter och exporten av ändringspåverkan — i PDF, Word och Markdown.
+
+![Administration → Dokument: den uppladdade logotypen, dess placering och största storlek, och förhandsvisningen av första sidan](images/sv-admin-documents.png)
+
+- **Ladda upp logotyp** tar en PNG-, JPEG- eller SVG-bild på högst 2 MB. En SVG konverteras till en bild på servern av Qtestframes egen renderare: skript, länkar, inbäddade bilder och texter i den används aldrig (konvertera texter till konturer innan du laddar upp den).
+- **Placering** lägger logotypen till vänster (standard), i mitten eller till höger på sidan.
+- **Största bredd** och **Största höjd** (i millimeter; standard 50 × 20 mm) begränsar storleken. Logotypen behåller sina proportioner och visas aldrig större än sin egen storlek vid 96 dpi.
+- **Förhandsvisningen** visar första sidan i ett dokument med logotypen som den kommer att skrivas ut, även innan du sparar.
+
+Projekten använder denna logotyp om de inte laddar upp en egen under **Kategorier och inställningar → Projekt → Logotyp i rapporter och dokument**, eller slår på **Ingen logotyp i projektets dokument** *(Förvaltare och Admin, eller en roll med `project.update`)*. Ett [projektarkiv](#spara-och-läs-in-projekt) tar med projektets egen logotyp; organisationens logotyp ingår i säkerhetskopior.
 
 ## Fältuppsättningar och mallar
 
@@ -4178,6 +4580,28 @@ API-referensen (`docs/api.md`, avsnittet *OSLC*) listar egenskaperna och fråges
 - Begränsa tidsperioden med **Från datum** och **Till datum**.
 - **Antal poster** anger hur många som visas (upp till 5000).
 - **Exportera CSV** laddar ner den filtrerade loggen till en revisor; **Exportera Markdown** laddar ner den som ett Markdown-dokument med datumintervallet och filtret.
+
+
+### Verifiera händelseloggen
+
+Händelseloggen kan inte ändras i programmet, och varje post är kopplad till posten före med en hash (ett fingeravtryck av innehållet), så en ändring som görs direkt i databasen syns. **Verifiera granskningsloggen** högst upp på sidan kontrollerar hela kedjan och visar antingen *Granskningsloggen är intakt* (med antalet poster och signerade kontrollpunkter) eller den **första brutna länken**: postens nummer och vad som är fel – posten har ändrats, poster saknas eller har tagits bort i slutet, eller kedjan har skrivits om. Spara beläggen och rapportera enligt era rutiner.
+
+**Exportera med hashar (JSON)** och **(CSV)** laddar ner hela loggen med varje posts nummer, hash och hashen av posten före, för arkivering utanför Qtestframe. *Detaljer* för en post visar också dess nummer, hash och, i läget för elektroniska poster, orsaken till ändringen.
+
+## Läge för elektroniska poster
+
+*(Administratörer ändrar det; testledare och uppåt kan läsa det och skapa rapporten)* **Administration → Elektroniska poster** slår på de kontroller som reglerade organisationer behöver för elektroniska poster och signaturer (21 CFR Part 11, EU GMP Annex 11). Läget är **av** tills en administratör slår på det. När det är på:
+
+- **Varje signatur kräver att du bekräftar vem du är**: ditt lösenord och, om du använder en autentiseringsapp, en kod från den. Du väljer signaturens **innebörd** (till exempel *Godkänd* eller *Granskad*) från organisationens lista. Loggar du in med enkel inloggning signerar du strax efter inloggningen.
+- **Vissa åtgärder kräver signatur**: administratören väljer bland att godkänna ett krav, godkänna ett test (status *Klar*), release go (*Frisläppt*) och att skapa en baslinje. När du gör någon av dem – i redigeraren, en massändring, kalkylbladsvyn eller en massgranskning – öppnas signaturdialogen; ändringen sparas när du har signerat. Avbryter du sparas ingenting.
+- **Vissa ändringar kräver en orsak**: när du sparar en sådan ändring frågar en dialog varför (till exempel numret på en ändringsbegäran). Orsaken sparas i händelseloggen tillsammans med ändringen.
+- **Du loggas ut efter en tid utan aktivitet** (standard 15 minuter). Uppdateringar i bakgrunden, som antalet aviseringar, håller dig inte inloggad.
+
+Signerade poster visar sina **Elektroniska signaturer**: namn och e-post för den som signerade, datum och tid i UTC och i den personens tidszon, innebörden, vad som signerades och hur personen bekräftade sig. När posten ändras efter signeringen visar signaturen *Posten ändrad efter signeringen*. Du hittar dem under **Historik** för ett krav eller test, bland en baslinjes signeringar, i ett undantag, vid acceptansen av en risk och i en release.
+
+![Inställningar för elektroniska poster och rapporten Kontroller enligt Part 11 / Annex 11](images/sv-admin-erecords.png)
+
+Administratören anger på samma sida vilka åtgärder som kräver signatur, innebörderna (en per rad), vilka ändringar som kräver en orsak, tiden för inaktivitet och hur snart efter inloggningen konton med enkel inloggning får signera. **Skapa rapport** visar **Kontroller enligt Part 11 / Annex 11**: för varje krav i regelverken vad Qtestframe gör, vad organisationens rutiner måste täcka och belägg från den här installationen; **Ladda ner (Markdown)** sparar den. Qtestframe ger tekniska kontroller – validering, utbildning, skriftliga policyer och kontroll av identiteten innan någon får ett konto är fortfarande organisationens ansvar, och rapporten säger det.
 
 ## Organisationer
 
@@ -4883,7 +5307,7 @@ Bara personer med behörigheten `script.execute` kan köra skript, och bara när
 
 ### Vad är skillnaden mellan en säkerhetskopia, ett projektarkiv och en export?
 
-En **säkerhetskopia** innehåller hela installationen och återställs av en superadministratör. Ett **projektarkiv** innehåller ett projekt, utan hemligheter, och läses in som ett nytt projekt. En **export** tar ut data i ett format för människor eller andra verktyg (PDF, Word, Excel, CSV, Markdown, ReqIF). Se [Säkerhetskopior och projektarkiv](#säkerhetskopior-och-projektarkiv).
+En **säkerhetskopia** innehåller hela installationen och återställs av en superadministratör. Ett **projektarkiv** innehåller ett projekt, utan hemligheter, och läses in som ett nytt projekt. En **export** tar ut data i ett format för människor eller andra verktyg (PDF, Word, Excel, CSV, Markdown, ReqIF). Se [Säkerhetskopior och projektarkiv](#säkerhetskopior-och-projektarkiv-1).
 
 ### Hur hittar jag ett ord som jag inte förstår?
 
@@ -4899,7 +5323,7 @@ Begreppen inom test, kravhantering och de standarder och format som Qtestframe b
 
 **Test:** [Acceptanstest](#acceptanstest) · [Allvarlighetsgrad](#allvarlighetsgrad) · [Användbarhetstest](#användbarhetstest) · [Beslutstabelltest](#beslutstabelltest) · [Beteendedriven utveckling](#beteendedriven-utveckling) · [Datadriven testning](#datadriven-testning) · [Defekt](#defekt) · [Defektens livscykel](#defektens-livscykel) · [Ekvivalensklassindelning](#ekvivalensklassindelning) · [End-to-end-test](#end-to-end-test) · [Enhetstest](#enhetstest) · [Exekvering](#exekvering) · [Felgissning](#felgissning) · [Funktionell testning](#funktionell-testning) · [Grålådetest](#grålådetest) · [Gränsvärdesanalys](#gränsvärdesanalys) · [Icke-funktionell testning](#icke-funktionell-testning) · [Ingångskriterier](#ingångskriterier) · [Instabilt testfall](#instabilt-testfall) · [Integrationstest](#integrationstest) · [Kodtäckning](#kodtäckning) · [Kontinuerlig integration](#kontinuerlig-integration) · [Kravtäckning](#kravtäckning) · [Lasttest](#lasttest) · [Parvis testning](#parvis-testning) · [Prestandatest](#prestandatest) · [Prioritet](#prioritet) · [Regressionstest](#regressionstest) · [Röktest och sanitetstest](#röktest-och-sanitetstest) · [Sessionsbaserad testledning](#sessionsbaserad-testledning) · [Shift-left](#shift-left) · [Stresstest](#stresstest) · [Svartlådetest](#svartlådetest) · [Systemtest](#systemtest) · [Säkerhetstest](#säkerhetstest) · [Testcykel](#testcykel) · [Testdata](#testdata) · [Testdesignteknik](#testdesignteknik) · [Testdriven utveckling](#testdriven-utveckling) · [Testfall](#testfall-2) · [Testkonfiguration](#testkonfiguration) · [Testkörning](#testkörning-1) · [Testmiljö](#testmiljö) · [Testnivå](#testnivå) · [Testorakel](#testorakel) · [Testplan](#testplan) · [Teststeg](#teststeg) · [Testsvit](#testsvit) · [Testtyp](#testtyp) · [Testutfall](#testutfall) · [Tillgänglighetstest](#tillgänglighetstest) · [Tillståndsövergångstest](#tillståndsövergångstest) · [Täckning](#täckning) · [Utforskande testning](#utforskande-testning) · [Utgångskriterier](#utgångskriterier-1) · [V-modellen](#v-modellen) · [Validering](#validering) · [Verifiering](#verifiering-1) · [Vitlådetest](#vitlådetest)
 
-**Krav:** [Acceptanskriterier](#acceptanskriterier) · [Användarkrav](#användarkrav) · [Avvikelse](#avvikelse) · [Bakåtspårbarhet](#bakåtspårbarhet) · [Baslinje](#baslinje) · [Begränsning](#begränsning) · [Dubbelriktad spårbarhet](#dubbelriktad-spårbarhet) · [EARS](#ears) · [Framåtspårbarhet](#framåtspårbarhet) · [Funktionellt krav](#funktionellt-krav) · [Förfining](#förfining) · [Härlett krav](#härlett-krav) · [Icke-funktionellt krav](#icke-funktionellt-krav) · [INCOSE-regler](#incose-regler) · [Intressent](#intressent) · [Intressentkrav](#intressentkrav) · [Krav](#krav-2) · [Kravkvalitet](#kravkvalitet) · [Kravnivå](#kravnivå) · [Kravord](#kravord) · [Kvalitetsegenskap](#kvalitetsegenskap) · [Misstänkt länk](#misstänkt-länk) · [Programvarukrav](#programvarukrav) · [Restrisk](#restrisk-1) · [Risk](#risk) · [Riskbaserad testning](#riskbaserad-testning) · [SKA, BÖR och FÅR](#ska-bör-och-får) · [Specifikation](#specifikation) · [Spårbarhet](#spårbarhet) · [Spårbarhetsmatris](#spårbarhetsmatris) · [Spårlänk](#spårlänk) · [Systemkrav](#systemkrav) · [Undantag](#undantag) · [Uttalande om tillämplighet](#uttalande-om-tillämplighet-1) · [Utvärderingskriterium](#utvärderingskriterium) · [Verifieringsmetod](#verifieringsmetod) · [Verifieringspost](#verifieringspost) · [Verksamhetskrav](#verksamhetskrav) · [Ändringspåverkan](#ändringspåverkan-1)
+**Krav:** [Acceptanskriterier](#acceptanskriterier-1) · [Användarkrav](#användarkrav) · [Avvikelse](#avvikelse) · [Bakåtspårbarhet](#bakåtspårbarhet) · [Baslinje](#baslinje) · [Begränsning](#begränsning) · [Dubbelriktad spårbarhet](#dubbelriktad-spårbarhet) · [EARS](#ears) · [Framåtspårbarhet](#framåtspårbarhet) · [Funktionellt krav](#funktionellt-krav) · [Förfining](#förfining) · [Härlett krav](#härlett-krav) · [Icke-funktionellt krav](#icke-funktionellt-krav) · [INCOSE-regler](#incose-regler) · [Intressent](#intressent) · [Intressentkrav](#intressentkrav) · [Krav](#krav-2) · [Kravkvalitet](#kravkvalitet) · [Kravnivå](#kravnivå) · [Kravord](#kravord) · [Kvalitetsegenskap](#kvalitetsegenskap) · [Misstänkt länk](#misstänkt-länk) · [Programvarukrav](#programvarukrav) · [Restrisk](#restrisk-1) · [Risk](#risk) · [Riskbaserad testning](#riskbaserad-testning) · [SKA, BÖR och FÅR](#ska-bör-och-får) · [Specifikation](#specifikation) · [Spårbarhet](#spårbarhet) · [Spårbarhetsmatris](#spårbarhetsmatris) · [Spårlänk](#spårlänk) · [Systemkrav](#systemkrav) · [Undantag](#undantag) · [Uttalande om tillämplighet](#uttalande-om-tillämplighet-1) · [Utvärderingskriterium](#utvärderingskriterium) · [Verifieringsmetod](#verifieringsmetod) · [Verifieringspost](#verifieringspost) · [Verksamhetskrav](#verksamhetskrav) · [Ändringspåverkan](#ändringspåverkan-1)
 
 **Standarder, format och ramverk:** [AI-förordningen](#ai-förordningen) · [Bearer-token](#bearer-token) · [CSV](#csv) · [CWE](#cwe) · [Cyberresiliensförordningen](#cyberresiliensförordningen) · [ETag och If-Match](#etag-och-if-match) · [HOTP](#hotp) · [HTTP-semantik](#http-semantik) · [ISO/IEC 25010](#isoiec-25010) · [ISO/IEC 27001 bilaga A](#isoiec-27001-bilaga-a) · [ISO/IEC/IEEE 29119](#isoiecieee-29119) · [ISO/IEC/IEEE 29148](#isoiecieee-29148) · [ISTQB](#istqb) · [JSON Web Token](#json-web-token) · [JUnit XML](#junit-xml-1) · [Landlock](#landlock) · [Markdown](#markdown) · [MITRE ATLAS](#mitre-atlas) · [MITRE ATT&CK](#mitre-attck-1) · [MITRE D3FEND](#mitre-d3fend) · [MITRE EMB3D](#mitre-emb3d) · [OAuth 2.0](#oauth-20) · [OpenAPI](#openapi) · [OpenID Connect](#openid-connect) · [OSLC](#oslc-2) · [PKCE](#pkce) · [Problem Details](#problem-details) · [ReqIF](#reqif) · [SAML 2.0](#saml-20) · [SCIM](#scim) · [seccomp](#seccomp) · [STIX](#stix) · [Syslog](#syslog) · [TOTP](#totp) · [WCAG](#wcag) · [WebAuthn och FIDO2](#webauthn-och-fido2)
 
@@ -4917,7 +5341,7 @@ De villkor som en produkt eller ett krav ska uppfylla för att godtas av kunden,
 
 ### Acceptanstest
 
-Den testnivå som avgör om ett system är redo att tas emot: av användarna (användaracceptanstest), av driften (driftacceptanstest) eller mot ett avtal eller en föreskrift. Den svarar på ”är det här vad vi behöver?” snarare än ”fungerar koden?” och är därför till stor del [validering](#validering). Acceptanstest härleds oftast från [acceptanskriterier](#acceptanskriterier) och verksamhetens processer (ISTQB:s ordlista).
+Den testnivå som avgör om ett system är redo att tas emot: av användarna (användaracceptanstest), av driften (driftacceptanstest) eller mot ett avtal eller en föreskrift. Den svarar på ”är det här vad vi behöver?” snarare än ”fungerar koden?” och är därför till stor del [validering](#validering). Acceptanstest härleds oftast från [acceptanskriterier](#acceptanskriterier-1) och verksamhetens processer (ISTQB:s ordlista).
 
 **I Qtestframe:** planera acceptanstestningen som en egen [testcykel](#testcykel) eller [körning](#testkörning-1), till exempel *Acceptanstest release 2.1*, och tagga eller kategorisera testfallen (`tag:acceptance`). Mallen för krav av typen *Verksamhet* föreslår ett acceptanstest.
 
@@ -4945,7 +5369,7 @@ Ett krav som beskriver vad en användare ska kunna göra med systemet, ofta skri
 
 **I Qtestframe:** skriv användarberättelser som krav och deras acceptanskriterier som utvärderingskriterier; förfina dem till system- eller programvarukrav där det behövs.
 
-**Se även:** [Intressentkrav](#intressentkrav), [Acceptanskriterier](#acceptanskriterier), [Beteendedriven utveckling](#beteendedriven-utveckling)
+**Se även:** [Intressentkrav](#intressentkrav), [Acceptanskriterier](#acceptanskriterier-1), [Beteendedriven utveckling](#beteendedriven-utveckling)
 
 ### Användbarhetstest
 
@@ -5027,7 +5451,7 @@ BDD: ett arbetssätt där teamet beskriver det önskade beteendet som konkreta e
 
 **I Qtestframe:** skriv ett scenario som steg i ett testfall (Givet som förutsättning, När som åtgärd, Så som förväntat resultat) och länka det till kravet. Automatiserade scenarier rapporterar sina utfall med JUnit XML som andra testfall.
 
-**Se även:** [Testdriven utveckling](#testdriven-utveckling), [Acceptanskriterier](#acceptanskriterier), [JUnit XML](#junit-xml-1)
+**Se även:** [Testdriven utveckling](#testdriven-utveckling), [Acceptanskriterier](#acceptanskriterier-1), [JUnit XML](#junit-xml-1)
 
 ## C
 
@@ -6185,7 +6609,7 @@ En beskrivning av hur uppfyllandet av ett krav ska bedömas: vad som kontrollera
 
 **I Qtestframe:** varje krav kan ha flera kriterier, vart och ett med en metod (test, inspektion, analys, demonstration, granskning) och ett tröskelvärde. Testfall länkas till ett kriterium, andra metoder registreras som [verifieringsposter](#verifieringspost); kravet är verifierat när alla kriterier är det.
 
-**Se även:** [Utvärderingskriterier](#utvärderingskriterier), [Acceptanskriterier](#acceptanskriterier), [Verifiering](#verifiering)
+**Se även:** [Utvärderingskriterier](#utvärderingskriterier), [Acceptanskriterier](#acceptanskriterier-1), [Verifiering](#verifiering)
 
 ## V
 

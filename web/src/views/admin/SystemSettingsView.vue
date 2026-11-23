@@ -326,6 +326,7 @@ function resetProviders() {
         <form v-else class="sys-form" @submit.prevent="save">
           <Message v-if="current === 'runner'" severity="warn" :closable="false">{{ t('sysSettings.runnerWarning') }}</Message>
           <Message v-if="current === 'similarity'" severity="warn" :closable="false">{{ t('sysSettings.similarityWarning') }}</Message>
+          <Message v-if="current === 'ai'" severity="warn" :closable="false">{{ t('sysSettings.aiWarning') }}</Message>
           <p v-if="current === 'runner'" class="small"><i class="pi pi-refresh" aria-hidden="true" /> {{ t('sysSettings.restartNote') }}</p>
           <p v-if="current === 'email'" class="small muted">{{ t('sysSettings.emailTestTo', { email: auth.me?.user?.email ?? '' }) }}</p>
           <!-- encryption of stored secrets: read-only, set in the file -->
@@ -372,6 +373,7 @@ function resetProviders() {
             <Button v-if="TESTABLE[current] === 'syslog'" type="button" :label="t('sysSettings.syslogTest')" icon="pi pi-send" severity="secondary" outlined :loading="testing" @click="runTest" />
             <Button v-if="TESTABLE[current] === 'email'" type="button" :label="t('sysSettings.emailTest')" icon="pi pi-envelope" severity="secondary" outlined :loading="testing" @click="runTest" />
             <Button v-if="TESTABLE[current] === 'embeddings'" type="button" :label="t('sysSettings.embeddingsTest')" icon="pi pi-bolt" severity="secondary" outlined :loading="testing" @click="runTest" />
+            <Button v-if="TESTABLE[current] === 'ai'" type="button" :label="t('sysSettings.aiTest')" icon="pi pi-sparkles" severity="secondary" outlined :loading="testing" @click="runTest" />
             <span class="grow" />
             <span v-if="dirty" class="small muted">{{ t('sysSettings.unsaved') }}</span>
             <Button type="button" :label="t('sysSettings.discard')" text severity="secondary" :disabled="!dirty || saving" @click="discard" />

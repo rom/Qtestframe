@@ -103,7 +103,15 @@ const soaSourceOptions = computed(() => soaSources.value.map((s) => ({ label: s.
 // exploratory sessions (session report)
 const sessionList = ref<{ id: string; key: string; title: string }[]>([])
 const sessionOptions = computed(() => [{ label: t('reports.sessionDefault'), value: '' }, ...sessionList.value.map((x) => ({ label: `${x.key} ${x.title}`, value: x.id }))])
+// change requests (change request report)
+const crList = ref<{ id: string; key: string; title: string }[]>([])
+const crOptions = computed(() => [{ label: t('reports.changeRequestDefault'), value: '' }, ...crList.value.map((x) => ({ label: `${x.key} ${x.title}`, value: x.key }))])
 async function loadReleaseAndSources() {
+  try {
+    crList.value = asItems(await api.get<{ items: { id: string; key: string; title: string }[] }>(`/projects/${proj.pid}/change-requests`))
+  } catch {
+    crList.value = []
+  }
   try {
     sessionList.value = asItems(await api.get<{ items: { id: string; key: string; title: string }[] }>(`/projects/${proj.pid}/exploratory-sessions`))
   } catch {
@@ -449,6 +457,10 @@ onMounted(() => {
               <template v-else-if="p.name === 'session_id'">
                 <label :for="`tpl-xs-${tpl.id}`">{{ t('reports.session') }}</label>
                 <Select v-model="cards[tpl.id].params.session_id" :input-id="`tpl-xs-${tpl.id}`" :options="sessionOptions" option-label="label" option-value="value" filter :placeholder="t('reports.sessionDefault')" />
+              </template>
+              <template v-else-if="p.name === 'change_request'">
+                <label :for="`tpl-cr-${tpl.id}`">{{ t('reports.changeRequest') }}</label>
+                <Select v-model="cards[tpl.id].params.change_request" :input-id="`tpl-cr-${tpl.id}`" :options="crOptions" option-label="label" option-value="value" filter :placeholder="t('reports.changeRequestDefault')" />
               </template>
               <template v-else-if="p.name === 'cycle_id'">
                 <label :for="`tpl-cyc-${tpl.id}`">{{ t('reports.cycle') }}</label>

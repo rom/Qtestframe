@@ -383,8 +383,10 @@ OIDC/SAML login neither creates nor changes that membership, so
 | requirement.review | | ✔ | ✔ | | | ✔ | ✔ |
 | comment.create | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | requirement.write | | | ✔ | | | ✔ | ✔ |
+| change.create | | | ✔ | | ✔ | ✔ | ✔ |
+| change.approve | | | | | ✔ | ✔ | ✔ |
 | test.write, run.write, run.execute, token.manage | | | | ✔ | ✔ | ✔ | ✔ |
-| cycle.plan, script.execute, audit.read, settings.manage | | | | | ✔ | ✔ | ✔ |
+| cycle.plan, environment.manage, script.execute, audit.read, settings.manage | | | | | ✔ | ✔ | ✔ |
 | waiver.approve, project.create, project.update | | | | | | ✔ | ✔ |
 | project.delete, member.manage, role.manage, tenant.manage | | | | | | | ✔ |
 
@@ -396,7 +398,9 @@ OIDC/SAML login neither creates nor changes that membership, so
   (`comment.create`), and reads tests, runs, defects and risks for
   context. It deliberately has no `test.*` write or review rights, no run
   or cycle rights (`run.write`, `run.execute`, `cycle.plan`), no
-  `waiver.approve` (accepting deviations is a management decision), no
+  `waiver.approve` (accepting deviations is a management decision) and no
+  `change.approve` (it proposes changes in change requests with
+  `change.create`, the change control board decides them), no
   project, settings, member or role administration, and no API tokens
   (`token.manage`; give the tester role as well to someone who also
   automates). Evidence on executions is recorded by testers
@@ -450,7 +454,7 @@ OIDC/SAML login neither creates nor changes that membership, so
   organisation administrators (and super admins) keep theirs; a project
   member gets the *project-scoped* permissions of the union of their
   project roles in place of the organisation roles' (`project.read/update/delete`,
-  `requirement.*`, `waiver.approve`, `test.*`, `run.*`, `cycle.plan`,
+  `requirement.*`, `waiver.approve`, `change.*`, `test.*`, `run.*`, `cycle.plan`, `environment.manage`,
   `script.execute`, `export`, `comment.create`), in both modes – a direct
   membership wins over group memberships, several groups give the union
   of their roles; others get their organisation roles in an
@@ -683,6 +687,7 @@ with the primitives of `internal/secrets`:
 | TOTP secrets (authenticator apps) | `user_mfa.totp_secret` |
 | Webhook signing secrets | `webhooks.secret` |
 | Code webhook secret and CI posting token (GitLab project access token) | `code_settings.webhook_secret`, `code_settings.ci_token` |
+| Webhook secret of the two-way requirement sync (Jira, Azure DevOps) | `req_sync_configs.webhook_secret` |
 | Defect tracker token (Jira, GitHub, GitLab) | `projects.defect_tracker` → `token` |
 | Values of secret web test variables | `projects.web_tests` → `variables[].value` |
 | SMTP password | `system_settings` `email.password` |
@@ -788,6 +793,28 @@ undecryptable secrets behind.
   request log shows them).
   Readable per tenant with `audit.read` (`GET /api/v1/audit?limit=&q=`,
   newest first, default 500, maximum 5000).
+* **Tamper evidence** (migration 0055, `internal/store/auditchain.go`):
+  the entries of each tenant form a hash chain (`seq`, `prev_hash`,
+  `hash` = SHA-256 over a length-prefixed canonical encoding). Entries are
+  chained after their transaction commits, under a per-tenant row lock in
+  `audit_heads` (no lock during the request). HMAC-SHA256 checkpoints with
+  a key encrypted by the secrets keyring (`audit_keys`) are written every
+  1000 entries, hourly while entries are written, and at each verification
+  or export. Threat covered: an attacker who can write the database but
+  cannot read the key provider can neither rewrite nor truncate the chain
+  before the newest checkpoint without detection (`POST /audit/verify`,
+  `qtestframe audit verify`). Not covered: removal of entries after the
+  newest checkpoint (mitigated by syslog and exported archives), and an
+  attacker with both the database and the key. The chain does not prevent
+  changes; it makes them evident.
+* **Electronic-records mode** (`internal/api/erecords.go`): per-tenant
+  re-authentication (password plus TOTP when enrolled, or a recent single
+  sign-on) at signing time, meanings, signature records linked to a content
+  hash of the record version (`esignatures`), server-side signature
+  requirements for chosen actions via single-use, session-bound signing
+  tickets (SHA-256 stored, 5 minutes), mandatory reasons for change, and an
+  inactivity timeout. Procedural controls of Part 11 / Annex 11 remain with
+  the operator (see the administrator guide, "Electronic-records mode").
 * Logs are structured (`logging.format: json`) to standard error → journald.
 * **Central syslog** (`logging.syslog`, `internal/logging`): every log
   record (including the `audit` records) is also sent as JSON in a syslog

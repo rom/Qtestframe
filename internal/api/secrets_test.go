@@ -29,7 +29,7 @@ func TestSystemSettingsShowSecretsProvider(t *testing.T) {
 	a.call("GET", "/api/v1/admin/settings", nil, 200, &r)
 	s := r.Secrets
 	if s == nil || s.Provider != "local" || !strings.HasPrefix(s.KeyID, "local:") || s.Info["key_source"] != "ephemeral" ||
-		s.Keys != 1 || s.ActiveKey == "" || s.Encrypted != 1 || s.Plaintext != 0 {
+		s.Keys != 1 || s.ActiveKey == "" || s.Encrypted != 2 || s.Plaintext != 0 { // the password and the audit trail's checkpoint key
 		t.Fatalf("secrets view: %+v", s)
 	}
 	// the password is stored encrypted and still used

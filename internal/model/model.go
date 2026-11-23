@@ -114,6 +114,13 @@ type TenantSettings struct {
 	// pass and no link is suspect, and a verified one goes back to
 	// implemented when that no longer holds.
 	ManualVerification bool `json:"manual_verification"`
+	// AIEnabled turns the optional AI assistance on for the organisation
+	// (it also needs a service configured in the system settings; projects
+	// can opt out). Off by default.
+	AIEnabled bool `json:"ai_enabled"`
+	// Logo is the organisation's logotype on reports and generated
+	// documents (changed only through /settings/logo).
+	Logo LogoSettings `json:"logo"`
 }
 
 // DefaultReadyRequirementStatuses are the requirement statuses ready for
@@ -163,7 +170,68 @@ const (
 	FileReport     = "report"
 	FileAvatar     = "avatar"
 	FileIcon       = "icon"
+	// FileLogo is the logotype of an organisation (no project) or a
+	// project, shown on the first page of reports and generated documents.
+	FileLogo = "logo"
 )
+
+// Logo placements (LogoSettings.Placement).
+const (
+	LogoLeft   = "left"
+	LogoCenter = "center"
+	LogoRight  = "right"
+)
+
+// LogoPlacements lists the valid logo placements.
+var LogoPlacements = []string{LogoLeft, LogoCenter, LogoRight}
+
+// Logo size bounds and defaults (millimetres, LogoSettings.MaxWidthMM and
+// MaxHeightMM).
+const (
+	DefaultLogoMaxWidthMM  = 50
+	DefaultLogoMaxHeightMM = 20
+	MinLogoMM              = 5
+	MaxLogoWidthMM         = 170
+	MaxLogoHeightMM        = 40
+)
+
+// LogoSettings are the logotype of an organisation's (TenantSettings.Logo)
+// or a project's reports and generated documents: the uploaded image
+// (FileID, a file of kind FileLogo; PNG or JPEG as stored, an uploaded SVG
+// is stored rasterised), where it goes on the first page and how large it
+// may be. A project without its own image uses the organisation's logo,
+// unless Off.
+type LogoSettings struct {
+	FileID      string `json:"file_id"`
+	ContentType string `json:"content_type,omitempty"`
+	Width       int    `json:"width,omitempty"`
+	Height      int    `json:"height,omitempty"`
+	// Source is the uploaded format (png, jpeg or svg), Name the uploaded
+	// file name.
+	Source      string `json:"source,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Placement   string `json:"placement"`
+	MaxWidthMM  int    `json:"max_width_mm"`
+	MaxHeightMM int    `json:"max_height_mm"`
+	// Off (projects only): no logo in the project's documents, not even
+	// the organisation's.
+	Off bool `json:"off,omitempty"`
+}
+
+// Normalize fills in the defaults and keeps the values in range.
+func (l *LogoSettings) Normalize() {
+	if !Valid(LogoPlacements, l.Placement) {
+		l.Placement = LogoLeft
+	}
+	if l.MaxWidthMM <= 0 {
+		l.MaxWidthMM = DefaultLogoMaxWidthMM
+	}
+	if l.MaxHeightMM <= 0 {
+		l.MaxHeightMM = DefaultLogoMaxHeightMM
+	}
+	l.MaxWidthMM = min(max(l.MaxWidthMM, MinLogoMM), MaxLogoWidthMM)
+	l.MaxHeightMM = min(max(l.MaxHeightMM, MinLogoMM), MaxLogoHeightMM)
+}
 
 // FileInfo is the metadata of a stored file.
 type FileInfo struct {
@@ -214,7 +282,7 @@ type ReportDefinition struct {
 type Preferences struct {
 	Theme            string `json:"theme,omitempty"`      // see Themes
 	Language         string `json:"language,omitempty"`   // en | sv; "" = browser
-	StartPage        string `json:"start_page,omitempty"` // projects | last_project | default_project | search
+	StartPage        string `json:"start_page,omitempty"` // projects | last_project | default_project | search | home_dashboard
 	DefaultProject   string `json:"default_project_id,omitempty"`
 	DefaultTenant    string `json:"default_tenant_id,omitempty"` // tenant selected at login
 	PageSize         int    `json:"page_size,omitempty"`         // 10 | 25 | 50 | 100
@@ -236,6 +304,9 @@ type Preferences struct {
 	// "" = on (my history and project values) | history | project | off.
 	// Only "" and history record what the user saves.
 	Autocomplete string `json:"autocomplete,omitempty"`
+	// LiveUpdatesOff turns off live updates and presence in this user's
+	// web client (it polls instead and is not shown to others).
+	LiveUpdatesOff bool `json:"live_updates_off,omitempty"`
 }
 
 // Preference value sets.
@@ -246,7 +317,7 @@ var (
 		"ocean", "forest", "sunset", "nordic", "lavender", "rose", "high_contrast", "high_contrast_light"}
 	// Languages of the web client ("" = browser language).
 	Languages   = []string{"en", "sv"}
-	StartPages  = []string{"projects", "last_project", "default_project", "search"}
+	StartPages  = []string{"projects", "last_project", "default_project", "search", "home_dashboard"}
 	PageSizes   = []int{10, 25, 50, 100}
 	DateFormats = []string{"locale", "iso", "relative"}
 	// AutocompleteModes: the values of Preferences.Autocomplete besides ""
@@ -519,6 +590,9 @@ type Requirement struct {
 	// CustomFields are the values of the project's custom fields (field key
 	// → value); a PATCH merges them, null removes a value.
 	CustomFields CustomValues `json:"custom_fields,omitempty"`
+	// OpenChangeRequests: the keys of the open change requests that
+	// propose changes to it (derived).
+	OpenChangeRequests []string `json:"open_change_requests,omitempty"`
 }
 
 // ItemRef is a derived reference from a requirement or test to a related
@@ -634,6 +708,9 @@ type TestCase struct {
 	// CustomFields are the values of the project's custom fields (field key
 	// → value); a PATCH merges them, null removes a value.
 	CustomFields CustomValues `json:"custom_fields,omitempty"`
+	// OpenChangeRequests: the keys of the open change requests that
+	// propose changes to it (derived).
+	OpenChangeRequests []string `json:"open_change_requests,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -716,6 +793,10 @@ type TestRun struct {
 	BuildID   *string `json:"build_id"`
 	// CycleID: the test cycle that created the run (read-only).
 	CycleID *string `json:"cycle_id"`
+	// EnvironmentID: the environment item the run is executed in
+	// (Environment holds its name for compatibility); nil: none, or only
+	// the free-text Environment.
+	EnvironmentID *string `json:"environment_id"`
 	// Derived.
 	Summary     map[string]int `json:"summary,omitempty"`
 	CycleName   string         `json:"cycle_name,omitempty"`
@@ -777,6 +858,11 @@ type Execution struct {
 	// execution runs in (nil without configuration).
 	ConfigurationID   *string `json:"configuration_id"`
 	ConfigurationName string  `json:"configuration_name,omitempty"`
+	// The environment the result was obtained in and the versions of its
+	// components at that moment (set when a final result is recorded).
+	EnvironmentID         *string     `json:"environment_id"`
+	EnvironmentName       string      `json:"environment_name,omitempty"`
+	EnvironmentComponents []Component `json:"environment_components,omitempty"`
 	// Iterations of a data-driven test (GET /executions/{id}); IterationCount
 	// is set in lists.
 	Iterations     []Iteration `json:"iterations,omitempty"`
@@ -1093,6 +1179,10 @@ var WebhookEvents = []string{
 	"comment.created", "comment.mentioned", "comment.resolved", "review.requested", "review.completed", "baseline.signed",
 	"defect.regression",
 	"waiver.requested", "waiver.approved", "waiver.rejected", "waiver.revoked",
+	"change_request.submitted", "change_request.review", "change_request.approved", "change_request.rejected", "change_request.deferred",
+	"change_request.implemented", "change_request.closed",
+	"environment.status_changed", "environment.booking_requested", "environment.booking_approved", "environment.booking_rejected",
+	"testdata.refresh_requested", "testdata.refresh_resolved",
 }
 
 // Webhook posts events of a project to a URL, signed with HMAC-SHA256.
@@ -1457,6 +1547,15 @@ type AuditEntry struct {
 	EntityID   string    `json:"entity_id"`
 	Details    string    `json:"details"`
 	CreatedAt  time.Time `json:"created_at"`
+	// Reason is the reason for the change given with the request
+	// (electronic-records mode; "" none).
+	Reason string `json:"reason"`
+	// Seq, PrevHash and Hash place the entry in the tenant's hash chain
+	// (see internal/store/auditchain.go); Seq 0: not chained yet (an entry
+	// is chained right after its transaction commits).
+	Seq      int64  `json:"seq"`
+	PrevHash string `json:"prev_hash"`
+	Hash     string `json:"hash"`
 }
 
 // Traceability rule kinds: what an item matching the rule's selector must

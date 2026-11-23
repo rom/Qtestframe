@@ -236,7 +236,7 @@ func (s *Server) exportReqIF(w http.ResponseWriter, r *http.Request, p *Principa
 		x := export.ReqIFRequirement{ID: rq.ID, Key: rq.Key, Title: rq.Title, Description: rq.Description, Obligation: rq.Obligation,
 			Type: rq.Type, Priority: rq.Priority, Status: rq.Status, Source: rq.Source, Rationale: rq.Rationale, Owner: rq.Owner,
 			CreatedBy: rq.CreatedBy, Tags: rq.Tags, Categories: cats, Version: rq.Version, CreatedAt: rq.CreatedAt, UpdatedAt: rq.UpdatedAt,
-			Custom: customStrings(rq.CustomFields)}
+			Custom: customStrings(rq.CustomFields), D3fend: rq.D3fend, Emb3d: rq.Emb3d}
 		if rq.FolderID != nil {
 			x.FolderID = *rq.FolderID
 		}
@@ -282,7 +282,7 @@ func (s *Server) exportReqIF(w http.ResponseWriter, r *http.Request, p *Principa
 			x := export.ReqIFTest{ID: t.ID, Key: t.Key, Title: t.Title, Description: t.Description, Preconditions: t.Preconditions,
 				Expected: t.ExpectedResult, ExecutionType: t.ExecutionType, Priority: t.Priority, Status: t.Status, CreatedBy: t.CreatedBy,
 				EstimatedMinutes: t.EstimatedMin, Version: t.Version, Tags: t.Tags, CreatedAt: t.CreatedAt, UpdatedAt: t.UpdatedAt,
-				Custom: customStrings(t.CustomFields)}
+				Custom: customStrings(t.CustomFields), D3fend: t.D3fend, Emb3d: t.Emb3d}
 			if t.FolderID != nil {
 				x.FolderID = *t.FolderID
 			}

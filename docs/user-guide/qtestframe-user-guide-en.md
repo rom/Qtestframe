@@ -23,11 +23,14 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Tests](#tests) | Manual steps, automated scripts, shared steps, categories, execution history, comments, history and attachments |
 | [Catalogue](#catalogue) | Standard requirements and tests to add to a project: browsing, searching, the preview and adding with tests and trace links |
 | [Test cycles](#test-cycles) | Planning test cycles: tests, testers and estimates, the runs a cycle creates, progress, burndown, workload, recurring cycles |
+| [Test environments and test data](#test-environments-and-test-data) | Environments with components and versions, status, health checks and credentials; booking calendar, capacity and approvals; the environment and versions of every result; shared test data sets with classification, expiry, usage and refresh requests |
 | [Test runs and execution](#test-runs-and-execution) | Runs, the execution runner and its keyboard shortcuts, defects, CI import with API tokens, attachments |
 | [Exploratory testing](#exploratory-testing) | Session-based exploratory testing: charters, the session timer, typed notes with keyboard shortcuts, defects from notes, debriefs, metrics and the session report |
 | [Waivers, residual risk and the SoA](#waivers-residual-risk-and-the-statement-of-applicability) | Waivers and deviations with signed approvals, residual risk and its acceptance, the Statement of Applicability (ISO/IEC 27001 Annex A) |
+| [Change requests and change control](#change-requests-and-change-control) | Proposing changes to approved requirements and tests, the impact assessment, the change control board's signed decisions, applying, verifying and closing; enforced change control and the emergency override |
 | [Traceability and coverage](#traceability-and-coverage) | The traceability matrix, how coverage is calculated, the dashboard |
 | [Duplicates and conflicts](#duplicates-and-conflicts) | Similar requirements while writing, suspected duplicate requirements and tests, potentially conflicting requirements, merging, thresholds |
+| [AI assistance](#ai-assistance) | Optional AI suggestions: drafts of tests, better requirement wording, acceptance criteria, framework mappings, run summaries with defect drafts; what is sent, and turning it on and off |
 | [Variants and code](#variants-and-code) | Variants and applicability, coverage per variant, commits, merge requests, builds and the regression selection |
 | [CI/CD](#cicd) | Pipeline templates for GitLab and GitHub, uploading results, the quality gate, commit statuses and merge request notes, test selection and child pipelines |
 | [Baselines](#baselines) | Freezing a release and comparing versions |
@@ -186,7 +189,7 @@ Preferences are stored with your account and applied on every device. Change the
 |---|---|
 | **Language** | English or Swedish; *Browser default* follows the browser. |
 | **Theme** | Colour theme. *Follow the operating system* switches between light and dark with your system setting. |
-| **Start page** | What you see after signing in: the project list, the last opened project, a default project or search. |
+| **Start page** | What you see after signing in: the project list, the last opened project, a default project, search or your [home dashboard](#customising-dashboards). |
 | **Default project** | The project opened when the start page is *Default project*. |
 | **Default organisation** | The organisation selected at sign-in when you do not name one. |
 | **Rows per table page** | 10, 25, 50 or 100 rows in tables. |
@@ -817,8 +820,10 @@ Customers often send their requirements as a spreadsheet, a ReqIF export from th
 | Tags | Tags, Labels · Taggar, Etiketter (separated by commas) |
 | Folder | Folder, Section, Chapter · Mapp, Avsnitt, Kapitel (a path such as `Security / Login`) |
 | Acceptance criteria | Criteria, Acceptance criteria · Kriterier, Acceptanskriterier (one per line; a line may start with a method, e.g. `inspection: …`) |
+| D3FEND techniques | D3FEND, D3FEND techniques · D3FEND-tekniker (ids such as `D3-MFA`, separated by commas) |
+| EMB3D threats and mitigations | EMB3D, EMB3D threats · EMB3D-hot (ids such as `TID-201`, `MID-002`) |
 
-Values of type, priority, status and obligation may be written in English or Swedish (*High*/*Hög*, *Approved*/*Godkänd*, *Security*/*Säkerhet*). An unknown value is noted and the default is used. A row without a title gets one from the first words of its description. A file exported from Qtestframe (requirements as CSV or Excel) can be imported again; in an Excel export the evaluation criteria of the criteria sheet come along.
+Values of type, priority, status and obligation may be written in English or Swedish (*High*/*Hög*, *Approved*/*Godkänd*, *Security*/*Säkerhet*). An unknown value is noted and the default is used; unknown D3FEND and EMB3D ids are left out with a warning on the row. A row without a title gets one from the first words of its description. A file exported from Qtestframe (requirements as CSV or Excel) can be imported again; in an Excel export the evaluation criteria of the criteria sheet come along.
 
 **ReqIF.** Every SPEC-OBJECT becomes a requirement: *ReqIF.Name* (or an attribute named title or name) gives the title, *ReqIF.Text* the description and *ReqIF.ForeignID* the ID; other attributes are matched by name like columns. Formatted text (XHTML) is imported as plain text with its line breaks; in a ReqIF file exported by Qtestframe it is read back with its formatting (paragraphs, lists, bold …), so an [export](#reqif-for-requirements-tools) comes back unchanged. Objects with only a *ReqIF.ChapterName* are headings: the specification hierarchy below them becomes folders.
 
@@ -944,7 +949,7 @@ Switch **Execution type** to **Automated** to show the **Script** field. Choose 
 - Standard output and errors are stored as the execution's **Output**, together with the duration.
 - The script can read these environment variables: `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT`, `QTF_BUILD` and `QTF_BASE_URL`, so one script can test the environment and build named in the run. The project's [test variables](#web-tests) arrive as `QTF_VAR_<NAME>`, for example `QTF_VAR_USERNAME`; the values of secret variables are masked as `***` in the stored output.
 
-Running scripts needs the **Manager** role and must be enabled by the administrator (`runner.enabled`). If your scripts run elsewhere, for example in a CI pipeline, leave the script empty and [import the results](#import-results-from-ci) instead. Steps are optional for automated tests.
+Running scripts needs the **Manager** role and must be enabled by the administrator (`runner.enabled`). If your scripts run elsewhere, for example in a CI pipeline, leave the script empty and [import the results](#import-results-from-ci) instead. **Generate test code** in the list writes the code stubs of such tests for pytest, Playwright, Go, JUnit 5, Jest, Vitest, Robot Framework or Cucumber, named so that their results map back (see [Generate test code](#generate-test-code)). Steps are optional for automated tests.
 
 ## Web tests (Playwright)
 
@@ -1119,6 +1124,8 @@ Every requirement lists at least one catalogue test that verifies it, and every 
 ## Browse and search
 
 Open **Catalogue** in the project sidebar, or select **Add from catalogue** at the top of the requirement or test list.
+
+![The catalogue: the areas and the list of catalogue requirements with search and filters, and the preview of the selected item](images/en-catalogue.png)
 
 - Switch between **Requirements**, **Tests** and **Risks** at the top.
 - Choose **English** or **Svenska** for the language of the texts. The items are added in this language.
@@ -1721,6 +1728,114 @@ The **Test cycle report** on the [Reports](#reports-and-export) page shows one c
 
 The **History** tab lists the versions of the cycle — its fields and its plan — with who changed what. Creating, changing, planning and deleting cycles and recurring cycles are recorded in the audit log. Cycles and recurring cycles are part of project archives and backups; a loaded project's recurring cycles are switched off until someone enables them.
 
+# Test environments and test data
+
+A **test environment** is a system your tests run against: a development or staging system, a pre-production system, a lab, a hardware-in-the-loop (HIL) rig or a device. Qtestframe keeps what each environment is made of (its **components and versions**), who owns it, whether it can be used right now, and who has **booked** it when. Every test result records the environment it was obtained in and the versions of its components at that moment, so a release can show which environments and versions were tested.
+
+**Test data sets** are named, versioned sets of test data: tables of parameters that data-driven tests can share, or data files. Each set has a classification (synthetic, anonymised, a copy of production data), an owner and an expiry date.
+
+Select **Environments** in the project sidebar. The Test data page is linked from there.
+
+| Task | Role (permission) |
+|---|---|
+| See environments, their bookings and the test data | every role that sees runs and tests (`run.read`, `test.read`) |
+| Book an environment | **Tester** and above (`run.execute`) |
+| Create and change environments, approve bookings, reveal a stored secret | **Test lead**, **Manager**, **Admin** (`environment.manage`); for an environment shared by the organisation, in the organisation roles |
+| Create and change test data sets | **Tester** and above (`test.write`) |
+| Ask for a test data refresh | everyone who writes tests or executes runs |
+
+## Environments
+
+Select **New environment** and enter:
+
+- a **name**, unique in the project, and the **type**: development, test, staging, pre-production, production-like, lab, HIL rig or device;
+- the **status**: *Available*, *In use*, *Maintenance*, *Broken* or *Retired*, with a **status note** (for example *Firmware update until Friday*);
+- the **owner**, the person responsible for it (you by default);
+- the **capacity**: how many bookings may overlap. 1 means one at a time; an environment of CI containers may allow many;
+- **Bookings need approval**: bookings wait until the owner or an environment manager approves them;
+- the **URLs**, a description and tags;
+- the **components and versions**, for example *Web app 1.4.0*, *PostgreSQL 16.4*, *Terminal firmware 5.0.1*;
+- the **configurations** and **variants** it provides;
+- where the **credentials** are, and optionally a **secret** (see below);
+- optionally a **health check URL**.
+
+Choose **Shared by the organisation** to make the environment available to every project of the organisation (for example a device lab used by several teams). Only someone who manages environments in the organisation can do this.
+
+The **Status board** shows every environment as a card: its status, its components, how many bookings it has right now and its next booking, and the result of its last health check. The **List** tab has the same environments in a table that you can filter with the [query language](#search-and-filters), for example `status:available component:PostgreSQL`, `type:hil_rig` or `booked:true`. Select an environment to open it.
+
+### Components and versions
+
+Keep the versions up to date when the environment is upgraded. A result recorded in the environment keeps the versions it was recorded with: changing the environment later does not change older results. The execution runner shows the environment and its versions next to the result, and **Releases → Runs → Tested environments** lists the environments and versions the release's results come from (also in the release readiness report).
+
+### Credentials and secrets
+
+**Where the credentials are** is a reference: a vault path, an entry in your password manager, a key cabinet. Prefer it to storing the secret in Qtestframe.
+
+If you store a **secret** anyway, it is write-only: it is encrypted like the other secrets Qtestframe stores and never shown again in the dialog. Environment managers can select **Reveal** on the environment's page; every reveal is recorded in the audit log. A project archive (*Save project*) leaves the secret out.
+
+### Health check
+
+With a **health check URL**, Qtestframe fetches the URL in the background every few minutes (**Check every**). An answer with an HTTP status below 400 is *up*. When the check fails, an *Available* or *In use* environment becomes **Broken** (marked *set by the health check*) and its owner is notified; when the check passes again, it becomes *Available* again. A status you set by hand stays: the health check does not change *Maintenance*, *Retired*, or *Broken* set by hand. Select **Check now** to check at once.
+
+## Booking an environment
+
+Select **Book** on the Environments page or on an environment, or choose a day in the **Booking calendar**. Enter **From**, **To** and the **purpose**.
+
+You can also book while you create a [run](#test-runs-and-execution), a [test cycle](#test-cycles) or an [exploratory session](#exploratory-testing): choose the **Environment** and tick **Book it for this**. The booking is linked to the run, cycle or session.
+
+- An environment takes as many overlapping bookings as its **capacity**. A booking that does not fit is refused and the dialog lists the bookings in the way. Bookings that only touch (one ends when the next starts) do not overlap.
+- When the environment needs approval, the booking is **Pending** until its owner or an environment manager approves or rejects it. They see it in **My work** (*Booking to approve*) and get a notification; you see your own pending booking in My work as *Awaiting approval*, and are notified of the decision. Owners and managers book without approval.
+- Moving an approved booking of an environment that needs approval makes it pending again.
+- You can cancel your own booking; owners and managers can cancel any booking of their environment.
+- A retired environment cannot be booked. A booking of a shared environment made for a project you cannot see shows only its time.
+
+The **Booking calendar** shows a week: one row per environment, a bar per booking (pending bookings dashed). Select a bar to see, move, cancel, approve or reject the booking. The environment's own page has the same calendar and its upcoming and past bookings.
+
+## Environments of runs, cycles and sessions
+
+Runs, test cycles and exploratory sessions select an **environment** from the project's environments (and the shared ones). The run keeps the environment's name as its environment text, so filters such as `environment:staging` work as before. A run created with a free-text environment (for example from CI or a result import) is linked to the environment of that name if there is one. When you upgraded, the free-text environments of your existing runs and cycles became environments of the project.
+
+A test cycle's runs get the cycle's environment.
+
+## Test data sets
+
+Open **Test data** from the Environments page (or **Environments → Test data**). Select **New data set** and enter:
+
+- a **name**, the **classification** and the **kind**: a **table of parameters** or **files**;
+- the **owner**, an **expiry date** and tags;
+- for a table: the **parameters** and **rows**. Select **Paste table** to paste data from a spreadsheet (CSV, semicolon or tab separated; the first line names the parameters, a column called *name* gives the row names);
+- for files: save the set, then add the files on the **Files** tab.
+
+**Classification.** *Synthetic* data is made up; *anonymised* data comes from production with personal data replaced; a **production copy** may hold personal or confidential data and is shown with a warning. Restrict access to it, follow your data protection rules and delete it when it expires.
+
+**Versions.** Every change of a set is a new version (see the **History** tab).
+
+### Sharing data between tests
+
+On the **Links** tab, link the set to tests, configurations and runs. Tick **As the data source of the tests** when you pick data-driven tests: such a test then takes its parameters and rows from the set instead of its own (see [data-driven tests](#tests)). When a run is created with the test, each row of the set becomes an iteration, and the **Usage** tab records which run used which version. The test's editor shows which shared set it takes its rows from. An archived set is not used: the test falls back to its own rows.
+
+### Refresh requests and expiry
+
+Anyone who writes tests or executes runs can **ask for a refresh** on the **Refresh requests** tab (what should be refreshed, and by when). The owner is notified and sees the request in **My work** (*Refresh requested*); they mark it **Done** or **Reject** it, and the requester is notified.
+
+A set whose expiry date has passed is marked **Expired**, and one expiring within 14 days **Expires soon**. Both appear in the owner's My work, so the data is refreshed, extended or archived in time.
+
+## Notifications and events
+
+| Event | Who is notified |
+|---|---|
+| `environment.booking_requested` | the owner and the managers of the environment |
+| `environment.booking_approved`, `environment.booking_rejected` | the person who booked |
+| `environment.status_changed` | the owner (also when the health check changes the status) |
+| `testdata.refresh_requested` | the owner of the data set |
+| `testdata.refresh_resolved` | the person who asked |
+
+The events can also be sent to [webhooks and chat channels](#reviews-and-notifications).
+
+## Backups and project archives
+
+Environments, bookings, test data sets, their links, usage and refresh requests are part of backups. A project archive holds the project's own environments and their bookings and the project's test data sets; shared environments belong to the organisation and stay behind (runs keep the name), and so do stored secrets.
+
 # Releases and risks
 
 A **release** is a version of your product that you plan, test and ship, for example *Spring 2027* or *2.1.0*. It brings together the requirements it must deliver (its **scope**), the test runs that test it and the **exit criteria** that decide whether it may ship. The **risk register** lists what could go wrong, how likely and how bad it would be, and which requirements address each risk. Open risks feed straight into the exit criteria of a release.
@@ -1847,6 +1962,10 @@ The requirement editor shows the risks a requirement mitigates under **Mitigates
 
 Tick risks in the register. The toolbar sets **status**, **likelihood** or **impact** of all of them, **Owner / category** sets either or both (empty clears), **Link requirements** links the same requirements to every ticked risk, and **Delete** removes them after confirmation. Only rows that are shown stay ticked, so filtering the register or choosing a heat-map cell never leaves hidden risks in the selection. Every risk is checked before any is changed. Changes other than linking and deleting can be undone with the undo button.
 
+### Import a risk register
+
+**Import** above the register reads a risk register from a CSV or Excel file: the *Risk register* sheet of the [risk report](#the-risk-report) (in English or Swedish), or a sheet of your own with columns such as *Key*, *Title*, *Description*, *Category*, *Owner*, *Likelihood*, *Impact*, *Status*, *Mitigation*, *Review date*, *Review owner*, *ATT&CK techniques* and *EMB3D threats*. Choose the file to see a preview: rows with the key of a risk of the project **change** it (only the columns the file has), the other rows become **new** risks, and each row lists its warnings. Unknown ATT&CK, ATLAS and EMB3D ids, unknown statuses and likelihoods or impacts outside 1–5 are left out with a warning; a row without a title is skipped. Select **Import** to save. *(Requirement author or any role with `requirement.write`)*
+
 ## The heat map
 
 The heat map counts the risks in a 5 × 5 grid: likelihood from 5 at the top to 1 at the bottom, impact from 1 on the left to 5 on the right. The colour of a cell is the level of its score. Select a cell to show only the risks with that likelihood and impact in the register; select it again, or the **×** on the filter chip, to show all.
@@ -1969,6 +2088,71 @@ A requirement cites a control when it was added from a catalogue requirement who
 The table works like the [spreadsheet view](#requirements): type in the **Applicable**, **Justification** and **Owner** cells, paste a block from a spreadsheet or fill down with <kbd>Ctrl</kbd>+<kbd>D</kbd>. Each change is saved at once. Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> on a control (or double-click it in the first column) to see its requirements and evidence. Filter by text, applicability, implementation and group; the figures above the table count the controls.
 
 **Download** creates the statement as PDF, Word, Excel or Markdown; **Save to archive** stores it in the [document archive](#documents-1). It is also the standard report **Statement of Applicability** on the **Reports** page.
+
+# Change requests and change control
+
+Once a requirement is approved, or frozen in a signed baseline, changing it should be a decision, not an edit. **Change control** makes it one: a **change request** proposes new values for one or more requirements and tests, says why, shows what else the change affects, is decided by the project's **change control board** with electronic signatures, and is then applied in one step, with normal versions and history.
+
+| Action | Role needed |
+|---|---|
+| View change requests | Viewer |
+| Propose changes; edit, submit, assess, send to the board, apply, verify and close change requests | Subject matter expert, Test lead, Manager (`change.create`) |
+| Decide change requests as a board member; emergency override | Test lead, Manager (`change.approve`) |
+| Change the project's change control settings | Manager (`project.update`) |
+
+Applying a change request also needs the permission to edit the items it changes (`requirement.write`, `test.write`, and the review permission for a review status).
+
+## Change control in a project
+
+In **Settings → Project → Change control** choose how strictly the project controls changes:
+
+- **Off** (the default): items are edited directly, as without change control. Change requests can still be used.
+- **Warn**: protected items can still be edited directly, but the editor says that they are under change control and the change is flagged.
+- **Enforce**: protected items cannot be edited directly. Saving them, a bulk edit, the spreadsheet view, an Excel or ReqIF import, restoring an older version or a baseline and deleting are refused with *Not saved: the item is under change control*, and the editor offers to **propose the change** instead.
+
+An item is **protected** when its status is one of the **protected statuses** (by default *Approved*, *Implemented*, *Verified* and, for tests, *Ready*) or, with **Signed baselines lock their items**, when it is in a baseline that has a [sign-off](#baselines). Review decisions and the automatic status of evidence are not affected.
+
+The **change control board** is a list of members (e-mail addresses) and roles. Only they decide change requests, and only if they also hold `change.approve`; with nobody listed, anyone with `change.approve` decides. The **quorum** says how many approvals are needed: *all* (every listed member and one holder of each listed role), *any* (one member) or a number. The **signature meaning** is the sentence a board member signs, for example *Approved for release by the change control board*. **Closing a change request creates a baseline by default** pre-selects that choice when a change request is closed.
+
+### Emergency override
+
+When a fix cannot wait for the board, someone with `change.approve` can save a protected item directly with an **emergency override** and a justification of at least ten characters (in the API `?change_override=<justification>`). The change is saved like any other, and the audit log records `change_control.override` with the item, the reason it was protected and the justification.
+
+## Propose a change
+
+There are three ways to put a change into a change request:
+
+- **In the editor**: open a requirement or test, change its fields as usual and select **Propose change** below the form instead of **Save**. The fields you changed (title, description, obligation, type, priority, status, source, rationale, owner, tags and custom fields; for tests also preconditions, expected result, execution type and estimate) become the proposal. Nothing is saved on the item.
+- **In bulk**: select items in the list and choose **Propose change** in the selection bar, then the new status, priority, obligation or execution type and owner for all of them.
+- **After a refused save**: under *enforce*, saving a protected item opens the same dialog with your changes.
+
+In the dialog choose **A new change request** (title, reason, category and priority) or **One of my drafts** to add the change to a draft you are still writing. The dialog shows each change as a difference: removed text struck through, added text highlighted.
+
+Items with open change requests show a **CR** badge in the lists, and the editor lists their open change requests. In the [query language](#search-and-filters), `cr:open` (or `has:cr`) finds items with an open change request and `cr:DEMO-CR-3` the items of one.
+
+## The workflow
+
+**Change requests** in the project sidebar lists them with key (*PROJ-CR-n*), status, category, priority, items and requester. Open one to see its proposed changes item by item and field by field, the impact, the signatures and the timeline.
+
+1. **Draft**: the requester writes the change request. **Category** is one of *Correction*, *Enhancement*, *Regulatory*, *Defect-driven*, *Risk-driven* and *Other*. Link the defects, risks and tracker issues the change comes from, choose what applying does with the [change impact](#traceability-and-coverage) (*Mark suspect*, *Notify owners* or *Neither*) and whether closing creates a baseline.
+2. **Submit**: needs at least one item and a reason. The transitive change impact of the proposed changes is computed and **stored on the change request** as a snapshot, with the path to every affected item, so the board decides on what was assessed.
+3. **Assess impact**: an assessor adds notes and an effort estimate; the impact is computed again. *Send to the change control board afterwards* moves it on at once.
+4. **In review**: the board members are notified, and it appears in their [My work](#reviews-and-notifications) as *Change decision*.
+5. **Decide**: a board member selects **Decide…**, chooses *Approve*, *Reject* or *Defer*, adds a comment (required to reject or defer) and confirms with their password. This is an **electronic signature** over the exact content of the change request with the project's signature meaning. A rejection or deferral decides at once; approvals decide once the quorum is reached. The requester cannot decide their own change request and is notified of the decision.
+6. **Apply**: an approved change request is applied in one step. Every item gets the proposed values through the normal save, so validation, permissions, versions, history and the audit log are the same as for an edit; then the impact is applied once, with the chosen action. If one item cannot be saved, nothing is saved. If an item changed since its change was proposed, the change request is *outdated* and cannot be decided or applied: withdraw it and propose the change again.
+7. **Verify** and **Close**: someone confirms that the change works as intended, then closes it, optionally with a new baseline of the project.
+
+A rejected or deferred change request can be **withdrawn** back to a draft and submitted again, or closed. Drafts and rejected change requests can be deleted. Every step is on the **timeline** with who did it, when and why.
+
+## Reports, notifications and integrations
+
+- The report template **Change requests** (in **Reports**) produces one change request (its proposed changes field by field, the impact, the signatures and the timeline) or the register of all of them; **PDF report** in the change request does the same for it.
+- Webhooks and chat channels can subscribe to `change_request.submitted`, `change_request.review`, `change_request.approved`, `change_request.rejected`, `change_request.deferred`, `change_request.implemented` and `change_request.closed`.
+- Change requests are part of project archives and backups.
+
+## In the demo
+
+The demo project has change control set to *warn*, with the administrator and the managers as the board. Sara's change request *Lock accounts for 30 minutes instead of 15* waits for the administrator's decision in My work; there is also a closed change request whose change was applied, a deferred one and a draft.
 
 # Defects
 
@@ -2149,6 +2333,8 @@ Qtestframe tells you when something needs your attention, lets you ask colleague
 
 **My work** in the main navigation (under **Projects** and **Search**) is your personal work list: everything that needs you, across all projects you can see, including your reviews. The badge next to it shows how many items need you; it turns red when some of them are overdue. Each row links to the item and says why it is there. An item is listed once, with all its reasons: a requirement you own that someone asked you to review is one row with **Owner** and **Review requested**.
 
+![My work: the items that need you, each with the reasons it is listed (Owner, In review), its project, status and due date](images/en-my-work.png)
+
 | Reason | The item is listed because |
 |---|---|
 | **Owner** | you own a requirement in draft, review, approved or implemented, a test in draft or review, or an open risk (identified or mitigating) |
@@ -2202,6 +2388,22 @@ When the server can send e-mail, you can also get your notifications by e-mail. 
 - **Daily digest**: once a day you get one e-mail with the notifications you have not read yet and that were not e-mailed before. Nothing is sent on days without new notifications.
 
 You never get e-mails about your own actions. Every notification e-mail has a link back to this setting, so you can change it or turn it off at any time.
+
+## Live updates
+
+Qtestframe shows other people's changes as they happen, without reloading the page:
+
+- **Lists** of requirements, tests, runs, defects, risks, test cycles, discussions and *My work* update a moment after someone else changes an item in them. Your selection, the page you are on and the scroll position stay as they were.
+- The **dashboard** counts and the **notification bell** update by themselves.
+- In a **run**, the results of other testers appear while you execute your own tests.
+- An **open item** shows who else is viewing or editing it: their avatars and, for example, *Bea is also editing this* above the item. Someone counts as editing as soon as they have unsaved changes.
+- When someone saves a newer version of the item you have open, a notice says *Bea changed this item (version 4)*. **Reload** loads their version. If you have unsaved changes, **Compare** shows the fields they changed next to yours, as when saving would collide; you can then keep editing, take their version or save your changes on top of it. Nothing is lost or overwritten without you choosing it, and the notice does not block your work: **Dismiss** hides it.
+
+Screen readers announce these changes politely and at most every half minute, so they do not interrupt you; the notice about a newer version of your open item is announced once.
+
+You only ever hear about items you may see. When the connection is interrupted (for example on a train), Qtestframe reconnects by itself and catches up; in a tab in the background it pauses after a minute and catches up when you come back.
+
+To turn live updates off, open your **Profile → Preferences → Live updates**. Lists then update when you open them and the bell checks every minute; others no longer see you as viewing or editing. An administrator can also turn live updates off for the whole server.
 
 ## Request a review
 
@@ -2561,6 +2763,8 @@ The mode next to each type (**Becomes suspect** or **Review recommended**) appli
 
 **Other connections** turns the other kinds of connection on or off: trace links (they can mark suspect or only recommend a review), shared steps, test dependencies, item links, risks, defects, variants and code changes (these only recommend a review).
 
+**Changed variant applicability** decides what happens when the [variants an item applies to](#applicability) change: **Recommends a review (default)** — nothing is marked, the owners of the items the rules reach are notified —, **Marks links and relations suspect** — the change counts like a change of the text, along the rules above — or **Has no impact**. The preview before saving and the **Impact** list name the change *applicability*.
+
 ## Stale results
 
 A test result goes **stale** when
@@ -2634,6 +2838,8 @@ Open a requirement and choose the **Verification** tab. It shows the state with 
 | **Not yet passed** | there is evidence, but none of it has passed yet (not run, a suspect link, a step not executed) |
 | **No evidence** | no test and no verification record |
 
+**Verification** in the project navigation lists every requirement with its state, as a hierarchy, per system element and with the inconsistencies. In a project with [variants](#show-for-a-variant), **Show for variant** limits it to the requirements of one variant, verified only by the tests that apply to the variant and the results that count for it (runs for the variant, its parents and runs without a variant, in its configurations). Verification records count for every variant.
+
 ### Tests for criteria and test steps
 
 A test linked to a requirement can be mapped to the criteria it verifies. In the **Verification** tab choose **Map criteria** next to the test, tick the criteria and, if you want, the **step** of the test that shows it. A criterion mapped to a step is passed when that step passed in the test's latest execution. When you link a test you can also choose a criterion right away (the selector next to **Link tests**).
@@ -2669,7 +2875,7 @@ The **Verification** report and the requirements specification show the same: th
 
 ## The dashboard
 
-**Dashboard** is the first page of every project. It has three tabs: **Overview** for the state today, **Trends** for how it changed and **Quality** for what needs attention. The tab is part of the address, so a link can open the dashboard on a given tab. On a phone the charts are stacked.
+**Dashboard** is the first page of every project. It starts with three dashboards, shown as tabs: **Overview** for the state today, **Trends** for how it changed and **Quality** for what needs attention. Every dashboard is a grid of widgets that you can rearrange and extend, and a project can have more dashboards (see [Customising dashboards](#customising-dashboards)). The tab is part of the address, so a link can open the dashboard on a given tab. On a phone the widgets are stacked.
 
 ![The dashboard with key figures, requirement coverage, execution results and recent runs](images/en-dashboard.png)
 
@@ -2714,6 +2920,28 @@ The further key figures and these charts are counted on the server in one reques
 
 Every chart has a text alternative with its figures for screen readers, and the legend names each colour. The heat map is a table with a caption, and every cell names its likelihood, impact, level and number of risks.
 
+### Customising dashboards
+
+Every widget of a dashboard can be moved, resized, configured and removed, and you can add widgets and dashboards.
+
+- **Shared dashboards** are seen by everyone who may read the project. The built-in **Overview**, **Trends** and **Quality** are shared; project administrators (permission *project.update*) can change them, add further shared dashboards and choose the one the project opens with (**⋮ → Make the project default**, marked with a star).
+- **Personal dashboards** are yours alone. Choose **⋮ → New dashboard** (optionally starting from a copy of the dashboard shown), or customise a shared dashboard you may not change: **Save as my dashboard** keeps your changes as a personal copy.
+- **Home** in the sidebar is your personal **home dashboard** across all projects: by default **My work**, your discussions and a note. A widget about a project names the project in its settings. You can make it your start page under **Profile → Start page**.
+
+Choose **Customise** to edit the dashboard shown:
+
+- **Add widget** lists the widget types you may see, with a short description. Among them: key figures, requirement coverage, verification status, counts by status, severity or level (as a bar, horizontal bar or doughnut chart, or a table), test results trend, flaky tests, defects, the risk heat map, release readiness (go / no-go per exit criterion and per variant), release burn-up, cycle burn-down, quality metrics, consistency checks, My work, discussions, recent activity, traceability gaps (requirements without tests and tests without requirements), exploratory testing, MITRE ATT&CK, D3FEND and EMB3D coverage, a **saved query** – any query in the [query language](#search-and-filters), shown as a table of the first items or as a count – and a **note** in Markdown.
+- Drag a widget by its **move** handle (the arrows next to its title) and resize it by the handle in its lower right corner. Widgets in the way move down; **Tidy up** closes the gaps.
+- With the keyboard, focus the move or resize handle and use the **arrow keys** (one cell per press; with **Shift** on the move handle they resize). **Home** and **End** go to the first or last column (on the resize handle: the narrowest and the full width). **Enter** or **Space** picks the widget up and drops it again, **Escape** puts it back where it was. Every change is announced to screen readers, for example "Coverage: column 7, row 1".
+- The **settings** button (cog) sets the title, the width (1–12 columns) and height (rows of about 80 pixels) and the settings of the widget: the release, cycle or variant, the query, the chart type, the period and so on. **Remove** (×) takes the widget off the dashboard.
+- **Save** keeps the layout; **Cancel** discards it.
+
+Some widgets have quick controls of their own, such as the period of a trend or the release of a burn-up; they change the view only until you leave the page.
+
+The **⋮** menu also has **Rename**, **Export as JSON** and **Import from JSON** (a dashboard exported here or on another server; widgets of unknown types are left out), **Reset to default** (a built-in dashboard goes back to its original layout, a copy to the layout it was copied from) and **Delete dashboard**.
+
+Widgets show only what you may see: a widget whose data needs a permission you do not have, or that is about a project you cannot open, says so instead. The widgets on screen load their data together in one request, and widgets further down load when you scroll to them; **Refresh** loads them all again.
+
 ## Dependency graphs
 
 **Dependency graph** in the project sidebar draws how items build on each other. Choose **Requirements** or **Tests** at the top:
@@ -2735,7 +2963,7 @@ Cycles (for example two requirements that depend on each other) are drawn, but o
 
 ## Requirement analytics
 
-**Analytics** in the project navigation analyses all requirements of the project at once (open it again or select **Analyse again** after changes). At the top: the **health** (the share of requirements without problems or warnings), the number of requirements and tests, the share **covered by tests** (rejected and obsolete requirements are not counted) and the average **language score**.
+**Analytics** in the project navigation analyses all requirements of the project at once (open it again or select **Analyse again** after changes). In a project with variants, **Show for variant** analyses only the requirements and tests of one variant, with its coverage, results and verification; the compliance below follows the same choice. At the top: the **health** (the share of requirements without problems or warnings), the number of requirements and tests, the share **covered by tests** (rejected and obsolete requirements are not counted) and the average **language score**.
 
 - **Obligation levels** shows how many requirements have each level, including those with **no obligation**.
 - **Keywords per meaning** groups the keywords that mean the same (MUST, SHALL and REQUIRED; MAY and OPTIONAL …) and shows how each is used, so you see the convention of the project at a glance.
@@ -2871,6 +3099,88 @@ Before you add requirements from the [catalogue](#catalogue), the dialog warns a
 
 An administrator can let an external **embeddings service** (an OpenAI-compatible `/v1/embeddings` endpoint) compute the similarity instead (**Administration → System settings → Similarity**; see the administrator guide). The page and the panel then say *Embeddings service*. The title, description and criteria or steps of requirements and tests are then **sent to that service**. Its vectors are cached per item version, so unchanged items are not sent again. The conflict detection always runs on the server. When the service fails, the local similarity is used.
 
+# AI assistance
+
+Qtestframe can ask a language model service for **suggestions**: drafts of tests for a requirement, a better wording of a requirement, a summary of a failed run with defect drafts, framework mappings and acceptance criteria. You review and edit every suggestion; **nothing is saved until you accept it**.
+
+AI assistance is optional and **off by default**. It needs a service set up by a super administrator, the organisation must turn it on, and a project can turn it off (see [Turning it on and off](#turning-it-on-and-off)).
+
+## The Assist button
+
+Pages that can use AI assistance have an **Assist** button with a sparkle icon:
+
+| Where | Actions |
+|---|---|
+| Requirement editor | **Improve wording**, **Suggest acceptance criteria**, **Suggest framework mappings**, **Draft tests** |
+| Test editor | **Draft this test from** the first linked requirement |
+| Run page | **Summarise failures** |
+| Risk dialog | **Suggest framework mappings** |
+
+**Assist** opens a small menu with the actions. When an action cannot be used, it stays visible but disabled, with the reason below it: AI assistance is not set up or turned off, the feature is turned off, the item is not saved yet, the run has no failures, or you have used all requests of this hour. The menu also says which service the text goes to and how many requests you have left.
+
+An action opens a dialog that asks the service at once. While it writes, the dialog shows how far it is; **Cancel request** stops it. Then you see the suggestions, the model, the tokens used, the time and, when the administrator entered prices, an estimated cost. **Ask again** sends the request once more.
+
+Suggestions and the prompts are in the language of the user interface (English or Swedish).
+
+## Draft tests from a requirement
+
+**Draft tests** in a saved requirement sends its title, description and acceptance criteria and suggests up to eight manual tests: title, description, preconditions, test data, expected result and steps with actions, data and expected results, and which acceptance criteria each test covers.
+
+Every test can be edited in the dialog: open its details to change the texts, edit, add or remove steps. Untick the tests you do not want. **Create draft tests** creates the ticked tests with status *Draft* and links each to the requirement and to the criteria it covers. The test data is added to the preconditions. The new tests appear in the [traceability](#traceability-and-coverage) of the requirement; review them like other drafts before you set them to *Ready*.
+
+In the **test editor**, **Draft this test from** *KEY* asks for drafts from the test's first linked requirement. Choose one draft and **Use this draft**: its title (if the test has none), description, preconditions, expected result and steps are added to the form. Save the test to keep them.
+
+## Improve a requirement
+
+**Improve wording** sends the requirement's current text (also when it is not saved yet) together with the findings of the [requirement checks](#requirements) and asks for a rewrite that follows the rules the checks look for: one obligation with an uppercase keyword (MUST, SHOULD, MAY …), an EARS pattern where it fits (*When* … *the system MUST* …), no vague terms, no TBDs, no open lists or escape clauses, active voice and measurable values.
+
+The dialog shows:
+
+- the **changes** as a word diff (inserted words underlined, removed ones struck through) and the explanation;
+- the **findings fixed**: the server checks the rewrite again with the same checks, so the list shows what the rewrite really fixes, not what the service claims;
+- the **findings that remain** and any **new findings**, and the quality score before and after.
+
+Edit the title and text if needed, then **Use this text**: it replaces the text in the editor. It is saved when you save the requirement, so you can still compare and undo. A placeholder such as *[value]* means the service needed a value it could not know.
+
+## Acceptance criteria
+
+**Suggest acceptance criteria** proposes verifiable criteria with a method (test, inspection, analysis, demonstration, review) and, where the requirement implies a quality, a threshold with unit. Criteria that the requirement already has are left out. Edit or untick them and **Add criteria**: they are added to the criteria of the form.
+
+## Framework mappings
+
+**Suggest framework mappings** proposes ids of security frameworks with a reason for each:
+
+- for a **requirement**: MITRE D3FEND techniques and EMB3D mitigations or threats, and CWE weaknesses;
+- for a **risk**: MITRE ATT&CK and ATLAS techniques and EMB3D threats.
+
+Every id is checked against the lists built into Qtestframe; ids that are not in them are dropped, and the dialog says how many. Ids that are already mapped are left out. **Add mappings** adds the ticked ids to the D3FEND, EMB3D or ATT&CK fields of the form; CWE ids are added to the requirement's tags (*CWE-79*), because requirements have no CWE field. CWE ids are known when the [catalogue](#catalogue) refers to them.
+
+## Summarise a failed run
+
+**Summarise failures** on a run page sends the failed and blocked executions (test, notes, the end of the error output, failed steps; at most 40) and the defects linked to the run. You get a short summary, likely common causes (hypotheses from the data) and drafts of defects for failures that no linked defect covers yet.
+
+Edit the title, description and severity of the drafts, untick what you do not want, and **Create defects**: each defect is created and linked to the run and to the executions of its tests. Then manage them as described in [Defects](#defects-1).
+
+## Privacy and what is sent
+
+When you click an action, the text of **that item** is sent to the AI service configured by the administrator — nothing else, and nothing in the background:
+
+| Action | What is sent |
+|---|---|
+| Draft tests, acceptance criteria, improve wording | the requirement's key, title, description, type, obligation, rationale and acceptance criteria (with improve: the findings of the checks) |
+| Summarise failures | the run's name, environment and build, the failed and blocked executions with notes, error output and failed steps, and the linked defects |
+| Framework mappings | the requirement's or risk's title and description (risks: also category and mitigation) and the ids already mapped |
+
+Every request is recorded in the organisation's audit log (feature, user, item, tokens) without the content. The service only answers with text: it cannot change anything in Qtestframe, and the item text is passed to it as data, not as instructions. Suggestions can still be wrong or incomplete: check them like the work of a new colleague.
+
+## Turning it on and off
+
+- **Server:** a super administrator configures the service (Anthropic, or an OpenAI-compatible service such as Azure OpenAI or a local server) under **Administration → System settings → AI assistance** and can turn single features off (see the administrator guide).
+- **Organisation:** an administrator (*settings.manage*) turns it on under **Administration → AI assistance**.
+- **Project:** a project manager (*project.update*) can turn it off for one project under **Settings → Project → AI assistance**, for example when its data must not leave the server.
+
+A limit per user and hour protects against runaway costs; the Assist menu shows how many requests are left.
+
 # Variants and code
 
 A product is often built in several **variants**: models, markets or customer configurations. Not every requirement applies to every variant, and a test run on one variant says nothing about another. Qtestframe keeps track of which requirements and tests apply to which variants and computes coverage per variant.
@@ -2901,6 +3211,8 @@ A requirement or test **applies** to all variants until you say otherwise. Open 
 
 To set the applicability of many items at once, select them in the list and choose **Applies to** in the toolbar.
 
+**When the applicability changes,** the item's tests, the requirements related to it and the other items the [change impact](#change-impact) reaches may need a look: a test written for *EU* may not cover *US*. By default a **review is recommended**: nothing is marked suspect, and the owners of the items reached are notified. Under **Categories & settings → Change impact → Changed variant applicability** a project can make it mark the trace links and relations suspect instead (as a change of the text does), or have no impact. Changing the applicability of many items at once, and restoring a version or a baseline with another applicability, work the same way.
+
 ### History, undo and baselines
 
 A change of the applicability is part of the item's **History** (shown as *Applicability*, with the variants before and after) and of the audit log. **Undo** (Ctrl+Z) takes it back, also for a change of many items at once: each item gets what it had. Restoring an older version from the history restores the applicability of that version too.
@@ -2909,7 +3221,7 @@ A change of the applicability is part of the item's **History** (shown as *Appli
 
 ### Show for a variant
 
-In the requirement and test lists and on the **Traceability** page, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
+In the requirement and test lists and on the **Traceability**, **Verification** and **Analytics** pages, choose a variant in **Show for variant**. The list then shows only the items that apply to it, with the coverage and last results that count for that variant. The query language knows variants too, and the API takes `?variant=` for the traceability matrix, exports, ReqIF and reports:
 
 | Query | Finds |
 |---|---|
@@ -3026,12 +3338,51 @@ Anyone who can read the project sees the CI setup; the tokens are never shown th
 
 ## Name automated tests after their key
 
-Qtestframe matches an automated result to a test by its **test key**, for example `SHOP-TC-12`. Put the key into the test:
+Qtestframe matches an automated result to a test by its **test key**, for example `SHOP-TC-12`. Put the key into the test (or [generate the test code](#generate-test-code) with the key already in it):
 
 - in the **test name** or **class name** of the JUnit report, for example `test_SHOP_TC_12_checkout` or `SHOP-TC-12 checkout`. Underscores stand for hyphens, because most languages do not allow hyphens in names; the key must be written in full and in capitals (`ShopTc12` is not recognised);
 - or as a **property** of the test case: `qtestframe.key`, `test_key` or `qtestframe`.
 
 The same identifier is what test selection filters on (`SHOP_TC_12`). Results without a key can create draft automated tests with `--create-missing` (see [runs](#test-runs-and-execution)). To group tests into the jobs of a generated child pipeline, tag them `runner:pytest`, `runner:go`, `runner:playwright` or `runner:maven` (or any name of your own); without such a tag, tests with the script language *playwright* go to `playwright` and *python* to `pytest`, the others to `default`.
+
+## Generate test code
+
+Instead of naming the tests by hand, let Qtestframe write a **stub** for each test: a source file for your test framework that is already named after the key, documents the test and reports as *skipped* until somebody implements it. Its results then map back without further work.
+
+**In the web client.** In **Tests**, select tests (or filter the list) and choose **Generate test code**. Pick the framework, the directory of the tests in the repository (and the package for Go and Java), look at the preview of each file and **Download zip** (or the one file). With the right to edit tests you can also tick **Set the script of the tests without one to their stub path** (see below). Under *Command line* the dialog shows the `qtestframe stubs` command that writes the same files.
+
+**On the command line**, in the repository:
+
+```
+qtestframe stubs --framework pytest --query 'execution_type:automated has:!script' --out tests/
+```
+
+`--query` selects the tests ([query language](#search-and-filters); the default is `execution_type:automated`, `""` is all tests), `--ids` names tests by key, `--package` sets the Go or Java package (Go: the name of the directory by default), `--dry-run` only lists what would change. `QTF_URL`, `QTF_TOKEN` and `QTF_PROJECT` are read as for `report`; a token with the role *viewer* is enough to generate.
+
+**Frameworks:**
+
+| `--framework` | File | Key in | Not implemented | Test data |
+|---|---|---|---|---|
+| `pytest` | `test_SHOP_TC_12.py` | `def test_SHOP_TC_12_checkout…()` | `@pytest.mark.skip` | `@pytest.mark.parametrize` |
+| `playwright` | `SHOP-TC-12.spec.ts` | the title, `tag: '@SHOP-TC-12'` and the annotation `qtestframe` | `test.fixme()` | one test per row |
+| `go` | `shop_tc_12_test.go` | `func TestSHOP_TC_12_Checkout…` | `t.Skip` | a table with subtests |
+| `junit5` | `SHOP_TC_12Test.java` | the class and method names, `@Tag("SHOP-TC-12")` | `@Disabled` | `@ParameterizedTest` with `@CsvSource` |
+| `jest`, `vitest` | `SHOP-TC-12.test.ts` | the test name | `test.skip` | `test.skip.each` |
+| `robot` | `SHOP-TC-12.robot` | the test name and the tag `SHOP-TC-12` | `Skip` | one test case per row calling a keyword |
+| `cucumber` | `SHOP-TC-12.feature` | the feature and scenario names, the tag `@SHOP-TC-12` | the steps have no definitions yet; tag `@qtestframe-stub` | a Scenario Outline with Examples |
+
+Every stub contains the title, a link to the test, the requirements it verifies, the priority and tags, the description, the preconditions and the expected result, and the **steps as numbered TODO comments** with their data and expected results (Cucumber: as Given, When and Then steps). Parameters of the [test data](#tests) become the parameters of the parametrised test; `{{name}}` placeholders stay in the comments (Cucumber: `<name>`). For Playwright, have the JUnit reporter write the annotation (`embedAnnotationsAsProperties: true`); the name alone is enough too. JUnit 5 needs `junit-jupiter-params` for data-driven tests. Cucumber has no skip marker: a stub's steps are undefined until you write their definitions; in strict mode Cucumber reports them as failed, so exclude the stubs with `--tags 'not @qtestframe-stub'` until they are implemented (they then have no result, and never a passed one).
+
+**Generating again.** Each file starts with a block between the comment lines `qtestframe:begin SHOP-TC-12 pytest body=…` and `qtestframe:end`. Keep these two lines. When you run `qtestframe stubs` again:
+
+- a file that does not exist is **created**;
+- a file whose code below the block is still the generated stub is **regenerated** completely (new steps, test data or title are taken over);
+- a file whose code you have changed (implemented) keeps it: only the **header block** is rewritten (title, requirements, preconditions…). The steps in the code are not touched again;
+- a file without the marker lines (or with those of another test) is **left alone**.
+
+Line endings and trailing spaces do not count as changes. The download from the web client always contains the full stubs: merge it into a repository with the command line instead.
+
+**Mark the scripts.** With `--mark-script` (or the check box in the dialog) each selected test that has no script gets the script `qtestframe:stub tests/test_SHOP_TC_12.py`, becomes automated, gets the script language of the framework (python, playwright or javascript, where there is one) and the tag `runner:<name>` for the [child pipeline](#test-selection) (pytest, playwright, go, maven, jest, vitest, robot, cucumber) unless it has a runner tag. The server never runs such a script (*Run automated tests* skips it): the results come from CI. Because the script is no longer empty, `has:!script` leaves these tests out the next time. `--script-dir` sets the directory written into the script when `--out` is not the path in the repository. Marking needs the right to edit tests and is recorded in the history of each test.
 
 ## Upload results
 
@@ -3159,6 +3510,7 @@ The selection is also `POST /api/v1/projects/{pid}/ci/select`.
 - GitLab's job token (`CI_JOB_TOKEN`) cannot post commit statuses or merge request notes: use a project access token, or let the server post.
 - The server posts only to GitLab; GitHub statuses come from the pipeline.
 - Test selection is only as good as the links: commits and merge requests are known through the [webhooks](#webhooks-1) or the keys in commit messages, and files only through the path map.
+- Generated stubs are templates built into the server; they cannot be customised per organisation yet. Project configurations are not turned into parameters: run the stubs once per configuration in CI (`qtestframe report --configuration`).
 - API tokens are limited by roles, not by finer scopes: give the CI user the tester role, or a custom role with only `project.read`, `test.read`, `run.read`, `run.execute` and `run.write`.
 
 # Baselines
@@ -3274,6 +3626,7 @@ With permission to edit both requirements and tests, the selected tags can also 
 | `version>=2` | numeric comparison |
 | `updated_at>=2026-01-01` | date comparison |
 | `has:criteria` or `criteria:*` | the field is not empty |
+| `has:!script` or `-has:script` | the field is empty |
 
 ### Operators
 
@@ -3495,6 +3848,10 @@ Reports are produced in the language you currently use in Qtestframe (**User men
 
 Below the standard reports, **Documents** offers two complete documents: a **requirements specification** and a **test plan** with its test specification. **Create…** opens the generator in the [document archive](#create-a-requirements-specification-or-a-test-plan), where the document is saved.
 
+### Logo on the first page
+
+Reports and generated documents show the logo of the organisation or the project at the top of their first page, in PDF, Word and Markdown (where it is an embedded image). An administrator sets the organisation's logo under [Administration → Documents](#logo-on-reports-and-documents); a project can use its own instead, or none, under **Categories & settings → Project → Logo on reports and documents**, with the placement (left, centre or right), the maximum size and a preview of the first page.
+
 ## Custom reports
 
 Under **Custom report** you design a report yourself:
@@ -3599,7 +3956,7 @@ Use the status buttons above the table to show only some rows, and clear the box
 
 What the workbook contains:
 
-- **One row per item** with *ID*, *Key*, *Version* and one column per field: folder, title, description, obligation, type, priority, status, source, rationale, owner, tags, acceptance criteria (one per line, for example `test: Login works (threshold: 2 s)`) and one column per relation type (*Refines*, *Depends on* …) with the keys of the related requirements. Tests have preconditions, expected result, execution type, estimated minutes and *Verifies* (the keys of the requirements the test verifies) instead.
+- **One row per item** with *ID*, *Key*, *Version* and one column per field: folder, title, description, obligation, type, priority, status, source, rationale, owner, tags, acceptance criteria (one per line, for example `test: Login works (threshold: 2 s)`), *D3FEND* and *EMB3D* (ids separated by commas; unknown ids are left out with a warning in the preview) and one column per relation type (*Refines*, *Depends on* …) with the keys of the related requirements. Tests have preconditions, expected result, execution type, estimated minutes and *Verifies* (the keys of the requirements the test verifies) instead.
 - **Steps of tests** on the sheet *Steps*, one row per step: the test, the step number, action, data, expected result and, for a shared step, the key of the called test. The steps of a test listed on the *Tests* sheet are replaced by its rows on the *Steps* sheet.
 - **Drop-down lists** for the fields with fixed values, grey columns that are only for information (*Verified by*), and a sheet *Instructions*.
 
@@ -3645,7 +4002,7 @@ What happens:
 - **Values**: priorities such as *Highest*, *High* … or Azure DevOps priorities 1 to 4 become *critical* … *low*. Statuses are matched by name (*To Do* and *New* → draft, *In Progress*, *Active* and *Approved* → approved, *Done*, *Resolved* and *Closed* → implemented, *Removed* → obsolete) and, in Jira, otherwise by the status category. A value without a match is left out with a note on the row; the requirement keeps its value.
 - **Re-import**: the key of every issue (`SHOP-12`) or the ID of every work item is kept with the requirement it became. Importing again **updates** that requirement instead of creating a second one, and shows a conflict when the requirement was also edited in Qtestframe. New requirements get *Jira SHOP-12* or *Azure DevOps 1234* as their source. Requirements are never deleted by an import, and existing requirements stay in their folder.
 - **Relations**: links between imported items become requirement relations: in Jira *blocks* (the blocked issue *depends on* the other), *duplicates*, *clones* (*derived from*), *relates to* and the parent of a sub-task or child issue (*refines*); in Azure DevOps *Parent* (*refines*), *Predecessor* (*depends on*), *Duplicate of* and *Related*. A link removed in the tracker removes the relation at the next import with relations. Links to items outside the query are left out.
-- Only reading is needed: the import never changes anything in Jira or Azure DevOps.
+- Only reading is needed: the import never changes anything in Jira or Azure DevOps. To keep both sides in step, use the [two-way sync](#two-way-sync-with-jira-and-azure-devops).
 
 #### Import sources
 
@@ -3655,6 +4012,33 @@ What happens:
 - **Azure DevOps**: the **Organization address** (`https://dev.azure.com/organization`, or the collection address of Azure DevOps Server), the **Project**, a **Personal access token** with the scope *Work Items (Read)*, and optionally the default **Area path** and **Work item types**.
 
 Tokens are write-only, as for the issue tracker. **Check connection** tries the saved connection.
+
+### Two-way sync with Jira and Azure DevOps
+
+The import brings changes from the tracker when you run it. The **two-way sync** keeps requirements and their Jira issues or Azure DevOps work items in step by itself, in both directions: **Tracker sync** in the project's navigation. It uses the connections and tokens of the [import sources](#import-sources); the token then needs write access (see below). Requirements imported before are already linked and take part at once.
+
+**Settings** *(Manager)*, per source:
+
+- **Sync with Jira / Azure DevOps** turns it on; **Every (minutes)** schedules it (0: only by hand and through the webhook). A sync that fails waits twice as long each time, at most a day; a tracker that limits the rate is left alone for as long as it asks.
+- **Items from the tracker**: the **JQL** or **WIQL query** of the items that take part (empty: the default query of the import source). With **Create requirements for items the query finds that are not linked yet** new issues become requirements in the chosen folder. Linked items stay in sync when the query no longer finds them.
+- **Requirements to the tracker**: **Create items for requirements made here** gives the requirements of a **folder**, with a **tag** or matching a **query** (at least one of them) a new issue or work item of the **Issue type** / **Work item type** (Jira also needs the **project key**, by default the one of the issue tracker). The new item is linked at once.
+- **Field mapping**: which requirement field (title, description, status, priority, tags, acceptance criteria, rationale) goes to which tracker field, given by its ID (`summary`, `customfield_10050`, `System.Title`, `Microsoft.VSTS.Common.AcceptanceCriteria`), and the **direction**: *Both ways*, *Tracker → Qtestframe*, *Qtestframe → tracker* or *Not synced*. Status and priority have a **value map** for each direction, one `value = value` per line, e.g. `In Progress = approved` and `approved = In Progress`. A Jira status is set through the workflow: the issue must have a transition to it.
+- **When both sides changed a field**: *Ask* (a conflict, see below), *The tracker wins* or *Qtestframe wins*.
+- **Impact of changes from the tracker**: as for any edit, *Mark links suspect*, *Notify owners only* or *Do nothing* ([impact](#traceability-and-coverage)).
+- **Sync comments** copies new comments of the issue into the requirement's discussion and new discussion comments to the issue, each with its author. Only comments made after this was turned on are synced.
+- **Sync links** makes the tracker's links between synced items relations and the other way round (*relates to*, *depends on*, *duplicates*; in Jira also *derived from*, in Azure DevOps also *refines*). Links and relations are only added, never removed.
+- **Writes per minute** spaces the changes sent to the tracker.
+- **Webhook**: the tracker can tell Qtestframe at once that an item changed (see the administrator guide). Copy the **Webhook URL**, **Generate** a shared secret, enter both in the tracker and **Save**; the secret is not shown again.
+
+Scheduled syncs and webhooks run with the permissions of whoever saved the settings last.
+
+**How a sync decides.** After each sync Qtestframe remembers the mapped values of both sides. At the next sync, a side whose value differs from that changed: a field changed on one side goes to the other (as its direction allows); a field changed on both is decided by the setting above. A change from the tracker is saved like an edit made here, with history, audit log, the review rules and *If-Match*: a requirement edited by someone while the sync ran is left for the next sync. A change to the tracker is checked the same way: Azure DevOps refuses it when the work item was changed after it was read, and the sync tries again next time. Requirements and tracker items are never deleted by the sync.
+
+**Overview.** **Sync now** syncs at once; **Preview** shows what a sync would do (pull, push, new requirements and items, conflicts, comments, links) without saving anything. The card shows the linked requirements, the last and next sync, the open conflicts and the last error.
+
+**Conflicts.** With *Ask*, a field changed on both sides waits in **Conflicts**: per field the value **at the last sync**, **Qtestframe now** and **the tracker now**. Choose per field *Keep Qtestframe*, *Take Jira* (*Take Azure DevOps*) or *Leave both* and **Apply decisions**, or decide for all fields at once. The decision is carried out at once (written to the tracker or saved here). The other fields of the item keep syncing meanwhile; a conflict closes by itself when both sides agree again.
+
+**Sync log.** Every sync (by hand, scheduled, webhook, a conflict decision) with what it did per item and the errors; the newest 100 per source are kept. Syncs are also in the audit log (`req_sync.run`).
 
 ### CSV and Excel from DOORS and Polarion
 
@@ -3693,11 +4077,11 @@ This page explains both. For the Excel round-trip and the other export formats s
 
 ## ReqIF export
 
-**Export** (in the project) offers **ReqIF** and **ReqIF (with attachments)**. A ReqIF file always contains the requirements with their folders (as chapter headings), custom fields, acceptance criteria and relations. Under **ReqIF content** you add more:
+**Export** (in the project) offers **ReqIF** and **ReqIF (with attachments)**. A ReqIF file always contains the requirements with their folders (as chapter headings), custom fields, acceptance criteria, D3FEND and EMB3D ids and relations; importing the file reads the D3FEND and EMB3D attributes back. Under **ReqIF content** you add more:
 
 | Option | What it adds |
 |---|---|
-| **Test cases with their steps and trace links** | Every test case as an object of the type *Test case* (title, description, preconditions, the steps as a table, expected result, execution type, priority, status, estimate, tags, custom fields), the test folders as a second chapter tree, and a *Verifies* relation from each test to each requirement it verifies. |
+| **Test cases with their steps and trace links** | Every test case as an object of the type *Test case* (title, description, preconditions, the steps as a table, expected result, execution type, priority, status, estimate, tags, D3FEND and EMB3D, custom fields), the test folders as a second chapter tree, and a *Verifies* relation from each test to each requirement it verifies. |
 | **Verification records** | Inspections, analyses, demonstrations and reviews recorded for the requirements, each related to its requirement (*Verification record of*). They are for reading in the other tool; importing the file ignores them. |
 | **Version** | *Current state*, or one of the project's [baselines](#baselines): the requirements and tests exactly as the baseline froze them. The filter does not apply to a baseline; relations, links and records are those of today between its items. |
 
@@ -3819,7 +4203,7 @@ The new document appears at the top of the archive, highlighted, with **Open** (
 
 ### Page layout
 
-In PDF and Word a requirement or test is never split across two pages when it fits on one: if it does not fit on the rest of a page, it starts on the next one, together with the folder headings right before it. Only an item longer than a page continues on the next page. In a specification with **Each requirement on a new page** every requirement starts a page anyway. Word keeps the items together with its *keep with next* and *page break before* paragraph settings, so the layout stays right when you edit the file. Markdown has no pages: it looks the same either way.
+In PDF and Word a requirement or test is never split across two pages when it fits on one: if it does not fit on the rest of a page, it starts on the next one, together with the folder headings right before it. Only an item longer than a page continues on the next page. In a specification with **Each requirement on a new page** every requirement starts a page anyway. Word keeps the items together with its *keep with next* and *page break before* paragraph settings, so the layout stays right when you edit the file. Markdown has no pages: it looks the same either way. The title page shows the [logo](#logo-on-the-first-page) of the project or the organisation at the top.
 
 ### Dependency graph appendix
 
@@ -3874,6 +4258,7 @@ Files are stored in the Qtestframe database, not on a separate file share. That 
 | **Provisioning (SCIM)** | Admins |
 | **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
 | **Audit log** | Test lead and up |
+| **Electronic records** | Test lead and up (Admins change the settings) |
 | **Field sets** (custom fields and templates per project type) | Admins and Test leads |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
@@ -3894,7 +4279,7 @@ Every organisation starts with seven built-in roles. By default each role in the
 | **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content; write in [discussions](#discussions) (*comment.create*, as all roles below except Viewer) |
 | **Subject matter expert** | take part in writing requirements: create and edit requirements with their criteria, rationale, sources, relations, links and attachments (*requirement.write*); review requirements (*requirement.review*) and discuss them; read tests, runs, defects and risks. No tests, runs, cycles, waivers, settings or members |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
-| **Test lead** | plan [test cycles](#test-cycles) (*cycle.plan*), mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
+| **Test lead** | plan [test cycles](#test-cycles) (*cycle.plan*), manage [test environments](#test-environments-and-test-data) and approve their bookings (*environment.manage*), mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
 | **Manager** | approve and reject requirements (*requirement.review*), write requirements and requirement folders, create and edit projects, all categories and the [traceability rules](#traceability-rules), create baselines |
 | **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, remove any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
@@ -3910,12 +4295,16 @@ The default matrix of permissions:
 | `requirement.review` | | ✔ | ✔ | | | ✔ | ✔ |
 | `comment.create` | | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
 | `requirement.write` | | | ✔ | | | ✔ | ✔ |
+| `change.create` | | | ✔ | | ✔ | ✔ | ✔ |
+| `change.approve` | | | | | ✔ | ✔ | ✔ |
 | `test.write`, `run.write`, `run.execute`, `token.manage` | | | | ✔ | ✔ | ✔ | ✔ |
-| `cycle.plan`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
+| `cycle.plan`, `environment.manage`, `script.execute`, `audit.read`, `settings.manage` | | | | | ✔ | ✔ | ✔ |
 | `waiver.approve`, `project.create`, `project.update` | | | | | | ✔ | ✔ |
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | | ✔ |
 
 **Waivers and risk acceptance.** Approving, rejecting and revoking [waivers and deviations](#waivers-residual-risk-and-the-statement-of-applicability) and signing the acceptance of a residual risk need `waiver.approve` (a project permission, so a project role can grant it in one project). Every decision is an electronic signature (password, or a recent single sign-on) and is recorded in the audit log; the requester of a waiver cannot decide it. Grant `waiver.approve` only to people who may accept not meeting requirements.
+
+**Change requests.** Proposing changes in [change requests](#change-requests-and-change-control) (and assessing, applying, verifying and closing them) needs `change.create`; deciding them as a member of the project's change control board, and the emergency override of enforced change control, need `change.approve`. Both are project permissions. Every decision is an electronic signature, and the requester of a change request cannot decide it.
 
 **Review decisions.** Setting a requirement to *Approved* or *Rejected* needs `requirement.review`; setting a test to *Ready* needs `test.review`. The same applies to bulk edits, to creating an item with that status and to restoring a version that has it. A reviewer without the write permission may change only the status; editing anything else still needs `requirement.write` or `test.write`. Each decision is recorded in the audit log as `requirement.review` or `test.review`. A copied requirement or test starts as *Draft*, so it is reviewed again.
 
@@ -4029,6 +4418,19 @@ What a rule forbids is refused by the server, also for API clients and CI import
 - when a rule is relaxed, the same reasons appear as an amber warning, and the test can be executed.
 
 **Requirement status follows test results** (on by default) lets an implemented requirement become **Verified** when it is [verified](#verification) — every criterion has passing evidence and every child requirement is verified — and go back to **Implemented** when that no longer holds. Turned off, statuses change only by hand and disagreements are listed under **Verification → Inconsistencies**. Whether each criterion needs evidence of its own is a project setting (**Settings → Project → Verification**).
+
+## Logo on reports and documents
+
+*(Admin and Test lead, or any role with `settings.manage`)* **Administration → Documents** sets the organisation's logo. It is shown at the top of the first page of every [report](#logo-on-the-first-page) and [generated document](#create-a-requirements-specification-or-a-test-plan) — requirements specifications, test plans, release, verification, SoA, quality, cycle and exploratory reports, custom reports and the change impact export — in PDF, Word and Markdown.
+
+![Administration → Documents: the uploaded logo, its placement and maximum size, and the preview of the first page](images/en-admin-documents.png)
+
+- **Upload logo** takes a PNG, JPEG or SVG image of at most 2 MB. An SVG is converted into an image on the server by Qtestframe's own renderer: scripts, links, embedded images and texts in it are never used (convert texts to outlines before you upload it).
+- **Placement** puts the logo at the left (default), in the centre or at the right of the page.
+- **Maximum width** and **Maximum height** (in millimetres; default 50 × 20 mm) bound its size. The logo keeps its proportions and is never shown larger than its own size at 96 dpi.
+- The **preview** shows the first page of a document with the logo as it will be printed, also before you save.
+
+Projects use this logo unless they upload their own under **Categories & settings → Project → Logo on reports and documents**, or turn on **No logo in this project's documents** *(Manager and Admin, or any role with `project.update`)*. A [project archive](#save-and-load-projects) carries the project's own logo; the organisation's logo is part of backups.
 
 ## Field sets and templates
 
@@ -4151,6 +4553,28 @@ The API reference (`docs/api.md`, section *OSLC*) lists the properties and the q
 - Limit the time range with **From date** and **To date**.
 - **Number of entries** sets how many are shown (up to 5000).
 - **Export CSV** downloads the filtered log for an auditor; **Export Markdown** downloads it as a Markdown document with the date range and filter.
+
+
+### Verify the audit trail
+
+The audit log cannot be changed through the application, and every entry is linked to the one before it by a hash (a fingerprint of its content), so a change made directly in the database shows. **Verify audit trail** at the top of the page checks the whole chain and shows either *The audit trail is intact* (with the number of entries and signed checkpoints) or the **first broken link**: the entry number and what is wrong – the entry was changed, entries are missing or were removed at the end, or the chain was rewritten. Keep that evidence and report it as your procedures say.
+
+**Export with hashes (JSON)** and **(CSV)** download the whole trail with each entry's number, hash and the hash of the entry before it, for archiving outside Qtestframe. The open *Details* of an entry also show its number, hash and, in electronic-records mode, the reason for the change.
+
+## Electronic-records mode
+
+*(Admins change it; Test lead and up can read it and create the report)* **Administration → Electronic records** turns on the controls regulated organisations need for electronic records and signatures (21 CFR Part 11, EU GMP Annex 11). It is **off** until an admin turns it on. When it is on:
+
+- **Every signature asks you to confirm who you are**: your password and, if you use an authenticator app, a code from it. You choose the **meaning** of your signature (for example *Approved* or *Reviewed*) from the organisation's list. If you sign in with single sign-on, you sign shortly after signing in.
+- **Some actions need a signature**: the admin chooses among approving a requirement, approving a test (status *Ready*), the release go (*Released*) and creating a baseline. When you do one of them – in the editor, a bulk change, the spreadsheet or a bulk review – the signature dialog opens; the change is saved once you have signed. If you cancel, nothing is saved.
+- **Some changes need a reason**: when you save such a change, a dialog asks why (for example the number of a change request). The reason is stored in the audit log with the change.
+- **You are signed out after a time without activity** (default 15 minutes). Background updates such as the notification count do not keep you signed in.
+
+Signed records show their **Electronic signatures**: the printed name and e-mail of the signer, the date and time in UTC and in the signer's time zone, the meaning, what was signed and how the signer confirmed it. When the record is changed after it was signed, the signature shows *Record changed after signing*. You find them under **History** of a requirement or test, in a baseline's sign-offs, in a waiver, under the acceptance of a risk and in a release.
+
+![Electronic records settings and the Part 11 / Annex 11 controls report](images/en-admin-erecords.png)
+
+The admin sets on the same page the actions that need a signature, the meanings (one per line), the changes that need a reason, the inactivity time and how soon after a single sign-on accounts may sign. **Create report** shows the **Part 11 / Annex 11 controls**: for each requirement of the regulations what Qtestframe does, what your organisation's procedures must cover and the evidence from this installation; **Download (Markdown)** saves it. Qtestframe gives technical controls – validation, training, written policies and checking people's identity before they get an account remain your organisation's responsibility, and the report says so.
 
 ## Organisations
 
@@ -4856,7 +5280,7 @@ Only people with the `script.execute` permission can run scripts, and only when 
 
 ### What is the difference between a backup, a project archive and an export?
 
-A **backup** holds the whole installation and is restored by a super admin. A **project archive** holds one project, without secrets, and is loaded as a new project. An **export** takes data out in a format for people or other tools (PDF, Word, Excel, CSV, Markdown, ReqIF). See [Backups and project archives](#backups-and-project-archives).
+A **backup** holds the whole installation and is restored by a super admin. A **project archive** holds one project, without secrets, and is loaded as a new project. An **export** takes data out in a format for people or other tools (PDF, Word, Excel, CSV, Markdown, ReqIF). See [Backups and project archives](#backups-and-project-archives-1).
 
 ### How do I find a word I don't understand?
 
@@ -4872,7 +5296,7 @@ The words of testing, requirements engineering and the standards and formats beh
 
 **Testing:** [Acceptance testing](#acceptance-testing) · [Accessibility testing](#accessibility-testing) · [Behaviour-driven development](#behaviour-driven-development) · [Black-box testing](#black-box-testing) · [Boundary value analysis](#boundary-value-analysis) · [Code coverage](#code-coverage) · [Continuous integration](#continuous-integration) · [Coverage](#coverage) · [Data-driven testing](#data-driven-testing) · [Decision table testing](#decision-table-testing) · [Defect](#defect) · [Defect lifecycle](#defect-lifecycle) · [End-to-end testing](#end-to-end-testing) · [Entry criteria](#entry-criteria) · [Equivalence partitioning](#equivalence-partitioning) · [Error guessing](#error-guessing) · [Exit criteria](#exit-criteria-1) · [Exploratory testing](#exploratory-testing-1) · [Flaky test](#flaky-test) · [Functional testing](#functional-testing) · [Grey-box testing](#grey-box-testing) · [Integration testing](#integration-testing) · [Load testing](#load-testing) · [Non-functional testing](#non-functional-testing) · [Pairwise testing](#pairwise-testing) · [Performance testing](#performance-testing) · [Priority](#priority) · [Regression testing](#regression-testing) · [Requirement coverage](#requirement-coverage) · [Security testing](#security-testing) · [Session-based test management](#session-based-test-management) · [Severity](#severity) · [Shift-left](#shift-left) · [Smoke and sanity testing](#smoke-and-sanity-testing) · [State transition testing](#state-transition-testing) · [Stress testing](#stress-testing) · [System testing](#system-testing) · [Test case](#test-case) · [Test configuration](#test-configuration) · [Test cycle](#test-cycle) · [Test data](#test-data) · [Test design technique](#test-design-technique) · [Test environment](#test-environment) · [Test execution](#test-execution) · [Test level](#test-level) · [Test oracle](#test-oracle) · [Test plan](#test-plan) · [Test result](#test-result) · [Test run](#test-run) · [Test step](#test-step) · [Test suite](#test-suite) · [Test type](#test-type) · [Test-driven development](#test-driven-development) · [Unit testing](#unit-testing) · [Usability testing](#usability-testing) · [V-model](#v-model) · [Validation](#validation) · [Verification](#verification-1) · [White-box testing](#white-box-testing)
 
-**Requirements:** [Acceptance criteria](#acceptance-criteria) · [Backward traceability](#backward-traceability) · [Baseline](#baseline) · [Bidirectional traceability](#bidirectional-traceability) · [Business requirement](#business-requirement) · [Change impact](#change-impact-1) · [Constraint](#constraint) · [Derived requirement](#derived-requirement) · [Deviation](#deviation) · [EARS](#ears) · [Evaluation criterion](#evaluation-criterion) · [Forward traceability](#forward-traceability) · [Functional requirement](#functional-requirement) · [INCOSE rules](#incose-rules) · [Non-functional requirement](#non-functional-requirement) · [Obligation level](#obligation-level) · [Quality attribute](#quality-attribute) · [Refinement](#refinement) · [Requirement](#requirement) · [Requirement key words](#requirement-key-words) · [Requirement quality](#requirement-quality) · [Residual risk](#residual-risk-1) · [Risk](#risk) · [Risk-based testing](#risk-based-testing) · [SKA, BÖR and FÅR](#ska-bör-and-får) · [Software requirement](#software-requirement) · [Specification](#specification) · [Stakeholder](#stakeholder) · [Stakeholder requirement](#stakeholder-requirement) · [Statement of Applicability](#statement-of-applicability-1) · [Suspect link](#suspect-link) · [System requirement](#system-requirement) · [Trace link](#trace-link) · [Traceability](#traceability) · [Traceability matrix](#traceability-matrix) · [User requirement](#user-requirement) · [Verification method](#verification-method) · [Verification record](#verification-record) · [Waiver](#waiver)
+**Requirements:** [Acceptance criteria](#acceptance-criteria-1) · [Backward traceability](#backward-traceability) · [Baseline](#baseline) · [Bidirectional traceability](#bidirectional-traceability) · [Business requirement](#business-requirement) · [Change impact](#change-impact-1) · [Constraint](#constraint) · [Derived requirement](#derived-requirement) · [Deviation](#deviation) · [EARS](#ears) · [Evaluation criterion](#evaluation-criterion) · [Forward traceability](#forward-traceability) · [Functional requirement](#functional-requirement) · [INCOSE rules](#incose-rules) · [Non-functional requirement](#non-functional-requirement) · [Obligation level](#obligation-level) · [Quality attribute](#quality-attribute) · [Refinement](#refinement) · [Requirement](#requirement) · [Requirement key words](#requirement-key-words) · [Requirement quality](#requirement-quality) · [Residual risk](#residual-risk-1) · [Risk](#risk) · [Risk-based testing](#risk-based-testing) · [SKA, BÖR and FÅR](#ska-bör-and-får) · [Software requirement](#software-requirement) · [Specification](#specification) · [Stakeholder](#stakeholder) · [Stakeholder requirement](#stakeholder-requirement) · [Statement of Applicability](#statement-of-applicability-1) · [Suspect link](#suspect-link) · [System requirement](#system-requirement) · [Trace link](#trace-link) · [Traceability](#traceability) · [Traceability matrix](#traceability-matrix) · [User requirement](#user-requirement) · [Verification method](#verification-method) · [Verification record](#verification-record) · [Waiver](#waiver)
 
 **Standards, formats and frameworks:** [Bearer token](#bearer-token) · [CSV](#csv) · [CWE](#cwe) · [Cyber Resilience Act](#cyber-resilience-act) · [ETag and If-Match](#etag-and-if-match) · [EU AI Act](#eu-ai-act) · [HOTP](#hotp) · [HTTP semantics](#http-semantics) · [ISO/IEC 25010](#isoiec-25010) · [ISO/IEC 27001 Annex A](#isoiec-27001-annex-a) · [ISO/IEC/IEEE 29119](#isoiecieee-29119) · [ISO/IEC/IEEE 29148](#isoiecieee-29148) · [ISTQB](#istqb) · [JSON Web Token](#json-web-token) · [JUnit XML](#junit-xml-1) · [Landlock](#landlock) · [Markdown](#markdown) · [MITRE ATLAS](#mitre-atlas) · [MITRE ATT&CK](#mitre-attck-1) · [MITRE D3FEND](#mitre-d3fend) · [MITRE EMB3D](#mitre-emb3d) · [OAuth 2.0](#oauth-20) · [OpenAPI](#openapi) · [OpenID Connect](#openid-connect) · [OSLC](#oslc-2) · [PKCE](#pkce) · [Problem Details](#problem-details) · [ReqIF](#reqif) · [SAML 2.0](#saml-20) · [SCIM](#scim) · [seccomp](#seccomp) · [STIX](#stix) · [Syslog](#syslog) · [TOTP](#totp) · [WCAG](#wcag) · [WebAuthn and FIDO2](#webauthn-and-fido2)
 
@@ -4890,7 +5314,7 @@ The conditions a product or a requirement must meet to be accepted by the custom
 
 ### Acceptance testing
 
-The test level that decides whether a system is ready to be accepted: by its users (user acceptance testing), by operations (operational acceptance), or against a contract or regulation. It answers "is this what we need?" rather than "does the code work?", so it is mostly a form of [validation](#validation). Acceptance tests are usually derived from [acceptance criteria](#acceptance-criteria) and business processes (ISTQB Glossary).
+The test level that decides whether a system is ready to be accepted: by its users (user acceptance testing), by operations (operational acceptance), or against a contract or regulation. It answers "is this what we need?" rather than "does the code work?", so it is mostly a form of [validation](#validation). Acceptance tests are usually derived from [acceptance criteria](#acceptance-criteria-1) and business processes (ISTQB Glossary).
 
 **In Qtestframe:** plan acceptance testing as a [test cycle](#test-cycle) or [run](#test-run) of its own, for example *Release 2.1 acceptance*, and tag or categorise the tests (`tag:acceptance`). The template for *Business* requirements suggests an acceptance test.
 
@@ -4968,7 +5392,7 @@ BDD: a way of working where the team describes the wanted behaviour as concrete 
 
 **In Qtestframe:** write a scenario as the steps of a test (Given as precondition, When as action, Then as expected result) and link it to the requirement. Automated scenarios report their results through JUnit XML like any other test.
 
-**See also:** [Test-driven development](#test-driven-development), [Acceptance criteria](#acceptance-criteria), [JUnit XML](#junit-xml-1)
+**See also:** [Test-driven development](#test-driven-development), [Acceptance criteria](#acceptance-criteria-1), [JUnit XML](#junit-xml-1)
 
 ### Bidirectional traceability
 
@@ -5230,7 +5654,7 @@ A statement of how the fulfilment of a requirement will be judged: what is check
 
 **In Qtestframe:** each requirement can have several criteria, each with a method (test, inspection, analysis, demonstration, review) and a threshold. Tests are linked to a criterion, other methods record [verification records](#verification-record); the requirement is verified when every criterion is.
 
-**See also:** [Evaluation criteria](#evaluation-criteria), [Acceptance criteria](#acceptance-criteria), [Verification](#verification)
+**See also:** [Evaluation criteria](#evaluation-criteria), [Acceptance criteria](#acceptance-criteria-1), [Verification](#verification)
 
 ### Exit criteria
 
@@ -6182,7 +6606,7 @@ A requirement that describes what a user must be able to do with the system, oft
 
 **In Qtestframe:** write user stories as requirements and their acceptance criteria as evaluation criteria; refine them into system or software requirements where needed.
 
-**See also:** [Stakeholder requirement](#stakeholder-requirement), [Acceptance criteria](#acceptance-criteria), [Behaviour-driven development](#behaviour-driven-development)
+**See also:** [Stakeholder requirement](#stakeholder-requirement), [Acceptance criteria](#acceptance-criteria-1), [Behaviour-driven development](#behaviour-driven-development)
 
 ## V
 

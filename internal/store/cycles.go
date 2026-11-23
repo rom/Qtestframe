@@ -24,19 +24,20 @@ const MaxCycleTests = 5000
 const cycleCols = `c.id, c.project_id, c.name, c.goal, c.description, c.status, c.owner_id, c.release_id, c.variant_id, c.build_id, c.environment, c.configuration_ids,
 	c.start_date, c.end_date, c.scheduled_start_at, c.schedule_id, c.version, c.started_at, c.closed_at, c.created_by, c.created_at, c.updated_at,
 	COALESCE((SELECT r.name FROM releases r WHERE r.id = c.release_id), ''), COALESCE((SELECT v.name FROM variants v WHERE v.id = c.variant_id), ''),
-	COALESCE((SELECT CASE WHEN b.number <> '' THEN b.number ELSE b.external_id END FROM builds b WHERE b.id = c.build_id), '')`
+	COALESCE((SELECT CASE WHEN b.number <> '' THEN b.number ELSE b.external_id END FROM builds b WHERE b.id = c.build_id), ''), c.environment_id`
 
 func scanCycle(r interface{ Scan(...any) error }) (*model.TestCycle, error) {
 	var c model.TestCycle
-	var rel, variant, build, sched sql.NullString
+	var rel, variant, build, sched, env sql.NullString
 	var start, started, closed sql.NullTime
 	var cfgs string
 	if err := r.Scan(&c.ID, &c.ProjectID, &c.Name, &c.Goal, &c.Description, &c.Status, &c.OwnerID, &rel, &variant, &build, &c.Environment, &cfgs,
 		&c.StartDate, &c.EndDate, &start, &sched, &c.Version, &started, &closed, &c.CreatedBy, &c.CreatedAt, &c.UpdatedAt,
-		&c.ReleaseName, &c.VariantName, &c.BuildLabel); err != nil {
+		&c.ReleaseName, &c.VariantName, &c.BuildLabel, &env); err != nil {
 		return nil, err
 	}
 	c.ReleaseID, c.VariantID, c.BuildID, c.ScheduleID = strPtr(rel), strPtr(variant), strPtr(build), strPtr(sched)
+	c.EnvironmentID = strPtr(env)
 	c.ScheduledStartAt, c.StartedAt, c.ClosedAt = timePtr(start), timePtr(started), timePtr(closed)
 	c.ConfigurationIDs = decodeTags(cfgs)
 	c.CreatedAt, c.UpdatedAt = c.CreatedAt.UTC(), c.UpdatedAt.UTC()
@@ -746,7 +747,7 @@ func (s *Store) CreateCycleRun(ctx context.Context, tenantID, cycleID, user stri
 		want[x.TestCaseID+"\x00"+cfg] = x
 	}
 	id := cy.ID
-	run := &model.TestRun{ProjectID: cy.ProjectID, Name: name, Description: cy.Goal, Environment: cy.Environment, CreatedBy: user,
+	run := &model.TestRun{ProjectID: cy.ProjectID, Name: name, Description: cy.Goal, Environment: cy.Environment, EnvironmentID: cy.EnvironmentID, CreatedBy: user,
 		ReleaseID: cy.ReleaseID, VariantID: cy.VariantID, BuildID: cy.BuildID, CycleID: &id}
 	if cy.BuildLabel != "" {
 		run.Build = cy.BuildLabel

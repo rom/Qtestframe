@@ -205,7 +205,7 @@ are `mfa.enable`, `mfa.disable`, `mfa.recovery_codes`,
 | GET | `/tokens` | token.manage | own tokens in tenant |
 | POST | `/tokens` | token.manage | `{"name","roles" (or "role"),"expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; the roles default to all of the creator's own roles, and their permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its roles' permissions and those of the user's current roles) |
 | DELETE | `/tokens/{id}` | token.manage | |
-| GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user |
+| GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user, the `reason` for change and their place in the hash chain (`seq`, `prev_hash`, `hash`, see [Tamper-evident audit trail](#tamper-evident-audit-trail)) |
 | GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"email_enabled"`, `"email_digest_hour"` (UTC) and `"version"` |
 | POST | `/admin/email/test` | tenant.manage | sends a test e-mail to the caller's own address now → `{"ok", "to", "error"?}` with the SMTP error; 400 when e-mail is not configured |
 
@@ -517,6 +517,78 @@ assigned to it. `activity` covers the last 30 days (UTC, today included):
 `changes` are new revisions of requirements and tests, `executions` the
 executions finished, `defects` the defects reported.
 
+### Dashboards
+
+Dashboards are layouts of widgets on a grid of 12 columns. A project has
+shared dashboards (everyone who may read the project sees them; changed by
+`project.update`) and each user's personal ones; every user also has a
+personal cross-project home dashboard. Until an administrator changes them,
+a project has the built-in layouts `overview`, `trends` and `quality` – the
+former fixed dashboard – so nothing changes for existing projects.
+
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/projects/{pid}/dashboards` | project.read – `{items: [Dashboard], default_id, can_manage}` |
+| POST | `/projects/{pid}/dashboards` | project.read (shared: project.update) – `{name, shared?, widgets?, source_id?}` or an export → 201 Dashboard |
+| GET | `/projects/{pid}/dashboards/{did}` | project.read – Dashboard (`{did}`: an id or a built-in key) |
+| PUT | `/projects/{pid}/dashboards/{did}` | owner of a personal one, project.update for a shared one – `{name?, widgets?}` |
+| DELETE | `/projects/{pid}/dashboards/{did}` | as PUT – 204 (a built-in layout: 400) |
+| POST | `/projects/{pid}/dashboards/{did}/reset` | as PUT – back to the default layout |
+| PUT | `/projects/{pid}/dashboards/default` | project.update – `{dashboard_id}` the dashboard the project opens with (`""`: the overview) |
+| GET, PUT, DELETE | `/dashboards/home` | signed in – the caller's home dashboard (DELETE resets it) |
+| GET | `/dashboards/widgets` | signed in – the widget registry `{items: [{type, project, home, w, h}]}` |
+| POST | `/dashboards/data` | signed in – the data of many widgets, each with the permissions of its data |
+
+A Dashboard is
+
+```json
+{"id": "…", "project_id": "…", "owner_id": "", "name": "Release health",
+ "builtin": "", "source_id": "", "shared": true, "stored": true,
+ "default": false, "editable": true,
+ "widgets": [{"id": "w1", "type": "saved_query", "title": "Open MUST",
+              "x": 0, "y": 0, "w": 6, "h": 4,
+              "settings": {"entity": "requirements", "query": "obligation:must coverage:none", "display": "table"}}]}
+```
+
+`x` (0–11) and `w` (1–12) keep a widget within the columns, `h` is 1–24
+rows; a dashboard has at most 60 widgets. Changing a built-in layout (PUT
+`/dashboards/overview`) stores the shared dashboard that replaces it
+(`builtin: "overview"`); resetting that one removes it again. Resetting a
+copy gives it the layout it was copied from. An export is the Dashboard
+with `"format": "qtestframe-dashboard", "version": 1`; POST takes it back
+(import).
+
+**Widget types.** `key_figures`, `coverage`, `execution_results`,
+`active_runs`, `recent_runs`, `breakdown` (`settings.dimension`:
+`requirement_status`, `requirement_obligation`, `test_status`,
+`test_execution_type`, `run_status`, `review_state`, `risk_level`,
+`risk_status`, `risk_mitigation`, `defect_severity`, `defect_status`),
+`test_types`, `verification_status`, `test_results_trend` and
+`defects_per_week` (`range`: 30, 90, 365), `recent_activity`,
+`flaky_tests`, `coverage_by_group`, `risk_heat`, `defect_age`,
+`trace_rules`, `correlations`, `release_progress`, `release_readiness`
+(`release_id`, `variant`), `release_burnup` (`release_id`),
+`cycle_burndown` (`cycle_id`; without one: the active, else planned, else
+newest one), `quality_metrics` and `consistency` (they load their own
+data), `my_work`, `discussions` (`status`, `filter`, `limit`),
+`saved_query` (`entity`: requirements, tests, defects, risks, runs;
+`query` in the query language; `display`: table or count; `limit`),
+`traceability_gaps` (requirements without tests, tests without
+requirements), `exploratory_metrics`, `framework_coverage` (`framework`:
+attack, d3fend, emb3d) and `note` (`text`, Markdown). Common settings are
+`chart` (bar, hbar, doughnut, table where it applies) and, on the
+home dashboard, `project_id`.
+
+**Widget data.** `POST /dashboards/data` takes `{widgets: [{id, type,
+project_id?, settings?}]}` and answers `{results: {id: {data} | {data:
+null, error: {status, code, error}}}}`. Each widget reads the API's own GET
+endpoints as the caller (in process, with the same permission checks), so a
+widget shows only what its viewer may see there: a saved query of
+requirements needs `requirement.read`, a project the viewer may not see
+answers 404. Within one request every endpoint is read once, so the many
+widgets fed by `/dashboard` and `/dashboard/insights` cost one computation
+each. The client asks only for the widgets on screen and batches them.
+
 ## Folders (groups) and categories
 
 Reading needs `project.read`. Writing folders needs `requirement.write` or
@@ -584,7 +656,14 @@ catalogue item; they are in the history, the exports (columns `D3FEND` and
 `EMB3D`), project archives and backups (columns `requirements.d3fend`,
 `requirements.emb3d`, `test_cases.d3fend`, `test_cases.emb3d`, JSON
 lists), and the generated documents show them with names (field
-`frameworks`).
+`frameworks`). The imports read them back: the requirement import (CSV,
+XLSX and ReqIF columns or attributes `D3FEND` and `EMB3D`, also *D3FEND
+techniques*, *EMB3D threats and mitigations* and the Swedish headers;
+fields `d3fend` and `emb3d` of the mapping and of a `Candidate`), the Excel
+exchange (columns `D3FEND` and `EMB3D` of the workbook) and the ReqIF
+exchange (attributes `D3FEND` and `EMB3D` of Qtestframe's ReqIF export, or
+mapped). Unknown ids are left out with a warning on the row ("unknown D3FEND
+technique D3-XYZ left out"), the known ones are saved.
 
 `Analysis`:
 ```json
@@ -612,7 +691,7 @@ need `requirement.write` and take a `multipart/form-data` upload: field
 |---|---|
 | `format` | `csv`, `xlsx`, `reqif` (also `reqifz`) or `docx`; default from the file extension (`.csv .tsv .txt .xlsx .xlsm .reqif .reqifz .docx`), else sniffed from the content. `.xls`/`.doc` → 400 |
 | `sheet` | XLSX sheet name (case-insensitive); default: a sheet named *requirements*/*krav*, else the first sheet with a header row |
-| `mapping` | JSON object `{"<column header>": "<field>"}` overriding the guessed field of a column (case-insensitive header; `"ignore"` or `""` ignores it). Fields: `title`, `description`, `external_id`, `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tags`, `folder`, `criteria`. For ReqIF the headers are the attribute long names |
+| `mapping` | JSON object `{"<column header>": "<field>"}` overriding the guessed field of a column (case-insensitive header; `"ignore"` or `""` ignores it). Fields: `title`, `description`, `external_id`, `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tags`, `folder`, `criteria`, `d3fend`, `emb3d`. For ReqIF the headers are the attribute long names |
 | `folder_id` | target requirement folder (root of the imported folder paths); default top level; unknown → 400 |
 
 | Method | Path | Notes |
@@ -1252,9 +1331,13 @@ reverse order brings them back with their links.
 
 ## Requirement analytics
 
-`GET /projects/{pid}/analytics?lang=` (requirement.read) analyses all
+`GET /projects/{pid}/analytics?lang=&variant=` (requirement.read) analyses all
 requirements of the project; `lang` is `auto` (default, per requirement) or
-an analysis language. Test findings are included with `test.read`.
+an analysis language. Test findings are included with `test.read`. With
+`variant` (id or name) only the requirements and tests that apply to the
+variant are analysed, with the variant's coverage, linked tests, results
+and verification (as `GET /projects/{pid}/verification?variant=`);
+`GET /projects/{pid}/analytics/compliance` takes the same `variant`.
 
 ```json
 {"summary": {"requirements": 20, "tests": 18, "with_findings": 3, "health": 85, "problems": 1, "warnings": 2, "infos": 1,
@@ -1283,6 +1366,55 @@ accepts; they are left out of `no_tests*`, `tests_failing` and
 `tests_not_run`, and `summary.waived` counts them) and
 `language_rule` (with `params.rule`, a language analysis rule). At most 200
 items per finding (`total` gives the full count).
+
+
+### Two-way sync with Jira and Azure DevOps
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/req-sync` | project.read | `{items: [config]}` for `jira` and `azure-devops` (a default, `id` "", where none is saved) |
+| PUT | `/projects/{pid}/req-sync/{source}` | project.update | `{enabled, interval_minutes, settings, webhook_secret, clear_webhook_secret, version}`; enabling needs `requirement.write` (the sync runs as the saver) |
+| POST | `/projects/{pid}/req-sync/{source}/run` | requirement.write | `{dry_run}` → the run; 409 while one runs, 502 `tracker_error` |
+| GET | `/projects/{pid}/req-sync/runs` | project.read | the log: `?source=`, `?limit=`, `?entries=true` |
+| GET | `/projects/{pid}/req-sync/runs/{run}` | project.read | one run with its entries |
+| GET | `/projects/{pid}/req-sync/conflicts` | requirement.read | `?status=open` (default), `resolved`, `dismissed`, `all`; `?source=` |
+| POST | `/projects/{pid}/req-sync/conflicts/{cid}/resolve` | requirement.write | `{resolution}` or `{fields: {field: decision}}` → `{conflict, run}` |
+| POST | `/hooks/req-sync/jira/{pid}` | none (public) | Jira webhooks: `X-Hub-Signature: sha256=<HMAC of the body>`, `?secret=` or `X-Qtestframe-Secret` → 202 |
+| POST | `/hooks/req-sync/azure-devops/{pid}` | none (public) | Azure DevOps service hooks: basic authentication with the secret as password, or `X-Qtestframe-Secret` → 202 |
+
+A configuration (`model.ReqSyncConfig`): `{id, system, enabled,
+interval_minutes, settings, has_webhook_secret, webhook_url, run_as,
+next_run_at, last_run_at, last_status, last_error, failures,
+open_conflicts, linked, version, connected}`. `settings`:
+
+- `fields`: `[{field, remote, direction, values, push_values}]`: the
+  requirement field (`title`, `description`, `status`, `priority`, `tags`,
+  `criteria`, `rationale`), the tracker's field ID (`summary`,
+  `customfield_10050`, `System.Title`, …), the direction (`both`, `pull`:
+  tracker → Qtestframe, `push`, `none`) and, for status and priority, the
+  value maps tracker value → requirement value (`values`) and requirement
+  value → tracker value (`push_values`).
+- `query` (JQL or WIQL; "" the import source's default), `import_new` and
+  `folder_id` (requirements for items not linked yet).
+- `push`: `{create, folder_id, tag, query, item_type, project_key}`: new
+  tracker items for the requirements in the scope (one of folder, tag or
+  query is required).
+- `conflict_policy` (`manual`, `tracker`, `qtestframe`), `impact`
+  (`suspect`, `notify`, `skip`: the impact choice of the pulled changes),
+  `comments`, `links`, `max_writes_per_minute` (1–600, default 60).
+
+A run compares, per linked requirement and field, the values of both sides
+with the values both had after the last sync (kept with the external
+reference): a field changed on one side goes to the other as its direction
+allows, one changed on both is decided by the policy (`manual` records a
+conflict). Pulled changes go through `PATCH /requirements/{id}` with
+`If-Match` (and `POST /projects/{pid}/requirements` for new items) inside
+one transaction, so permissions, review rules, history and the audit log
+apply; pushed changes are written with the tracker's API (Jira: fields and
+a workflow transition for the status; Azure DevOps: a JSON patch that
+tests the revision read). Run entries have the `action` `pull`, `push`,
+`create_local`, `create_remote`, `conflict`, `comment_pull`,
+`comment_push`, `link_pull`, `link_push`, `skip` or `error`.
 
 ### Compliance
 
@@ -1551,7 +1683,7 @@ passed yet), `none` (no evidence).
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/requirements/{id}/verification` | RequirementVerification: is it verified, and why (`requirement.read`) |
-| GET | `/projects/{pid}/verification?q=&folder_id=` | `{"strict","counts":{state: n},"criteria_verified","criteria_total","requirements":[RequirementVerification],"inconsistent":[…]}` over the requirements matching `q` (counts leave out rejected and obsolete ones) |
+| GET | `/projects/{pid}/verification?q=&folder_id=&variant=` | `{"strict","variant"?,"counts":{state: n},"criteria_verified","criteria_total","requirements":[RequirementVerification],"inconsistent":[…]}` over the requirements matching `q` (counts leave out rejected and obsolete ones). `variant` (id or name): only the requirements that apply to the variant, verified by the rules of the [variant coverage](#variants-and-applicability): only trace links between a requirement and a test that both apply count, a test's result is its latest result in the runs and configurations that count for the variant (stale passes are no evidence), step results only where the variant's result is the test's latest execution; verification records and exploratory sessions count as they are |
 | GET / PUT | `/projects/{pid}/verification-settings` | `{"strict_criteria", "updated_by", "updated_at"}`; PUT needs `project.update` and lets the statuses follow the evidence again |
 | PUT | `/links/{id}/criteria` | `{"criteria":[{"criterion_id","step_id"?}]}` → TraceLink (`test.write`); `[]` makes it a plain link; 400 for a criterion of another requirement or a step of another test |
 | GET | `/projects/{pid}/verification-records?requirement_id=` | `[VerificationRecord]`, newest first |
@@ -1932,6 +2064,7 @@ with the role `tester` can call all of them.
 |---|---|---|---|
 | GET, POST | `/projects/{pid}/gate` | project.read | the quality gate, see below; the results of a run or build also need run.read |
 | POST | `/projects/{pid}/ci/select` | test.read | the tests of a change, see below; `create_run` needs run.write |
+| GET, POST | `/projects/{pid}/tests/stubs` | test.read | generated test code stubs (zip, JSON or one file), see below; `mark_script` (POST) needs test.write |
 | GET | `/projects/{pid}/ci/setup` | project.read | `{server_url, project_key, project_id, token_role, variables: [{name, value?, masked, required, description}], templates: [{name, kind: gitlab\|gitlab-selection\|gitlab-component\|github, file, url, content}]}`: the CI setup panel, with the server URL and project key filled in |
 | GET | `/ci/templates/{name}` | none (public) | a template (`gitlab-ci.yml`, `gitlab-ci-selection.yml`, `gitlab-component.yml`, `github-actions.yml`) as `text/yaml` with the server URL filled in; `?project=KEY`, `?download=true`. For GitLab's `include: remote:`; templates contain no secrets |
 | PUT | `/projects/{pid}/ci-settings` | project.update | `{"ci": {provider: ""\|gitlab, api_url, project, post_status, post_note, release_id, conditions: [...]}, "ci_token"?, "clear_ci_token"?}` → the code settings. The token is write-only and stored encrypted; empty keeps it. Audited as `project.ci_settings` |
@@ -1987,6 +2120,42 @@ test's `runner:<name>` tag, else `playwright` / `pytest` from the script
 language, else `default`; `identifier` is the key with underscores
 (`SHOP_TC_12`), as automated tests name it. A run is created only when
 tests are selected.
+
+**Test stubs.** `GET /projects/{pid}/tests/stubs?framework=pytest&q=execution_type:automated has:!script`
+(or POST with the body `{"framework", "query", "ids": [...], "format",
+"package", "dir", "mark_script"}`) generates one stub per selected test
+(`q` or `query`, and/or `ids`: test ids or keys; at most 2000) for
+`framework` `pytest`, `playwright`, `go`, `junit5`, `jest`, `vitest`,
+`robot` or `cucumber` (aliases `py`, `golang`, `java`, `junit`,
+`gherkin`, `robotframework`). Each file is named after the key
+(`test_SHOP_TC_12.py`, `shop_tc_12_test.go`, `SHOP_TC_12Test.java`,
+`SHOP-TC-12.spec.ts`, `SHOP-TC-12.test.ts`, `SHOP-TC-12.robot`,
+`SHOP-TC-12.feature`), and so is the test function, class or scenario,
+which is how [JUnit results](#operations) map back. A header block
+between `qtestframe:begin KEY FRAMEWORK body=HASH` and `qtestframe:end`
+holds the title, link, requirements, priority, tags, description,
+preconditions and expected result; the body has the steps as numbered
+TODO comments (with data and expected results), the test data as a
+parametrised test (pytest `parametrize`, Go table with subtests, JUnit
+`@ParameterizedTest @CsvSource`, a loop of Playwright tests, `test.each`,
+Robot test cases calling one keyword, a Cucumber Scenario Outline) and a
+skip marker (`pytest.mark.skip`, `t.Skip`, `@Disabled`, `test.fixme`,
+`test.skip`, `Skip`; Cucumber: undefined steps and the tag
+`@qtestframe-stub`), so an unimplemented stub reports as skipped.
+`format`: `zip` (default; `<key>-<framework>-stubs.zip`), `json`
+(`{"framework": {id, name, language, runner, script_language,
+parametrised}, "files": [{path, content, key, framework, test_id}],
+"marked"}`) or `file` (exactly one test, as `text/plain`). `package`:
+the Go package (default `tests`) or Java package; `dir`: a relative
+directory put before the paths. With `mark_script` (POST, test.write)
+each selected test without a script (or with an earlier stub reference)
+gets the script `qtestframe:stub <dir/path>`, becomes automated, gets the
+framework's script language (where there is one) and the tag
+`runner:<runner>` (pytest, playwright, go, maven, jest, vitest, robot,
+cucumber) unless it has a runner tag; `marked` counts them. The server
+never executes such a script: `run-automated` skips it with the code
+`external` and `run-script` refuses it. Regeneration is the client's job:
+`qtestframe stubs` merges with the files on disk (see the CI/CD guide).
 
 **Server-side posting.** With `ci.provider` `gitlab`, a token and
 `post_status` or `post_note`, every result upload (`POST /runs/{id}/junit`,
@@ -2469,7 +2638,7 @@ are per project.
 
 | Method | Path | Permission | Description |
 |---|---|---|---|
-| GET | `/projects/{pid}/correlation-settings` | project.read | `{relation_impact, relation_modes, impact_depth, impact_rules, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` |
+| GET | `/projects/{pid}/correlation-settings` | project.read | `{relation_impact, relation_modes, impact_depth, impact_rules, applicability_impact, flag_issues, stale_after_days, stale_on_change, blocking_severities, warning_severities, regression_action}` |
 | PUT | `/projects/{pid}/correlation-settings` | project.update | partial update; `relation_impact` is replaced as a whole |
 | GET | `/requirements/{id}/impact` | requirement.read | what a change of the requirement's substance makes suspect, out of date, outdated or stale |
 | GET | `/tests/{id}/impact` | test.read | the same for a test |
@@ -2550,6 +2719,17 @@ direction}]` from the changed item) and `owner`; the impact has `roots`,
 `risks`, `defects`, `links` (runs), `variants`, `code`. A status change only
 recommends reviews.
 
+**Changed applicability.** Changing the variants a requirement or test
+applies to (`PUT /requirements/{id}/applicability`, `PUT /tests/{id}/applicability`,
+`PUT /projects/{pid}/applicability`, and restoring a version or baseline
+with another applicability) is a change with the root field
+`applicability`; `applicability_impact` decides what it does: `review`
+(default) recommends a review of what the rules above reach — nothing is
+marked, the owners of the reached items are notified (`impact.review`) —
+`suspect` makes it a change of substance (the rules mark trace links and
+relations suspect, audited as for content changes), `off` does nothing.
+These endpoints take `?dry_run=impact` and `?impact=` like the others.
+
 **Dry run and choice.** Every endpoint that changes requirements or tests
 (`PATCH /requirements/{id}`, `PATCH /tests/{id}`, the `bulk` and `batch`
 endpoints, `exchange/{xlsx,reqif}/apply`, `requirements/import`,
@@ -2622,6 +2802,20 @@ deprecated id). A catalogue import copies the catalogue risk's `attack` and
 `atlas` into it. The field is in exports, project archives and backups
 (column `risks.attack`, a JSON list).
 
+**Risk register import.** `POST /projects/{pid}/risks/import` reads the
+risk register of the risks report (sheet *Risk register* of the XLSX, or the
+CSV) or a sheet of one's own: the sheet and header row with a *Title* column
+and the most risk columns among Key, Title, Description, Category, Owner,
+Likelihood, Impact, Status (code or English or Swedish label), Mitigation,
+Review date, Review owner, ATT&CK techniques and EMB3D threats (English or
+Swedish headers). A row naming the key of a risk of the project updates the
+columns the file has (`action` `update`, or `unchanged`); the others create
+risks (`create`; an unknown key gets a warning). Unknown ATT&CK and ATLAS
+techniques and EMB3D threats (a mitigation `MID-nnn` too), unknown
+statuses and likelihoods or impacts outside 1–5 are left out with a
+warning on the row; a row without a title is an `error` and skipped.
+`dry_run=true` previews without saving.
+
 `emb3d` lists the MITRE EMB3D threats that realise the risk on an embedded
 device (`["TID-201", "TID-327"]`, at most 20): trimmed, upper-cased, without
 duplicates and each a threat of `GET /catalog/emb3d?kind=threat` (400
@@ -2629,6 +2823,7 @@ otherwise; a mitigation `MID-nnn` is rejected). A catalogue import copies
 the catalogue risk's `emb3d`; column `risks.emb3d`.
 | POST | `/projects/{pid}/risks/bulk` | `{"ids":[...], "set": {"status"?, "owner"?, "category"?, "likelihood"?, "impact"?}, "add_requirement_ids"?, "remove_requirement_ids"?}` → `{"updated": n}`; every risk is validated before any is saved |
 | DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
+| POST | `/projects/{pid}/risks/import` | multipart `file` (CSV or XLSX) and `dry_run` → `{dry_run, sheet, columns, created, updated, unchanged, errors, rows:[{row, key, title, action, error?, warnings}]}` (see below); atomic; audited as `risk.import` |
 | POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
 | GET | `/requirements/{id}/risks` | the risks a requirement addresses |
 | POST | `/requirements/{id}/risks` | `{add:[risk ids], remove:[risk ids]}` – the risks a requirement mitigates, changed from its side (requirement.write); → the risks as for GET |
@@ -2657,6 +2852,146 @@ effect; `threshold` is the project's risk acceptance threshold and
 (`review_due` once the date is reached). The acceptance sign-off fills
 `accepted_by`, `accepted_name`, `accepted_at` and `acceptance_comment`;
 `acceptance_valid` is false when the residual assessment changed since.
+
+## Test environments
+
+A **test environment** is a system tests run against: a development or
+staging system, a lab, a hardware-in-the-loop rig, a device. It belongs to
+a project, or (`shared: true`, `project_id` "") to the organisation, and
+every project can then select and book it. It has a `type` (`dev`, `test`,
+`staging`, `pre_prod`, `prod_like`, `lab`, `hil_rig`, `device`), `urls`, a
+`description`, **components** with versions (`[{name, version}]`, e.g.
+app 2.3.1, DB 16), an `owner_id`, a `status` (`available`, `in_use`,
+`maintenance`, `broken`, `retired`) with a `status_note`, `tags`, the
+`configuration_ids` and `variant_ids` it provides (project environments),
+a `capacity` (how many bookings may overlap; 1 = exclusive) and
+`requires_approval`. Reading needs `run.read`; creating and changing
+environments, approving their bookings and revealing their secret need
+`environment.manage` (test leads, managers, admins; for a shared
+environment in the organisation, not a project role).
+
+**Credentials.** `credentials_ref` says where the credentials are (a vault
+path, a password manager entry, a key cabinet); it is plain text and must
+not hold the secret. An optional `secret` is **write-only**: it is
+encrypted like the other stored secrets (`enc:v1:`, bound to
+`environments.secret` and the row; see the administrator guide, *Stored
+secrets*), never returned (`has_secret` says whether one is stored), left
+out of project archives, and revealed only by `POST
+/environments/{id}/secret` to environment managers, which writes the audit
+entry `environment.secret_reveal`. Prefer the reference.
+
+**Health check.** With a `health_url` (http or https) the background job
+(every minute) fetches it every `health_interval_minutes` (default 5) with
+a 10 s timeout; 2xx and 3xx are up. A failing check marks an `available`
+or `in_use` environment `broken` (`status_by_health`, the error in
+`status_note`); a passing check makes an environment the check marked
+broken `available` again. Environments in maintenance or retired are not
+checked. A status change is audited (`environment.health`), notified to
+the owner and sent as the event `environment.status_changed`.
+
+**Runs, cycles and sessions.** Runs, test cycles and exploratory sessions
+select an environment item with `environment_id` (by id or name; "" none).
+The free-text `environment` of runs and cycles stays for compatibility: it
+holds the item's name (renaming the environment renames it), and a run
+created or changed with a free-text environment that names an environment
+of the project (or a shared one) is linked to it. Migration 0057 turned the
+distinct free-text environments of each project's runs and cycles into
+environment items. A cycle's runs get its environment. When an execution
+gets a final result it records `environment_id`, `environment_name` and
+`environment_components` (the versions at that moment; later changes of the
+environment do not change them; taking the result back clears them).
+`GET /releases/{id}/environments` and the release readiness report list the
+environments and versions the release's results were obtained in.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/environments` | the project's environments and the shared ones (`?shared=false`: only the project's) with `booked_now`, `next_booking` and `run_count`; `?q=` filters (fields `name`, `type`, `status`, `description`, `owner`, `tag`, `component` (alias `version`: a component name or "name version"), `url`, `shared`, `capacity`, `approval`, `health`, `booked`, `created_by`, `created_at`, `updated_at`) |
+| POST | `/projects/{pid}/environments` | `{name, type?, status?, status_note?, description?, urls?, components?, owner_id? (default: the caller), tags?, configuration_ids?, variant_ids?, capacity?, requires_approval?, credentials_ref?, secret?, health_url?, health_interval_minutes?, shared?}` → 201; names are unique per project (and among the shared ones), ignoring case |
+| GET | `/environments` | the shared environments |
+| GET | `/environments/{id}` | an environment (never its secret) |
+| PATCH | `/environments/{id}` | the fields above (only those given; `secret` "" keeps the stored one, `clear_secret: true` removes it) |
+| DELETE | `/environments/{id}` | 204; its bookings go, runs and results keep the name and the recorded versions |
+| POST | `/environments/{id}/secret` | `{secret}` (audited); 404 when none is stored |
+| POST | `/environments/{id}/check` | runs the health check now → the environment |
+| GET | `/environments/{id}/history` | revisions (never the secret) |
+| GET | `/releases/{id}/environments` | `[{environment_id, name, type, components, executions, passed, failed, blocked, last_at}]` |
+
+### Bookings
+
+A **booking** reserves an environment from `starts_at` to `ends_at` (at most
+366 days) for a `purpose`, for a project (the environment's, or for a
+shared environment the project it is booked for) and optionally a run,
+cycle or session of that project. Booking needs `run.execute` in that
+project. `pending` and `approved` bookings take up the capacity; a booking
+that would exceed it at some moment (bookings that only touch do not
+overlap) answers **409** `{"code": "booking_conflict", "error", "capacity",
+"overlapping": [Booking]}`. When the environment `requires_approval`, a
+booking is `pending` until its owner or an environment manager approves or
+rejects it (`environment.booking_requested` to them, `…_approved` /
+`…_rejected` to the booker); they book without approval themselves. Moving
+an approved booking of such an environment makes it pending again. A
+retired environment cannot be booked. A booking made for a project the
+caller does not see shows only its time and status (`hidden: true`). My
+work lists the bookings waiting for the caller's approval (reason
+`booking_approval`) and the caller's own waiting bookings
+(`awaiting_approval`, not counted).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/bookings` | the bookings of the project's environments and those made for the project; `?from=`, `?to=` (RFC 3339 or YYYY-MM-DD), `?status=` (comma separated) |
+| GET | `/environments/{id}/bookings` | the bookings of an environment (same parameters) |
+| POST | `/environments/{id}/bookings` | `{starts_at, ends_at, purpose?, project_id? (shared environments), run_id?, cycle_id?, session_id?}` → 201 Booking |
+| GET | `/bookings/{id}` | a booking |
+| PATCH | `/bookings/{id}` | the fields above (not `project_id`), by the booker, the environment's owner or a manager |
+| POST | `/bookings/{id}/decision` | `{decision: approved \| rejected, note?}` of a pending booking (owner or manager; approving checks the capacity again) |
+| POST | `/bookings/{id}/cancel` | cancels a pending or approved booking |
+| GET | `/runs/{id}/bookings`, `/cycles/{id}/bookings`, `/exploratory-sessions/{id}/bookings` | the bookings linked to the item |
+
+`POST /projects/{pid}/runs`, `POST /projects/{pid}/cycles` and `POST
+/projects/{pid}/exploratory-sessions` (and their PATCH) take `environment_id`
+and `booking: {starts_at, ends_at, purpose?}`: the item is created with the
+environment and the booking in one transaction (a booking conflict creates
+nothing).
+
+## Test data sets
+
+A **test data set** is named, versioned data shared by tests: a `table`
+of `parameters` and `data_rows` (the same rules as the [inline data of a
+test](#test-data-data-driven-tests)) or `files` (attachments of the set,
+`/test-data-sets/{id}/attachments` like the other attachments). It has a
+`classification` (`synthetic`, `anonymised`, `production_copy`: shown with
+a warning, it may hold personal or confidential data), an `owner_id`, an
+`expires_on` date (`expired`; `expiring` within 14 days), `tags` and a
+`status` (`active`, `archived`). Every change is a new `version`. Reading
+needs `test.read`, changing `test.write`.
+
+**Links.** A set is linked to tests, configurations and runs (`usage`
+`reference`). A table set linked to a data-driven test as `source` replaces
+the test's own rows: when the test's executions are created, each row of
+the active set becomes an iteration, and the run records the use
+(`test_data_usage`: set, version, run, test). A test has one source; an
+archived set is not used (the test's own rows are). **Refresh requests**
+ask the owner to refresh a set (`testdata.refresh_requested`); the owner
+closes them as done or rejected (`testdata.refresh_resolved`). My work lists
+the owner's sets that expired or expire soon (reasons `data_expired`,
+`data_expiring`) and the sets with open refresh requests
+(`refresh_requested`).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/test-data-sets` | `[DataSet]` with `links`, `usage_count`, `last_used_at`, `open_refreshes`, `file_count`, `expired`, `expiring`; `?q=` filters (fields `name`, `description`, `kind`, `classification`, `owner`, `status`, `tag`, `expires`, `expired`, `expiring`, `parameter`, `linked` (item keys and names), `version`, `usage`, `refresh`, `created_by`, `created_at`, `updated_at`) |
+| POST | `/projects/{pid}/test-data-sets` | `{name, description?, kind?, parameters?, data_rows?, classification?, owner_id?, expires_on?, tags?, status?}` → 201 |
+| GET | `/test-data-sets/{id}` | a set with its links |
+| PATCH | `/test-data-sets/{id}` | the fields above and `version` (optional: 409 when it was saved in the meantime) |
+| DELETE | `/test-data-sets/{id}` | 204 |
+| GET | `/test-data-sets/{id}/history` | revisions |
+| GET | `/test-data-sets/{id}/usage` | `[{data_version, run_id, run_name, test_case_id, test_key, used_at}]`, newest first (`?limit=`) |
+| POST | `/test-data-sets/{id}/links` | `{item_type: test \| configuration \| run, item_id, usage?: reference \| source}` → the set |
+| DELETE | `/test-data-sets/{id}/links/{link}` | 204 |
+| GET | `/tests/{id}/data-sets`, `/configurations/{id}/data-sets`, `/runs/{id}/data-sets` | the links of an item |
+| GET | `/test-data-sets/{id}/refresh-requests` | the refresh requests, newest first |
+| POST | `/test-data-sets/{id}/refresh-requests` | `{reason, needed_by?}` → 201 (needs `test.write` or `run.execute`) |
+| POST | `/test-data-refresh-requests/{id}/resolve` | `{status: done \| rejected, note?}` (the set's owner or `test.write`) |
 
 ## Exploratory testing
 
@@ -2698,6 +3033,41 @@ inconclusive does not count, and only the newest session per requirement
 counts. Defects link to sessions with `entity_type` `exploratory_session`.
 The report templates `exploratory_session` (param `session_id`) and
 `exploratory_sessions` are part of `/reports/templates`.
+
+## AI assistance
+
+Optional suggestions from a language model service (system settings,
+section `ai`; off by default). It is available in a project when the service
+is configured and on, the organisation turned it on (`ai_enabled` of
+`PUT /settings`) and the project did not opt out. The feature endpoints
+**only return suggestions**: the client shows them for review and saves what
+the user accepts through the regular endpoints.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/ai` | signed in | the organisation's view: `{available, reason, provider, model, features, system_enabled, organisation_enabled, rate_limit, remaining, price_input, price_output, prompt_version}` |
+| GET | `/projects/{pid}/ai` | project.read | the same for the project, with `project_disabled`; `reason` is `off`, `not_configured`, `organisation` or `project` |
+| PUT | `/projects/{pid}/ai` | project.update | `{"disabled": bool}` — the project's opt-out |
+| POST | `/projects/{pid}/ai/draft-tests` | test.write | `{requirement_id, lang}` → `{requirement_id, requirement_key, tests: [{title, description, preconditions, test_data, expected_result, steps: [{action, data, expected}], criteria, criterion_ids}]}` |
+| POST | `/projects/{pid}/ai/improve-requirement` | requirement.write | `{requirement_id?, title, description, analysis_language, lang}` → `{original, title, description, explanation, before, after, fixed, new, claimed}`; `before`/`after` are the analyses of `POST /reqlang/analyze`, `fixed`/`new` the rule ids the rewrite resolves or adds (checked on the server) |
+| POST | `/projects/{pid}/ai/summarize-run` | run.read | `{run_id, lang}` → `{run_id, summary, causes: [{title, explanation, tests}], defects: [{title, description, severity, tests: [{key, title, test_case_id, execution_id}]}], failed, linked_defects}` |
+| POST | `/projects/{pid}/ai/suggest-mappings` | requirement.write | `{requirement_id \| risk_id, kind?, title?, description?, lang}` (`kind: "risk"` for a risk not saved yet) → `{kind, mappings: [{framework, id, name, reason}], dropped}`; requirements `d3fend`, `emb3d`, `cwe`; risks `attack`, `emb3d` (threats); ids not in the embedded lists are dropped |
+| POST | `/projects/{pid}/ai/suggest-criteria` | requirement.write | `{requirement_id?, title, description, criteria, lang}` → `{criteria: [{description, method, threshold}]}` without the existing ones |
+| POST | `/admin/settings/test/ai` | super admin | `{values}` (unsaved settings) → `{ok, message, error, details}` |
+
+Every feature answer is `{meta, result}` with `meta` = `{feature,
+prompt_version, provider, model, usage: {input_tokens, output_tokens},
+retried, duration_ms, cost}` (`cost` from the configured prices, 0 without).
+With `Accept: text/event-stream` the answer is streamed as server-sent
+events: `start` `{feature, provider, model}`, `progress` `{chars}` while the
+service writes, then `result` (the JSON body) or `error` `{status, code,
+error, meta}`. Closing the connection cancels the request at the service.
+Errors: `409 ai_unavailable`, `429 rate_limited` (`ai.rate_limit` per user
+and hour), `422 ai_refused`, `502 ai_service`, `502 ai_invalid_answer` (the
+answer did not match the schema, also after one retry), `504 ai_timeout`.
+`lang` (`en`, `sv`) is the language of the prompt and the suggestions. Each
+request is audited as `ai.request` (feature, item ids, model, tokens,
+outcome — never the content).
 
 ## Waivers and deviations
 
@@ -2755,6 +3125,110 @@ requirements under a project-wide waiver separately (`waived`), and the
 partly implemented. The compliance and `release` reports have a waiver
 section; the requirements specification marks waived requirements
 ("Waived by") and lists the waivers in an appendix.
+
+## Change requests
+
+Formal change control. A change request (key `PROJ-CR-n`) proposes new
+field values for requirements and tests, with a reason, a category
+(`correction`, `enhancement`, `regulatory`, `defect_driven`, `risk_driven`,
+`other`), a priority and links to defects, risks and tracker issues. Reading
+needs `requirement.read`; proposing, editing, submitting, assessing, sending
+to the board, applying, verifying and closing `change.create` (SME, Test
+lead, Manager and Admin by default); deciding `change.approve` (Test lead,
+Manager and Admin by default) and a seat on the project's change control
+board.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET / PUT | `/projects/{pid}/change-control` | settings (PUT: `project.update`): `{"mode": "off"\|"warn"\|"enforce", "protected_statuses": [status], "lock_signed_baselines": true, "board": {"users": [e-mail], "roles": [role], "quorum": "all"\|"any"\|"N"}, "signature_meaning", "baseline_on_close"}` |
+| GET | `/projects/{pid}/change-requests?status=&category=&open=true&item=kind:id` | `[ChangeRequest]`, newest first |
+| POST | `/projects/{pid}/change-requests` | `{"title", "reason", "category", "priority", "impact_action": "suspect"\|"notify"\|"skip", "links": {"defect_ids", "risk_ids", "issues"}, "baseline_on_close", "items": [{"entity_type", "entity_id", "proposed": {field: value}}], "submit"}` → 201 |
+| GET | `/projects/{pid}/change-requests/open-items` | `{"items": {"kind:id": [keys]}}`: items with open change requests |
+| GET / PATCH / DELETE | `/change-requests/{id}` | PATCH only for a draft; DELETE only a draft or rejected one |
+| POST / DELETE | `/change-requests/{id}/items`, `/change-requests/{id}/items/{item}` | add (or replace the proposal of) items of a draft; remove one |
+| GET | `/change-requests/{id}/impact` | the impact of the proposed changes now |
+| POST | `/change-requests/{id}/submit` | draft → submitted; stores the impact snapshot |
+| POST | `/change-requests/{id}/assess` | `{"notes", "effort", "review"}`: → assessed (impact computed again); `review: true` also sends it to the board |
+| POST | `/change-requests/{id}/review` | assessed → in_review; the board is notified |
+| POST | `/change-requests/{id}/withdraw` | back to draft (from submitted, assessed, in_review, rejected, deferred) |
+| POST | `/change-requests/{id}/decision` | (change.approve) `{"decision": "approve"\|"reject"\|"defer", "comment", "password"}` |
+| POST | `/change-requests/{id}/apply` | `{"impact"}`: approved → implemented |
+| POST | `/change-requests/{id}/verify` | implemented → verified |
+| POST | `/change-requests/{id}/close` | `{"create_baseline", "baseline_name", "comment"}`: verified, rejected or deferred → closed |
+| GET | `/requirements/{id}/change-control`, `/tests/{id}/change-control` | `{mode, protected, blocked, reasons, open_change_requests, can_propose, can_override}` |
+
+`ChangeRequest` = `{id, project_id, key, title, reason, category, priority,
+status, impact_action, impact (ChangeImpact or null), impact_notes, effort,
+assessed_by, assessed_at, links: {defect_ids, risk_ids, issues}, defects,
+risks, baseline_on_close, baseline_id, decided_by, decided_at,
+decision_comment, applied_by, applied_at, verified_by, verified_at,
+closed_by, closed_at, items: [{id, entity_type, entity_id, key, title,
+status, base_version, current_version, proposed, current, outdated,
+applied_version}], approvals: [{user_email, user_name, decision, meaning,
+comment, content_hash, signed_at, valid}], events: [{action, actor,
+comment, at}], content_hash, outdated, created_by, created_at,
+updated_at}`.
+
+**Proposed values.** `proposed` holds new values as in a PATCH:
+requirements `title`, `description`, `obligation`, `type`, `priority`,
+`status`, `source`, `rationale`, `owner`, `tags`, `custom_fields`; tests
+`title`, `description`, `preconditions`, `expected_result`,
+`execution_type`, `priority`, `status`, `estimated_minutes`, `owner`,
+`tags`, `custom_fields`. `base_version` is the item's version when it was
+proposed; an item whose version moved on is `outdated`, and the change
+request can then not be decided or applied (409 `outdated`) until it is
+withdrawn and proposed again.
+
+**Workflow.** `draft` → `submitted` (the [transitive change
+impact](#change-and-defect-correlations) of the proposed changes is stored as a snapshot,
+with every path) → `assessed` (the assessor adds notes and an effort
+estimate; the snapshot is taken again) → `in_review` → `approved`,
+`rejected` or `deferred` → (approved) `implemented` → `verified` →
+`closed`. A **decision** is an electronic signature over `content_hash`
+(the items, their proposals and base versions, title, reason, category
+and impact action), given in the browser with the signer's password or a
+recent single sign-on, recording the project's `signature_meaning`.
+The requester cannot decide their own change request. Board members are
+the listed users and the holders of the listed roles (none listed: anyone
+with `change.approve`). Any rejection rejects and any deferral defers
+(both need a comment); approvals meeting the quorum approve it: `all`
+(every listed user and a holder of each listed role), `any` (one) or a
+number. **Applying** saves the proposed values of every item atomically
+through the normal PATCH (validation, permissions, revisions, history,
+audit) and then applies the change impact once with the chosen action
+(`suspect`, `notify` or `skip`, as `?impact=`); if any item fails nothing
+is saved. Closing a verified change request can create a baseline. Each
+step is on the timeline (`events`) and in the audit log
+(`change_request.*`); webhook and chat events `change_request.submitted`,
+`.review`, `.approved`, `.rejected`, `.deferred`, `.implemented`,
+`.closed`; the board is notified when it is sent for review and the
+requester of the decision.
+
+**Change control.** With `mode` `enforce`, requirements and tests whose
+current status is one of `protected_statuses` (empty: approved,
+implemented, verified, ready) or that are in a baseline with a sign-off
+(`lock_signed_baselines`) cannot be changed directly: PATCH, bulk edits,
+the spreadsheet batch, the Excel and ReqIF exchange, restoring a version
+or a baseline and deleting answer 409 `{"code": "change_control", "error",
+"hint", "kind", "id", "key", "reasons", "open_change_requests"}`. Review
+decisions and the automatic status of evidence are not affected. An
+**emergency override** `?change_override=<justification>` (at least 10
+characters, `change.approve`) saves the change anyway and writes
+`change_control.override` to the audit log. With `warn` the change is
+saved and the answer has `X-Change-Control: warn` and
+`X-Change-Control-Reason`.
+
+**Elsewhere.** Requirements and tests carry `open_change_requests` (the
+keys of their open change requests); the query field `cr` (aliases
+`change_request`, `crs`) holds `open` and those keys, so `cr:open` or
+`has:cr` finds items with an open change request and `cr:PROJ-CR-3` the
+items of one. The work list source `change_requests` lists change
+requests waiting for the caller's signature (`change_approval`) and the
+caller's own that came back rejected or deferred (`change_returned`) or
+wait to be applied (`change_approved`). The report template
+`change_requests` (param `change_request`: a key or id; without it the
+register) has the proposed changes field by field, the impact, the
+signatures and the timeline.
 
 ## Reviews
 
@@ -2845,6 +3319,7 @@ date, then the most recently changed. Sources and reasons:
 | `in_review` | requirements and tests in status review that the caller owns, wrote or was asked to review (as `GET /reviews/in-review`, without the items listed only for the caller's review permission) | `in_review` (waiting, not counted) |
 | `waivers` | requested waivers the caller may decide and has not signed (one of its approvers, or holds `waiver.approve` when it names none; never the requester) | `waiver_approval` |
 | `risk_acceptance` | mitigated or accepted risks above the acceptance threshold without a valid acceptance signature, for holders of `waiver.approve` | `risk_acceptance` |
+| `change_requests` | [change requests](#change-requests) in review the caller may decide as a board member and has not signed (never the requester); the caller's own change requests that came back rejected or deferred, or are approved and wait to be applied (`detail` = the requester) | `change_approval`, `change_returned`, `change_approved` |
 | `cycles` | tests of planned or active test cycles assigned to the caller without a final result (a test in one of the cycle's runs is the row of its execution; `detail` = cycle, `due` = its end date) | `assigned` |
 | `exploratory` | exploratory sessions the caller is the tester of, planned, running or paused | `assigned` |
 | `mentions` | items with an unresolved discussion thread that mentions the caller (`detail` = who wrote last); a requirement can also be an `owned` row, and the reasons are joined | `mentioned` |
@@ -3048,6 +3523,47 @@ project.
 
 Project icon files are served by `/files/{id}/content?inline=1`.
 
+### Logo on reports and documents
+
+The first page of every report (`/reports/generate`, saved and scheduled
+reports, the change impact export) and generated document
+(`/documents/generate`) shows a logo in PDF, DOCX and Markdown (a data URI
+image; centred and right-aligned logos as `<p align>` HTML): the project's
+own, else the organisation's, unless the project turned it off. A logo is
+`{file_id, content_type, width, height, source, name, placement, max_width_mm, max_height_mm, url}`:
+`placement` `left` (default) | `center` | `right`; `max_width_mm` 5–170
+(default 50) and `max_height_mm` 5–40 (default 20) bound the printed size;
+the logo keeps its proportions and is never larger than its own size at
+96 dpi.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/settings/logo` | member | the organisation's logo |
+| PUT | `/settings/logo` | settings.manage | `{placement?, max_width_mm?, max_height_mm?}`; audited as `settings.logo` |
+| PUT | `/settings/logo/image` | settings.manage | multipart `file` (see below); audited as `settings.logo.upload` |
+| DELETE | `/settings/logo/image` | settings.manage | removes the image |
+| GET | `/settings/logo/image` | member | the image (PNG or JPEG) |
+| GET | `/projects/{pid}/logo` | project.read | `{own, organisation, effective: project \| organisation \| none}` |
+| PUT | `/projects/{pid}/logo` | project.update | `{placement?, max_width_mm?, max_height_mm?, off?}`; `off`: no logo, not even the organisation's; audited as `project.logo` |
+| PUT | `/projects/{pid}/logo/image` | project.update | multipart `file`: the project's own logo (turns `off` off) |
+| DELETE | `/projects/{pid}/logo/image` | project.update | the organisation's logo applies again |
+| GET | `/projects/{pid}/logo/image` | project.read | the image |
+
+Uploads are PNG, JPEG or SVG of at most 2 MB (400 otherwise, also for
+images smaller than 8 pixels, larger than 40 megapixels or with an aspect
+ratio beyond 50:1). PNG and JPEG are decoded and encoded again (no
+metadata, 8 bits, at most 1600 pixels on the longer side). An SVG is drawn
+by Qtestframe's own renderer into a PNG of 1000 pixels on the longer side —
+nothing in it is run or fetched: scripts, event handlers, `<image>`,
+`<use>`, `<foreignObject>`, links, external style sheets and entity
+declarations (rejected) are ignored; paths, basic shapes, fills, strokes,
+opacities, transforms, simple `<style>` rules and gradients (their first
+stop colour) are drawn; texts are not (convert them to outlines). The
+stored image is a file of kind `logo` (not listed in the document archive);
+`PUT /settings` keeps the logo as it is. Project archives carry the
+project's own logo (the organisation's logo belongs to the organisation and
+is in backups).
+
 ## Sign-in information
 
 * `Me` additionally contains `previous_login` (`{created_at, ip, user_agent,
@@ -3075,6 +3591,74 @@ Project icon files are served by `/files/{id}/content?inline=1`.
 
 CLI equivalents: `qtestframe backup --out FILE.zip`,
 `qtestframe restore --in FILE.zip --yes`.
+
+### Tamper-evident audit trail
+
+The audit log of each organisation is a hash chain (system entries such as
+command-line backups, tenant `""`, have their own). Every entry has `seq`
+(1, 2, …), `prev_hash` (the hash of the entry before it, `""` for the first)
+and `hash` = hex SHA-256 over the canonical encoding: the line
+`qtf-audit-v1\n`, then for each of tenant id, seq, id, `created_at` (UTC,
+`2006-01-02T15:04:05.000000Z`), user id, user e-mail, action, entity type,
+entity id, details, reason and prev_hash the text `<length in bytes>:<value>\n`.
+Entries are chained right after the transaction that wrote them commits
+(`seq` is 0 until then, normally milliseconds). Signed checkpoints
+(HMAC-SHA256 with a server key that is stored encrypted like the other
+secrets) are written every 1 000 entries, at least hourly while entries are
+written, and at every verification and export.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| POST | `/audit/verify` | audit.read | verifies the chain → `AuditVerification`: `ok`, `entries`, `last_seq`, `last_hash`, `checkpoints`, `last_checkpoint`, `key_protected`, `unchained`, and `broken` (`seq`, `entry_id`, `created_at`, `problem`: `entry_changed`, `link_broken`, `sequence_gap`, `truncated`, `checkpoint_mismatch`, `checkpoint_signature`; `message`) for the first broken link. Recorded as `audit.verify` |
+| GET | `/audit/archive?format=json\|csv` | audit.read | the whole chain for external archiving. JSON: `{"format": "qtestframe-audit-archive-v1", "chain": "qtf-audit-v1", "tenant_id", "tenant", "exported_at", "head_seq", "head_hash", "checkpoints": [...], "entries": [...]}`; CSV: `seq, id, created_at, user_id, user_email, action, entity_type, entity_id, details, reason, prev_hash, hash`. Recorded as `audit.archive` |
+
+`qtestframe audit verify [--tenant SLUG] [--json]` verifies the chains in the
+database (exit 1 at a broken link); `qtestframe audit verify --file
+EXPORT.json` verifies a JSON export without the database (hashes, links, end
+and checkpoint hashes; the checkpoint signatures need the server key).
+
+### Electronic-records mode (Part 11 / Annex 11)
+
+An organisation setting, off by default. When it is on, the server enforces:
+
+- **Signatures for chosen actions.** A request that performs an action of
+  `signature_actions` — `requirement.approve` (status → approved, also by
+  bulk, batch and bulk review), `test.approve` (status → ready),
+  `release.go` (status → released) and `baseline.create` — answers **428**
+  `{"code": "signature_required", "action", "meanings"}` unless it carries
+  the header `X-Signature-Ticket` with a ticket from `POST /esign/tickets`
+  for that action. Records it leaves unchanged (already approved, skipped)
+  are not signed.
+- **Reasons for change.** A request of an edit type in `reason_edits`
+  answers **428** `{"code": "reason_required", "edit_type"}` unless the header
+  `X-Change-Reason` carries a reason (3–1000 characters, URL-encoded); every
+  audit entry of the request records it in `reason`.
+- **Re-authentication at every signature**, also in the dialogs of baseline
+  sign-offs, waiver decisions, risk acceptance and verification-record
+  sign-offs: the password and, when the signer has a second factor, a code
+  (`mfa_code`); single sign-on accounts sign within `sso_reauth_minutes` of
+  signing in. `meaning` must be one of `meanings`; `time_zone` (IANA) is
+  recorded with the UTC time. These requests may instead carry a ticket
+  (`X-Signature-Ticket`) for `baseline.signoff`, `waiver.decision`,
+  `risk.accept` or `verification.signoff`; without any credentials they
+  answer 428 `signature_required` like the actions above.
+- **Inactivity timeout**: a browser session ends after
+  `idle_timeout_minutes` without requests (requests with the header
+  `X-Qtf-Background: 1`, the client's polling, do not count).
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/erecords` | signed in | `{"settings": {"enabled", "meanings", "signature_actions", "reason_edits", "idle_timeout_minutes", "sso_reauth_minutes", "updated_by", "updated_at"}, "signature_actions": [...], "reason_edits": [...]}` (the last two: what can be chosen) |
+| PUT | `/erecords` | tenant.manage | replaces the settings; recorded as `erecords.enable`, `erecords.disable` or `erecords.update` |
+| POST | `/esign/tickets` | signed in | `action`: one of `signature_actions` or `baseline.signoff`, `waiver.decision`, `risk.accept`, `verification.signoff`; `{"action", "password", "mfa_code", "meaning", "comment", "time_zone"}` → 201 `{"ticket", "action", "meaning", "expires_at"}`: single use, 5 minutes, this session only. API tokens cannot sign (403). Errors 403 `reauth_failed`, `reauth_required`, `mfa_required`, `mfa_invalid`, 400 `meaning_required`, 429 |
+| GET | `/esignatures?entity_type=&entity_id=` | read permission on the record | the signatures of a record (`requirement`, `test`, `release`, `baseline`, `waiver`, `risk`, `verification_record`), newest first: `user_name`, `user_email`, `signed_at` (UTC), `time_zone`, `meaning`, `action`, `method` (`password`, `password+mfa`, `sso`, `sso+mfa`), `comment`, `content_hash` and `valid` (the record still has the signed content) |
+| GET | `/esignatures?project_id=` | audit.read | all signatures of a project (without parameters: of the organisation) |
+| GET | `/erecords/report?format=json\|md` | audit.read | the "Part 11 / Annex 11 controls" report: per control `references`, `provider` (`tool`, `shared`, `customer`), `status` (`met`, `not_configured`, `attention`, `procedural`), what the tool does, what the customer's procedures must cover, and `evidence` (it verifies the audit chain) |
+
+Signatures are recorded in every mode for the existing signature dialogs
+(baseline sign-offs, waiver decisions, risk acceptance); outside the mode
+verification-record sign-offs need no re-authentication and are not
+recorded as signatures.
 
 ### System settings
 
@@ -3628,6 +4212,7 @@ key:*-REQ-1*                               glob (* and ?) over the whole value
 version>=2 created_at<2026-01-01           numeric / date comparison
 category:Negative  category:"Network based"
 has:criteria   (or field:* )               field not empty
+has:!script    (or -has:script)            field empty
 (a OR b) AND c                             grouping
 ```
 
@@ -3653,6 +4238,9 @@ so `d3fend:D3-AA` also finds `D3-MFA`, `d3fend:harden` every hardening
 technique and `d3fend:"bootloader authentication"` works) and `emb3d` (the
 EMB3D ids and names plus the threats a listed mitigation addresses and
 their categories: `emb3d:TID-201` finds an item with `MID-002`).
+Both also have `cr` (aliases `change_request`, `crs`): `open` and the keys
+of the item's open [change requests](#change-requests), so `cr:open` and
+`has:cr` find items with an open change request.
 
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of

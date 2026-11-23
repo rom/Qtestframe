@@ -152,21 +152,21 @@ export const QUERY_OPERATORS: QueryHelpEntry[] = [
   { example: '>  >=  <  <=', meaning: 'numeric or date comparison', id: 'opCompare' },
 ]
 
-export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit' | 'defect' | 'cycle', string[]> = {
+export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit' | 'defect' | 'cycle' | 'environment' | 'dataset', string[]> = {
   requirement: [
     'key', 'title', 'description', 'obligation', 'type', 'priority', 'status', 'source', 'rationale', 'owner',
     'tag', 'version', 'folder', 'category', 'dimension', 'coverage', 'linked', 'created_by', 'created_at',
     'updated_at', 'criteria', 'related', 'parent', 'child', 'comments', 'open_discussions', 'mention', 'suspect', 'risk', 'defects', 'catalog',
     'blocked', 'stale', 'suspect_relations',
     'verification', 'element',
-    'variant', 'applicability',
+    'variant', 'applicability', 'cr',
   ],
   test: [
     'key', 'title', 'description', 'preconditions', 'execution_type', 'type', 'script_language', 'script',
     'expected', 'step', 'priority', 'status', 'estimate', 'owner', 'tag', 'folder', 'category', 'dimension', 'linked',
     'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'open_discussions', 'version', 'mention', 'depends_on', 'suspect', 'flaky', 'flakiness', 'catalog', 'stale',
     'element',
-    'variant', 'applicability',
+    'variant', 'applicability', 'cr',
     'cycle',
   ],
   run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at', 'configuration', 'variant', 'cycle'],
@@ -177,5 +177,10 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' |
   cycle: [
     'name', 'goal', 'description', 'status', 'owner', 'release', 'variant', 'build', 'environment', 'configuration', 'start', 'end',
     'planned', 'executed', 'progress', 'passed', 'failed', 'blocked', 'unassigned', 'test', 'assignee', 'created_by', 'created_at',
+  ],
+  environment: ['name', 'type', 'status', 'description', 'owner', 'tag', 'component', 'url', 'shared', 'capacity', 'approval', 'health', 'booked', 'created_by', 'created_at', 'updated_at'],
+  dataset: [
+    'name', 'description', 'kind', 'classification', 'owner', 'status', 'tag', 'expires', 'expired', 'expiring', 'parameter', 'linked', 'version', 'usage', 'refresh',
+    'created_by', 'created_at', 'updated_at',
   ],
 }

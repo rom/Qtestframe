@@ -259,8 +259,14 @@ func BaselineHash(b *model.Baseline) string {
 
 // SignBaseline records a signature on the baseline's current content.
 func (s *Store) SignBaseline(ctx context.Context, tenantID string, so *model.Signoff) error {
-	if !slices.Contains(model.SignoffMeanings, so.Meaning) {
-		return Invalidf("meaning must be one of %s", strings.Join(model.SignoffMeanings, ", "))
+	return s.SignBaselineAs(ctx, tenantID, so, model.SignoffMeanings)
+}
+
+// SignBaselineAs records a signature whose meaning must be one of meanings
+// (an organisation's list in electronic-records mode).
+func (s *Store) SignBaselineAs(ctx context.Context, tenantID string, so *model.Signoff, meanings []string) error {
+	if !slices.Contains(meanings, so.Meaning) {
+		return Invalidf("meaning must be one of %s", strings.Join(meanings, ", "))
 	}
 	if len([]rune(so.Comment)) > 2000 {
 		return Invalidf("the comment is at most 2000 characters")

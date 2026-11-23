@@ -22,6 +22,8 @@ export function notificationTarget(n: Pick<AppNotification, 'project_id' | 'enti
       return { name: 'risks', params, query: { risk: n.entity_id } }
     case 'waiver':
       return { name: 'waivers', params, query: { waiver: n.entity_id } }
+    case 'change_request':
+      return { name: 'changeRequests', params, query: { cr: n.entity_id } }
     case 'execution':
       return { name: 'runs', params }
     case 'run':
@@ -32,6 +34,10 @@ export function notificationTarget(n: Pick<AppNotification, 'project_id' | 'enti
       return { name: 'settings', params }
     case 'cycle':
       return { name: 'cycle', params: { ...params, cycleId: n.entity_id } }
+    case 'environment':
+      return { name: 'environment', params: { ...params, environmentId: n.entity_id } }
+    case 'test_data_set':
+      return { name: 'testData', params, query: { set: n.entity_id } }
   }
   return { name: 'dashboard', params }
 }
@@ -48,6 +54,9 @@ export function notificationIcon(event: string): string {
   if (event === 'comment.resolved') return 'pi pi-check-circle'
   if (event === 'impact.review') return 'pi pi-sitemap'
   if (event.startsWith('chat.')) return 'pi pi-comments'
+  if (group === 'change_request') return action === 'review' ? 'pi pi-pen-to-square' : action === 'approved' ? 'pi pi-verified' : action === 'rejected' ? 'pi pi-ban' : 'pi pi-file-edit'
+  if (group === 'environment') return action === 'status_changed' ? 'pi pi-server' : action === 'booking_requested' ? 'pi pi-calendar-plus' : 'pi pi-calendar'
+  if (group === 'testdata') return 'pi pi-database'
   if (group === 'waiver') return action === 'requested' ? 'pi pi-pen-to-square' : action === 'approved' ? 'pi pi-verified' : 'pi pi-ban'
   return 'pi pi-bell'
 }
