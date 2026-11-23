@@ -96,6 +96,14 @@ export function usePresence(type: () => string, id: () => string | null | undefi
   watch(editing, (now, before) => {
     if (now !== before) beat()
   })
+  // when the stream (re)connects, presence events sent before were missed:
+  // announce again, the answer brings who else is on the item now
+  watch(
+    () => live.active,
+    (now, before) => {
+      if (now && !before) beat()
+    },
+  )
   const onVisible = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') beat()
   }
