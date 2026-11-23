@@ -121,3 +121,19 @@ What restriction does **not** hide, so plan accordingly:
 | Audit log | `audit.read` (Test lead and up by default) |
 | Provisioning (SCIM), Multi-factor authentication (organisation policy) | `tenant.manage` |
 | Organisations, Users, Backup, System settings, server MFA policy | super administrators |
+
+## Organisations and users (super administrators)
+
+**Administration → Organisations** lists every organisation with its members, projects and storage, against its quotas.
+
+- **Create** with a slug (2–63 of `a-z`, `0-9`, `-`, fixed) and a name; **rename** at any time.
+- **Suspend** stops an organisation without deleting anything: its members cannot open it (a session in it has no organisation, switching to it or signing in into it answers 403) and its API tokens are refused. **Reactivate** ends it. Super administrators can still open a suspended organisation.
+- **Usage and policy** shows the counts (members, projects, requirements, tests, runs, files, storage, last activity), what the organisation's admins have set (AI assistance, electronic-records mode, MFA required), and the **policy** only super administrators change: quotas for members, projects and storage (adding beyond them is refused, nothing existing is removed), *Forbid AI assistance*, the **allowed sign-in methods** (password, an OIDC or SAML provider; members whose account uses another method cannot open the organisation) and **e-mail domains** whose new single sign-on users join it.
+- **Delete** removes the organisation and all its data for good. The dialog offers a backup first and asks for the slug to be typed; the organisation you are working in cannot be deleted.
+- **Audit trail** opens the organisation's audit log; super administrators can pick any organisation there.
+
+Nobody can sign in as another user – super administrators included. Switching to an organisation opens it under your own name, and every action is recorded with it.
+
+**Administration → Users** lists every account across organisations, with filters (status, sign-in method, MFA, super administrators). Super administrators create and edit accounts, **disable and enable** them, reset a local password (a temporary one, shown once) or the second factor, **sign a user out everywhere** (API tokens stay valid), see the user's **organisations and roles**, and give or take the super administrator flag. The last enabled super administrator cannot be demoted or disabled.
+
+Who may create **projects** is the permission `project.create` of each organisation's role matrix; only super administrators create organisations. A new project is visible to the whole organisation until its members restrict it (above).

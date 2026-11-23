@@ -217,7 +217,7 @@ async function submit() {
               as="a"
               :href="p.login_url"
               :label="p.display_name || p.name"
-              :icon="p.kind === 'saml' ? 'pi pi-shield' : 'pi pi-key'"
+              :icon="p.icon ? `pi pi-${p.icon}` : p.kind === 'saml' ? 'pi pi-shield' : 'pi pi-key'"
               severity="secondary"
               outlined
               class="w-full"

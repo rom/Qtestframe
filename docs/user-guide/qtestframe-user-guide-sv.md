@@ -4660,8 +4660,12 @@ Administratören anger på samma sida vilka åtgärder som kräver signatur, inn
 
 - **Ny organisation**: ett **Kortnamn** (används vid inloggning, till exempel `acme`) och ett **Namn**.
 - **Byt namn på organisation** (får även göras av organisationens administratörer).
-- **Byt** till en organisation för att arbeta i den.
-- **Ta bort** tar bort organisationen med **alla** dess projekt och data. Det går inte att ångra.
+- **Byt** till en organisation för att arbeta i den. Du arbetar där i ditt eget namn: ingen, inte ens en superadministratör, kan logga in som en annan användare.
+- Listan visar **medlemmar**, **projekt** och **lagring** för varje organisation, mot dess gränser.
+- **Användning och regler** visar antalen (krav, testfall, körningar, filer, senaste aktivitet), vad organisationens administratörer har slagit på (AI-assistans, läge för elektroniska poster, flerfaktorsautentisering) och de **regler** som bara superadministratörer ändrar: flest **medlemmar**, **projekt** och mest **lagring** (0 = ingen gräns; att lägga till fler nekas), **Förbjud AI-assistans**, **Tillåtna inloggningssätt** (lösenord eller en leverantör för enkel inloggning; medlemmar vars konto använder ett annat sätt kan inte öppna organisationen) och **E-postdomäner** vars nya användare med enkel inloggning går med i den.
+- **Stäng av** stoppar organisationen utan att ta bort något: medlemmarna kan inte öppna den och dess API-tokens slutar fungera tills du **Återaktiverar** den.
+- **Granskningslogg** öppnar organisationens [händelselogg](#händelselogg).
+- **Ta bort** tar bort organisationen med **alla** dess projekt och data. Det går inte att ångra: dialogen erbjuder **Ladda ned säkerhetskopia** först och ber dig skriva organisationens kortnamn. Du kan inte ta bort organisationen du arbetar i.
 
 ## Användare
 
@@ -4671,7 +4675,9 @@ Administratören anger på samma sida vilka åtgärder som kräver signatur, inn
 
 - **Ny användare**: e-post, visningsnamn, lösenord och eventuellt **Superadministratör**.
 - **Redigera användare**: ändra visningsnamnet, ange ett nytt lösenord (**Återställ lösenord (valfritt)**), gör användaren till superadministratör eller markera kontot som **Inaktiverad**. Att inaktivera ett konto eller ange ett lösenord loggar ut användaren överallt. **Måste byta lösenord** tvingar fram ett nytt lösenord vid nästa inloggning.
-- Du kan inte ta bort din egen superadministratörsflagga eller inaktivera dig själv.
+- Du kan inte ta bort din egen superadministratörsflagga eller inaktivera dig själv, och den sista aktiverade superadministratören förblir alltid en.
+- **Filtrera** på namn eller e-post, status (aktiverad eller inaktiverad), inloggningssätt, flerfaktorsautentisering eller superadministratörer.
+- Knapparna på en rad visar användarens **organisationer** med roller och öppna sessioner, **loggar ut användaren överallt** (API-tokens fortsätter att gälla), återställer den andra faktorn eller ett lokalt lösenord och **inaktiverar** eller **aktiverar** kontot.
 
 Användare som loggar in med enkel inloggning via OIDC eller SAML kan skapas automatiskt vid första inloggningen, med en roll som hämtas från grupperna hos identitetsleverantören; det konfigureras på servern (se [administratörshandboken](https://github.com/rom/Qtestframe/blob/rom/docs/admin-guide/sv/authentication.md#provisionering-av-anv%C3%A4ndare-med-single-sign-on)).
 
@@ -4690,9 +4696,12 @@ Hemligheter i en säkerhetskopia (hemligheter för autentiseringsappar, webhook-
 
 ## Systeminställningar
 
-*(Superadministratör)* **Administration → Systeminställningar** ändrar serverns konfiguration medan den kör: enkel inloggning, loggning och syslog, e-postservern, inloggningssäkerhet och testkörningen. Organisationsadministratörer ser inte sidan: varje inställning gäller hela installationen.
+*(Superadministratör)* **Administration → Systeminställningar** ändrar serverns konfiguration medan den kör: inloggning och lösenord, API-tokens, enkel inloggning, loggning och syslog, e-postservern, utgående anslutningar, testkörningen, liveuppdateringar, likhet och AI-assistans. Inställningar som bara kan anges i konfigurationsfilen (lyssningsadressen, TLS, databasen, härdningen) visas skrivskyddade med sin källa. Organisationsadministratörer ser inte sidan: varje inställning gäller hela installationen.
 
-Välj en del i listan till vänster (på en telefon: överst). Varje del har en egen **Spara**-knapp; bara de värden du ändrat skickas. **Exportera konfiguration** laddar ner den gällande konfigurationen som en YAML-fil där alla hemligheter är utbytta mot `REDACTED`, till exempel för att föra in den i serverns konfigurationsfil.
+Välj en del i listan till vänster (på en telefon: överst); delarna är grupperade i *Server*, *Åtkomst* och *Tjänster*. **Sök bland alla inställningar** ovanför listan hittar en inställning i vilken del som helst via namn, hjälptext eller värde och tar dig dit. Varje del har en egen knapp **Spara avsnittet**; bara de värden du ändrat skickas, efter en bekräftelse som listar varje ändring med gammalt och nytt värde.
+
+- **Exportera konfiguration** laddar ner den gällande konfigurationen som en YAML-fil där alla hemligheter är utbytta mot `REDACTED`, till exempel för att föra in den i serverns konfigurationsfil.
+- **Exportera inställningar (JSON)** laddar bara ned värdena som ändrats på sidan, utan hemligheter; **Importera inställningar** läser en sådan fil (till exempel från en testserver), visar vad den skulle ändra och sparar den när du bekräftat. Låsta inställningar, hemligheter och okända nycklar i filen hoppas över och listas.
 
 ### Var ett värde kommer ifrån
 
@@ -4703,7 +4712,7 @@ Varje inställning har en etikett som visar var det nuvarande värdet kommer ifr
 - **Miljövariabel** – satt med en `QTF_…`-miljövariabel på servern.
 - **Ändrad här** – ändrad på den här sidan (sparad i databasen).
 
-Ett värde som ändrats här går före konfigurationsfilen och standardvärdet. **Återställ till filens värde** tar bort din ändring, så att värdet i konfigurationsfilen (eller standardvärdet) gäller igen.
+Ett värde som ändrats här går före konfigurationsfilen och standardvärdet, men inte före en miljövariabel. **Återställ till filens värde** tar bort din ändring, så att värdet i konfigurationsfilen (eller standardvärdet) gäller igen. Om ett värde du ändrat senare sätts av en miljövariabel eller låses, säger sidan att det sparade värdet ignoreras.
 
 Vissa inställningar kan inte ändras här. De har ett lås och en förklaring:
 
@@ -4711,7 +4720,7 @@ Vissa inställningar kan inte ändras här. De har ett lås och en förklaring:
 - **Låst av serveradministratören** – konfigurationsfilen listar inställningen under `system_settings.locked`.
 - **Bara i konfigurationsfilen** – visas som information (till exempel lyssningsadressen eller databasen), eftersom de bara kan ändras med en omstart av servern.
 
-De flesta inställningar gäller direkt. Inställningar med etiketten **Gäller efter omstart** (testkörningen) sparas nu och börjar gälla nästa gång servern startar; till dess visar sidan värdet som används. Om de sparade inställningarna någon gång blir ogiltiga (till exempel efter en ändring i konfigurationsfilen) bortser servern från dem vid start och sidan visar en varning.
+De flesta inställningar gäller direkt. Inställningar med etiketten **Gäller efter omstart** (testkörningen, gränserna för liveuppdateringar, HTTP-tidsgränserna) sparas nu och börjar gälla nästa gång servern startar; till dess visar sidan värdet som används, och en banderoll överst listar varje ändring som väntar på en omstart. Om de sparade inställningarna någon gång blir ogiltiga (till exempel efter en ändring i konfigurationsfilen) bortser servern från dem vid start och sidan visar en varning.
 
 Varje ändring registreras i [händelseloggen](#händelselogg) med gammalt och nytt värde; lösenord och klienthemligheter skrivs aldrig dit, bara att de satts eller ändrats.
 
@@ -4737,11 +4746,19 @@ SMTP-servern för aviseringar, inbjudningar och rapporter: värd, port, krypteri
 
 ### Säkerhet
 
-**Sessionens livslängd** (hur länge en inloggning varar; gäller nya inloggningar), **minsta lösenordslängd** för lokala konton, antalet **misslyckade inloggningar** efter vilka fler försök från samma adress för samma konto nekas, och hur länge. **Lokal inloggning** (e-post och lösenord) kan bara stängas av när minst en leverantör för enkel inloggning är aktiv.
+**Sessionens livslängd** (hur länge en inloggning varar; gäller nya inloggningar), **tidsgränsen för inaktivitet** (0 = av), lösenordsreglerna för lokala konton – **minsta längd**, **teckenklasser** (gemener, versaler, siffror, symboler), **lösenordshistorik** och **lösenordets giltighet** – antalet **misslyckade inloggningar** efter vilka fler försök från samma adress för samma konto nekas, och hur länge. **Lokal inloggning** (e-post och lösenord) kan bara stängas av när minst en leverantör för enkel inloggning är aktiv.
+
+**API-tokens**: längsta livslängd för nya tokens i dagar, och om de alls behöver ett utgångsdatum.
+
+**Utgående anslutningar**: en proxy för serverns utgående anrop (webhooks, chatt, ärendehanterare, AI, inbäddningar, discovery för enkel inloggning), de värdar som får eller inte får nås, och **Blockera privata adresser** så att ingen kan få servern att anropa ert interna nät. **Kontrollera adress** testar en adress mot reglerna.
+
+**Behörigheter** förklarar vem som får göra vad och länkar till rollmatrisen, organisationer, användare och provisionering.
+
+SAML-leverantörer konfigureras i konfigurationsfilen; delen **Enkel inloggning** listar dem med adresserna som ska registreras hos identitetsleverantören, och **Testa metadata** kontrollerar att servern kan läsa leverantörens metadata. OIDC-leverantörer har också en **knappikon**, **tillåtna e-postdomäner** och kan ge flera roller per grupp (`grupp=roll1, roll2`).
 
 ### Kryptering av lagrade hemligheter
 
-Delen **Säkerhet** visar också, skrivskyddat, hur de hemligheter som servern måste kunna läsa tillbaka skyddas: hemligheter för autentiseringsappar, webhookarnas signeringshemligheter, ärendesystemets token, hemliga testvariabler samt e-postlösenordet och klienthemligheterna som anges på den här sidan. De lagras **krypterade** (AES-256-GCM) i databasen. Tidigare versioner lagrade dem okrypterade; det gäller inte längre, och värden som sparats av en tidigare version krypteras när servern startar. Lösenord och åtkomstnycklar har aldrig lagrats som de är: bara deras hashvärden sparas.
+Delen **Server och databas** visar också, skrivskyddat, hur de hemligheter som servern måste kunna läsa tillbaka skyddas: hemligheter för autentiseringsappar, webhookarnas signeringshemligheter, ärendesystemets token, hemliga testvariabler samt e-postlösenordet och klienthemligheterna som anges på den här sidan. De lagras **krypterade** (AES-256-GCM) i databasen. Tidigare versioner lagrade dem okrypterade; det gäller inte längre, och värden som sparats av en tidigare version krypteras när servern startar. Lösenord och åtkomstnycklar har aldrig lagrats som de är: bara deras hashvärden sparas.
 
 Sidan visar:
 

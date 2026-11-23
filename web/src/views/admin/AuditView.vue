@@ -4,6 +4,7 @@
 // trail" checks the hash chain (OK or the first broken link) and "Export
 // with hashes" downloads the whole chain for external archiving.
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -18,13 +19,20 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import { api, ApiError, asItems } from '@/lib/api'
 import { actionSeverity, auditParams, prettyDetails, rangeInvalid, type AuditFilters } from '@/lib/audit'
 import { formatDateTime, formatFullDateTime } from '@/lib/format'
-import type { AuditEntry } from '@/lib/types'
+import type { AuditEntry, Tenant } from '@/lib/types'
+import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useI18n } from 'vue-i18n'
 import { short, utcStamp, type AuditVerification } from '@/lib/erecords'
 
 const prefs = usePrefsStore()
+const auth = useAuthStore()
+const route = useRoute()
+// super administrators read the audit trail of any organisation
+const tenant = ref(typeof route.query.tenant === 'string' ? route.query.tenant : '')
+const tenants = ref<Tenant[]>([])
+const tenantOptions = computed(() => [{ label: t('audit.currentTenant'), value: '' }, ...tenants.value.filter((x) => x.id !== auth.tenant?.id).map((x) => ({ label: `${x.name} (${x.slug})`, value: x.id }))])
 const notify = useNotify()
 const { t } = useI18n()
 const entries = ref<AuditEntry[]>([])
@@ -45,7 +53,7 @@ const entityOptions = computed(() => {
   return [{ label: t('common.all'), value: '' }, ...[...seen].sort().map((v) => ({ label: v, value: v }))]
 })
 const badRange = computed(() => rangeInvalid(from.value, to.value))
-const filters = computed<AuditFilters>(() => ({ from: from.value, to: to.value, user: user.value, action: action.value, entity: entity.value, q: q.value, limit: limit.value }))
+const filters = computed<AuditFilters>(() => ({ from: from.value, to: to.value, user: user.value, action: action.value, entity: entity.value, q: q.value, limit: limit.value, tenant: tenant.value === auth.tenant?.id ? '' : tenant.value }))
 const queryError = computed(() => (error.value instanceof ApiError && error.value.code === 'invalid_query' ? error.value : null))
 
 async function load() {
@@ -61,7 +69,16 @@ async function load() {
     loading.value = false
   }
 }
-onMounted(load)
+onMounted(async () => {
+  if (auth.isSuperAdmin) {
+    try {
+      tenants.value = asItems(await api.get<{ items: Tenant[] }>('/tenants'))
+    } catch {
+      tenants.value = []
+    }
+  }
+  await load()
+})
 function reset() {
   from.value = to.value = null
   user.value = action.value = entity.value = q.value = ''
@@ -146,6 +163,7 @@ const details = computed(() => prettyDetails(detail.value?.details))
         <label>{{ t('audit.to') }}</label>
         <DatePicker v-model="to" date-format="yy-mm-dd" show-icon show-button-bar :min-date="from ?? undefined" :invalid="badRange" />
       </div>
+      <div v-if="auth.isSuperAdmin && tenants.length > 1" v-field class="field"><label>{{ t('audit.tenant') }}</label><Select v-model="tenant" :options="tenantOptions" option-label="label" option-value="value" filter /></div>
       <div v-field class="field"><label>{{ t('common.user') }}</label><InputText v-model="user" :placeholder="t('audit.userPlaceholder')" /></div>
       <div v-field class="field"><label>{{ t('admin.action') }}</label><InputText v-model="action" :placeholder="t('audit.actionPlaceholder')" /></div>
       <div v-field class="field"><label>{{ t('admin.entity') }}</label><Select v-model="entity" :options="entityOptions" option-label="label" option-value="value" filter :placeholder="t('common.all')" /></div>

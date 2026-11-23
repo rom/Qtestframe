@@ -56,6 +56,7 @@ const serverState = computed(() => {
   if (!s) return ''
   if (!s.system_enabled) return t('ai.org.serverOff')
   if (s.reason === 'not_configured') return t('ai.reason.not_configured')
+  if (s.reason === 'policy') return t('ai.reason.policy')
   return t('ai.org.serverOn', { provider: t(`ai.provider.${s.provider ?? 'anthropic'}`), model: s.model ?? '' })
 })
 </script>

@@ -40,6 +40,8 @@ export const useMetaStore = defineStore('meta', {
         merged.web_tests_enabled = m?.web_tests_enabled === true
         merged.live_updates = m?.live_updates === true
         if (typeof m?.email_digest_hour === 'number') merged.email_digest_hour = m.email_digest_hour
+        if (typeof m?.token_max_days === 'number') merged.token_max_days = m.token_max_days
+        merged.token_require_expiry = m?.token_require_expiry === true
         this.meta = merged
         this.loaded = true
       } catch {

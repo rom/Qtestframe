@@ -35,6 +35,8 @@ export interface SettingView {
 export interface OidcProvider {
   name: string
   display_name: string
+  /** icon of the sign-in button (PrimeIcons name, "" = default) */
+  icon: string
   enabled: boolean
   issuer: string
   client_id: string
@@ -47,6 +49,8 @@ export interface OidcProvider {
   default_tenant: string
   default_role: string
   role_mapping: Record<string, string> | null
+  /** e-mail domains that may sign in (empty = any) */
+  allowed_domains: string[] | null
   /** local second factor after this provider's sign-in */
   local_mfa: '' | 'off' | 'unless_idp_mfa' | 'always'
   mfa_amr_values: string[] | null
@@ -61,9 +65,31 @@ export interface OidcProviderView extends OidcProvider {
   callback_url: string
 }
 
+/** A SAML provider of the configuration file (read-only). */
+export interface SamlProviderView {
+  name: string
+  display_name: string
+  entity_id: string
+  metadata_url: string
+  metadata_file: string
+  sp_cert_file: string
+  email_attr: string
+  name_attr: string
+  groups_attr: string
+  auto_provision: boolean
+  default_tenant: string
+  default_role: string
+  role_mapping: Record<string, string> | null
+  allowed_domains: string[]
+  acs_url: string
+  sp_metadata_url: string
+}
+
 export interface SystemSettings {
   sections: string[]
   settings: SettingView[]
+  saml: SamlProviderView[]
+  oidc_icons: string[]
   oidc: {
     providers: OidcProviderView[]
     source: SettingSource
@@ -110,12 +136,23 @@ export interface TestResult {
   details?: Record<string, unknown>
 }
 
-/** Sections of the view in order; "mfa" links to the MFA page. */
-export const SECTIONS = ['general', 'security', 'oidc', 'logging', 'email', 'runner', 'similarity', 'ai', 'retention', 'mfa'] as const
+/**
+ * Sections of the view in order, in groups of the side navigation.
+ * "authorisation" and "mfa" have no settings of their own: they explain
+ * and link to the pages that manage them.
+ */
+export const SECTION_GROUPS = {
+  server: ['general', 'server', 'logging', 'retention'],
+  access: ['security', 'tokens', 'oidc', 'mfa', 'authorisation'],
+  services: ['email', 'outbound', 'runner', 'live', 'similarity', 'ai'],
+} as const
+export const SECTIONS = [...SECTION_GROUPS.server, ...SECTION_GROUPS.access, ...SECTION_GROUPS.services] as const
 export type SectionId = (typeof SECTIONS)[number]
+/** Sections without settings in the registry (shown with their own content). */
+export const INFO_SECTIONS: readonly SectionId[] = ['mfa', 'authorisation', 'retention']
 
 /** Sections with a test button (POST /admin/settings/test/<kind>). */
-export const TESTABLE: Partial<Record<SectionId, 'syslog' | 'email' | 'embeddings' | 'ai'>> = { logging: 'syslog', email: 'email', similarity: 'embeddings', ai: 'ai' }
+export const TESTABLE: Partial<Record<SectionId, 'syslog' | 'email' | 'embeddings' | 'ai' | 'outbound'>> = { logging: 'syslog', email: 'email', similarity: 'embeddings', ai: 'ai', outbound: 'outbound' }
 
 /** The id of a setting in the message catalogue ("logging.level" → "logging_level"). */
 export function fieldId(key: string): string {
@@ -128,10 +165,10 @@ export function isSection(s: unknown): s is SectionId {
 
 export type FormValue = string | number | boolean | null
 
-/** The form model of a setting (secrets start empty: write-only). */
+/** The form model of a setting (secrets start empty: write-only; lists one entry per line). */
 export function formValue(s: SettingView): FormValue {
   if (s.type === 'secret') return ''
-  if (s.type === 'list') return Array.isArray(s.value) ? s.value.join(', ') : ''
+  if (s.type === 'list') return Array.isArray(s.value) ? s.value.join('\n') : ''
   if (s.type === 'int') return typeof s.value === 'number' ? s.value : Number(s.value ?? 0)
   if (s.type === 'bool') return s.value === true
   return s.value == null ? '' : String(s.value)
@@ -162,9 +199,119 @@ export function changedValues(settings: SettingView[], section: string, form: Re
       if (String(v ?? '').trim() !== String(formValue(s)).trim()) out[s.key] = String(v ?? '').trim()
       continue
     }
+    if (s.type === 'list') {
+      const next = parseList(String(v ?? ''))
+      if (next.join('\n') !== parseList(String(formValue(s))).join('\n')) out[s.key] = next
+      continue
+    }
     if (v !== formValue(s)) out[s.key] = v
   }
   return out
+}
+
+/** List text (lines, commas or spaces) → entries, trimmed and without duplicates. */
+export function parseList(text: string): string[] {
+  const out: string[] = []
+  for (const s of text.split(/[\n,\s]+/)) if (s && !out.includes(s)) out.push(s)
+  return out
+}
+
+/** One line of the confirmation before saving: a setting and its old and new value. */
+export interface SettingChange {
+  key: string
+  section: string
+  from: string
+  to: string
+  secret: boolean
+  apply: SettingApply
+}
+
+/** A value as text for the diff ("" for empty; lists comma-separated). */
+export function valueText(v: unknown): string {
+  if (v == null) return ''
+  if (Array.isArray(v)) return v.join(', ')
+  return String(v)
+}
+
+/** The changes values make to the settings, for the confirmation dialog (secrets without values). */
+export function settingsDiff(settings: SettingView[], values: Record<string, unknown>): SettingChange[] {
+  const out: SettingChange[] = []
+  for (const s of settings) {
+    if (!(s.key in values)) continue
+    const secret = s.type === 'secret'
+    out.push({ key: s.key, section: s.section, from: secret ? '' : valueText(s.value), to: secret ? '' : valueText(values[s.key]), secret, apply: s.apply })
+  }
+  return out
+}
+
+/** Settings whose saved value applies after the next restart (running value differs). */
+export function pendingRestart(settings: SettingView[]): SettingView[] {
+  return settings.filter((s) => s.pending_restart)
+}
+
+/** A search hit: a setting (or a section) matching the query. */
+export interface SearchHit {
+  key: string
+  section: string
+}
+
+/**
+ * Settings matching a query (all words, case-insensitive) in their key,
+ * label, hint or value; text(key) returns the label and hint of a setting.
+ */
+export function searchSettings(settings: SettingView[], query: string, text: (key: string) => string): SearchHit[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  if (!words.length) return []
+  const out: SearchHit[] = []
+  for (const s of settings) {
+    const hay = `${s.key} ${text(s.key)} ${s.type === 'secret' ? '' : valueText(s.value)} ${s.env ?? ''}`.toLowerCase()
+    if (words.every((w) => hay.includes(w))) out.push({ key: s.key, section: s.section })
+  }
+  return out
+}
+
+/** The JSON file of "Export settings": the values changed here, without secrets. */
+export interface SettingsFile {
+  format: 'qtestframe-settings'
+  version: 1
+  exported_at: string
+  values: Record<string, unknown>
+}
+
+/** The settings changed here (stored, applied), without secrets and the OIDC provider list. */
+export function exportSettings(settings: SettingView[], now = new Date()): SettingsFile {
+  const values: Record<string, unknown> = {}
+  for (const s of settings) {
+    if (!s.stored || s.ignored || s.locked || s.type === 'secret') continue
+    values[s.key] = s.value
+  }
+  return { format: 'qtestframe-settings', version: 1, exported_at: now.toISOString(), values }
+}
+
+/** What an imported file would change; problems name keys that are skipped. */
+export interface ImportPlan {
+  values: Record<string, unknown>
+  unknown: string[]
+  locked: string[]
+  secrets: string[]
+  unchanged: number
+}
+
+/** Reads an exported settings file (text) against the current settings; throws on a file of another format. */
+export function importPlan(settings: SettingView[], text: string): ImportPlan {
+  const doc = JSON.parse(text) as Partial<SettingsFile>
+  if (!doc || doc.format !== 'qtestframe-settings' || typeof doc.values !== 'object' || doc.values === null) throw new Error('format')
+  const byKey = new Map(settings.map((s) => [s.key, s]))
+  const plan: ImportPlan = { values: {}, unknown: [], locked: [], secrets: [], unchanged: 0 }
+  for (const [k, v] of Object.entries(doc.values)) {
+    const s = byKey.get(k)
+    if (!s) plan.unknown.push(k)
+    else if (s.type === 'secret') plan.secrets.push(k)
+    else if (s.locked) plan.locked.push(k)
+    else if (valueText(v) === valueText(s.value)) plan.unchanged++
+    else plan.values[k] = v
+  }
+  return plan
 }
 
 /** Values of a section for a test button (unsaved form values, secrets only when typed). */
@@ -229,6 +376,7 @@ export function newProvider(): OidcProvider {
     issuer: '',
     client_id: '',
     client_secret: '',
+    icon: '',
     scopes: ['openid', 'email', 'profile'],
     email_claim: 'email',
     name_claim: 'name',
@@ -237,6 +385,7 @@ export function newProvider(): OidcProvider {
     default_tenant: '',
     default_role: '',
     role_mapping: null,
+    allowed_domains: [],
     local_mfa: 'off',
     mfa_amr_values: null,
     mfa_acr_values: null,

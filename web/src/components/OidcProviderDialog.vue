@@ -15,7 +15,7 @@ import { useI18n } from 'vue-i18n'
 import { api, errorMessage } from '@/lib/api'
 import { formatRoleMapping, newProvider, parseRoleMapping, parseScopes, PROVIDER_NAME, type OidcProvider, type OidcProviderView, type TestResult } from '@/lib/systemSettings'
 
-const props = defineProps<{ visible: boolean; provider: OidcProviderView | null; busy?: boolean; error?: string }>()
+const props = defineProps<{ visible: boolean; provider: OidcProviderView | null; busy?: boolean; error?: string; icons?: string[] }>()
 const emit = defineEmits<{ 'update:visible': [v: boolean]; save: [p: OidcProvider & { clear_secret?: boolean }] }>()
 const { t } = useI18n()
 
@@ -24,6 +24,8 @@ const scopes = ref('')
 const mapping = ref('')
 const amr = ref('')
 const acr = ref('')
+const domains = ref('')
+const iconOptions = computed(() => (props.icons ?? ['']).map((v) => ({ value: v, label: v ? v : t('sysSettings.oidc.iconDefault'), icon: `pi pi-${v || 'sign-in'}` })))
 const localMfaOptions = computed(() => (['off', 'unless_idp_mfa', 'always'] as const).map((v) => ({ value: v, label: t(`sysSettings.oidc.localMfaOpt.${v}`) })))
 const clearSecret = ref(false)
 const localError = ref('')
@@ -42,6 +44,8 @@ watch(
     if (!form.value.local_mfa) form.value.local_mfa = 'off'
     amr.value = (form.value.mfa_amr_values ?? []).join(' ')
     acr.value = (form.value.mfa_acr_values ?? []).join(' ')
+    domains.value = (form.value.allowed_domains ?? []).join(' ')
+    if (form.value.icon == null) form.value.icon = ''
     clearSecret.value = false
     localError.value = ''
     result.value = null
@@ -80,6 +84,7 @@ function submit() {
     role_mapping: Object.keys(m.mapping).length ? m.mapping : null,
     mfa_amr_values: parseScopes(amr.value).length ? parseScopes(amr.value) : null,
     mfa_acr_values: parseScopes(acr.value).length ? parseScopes(acr.value) : null,
+    allowed_domains: parseScopes(domains.value),
     clear_secret: clearSecret.value || undefined,
   })
 }
@@ -111,6 +116,13 @@ async function test() {
           <label>{{ t('sysSettings.oidc.displayName') }}</label>
           <InputText v-model="form.display_name" maxlength="100" aria-describedby="oidc-dn-hint" />
           <small id="oidc-dn-hint" class="muted">{{ t('sysSettings.oidc.displayNameHint') }}</small>
+        </div>
+        <div v-field class="field">
+          <label>{{ t('sysSettings.oidc.icon') }}</label>
+          <Select v-model="form.icon" :options="iconOptions" option-label="label" option-value="value" aria-describedby="oidc-icon-hint">
+            <template #option="{ option }"><span class="row nowrap" style="gap: 6px"><i :class="option.icon" aria-hidden="true" />{{ option.label }}</span></template>
+          </Select>
+          <small id="oidc-icon-hint" class="muted">{{ t('sysSettings.oidc.iconHint') }}</small>
         </div>
       </div>
       <div class="row nowrap" style="gap: 10px">
@@ -191,6 +203,11 @@ async function test() {
             <InputText v-model="form.default_role" class="mono" spellcheck="false" aria-describedby="oidc-role-hint" />
             <small id="oidc-role-hint" class="muted">{{ t('sysSettings.oidc.defaultRoleHint') }}</small>
           </div>
+        </div>
+        <div v-field class="field" style="margin-top: 8px">
+          <label>{{ t('sysSettings.oidc.allowedDomains') }}</label>
+          <InputText v-model="domains" class="mono" spellcheck="false" placeholder="example.com" aria-describedby="oidc-domains-hint" />
+          <small id="oidc-domains-hint" class="muted">{{ t('sysSettings.oidc.allowedDomainsHint') }}</small>
         </div>
         <div v-field class="field" style="margin-top: 8px">
           <label>{{ t('sysSettings.oidc.roleMapping') }}</label>

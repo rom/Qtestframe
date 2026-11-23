@@ -19,6 +19,7 @@ Qtestframe knows these ways to prove who someone is:
 - **Sign-in limit:** at most `auth.login_max_attempts` attempts (default 10) per *client address + e-mail address* within `auth.login_lockout` (default 5 minutes); more get `429 rate_limited`. A successful sign-in clears the counter. The counter is in memory, per server process. Behind a reverse proxy set `server.trusted_proxies`, or every user shares the proxy's address.
 - Failed sign-ins are logged at WARN (`login failed`, with e-mail and client address) and recorded in the user's sign-in history, which the web client shows as "failed attempts since your last sign-in".
 - **Disable local sign-in** with `auth.local: false` once single sign-on works. In the web client this is only possible while a single sign-on provider is enabled. Super administrators can still be managed on the command line.
+- **Password policy** (System settings → Sign-in and passwords): `auth.password_min_classes` asks for 2–4 of lower-case letters, upper-case letters, digits and symbols; `auth.password_history` (0–24) refuses the last passwords when users change theirs; `auth.password_max_age_days` makes a password expire – the next sign-in after that must change it (for accounts older than the setting the days count from their next sign-in). Temporary passwords set by administrators must be changed at the next sign-in anyway.
 - Organisation admins reset the passwords of members who belong only to their organisation (**Administration → Members → Reset password**: a temporary password, shown once, that must be changed at the next sign-in); super administrators reset anyone's under **Users**. Both sign the user out everywhere.
 
 ## Multi-factor authentication
@@ -122,7 +123,11 @@ At every OIDC or SAML sign-in:
 
 1. The user is found by provider and subject. Otherwise by e-mail: a local account (or one created by SCIM) with that address is **linked** to the provider and its password removed; an account bound to *another* provider is refused. Otherwise a new user is created only with `auto_provision: true`.
 2. Disabled users are refused.
-3. With `default_tenant`, the role is the most privileged role that `role_mapping` gives one of the user's groups, else `default_role` (`viewer` when empty or unknown). A missing membership is created with `auto_provision`; with a `role_mapping`, an existing membership is set to the mapped role at every sign-in – the identity provider is authoritative.
+3. With `allowed_domains`, an address of another domain is refused before anything else (`*.example.com` allows the subdomains).
+4. The organisation is `default_tenant`; without one, the organisation whose policy lists the user's e-mail domain (Administration → Organisations → *E-mail domains*). A suspended organisation, or one whose policy does not allow the provider, is not joined.
+5. The roles are every role that `role_mapping` gives one of the user's groups – a mapping may name several roles (`qa: "tester, reviewer"`) – else `default_role`, which may also list several (`viewer` when empty or unknown). A missing membership is created with `auto_provision`; with a `role_mapping`, an existing membership is set to the mapped roles at every sign-in – the identity provider is authoritative.
+
+In the web client the OIDC providers also have a **button icon** (`icon`) and the *Test connection* button fetches the discovery document.
 
 Because accounts are linked by e-mail address, connect only identity providers whose addresses are verified and belong to your organisation. Members that SCIM manages are left to SCIM.
 
@@ -145,13 +150,13 @@ API tokens are for scripts and CI pipelines (`Authorization: Bearer qtf_…`). M
 - A token is `qtf_` + 32 random bytes; only its SHA-256 hash and a short prefix are stored, and it is shown once.
 - It belongs to **one organisation** and has a role that cannot exceed its creator's. On every request its permissions are **capped by the creator's current role**: demoting the user demotes the token, removing the member ends it.
 - Tokens cannot create tokens, never carry super administrator rights (not even a super administrator's), cannot use the system settings and are not subject to MFA.
-- Optional expiry in days; the last use is recorded; revoking is immediate.
+- Optional expiry in days; the last use is recorded; revoking is immediate. The server's **token policy** (System settings → API tokens) can require an expiry date (`auth.token_require_expiry`) and limit it (`auth.token_max_days`); it applies to new tokens.
 - Requests with a token skip the CSRF check (there is no cookie), so the token is the only credential: keep it in the CI system's secret store.
 
 ## Sessions
 
 - A session is created at every sign-in. The browser holds only the random cookie `qtf_session` (`HttpOnly`, `SameSite=Lax`, `Secure` unless `auth.cookie_secure: false`); the database stores a SHA-256 hash of it.
-- Sessions end after `auth.session_ttl` (default 12 h, absolute, no extension), at sign-out, and when an administrator disables the user, resets the password or resets MFA. Changing one's own password ends the user's other sessions. Expired sessions are purged hourly.
+- Sessions end after `auth.session_ttl` (default 12 h, absolute, no extension), after `auth.session_idle_timeout` without activity (off by default; the electronic-records mode of an organisation can set a shorter one), at sign-out, and when an administrator disables the user, resets the password or resets MFA, or signs the user out everywhere (Administration → Users). "Remember this device" for the second factor is set in the server MFA policy. Changing one's own password ends the user's other sessions. Expired sessions are purged hourly.
 - Users see their sessions (browser, address, last activity) in their profile and can end each one.
 - Requests from the browser that change something must send the per-session CSRF token and pass an origin check against the request host or `server.base_url`.
 - Sessions are not part of a backup; a restore signs everyone out.

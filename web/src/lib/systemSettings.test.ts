@@ -3,17 +3,24 @@ import en from '@/i18n/locales/en'
 import {
   changedValues,
   displayValue,
+  exportSettings,
   fieldId,
   formatRoleMapping,
   formValue,
+  importPlan,
   isSection,
   newProvider,
+  parseList,
   parseRoleMapping,
   parseScopes,
+  pendingRestart,
   PROVIDER_NAME,
+  searchSettings,
+  SECTION_GROUPS,
   SECTIONS,
   secretsRows,
   sectionForm,
+  settingsDiff,
   sourceSeverity,
   testValues,
   type SettingView,
@@ -57,12 +64,19 @@ function setting(p: Partial<SettingView>): SettingView {
 
 // the keys of internal/settings.Registry (GET /admin/settings)
 const SERVER_KEYS = [
-  'server.base_url', 'files.max_upload_mb', 'requirements.auto_create_test', 'server.listen', 'database.driver',
-  'auth.local', 'auth.session_ttl', 'auth.password_min_length', 'auth.login_max_attempts', 'auth.login_lockout', 'auth.cookie_secure', 'server.hsts', 'server.trusted_proxies',
-  'logging.level', 'logging.format', 'logging.syslog.enabled', 'logging.syslog.network', 'logging.syslog.address', 'logging.syslog.format', 'logging.syslog.facility', 'logging.syslog.tag', 'logging.syslog.ca_file', 'logging.syslog.cert_file',
-  'email.enabled', 'email.host', 'email.port', 'email.tls', 'email.username', 'email.password', 'email.from', 'email.from_name', 'email.timeout', 'email.digest_hour',
-  'runner.enabled', 'runner.timeout', 'runner.max_output_bytes', 'runner.deny_network', 'runner.sandbox', 'runner.web.enabled', 'runner.web.browser', 'runner.web.headless',
-  'runner.web.timeout', 'runner.web.job_timeout', 'runner.web.max_parallel', 'runner.web.max_evidence_mb', 'runner.web.screenshots', 'runner.web.trace', 'runner.web.video', 'runner.web.playwright_dir',
+  'server.base_url', 'files.max_upload_mb', 'requirements.auto_create_test',
+  'server.listen', 'server.tls_cert', 'server.tls_key', 'server.read_timeout', 'server.write_timeout', 'server.frame_ancestors', 'server.trusted_proxies', 'server.hsts',
+  'database.driver', 'database.dsn', 'database.max_open_conns', 'bootstrap.tenant_slug', 'bootstrap.tenant_name', 'bootstrap.admin_email',
+  'hardening.no_new_privs', 'hardening.landlock', 'hardening.seccomp', 'hardening.drop_capabilities', 'hardening.read_only_paths', 'hardening.read_write_paths', 'secrets.provider',
+  'auth.local', 'auth.session_ttl', 'auth.session_idle_timeout', 'auth.password_min_length', 'auth.password_min_classes', 'auth.password_history', 'auth.password_max_age_days',
+  'auth.login_max_attempts', 'auth.login_lockout', 'auth.cookie_secure', 'auth.token_max_days', 'auth.token_require_expiry',
+  'logging.level', 'logging.format', 'logging.syslog.enabled', 'logging.syslog.network', 'logging.syslog.address', 'logging.syslog.format', 'logging.syslog.facility', 'logging.syslog.tag', 'logging.syslog.ca_file', 'logging.syslog.cert_file', 'logging.syslog.key_file',
+  'email.enabled', 'email.host', 'email.port', 'email.tls', 'email.username', 'email.password', 'email.from', 'email.from_name', 'email.reply_to', 'email.timeout', 'email.digest_hour',
+  'outbound.proxy', 'outbound.no_proxy', 'outbound.allowed_hosts', 'outbound.denied_hosts', 'outbound.block_private',
+  'runner.enabled', 'runner.timeout', 'runner.max_output_bytes', 'runner.deny_network', 'runner.sandbox', 'runner.work_dir', 'runner.interpreters', 'runner.web.enabled', 'runner.web.browser', 'runner.web.channel', 'runner.web.browser_channels', 'runner.web.headless',
+  'runner.web.timeout', 'runner.web.job_timeout', 'runner.web.max_parallel', 'runner.web.max_evidence_mb', 'runner.web.screenshots', 'runner.web.trace', 'runner.web.video',
+  'runner.web.node', 'runner.web.playwright_dir', 'runner.web.command', 'runner.web.browsers_path', 'runner.web.executable_path',
+  'live.enabled', 'live.heartbeat', 'live.presence_ttl', 'live.max_connections', 'live.max_connections_per_user', 'live.replay_buffer',
   'similarity.embeddings.enabled', 'similarity.embeddings.url', 'similarity.embeddings.model', 'similarity.embeddings.api_key', 'similarity.embeddings.timeout',
   'ai.enabled', 'ai.provider', 'ai.url', 'ai.model', 'ai.api_key', 'ai.timeout', 'ai.max_tokens', 'ai.temperature', 'ai.rate_limit',
   'ai.features.draft_tests', 'ai.features.improve_requirement', 'ai.features.summarize_run', 'ai.features.suggest_mappings', 'ai.features.suggest_criteria',
@@ -79,6 +93,8 @@ describe('system settings texts', () => {
       expect(s.section[id]).toBeTruthy()
       expect(s.sectionIntro[id]).toBeTruthy()
     }
+    for (const g of Object.keys(SECTION_GROUPS) as (keyof typeof SECTION_GROUPS)[]) expect(s.group[g]).toBeTruthy()
+    expect(new Set(SECTIONS).size).toBe(SECTIONS.length)
     for (const src of ['default', 'file', 'environment', 'database'] as const) expect(s.source[src]).toBeTruthy()
   })
 })
@@ -92,7 +108,7 @@ describe('system settings forms', () => {
   })
   it('builds form values', () => {
     expect(formValue(setting({ type: 'secret', value: null }))).toBe('')
-    expect(formValue(setting({ type: 'list', value: ['a', 'b'] }))).toBe('a, b')
+    expect(formValue(setting({ type: 'list', value: ['a', 'b'] }))).toBe('a\nb')
     expect(formValue(setting({ type: 'list', value: null }))).toBe('')
     expect(formValue(setting({ type: 'int', value: 5 }))).toBe(5)
     expect(formValue(setting({ type: 'int', value: '7' }))).toBe(7)
@@ -137,6 +153,68 @@ describe('system settings forms', () => {
     expect(displayValue(5)).toBe('5')
     expect(sourceSeverity('database')).toBe('success')
     expect(sourceSeverity('environment')).toBe('warn')
+  })
+})
+
+describe('system settings lists, search, diff and files', () => {
+  it('edits lists one entry per line', () => {
+    expect(parseList(' a.example.com\n\n*.b.example.com, a.example.com c ')).toEqual(['a.example.com', '*.b.example.com', 'c'])
+    const list = [setting({ key: 'outbound.allowed_hosts', section: 'outbound', type: 'list', value: ['a', 'b'] })]
+    const form = sectionForm(list, 'outbound')
+    expect(form['outbound.allowed_hosts']).toBe('a\nb')
+    expect(changedValues(list, 'outbound', form)).toEqual({})
+    form['outbound.allowed_hosts'] = 'a, b'
+    expect(changedValues(list, 'outbound', form)).toEqual({})
+    form['outbound.allowed_hosts'] = 'b\nc'
+    expect(changedValues(list, 'outbound', form)).toEqual({ 'outbound.allowed_hosts': ['b', 'c'] })
+    form['outbound.allowed_hosts'] = ''
+    expect(changedValues(list, 'outbound', form)).toEqual({ 'outbound.allowed_hosts': [] })
+  })
+  it('searches all sections by key, label, hint and value', () => {
+    const list = [
+      setting({ key: 'logging.level', section: 'logging', value: 'info' }),
+      setting({ key: 'email.host', section: 'email', value: 'smtp.example.com' }),
+      setting({ key: 'ai.api_key', section: 'ai', type: 'secret', value: 'never-shown' }),
+      setting({ key: 'auth.session_idle_timeout', section: 'security', value: '30m', env: 'QTF_X' }),
+    ]
+    const text = (k: string) => ({ 'logging.level': 'Log level debug info', 'email.host': 'SMTP host', 'ai.api_key': 'API key', 'auth.session_idle_timeout': 'Inactivity timeout' })[k] ?? ''
+    expect(searchSettings(list, '', text)).toEqual([])
+    expect(searchSettings(list, 'SMTP', text)).toEqual([{ key: 'email.host', section: 'email' }])
+    expect(searchSettings(list, 'example.com', text).map((h) => h.key)).toEqual(['email.host'])
+    expect(searchSettings(list, 'never-shown', text)).toEqual([])
+    expect(searchSettings(list, 'timeout 30m', text).map((h) => h.key)).toEqual(['auth.session_idle_timeout'])
+    expect(searchSettings(list, 'qtf_x', text).map((h) => h.key)).toEqual(['auth.session_idle_timeout'])
+    expect(searchSettings(list, 'level nope', text)).toEqual([])
+  })
+  it('lists the changes before saving, secrets without values', () => {
+    const list = [
+      setting({ key: 'a', value: 'x' }),
+      setting({ key: 'b', type: 'secret', value: null }),
+      setting({ key: 'c', type: 'list', value: ['p'], apply: 'restart' }),
+      setting({ key: 'd', value: 'untouched' }),
+    ]
+    expect(settingsDiff(list, { a: 'y', b: 'top-secret', c: ['p', 'q'] })).toEqual([
+      { key: 'a', section: 'logging', from: 'x', to: 'y', secret: false, apply: 'runtime' },
+      { key: 'b', section: 'logging', from: '', to: '', secret: true, apply: 'runtime' },
+      { key: 'c', section: 'logging', from: 'p', to: 'p, q', secret: false, apply: 'restart' },
+    ])
+    expect(pendingRestart([setting({ key: 'r', pending_restart: true }), setting({ key: 's' })]).map((s) => s.key)).toEqual(['r'])
+  })
+  it('exports the values changed here without secrets and imports them back', () => {
+    const list = [
+      setting({ key: 'a', value: 'x', stored: true }),
+      setting({ key: 'b', type: 'secret', value: null, stored: true }),
+      setting({ key: 'c', value: 'file', stored: false }),
+      setting({ key: 'd', value: 'locked', stored: true, locked: true }),
+      setting({ key: 'e', value: 'ignored', stored: true, ignored: true }),
+      setting({ key: 'f', type: 'int', value: 3, stored: true }),
+    ]
+    const file = exportSettings(list, new Date('2026-01-02T03:04:05Z'))
+    expect(file).toEqual({ format: 'qtestframe-settings', version: 1, exported_at: '2026-01-02T03:04:05.000Z', values: { a: 'x', f: 3 } })
+    const plan = importPlan(list, JSON.stringify({ ...file, values: { a: 'x', c: 'new', b: 'secret', d: 'z', zz: 1, f: 4 } }))
+    expect(plan).toEqual({ values: { c: 'new', f: 4 }, unknown: ['zz'], locked: ['d'], secrets: ['b'], unchanged: 1 })
+    expect(() => importPlan(list, '{"values": {}}')).toThrow()
+    expect(() => importPlan(list, 'not json')).toThrow()
   })
 })
 

@@ -126,6 +126,9 @@ func (s *Store) CreateProject(ctx context.Context, tenantID string, p *model.Pro
 	p.CreatedAt = s.now()
 	p.UpdatedAt = p.CreatedAt
 	return s.tx(ctx, func(c conn) error {
+		if err := s.checkQuota(ctx, c, tenantID, quotaProjects, 0); err != nil {
+			return err
+		}
 		_, err := c.exec(ctx, `INSERT INTO projects (id, tenant_id, key, name, description, color, requirement_sources, type, tech_context, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			p.ID, p.TenantID, p.Key, p.Name, p.Description, p.Color, storedSources(p), p.Type, p.TechContext, p.CreatedBy, p.CreatedAt, p.UpdatedAt)
 		if err != nil {

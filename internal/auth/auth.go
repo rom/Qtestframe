@@ -40,6 +40,83 @@ func (e weakPassword) Is(target error) bool { return target == ErrWeakPassword }
 // ValidatePassword enforces a basic password policy.
 func ValidatePassword(p string) error { return ValidatePasswordMin(p, MinPasswordLength) }
 
+// PasswordPolicy is the policy of local passwords: the minimum length
+// (auth.password_min_length) and the number of character classes
+// (lower-case, upper-case, digit, symbol) a password must use
+// (auth.password_min_classes; 0 or 1 = letters and a digit or symbol).
+type PasswordPolicy struct {
+	MinLength  int
+	MinClasses int
+}
+
+// weakClasses is ErrWeakPassword for too few character classes.
+type weakClasses struct{ min, classes int }
+
+func (e weakClasses) Error() string {
+	return fmt.Sprintf("password must be at least %d characters and use at least %d of: lower-case letters, upper-case letters, digits, symbols", e.min, e.classes)
+}
+
+func (e weakClasses) Is(target error) bool { return target == ErrWeakPassword }
+
+// CharClasses counts the character classes of p (lower-case, upper-case,
+// digit, other).
+func CharClasses(p string) int {
+	var lower, upper, digit, other bool
+	for _, r := range p {
+		switch {
+		case unicode.IsLower(r):
+			lower = true
+		case unicode.IsUpper(r):
+			upper = true
+		case unicode.IsDigit(r):
+			digit = true
+		case unicode.IsLetter(r):
+			lower = true // letters without case
+		default:
+			other = true
+		}
+	}
+	n := 0
+	for _, b := range []bool{lower, upper, digit, other} {
+		if b {
+			n++
+		}
+	}
+	return n
+}
+
+// Validate checks p against the policy. Its errors match ErrWeakPassword.
+func (pol PasswordPolicy) Validate(p string) error {
+	if err := ValidatePasswordMin(p, pol.MinLength); err != nil {
+		return err
+	}
+	if pol.MinClasses > 1 && CharClasses(p) < pol.MinClasses {
+		min := pol.MinLength
+		if min < 1 {
+			min = MinPasswordLength
+		}
+		return weakClasses{min, pol.MinClasses}
+	}
+	return nil
+}
+
+// ErrPasswordReused is returned for a password that was used before.
+var ErrPasswordReused = errors.New("this password was used before: choose another one")
+
+// Reused reports whether p matches one of the earlier hashes (the newest
+// n of them).
+func Reused(p string, hashes []string, n int) bool {
+	for i, h := range hashes {
+		if i >= n {
+			break
+		}
+		if CheckPassword(h, p) {
+			return true
+		}
+	}
+	return false
+}
+
 // ValidatePasswordMin enforces the policy with a minimum length of min
 // (auth.password_min_length; bcrypt limits passwords to 72 bytes). Its
 // errors match ErrWeakPassword with errors.Is.
@@ -212,14 +289,36 @@ type Identity struct {
 func MapRoles(groups []string, mapping map[string]string, def string, valid func(string) bool) []string {
 	var out []string
 	seen := map[string]bool{}
+	add := func(list string) {
+		for _, r := range SplitRoles(list) {
+			if valid(r) && !seen[r] {
+				seen[r] = true
+				out = append(out, r)
+			}
+		}
+	}
 	for _, g := range groups {
-		if r, ok := mapping[g]; ok && valid(r) && !seen[r] {
-			seen[r] = true
-			out = append(out, r)
+		if r, ok := mapping[g]; ok {
+			add(r)
 		}
 	}
 	if len(out) == 0 {
+		add(def)
+	}
+	if len(out) == 0 {
 		return []string{def}
+	}
+	return out
+}
+
+// SplitRoles splits a role list of a mapping or default role ("tester" or
+// "tester, reviewer") into its roles.
+func SplitRoles(s string) []string {
+	var out []string
+	for _, r := range strings.Split(s, ",") {
+		if r = strings.TrimSpace(r); r != "" {
+			out = append(out, r)
+		}
 	}
 	return out
 }

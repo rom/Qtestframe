@@ -42,14 +42,16 @@ func validSlug(s string) bool {
 	return true
 }
 
-const tenantCols = `id, slug, name, created_at`
+const tenantCols = `id, slug, name, created_at, suspended_at`
 
 func scanTenant(r interface{ Scan(...any) error }) (*model.Tenant, error) {
 	var t model.Tenant
-	if err := r.Scan(&t.ID, &t.Slug, &t.Name, &t.CreatedAt); err != nil {
+	var susp sql.NullTime
+	if err := r.Scan(&t.ID, &t.Slug, &t.Name, &t.CreatedAt, &susp); err != nil {
 		return nil, err
 	}
 	t.CreatedAt = t.CreatedAt.UTC()
+	t.SuspendedAt = timePtr(susp)
 	return &t, nil
 }
 
@@ -128,15 +130,17 @@ func (s *Store) DeleteTenant(ctx context.Context, id string) error {
 
 // ---------------------------------------------------------------- users
 
-const userCols = `id, email, display_name, password_hash, super_admin, auth_provider, external_id, disabled, created_at, preferences, avatar, must_change_password`
+const userCols = `id, email, display_name, password_hash, super_admin, auth_provider, external_id, disabled, created_at, preferences, avatar, must_change_password, password_changed_at`
 
 func scanUser(r interface{ Scan(...any) error }) (*model.User, error) {
 	var u model.User
 	var prefs string
-	if err := r.Scan(&u.ID, &u.Email, &u.DisplayName, &u.PasswordHash, &u.SuperAdmin, &u.AuthProvider, &u.ExternalID, &u.Disabled, &u.CreatedAt, &prefs, &u.Avatar, &u.MustChangePassword); err != nil {
+	var changed sql.NullTime
+	if err := r.Scan(&u.ID, &u.Email, &u.DisplayName, &u.PasswordHash, &u.SuperAdmin, &u.AuthProvider, &u.ExternalID, &u.Disabled, &u.CreatedAt, &prefs, &u.Avatar, &u.MustChangePassword, &changed); err != nil {
 		return nil, err
 	}
 	u.CreatedAt = u.CreatedAt.UTC()
+	u.PasswordChangedAt = timePtr(changed)
 	_ = json.Unmarshal([]byte(prefs), &u.Preferences) // unknown/old keys are ignored
 	return &u, nil
 }
@@ -165,8 +169,12 @@ func (s *Store) CreateUser(ctx context.Context, u *model.User) error {
 		u.DisplayName = strings.Split(u.Email, "@")[0]
 	}
 	u.CreatedAt = s.now()
-	_, err := s.c(ctx).exec(ctx, `INSERT INTO users (`+userCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		u.ID, u.Email, u.DisplayName, u.PasswordHash, u.SuperAdmin, u.AuthProvider, u.ExternalID, u.Disabled, u.CreatedAt, encodePrefs(u.Preferences), u.Avatar, u.MustChangePassword)
+	u.PasswordChangedAt = nil
+	if u.PasswordHash != "" {
+		u.PasswordChangedAt = &u.CreatedAt
+	}
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO users (`+userCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		u.ID, u.Email, u.DisplayName, u.PasswordHash, u.SuperAdmin, u.AuthProvider, u.ExternalID, u.Disabled, u.CreatedAt, encodePrefs(u.Preferences), u.Avatar, u.MustChangePassword, nullTime(u.PasswordChangedAt))
 	return mapErr(err, "user")
 }
 
@@ -206,17 +214,68 @@ func (s *Store) ListUsers(ctx context.Context) ([]model.User, error) {
 	return out, rows.Err()
 }
 
-// UpdateUser stores mutable user fields.
+// UpdateUser stores mutable user fields. A changed password hash records
+// the time of the change and keeps the earlier hash in the password
+// history (see PasswordHistory).
 func (s *Store) UpdateUser(ctx context.Context, u *model.User) error {
-	res, err := s.c(ctx).exec(ctx, `UPDATE users SET display_name = ?, password_hash = ?, super_admin = ?, disabled = ?, auth_provider = ?, external_id = ?, preferences = ?, avatar = ?, must_change_password = ? WHERE id = ?`,
-		u.DisplayName, u.PasswordHash, u.SuperAdmin, u.Disabled, u.AuthProvider, u.ExternalID, encodePrefs(u.Preferences), u.Avatar, u.MustChangePassword, u.ID)
-	if err != nil {
+	return s.tx(ctx, func(c conn) error {
+		var old, hist string
+		var changed sql.NullTime
+		if err := c.row(ctx, `SELECT password_hash, password_history, password_changed_at FROM users WHERE id = ?`, u.ID).Scan(&old, &hist, &changed); err != nil {
+			return mapErr(err, "user")
+		}
+		u.PasswordChangedAt = timePtr(changed)
+		if u.PasswordHash != old {
+			now := s.now()
+			u.PasswordChangedAt = &now
+			if u.PasswordHash == "" {
+				u.PasswordChangedAt = nil
+			}
+			if old != "" {
+				var list []string
+				_ = json.Unmarshal([]byte(hist), &list)
+				list = append([]string{old}, list...)
+				if len(list) > MaxPasswordHistory {
+					list = list[:MaxPasswordHistory]
+				}
+				b, _ := json.Marshal(list)
+				hist = string(b)
+			}
+		}
+		_, err := c.exec(ctx, `UPDATE users SET display_name = ?, password_hash = ?, super_admin = ?, disabled = ?, auth_provider = ?, external_id = ?, preferences = ?, avatar = ?, must_change_password = ?, password_changed_at = ?, password_history = ? WHERE id = ?`,
+			u.DisplayName, u.PasswordHash, u.SuperAdmin, u.Disabled, u.AuthProvider, u.ExternalID, encodePrefs(u.Preferences), u.Avatar, u.MustChangePassword, nullTime(u.PasswordChangedAt), hist, u.ID)
 		return err
+	})
+}
+
+// StartPasswordAge records now as the time of the password change of a
+// user whose password has none recorded (accounts older than migration
+// 0063), so auth.password_max_age_days counts from now on.
+func (s *Store) StartPasswordAge(ctx context.Context, userID string) error {
+	_, err := s.c(ctx).exec(ctx, `UPDATE users SET password_changed_at = ? WHERE id = ? AND password_changed_at IS NULL`, s.now(), userID)
+	return err
+}
+
+// MaxPasswordHistory is the most earlier password hashes kept per user.
+const MaxPasswordHistory = 24
+
+// PasswordHistory returns the hashes of the earlier passwords of a user,
+// newest first.
+func (s *Store) PasswordHistory(ctx context.Context, userID string) ([]string, error) {
+	var hist string
+	if err := s.c(ctx).row(ctx, `SELECT password_history FROM users WHERE id = ?`, userID).Scan(&hist); err != nil {
+		return nil, mapErr(err, "user")
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return mapErr(sql.ErrNoRows, "user")
-	}
-	return nil
+	var list []string
+	_ = json.Unmarshal([]byte(hist), &list)
+	return list, nil
+}
+
+// CountActiveSuperAdmins returns the number of enabled super administrators.
+func (s *Store) CountActiveSuperAdmins(ctx context.Context) (int, error) {
+	var n int
+	err := s.c(ctx).row(ctx, `SELECT COUNT(*) FROM users WHERE super_admin = ? AND disabled = ?`, true, false).Scan(&n)
+	return n, err
 }
 
 // CountUsers returns the number of users.
@@ -248,6 +307,9 @@ func (s *Store) SetMembershipRoles(ctx context.Context, tenantID, userID string,
 		}
 		if n, _ := res.RowsAffected(); n > 0 {
 			return nil
+		}
+		if err := s.checkQuota(ctx, c, tenantID, quotaMembers, 0); err != nil {
+			return err
 		}
 		_, err = c.exec(ctx, `INSERT INTO memberships (tenant_id, user_id, role, roles, created_at) VALUES (?, ?, ?, ?, ?)`, tenantID, userID, role, raw, s.now())
 		return mapErr(err, "membership")

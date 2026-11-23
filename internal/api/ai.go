@@ -49,6 +49,7 @@ const (
 	aiNotConfigured = "not_configured" // enabled without a usable service
 	aiOrganisation  = "organisation"   // the organisation has not turned it on
 	aiProject       = "project"        // the project opted out
+	aiPolicy        = "policy"         // a super administrator forbade it for the organisation
 	aiFeatureOff    = "feature_off"    // the feature is turned off
 )
 
@@ -116,7 +117,7 @@ type aiStatus struct {
 	// Available: the assistance can be used in the project (by someone
 	// with the permissions of the features).
 	Available bool `json:"available"`
-	// Reason when not available: off, not_configured, organisation, project.
+	// Reason when not available: off, not_configured, policy, organisation, project.
 	Reason   string          `json:"reason,omitempty"`
 	Provider string          `json:"provider,omitempty"`
 	Model    string          `json:"model,omitempty"`
@@ -125,6 +126,9 @@ type aiStatus struct {
 	SystemEnabled       bool `json:"system_enabled"`
 	OrganisationEnabled bool `json:"organisation_enabled"`
 	ProjectDisabled     bool `json:"project_disabled"`
+	// PolicyDisabled: a super administrator forbade AI assistance for the
+	// organisation (Administration → Organisations).
+	PolicyDisabled bool `json:"policy_disabled"`
 	// RateLimit per user and hour, Remaining for the caller.
 	RateLimit int `json:"rate_limit"`
 	Remaining int `json:"remaining"`
@@ -144,6 +148,11 @@ func (s *Server) aiState(ctx context.Context, p *Principal, projectID string) (*
 		return nil, c, err
 	}
 	st.OrganisationEnabled = ts.AIEnabled
+	pol, err := s.Store.TenantPolicy(ctx, p.TenantID())
+	if err != nil {
+		return nil, c, err
+	}
+	st.PolicyDisabled = pol.AIDisabled
 	if projectID != "" {
 		if st.ProjectDisabled, err = s.Store.ProjectAIDisabled(ctx, p.TenantID(), projectID); err != nil {
 			return nil, c, err
@@ -159,6 +168,8 @@ func (s *Server) aiState(ctx context.Context, p *Principal, projectID string) (*
 		st.Reason = aiOff
 	case !c.On():
 		st.Reason = aiNotConfigured
+	case pol.AIDisabled:
+		st.Reason = aiPolicy
 	case !ts.AIEnabled:
 		st.Reason = aiOrganisation
 	case st.ProjectDisabled:

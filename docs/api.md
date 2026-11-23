@@ -183,10 +183,17 @@ are `mfa.enable`, `mfa.disable`, `mfa.recovery_codes`,
 | GET | `/tenants` | super admin (all) / member (own) | list |
 | POST | `/tenants` | super admin | `{"slug","name"}` |
 | PATCH | `/tenants/{id}` | super admin or tenant.manage | `{"name"}` |
-| DELETE | `/tenants/{id}` | super admin | |
-| GET | `/users` | super admin | list all users |
+| DELETE | `/tenants/{id}` | super admin | deletes the organisation and all its data (the web client asks for a backup first and for the slug to be typed) |
+| GET | `/admin/tenants` | super admin | every organisation with `policy`, `usage` (`members, projects, requirements, tests, runs, files, storage_bytes, last_activity`), `ai_enabled`, `erecords_enabled`, `mfa_required` |
+| GET | `/admin/tenants/{id}` | super admin | one organisation as above |
+| PUT | `/admin/tenants/{id}/policy` | super admin | `TenantPolicy` (below) → the organisation; audited `tenant.policy` with the changes |
+| POST | `/admin/tenants/{id}/suspend` | super admin | suspends the organisation (`suspended_at` is set): its members cannot open it (switch-tenant and sign-in into it answer 403, a session in it has no organisation), its API tokens are refused; nothing is deleted. Audited `tenant.suspend` |
+| POST | `/admin/tenants/{id}/reactivate` | super admin | ends the suspension (`tenant.reactivate`) |
+| GET | `/users` | super admin | list all users (with `mfa_enabled`, `password_changed_at`) |
 | POST | `/users` | super admin | `{"email","display_name","password","super_admin"}` |
-| PATCH | `/users/{id}` | super admin | `{"display_name","disabled","super_admin","password"}`; disabling or setting a password ends the user's sessions; you cannot demote or disable yourself (409) |
+| PATCH | `/users/{id}` | super admin | `{"display_name","disabled","super_admin","password","must_change_password"}`; disabling or setting a password ends the user's sessions; you cannot demote or disable yourself (409), and the last enabled super administrator cannot be demoted or disabled (409 `last_super_admin`) |
+| GET | `/users/{id}/memberships` | super admin | `{"items": [membership with tenant_slug, tenant_name, roles], "sessions": open sessions}` |
+| POST | `/users/{id}/sessions/revoke` | super admin | signs the user out everywhere → `{"revoked": n}` (not yourself: 400; API tokens stay valid); audited `user.revoke_sessions` |
 | GET | `/members` | member.read | members of current tenant; `"scim": true` marks members provisioned by SCIM, whose role and membership only the identity provider changes (`PATCH`, `DELETE` and `POST /members` answer 409 `scim_managed` for them); a member with an open e-mail invitation has `"invitation": {id, sent_at, expires_at, sso, expired, invited_by}` |
 | POST | `/members` | member.manage | `{"email","roles" (or "role"),"display_name"?,"password"?,"invite"?,"sso"?}` – creates the local user if it does not exist. With `"invite": true` (needs e-mail, see [E-mail](#e-mail)) a person without a used account gets an invitation e-mail instead of an initial password (`password` must then be empty), and the answer has `invitation`; an existing account only gets an e-mail that it was added. `"sso": true` invites to sign in with single sign-on |
 | POST | `/members/{user_id}/invitation` | member.manage | sends a new invitation link (the old link stops working) → invitation; 409 when the person already uses the account |
@@ -203,10 +210,10 @@ are `mfa.enable`, `mfa.disable`, `mfa.recovery_codes`,
 | GET | `/settings` | any member | `TenantSettings` (below) |
 | PUT | `/settings` | settings.manage | `TenantSettings` → the stored settings |
 | GET | `/tokens` | token.manage | own tokens in tenant |
-| POST | `/tokens` | token.manage | `{"name","roles" (or "role"),"expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; the roles default to all of the creator's own roles, and their permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its roles' permissions and those of the user's current roles) |
+| POST | `/tokens` | token.manage | `{"name","roles" (or "role"),"expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (400 when the server's token policy needs an expiry date or allows fewer days: `auth.token_require_expiry`, `auth.token_max_days`; token only shown once; the roles default to all of the creator's own roles, and their permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its roles' permissions and those of the user's current roles) |
 | DELETE | `/tokens/{id}` | token.manage | |
-| GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user, the `reason` for change and their place in the hash chain (`seq`, `prev_hash`, `hash`, see [Tamper-evident audit trail](#tamper-evident-audit-trail)) |
-| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"email_enabled"`, `"email_digest_hour"` (UTC) and `"version"` |
+| GET | `/audit?limit=&q=&tenant=` | audit.read | audit log of tenant (super administrators: `tenant=<id>` reads another organisation's), newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user, the `reason` for change and their place in the hash chain (`seq`, `prev_hash`, `hash`, see [Tamper-evident audit trail](#tamper-evident-audit-trail)) |
+| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"email_enabled"`, `"email_digest_hour"` (UTC), the token policy `"token_max_days"` (0 = no limit) and `"token_require_expiry"`, and `"version"` |
 | POST | `/admin/email/test` | tenant.manage | sends a test e-mail to the caller's own address now → `{"ok", "to", "error"?}` with the SMTP error; 400 when e-mail is not configured |
 
 Roles: nobody can grant a permission they do not hold (403 when a role
@@ -3774,6 +3781,8 @@ All endpoints need a **super administrator signed in with a session**
 | POST | `/admin/settings/test/oidc` | `{"issuer"}` → discovery result |
 | POST | `/admin/settings/test/syslog` | `{"values": {...}}` (unsaved logging values) → sends a test message |
 | POST | `/admin/settings/test/email` | `{"values": {...}}` (unsaved e-mail values) → sends a test e-mail to the caller |
+| POST | `/admin/settings/test/outbound` | `{"url", "values"?}` (unsaved outbound values) → whether the outbound rules allow the URL, and its HTTP status (`details.blocked` when refused) |
+| POST | `/admin/settings/test/saml` | `{"name"}` → reads the metadata of a SAML provider of the file (`details.entity_id`, `certificates`, `sso_urls`) |
 
 A setting in `settings`:
 
@@ -3787,7 +3796,13 @@ A setting in `settings`:
 
 * `type`: `string`, `int` (with `min`/`max`), `bool`, `duration` (Go
   duration strings such as `"12h"`, `"90s"`), `enum` (`options`), `secret`,
-  `list` (read-only).
+  `list` (a JSON array of strings; entries are trimmed and de-duplicated,
+  at most 200).
+* `section`: `general`, `server`, `security`, `tokens`, `oidc`, `logging`,
+  `email`, `outbound`, `runner`, `live`, `similarity`, `ai`, `retention`.
+  Every key of the configuration file is either a setting (editable or
+  `readonly`, shown with its source) or file-only (bootstrap secrets, key
+  files, SAML providers, the key provider of stored secrets).
 * `apply`: `runtime` (applies at once), `restart` (stored now, applies at
   the next start; `running_value` and `pending_restart` show the value in
   use), `readonly` (configuration file only).
@@ -3837,8 +3852,36 @@ Test results are always 200 with `{"ok": bool, "message", "error",
 `details` and an error such as `the document names the issuer "…", not
 "…" (they must match exactly)`.
 
-`GET /auth/providers` (public) also returns `password_min_length`, and
-`GET /invitations/{token}` returns `password_min_length`.
+`GET /auth/providers` (public) also returns `password_min_length` and
+`password_min_classes` (and per OIDC provider its button `icon`), and
+`GET /invitations/{token}` returns `password_min_length` and
+`password_min_classes`.
+
+The GET document also lists `saml`: the SAML providers of the
+configuration file, read-only (`name, display_name, entity_id,
+metadata_url, metadata_file, sp_cert_file, email_attr, name_attr,
+groups_attr, auto_provision, default_tenant, default_role, role_mapping,
+allowed_domains, acs_url, sp_metadata_url`), and `oidc_icons`, the icons
+an OIDC button can have. OIDC providers also take `icon` and
+`allowed_domains` (e-mail domains that may sign in; `*.example.com` for
+subdomains), and a `role_mapping` value or `default_role` may name several
+roles (`"tester, reviewer"`).
+
+`TenantPolicy` (`PUT /admin/tenants/{id}/policy`):
+
+```json
+{"max_members": 50, "max_projects": 10, "max_storage_mb": 2048, "ai_disabled": false,
+ "allowed_providers": ["oidc:corp"], "email_domains": ["example.com"], "note": "contract 42"}
+```
+
+Quotas are 0 for no limit; adding a member, creating a project or storing
+a file beyond them answers 409. `allowed_providers` (`local`,
+`oidc:<name>`, `saml:<name>`; empty = any) are the sign-in methods of
+accounts that may open the organisation (super administrators always can).
+`email_domains`: new single sign-on users of these domains join the
+organisation when their provider names no `default_tenant` (a domain
+belongs to one organisation: 409). `ai_disabled` forbids AI assistance
+(`GET /ai` then has `reason: "policy"`).
 
 ## SCIM 2.0 provisioning
 

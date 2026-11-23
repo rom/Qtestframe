@@ -92,6 +92,50 @@ type Tenant struct {
 	Slug      string    `json:"slug"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
+	// SuspendedAt is set while a super administrator has suspended the
+	// organisation: its members cannot open it and its API tokens are
+	// refused (nothing is deleted).
+	SuspendedAt *time.Time `json:"suspended_at,omitempty"`
+}
+
+// Suspended reports whether the organisation is suspended.
+func (t *Tenant) Suspended() bool { return t != nil && t.SuspendedAt != nil }
+
+// TenantPolicy holds the limits and rules of an organisation that only
+// super administrators change (Administration → Organisations). Zero
+// values mean "no limit" / "no rule".
+type TenantPolicy struct {
+	// MaxMembers, MaxProjects and MaxStorageMB are quotas: adding a member,
+	// creating a project or uploading a file beyond them is refused.
+	MaxMembers   int `json:"max_members"`
+	MaxProjects  int `json:"max_projects"`
+	MaxStorageMB int `json:"max_storage_mb"`
+	// AIDisabled forbids the AI assistance in the organisation, whatever
+	// its own setting.
+	AIDisabled bool `json:"ai_disabled"`
+	// AllowedProviders, when set, are the sign-in methods of its members:
+	// "local" (password) and "oidc:<name>" / "saml:<name>". Members whose
+	// account uses another one cannot open the organisation.
+	AllowedProviders []string `json:"allowed_providers"`
+	// EmailDomains: new single sign-on users with an address of one of
+	// these domains join the organisation (when their provider names no
+	// default organisation).
+	EmailDomains []string `json:"email_domains"`
+	// Note is a free text for the super administrators (contract, contact).
+	Note string `json:"note"`
+}
+
+// TenantUsage counts what an organisation holds.
+type TenantUsage struct {
+	Members      int   `json:"members"`
+	Projects     int   `json:"projects"`
+	Requirements int   `json:"requirements"`
+	Tests        int   `json:"tests"`
+	Runs         int   `json:"runs"`
+	Files        int   `json:"files"`
+	StorageBytes int64 `json:"storage_bytes"`
+	// LastActivity is the time of the newest audit entry.
+	LastActivity *time.Time `json:"last_activity,omitempty"`
 }
 
 // TenantSettings are organisation-wide settings, edited by holders of
@@ -150,6 +194,9 @@ type User struct {
 	// MFAEnabled: the user has a confirmed second factor (filled by the
 	// user lists and /auth/me, not stored in the users table).
 	MFAEnabled bool `json:"mfa_enabled"`
+	// PasswordChangedAt is when the local password was last set (nil =
+	// before this was recorded).
+	PasswordChangedAt *time.Time `json:"password_changed_at,omitempty"`
 }
 
 // LoginEvent records a sign-in attempt.

@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -49,6 +50,11 @@ type Config struct {
 	// AI configures the optional AI assistance (off by default, see
 	// internal/ai): drafts and suggestions from a language model service.
 	AI AI `yaml:"ai"`
+	// Outbound configures the outgoing HTTP calls of the server (webhooks,
+	// chat, defect trackers, AI, embeddings, OIDC discovery): a proxy and
+	// the hosts they may reach (protection against server-side request
+	// forgery).
+	Outbound Outbound `yaml:"outbound"`
 
 	// Meta records where values came from (file keys, environment
 	// variables); filled by Load, not part of the YAML.
@@ -228,6 +234,87 @@ type Email struct {
 	Timeout      time.Duration `yaml:"timeout"`
 	// DigestHour is the hour of the day (UTC) when daily digests are sent.
 	DigestHour int `yaml:"digest_hour"`
+	// ReplyTo is the Reply-To address of e-mails that have none of their
+	// own ("" = none; invitations and shared reports reply to the person
+	// who sent them).
+	ReplyTo string `yaml:"reply_to"`
+}
+
+// Outbound configures outgoing HTTP calls.
+type Outbound struct {
+	// Proxy is the HTTP(S) proxy of outgoing calls (http://proxy:3128);
+	// "" uses the environment (HTTPS_PROXY, HTTP_PROXY, NO_PROXY).
+	Proxy string `yaml:"proxy"`
+	// NoProxy lists hosts (and *.domain patterns) reached without Proxy.
+	NoProxy []string `yaml:"no_proxy"`
+	// AllowedHosts, when set, are the only hosts outgoing calls may reach
+	// (exact names or *.domain patterns); DeniedHosts are never reached.
+	AllowedHosts []string `yaml:"allowed_hosts"`
+	DeniedHosts  []string `yaml:"denied_hosts"`
+	// BlockPrivate refuses calls to loopback, private, link-local and
+	// other non-public addresses (unless the host is in AllowedHosts).
+	BlockPrivate bool `yaml:"block_private"`
+}
+
+func (o Outbound) validate() []error {
+	var errs []error
+	if o.Proxy != "" {
+		u, err := url.Parse(o.Proxy)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			errs = append(errs, errors.New("outbound.proxy must be an http(s) URL such as http://proxy.example.com:3128"))
+		}
+	}
+	for _, l := range []struct {
+		key  string
+		list []string
+	}{{"outbound.no_proxy", o.NoProxy}, {"outbound.allowed_hosts", o.AllowedHosts}, {"outbound.denied_hosts", o.DeniedHosts}} {
+		for _, h := range l.list {
+			if !ValidHostPattern(h) {
+				errs = append(errs, fmt.Errorf("%s: %q is not a host name, address or *.domain pattern", l.key, h))
+			}
+		}
+	}
+	return errs
+}
+
+// ValidHostPattern reports whether s is a host name, an IP address or a
+// *.domain pattern (outbound host lists, allowed e-mail domains).
+func ValidHostPattern(s string) bool {
+	if net.ParseIP(s) != nil {
+		return true
+	}
+	s = strings.TrimPrefix(s, "*.")
+	if s == "" || len(s) > 253 {
+		return false
+	}
+	for _, part := range strings.Split(s, ".") {
+		if part == "" || len(part) > 63 {
+			return false
+		}
+		for _, r := range part {
+			if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_') {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// MatchHost reports whether host matches one of the patterns (exact,
+// case-insensitive, or *.domain for the domain's subdomains).
+func MatchHost(host string, patterns []string) bool {
+	host = strings.ToLower(strings.TrimSuffix(host, "."))
+	for _, p := range patterns {
+		p = strings.ToLower(strings.TrimSpace(p))
+		if d, ok := strings.CutPrefix(p, "*."); ok {
+			if strings.HasSuffix(host, "."+d) {
+				return true
+			}
+		} else if host == p {
+			return true
+		}
+	}
+	return false
 }
 
 // Live configures live updates: the event stream that tells the web
@@ -480,8 +567,24 @@ type Auth struct {
 	// window has passed.
 	LoginMaxAttempts int           `yaml:"login_max_attempts"`
 	LoginLockout     time.Duration `yaml:"login_lockout"`
-	OIDC             []OIDC        `yaml:"oidc"`
-	SAML             []SAML        `yaml:"saml"`
+	// SessionIdleTimeout ends a browser session after this long without
+	// activity (0 = only session_ttl applies).
+	SessionIdleTimeout time.Duration `yaml:"session_idle_timeout"`
+	// PasswordMinClasses: local passwords need characters of at least this
+	// many of the classes lower-case, upper-case, digit and symbol (0 =
+	// letters and at least one digit or symbol).
+	PasswordMinClasses int `yaml:"password_min_classes"`
+	// PasswordHistory is how many previous passwords cannot be used again.
+	PasswordHistory int `yaml:"password_history"`
+	// PasswordMaxAgeDays makes a local password expire this many days
+	// after it was set (0 = never): the next sign-in must change it.
+	PasswordMaxAgeDays int `yaml:"password_max_age_days"`
+	// TokenMaxDays limits the lifetime of new API tokens (0 = no limit);
+	// TokenRequireExpiry refuses tokens without an expiry date.
+	TokenMaxDays       int    `yaml:"token_max_days"`
+	TokenRequireExpiry bool   `yaml:"token_require_expiry"`
+	OIDC               []OIDC `yaml:"oidc"`
+	SAML               []SAML `yaml:"saml"`
 }
 
 // Provisioning holds settings shared by external identity providers.
@@ -490,6 +593,10 @@ type Provisioning struct {
 	DefaultTenant string            `yaml:"default_tenant"`
 	DefaultRole   string            `yaml:"default_role"`
 	RoleMapping   map[string]string `yaml:"role_mapping"`
+	// AllowedDomains, when set, are the only e-mail domains that may sign
+	// in through the provider (example.com, or *.example.com for its
+	// subdomains).
+	AllowedDomains []string `yaml:"allowed_domains"`
 }
 
 // OIDC is an OpenID Connect provider.
@@ -497,8 +604,11 @@ type OIDC struct {
 	Name string `yaml:"name"`
 	// Enabled is false to keep a provider configured but hide it from the
 	// sign-in page (nil = enabled).
-	Enabled          *bool    `yaml:"enabled"`
-	DisplayName      string   `yaml:"display_name"`
+	Enabled     *bool  `yaml:"enabled"`
+	DisplayName string `yaml:"display_name"`
+	// Icon is the icon of the sign-in button (one of OIDCIcons; "" = a
+	// generic sign-in icon).
+	Icon             string   `yaml:"icon"`
 	Issuer           string   `yaml:"issuer"`
 	ClientID         string   `yaml:"client_id"`
 	ClientSecret     string   `yaml:"client_secret"`
@@ -526,6 +636,9 @@ const (
 	LocalMFAUnlessIdPMFA = "unless_idp_mfa"
 	LocalMFAAlways       = "always"
 )
+
+// OIDCIcons are the icons of sign-in buttons (PrimeIcons names).
+var OIDCIcons = []string{"", "sign-in", "key", "shield", "building", "microsoft", "google", "github", "amazon", "apple"}
 
 // On reports whether the provider is enabled.
 func (o OIDC) On() bool { return o.Enabled == nil || *o.Enabled }
@@ -1024,6 +1137,21 @@ func (c *Config) Validate() error {
 	if c.Auth.LoginLockout < time.Minute || c.Auth.LoginLockout > 24*time.Hour {
 		errs = append(errs, errors.New("auth.login_lockout must be between 1m and 24h"))
 	}
+	if c.Auth.SessionIdleTimeout != 0 && (c.Auth.SessionIdleTimeout < time.Minute || c.Auth.SessionIdleTimeout > 30*24*time.Hour) {
+		errs = append(errs, errors.New("auth.session_idle_timeout must be 0 (off) or between 1m and 720h"))
+	}
+	if c.Auth.PasswordMinClasses < 0 || c.Auth.PasswordMinClasses > 4 {
+		errs = append(errs, errors.New("auth.password_min_classes must be between 0 and 4"))
+	}
+	if c.Auth.PasswordHistory < 0 || c.Auth.PasswordHistory > 24 {
+		errs = append(errs, errors.New("auth.password_history must be between 0 and 24"))
+	}
+	if c.Auth.PasswordMaxAgeDays < 0 || c.Auth.PasswordMaxAgeDays > 3650 {
+		errs = append(errs, errors.New("auth.password_max_age_days must be between 0 and 3650"))
+	}
+	if c.Auth.TokenMaxDays < 0 || c.Auth.TokenMaxDays > 3650 {
+		errs = append(errs, errors.New("auth.token_max_days must be between 0 and 3650"))
+	}
 	if _, err := ParseLevel(c.Logging.Level); err != nil {
 		errs = append(errs, fmt.Errorf("logging.level %q must be debug, info, warn or error", c.Logging.Level))
 	}
@@ -1041,6 +1169,10 @@ func (c *Config) Validate() error {
 		default:
 			errs = append(errs, fmt.Errorf("oidc provider %q: local_mfa must be off, unless_idp_mfa or always, got %q", o.Name, o.LocalMFA))
 		}
+		if !slices.Contains(OIDCIcons, o.Icon) {
+			errs = append(errs, fmt.Errorf("oidc provider %q: icon must be one of %s", o.Name, strings.Join(OIDCIcons[1:], ", ")))
+		}
+		errs = append(errs, o.Provisioning.validate("oidc provider "+o.Name)...)
 	}
 	for _, s := range c.Auth.SAML {
 		if s.Name == "" || (s.IDPMetadataURL == "" && s.IDPMetadataFile == "") {
@@ -1050,6 +1182,7 @@ func (c *Config) Validate() error {
 			errs = append(errs, fmt.Errorf("duplicate saml provider %q", s.Name))
 		}
 		names["saml/"+s.Name] = true
+		errs = append(errs, s.Provisioning.validate("saml provider "+s.Name)...)
 	}
 	if c.Logging.Syslog.Enabled {
 		switch c.Logging.Syslog.Network {
@@ -1072,6 +1205,7 @@ func (c *Config) Validate() error {
 	errs = append(errs, c.Secrets.validate()...)
 	errs = append(errs, c.Similarity.Embeddings.validate()...)
 	errs = append(errs, c.AI.validate()...)
+	errs = append(errs, c.Outbound.validate()...)
 	if c.Email.On() && c.Server.BaseURL == "" {
 		errs = append(errs, errors.New("server.base_url is required for e-mail (links in the messages)"))
 	}
@@ -1142,7 +1276,33 @@ func (e Email) validate() []error {
 	if e.DigestHour < 0 || e.DigestHour > 23 {
 		errs = append(errs, errors.New("email.digest_hour must be between 0 and 23"))
 	}
+	if e.ReplyTo != "" {
+		if a, err := mail.ParseAddress(e.ReplyTo); err != nil || a.Name != "" || strings.ContainsAny(e.ReplyTo, "\r\n") {
+			errs = append(errs, fmt.Errorf("email.reply_to %q must be a plain e-mail address", e.ReplyTo))
+		}
+	}
 	return errs
+}
+
+// validate checks the provisioning settings of the provider named what.
+func (p Provisioning) validate(what string) []error {
+	var errs []error
+	for _, d := range p.AllowedDomains {
+		if strings.Contains(d, "@") || !ValidHostPattern(d) || net.ParseIP(d) != nil {
+			errs = append(errs, fmt.Errorf("%s: allowed_domains: %q is not a domain such as example.com", what, d))
+		}
+	}
+	return errs
+}
+
+// DomainAllowed reports whether the e-mail address may sign in through the
+// provider (allowed_domains).
+func (p Provisioning) DomainAllowed(email string) bool {
+	if len(p.AllowedDomains) == 0 {
+		return true
+	}
+	_, domain, ok := strings.Cut(strings.TrimSpace(email), "@")
+	return ok && MatchHost(domain, p.AllowedDomains)
 }
 
 // ValidOrigin reports whether s is an origin: http(s)://host[:port]
