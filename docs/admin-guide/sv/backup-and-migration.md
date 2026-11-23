@@ -77,6 +77,15 @@ Säkerhetskopians systeminställningar gäller direkt. Efter en återställning:
 
 Använd historiken i webbklienten för att återställa ett enskilt objekt; för att flytta ett projekt, se nedan.
 
+## Händelseloggen i säkerhetskopior
+
+Händelseloggens hashkedja (se [Manipuleringssäker händelselogg](security.md#manipuleringssäker-händelselogg)) klarar säkerhetskopiering och återställning, också mellan SQLite och PostgreSQL:
+
+- En **säkerhetskopia** är en konsekvent ögonblicksbild av posterna, kedjornas registrerade slut (`audit_heads`), de signerade kontrollpunkterna och deras nyckel (`audit_keys`, krypterad med de säkerhetskopierade datanycklarna), så den återställda kedjan verifieras som originalet. Tiderna sparas på mikrosekunden, vilket båda databaserna lagrar.
+- En **återställning** ersätter kedjan med säkerhetskopians: poster som skrevs efter säkerhetskopian försvinner, liksom kontrollpunkterna som skrevs efter den, så den återställda kedjan är intakt; själva återställningen (`admin.restore`) blir nästa post. Spara händelseloggens exporter från tiden mellan säkerhetskopian och återställningen om ni måste kunna visa vad som hände då. Verifiera efter en återställning: `qtestframe audit verify`.
+- Återställning till en installation med en annan nyckel misslyckas som för alla krypterade hemligheter; nyckeln till kontrollpunkterna kan inte läsas utan säkerhetskopians nyckel.
+- **Projektarkiv** (nedan) innehåller aldrig händelseloggen eller de elektroniska signaturerna: de hör till organisationen. Att spara, läsa in, kopiera eller ta bort ett projekt lägger bara till poster i kedjan; inget tas bort ur den. Elektroniska signaturer behålls när deras projekt tas bort.
+
 ## Uppgradering
 
 1. Läs versionsnyteterna.
